@@ -1,5 +1,5 @@
 import { SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES } from "@triliumnext/commons";
-import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "fs";
 import { createRequire } from "module";
 import { tmpdir } from "os";
 import { dirname, join } from "path";
@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import { findSlowSelectors } from "./src/test/css_invalidation";
 import {
     buildShareThemeManifest,
+    bundleStylesheet,
     checkHostedGroups,
     ENGINE_RENDER_ENTRY,
     flattenCssNesting,
@@ -407,6 +408,46 @@ describe("flattenCssNesting", () => {
             expect(findNestedRules(flattenCssNesting(source, file)), file).toEqual([]);
         }
         expect(findNestedRules(readFileSync(join(dir, "style.css"), "utf8")).length).toBeGreaterThan(0);
+    });
+});
+
+describe("bundleStylesheet", () => {
+    it("inlines the imports of a stylesheet, pointing their URLs from where the stylesheet is", async () => {
+        const dir = mkdtempSync(join(tmpdir(), "bundle-stylesheet-"));
+        mkdirSync(join(dir, "nested/deeper"), { recursive: true });
+        writeFileSync(join(dir, "entry.css"), "@import url(./nested/a.css);\n.entry { background: url(own.png); }");
+        writeFileSync(join(dir, "nested/a.css"), [
+            "@import url(./deeper/b.css);",
+            ".a { background: url(\"img.png\"); & .inner { mask: url(#mask); } }",
+            ".data { background: url(data:image/png;base64,AAAA); }"
+        ].join("\n"));
+        writeFileSync(join(dir, "nested/deeper/b.css"), "@font-face { font-family: B; src: url(../../fonts/b.woff2); }");
+
+        const css = await bundleStylesheet(readFileSync(join(dir, "entry.css"), "utf8"), join(dir, "entry.css"));
+        expect(css).not.toContain("@import");
+        expect(css).toContain("url(\"own.png\")");
+        expect(css).toContain("url(\"nested/img.png\")");
+        expect(css).toContain("url(\"fonts/b.woff2\")");
+        expect(css).toContain("url(\"#mask\")");
+        expect(css).toContain("data:image/png;base64,AAAA");
+        expect(findNestedRules(css)).toEqual([]);
+    });
+
+    it("bundles the client's themes and `style.css` into one file each, with every URL still found", async () => {
+        const dir = join(__dirname, "src/stylesheets");
+        for (const file of [ "theme-next-light.css", "theme-next-dark.css", "style.css" ]) {
+            const css = await bundleStylesheet(readFileSync(join(dir, file), "utf8"), join(dir, file));
+            expect(css, file).not.toContain("@import");
+            for (const [ , url ] of css.matchAll(/url\("([^"#][^"]*)"\)/g)) {
+                if (url.startsWith("data:")) continue;
+                expect(existsSync(join(dir, url)), `${file}: ${url}`).toBe(true);
+            }
+        }
+    });
+
+    it("flattens a stylesheet without imports, and leaves other files untouched", async () => {
+        expect(findNestedRules(await bundleStylesheet(".a { &:hover { color: red; } }", "/x/plain.css"))).toEqual([]);
+        expect(await bundleStylesheet("const a = 1;", "/x/theme.ts")).toBe("const a = 1;");
     });
 });
 

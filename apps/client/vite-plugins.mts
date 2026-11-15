@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import type { ServerResponse } from "node:http";
-import { join, posix } from "node:path";
+import { dirname, join, posix, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // Node loads these without a bundler, so neither imports another source file.
@@ -16,7 +16,7 @@ import {
 import {
     buildVsCodeThemeCss, VS_CODE_DARK, VS_CODE_LIGHT
 } from "@triliumnext/highlightjs/src/vs_code_theme.js";
-import { Features, transform } from "lightningcss";
+import { bundleAsync, Features, transform } from "lightningcss";
 import {
     build, type Connect, type InlineConfig, normalizePath, parse, type Plugin,
     type ResolvedConfig, type Rollup, type ViteDevServer
@@ -151,6 +151,55 @@ export function flattenCssNesting(content: string, filename: string): string {
         errorRecovery: true
     });
     return code.toString();
+}
+
+/**
+ * Inlines the `@import`s of a stylesheet copied by `viteStaticCopy` and flattens its nesting, so a
+ * theme the client links at runtime arrives as one file rather than a chain of requests. Each
+ * imported file's relative URLs are pointed from the stylesheet's own folder, which lightningcss
+ * leaves to the caller. The imported files are still copied, for custom themes that import them.
+ * Returns files other than `.css` unchanged.
+ */
+export async function bundleStylesheet(content: string, filename: string): Promise<string> {
+    if (!filename.endsWith(".css")) {
+        return content;
+    }
+    if (!content.includes("@import")) {
+        return flattenCssNesting(content, filename);
+    }
+
+    const entryDir = dirname(filename);
+    const { code } = await bundleAsync({
+        filename,
+        include: Features.Nesting,
+        errorRecovery: true,
+        resolver: {
+            read: async (filePath) => {
+                const source = await readFile(filePath, "utf8");
+                return filePath === filename ? source : rebaseUrls(source, dirname(filePath), entryDir);
+            }
+        }
+    });
+    return code.toString();
+}
+
+/**
+ * Rewrites the relative `url()`s of `css`, found in `fromDir`, to be relative to `toDir`. Leaves
+ * `@import` lines alone, as lightningcss resolves those against the file that holds them.
+ */
+function rebaseUrls(css: string, fromDir: string, toDir: string) {
+    return css.split("\n").map((line) => {
+        if (line.trimStart().startsWith("@import")) {
+            return line;
+        }
+        return line.replace(/url\(\s*(['"]?)([^'")]+)\1\s*\)/g, (match, quote: string, url: string) => {
+            if (/^(?:[a-z][\w+.-]*:|\/|#)/i.test(url)) {
+                return match;
+            }
+            const rebased = relative(toDir, resolve(fromDir, url)).split("\\").join("/");
+            return `url(${quote}${rebased}${quote})`;
+        });
+    }).join("\n");
 }
 
 /**

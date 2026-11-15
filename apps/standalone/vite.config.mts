@@ -8,7 +8,7 @@ import { viteStaticCopy } from "vite-plugin-static-copy";
 
 import { translationCatalogues } from "../client/translation-catalogues.mjs";
 import {
-    flattenCssNesting, narrowThirdPartySelectors, shareTheme, stripUniverEmojiData,
+    bundleStylesheet, narrowThirdPartySelectors, shareTheme, stripUniverEmojiData,
     stripUniverHyphenation
 } from "../client/vite-plugins.mjs";
 
@@ -207,7 +207,7 @@ let plugins: any = [
             src: `../../client/src/${asset}/**/*`,
             dest: asset,
             rename: { stripBase: 3 },
-            ...(asset === "stylesheets" && { transform: flattenCssNesting })
+            ...(asset === "stylesheets" && { transform: bundleStylesheet })
         })),
         // Enable watching in development
         ...(isDev && {

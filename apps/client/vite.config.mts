@@ -7,7 +7,7 @@ import { viteStaticCopy } from 'vite-plugin-static-copy'
 
 import { translationCatalogues } from './translation-catalogues.mjs';
 import {
-    flattenCssNesting, narrowThirdPartySelectors, shareTheme, stripUniverEmojiData,
+    bundleStylesheet, narrowThirdPartySelectors, shareTheme, stripUniverEmojiData,
     stripUniverHyphenation
 } from './vite-plugins.mjs';
 
@@ -40,7 +40,7 @@ if (isDev) {
                 src: `src/${asset}/**/*`,
                 dest: asset,
                 rename: { stripBase: 2 },
-                ...(asset === "stylesheets" && { transform: flattenCssNesting })
+                ...(asset === "stylesheets" && { transform: bundleStylesheet })
             }))
         }),
         viteStaticCopy({
