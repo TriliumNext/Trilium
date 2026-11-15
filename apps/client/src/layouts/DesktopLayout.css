@@ -44,7 +44,13 @@
         }
     }
 
-    .tab-row-host,
+    .tab-row-host {
+        display: flex;
+        flex-grow: 1;
+        align-self: stretch;
+        min-width: 0;
+    }
+
     .note-splits-host {
         display: contents;
     }
