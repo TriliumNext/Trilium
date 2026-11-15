@@ -1,3 +1,5 @@
+import "./RightPaneContent.css";
+
 import clsx from "clsx";
 import type { RefObject, VNode } from "preact";
 import { useLayoutEffect, useRef } from "preact/hooks";
