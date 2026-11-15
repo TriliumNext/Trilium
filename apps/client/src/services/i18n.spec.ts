@@ -8,25 +8,16 @@ import i18next from "i18next";
 import { join } from "path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// Mock the http backend so i18next.init() never hits the network. The real
-// backend would try to fetch translation JSON over HTTP and the awaited init()
-// would hang until the connection fails. Our fake backend resolves read()
-// synchronously with an empty resource bundle.
+// The catalogues are read through `takeCatalogue()`, which here answers with an empty catalogue
+// instead of fetching one.
 const backendReads = vi.hoisted(() => [] as string[]);
-vi.mock("i18next-http-backend", () => {
-    class FakeBackend {
-        static type = "backend" as const;
-        type = "backend" as const;
-        init() {
-            // No configuration needed.
-        }
-        read(language: string, namespace: string, callback: (err: unknown, data: unknown) => void) {
-            backendReads.push(`${language}/${namespace}`);
-            callback(null, {});
-        }
+vi.mock("./catalogue_requests", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./catalogue_requests")>(),
+    takeCatalogue: async (lng: string, ns: string) => {
+        backendReads.push(`${lng}/${ns}`);
+        return {};
     }
-    return { default: FakeBackend };
-});
+}));
 
 const {
     getAvailableLocales, getCurrentLanguage, getEnglishAnnotation, getLocaleById, initLocale,
@@ -409,6 +400,15 @@ describe("i18n", () => {
             backendReads.length = 0;
             await initLocale("pt_br");
             expect(backendReads.sort()).toEqual([ "pt_br/entry", "pt_br/translation" ]);
+        });
+
+        it("reads the catalogue of a language picked once it is running, as the setup wizard does", async () => {
+            await initLocale("en", "entry");
+            backendReads.length = 0;
+
+            await i18next.changeLanguage("de");
+
+            expect(backendReads).toEqual([ "de/entry" ]);
         });
 
         it("uses the default 'en' locale when called without arguments", async () => {

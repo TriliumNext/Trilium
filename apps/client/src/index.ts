@@ -3,6 +3,7 @@
 // CSS, which loads ahead of the stylesheets `loadStylesheets()` appends.
 import "./content.css";
 
+import { requestCatalogues } from "./services/catalogue_requests";
 import { createFontStylesheetLink } from "./services/font";
 import {
     CLIENT_STARTUP_PHASES, hideSplash, initSplashProgress, reportSplashPhase, showSplashError
@@ -33,6 +34,7 @@ async function bootstrap() {
     const isIosWebApp = (navigator as Navigator & { standalone?: boolean }).standalone === true;
     document.documentElement.classList.toggle("ios-web-app", isIosWebApp && extendsUnderStatusBar());
     await setupGlob();
+    requestStartupCatalogues();
     await Promise.all([
         initJQuery(),
         loadBootstrapCss()
@@ -238,6 +240,21 @@ async function loadScripts() {
     // user a blank page for the seconds those fetches take on a slow connection.
     reportSplashPhase("interface");
     await entry.ready;
+}
+
+/**
+ * Starts fetching the catalogues of the page {@link importEntry} loads, in its language, so they
+ * download while its modules do. Printing translates nothing.
+ */
+function requestStartupCatalogues() {
+    const locale = glob.currentLocale?.id ?? "en";
+    if (!glob.dbInitialized) {
+        requestCatalogues("en", "entry");
+    } else if (glob.passwordSet === false || glob.loggedIn === false) {
+        requestCatalogues(locale, "entry");
+    } else if (glob.device !== "print") {
+        requestCatalogues(locale, "app");
+    }
 }
 
 function importEntry(): Promise<{ ready?: Promise<unknown> }> {

@@ -290,9 +290,6 @@ importers:
       i18next:
         specifier: 26.7.2
         version: 26.7.2(typescript@6.0.3)
-      i18next-http-backend:
-        specifier: 4.0.10
-        version: 4.0.10
       jquery:
         specifier: 4.0.0
         version: 4.0.0
@@ -7428,7 +7425,7 @@ packages:
     resolution: {integrity: sha512-/kVP2U8z596Ia0gwFrwyIeo74ta5aVmSeU1FfAUMAmcEP5EP7zydmag3SLiN64NaRKef3lxsq7i/g7ltJQDGow==}
     engines: {node: '>=4.0'}
     peerDependencies:
-      debug: '*'
+      debug: '>=3.2.7'
     peerDependenciesMeta:
       debug:
         optional: true

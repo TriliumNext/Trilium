@@ -644,8 +644,10 @@ export class AppContext extends Component {
      * Must be called as soon as possible, before the creation of any components since this method is in charge of initializing the locale. Any attempts to read translation before this method is called will result in `undefined`.
      */
     async earlyInit() {
-        await options.initializedPromise;
-        await initLocale((options.get("locale") || "en") as LOCALE_IDS);
+        await Promise.all([
+            options.initializedPromise,
+            initLocale(window.glob.currentLocale.id as LOCALE_IDS)
+        ]);
     }
 
     setLayout(layout: Layout) {
