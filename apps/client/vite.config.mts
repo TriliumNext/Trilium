@@ -5,6 +5,7 @@ import { join } from 'path';
 import { defineConfig } from 'vite';
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 
+import { startupChunkGroup } from './startup-chunks.mjs';
 import { translationCatalogues } from './translation-catalogues.mjs';
 import {
     bundleStylesheet, narrowThirdPartySelectors, shareTheme, stripUniverEmojiData,
@@ -134,7 +135,13 @@ export default defineConfig(() => ({
                     return "src/[name].js";
                 },
                 chunkFileNames: "src/[name]-[hash].js",
-                assetFileNames: "src/[name]-[hash].[ext]"
+                assetFileNames: "src/[name]-[hash].[ext]",
+                // By default every module that two lazily loaded parts share gets a chunk of its
+                // own, which made a start of the app request about 300 scripts.
+                codeSplitting: {
+                    includeDependenciesRecursively: false,
+                    groups: [ startupChunkGroup(import.meta.dirname) ]
+                }
             },
             onwarn(warning, rollupWarn) {
                 if (warning.code === "MODULE_LEVEL_DIRECTIVE") {
