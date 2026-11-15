@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from "fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "fs";
 import type { IncomingMessage, ServerResponse } from "http";
 import { tmpdir } from "os";
 import { join } from "path";
@@ -111,25 +111,21 @@ describe("translationCatalogues", () => {
         expect(other.body).toBeUndefined();
     });
 
-    it("emits every catalogue of every language, merged, in a build", async () => {
+    it("writes every catalogue of every language, merged, beside the build, outside its bundle", async () => {
         const { plugin } = setUp();
-        const emitted: Record<string, Catalogue> = {};
-        const context = {
-            emitFile: ({ fileName, source }: { fileName: string, source: string }) => {
-                emitted[fileName] = JSON.parse(source);
-                return fileName;
-            }
-        };
-        const hook = plugin.generateBundle;
-        const generate = typeof hook === "function" ? hook : hook?.handler;
-        expect(generate).toBeDefined();
-        await generate?.call(context as never, {} as never, {}, false);
+        // The bundle is what the Codecov plugin measures, as `viteStaticCopy` left the catalogues out of it.
+        expect(plugin.generateBundle).toBeUndefined();
 
-        expect(emitted).toEqual({
-            "translations/en/translation.json": { save: "Save", close: "Close" },
-            "translations/en/entry.json": { login: "Log in" },
-            "translations/de/translation.json": { save: "Speichern", close: "Close" },
-            "translations/de/entry.json": { login: "Log in" }
-        });
+        const outDir = mkdtempSync(join(tmpdir(), "catalogues-out-"));
+        const hook = plugin.writeBundle;
+        const write = typeof hook === "function" ? hook : hook?.handler;
+        expect(write).toBeDefined();
+        await write?.call({} as never, { dir: outDir } as never, {});
+
+        const read = (path: string) => JSON.parse(readFileSync(join(outDir, path), "utf8"));
+        expect(read("translations/en/translation.json")).toEqual({ save: "Save", close: "Close" });
+        expect(read("translations/en/entry.json")).toEqual({ login: "Log in" });
+        expect(read("translations/de/translation.json")).toEqual({ save: "Speichern", close: "Close" });
+        expect(read("translations/de/entry.json")).toEqual({ login: "Log in" });
     });
 });

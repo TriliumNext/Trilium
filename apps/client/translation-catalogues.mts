@@ -1,5 +1,5 @@
 import { readdirSync } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import type { Plugin } from "vite";
@@ -23,9 +23,10 @@ const CATALOGUE_URL = /\/translations\/([^/]+)\/([^/]+)\.json$/;
  * one catalogue and needs no English fallback. The files under `translationsDir` are Weblate's and
  * are never changed.
  *
- * A build writes the merged catalogues of every language into `translations/`. The dev server
- * merges a catalogue when it is requested, so only the language in use is processed, and an edit
- * to a source catalogue shows on the next reload.
+ * A build writes the merged catalogues of every language into `translations/` of its output, once
+ * the bundle is written: like the static copy they replace, they are no part of the bundle, which
+ * the Codecov plugin measures. The dev server merges a catalogue when it is requested, so only the
+ * language in use is processed, and an edit to a source catalogue shows on the next reload.
  */
 export function translationCatalogues(translationsDir: string): Plugin {
     return {
@@ -48,18 +49,18 @@ export function translationCatalogues(translationsDir: string): Plugin {
             });
         },
 
-        async generateBundle() {
+        async writeBundle({ dir }) {
+            if (!dir) return;
             const languages = readdirSync(translationsDir, { withFileTypes: true })
                 .filter((entry) => entry.isDirectory())
                 .map((entry) => entry.name);
 
             for (const lng of languages) {
+                const outDir = join(dir, "translations", lng);
+                await mkdir(outDir, { recursive: true });
                 for (const ns of NAMESPACES) {
-                    this.emitFile({
-                        type: "asset",
-                        fileName: `translations/${lng}/${ns}.json`,
-                        source: JSON.stringify(await readMergedCatalogue(translationsDir, lng, ns))
-                    });
+                    const catalogue = await readMergedCatalogue(translationsDir, lng, ns);
+                    await writeFile(join(outDir, `${ns}.json`), JSON.stringify(catalogue));
                 }
             }
         }
