@@ -55,7 +55,8 @@ import ws from "../services/ws";
 import { buildNote } from "../test/easy-froca";
 import { renderInto } from "../test/render";
 import { ParentComponent } from "./react/react_utils";
-import PromotedAttributes, { buildPromotedCells, PromotedAttributesContent, usePromotedAttributeData } from "./PromotedAttributes";
+import { buildPromotedCells, usePromotedAttributeData } from "./promoted_attribute_cells";
+import PromotedAttributes, { PromotedAttributesContent } from "./PromotedAttributes";
 
 // The fields reach the server through these three; every suite stands them down, and the ones
 // asserting on what was written reach for these same handles.

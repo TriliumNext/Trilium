@@ -210,6 +210,10 @@
 /src/widgets/layout/Breadcrumb.tsx
 /src/widgets/layout/InlineTitle.css
 /src/widgets/layout/InlineTitle.tsx
+/src/widgets/layout/NoteTitleActions.css
+/src/widgets/layout/NoteTitleActions.tsx
+/src/widgets/layout/PinnedAttachments.css
+/src/widgets/layout/PinnedAttachments.tsx
 /src/widgets/layout/StatusBar.css
 /src/widgets/layout/StatusBar.tsx
 /src/widgets/layout/VimStatus.css
@@ -225,6 +229,7 @@
 /src/widgets/note_tree.ts
 /src/widgets/note_types.tsx
 /src/widgets/note_wrapper.ts
+/src/widgets/promoted_attribute_cells.ts
 /src/widgets/quick_search.css
 /src/widgets/quick_search.tsx
 /src/widgets/react/ActionButton.tsx
@@ -310,5 +315,11 @@ ws://*/
 ? /api/notes/*/attachments
 ? /api/recent-notes
 ? /api/tree/load
+? /packages/commons/src/lib/note_type_ids.ts
 ? /repos/TriliumNext/Trilium/releases/latest
 ? /src/fonts/JetBrainsMono/JetBrainsMono-VariableFont_wght.woff2
+? /src/services/mime_types.ts
+? /src/services/note_types.ts
+? /src/widgets/layout/NoteTypeSwitcher.css
+? /src/widgets/layout/NoteTypeSwitcher.tsx
+? /src/widgets/react/hooks/editor.ts

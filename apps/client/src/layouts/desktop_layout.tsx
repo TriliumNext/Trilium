@@ -13,7 +13,6 @@ import SpacerWidget from "../widgets/launch_bar/SpacerWidget.jsx";
 import { FixedFormattingToolbar } from "../widgets/layout/FormattingToolbar.jsx";
 import NoteActions from "../widgets/layout/NoteActions.jsx";
 import NoteBadges from "../widgets/layout/NoteBadges.jsx";
-import NoteTitleActions from "../widgets/layout/NoteTitleActions.jsx";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import ScrollPadding from "../widgets/scroll_padding.js";
 import SearchResult from "../widgets/search_result.jsx";
@@ -68,7 +67,6 @@ export default class DesktopLayout {
                                                         .child(
                                                             new ScrollingContainer()
                                                                 .filling()
-                                                                .child(<NoteTitleActions />)
                                                                 .child(<SearchResult />)
                                                                 .child(<ScrollPadding />)
                                                         )
