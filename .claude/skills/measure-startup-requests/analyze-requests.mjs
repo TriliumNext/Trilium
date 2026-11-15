@@ -246,7 +246,9 @@ function stableName(request) {
 
 /**
  * Compares the requests of a capture with an allowlist, one name per line, and exits with 1 when
- * the two differ in either direction. `--update` writes the allowlist from the capture instead.
+ * the two differ in either direction. A line starting with `?` names a request that depends on
+ * the session, which is allowed but not required. `--update` writes the allowlist from the capture
+ * instead, keeping its optional names.
  */
 function check(file, allowlistFile, update) {
     const requests = load(file);
@@ -255,22 +257,29 @@ function check(file, allowlistFile, update) {
         process.exit(1);
     }
     const actual = [ ...new Set(requests.map(stableName)) ].sort();
+    const lines = fs.existsSync(allowlistFile)
+        ? fs.readFileSync(allowlistFile, "utf8").split("\n").map((line) => line.trim())
+            .filter((line) => line && !line.startsWith("#"))
+        : [];
+    const optional = new Set(lines.filter((line) => line.startsWith("?"))
+        .map((line) => line.slice(1).trim()));
 
     if (update) {
         const header = [
             "# Every request the desktop client is allowed to make during startup, in dev mode.",
-            "# Checked by `analyze-requests.mjs check`; regenerate with `--update` only for a request that is wanted."
+            "# Checked by `analyze-requests.mjs check`; regenerate with `--update` only for a request that is wanted.",
+            "# A `?` marks a request that depends on the session: allowed, but not required."
         ];
-        fs.writeFileSync(allowlistFile, `${[ ...header, ...actual ].join("\n")}\n`);
-        console.log(`Wrote ${actual.length} names to ${allowlistFile}`);
+        const required = actual.filter((name) => !optional.has(name));
+        const optionalLines = [ ...optional ].sort().map((name) => `? ${name}`);
+        fs.writeFileSync(allowlistFile, `${[ ...header, ...required, ...optionalLines ].join("\n")}\n`);
+        console.log(`Wrote ${required.length} names and ${optional.size} optional ones to ${allowlistFile}`);
         return;
     }
 
-    const allowed = new Set(fs.readFileSync(allowlistFile, "utf8").split("\n")
-        .map((line) => line.trim())
-        .filter((line) => line && !line.startsWith("#")));
-    const unexpected = actual.filter((name) => !allowed.has(name));
-    const missing = [ ...allowed ].filter((name) => !actual.includes(name)).sort();
+    const required = new Set(lines.filter((line) => !line.startsWith("?")));
+    const unexpected = actual.filter((name) => !required.has(name) && !optional.has(name));
+    const missing = [ ...required ].filter((name) => !actual.includes(name)).sort();
 
     if (!unexpected.length && !missing.length) {
         console.log(`OK: the ${actual.length} startup requests match ${allowlistFile}`);
@@ -293,7 +302,7 @@ function check(file, allowlistFile, update) {
             console.log(`  - ${name}`);
         }
     }
-    console.log(`FAILED: ${actual.length} requests, ${allowed.size} allowed`);
+    console.log(`FAILED: ${actual.length} requests, ${required.size} required and ${optional.size} optional allowed`);
     process.exit(1);
 }
 

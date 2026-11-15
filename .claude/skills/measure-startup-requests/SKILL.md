@@ -71,14 +71,15 @@ TRILIUM_PASSWORD=<password> node .claude/skills/measure-startup-requests/check-s
 node .claude/skills/measure-startup-requests/analyze-requests.mjs check <capture.json> [allowlist.txt] [--update]
 ```
 
-- The allowlist is the startup of the desktop layout with nothing mounted in it. A feature that
-  is moved into the layout makes the check fail, and the failure lists what it loads: shrink that
-  list first, then add what is left with `--update`. Never run `--update` to make a failure go
-  away without reading it.
+- The allowlist is the startup of the new desktop layout as built so far (the launch bar and the
+  restored tabs). A feature that is moved into the layout makes the check fail, and the failure
+  lists what it loads: shrink that list first, then add what is left with `--update`. Never run
+  `--update` to make a failure go away without reading it.
 - Names drop what changes between runs: the content hash of a pre-bundled dependency chunk
   (`preact-*.js`) and the HMR websocket's host and token.
 - A request that depends on the session (a font fetched only once text is on screen, the notes of
-  the open tabs) belongs in the list only when every startup makes it.
+  the open tabs) is written with a leading `?`: it is allowed without being required. `--update`
+  keeps those lines.
 
 ## Timing one module graph, without logging in
 
