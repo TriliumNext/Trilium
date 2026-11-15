@@ -5,7 +5,6 @@ import type FAttachment from "../entities/fattachment.js";
 import type FNote from "../entities/fnote.js";
 import attributeRenderer from "./attribute_renderer.js";
 import { revealHighlightedBlocks } from "./block_reference.js";
-import contentRenderer from "./content_renderer.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import linkService, { type BlockJump } from "./link.js";
@@ -259,6 +258,8 @@ export async function renderTooltip(
         ? null
         : (await attributeRenderer.renderNormalAttributes(note)).$renderedAttributes;
 
+    // Loaded with the first tooltip: the content renderer imports the renderers of every note type.
+    const { default: contentRenderer } = await import("./content_renderer.js");
     const { $renderedContent } = await contentRenderer.getRenderedContent(entity, {
         tooltip: true,
         trim: true,
