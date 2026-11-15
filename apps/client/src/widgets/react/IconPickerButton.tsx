@@ -1,12 +1,13 @@
 import "./IconPickerButton.css";
 
 import clsx from "clsx";
+import type { ComponentProps } from "preact";
 import { useRef, useState } from "preact/hooks";
 
 import { isMobile } from "../../services/utils";
 import ActionButton from "./ActionButton";
 import { type DropdownHandle, DropdownPanel } from "./Dropdown";
-import type { IconPickerProps } from "./IconPicker";
+import type { IconPickerModal, IconPickerProps } from "./IconPicker";
 import { preloadLazyModule, useLazyModule } from "./LazyComponent";
 
 /** The picker with its grid of every icon, imported once a button is about to open it. */
@@ -104,8 +105,8 @@ function IconPickerModalButton({
     icon, title, className, disabled, onSelect, onReset, resetText, onOpened, onClosed
 }: IconPickerButtonProps) {
     const [ modalShown, setModalShown ] = useState(false);
-    // Loaded with the button: the modal it opens is rendered, hidden, from the start.
-    const iconPicker = useLazyModule(loadIconPicker);
+    // The modal is rendered from the first press on, and stays so it can animate closed.
+    const [ modalOpened, setModalOpened ] = useState(false);
 
     return (
         <div className={clsx("note-icon-widget", className)}>
@@ -117,14 +118,17 @@ function IconPickerModalButton({
                 // size. `icon-action` instead is sized by the theme as a toolbar button, which is
                 // larger, so the same icon would be drawn differently on the two.
                 noIconActionClass
+                onPointerEnter={preloadIconPicker}
+                onFocus={preloadIconPicker}
                 onClick={() => {
+                    setModalOpened(true);
                     setModalShown(true);
                     onOpened?.();
                 }}
                 disabled={disabled}
             />
 
-            {iconPicker && <iconPicker.IconPickerModal
+            {modalOpened && <LazyIconPickerModal
                 title={title}
                 show={modalShown}
                 resetText={resetText}
@@ -143,6 +147,12 @@ function IconPickerModalButton({
             />}
         </div>
     );
+}
+
+/** The picker's modal, once its module has loaded. */
+function LazyIconPickerModal(props: ComponentProps<typeof IconPickerModal>) {
+    const iconPicker = useLazyModule(loadIconPicker);
+    return iconPicker ? <iconPicker.IconPickerModal {...props} /> : null;
 }
 
 /** The picker, once its module has loaded. */

@@ -1,5 +1,5 @@
 import { act } from "preact/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Hoisted: a module in the import chain reads the device once as it loads (see ActionButton), which
 // happens before a plain `const` here would have been initialized.
@@ -39,6 +39,11 @@ import IconPicker from "./IconPicker";
 import { IconPickerButton } from "./IconPickerButton";
 
 describe("IconPickerButton", () => {
+    beforeEach(() => {
+        // Opening builds the grid, which reads the installed packs off the page.
+        glob.iconPacks = [];
+    });
+
     /** Renders the button as the given device would see it. */
     function renderButton(mobile: boolean) {
         isMobileMock.mockReturnValue(mobile);
@@ -60,14 +65,18 @@ describe("IconPickerButton", () => {
 
         // A menu at the width of the picker is wider than a phone, so what opens there is the modal
         // the note's own icon is picked through, which the stylesheet gives the whole screen to.
-        expect(mobile.querySelector(".note-icon-widget button.note-icon")).toBeTruthy();
-        // The modal comes with the picker's module, which the button imports as it mounts.
+        const mobileButton = mobile.querySelector<HTMLElement>(".note-icon-widget button.note-icon");
+        expect(mobileButton).toBeTruthy();
+        // The modal comes with the picker's module, which loads once the button is about to be
+        // pressed, and is rendered from the first press.
+        // Long enough for a modal that came with the button to have rendered.
+        await act(async () => { await new Promise((resolve) => setTimeout(resolve, 200)); });
+        expect(document.body.querySelector(".modal.icon-switcher")).toBeNull();
+        act(() => { mobileButton?.dispatchEvent(new PointerEvent("pointerenter")); });
+        act(() => { mobileButton?.dispatchEvent(new MouseEvent("click", { bubbles: true })); });
         await vi.waitFor(() => expect(document.body.querySelector(".modal.icon-switcher")).toBeTruthy());
         expect(document.body.querySelector(".dropdown-menu")).toBeNull();
 
-        // On either device the picker itself waits to be asked for: it holds every icon of every
-        // installed pack, which is far more work than a button on screen should be doing.
-        expect(document.body.querySelector(".icon-picker")).toBeNull();
     });
 
     /**
@@ -76,11 +85,7 @@ describe("IconPickerButton", () => {
      * inside, taking itself down with it and leaving the backdrop over an empty page.
      */
     it("opens the picker on a phone without closing the dialog it stands in", async () => {
-        // Opening builds the grid, which reads the installed packs off the page.
-        glob.iconPacks = [];
-
         const mobile = renderButton(true);
-        await vi.waitFor(() => expect(document.body.querySelector(".modal.icon-switcher")).toBeTruthy());
         openDialogMock.mockClear();
 
         const button = mobile.querySelector<HTMLElement>(".note-icon-widget button.note-icon");
@@ -89,7 +94,7 @@ describe("IconPickerButton", () => {
             button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
         });
 
-        expect(openDialogMock).toHaveBeenCalledOnce();
+        await vi.waitFor(() => expect(openDialogMock).toHaveBeenCalledOnce());
         // The `closeActDialog` argument, which is what stands a dialog down to make room.
         expect(openDialogMock.mock.calls[0][1]).toBe(false);
     });
