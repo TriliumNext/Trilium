@@ -8,7 +8,7 @@ import { useTriliumEvents } from "../widgets/react/hooks/events.js";
 import { ParentComponent, POPUP_EDITOR_NTX_ID } from "../widgets/react/react_utils.jsx";
 import ToastContainer from "../widgets/Toast.jsx";
 
-/** Adds the dialogs, toasts and other overlays of {@link modals} to a legacy layout's root container. */
+/** Adds the dialogs, toasts and other overlays of {@link modals} to the mobile layout's root container. */
 export function applyModals(rootContainer: RootContainer) {
     for (const modal of modals()) {
         rootContainer.child(modal);

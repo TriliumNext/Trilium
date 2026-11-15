@@ -44,7 +44,7 @@ import TabRowWidget from "../widgets/tab_row.js";
 import TabHistoryNavigationButtons from "../widgets/TabHistoryNavigationButtons.js";
 import { LazyDialog, Modals } from "./layout_commons.js";
 
-/** The desktop layout as a single Preact tree, which `desktop_layout.tsx` is moved into piece by piece. */
+/** The desktop layout, as a single Preact tree. */
 export default function DesktopLayout() {
     const isHorizontal = window.glob.layoutOrientation === "horizontal";
     const orientation = isHorizontal ? "horizontal" : "vertical";
@@ -241,7 +241,7 @@ function SearchResults() {
 
 /**
  * Runs the command that an element of a legacy widget names in `data-trigger-command`, from the
- * widget it belongs to, as `app_startup.ts` does for the old layout.
+ * widget it belongs to, as `app_startup.ts` does for the mobile layout.
  */
 function triggerLegacyCommand(e: MouseEvent) {
     const target = (e.target as Element).closest<HTMLElement>("[data-trigger-command]");
