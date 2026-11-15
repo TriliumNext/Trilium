@@ -200,6 +200,10 @@ function loadStylesheets() {
         stylesheets.push(appendStylesheet(ref, { theme: true }));
     }
     stylesheets.push(appendStylesheet({ href: `${stylesheetsPath}/style.css` }));
+    // The notes labelled `#appCss`, after the stylesheets they override.
+    for (const noteId of window.glob.appCssNoteIds ?? []) {
+        appendStylesheet({ href: `api/notes/download/${noteId}` });
+    }
     void rememberRootBackground(stylesheets);
 }
 

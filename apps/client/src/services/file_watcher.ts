@@ -1,6 +1,5 @@
 import type { WebSocketMessage } from "@triliumnext/commons";
 
-import { dayjs } from "./dayjs.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import server from "./server.js";
@@ -34,6 +33,7 @@ export function watchOpenedFile(filePath: string) {
  */
 async function showUploadToast({ entityType, entityId, filePath, lastModifiedMs }: OpenedFileUpdate) {
     const noteReference = await getNoteReference(entityType, entityId);
+    const { dayjs } = await import("./dayjs.js");
 
     toast.showPersistent({
         id: `opened-file-updated-${entityType}-${entityId}`,

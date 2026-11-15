@@ -1,38 +1,38 @@
 import type { ElectronWindowApi } from "@triliumnext/commons";
 
 import appContext, { type CommandNames } from "./components/app_context.js";
-import { startApp } from "./components/app_startup.js";
-import electronContextMenu from "./menus/electron_context_menu.js";
-import { setupContextMenu as setupBrowserContextMenu } from "./menus/note_context_menu.js";
-import bundleService from "./services/bundle.js";
+import { startAppAroundLayout } from "./components/app_startup.js";
+import { setupContextMenu as setupBrowserContextMenu } from "./menus/browser_context_menu.js";
 import { setupClipboardImageEmbed } from "./services/clipboard_image_embed.js";
 import glob from "./services/glob.js";
 import { t } from "./services/i18n.js";
 import { setupLinkHandlers } from "./services/link.js";
-import { syncNativeWindowWithTheme } from "./services/native_window.js";
 import noteTooltipService from "./services/note_tooltip.js";
 import { onEffectiveThemeStyleChange, setBackgroundEffectsSuspended } from "./services/theme.js";
 import toastService from "./services/toast.js";
 import utils from "./services/utils.js";
 import { preloadCommonNoteTypes } from "./widgets/note_types.js";
 
-// The desktop entry before the layout was rebuilt in Preact. Nothing imports it: desktop.ts is
-// the entry, and what this file sets up moves there piece by piece.
-
-await appContext.earlyInit();
-
 /**
- * Resolves once the layout is rendered and froca has the note tree. index.ts keeps the splash up
- * until then, so the bundle, layout and tree requests below are not made behind a blank page. A
- * failed start still resolves it: the toast that reports the failure has to become visible.
+ * The part of the desktop startup that `desktop.ts` runs after the first render of the layout:
+ * the components that execute commands, the tabs, and the handlers of errors, links, tooltips,
+ * context menus and the Electron window.
  */
-export const ready = bundleService.getWidgetBundlesByParent().then(async (widgetBundles) => {
-    // A dynamic import is required for layouts since they initialize components which require translations.
-    const DesktopLayout = (await import("./layouts/desktop_layout.js")).default;
+export async function startDesktop(root: HTMLElement) {
+    glob.setupGlobs();
+    const started = startAppAroundLayout(root);
 
-    appContext.setLayout(new DesktopLayout(widgetBundles));
+    noteTooltipService.setupGlobalTooltip();
+    setupClipboardImageEmbed();
+    setupLinkHandlers();
+    if (utils.isElectron()) {
+        void initOnElectron();
+    } else {
+        setupBrowserContextMenu();
+    }
+
     try {
-        await startApp();
+        await started;
     } catch (e) {
         toastService.showPersistent({
             id: "critical-error",
@@ -46,27 +46,10 @@ export const ready = bundleService.getWidgetBundlesByParent().then(async (widget
 
     reportFullRenderStartupMetric();
     preloadCommonNoteTypes();
-});
-
-glob.setupGlobs();
-initFullScreenDetection();
-
-if (utils.isElectron()) {
-    initOnElectron();
 }
 
-noteTooltipService.setupGlobalTooltip();
-
-setupClipboardImageEmbed();
-setupLinkHandlers();
-
-if (utils.isElectron()) {
-    electronContextMenu.setupContextMenu();
-} else {
-    setupBrowserContextMenu();
-}
-
-function initOnElectron() {
+/** Connects the Electron window: its shortcuts, theme, DevTools dock and context menu. */
+async function initOnElectron() {
     const api = window.electronApi;
     if (!api) return;
 
@@ -75,16 +58,20 @@ function initOnElectron() {
     // process; runtime contract is that it's always a valid CommandNames key.
     win.onGlobalShortcut(async (actionName) => appContext.triggerCommand(actionName as CommandNames));
     win.onOpenInSameTab(async (noteId) => appContext.tabManager.openInSameTab(noteId));
-
-    syncNativeWindowWithTheme();
     initDevToolsDockDetection(win);
-
-    // With an "auto" theme the effective colors of background effects and the native title bar
-    // follow the OS color scheme.
-    onEffectiveThemeStyleChange(() => syncNativeWindowWithTheme());
 
     // Clear navigation history on frontend refresh.
     api.navigation.clearNavigationHistory();
+
+    const [ { syncNativeWindowWithTheme }, { default: electronContextMenu } ] = await Promise.all([
+        import("./services/native_window.js"),
+        import("./menus/electron_context_menu.js")
+    ]);
+    syncNativeWindowWithTheme();
+    // With an "auto" theme the effective colors of background effects and the native title bar
+    // follow the OS color scheme.
+    onEffectiveThemeStyleChange(() => syncNativeWindowWithTheme());
+    electronContextMenu.setupContextMenu();
 }
 
 /**
@@ -99,25 +86,6 @@ function reportFullRenderStartupMetric() {
         requestAnimationFrame(() => {
             window.electronApi?.window.reportStartupMetric("client-full-render");
         });
-    });
-}
-
-/** Sets `full-screen` on the body while the window, or the page in a browser, is full screen. */
-function initFullScreenDetection() {
-    const setFullScreen = (isFullScreen: boolean) => {
-        document.body.classList.toggle("full-screen", isFullScreen);
-    };
-
-    const win = window.electronApi?.window;
-    if (win) {
-        setFullScreen(win.isFullScreen());
-        win.onEnterFullScreen(() => setFullScreen(true));
-        win.onLeaveFullScreen(() => setFullScreen(false));
-        return;
-    }
-
-    document.addEventListener("fullscreenchange", () => {
-        setFullScreen(document.fullscreenElement === document.documentElement);
     });
 }
 

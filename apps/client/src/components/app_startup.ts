@@ -34,6 +34,22 @@ export async function startApp() {
     setTimeout(() => bundleService.executeStartupBundles(), 2000);
 }
 
+/**
+ * Builds the same components as {@link startApp} around `root`, a layout that Preact has already
+ * rendered, then restores the tabs once froca has the note tree. `desktop.ts` calls it after the
+ * first render.
+ */
+export async function startAppAroundLayout(root: HTMLElement) {
+    initComponents();
+    keyboardActionsService.updateDisplayedShortcuts($(root));
+    appContext.triggerEvent("initialRenderComplete", {});
+
+    await froca.initializedPromise;
+    await appContext.tabManager.loadTabs();
+
+    setTimeout(() => bundleService.executeStartupBundles(), 2000);
+}
+
 function initComponents() {
     appContext.tabManager = new TabManager();
 

@@ -30,6 +30,7 @@ import { isExperimentalFeatureEnabled } from "../../../services/experimental_fea
 import froca from "../../../services/froca.js";
 import { t } from "../../../services/i18n.js";
 import imageService from "../../../services/image.js";
+import { embedReferenceImageAsDataUrl } from "../../../services/image_embed.js";
 import { getNoteImageSourceToLoad } from "../../../services/image_urls.js";
 import linkService from "../../../services/link.js";
 import { detectEmbedType, fetchMetadata, renderEmbedPreview, renderMentionPreview, unresolvedMetadata } from "../../../services/link_embed.js";
@@ -415,7 +416,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
     // boolean would leave an open editor still embedding after the switch was flipped.
     config.clipboardImageEmbed = {
         enabled: () => options.get("clipboardImageEmbedEnabled") === "true",
-        embedImage: (src: string) => imageService.embedReferenceImageAsDataUrl(src)
+        embedImage: (src: string) => embedReferenceImageAsDataUrl(src)
     };
 
     // Table sorting reads dates inserted in the user's own format.
