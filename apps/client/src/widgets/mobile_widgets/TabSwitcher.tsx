@@ -17,21 +17,17 @@ import { NoteContent } from "../collections/legacy/ListOrGridView";
 import { LaunchBarActionButton, LauncherNoteProps } from "../launch_bar/launch_bar_widgets";
 import { ICON_MAPPINGS } from "../note_bars/CollectionProperties";
 import ActionButton from "../react/ActionButton";
-import {
-    useActiveNoteContext,
-    useNote,
-    useNoteColorClass,
-    useNoteIcon,
-    useNoteLabelBoolean,
-    useNoteTitle,
-    useTriliumEvents,
-    useTriliumOptionBool
-} from "../react/hooks";
+import { useTriliumEvents } from "../react/hooks/events";
+import { useNote, useNoteColorClass, useNoteIcon, useNoteLabelBoolean } from "../react/hooks/note";
+import { useTriliumOptionBool } from "../react/hooks/options";
+import { useActiveNoteContext, useNoteTitle } from "../react/hooks/tree";
 import Icon from "../react/Icon";
 import LinkButton from "../react/LinkButton";
 import Modal from "../react/Modal";
 import { useNavigatorChildren } from "./MobileNoteNavigator";
-import { getLastSegment, getSpotlightedNoteId, getTabNavigation, type TreeStack } from "./tab_navigation";
+import {
+    getLastSegment, getSpotlightedNoteId, getTabNavigation, type TreeStack
+} from "./tab_navigation";
 import { isTabSwipeActive, type SwipeDirection, TabSwipe } from "./tab_swipe";
 
 const VIEW_MODE_ICON_MAPPINGS: Record<Exclude<ViewMode, "default">, string> = {

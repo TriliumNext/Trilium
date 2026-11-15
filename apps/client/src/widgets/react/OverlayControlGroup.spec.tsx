@@ -4,8 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 // The bootstrap tooltip needs real layout; capture what it would have been given instead.
 const { staticTooltipSpy } = vi.hoisted(() => ({ staticTooltipSpy: vi.fn() }));
-vi.mock("./hooks", async (importOriginal) => ({
-    ...await importOriginal<typeof import("./hooks")>(),
+vi.mock("./hooks/tooltip", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./hooks/tooltip")>()),
     useStaticTooltip: staticTooltipSpy
 }));
 vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));

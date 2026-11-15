@@ -2,13 +2,17 @@ import "./MobileNoteNavigator.css";
 
 import clsx from "clsx";
 import type { ComponentChildren } from "preact";
-import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
+import {
+    useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState
+} from "preact/hooks";
 
 import type Component from "../../components/component";
 import type { Screen } from "../../components/mobile_screen_switcher";
 import type FNote from "../../entities/fnote";
 import contextMenu from "../../menus/context_menu";
-import { buildTreeContextMenuItems, handleTreeContextMenuSelect } from "../../menus/tree_context_menu";
+import {
+    buildTreeContextMenuItems, handleTreeContextMenuSelect
+} from "../../menus/tree_context_menu";
 import cssClassManager from "../../services/css_class_manager";
 import froca from "../../services/froca";
 import hoisted_note from "../../services/hoisted_note";
@@ -20,23 +24,20 @@ import tree from "../../services/tree";
 import utils, { isIOS } from "../../services/utils";
 import { NoteContent } from "../collections/legacy/ListOrGridView";
 import { useShareState } from "../layout/NoteBadges";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useLongPressContextMenu } from "../react/hooks/dom";
 import {
-    useActiveNoteContext,
-    useChildNotes,
-    useLongPressContextMenu,
-    useNote,
-    useNoteColorClass,
-    useNoteIcon,
-    useNoteLabel,
-    useNoteLabelBoolean,
-    useNoteTitle,
-    useTriliumEvent,
-    useTriliumOptionBool
-} from "../react/hooks";
+    useChildNotes, useNote, useNoteColorClass, useNoteIcon, useNoteLabel, useNoteLabelBoolean
+} from "../react/hooks/note";
+import { useTriliumOptionBool } from "../react/hooks/options";
+import { useActiveNoteContext, useNoteTitle } from "../react/hooks/tree";
 import Icon from "../react/Icon";
 import NoItems from "../react/NoItems";
 import { ParentComponent } from "../react/react_utils";
-import { enterHoistedNote, getLastSegment, getParentStack, getSpotlightedNoteId, getTreeStack, leaveHoistedNote, setTabTree } from "./tab_navigation";
+import {
+    enterHoistedNote, getLastSegment, getParentStack, getSpotlightedNoteId, getTreeStack,
+    leaveHoistedNote, setTabTree
+} from "./tab_navigation";
 
 /**
  * A touch-native replacement for the Fancytree-based note tree on mobile. Shows one

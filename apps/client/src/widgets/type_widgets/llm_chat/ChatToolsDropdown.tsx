@@ -7,10 +7,14 @@ import { useMemo } from "preact/hooks";
 
 import appContext from "../../../components/app_context.js";
 import { t } from "../../../services/i18n.js";
-import { readSearchProviders, resolveWebSearch, type SearchProviderOption, type WebSearchState } from "../../../services/llm_providers.js";
+import {
+    readSearchProviders, resolveWebSearch, type SearchProviderOption, type WebSearchState
+} from "../../../services/llm_providers.js";
 import Dropdown from "../../react/Dropdown.js";
-import { FormDropdownDivider, FormDropdownSubmenu, FormListItem, FormListToggleableItem } from "../../react/FormList.js";
-import { useTriliumOption } from "../../react/hooks.js";
+import {
+    FormDropdownDivider, FormDropdownSubmenu, FormListItem, FormListToggleableItem
+} from "../../react/FormList.js";
+import { useTriliumOption } from "../../react/hooks/options.js";
 import Icon from "../../react/Icon.js";
 import { providerIcon } from "../options/llm/provider_icons.js";
 import type { UseLlmChatReturn } from "./useLlmChat.js";

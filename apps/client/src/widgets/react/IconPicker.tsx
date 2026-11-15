@@ -16,7 +16,8 @@ import ActionButton from "./ActionButton";
 import Dropdown, { type DropdownHandle, DropdownPanel } from "./Dropdown";
 import { FormDropdownDivider, FormListItem } from "./FormList";
 import FormTextBox from "./FormTextBox";
-import { useStaticTooltip, useWindowSize } from "./hooks";
+import { useWindowSize } from "./hooks/dom";
+import { useStaticTooltip } from "./hooks/tooltip";
 import Modal from "./Modal";
 
 /** The room one icon takes in the grid, which also decides how many fit across a given width. */

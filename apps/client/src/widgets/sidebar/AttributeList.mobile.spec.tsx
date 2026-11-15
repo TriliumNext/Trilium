@@ -13,8 +13,8 @@ vi.mock("../../services/utils", async (importOriginal) => ({
 }));
 
 const shownNote = vi.hoisted(() => ({ current: null as FNote | null }));
-vi.mock("../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../react/hooks")>()),
+vi.mock("../react/hooks/tree", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/tree")>()),
     useActiveNoteContext: () => ({ note: shownNote.current })
 }));
 

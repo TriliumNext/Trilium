@@ -23,14 +23,10 @@ import toast from "../services/toast.js";
 import { isElectron, isMobile } from "../services/utils";
 import { ExtendedNoteType, TYPE_MAPPINGS, TypeWidget } from "./note_types";
 import Button from "./react/Button";
-import {
-    useDelayedVisibility,
-    useGetContextDataFrom,
-    useLegacyComponentElement,
-    useNoteContext,
-    useParentClass,
-    useTriliumEvent
-} from "./react/hooks";
+import { useTriliumEvent } from "./react/hooks/events";
+import { useDelayedVisibility, useParentClass } from "./react/hooks/dom";
+import { useGetContextDataFrom, useNoteContext } from "./react/hooks/note_context";
+import { useLegacyComponentElement } from "./react/hooks/legacy";
 import Icon from "./react/Icon";
 import NoItems from "./react/NoItems";
 import { NoteListWithLinks } from "./react/NoteList";

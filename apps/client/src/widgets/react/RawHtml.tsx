@@ -3,7 +3,7 @@ import DOMPurify from "dompurify";
 import type { CSSProperties, HTMLAttributes, RefObject } from "preact";
 import { useLayoutEffect, useRef } from "preact/hooks";
 
-import { useImperativeSearchHighlighlighting } from "./hooks";
+import { useImperativeSearchHighlighlighting } from "./hooks/highlight";
 
 type HTMLElementLike = string | HTMLElement | JQuery<HTMLElement>;
 

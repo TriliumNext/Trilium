@@ -7,7 +7,7 @@ import { GPX_MIME } from "../../services/gpx";
 import { t } from "../../services/i18n";
 import Alert from "../react/Alert";
 import CodeBlock from "../react/CodeBlock";
-import { useNoteBlob } from "../react/hooks";
+import { useNoteBlob } from "../react/hooks/note";
 import FontPreview from "./file/FontPreview";
 import GpxPreview from "./file/GpxPreview";
 import MediaPreview from "./file/MediaPreview";

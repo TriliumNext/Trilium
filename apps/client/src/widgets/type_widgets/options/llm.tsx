@@ -14,7 +14,7 @@ import CodeBlock from "../../react/CodeBlock";
 import Collapsible from "../../react/Collapsible";
 import FormTextBox from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
-import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
 import Icon from "../../react/Icon";
 import NoItems from "../../react/NoItems";
 import { shortModelName } from "../llm_chat/model_name";

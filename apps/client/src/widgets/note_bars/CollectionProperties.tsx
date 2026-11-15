@@ -18,7 +18,9 @@ import ActionButton from "../react/ActionButton";
 import { Card } from "../react/Card";
 import Dropdown from "../react/Dropdown";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
-import { useNoteContext, useNoteLabel, useNoteProperty, useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useNoteLabel, useNoteProperty } from "../react/hooks/note";
+import { useNoteContext } from "../react/hooks/note_context";
 import Icon from "../react/Icon";
 import Modal from "../react/Modal";
 import {

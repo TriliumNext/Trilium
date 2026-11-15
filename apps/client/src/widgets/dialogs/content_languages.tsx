@@ -3,7 +3,9 @@ import { useMemo, useState } from "preact/hooks";
 import FNote from "../../entities/fnote";
 import { getAvailableLocales, getLocaleById, t } from "../../services/i18n";
 import { resolveContentLanguage } from "../../utils/formatters";
-import { useNoteLabel, useTriliumEvent, useTriliumOption } from "../react/hooks.jsx";
+import { useTriliumEvent } from "../react/hooks/events.js";
+import { useNoteLabel } from "../react/hooks/note.js";
+import { useTriliumOption } from "../react/hooks/options.js";
 import Modal from "../react/Modal";
 import { ContentLanguagesCard } from "../type_widgets/options/content_languages_card";
 

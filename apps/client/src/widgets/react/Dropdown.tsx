@@ -9,7 +9,8 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { MenuItem } from "../../menus/context_menu";
 import { isMobile, isNarrowLayout, onNarrowLayoutChange } from "../../services/utils";
 import { focusListItem } from "./FormList";
-import { useBodyClass, useTooltip, useUniqueName } from "./hooks";
+import { useBodyClass, useUniqueName } from "./hooks/dom";
+import { useTooltip } from "./hooks/tooltip";
 import { suspendModalFocusTraps } from "./modal_focustrap";
 import Menu from "./Menu";
 import Popup, { type PopupProps } from "./Popup";

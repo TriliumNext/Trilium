@@ -5,7 +5,7 @@ import type { EventData, EventNames } from "../components/app_context.js";
 import type RootContainer from "../widgets/containers/root_container.js";
 import CallToActionDialog from "../widgets/dialogs/call_to_action.jsx";
 import PopupEditorDialog from "../widgets/dialogs/PopupEditor.jsx";
-import { useTriliumEvents } from "../widgets/react/hooks.jsx";
+import { useTriliumEvents } from "../widgets/react/hooks/events.js";
 import { ParentComponent, POPUP_EDITOR_NTX_ID } from "../widgets/react/react_utils.jsx";
 import ShortcutHintsPanel from "../widgets/shortcut_hints/shortcut_hints_panel.jsx";
 import ToastContainer from "../widgets/Toast.jsx";

@@ -13,7 +13,8 @@ import options from "../../../services/options";
 import ActionButton from "../../react/ActionButton";
 import { Badge } from "../../react/Badge";
 import FormToggle from "../../react/FormToggle";
-import { useTriliumOption, useTriliumOptionBool, useUniqueName } from "../../react/hooks";
+import { useUniqueName } from "../../react/hooks/dom";
+import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
 import Icon from "../../react/Icon";
 import { type SortableItem, SortableCard } from "../../react/SortableCard";
 

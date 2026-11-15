@@ -13,7 +13,9 @@ import {
 import { TextEditorFindTarget } from "../../find_in_text";
 import { SaveStatusBadge } from "../../layout/NoteBadges";
 import MergedFind from "../../merged_find";
-import { useLegacyComponentElement, useNoteContext, useTriliumEvent } from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useNoteContext } from "../../react/hooks/note_context";
+import { useLegacyComponentElement } from "../../react/hooks/legacy";
 import { registerEmbedFindTarget } from "./content_embed_tools";
 import EditableText, { getBlockData } from "./EditableText";
 import {

@@ -16,7 +16,7 @@ import { t } from "../../../services/i18n";
 import { renderMermaidSvg } from "../../../services/mermaid";
 import type { SourceEmbedProps } from "../../../services/source_embeds";
 import { isMobile, openInAppHelpFromUrl } from "../../../services/utils";
-import { useDebouncedValue } from "../../react/hooks";
+import { useDebouncedValue } from "../../react/hooks/dom";
 import OverlayControlGroup, { OverlayFullscreenButton } from "../../react/OverlayControlGroup";
 import { useZoomPanWheel } from "../../react/zoom_pan";
 import { useZoomPanKeyboard } from "../../react/zoom_pan_keyboard";

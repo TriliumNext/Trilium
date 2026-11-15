@@ -17,7 +17,8 @@ import {
     checkFillsPane, getExtendedWidgetType, NoteDetailWrapper, shouldFocusOnNoteChange,
     useDeferredDetailFocus, useNoteInfo
 } from "./NoteDetail";
-import { useLegacyImperativeHandlers, useTriliumEvent } from "./react/hooks";
+import { useTriliumEvent } from "./react/hooks/events";
+import { useLegacyImperativeHandlers } from "./react/hooks/legacy";
 import {
     ContainerVisibilityContext, NoteContextContext, ParentComponent
 } from "./react/react_utils";

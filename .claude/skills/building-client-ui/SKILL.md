@@ -13,7 +13,7 @@ The general styling rules (no inline styles, one `.css` file per component impor
 
 ## Don't reinvent froca-reactive state
 
-The most common mistake on this surface is writing `useState` + `server.get`/`froca` + a hand-rolled `entitiesReloaded` listener for something a **one-line hook already does** — with the right reload filter, the right echo-suppression, and the stale-request guard. `apps/client/src/widgets/react/hooks.tsx` exports 60 `use*` hooks. Check the catalogue first: [references/hooks-catalog.md](references/hooks-catalog.md).
+The most common mistake on this surface is writing `useState` + `server.get`/`froca` + a hand-rolled `entitiesReloaded` listener for something a **one-line hook already does** — with the right reload filter, the right echo-suppression, and the stale-request guard. `apps/client/src/widgets/react/hooks/` exports 79 `use*` hooks, one file per set of imports. Check the catalogue first: [references/hooks-catalog.md](references/hooks-catalog.md).
 
 | You need… | Use | It already wires |
 |---|---|---|

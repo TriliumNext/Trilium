@@ -6,7 +6,7 @@ import { useMemo, useRef, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
 import { isMobile } from "../../services/utils";
-import { useStaticTooltip } from "./hooks";
+import { useStaticTooltip } from "./hooks/tooltip";
 import Modal from "./Modal";
 
 interface ContextualHelpProps {

@@ -44,13 +44,17 @@ vi.mock("../../../services/options", () => ({
 }));
 vi.mock("../../../services/toast", () => ({ default: { showPersistent: mocks.showPersistent } }));
 vi.mock("../../../services/utils", () => ({ isMobile: () => mocks.isMobile }));
-vi.mock("../../react/hooks", () => ({
-    useContextualShortcutHints: (hints: () => unknown[]) => {
-        mocks.shortcutHints = hints;
-    },
-    useNoteLabel: vi.fn(),
+vi.mock("../../react/hooks/note", () => ({
+    useNoteLabel: vi.fn()
+}));
+vi.mock("../../react/hooks/options", () => ({
     useTriliumOption: (name: string) => [ mocks.stored[name] ?? "" ],
     useTriliumOptionBool: (name: string) => [ mocks.stored[name] === true ]
+}));
+vi.mock("../../react/hooks/shortcuts", () => ({
+    useContextualShortcutHints: (hints: () => unknown[]) => {
+        mocks.shortcutHints = hints;
+    }
 }));
 vi.mock("../../shortcut_hints/shortcut_hints_panel", () => ({
     closeShortcutHints: mocks.closeShortcutHints

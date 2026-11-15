@@ -12,7 +12,7 @@ import ws from "../../services/ws";
 import TemplateField, { noteTemplateVariables } from "../bulk_actions/TemplateField";
 import { CollectionPropertiesDialog } from "../note_bars/CollectionProperties";
 import { Card, OptionCardSection } from "../react/Card";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import NoteAutocomplete from "../react/NoteAutocomplete";
 
 /** What the server's `getNewNoteTitle()` passes to `evaluateTemplate()` for a title template. */

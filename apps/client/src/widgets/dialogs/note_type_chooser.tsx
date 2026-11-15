@@ -9,7 +9,7 @@ import type { Suggestion } from "../../services/note_autocomplete";
 import type { NotePresetId } from "../../services/note_presets";
 import note_types from "../../services/note_types";
 import { Card, CardSection, OptionCardSection } from "../react/Card";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import Menu from "../react/Menu";
 import Modal from "../react/Modal";
 import NoteAutocomplete from "../react/NoteAutocomplete";

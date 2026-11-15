@@ -4,7 +4,7 @@ import clsx from "clsx";
 import { ComponentChildren, HTMLAttributes } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
-import { useElementSize, useUniqueName } from "./hooks";
+import { useElementSize, useUniqueName } from "./hooks/dom";
 import Icon from "./Icon";
 
 interface CollapsibleProps extends Pick<HTMLAttributes<HTMLDivElement>, "className"> {

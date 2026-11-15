@@ -1,7 +1,7 @@
 import { useMemo } from "preact/hooks";
 
 import type FNote from "../../../entities/fnote";
-import { useNoteLabel, useNoteLabelBoolean } from "../../react/hooks";
+import { useNoteLabel, useNoteLabelBoolean } from "../../react/hooks/note";
 import { parseSortKey } from "../sorting";
 import type { ColumnSort } from "./data";
 

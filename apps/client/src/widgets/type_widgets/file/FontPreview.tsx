@@ -10,7 +10,7 @@ import { t } from "../../../services/i18n";
 import Alert from "../../react/Alert";
 import FormTextBox from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
-import { useNoteLabelBoolean } from "../../react/hooks";
+import { useNoteLabelBoolean } from "../../react/hooks/note";
 import Slider from "../../react/Slider";
 
 /** The sizes the specimen is laddered at, from a display line down to body copy. */

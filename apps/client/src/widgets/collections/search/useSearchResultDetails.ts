@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 
 import type FNote from "../../../entities/fnote";
 import server from "../../../services/server";
-import { useTriliumEvent } from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
 
 export interface SearchResultDetailsState {
     detailsByNoteId: Map<string, SearchResultDetails>;

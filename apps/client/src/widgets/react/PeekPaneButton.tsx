@@ -5,7 +5,7 @@ import { Tooltip } from "bootstrap";
 import clsx from "clsx";
 import { useCallback, useMemo, useRef } from "preact/hooks";
 
-import { useStaticTooltipWithKeyboardShortcut } from "./hooks";
+import { useStaticTooltipWithKeyboardShortcut } from "./hooks/shortcuts";
 
 // Gap (px) between the peek button and its tooltip, so the tooltip can't overlap the button.
 const TOOLTIP_MARGIN_PX = 8;

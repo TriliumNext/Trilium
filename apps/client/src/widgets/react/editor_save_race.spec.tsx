@@ -28,7 +28,7 @@ import LoadResults from "../../services/load_results";
 import server from "../../services/server";
 import type SpacedUpdate from "../../services/spaced_update";
 import { buildNote } from "../../test/easy-froca";
-import { type SavedData, useEditorSpacedUpdate } from "./hooks";
+import { type SavedData, useEditorSpacedUpdate } from "./hooks/editor";
 import { noteSavedDataStore } from "./NoteStore";
 import { ParentComponent } from "./react_utils";
 

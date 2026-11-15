@@ -5,7 +5,7 @@ import { RefObject } from "preact";
 import { t } from "../../../../services/i18n";
 import ActionButton from "../../../react/ActionButton";
 import FormTextBox from "../../../react/FormTextBox";
-import { useSyncedRef } from "../../../react/hooks";
+import { useSyncedRef } from "../../../react/hooks/dom";
 
 interface SettingsSearchProps {
     query: string;

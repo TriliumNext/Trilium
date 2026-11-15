@@ -7,7 +7,8 @@ import { isExperimentalFeatureEnabled } from "../../services/experimental_featur
 import froca from "../../services/froca";
 import { isDesktop, isElectron, isMobile } from "../../services/utils";
 import TabSwitcher, { useLaunchBarTabSwipe } from "../mobile_widgets/TabSwitcher";
-import { useNoteLabelBoolean, useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useNoteLabelBoolean } from "../react/hooks/note";
 import { onWheelHorizontalScroll } from "../widget_utils";
 import BookmarkButtons, { BookmarkFolder, getBookmarkOpenMode } from "./BookmarkButtons";
 import CalendarWidget from "./CalendarWidget";
@@ -15,7 +16,10 @@ import ColorSchemeSwitcher from "./ColorSchemeSwitcher";
 import { CustomNoteLauncher } from "./GenericButtons";
 import HistoryNavigationButton from "./HistoryNavigation";
 import { LaunchBarContext } from "./launch_bar_widgets";
-import { CommandButton, CustomWidget, NoteLauncher, QuickSearchLauncherWidget, ScriptLauncher, TodayLauncher } from "./LauncherDefinitions";
+import {
+    CommandButton, CustomWidget, NoteLauncher, QuickSearchLauncherWidget, ScriptLauncher,
+    TodayLauncher
+} from "./LauncherDefinitions";
 import LauncherDropTarget from "./LauncherDropTarget";
 import ProtectedSessionStatusWidget from "./ProtectedSessionStatusWidget";
 import RecordMeetingButton from "./RecordMeetingButton";

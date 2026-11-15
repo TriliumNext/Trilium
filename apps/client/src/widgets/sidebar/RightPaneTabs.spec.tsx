@@ -4,8 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // The strip's names live in tooltips only; Bootstrap's own machinery is not what is under test here.
 const useStaticTooltip = vi.hoisted(() => vi.fn());
-vi.mock("../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../react/hooks")>()),
+vi.mock("../react/hooks/tooltip", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/tooltip")>()),
     useStaticTooltip
 }));
 

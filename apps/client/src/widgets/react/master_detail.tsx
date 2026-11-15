@@ -8,7 +8,7 @@ import { useCallback, useContext, useEffect, useRef, useState } from "preact/hoo
 import { onSystemBack } from "../../services/system_back";
 import utils from "../../services/utils";
 import ActionButton from "./ActionButton";
-import { useWindowSize } from "./hooks";
+import { useWindowSize } from "./hooks/dom";
 import Modal, { ModalProps } from "./Modal";
 import { useSlide } from "./SlidePages";
 

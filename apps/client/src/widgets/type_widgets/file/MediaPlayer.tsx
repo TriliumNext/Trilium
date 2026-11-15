@@ -11,20 +11,29 @@ import attributes from "../../../services/attributes";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import type { ViewScope } from "../../../services/link";
-import type { ShortcutHint, ShortcutHintDefinition, ShortcutHintSection } from "../../../services/shortcut_hints";
+import type {
+    ShortcutHint, ShortcutHintDefinition, ShortcutHintSection
+} from "../../../services/shortcut_hints";
 import { isAppShortcutChord } from "../../../services/shortcuts";
 import { isMobile } from "../../../services/utils";
 import { logError } from "../../../services/ws";
 import ActionButton from "../../react/ActionButton";
 import Dropdown from "../../react/Dropdown";
 import { FormListItem } from "../../react/FormList";
-import { useContextualShortcutHints, useTriliumEvent, useTriliumEvents } from "../../react/hooks";
+import { useTriliumEvent, useTriliumEvents } from "../../react/hooks/events";
+import { useContextualShortcutHints } from "../../react/hooks/shortcuts";
 import Icon from "../../react/Icon";
 import NoItems from "../../react/NoItems";
 import { getParentFromNotePath } from "../../react/sibling_navigation";
-import { attachmentSiblingProvider, noteSiblingProvider, type SiblingNavigationState, useSiblingKeyboard, useSiblingNavigation } from "../../react/SiblingNavigator";
+import {
+    attachmentSiblingProvider, noteSiblingProvider, type SiblingNavigationState, useSiblingKeyboard,
+    useSiblingNavigation
+} from "../../react/SiblingNavigator";
 import type { MediaEnvironment } from "./media_environment";
-import { getAutoAdvanceTarget, MEDIA_PLAY_MODE_ICONS, MEDIA_PLAY_MODE_LABEL, MEDIA_PLAY_MODE_LABEL_KEYS, MEDIA_PLAY_MODES, type MediaPlayMode, playModeFromLabel, playModeToLabel, shouldLoop } from "./media_play_mode";
+import {
+    getAutoAdvanceTarget, MEDIA_PLAY_MODE_ICONS, MEDIA_PLAY_MODE_LABEL, MEDIA_PLAY_MODE_LABEL_KEYS,
+    MEDIA_PLAY_MODES, type MediaPlayMode, playModeFromLabel, playModeToLabel, shouldLoop
+} from "./media_play_mode";
 import { fetchHttpStatus, type MediaSource } from "./media_source";
 
 const NO_KEYS: readonly string[] = [];

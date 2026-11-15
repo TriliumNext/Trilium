@@ -7,10 +7,8 @@ import type FNote from "../../entities/fnote";
 import type { MenuCommandItem, MenuItem } from "../../menus/context_menu";
 import { t } from "../../services/i18n";
 import server from "../../services/server";
-import {
-    useNoteLabelInt, useNoteLabelOptionalBool, useNoteProperty, useTriliumOptionBool,
-    useTriliumOptionInt
-} from "../react/hooks";
+import { useNoteLabelInt, useNoteLabelOptionalBool, useNoteProperty } from "../react/hooks/note";
+import { useTriliumOptionBool, useTriliumOptionInt } from "../react/hooks/options";
 import { codeLanguageItems, NoteTypeOptionsModal, useMimeTypes } from "./NoteTypeSwitcher";
 import { convertIndentation } from "./reindentation";
 

@@ -8,7 +8,7 @@ import FNote from "../../entities/fnote";
 import attribute_renderer from "../../services/attribute_renderer";
 import attributes from "../../services/attributes";
 import { t } from "../../services/i18n";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import RawHtml from "../react/RawHtml";
 import { joinElements } from "../react/react_utils";
 import { AttributeDetail, AttributeDetailOpts } from "./attribute_detail";

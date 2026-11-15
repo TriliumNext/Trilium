@@ -25,8 +25,8 @@ vi.mock("../../../services/onenote_import.js", async (importOriginal) => ({
 }));
 vi.mock("../../../services/toast.js", () => ({ default: { showError } }));
 // The shrink-images preference; the panel only reads it, so a fixed "on" is enough.
-vi.mock("../../react/hooks.js", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks.js")>()),
+vi.mock("../../react/hooks/options.js", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options.js")>()),
     useTriliumOptionBool: () => [true, vi.fn()]
 }));
 

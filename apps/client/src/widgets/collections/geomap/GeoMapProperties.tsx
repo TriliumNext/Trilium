@@ -14,7 +14,7 @@ import { Card, CardSection, OptionCardSection } from "../../react/Card";
 import FormDropdownList from "../../react/FormDropdownList";
 import FormTextBox from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
-import { useNoteLabel, useNoteLabelBoolean, useNoteRelation } from "../../react/hooks";
+import { useNoteLabel, useNoteLabelBoolean, useNoteRelation } from "../../react/hooks/note";
 import NoteAutocomplete from "../../react/NoteAutocomplete";
 import { type BookProperty, ViewPropertySection } from "../../react/NotePropertyMenu";
 import SegmentedChoice from "../../react/SegmentedChoice";

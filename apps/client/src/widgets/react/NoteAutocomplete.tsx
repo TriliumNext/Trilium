@@ -12,7 +12,10 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import appContext from "../../components/app_context";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
-import { createSearchScheduler, createNoteFromSuggestion, getCommandSuggestions, getNoteSuggestions, type Options, recentNoteGroup, type RecentNoteGroup, type Suggestion } from "../../services/note_autocomplete";
+import {
+    createSearchScheduler, createNoteFromSuggestion, getCommandSuggestions, getNoteSuggestions,
+    type Options, recentNoteGroup, type RecentNoteGroup, type Suggestion
+} from "../../services/note_autocomplete";
 import { escapeHtml, isMobile } from "../../services/utils";
 import { ShortcutHintOverlayButton } from "../shortcut_hints/shortcut_hint_button";
 import { AttributeSnippetBadges } from "./Badge";
@@ -20,7 +23,8 @@ import Button from "./Button";
 import { type AutocompleteListHandle, useAutocomplete, useForwardedKeys } from "./FormAutocomplete";
 import { FormDropdownDivider, FormListHeader } from "./FormList";
 import FormToggle from "./FormToggle";
-import { useContextualShortcutHints, useSyncedRef } from "./hooks";
+import { useSyncedRef } from "./hooks/dom";
+import { useContextualShortcutHints } from "./hooks/shortcuts";
 import Icon from "./Icon";
 import OverlayControlGroup from "./OverlayControlGroup";
 import Popup, { type PopupProps } from "./Popup";

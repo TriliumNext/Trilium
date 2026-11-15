@@ -4,7 +4,7 @@ import { t } from "@triliumnext/client/src/services/i18n.js";
 import { getNoteImageUrl } from "@triliumnext/client/src/services/image_urls.js";
 import type NoteMapWidget from "@triliumnext/client/src/widgets/note_map/NoteMap.js";
 import { TYPE_MAPPINGS } from "@triliumnext/client/src/widgets/note_types.js";
-import { useNoteBlob } from "@triliumnext/client/src/widgets/react/hooks.js";
+import { useNoteBlob } from "@triliumnext/client/src/widgets/react/hooks/note.js";
 import { RawHtmlBlock } from "@triliumnext/client/src/widgets/react/RawHtml.js";
 import type RelationMapWidget from "@triliumnext/client/src/widgets/type_widgets/relation_map/RelationMap.js";
 import { type ComponentType, render } from "preact";

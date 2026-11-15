@@ -9,9 +9,9 @@ import { t } from "../../../services/i18n";
 import options from "../../../services/options";
 import toast from "../../../services/toast";
 import { isMobile } from "../../../services/utils";
-import {
-    useContextualShortcutHints, useNoteLabel, useTriliumOption, useTriliumOptionBool
-} from "../../react/hooks";
+import { useNoteLabel } from "../../react/hooks/note";
+import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
+import { useContextualShortcutHints } from "../../react/hooks/shortcuts";
 import { closeShortcutHints } from "../../shortcut_hints/shortcut_hints_panel";
 import { findTextEditorAround } from "./editable_embed";
 import { getVimHintSection } from "./vim_key_reference";

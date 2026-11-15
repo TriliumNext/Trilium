@@ -8,7 +8,7 @@ import toast from "../../services/toast";
 import Button from "../react/Button";
 import { Card, OptionCardSection } from "../react/Card";
 import { FormTextBoxWithPaste } from "../react/FormTextBox";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import Modal from "../react/Modal";
 import { suspendModalFocusTraps } from "../react/modal_focustrap";
 

@@ -21,7 +21,7 @@ vi.mock("@triliumnext/client/src/services/image_urls.js", () => ({
     getNoteImageUrl: (noteId: string, title: string, blobId: string) =>
         `api/images/${noteId}/${title}?${blobId}`
 }));
-vi.mock("@triliumnext/client/src/widgets/react/hooks.js", () => ({
+vi.mock("@triliumnext/client/src/widgets/react/hooks/note.js", () => ({
     useNoteBlob: mocks.useNoteBlob
 }));
 vi.mock("@triliumnext/client/src/widgets/react/RawHtml.js", () => ({

@@ -5,7 +5,8 @@ import FNote from "../../entities/fnote";
 import { showLauncherContextMenu } from "../../menus/launcher_button_context_menu";
 import link_context_menu from "../../menus/link_context_menu";
 import { isCtrlKey } from "../../services/utils";
-import { useGlobalShortcut, useNoteLabel } from "../react/hooks";
+import { useNoteLabel } from "../react/hooks/note";
+import { useGlobalShortcut } from "../react/hooks/shortcuts";
 import { LaunchBarActionButton, useLauncherIconAndTitle } from "./launch_bar_widgets";
 
 /** How a click on a launcher button finds the note it opens, and where it opens it. */

@@ -1,7 +1,7 @@
 import { ComponentChildren, createPortal } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 
-import { useColorScheme } from "./hooks";
+import { useColorScheme } from "./hooks/options";
 
 interface IsolatedFrameProps {
     className?: string;

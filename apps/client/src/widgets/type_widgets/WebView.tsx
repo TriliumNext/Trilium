@@ -12,7 +12,7 @@ import utils from "../../services/utils";
 import Button from "../react/Button";
 import FormGroup from "../react/FormGroup";
 import FormTextBox from "../react/FormTextBox";
-import { useNoteLabel } from "../react/hooks";
+import { useNoteLabel } from "../react/hooks/note";
 import SetupForm from "./helpers/SetupForm";
 import { TypeWidgetProps } from "./type_widget";
 

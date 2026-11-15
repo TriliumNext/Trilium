@@ -17,9 +17,10 @@ import options from "../../services/options";
 import { isMobile } from "../../services/utils";
 import Button from "../react/Button";
 import { openHelpPageFor } from "../react/HelpButton";
-import {
-    useGetContextDataFrom, useNoteContext, useNoteLabel, useStaticTooltip, useTriliumOptionBool
-} from "../react/hooks";
+import { useNoteLabel } from "../react/hooks/note";
+import { useTriliumOptionBool } from "../react/hooks/options";
+import { useGetContextDataFrom, useNoteContext } from "../react/hooks/note_context";
+import { useStaticTooltip } from "../react/hooks/tooltip";
 import ScrollableLabel from "../react/ScrollableLabel";
 import { toggleVimKeyReference } from "../type_widgets/text/vim_key_reference";
 import { setCommandLineSlot } from "../type_widgets/text/vim_mode";

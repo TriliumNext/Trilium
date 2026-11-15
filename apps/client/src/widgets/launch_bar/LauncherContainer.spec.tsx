@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import Component from "../../components/component.js";
 import type FNote from "../../entities/fnote.js";
 import { buildNote } from "../../test/easy-froca.js";
-import { TREE_CLIPBOARD_TYPE } from "../react/hooks.js";
+import { TREE_CLIPBOARD_TYPE } from "../react/hooks/drag.js";
 import { ParentComponent } from "../react/react_utils.js";
 import LauncherContainer, { useLauncherChildNotes } from "./LauncherContainer.js";
 

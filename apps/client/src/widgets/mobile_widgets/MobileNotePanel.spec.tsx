@@ -6,10 +6,16 @@ import type FNote from "../../entities/fnote";
 
 const shownNote = vi.hoisted(() => ({ current: null as FNote | null }));
 const shownContext = vi.hoisted(() => ({ current: null as { isCommandTarget: (ntxId?: string | null) => boolean } | null }));
-vi.mock("../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../react/hooks")>()),
-    useActiveNoteContext: () => ({ note: shownNote.current }),
-    useNoteContext: () => ({ note: shownNote.current, noteContext: shownContext.current }),
+vi.mock("../react/hooks/note_context", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/note_context")>()),
+    useNoteContext: () => ({ note: shownNote.current, noteContext: shownContext.current })
+}));
+vi.mock("../react/hooks/tree", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/tree")>()),
+    useActiveNoteContext: () => ({ note: shownNote.current })
+}));
+vi.mock("../react/hooks/tooltip", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/tooltip")>()),
     useStaticTooltip: vi.fn()
 }));
 

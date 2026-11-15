@@ -1,7 +1,7 @@
 import { useState } from "preact/hooks";
 import { t } from "../../../services/i18n.js";
 import FormTextBox from "../../react/FormTextBox.jsx";
-import { useSpacedUpdate } from "../../react/hooks.jsx";
+import { useSpacedUpdate } from "../../react/hooks/editor.js";
 import AbstractBulkAction, { ActionDefinition } from "../abstract_bulk_action.js";
 import BulkAction from "../BulkAction.jsx";
 

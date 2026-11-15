@@ -456,7 +456,7 @@ without one is skipped, and nothing reports it.
   match, and _Replace all_ skips it.
 - **Ctrl+F inside the content** does not reach the binding that opens the find bar, as the embed
   keeps its keys from the window. Content that takes the focus calls `useFindShortcut(rootRef)`
-  (`react/hooks.tsx`), as `CanvasDrawing` does.
+  (`react/hooks/shortcuts.ts`), as `CanvasDrawing` does.
 
 ## Caret navigation
 
@@ -515,7 +515,7 @@ any other block. An editor takes part by opting in; without it, the caret steps 
   (`text/utils.ts`) lets the host skip its redraw on a save that changes only the content. A
   rename, a deletion or a static kind (image, PDF) still redraws.
 - **Hidden views** (a background tab, a collapsed box) apply changes once shown, through
-  `useWhenShown(ref)` (`react/hooks.tsx`). Only the last waiting callback runs, so check a request
+  `useWhenShown(ref)` (`react/hooks/dom.ts`). Only the last waiting callback runs, so check a request
   ID before queuing, not after.
 - **Pace the saves** of content that changes continuously: `postponeSave()` on the
   `ContentEditor` holds the scheduled save while input goes on.

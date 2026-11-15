@@ -5,7 +5,8 @@ import { useEffect, useState } from "preact/hooks";
 
 import FNote from "../entities/fnote";
 import attributes from "../services/attributes";
-import { useNoteContext, useNoteLabel } from "./react/hooks";
+import { useNoteLabel } from "./react/hooks/note";
+import { useNoteContext } from "./react/hooks/note_context";
 import { IconPickerButton } from "./react/IconPicker";
 
 /**

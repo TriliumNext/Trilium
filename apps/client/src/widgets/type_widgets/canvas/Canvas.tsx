@@ -1,9 +1,8 @@
 import { Excalidraw } from "@excalidraw/excalidraw";
 import { TypeWidgetProps } from "../type_widget";
 import "@excalidraw/excalidraw/index.css";
-import {
-    useColorScheme, useEffectiveReadOnly, useTriliumOption, useTriliumOptionBool
-} from "../../react/hooks";
+import { useColorScheme, useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
+import { useEffectiveReadOnly } from "../../react/hooks/note_context";
 import type { ComponentChildren, RefObject } from "preact";
 import { useCallback, useRef } from "preact/hooks";
 import {
@@ -14,7 +13,9 @@ import {
 } from "@excalidraw/excalidraw/types";
 import options from "../../../services/options";
 import "./Canvas.css";
-import { NonDeleted, NonDeletedExcalidrawElement, ExcalidrawEmbeddableElement } from "@excalidraw/excalidraw/element/types";
+import {
+    NonDeleted, NonDeletedExcalidrawElement, ExcalidrawEmbeddableElement
+} from "@excalidraw/excalidraw/element/types";
 import { goToLinkExt } from "../../../services/link";
 import { CanvasNoteMenu } from "./CanvasDrawingMenu";
 import useCanvasPersistence from "./persistence";

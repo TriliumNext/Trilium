@@ -7,7 +7,7 @@ import { showLauncherContextMenu } from "../../menus/launcher_button_context_men
 import utils from "../../services/utils";
 import ActionButton, { ActionButtonProps } from "../react/ActionButton";
 import Dropdown, { DropdownPanel, DropdownProps } from "../react/Dropdown";
-import { useNoteLabel, useNoteProperty } from "../react/hooks";
+import { useNoteLabel, useNoteProperty } from "../react/hooks/note";
 import Icon from "../react/Icon";
 
 const cachedIsMobile = utils.isMobile();

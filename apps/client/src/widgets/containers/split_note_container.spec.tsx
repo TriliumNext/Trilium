@@ -8,7 +8,7 @@ import type TabManager from "../../components/tab_manager";
 import LoadResults from "../../services/load_results";
 import { buildNote } from "../../test/easy-froca";
 import NoteWrapperWidget from "../note_wrapper";
-import { useNoteContext } from "../react/hooks";
+import { useNoteContext } from "../react/hooks/note_context";
 import SplitNoteContainer from "./split_note_container";
 
 // The resizer drives Split.js against the real #center-pane layout, on an animation frame that

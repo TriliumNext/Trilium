@@ -15,8 +15,8 @@ vi.mock("../../../../services/toast", () => ({
     default: { showError: mocks.showError, showMessage: vi.fn() }
 }));
 
-vi.mock("../../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../../react/hooks")>()),
+vi.mock("../../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../../react/hooks/options")>()),
     useTriliumOption: (name: string) => [
         mocks.stored[name] ?? "",
         (value: string | number) => void mocks.saved.push([ name, value ])

@@ -1,4 +1,4 @@
-import { useTriliumOptionInt } from "../react/hooks";
+import { useTriliumOptionInt } from "../react/hooks/options";
 import clsx from "clsx";
 import server from "../../services/server";
 import { TargetedMouseEvent, VNode } from "preact";

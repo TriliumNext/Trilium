@@ -33,14 +33,20 @@ const iconPickerProps = vi.hoisted(() => ({
     }
 }));
 
-vi.mock("./react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("./react/hooks")>()),
+vi.mock("./react/hooks/note", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./react/hooks/note")>()),
+    useNoteLabel: () => [ undefined ]
+}));
+vi.mock("./react/hooks/note_context", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./react/hooks/note_context")>()),
     useNoteContext: () => {
         const [ note, setNote ] = useState(noteContext.initialNote);
         noteContext.setNote = setNote;
         return { note, viewScope: { viewMode: "default" } };
-    },
-    useNoteLabel: () => [ undefined ],
+    }
+}));
+vi.mock("./react/hooks/tooltip", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./react/hooks/tooltip")>()),
     useStaticTooltip: () => {},
     useTooltip: (_ref: unknown, config: { title?: unknown }) => {
         tooltipConfig.current = config;

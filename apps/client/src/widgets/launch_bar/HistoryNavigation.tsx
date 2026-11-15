@@ -5,7 +5,7 @@ import contextMenu, { MenuCommandItem } from "../../menus/context_menu";
 import { notePathMenuItem } from "../../menus/context_menu_utils";
 import { showLauncherContextMenu } from "../../menus/launcher_button_context_menu";
 import link from "../../services/link";
-import { useHoldContextMenu } from "../react/hooks";
+import { useHoldContextMenu } from "../react/hooks/dom";
 import { LaunchBarActionButton, useLauncherIconAndTitle } from "./launch_bar_widgets";
 
 export type HistoryDirection = "back" | "forward";

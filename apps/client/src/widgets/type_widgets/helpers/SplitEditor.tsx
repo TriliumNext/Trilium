@@ -9,7 +9,9 @@ import { DEFAULT_GUTTER_SIZE } from "../../../services/resizer";
 import utils, { isMobile } from "../../../services/utils";
 import { ExtendedAdmonition } from "../../react/Admonition";
 import { Badge } from "../../react/Badge";
-import { useEffectiveReadOnly, useNoteBlob, useNoteLabel, useTriliumOption } from "../../react/hooks";
+import { useNoteBlob, useNoteLabel } from "../../react/hooks/note";
+import { useTriliumOption } from "../../react/hooks/options";
+import { useEffectiveReadOnly } from "../../react/hooks/note_context";
 import { EditableCode, EditableCodeProps, ReadOnlyCode } from "../code/Code";
 import { type DisplayMode, resolveDisplayMode } from "./split_editor_mode";
 

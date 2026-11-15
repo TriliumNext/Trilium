@@ -11,7 +11,7 @@ import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
 import { getReadableTextColor } from "../../services/css_class_manager";
 import { formatDateTime } from "../../utils/formatters";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import Icon from "../react/Icon";
 import NoteLink from "../react/NoteLink";
 

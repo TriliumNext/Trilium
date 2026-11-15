@@ -4,12 +4,14 @@ import type { CKTextEditor, EmbedEdge } from "@triliumnext/ckeditor5";
 import clsx from "clsx";
 import { type ComponentChildren, createContext, type RefObject } from "preact";
 import { Suspense } from "preact/compat";
-import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+import {
+    useCallback, useContext, useEffect, useLayoutEffect, useRef, useState
+} from "preact/hooks";
 
 import type FNote from "../../../entities/fnote";
 import { type ContentEditor, disposeInteractiveContent } from "../../../services/content_renderer";
 import options from "../../../services/options";
-import { useNoteLabelBoolean } from "../../react/hooks";
+import { useNoteLabelBoolean } from "../../react/hooks/note";
 import {
     type ContentEmbedToolProvider, registerContentEmbedTools, registerEmbedCaretTarget,
     useIsContentEmbedEditable

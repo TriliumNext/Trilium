@@ -6,7 +6,7 @@ import { CommandNames } from "../../components/app_context";
 import keyboard_actions from "../../services/keyboard_actions";
 import { formatShortcut, joinShortcut } from "../../services/keyboard_shortcut_display";
 import { isMobile } from "../../services/utils";
-import { useStaticTooltip } from "./hooks";
+import { useStaticTooltip } from "./hooks/tooltip";
 import { useCommandTrigger } from "./react_utils";
 
 export interface ActionButtonProps extends Pick<

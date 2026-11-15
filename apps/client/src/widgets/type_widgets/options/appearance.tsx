@@ -4,7 +4,9 @@ import type { OptionDefinitions } from "@triliumnext/commons";
 import { useMemo } from "preact/hooks";
 
 import zoomService from "../../../components/zoom";
-import { ColorScheme, resolveColorScheme, THEME_FAMILY_SCHEMES } from "../../../services/color_scheme";
+import {
+    ColorScheme, resolveColorScheme, THEME_FAMILY_SCHEMES
+} from "../../../services/color_scheme";
 import { t } from "../../../services/i18n";
 import { isElectron, isIOS, isMobile } from "../../../services/utils";
 import { Card, CardSection, OptionCardSection } from "../../react/Card";
@@ -13,7 +15,7 @@ import { FormListHeader, FormListItem } from "../../react/FormList";
 import { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
 import HelpButton from "../../react/HelpButton";
-import { useTriliumOption, useTriliumOptionBool, useUserThemes } from "../../react/hooks";
+import { useTriliumOption, useTriliumOptionBool, useUserThemes } from "../../react/hooks/options";
 import Icon from "../../react/Icon";
 import SegmentedChoice, { SegmentedChoiceOption } from "../../react/SegmentedChoice";
 import Fonts from "./appearance_fonts";

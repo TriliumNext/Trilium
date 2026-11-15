@@ -7,11 +7,15 @@ import { useEffect, useRef, useState } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
 import type { PrintReport } from "../../print";
-import { subscribeToMessages, unsubscribeToMessage as unsubscribeFromMessage } from "../../services/ws";
 import {
-    useGetContextDataFrom, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelInt,
-    useNoteProperty, useParentClass, useTriliumEvent
-} from "../react/hooks";
+    subscribeToMessages, unsubscribeToMessage as unsubscribeFromMessage
+} from "../../services/ws";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useParentClass } from "../react/hooks/dom";
+import {
+    useNoteLabel, useNoteLabelBoolean, useNoteLabelInt, useNoteProperty
+} from "../react/hooks/note";
+import { useGetContextDataFrom, useNoteContext } from "../react/hooks/note_context";
 import { ViewModeMedia, ViewModeProps, resolveViewType, ViewTypeOptions } from "./interface";
 import ViewModeStorage, { type ViewModeStorageType } from "./view_mode_storage";
 

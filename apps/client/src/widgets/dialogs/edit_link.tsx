@@ -21,7 +21,7 @@ import { Card, ChoiceCardSection, OptionCardSection } from "../react/Card";
 import FormSelect from "../react/FormSelect";
 import FormTextArea from "../react/FormTextArea";
 import FormTextBox, { type FormTextBoxProps, FormTextBoxWithPaste } from "../react/FormTextBox";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import { InputGroupSpinner } from "../react/LoadingSpinner";
 import Modal from "../react/Modal";
 import { suspendModalFocusTraps } from "../react/modal_focustrap";

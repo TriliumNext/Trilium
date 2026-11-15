@@ -5,7 +5,7 @@ import type { ComponentType } from "preact";
 import type FAttachment from "../../entities/fattachment";
 import type FNote from "../../entities/fnote";
 import Collapsible from "../react/Collapsible";
-import { useAttachments } from "../react/hooks";
+import { useAttachments } from "../react/hooks/note";
 import TranscriptView, {
     TranscriptRecordingLevels
 } from "../type_widgets/transcript/TranscriptView";

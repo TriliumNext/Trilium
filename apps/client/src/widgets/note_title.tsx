@@ -13,7 +13,11 @@ import server from "../services/server";
 import { isIMEComposing } from "../services/shortcuts";
 import { shouldShowInlineTitle } from "./layout/InlineTitle";
 import FormTextBox from "./react/FormTextBox";
-import { useNoteContext, useNoteProperty, useSpacedUpdate, useTriliumEvents, useTriliumOption } from "./react/hooks";
+import { useTriliumEvents } from "./react/hooks/events";
+import { useNoteProperty } from "./react/hooks/note";
+import { useTriliumOption } from "./react/hooks/options";
+import { useNoteContext } from "./react/hooks/note_context";
+import { useSpacedUpdate } from "./react/hooks/editor";
 
 /**
  * Where a title sits in a note split, which has one in its title row and one in `InlineTitle`.

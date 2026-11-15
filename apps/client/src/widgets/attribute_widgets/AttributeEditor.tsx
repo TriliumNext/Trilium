@@ -1,6 +1,9 @@
 import "./AttributeEditor.css";
 
-import type { AttributeEditor as CKEditorAttributeEditor, EditorConfig, ModelElement, ModelNode, ModelPosition, MentionHostedFeed } from "@triliumnext/ckeditor5";
+import type {
+    AttributeEditor as CKEditorAttributeEditor, EditorConfig, ModelElement, ModelNode,
+    ModelPosition, MentionHostedFeed
+} from "@triliumnext/ckeditor5";
 import { AttributeType } from "@triliumnext/commons";
 import clsx from "clsx";
 import { createPortal, RefObject } from "preact";
@@ -22,8 +25,11 @@ import { isIMEComposing } from "../../services/shortcuts";
 import { escapeQuotes, getErrorMessage } from "../../services/utils";
 import ActionButton from "../react/ActionButton";
 import CKEditor, { CKEditorApi } from "../react/CKEditor";
-import { useLegacyWidget, useTriliumEvent } from "../react/hooks";
-import { createAutocompleteMentionList, createNoteMentionList } from "../type_widgets/text/mention_list_view";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useLegacyWidget } from "../react/hooks/legacy";
+import {
+    createAutocompleteMentionList, createNoteMentionList
+} from "../type_widgets/text/mention_list_view";
 import AttributeDetailWidget, { AttributeNameSuggestion, fetchAttributeNames } from "./attribute_detail";
 
 type AttributeCommandNames = FilteredCommandNames<CommandData>;

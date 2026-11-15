@@ -20,7 +20,9 @@ import utils from "../../../services/utils";
 import { useTranscriptionState } from "../../launch_bar/RecordMeetingButton";
 import ActionButton from "../../react/ActionButton";
 import FormTextBox from "../../react/FormTextBox";
-import { useStaticTooltip, useTriliumEvent, useTriliumOptionBool } from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useTriliumOptionBool } from "../../react/hooks/options";
+import { useStaticTooltip } from "../../react/hooks/tooltip";
 import LinkButton from "../../react/LinkButton";
 import NoItems from "../../react/NoItems";
 

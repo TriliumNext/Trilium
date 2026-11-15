@@ -14,10 +14,14 @@ import { handleRightToLeftPlacement, isMobile, openInAppHelpFromUrl } from "../.
 import ActionButton from "./ActionButton";
 import FormTextBox from "./FormTextBox";
 import FormToggle from "./FormToggle";
-import { useStaticTooltip, useSyncedRef, useUniqueName } from "./hooks";
+import { useSyncedRef, useUniqueName } from "./hooks/dom";
+import { useStaticTooltip } from "./hooks/tooltip";
 import Icon, { SvgIcon } from "./Icon";
 import { MasterDetailHeader } from "./master_detail";
-import { isRightToLeft, MenuContext, type MenuContextValue, type MenuFilter, MenuFilterContext, MenuLevelContext, type OpenSubmenu, pointerMoved, shouldDropStart, useMenu } from "./menu_context";
+import {
+    isRightToLeft, MenuContext, type MenuContextValue, type MenuFilter, MenuFilterContext,
+    MenuLevelContext, type OpenSubmenu, pointerMoved, shouldDropStart, useMenu
+} from "./menu_context";
 import { placeFloating } from "./Popup";
 import { joinElements } from "./react_utils";
 import { renderShortcutKbds } from "./shortcut_kbd";

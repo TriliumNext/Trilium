@@ -33,9 +33,8 @@ vi.mock("../../../services/search", () => ({
     default: { searchForNotes: async () => mocks.shareRoots }
 }));
 
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
-    useNoteContext: () => ({ noteContext: undefined }),
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useTriliumOption: (name: string) => [
         mocks.stored[name] ?? "",
         (value: string) => void mocks.saved.push([ name, value ])
@@ -48,6 +47,10 @@ vi.mock("../../react/hooks", async (importOriginal) => ({
         mocks.json[name] ?? [],
         (value: unknown) => void mocks.saved.push([ name, value ])
     ]
+}));
+vi.mock("../../react/hooks/note_context", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/note_context")>()),
+    useNoteContext: () => ({ noteContext: undefined })
 }));
 
 vi.mock("./components/OptionsPageHeader", () => ({ default: () => <div className="header-stub" /> }));

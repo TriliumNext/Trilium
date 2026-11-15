@@ -11,11 +11,16 @@ import { useLanguageSwitcher } from "../dialogs/content_languages";
 import { CommandItem, NoteContextMenu } from "../layout/NoteActions";
 import NoteActionsCustom from "../layout/NoteActionsCustom";
 import { codeLanguageItems, useMimeTypes } from "../layout/NoteTypeSwitcher";
-import { getLocaleName, NoteInfoContent, SimilarNotesList, useAttributeCount } from "../layout/StatusBar";
+import {
+    getLocaleName, NoteInfoContent, SimilarNotesList, useAttributeCount
+} from "../layout/StatusBar";
 import ActionButton from "../react/ActionButton";
 import type { DropdownHandle } from "../react/Dropdown";
-import { FormDropdownDivider, FormDropdownSubmenu, FormListCustomItem, FormListItem } from "../react/FormList";
-import { useAttachments, useNoteContext, useNoteProperty } from "../react/hooks";
+import {
+    FormDropdownDivider, FormDropdownSubmenu, FormListCustomItem, FormListItem
+} from "../react/FormList";
+import { useAttachments, useNoteProperty } from "../react/hooks/note";
+import { useNoteContext } from "../react/hooks/note_context";
 import { MenuItemRows } from "../react/Menu";
 import Modal from "../react/Modal";
 import { BacklinksWidget, useBacklinkCount } from "../sidebar/Backlinks";

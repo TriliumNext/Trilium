@@ -23,9 +23,9 @@ import {
 import { SaveStateBadge } from "../../layout/NoteBadges";
 import { useMimeTypes } from "../../layout/NoteTypeSwitcher";
 import ActionButton from "../../react/ActionButton";
-import {
-    useNoteBlob, useNoteLabelOptionalBool, useTriliumEvent, useWhenShown
-} from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useWhenShown } from "../../react/hooks/dom";
+import { useNoteBlob, useNoteLabelOptionalBool } from "../../react/hooks/note";
 import { useContentEmbedMenus } from "../text/content_embed_menus";
 import {
     type ContentEmbedToolbarItem, useContentEmbedAttribute, useContentEmbedFlag

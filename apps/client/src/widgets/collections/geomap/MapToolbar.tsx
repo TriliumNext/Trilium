@@ -7,7 +7,7 @@ import { useCallback, useContext, useEffect, useRef, useState } from "preact/hoo
 import { t } from "../../../services/i18n";
 import toast from "../../../services/toast";
 import { isElectron, isLinux, isMobile } from "../../../services/utils";
-import { useFullscreen } from "../../react/hooks";
+import { useFullscreen } from "../../react/hooks/dom";
 import OverlayControlGroup, { OverlayControlButton, OverlayFullscreenButton, ZoomControls } from "../../react/OverlayControlGroup";
 import { ParentMap, useMapPitch } from "./map";
 

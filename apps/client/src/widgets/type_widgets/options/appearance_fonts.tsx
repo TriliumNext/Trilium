@@ -14,7 +14,9 @@ import { Trans } from "react-i18next";
 
 import FNote from "../../../entities/fnote";
 import { getCustomFonts, registerFontNote } from "../../../services/custom_fonts";
-import { filterAvailableFamilies, listSystemFonts, quoteFamily, rendersFamily } from "../../../services/font";
+import {
+    filterAvailableFamilies, listSystemFonts, quoteFamily, rendersFamily
+} from "../../../services/font";
 import { t } from "../../../services/i18n";
 import toast from "../../../services/toast";
 import { isElectron, isMobile } from "../../../services/utils";
@@ -24,7 +26,9 @@ import { filterTokens, matchesFilter } from "../../react/filter";
 import FormList, { FormListHeader, FormListItem } from "../../react/FormList";
 import { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
-import { useChildNotes, useNoteTitle, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useChildNotes } from "../../react/hooks/note";
+import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
+import { useNoteTitle } from "../../react/hooks/tree";
 import Icon from "../../react/Icon";
 import Modal from "../../react/Modal";
 import NoItems from "../../react/NoItems";

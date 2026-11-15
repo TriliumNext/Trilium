@@ -34,8 +34,8 @@ vi.mock("./attribute_widgets/relation_values_input", () => ({
 // held stable: the grid rebuilds its cells when the context changes, told apart by identity.
 const shownNote = vi.hoisted(() => ({ current: null as FNote | null }));
 const noteContext = vi.hoisted(() => ({ viewScope: { viewMode: "default" } }));
-vi.mock("./react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("./react/hooks")>()),
+vi.mock("./react/hooks/note_context", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./react/hooks/note_context")>()),
     useNoteContext: () => ({
         note: shownNote.current,
         componentId: "cid",

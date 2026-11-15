@@ -8,9 +8,10 @@ import { isIOS } from "../../../services/utils";
 import {
     HideKeyboardAction, holdVisibleBottom, usePositioningOniOS
 } from "../../mobile_widgets/hide_keyboard_button";
-import {
-    useBodyClass, useIsNoteReadOnly, useNoteContext, useNoteProperty, useTriliumEvent
-} from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useBodyClass } from "../../react/hooks/dom";
+import { useNoteProperty } from "../../react/hooks/note";
+import { useIsNoteReadOnly, useNoteContext } from "../../react/hooks/note_context";
 import { useNestedEditor } from "./editable_embed";
 
 /**

@@ -8,7 +8,7 @@ import {
 import type { EventData } from "../../components/app_context";
 import options from "../../services/options";
 import { FLOATING_LAYER_SELECTOR } from "./floating_layers";
-import { useTriliumEvent } from "./hooks";
+import { useTriliumEvent } from "./hooks/events";
 import { ParentComponent } from "./react_utils";
 
 /**

@@ -19,11 +19,18 @@ import { ViewTypeOptions } from "../collections/interface";
 import { showImageCompressionDialog } from "../dialogs/image_compression/image_compression_dialog";
 import ActionButton, { ActionButtonProps } from "../react/ActionButton";
 import { ButtonGroup } from "../react/Button";
-import { FormFileUploadActionButton, FormFileUploadFormListItem, FormFileUploadProps } from "../react/FormFileUpload";
+import {
+    FormFileUploadActionButton, FormFileUploadFormListItem, FormFileUploadProps
+} from "../react/FormFileUpload";
 import { FormListItem } from "../react/FormList";
 import { openHelpPageFor } from "../react/HelpButton";
-import { useEffectiveReadOnly, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useTriliumEvent, useTriliumEvents, useTriliumOption } from "../react/hooks";
-import { DISPLAY_MODE_OPTIONS, isSplitEditorForcedReadOnly, resolveDisplayMode } from "../type_widgets/helpers/split_editor_mode";
+import { useTriliumEvent, useTriliumEvents } from "../react/hooks/events";
+import { useNoteLabel, useNoteLabelBoolean, useNoteProperty } from "../react/hooks/note";
+import { useTriliumOption } from "../react/hooks/options";
+import { useEffectiveReadOnly } from "../react/hooks/note_context";
+import {
+    DISPLAY_MODE_OPTIONS, isSplitEditorForcedReadOnly, resolveDisplayMode
+} from "../type_widgets/helpers/split_editor_mode";
 import { ParentComponent } from "../react/react_utils";
 
 interface NoteActionsCustomProps {

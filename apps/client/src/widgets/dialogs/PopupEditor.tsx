@@ -20,10 +20,12 @@ import TitleRow from "../layout/TitleRow";
 import NoteDetail from "../NoteDetail";
 import PromotedAttributes from "../PromotedAttributes";
 import { DropdownPanel, type DropdownHandle } from "../react/Dropdown";
-import {
-    useContainedLinkNavigation, useDetachedNoteContext, useFindShortcut, useLegacyWidget,
-    useNoteContext, useNoteLabel, useTriliumEvent
-} from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useNoteLabel } from "../react/hooks/note";
+import { useDetachedNoteContext, useNoteContext } from "../react/hooks/note_context";
+import { useFindShortcut } from "../react/hooks/shortcuts";
+import { useLegacyWidget } from "../react/hooks/legacy";
+import { useContainedLinkNavigation } from "../react/hooks/content";
 import Modal from "../react/Modal";
 import { NoteContextContext, ParentComponent, POPUP_EDITOR_NTX_ID } from "../react/react_utils";
 import { BacklinksWidget, useBacklinkCount } from "../sidebar/Backlinks";

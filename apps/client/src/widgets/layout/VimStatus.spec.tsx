@@ -28,15 +28,23 @@ vi.mock("../../services/i18n", () => ({
     t: (key: string, options?: Record<string, string>) =>
         (options ? `${key} ${Object.values(options).join(" ")}` : key)
 }));
-vi.mock("../react/hooks", () => ({
-    useGetContextDataFrom: () => mocks.vim,
-    useNoteContext: () => ({ note: mocks.note, noteContext: { ntxId: "_popup-editor" } }),
-    useNoteLabel: () => [ mocks.vimModeLabel, vi.fn() ],
+vi.mock("../react/hooks/dom", () => ({
+    useTrackedElement: (ref: { current: HTMLElement | null }) => ref.current
+}));
+vi.mock("../react/hooks/note", () => ({
+    useNoteLabel: () => [ mocks.vimModeLabel, vi.fn() ]
+}));
+vi.mock("../react/hooks/options", () => ({
     useTriliumOptionBool: (name: string) => [
         name === "textNoteVimModeEnabled" ? mocks.isVimModeOptionOn : mocks.areHintsEnabled,
         vi.fn()
-    ],
-    useTrackedElement: (ref: { current: HTMLElement | null }) => ref.current,
+    ]
+}));
+vi.mock("../react/hooks/note_context", () => ({
+    useGetContextDataFrom: () => mocks.vim,
+    useNoteContext: () => ({ note: mocks.note, noteContext: { ntxId: "_popup-editor" } })
+}));
+vi.mock("../react/hooks/tooltip", () => ({
     useStaticTooltip: mocks.useStaticTooltip
 }));
 vi.mock("../../services/attributes", async (importOriginal) => ({

@@ -36,8 +36,8 @@ vi.mock("./components/OptionsPageHeader", () => ({ default: () => <div className
 // `appearance_fonts.spec.tsx`; here only its place on the page matters.
 vi.mock("./appearance_fonts", () => ({ default: () => <div className="fonts-stub" /> }));
 
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useTriliumOption: (name: string) => [ String(mocks.stored[name] ?? ""), vi.fn() ],
     useTriliumOptionBool: (name: string) => [ mocks.stored[name] === true, vi.fn() ]
 }));

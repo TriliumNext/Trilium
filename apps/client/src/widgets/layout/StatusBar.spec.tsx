@@ -11,10 +11,10 @@ import FNote from "../../entities/fnote";
 // is read in — neither of which a rendered widget brings with it.
 const shownNote = vi.hoisted(() => ({ current: null as FNote | null }));
 const contextData = vi.hoisted(() => new Map<string, unknown>());
-vi.mock("../react/hooks", async (importOriginal) => {
+vi.mock("../react/hooks/tree", async (importOriginal) => {
     const noteContext = { ntxId: "ntx1", getContextData: (key: string) => contextData.get(key) };
     return {
-        ...(await importOriginal<typeof import("../react/hooks")>()),
+        ...(await importOriginal<typeof import("../react/hooks/tree")>()),
         useActiveNoteContext: () => ({
             note: shownNote.current,
             noteContext,

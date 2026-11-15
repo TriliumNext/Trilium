@@ -6,7 +6,9 @@ import type { CSSProperties } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
-import { ensureMimeTypesForHighlighting, loadHighlightingTheme } from "../../../services/syntax_highlight";
+import {
+    ensureMimeTypesForHighlighting, loadHighlightingTheme
+} from "../../../services/syntax_highlight";
 import { formatDateTime, toggleBodyClass } from "../../../services/utils";
 import ActionButton from "../../react/ActionButton";
 import { Card, CardSection, OptionCardSection } from "../../react/Card";
@@ -16,7 +18,7 @@ import FormSelect, { FormSelectGroup, FormSelectWithGroups } from "../../react/F
 import FormTextArea from "../../react/FormTextArea";
 import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
-import { useColorScheme, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useColorScheme, useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
 import { getHtml } from "../../react/RawHtml";
 import { QUOTE_MARK_PRESETS } from "../text/quotes";
 import { type CustomReplacement, parseCustomReplacements } from "../text/replacements";

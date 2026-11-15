@@ -6,12 +6,15 @@ import { useCallback, useRef, useState } from "preact/hooks";
 import type { WidgetsByParent } from "../../services/bundle";
 import { t } from "../../services/i18n";
 import ActionButton from "../react/ActionButton";
-import { useNoteContext, useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useNoteContext } from "../react/hooks/note_context";
 import { MasterDetailModal } from "../react/master_detail";
 import TabStrip from "../react/TabStrip";
 import NoteMap from "../sidebar/NoteMap";
 import PdfPages from "../sidebar/pdf/PdfPages";
-import { RightPaneTabBodies, type RightPaneTabContents, useRightPaneTabs } from "../sidebar/RightPanelContainer";
+import {
+    RightPaneTabBodies, type RightPaneTabContents, useRightPaneTabs
+} from "../sidebar/RightPanelContainer";
 import { NavigatedInNote } from "../sidebar/RightPanelWidget";
 import { RightPaneTabId } from "../sidebar/RightPaneTabs";
 

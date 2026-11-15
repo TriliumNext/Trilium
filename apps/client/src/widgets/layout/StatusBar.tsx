@@ -29,11 +29,14 @@ import { ContentLanguagesModal, useLanguageSwitcher } from "../dialogs/content_l
 import Dropdown, { type DropdownHandle, DropdownPanel, type DropdownPanelProps } from "../react/Dropdown";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
 import HelpDropdown from "../react/HelpDropdown";
-import {
-    useActiveNoteContext, useAttachments, useBodyClass, useGetContextDataFrom,
-    useLegacyImperativeHandlers, useNoteLabel, useNoteProperty, useStaticTooltip, useTriliumEvent,
-    useTriliumEvents, useTriliumOptionBool
-} from "../react/hooks";
+import { useTriliumEvent, useTriliumEvents } from "../react/hooks/events";
+import { useBodyClass } from "../react/hooks/dom";
+import { useAttachments, useNoteLabel, useNoteProperty } from "../react/hooks/note";
+import { useTriliumOptionBool } from "../react/hooks/options";
+import { useGetContextDataFrom } from "../react/hooks/note_context";
+import { useActiveNoteContext } from "../react/hooks/tree";
+import { useStaticTooltip } from "../react/hooks/tooltip";
+import { useLegacyImperativeHandlers } from "../react/hooks/legacy";
 import Icon from "../react/Icon";
 import LinkButton from "../react/LinkButton";
 import NoItems from "../react/NoItems";

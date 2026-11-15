@@ -32,10 +32,12 @@ import { trackPendingRender } from "../../../services/pending_renders";
 import { consumeSearchTerms } from "../../../services/search_jump";
 import { formatCodeBlocks } from "../../../services/syntax_highlight";
 import { isContentRightToLeft } from "../../../utils/formatters";
-import {
-    useNoteBlob, useNoteLabel, useSameNoteSwitch, useSearchTermsConsumer, useSyncedRef,
-    useTriliumEvent, useTriliumOption, useTriliumOptionBool
-} from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useSyncedRef } from "../../react/hooks/dom";
+import { useNoteBlob, useNoteLabel } from "../../react/hooks/note";
+import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
+import { useSameNoteSwitch } from "../../react/hooks/note_context";
+import { useSearchTermsConsumer } from "../../react/hooks/note_context";
 import { RawHtmlBlock } from "../../react/RawHtml";
 import { mountScrollableLabel } from "../../react/ScrollableLabel";
 import { TypeWidgetProps } from "../type_widget";

@@ -11,7 +11,7 @@ import { ExtendedAdmonition } from "../react/Admonition";
 import { Badge } from "../react/Badge";
 import Button, { ButtonGroup } from "../react/Button";
 import { Card, CardSection } from "../react/Card";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import Modal from "../react/Modal";
 import SelectableCard, { SelectableCardGrid } from "../react/SelectableCard";
 

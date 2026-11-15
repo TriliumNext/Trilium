@@ -10,17 +10,21 @@ const state = vi.hoisted(() => ({ noteLanguage: null as string | null }));
 // `useTriliumOption` reads the real options store rather than a map of its own: `resolveContentLanguage`
 // reads that store directly, and a separate fixture would let the two disagree — which is exactly the
 // bug this suite would then fail to catch.
-vi.mock("../react/hooks", async () => {
+vi.mock("../react/hooks/options", async () => {
     const options = (await import("../../services/options")).default;
     type OptionNames = Parameters<typeof options.get>[0];
     return {
-        useTriliumOption: (name: OptionNames) => [ options.get(name), vi.fn() ],
-        useNoteLabel: () => [ state.noteLanguage, vi.fn() ],
-        useNoteLabelBoolean: () => [ false, vi.fn() ],
-        useNoteProperty: () => undefined,
-        useTriliumEvent: () => {}
+        useTriliumOption: (name: OptionNames) => [ options.get(name), vi.fn() ]
     };
 });
+vi.mock("../react/hooks/note", () => ({
+    useNoteLabel: () => [ state.noteLanguage, vi.fn() ],
+    useNoteLabelBoolean: () => [ false, vi.fn() ],
+    useNoteProperty: () => undefined
+}));
+vi.mock("../react/hooks/events", () => ({
+    useTriliumEvent: () => {}
+}));
 
 // t() echoes the key with its interpolation, so assertions can name the resolved language without
 // depending on the English wording.

@@ -13,11 +13,12 @@ import {
 import { t } from "../../services/i18n";
 import utils, { isElectron, isMobile, isStandalone } from "../../services/utils";
 import Dropdown from "../react/Dropdown";
-import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem } from "../react/FormList";
 import {
-    useStaticTooltip, useStaticTooltipWithKeyboardShortcut, useTriliumOption, useTriliumOptionBool,
-    useUserThemes
-} from "../react/hooks";
+    FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem
+} from "../react/FormList";
+import { useTriliumOption, useTriliumOptionBool, useUserThemes } from "../react/hooks/options";
+import { useStaticTooltip } from "../react/hooks/tooltip";
+import { useStaticTooltipWithKeyboardShortcut } from "../react/hooks/shortcuts";
 import { MenuItemRows } from "../react/Menu";
 import { ParentComponent } from "../react/react_utils";
 

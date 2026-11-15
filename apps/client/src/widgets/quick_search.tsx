@@ -17,7 +17,7 @@ import { ExtendedAdmonition } from "./react/Admonition";
 import { AttributeSnippetBadges } from "./react/Badge";
 import Button from "./react/Button";
 import { focusListItem } from "./react/FormList";
-import { useTriliumEvent } from "./react/hooks";
+import { useTriliumEvent } from "./react/hooks/events";
 import Icon from "./react/Icon";
 import { pointerMoved } from "./react/menu_context";
 import OverlayControlGroup from "./react/OverlayControlGroup";

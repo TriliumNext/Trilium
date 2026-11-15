@@ -4,7 +4,7 @@ import { diffLines as jsDiffLines } from "diff";
 
 import { t } from "../../../services/i18n.js";
 import { MARKDOWN_NOTE_TYPE_MIME } from "../../../services/note_types.js";
-import { useNote } from "../../react/hooks.js";
+import { useNote } from "../../react/hooks/note.js";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText.js";
 import { renderMarkdown } from "./chat_markdown.js";
 

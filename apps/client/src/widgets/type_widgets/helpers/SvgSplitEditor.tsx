@@ -6,11 +6,16 @@ import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import utils, { isMobile } from "../../../services/utils";
-import { useContextualShortcutHints, useEffectiveReadOnly, useNoteLabel, useTriliumEvent } from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useNoteLabel } from "../../react/hooks/note";
+import { useEffectiveReadOnly } from "../../react/hooks/note_context";
+import { useContextualShortcutHints } from "../../react/hooks/shortcuts";
 import OverlayControlGroup, { ZoomControls } from "../../react/OverlayControlGroup";
 import { RawHtmlBlock } from "../../react/RawHtml";
 import { useZoomPanPinch, useZoomPanWheel } from "../../react/zoom_pan";
-import { useZoomPanKeyboard, ZOOM_PAN_HINTS, ZOOM_PAN_VIEWPORT_CLASS } from "../../react/zoom_pan_keyboard";
+import {
+    useZoomPanKeyboard, ZOOM_PAN_HINTS, ZOOM_PAN_VIEWPORT_CLASS
+} from "../../react/zoom_pan_keyboard";
 import { ShortcutHintOverlayButton } from "../../shortcut_hints/shortcut_hint_button";
 import SplitEditor, { SplitEditorProps } from "./SplitEditor";
 import { resolveDisplayMode } from "./split_editor_mode";

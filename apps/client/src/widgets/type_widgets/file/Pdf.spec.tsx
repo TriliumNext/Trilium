@@ -17,15 +17,21 @@ const historyStore = vi.hoisted(() => vi.fn());
 const saveOptions = vi.hoisted(() => ({ current: null as null | { getData(): unknown; onContentChange(blob: unknown): void } }));
 /** The Trilium event handlers the component registered, by event name. */
 const eventHandlers = vi.hoisted(() => new Map<string, (data: any) => unknown>());
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
+vi.mock("../../react/hooks/events", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/events")>()),
+    useTriliumEvent: (name: string, handler: (data: any) => unknown) => {
+        eventHandlers.set(name, handler);
+    }
+}));
+vi.mock("../../react/hooks/note_context", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/note_context")>()),
+    useEffectiveReadOnly: () => readOnly.current
+}));
+vi.mock("../../react/hooks/editor", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/editor")>()),
     useBlobEditorSpacedUpdate: (options: any) => {
         saveOptions.current = options;
         return spacedUpdate;
-    },
-    useEffectiveReadOnly: () => readOnly.current,
-    useTriliumEvent: (name: string, handler: (data: any) => unknown) => {
-        eventHandlers.set(name, handler);
     }
 }));
 vi.mock("../../collections/NoteList", () => ({

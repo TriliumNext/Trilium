@@ -30,8 +30,10 @@ import Button from "../react/Button";
 import Dropdown from "../react/Dropdown";
 import FormList, { FormDropdownDivider, FormListItem } from "../react/FormList";
 import FormToggle from "../react/FormToggle";
-import { useTriliumEvent } from "../react/hooks";
-import { DetailPane, MasterDetailHeader, MasterPane, useMobileMasterDetail } from "../react/master_detail";
+import { useTriliumEvent } from "../react/hooks/events";
+import {
+    DetailPane, MasterDetailHeader, MasterPane, useMobileMasterDetail
+} from "../react/master_detail";
 import Modal from "../react/Modal";
 import NoItems from "../react/NoItems";
 import { RawHtmlBlock, SanitizedHtml } from "../react/RawHtml";

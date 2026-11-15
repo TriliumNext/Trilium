@@ -4,7 +4,9 @@ import { RelationMapPostResponse } from "@triliumnext/commons";
 import clsx from "clsx";
 import { ComponentChildren, HTMLAttributes, RefObject } from "preact";
 import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
-import { type ReactZoomPanPinchRef, TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
+import {
+    type ReactZoomPanPinchRef, TransformComponent, TransformWrapper
+} from "react-zoom-pan-pinch";
 
 import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
@@ -16,7 +18,10 @@ import { pasteNotes } from "../../../services/note_paste";
 import type { ShortcutHintDefinition } from "../../../services/shortcut_hints";
 import toast from "../../../services/toast";
 import { isMobile } from "../../../services/utils";
-import { useContextualShortcutHints, useEditorSpacedUpdate, useEffectiveReadOnly, useTriliumEvent } from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useEffectiveReadOnly } from "../../react/hooks/note_context";
+import { useEditorSpacedUpdate } from "../../react/hooks/editor";
+import { useContextualShortcutHints } from "../../react/hooks/shortcuts";
 import { useZoomPanPinch, useZoomPanWheel } from "../../react/zoom_pan";
 import { useZoomPanKeyboard, ZOOM_PAN_HINTS } from "../../react/zoom_pan_keyboard";
 import ShortcutHintButton from "../../shortcut_hints/shortcut_hint_button";
@@ -30,7 +35,9 @@ import MapToolbar, { EditToolbar } from "./MapToolbar";
 import { GhostNoteBox, NoteBox } from "./NoteBox";
 import NotePane, { type NotePaneHandle, type PaneSelection } from "./NotePane";
 import RelationNamePopover, { useRelationNamePrompt } from "./RelationNamePopover";
-import { CLICK_TOLERANCE, fitTransform, getMousePosition, idToNoteId, noteIdToId, revealOffset } from "./utils";
+import {
+    CLICK_TOLERANCE, fitTransform, getMousePosition, idToNoteId, noteIdToId, revealOffset
+} from "./utils";
 
 interface RelationMapProps extends TypeWidgetProps {
     /** Opens a clicked note where the map's host shows notes, in place of the note pane and a tab. */

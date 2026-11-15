@@ -15,7 +15,7 @@ import { Card, CardSection, OptionCardSection } from "../../react/Card";
 import { DirectoryLocation } from "../../react/DirectoryLink";
 import FormDropdownList from "../../react/FormDropdownList";
 import FormToggle from "../../react/FormToggle";
-import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
 import Icon from "../../react/Icon";
 import NoItems from "../../react/NoItems";
 import OptionsPageHeader from "./components/OptionsPageHeader";

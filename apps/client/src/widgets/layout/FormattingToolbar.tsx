@@ -6,10 +6,12 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import NoteContext from "../../components/note_context";
 import FNote from "../../entities/fnote";
 import options from "../../services/options";
-import {
-    useActiveNoteContext, useDocumentFocus, useNoteContext, useNoteProperty, useTriliumEvent,
-    useTriliumEvents, useTriliumOption
-} from "../react/hooks";
+import { useTriliumEvent, useTriliumEvents } from "../react/hooks/events";
+import { useDocumentFocus } from "../react/hooks/dom";
+import { useNoteProperty } from "../react/hooks/note";
+import { useTriliumOption } from "../react/hooks/options";
+import { useNoteContext } from "../react/hooks/note_context";
+import { useActiveNoteContext } from "../react/hooks/tree";
 import { useNestedEditor } from "../type_widgets/text/editable_embed";
 
 /**

@@ -13,12 +13,16 @@ import { getErrorMessage, isMobile } from "../../services/utils";
 import BasicWidget from "../basic_widget";
 import NoteContextAwareWidget from "../note_context_aware_widget";
 import QuickSearch from "../quick_search";
-import {
-    useGlobalShortcut, useHoldContextMenu, useLegacyWidget, useNoteLabel, useNoteRelationTarget
-} from "../react/hooks";
+import { useHoldContextMenu } from "../react/hooks/dom";
+import { useNoteLabel, useNoteRelationTarget } from "../react/hooks/note";
+import { useGlobalShortcut } from "../react/hooks/shortcuts";
+import { useLegacyWidget } from "../react/hooks/legacy";
 import { ParentComponent } from "../react/react_utils";
 import { CustomNoteLauncher } from "./GenericButtons";
-import { LaunchBarActionButton, LaunchBarContext, launcherContextMenuHandler, LauncherNoteProps, useLauncherIconAndTitle } from "./launch_bar_widgets";
+import {
+    LaunchBarActionButton, LaunchBarContext, launcherContextMenuHandler, LauncherNoteProps,
+    useLauncherIconAndTitle
+} from "./launch_bar_widgets";
 
 export function CommandButton({ launcherNote }: LauncherNoteProps) {
     const { icon, title } = useLauncherIconAndTitle(launcherNote);

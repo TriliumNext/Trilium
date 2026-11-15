@@ -34,7 +34,7 @@ import { collectShortcutHints } from "../../../services/shortcut_hints";
 import BoardApi, { getPendingWrites } from "./api";
 import { RAIL_EXIT_MS } from "../../react/OverlayRail";
 import { DEFAULT_COLUMN_ICON } from "./columns";
-import { TREE_CLIPBOARD_TYPE } from "../../react/hooks";
+import { TREE_CLIPBOARD_TYPE } from "../../react/hooks/drag";
 
 // Stands in for the server: by the time the bulk action resolves, the notes carry the new value,
 // which is what makes the old column empty rather than merely renamed.

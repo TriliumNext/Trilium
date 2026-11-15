@@ -13,7 +13,7 @@ import tree from "../../services/tree";
 import branches from "../../services/branches";
 import toast from "../../services/toast";
 import NoteList from "../react/NoteList";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 
 export default function CloneToDialog() {
     const [ clonedNoteIds, setClonedNoteIds ] = useState<string[]>();

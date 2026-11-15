@@ -13,7 +13,9 @@ import { Card, CardSection, OptionCardSection } from "../../react/Card";
 import FormDropdownList from "../../react/FormDropdownList";
 import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
-import { useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "../../react/hooks";
+import {
+    useTriliumOption, useTriliumOptionBool, useTriliumOptionJson
+} from "../../react/hooks/options";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 import TimeSelector from "./components/TimeSelector";
 

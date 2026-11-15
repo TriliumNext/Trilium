@@ -11,7 +11,7 @@ import {
     isInScrollingDocument, type MediaEnvironment, usesCompactControls
 } from "../type_widgets/file/media_environment";
 import ContentErrorMessage from "./ContentErrorMessage";
-import { useContextualShortcutHints } from "./hooks";
+import { useContextualShortcutHints } from "./hooks/shortcuts";
 import OverlayControlGroup, { ZoomControls } from "./OverlayControlGroup";
 import { useZoomPanPinch, useZoomPanWheel } from "./zoom_pan";
 import { useZoomPanKeyboard, ZOOM_PAN_HINTS, ZOOM_PAN_VIEWPORT_CLASS } from "./zoom_pan_keyboard";

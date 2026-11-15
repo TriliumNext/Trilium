@@ -10,7 +10,7 @@ import { t } from "../../services/i18n";
 import Calendar from "../launch_bar/Calendar";
 import { AdjustDateButton, MONTHS } from "../launch_bar/CalendarWidget";
 import Button from "./Button";
-import { useTriliumOptionInt } from "./hooks";
+import { useTriliumOptionInt } from "./hooks/options";
 import { isRightToLeft } from "./menu_context";
 
 export interface DatePickerProps {

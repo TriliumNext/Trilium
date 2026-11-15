@@ -14,7 +14,7 @@ import type { ContentEditor } from "../../../services/content_renderer";
 import { buildNote } from "../../../test/easy-froca";
 import { TextEditorFindTarget } from "../../find_in_text";
 import MergedFind from "../../merged_find";
-import { useTriliumEvent } from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
 import { ParentComponent } from "../../react/react_utils";
 import type { TypeWidgetProps } from "../type_widget";
 import { getContentEmbedTools, getEmbedFindTarget } from "./content_embed_tools";

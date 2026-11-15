@@ -8,9 +8,12 @@ import FNote from "../../entities/fnote";
 const shownNote = vi.hoisted(() => ({ current: null as FNote | null }));
 // The tabs' names live in tooltips only; Bootstrap's own machinery is not what is under test here.
 const useStaticTooltip = vi.hoisted(() => vi.fn());
-vi.mock("../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../react/hooks")>()),
-    useActiveNoteContext: () => ({ note: shownNote.current }),
+vi.mock("../react/hooks/tree", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/tree")>()),
+    useActiveNoteContext: () => ({ note: shownNote.current })
+}));
+vi.mock("../react/hooks/tooltip", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/tooltip")>()),
     useStaticTooltip
 }));
 

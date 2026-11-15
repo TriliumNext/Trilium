@@ -7,7 +7,9 @@ import { ZoomViewer } from "./zoom_viewer.js";
 
 // The real modules reach `window.glob`, which only the app's boot script defines, and the
 // Bootstrap tooltip needs real layout.
-vi.mock("@triliumnext/client/src/widgets/react/hooks.js", () => ({ useStaticTooltip: () => {} }));
+vi.mock("@triliumnext/client/src/widgets/react/hooks/tooltip.js", () => ({
+    useStaticTooltip: () => {}
+}));
 vi.mock("@triliumnext/client/src/services/i18n.js", () => ({ t: (key: string) => key }));
 vi.mock("@triliumnext/client/src/services/keyboard_shortcut_display.js", () => ({
     formatShortcut: (shortcut: string) => [ shortcut ],

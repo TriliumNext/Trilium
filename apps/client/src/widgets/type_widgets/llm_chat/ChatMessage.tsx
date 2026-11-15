@@ -9,7 +9,7 @@ import { t } from "../../../services/i18n.js";
 import utils from "../../../services/utils.js";
 import { ExtendedAdmonition } from "../../react/Admonition.js";
 import Button from "../../react/Button.js";
-import { useResizeObserver } from "../../react/hooks.js";
+import { useResizeObserver } from "../../react/hooks/dom.js";
 import LightboxLink from "../../react/LightboxLink.js";
 import LoadingSpinner from "../../react/LoadingSpinner.js";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText.js";
@@ -17,7 +17,10 @@ import { formatErrorDetails } from "./chat_error.js";
 import { renderMarkdown } from "./chat_markdown.js";
 import { renderQuoteSourceLinks } from "./chat_quote.js";
 import { ExpandableCard, ExpandableSection } from "./ExpandableCard.js";
-import { type ContentBlock, type FileBlock, getMessageText, type ImageBlock, type StoredMessage, type TextBlock, type TextFileBlock, type ThinkingBlock, type ToolCallBlock } from "./llm_chat_types.js";
+import {
+    type ContentBlock, type FileBlock, getMessageText, type ImageBlock, type StoredMessage,
+    type TextBlock, type TextFileBlock, type ThinkingBlock, type ToolCallBlock
+} from "./llm_chat_types.js";
 import { shortModelName } from "./model_name.js";
 import { SafeImage } from "./retry_image.js";
 import ToolCallCard from "./ToolCallCard.js";

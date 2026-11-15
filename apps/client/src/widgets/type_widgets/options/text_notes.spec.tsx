@@ -25,8 +25,8 @@ vi.mock("@triliumnext/highlightjs", () => ({
     highlight: () => ({ value: "" })
 }));
 
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useColorScheme: () => mocks.colorScheme,
     useTriliumOption: (name: string) => [
         String(mocks.stored[name] ?? ""),

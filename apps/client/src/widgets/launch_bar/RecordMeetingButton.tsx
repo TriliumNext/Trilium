@@ -16,7 +16,7 @@ import noteCreateService from "../../services/note_create";
 import options from "../../services/options";
 import toast from "../../services/toast";
 import { Badge } from "../react/Badge";
-import { useTriliumOptionBool } from "../react/hooks";
+import { useTriliumOptionBool } from "../react/hooks/options";
 import Icon from "../react/Icon";
 import Popover from "../react/Popover";
 import {

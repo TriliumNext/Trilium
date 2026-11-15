@@ -64,8 +64,8 @@ vi.mock("../../../services/i18n", () => ({
 // A stand-in options store: the page reads through these hooks and writes back through them, so
 // this is the whole of what the card touches. Partial-mocked, since sibling components below it
 // use other hooks from the same module.
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useTriliumOption: (name: string) => [ mocks.stored[name], (value: string) => mocks.saved(name, value) ],
     useTriliumOptionBool: (name: string) => [
         mocks.stored[name] === "true",
@@ -74,7 +74,10 @@ vi.mock("../../react/hooks", async (importOriginal) => ({
     useTriliumOptionInt: (name: string) => [
         parseInt(mocks.stored[name] ?? "", 10),
         (value: number) => mocks.saved(name, String(value))
-    ],
+    ]
+}));
+vi.mock("../../react/hooks/note_context", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/note_context")>()),
     useNoteContext: () => ({ note: undefined })
 }));
 

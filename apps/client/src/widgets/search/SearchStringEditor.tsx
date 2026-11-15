@@ -5,7 +5,7 @@ import { useEffect, useRef } from "preact/hooks";
 
 import { t } from "../../services/i18n";
 import type { ShortcutHintDefinition } from "../../services/shortcut_hints";
-import { useContextualShortcutHints } from "../react/hooks";
+import { useContextualShortcutHints } from "../react/hooks/shortcuts";
 import { createSearchFieldEditor, SEARCH_FIELD_EDITOR_CLASS } from "../search_field_editor";
 
 interface SearchStringEditorProps {

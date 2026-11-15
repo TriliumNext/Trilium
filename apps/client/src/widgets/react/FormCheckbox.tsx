@@ -3,7 +3,7 @@ import { ComponentChildren, CSSProperties } from "preact";
 import { useCallback, useEffect, useMemo, useRef } from "preact/hooks";
 
 import { escapeQuotes } from "../../services/utils";
-import { useUniqueName } from "./hooks";
+import { useUniqueName } from "./hooks/dom";
 
 interface FormCheckboxProps {
     name?: string;

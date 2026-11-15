@@ -5,8 +5,8 @@ import { describe, expect, it, vi } from "vitest";
 import FNote from "../../entities/fnote";
 
 const shownNote = vi.hoisted(() => ({ current: null as FNote | null }));
-vi.mock("../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../react/hooks")>()),
+vi.mock("../react/hooks/note_context", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/note_context")>()),
     useNoteContext: () => ({ note: shownNote.current })
 }));
 

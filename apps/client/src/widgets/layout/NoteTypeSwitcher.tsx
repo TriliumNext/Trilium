@@ -2,7 +2,9 @@ import "./NoteTypeSwitcher.css";
 
 import type { MimeType, NoteType } from "@triliumnext/commons";
 import { getCodeLanguageIcon } from "@triliumnext/commons/src/lib/notes.js";
-import { type Dispatch, type StateUpdater, useCallback, useEffect, useMemo, useState } from "preact/hooks";
+import {
+    type Dispatch, type StateUpdater, useCallback, useEffect, useMemo, useState
+} from "preact/hooks";
 
 import FNote from "../../entities/fnote";
 import type { MenuCommandItem, MenuItem } from "../../menus/context_menu";
@@ -18,9 +20,11 @@ import note_types, {
 import server from "../../services/server";
 import { escapeHtml } from "../../services/utils";
 import { Badge, BadgeWithDropdown } from "../react/Badge";
-import {
-    useGetContextDataFrom, useNoteContext, useNoteProperty, useNoteSavedData, useTriliumEvent, useTriliumOption
-} from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useNoteProperty } from "../react/hooks/note";
+import { useTriliumOption } from "../react/hooks/options";
+import { useGetContextDataFrom, useNoteContext } from "../react/hooks/note_context";
+import { useNoteSavedData } from "../react/hooks/editor";
 import { MenuItemRows } from "../react/Menu";
 import Modal from "../react/Modal";
 import { CodeMimeTypesCard } from "../type_widgets/options/code_mime_types_card";

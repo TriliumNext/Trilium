@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef } from "preact/hooks";
 import { t } from "../../services/i18n";
 import { isIOS, isMobileApp } from "../../services/utils";
 import ActionButton from "../react/ActionButton";
-import { useDocumentFocus } from "../react/hooks";
+import { useDocumentFocus } from "../react/hooks/dom";
 
 /**
  * Closes the virtual keyboard by blurring the focused element. The button stands at the bottom-end

@@ -5,7 +5,8 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import type FNote from "../../../entities/fnote";
 import type { ContentEditor } from "../../../services/content_renderer";
 import froca from "../../../services/froca";
-import { useTriliumEvent, useWhenShown } from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useWhenShown } from "../../react/hooks/dom";
 import {
     EditableEmbedContent, hasFixedToolbarAround, useEditableEmbed, useEmbedPreview
 } from "./editable_embed";

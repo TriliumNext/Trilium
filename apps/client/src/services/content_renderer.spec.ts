@@ -163,7 +163,7 @@ import Component from "../components/component.js";
 import type { SaveState } from "../components/note_context.js";
 import FAttachment from "../entities/fattachment.js";
 import { buildNote } from "../test/easy-froca.js";
-import { useLegacyImperativeHandlers } from "../widgets/react/hooks.js";
+import { useLegacyImperativeHandlers } from "../widgets/react/hooks/legacy.js";
 import EmbedHistories from "../widgets/type_widgets/text/embed_history.js";
 import {
     addContentDisposer,

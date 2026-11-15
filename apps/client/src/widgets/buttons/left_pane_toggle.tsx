@@ -7,7 +7,7 @@ import { showLaunchBarManagementContextMenu } from "../../menus/launcher_button_
 import { t } from "../../services/i18n";
 import options from "../../services/options";
 import ActionButton from "../react/ActionButton";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import type { PaneMode } from "../react/peek_pane";
 import PeekPaneButton from "../react/PeekPaneButton";
 import { ParentComponent } from "../react/react_utils";

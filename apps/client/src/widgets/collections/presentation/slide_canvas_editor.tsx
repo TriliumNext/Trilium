@@ -8,8 +8,11 @@ import { useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import type NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
-import { announceEmbeddedNoteClosing, EmbeddedNoteScope, useEmbeddedNoteContext } from "../../EmbeddedNotePane";
-import { useColorScheme, useEffectiveReadOnly, useNoteContext } from "../../react/hooks";
+import {
+    announceEmbeddedNoteClosing, EmbeddedNoteScope, useEmbeddedNoteContext
+} from "../../EmbeddedNotePane";
+import { useColorScheme } from "../../react/hooks/options";
+import { useEffectiveReadOnly, useNoteContext } from "../../react/hooks/note_context";
 import { CanvasEditor } from "../../type_widgets/canvas/Canvas";
 import { CanvasNoteMenu } from "../../type_widgets/canvas/CanvasDrawingMenu";
 import { getCenteredView } from "../../type_widgets/canvas/drawing_view";

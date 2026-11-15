@@ -24,8 +24,18 @@ import { resolveViewType } from "../collections/interface";
 import { showImageCompressionDialog } from "../dialogs/image_compression/image_compression_dialog";
 import { isAlwaysFullWidthByType } from "../note_wrapper";
 import Dropdown, { type DropdownHandle } from "../react/Dropdown";
-import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem, FormListToggleableItem } from "../react/FormList";
-import { useEffectiveReadOnly, useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelOptionalBool, useNoteProperty, useNoteRelation, useSyncedRef, useTriliumEvent, useTriliumOption } from "../react/hooks";
+import {
+    FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem, FormListToggleableItem
+} from "../react/FormList";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useSyncedRef } from "../react/hooks/dom";
+import {
+    useNoteLabel, useNoteLabelBoolean, useNoteLabelOptionalBool, useNoteProperty, useNoteRelation
+} from "../react/hooks/note";
+import { useTriliumOption } from "../react/hooks/options";
+import {
+    useEffectiveReadOnly, useIsNoteReadOnly, useNoteContext
+} from "../react/hooks/note_context";
 import { MenuItemRows } from "../react/Menu";
 import { ParentComponent, POPUP_EDITOR_NTX_ID, useCommandTrigger } from "../react/react_utils";
 import { getWordWrapMenu } from "./code_menus";

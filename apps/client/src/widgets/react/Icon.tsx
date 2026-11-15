@@ -5,7 +5,7 @@ import { HTMLAttributes } from "preact";
 import { useRef } from "preact/hooks";
 
 import { isMobile } from "../../services/utils";
-import { useStaticTooltip } from "./hooks";
+import { useStaticTooltip } from "./hooks/tooltip";
 import RawHtml from "./RawHtml";
 
 interface IconProps extends Pick<HTMLAttributes<HTMLSpanElement>,

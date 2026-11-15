@@ -22,7 +22,7 @@ import {
 import ActionButton from "./ActionButton";
 import { Badge } from "./Badge";
 import FormToggle from "./FormToggle";
-import { useTriliumEvent } from "./hooks";
+import { useTriliumEvent } from "./hooks/events";
 import { TooltipIcon } from "./Icon";
 import { type SortableItem, SortableCard } from "./SortableCard";
 

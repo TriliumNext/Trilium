@@ -21,9 +21,9 @@ import type { ContentEditor } from "../../../services/content_renderer";
 import froca from "../../../services/froca";
 import options from "../../../services/options";
 import server from "../../../services/server";
-import {
-    SavedData, useEditorSpacedUpdate, useTriliumEvent, useWhenShown
-} from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useWhenShown } from "../../react/hooks/dom";
+import { SavedData, useEditorSpacedUpdate } from "../../react/hooks/editor";
 import { isInFullscreen } from "../text/content_embed_tools";
 import {
     type DrawingScene, getDrawingHistory, isInteracting, type SavedAppState, showDrawingScene

@@ -10,7 +10,9 @@ import { BadgeWithDropdown } from "../react/Badge";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
 import FormToggle from "../react/FormToggle";
 import { openHelpPageFor } from "../react/HelpButton";
-import { useNoteContext, useNoteProperty, useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useNoteProperty } from "../react/hooks/note";
+import { useNoteContext } from "../react/hooks/note_context";
 import { BookProperty, ViewProperty } from "../react/NotePropertyMenu";
 
 const NON_DANGEROUS_ACTIVE_CONTENT = [ "appCss", "appTheme" ];

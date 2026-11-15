@@ -8,7 +8,7 @@ import server from "../../services/server";
 import toast from "../../services/toast";
 import utils from "../../services/utils";
 import Button from "../react/Button";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import Modal from "../react/Modal";
 import type { CKEditorApi } from "../type_widgets/text/CKEditor";
 

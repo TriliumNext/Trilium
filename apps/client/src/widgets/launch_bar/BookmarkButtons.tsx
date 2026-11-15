@@ -13,12 +13,15 @@ import { isCtrlKey, isMobile } from "../../services/utils";
 import { FormDropdownSubmenu, FormListItem } from "../react/FormList";
 import {
     useChildNotes, useNote, useNoteIcon, useNoteLabelBoolean, useNoteProperty
-} from "../react/hooks";
+} from "../react/hooks/note";
 import { MenuItemRows } from "../react/Menu";
 import { MenuFilterContext } from "../react/menu_context";
 import ResponsiveContainer from "../react/ResponsiveContainer";
 import { CustomNoteLauncher, launchCustomNoteLauncher } from "./GenericButtons";
-import { LaunchBarContext, LaunchBarDropdownButton, launcherContextMenuHandler, LauncherNoteProps, useLauncherIconAndTitle } from "./launch_bar_widgets";
+import {
+    LaunchBarContext, LaunchBarDropdownButton, launcherContextMenuHandler, LauncherNoteProps,
+    useLauncherIconAndTitle
+} from "./launch_bar_widgets";
 
 const PARENT_NOTE_ID = "_lbBookmarks";
 /** The deepest a folder's submenus nest below the folder's own menu. */

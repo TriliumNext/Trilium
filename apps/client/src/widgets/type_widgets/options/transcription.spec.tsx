@@ -37,8 +37,8 @@ vi.mock("../../../services/i18n", () => ({
     t: (key: string, options?: object) => (options ? `${key} ${JSON.stringify(options)}` : key)
 }));
 
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useTriliumOption: (name: string) => [
         name === "transcriptionModel" ? mocks.stored : "",
         (value: string) => void mocks.saved.push(value)
@@ -46,7 +46,10 @@ vi.mock("../../react/hooks", async (importOriginal) => ({
     useTriliumOptionBool: (name: string) => [
         mocks.bools[name] ?? false,
         (value: boolean) => void mocks.savedBools.push([ name, value ])
-    ],
+    ]
+}));
+vi.mock("../../react/hooks/tooltip", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/tooltip")>()),
     useStaticTooltip: vi.fn(),
     useTooltip: () => ({ showTooltip: vi.fn(), hideTooltip: vi.fn() })
 }));

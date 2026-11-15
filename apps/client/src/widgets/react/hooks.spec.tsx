@@ -13,22 +13,14 @@ import { buildNote } from "../../test/easy-froca";
 import { highlightedTexts } from "../../test/highlights";
 import { setupHoldContextMenu } from "../widget_utils";
 import {
-    type DelayedVisibilityPhase,
-    useBodyClass,
-    useDelayedVisibility,
-    useDetachedNoteContext,
-    useDocumentFocus,
-    useFindShortcut,
-    useFocusWithin,
-    useHoldContextMenu,
-    useImperativeSearchHighlighlighting,
-    useMediaQuery,
-    useNoteLabelBoolean,
-    useParentClass,
-    useStaticTooltip,
-    useTooltip,
-    useWhenShown
-} from "./hooks";
+    type DelayedVisibilityPhase, useBodyClass, useDelayedVisibility, useDocumentFocus,
+    useFocusWithin, useHoldContextMenu, useMediaQuery, useParentClass, useWhenShown
+} from "./hooks/dom";
+import { useNoteLabelBoolean } from "./hooks/note";
+import { useDetachedNoteContext } from "./hooks/note_context";
+import { useStaticTooltip, useTooltip } from "./hooks/tooltip";
+import { useFindShortcut } from "./hooks/shortcuts";
+import { useImperativeSearchHighlighlighting } from "./hooks/highlight";
 
 let currentPhase: DelayedVisibilityPhase | undefined;
 

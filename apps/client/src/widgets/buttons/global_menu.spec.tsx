@@ -24,8 +24,8 @@ vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
 
 // The hook reads the user's preference through `useTriliumOptionBool`; stub just that one, so the
 // other hooks the menu pulls in keep their real implementation.
-vi.mock("../react/hooks", async (importOriginal) => {
-    const original = await importOriginal<typeof import("../react/hooks")>();
+vi.mock("../react/hooks/options", async (importOriginal) => {
+    const original = await importOriginal<typeof import("../react/hooks/options")>();
     return {
         ...original,
         useTriliumOptionBool: () => [ ctrl.checkForUpdates, vi.fn() ],

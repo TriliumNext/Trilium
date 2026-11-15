@@ -18,8 +18,8 @@ vi.mock("bootstrap", () => ({
     Dropdown: { getOrCreateInstance: () => ({ show() {}, hide() {}, update() {}, dispose() {} }) },
     Tooltip: class { static getInstance() { return null; } }
 }));
-vi.mock("./hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("./hooks")>()),
+vi.mock("./hooks/tooltip", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./hooks/tooltip")>()),
     useStaticTooltip: vi.fn(),
     useTooltip: () => ({ showTooltip: vi.fn(), hideTooltip: vi.fn() })
 }));

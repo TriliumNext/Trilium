@@ -10,7 +10,7 @@ import tree from "../../services/tree";
 import froca from "../../services/froca";
 import branches from "../../services/branches";
 import toast from "../../services/toast";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 
 export default function MoveToDialog() {
     const [ movedBranchIds, setMovedBranchIds ] = useState<string[]>();

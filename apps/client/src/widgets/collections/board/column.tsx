@@ -17,9 +17,9 @@ import { noteTypeOptionIcon } from "../../../services/note_types";
 import { isMobile } from "../../../services/utils";
 import ActionButton from "../../react/ActionButton";
 import Icon from "../../react/Icon";
-import {
-    type DragData, TREE_CLIPBOARD_TYPE, useIsOnScreen, useLingeringTrue, useStaticTooltip
-} from "../../react/hooks";
+import { useIsOnScreen, useLingeringTrue } from "../../react/hooks/dom";
+import { useStaticTooltip } from "../../react/hooks/tooltip";
+import { type DragData, TREE_CLIPBOARD_TYPE } from "../../react/hooks/drag";
 import { useFlip } from "../../react/flip";
 import { useScrollFade } from "../../react/scroll_fade";
 import { useSelection } from "../../react/selection";

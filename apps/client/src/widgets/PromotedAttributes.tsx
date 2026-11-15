@@ -21,7 +21,10 @@ import LabelValueInput, { useLabelValueSuggestions } from "./attribute_widgets/l
 import MultiValueInput from "./attribute_widgets/multi_value_input";
 import RelationValuesInput from "./attribute_widgets/relation_values_input";
 import FormAutocomplete from "./react/FormAutocomplete";
-import { useNoteContext, useNoteLabel, useTriliumEvent, useUniqueName } from "./react/hooks";
+import { useTriliumEvent } from "./react/hooks/events";
+import { useUniqueName } from "./react/hooks/dom";
+import { useNoteLabel } from "./react/hooks/note";
+import { useNoteContext } from "./react/hooks/note_context";
 import NoteAutocomplete from "./react/NoteAutocomplete";
 
 interface Cell {

@@ -53,18 +53,24 @@ vi.mock("@triliumnext/ckeditor5", () => {
     };
 });
 
-vi.mock("../../react/hooks", () => ({
-    useKeyboardShortcuts: () => {},
+vi.mock("../../react/hooks/dom", () => ({
+    useSyncedRef: (_externalRef: unknown, initialValue: unknown) => useRef(initialValue)
+}));
+vi.mock("../../react/hooks/options", () => ({
+    useTriliumOption: (name: string) => [ String(mocks.options[name] ?? ""), vi.fn() ],
+    useTriliumOptionBool: (name: string) => [ mocks.options[name] === true, vi.fn() ]
+}));
+vi.mock("../../react/hooks/note_context", () => ({
     useNoteContext: () => ({
         parentComponent: undefined,
         ntxId: undefined,
         note: mocks.note,
         notePath: undefined,
         noteContext: mocks.note && { ntxId: "context1" }
-    }),
-    useSyncedRef: (_externalRef: unknown, initialValue: unknown) => useRef(initialValue),
-    useTriliumOption: (name: string) => [ String(mocks.options[name] ?? ""), vi.fn() ],
-    useTriliumOptionBool: (name: string) => [ mocks.options[name] === true, vi.fn() ]
+    })
+}));
+vi.mock("../../react/hooks/shortcuts", () => ({
+    useKeyboardShortcuts: () => {}
 }));
 
 vi.mock("./ai_quick_actions", () => ({

@@ -4,7 +4,7 @@ import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons/src/lib/notes.
 import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
 import { parseImageDataUrl } from "../../../services/image_upload";
-import type { SavedData } from "../../react/hooks";
+import type { SavedData } from "../../react/hooks/editor";
 
 /** Maps a canvas image's Excalidraw `fileId` to the attachment it is stored in. */
 export interface ImageAttachmentMetadata {

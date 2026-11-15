@@ -9,7 +9,7 @@ import { getAvailableLocales, getEnglishAnnotation, t } from "../../../services/
 import options from "../../../services/options";
 import ActionButton from "../../react/ActionButton";
 import { Card, CardSection, ItemCreationRow } from "../../react/Card";
-import { useTriliumOption } from "../../react/hooks";
+import { useTriliumOption } from "../../react/hooks/options";
 import Icon from "../../react/Icon";
 
 const LANGUAGE_ICON = "bx bx-globe";

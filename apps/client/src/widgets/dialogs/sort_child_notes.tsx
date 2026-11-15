@@ -13,7 +13,7 @@ import { Card, CardSection, ItemCreationRow, OptionCardSection } from "../react/
 import FormSelect from "../react/FormSelect";
 import FormTextBox from "../react/FormTextBox";
 import FormToggle from "../react/FormToggle";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import Modal from "../react/Modal";
 import SegmentedChoice, { type SegmentedChoiceOption } from "../react/SegmentedChoice";
 

@@ -7,7 +7,7 @@ import {
 import { CSSProperties, RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
-import { useTrackedElement } from "./hooks";
+import { useTrackedElement } from "./hooks/dom";
 
 export interface ScrollFadeOptions extends ScrollFadeWatchOptions {
     /** How long a fade takes to arrive and to leave, in milliseconds. */

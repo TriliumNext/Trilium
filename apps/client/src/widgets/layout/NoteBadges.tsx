@@ -21,10 +21,14 @@ import sync from "../../services/sync";
 import { isElectron, isMobileApp, isStandalone } from "../../services/utils";
 import { Badge, BadgeWithDropdown } from "../react/Badge";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
+import { useTriliumEvent } from "../react/hooks/events";
 import {
-    useGetContextDataFrom, useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelByName, useNoteProperty,
-    useTriliumEvent, useTriliumOption
-} from "../react/hooks";
+    useNoteLabel, useNoteLabelBoolean, useNoteLabelByName, useNoteProperty
+} from "../react/hooks/note";
+import { useTriliumOption } from "../react/hooks/options";
+import {
+    useGetContextDataFrom, useIsNoteReadOnly, useNoteContext
+} from "../react/hooks/note_context";
 import Icon from "../react/Icon";
 import { ActiveContentBadges } from "./ActiveContentBadges";
 import { SnippetBadge } from "./SnippetBadge";

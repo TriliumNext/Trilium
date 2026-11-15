@@ -15,8 +15,8 @@ vi.mock("../../services/utils", async (importActual) => {
     return { ...actual, default: { ...actual.default, isMobile: mocks.isMobile } };
 });
 
-vi.mock("./hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("./hooks")>()),
+vi.mock("./hooks/dom", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./hooks/dom")>()),
     useWindowSize: () => ({ windowWidth: mocks.windowWidth, windowHeight: 800 })
 }));
 

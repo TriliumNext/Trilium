@@ -8,7 +8,7 @@ import NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
 import { uploadImageAttachment } from "../../../services/image_upload";
 import { randomString } from "../../../services/utils";
-import { SavedData, useEditorSpacedUpdate } from "../../react/hooks";
+import { SavedData, useEditorSpacedUpdate } from "../../react/hooks/editor";
 
 interface PersistedData {
     version: number;

@@ -7,7 +7,7 @@ import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import server from "../../services/server";
 import { formatSize } from "../../services/utils";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import LinkButton from "../react/LinkButton";
 import LoadingSpinner from "../react/LoadingSpinner";
 
