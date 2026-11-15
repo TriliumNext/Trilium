@@ -10,9 +10,6 @@ import type Component from "../../components/component";
 import type { Screen } from "../../components/mobile_screen_switcher";
 import type FNote from "../../entities/fnote";
 import contextMenu from "../../menus/context_menu";
-import {
-    buildTreeContextMenuItems, handleTreeContextMenuSelect
-} from "../../menus/tree_context_menu";
 import cssClassManager from "../../services/css_class_manager";
 import froca from "../../services/froca";
 import hoisted_note from "../../services/hoisted_note";
@@ -801,8 +798,8 @@ export function getListedChildCount(note: FNote, hideArchived: boolean) {
  * Builds the same rich tree context menu as Fancytree's `TreeContextMenu`, but
  * sourced from a note path so it can be used from the mobile navigator. The
  * heavy lifting (item construction, command dispatch) lives in
- * `tree_context_menu.ts`; this function just resolves `notePath` into the shared
- * `TreeContextMenuContext` and wires up the `contextMenu.show(...)` boilerplate.
+ * `tree_context_menu.ts`, which loads with the first menu; this function just resolves `notePath`
+ * into the shared `TreeContextMenuContext` and wires up the `contextMenu.show(...)` boilerplate.
  */
 function buildNoteContextMenu(notePath: string, parentComponent: Component | null) {
     return async (e: MouseEvent) => {
@@ -842,6 +839,7 @@ function buildNoteContextMenu(notePath: string, parentComponent: Component | nul
             }
         };
 
+        const { buildTreeContextMenuItems, handleTreeContextMenuSelect } = await import("../../menus/tree_context_menu");
         await contextMenu.show({
             x: e.pageX,
             y: e.pageY,

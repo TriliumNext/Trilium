@@ -69,6 +69,13 @@ describe("MobileLayout", () => {
         expect(typeBar?.nextElementSibling?.nextElementSibling?.classList.contains("find-replace-widget")).toBe(true);
     });
 
+    it("puts the sidebar before the note splits, beside them as the stylesheets select it", () => {
+        const container = renderLayout();
+        const rest = container.querySelector("#mobile-rest-container");
+        expect(rest?.firstElementChild?.id).toBe("mobile-sidebar-wrapper");
+        expect(rest?.firstElementChild?.nextElementSibling?.id).toBe("detail-container");
+    });
+
     it("ends with the bottom bar, holding the launchers and then the global menu", () => {
         const container = renderLayout();
         const root = container.querySelector("#root-widget.mobile-layout");

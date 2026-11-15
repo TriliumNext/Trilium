@@ -11,6 +11,7 @@ import InlineTitle from "../widgets/layout/InlineTitle.js";
 import NoteBadges from "../widgets/layout/NoteBadges.js";
 import NoteTitleActions from "../widgets/layout/NoteTitleActions.js";
 import MobileDetailMenu from "../widgets/mobile_widgets/mobile_detail_menu.js";
+import MobileSidebar from "../widgets/mobile_widgets/MobileSidebar.js";
 import ToggleSidebarButton from "../widgets/mobile_widgets/toggle_sidebar_button.js";
 import NoteIcon from "../widgets/note_icon.js";
 import NoteTitleWidget, { NoteTypeSwitcherBar } from "../widgets/note_title.js";
@@ -26,6 +27,7 @@ export default function MobileLayout() {
     return (
         <div id="root-widget" className="mobile-layout horizontal-layout">
             <div id="mobile-rest-container">
+                <MobileSidebar />
                 <NoteSplits />
             </div>
             <div id="mobile-bottom-bar">

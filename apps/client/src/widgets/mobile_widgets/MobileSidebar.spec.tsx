@@ -1,59 +1,88 @@
+import { render as renderPreact } from "preact";
+import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from "vitest";
 
+vi.mock("./MobileNoteNavigator", () => ({ default: () => <div className="note-navigator-stub" /> }));
+vi.mock("../LazyQuickSearch", () => ({ default: () => <div className="quick-search-stub" /> }));
+
+import appContext, { type EventData, type EventNames } from "../../components/app_context";
 import type NoteContext from "../../components/note_context";
 import options from "../../services/options";
 import { handleSystemBack } from "../../services/system_back";
-import SidebarContainer from "./sidebar_container";
+import { ParentComponent } from "../react/react_utils";
+import MobileSidebar from "./MobileSidebar";
 import { getTabNavigation } from "./tab_navigation";
 
-describe("SidebarContainer", () => {
+describe("MobileSidebar", () => {
     let save: MockInstance<typeof options.save>;
+    let rest: HTMLElement;
+    let tree: HTMLElement;
+    let triggerCommand: MockInstance<typeof appContext.triggerCommand>;
 
     beforeEach(() => {
         save = vi.spyOn(options, "save").mockResolvedValue(undefined);
+        triggerCommand = vi.spyOn(appContext, "triggerCommand").mockImplementation(async () => undefined);
     });
 
     afterEach(() => {
+        act(() => renderPreact(null, rest));
+        document.body.innerHTML = "";
         vi.restoreAllMocks();
     });
 
+    /** Renders the sidebar first in `#mobile-rest-container`, as the layout does. */
     function render(leftPaneVisible: boolean) {
         options.set("leftPaneVisible", leftPaneVisible.toString());
-        const sidebar = new SidebarContainer("tree", "column");
-        sidebar.render();
+        rest = document.body.appendChild(document.createElement("div"));
+        rest.id = "mobile-rest-container";
+        act(() => renderPreact(<ParentComponent.Provider value={appContext}><MobileSidebar /></ParentComponent.Provider>, rest));
+        const sidebar = rest.querySelector<HTMLElement>("#mobile-sidebar-wrapper");
+        if (!sidebar) throw new Error("No sidebar");
+        tree = sidebar;
         return sidebar;
     }
 
+    function trigger<T extends EventNames>(name: T, data: EventData<T>) {
+        act(() => { void appContext.triggerEvent(name, data); });
+    }
+
+    it("renders the quick search with the layout, and the note navigator after the first paint", async () => {
+        render(true);
+        expect(tree.querySelector(".quick-search-stub")).toBeInstanceOf(HTMLElement);
+        expect(tree.querySelector(".note-navigator-stub")).toBeNull();
+        await vi.waitFor(() => expect(tree.querySelector(".note-navigator-stub")).toBeInstanceOf(HTMLElement));
+    });
+
     it("hides in tablet mode like the left pane, sharing its option", () => {
-        expect(render(false).$widget.hasClass("left-pane-hidden")).toBe(true);
+        expect(render(false).classList.contains("left-pane-hidden")).toBe(true);
+        act(() => renderPreact(null, rest));
 
         const sidebar = render(true);
-        expect(sidebar.$widget.hasClass("left-pane-hidden")).toBe(false);
+        expect(sidebar.classList.contains("left-pane-hidden")).toBe(false);
 
         // The sidebar toggle in the title row.
-        sidebar.setLeftPaneVisibilityEvent({ leftPaneVisible: null });
-        expect(sidebar.$widget.hasClass("left-pane-hidden")).toBe(true);
+        trigger("setLeftPaneVisibility", { leftPaneVisible: null });
+        expect(sidebar.classList.contains("left-pane-hidden")).toBe(true);
         expect(save).toHaveBeenLastCalledWith("leftPaneVisible", "false");
 
-        sidebar.setLeftPaneVisibilityEvent({ leftPaneVisible: null });
-        expect(sidebar.$widget.hasClass("left-pane-hidden")).toBe(false);
+        trigger("setLeftPaneVisibility", { leftPaneVisible: null });
+        expect(sidebar.classList.contains("left-pane-hidden")).toBe(false);
         expect(save).toHaveBeenLastCalledWith("leftPaneVisible", "true");
 
         // The "hide/show panel" commands.
-        sidebar.setLeftPaneVisibilityEvent({ leftPaneVisible: false });
-        expect(sidebar.$widget.hasClass("left-pane-hidden")).toBe(true);
-        sidebar.setLeftPaneVisibilityEvent({ leftPaneVisible: true });
-        expect(sidebar.$widget.hasClass("left-pane-hidden")).toBe(false);
+        trigger("setLeftPaneVisibility", { leftPaneVisible: false });
+        expect(sidebar.classList.contains("left-pane-hidden")).toBe(true);
+        trigger("setLeftPaneVisibility", { leftPaneVisible: true });
+        expect(sidebar.classList.contains("left-pane-hidden")).toBe(false);
 
         // Showing an already visible sidebar leaves the option alone.
         save.mockClear();
-        sidebar.setLeftPaneVisibilityEvent({ leftPaneVisible: true });
-        expect(sidebar.$widget.hasClass("left-pane-hidden")).toBe(false);
+        trigger("setLeftPaneVisibility", { leftPaneVisible: true });
+        expect(sidebar.classList.contains("left-pane-hidden")).toBe(false);
         expect(save).not.toHaveBeenCalled();
     });
 
     describe("on a phone", () => {
-        let tree: HTMLElement;
         let detail: HTMLElement;
         let isNarrow: boolean;
         let onLayoutChange: () => void;
@@ -68,45 +97,42 @@ describe("SidebarContainer", () => {
                 removeEventListener: vi.fn()
             }) as unknown as MediaQueryList);
 
-            const rest = document.body.appendChild(document.createElement("div"));
-            rest.id = "mobile-rest-container";
-            tree = rest.appendChild(document.createElement("div"));
-            tree.id = "mobile-sidebar-wrapper";
-            detail = rest.appendChild(document.createElement("div"));
-            detail.id = "detail-container";
         });
 
-        afterEach(() => {
-            document.body.innerHTML = "";
-        });
+        function renderPhone() {
+            const sidebar = render(true);
+            detail = rest.appendChild(document.createElement("div"));
+            detail.id = "detail-container";
+            return sidebar;
+        }
 
         // A transform on the note makes it a stacking context, which traps a dialog the note renders
         // under Bootstrap's backdrop.
         it("slides the note off the tree, which lies under it, and leaves no transform on it at rest", () => {
-            const sidebar = render(true);
+            renderPhone();
 
-            sidebar.activeScreenChangedEvent({ activeScreen: "tree" });
+            trigger("activeScreenChanged", { activeScreen: "tree" });
             expect(detail.style.transform).toBe("translateX(100%)");
             expect(tree.style.transform).toBe("translateX(0%)");
 
-            sidebar.activeScreenChangedEvent({ activeScreen: "detail" });
+            trigger("activeScreenChanged", { activeScreen: "detail" });
             expect(detail.style.transform).toBe("");
             expect(tree.style.transform).toBe("translateX(-30%)");
         });
 
         it("marks the body while the tree is open", () => {
-            const sidebar = render(true);
+            renderPhone();
 
-            sidebar.activeScreenChangedEvent({ activeScreen: "tree" });
+            trigger("activeScreenChanged", { activeScreen: "tree" });
             expect(tree.classList.contains("show")).toBe(true);
             expect(document.body.classList.contains("mobile-sidebar-open")).toBe(true);
 
-            sidebar.activeScreenChangedEvent({ activeScreen: "detail" });
+            trigger("activeScreenChanged", { activeScreen: "detail" });
             expect(document.body.classList.contains("mobile-sidebar-open")).toBe(false);
         });
 
         it("marks the tree as dragged while a swipe from the edge reveals it", () => {
-            render(true);
+            renderPhone();
             const touch = (type: string, clientX: number) => document.dispatchEvent(
                 Object.assign(new Event(type, { cancelable: true }), { touches: [ { clientX } ] }));
 
@@ -120,7 +146,7 @@ describe("SidebarContainer", () => {
         });
 
         it("leaves a swipe from the edge of a swipeable launch bar to the tabs", () => {
-            render(true);
+            renderPhone();
             const bar = document.body.appendChild(document.createElement("div"));
             bar.id = "launcher-pane";
             bar.className = "tab-swipe";
@@ -141,84 +167,79 @@ describe("SidebarContainer", () => {
         });
 
         it("goes back from the note to the tree on the system back, and not from the tree", () => {
-            const sidebar = render(true);
-            const triggerCommand = vi.spyOn(sidebar, "triggerCommand").mockImplementation(() => undefined);
+            renderPhone();
 
             expect(handleSystemBack()).toBe(true);
             expect(triggerCommand).toHaveBeenCalledWith("setActiveScreen", { screen: "tree" });
 
             triggerCommand.mockClear();
-            sidebar.activeScreenChangedEvent({ activeScreen: "tree" });
+            trigger("activeScreenChanged", { activeScreen: "tree" });
             handleSystemBack();
             expect(triggerCommand).not.toHaveBeenCalled();
         });
 
         it("shows each tab on the screen it was left on", () => {
-            const sidebar = render(true);
-            const triggerCommand = vi.spyOn(sidebar, "triggerCommand").mockImplementation(() => undefined);
-            const switchTo = (ntxId: string) => sidebar.activeContextChangedEvent({
+            renderPhone();
+            const switchTo = (ntxId: string) => trigger("activeContextChanged", {
                 noteContext: { getMainContext: () => ({ ntxId }) } as unknown as NoteContext
             });
 
             switchTo("first");
-            sidebar.activeScreenChangedEvent({ activeScreen: "tree" });
+            trigger("activeScreenChanged", { activeScreen: "tree" });
 
             switchTo("second");
             expect(triggerCommand).toHaveBeenLastCalledWith("setActiveScreen", { screen: "detail" });
-            sidebar.activeScreenChangedEvent({ activeScreen: "detail" });
+            trigger("activeScreenChanged", { activeScreen: "detail" });
 
             switchTo("first");
             expect(triggerCommand).toHaveBeenLastCalledWith("setActiveScreen", { screen: "tree" });
 
             // The tab switcher reads the screen of every tab, the active one included.
-            sidebar.activeScreenChangedEvent({ activeScreen: "tree" });
+            trigger("activeScreenChanged", { activeScreen: "tree" });
             expect(getTabNavigation("first")?.screen).toBe("tree");
             expect(getTabNavigation("second")?.screen).toBe("detail");
-            sidebar.noteContextRemovedEvent({ ntxIds: [ "first" ] });
+            trigger("noteContextRemoved", { ntxIds: [ "first" ] });
             expect(getTabNavigation("first")).toBeUndefined();
         });
 
         // Restoring tabs at startup and opening a note in a new tab activate the tab without
         // `activeContextChanged`.
         it("follows a tab activated together with its note", () => {
-            const sidebar = render(true);
-            const triggerCommand = vi.spyOn(sidebar, "triggerCommand").mockImplementation(() => undefined);
+            renderPhone();
             const noteContext = { getMainContext: () => ({ ntxId: "opened" }) } as unknown as NoteContext;
 
-            sidebar.noteSwitchedAndActivatedEvent({ noteContext, notePath: "root/note" });
+            trigger("noteSwitchedAndActivated", { noteContext, notePath: "root/note" });
             expect(triggerCommand).toHaveBeenLastCalledWith("setActiveScreen", { screen: "detail" });
-            sidebar.activeScreenChangedEvent({ activeScreen: "tree" });
+            trigger("activeScreenChanged", { activeScreen: "tree" });
             expect(getTabNavigation("opened")?.screen).toBe("tree");
         });
 
         it("shows the tree of a tab left without a note, but not of a split or a tab in the background", () => {
-            const sidebar = render(true);
-            const triggerCommand = vi.spyOn(sidebar, "triggerCommand").mockImplementation(() => undefined);
+            renderPhone();
             const context = (ntxId: string, isMainContext = true) => ({
                 ntxId,
                 isMainContext: () => isMainContext,
                 getMainContext: () => ({ ntxId: isMainContext ? ntxId : "blank" })
             }) as unknown as NoteContext;
 
-            sidebar.activeContextChangedEvent({ noteContext: context("blank") });
+            trigger("activeContextChanged", { noteContext: context("blank") });
             expect(triggerCommand).toHaveBeenLastCalledWith("setActiveScreen", { screen: "detail" });
-            sidebar.activeScreenChangedEvent({ activeScreen: "detail" });
+            trigger("activeScreenChanged", { activeScreen: "detail" });
 
             // A tab opened in the background, and a split opened empty in the active tab.
             triggerCommand.mockClear();
-            sidebar.noteSwitchedEvent({ noteContext: context("background"), notePath: null });
-            sidebar.noteSwitchedEvent({ noteContext: context("split", false), notePath: null });
-            sidebar.noteSwitchedEvent({ noteContext: context("blank"), notePath: "root/note" });
+            trigger("noteSwitched", { noteContext: context("background"), notePath: null });
+            trigger("noteSwitched", { noteContext: context("split", false), notePath: null });
+            trigger("noteSwitched", { noteContext: context("blank"), notePath: "root/note" });
             expect(triggerCommand).not.toHaveBeenCalled();
 
-            sidebar.noteSwitchedEvent({ noteContext: context("blank"), notePath: null });
+            trigger("noteSwitched", { noteContext: context("blank"), notePath: null });
             expect(triggerCommand).toHaveBeenLastCalledWith("setActiveScreen", { screen: "tree" });
             expect(tree.classList.contains("show")).toBe(true);
         });
 
         it("swaps the screen in place on a tab switch, and slides it within a tab", () => {
-            const sidebar = render(true);
-            vi.spyOn(sidebar, "triggerCommand").mockImplementation(() => undefined);
+            renderPhone();
             const rest = tree.parentElement;
             if (!rest) throw new Error("No container");
             const flushes: { instant: boolean, transform: string }[] = [];
@@ -226,14 +247,14 @@ describe("SidebarContainer", () => {
                 flushes.push({ instant: rest.classList.contains("instant-screen-change"), transform: detail.style.transform });
                 return 0;
             } });
-            const switchTo = (ntxId: string) => sidebar.activeContextChangedEvent({
+            const switchTo = (ntxId: string) => trigger("activeContextChanged", {
                 noteContext: { getMainContext: () => ({ ntxId }) } as unknown as NoteContext
             });
 
             switchTo("swap-tree");
-            sidebar.activeScreenChangedEvent({ activeScreen: "tree" });
+            trigger("activeScreenChanged", { activeScreen: "tree" });
             switchTo("swap-note");
-            sidebar.activeScreenChangedEvent({ activeScreen: "detail" });
+            trigger("activeScreenChanged", { activeScreen: "detail" });
             flushes.length = 0;
 
             switchTo("swap-tree");
@@ -241,14 +262,14 @@ describe("SidebarContainer", () => {
             expect(rest.classList.contains("instant-screen-change")).toBe(false);
 
             flushes.length = 0;
-            sidebar.activeScreenChangedEvent({ activeScreen: "detail" });
+            trigger("activeScreenChanged", { activeScreen: "detail" });
             expect(flushes).toEqual([]);
             expect(detail.style.transform).toBe("");
         });
 
         it("puts the tree back beside the note once the screen widens to a tablet", () => {
-            const sidebar = render(true);
-            sidebar.activeScreenChangedEvent({ activeScreen: "tree" });
+            renderPhone();
+            trigger("activeScreenChanged", { activeScreen: "tree" });
             expect(detail.style.transform).toBe("translateX(100%)");
 
             isNarrow = false;

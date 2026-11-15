@@ -8,12 +8,9 @@ import RootContainer from "../widgets/containers/root_container.js";
 import ScrollingContainer from "../widgets/containers/scrolling_container.js";
 import SplitNoteContainer from "../widgets/containers/split_note_container.js";
 import HideKeyboardButton from "../widgets/mobile_widgets/hide_keyboard_button.jsx";
-import MobileNoteNavigator from "../widgets/mobile_widgets/MobileNoteNavigator.jsx";
 import MobileNotePanel from "../widgets/mobile_widgets/MobileNotePanel.jsx";
 import ScreenContainer from "../widgets/mobile_widgets/screen_container.js";
-import SidebarContainer from "../widgets/mobile_widgets/sidebar_container.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
-import QuickSearch from "../widgets/quick_search.jsx";
 import { applyModals } from "./layout_commons.js";
 
 export default class MobileLayout {
@@ -31,21 +28,6 @@ export default class MobileLayout {
                 new FlexContainer("row")
                     .filling()
                     .id("mobile-rest-container")
-                    .child(
-                        new SidebarContainer("tree", "column")
-                            .class("d-md-flex d-lg-flex d-xl-flex col-12 col-sm-5 col-md-4 col-lg-3 col-xl-3")
-                            .id("mobile-sidebar-wrapper")
-                            .css("max-height", "100%")
-                            .css("padding-inline-start", "0")
-                            .css("padding-inline-end", "0")
-                            .css("contain", "content")
-                            .child(
-                                new FlexContainer("column")
-                                    .filling()
-                                    .child(<QuickSearch />)
-                                    .child(<MobileNoteNavigator />)
-                            )
-                    )
                     .child(
                         new ScreenContainer("detail", "row")
                             .id("detail-container")
