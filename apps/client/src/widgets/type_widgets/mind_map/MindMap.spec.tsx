@@ -6,7 +6,7 @@ import i18next from "i18next";
 import { DARK_THEME, type default as MindElixirInstance, type MindElixirData, THEME as LIGHT_THEME } from "mind-elixir";
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { renderInto } from "../../../test/render";
 import englishTranslation from "../../../translations/en/translation.json";
@@ -168,11 +168,15 @@ describe("sanitizeMindMapData", () => {
 });
 
 describe("buildTheme", () => {
+    afterEach(() => document.body.replaceChildren());
+
+    /** Custom properties resolve only on a connected element, as in a browser. */
     function container(background?: string) {
         const el = document.createElement("div");
         if (background) {
             el.style.setProperty("--main-background-color", background);
         }
+        document.body.append(el);
         return el;
     }
 
