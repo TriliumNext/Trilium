@@ -1,6 +1,7 @@
 import "./LeftPane.css";
 
 import clsx from "clsx";
+import type { ComponentChildren } from "preact";
 import { useCallback, useContext, useEffect, useLayoutEffect, useRef } from "preact/hooks";
 
 import appContext from "../../components/app_context";
@@ -94,10 +95,10 @@ export function useLeftPane(isHorizontalLayout: boolean): LeftPaneController {
 }
 
 /**
- * The note tree, with the quick search above it in the vertical layout. The tree is loaded once the
- * pane is first shown, and stays mounted while it is closed again.
+ * The note tree, with the quick search above it in the vertical layout and `children` after it. The
+ * tree is loaded once the pane is first shown, and stays mounted while it is closed again.
  */
-export default function LeftPane({ pane }: { pane: LeftPaneController }) {
+export default function LeftPane({ pane, children }: { pane: LeftPaneController, children?: ComponentChildren }) {
     const { mode, visible, isHorizontalLayout } = pane;
     const wasShown = useRef(false);
     wasShown.current ||= visible;
@@ -115,6 +116,7 @@ export default function LeftPane({ pane }: { pane: LeftPaneController }) {
                 {!isHorizontalLayout && <LazyQuickSearch />}
                 <ShowAllNotesButton />
                 {wasShown.current && <NoteTree />}
+                {children}
             </div>
             <div className="peek-pane-spacer" />
         </div>

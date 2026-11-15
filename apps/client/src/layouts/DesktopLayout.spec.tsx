@@ -5,6 +5,35 @@ vi.mock("../services/keyboard_actions", () => ({
     default: { getAction: vi.fn().mockResolvedValue({ effectiveShortcuts: [] }), updateDisplayedShortcuts: vi.fn() }
 }));
 vi.mock("../services/resizer", () => ({ default: { setupLeftPaneResizer: vi.fn() } }));
+// A Preact widget for each slot of the layout, and a legacy one for each note split.
+vi.mock("../services/bundle.js", async (importOriginal) => {
+    const original = await importOriginal<typeof import("../services/bundle.js")>();
+    const { h } = await import("preact");
+    const { default: BasicWidget } = await import("../widgets/basic_widget.js");
+    class LegacyDetailWidget extends BasicWidget {
+        static get parentWidget() {
+            return "note-detail-pane";
+        }
+
+        doRender() {
+            this.$widget = $("<div class=\"custom-legacy-detail\">");
+        }
+    }
+    return {
+        ...original,
+        default: {
+            ...original.default,
+            getWidgetBundlesByParent: async () => {
+                const widgets = new original.WidgetsByParent();
+                for (const parent of [ "left-pane", "center-pane", "note-detail-pane" ] as const) {
+                    widgets.add({ type: "preact-widget", parent, render: () => h("div", { className: `custom-${parent}` }), _noteId: parent } as never);
+                }
+                widgets.add(LegacyDetailWidget as never);
+                return widgets;
+            }
+        }
+    };
+});
 
 import appContext from "../components/app_context.js";
 import NoteContext from "../components/note_context.js";
@@ -24,6 +53,7 @@ describe("DesktopLayout", () => {
         buildNote({ id: "_lbBackInHistory", title: "Back", type: "launcher" });
         buildNote({ id: "_lbForwardInHistory", title: "Forward", type: "launcher" });
         options.set("leftPaneVisible", "false");
+        options.set("experimentalFeatures", "[]");
     });
 
     afterEach(() => {
@@ -154,6 +184,41 @@ describe("DesktopLayout", () => {
         expect(scroller?.nextElementSibling?.classList.contains("note-type-switcher-bar")).toBe(true);
         // The find bar follows it.
         expect(scroller?.nextElementSibling?.nextElementSibling?.classList.contains("find-replace-widget")).toBe(true);
+    });
+
+    it("adds the custom widgets of `#widget` notes to their slots once they have loaded", async () => {
+        window.glob.layoutOrientation = "vertical";
+        let container: HTMLElement | undefined;
+        act(() => { container = renderInto(<Layout />); });
+        const noteContext = new NoteContext("main");
+        const originalTabManager = appContext.tabManager;
+        appContext.tabManager = {
+            noteContexts: [ noteContext ],
+            getActiveMainContext: () => noteContext,
+            getActiveContext: () => noteContext
+        } as unknown as typeof appContext.tabManager;
+        const splits = container?.querySelector(".split-note-container-widget");
+        expect(splits).not.toBeNull();
+        await act(async () => {
+            await $(splits as HTMLElement).prop("component").handleEvent("newNoteContextCreated", { noteContext });
+        });
+
+        const follows = (later: Element | null | undefined, earlier: Element | null | undefined) =>
+            !!later && !!earlier && !!(earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING);
+        await vi.waitFor(() => expect(container?.querySelector("#left-pane .custom-left-pane")).not.toBeNull());
+        // After the note tree, in the pane that holds it.
+        expect(follows(container?.querySelector(".custom-left-pane"), container?.querySelector("#left-pane .show-all-notes"))).toBe(true);
+        // After the note splits, spanning them.
+        const centerWidget = container?.querySelector("#center-pane .custom-center-pane");
+        expect(follows(centerWidget, splits)).toBe(true);
+        expect(splits?.contains(centerWidget ?? null)).toBe(false);
+        // At the end of each split, after the find bar.
+        const split = container?.querySelector(".note-split[data-ntx-id=main]");
+        const findBar = split?.querySelector(".find-replace-widget");
+        await vi.waitFor(() => expect(split?.querySelector(".custom-legacy-detail")).not.toBeNull());
+        expect(follows(split?.querySelector(".custom-note-detail-pane"), findBar)).toBe(true);
+        expect(follows(split?.querySelector(".custom-legacy-detail"), findBar)).toBe(true);
+        appContext.tabManager = originalTabManager;
     });
 
     it("runs the command of a legacy widget's `data-trigger-command` element on a click", () => {

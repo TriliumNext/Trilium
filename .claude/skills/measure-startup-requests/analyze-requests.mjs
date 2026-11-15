@@ -201,12 +201,15 @@ function rootOf(nodes, node) {
 
 /**
  * The modules that render what the session has open: the note's content, the list of its child
- * notes, and the tab the right pane is open on. What they request is the session's own load.
+ * notes, and the tab the right pane is open on. What they request is the session's own load. The
+ * user's `#widget` and startup scripts count as well: `script_context.ts` imports the script API
+ * only to run one.
  */
 const SESSION_RENDERERS = new Set([
     "/src/widgets/NoteDetail.tsx",
     "/src/widgets/collections/NoteList.tsx",
-    "/src/widgets/sidebar/RightPanelContainer.tsx"
+    "/src/widgets/sidebar/RightPanelContainer.tsx",
+    "/src/services/script_context.ts"
 ]);
 
 /**

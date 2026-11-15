@@ -1,12 +1,16 @@
 import "./DesktopLayout.css";
 
 import clsx from "clsx";
-import { useLayoutEffect } from "preact/hooks";
+import { useSyncExternalStore } from "preact/compat";
+import { useEffect, useLayoutEffect, useMemo } from "preact/hooks";
 
 import type { CommandNames, EventNames } from "../components/app_context.js";
 import type Component from "../components/component.js";
+import type NoteContext from "../components/note_context.js";
 import { applyAppearance, applyReloadedAppearance } from "../services/appearance.js";
+import type { ParentName, WidgetsByParent } from "../services/bundle.js";
 import { areWindowControlsOnLeft, isElectron } from "../services/utils.js";
+import type BasicWidget from "../widgets/basic_widget.js";
 import GlobalMenu from "../widgets/buttons/global_menu.js";
 import LeftPaneToggle, { LeftPanePeekButton } from "../widgets/buttons/left_pane_toggle.js";
 import RightPaneToggle from "../widgets/buttons/right_pane_toggle.js";
@@ -46,6 +50,12 @@ export default function DesktopLayout() {
     const orientation = isHorizontal ? "horizontal" : "vertical";
     const leftPane = useLeftPane(isHorizontal);
     useAppearance();
+    const widgetsByParent = useCustomWidgets();
+    useEffect(() => {
+        void import("../services/bundle.js")
+            .then(({ default: bundleService }) => bundleService.getWidgetBundlesByParent())
+            .then(setCustomWidgets);
+    }, []);
     // Above the launch bar, across the whole window, in the horizontal layout and wherever the window
     // controls sit on the left: the rest pane starts past the launch bar, so a tab bar there would
     // leave the controls drawn over the launch bar.
@@ -72,15 +82,18 @@ export default function DesktopLayout() {
             >
                 {!isHorizontal && launcherPane}
                 <LeftPanePeekButton />
-                <LeftPane pane={leftPane} />
+                <LeftPane pane={leftPane}>
+                    <CustomWidgets parent="left-pane" />
+                </LeftPane>
                 <div id="rest-pane">
                     {!fullWidthTabBar && <TabBar fullWidth={false} leftPaneToggle={false} />}
                     <FixedFormattingToolbar />
                     <div id="vertical-main-container">
                         <div id="center-pane">
                             <NoteSplits />
+                            <CustomWidgets parent="center-pane" />
                         </div>
-                        <RightPanelContainer />
+                        <RightPanelContainer widgetsByParent={widgetsByParent} />
                     </div>
                     {!isHorizontal && <StatusBar />}
                 </div>
@@ -128,7 +141,7 @@ function TabBar({ fullWidth, leftPaneToggle }: { fullWidth: boolean, leftPaneTog
  * One note split per note context of the active tab, each with a title row (the note's icon, its
  * compact title, its badges and its actions) above the note's inline title, title actions,
  * content, list of child notes, search results and scroll padding, then the bar that picks the type
- * of an empty note and the find bar.
+ * of an empty note, the find bar and the custom widgets of the split.
  */
 function NoteSplits() {
     const [ splits ] = useLegacyWidget(() => new SplitNoteContainer(() =>
@@ -151,8 +164,58 @@ function NoteSplits() {
                 .child(<ScrollPadding />))
             .child(<NoteTypeSwitcherBar />)
             .child(new FindWidget())
+            .child(<CustomWidgets parent="note-detail-pane" />)
     ), { containerClassName: "note-splits-host" });
     return splits;
+}
+
+/**
+ * The widgets of the `#widget` notes, which `DesktopLayout` loads after its first paint. The note
+ * splits are legacy widgets, which take no Preact context, so the slot in each split reads them from
+ * here.
+ */
+let customWidgets: WidgetsByParent | undefined;
+const customWidgetsListeners = new Set<() => void>();
+
+function setCustomWidgets(widgets: WidgetsByParent) {
+    customWidgets = widgets;
+    for (const listener of customWidgetsListeners) {
+        listener();
+    }
+}
+
+function useCustomWidgets() {
+    return useSyncExternalStore((listener) => {
+        customWidgetsListeners.add(listener);
+        return () => customWidgetsListeners.delete(listener);
+    }, () => customWidgets);
+}
+
+/**
+ * The widgets that `#widget` notes add to `parent`, once they have loaded. A legacy widget gets the
+ * note context of the split it is in, if any. The host takes no box of its own, so the widgets lay
+ * out as children of the pane, and keeps one root element, which the legacy widget adapter requires.
+ */
+function CustomWidgets({ parent }: { parent: Exclude<ParentName, "right-pane"> }) {
+    const widgetsByParent = useCustomWidgets();
+    const { noteContext } = useNoteContext();
+    // A legacy widget given as a class is built once per slot, so that each split has its own.
+    const legacyWidgets = useMemo(() => widgetsByParent?.getLegacyWidgets(parent) ?? [], [ widgetsByParent, parent ]);
+    const preactWidgets = widgetsByParent?.getPreactWidgets(parent) ?? [];
+
+    return (
+        <div className="custom-widgets">
+            {legacyWidgets.map((widget) => (
+                <LegacyCustomWidget key={widget.componentId} widget={widget} noteContext={noteContext} />
+            ))}
+            {preactWidgets.map((widget, index) => <widget.render key={index} />)}
+        </div>
+    );
+}
+
+function LegacyCustomWidget({ widget, noteContext }: { widget: BasicWidget, noteContext?: NoteContext }) {
+    const [ el ] = useLegacyWidget(() => widget, { noteContext, containerClassName: "custom-widget-host" });
+    return el;
 }
 
 const loadSearchResult = () => import("../widgets/search_result.js");

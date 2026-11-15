@@ -85,7 +85,9 @@ node .claude/skills/measure-startup-requests/analyze-requests.mjs check <capture
   request with `NoteDetail.tsx`, `NoteList.tsx` or `RightPanelContainer.tsx` on its stack (the
   note's blob, its type widget's or collection view's import graph, the editor's searches and data,
   the previews of the child notes, the widgets of the right pane's open tab), and in turn what those
-  modules request. The capture records each request's full stack, async parents included, for
+  modules request. The user's scripts are left out the same way, through `script_context.ts`: the
+  script API it imports to run a `#widget` or startup script, with every Preact component a script
+  can use (tabulator, FullCalendar, CKEditor), loads only for a user who has such notes. The capture records each request's full stack, async parents included, for
   this; a capture taken before that has no stacks and gets no such exclusion. `NoteDetail`,
   `NoteList`, `RightPanelContainer` and the containers around them stay in the allowlist: they
   load whatever the session has open. What the previews' markup and stylesheets fetch (images, a

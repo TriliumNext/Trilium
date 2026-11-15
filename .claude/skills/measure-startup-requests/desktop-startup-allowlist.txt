@@ -47,6 +47,7 @@
 /api/notes/*/metadata
 /api/options
 /api/script/startup
+/api/script/widgets
 /api/system-checks
 /api/tree
 /bootstrap
@@ -96,6 +97,7 @@
 /src/entities/fnote.ts
 /src/fonts/Inter/Inter-VariableFont_opsz,wght.woff2
 /src/fonts/boxicons.woff2
+? /src/fonts/brand-icons.woff2
 /src/index.ts
 /src/layouts/DesktopLayout.css
 /src/layouts/DesktopLayout.tsx

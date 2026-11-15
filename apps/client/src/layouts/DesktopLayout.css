@@ -71,3 +71,8 @@
         min-width: 0;
     }
 }
+
+.custom-widgets,
+.custom-widget-host {
+    display: contents;
+}
