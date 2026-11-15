@@ -22,6 +22,7 @@ import type { CommandMappings, CommandNames } from "../../../components/app_cont
 import { openInCurrentNoteContext } from "../../../components/note_context.js";
 import linkContextMenu from "../../../menus/link_context_menu.js";
 import { buildReferenceConfig, type ReferenceSource } from "../../../services/block_reference.js";
+import { takeCatalogue } from "../../../services/catalogue_requests.js";
 import { copyHtmlWithToast, copyTextWithToast } from "../../../services/clipboard_ext.js";
 import { getEmbedContentInfo, getUploadBoxDefaults } from "../../../services/content_renderer.js";
 import { formatCustomDateTime } from "../../../services/dayjs.js";
@@ -367,7 +368,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         removePlugins: getDisabledPlugins(),
         // The locale's CKEditor translations, plus the dictionary of Trilium-authored editor
         // strings resolved through the app's i18n (see `messages.ts` in the ckeditor5 package).
-        ...await getCkLocale(opts.uiLanguage, { englishMessages: getEnglishEditorMessages(), translate: (key) => t(key) })
+        ...await getCkLocale(opts.uiLanguage, { englishMessages: await getEnglishEditorMessages(), translate: (key) => t(key) })
     };
 
     // User-configurable todo task states (from the `_taskStates` hidden subtree).
@@ -616,16 +617,30 @@ function buildTransformationsConfig(contentLanguage: string | null): TextTransfo
  * registry of Trilium-authored editor strings — there is no list of them in code — so reading it
  * back is what lets the message dictionary be built.
  *
- * English is always loaded, being i18next's `fallbackLng`; an empty section only means every editor
- * string renders its English message id, which is what an unconfigured editor does anyway.
+ * i18next holds the English catalog only while the app is in English, so in another language it is
+ * fetched once, with the first editor. An empty section only means every editor string renders its
+ * English message id, which is what an unconfigured editor does anyway.
  *
  * `getResourceBundle` is bound onto the i18next instance by `init()`, so it is missing until
  * `initLocale()` has run — the case for a test that builds a config without booting i18n.
  */
-function getEnglishEditorMessages(): Record<string, string> {
-    const bundle = i18next.getResourceBundle?.("en", "translation") as
+async function getEnglishEditorMessages(): Promise<Record<string, string>> {
+    if (!i18next.getResourceBundle) return {};
+    const bundle = (i18next.getResourceBundle("en", "translation") ?? await loadEnglishCatalogue()) as
         { "text-editor"?: { ck?: Record<string, string> } } | undefined;
     return bundle?.["text-editor"]?.ck ?? {};
+}
+
+let englishCatalogue: Promise<Record<string, unknown> | undefined> | undefined;
+
+/** The English `translation` catalog, fetched once; a failed fetch is tried again by the next editor. */
+function loadEnglishCatalogue() {
+    englishCatalogue ??= takeCatalogue("en", "translation").catch((e: unknown) => {
+        console.warn("Could not load the English editor messages:", e);
+        englishCatalogue = undefined;
+        return undefined;
+    });
+    return englishCatalogue;
 }
 
 function buildListOfLanguages() {

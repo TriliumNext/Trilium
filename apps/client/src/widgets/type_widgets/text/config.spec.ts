@@ -24,12 +24,14 @@ const optionsState = vi.hoisted(() => ({
 // Toggles whether the editor advertises raw-image clipboard support.
 const imageState = vi.hoisted(() => ({ copySupported: false }));
 
-// The app catalog, as far as the config is concerned: `bundle` is the `translation` namespace the
-// editor messages are read back from, and `t` resolves a key against `entries`. Unknown keys echo
+// The app catalog, as far as the config is concerned: `bundle` is the English `translation`
+// namespace the editor messages are read back from, which i18next holds only while the app is in
+// English (`language`) and the server serves otherwise, and `t` resolves a key against `entries`. Unknown keys echo
 // back the way i18next does for a missing entry, which keeps every lookup visible in the assertions
 // rather than resolving to `undefined` against an uninitialized i18n.
 const catalogState = vi.hoisted(() => ({
     bundle: undefined as Record<string, unknown> | undefined,
+    language: "en",
     entries: {} as Record<string, string>
 }));
 vi.mock("../../../services/i18n.js", () => ({
@@ -44,7 +46,7 @@ vi.mock("i18next", () => ({
         // i18next binds `getResourceBundle` in `init()`, so it is absent until the app has booted —
         // the case for a test that builds a config without one.
         get getResourceBundle() {
-            return catalogState.bundle && (() => catalogState.bundle);
+            return catalogState.bundle && ((lng: string) => (lng === catalogState.language ? catalogState.bundle : undefined));
         },
         // `services/dayjs` follows the language from here.
         on: () => {}
@@ -52,6 +54,10 @@ vi.mock("i18next", () => ({
 }));
 
 const experimentalState = vi.hoisted(() => ({ enabled: new Set<string>() }));
+vi.mock("../../../services/catalogue_requests.js", () => ({
+    takeCatalogue: async (lng: string, ns: string) => (lng === "en" && ns === "translation" ? catalogState.bundle : {})
+}));
+
 vi.mock("../../../services/experimental_features.js", () => ({
     isExperimentalFeatureEnabled: (id: string) => experimentalState.enabled.has(id)
 }));
@@ -183,6 +189,7 @@ beforeEach(() => {
     experimentalState.enabled.clear();
     imageState.copySupported = false;
     catalogState.bundle = undefined;
+    catalogState.language = "en";
     catalogState.entries = {};
     window.glob.isDev = false;
 });
@@ -256,6 +263,7 @@ describe("CK config", () => {
 
     it("turns the English editor catalog into the dictionary the editor resolves messages through", async () => {
         catalogState.bundle = { "text-editor": { ck: { "insert-a-table": "Insert a table." } } };
+        catalogState.language = "de";
         catalogState.entries["text-editor.ck.insert-a-table"] = "Tabelle einfügen";
 
         const config = await buildConfig(baseOpts({ uiLanguage: "de" }));
