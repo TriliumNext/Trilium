@@ -4,7 +4,7 @@ import clsx from "clsx";
 import { useSyncExternalStore } from "preact/compat";
 import { useEffect, useLayoutEffect, useMemo } from "preact/hooks";
 
-import type { CommandNames, EventNames } from "../components/app_context.js";
+import appContext, { type CommandNames, type EventNames } from "../components/app_context.js";
 import type Component from "../components/component.js";
 import type NoteContext from "../components/note_context.js";
 import { applyAppearance, applyReloadedAppearance } from "../services/appearance.js";
@@ -35,6 +35,7 @@ import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import NoteDetail from "../widgets/NoteDetail.js";
 import { useTriliumEvent } from "../widgets/react/hooks/events.js";
 import { useLegacyWidget } from "../widgets/react/hooks/legacy.js";
+import { useTriliumOption } from "../widgets/react/hooks/options.js";
 import { useNoteProperty } from "../widgets/react/hooks/note.js";
 import { useNoteContext } from "../widgets/react/hooks/note_context.js";
 import { WithLazyModule } from "../widgets/react/LazyComponent.js";
@@ -46,8 +47,14 @@ import { LazyDialog, Modals } from "./layout_commons.js";
 
 /** The desktop layout, as a single Preact tree. */
 export default function DesktopLayout() {
-    const isHorizontal = window.glob.layoutOrientation === "horizontal";
+    const [ layoutOrientation ] = useTriliumOption("layoutOrientation");
+    const isHorizontal = layoutOrientation === "horizontal";
     const orientation = isHorizontal ? "horizontal" : "vertical";
+    // `index.ts` sets the class at startup; it follows a change of the option from then on.
+    useLayoutEffect(() => {
+        document.body.classList.toggle("layout-horizontal", isHorizontal);
+        document.body.classList.toggle("layout-vertical", !isHorizontal);
+    }, [ isHorizontal ]);
     const leftPane = useLeftPane(isHorizontal);
     useAppearance();
     const widgetsByParent = useCustomWidgets();
@@ -120,10 +127,16 @@ const loadPasswordNotSetDialog = () => import("../widgets/dialogs/password_not_s
 
 /** The tabs with the history buttons before them, and the full screen and right pane toggles after. */
 function TabBar({ fullWidth, leftPaneToggle }: { fullWidth: boolean, leftPaneToggle: boolean }) {
-    const [ tabRow ] = useLegacyWidget(() => {
+    const [ tabRow, tabRowWidget ] = useLegacyWidget(() => {
         const widget = new TabRowWidget();
         return fullWidth ? widget.class("full-width") : widget;
     }, { containerClassName: "tab-row-host" });
+    // A change of orientation moves the tab bar, and the tab row it builds anew takes the tabs.
+    useEffect(() => {
+        if (appContext.tabManager?.tabsRestored) {
+            void tabRowWidget.showExistingTabs();
+        }
+    }, [ tabRowWidget ]);
 
     return (
         <div className={`tab-row-container ${fullWidth ? "full-width" : ""}`}>

@@ -91,7 +91,7 @@ export function useLeftPane(isHorizontalLayout: boolean): LeftPaneController {
 
     // After the paint, as `resizer` measures `#launcher-pane`, which is not in the page while the
     // layout first renders into a fragment.
-    useEffect(() => resizer.setupLeftPaneResizer(mode), [ mode ]);
+    useEffect(() => resizer.setupLeftPaneResizer(mode), [ mode, isHorizontalLayout ]);
 
     return { ...pane, isHorizontalLayout };
 }

@@ -185,4 +185,24 @@ describe("TabRowWidget tab restore", () => {
         later.render();
         expect(later.$widget.hasClass("tabs-restoring")).toBe(false);
     });
+
+    it("shows the tabs restored before it was rendered, with the active one marked", async () => {
+        const mainContexts = [ { ntxId: "first" }, { ntxId: "second" } ];
+        appContext.tabManager = {
+            tabsRestored: true,
+            getMainNoteContexts: () => mainContexts,
+            getActiveContext: () => mainContexts[1]
+        } as unknown as TabManager;
+        const widget = new TabRowWidget();
+        widget.render();
+        const updateTab = vi.spyOn(widget, "updateTab").mockResolvedValue(undefined);
+        vi.spyOn(widget, "refreshTab").mockImplementation(() => {});
+
+        await widget.showExistingTabs();
+
+        expect(widget.$widget.find(".note-tab").toArray().map((tab) => tab.getAttribute("data-ntx-id")))
+            .toEqual([ "first", "second" ]);
+        expect(updateTab).toHaveBeenCalledTimes(2);
+        expect(widget.getTabById("second").attr("active")).toBe("");
+    });
 });

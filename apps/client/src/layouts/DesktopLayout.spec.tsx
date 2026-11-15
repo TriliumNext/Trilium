@@ -1,5 +1,5 @@
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../services/keyboard_actions", () => ({
     default: { getAction: vi.fn().mockResolvedValue({ effectiveShortcuts: [] }), updateDisplayedShortcuts: vi.fn() }
@@ -46,8 +46,6 @@ import { ParentComponent } from "../widgets/react/react_utils.js";
 import DesktopLayout from "./DesktopLayout.js";
 
 describe("DesktopLayout", () => {
-    const originalOrientation = window.glob.layoutOrientation;
-
     beforeEach(() => {
         buildNote({ id: "_lbVisibleLaunchers", title: "Visible Launchers" });
         // The tab bar's history buttons follow these launchers.
@@ -55,14 +53,16 @@ describe("DesktopLayout", () => {
         buildNote({ id: "_lbForwardInHistory", title: "Forward", type: "launcher" });
         options.set("leftPaneVisible", "false");
         options.set("experimentalFeatures", "[]");
-    });
-
-    afterEach(() => {
-        window.glob.layoutOrientation = originalOrientation;
+        // A split shows an empty note, whose view searches for the workspaces, also after its case.
+        if (!vi.isMockFunction(server.get)) {
+            const get = server.get.bind(server);
+            vi.spyOn(server, "get").mockImplementation((async (url: string) =>
+                (url.startsWith("search?") ? [] : get(url))) as typeof server.get);
+        }
     });
 
     it("puts the launch bar beside the main container in the vertical layout", () => {
-        window.glob.layoutOrientation = "vertical";
+        options.set("layoutOrientation", "vertical");
         let container: HTMLElement | undefined;
         // In `act()`, so the tab row widget is attached by its effect.
         act(() => { container = renderInto(<Layout />); });
@@ -107,7 +107,7 @@ describe("DesktopLayout", () => {
     });
 
     it("puts the launch bar above the main container in the horizontal layout", () => {
-        window.glob.layoutOrientation = "horizontal";
+        options.set("layoutOrientation", "horizontal");
         let container: HTMLElement | undefined;
         // In `act()`, so the tab row widget is attached by its effect.
         act(() => { container = renderInto(<Layout />); });
@@ -140,7 +140,7 @@ describe("DesktopLayout", () => {
     });
 
     it("gives each note split a title row, and the inline title, title actions, content, note list, search results and scroll padding in its scroller", async () => {
-        window.glob.layoutOrientation = "vertical";
+        options.set("layoutOrientation", "vertical");
         let container: HTMLElement | undefined;
         act(() => { container = renderInto(<Layout />); });
         const noteContext = new NoteContext("main");
@@ -188,11 +188,7 @@ describe("DesktopLayout", () => {
     });
 
     it("adds the custom widgets of `#widget` notes to their slots once they have loaded", async () => {
-        window.glob.layoutOrientation = "vertical";
-        // The split shows an empty note, whose view searches for the workspaces.
-        const get = server.get.bind(server);
-        const serverGet = vi.spyOn(server, "get").mockImplementation((async (url: string) =>
-            (url.startsWith("search?") ? [] : get(url))) as typeof server.get);
+        options.set("layoutOrientation", "vertical");
         let container: HTMLElement | undefined;
         act(() => { container = renderInto(<Layout />); });
         const noteContext = new NoteContext("main");
@@ -224,11 +220,10 @@ describe("DesktopLayout", () => {
         expect(follows(split?.querySelector(".custom-note-detail-pane"), findBar)).toBe(true);
         expect(follows(split?.querySelector(".custom-legacy-detail"), findBar)).toBe(true);
         appContext.tabManager = originalTabManager;
-        serverGet.mockRestore();
     });
 
     it("runs the command of a legacy widget's `data-trigger-command` element on a click", () => {
-        window.glob.layoutOrientation = "horizontal";
+        options.set("layoutOrientation", "horizontal");
         const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockResolvedValue(undefined);
         let container: HTMLElement | undefined;
         act(() => { container = renderInto(<Layout />); });
@@ -245,8 +240,39 @@ describe("DesktopLayout", () => {
         triggerCommand.mockRestore();
     });
 
+    it("switches its orientation as the option changes, keeping the panes and moving the launch bar", async () => {
+        options.set("layoutOrientation", "vertical");
+        let container: HTMLElement | undefined;
+        act(() => { container = renderInto(<Layout />); });
+        const root = container?.querySelector("#root-widget");
+        const restPane = root?.querySelector("#rest-pane");
+        expect(root?.querySelector("#horizontal-main-container > #launcher-pane.vertical")).not.toBeNull();
+        expect(document.body.classList.contains("layout-vertical")).toBe(true);
+
+        // The tab row the move remounts asks for the tabs restored before it.
+        const originalTabManager = appContext.tabManager;
+        appContext.tabManager = {
+            tabsRestored: true, noteContexts: [], getMainNoteContexts: () => [], getActiveContext: () => null
+        } as unknown as typeof appContext.tabManager;
+        options.set("layoutOrientation", "horizontal");
+        const loadResults = new LoadResults([]);
+        loadResults.addOption("layoutOrientation");
+        await act(async () => { await appContext.triggerEvent("entitiesReloaded", { loadResults }); });
+        appContext.tabManager = originalTabManager;
+
+        expect(root?.classList.contains("horizontal-layout")).toBe(true);
+        expect(root?.querySelector(":scope > #launcher-pane.horizontal")).not.toBeNull();
+        expect(root?.querySelector("#horizontal-main-container > #launcher-pane")).toBeNull();
+        expect(root?.querySelector(":scope > .tab-row-container.full-width .tab-row-widget")).not.toBeNull();
+        // The panes stay mounted.
+        expect(root?.querySelector("#rest-pane")).toBe(restPane);
+        expect(document.body.classList.contains("layout-horizontal")).toBe(true);
+        expect(document.body.classList.contains("layout-vertical")).toBe(false);
+        document.body.classList.remove("layout-horizontal");
+    });
+
     it("applies the appearance options to the body before the first paint, and again as they change", async () => {
-        window.glob.layoutOrientation = "vertical";
+        options.set("layoutOrientation", "vertical");
         options.set("motionEnabled", "false");
         options.set("maxContentWidth", "900");
         options.set("centerContent", "true");
@@ -272,7 +298,7 @@ describe("DesktopLayout", () => {
     });
 
     it("ends with the zen mode button and the toasts, and opens a dialog on its first summons for it alone", async () => {
-        window.glob.layoutOrientation = "vertical";
+        options.set("layoutOrientation", "vertical");
         let container: HTMLElement | undefined;
         act(() => { container = renderInto(<Layout />); });
         const root = container?.querySelector("#root-widget");

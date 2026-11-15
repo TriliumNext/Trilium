@@ -8,7 +8,7 @@ import { t } from "../services/i18n.js";
 import options from "../services/options.js";
 import server from "../services/server.js";
 import toast from "../services/toast.js";
-import { isMobile, reloadFrontendApp } from "../services/utils.js";
+import { isMobile } from "../services/utils.js";
 import contextMenu, { type ContextMenuEvent, type MenuItem } from "./context_menu.js";
 
 const VISIBLE_LAUNCHER_PARENTS = ["_lbVisibleLaunchers", "_lbMobileVisibleLaunchers"];
@@ -233,8 +233,7 @@ function buildOrientationItem(target: "vertical" | "horizontal", currentOrientat
     const isCurrent = currentOrientation === target;
     const label = target === "vertical" ? t("theme.layout-vertical-title") : t("theme.layout-horizontal-title");
     return {
-        // The unchecked item triggers a reload when picked, so hint that after its label.
-        title: isCurrent ? label : `${label} ${t("launcher_button_context_menu.will_reload_frontend")}`,
+        title: label,
         // `bx-empty` reserves the icon slot so unchecked items stay aligned with the checked one.
         uiIcon: "bx bx-empty",
         checked: isCurrent,
@@ -248,6 +247,4 @@ async function setLayoutOrientation(orientation: "vertical" | "horizontal") {
     }
 
     await options.save("layoutOrientation", orientation);
-    // The layout tree and body classes are computed once at boot, so a reload is required to apply the change.
-    reloadFrontendApp(`layout orientation change: ${orientation}`);
 }

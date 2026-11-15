@@ -200,7 +200,7 @@ function UserInterface() {
 }
 
 function LayoutOrientation() {
-    const [ layoutOrientation, setLayoutOrientation ] = useTriliumOption("layoutOrientation", true);
+    const [ layoutOrientation, setLayoutOrientation ] = useTriliumOption("layoutOrientation");
 
     return (
         <Card className="thumbnail-selector-option-card" heading={t("settings_appearance.ui_layout_orientation")}>
