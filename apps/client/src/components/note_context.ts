@@ -2,17 +2,16 @@ import type { CKTextEditor, TriliumVim } from "@triliumnext/ckeditor5";
 import type CodeMirror from "@triliumnext/codemirror";
 
 import type FNote from "../entities/fnote.js";
-import { closeActiveDialog } from "../services/dialog.js";
 import froca from "../services/froca.js";
 import hoistedNoteService from "../services/hoisted_note.js";
-import type { ViewScope } from "../services/link.js";
+import { getNoteIdAndParentIdFromUrl, type ViewScope } from "../services/navigation_state.js";
 import options from "../services/options.js";
 import protectedSessionHolder from "../services/protected_session_holder.js";
 import server from "../services/server.js";
 import { shouldRedirectPinnedNavigation } from "../services/tab_pinning.js";
 import treeService from "../services/tree.js";
 import utils from "../services/utils.js";
-import { ReactWrappedWidget } from "../widgets/basic_widget.js";
+import type { ReactWrappedWidget } from "../widgets/basic_widget.js";
 import type { HighlightContext } from "../widgets/sidebar/HighlightsList.js";
 import type { HeadingContext } from "../widgets/sidebar/TableOfContents.js";
 import type { ChatHighlightsContext } from "../widgets/type_widgets/llm_chat/chat_highlights.js";
@@ -206,7 +205,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
         }
 
         // Pinned tabs stay on the note they were pinned to — redirect navigation to a new tab instead.
-        const { noteId: targetNoteId } = treeService.getNoteIdAndParentIdFromUrl(resolvedNotePath);
+        const { noteId: targetNoteId } = getNoteIdAndParentIdFromUrl(resolvedNotePath);
         if (shouldRedirectPinnedNavigation(this.pinned, this.noteId, targetNoteId)) {
             return appContext.tabManager.openContextWithNote(resolvedNotePath, {
                 activate: true,
@@ -218,7 +217,9 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
 
         await this.triggerEvent("beforeNoteSwitch", { noteContext: this });
 
-        if (!opts.keepActiveDialog) {
+        // Only `dialog.openDialog()` sets `glob.activeDialog`, so `dialog.ts` is loaded whenever one is open.
+        if (!opts.keepActiveDialog && glob.activeDialog) {
+            const { closeActiveDialog } = await import("../services/dialog.js");
             closeActiveDialog();
         }
 
@@ -226,7 +227,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
 
         this.notePath = resolvedNotePath;
         this.viewScope = viewScope;
-        ({ noteId: this.noteId, parentNoteId: this.parentNoteId } = treeService.getNoteIdAndParentIdFromUrl(resolvedNotePath));
+        ({ noteId: this.noteId, parentNoteId: this.parentNoteId } = getNoteIdAndParentIdFromUrl(resolvedNotePath));
 
         // Clear context data only when actually switching to a different note.
         // Context data (e.g. ToC headings) is tied to the note content, so it

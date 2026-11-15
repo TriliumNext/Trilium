@@ -6,9 +6,9 @@ import server from "../services/server.js";
 import options from "../services/options.js";
 import froca from "../services/froca.js";
 import treeService from "../services/tree.js";
+import { calculateHash, getNoteIdFromUrl, parseNavigationStateFromUrl } from "../services/navigation_state.js";
 import NoteContext from "./note_context.js";
 import appContext from "./app_context.js";
-import linkService from "../services/link.js";
 import { partitionPinnedFirst } from "../services/tab_pinning.js";
 import type { EventData, NoteCommandData } from "./app_context.js";
 import type FNote from "../entities/fnote.js";
@@ -104,10 +104,10 @@ export default class TabManager extends Component {
 
             // preload all notes at once
             await froca.getNotes([...noteContextsToOpen.flatMap((tab: NoteContextState) =>
-                [treeService.getNoteIdFromUrl(tab.notePath), tab.hoistedNoteId])], true);
+                [getNoteIdFromUrl(tab.notePath), tab.hoistedNoteId])], true);
 
             const filteredNoteContexts = noteContextsToOpen.filter((openTab: NoteContextState) => {
-                const noteId = treeService.getNoteIdFromUrl(openTab.notePath);
+                const noteId = getNoteIdFromUrl(openTab.notePath);
                 if (!noteId || !(noteId in froca.notes)) {
                     // note doesn't exist so don't try to open tab for it
                     return false;
@@ -121,7 +121,7 @@ export default class TabManager extends Component {
             });
 
             // resolve before opened tabs can change this
-            const parsedFromUrl = linkService.parseNavigationStateFromUrl(window.location.href);
+            const parsedFromUrl = parseNavigationStateFromUrl(window.location.href);
 
             if (filteredNoteContexts.length === 0) {
                 parsedFromUrl.ntxId = parsedFromUrl.ntxId || NoteContext.generateNtxId(); // generate already here, so that we later know which one to activate
@@ -217,7 +217,7 @@ export default class TabManager extends Component {
             return "";
         }
 
-        return linkService.calculateHash({
+        return calculateHash({
             notePath: activeNoteContext.notePath,
             ntxId: activeNoteContext.ntxId,
             hoistedNoteId: activeNoteContext.hoistedNoteId,

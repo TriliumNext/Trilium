@@ -364,3 +364,37 @@ export function getNoteIdFromUrl(urlOrNotePath: string | null | undefined) {
 
     return segments[segments.length - 1];
 }
+
+/** The ids of the note a URL or a note path leads to and of its parent, `root` at the top. */
+export function getNoteIdAndParentIdFromUrl(urlOrNotePath: string) {
+    if (!urlOrNotePath) {
+        return {};
+    }
+
+    const [notePath] = urlOrNotePath.split("?");
+
+    if (notePath === "root") {
+        return {
+            noteId: "root",
+            parentNoteId: "none"
+        };
+    }
+
+    let parentNoteId = "root";
+    let noteId = "";
+
+    if (notePath) {
+        const segments = notePath.split("/");
+
+        noteId = segments[segments.length - 1];
+
+        if (segments.length > 1) {
+            parentNoteId = segments[segments.length - 2];
+        }
+    }
+
+    return {
+        parentNoteId,
+        noteId
+    };
+}
