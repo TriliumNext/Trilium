@@ -45,7 +45,6 @@
 /api/notes/*/attachments
 /api/notes/*/blob
 /api/notes/*/metadata
-?/api/notes/download/*
 /api/options
 /api/script/startup
 /api/system-checks
@@ -61,6 +60,7 @@
 /packages/commons/src/lib/attribute_names.ts
 /packages/commons/src/lib/block_reference.ts
 /packages/commons/src/lib/builtin_attributes.ts
+/packages/commons/src/lib/custom_fonts.ts
 /packages/commons/src/lib/font_mimes.ts
 /packages/commons/src/lib/i18n.ts
 /packages/commons/src/lib/keyboard_shortcut_display.ts
@@ -102,6 +102,7 @@
 /src/layouts/layout_commons.tsx
 /src/menus/browser_context_menu.ts
 /src/menus/context_menu.ts
+/src/services/appearance.ts
 /src/services/attributes.ts
 /src/services/backend_scripting.ts
 /src/services/block_excerpts.ts
@@ -116,6 +117,7 @@
 /src/services/color_scheme.ts
 /src/services/command_registry.ts
 /src/services/css_class_manager.ts
+/src/services/custom_fonts.ts
 /src/services/date_notes.ts
 /src/services/debounce.ts
 /src/services/experimental_features.ts
@@ -366,6 +368,7 @@
 /src/widgets/widget_utils.ts
 ws://*/
 ? /api/attachments/download/*
+? /api/notes/download/*
 ? /api/recent-notes
 ? /api/search-templates
 ? /api/tree/load

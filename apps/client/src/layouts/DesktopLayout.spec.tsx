@@ -8,6 +8,7 @@ vi.mock("../services/resizer", () => ({ default: { setupLeftPaneResizer: vi.fn()
 
 import appContext from "../components/app_context.js";
 import NoteContext from "../components/note_context.js";
+import LoadResults from "../services/load_results.js";
 import options from "../services/options.js";
 import { buildNote } from "../test/easy-froca.js";
 import { renderInto } from "../test/render.js";
@@ -171,6 +172,32 @@ describe("DesktopLayout", () => {
         newTabButton?.click();
         expect(triggerCommand).not.toHaveBeenCalled();
         triggerCommand.mockRestore();
+    });
+
+    it("applies the appearance options to the body before the first paint, and again as they change", async () => {
+        window.glob.layoutOrientation = "vertical";
+        options.set("motionEnabled", "false");
+        options.set("maxContentWidth", "900");
+        options.set("centerContent", "true");
+        act(() => { renderInto(<Layout />); });
+
+        const body = document.body;
+        expect(body.classList.contains("motion-disabled")).toBe(true);
+        expect(body.style.getPropertyValue("--preferred-max-content-width")).toBe("900px");
+        expect(body.classList.contains("prefers-centered-content")).toBe(true);
+
+        // The tab row hears the reload as well, and reads the tabs.
+        const originalTabManager = appContext.tabManager;
+        appContext.tabManager = { noteContexts: [] } as unknown as typeof appContext.tabManager;
+        options.set("motionEnabled", "true");
+        const loadResults = new LoadResults([]);
+        loadResults.addOption("motionEnabled");
+        await act(async () => { await appContext.triggerEvent("entitiesReloaded", { loadResults }); });
+        expect(body.classList.contains("motion-disabled")).toBe(false);
+        appContext.tabManager = originalTabManager;
+
+        body.classList.remove("prefers-centered-content");
+        body.style.removeProperty("--preferred-max-content-width");
     });
 
     it("ends with the zen mode button and the toasts, and opens a dialog on its first summons for it alone", async () => {

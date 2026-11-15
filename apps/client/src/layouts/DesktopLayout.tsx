@@ -1,9 +1,11 @@
 import "./DesktopLayout.css";
 
 import clsx from "clsx";
+import { useLayoutEffect } from "preact/hooks";
 
 import type { CommandNames, EventNames } from "../components/app_context.js";
 import type Component from "../components/component.js";
+import { applyAppearance, applyReloadedAppearance } from "../services/appearance.js";
 import { areWindowControlsOnLeft, isElectron } from "../services/utils.js";
 import GlobalMenu from "../widgets/buttons/global_menu.js";
 import LeftPaneToggle, { LeftPanePeekButton } from "../widgets/buttons/left_pane_toggle.js";
@@ -27,6 +29,7 @@ import NoteIcon from "../widgets/note_icon.js";
 import NoteTitleWidget, { NoteTypeSwitcherBar } from "../widgets/note_title.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import NoteDetail from "../widgets/NoteDetail.js";
+import { useTriliumEvent } from "../widgets/react/hooks/events.js";
 import { useLegacyWidget } from "../widgets/react/hooks/legacy.js";
 import { useNoteProperty } from "../widgets/react/hooks/note.js";
 import { useNoteContext } from "../widgets/react/hooks/note_context.js";
@@ -42,6 +45,7 @@ export default function DesktopLayout() {
     const isHorizontal = window.glob.layoutOrientation === "horizontal";
     const orientation = isHorizontal ? "horizontal" : "vertical";
     const leftPane = useLeftPane(isHorizontal);
+    useAppearance();
     // Above the launch bar, across the whole window, in the horizontal layout and wherever the window
     // controls sit on the left: the rest pane starts past the launch bar, so a tab bar there would
     // leave the controls drawn over the launch bar.
@@ -87,6 +91,15 @@ export default function DesktopLayout() {
             <Modals />
         </div>
     );
+}
+
+/**
+ * Applies the appearance options to the body before the first paint, and again whenever they are
+ * reloaded; see `applyAppearance()`.
+ */
+function useAppearance() {
+    useLayoutEffect(applyAppearance, []);
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => applyReloadedAppearance(loadResults));
 }
 
 const PASSWORD_NOT_SET_EVENTS: EventNames[] = [ "showPasswordNotSet" ];

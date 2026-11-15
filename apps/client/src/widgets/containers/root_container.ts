@@ -1,12 +1,5 @@
-import { buildFontCss, FONT_OPTION_NAMES } from "@triliumnext/commons/src/lib/font_css.js";
-import { LOCALES } from "@triliumnext/commons/src/lib/i18n.js";
-
 import { EventData } from "../../components/app_context.js";
-import { getEnabledExperimentalFeatureIds } from "../../services/experimental_features.js";
-import { applyCustomFontsFromOptions, hasCustomFontContentChanged } from "../../services/custom_fonts.js";
-import { applyFontCss } from "../../services/font.js";
-import options from "../../services/options.js";
-import { applyThemeFromOptions, onEffectiveThemeStyleChange, updateColorSchemeClasses, updateThemeCapabilities } from "../../services/theme.js";
+import { applyAppearance, applyReloadedAppearance } from "../../services/appearance.js";
 import utils, { isIOS, isMobile, isMobileApp } from "../../services/utils.js";
 import type BasicWidget from "../basic_widget.js";
 import FlexContainer from "./flex_container.js";
@@ -43,21 +36,7 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
             window.visualViewport?.addEventListener("resize", () => this.#onMobileResize());
         }
 
-        this.#initTheme();
-        this.#setDeviceSpecificClasses();
-        this.#setMaxContentWidth();
-        this.#setMotion();
-        this.#setShadows();
-        this.#setBackdropEffects();
-        this.#setMonospaceLigatures();
-        this.#setStickyTableHeaders();
-        updateThemeCapabilities();
-        this.#setLocaleAndDirection(options.get("locale"));
-        // The fonts stylesheet went out with the page; the files the user's own fonts are stored in
-        // are fetched here, once froca can be asked which notes hold them.
-        void applyCustomFontsFromOptions();
-        this.#setExperimentalFeatures();
-        this.#initThemeColor();
+        applyAppearance();
 
         const $widget = super.render();
         if (isMobile() && (!isIOS() || isMobileApp())) {
@@ -67,55 +46,7 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
     }
 
     entitiesReloadedEvent({ loadResults }: EventData<"entitiesReloaded">) {
-        if (loadResults.isOptionReloaded("theme")) {
-            void applyThemeFromOptions();
-        }
-
-        if (FONT_OPTION_NAMES.some((optionName) => loadResults.isOptionReloaded(optionName))) {
-            applyFontCss(buildFontCss(Object.fromEntries(FONT_OPTION_NAMES.map((name) => [ name, options.get(name) ]))));
-            void applyCustomFontsFromOptions();
-        } else if (hasCustomFontContentChanged(loadResults)) {
-            // The options still name the same fonts, so the stylesheet of the font options holds; only
-            // the faces their files were loaded into have to be built again.
-            void applyCustomFontsFromOptions();
-        }
-
-        if (loadResults.isOptionReloaded("motionEnabled")) {
-            this.#setMotion();
-        }
-
-        if (loadResults.isOptionReloaded("shadowsEnabled")) {
-            this.#setShadows();
-        }
-
-        if (loadResults.isOptionReloaded("backdropEffectsEnabled")) {
-            this.#setBackdropEffects();
-        }
-
-        if (loadResults.isOptionReloaded("monospaceLigaturesEnabled")) {
-            this.#setMonospaceLigatures();
-        }
-
-        if (loadResults.isOptionReloaded("textNoteStickyTableHeadersEnabled")) {
-            this.#setStickyTableHeaders();
-        }
-
-        if (loadResults.isOptionReloaded("maxContentWidth")
-            || loadResults.isOptionReloaded("centerContent")) {
-
-            this.#setMaxContentWidth();
-        }
-    }
-
-    #initTheme() {
-        onEffectiveThemeStyleChange(() => this.#updateColorScheme());
-        this.#updateColorScheme();
-
-        document.body.setAttribute("data-theme-id", options.get("theme"));
-    }
-
-    #updateColorScheme() {
-        updateColorSchemeClasses();
+        applyReloadedAppearance(loadResults);
     }
 
     #onMobileResize() {
@@ -168,77 +99,4 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
         new ResizeObserver(update).observe(root);
         window.visualViewport?.addEventListener("resize", update);
     }
-
-    #setMaxContentWidth() {
-        const width = Math.max(options.getInt("maxContentWidth") || 0, 640);
-        document.body.style.setProperty("--preferred-max-content-width", `${width}px`);
-
-        document.body.classList.toggle("prefers-centered-content", options.is("centerContent"));
-    }
-
-    #setMotion() {
-        const enabled = options.is("motionEnabled");
-        document.body.classList.toggle("motion-disabled", !enabled);
-        jQuery.fx.off = !enabled;
-    }
-
-    #setShadows() {
-        const enabled = options.is("shadowsEnabled");
-        document.body.classList.toggle("shadows-disabled", !enabled);
-    }
-
-    #setBackdropEffects() {
-        const enabled = options.is("backdropEffectsEnabled") && (!isMobile() || isIOS());
-        document.body.classList.toggle("backdrop-effects-disabled", !enabled);
-    }
-
-    /**
-     * Ligatures are a property of how the monospace font renders, not of which font is selected, so
-     * this rides a body class rather than the stylesheet of the font options.
-     */
-    #setMonospaceLigatures() {
-        const enabled = options.is("monospaceLigaturesEnabled");
-        document.body.classList.toggle("monospace-ligatures-disabled", !enabled);
-    }
-
-    #setStickyTableHeaders() {
-        const enabled = options.is("textNoteStickyTableHeadersEnabled");
-        document.body.classList.toggle("sticky-table-headers-disabled", !enabled);
-    }
-
-    #setExperimentalFeatures() {
-        for (const featureId of getEnabledExperimentalFeatureIds()) {
-            document.body.classList.add(`experimental-feature-${featureId}`);
-        }
-    }
-
-    #setLocaleAndDirection(locale: string) {
-        const correspondingLocale = LOCALES.find(l => l.id === locale);
-        document.body.lang = locale;
-        document.body.dir = correspondingLocale?.rtl ? "rtl" : "ltr";
-    }
-
-    #setDeviceSpecificClasses() {
-        if (isIOS()) {
-            document.body.classList.add("ios");
-        }
-    }
-
-    #initThemeColor() {
-        const tracker = $("#background-color-tracker");
-
-        if (tracker.length) {
-            const applyThemeColor = () => {
-                let meta = $("meta[name='theme-color']");
-                if (!meta.length) {
-                    meta = $(`<meta name="theme-color">`).appendTo($("head"));
-                }
-                meta.attr("content", tracker.css("color"));
-            };
-
-            tracker.on("transitionend", applyThemeColor);
-            applyThemeColor();
-        }
-    }
 }
-
