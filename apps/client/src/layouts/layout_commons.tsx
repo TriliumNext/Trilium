@@ -1,9 +1,10 @@
 import { ComponentType, VNode } from "preact";
 import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
-import type { EventData, EventNames } from "../components/app_context.js";
+import type { CommandNames, EventData, EventNames } from "../components/app_context.js";
 import Component from "../components/component.js";
-import { useTriliumEvents } from "../widgets/react/hooks/events.js";
+import { applyAppearance, applyReloadedAppearance } from "../services/appearance.js";
+import { useTriliumEvent, useTriliumEvents } from "../widgets/react/hooks/events.js";
 import { useNoteProperty } from "../widgets/react/hooks/note.js";
 import { useNoteContext } from "../widgets/react/hooks/note_context.js";
 import { WithLazyModule } from "../widgets/react/LazyComponent.js";
@@ -184,3 +185,23 @@ export function SearchResults() {
     );
 }
 
+/**
+ * Applies the appearance options to the body before the first paint, and again whenever they are
+ * reloaded; see `applyAppearance()`.
+ */
+export function useAppearance() {
+    useLayoutEffect(applyAppearance, []);
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => applyReloadedAppearance(loadResults));
+}
+
+/**
+ * Runs the command that an element of a legacy widget names in `data-trigger-command`, from the
+ * widget it belongs to. A layout handles it on its root, for every legacy widget inside it.
+ */
+export function triggerLegacyCommand(e: MouseEvent) {
+    const target = (e.target as Element).closest<HTMLElement>("[data-trigger-command]");
+    if (!target || target.classList.contains("disabled")) return;
+
+    const component = $(target).closest(".component").prop("component") as Component | undefined;
+    void component?.triggerCommand(target.dataset.triggerCommand as CommandNames, { $el: $(target) });
+}

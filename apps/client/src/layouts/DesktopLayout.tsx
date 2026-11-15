@@ -3,10 +3,8 @@ import "./DesktopLayout.css";
 import clsx from "clsx";
 import { useEffect, useLayoutEffect, useMemo } from "preact/hooks";
 
-import appContext, { type CommandNames, type EventNames } from "../components/app_context.js";
-import type Component from "../components/component.js";
+import appContext, { type EventNames } from "../components/app_context.js";
 import type NoteContext from "../components/note_context.js";
-import { applyAppearance, applyReloadedAppearance } from "../services/appearance.js";
 import type { ParentName } from "../services/bundle.js";
 import { areWindowControlsOnLeft, isElectron } from "../services/utils.js";
 import type BasicWidget from "../widgets/basic_widget.js";
@@ -33,7 +31,6 @@ import NoteTitleWidget, { NoteTypeSwitcherBar } from "../widgets/note_title.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import NoteDetail from "../widgets/NoteDetail.js";
 import { useCustomWidgets, useLoadCustomWidgets } from "../widgets/react/hooks/custom_widgets.js";
-import { useTriliumEvent } from "../widgets/react/hooks/events.js";
 import { useLegacyWidget } from "../widgets/react/hooks/legacy.js";
 import { useTriliumOption } from "../widgets/react/hooks/options.js";
 import { useNoteContext } from "../widgets/react/hooks/note_context.js";
@@ -41,7 +38,7 @@ import ScrollPadding from "../widgets/scroll_padding.js";
 import RightPanelContainer from "../widgets/sidebar/RightPanelContainer.js";
 import TabRowWidget from "../widgets/tab_row.js";
 import TabHistoryNavigationButtons from "../widgets/TabHistoryNavigationButtons.js";
-import { LazyDialog, Modals, SearchResults } from "./layout_commons.js";
+import { LazyDialog, Modals, SearchResults, triggerLegacyCommand, useAppearance } from "./layout_commons.js";
 
 /** The desktop layout, as a single Preact tree. */
 export default function DesktopLayout() {
@@ -105,15 +102,6 @@ export default function DesktopLayout() {
             <Modals />
         </div>
     );
-}
-
-/**
- * Applies the appearance options to the body before the first paint, and again whenever they are
- * reloaded; see `applyAppearance()`.
- */
-function useAppearance() {
-    useLayoutEffect(applyAppearance, []);
-    useTriliumEvent("entitiesReloaded", ({ loadResults }) => applyReloadedAppearance(loadResults));
 }
 
 const PASSWORD_NOT_SET_EVENTS: EventNames[] = [ "showPasswordNotSet" ];
@@ -201,16 +189,4 @@ function CustomWidgets({ parent }: { parent: Exclude<ParentName, "right-pane"> }
 function LegacyCustomWidget({ widget, noteContext }: { widget: BasicWidget, noteContext?: NoteContext }) {
     const [ el ] = useLegacyWidget(() => widget, { noteContext, containerClassName: "custom-widget-host" });
     return el;
-}
-
-/**
- * Runs the command that an element of a legacy widget names in `data-trigger-command`, from the
- * widget it belongs to, as `app_startup.ts` does for the mobile layout.
- */
-function triggerLegacyCommand(e: MouseEvent) {
-    const target = (e.target as Element).closest<HTMLElement>("[data-trigger-command]");
-    if (!target || target.classList.contains("disabled")) return;
-
-    const component = $(target).closest(".component").prop("component") as Component | undefined;
-    void component?.triggerCommand(target.dataset.triggerCommand as CommandNames, { $el: $(target) });
 }

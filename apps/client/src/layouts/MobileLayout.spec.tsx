@@ -10,6 +10,7 @@ vi.mock("../services/bundle.js", async (importOriginal) => {
 
 import appContext from "../components/app_context.js";
 import NoteContext from "../components/note_context.js";
+import LoadResults from "../services/load_results.js";
 import options from "../services/options.js";
 import server from "../services/server.js";
 import { buildNote } from "../test/easy-froca.js";
@@ -112,6 +113,62 @@ describe("MobileLayout", () => {
         expect(bottomBar?.nextElementSibling?.classList.contains("close-zen-container")).toBe(true);
         expect(bottomBar?.nextElementSibling?.nextElementSibling?.classList.contains("hide-keyboard-button")).toBe(true);
         expect(root?.querySelector("#toast-container")).toBeInstanceOf(HTMLElement);
+    });
+
+    it("applies the appearance options to the body before the first paint, and again as they change", async () => {
+        options.set("motionEnabled", "false");
+        act(() => { renderLayout(); });
+        expect(document.body.classList.contains("motion-disabled")).toBe(true);
+
+        options.set("motionEnabled", "true");
+        const loadResults = new LoadResults([]);
+        loadResults.addOption("motionEnabled");
+        await act(async () => { await appContext.triggerEvent("entitiesReloaded", { loadResults }); });
+        expect(document.body.classList.contains("motion-disabled")).toBe(false);
+    });
+
+    it("runs the command of a legacy widget's `data-trigger-command` element on a click", () => {
+        let container: HTMLElement | undefined;
+        act(() => { container = renderLayout(); });
+        const splits = container?.querySelector<HTMLElement>(".split-note-container-widget");
+        const component = $(splits as HTMLElement).prop("component");
+        expect(component).toBeDefined();
+        const triggerCommand = vi.spyOn(component, "triggerCommand").mockResolvedValue(undefined);
+        const button = splits?.appendChild(document.createElement("button"));
+        button?.setAttribute("data-trigger-command", "openNewTab");
+
+        button?.click();
+        expect(triggerCommand).toHaveBeenCalledWith("openNewTab", expect.objectContaining({ $el: expect.anything() }));
+
+        triggerCommand.mockClear();
+        button?.classList.add("disabled");
+        button?.click();
+        expect(triggerCommand).not.toHaveBeenCalled();
+    });
+
+    it("marks the root while the virtual keyboard covers part of the screen", () => {
+        const visualViewport = Object.assign(new EventTarget(), { height: 800, width: 400 });
+        Object.defineProperty(window, "visualViewport", { value: visualViewport, configurable: true });
+        Object.defineProperty(window, "innerWidth", { value: 400, configurable: true });
+        Object.defineProperty(window, "innerHeight", { value: 800, configurable: true });
+        try {
+            let container: HTMLElement | undefined;
+            act(() => { container = renderLayout(); });
+            const root = container?.querySelector("#root-widget");
+
+            visualViewport.height = 450;
+            visualViewport.dispatchEvent(new Event("resize"));
+            expect(root?.classList.contains("virtual-keyboard-opened")).toBe(true);
+
+            visualViewport.height = 800;
+            visualViewport.dispatchEvent(new Event("resize"));
+            expect(root?.classList.contains("virtual-keyboard-opened")).toBe(false);
+        } finally {
+            Object.defineProperty(window, "visualViewport", { value: undefined, configurable: true });
+            for (const name of [ "--tn-keyboard-height", "--tn-layout-shrink", "--tn-layout-overhang" ]) {
+                document.body.style.removeProperty(name);
+            }
+        }
     });
 });
 

@@ -1,5 +1,7 @@
 import "./MobileLayout.css";
 
+import { useLayoutEffect, useRef } from "preact/hooks";
+
 import GlobalMenu from "../widgets/buttons/global_menu.js";
 import CloseZenModeButton from "../widgets/close_zen_button.js";
 import NoteList from "../widgets/collections/NoteList.js";
@@ -16,6 +18,7 @@ import MobileDetailMenu from "../widgets/mobile_widgets/mobile_detail_menu.js";
 import MobileNotePanel from "../widgets/mobile_widgets/MobileNotePanel.js";
 import MobileSidebar from "../widgets/mobile_widgets/MobileSidebar.js";
 import ToggleSidebarButton from "../widgets/mobile_widgets/toggle_sidebar_button.js";
+import { trackVirtualKeyboard } from "../widgets/mobile_widgets/virtual_keyboard.js";
 import NoteIcon from "../widgets/note_icon.js";
 import NoteTitleWidget, { NoteTypeSwitcherBar } from "../widgets/note_title.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
@@ -24,14 +27,17 @@ import { useLoadCustomWidgets } from "../widgets/react/hooks/custom_widgets.js";
 import { useLegacyWidget } from "../widgets/react/hooks/legacy.js";
 import ScrollPadding from "../widgets/scroll_padding.js";
 import MobileEditorToolbar from "../widgets/type_widgets/text/mobile_editor_toolbar.js";
-import { Modals, SearchResults } from "./layout_commons.js";
+import { Modals, SearchResults, triggerLegacyCommand, useAppearance } from "./layout_commons.js";
 
 /** The mobile layout as a single Preact tree, which `mobile_layout.tsx` is moved into piece by piece. */
 export default function MobileLayout() {
+    const rootRef = useRef<HTMLDivElement>(null);
+    useAppearance();
+    useLayoutEffect(() => (rootRef.current ? trackVirtualKeyboard(rootRef.current) : undefined), []);
     useLoadCustomWidgets();
 
     return (
-        <div id="root-widget" className="mobile-layout horizontal-layout">
+        <div ref={rootRef} id="root-widget" className="mobile-layout horizontal-layout" onClick={triggerLegacyCommand}>
             <div id="mobile-rest-container">
                 <MobileSidebar />
                 <NoteSplits />

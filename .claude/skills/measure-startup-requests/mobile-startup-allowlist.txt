@@ -60,6 +60,7 @@
 /packages/commons/src/lib/block_reference.ts
 /packages/commons/src/lib/builtin_attributes.ts
 /packages/commons/src/lib/content_embeds.ts
+/packages/commons/src/lib/custom_fonts.ts
 /packages/commons/src/lib/favicon_contrast.ts
 /packages/commons/src/lib/font_mimes.ts
 /packages/commons/src/lib/i18n.ts
@@ -108,6 +109,7 @@
 /src/menus/image_context_menu.ts
 /src/mobile.ts
 /src/mobile_startup.ts
+/src/services/appearance.ts
 /src/services/attributes.ts
 /src/services/backend_scripting.ts
 /src/services/block_excerpts.ts
@@ -125,6 +127,7 @@
 /src/services/content_renderer.ts
 /src/services/content_renderer_text.ts
 /src/services/css_class_manager.ts
+/src/services/custom_fonts.ts
 /src/services/date_notes.ts
 /src/services/debounce.ts
 /src/services/dialog.ts
@@ -287,6 +290,7 @@
 /src/widgets/mobile_widgets/tab_swipe.ts
 /src/widgets/mobile_widgets/toggle_sidebar_button.css
 /src/widgets/mobile_widgets/toggle_sidebar_button.tsx
+/src/widgets/mobile_widgets/virtual_keyboard.ts
 /src/widgets/note_context_aware_widget.ts
 /src/widgets/note_icon.css
 /src/widgets/note_icon.tsx
@@ -383,12 +387,12 @@ ws://*/
 ? /api/attachments/KWya4AN5eAyI/image/Trilium%20Demo_icon-color.svg
 ? /api/notes/download/*
 ? /api/search?searchString=%23workspace%20%23!template
-? /api/tree?subTreeNoteId=root
 ? /api/tree?subTreeNoteId=YWtM9eFuSqSl
+? /api/tree?subTreeNoteId=root
 ? /packages/commons/src/lib/note_type_ids.ts
 ? /src/fonts/JetBrainsMono/JetBrainsMono-VariableFont_wght.woff2
 ? /src/services/note_types.ts
 ? /src/widgets/layout/NoteTypeSwitcher.css
 ? /src/widgets/layout/NoteTypeSwitcher.tsx
-? /src/widgets/react/hooks/editor.ts
 ? /src/widgets/react/NoteStore.ts
+? /src/widgets/react/hooks/editor.ts
