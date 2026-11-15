@@ -28,7 +28,7 @@ const update = args.includes("--update");
 const fixture = args.includes("--fixture");
 const outIndex = args.indexOf("--out");
 const outDir = outIndex >= 0 ? path.resolve(args[outIndex + 1]) : fs.mkdtempSync(path.join(os.tmpdir(), "startup-check-"));
-const baseUrlArg = args.find((arg, index) => !arg.startsWith("--") && index !== outIndex + 1);
+const baseUrlArg = args.find((arg, index) => !arg.startsWith("--") && (outIndex < 0 || index !== outIndex + 1));
 fs.mkdirSync(outDir, { recursive: true });
 
 if (fixture) {
