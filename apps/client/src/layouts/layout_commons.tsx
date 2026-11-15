@@ -3,20 +3,12 @@ import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState }
 
 import type { EventData, EventNames } from "../components/app_context.js";
 import Component from "../components/component.js";
-import type RootContainer from "../widgets/containers/root_container.js";
 import { useTriliumEvents } from "../widgets/react/hooks/events.js";
 import { useNoteProperty } from "../widgets/react/hooks/note.js";
 import { useNoteContext } from "../widgets/react/hooks/note_context.js";
 import { WithLazyModule } from "../widgets/react/LazyComponent.js";
 import { ParentComponent, POPUP_EDITOR_NTX_ID } from "../widgets/react/react_utils.jsx";
 import ToastContainer from "../widgets/Toast.jsx";
-
-/** Adds the dialogs, toasts and other overlays of {@link modals} to the mobile layout's root container. */
-export function applyModals(rootContainer: RootContainer) {
-    for (const modal of modals()) {
-        rootContainer.child(modal);
-    }
-}
 
 /**
  * The dialogs, toasts and other overlays of every layout. Each dialog mounts on its first summons;

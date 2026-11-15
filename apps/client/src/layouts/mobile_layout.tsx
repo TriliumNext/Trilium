@@ -2,16 +2,12 @@ import "./mobile_layout.css";
 
 import type AppContext from "../components/app_context.js";
 import type { WidgetsByParent } from "../services/bundle.js";
-import CloseZenModeButton from "../widgets/close_zen_button.js";
 import FlexContainer from "../widgets/containers/flex_container.js";
 import RootContainer from "../widgets/containers/root_container.js";
 import ScrollingContainer from "../widgets/containers/scrolling_container.js";
 import SplitNoteContainer from "../widgets/containers/split_note_container.js";
-import HideKeyboardButton from "../widgets/mobile_widgets/hide_keyboard_button.jsx";
-import MobileNotePanel from "../widgets/mobile_widgets/MobileNotePanel.jsx";
 import ScreenContainer from "../widgets/mobile_widgets/screen_container.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
-import { applyModals } from "./layout_commons.js";
 
 export default class MobileLayout {
     private customWidgets: WidgetsByParent;
@@ -40,7 +36,6 @@ export default class MobileLayout {
                                                 .class("title-row note-split-title")
                                                 .contentSized()
                                                 .css("align-items", "center")
-                                                .child(<MobileNotePanel widgetsByParent={this.customWidgets} />)
                                         )
                                         .child(
                                             new ScrollingContainer()
@@ -50,10 +45,7 @@ export default class MobileLayout {
                                 )
                             )
                     )
-            )
-            .child(<CloseZenModeButton />)
-            .child(<HideKeyboardButton />);
-        applyModals(rootContainer);
+            );
         return rootContainer;
     }
 }

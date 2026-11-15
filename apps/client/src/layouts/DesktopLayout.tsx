@@ -1,14 +1,13 @@
 import "./DesktopLayout.css";
 
 import clsx from "clsx";
-import { useSyncExternalStore } from "preact/compat";
 import { useEffect, useLayoutEffect, useMemo } from "preact/hooks";
 
 import appContext, { type CommandNames, type EventNames } from "../components/app_context.js";
 import type Component from "../components/component.js";
 import type NoteContext from "../components/note_context.js";
 import { applyAppearance, applyReloadedAppearance } from "../services/appearance.js";
-import type { ParentName, WidgetsByParent } from "../services/bundle.js";
+import type { ParentName } from "../services/bundle.js";
 import { areWindowControlsOnLeft, isElectron } from "../services/utils.js";
 import type BasicWidget from "../widgets/basic_widget.js";
 import GlobalMenu from "../widgets/buttons/global_menu.js";
@@ -33,6 +32,7 @@ import NoteIcon from "../widgets/note_icon.js";
 import NoteTitleWidget, { NoteTypeSwitcherBar } from "../widgets/note_title.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import NoteDetail from "../widgets/NoteDetail.js";
+import { useCustomWidgets, useLoadCustomWidgets } from "../widgets/react/hooks/custom_widgets.js";
 import { useTriliumEvent } from "../widgets/react/hooks/events.js";
 import { useLegacyWidget } from "../widgets/react/hooks/legacy.js";
 import { useTriliumOption } from "../widgets/react/hooks/options.js";
@@ -56,11 +56,7 @@ export default function DesktopLayout() {
     const leftPane = useLeftPane(isHorizontal);
     useAppearance();
     const widgetsByParent = useCustomWidgets();
-    useEffect(() => {
-        void import("../services/bundle.js")
-            .then(({ default: bundleService }) => bundleService.getWidgetBundlesByParent())
-            .then(setCustomWidgets);
-    }, []);
+    useLoadCustomWidgets();
     // Above the launch bar, across the whole window, in the horizontal layout and wherever the window
     // controls sit on the left: the rest pane starts past the launch bar, so a tab bar there would
     // leave the controls drawn over the launch bar.
@@ -178,28 +174,6 @@ function NoteSplits() {
             .child(<CustomWidgets parent="note-detail-pane" />)
     ), { containerClassName: "note-splits-host" });
     return splits;
-}
-
-/**
- * The widgets of the `#widget` notes, which `DesktopLayout` loads after its first paint. The note
- * splits are legacy widgets, which take no Preact context, so the slot in each split reads them from
- * here.
- */
-let customWidgets: WidgetsByParent | undefined;
-const customWidgetsListeners = new Set<() => void>();
-
-function setCustomWidgets(widgets: WidgetsByParent) {
-    customWidgets = widgets;
-    for (const listener of customWidgetsListeners) {
-        listener();
-    }
-}
-
-function useCustomWidgets() {
-    return useSyncExternalStore((listener) => {
-        customWidgetsListeners.add(listener);
-        return () => customWidgetsListeners.delete(listener);
-    }, () => customWidgets);
 }
 
 /**

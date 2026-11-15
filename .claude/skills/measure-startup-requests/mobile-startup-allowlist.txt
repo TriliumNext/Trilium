@@ -41,6 +41,7 @@
 /api/notes/*/metadata
 /api/recent-notes
 /api/script/startup?mobile=true
+/api/script/widgets
 /api/tree
 /api/tree/load
 /bootstrap
@@ -98,7 +99,6 @@
 /src/entities/fbranch.ts
 /src/entities/fnote.ts
 /src/fonts/Inter/Inter-VariableFont_opsz,wght.woff2
-/src/fonts/JetBrainsMono/JetBrainsMono-VariableFont_wght.woff2
 /src/fonts/boxicons.woff2
 /src/index.ts
 /src/layouts/MobileLayout.css
@@ -222,6 +222,8 @@
 /src/widgets/buttons/global_menu.css
 /src/widgets/buttons/global_menu.tsx
 /src/widgets/buttons/move_pane_button.tsx
+/src/widgets/close_zen_button.css
+/src/widgets/close_zen_button.tsx
 /src/widgets/collections/NoteList.css
 /src/widgets/collections/NoteList.tsx
 /src/widgets/collections/calendar/recurrence.ts
@@ -235,6 +237,7 @@
 /src/widgets/containers/scrolling_container.css
 /src/widgets/containers/scrolling_container.ts
 /src/widgets/containers/split_note_container.ts
+/src/widgets/dialogs/call_to_action_definitions.ts
 /src/widgets/find.ts
 /src/widgets/hold_context_menu.ts
 /src/widgets/launch_bar/BookmarkButtons.css
@@ -270,6 +273,8 @@
 /src/widgets/layout/note_metadata.tsx
 /src/widgets/mobile_widgets/MobileNoteNavigator.css
 /src/widgets/mobile_widgets/MobileNoteNavigator.tsx
+/src/widgets/mobile_widgets/MobileNotePanel.css
+/src/widgets/mobile_widgets/MobileNotePanel.tsx
 /src/widgets/mobile_widgets/MobileSidebar.css
 /src/widgets/mobile_widgets/MobileSidebar.tsx
 /src/widgets/mobile_widgets/TabSwitcher.css
@@ -338,6 +343,7 @@
 /src/widgets/react/Popup.tsx
 /src/widgets/react/RawHtml.tsx
 /src/widgets/react/ResponsiveContainer.tsx
+/src/widgets/react/hooks/custom_widgets.ts
 /src/widgets/react/hooks/dom.ts
 /src/widgets/react/hooks/events.ts
 /src/widgets/react/hooks/highlight.ts
@@ -376,8 +382,11 @@
 ws://*/
 ? /api/attachments/KWya4AN5eAyI/image/Trilium%20Demo_icon-color.svg
 ? /api/notes/download/*
+? /api/search?searchString=%23workspace%20%23!template
+? /api/tree?subTreeNoteId=root
 ? /api/tree?subTreeNoteId=YWtM9eFuSqSl
 ? /packages/commons/src/lib/note_type_ids.ts
+? /src/fonts/JetBrainsMono/JetBrainsMono-VariableFont_wght.woff2
 ? /src/services/note_types.ts
 ? /src/widgets/layout/NoteTypeSwitcher.css
 ? /src/widgets/layout/NoteTypeSwitcher.tsx
