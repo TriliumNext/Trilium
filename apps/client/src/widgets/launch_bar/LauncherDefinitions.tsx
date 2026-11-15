@@ -12,11 +12,11 @@ import toast from "../../services/toast";
 import { getErrorMessage, isMobile } from "../../services/utils";
 import BasicWidget from "../basic_widget";
 import NoteContextAwareWidget from "../note_context_aware_widget";
-import QuickSearch from "../quick_search";
 import { useHoldContextMenu } from "../react/hooks/dom";
+import { useLegacyWidget } from "../react/hooks/legacy";
 import { useNoteLabel, useNoteRelationTarget } from "../react/hooks/note";
 import { useGlobalShortcut } from "../react/hooks/shortcuts";
-import { useLegacyWidget } from "../react/hooks/legacy";
+import LazyComponent from "../react/LazyComponent";
 import { ParentComponent } from "../react/react_utils";
 import { CustomNoteLauncher } from "./GenericButtons";
 import {
@@ -139,7 +139,7 @@ export function QuickSearchLauncherWidget({ launcherNote }: LauncherNoteProps) {
 
     return (
         <div onContextMenu={launcherContextMenuHandler(launcherNote)}>
-            {isEnabled && <QuickSearch />}
+            {isEnabled && <LazyComponent loader={() => import("../quick_search")} />}
         </div>
     );
 }
