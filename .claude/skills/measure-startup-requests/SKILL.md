@@ -72,7 +72,7 @@ node .claude/skills/measure-startup-requests/analyze-requests.mjs check <capture
 ```
 
 - The allowlist is the startup of the new desktop layout as built so far (the launch bar, the tab
-  bar, the left pane in the vertical layout and the note content). A feature that is moved into the layout makes the check fail, and the failure
+  bar, the left pane in the vertical layout, the note title and content, and the status bar). A feature that is moved into the layout makes the check fail, and the failure
   lists what it loads: shrink that list first, then add what is left with `--update`. Never run
   `--update` to make a failure go away without reading it.
 - Names drop what changes between runs: the content hash of a pre-bundled dependency chunk

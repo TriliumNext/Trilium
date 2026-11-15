@@ -16,7 +16,6 @@ import NoteActions from "../widgets/layout/NoteActions.jsx";
 import NoteBadges from "../widgets/layout/NoteBadges.jsx";
 import NoteTitleActions from "../widgets/layout/NoteTitleActions.jsx";
 import { NoteTypeSwitcherBar } from "../widgets/layout/NoteTypeSwitcher.jsx";
-import StatusBar from "../widgets/layout/StatusBar.jsx";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import ScrollPadding from "../widgets/scroll_padding.js";
 import SearchResult from "../widgets/search_result.jsx";
@@ -86,10 +85,8 @@ export default class DesktopLayout {
                                     )
                                     .child(<RightPanelContainer widgetsByParent={this.customWidgets} />)
                             )
-                            .optChild(!launcherPaneIsHorizontal, <StatusBar />)
                     )
             )
-            .optChild(launcherPaneIsHorizontal, <StatusBar />)
             .child(<CloseZenModeButton />)
 
             // Desktop-specific dialogs.

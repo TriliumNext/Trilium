@@ -59,6 +59,11 @@ describe("DesktopLayout", () => {
         const centerPane = root?.querySelector("#rest-pane > #vertical-main-container > #center-pane");
         expect(centerPane?.querySelector(".split-note-container-widget")).not.toBeNull();
         expect(tabBar?.nextElementSibling?.id).toBe("vertical-main-container");
+        // The status bar ends the pane beside the launch bar.
+        const statusBar = root?.querySelector(".status-bar");
+        expect(statusBar).toBeInstanceOf(HTMLElement);
+        expect(statusBar?.parentElement?.id).toBe("rest-pane");
+        expect(statusBar?.previousElementSibling?.id).toBe("vertical-main-container");
     });
 
     it("puts the launch bar above the main container in the horizontal layout", () => {
@@ -87,6 +92,11 @@ describe("DesktopLayout", () => {
         const mainContainer = root?.querySelector("#horizontal-main-container");
         expect(mainContainer?.firstElementChild?.classList.contains("left-pane-peek-button")).toBe(true);
         expect(mainContainer?.children[1]?.id).toBe("left-pane-host");
+        // The status bar spans the window under the main container.
+        const statusBar = root?.querySelector(".status-bar");
+        expect(statusBar).toBeInstanceOf(HTMLElement);
+        expect(statusBar?.parentElement).toBe(root);
+        expect(statusBar?.previousElementSibling).toBe(mainContainer);
     });
 
     it("gives each note split a title row with the note's icon and title, above its inline title", async () => {

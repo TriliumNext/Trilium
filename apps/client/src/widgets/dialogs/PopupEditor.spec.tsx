@@ -125,8 +125,11 @@ vi.mock("../collections/NoteList", () => ({ default: () => null }));
 vi.mock("../PromotedAttributes", () => ({ default: () => null }));
 vi.mock("../layout/NoteActions", () => ({ default: () => null }));
 // `BacklinksWidget` has its own spec; this one covers where its links navigate.
+vi.mock("../react/hooks/note", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/note")>()),
+    useBacklinkCount: mocks.backlinkCount
+}));
 vi.mock("../sidebar/Backlinks", () => ({
-    useBacklinkCount: mocks.backlinkCount,
     BacklinksWidget: () => <a className="backlink-stub" href="#root/source">Source</a>
 }));
 vi.mock("../layout/NoteBadges", () => ({ default: () => null }));

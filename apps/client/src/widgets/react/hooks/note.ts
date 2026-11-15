@@ -1,4 +1,4 @@
-import type { FilterLabelsByType, RelationNames } from "@triliumnext/commons";
+import type { BacklinkCountResponse, FilterLabelsByType, RelationNames } from "@triliumnext/commons";
 import type { RefObject } from "preact";
 import { useCallback, useDebugValue, useEffect, useRef, useState } from "preact/hooks";
 
@@ -6,8 +6,10 @@ import type NoteContext from "../../../components/note_context";
 import type FAttachment from "../../../entities/fattachment";
 import type FBlob from "../../../entities/fblob";
 import type FNote from "../../../entities/fnote";
+import type { NotePathRecord } from "../../../entities/fnote";
 import attributes from "../../../services/attributes";
 import froca from "../../../services/froca";
+import server from "../../../services/server";
 import { useWhenShown } from "./dom";
 import { useTriliumEvent } from "./events";
 
@@ -434,4 +436,51 @@ export function useAttachments(note: FNote) {
     });
 
     return attachments;
+}
+
+/** The places of `note` in the tree that are not hidden, sorted by `getSortedNotePathRecords()`. */
+export function useSortedNotePaths(note: FNote | null | undefined, hoistedNoteId?: string) {
+    const [ sortedNotePaths, setSortedNotePaths ] = useState<NotePathRecord[]>();
+
+    function refresh() {
+        if (!note) return;
+        setSortedNotePaths(note
+            .getSortedNotePathRecords(hoistedNoteId)
+            .filter((notePath) => !notePath.isHidden));
+    }
+
+    useEffect(refresh, [ note, hoistedNoteId ]);
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        const noteId = note?.noteId;
+        if (!noteId) return;
+        if (loadResults.getBranchRows().find((branch) => branch.noteId === noteId)
+            || loadResults.isNoteReloaded(noteId)) {
+            refresh();
+        }
+    });
+
+    return sortedNotePaths;
+}
+
+/** The number of notes that link to `note`, fetched again when a relation affecting it changes. */
+export function useBacklinkCount(note: FNote | null | undefined, isDefaultViewMode: boolean) {
+    const [ backlinkCount, setBacklinkCount ] = useState(0);
+
+    const refresh = useCallback(() => {
+        if (!note || !isDefaultViewMode) return;
+
+        server.get<BacklinkCountResponse>(`note-map/${note.noteId}/backlink-count`).then(resp => {
+            setBacklinkCount(resp.count);
+        });
+    }, [ isDefaultViewMode, note ]);
+
+    useEffect(() => refresh(), [ refresh ]);
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        if (note && loadResults.getAttributeRows().some((attr) =>
+            attr.type === "relation" && attributes.isAffecting(attr, note))) {
+            refresh();
+        }
+    });
+
+    return backlinkCount;
 }

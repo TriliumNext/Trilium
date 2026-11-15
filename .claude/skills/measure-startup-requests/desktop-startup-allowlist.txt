@@ -39,6 +39,8 @@
 /@vite/client
 /api/icon-packs.css
 /api/keyboard-actions
+/api/note-map/*/backlink-count
+/api/notes/*/attachments
 /api/notes/*/metadata
 /api/options
 /api/tree
@@ -200,8 +202,15 @@
 /src/widgets/launch_bar/SyncStatus.css
 /src/widgets/launch_bar/SyncStatus.tsx
 /src/widgets/launch_bar/launch_bar_widgets.tsx
+/src/widgets/layout/Breadcrumb.css
+/src/widgets/layout/Breadcrumb.tsx
 /src/widgets/layout/InlineTitle.css
 /src/widgets/layout/InlineTitle.tsx
+/src/widgets/layout/StatusBar.css
+/src/widgets/layout/StatusBar.tsx
+/src/widgets/layout/VimStatus.css
+/src/widgets/layout/VimStatus.tsx
+/src/widgets/layout/language_switcher.ts
 /src/widgets/layout/note_metadata.tsx
 /src/widgets/note_context_aware_widget.ts
 /src/widgets/note_icon.css
@@ -288,6 +297,7 @@
 /src/widgets/shortcut_hints/shortcut_hint_button.tsx
 /src/widgets/shortcut_hints/shortcut_hints_kbd.css
 /src/widgets/tab_row.ts
+/src/widgets/type_widgets/options/components/LocaleSelector.tsx
 /src/widgets/type_widgets/options/components/OptionsRow.css
 /src/widgets/type_widgets/options/components/OptionsRow.tsx
 /src/widgets/widget_utils.ts

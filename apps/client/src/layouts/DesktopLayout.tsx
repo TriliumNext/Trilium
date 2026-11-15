@@ -15,6 +15,7 @@ import ScrollingContainer from "../widgets/containers/scrolling_container.js";
 import SplitNoteContainer from "../widgets/containers/split_note_container.js";
 import LauncherContainer from "../widgets/launch_bar/LauncherContainer.js";
 import InlineTitle from "../widgets/layout/InlineTitle.js";
+import StatusBar from "../widgets/layout/StatusBar.js";
 import NoteIcon from "../widgets/note_icon.js";
 import NoteTitleWidget from "../widgets/note_title.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
@@ -62,8 +63,10 @@ export default function DesktopLayout() {
                             <NoteSplits />
                         </div>
                     </div>
+                    {!isHorizontal && <StatusBar />}
                 </div>
             </div>
+            {isHorizontal && <StatusBar />}
         </div>
     );
 }
