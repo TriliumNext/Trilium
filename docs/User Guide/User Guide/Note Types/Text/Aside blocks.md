@@ -31,8 +31,7 @@ To change the width of an aside block, put the cursor inside it and drag the han
 
 ## Removing an aside block
 
-*   To remove the box but keep what's in it, click the <span class="tn-icon cke cke-remove"></span> _Remove aside_ button in its toolbar. The content goes back into the main text, where the block was.
-*   To delete the aside along with everything in it, click the handle at its top-left corner and press <kbd>Delete</kbd>.
+To delete the aside along with everything in it, click the handle at its top-left corner and press <kbd>Delete</kbd>.
 
 ## Markdown
 

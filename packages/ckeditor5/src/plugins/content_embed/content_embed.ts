@@ -46,7 +46,9 @@ import PositionedWidgets, {
 } from '../positioned_widgets.js';
 import { getAttachmentId, getNoteId } from '../referencelink.js';
 import ResizableWidgets, { SIZE_ATTRIBUTES } from '../resizable_widgets/resizable_widgets.js';
-import { markWidgetOfSelection, restoreRendererFocusOnInput } from '../widget_utils.js';
+import {
+	deleteWidget, markWidgetOfSelection, restoreRendererFocusOnInput
+} from '../widget_utils.js';
 import type { EmbedEdge } from './content_embed_caret.js';
 import EmbedHistory from './embed_history.js';
 import ContentEmbedInlineSource, {
@@ -1357,8 +1359,7 @@ class ConvertEmbedToLinkCommand extends Command {
 }
 
 /**
- * Deletes the selected embed, and puts the caret at the start of the block after it, else at the
- * end of the block before it. A parent left empty, such as a table cell, gets an empty paragraph.
+ * Deletes the selected embed with `deleteWidget()`.
  */
 export class DeleteContentEmbedCommand extends Command {
 	override refresh() {
@@ -1367,23 +1368,9 @@ export class DeleteContentEmbedCommand extends Command {
 
 	override execute() {
 		const embed = getSelectedContentEmbed( this.editor );
-		if ( !embed ) {
-			return;
+		if ( embed ) {
+			deleteWidget( this.editor, embed );
 		}
-
-		const model = this.editor.model;
-		model.change( writer => {
-			const position = writer.createPositionBefore( embed );
-			writer.remove( embed );
-
-			const parent = position.parent as ModelElement;
-			if ( parent.isEmpty && model.schema.checkChild( parent, 'paragraph' ) ) {
-				writer.insertElement( 'paragraph', position );
-			}
-
-			writer.setSelection( model.schema.getNearestSelectionRange( position, 'forward' )
-				?? model.schema.getNearestSelectionRange( position, 'backward' ) );
-		} );
 	}
 }
 

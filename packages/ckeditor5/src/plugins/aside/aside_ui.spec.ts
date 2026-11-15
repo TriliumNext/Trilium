@@ -127,15 +127,15 @@ describe("AsideUI", () => {
             });
     });
 
-    it("removes the aside from its button, keeping its blocks", () => {
-        setModelData(editor.model, aside(paragraph("A[]") + paragraph("B")));
+    it("deletes the aside with its blocks from its button", () => {
+        setModelData(editor.model, aside(paragraph("A[]") + paragraph("B")) + paragraph("After"));
         const button = createButton("removeAside");
         expect([ button.label, button.icon, button.tooltip, button.isEnabled ])
             .toEqual([ "Remove aside", IconRemove, true, true ]);
 
         button.fire("execute");
 
-        expect(getModelData(editor.model)).toBe(paragraph("A[]") + paragraph("B"));
+        expect(getModelData(editor.model)).toBe(paragraph("[]After"));
         expect(button.isEnabled).toBe(false);
     });
 

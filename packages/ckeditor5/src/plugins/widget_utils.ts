@@ -99,6 +99,27 @@ function isMarkedWidget(element: ViewElement, property: string) {
 }
 
 /**
+ * Deletes `widget` with its content, and puts the caret at the start of the block after it, else at
+ * the end of the block before it. A parent left empty, such as a table cell, gets an empty
+ * paragraph.
+ */
+export function deleteWidget(editor: Editor, widget: ModelElement) {
+    const model = editor.model;
+    model.change((writer) => {
+        const position = writer.createPositionBefore(widget);
+        writer.remove(widget);
+
+        const parent = position.parent as ModelElement;
+        if (parent.isEmpty && model.schema.checkChild(parent, "paragraph")) {
+            writer.insertElement("paragraph", position);
+        }
+
+        writer.setSelection(model.schema.getNearestSelectionRange(position, "forward")
+            ?? model.schema.getNearestSelectionRange(position, "backward"));
+    });
+}
+
+/**
  * Keeps `className` on the view elements that `isContainer` accepts and that hold the focused
  * nested editable, like CKEditor keeps `ck-editor__nested-editable_focused` on the editable.
  * With `isInnermostOnly`, only the closest such element gets it. Stylesheets match this class

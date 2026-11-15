@@ -109,19 +109,21 @@ describe("aside commands", () => {
     });
 
     describe("removeAside", () => {
-        it("replaces the aside with its blocks, from inside it or with it selected", () => {
-            setModelData(editor.model,
-                paragraph("Before") + aside(paragraph("A[]") + paragraph("B")));
+        it("deletes the aside with its blocks, from inside it or with it selected", () => {
+            setModelData(editor.model, paragraph("Before")
+                + aside(paragraph("A[]") + paragraph("B")) + paragraph("After"));
             expect(isEnabled("removeAside")).toBe(true);
             editor.execute("removeAside");
-            expect(getModelData(editor.model))
-                .toBe(paragraph("Before") + paragraph("A[]") + paragraph("B"));
+            expect(getModelData(editor.model)).toBe(paragraph("Before") + paragraph("[]After"));
             expect(isEnabled("removeAside")).toBe(false);
 
-            setModelData(editor.model, `[${aside(paragraph("A"))}]${paragraph("After")}`);
+            setModelData(editor.model, `${paragraph("Before")}[${aside(paragraph("A"))}]`);
             editor.execute("removeAside");
-            expect(getModelData(editor.model, { withoutSelection: true }))
-                .toBe(paragraph("A") + paragraph("After"));
+            expect(getModelData(editor.model)).toBe(paragraph("Before[]"));
+
+            setModelData(editor.model, aside(paragraph("A[]")));
+            editor.execute("removeAside");
+            expect(getModelData(editor.model)).toBe(paragraph("[]"));
         });
 
         it("is one undo step", () => {

@@ -1,5 +1,6 @@
 import { type Batch, Command, type Editor, type ModelElement, type ModelWriter } from "ckeditor5";
 
+import { deleteWidget } from "../widget_utils.js";
 import { COLOR_ATTRIBUTE, DEFAULT_COLOR, DEFAULT_POSITION, ELEMENTS } from "./constants.js";
 
 /**
@@ -47,7 +48,8 @@ export class InsertAsideCommand extends Command {
 }
 
 /**
- * Replaces the selected aside, or the one that holds the selection, with its blocks.
+ * Deletes the selected aside, or the one that holds the selection, with its blocks, as
+ * `deleteWidget()` deletes a content embed.
  */
 export class RemoveAsideCommand extends Command {
 
@@ -62,13 +64,7 @@ export class RemoveAsideCommand extends Command {
             return;
         }
 
-        this.editor.model.change((writer) => {
-            for (const content of aside.getChildren()) {
-                writer.move(writer.createRangeIn(content as ModelElement),
-                    writer.createPositionBefore(aside));
-            }
-            writer.remove(aside);
-        });
+        deleteWidget(this.editor, aside);
     }
 }
 
