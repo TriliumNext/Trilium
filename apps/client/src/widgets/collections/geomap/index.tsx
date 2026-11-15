@@ -16,6 +16,7 @@ import { fileAccept } from "../../../services/utils";
 import { logError } from "../../../services/ws";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import { FormListItem } from "../../react/FormList";
+import { useSpacedUpdate } from "../../react/hooks/dom";
 import { useTriliumEvent } from "../../react/hooks/events";
 import {
     useNoteBlob, useNoteLabel, useNoteLabelBoolean, useNoteLabelByName, useNoteProperty,
@@ -23,7 +24,6 @@ import {
 } from "../../react/hooks/note";
 import { useColorScheme } from "../../react/hooks/options";
 import { useEffectiveReadOnly, useNoteContext } from "../../react/hooks/note_context";
-import { useSpacedUpdate } from "../../react/hooks/editor";
 import { useCollectionTreeDrag } from "../../react/hooks/drag";
 import NoItems from "../../react/NoItems";
 import { ViewModeProps } from "../interface";

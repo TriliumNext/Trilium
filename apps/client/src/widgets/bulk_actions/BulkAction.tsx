@@ -11,9 +11,9 @@ import {
 import { useLabelValueSuggestions } from "../attribute_widgets/label_value_input";
 import { CardSection } from "../react/Card";
 import FormAutocomplete from "../react/FormAutocomplete";
-import { useSpacedUpdate } from "../react/hooks/editor";
 import HelpRemoveButtons from "../react/HelpRemoveButtons";
 import Icon from "../react/Icon";
+import { useSpacedUpdate } from "../react/hooks/dom";
 import AbstractBulkAction, { ActionDefinition } from "./abstract_bulk_action";
 
 interface BulkActionProps {

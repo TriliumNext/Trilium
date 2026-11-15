@@ -1,6 +1,7 @@
 import type { Ref, RefObject } from "preact";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
+import SpacedUpdate, { type StateCallback } from "../../../services/spaced_update";
 import { createHoldContextMenu } from "../../hold_context_menu";
 
 let uniqueNameCounter = 0;
@@ -538,6 +539,37 @@ export function useDelayedVisibility(active: boolean, { graceMs = 150, minVisibl
     }, [ active, phase, graceMs, minVisibleMs, stalledMs ]);
 
     return phase;
+}
+
+/**
+ * A `SpacedUpdate` that runs the latest `callback` at most once per `interval`, as a title or a
+ * field saves while being typed in.
+ */
+export function useSpacedUpdate(callback: () => void | Promise<void>, interval = 1000, stateCallback?: StateCallback) {
+    const callbackRef = useRef(callback);
+    const stateCallbackRef = useRef(stateCallback);
+    const spacedUpdateRef = useRef<SpacedUpdate>(new SpacedUpdate(
+        () => callbackRef.current(),
+        interval,
+        (state) => stateCallbackRef.current?.(state)
+    ));
+
+    // Update callback ref when it changes
+    useEffect(() => {
+        callbackRef.current = callback;
+    }, [ callback ]);
+
+    // Update state callback when it changes.
+    useEffect(() => {
+        stateCallbackRef.current = stateCallback;
+    }, [ stateCallback ]);
+
+    // Update interval if it changes
+    useEffect(() => {
+        spacedUpdateRef.current?.setUpdateInterval(interval);
+    }, [ interval ]);
+
+    return spacedUpdateRef.current;
 }
 
 /**

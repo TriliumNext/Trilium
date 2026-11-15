@@ -17,33 +17,6 @@ import { ParentComponent } from "../react_utils";
 import { useTriliumEvent } from "./events";
 import { useNoteBlob } from "./note";
 
-export function useSpacedUpdate(callback: () => void | Promise<void>, interval = 1000, stateCallback?: StateCallback) {
-    const callbackRef = useRef(callback);
-    const stateCallbackRef = useRef(stateCallback);
-    const spacedUpdateRef = useRef<SpacedUpdate>(new SpacedUpdate(
-        () => callbackRef.current(),
-        interval,
-        (state) => stateCallbackRef.current?.(state)
-    ));
-
-    // Update callback ref when it changes
-    useEffect(() => {
-        callbackRef.current = callback;
-    }, [ callback ]);
-
-    // Update state callback when it changes.
-    useEffect(() => {
-        stateCallbackRef.current = stateCallback;
-    }, [ stateCallback ]);
-
-    // Update interval if it changes
-    useEffect(() => {
-        spacedUpdateRef.current?.setUpdateInterval(interval);
-    }, [ interval ]);
-
-    return spacedUpdateRef.current;
-}
-
 export interface SavedData {
     content: string;
     /** The blocks that `content` holds, a `block` link parameter, for an editor of some blocks. */
