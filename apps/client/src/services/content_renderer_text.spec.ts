@@ -57,6 +57,12 @@ vi.mock("./math.js", async (importOriginal) => {
     };
 });
 
+const blockReference = vi.hoisted(() => ({ loaded: false }));
+vi.mock("./block_reference.js", async (importOriginal) => {
+    blockReference.loaded = true;
+    return await importOriginal<typeof import("./block_reference.js")>();
+});
+
 const disposeStickyTableHeaders = vi.hoisted(() => vi.fn());
 const applyStickyTableHeaders = vi.hoisted(() => vi.fn(() => disposeStickyTableHeaders));
 vi.mock("@triliumnext/ckeditor5/src/plugins/table_sticky_header_read_only.js", () => ({
@@ -81,6 +87,17 @@ import renderText, {
 } from "./content_renderer_text";
 
 describe("Text content renderer", () => {
+    it("loads the block reference service only to highlight a block", async () => {
+        const note = buildNote({ title: "Plain", content: "<p data-trilium-block-id=\"b1\">Block</p>" });
+        await renderText(note, $(document.createElement("div")), {});
+        expect(blockReference.loaded).toBe(false);
+
+        const contentEl = document.createElement("div");
+        await renderText(note, $(contentEl), { highlightBlock: "b1" });
+        expect(blockReference.loaded).toBe(true);
+        expect(contentEl.querySelector(".block-reference-highlight")?.textContent).toBe("Block");
+    });
+
     it("renders embedded note", async () => {
         const contentEl = document.createElement("div");
         const embeddedNote = buildNote({

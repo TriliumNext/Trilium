@@ -19,7 +19,6 @@ import { KATEX_MACROS } from "@triliumnext/commons/src/lib/katex_macros.js";
 import FAttachment from "../entities/fattachment.js";
 import FNote from "../entities/fnote.js";
 import { getContentEmbedFlag } from "../widgets/type_widgets/text/content_embed_tools.js";
-import { highlightBlockReference } from "./block_reference.js";
 import {
     addContentDisposer, default as content_renderer, getContentType, type RenderOptions
 } from "./content_renderer.js";
@@ -64,7 +63,9 @@ export async function renderTextContent(
         addContentDisposer($content[0], applyTableScroll($content[0]));
         addContentDisposer($content[0], applyStickyTableHeaders($content[0]));
         // Runs before `postProcessRichContent()` renders embeds, so their blocks are not searched.
+        // `block_reference.ts` brings the block menus and clipboard, so only a highlight loads it.
         if (options.highlightBlock) {
+            const { highlightBlockReference } = await import("./block_reference.js");
             highlightBlockReference($content[0], options.highlightBlock);
         }
         $renderedContent.append($content);
