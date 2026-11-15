@@ -12,10 +12,9 @@ import { t } from "../services/i18n.js";
 import keyboardActionService from "../services/keyboard_actions.js";
 import search from "../services/search.js";
 import { clampDragDestination } from "../services/tab_pinning.js";
-import { buildTabTitle, TAB_TITLE_SEPARATOR } from "../services/tab_title.js";
+import { buildTabTitle, noteTitleHtml, TAB_TITLE_SEPARATOR } from "../services/tab_title.js";
 import utils from "../services/utils.js";
 import BasicWidget from "./basic_widget.js";
-import { noteTitleHtml } from "./layout/Breadcrumb.js";
 import { setupHoldContextMenu } from "./hold_context_menu.js";
 import { setupHorizontalScrollViaWheel } from "./widget_utils.js";
 

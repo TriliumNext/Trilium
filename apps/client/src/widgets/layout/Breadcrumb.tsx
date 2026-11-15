@@ -21,8 +21,8 @@ import hoisted_note from "../../services/hoisted_note";
 import { t } from "../../services/i18n";
 import note_create from "../../services/note_create";
 import options from "../../services/options";
+import { noteTitleTextHtml, PROTECTED_ICON } from "../../services/tab_title";
 import tree from "../../services/tree";
-import { escapeHtml } from "../../services/utils";
 import ActionButton from "../react/ActionButton";
 import { Badge } from "../react/Badge";
 import Dropdown from "../react/Dropdown";
@@ -38,7 +38,6 @@ import { MenuItemRows } from "../react/Menu";
 import { NewNoteLink } from "../react/NoteLink";
 import { ParentComponent } from "../react/react_utils";
 
-const PROTECTED_ICON = "bx bx-lock-alt protected-icon";
 const COLLAPSE_THRESHOLD = 5;
 const INITIAL_ITEMS = 2;
 const FINAL_ITEMS = 3;
@@ -254,19 +253,6 @@ export function buildChildNoteItems(childNotes: FNote[], props: BreadcrumbSepara
         handler: () => note_create.createNote(notePath, { activate: true })
     });
     return items;
-}
-
-/** The HTML of {@link BreadcrumbNoteTitle}, with the lock of a protected note. */
-export function noteTitleHtml(note: FNote) {
-    const title = noteTitleTextHtml(note);
-    return note.isProtected ? `${title}<span class="${PROTECTED_ICON} tn-icon"></span>` : title;
-}
-
-/** The HTML of the note's title, or of "Protected" while the protected session is locked. */
-function noteTitleTextHtml(note: FNote) {
-    if (note.isContentAvailable()) return escapeHtml(note.title);
-    const locked = escapeHtml(t("protected_session.locked_note_title"));
-    return `<span class="protected-title">${locked}</span>`;
 }
 
 function BreadcrumbCollapsed({ items, noteContext }: {

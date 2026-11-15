@@ -912,7 +912,8 @@ body.layout-vertical #left-pane .quick-search {
 
 /* Limit the drag area for the previous elements to include just to the element itself
    and not its descendants also */
-body.layout-horizontal .tab-row-container > *,
+body.layout-horizontal .tab-row-container > :not(.tab-row-host),
+body.layout-horizontal .tab-row-host > *,
 body.layout-vertical .tab-row-widget > *:not(.tab-row-filler),
 body.layout-vertical #left-pane .quick-search > * {
     -webkit-app-region: no-drag;

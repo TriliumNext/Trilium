@@ -1,11 +1,9 @@
 import type { AppContext } from "../components/app_context.js";
 import type { WidgetsByParent } from "../services/bundle.js";
 import options from "../services/options.js";
-import utils from "../services/utils.js";
 import LeftPaneToggle, { LeftPanePeekButton } from "../widgets/buttons/left_pane_toggle.js";
-import RightPaneToggle from "../widgets/buttons/right_pane_toggle.jsx";
 import ShowAllNotesButton from "../widgets/buttons/show_all_notes_button.jsx";
-import CloseZenModeButton, { LeaveFullScreenButton } from "../widgets/close_zen_button.jsx";
+import CloseZenModeButton from "../widgets/close_zen_button.jsx";
 import NoteList from "../widgets/collections/NoteList.jsx";
 import FlexContainer from "../widgets/containers/flex_container.js";
 import LeftPaneContainer from "../widgets/containers/left_pane_container.js";
@@ -32,8 +30,6 @@ import QuickSearch from "../widgets/quick_search.jsx";
 import ScrollPadding from "../widgets/scroll_padding.js";
 import SearchResult from "../widgets/search_result.jsx";
 import RightPanelContainer from "../widgets/sidebar/RightPanelContainer.jsx";
-import TabRowWidget from "../widgets/tab_row.js";
-import TabHistoryNavigationButtons from "../widgets/TabHistoryNavigationButtons.jsx";
 import { applyModals } from "./layout_commons.js";
 
 export default class DesktopLayout {
@@ -49,32 +45,14 @@ export default class DesktopLayout {
 
         const launcherPaneIsHorizontal = options.get("layoutOrientation") === "horizontal";
         const launcherPane = this.#buildLauncherPane(launcherPaneIsHorizontal);
-        const isElectron = utils.isElectron();
-        const hasNativeTitleBar = window.glob.hasNativeTitleBar;
-
-        /**
-         * If true, the tab bar is displayed above the launcher pane with full width; if false (default), the tab bar is displayed in the rest pane.
-         * We force the full-width tab bar on Electron whenever the window controls sit on the left (always on macOS, and on Linux
-         * depending on the desktop's decoration layout): the rest pane starts past the launcher pane, so a tab bar confined to it
-         * cannot give those controls room, and they end up drawn over the launcher pane instead.
-         */
-        const fullWidthTabBar = launcherPaneIsHorizontal || (isElectron && !hasNativeTitleBar && utils.areWindowControlsOnLeft());
 
         const rootContainer = new RootContainer(true)
             .setParent(appContext)
             .class(`${launcherPaneIsHorizontal ? "horizontal" : "vertical"  }-layout`)
             .optChild(
-                fullWidthTabBar,
+                launcherPaneIsHorizontal,
                 new FlexContainer("row")
-                    .class("tab-row-container")
-                    .child(new FlexContainer("row").id("tab-row-left-spacer"))
-                    .optChild(launcherPaneIsHorizontal, <LeftPaneToggle isHorizontalLayout={true} />)
-                    .child(<TabHistoryNavigationButtons />)
-                    .child(new TabRowWidget().class("full-width"))
-                    .child(<LeaveFullScreenButton />)
-                    .child(<RightPaneToggle />)
-                    .css("height", "40px")
-                    .css("background-color", "var(--launcher-pane-background-color)")
+                    .child(<LeftPaneToggle isHorizontalLayout={true} />)
                     .setParent(appContext)
             )
             .optChild(launcherPaneIsHorizontal, launcherPane)
@@ -95,16 +73,6 @@ export default class DesktopLayout {
                         new FlexContainer("column")
                             .id("rest-pane")
                             .css("flex-grow", "1")
-                            .optChild(!fullWidthTabBar,
-                                new FlexContainer("row")
-                                    .class("tab-row-container")
-                                    .child(<TabHistoryNavigationButtons />)
-                                    .child(new TabRowWidget())
-                                    .child(<LeaveFullScreenButton />)
-                                    .child(<RightPaneToggle />)
-                                    .css("height", "40px")
-                                    .css("align-items", "center")
-                            )
                             .child(<FixedFormattingToolbar />)
                             .child(
                                 new FlexContainer("row")
