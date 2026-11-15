@@ -1,7 +1,7 @@
 import "./left_pane_toggle.css";
 
 import clsx from "clsx";
-import { useCallback, useContext, useState } from "preact/hooks";
+import { useCallback, useContext, useRef, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
 import options from "../../services/options";
@@ -14,13 +14,18 @@ import { ParentComponent } from "../react/react_utils";
 
 export default function LeftPaneToggle({ isHorizontalLayout }: { isHorizontalLayout: boolean }) {
     const isDocked = useLeftPaneMode() === "docked";
+    // The icon's rotation is a CSS animation, which would also play when the button mounts.
+    const initiallyDocked = useRef(isDocked);
+    const hasToggled = useRef(false);
+    hasToggled.current ||= isDocked !== initiallyDocked.current;
 
     return (
         <ActionButton
             className={clsx(
                 isHorizontalLayout ? "toggle-button" : "launcher-button",
                 "left-pane-toggle-button",
-                isDocked ? "action-collapse" : "action-expand"
+                isDocked ? "action-collapse" : "action-expand",
+                hasToggled.current && "animated"
             )}
             text={t("left_pane_toggle.toggle")}
             titlePosition={isHorizontalLayout ? "bottom" : "right"}
