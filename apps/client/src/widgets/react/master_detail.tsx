@@ -8,10 +8,9 @@ import { useCallback, useContext, useEffect, useRef, useState } from "preact/hoo
 import { onSystemBack } from "../../services/system_back";
 import utils from "../../services/utils";
 import ActionButton from "./ActionButton";
-import { useWindowSize } from "./hooks/dom";
+import { useSlide, useWindowSize } from "./hooks/dom";
 import MasterDetailHeader from "./MasterDetailHeader";
 import Modal, { ModalProps } from "./Modal";
-import { useSlide } from "./SlidePages";
 
 /**
  * The flow a dialog that pairs a list with a detail takes on a screen too narrow to hold both: one at a
