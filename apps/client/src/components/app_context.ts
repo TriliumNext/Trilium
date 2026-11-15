@@ -5,8 +5,8 @@ import { ColumnComponent } from "tabulator-tables";
 
 import type { Attribute } from "../services/attribute_parser.js";
 import { initLocale, t } from "../services/i18n.js";
-import linkService, { type HashPane, type ViewScope } from "../services/link.js";
 import type LoadResults from "../services/load_results.js";
+import { type HashPane, parseNavigationStateFromUrl, type ViewScope } from "../services/navigation_state.js";
 import type { CreateNoteOpts } from "../services/note_create.js";
 import options from "../services/options.js";
 import type { ShortcutHintSection } from "../services/shortcut_hints.js";
@@ -734,7 +734,7 @@ function registerWindowHandlers(appContext: AppContext) {
     });
 
     $(window).on("hashchange", () => {
-        const { notePath, ntxId, viewScope, searchString } = linkService.parseNavigationStateFromUrl(window.location.href);
+        const { notePath, ntxId, viewScope, searchString } = parseNavigationStateFromUrl(window.location.href);
 
         if (notePath || ntxId) {
             appContext.tabManager.switchToHistoryEntry(ntxId, notePath, viewScope);

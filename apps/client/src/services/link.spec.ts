@@ -1304,11 +1304,12 @@ describe("module-level click handlers", () => {
         $card.remove();
     });
 
-    it("opens the link context menu on contextmenu of an internal link", () => {
+    it("opens the link context menu on contextmenu of an internal link", async () => {
         const $a = $("<a href='#root/aaaaaaaaaaaa'>link</a>");
         $("body").append($a);
         $a.trigger($.Event("contextmenu", { button: 2 }));
-        expect(openContextMenu).toHaveBeenCalled();
+        // The menu module is imported on the first right-click.
+        await vi.waitFor(() => expect(openContextMenu).toHaveBeenCalled());
         $a.remove();
     });
 
@@ -1320,7 +1321,7 @@ describe("module-level click handlers", () => {
         $a.remove();
     });
 
-    it("leaves a link in the text being edited to the menu of its toolbar", () => {
+    it("leaves a link in the text being edited to the menu of its toolbar", async () => {
         const $editor = $(`<div class="ck-content note-detail-editable-text-editor">`
             + `<p><a href='#root/aaaaaaaaaaaa'>link</a></p>`
             + `<figure class="include-note"><a href='#root/bbbbbbbbbbbb'>title</a></figure></div>`);
@@ -1336,7 +1337,7 @@ describe("module-level click handlers", () => {
 
         // A link in an included note is not one of the text.
         expect(rightClick("figure a")).toBe(true);
-        expect(openContextMenu).toHaveBeenCalledOnce();
+        await vi.waitFor(() => expect(openContextMenu).toHaveBeenCalledOnce());
         $editor.remove();
     });
 
@@ -1366,11 +1367,11 @@ describe("module-level click handlers", () => {
         $a.remove();
     });
 
-    it("falls back to data-href when an anchor has no href (context menu handler)", () => {
+    it("falls back to data-href when an anchor has no href (context menu handler)", async () => {
         const $a = $("<a data-href='#root/aaaaaaaaaaaa'>link</a>");
         $("body").append($a);
         $a.trigger($.Event("contextmenu", { button: 2 }));
-        expect(openContextMenu).toHaveBeenCalled();
+        await vi.waitFor(() => expect(openContextMenu).toHaveBeenCalled());
         $a.remove();
     });
 

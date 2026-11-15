@@ -5,6 +5,7 @@ import hoistedNoteService from "./hoisted_note.js";
 import appContext from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
 import { t } from "./i18n.js";
+import { getNoteIdFromUrl } from "./navigation_state.js";
 
 export const NOTE_PATH_TITLE_SEPARATOR = " › ";
 
@@ -127,17 +128,6 @@ ws.subscribeToMessages((message) => {
 
 function getParentProtectedStatus(node: Fancytree.FancytreeNode) {
     return hoistedNoteService.isHoistedNode(node) ? false : node.getParent().data.isProtected;
-}
-
-function getNoteIdFromUrl(urlOrNotePath: string | null | undefined) {
-    if (!urlOrNotePath) {
-        return null;
-    }
-
-    const [notePath] = urlOrNotePath.split("?");
-    const segments = notePath.split("/");
-
-    return segments[segments.length - 1];
 }
 
 async function getBranchIdFromUrl(urlOrNotePath: string) {
