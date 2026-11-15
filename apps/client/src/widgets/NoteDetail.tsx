@@ -1,7 +1,6 @@
 import "./NoteDetail.css";
 
 import clsx from "clsx";
-import { note } from "mermaid/dist/rendering-util/rendering-elements/shapes/note.js";
 import { isValidElement, VNode } from "preact";
 import {
     useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState
@@ -13,14 +12,10 @@ import NoteContext from "../components/note_context";
 import FNote from "../entities/fnote";
 import type { PrintReport } from "../print";
 import attributes from "../services/attributes";
-import dialog from "../services/dialog";
 import froca from "../services/froca";
 import { t } from "../services/i18n";
-import { endLivePrint, getLivePrintTarget, printLiveInBrowser } from "../services/live_print";
-import { stopBackgroundMedia } from "../services/media_playback";
 import protected_session_holder from "../services/protected_session_holder";
-import toast from "../services/toast.js";
-import { isElectron, isMobile } from "../services/utils";
+import { isMobile } from "../services/utils";
 import { ExtendedNoteType, TYPE_MAPPINGS, TypeWidget } from "./note_types";
 import Button from "./react/Button";
 import { useTriliumEvent } from "./react/hooks/events";
@@ -29,7 +24,6 @@ import { useGetContextDataFrom, useNoteContext } from "./react/hooks/note_contex
 import { useLegacyComponentElement } from "./react/hooks/legacy";
 import Icon from "./react/Icon";
 import NoItems from "./react/NoItems";
-import { NoteListWithLinks } from "./react/NoteList";
 import { ContainerVisibilityContext, ParentComponent } from "./react/react_utils";
 import { TypeWidgetProps } from "./type_widgets/type_widget";
 
@@ -150,11 +144,15 @@ export default function NoteDetail() {
     useEffect(() => {
         const api = window.electronApi?.printing;
         if (!api) return;
-        api.onPrintProgress(({ progress, action }) => showToast(action as "printing" | "exporting_pdf", progress));
+        api.onPrintProgress(({ progress, action }) => {
+            void import("./NoteDetailPrint").then(({ showPrintToast }) => {
+                showPrintToast(action as "printing" | "exporting_pdf", progress);
+            });
+        });
         api.onPrintDone((printReport, liveJobId) => {
-            if (liveJobId !== undefined) endLivePrint(liveJobId);
-            toast.closePersistent("printing");
-            handlePrintReport(printReport as PrintReport);
+            void import("./NoteDetailPrint").then(({ finishElectronPrint }) => {
+                finishElectronPrint(printReport as PrintReport, liveJobId);
+            });
         });
         return () => {
             api.removePrintListeners();
@@ -183,67 +181,9 @@ export default function NoteDetail() {
         // PDF printing is handled by the PDF viewer's own print mechanism.
         if (note.type === "file" && note.mime === "application/pdf") return;
 
-        // A render note prints from the screen, keeping its script's state.
-        const liveTarget = getLivePrintTarget(containerRef.current, type);
-
-        if (isElectron() && noteContext.notePath) {
-            appContext.triggerCommand("showPrintPreview", { note, notePath: noteContext.notePath, liveTarget });
-            return;
-        }
-
-        if (liveTarget) {
-            void printLiveInBrowser(note, liveTarget);
-            return;
-        }
-
-        // Browser fallback: render the print page in a hidden iframe and use window.print().
-        console.debug("[print] Opening the print page for", noteContext.notePath);
-        showToast("printing");
-        const iframe = document.createElement('iframe');
-        iframe.src = `?print#${noteContext.notePath}`;
-        iframe.className = "print-iframe";
-        document.body.appendChild(iframe);
-        iframe.onload = () => {
-            const printWindow = iframe.contentWindow;
-            console.debug("[print] The print page loaded", printWindow ? "" : "without a window");
-            if (!printWindow) {
-                toast.closePersistent("printing");
-                document.body.removeChild(iframe);
-                return;
-            }
-
-            printWindow.addEventListener("error", (e) => {
-                console.error("[print] Uncaught error in the print page:", e.error ?? e.message);
-            });
-            printWindow.addEventListener("unhandledrejection", (e) => {
-                console.error("[print] Unhandled rejection in the print page:", e.reason);
-            });
-
-            // A print page that never reports leaves the toast up and prints nothing.
-            const watchdog = setTimeout(() => console.warn(
-                "[print] The print page has not reported ready; it may have failed to render.",
-                { src: iframe.src, noteType: printWindow.document.body.dataset.noteType }
-            ), 20_000);
-
-            printWindow.addEventListener("note-load-progress", (e) => {
-                console.debug("[print] Progress:", (e as CustomEvent<{ progress: number }>).detail.progress);
-                showToast("printing", (e as CustomEvent<{ progress: number }>).detail.progress);
-            });
-
-            printWindow.addEventListener("note-ready", (e) => {
-                clearTimeout(watchdog);
-                toast.closePersistent("printing");
-
-                const report = "detail" in e ? e.detail as PrintReport : undefined;
-                console.debug("[print] The print page is ready:", report);
-                handlePrintReport(report);
-
-                if (report?.type !== "error") {
-                    printWindow.print();
-                }
-                document.body.removeChild(iframe);
-            });
-        };
+        void import("./NoteDetailPrint").then(({ printNote }) => {
+            printNote(note, noteContext, containerRef.current, type);
+        });
     });
 
     return (
@@ -329,8 +269,9 @@ export function NoteDetailWrapper({ Element, type, isVisible, isFullHeight, prop
     // popup is closed but kept in the DOM. A hidden but still-mounted embedded player keeps playing
     // audio/video in the background, so stop it in either case.
     useEffect(() => {
-        if (!isVisible || !containerVisible) {
-            stopBackgroundMedia(wrapperRef.current);
+        const wrapper = wrapperRef.current;
+        if (wrapper && (!isVisible || !containerVisible)) {
+            void import("../services/media_playback").then(({ stopBackgroundMedia }) => stopBackgroundMedia(wrapper));
         }
     }, [ isVisible, containerVisible ]);
 
@@ -593,65 +534,4 @@ export function checkFillsPane(
     noteContext: NoteContext | undefined, type: ExtendedNoteType | undefined
 ) {
     return type === "contentWidget" && noteContext?.noteId === "_spaceUsage";
-}
-
-function showToast(type: "printing" | "exporting_pdf", progress: number = 0) {
-    toast.showPersistent({
-        icon: "bx bx-loader-circle bx-spin",
-        message: type === "printing" ? t("note_detail.printing") : t("note_detail.printing_pdf"),
-        id: "printing",
-        progress
-    });
-}
-
-function handlePrintReport(printReport?: PrintReport) {
-    if (!printReport) return;
-
-    if (printReport.type === "error") {
-        toast.showPersistent({
-            id: "print-error",
-            icon: "bx bx-error-circle",
-            title: t("note_detail.print_report_error_title"),
-            message: printReport.message,
-            buttons: printReport.stack ? [
-                {
-                    text: t("note_detail.print_report_collection_details_button"),
-                    onClick(api) {
-                        api.dismissToast();
-                        dialog.info(<>
-                            <p>{printReport.message}</p>
-                            <details>
-                                <summary>{t("note_detail.print_report_stack_trace")}</summary>
-                                <pre style="font-size: 0.85em; overflow-x: auto;">{printReport.stack}</pre>
-                            </details>
-                        </>, {
-                            title: t("note_detail.print_report_error_title")
-                        });
-                    }
-                }
-            ] : undefined
-        });
-    } else if (printReport.type === "collection" && printReport.ignoredNoteIds.length > 0) {
-        toast.showPersistent({
-            id: "print-report",
-            icon: "bx bx-collection",
-            title: t("note_detail.print_report_title"),
-            message: t("note_detail.print_report_collection_content", { count: printReport.ignoredNoteIds.length }),
-            buttons: [
-                {
-                    text: t("note_detail.print_report_collection_details_button"),
-                    onClick(api) {
-                        api.dismissToast();
-                        dialog.info(<>
-                            <h3>{t("note_detail.print_report_collection_details_ignored_notes")}</h3>
-                            <NoteListWithLinks noteIds={printReport.ignoredNoteIds} />
-                        </>, {
-                            title: t("note_detail.print_report_title"),
-                            size: "md"
-                        });
-                    }
-                }
-            ]
-        });
-    }
 }

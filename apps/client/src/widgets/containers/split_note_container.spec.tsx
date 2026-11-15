@@ -170,6 +170,8 @@ describe("SplitNoteContainer", () => {
             return <div className="probe">{note?.noteId ?? ""}</div>;
         }
 
+        // The container imports it on mobile; loaded here, the fake timers alone pace the rendering.
+        await import("../mobile_widgets/tab_swipe.js");
         const { device } = window.glob;
         window.glob.device = "mobile";
         vi.useFakeTimers({ toFake: [ "setTimeout", "clearTimeout" ] });
