@@ -13,7 +13,6 @@
 /.cache/vite/deps/@preact_signals.js
 /.cache/vite/deps/@prefresh_core.js
 /.cache/vite/deps/@prefresh_utils.js
-/.cache/vite/deps/bootstrap.js
 /.cache/vite/deps/clsx.js
 /.cache/vite/deps/color-name-*.js
 /.cache/vite/deps/color.js

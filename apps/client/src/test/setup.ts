@@ -8,6 +8,7 @@ import $ from "jquery";
 import { afterAll, vi } from "vitest";
 
 import { loadTooltips } from "../widgets/react/hooks/tooltip";
+import { setBootstrapModal } from "../widgets/react/modal_focustrap";
 import { stubHighlightApi } from "./highlights";
 
 // Top level, not in a beforeAll: vi.mock is hoisted either way, and nesting it only makes the order lie.
@@ -21,6 +22,8 @@ deferSelectionChange();
 drainBootstrapTransitions();
 // The app loads tooltips at the first hover; specs inspect them right after rendering.
 await loadTooltips();
+// The app hands `Modal` over as the first dialog opens; specs show modals with `dialog.ts` mocked.
+setBootstrapModal(Modal);
 
 function injectGlobals() {
     const uncheckedWindow = window as any;

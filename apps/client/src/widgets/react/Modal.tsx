@@ -12,8 +12,11 @@ import { RENDER_SCOPE_CLASS } from "../../services/render_css_scope";
 import { onSystemBack } from "../../services/system_back";
 import { openInAppHelpFromUrl } from "../../services/utils";
 import { useSyncedRef } from "./hooks/dom";
-import { suspendModalFocusTraps } from "./modal_focustrap";
+import { setBootstrapModal, suspendModalFocusTraps } from "./modal_focustrap";
 import { ContainerVisibilityContext } from "./react_utils";
+
+// `openDialog()` then shows a dialog of this component without waiting for Bootstrap to load.
+setBootstrapModal(BootstrapModal);
 
 interface CustomTitleBarButton {
     title: string;
