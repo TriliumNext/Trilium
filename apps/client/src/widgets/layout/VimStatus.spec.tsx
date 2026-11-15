@@ -165,7 +165,7 @@ describe("VimStatusLine", () => {
 });
 
 describe("the mode", () => {
-    it("explains each mode in its tooltip, and shows the keys on a click", () => {
+    it("explains each mode in its tooltip, and shows the keys on a click", async () => {
         const tooltips = ([ "normal", "insert", "visual", "visual-line", "replace" ] as const)
             .map((mode) => {
                 act(() => render(<VimStatusLine status={{ ...OFF, mode }} />, container));
@@ -188,7 +188,7 @@ describe("the mode", () => {
         button?.dispatchEvent(mouseDown);
         expect(mouseDown.defaultPrevented).toBe(true);
         button?.click();
-        expect(mocks.toggleVimKeyReference).toHaveBeenCalledWith(vim, button);
+        await vi.waitFor(() => expect(mocks.toggleVimKeyReference).toHaveBeenCalledWith(vim, button));
     });
 });
 
@@ -226,7 +226,7 @@ describe("VimModeBadge", () => {
             .toHaveBeenLastCalledWith(note, "vimMode", "true", "true");
     });
 
-    it("opens a menu of the note's Vim mode, the key hints, the settings and the help", () => {
+    it("opens a menu of the note's Vim mode, the key hints, the settings and the help", async () => {
         const isOption = vi.spyOn(options, "is").mockReturnValue(true);
         const toggleOption = vi.spyOn(options, "toggle").mockResolvedValue(undefined);
         const triggerCommand = vi.spyOn(appContext, "triggerCommand")
@@ -236,7 +236,7 @@ describe("VimModeBadge", () => {
         const note = { getOwnedLabel: () => ownedLabel } as unknown as FNote;
         act(() => render(<VimModeBadge note={note} ntxId="main" />, container));
 
-        const items = openBadgeMenu();
+        const items = await openBadgeMenu();
         expect(getMenuRows(items)).toEqual([
                 [ "vim_mode.menu_note", true, false ],
                 "separator",
@@ -251,7 +251,7 @@ describe("VimModeBadge", () => {
             .toBe("vim_mode.menu_note_description");
         // The switch changes the owned label, which an inheritable one passes to the subtree.
         ownedLabel.isInheritable = true;
-        const [ subtreeItem ] = openBadgeMenu();
+        const [ subtreeItem ] = await openBadgeMenu();
         expect("description" in subtreeItem && subtreeItem.description)
             .toBe("vim_mode.menu_note_description_subtree");
 
@@ -266,7 +266,7 @@ describe("VimModeBadge", () => {
 });
 
 describe("VimTitleStatus", () => {
-    it("shows the badge while the option is on and the mode while Vim runs, tooltips below", () => {
+    it("shows the badge while the option is on and the mode while Vim runs, tooltips below", async () => {
         // A new mount each time, as the component has no props that change between the renders.
         const showTitle = () => {
             act(() => render(null, container));
@@ -291,7 +291,7 @@ describe("VimTitleStatus", () => {
         expect(tooltips.filter(([ , placement ]) => placement !== "bottom")).toEqual([]);
         const mode = container.querySelector<HTMLButtonElement>(".vim-title-status .vim-mode");
         mode?.click();
-        expect(mocks.toggleVimKeyReference).toHaveBeenCalledWith(vim, mode);
+        await vi.waitFor(() => expect(mocks.toggleVimKeyReference).toHaveBeenCalledWith(vim, mode));
 
         // A note with `#vimMode=true` runs Vim while the option is off.
         mocks.isVimModeOptionOn = false;
@@ -306,7 +306,7 @@ describe("VimTitleStatus", () => {
         expect(showTitle()).toBeNull();
     });
 
-    it("leaves the key hints out of the badge menu, and opens the help from the popup", () => {
+    it("leaves the key hints out of the badge menu, and opens the help from the popup", async () => {
         vi.spyOn(appContext, "triggerCommand").mockResolvedValue(undefined);
         const toggleOption = vi.spyOn(options, "toggle").mockResolvedValue(undefined);
         mocks.note = { getOwnedLabel: () => null } as unknown as FNote;
@@ -314,7 +314,7 @@ describe("VimTitleStatus", () => {
         mocks.vim = createVim(OFF);
         act(() => render(<VimTitleStatus />, container));
 
-        const items = openBadgeMenu();
+        const items = await openBadgeMenu();
         expect(getMenuRows(items)).toEqual([
             [ "vim_mode.menu_note", true, true ],
             "separator",
@@ -329,7 +329,7 @@ describe("VimTitleStatus", () => {
 });
 
 describe("VimHintStrip", () => {
-    it("leads with the typed keys, then the hints as keys and words", () => {
+    it("leads with the typed keys, then the hints as keys and words", async () => {
         act(() => render(<VimHintStrip hints={{
             kind: "command",
             typedKeys: [ "Ctrl+R" ],
@@ -340,6 +340,7 @@ describe("VimHintStrip", () => {
                 { keys: [ "Esc" ], description: "breadcrumb", id: "breadcrumb" }
             ]
         }} />, container));
+        await waitForHints();
         const strip = container.querySelector(".vim-hint-strip.vim-hint-strip-command");
         expect(strip?.classList.contains("tn-shortcut-hints-kbd")).toBe(true);
         expect(strip?.querySelector(".vim-hint-typed-keys")?.textContent).toBe("Ctrl+R");
@@ -353,21 +354,22 @@ describe("VimHintStrip", () => {
             .map((hint) => hint.textContent)).toEqual([ "Escbreadcrumb" ]);
     });
 
-    it("moves its hints with a vertical wheel", () => {
+    it("moves its hints with a vertical wheel", async () => {
         act(() => render(<VimHintStrip hints={{
             kind: "mode", typedKeys: [], hints: [ { keys: [ "i" ], description: "insert" } ]
         }} />, container));
-        const label = container.querySelector(".scrollable-label") as HTMLElement;
+        const label = await waitForHints();
         Object.defineProperty(label, "scrollWidth", { value: 300 });
         Object.defineProperty(label, "clientWidth", { value: 100 });
         label.dispatchEvent(new WheelEvent("wheel", { deltaY: 40, cancelable: true }));
         expect(label.scrollLeft).toBe(40);
     });
 
-    it("keeps the focus where it is when pressed", () => {
+    it("keeps the focus where it is when pressed", async () => {
         act(() => render(<VimHintStrip hints={{
             kind: "mode", typedKeys: [], hints: [ { keys: [ "i" ], description: "insert" } ]
         }} />, container));
+        await waitForHints();
         expect(container.querySelector(".vim-hint-typed-keys")).toBeNull();
         const event = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
         container.querySelector(".vim-hint")?.dispatchEvent(event);
@@ -376,14 +378,14 @@ describe("VimHintStrip", () => {
 });
 
 describe("the command line slot and the message panel", () => {
-    it("registers the slot of the command line while it is mounted", () => {
+    it("registers the slot of the command line while it is mounted", async () => {
         act(() => render(<VimCommandLineSlot />, container));
         const slot = container.querySelector(".vim-command-line-slot");
         expect(slot).not.toBeNull();
-        expect(mocks.setCommandLineSlot).toHaveBeenLastCalledWith(slot);
+        await vi.waitFor(() => expect(mocks.setCommandLineSlot).toHaveBeenLastCalledWith(slot));
 
         act(() => render(null, container));
-        expect(mocks.setCommandLineSlot).toHaveBeenLastCalledWith(null);
+        await vi.waitFor(() => expect(mocks.setCommandLineSlot).toHaveBeenLastCalledWith(null));
     });
 
     it("shows a long message with its lines kept", () => {
@@ -412,11 +414,22 @@ function getLine() {
 }
 
 /** Opens the menu of the Vim mode badge with a right click, and returns its items. */
-function openBadgeMenu(): MenuItem<unknown>[] {
+async function openBadgeMenu(): Promise<MenuItem<unknown>[]> {
+    mocks.showContextMenu.mockClear();
     const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
     container.querySelector(".vim-mode-badge")?.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(true);
+    await vi.waitFor(() => expect(mocks.showContextMenu).toHaveBeenCalled());
     return mocks.showContextMenu.mock.lastCall?.[0].items ?? [];
+}
+
+/** Waits for the hint strip to draw its hints, which load `ScrollableLabel` first. */
+function waitForHints() {
+    return vi.waitFor(() => {
+        const label = container.querySelector<HTMLElement>(".scrollable-label");
+        expect(label).toBeInstanceOf(HTMLElement);
+        return label as HTMLElement;
+    });
 }
 
 /** The title, switch flag and checked state of each item of a menu, or the kind of a separator. */

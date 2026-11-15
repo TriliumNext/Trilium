@@ -1,6 +1,6 @@
 import "./LazyComponent.css";
 
-import { ComponentType } from "preact";
+import { ComponentChildren, ComponentType } from "preact";
 import { useEffect, useState } from "preact/hooks";
 
 interface LazyComponentProps {
@@ -73,4 +73,16 @@ export function useLazyModule<T>(load: () => Promise<T>) {
         };
     }, [ load, module ]);
     return module;
+}
+
+/**
+ * Renders `children` with the module `load` imports, once it has loaded, and nothing until then.
+ * `load` keeps its identity across renders, as for {@link useLazyModule}.
+ */
+export function WithLazyModule<T>({ load, children }: {
+    load: () => Promise<T>;
+    children: (module: T) => ComponentChildren;
+}) {
+    const module = useLazyModule(load);
+    return module ? <>{children(module)}</> : null;
 }
