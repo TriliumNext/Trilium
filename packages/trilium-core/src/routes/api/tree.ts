@@ -6,6 +6,13 @@ import { NotFoundError } from "../../errors.js";
 import { getLog } from "../../services/log.js";
 import type BNote from "../../becca/entities/bnote.js";
 
+/**
+ * Notes whose children the client shows as soon as it starts, whether or not they are expanded in
+ * the tree: the launch bar of each layout and its bookmarks. The initial tree carries them, so
+ * the launch bar renders without a request of its own.
+ */
+const STARTUP_PARENT_NOTE_IDS = [ "_lbVisibleLaunchers", "_lbMobileVisibleLaunchers", "_lbBookmarks" ];
+
 function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
     const noteIds = new Set(_noteIds);
     const collectedNoteIds = new Set<string>();
@@ -196,6 +203,18 @@ function getTree(req: Request) {
     }
 
     collect(becca.notes[subTreeNoteId]);
+
+    if (subTreeNoteId === "root") {
+        for (const noteId of STARTUP_PARENT_NOTE_IDS) {
+            const note = becca.notes[noteId];
+            if (!note) continue;
+
+            collectedNoteIds.add(noteId);
+            for (const childNote of note.children) {
+                collectedNoteIds.add(childNote.noteId);
+            }
+        }
+    }
 
     return getNotesAndBranchesAndAttributes(collectedNoteIds);
 }

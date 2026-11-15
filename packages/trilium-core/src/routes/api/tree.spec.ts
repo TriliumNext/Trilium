@@ -16,7 +16,7 @@ let api: CoreApiTester;
 
 interface TreeResponse {
     notes: { noteId: string }[];
-    branches: { branchId: string }[];
+    branches: { branchId: string; noteId: string; parentNoteId: string }[];
     attributes: unknown[];
 }
 
@@ -33,6 +33,23 @@ describe("Tree API (core)", () => {
         expect(res.body.notes.some((n) => n.noteId === "root")).toBe(true);
         // root always gets the synthetic `none_root` branch (parentNoteId "none").
         expect(res.body.branches.some((b) => b.branchId === "none_root")).toBe(true);
+    });
+
+    it("includes the launch bars and the bookmarks, which the client shows at startup", async () => {
+        await createTextNote(api, { parentNoteId: "_lbBookmarks", title: "Bookmarked" });
+        const res = await api.get<TreeResponse>("/api/tree");
+        const noteIds = new Set(res.body.notes.map((n) => n.noteId));
+        const branchKeys = new Set(res.body.branches.map((b) => `${b.parentNoteId}/${b.noteId}`));
+
+        for (const parentNoteId of [ "_lbVisibleLaunchers", "_lbMobileVisibleLaunchers", "_lbBookmarks" ]) {
+            const parent = becca.getNoteOrThrow(parentNoteId);
+            expect(parent.children.length).toBeGreaterThan(0);
+            expect(noteIds.has(parentNoteId)).toBe(true);
+            for (const child of parent.children) {
+                expect(noteIds.has(child.noteId)).toBe(true);
+                expect(branchKeys.has(`${parentNoteId}/${child.noteId}`)).toBe(true);
+            }
+        }
     });
 
     it("scopes the tree to a subtree via subTreeNoteId", async () => {

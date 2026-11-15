@@ -287,7 +287,13 @@ class FrocaImpl implements Froca {
         }
 
         noteIds = Array.from(new Set(noteIds)); // make unique
-        const missingNoteIds = noteIds.filter((noteId) => !this.notes[noteId]);
+        let missingNoteIds = noteIds.filter((noteId) => !this.notes[noteId]);
+        if (missingNoteIds.length) {
+            // The initial tree holds most of what is asked for at startup, and replaces the cache
+            // once it arrives, which would drop a note loaded in the meantime.
+            await this.initializedPromise.catch(() => {});
+            missingNoteIds = missingNoteIds.filter((noteId) => !this.notes[noteId]);
+        }
 
         await this.reloadNotes(missingNoteIds);
 

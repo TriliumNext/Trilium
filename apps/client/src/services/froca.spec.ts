@@ -57,6 +57,41 @@ describe("loadInitialTree", () => {
     });
 });
 
+describe("getNotes", () => {
+    it("waits for the initial tree before loading what froca does not hold", async () => {
+        const realInitialized = froca.initializedPromise;
+        let finishInitialTree = () => {};
+        froca.initializedPromise = new Promise<void>((resolve) => {
+            finishInitialTree = resolve;
+        });
+        const reloadNotes = vi.spyOn(froca, "reloadNotes").mockResolvedValue();
+
+        try {
+            const pending = froca.getNote("startup-launcher", true);
+            buildNote({ id: "startup-launcher", title: "From the initial tree" });
+            finishInitialTree();
+
+            expect((await pending)?.title).toBe("From the initial tree");
+            expect(reloadNotes).toHaveBeenCalledWith([]);
+        } finally {
+            froca.initializedPromise = realInitialized;
+        }
+    });
+
+    it("still loads a note once the initial tree failed", async () => {
+        const realInitialized = froca.initializedPromise;
+        froca.initializedPromise = Promise.reject(new Error("tree failed"));
+        const reloadNotes = vi.spyOn(froca, "reloadNotes").mockResolvedValue();
+
+        try {
+            await froca.getNote("not-in-the-tree", true);
+            expect(reloadNotes).toHaveBeenCalledWith([ "not-in-the-tree" ]);
+        } finally {
+            froca.initializedPromise = realInitialized;
+        }
+    });
+});
+
 describe("reloadAll", () => {
     it("reloads the initial tree, then every note froca held outside it", async () => {
         const held = buildNote({ title: "Held outside the tree" });
