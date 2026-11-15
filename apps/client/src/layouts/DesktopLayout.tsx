@@ -1,7 +1,7 @@
 import "./DesktopLayout.css";
 
 import clsx from "clsx";
-import { useEffect, useLayoutEffect, useMemo } from "preact/hooks";
+import { useEffect, useLayoutEffect, useMemo, useState } from "preact/hooks";
 
 import appContext, { type EventNames } from "../components/app_context.js";
 import type NoteContext from "../components/note_context.js";
@@ -128,10 +128,13 @@ function TabBar({ fullWidth, leftPaneToggle }: { fullWidth: boolean, leftPaneTog
 /**
  * The widgets that `#widget` notes add to `parent`, once they have loaded, that go in gap `gap` of
  * the `builtInCount` built-in children of the pane, by their `position` (see `placeCustomWidgets()`).
- * A legacy widget gets the note context of the split it is in, if any. The host takes no box of its
- * own, so the widgets lay out as children of the pane. An empty gap renders nothing, which keeps the
- * built-in children adjacent, unless `keepsRoot` is set: a part of a legacy container must keep its
- * one root element, since the widgets load after the container is built.
+ * A legacy widget in a split gets the note context of that split. One outside the splits starts on
+ * the active note context and follows it through `activeContextChanged`, as a child of `appContext`:
+ * `useNoteContext()` there would take the context of any tab that switches its note, even a tab in
+ * the background. The host takes no box of its own, so the widgets lay out as children of the pane.
+ * An empty gap renders nothing, which keeps the built-in children adjacent, unless `keepsRoot` is
+ * set: a part of a legacy container must keep its one root element, since the widgets load after
+ * the container is built.
  */
 function CustomWidgets({ parent, gap, builtInCount, keepsRoot }: {
     parent: Exclude<ParentName, "right-pane">;
@@ -140,7 +143,8 @@ function CustomWidgets({ parent, gap, builtInCount, keepsRoot }: {
     keepsRoot?: boolean;
 }) {
     const widgetsByParent = useCustomWidgets();
-    const { noteContext } = useNoteContext();
+    const { noteContext: splitNoteContext } = useNoteContext();
+    const noteContext = parent === "note-detail-pane" ? splitNoteContext : undefined;
     // A legacy widget given as a class is built once per slot, so that each split has its own. Its
     // position is read from the instance.
     const widgets = useMemo(() => {
@@ -166,6 +170,11 @@ function CustomWidgets({ parent, gap, builtInCount, keepsRoot }: {
 type PlacedWidget = { legacy: BasicWidget } | { preact: ReturnType<WidgetsByParent["getPreactWidgets"]>[number], key: string };
 
 function LegacyCustomWidget({ widget, noteContext }: { widget: BasicWidget, noteContext?: NoteContext }) {
-    const [ el ] = useLegacyWidget(() => widget, { noteContext, containerClassName: "custom-widget-host" });
+    // The tabs can load before the widget does, which then misses their `activeContextChanged`.
+    const [ activeNoteContext ] = useState(() => appContext.tabManager?.getActiveContext() ?? undefined);
+    const [ el ] = useLegacyWidget(() => widget, {
+        noteContext: noteContext ?? activeNoteContext,
+        containerClassName: "custom-widget-host"
+    });
     return el;
 }

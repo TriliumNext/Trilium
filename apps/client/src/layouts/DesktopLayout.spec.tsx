@@ -17,6 +17,16 @@ vi.mock("../services/bundle.js", async (importOriginal) => {
     const original = await importOriginal<typeof import("../services/bundle.js")>();
     const { h } = await import("preact");
     const { default: BasicWidget } = await import("../widgets/basic_widget.js");
+    const { default: NoteContextAwareWidget } = await import("../widgets/note_context_aware_widget.js");
+    class LegacyCenterWidget extends NoteContextAwareWidget {
+        static get parentWidget() {
+            return "center-pane";
+        }
+
+        doRender() {
+            this.$widget = $("<div class=\"custom-legacy-center\">");
+        }
+    }
     class LegacyDetailWidget extends BasicWidget {
         static get parentWidget() {
             return "note-detail-pane";
@@ -53,6 +63,7 @@ vi.mock("../services/bundle.js", async (importOriginal) => {
                 }
                 widgets.add(LegacyDetailWidget as never);
                 widgets.add(PositionedLegacyDetailWidget as never);
+                widgets.add(LegacyCenterWidget as never);
                 return widgets;
             }
         }
@@ -67,6 +78,7 @@ import server from "../services/server.js";
 import { buildNote } from "../test/easy-froca.js";
 import { showNoteSplit } from "../test/note_splits.js";
 import { renderInto } from "../test/render.js";
+import type NoteContextAwareWidget from "../widgets/note_context_aware_widget.js";
 import { ParentComponent } from "../widgets/react/react_utils.js";
 import DesktopLayout from "./DesktopLayout.js";
 
@@ -85,6 +97,27 @@ describe("DesktopLayout", () => {
             vi.spyOn(server, "get").mockImplementation((async (url: string) =>
                 (url.startsWith("search?") || url.endsWith("/attachments") ? [] : get(url))) as typeof server.get);
         }
+    });
+
+    it("keeps a legacy widget outside the splits on the active note context as a background tab switches its note", async () => {
+        options.set("layoutOrientation", "vertical");
+        let container: HTMLElement | undefined;
+        act(() => { container = renderInto(<Layout />); });
+        const noteContext = new NoteContext("main");
+        const restoreTabManager = await showNoteSplit(container, noteContext);
+        await vi.waitFor(() => expect(container?.querySelector("#center-pane .custom-legacy-center")).not.toBeNull());
+        const widget: NoteContextAwareWidget = $(".custom-legacy-center", container).prop("component");
+        // The tab manager activates the restored tab, whether the widget has loaded by then or not.
+        await act(async () => {
+            await appContext.triggerEvent("activeContextChanged", { noteContext });
+        });
+        expect(widget.noteContext).toBe(noteContext);
+
+        await act(async () => {
+            await appContext.triggerEvent("noteSwitched", { noteContext: new NoteContext("background"), notePath: "root" });
+        });
+        expect(widget.noteContext).toBe(noteContext);
+        restoreTabManager();
     });
 
     it("puts the launch bar beside the main container in the vertical layout", () => {
