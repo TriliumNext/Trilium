@@ -1169,7 +1169,7 @@ body.desktop.status-bar-panel-open .vertical-layout #center-pane
 }
 
 /* The active split in a multi-split view */
-#center-pane > .split-note-container-widget.multiple-splits > .note-split.active::after,
+#center-pane > .note-splits-host > .split-note-container-widget.multiple-splits > .note-split.active::after,
 body.mobile #detail-container > .split-note-container-widget.multiple-splits
     > .note-split.active::after {
     border-color: var(--link-selection-outline-color);
