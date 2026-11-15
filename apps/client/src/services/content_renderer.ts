@@ -25,7 +25,7 @@ import renderText, {
 } from "./content_renderer_text.js";
 import renderDoc from "./doc_renderer.js";
 import { getAttachmentImageUrl, getNoteImageUrl } from "./image_urls.js";
-import { renderOfficeToHtml } from "./office_renderer.js";
+import { OfficePreviewTooLargeError, renderOfficeToHtml } from "./office_renderer.js";
 import openService from "./open.js";
 import { waitForPendingRenders } from "./pending_renders.js";
 import protectedSessionService from "./protected_session.js";
@@ -863,9 +863,13 @@ async function renderOffice(entity: FNote | FAttachment, $renderedContent: JQuer
             $body.prepend($("<style>").text(css));
         }
     } catch (e) {
-        console.warn("Failed to render office document preview:", getErrorMessage(e));
+        const tooLarge = e instanceof OfficePreviewTooLargeError;
+        if (!tooLarge) {
+            console.warn("Failed to render office document preview:", getErrorMessage(e));
+        }
+        const message = tooLarge ? "content_renderer.office_too_large" : "content_renderer.office_render_error";
         $scroll.remove();
-        $content.prepend($("<div>").addClass("admonition caution").text(t("content_renderer.office_render_error")));
+        $content.prepend($("<div>").addClass("admonition caution").text(t(message)));
     }
 
     appendNoteFileActions($content, entity);

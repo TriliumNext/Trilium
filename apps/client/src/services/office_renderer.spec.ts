@@ -9,7 +9,7 @@ vi.mock("./server.js", () => ({
 const sanitizeNoteContentHtml = vi.fn((s: string) => `SANITIZED:${s}`);
 vi.mock("./sanitize_content.js", () => ({ sanitizeNoteContentHtml: (s: string) => sanitizeNoteContentHtml(s) }));
 
-import { renderOfficeToHtml } from "./office_renderer.js";
+import { OfficePreviewTooLargeError, renderOfficeToHtml } from "./office_renderer.js";
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -20,6 +20,18 @@ describe("renderOfficeToHtml", () => {
         expect(serverGet).toHaveBeenCalledWith("notes/n1/office-preview", undefined, true);
         expect(sanitizeNoteContentHtml).toHaveBeenCalledWith("<h1>Doc</h1>");
         expect(html).toBe("SANITIZED:<h1>Doc</h1>");
+    });
+
+    it("turns the server's size refusal into an OfficePreviewTooLargeError, and passes other failures on", async () => {
+        serverGet.mockRejectedValueOnce(JSON.stringify({ message: "Office document is too large to preview (39656866 bytes)." }));
+        await expect(renderOfficeToHtml("notes", "n1")).rejects.toBeInstanceOf(OfficePreviewTooLargeError);
+
+        const other = JSON.stringify({ message: "Note 'n1' not found." });
+        serverGet.mockRejectedValueOnce(other);
+        await expect(renderOfficeToHtml("notes", "n1")).rejects.toBe(other);
+
+        serverGet.mockRejectedValueOnce("<html>not json</html>");
+        await expect(renderOfficeToHtml("notes", "n1")).rejects.toBe("<html>not json</html>");
     });
 
     it("builds the attachment URL variant", async () => {

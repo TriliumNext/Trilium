@@ -1,4 +1,4 @@
-import { isOfficeMimeType, OFFICE_FILE_TYPE_HINTS } from "@triliumnext/commons";
+import { isOfficeMimeType, OFFICE_FILE_TYPE_HINTS, OFFICE_PREVIEW_TOO_LARGE_MESSAGE } from "@triliumnext/commons";
 
 import { ValidationError } from "../errors.js";
 import { wrapStringOrBuffer } from "./utils/binary.js";
@@ -41,7 +41,7 @@ export async function convertOfficeToHtml(content: string | Uint8Array, mime: st
 
     const buffer = wrapStringOrBuffer(content);
     if (buffer.byteLength > MAX_OFFICE_PREVIEW_BYTES) {
-        throw new ValidationError(`Office document is too large to preview (${buffer.byteLength} bytes).`);
+        throw new ValidationError(`${OFFICE_PREVIEW_TOO_LARGE_MESSAGE} (${buffer.byteLength} bytes).`);
     }
 
     // A file labeled as a workbook without being one (a DOCX, say) opens in exceljs as an

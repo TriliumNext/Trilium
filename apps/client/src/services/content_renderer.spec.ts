@@ -70,7 +70,8 @@ vi.mock("./open.js", () => ({
 // isOfficeMimeType comes (unmocked) from @triliumnext/commons; only the server
 // round-trip is stubbed out.
 const renderOfficeToHtml = vi.fn(async (..._args: any[]) => ({ css: "", html: `<div class="office-doc">converted</div>` }));
-vi.mock("./office_renderer.js", () => ({
+vi.mock("./office_renderer.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./office_renderer.js")>(),
     renderOfficeToHtml: (...a: any[]) => renderOfficeToHtml(...a)
 }));
 
@@ -175,6 +176,7 @@ import {
     snapshotAndDispose
 } from "./content_renderer.js";
 import froca from "./froca.js";
+import { t } from "./i18n.js";
 import server from "./server.js";
 
 // getRenderedContent declares an explicit `this` parameter; bind it so callers don't need to.
@@ -949,8 +951,17 @@ describe("getRenderedContent office rendering", () => {
         note.mime = "application/vnd.oasis.opendocument.text";
         const { type, $renderedContent } = await getRenderedContent(note);
         expect(type).toBe("office");
-        expect($renderedContent.find(".admonition.caution").length).toBe(1);
+        expect($renderedContent.find(".admonition.caution").text()).toBe(t("content_renderer.office_render_error"));
         expect($renderedContent.find(".office-preview-scroll, .office-preview-body").length).toBe(0);
+    });
+
+    it("says the document is too large when the server refuses it for its size", async () => {
+        const { OfficePreviewTooLargeError } = await import("./office_renderer.js");
+        renderOfficeToHtml.mockRejectedValueOnce(new OfficePreviewTooLargeError());
+        const note = buildNote({ title: "DocHuge", type: "file" });
+        note.mime = "application/vnd.oasis.opendocument.text";
+        const { $renderedContent } = await getRenderedContent(note);
+        expect($renderedContent.find(".admonition.caution").text()).toBe(t("content_renderer.office_too_large"));
     });
 
     it("does not run the heavy conversion in tooltip mode", async () => {

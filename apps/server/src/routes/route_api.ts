@@ -146,7 +146,12 @@ function handleResponse(resultHandler: ApiResultHandler, req: express.Request, r
 function handleException(e: unknown | Error, method: HttpMethod, path: string, res: express.Response) {
     const [errMessage, errStack] = safeExtractMessageAndStackFromError(e);
 
-    getLog().error(`${method} ${path} threw exception: '${errMessage}', stack: ${errStack}`);
+    // A 4xx refuses the request as the route intends, so its stack points at no defect.
+    if (e instanceof HttpError && e.statusCode < 500) {
+        getLog().info(`${method} ${path} rejected with ${e.statusCode}: '${errMessage}'`);
+    } else {
+        getLog().error(`${method} ${path} threw exception: '${errMessage}', stack: ${errStack}`);
+    }
 
     // Skip sending response if it's already been handled by the route handler
     if (res.triliumResponseHandled || res.headersSent) {

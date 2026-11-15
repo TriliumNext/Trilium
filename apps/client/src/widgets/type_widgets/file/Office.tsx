@@ -2,32 +2,35 @@ import { useEffect, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
-import { type OfficePreview, renderOfficeToHtml } from "../../../services/office_renderer";
-import Alert from "../../react/Alert";
+import {
+    type OfficePreview, OfficePreviewTooLargeError, renderOfficeToHtml
+} from "../../../services/office_renderer";
 import LoadingSpinner from "../../react/LoadingSpinner";
+import NoItems from "../../react/NoItems";
 
 /**
  * Main-view preview for office documents (DOCX/XLSX/PPTX, ODT/ODS/ODP, RTF and EPUB). Fetches the
- * server-rendered HTML preview and sanitizes it. Falls back to the standard "preview not
- * available" notice on failure (the file remains downloadable through the usual file note
- * affordances).
+ * server-rendered HTML preview and sanitizes it. On failure it shows a placeholder saying whether
+ * the document was too large or could not be converted; the file remains downloadable through the
+ * usual file note affordances.
  */
 export default function OfficePreview({ note }: { note: FNote }) {
     const [preview, setPreview] = useState<OfficePreview | null>(null);
-    const [failed, setFailed] = useState(false);
+    const [failure, setFailure] = useState<"too-large" | "error" | null>(null);
 
     useEffect(() => {
         let cancelled = false;
         setPreview(null);
-        setFailed(false);
+        setFailure(null);
 
         renderOfficeToHtml("notes", note.noteId)
             .then((result) => {
                 if (!cancelled) setPreview(result);
             })
             .catch((e) => {
-                console.warn("Failed to render office document preview:", e);
-                if (!cancelled) setFailed(true);
+                const tooLarge = e instanceof OfficePreviewTooLargeError;
+                if (!tooLarge) console.warn("Failed to render office document preview:", e);
+                if (!cancelled) setFailure(tooLarge ? "too-large" : "error");
             });
 
         return () => {
@@ -35,11 +38,14 @@ export default function OfficePreview({ note }: { note: FNote }) {
         };
     }, [note.noteId, note.blobId]);
 
-    if (failed) {
+    if (failure) {
+        const tooLarge = failure === "too-large";
         return (
-            <Alert className="file-preview-not-available" type="info">
-                {t("file.file_preview_not_available")}
-            </Alert>
+            <NoItems
+                className="file-preview-not-available"
+                icon={tooLarge ? "bx bx-file" : "bx bx-error-circle"}
+                text={t(tooLarge ? "content_renderer.office_too_large" : "content_renderer.office_render_error")}
+            />
         );
     }
 

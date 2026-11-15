@@ -38,3 +38,9 @@ export const OFFICE_FILE_TYPE_HINTS: Record<string, "rtf" | "epub"> = {
 export function isOfficeMimeType(mime: string | null | undefined): boolean {
     return !!mime && OFFICE_MIME_TYPES.has(mime);
 }
+
+/**
+ * How the office preview route's refusal of a document above its size limit starts. The client
+ * reads it to tell that refusal apart from a failed conversion.
+ */
+export const OFFICE_PREVIEW_TOO_LARGE_MESSAGE = "Office document is too large to preview";

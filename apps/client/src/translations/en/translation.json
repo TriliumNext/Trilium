@@ -4009,7 +4009,8 @@
     "open_externally": "Open externally",
     "mermaid_diagram_error": "Mermaid diagram failed to render: {{error}}",
     "office_rendering": "Rendering preview…",
-    "office_render_error": "This document could not be rendered as a preview. You can still download it or open it externally."
+    "office_render_error": "This document could not be rendered as a preview. You can still download it or open it externally.",
+    "office_too_large": "This document is too large to preview. You can still download it or open it externally."
   },
   "modal": {
     "close": "Close",
