@@ -44,7 +44,9 @@ vi.mock("i18next", () => ({
         // the case for a test that builds a config without one.
         get getResourceBundle() {
             return catalogState.bundle && (() => catalogState.bundle);
-        }
+        },
+        // `services/dayjs` follows the language from here.
+        on: () => {}
     }
 }));
 

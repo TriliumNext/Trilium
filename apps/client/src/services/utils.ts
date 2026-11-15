@@ -1,7 +1,6 @@
 import {
     filterAttributeName, isValidAttributeName
 } from "@triliumnext/commons/src/lib/attribute_names.js";
-import { dayjs } from "@triliumnext/commons/src/lib/dayjs.js";
 import type { ViteHotContext } from "vite/types/hot.js";
 
 import FNote from "../entities/fnote";
@@ -138,15 +137,17 @@ function formatDateISO(date: Date) {
     return `${date.getFullYear()}-${padNum(date.getMonth() + 1)}-${padNum(date.getDate())}`;
 }
 
-export function formatDateTime(date: Date, userSuppliedFormat?: string): string {
-    if (userSuppliedFormat?.trim()) {
-        return dayjs(date).format(userSuppliedFormat);
-    }
+export function formatDateTime(date: Date): string {
     return `${formatDate(date)} ${formatTime(date)}`;
 }
 
+/** The local time as `YYYY-MM-DD HH:mm:ss.SSS+hhmm`, which the server reads from a request header. */
 function localNowDateTime() {
-    return dayjs().format("YYYY-MM-DD HH:mm:ss.SSSZZ");
+    const date = new Date();
+    const offset = -date.getTimezoneOffset();
+    const zone = `${offset < 0 ? "-" : "+"}${padNum(Math.floor(Math.abs(offset) / 60))}${padNum(Math.abs(offset) % 60)}`;
+    const milliseconds = String(date.getMilliseconds()).padStart(3, "0");
+    return `${formatDateISO(date)} ${formatTimeWithSeconds(date)}.${milliseconds}${zone}`;
 }
 
 function now() {

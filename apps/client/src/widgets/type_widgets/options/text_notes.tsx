@@ -5,11 +5,12 @@ import { getThemeVariant, Themes } from "@triliumnext/highlightjs";
 import type { CSSProperties } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
+import { formatCustomDateTime } from "../../../services/dayjs";
 import { t } from "../../../services/i18n";
 import {
     ensureMimeTypesForHighlighting, loadHighlightingTheme
 } from "../../../services/syntax_highlight";
-import { formatDateTime, toggleBodyClass } from "../../../services/utils";
+import { toggleBodyClass } from "../../../services/utils";
 import ActionButton from "../../react/ActionButton";
 import { Card, CardSection, OptionCardSection } from "../../react/Card";
 import Dropdown from "../../react/Dropdown";
@@ -557,7 +558,7 @@ function Editor() {
             <OptionCardSection
                 name="custom-date-time-format"
                 label={t("custom_date_time_format.title")}
-                description={<>{t("custom_date_time_format.description_short")} {t("custom_date_time_format.preview", { preview: formatDateTime(new Date(), customDateTimeFormat) })}</>}
+                description={<>{t("custom_date_time_format.description_short")} {t("custom_date_time_format.preview", { preview: formatCustomDateTime(new Date(), customDateTimeFormat) })}</>}
             >
                 <FormTextBox
                     placeholder="YYYY-MM-DD HH:mm"

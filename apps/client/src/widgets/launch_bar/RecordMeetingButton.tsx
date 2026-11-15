@@ -3,13 +3,13 @@ import "./RecordMeetingButton.css";
 import type {
     TranscriptionState, TranscriptionStatus, TranscriptSource, TranscriptSourceIssue
 } from "@triliumnext/commons";
-import { dayjs } from "@triliumnext/commons/src/lib/dayjs.js";
 import { MEETING_RECORDING_LABEL } from "@triliumnext/commons/src/lib/notes.js";
 import { getTranscriptionResources } from "@triliumnext/commons/src/lib/transcript.js";
 import clsx from "clsx";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import dateNoteService from "../../services/date_notes";
+import { dayjs } from "../../services/dayjs";
 import { requireResources } from "../../services/dialog";
 import { t } from "../../services/i18n";
 import noteCreateService from "../../services/note_create";

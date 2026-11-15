@@ -1,3 +1,4 @@
+import { dayjs } from "@triliumnext/commons/src/lib/dayjs.js";
 import type { ViteHotContext } from "vite/types/hot.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -162,16 +163,6 @@ describe("formatDateTime / date helpers", () => {
         expect(formatDateTime(date)).toBe("2024-01-05 09:07");
     });
 
-    it("uses a user-supplied dayjs format when provided", () => {
-        const date = new Date(2024, 0, 5, 9, 7);
-        expect(formatDateTime(date, "YYYY")).toBe("2024");
-    });
-
-    it("treats a whitespace-only custom format as absent", () => {
-        const date = new Date(2024, 11, 31, 23, 59);
-        expect(formatDateTime(date, "   ")).toBe("2024-12-31 23:59");
-    });
-
     it("formatDateISO (via default export) pads month and day", () => {
         const date = new Date(2024, 2, 9); // March 9
         expect(utils.formatDateISO(date)).toBe("2024-03-09");
@@ -186,8 +177,16 @@ describe("formatDateTime / date helpers", () => {
         expect(utils.now()).toMatch(/^\d{2}:\d{2}:\d{2}$/);
     });
 
-    it("localNowDateTime() returns a dayjs formatted timestamp", () => {
-        expect(utils.localNowDateTime()).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\./);
+    it("localNowDateTime() matches dayjs' YYYY-MM-DD HH:mm:ss.SSSZZ, offset included", () => {
+        vi.useFakeTimers();
+        try {
+            for (const time of [ new Date(2024, 0, 5, 9, 7, 3, 45), new Date(2024, 6, 15, 23, 59, 59, 999) ]) {
+                vi.setSystemTime(time);
+                expect(utils.localNowDateTime()).toBe(dayjs(time).format("YYYY-MM-DD HH:mm:ss.SSSZZ"));
+            }
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });
 

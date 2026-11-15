@@ -4,7 +4,6 @@ import {
     applyListItemAlignment
 } from "@triliumnext/ckeditor5/src/plugins/list_item_alignment_read_only.js";
 import type { RevisionItem, RevisionPojo } from "@triliumnext/commons";
-import { dayjs } from "@triliumnext/commons/src/lib/dayjs.js";
 import { safeHostname, safeLinkPreviewHref } from "@triliumnext/commons/src/lib/link_embed.js";
 import clsx from "clsx";
 import { diffWords } from "diff";
@@ -13,6 +12,7 @@ import { Dispatch, StateUpdater, useEffect, useLayoutEffect, useRef, useState } 
 
 import appContext from "../../components/app_context";
 import FNote from "../../entities/fnote";
+import { dayjs } from "../../services/dayjs.js";
 import dialog from "../../services/dialog";
 import froca from "../../services/froca";
 import { diffHtml } from "../../services/html_diff";

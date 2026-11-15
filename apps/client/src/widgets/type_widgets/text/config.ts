@@ -24,6 +24,7 @@ import linkContextMenu from "../../../menus/link_context_menu.js";
 import { buildReferenceConfig, type ReferenceSource } from "../../../services/block_reference.js";
 import { copyHtmlWithToast, copyTextWithToast } from "../../../services/clipboard_ext.js";
 import { getEmbedContentInfo, getUploadBoxDefaults } from "../../../services/content_renderer.js";
+import { formatCustomDateTime } from "../../../services/dayjs.js";
 import { prompt } from "../../../services/dialog.js";
 import { isExperimentalFeatureEnabled } from "../../../services/experimental_features.js";
 import froca from "../../../services/froca.js";
@@ -40,7 +41,7 @@ import server from "../../../services/server.js";
 import { getSourceEmbedTypeByLanguage, SOURCE_EMBED_TYPES } from "../../../services/source_embeds.js";
 import { ensureMimeTypesForHighlighting, isSyntaxHighlightEnabled } from "../../../services/syntax_highlight.js";
 import { getTaskStateDefinitions, openCustomTaskStateConfig } from "../../../services/task_states.js";
-import { formatDateTime, isMac, isMobile } from "../../../services/utils.js";
+import { isMac, isMobile } from "../../../services/utils.js";
 import { resolveContentLanguage } from "../../../utils/formatters.js";
 import { FLOATING_LAYER_SELECTOR } from "../../react/floating_layers.js";
 import { convertImageToDrawing } from "../canvas/image_to_drawing.js";
@@ -287,7 +288,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             copyHtml: copyHtmlWithToast
         },
         // Reads `customDateTimeFormat` on each call, so a changed format applies to open editors.
-        formatDateTime: (date, format) => formatDateTime(date, format ?? options.get("customDateTimeFormat")),
+        formatDateTime: (date, format) => formatCustomDateTime(date, format ?? options.get("customDateTimeFormat")),
         referenceLink: {
             getTitle: linkService.getReferenceLinkTitle,
             getTitleSync: (href, storedTitle, content) => linkService.getReferenceLinkTitleSync(
