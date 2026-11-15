@@ -54,36 +54,6 @@ async function setPassword(req: Request, res: Response) {
     res.redirect("login");
 }
 
-/**
- * @swagger
- * /login:
- *   post:
- *     tags:
- *       - auth
- *     summary: Log in using password
- *     description: This will give you a Trilium session, which is required for some other API endpoints. `totpToken` is only required if the user configured TOTP authentication.
- *     operationId: login-normal
- *     externalDocs:
- *       description: HMAC calculation
- *       url: https://github.com/TriliumNext/Trilium/blob/v0.91.6/src/services/utils.ts#L62-L66
- *     requestBody:
- *       content:
- *         application/x-www-form-urlencoded:
- *           schema:
- *             type: object
- *             required:
- *               - password
- *             properties:
- *               password:
- *                 type: string
- *               totpToken:
- *                 type: string
- *     responses:
- *       '200':
- *         description: Successful operation
- *       '401':
- *         description: Password / TOTP mismatch
- */
 async function login(req: Request, res: Response) {
     if (openID.isOpenIDEnabled()) {
         void res.oidc.login({ returnTo: '/' });
