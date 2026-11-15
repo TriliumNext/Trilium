@@ -1,13 +1,13 @@
 ---
 name: patching-excalidraw
-description: Use when changing, regenerating, checking or upgrading Trilium's patch of @excalidraw/excalidraw (`patches/@excalidraw__excalidraw@<version>.patch`): adding or editing a hunk in the dev bundle, the minified prod bundle or the `.d.ts` files, a new `UIOptions` hook or export, bumping Excalidraw to a new release (including Renovate's bump PR), a failing `excalidraw_contract.spec.ts` or `excalidraw_offsets.spec.ts`, an install that fails on the patch, the lockfile `patch_hash`, or "is the installed Excalidraw patched?". Covers what each hunk does and which Trilium code depends on it, the scratch-repo workflow that replaces `pnpm patch`, carrying the patch to a new release (three-way merge for the readable files, re-applying the minified prod changes by hand), and the upgrade checklist beyond the patch (asset paths, stylesheets, the three Excalidraw editors). Includes excalidraw_patch.mjs (check, open, changes, save, rebase); don't hand-roll a scratch repo, a hash update or a tar extraction.
+description: Use when changing, regenerating, checking or upgrading Trilium's patch of @excalidraw/excalidraw (`patches/@excalidraw__excalidraw@<version>.patch`): adding or editing a hunk in the dev bundle, the minified prod bundle or the `.d.ts` files, a new `UIOptions` hook or export, bumping Excalidraw to a new release (including Renovate's bump PR), a failing `excalidraw_contract.spec.ts`, `excalidraw_offsets.spec.ts` or `excalidraw_freedraw_outline.spec.ts`, an install that fails on the patch, the lockfile `patch_hash`, or "is the installed Excalidraw patched?". Covers what each hunk does and which Trilium code depends on it, the scratch-repo workflow that replaces `pnpm patch`, carrying the patch to a new release (three-way merge for the readable files, re-applying the minified prod changes by hand), and the upgrade checklist beyond the patch (asset paths, stylesheets, the three Excalidraw editors). Includes excalidraw_patch.mjs (check, open, changes, save, rebase); don't hand-roll a scratch repo, a hash update or a tar extraction.
 ---
 
 # Patching Excalidraw
 
 Trilium patches `@excalidraw/excalidraw` where its behaviour has no API to hook into: the canvas
 layers drawn in layout effects for Preact, view limits, a desktop layout at any size, a thinner pen,
-two handwriting performance fixes, zoom-to-fit with the properties panel on the right, and one
+three handwriting performance fixes, zoom-to-fit with the properties panel on the right, and one
 internal function exported. `references/hunks.md` lists every hunk with its reason, the Trilium code
 that depends on it, the spec that guards it and what would let it go.
 
@@ -26,12 +26,12 @@ replace it.
 
 | What | Where |
 |---|---|
-| The patch | `patches/@excalidraw__excalidraw@<version>.patch`: `dist/dev/index.js`, `dist/prod/index.js`, `dist/types/excalidraw/index.d.ts`, `dist/types/excalidraw/types.d.ts`. Kept LF by `.gitattributes` (`patches/** eol=lf`) |
+| The patch | `patches/@excalidraw__excalidraw@<version>.patch`: `dist/dev/index.js`, `dist/prod/index.js`, `dist/types/excalidraw/index.d.ts`, `dist/types/excalidraw/types.d.ts`, and the chunks that define `getFreeDrawSvgPath()` (`dist/dev/chunk-4FTI6OG3.js`, `dist/prod/chunk-K2UTITRG.js` in 0.18.1). Kept LF by `.gitattributes` (`patches/** eol=lf`) |
 | Its registration | `patchedDependencies` in `pnpm-workspace.yaml`, keyed by the exact version |
 | The pinned version | `apps/client/package.json` and `apps/standalone/package.json`, exact (no range) |
 | The patch hash | `sha256` of the patch file, once in `patchedDependencies` and once per importer and snapshot (4 places today; the count follows the importers), in `pnpm-lock.yaml` **and** in pnpm's copy, `node_modules/.pnpm/lock.yaml` |
 | The installed copy | `node_modules/@excalidraw/excalidraw`, the only one: the workspace uses `nodeLinker: hoisted` |
-| The guards | `apps/client/src/widgets/type_widgets/canvas/excalidraw_contract.spec.ts` (every hunk but one, in both bundles, plus the unpatched internals Trilium relies on) and `excalidraw_offsets.spec.ts` (the `getEditorUIOffsets` hunk) |
+| The guards | `apps/client/src/widgets/type_widgets/canvas/excalidraw_contract.spec.ts` (every hunk but one, in both bundles, plus the unpatched internals Trilium relies on), `excalidraw_offsets.spec.ts` (the `getEditorUIOffsets` hunk) and `excalidraw_freedraw_outline.spec.ts` (runs the outline of a growing stroke) |
 
 The package's `development` export is `dist/dev`, which the Vite dev server and Vitest load; builds
 load `production`, `dist/prod`. A hunk missing from the prod bundle therefore works in development
@@ -46,7 +46,7 @@ directory (`<os tmp>/trilium-excalidraw-patch`, or `--dir`), and never runs pnpm
 | Command | Does |
 |---|---|
 | `check` | Checks that the workspace entry, the pinned versions, the hash in both lockfiles and the patch agree, and that each installed file is the patched one (by its git blob id, which the patch records). Exit code 1 on any mismatch |
-| `open` | Builds a scratch git repo for the patched version: the release's files staged as the base, the patch applied in the working tree. Confirms that it reproduces the patch byte for byte. Refuses to overwrite unsaved edits without `--force` |
+| `open` | Builds a scratch git repo for the patched version: the release's files staged as the base, the patch applied in the working tree. Confirms that it reproduces the patch byte for byte. Refuses to overwrite unsaved edits without `--force`. `--add <path,...>` also takes release files that the patch does not change yet |
 | `changes [file...]` | Prints the patch as word-level snippets, `[-removed-]{+added+}` with some context. The readable view of the minified prod bundle. `--version` reads another version's repo, `--context n` |
 | `save` | Checks that each script parses, writes the patch with `git diff --full-index --diff-algorithm=patience`, replaces the hash everywhere in both lockfiles and copies the files into `node_modules`. After a rebase it writes the new version's patch, moves the workspace entry and the pins, and deletes the old patch file. Refuses a patch that leaves a file unchanged without `--force` |
 | `rebase <version>` | Carries the patch onto another release: a three-way merge per file, the minified prod bundle reset to the release's own file for work by hand. Lists what needs attention |
@@ -70,6 +70,10 @@ directory (`<os tmp>/trilium-excalidraw-patch`, or `--dir`), and never runs pnpm
    at another call site that both bundles share, and check that the alias is not declared again in
    the scope you patch. If prod's `index.js` does not import a helper at all, the import would
    come from a content-hashed `chunk-*.js` file; choose another place for the change instead.
+   Code that only a chunk calls (the outline of a stroke, hunk 9) is patched in that chunk: `open
+   --add dist/dev/chunk-<hash>.js,dist/prod/chunk-<hash>.js` takes the two files into the scratch
+   repo, and once saved the patch lists them. A block of new code can be the same text in both
+   chunks, with only its call written in each bundle's names.
 5. Add the contract spec assertion for the new hunk **before** `save`: it fails against the
    installed bundle (red), then passes once `save` copies the patched files in (green). Check both
    bundles, on the source with whitespace removed (`replace(/\s+/g, "")`); count the occurrences
@@ -77,7 +81,7 @@ directory (`<os tmp>/trilium-excalidraw-patch`, or `--dir`), and never runs pnpm
 6. `save`, then restart the dev server so that Vite pre-bundles Excalidraw again; under
    `pnpm server:start`, `touch apps/server/src/main.ts` makes `tsx watch` restart it. The new
    `lockfileHash` in `.cache/vite-<port>/deps/_metadata.json` shows that it did.
-7. Run `pnpm --filter client test excalidraw_` (both guards) and the specs of the feature, then
+7. Run `pnpm --filter client test excalidraw_` (the guards) and the specs of the feature, then
    `pnpm typecheck` if a `.d.ts` changed.
 8. Add the hunk to `references/hunks.md`. Commit the patch together with `pnpm-lock.yaml`: CI
    installs with `--frozen-lockfile`, so a patch without its hash fails every job at install. The
@@ -107,7 +111,7 @@ on a branch.
 5. `save`. It writes `patches/@excalidraw__excalidraw@<new>.patch`, moves the `pnpm-workspace.yaml`
    entry and both pins, and deletes the old patch file. Then `pnpm install`, which rewrites the
    lockfile and applies the new patch, and `check`.
-6. **Run both guards.** A failure in the unpatched half of the contract spec names the Trilium
+6. **Run the guards.** A failure in the unpatched half of the contract spec names the Trilium
    code to review (table at the end of `references/hunks.md`). Rewrite the negative check of
    `excalidraw_offsets.spec.ts`, which names 0.18.1's minified variables and cannot fail after an
    upgrade.

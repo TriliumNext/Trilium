@@ -130,6 +130,41 @@ file as word-level snippets, which is the readable form of the prod bundle.
 - **Added in:** 815cd0bcd1.
 - **Can go when:** upstream exports it, or offers a search API.
 
+## 9. Outline of a growing freedraw stroke
+
+- **Where:** not in `index.js` but in the chunks that define `getFreeDrawSvgPath()`:
+  `dist/dev/chunk-4FTI6OG3.js` and `dist/prod/chunk-K2UTITRG.js` (`wa` there) in 0.18.1. Both get
+  the same block, `triliumFreedrawOutline`, between the comments `/* Trilium patch: incremental
+  outline of a growing freedraw stroke */` and `/* End of the Trilium patch: … */`, right before the
+  function. The function builds its `options` first, returns
+  `triliumFreedrawOutline.getGrowingStrokePath(element, options)` unless that is `null`, and
+  otherwise calls perfect-freehand's `getStroke()` as before.
+- **Used by:** every pen stroke while it is drawn, in the three editors. Each pointer move appends a
+  point, and the next render outlined the stroke again from all of its points (`getStroke()`, then
+  the SVG path), so the work per frame grew with the length of the stroke: in Node, 0.10 ms per
+  point at 100 points, 1.3 ms at 1,000 and 3.1 ms at 2,000; on a 120 Hz tablet, one frame in seven
+  went over its 8.3 ms budget after ten seconds of writing. The block keeps the outline away from
+  the end of the stroke and its SVG path, and computes only the end again: about 0.04 ms per point
+  at any length. It handles only a stroke that is not finished (`lastCommittedPoint` unset, so
+  `last: false`) and got points appended since its last outline (the same object, with the same
+  first and last point as then). Every other stroke, finished, loaded or drawn in turn with
+  another, goes through `getStroke()` as before.
+- **Guarded by:** `excalidraw_freedraw_outline.spec.ts`, which runs the dev bundle's
+  `getFreeDrawSvgPath()` with the block of each bundle against the same function without it, after
+  every point of 60 random strokes (the paths must be identical), and checks that `getStroke()` is
+  no longer called once a stroke has its first stroke points. The contract spec, "outlines a
+  growing pen stroke with the block of the Trilium patch": the same block in both bundles, and the
+  hook before `getStroke()` with the same options.
+- **Added in:** the fix for #12650. A port of excalidraw/excalidraw#12621,
+  variable width only: 0.18.1 has no constant-width freedraw.
+- **Can go when:** a release ships #12621, or outlines the stroke being drawn incrementally in
+  another way.
+- **At an upgrade:** chunk names are content hashes, so `rebase` reports both chunks as `GONE`.
+  Find the new ones (the dev chunk that defines `getFreeDrawSvgPath`, the prod chunk with
+  `size:e.strokeWidth*4.25`), carry the block and the hook over, and add the files with `open
+  --add`. The block copies perfect-freehand 1.2.0's arithmetic: if a release bumps
+  perfect-freehand, the outline spec fails until the block follows it.
+
 ## What the contract spec checks besides the patch
 
 Half of `excalidraw_contract.spec.ts` pins Excalidraw internals that Trilium relies on without

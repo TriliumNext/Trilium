@@ -350,6 +350,33 @@ describe("Excalidraw contract of the canvas drawing", () => {
         expect(unpatched).toEqual([]);
     });
 
+    it("outlines a growing pen stroke with the block of the Trilium patch", () => {
+        // The same block in both bundles; `excalidraw_freedraw_outline.spec.ts` runs it.
+        const start = "/* Trilium patch: incremental outline of a growing freedraw stroke */";
+        const end = "/* End of the Trilium patch: incremental outline of a growing freedraw stroke */";
+        const [ production, development ] = [ productionDir, developmentDir ]
+            .map((dir) => readBundle(dir, [ ".js" ]).split(start)[1]?.split(end)[0]);
+        expect(development).toContain("var triliumFreedrawOutline =");
+        expect(production).toBe(development);
+
+        // `getFreeDrawSvgPath()` asks the block first, with the options of perfect-freehand's
+        // `getStroke()`, and outlines the stroke from scratch when it gets `null`.
+        const unpatched = [ productionDir, developmentDir ].filter((dir) => {
+            const bundle = readBundle(dir, [ ".js" ]);
+            const getStroke = bundle.match(
+                /import\s*\{\s*getStroke(?:\s+as\s+([\w$]+))?\s*\}\s*from\s*"perfect-freehand"/);
+            const getStrokeName = (getStroke?.[1] ?? "getStroke").replace(/\$/g, "\\$");
+            const hook = new RegExp([
+                String.raw`=triliumFreedrawOutline\.getGrowingStrokePath\((\w+),(\w+)\);`,
+                String.raw`if\((\w+)!==null\)\{?return\3;?\}?`,
+                String.raw`(?:const|let)\w+=\1\.simulatePressure\?[^;]*;`,
+                String.raw`return[\w$]+\(${getStrokeName}\(\w+,\2\)\);?\}`
+            ].join(""), "g");
+            return !getStroke || bundle.replace(/\s+/g, "").match(hook)?.length !== 1;
+        });
+        expect(unpatched).toEqual([]);
+    });
+
     it("pans and zooms with the wheel through `translateCanvas()`, which the patch limits", () => {
         const source = readBundle(developmentDir, [ ".js" ]);
         const handleWheel = source.split("__publicField(this, \"handleWheel\"")[1]

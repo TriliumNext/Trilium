@@ -3,8 +3,10 @@
 //
 //   check               the patch file, its workspace entry, the pinned versions, the hash in
 //                       both lockfiles and the installed copy agree
-//   open [--force]      scratch git repo for the patched version: the release's files staged as
-//                       the base, the patch applied in the working tree
+//   open [--force] [--add <path,...>]
+//                       scratch git repo for the patched version: the release's files staged as
+//                       the base, the patch applied in the working tree. --add also takes release
+//                       files that the patch does not change yet (a `dist/*/chunk-*.js`)
 //   changes [file...]   what the patch changes, as word-level snippets; readable for the minified
 //                       prod bundle too. [--context n] characters around each change (default 60),
 //                       [--version v] reads the scratch repo of another version
@@ -147,7 +149,8 @@ function check() {
 async function open() {
     const { version, patchPath } = readWorkspaceEntry();
     const patch = readFileSync(patchPath);
-    const repo = await openRepo(version, patchPath, { isForced: !!flags.force });
+    const added = flags.add?.split(",").filter(Boolean) ?? [];
+    const repo = await openRepo(version, patchPath, { isForced: !!flags.force, added });
     setActiveVersion(version);
     const reproduced = diffPatch(repo, readState(repo));
     console.log(reproduced.equals(patch)
@@ -344,13 +347,17 @@ function checkSyntax(repo, paths) {
 // --- Scratch repos ----------------------------------------------------------------------------
 
 /** Builds the scratch repo of `version` with `patchPath` applied, unless it holds unsaved edits. */
-async function openRepo(version, patchPath, { isForced = false }) {
+async function openRepo(version, patchPath, { isForced = false, added = [] }) {
     const repo = repoDir(version);
     if (existsSync(repo) && hasUnsavedEdits(repo) && !isForced) {
         fail(`${repo} holds edits that \`save\` has not written. Save them, or pass --force.`);
     }
-    const paths = parsePatch(readFileSync(patchPath, "utf8")).map((file) => file.path);
-    const [ baseTree ] = initRepo(repo, paths, [ await fetchRelease(version) ]);
+    const patched = parsePatch(readFileSync(patchPath, "utf8")).map((file) => file.path);
+    const paths = [ ...patched, ...added.filter((path) => !patched.includes(path)) ];
+    const release = await fetchRelease(version);
+    const missing = added.filter((path) => !existsSync(join(release, path)));
+    if (missing.length) fail(`${version} has no ${missing.join(", ")}.`);
+    const [ baseTree ] = initRepo(repo, paths, [ release ]);
     git(repo, [ "apply", "--whitespace=nowarn", patchPath ]);
     writeState(repo, { version, from: version, baseTree, oldTree: baseTree, files: paths });
     return repo;
