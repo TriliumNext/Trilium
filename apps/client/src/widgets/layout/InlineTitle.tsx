@@ -1,7 +1,7 @@
 import "./InlineTitle.css";
 
 import { NoteType } from "@triliumnext/commons";
-import { Tooltip } from "bootstrap";
+import type { Tooltip } from "bootstrap";
 import clsx from "clsx";
 import { ComponentChild } from "preact";
 import { useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";

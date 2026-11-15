@@ -273,24 +273,36 @@ export function useStaticTooltip(
 
 /** Bootstrap's `Tooltip`, once it has loaded. */
 let BootstrapTooltip: TooltipClass | undefined;
-let tooltipsLoad: Promise<TooltipClass> | undefined;
+let bootstrapLoad: Promise<typeof import("bootstrap")> | undefined;
 /** The tooltips waiting for Bootstrap to load. */
 const pendingTooltips = new Set<(Tooltip: TooltipClass) => void>();
+
+/**
+ * Loads Bootstrap with `Tooltip.dispose()` patched (see `patchDispose()`), and attaches every
+ * tooltip waiting for it. Every module that creates a tooltip loads Bootstrap here, so each tooltip
+ * is created with the patch in place. A failed load is tried again on the next call.
+ */
+export function loadBootstrap() {
+    bootstrapLoad ??= import("bootstrap").then((bootstrap) => {
+        patchDispose(bootstrap.Tooltip);
+        BootstrapTooltip = bootstrap.Tooltip;
+        for (const attach of [ ...pendingTooltips ]) attach(bootstrap.Tooltip);
+        pendingTooltips.clear();
+        return bootstrap;
+    }, (err: unknown) => {
+        bootstrapLoad = undefined;
+        throw err;
+    });
+    return bootstrapLoad;
+}
 
 /**
  * Loads Bootstrap's tooltips, and attaches every tooltip waiting for them. A tooltip's own element
  * starts the load when the pointer enters it or it takes focus; a spec that inspects a tooltip
  * right after rendering preloads it.
  */
-export function loadTooltips() {
-    tooltipsLoad ??= import("bootstrap").then(({ Tooltip }) => {
-        patchDispose(Tooltip);
-        BootstrapTooltip = Tooltip;
-        for (const attach of [ ...pendingTooltips ]) attach(Tooltip);
-        pendingTooltips.clear();
-        return Tooltip;
-    });
-    return tooltipsLoad;
+export async function loadTooltips() {
+    return (await loadBootstrap()).Tooltip;
 }
 
 /**

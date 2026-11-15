@@ -4,6 +4,7 @@ import appContext from "../components/app_context.js";
 import type FAttachment from "../entities/fattachment.js";
 import type FNote from "../entities/fnote.js";
 import { onContextMenuShow } from "../menus/context_menu.js";
+import { loadBootstrap } from "../widgets/react/hooks/tooltip.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import linkService, { type BlockJump } from "./link.js";
@@ -134,6 +135,8 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
         renderPromise,
         import("./sanitize_content.js"),
         viewScope?.block ? import("./block_reference.js") : undefined,
+        // The preview is a tooltip of Bootstrap's jQuery plugin, which Bootstrap installs as it loads.
+        loadBootstrap(),
         // to reduce flicker due to accidental mouseover, cursor must stay for a bit over the link for tooltip to appear
         new Promise((res) => setTimeout(res, 500))
     ]);
