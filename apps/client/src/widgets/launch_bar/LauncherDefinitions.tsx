@@ -131,9 +131,10 @@ export function TodayLauncher({ launcherNote }: LauncherNoteProps) {
 
 export function QuickSearchLauncherWidget({ launcherNote }: LauncherNoteProps) {
     const { isHorizontalLayout } = useContext(LaunchBarContext);
-    const parentComponent = useContext(ParentComponent) as BasicWidget | null;
+    // A `BasicWidget` only in the legacy layout, which wraps the launch bar in one.
+    const parentComponent = useContext(ParentComponent) as Partial<BasicWidget> | null;
     const isEnabled = isHorizontalLayout && !isMobile();
-    parentComponent?.contentSized();
+    parentComponent?.contentSized?.();
 
     return (
         <div onContextMenu={launcherContextMenuHandler(launcherNote)}>

@@ -20,8 +20,9 @@ export default function CustomWidget({ launcherNote }: LauncherNoteProps) {
     const [ widgetNote ] = useNoteRelationTarget(launcherNote, "widget");
     const [ widget, setWidget ] = useState<BasicWidget | NoteContextAwareWidget | LauncherWidgetDefinitionWithType>();
 
-    const parentComponent = useContext(ParentComponent) as BasicWidget | null;
-    parentComponent?.contentSized();
+    // A `BasicWidget` only in the legacy layout, which wraps the launch bar in one.
+    const parentComponent = useContext(ParentComponent) as Partial<BasicWidget> | null;
+    parentComponent?.contentSized?.();
 
     useEffect(() => {
         (async function() {
