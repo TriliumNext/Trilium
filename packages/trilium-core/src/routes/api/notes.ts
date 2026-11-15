@@ -17,85 +17,14 @@ import TaskContext from "../../services/task_context.js";
 import treeService from "../../services/tree.js";
 import { randomString } from "../../services/utils/index";
 
-/**
- * @swagger
- * /api/notes/{noteId}:
- *   get:
- *     summary: Retrieve note metadata
- *     operationId: notes-get
- *     parameters:
- *       - name: noteId
- *         in: path
- *         required: true
- *         schema:
- *           $ref: "#/components/schemas/NoteId"
- *     responses:
- *       '200':
- *         description: Note metadata
- *         content:
- *           application/json:
- *             schema:
- *              allOf:
- *                - $ref: '#/components/schemas/Note'
- *                - $ref: "#/components/schemas/Timestamps"
- *     security:
- *       - session: []
- *     tags: ["data"]
- */
 function getNote(req: Request<{ noteId: string }>) {
     return becca.getNoteOrThrow(req.params.noteId);
 }
 
-/**
- * @swagger
- * /api/notes/{noteId}/blob:
- *   get:
- *     summary: Retrieve note content
- *     operationId: notes-blob
- *     parameters:
- *       - name: noteId
- *         in: path
- *         required: true
- *         schema:
- *           $ref: "#/components/schemas/NoteId"
- *     responses:
- *       '304':
- *         description: Note content
- *         content:
- *           application/json:
- *             schema:
- *              $ref: '#/components/schemas/Blob'
- *     security:
- *       - session: []
- *     tags: ["data"]
- */
 function getNoteBlob(req: Request<{ noteId: string }>) {
     return blobService.getBlobPojo("notes", req.params.noteId);
 }
 
-/**
- * @swagger
- * /api/notes/{noteId}/metadata:
- *   get:
- *     summary: Retrieve note metadata (limited to timestamps)
- *     operationId: notes-metadata
- *     parameters:
- *       - name: noteId
- *         in: path
- *         required: true
- *         schema:
- *           $ref: "#/components/schemas/NoteId"
- *     responses:
- *       '200':
- *         description: Note metadata
- *         content:
- *           application/json:
- *             schema:
- *              $ref: "#/components/schemas/Timestamps"
- *     security:
- *       - session: []
- *     tags: ["data"]
- */
 function getNoteMetadata(req: Request<{ noteId: string }>) {
     const note = becca.getNoteOrThrow(req.params.noteId);
 
@@ -107,36 +36,6 @@ function getNoteMetadata(req: Request<{ noteId: string }>) {
     } satisfies MetadataResponse;
 }
 
-/**
- * @swagger
- * /api/notes/metadata:
- *   post:
- *     summary: Retrieve the timestamps of several notes at once
- *     operationId: notes-metadata-bulk
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               noteIds:
- *                 type: array
- *                 items:
- *                   $ref: "#/components/schemas/NoteId"
- *     responses:
- *       '200':
- *         description: The timestamps of each note found, keyed by note ID
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               additionalProperties:
- *                 $ref: "#/components/schemas/Timestamps"
- *     security:
- *       - session: []
- *     tags: ["data"]
- */
 function getNotesMetadata(req: Request) {
     const { noteIds } = req.body as { noteIds?: unknown };
     if (!Array.isArray(noteIds) || noteIds.some((noteId) => typeof noteId !== "string")) {
@@ -253,43 +152,6 @@ function getBlockRangeError(noteId: string, block: string) {
     return `Blocks '${block}' of note '${noteId}' do not exist or cannot be edited apart.`;
 }
 
-/**
- * @swagger
- * /api/notes/{noteId}:
- *   delete:
- *     summary: Delete note
- *     operationId: notes-delete
- *     parameters:
- *       - name: noteId
- *         in: path
- *         required: true
- *         schema:
- *           $ref: "#/components/schemas/NoteId"
- *       - name: taskId
- *         in: query
- *         required: true
- *         schema:
- *           type: string
- *         description: Task group identifier
- *       - name: eraseNotes
- *         in: query
- *         schema:
- *           type: boolean
- *         required: false
- *         description: Whether to erase the note immediately
- *       - name: last
- *         in: query
- *         schema:
- *           type: boolean
- *         required: true
- *         description: Whether this is the last request of this task group
- *     responses:
- *       '200':
- *         description: Note successfully deleted
- *     security:
- *       - session: []
- *     tags: ["data"]
- */
 function deleteNote(req: Request<{ noteId: string }>) {
     const noteId = req.params.noteId;
     const taskId = req.query.taskId;
