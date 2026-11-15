@@ -365,7 +365,7 @@ describe("Excalidraw contract of the canvas drawing", () => {
             const bundle = readBundle(dir, [ ".js" ]);
             const getStroke = bundle.match(
                 /import\s*\{\s*getStroke(?:\s+as\s+([\w$]+))?\s*\}\s*from\s*"perfect-freehand"/);
-            const getStrokeName = (getStroke?.[1] ?? "getStroke").replace(/\$/g, "\\$");
+            const getStrokeName = (getStroke?.[1] ?? "getStroke").replace(/[\\$]/g, "\\$&");
             const hook = new RegExp([
                 String.raw`=triliumFreedrawOutline\.getGrowingStrokePath\((\w+),(\w+)\);`,
                 String.raw`if\((\w+)!==null\)\{?return\3;?\}?`,
