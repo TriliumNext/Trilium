@@ -9,6 +9,12 @@
 /** What `options.ts`, `froca.ts` and `keyboard_actions.ts` ask for as soon as they load. */
 const STARTUP_URLS = [ "options", "tree", "keyboard-actions" ];
 
+/**
+ * How long a startup request can take, body included, before it fails and `server.ts` sends it
+ * again. Matches `DEFAULT_TIMEOUT` in `server.ts`, which the request it replaces would have had.
+ */
+const STARTUP_TIMEOUT_MS = 60_000;
+
 const pendingRequests = new Map<string, Promise<Response>>();
 
 /** Starts the requests of {@link STARTUP_URLS}, for {@link takeStartupResponse} to collect. */
@@ -21,7 +27,10 @@ export function requestStartupData() {
     for (const url of STARTUP_URLS) {
         // `/bootstrap` brings them to a client with a session.
         if (url === "options" && window.glob.options) continue;
-        const request = fetch(`${window.glob.baseApiUrl}${url}`, { headers });
+        // The abort also fails a read of the body that stalls.
+        const controller = new AbortController();
+        setTimeout(() => controller.abort(), STARTUP_TIMEOUT_MS);
+        const request = fetch(`${window.glob.baseApiUrl}${url}`, { headers, signal: controller.signal });
         // A failure goes to whoever takes the request, which then sends it again, not as an
         // unhandled rejection.
         request.catch(() => {});

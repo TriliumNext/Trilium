@@ -749,4 +749,31 @@ describe("requests started at startup", () => {
         expect(await server.get("tree", undefined, true)).toEqual({ from: "ajax" });
         expect(ajaxSpy).toHaveBeenCalledTimes(2);
     });
+
+    it("gives up on a stalled startup request after a minute and sends it again", async () => {
+        vi.useFakeTimers();
+        try {
+            // A real fetch rejects once its signal aborts, whether it waits on the response or the body.
+            const signals: AbortSignal[] = [];
+            vi.stubGlobal("fetch", vi.fn((_url: string, init?: RequestInit) => new Promise<Response>((_resolve, reject) => {
+                const signal = init?.signal;
+                if (signal) signals.push(signal);
+                signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
+            })));
+            const ajaxSpy = vi.fn((opts: AjaxOptions) => opts.success({ from: "ajax" }, "success", fakeJqXhr("")));
+            (window as any).$.ajax = ajaxSpy;
+
+            requestStartupData();
+            const tree = server.get("tree");
+            await vi.advanceTimersByTimeAsync(59_000);
+            expect(ajaxSpy).not.toHaveBeenCalled();
+            await vi.advanceTimersByTimeAsync(1_000);
+            expect(await tree).toEqual({ from: "ajax" });
+            expect(ajaxSpy.mock.calls[0][0].url).toBe("/api/tree");
+            expect(signals.length).toBeGreaterThan(0);
+            expect(signals.every((signal) => signal.aborted)).toBe(true);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
 });
