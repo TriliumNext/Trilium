@@ -3686,7 +3686,6 @@
     "remove_from_launch_bar": "ランチャーバーから削除",
     "configure_launch_bar": "ランチャーバーの設定...",
     "launch_bar_orientation": "ランチャーバーの向き",
-    "will_reload_frontend": "（アプリが再読み込みされます）",
     "show_as_folder": "フォルダーとして表示",
     "open_mode": "開き方",
     "open_mode_current_tab": "現在のタブ",

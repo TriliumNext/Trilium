@@ -3666,7 +3666,6 @@
     "remove_from_launch_bar": "从启动栏中移除",
     "configure_launch_bar": "配置启动栏...",
     "launch_bar_orientation": "启动栏方向",
-    "will_reload_frontend": "（将重新加载应用）",
     "show_as_folder": "显示为文件夹",
     "open_mode": "打开方式",
     "open_mode_current_tab": "当前标签页",

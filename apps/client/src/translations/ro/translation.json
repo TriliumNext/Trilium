@@ -2799,8 +2799,7 @@
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "Elimină din bara de lansare",
     "configure_launch_bar": "Configurează bara de lansare",
-    "launch_bar_orientation": "Orientarea barei de lansare",
-    "will_reload_frontend": "(va reîncărca aplicația)"
+    "launch_bar_orientation": "Orientarea barei de lansare"
   },
   "link": {
     "failed_to_open": "Deschiderea legăturii „{{- href}}” a eșuat: {{- message}}"

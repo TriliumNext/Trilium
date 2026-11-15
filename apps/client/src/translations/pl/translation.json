@@ -4024,8 +4024,7 @@
     "open_mode_new_window": "Nowe okno",
     "open_mode_quick_edit": "Szybka edycja",
     "configure_launch_bar": "Konfiguruj pasek szybkiego dostępu...",
-    "launch_bar_orientation": "Orientacja paska szybkiego dostępu",
-    "will_reload_frontend": "(aplikacja zostanie ponownie załadowana)"
+    "launch_bar_orientation": "Orientacja paska szybkiego dostępu"
   },
   "link": {
     "failed_to_open": "Nie udało się otworzyć linku „{{- href}}”: {{- message}}"

@@ -3803,7 +3803,6 @@
   },
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "Убрать с панели запуска",
-    "will_reload_frontend": "(перезагрузит приложение)",
     "configure_launch_bar": "Настроить панель запуска...",
     "launch_bar_orientation": "Ориентация панели запуска",
     "show_as_folder": "Отобразить как папку",

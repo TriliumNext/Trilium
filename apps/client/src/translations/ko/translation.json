@@ -2886,7 +2886,6 @@
     "remove_from_launch_bar": "실행 표시줄에서 제거",
     "configure_launch_bar": "실행 표시줄 구성...",
     "launch_bar_orientation": "실행 표시줄 방향",
-    "will_reload_frontend": "(앱을 다시 불러올 예정입니다)",
     "show_as_folder": "폴더로 표시",
     "open_mode": "열기 방식",
     "open_mode_current_tab": "현재 탭",

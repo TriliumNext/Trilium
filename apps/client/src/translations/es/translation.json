@@ -3589,7 +3589,6 @@
     "remove_from_launch_bar": "Quitar de la barra de inicio",
     "configure_launch_bar": "Configurar barra de inicio...",
     "launch_bar_orientation": "Orientación de la barra de inicio",
-    "will_reload_frontend": "(se recargará la aplicación)",
     "show_as_folder": "Mostrar como carpeta",
     "open_mode": "Modo de apertura",
     "open_mode_current_tab": "Pestaña actual",

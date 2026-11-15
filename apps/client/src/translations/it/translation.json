@@ -3354,8 +3354,7 @@
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "Rimuovi dalla barra di avvio",
     "configure_launch_bar": "Configura la barra di avvio",
-    "launch_bar_orientation": "Orientamento della barra di avvio",
-    "will_reload_frontend": "(ricaricherà l'app)"
+    "launch_bar_orientation": "Orientamento della barra di avvio"
   },
   "link": {
     "failed_to_open": "Impossibile aprire il link '{{- href}}': {{- message}}"

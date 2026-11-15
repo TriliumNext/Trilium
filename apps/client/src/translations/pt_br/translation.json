@@ -3363,8 +3363,7 @@
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "Remover da barra de lançamento",
     "configure_launch_bar": "Configurar a barra de lançamento",
-    "launch_bar_orientation": "Orientação da barra de lançamento",
-    "will_reload_frontend": "(recarregará o aplicativo)"
+    "launch_bar_orientation": "Orientação da barra de lançamento"
   },
   "link": {
     "failed_to_open": "Falha ao abrir o link '{{- href}}': {{- message}}"

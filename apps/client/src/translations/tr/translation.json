@@ -2787,8 +2787,7 @@
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "Başlatma çubuğundan kaldır",
     "configure_launch_bar": "Başlatma çubuğunu yapılandır",
-    "launch_bar_orientation": "Başlatma çubuğu yönü",
-    "will_reload_frontend": "(uygulamayı yeniden yükleyecek)"
+    "launch_bar_orientation": "Başlatma çubuğu yönü"
   },
   "highlighting": {
     "title": "Kod Blokları",

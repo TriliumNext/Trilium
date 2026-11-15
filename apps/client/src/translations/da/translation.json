@@ -3004,8 +3004,7 @@
     "remove_from_launch_bar": "Fjern fra værktøjslinjen",
     "show_as_folder": "Mappe",
     "configure_launch_bar": "Konfigurér værktøjslinjen...",
-    "launch_bar_orientation": "Værktøjslinjens retning",
-    "will_reload_frontend": "(genindlæser programmet)"
+    "launch_bar_orientation": "Værktøjslinjens retning"
   },
   "highlighting": {
     "title": "Kodeblokke",
