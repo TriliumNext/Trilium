@@ -58,7 +58,7 @@ async function setupActionsForElement(scope: string, $el: JQuery<HTMLElement>, c
 
 /**
  * Binds every window-scoped action (jump to note, reload, tab switching, …) as a global shortcut
- * routed through `appContext.triggerCommand`. `startApp()` calls this once
+ * routed through `appContext.triggerCommand`. `startAppAroundLayout()` calls this once
  * `appContext.tabManager` exists; binding at module load instead left a window during startup in
  * which a matching keypress (F5 held across a reload, for instance) threw on the missing tab manager.
  */

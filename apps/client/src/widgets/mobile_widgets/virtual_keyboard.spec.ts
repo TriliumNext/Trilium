@@ -1,34 +1,38 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import LoadResults from "../../services/load_results";
-import options from "../../services/options";
-import RootContainer from "./root_container";
+import { trackVirtualKeyboard } from "./virtual_keyboard";
 
 /**
  * Stands in for `window.visualViewport`, which happy-dom does not implement. Only the parts the
- * root container reads (`height`) and listens on (`resize`) are modelled.
+ * tracking reads (`height`) and listens on (`resize`) are modelled.
  */
 class FakeVisualViewport extends EventTarget {
     height = 0;
     width = 0;
 }
 
-describe("RootContainer", () => {
+describe("trackVirtualKeyboard", () => {
     let visualViewport: FakeVisualViewport;
+    let root: HTMLElement;
+    let stopTracking: (() => void) | undefined;
 
     beforeEach(() => {
-        window.glob = { ...window.glob, device: "mobile" };
         visualViewport = new FakeVisualViewport();
         Object.defineProperty(window, "visualViewport", { value: visualViewport, configurable: true });
+        root = document.body.appendChild(document.createElement("div"));
     });
 
     afterEach(() => {
+        stopTracking?.();
+        root.remove();
         Object.defineProperty(window, "visualViewport", { value: undefined, configurable: true });
-        window.glob = { ...window.glob, device: "desktop" };
-        document.body.classList.remove("sticky-table-headers-disabled");
+        for (const name of [ "--tn-keyboard-height", "--tn-layout-shrink", "--tn-layout-overhang" ]) {
+            document.body.style.removeProperty(name);
+        }
+        vi.restoreAllMocks();
     });
 
-    /** Applies a new window/viewport geometry and lets the container react to it. */
+    /** Applies a new window/viewport geometry and lets the tracking react to it. */
     function resizeTo({ width, height, viewportHeight }: { width: number; height: number; viewportHeight?: number }) {
         Object.defineProperty(window, "innerWidth", { value: width, configurable: true });
         Object.defineProperty(window, "innerHeight", { value: height, configurable: true });
@@ -37,42 +41,41 @@ describe("RootContainer", () => {
         visualViewport.dispatchEvent(new Event("resize"));
     }
 
-    function renderInPortrait() {
+    function trackInPortrait() {
         resizeTo({ width: 400, height: 800 });
-        const rootContainer = new RootContainer(false);
-        const $widget = rootContainer.render();
+        stopTracking = trackVirtualKeyboard(root);
         resizeTo({ width: 400, height: 800 });
-        return $widget;
     }
 
+    const isKeyboardOpened = () => root.classList.contains("virtual-keyboard-opened");
+
     it("does not report the virtual keyboard as opened after a portrait → landscape rotation", () => {
-        const $widget = renderInPortrait();
-        expect($widget.hasClass("virtual-keyboard-opened")).toBe(false);
+        trackInPortrait();
+        expect(isKeyboardOpened()).toBe(false);
 
         // Rotating shrinks the window itself; the viewport still fills it, so no keyboard is up.
         resizeTo({ width: 800, height: 400 });
-
-        expect($widget.hasClass("virtual-keyboard-opened")).toBe(false);
+        expect(isKeyboardOpened()).toBe(false);
     });
 
     it("reports the virtual keyboard as opened while it covers part of the viewport", () => {
-        const $widget = renderInPortrait();
+        trackInPortrait();
 
         // Keyboard in portrait: the window keeps its height, the visual viewport shrinks.
         resizeTo({ width: 400, height: 800, viewportHeight: 450 });
-        expect($widget.hasClass("virtual-keyboard-opened")).toBe(true);
+        expect(isKeyboardOpened()).toBe(true);
 
         resizeTo({ width: 400, height: 800 });
-        expect($widget.hasClass("virtual-keyboard-opened")).toBe(false);
+        expect(isKeyboardOpened()).toBe(false);
 
         // ... and the same once rotated to landscape.
         resizeTo({ width: 800, height: 400 });
         resizeTo({ width: 800, height: 400, viewportHeight: 200 });
-        expect($widget.hasClass("virtual-keyboard-opened")).toBe(true);
+        expect(isKeyboardOpened()).toBe(true);
     });
 
     it("keeps the height of the last keyboard for a menu to take its place", () => {
-        renderInPortrait();
+        trackInPortrait();
         const keyboardHeight = () => document.body.style.getPropertyValue("--tn-keyboard-height");
 
         resizeTo({ width: 400, height: 800, viewportHeight: 450 });
@@ -81,14 +84,12 @@ describe("RootContainer", () => {
         // Closing the keyboard leaves the height for a menu that replaces it as it closes.
         resizeTo({ width: 400, height: 800 });
         expect(keyboardHeight()).toBe("350px");
-        document.body.style.removeProperty("--tn-keyboard-height");
     });
 
     it("measures how far the layout shrinks for the keyboard on Android", () => {
-        const $widget = renderInPortrait();
         const layoutHeight = { value: 800 };
-        vi.spyOn($widget[0], "getBoundingClientRect").mockImplementation(
-            () => ({ height: layoutHeight.value }) as DOMRect);
+        vi.spyOn(root, "getBoundingClientRect").mockImplementation(() => ({ height: layoutHeight.value }) as DOMRect);
+        trackInPortrait();
         const shrink = () => document.body.style.getPropertyValue("--tn-layout-shrink");
 
         // `interactive-widget=resizes-content` shrinks the window and the layout with the keyboard.
@@ -99,38 +100,14 @@ describe("RootContainer", () => {
         layoutHeight.value = 800;
         resizeTo({ width: 400, height: 800 });
         expect(shrink()).toBe("0px");
-        document.body.style.removeProperty("--tn-layout-shrink");
-        document.body.style.removeProperty("--tn-layout-overhang");
     });
 
-    it("marks the body while sticky table headers are off, and follows a change", () => {
-        const isMarked = () => document.body.classList.contains("sticky-table-headers-disabled");
-        options.set("textNoteStickyTableHeadersEnabled", "true");
-        const rootContainer = new RootContainer(false);
-        rootContainer.render();
-        expect(isMarked()).toBe(false);
+    it("stops following the keyboard once stopped", () => {
+        trackInPortrait();
+        stopTracking?.();
+        stopTracking = undefined;
 
-        options.set("textNoteStickyTableHeadersEnabled", "false");
-        const loadResults = new LoadResults([]);
-        loadResults.addOption("textNoteStickyTableHeadersEnabled");
-        rootContainer.entitiesReloadedEvent({ loadResults });
-        expect(isMarked()).toBe(true);
-    });
-
-    it("keeps backdrop effects on a mobile device only on iOS", () => {
-        const isDisabled = () => document.body.classList.contains("backdrop-effects-disabled");
-        const userAgent = vi.spyOn(navigator, "userAgent", "get");
-        options.set("backdropEffectsEnabled", "true");
-
-        userAgent.mockReturnValue("Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) Mobile");
-        new RootContainer(false).render();
-        expect(isDisabled()).toBe(false);
-
-        userAgent.mockReturnValue("Mozilla/5.0 (Linux; Android 15; Pixel 9) Mobile");
-        new RootContainer(false).render();
-        expect(isDisabled()).toBe(true);
-
-        userAgent.mockRestore();
-        document.body.classList.remove("backdrop-effects-disabled", "ios");
+        resizeTo({ width: 400, height: 800, viewportHeight: 450 });
+        expect(isKeyboardOpened()).toBe(false);
     });
 });

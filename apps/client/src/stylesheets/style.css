@@ -446,7 +446,7 @@ samp {
 /*
  * Programming ligatures: the bundled JetBrains Mono renders `!=` as `≠`, `->` as `→` and so on,
  * which reads as the characters having been silently replaced (see #2851). The `monospaceLigatures-
- * Enabled` option gates this; the class is applied by RootContainer.
+ * Enabled` option gates this; the class is applied by `applyAppearance()`.
  *
  * Scoped to the monospace surfaces rather than set on `body`: `font-variant-ligatures` is inherited,
  * so a blanket rule would also disable `fi`/`fl` in prose, which is a typographic regression in note

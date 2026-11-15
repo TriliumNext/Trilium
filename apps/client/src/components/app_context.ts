@@ -1,18 +1,17 @@
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import type CodeMirror from "@triliumnext/codemirror";
-import { type LOCALE_IDS, SqlExecuteResponse } from "@triliumnext/commons";
+import { SqlExecuteResponse } from "@triliumnext/commons";
 import { ColumnComponent } from "tabulator-tables";
 
 import type { Attribute } from "../services/attribute_parser.js";
-import { initLocale, t } from "../services/i18n.js";
+import { t } from "../services/i18n.js";
 import type LoadResults from "../services/load_results.js";
 import { type HashPane, parseNavigationStateFromUrl, type ViewScope } from "../services/navigation_state.js";
 import type { CreateNoteOpts } from "../services/note_create.js";
-import options from "../services/options.js";
 import type { ShortcutHintSection } from "../services/shortcut_hints.js";
 import toast from "../services/toast.js";
 import { reuseAcrossHotReloads } from "../services/utils.js";
-import type { default as BasicWidget, ReactWrappedWidget } from "../widgets/basic_widget.js";
+import type { ReactWrappedWidget } from "../widgets/basic_widget.js";
 import type { ConfirmWithMessageOptions, ConfirmWithTitleOptions } from "../widgets/dialogs/confirm.js";
 import { ContentEmbedOpts } from "../widgets/dialogs/content_embed.jsx";
 import type { ResolveOptions } from "../widgets/dialogs/delete_notes.js";
@@ -36,10 +35,6 @@ import Component from "./component.js";
 import type { Screen } from "./mobile_screen_switcher.js";
 import type { default as NoteContext, GetTextEditorCallback } from "./note_context.js";
 import type TabManager from "./tab_manager.js";
-
-interface Layout {
-    getRootWidget: (appContext: AppContext) => BasicWidget;
-}
 
 export interface BeforeUploadListener extends Component {
     beforeUnloadEvent(): boolean;
@@ -628,7 +623,6 @@ export class AppContext extends Component {
     components: Component[];
     beforeUnloadListeners: (WeakRef<BeforeUploadListener> | (() => boolean))[];
     tabManager!: TabManager;
-    layout?: Layout;
     noteTreeWidget?: NoteTreeWidget;
 
     lastSearchString?: string;
@@ -640,20 +634,6 @@ export class AppContext extends Component {
         // non-widget/layout components needed for the application
         this.components = [];
         this.beforeUnloadListeners = [];
-    }
-
-    /**
-     * Must be called as soon as possible, before the creation of any components since this method is in charge of initializing the locale. Any attempts to read translation before this method is called will result in `undefined`.
-     */
-    async earlyInit() {
-        await Promise.all([
-            options.initializedPromise,
-            initLocale(window.glob.currentLocale.id as LOCALE_IDS)
-        ]);
-    }
-
-    setLayout(layout: Layout) {
-        this.layout = layout;
     }
 
     triggerEvent<K extends EventNames>(name: K, data: EventData<K>) {

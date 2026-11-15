@@ -29,7 +29,7 @@ import ScrollPadding from "../widgets/scroll_padding.js";
 import MobileEditorToolbar from "../widgets/type_widgets/text/mobile_editor_toolbar.js";
 import { Modals, SearchResults, triggerLegacyCommand, useAppearance } from "./layout_commons.js";
 
-/** The mobile layout as a single Preact tree, which `mobile_layout.tsx` is moved into piece by piece. */
+/** The mobile layout, as a single Preact tree. */
 export default function MobileLayout() {
     const rootRef = useRef<HTMLDivElement>(null);
     useAppearance();
