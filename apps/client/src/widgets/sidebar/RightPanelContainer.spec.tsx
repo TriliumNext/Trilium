@@ -47,7 +47,8 @@ import type LoadResults from "../../services/load_results";
 import options from "../../services/options";
 import { buildNote } from "../../test/easy-froca";
 import { ParentComponent } from "../react/react_utils";
-import RightPanelContainer, { groupIntoTabs, reduceTabSelection, RightPanelWidgetDefinition } from "./RightPanelContainer";
+import RightPanelContainer, { reduceTabSelection } from "./RightPanelContainer";
+import { groupIntoTabs, type RightPanelWidgetDefinition } from "./RightPaneContent";
 import { RIGHT_PANE_TABS } from "./RightPaneTabs";
 
 describe("reduceTabSelection", () => {
@@ -131,9 +132,11 @@ describe("RightPanelContainer", () => {
         container.remove();
     });
 
-    it("treats the tab as the window's own: a press writes the choice back, another window's is not followed", () => {
+    it("treats the tab as the window's own: a press writes the choice back, another window's is not followed", async () => {
         shownNote.current = buildNote({ title: "Read" });
         renderContainer();
+        // The pane's content loads as it first opens.
+        await vi.waitFor(() => expect(container.querySelector("[role=tab]")).not.toBeNull());
 
         // A text note offers the outline, the attributes and the connections; the pane is on the tab
         // last chosen here.

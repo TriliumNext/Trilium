@@ -59,7 +59,7 @@ import { buildNote } from "../../test/easy-froca";
 import { ParentComponent } from "../react/react_utils";
 import NoteMap from "../sidebar/NoteMap";
 import PdfPages from "../sidebar/pdf/PdfPages";
-import type { RightPaneTabContents } from "../sidebar/RightPanelContainer";
+import type { RightPaneTabContents } from "../sidebar/RightPaneContent";
 import MobileNotePanel, { withFixedHeightWidgetsLast } from "./MobileNotePanel";
 
 describe("withFixedHeightWidgetsLast", () => {

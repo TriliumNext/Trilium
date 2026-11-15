@@ -14,7 +14,7 @@ import NoteMap from "../sidebar/NoteMap";
 import PdfPages from "../sidebar/pdf/PdfPages";
 import {
     RightPaneTabBodies, type RightPaneTabContents, useRightPaneTabs
-} from "../sidebar/RightPanelContainer";
+} from "../sidebar/RightPaneContent";
 import { NavigatedInNote } from "../sidebar/RightPanelWidget";
 import { RightPaneTabId } from "../sidebar/RightPaneTabs";
 
