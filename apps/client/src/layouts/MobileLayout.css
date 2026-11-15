@@ -1,0 +1,16 @@
+.mobile-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+
+    #mobile-rest-container {
+        display: flex;
+        flex-grow: 1;
+        min-height: 0;
+    }
+
+    #launcher-pane {
+        display: flex;
+        height: 53px;
+    }
+}

@@ -6,10 +6,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import appContext from "../../components/app_context";
 import type NoteContext from "../../components/note_context";
 import froca from "../../services/froca";
-import { buildNotes } from "../../test/easy-froca";
+import { buildNote, buildNotes } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
+import { ParentComponent } from "../react/react_utils";
 import { setTabScreen, setTabTree } from "./tab_navigation";
-import { getSwipeDirection, Tab, useLaunchBarTabSwipe } from "./TabSwitcher";
+import TabSwitcher, { getSwipeDirection, Tab, useLaunchBarTabSwipe } from "./TabSwitcher";
 
 describe("Tab", () => {
     buildNotes([
@@ -232,5 +233,26 @@ describe("tab swipe", () => {
         expect(triggerCommand.mock.calls).toEqual([ [ "activateNextTab" ], [ "activateNextTab" ] ]);
 
         appContext.tabManager = tabManager;
+    });
+});
+
+describe("TabSwitcher", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("counts no tabs before the tab manager exists, and the tabs once they are created", () => {
+        vi.spyOn(appContext, "tabManager", "get").mockReturnValue(undefined as never);
+        const launcherNote = buildNote({ id: "_lbMobileTabSwitcher", title: "Tabs", type: "launcher" });
+        const container = renderInto(
+            <ParentComponent.Provider value={appContext}><TabSwitcher launcherNote={launcherNote} /></ParentComponent.Provider>
+        );
+        const button = container.querySelector(".mobile-tab-switcher");
+        expect(button?.getAttribute("data-tab-count")).toBe("0");
+
+        const noteContexts = [ {}, {} ] as NoteContext[];
+        vi.spyOn(appContext, "tabManager", "get").mockReturnValue({ getMainNoteContexts: () => noteContexts } as never);
+        act(() => { appContext.triggerEvent("newNoteContextCreated", { noteContext: noteContexts[1] }); });
+        expect(button?.getAttribute("data-tab-count")).toBe("2");
     });
 });

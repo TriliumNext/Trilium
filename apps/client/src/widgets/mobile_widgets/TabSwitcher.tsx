@@ -495,12 +495,20 @@ function getWorkspaceTabBackgroundColorHue(noteContext: NoteContext) {
     }
 }
 
+/**
+ * The tabs, or none before the startup creates the tab manager, which can come after the launch bar
+ * renders. The tabs it restores then arrive through `newNoteContextCreated`.
+ */
 function useMainNoteContexts() {
-    const [ noteContexts, setNoteContexts ] = useState(appContext.tabManager.getMainNoteContexts());
+    const [ noteContexts, setNoteContexts ] = useState(getMainNoteContexts);
 
     useTriliumEvents([ "newNoteContextCreated", "noteContextRemoved" ] , () => {
-        setNoteContexts(appContext.tabManager.getMainNoteContexts());
+        setNoteContexts(getMainNoteContexts());
     });
 
     return noteContexts;
+}
+
+function getMainNoteContexts() {
+    return appContext.tabManager?.getMainNoteContexts() ?? [];
 }
