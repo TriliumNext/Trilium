@@ -11,10 +11,15 @@ This is essentially Trilium sources + node modules + node.js runtime packaged in
 *   you can open the browser and open http://\[your-server-hostname\]:8080 and you should see Trilium initialization page
 *   the console lists the addresses the server can be reached on, so you can also copy one from there
 
-The problem with above steps is that once you close the SSH connection, the Trilium process is terminated. To avoid that, you have two options:
+The problem with above steps is that once you close the SSH connection or the terminal, the Trilium process is terminated. Generally, the best way to avoid that is to configure systemd to run Trilium in the background on every boot, as described in the next section. It also restarts Trilium if it stops unexpectedly.
 
-*   Kill it (with e.g. <kbd>Ctrl</kbd> + <kbd>C</kbd>) and run again like this: `nohup ./trilium.sh &`. (nohup keeps the process running in the background, `&` runs it in the background)
-*   Configure systemd to automatically run Trilium in the background on every boot
+To keep Trilium running without a service, stop it (with <kbd>Ctrl</kbd>+<kbd>C</kbd>) and start it again detached from the terminal:
+
+*   `setsid -f ./trilium.sh > trilium.out 2>&1` starts Trilium in a new session, so closing the terminal does not reach it. Its output goes to `trilium.out`.
+*   Alternatively, in Bash or Zsh, `./trilium.sh > trilium.out 2>&1 & disown` starts it in the background and removes it from the shell's jobs, so the shell does not stop it on exit.
+
+> [!WARNING]
+> `nohup ./trilium.sh &` does not keep Trilium running. Node.js resets the signal handlers at startup, so it no longer ignores the hang-up signal (`SIGHUP`) that `nohup` sets up, and Trilium stops as soon as the terminal closes.
 
 ## Configure Trilium to auto-run on boot with systemd
 
