@@ -17,7 +17,7 @@ import { reportSplashPhase } from "../services/splash.js";
 import toast from "../services/toast.js";
 import utils, { reuseAcrossHotReloads } from "../services/utils.js";
 import { ReactWrappedWidget } from "../widgets/basic_widget.js";
-import type RootContainer from "../widgets/containers/root_container.js";
+import type BasicWidget from "../widgets/basic_widget.js";
 import type { ConfirmWithMessageOptions, ConfirmWithTitleOptions } from "../widgets/dialogs/confirm.js";
 import { ContentEmbedOpts } from "../widgets/dialogs/content_embed.jsx";
 import type { ResolveOptions } from "../widgets/dialogs/delete_notes.js";
@@ -49,7 +49,7 @@ import TabManager from "./tab_manager.js";
 import zoomComponent from "./zoom.js";
 
 interface Layout {
-    getRootWidget: (appContext: AppContext) => RootContainer;
+    getRootWidget: (appContext: AppContext) => BasicWidget;
 }
 
 export interface BeforeUploadListener extends Component {

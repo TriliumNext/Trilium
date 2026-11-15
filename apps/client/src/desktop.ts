@@ -21,11 +21,11 @@ await appContext.earlyInit();
  * until then, so the bundle, layout and tree requests below are not made behind a blank page. A
  * failed start still resolves it: the toast that reports the failure has to become visible.
  */
-export const ready = bundleService.getWidgetBundlesByParent().then(async (widgetBundles) => {
+export const ready = bundleService.getWidgetBundlesByParent().then(async () => {
     // A dynamic import is required for layouts since they initialize components which require translations.
-    const DesktopLayout = (await import("./layouts/desktop_layout.js")).default;
+    const DesktopLayout = (await import("./layouts/DesktopLayout.js")).default;
 
-    appContext.setLayout(new DesktopLayout(widgetBundles));
+    appContext.setLayout(new DesktopLayout());
     try {
         await appContext.start();
     } catch (e) {
