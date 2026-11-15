@@ -15,8 +15,9 @@ import {
 import {
     EditableEmbedContent, type EditableEmbedOptions, type EmbeddedCaretEditor, EmbedPreview,
     NestedEmbedContext, useEditableEmbed, useEmbedCaretNavigation, useEmbedEditors,
-    useEmbedPreview, useNestedEditor
+    useEmbedPreview
 } from "./editable_embed";
+import { useNestedEditor } from "./nested_editor";
 
 const figures: HTMLElement[] = [];
 

@@ -12,7 +12,7 @@ import { useTriliumEvent } from "../../react/hooks/events";
 import { useBodyClass } from "../../react/hooks/dom";
 import { useNoteProperty } from "../../react/hooks/note";
 import { useIsNoteReadOnly, useNoteContext } from "../../react/hooks/note_context";
-import { useNestedEditor } from "./editable_embed";
+import { useNestedEditor } from "./nested_editor";
 
 /**
  * Handles the editing toolbar for CKEditor in mobile mode. The toolbar acts as a floating bar, with two different mechanism:

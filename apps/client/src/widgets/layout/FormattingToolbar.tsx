@@ -12,7 +12,7 @@ import { useNoteProperty } from "../react/hooks/note";
 import { useTriliumOption } from "../react/hooks/options";
 import { useNoteContext } from "../react/hooks/note_context";
 import { useActiveNoteContext } from "../react/hooks/tree";
-import { useNestedEditor } from "../type_widgets/text/editable_embed";
+import { useNestedEditor } from "../type_widgets/text/nested_editor";
 
 /**
  * Handles the editing toolbar of a single note context when the CKEditor is in decoupled mode, as

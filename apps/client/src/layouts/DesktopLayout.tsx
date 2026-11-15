@@ -17,6 +17,7 @@ import SplitNoteContainer from "../widgets/containers/split_note_container.js";
 import FindWidget from "../widgets/find.js";
 import LauncherContainer from "../widgets/launch_bar/LauncherContainer.js";
 import SpacerWidget from "../widgets/launch_bar/SpacerWidget.js";
+import { FixedFormattingToolbar } from "../widgets/layout/FormattingToolbar.js";
 import InlineTitle from "../widgets/layout/InlineTitle.js";
 import NoteActions from "../widgets/layout/NoteActions.js";
 import NoteBadges from "../widgets/layout/NoteBadges.js";
@@ -69,6 +70,7 @@ export default function DesktopLayout() {
                 <LeftPane pane={leftPane} />
                 <div id="rest-pane">
                     {!fullWidthTabBar && <TabBar fullWidth={false} leftPaneToggle={false} />}
+                    <FixedFormattingToolbar />
                     <div id="vertical-main-container">
                         <div id="center-pane">
                             <NoteSplits />

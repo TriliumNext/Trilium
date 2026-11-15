@@ -58,7 +58,10 @@ describe("DesktopLayout", () => {
         // The note splits fill the center pane, under the tab bar.
         const centerPane = root?.querySelector("#rest-pane > #vertical-main-container > #center-pane");
         expect(centerPane?.querySelector(".split-note-container-widget")).not.toBeNull();
-        expect(tabBar?.nextElementSibling?.id).toBe("vertical-main-container");
+        // The fixed formatting toolbar sits between the tab bar and the main container.
+        const toolbar = tabBar?.nextElementSibling;
+        expect(toolbar?.classList.contains("classic-toolbar-widget")).toBe(true);
+        expect(toolbar?.nextElementSibling?.id).toBe("vertical-main-container");
         // The right pane and its peek button follow the center pane.
         const rightPaneHost = root?.querySelector("#vertical-main-container > #right-pane-host");
         expect(rightPaneHost).toBeInstanceOf(HTMLElement);

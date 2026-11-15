@@ -216,6 +216,8 @@
 /src/widgets/layout/ActiveContentBadges.tsx
 /src/widgets/layout/Breadcrumb.css
 /src/widgets/layout/Breadcrumb.tsx
+/src/widgets/layout/FormattingToolbar.css
+/src/widgets/layout/FormattingToolbar.tsx
 /src/widgets/layout/InlineTitle.css
 /src/widgets/layout/InlineTitle.tsx
 /src/widgets/layout/NoteActions.css
@@ -329,6 +331,7 @@
 /src/widgets/type_widgets/options/components/LocaleSelector.tsx
 /src/widgets/type_widgets/options/components/OptionsRow.css
 /src/widgets/type_widgets/options/components/OptionsRow.tsx
+/src/widgets/type_widgets/text/nested_editor.ts
 /src/widgets/widget_utils.ts
 ws://*/
 ? /api/attachments/download/*
@@ -340,6 +343,10 @@ ws://*/
 ? /src/fonts/JetBrainsMono/JetBrainsMono-VariableFont_wght.woff2
 ? /src/services/mime_types.ts
 ? /src/services/note_types.ts
+? /src/widgets/PromotedAttributes.css
+? /src/widgets/PromotedAttributes.tsx
+? /src/widgets/attribute_widgets/multi_value_input.tsx
+? /src/widgets/attribute_widgets/relation_values_input.tsx
 ? /src/widgets/layout/NoteTypeSwitcher.css
 ? /src/widgets/layout/NoteTypeSwitcher.tsx
 ? /src/widgets/react/hooks/editor.ts
