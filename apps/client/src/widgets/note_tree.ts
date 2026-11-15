@@ -1859,7 +1859,8 @@ function buildEnhanceTitle() {
         const note = froca.getNoteFromCache(node.data.noteId);
         if (!note) return;
 
-        const activeNoteContext = appContext.tabManager.getActiveContext();
+        // The tree can be built before `desktop.ts` creates the tab manager, which restores the tabs.
+        const activeNoteContext = appContext.tabManager?.getActiveContext();
 
         const $span = $(node.span);
 

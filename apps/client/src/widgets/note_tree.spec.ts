@@ -411,6 +411,38 @@ describe("focusing the tree", () => {
     });
 });
 
+describe("rendering before the tabs exist", () => {
+    const originalTabManager = appContext.tabManager;
+
+    afterEach(() => {
+        appContext.tabManager = originalTabManager;
+        vi.restoreAllMocks();
+    });
+
+    it("renders a note's title while the tab manager is not created yet", async () => {
+        buildNote({ id: "early", title: "Early" });
+        const widget = new NoteTreeWidget();
+        let treeOptions: Fancytree.FancytreeOptions | undefined;
+        vi.spyOn(widget, "prepareRootNode").mockReturnValue({ key: "root" } as never);
+        vi.spyOn($.fn, "fancytree").mockImplementation(function (this: JQuery, opts: unknown) {
+            treeOptions = opts as Fancytree.FancytreeOptions;
+            return this;
+        } as never);
+        vi.spyOn($.ui.fancytree, "getTree").mockReturnValue({} as never);
+        widget.doRender();
+        await new Promise((resolve) => setTimeout(resolve));
+        widget.initFancyTree();
+
+        appContext.tabManager = undefined as unknown as TabManager;
+        const span = document.createElement("span");
+        span.innerHTML = `<span class="fancytree-title">Early</span>`;
+        const enhanceTitle = treeOptions?.enhanceTitle as ((event: Event, data: unknown) => Promise<void>) | undefined;
+        expect(enhanceTitle).toBeDefined();
+        await expect(enhanceTitle?.(new Event("render"), { node: { data: { noteId: "early" }, span, extraClasses: "" }, noteId: "early" }))
+            .resolves.toBeUndefined();
+    });
+});
+
 describe("drags onto the tree", () => {
     const target = { data: { noteId: "target", noteType: "text" } };
 
