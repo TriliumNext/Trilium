@@ -3,14 +3,12 @@ import Draggabilly, { type MoveVector } from "draggabilly";
 
 import appContext, { type CommandListenerData, type CommandNames, type EventData } from "../components/app_context.js";
 import type NoteContext from "../components/note_context.js";
-import contextMenu from "../menus/context_menu.js";
-import { getRecentChangesMenuItems } from "../menus/recent_changes_menu_items.js";
+import type { MenuItem } from "../menus/context_menu.js";
 import attributeService from "../services/attributes.js";
 import cssClassManager from "../services/css_class_manager.js";
 import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
 import keyboardActionService from "../services/keyboard_actions.js";
-import search from "../services/search.js";
 import { clampDragDestination } from "../services/tab_pinning.js";
 import { buildTabTitle, noteTitleHtml, TAB_TITLE_SEPARATOR } from "../services/tab_title.js";
 import utils from "../services/utils.js";
@@ -429,35 +427,39 @@ export default class TabRowWidget extends BasicWidget {
             const isPinned = !!mainContext?.pinned;
             const isEmpty = !mainContext || mainContext.isEmpty();
 
-            contextMenu.show<CommandNames>({
-                x: e.pageX,
-                y: e.pageY,
-                items: [
-                    isPinned
-                        ? { title: t("tab_row.unpin_tab"), command: "unpinTab", uiIcon: "bx bx-pin" }
-                        : { title: t("tab_row.pin_tab"), command: "pinTab", uiIcon: "bx bx-pin", enabled: !isEmpty },
+            const items: MenuItem<CommandNames>[] = [
+                isPinned
+                    ? { title: t("tab_row.unpin_tab"), command: "unpinTab", uiIcon: "bx bx-pin" }
+                    : { title: t("tab_row.pin_tab"), command: "pinTab", uiIcon: "bx bx-pin", enabled: !isEmpty },
 
-                    { kind: "separator" },
+                { kind: "separator" },
 
-                    { title: t("tab_row.close"), command: "closeTab", uiIcon: "bx bx-x", enabled: !isPinned },
-                    { title: t("tab_row.close_other_tabs"), command: "closeOtherTabs", uiIcon: "bx bx-empty", enabled: appContext.tabManager.noteContexts.length !== 1 },
-                    { title: t("tab_row.close_right_tabs"), command: "closeRightTabs", uiIcon: "bx bx-empty", enabled: appContext.tabManager.noteContexts?.at(-1)?.ntxId !== ntxId },
-                    { title: t("tab_row.close_all_tabs"), command: "closeAllTabs", uiIcon: "bx bx-empty" },
+                { title: t("tab_row.close"), command: "closeTab", uiIcon: "bx bx-x", enabled: !isPinned },
+                { title: t("tab_row.close_other_tabs"), command: "closeOtherTabs", uiIcon: "bx bx-empty", enabled: appContext.tabManager.noteContexts.length !== 1 },
+                { title: t("tab_row.close_right_tabs"), command: "closeRightTabs", uiIcon: "bx bx-empty", enabled: appContext.tabManager.noteContexts?.at(-1)?.ntxId !== ntxId },
+                { title: t("tab_row.close_all_tabs"), command: "closeAllTabs", uiIcon: "bx bx-empty" },
 
-                    { kind: "separator" },
+                { kind: "separator" },
 
-                    { title: t("tab_row.reopen_last_tab"), command: "reopenLastTab", uiIcon: "bx bx-undo", enabled: appContext.tabManager.recentlyClosedTabs.length !== 0 },
+                { title: t("tab_row.reopen_last_tab"), command: "reopenLastTab", uiIcon: "bx bx-undo", enabled: appContext.tabManager.recentlyClosedTabs.length !== 0 },
 
-                    { kind: "separator" },
+                { kind: "separator" },
 
-                    { title: t("tab_row.move_tab_to_new_window"), command: "moveTabToNewWindow", uiIcon: "bx bx-window-open", enabled: !isPinned },
-                    { title: t("tab_row.copy_tab_to_new_window"), command: "copyTabToNewWindow", uiIcon: "bx bx-empty" }
-                ],
-                selectMenuItemHandler: ({ command }) => {
-                    if (command) {
-                        this.triggerCommand(command, { ntxId });
+                { title: t("tab_row.move_tab_to_new_window"), command: "moveTabToNewWindow", uiIcon: "bx bx-window-open", enabled: !isPinned },
+                { title: t("tab_row.copy_tab_to_new_window"), command: "copyTabToNewWindow", uiIcon: "bx bx-empty" }
+            ];
+            const { pageX: x, pageY: y } = e;
+            void import("../menus/context_menu.js").then(({ default: contextMenu }) => {
+                contextMenu.show<CommandNames>({
+                    x,
+                    y,
+                    items,
+                    selectMenuItemHandler: ({ command }) => {
+                        if (command) {
+                            this.triggerCommand(command, { ntxId });
+                        }
                     }
-                }
+                });
             });
         });
     }
@@ -976,9 +978,12 @@ export default class TabRowWidget extends BasicWidget {
     }
 
     async showNewTabContextMenu(x: number, y: number) {
-        const [ workspaceNotes, recentChangesItems ] = await Promise.all([
-            search.searchForNotes("#workspace #!template"),
-            getRecentChangesMenuItems()
+        const [ { default: contextMenu }, workspaceNotes, recentChangesItems ] = await Promise.all([
+            import("../menus/context_menu.js"),
+            import("../services/search.js").then(({ default: search }) =>
+                search.searchForNotes("#workspace #!template")),
+            import("../menus/recent_changes_menu_items.js").then(({ getRecentChangesMenuItems }) =>
+                getRecentChangesMenuItems())
         ]);
 
         contextMenu.show<CommandNames>({

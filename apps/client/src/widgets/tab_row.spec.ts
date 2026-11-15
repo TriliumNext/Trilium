@@ -92,6 +92,59 @@ describe("TabRowWidget tab activation", () => {
     });
 });
 
+describe("TabRowWidget context menus", () => {
+    afterEach(() => {
+        document.body.replaceChildren();
+        vi.doUnmock("../menus/context_menu");
+        vi.doUnmock("../menus/recent_changes_menu_items");
+        vi.doUnmock("../services/search");
+    });
+
+    it("loads the menu modules only once a tab is right-clicked", async () => {
+        // The spec's own static import of `tab_row` loaded the menus, so this one starts from fresh modules.
+        vi.resetModules();
+        const loaded = new Set<string>();
+        const show = vi.fn();
+        vi.doMock("../menus/context_menu", () => {
+            loaded.add("context_menu");
+            return { default: { show } };
+        });
+        vi.doMock("../menus/recent_changes_menu_items", () => {
+            loaded.add("recent_changes_menu_items");
+            return { getRecentChangesMenuItems: async () => [] };
+        });
+        vi.doMock("../services/search", () => {
+            loaded.add("search");
+            return { default: { searchForNotes: async () => [] } };
+        });
+        const { default: freshAppContext } = await import("../components/app_context");
+        const { default: FreshTabRowWidget } = await import("./tab_row");
+
+        const mainContexts = [ { ntxId: "tab", pinned: false, isEmpty: () => false } ];
+        freshAppContext.tabManager = {
+            getMainNoteContexts: () => mainContexts,
+            noteContexts: mainContexts,
+            recentlyClosedTabs: []
+        } as unknown as TabManager;
+        const widget = new FreshTabRowWidget();
+        document.body.append(widget.render()[0]);
+        widget.addTab("tab");
+        expect([ ...loaded ]).toEqual([]);
+
+        const tab = widget.$widget.find(`.note-tab[data-ntx-id="tab"]`)[0];
+        expect(tab).toBeInstanceOf(HTMLElement);
+        tab.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+        await vi.waitFor(() => expect(show).toHaveBeenCalledOnce());
+        expect([ ...loaded ]).toEqual([ "context_menu" ]);
+        const titles = show.mock.calls[0][0].items.map((item: { title?: string }) => item.title);
+        expect(titles).toContain("tab_row.close");
+
+        await widget.showNewTabContextMenu(0, 0);
+        expect(show).toHaveBeenCalledTimes(2);
+        expect([ ...loaded ].sort()).toEqual([ "context_menu", "recent_changes_menu_items", "search" ]);
+    });
+});
+
 describe("TabRowWidget tab restore", () => {
     const originalTabManager = appContext.tabManager;
 
