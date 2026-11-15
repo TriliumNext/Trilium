@@ -83,6 +83,24 @@ describe("DesktopLayout", () => {
         expect(mainContainer?.firstElementChild?.classList.contains("left-pane-peek-button")).toBe(true);
         expect(mainContainer?.children[1]?.id).toBe("left-pane-host");
     });
+
+    it("runs the command of a legacy widget's `data-trigger-command` element on a click", () => {
+        window.glob.layoutOrientation = "horizontal";
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockResolvedValue(undefined);
+        let container: HTMLElement | undefined;
+        act(() => { container = renderInto(<Layout />); });
+
+        const newTabButton = container?.querySelector<HTMLElement>(".note-new-tab[data-trigger-command]");
+        expect(newTabButton).toBeInstanceOf(HTMLElement);
+        newTabButton?.click();
+        expect(triggerCommand).toHaveBeenCalledWith("openNewTab", expect.objectContaining({ $el: expect.anything() }));
+
+        triggerCommand.mockClear();
+        newTabButton?.classList.add("disabled");
+        newTabButton?.click();
+        expect(triggerCommand).not.toHaveBeenCalled();
+        triggerCommand.mockRestore();
+    });
 });
 
 /** `desktop.ts` renders the layout with `appContext` as its parent component. */

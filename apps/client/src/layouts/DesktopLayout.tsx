@@ -2,6 +2,8 @@ import "./DesktopLayout.css";
 
 import clsx from "clsx";
 
+import type { CommandNames } from "../components/app_context.js";
+import type Component from "../components/component.js";
 import { areWindowControlsOnLeft, isElectron } from "../services/utils.js";
 import GlobalMenu from "../widgets/buttons/global_menu.js";
 import LeftPaneToggle, { LeftPanePeekButton } from "../widgets/buttons/left_pane_toggle.js";
@@ -35,7 +37,7 @@ export default function DesktopLayout() {
     );
 
     return (
-        <div id="root-widget" className={`desktop-layout ${orientation}-layout`}>
+        <div id="root-widget" className={`desktop-layout ${orientation}-layout`} onClick={triggerLegacyCommand}>
             {fullWidthTabBar && <TabBar fullWidth leftPaneToggle={isHorizontal} />}
             {isHorizontal && launcherPane}
             <div
@@ -70,4 +72,16 @@ function TabBar({ fullWidth, leftPaneToggle }: { fullWidth: boolean, leftPaneTog
             <RightPaneToggle />
         </div>
     );
+}
+
+/**
+ * Runs the command that an element of a legacy widget names in `data-trigger-command`, from the
+ * widget it belongs to, as `app_startup.ts` does for the old layout.
+ */
+function triggerLegacyCommand(e: MouseEvent) {
+    const target = (e.target as Element).closest<HTMLElement>("[data-trigger-command]");
+    if (!target || target.classList.contains("disabled")) return;
+
+    const component = $(target).closest(".component").prop("component") as Component | undefined;
+    void component?.triggerCommand(target.dataset.triggerCommand as CommandNames, { $el: $(target) });
 }
