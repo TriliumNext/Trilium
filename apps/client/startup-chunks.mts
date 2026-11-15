@@ -38,6 +38,12 @@ export const STARTUP_AREAS = {
 
 export type StartupArea = keyof typeof STARTUP_AREAS;
 
+/**
+ * The areas a page loads only for some users or notes: the script API for a user with `#widget` or
+ * startup scripts. The areas after one cannot count on its modules.
+ */
+export const OPTIONAL_AREAS: ReadonlySet<StartupArea> = new Set<StartupArea>([ "script-api" ]);
+
 export interface StartupPage {
     /** The module `importEntry()` in `index.ts` loads for the page. Its imports are the page's `shell`. */
     entry: string;
@@ -72,6 +78,8 @@ interface Step {
     name: string;
     /** The absolute IDs of the modules the step loads from. */
     entries: string[];
+    /** Whether the page can skip the step, so that a later step loads what it shares with this one. */
+    optional?: boolean;
 }
 
 export interface StartupChunkOptions {
@@ -91,6 +99,10 @@ export interface StartupChunkOptions {
  * so a page downloads few files for a step and none of the code that only other pages use. Such a
  * chunk is named after its steps and, unless every page loads it, their pages: `shell`,
  * `shell.desktop.mobile`, `startup.desktop_shell.print`.
+ *
+ * A page can skip an optional step, so its modules do not count as loaded for the steps after it.
+ * A module that a later step imports too gets a chunk named after both steps, `script-api+editor`,
+ * which keeps the rest of the optional step away from a page that skipped it.
  *
  * Every other input of the build counts as a page with one step, which keeps the chunks of the app
  * out of it. A module keeps the chunk the bundler gives it when a step loads from it, or when no
@@ -123,9 +135,12 @@ export function assignStartupChunks({ entry, pages, getModule }: StartupChunkOpt
         const loaded = new Set<string>();
         for (const step of steps) {
             for (const id of collectImports(step.entries, loaded, modules)) {
-                loaded.add(id);
+                if (!step.optional) {
+                    loaded.add(id);
+                }
                 const stepsOfModule = stepsByModule.get(id) ?? new Map<string, string>();
-                stepsOfModule.set(page, step.name);
+                const optionalSteps = stepsOfModule.get(page);
+                stepsOfModule.set(page, optionalSteps ? `${optionalSteps}+${step.name}` : step.name);
                 stepsByModule.set(id, stepsOfModule);
             }
         }
@@ -166,7 +181,11 @@ export function startupChunkGroup(rootDir: string) {
                 entry: normalizePath(join(rootDir, "index.html")),
                 pages: Object.fromEntries(Object.entries(STARTUP_PAGES).map(([ page, { entry, areas } ]) => [ page, [
                     { name: "shell", entries: [ toId(entry) ] },
-                    ...areas.map((area) => ({ name: area, entries: STARTUP_AREAS[area].map(toId) }))
+                    ...areas.map((area) => ({
+                        name: area,
+                        entries: STARTUP_AREAS[area].map(toId),
+                        optional: OPTIONAL_AREAS.has(area)
+                    }))
                 ] ])),
                 getModule: (moduleId) => ctx.getModuleInfo(moduleId)
             });

@@ -91,6 +91,42 @@ describe("assignStartupChunks", () => {
             expect(chunks.has(id), id).toBe(false);
         }
     });
+
+    it("keeps what a later step shares with an optional step out of the optional step's chunk", () => {
+        const optionalChunks = assignStartupChunks({
+            entry: "index.html",
+            pages: {
+                desktop: [
+                    { name: "shell", entries: [ "desktop.ts" ] },
+                    { name: "scripts", entries: [ "scripts.ts" ], optional: true },
+                    { name: "editor", entries: [ "editor.ts" ] },
+                    { name: "dialog", entries: [ "dialog.tsx" ] }
+                ]
+            },
+            getModule: buildGraph({
+                "index.html": { imports: [ "index.ts" ], isEntry: true },
+                "index.ts": { lazy: [ "desktop.ts" ] },
+                "desktop.ts": { imports: [ "utils.ts" ], lazy: [ "scripts.ts", "editor.ts", "dialog.tsx" ] },
+                "scripts.ts": { imports: [ "utils.ts", "tabulator.js", "palette.tsx", "calendar.js" ] },
+                "editor.ts": { imports: [ "utils.ts", "ckeditor.js", "palette.tsx" ] },
+                "dialog.tsx": { imports: [ "palette.tsx", "ckeditor.js", "calendar.js" ] },
+                "utils.ts": {},
+                "tabulator.js": {},
+                "palette.tsx": {},
+                "calendar.js": {},
+                "ckeditor.js": {}
+            })
+        });
+
+        expect(Object.fromEntries(optionalChunks)).toEqual({
+            "utils.ts": "shell",
+            "tabulator.js": "scripts",
+            // The editor loads it whether or not the scripts have, and the dialog has it by then.
+            "palette.tsx": "scripts+editor",
+            "ckeditor.js": "editor",
+            "calendar.js": "scripts+dialog"
+        });
+    });
 });
 
 describe("startupChunkGroup", () => {
