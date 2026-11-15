@@ -12,14 +12,11 @@ import UploadAttachmentsDialog from "../widgets/dialogs/upload_attachments.js";
 import FindWidget from "../widgets/find.js";
 import SpacerWidget from "../widgets/launch_bar/SpacerWidget.jsx";
 import { FixedFormattingToolbar } from "../widgets/layout/FormattingToolbar.jsx";
-import InlineTitle from "../widgets/layout/InlineTitle.jsx";
 import NoteActions from "../widgets/layout/NoteActions.jsx";
 import NoteBadges from "../widgets/layout/NoteBadges.jsx";
 import NoteTitleActions from "../widgets/layout/NoteTitleActions.jsx";
 import { NoteTypeSwitcherBar } from "../widgets/layout/NoteTypeSwitcher.jsx";
 import StatusBar from "../widgets/layout/StatusBar.jsx";
-import NoteIconWidget from "../widgets/note_icon.jsx";
-import NoteTitleWidget from "../widgets/note_title.jsx";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import ScrollPadding from "../widgets/scroll_padding.js";
 import SearchResult from "../widgets/search_result.jsx";
@@ -68,15 +65,12 @@ export default class DesktopLayout {
                                                         .child(new FlexContainer("row")
                                                             .class("title-row note-split-title")
                                                             .cssBlock(".title-row > * { margin: 5px; }")
-                                                            .child(<NoteIconWidget />)
-                                                            .child(<NoteTitleWidget placement="split" />)
                                                             .child(<NoteBadges />)
                                                             .child(<SpacerWidget baseSize={0} growthFactor={1} />)
                                                             .child(<NoteActions />))
                                                         .child(
                                                             new ScrollingContainer()
                                                                 .filling()
-                                                                .child(<InlineTitle />)
                                                                 .child(<NoteTitleActions />)
                                                                 .child(<NoteList media="screen" />)
                                                                 .child(<SearchResult />)

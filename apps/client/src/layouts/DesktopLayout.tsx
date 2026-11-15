@@ -9,12 +9,16 @@ import GlobalMenu from "../widgets/buttons/global_menu.js";
 import LeftPaneToggle, { LeftPanePeekButton } from "../widgets/buttons/left_pane_toggle.js";
 import RightPaneToggle from "../widgets/buttons/right_pane_toggle.js";
 import { LeaveFullScreenButton } from "../widgets/close_zen_button.js";
+import FlexContainer from "../widgets/containers/flex_container.js";
 import LeftPane, { useLeftPane } from "../widgets/containers/LeftPane.js";
 import ScrollingContainer from "../widgets/containers/scrolling_container.js";
 import SplitNoteContainer from "../widgets/containers/split_note_container.js";
 import LauncherContainer from "../widgets/launch_bar/LauncherContainer.js";
-import NoteDetail from "../widgets/NoteDetail.js";
+import InlineTitle from "../widgets/layout/InlineTitle.js";
+import NoteIcon from "../widgets/note_icon.js";
+import NoteTitleWidget from "../widgets/note_title.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
+import NoteDetail from "../widgets/NoteDetail.js";
 import { useLegacyWidget } from "../widgets/react/hooks/legacy.js";
 import TabRowWidget from "../widgets/tab_row.js";
 import TabHistoryNavigationButtons from "../widgets/TabHistoryNavigationButtons.js";
@@ -83,12 +87,21 @@ function TabBar({ fullWidth, leftPaneToggle }: { fullWidth: boolean, leftPaneTog
     );
 }
 
-/** One note split per note context of the active tab, each showing its note's content. */
+/**
+ * One note split per note context of the active tab, each with a title row (the note's icon and
+ * its compact title) above the note's inline title and content.
+ */
 function NoteSplits() {
     const [ splits ] = useLegacyWidget(() => new SplitNoteContainer(() =>
         new NoteWrapperWidget()
+            .child(new FlexContainer("row")
+                .class("title-row note-split-title")
+                .cssBlock(".title-row > * { margin: 5px; }")
+                .child(<NoteIcon />)
+                .child(<NoteTitleWidget placement="split" />))
             .child(new ScrollingContainer()
                 .filling()
+                .child(<InlineTitle />)
                 .child(<NoteDetail />))
     ), { containerClassName: "note-splits-host" });
     return splits;

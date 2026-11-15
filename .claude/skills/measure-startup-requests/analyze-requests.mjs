@@ -264,10 +264,12 @@ function why(file, name) {
 
 /**
  * The name a request has in an allowlist: its normalized path without what changes between runs
- * (the content hash of a pre-bundled dependency chunk, the query string of the HMR websocket).
+ * (the content hash of a pre-bundled dependency chunk, the query string of the HMR websocket) or
+ * between sessions (the ID of the open note in `/api/notes/<id>/...`).
  */
 function stableName(request) {
     return normalize(request.url)
+        .replace(/^\/api\/notes\/[A-Za-z0-9_]+\//, "/api/notes/*/")
         .replace(/-[A-Za-z0-9_-]{8}\.js$/, "-*.js")
         .replace(/^(wss?:\/\/)[^/]+(\/[^?]*).*$/, "$1*$2");
 }

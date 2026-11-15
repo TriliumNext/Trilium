@@ -39,6 +39,7 @@
 /@vite/client
 /api/icon-packs.css
 /api/keyboard-actions
+/api/notes/*/metadata
 /api/options
 /api/tree
 /bootstrap
@@ -93,6 +94,7 @@
 /src/services/command_registry.ts
 /src/services/css_class_manager.ts
 /src/services/date_notes.ts
+/src/services/debounce.ts
 /src/services/experimental_features.ts
 /src/services/focus.ts
 /src/services/font.ts
@@ -198,7 +200,14 @@
 /src/widgets/launch_bar/SyncStatus.css
 /src/widgets/launch_bar/SyncStatus.tsx
 /src/widgets/launch_bar/launch_bar_widgets.tsx
+/src/widgets/layout/InlineTitle.css
+/src/widgets/layout/InlineTitle.tsx
+/src/widgets/layout/note_metadata.tsx
 /src/widgets/note_context_aware_widget.ts
+/src/widgets/note_icon.css
+/src/widgets/note_icon.tsx
+/src/widgets/note_title.css
+/src/widgets/note_title.tsx
 /src/widgets/note_tree.css
 /src/widgets/note_tree.ts
 /src/widgets/note_types.tsx
@@ -231,6 +240,8 @@
 /src/widgets/react/HelpTooltipButton.tsx
 /src/widgets/react/Icon.css
 /src/widgets/react/Icon.tsx
+/src/widgets/react/IconPickerButton.css
+/src/widgets/react/IconPickerButton.tsx
 /src/widgets/react/LazyComponent.css
 /src/widgets/react/LazyComponent.tsx
 /src/widgets/react/Menu.css

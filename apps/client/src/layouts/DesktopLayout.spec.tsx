@@ -7,6 +7,7 @@ vi.mock("../services/keyboard_actions", () => ({
 vi.mock("../services/resizer", () => ({ default: { setupLeftPaneResizer: vi.fn() } }));
 
 import appContext from "../components/app_context.js";
+import NoteContext from "../components/note_context.js";
 import options from "../services/options.js";
 import { buildNote } from "../test/easy-froca.js";
 import { renderInto } from "../test/render.js";
@@ -86,6 +87,34 @@ describe("DesktopLayout", () => {
         const mainContainer = root?.querySelector("#horizontal-main-container");
         expect(mainContainer?.firstElementChild?.classList.contains("left-pane-peek-button")).toBe(true);
         expect(mainContainer?.children[1]?.id).toBe("left-pane-host");
+    });
+
+    it("gives each note split a title row with the note's icon and title, above its inline title", async () => {
+        window.glob.layoutOrientation = "vertical";
+        let container: HTMLElement | undefined;
+        act(() => { container = renderInto(<Layout />); });
+        const noteContext = new NoteContext("main");
+        const originalTabManager = appContext.tabManager;
+        appContext.tabManager = {
+            getActiveMainContext: () => noteContext,
+            getActiveContext: () => noteContext
+        } as unknown as typeof appContext.tabManager;
+        const splits = container?.querySelector(".split-note-container-widget");
+        expect(splits).not.toBeNull();
+        await act(async () => {
+            await $(splits as HTMLElement).prop("component").handleEvent("newNoteContextCreated", { noteContext });
+        });
+        appContext.tabManager = originalTabManager;
+
+        const split = container?.querySelector(".note-split[data-ntx-id=main]");
+        expect(split).not.toBeNull();
+        const titleRow = split?.querySelector(":scope > .title-row");
+        expect(titleRow).toBeInstanceOf(HTMLElement);
+        expect(titleRow?.querySelector(".note-icon-widget button.note-icon")).toBeInstanceOf(HTMLElement);
+        expect(titleRow?.querySelector(".note-title-widget")).toBeInstanceOf(HTMLElement);
+        const scroller = split?.querySelector(":scope > .scrolling-container");
+        expect(scroller?.firstElementChild?.classList.contains("inline-title")).toBe(true);
+        expect(scroller?.querySelector(":scope > .note-detail")).toBeInstanceOf(HTMLElement);
     });
 
     it("runs the command of a legacy widget's `data-trigger-command` element on a click", () => {
