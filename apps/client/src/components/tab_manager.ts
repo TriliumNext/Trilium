@@ -497,8 +497,10 @@ export default class TabManager extends Component {
             await noteContext.setNote(notePath, {
                 // if activate is false, then send normal noteSwitched event
                 triggerSwitchEvent: !activate,
-                // A tab opened in the background leaves the mobile layout on the tab the user is in.
+                // A tab opened in the background, as when the tabs are restored, leaves the mobile
+                // layout on the tab the user is in and is not a visit to its note.
                 keepScreen: !activate,
+                skipRecentNotes: !activate,
                 viewScope: viewScope
             });
         }
@@ -551,9 +553,13 @@ export default class TabManager extends Component {
         }
 
         if (triggerEvent) {
-            await this.triggerEvent("activeContextChanged", {
-                noteContext: this.getNoteContextById(ntxId)
-            });
+            const noteContext = this.getNoteContextById(ntxId);
+            // Switching to a context visits its note, which a tab opened in the background has not.
+            if (noteContext.notePath) {
+                noteContext.saveToRecentNotes(noteContext.notePath);
+            }
+
+            await this.triggerEvent("activeContextChanged", { noteContext });
         }
 
         this.tabsUpdate.scheduleUpdate();

@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import server from "../services/server.js";
 import { buildNote } from "../test/easy-froca.js";
 import appContext from "./app_context.js";
 import NoteContext from "./note_context.js";
@@ -88,6 +89,40 @@ describe("TabManager tab placement", () => {
             [ "root/activated", false ]
         ]);
         setNote.mockRestore();
+    });
+});
+
+describe("recent notes", () => {
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+    });
+
+    it("adds the note of an activated tab, and of a background tab only once switched to", async () => {
+        vi.useFakeTimers();
+        buildNote({
+            id: "root", title: "root", children: [
+                { id: "background", title: "Background" }, { id: "activated", title: "Activated" }
+            ]
+        });
+        const post = vi.spyOn(server, "post").mockResolvedValue(undefined);
+        const tm = new TabManager();
+        appContext.tabManager = tm;
+
+        const recentNotes = () => post.mock.calls
+            .filter(([ url ]) => url === "recent-notes").map(([ , data ]) => data);
+
+        const background = await tm.openContextWithNote("root/background");
+        await tm.openContextWithNote("root/activated", { activate: true });
+        await vi.advanceTimersByTimeAsync(5000);
+        expect(recentNotes()).toEqual([ { noteId: "activated", notePath: "root/activated" } ]);
+
+        await tm.activateNoteContext(background.ntxId);
+        await vi.advanceTimersByTimeAsync(5000);
+        expect(recentNotes()).toEqual([
+            { noteId: "activated", notePath: "root/activated" },
+            { noteId: "background", notePath: "root/background" }
+        ]);
     });
 });
 
