@@ -167,6 +167,11 @@ export default class App {
         // Page in Playwright is not updated somehow, need to click on the tab to make sure it's rendered
         const tab = await this.getTab(0);
         await tab.click();
+        // The tabs are saved a second after they change, so a test that ends sooner would leave
+        // its tabs to the next one.
+        await this.page.evaluate(async () => {
+            await (window as any).glob.appContext.tabManager.tabsUpdate.updateNowIfNecessary();
+        });
     }
 
     /**
