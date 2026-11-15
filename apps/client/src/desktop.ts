@@ -1,6 +1,7 @@
 import type { ElectronWindowApi } from "@triliumnext/commons";
 
 import appContext, { type CommandNames } from "./components/app_context.js";
+import { startApp } from "./components/app_startup.js";
 import electronContextMenu from "./menus/electron_context_menu.js";
 import { setupContextMenu as setupBrowserContextMenu } from "./menus/note_context_menu.js";
 import { setupClipboardImageEmbed } from "./services/clipboard_image_embed.js";
@@ -24,7 +25,7 @@ export const ready = (async () => {
 
     appContext.setLayout(new DesktopLayout());
     try {
-        await appContext.start();
+        await startApp();
     } catch (e) {
         toastService.showPersistent({
             id: "critical-error",

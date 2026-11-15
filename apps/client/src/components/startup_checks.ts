@@ -16,7 +16,7 @@ export class StartupChecks extends Component {
     constructor() {
         super();
         this.checkCpuArchMismatch();
-        // Shared by desktop and mobile (both reach here via appContext.start), so the post-enrollment
+        // Shared by desktop and mobile (both reach here via startApp()), so the post-enrollment
         // toast lives here rather than being duplicated in each entry point.
         showOAuthEnrollmentResultToast();
     }

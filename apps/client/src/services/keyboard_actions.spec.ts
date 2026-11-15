@@ -127,7 +127,7 @@ describe("keyboard_actions", () => {
         );
 
         // Importing the module must not bind anything: the handlers read `appContext.tabManager`,
-        // which only exists once `AppContext.initComponents()` has run and called setupWindowShortcuts.
+        // which only exists once `startApp()` has run and called setupWindowShortcuts.
         await kb.default.getActions();
         await Promise.resolve();
         expect(spy).not.toHaveBeenCalled();

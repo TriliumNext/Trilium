@@ -4,20 +4,15 @@ import { type LOCALE_IDS, SqlExecuteResponse } from "@triliumnext/commons";
 import { ColumnComponent } from "tabulator-tables";
 
 import type { Attribute } from "../services/attribute_parser.js";
-import bundleService from "../services/bundle.js";
-import froca from "../services/froca.js";
 import { initLocale, t } from "../services/i18n.js";
-import keyboardActionsService from "../services/keyboard_actions.js";
 import linkService, { type HashPane, type ViewScope } from "../services/link.js";
 import type LoadResults from "../services/load_results.js";
 import type { CreateNoteOpts } from "../services/note_create.js";
 import options from "../services/options.js";
 import type { ShortcutHintSection } from "../services/shortcut_hints.js";
-import { reportSplashPhase } from "../services/splash.js";
 import toast from "../services/toast.js";
-import utils, { reuseAcrossHotReloads } from "../services/utils.js";
-import { ReactWrappedWidget } from "../widgets/basic_widget.js";
-import type BasicWidget from "../widgets/basic_widget.js";
+import { reuseAcrossHotReloads } from "../services/utils.js";
+import type { default as BasicWidget, ReactWrappedWidget } from "../widgets/basic_widget.js";
 import type { ConfirmWithMessageOptions, ConfirmWithTitleOptions } from "../widgets/dialogs/confirm.js";
 import { ContentEmbedOpts } from "../widgets/dialogs/content_embed.jsx";
 import type { ResolveOptions } from "../widgets/dialogs/delete_notes.js";
@@ -38,15 +33,9 @@ import type { PaneId, PaneMode } from "../widgets/react/peek_pane.js";
 import type { RightPaneTabId } from "../widgets/sidebar/RightPaneTabs.jsx";
 import type { ToolCall } from "../widgets/type_widgets/llm_chat/llm_chat_types.js";
 import Component from "./component.js";
-import Entrypoints from "./entrypoints.js";
-import MainTreeExecutors from "./main_tree_executors.js";
-import MobileScreenSwitcherExecutor, { type Screen } from "./mobile_screen_switcher.js";
+import type { Screen } from "./mobile_screen_switcher.js";
 import type { default as NoteContext, GetTextEditorCallback } from "./note_context.js";
-import RootCommandExecutor from "./root_command_executor.js";
-import ShortcutComponent from "./shortcut_component.js";
-import { StartupChecks } from "./startup_checks.js";
-import TabManager from "./tab_manager.js";
-import zoomComponent from "./zoom.js";
+import type TabManager from "./tab_manager.js";
 
 interface Layout {
     getRootWidget: (appContext: AppContext) => BasicWidget;
@@ -661,74 +650,6 @@ export class AppContext extends Component {
 
     setLayout(layout: Layout) {
         this.layout = layout;
-    }
-
-    async start() {
-        this.initComponents();
-        this.renderWidgets();
-
-        reportSplashPhase("notes");
-        await froca.initializedPromise;
-
-        this.tabManager.loadTabs();
-
-        setTimeout(() => bundleService.executeStartupBundles(), 2000);
-    }
-
-    initComponents() {
-        this.tabManager = new TabManager();
-
-        this.components = [
-            this.tabManager,
-            new RootCommandExecutor(),
-            new Entrypoints(),
-            new MainTreeExecutors(),
-            new ShortcutComponent(),
-            new StartupChecks()
-        ];
-
-        if (utils.isMobile()) {
-            this.components.push(new MobileScreenSwitcherExecutor());
-        }
-
-        for (const component of this.components) {
-            this.child(component);
-        }
-
-        if (utils.isElectron()) {
-            this.child(zoomComponent);
-        }
-
-        void keyboardActionsService.setupWindowShortcuts();
-    }
-
-    renderWidgets() {
-        if (!this.layout) {
-            throw new Error("Missing layout.");
-        }
-
-        const rootWidget = this.layout.getRootWidget(this);
-        const $renderedWidget = rootWidget.render();
-
-        keyboardActionsService.updateDisplayedShortcuts($renderedWidget);
-
-        $("body").append($renderedWidget);
-
-        $renderedWidget.on("click", "[data-trigger-command]", function () {
-            if ($(this).hasClass("disabled")) {
-                return;
-            }
-
-            const commandName = $(this).attr("data-trigger-command");
-            const $component = $(this).closest(".component");
-            const component = $component.prop("component");
-
-            component.triggerCommand(commandName, { $el: $(this) });
-        });
-
-        this.child(rootWidget as Component);
-
-        this.triggerEvent("initialRenderComplete", {});
     }
 
     triggerEvent<K extends EventNames>(name: K, data: EventData<K>) {
