@@ -490,7 +490,7 @@ body .todo-list input[type="checkbox"]:not(:checked):before {
 .note-split.with-hue .table :is(td, th).ck-editor__editable_selected,
 .quick-edit-dialog-wrapper.with-hue .table :is(td, th).ck-editor__editable_selected,
 .ck-content aside.with-hue .table :is(td, th).ck-editor__editable_selected {
-    --selection-background-color: hsl(var(--custom-color-hue), 49.2%, 35%);
+    --selection-background-color: hsl(var(--custom-color-hue), 100%, 61.2%, 0.444);
 }
 
 .note-book-card.with-hue {
