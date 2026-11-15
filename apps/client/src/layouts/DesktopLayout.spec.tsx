@@ -148,6 +148,8 @@ describe("DesktopLayout", () => {
         expect(searchResults?.nextElementSibling).toBe(scroller?.lastElementChild);
         // The note type switcher's bar ends the split, under the scroller.
         expect(scroller?.nextElementSibling?.classList.contains("note-type-switcher-bar")).toBe(true);
+        // The find bar follows it.
+        expect(scroller?.nextElementSibling?.nextElementSibling?.classList.contains("find-replace-widget")).toBe(true);
     });
 
     it("runs the command of a legacy widget's `data-trigger-command` element on a click", () => {

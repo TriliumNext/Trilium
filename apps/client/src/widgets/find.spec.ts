@@ -1,15 +1,30 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import type NoteContext from "../components/note_context";
 import FindWidget from "./find";
 
-vi.mock("../services/i18n.js", () => ({ t: (key: string) => key }));
+// The translations are loaded after this module is, as a layout that imports the bar statically
+// loads it before `initLocale()` has run.
+const i18n = vi.hoisted(() => ({ isLoaded: false }));
+vi.mock("../services/i18n.js", () => ({ t: (key: string) => (i18n.isLoaded ? key : "") }));
 
 function fakeContext(ntxId: string) {
     return { ntxId, note: null } as unknown as NoteContext;
 }
 
 describe("FindWidget", () => {
+    beforeAll(() => {
+        i18n.isLoaded = true;
+    });
+
+    it("words its fields in the translations loaded after its module", () => {
+        const $widget = new FindWidget().render();
+        expect($widget.find(".find-widget-search-term-input").attr("placeholder")).toBe("find.find_placeholder");
+        const labels = $widget.find(".find-widget-box .form-check-label").toArray()
+            .map((label) => label.textContent?.trim());
+        expect(labels).toEqual([ "find.case_sensitive", "find.match_words" ]);
+    });
+
     it("stays on its pinned context while the tabs switch theirs", async () => {
         const popup = fakeContext("_popup-editor");
         const tab = fakeContext("main");

@@ -195,6 +195,7 @@
 /src/widgets/containers/scrolling_container.css
 /src/widgets/containers/scrolling_container.ts
 /src/widgets/containers/split_note_container.ts
+/src/widgets/find.ts
 /src/widgets/hold_context_menu.ts
 /src/widgets/launch_bar/BookmarkButtons.css
 /src/widgets/launch_bar/BookmarkButtons.tsx

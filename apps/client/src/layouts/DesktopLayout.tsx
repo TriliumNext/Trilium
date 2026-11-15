@@ -14,6 +14,7 @@ import FlexContainer from "../widgets/containers/flex_container.js";
 import LeftPane, { useLeftPane } from "../widgets/containers/LeftPane.js";
 import ScrollingContainer from "../widgets/containers/scrolling_container.js";
 import SplitNoteContainer from "../widgets/containers/split_note_container.js";
+import FindWidget from "../widgets/find.js";
 import LauncherContainer from "../widgets/launch_bar/LauncherContainer.js";
 import SpacerWidget from "../widgets/launch_bar/SpacerWidget.js";
 import InlineTitle from "../widgets/layout/InlineTitle.js";
@@ -104,8 +105,8 @@ function TabBar({ fullWidth, leftPaneToggle }: { fullWidth: boolean, leftPaneTog
 /**
  * One note split per note context of the active tab, each with a title row (the note's icon, its
  * compact title, its badges and its actions) above the note's inline title, title actions,
- * content, list of child notes, search results and scroll padding, and the bar that picks the type
- * of an empty note at the bottom.
+ * content, list of child notes, search results and scroll padding, then the bar that picks the type
+ * of an empty note and the find bar.
  */
 function NoteSplits() {
     const [ splits ] = useLegacyWidget(() => new SplitNoteContainer(() =>
@@ -127,6 +128,7 @@ function NoteSplits() {
                 .child(<SearchResults />)
                 .child(<ScrollPadding />))
             .child(<NoteTypeSwitcherBar />)
+            .child(new FindWidget())
     ), { containerClassName: "note-splits-host" });
     return splits;
 }
