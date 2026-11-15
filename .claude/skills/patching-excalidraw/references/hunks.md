@@ -151,8 +151,8 @@ file as word-level snippets, which is the readable form of the prod bundle.
   another, goes through `getStroke()` as before.
 - **Guarded by:** `excalidraw_freedraw_outline.spec.ts`, which runs the dev bundle's
   `getFreeDrawSvgPath()` with the block of each bundle against the same function without it, after
-  every point of 60 random strokes (the paths must be identical), and checks that `getStroke()` is
-  no longer called once a stroke has its first stroke points. The contract spec, "outlines a
+  every one to eight points of 60 random strokes (the paths must be identical), and checks that
+  `getStroke()` is no longer called once a stroke has its first stroke points. The contract spec, "outlines a
   growing pen stroke with the block of the Trilium patch": the same block in both bundles, and the
   hook before `getStroke()` with the same options.
 - **Added in:** the fix for #12650. A port of excalidraw/excalidraw#12621,

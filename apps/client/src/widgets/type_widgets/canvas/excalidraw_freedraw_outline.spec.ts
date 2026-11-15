@@ -38,8 +38,7 @@ const NO_BLOCK = "var triliumFreedrawOutline = { getGrowingStrokePath: () => nul
  * skill): `getFreeDrawSvgPath()` outlines a stroke that grows, as the one being drawn does, from
  * where its last outline stopped, with the block `triliumFreedrawOutline`. These tests run the dev
  * bundle's own `getFreeDrawSvgPath()` with the block of each bundle against the same function
- * without it, after every point of random strokes: the SVG paths must be the same, character for
- * character.
+ * without it, as random strokes grow: the SVG paths must be the same, character for character.
  */
 describe("Excalidraw outline of a growing freedraw stroke (Trilium patch)", () => {
     // Vitest resolves the `development` export, so both folders come from `dist`.
@@ -64,7 +63,8 @@ describe("Excalidraw outline of a growing freedraw stroke (Trilium patch)", () =
         return outline;
     }
 
-    it.each([ "dev", "prod" ])("outlines a growing stroke as from scratch after every point (%s)",
+    it.each([ "dev", "prod" ])(
+        "outlines a growing stroke as from scratch, one to eight points at a time (%s)",
         (bundle) => {
             const patched = loadOutline(readBlock(join(distDir, bundle)));
             const unpatched = loadOutline(NO_BLOCK);
@@ -73,11 +73,14 @@ describe("Excalidraw outline of a growing freedraw stroke (Trilium patch)", () =
             for (let seed = 1; seed <= 60; seed++) {
                 const stroke = createStroke(seed);
                 const element = createElement(stroke);
-                for (let i = 0; i < stroke.points.length; i++) {
-                    addPoint(element, stroke, i);
+                // Pointer moves that arrive between two renders append several points per outline.
+                const random = createRandom(1000 + seed);
+                for (let i = 0; i < stroke.points.length;) {
+                    const end = Math.min(stroke.points.length, i + 1 + Math.floor(random() * 8));
+                    for (; i < end; i++) addPoint(element, stroke, i);
                     if (patched.getFreeDrawSvgPath(element)
                         !== unpatched.getFreeDrawSvgPath(element)) {
-                        mismatches.push(`seed ${seed}, point ${i}`);
+                        mismatches.push(`seed ${seed}, point ${i - 1}`);
                         break;
                     }
                 }
