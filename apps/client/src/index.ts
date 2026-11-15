@@ -6,9 +6,7 @@ import "./content.css";
 import { requestCatalogues } from "./services/catalogue_requests";
 import { loadIconPackGlyphs } from "./services/icon_pack_glyphs";
 import { createFontPreloadLink, createFontStylesheet } from "./services/font";
-import {
-    hideSplash, reportSplashPhase, showSplashError
-} from "./services/splash";
+import { hideSplash, reportSplashPhase, showStartupFailure } from "./services/splash";
 import { requestStartupData } from "./services/startup_requests";
 import {
     buildThemeStylesheetRefs, createStylesheetLink, getThemeStyle, initThemeChangeNotifier, rememberRootBackground,
@@ -305,8 +303,4 @@ function importEntry(): Promise<{ ready?: Promise<unknown> }> {
     }
 }
 
-bootstrap().catch((err) => {
-    console.error("Trilium failed to start:", err);
-    const message = err instanceof Error ? err.message : String(err);
-    showSplashError(`Trilium failed to start: ${message} — reload the page to try again.`);
-});
+bootstrap().catch(showStartupFailure);

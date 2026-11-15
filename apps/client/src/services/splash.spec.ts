@@ -119,4 +119,18 @@ describe("splash", () => {
         expect(alert?.querySelector(".startup-error-title")?.textContent).toBe("Trilium Notes");
         expect(alert?.querySelector(".startup-error-message")?.textContent).toBe("something broke");
     });
+
+    it("shows a failure after the splash began to fade on a screen of its own, and logs it", async () => {
+        const { hideSplash, showStartupFailure } = await freshSplash();
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+        hideSplash();
+        const error = new Error("chunk failed");
+
+        showStartupFailure(error);
+        expect(document.getElementById("splash")?.classList.contains("splash-error")).toBe(false);
+        expect(document.querySelector("#startup-error .startup-error-message")?.textContent)
+            .toBe("Trilium failed to start: chunk failed — reload the page to try again.");
+        expect(consoleError).toHaveBeenCalledWith("Trilium failed to start:", error);
+        consoleError.mockRestore();
+    });
 });

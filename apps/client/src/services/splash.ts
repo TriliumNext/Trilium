@@ -95,12 +95,22 @@ export function updateSplashStatus(status: string): void {
  */
 export function showSplashError(message: string): void {
     const splashEl = document.getElementById("splash");
-    if (!splashEl) {
+    if (!splashEl || splashEl.classList.contains("splash-hidden")) {
         document.body.append(buildStartupError(message));
         return;
     }
     splashEl.classList.add("splash-error");
     updateSplashStatus(message);
+}
+
+/**
+ * Logs a failure to start and shows it with {@link showSplashError}. An entry point that starts the
+ * app after its first render calls it as well, as the page's `bootstrap()` has finished by then.
+ */
+export function showStartupFailure(err: unknown): void {
+    console.error("Trilium failed to start:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    showSplashError(`Trilium failed to start: ${message} — reload the page to try again.`);
 }
 
 /** Fades the splash out and removes it, revealing the application behind it. */
