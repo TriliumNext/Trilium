@@ -1,4 +1,8 @@
-import { type Editor, isWidget, type Plugin, type ViewDocumentSelection, type ViewElement } from "ckeditor5";
+import {
+    type DowncastCleanSelectionEvent, type DowncastSelectionEvent, type Editor, isWidget,
+    type ModelElement, type ModelPosition, type Plugin, type ViewDocumentSelection,
+    type ViewElement, WIDGET_SELECTED_CLASS_NAME
+} from "ckeditor5";
 
 /**
  * Hack coming from https://github.com/ckeditor/ckeditor5/issues/4465
@@ -95,6 +99,27 @@ function isMarkedWidget(element: ViewElement, property: string) {
 }
 
 /**
+ * Deletes `widget` with its content, and puts the caret at the start of the block after it, else at
+ * the end of the block before it. A parent left empty, such as a table cell, gets an empty
+ * paragraph.
+ */
+export function deleteWidget(editor: Editor, widget: ModelElement) {
+    const model = editor.model;
+    model.change((writer) => {
+        const position = writer.createPositionBefore(widget);
+        writer.remove(widget);
+
+        const parent = position.parent as ModelElement;
+        if (parent.isEmpty && model.schema.checkChild(parent, "paragraph")) {
+            writer.insertElement("paragraph", position);
+        }
+
+        writer.setSelection(model.schema.getNearestSelectionRange(position, "forward")
+            ?? model.schema.getNearestSelectionRange(position, "backward"));
+    });
+}
+
+/**
  * Keeps `className` on the view elements that `isContainer` accepts and that hold the focused
  * nested editable, like CKEditor keeps `ck-editor__nested-editable_focused` on the editable.
  * With `isInnermostOnly`, only the closest such element gets it. Stylesheets match this class
@@ -135,4 +160,32 @@ export function markFocusedContainers(
         marked = containers;
         return isChanged;
     });
+}
+
+/**
+ * Marks the widget that `findWidget()` returns for the selection as selected, as `Widget` marks
+ * the widget that the selection is on: an embed whose caption holds the selection, or an aside that
+ * holds it.
+ */
+export function markWidgetOfSelection(
+    editor: Editor, findWidget: (position: ModelPosition | null) => ModelElement | null
+) {
+    const dispatcher = editor.editing.downcastDispatcher;
+    let marked: ViewElement | null = null;
+
+    dispatcher.on<DowncastCleanSelectionEvent>("cleanSelection", (_evt, _data, api) => {
+        if (marked) {
+            api.writer.removeClass(WIDGET_SELECTED_CLASS_NAME, marked);
+            marked = null;
+        }
+    });
+    // After `Widget` marks the widgets in the selection.
+    dispatcher.on<DowncastSelectionEvent>("selection", (_evt, { selection }, api) => {
+        const widget = findWidget(selection.getFirstPosition());
+        const view = widget && api.mapper.toViewElement(widget);
+        if (view) {
+            api.writer.addClass(WIDGET_SELECTED_CLASS_NAME, view);
+            marked = view;
+        }
+    }, { priority: "lowest" });
 }

@@ -18,8 +18,9 @@ export type { ImageEditingSourceConfig } from "./plugins/image_editing_source.js
 export type { FileUploadData, FileUploadEvent } from "./plugins/file_upload/fileuploadediting.js";
 export type { PasteTarget } from "./plugins/cuttonote.js";
 export type {
-    ContentEmbedCodeView, ContentEmbedState, PositionValue
+    ContentEmbedCodeView, ContentEmbedState
 } from "./plugins/content_embed/content_embed.js";
+export type { PositionValue } from "./plugins/positioned_widgets.js";
 export type { EmbedEdge } from "./plugins/content_embed/content_embed_caret.js";
 export { default as EmbedHistory } from "./plugins/content_embed/embed_history.js";
 export type {
@@ -88,6 +89,7 @@ import "./plugins/markdownimport.js";
 import "./plugins/math/math.js";
 import "./plugins/tabs/tabs.js";
 import "./plugins/multicolumn/multicolumn.js";
+import "./plugins/aside/aside.js";
 import "./plugins/mermaid/mermaid.js";
 import "./plugins/referencelink.js";
 import "./plugins/sort_selection/sort_selection.js";

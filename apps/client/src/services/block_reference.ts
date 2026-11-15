@@ -510,6 +510,7 @@ const BLOCK_TYPES: Record<string, BlockType> = {
     details: "collapsible",
     tabs: "tabs",
     multicolumnLayout: "columns",
+    asideBlock: "aside",
     "mathtex-display": "math",
     footnoteSection: "footnotes",
     footnoteItem: "footnote",
@@ -521,9 +522,9 @@ const BLOCK_TYPES: Record<string, BlockType> = {
 /** A type of block, by its key under `block_handle_menu.types`. */
 export type BlockType = "paragraph" | "heading" | "list_item" | "todo_item" | "block_quote"
     | "code_block" | "table" | "image" | "horizontal_line" | "page_break" | "admonition"
-    | "collapsible" | "tabs" | "columns" | "math" | "footnotes" | "footnote" | "included_note"
-    | "excerpt" | "attachment" | "drawing" | "mermaid" | "video" | "audio" | "link_preview"
-    | "embed" | "block";
+    | "collapsible" | "tabs" | "columns" | "aside" | "math" | "footnotes" | "footnote"
+    | "included_note" | "excerpt" | "attachment" | "drawing" | "mermaid" | "video" | "audio"
+    | "link_preview" | "embed" | "block";
 
 /** The commands of the insert items for a list item or a table cell. */
 type InsertCommandName = "triliumInsertListItemAbove" | "triliumInsertListItemBelow"

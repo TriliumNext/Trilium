@@ -1,7 +1,7 @@
 import type { Editor, ModelElement, ModelNode } from "ckeditor5";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { createVimEditor, setVimData } from "../../../test/vim-kit.js";
+import { aside, createVimEditor, setVimData } from "../../../test/vim-kit.js";
 import {
     DEFAULT_VISIBILITY, EVERYTHING_SHOWN, LineIndex, type LineVisibility, OBJECT_CHARACTER
 } from "./vim_lines.js";
@@ -61,10 +61,13 @@ describe("LineIndex", () => {
             + "<tabs><tab><tabTitle>T</tabTitle><tabPanel>"
             + "<paragraph>p</paragraph></tabPanel></tab></tabs>"
             + "<paragraph listIndent=\"0\" listItemId=\"a\" listType=\"bulleted\">item</paragraph>"
-            + "<aside admonitionType=\"note\"><paragraph>note</paragraph></aside>");
+            + "<aside admonitionType=\"note\"><paragraph>note</paragraph></aside>"
+            + aside("<paragraph>s1</paragraph><heading2>s2</heading2>"));
         expect(texts(lines)).toEqual([
-            "q", "a1", "b1", "b2", "a2", "b3", "c1", "c2", "T", "p", "item", "note"
+            "q", "a1", "b1", "b2", "a2", "b3", "c1", "c2", "T", "p", "item", "note", "s1", "s2"
         ]);
+        expect(lines.getSpan(child(6))).toEqual({ first: 12, last: 13 });
+        expect(lines.has(child(6))).toBe(false);
     });
 
     it("reads the title of a closed collapsible block only, and leaves out hidden blocks",

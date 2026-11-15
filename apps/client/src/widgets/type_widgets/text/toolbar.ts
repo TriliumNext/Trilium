@@ -75,7 +75,7 @@ export function buildMobileToolbar(aiAssistant: boolean) {
                         "|",
                         "horizontalLine", "pageBreak", "footnote",
                         "|",
-                        "math", "drawingCanvas", "mermaid", "insertMedia",
+                        "aside", "math", "drawingCanvas", "mermaid", "insertMedia",
                         "|",
                         "bookmark", "childNote", "contentEmbed",
                         "|",
@@ -182,8 +182,8 @@ export function buildClassicToolbar(multilineToolbar: boolean, aiAssistant: bool
                         "bookmark", "internallink", "childNote", "contentEmbed",
                         "|",
                         "collapsible", "tabs", "multicolumnLayout", ...getExtendedCodeBlockItems(),
-                        "math", "drawingCanvas", "mermaid", "insertMedia", "horizontalLine",
-                        "pageBreak", "footnote",
+                        "aside", "math", "drawingCanvas", "mermaid", "insertMedia",
+                        "horizontalLine", "pageBreak", "footnote",
                         "|",
                         "dateTime", "specialCharacters", "emoji", "insertIcon"
                     ]
@@ -261,8 +261,8 @@ export function buildFloatingToolbar(aiAssistant: boolean) {
                     "bookmark", "internallink", "childNote", "contentEmbed",
                     "|",
                     "collapsible", "tabs", "multicolumnLayout", ...getExtendedCodeBlockItems(),
-                    "math", "drawingCanvas", "mermaid", "insertMedia", "horizontalLine",
-                    "pageBreak", "footnote", "dateTime"
+                    "aside", "math", "drawingCanvas", "mermaid", "insertMedia",
+                    "horizontalLine", "pageBreak", "footnote", "dateTime"
                 ]
             },
             "|",

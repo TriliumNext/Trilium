@@ -3,6 +3,7 @@ import type { Completion, CompletionContext, CompletionResult } from "@codemirro
 import { syntaxTree } from "@codemirror/language";
 import type { EditorState } from "@codemirror/state";
 import type { SyntaxNode } from "@lezer/common";
+import asideIcon from "@triliumnext/ckeditor5/src/icons/aside.svg?raw";
 import collapsibleIcon from "@triliumnext/ckeditor5/src/icons/collapsible.svg?raw";
 import dateTimeIcon from "@triliumnext/ckeditor5/src/icons/date-time.svg?raw";
 import insertFootnoteIcon from "@triliumnext/ckeditor5/src/icons/insert-footnote.svg?raw";
@@ -210,10 +211,7 @@ export function buildMarkdownCommands(
         }, (view, from, to) => {
             // The `=== "Title"` syntax of Material for MkDocs, which the Markdown export writes for
             // a tabs block (see marked_extensions.ts). A header only counts at the start of a line.
-            const lineStart = view.state.doc.lineAt(from).from;
-            const before = view.state.sliceDoc(lineStart, from);
-            const start = from - (before.length - before.trimEnd().length);
-            const prefix = before.trim() ? "\n\n" : "";
+            const { start, prefix } = getBlockStart(view, from);
             const content = t("markdown_slash_commands.placeholders.tab_content");
             const tab = (number: number) =>
                 `=== "${t("markdown_slash_commands.placeholders.tab_title", { number })}"\n\n    ${content}`;
@@ -221,6 +219,25 @@ export function buildMarkdownCommands(
             view.dispatch({
                 changes: { from: start, to, insert: `${prefix}${tab(1)}\n\n${tab(2)}` },
                 selection: { anchor, head: anchor + t("markdown_slash_commands.placeholders.tab_title", { number: 1 }).length }
+            });
+        }),
+        command("aside", {
+            title: t("markdown_slash_commands.titles.aside"),
+            description: t("markdown_slash_commands.aside"),
+            aliases: [ "sidebar", "side note", "margin note", "text box", "float" ],
+            iconSvg: asideIcon
+        }, (view, from, to) => {
+            // `CustomMarkdownRenderer.html()` wraps a bare `<aside>` at the right. A blank line
+            // after the closing tag ends its HTML block, which otherwise takes in the next line.
+            const { start, prefix } = getBlockStart(view, from);
+            const content = t("markdown_slash_commands.placeholders.aside");
+            const newlinesAfter = /^\n*/.exec(view.state.sliceDoc(to, to + 2))?.[0].length ?? 0;
+            const suffix = to < view.state.doc.length ? "\n\n".slice(newlinesAfter) : "";
+            const insert = `${prefix}<aside>\n\n${content}\n\n</aside>${suffix}`;
+            const anchor = start + prefix.length + "<aside>\n\n".length;
+            view.dispatch({
+                changes: { from: start, to, insert },
+                selection: { anchor, head: anchor + content.length }
             });
         }),
         command("page-break", {
@@ -306,6 +323,19 @@ function admonitions() {
         { type: "caution", title: t("markdown_slash_commands.titles.caution"), icon: bxErrorCircle },
         { type: "warning", title: t("markdown_slash_commands.titles.warning"), icon: bxError }
     ];
+}
+
+/**
+ * Where a block typed at `from` starts, past the spaces before it, and the blank line that puts it
+ * on lines of its own after text earlier in the line.
+ */
+function getBlockStart({ state }: Parameters<HostedCompletionApply>[0], from: number) {
+    const lineStart = state.doc.lineAt(from).from;
+    const before = state.sliceDoc(lineStart, from);
+    return {
+        start: from - (before.length - before.trimEnd().length),
+        prefix: before.trim() ? "\n\n" : ""
+    };
 }
 
 /** A command typed as `/name`, which `name` finds as well as its title and aliases. */

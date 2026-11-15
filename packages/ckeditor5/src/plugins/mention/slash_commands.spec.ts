@@ -329,7 +329,7 @@ describe("TriliumSlashCommands", () => {
                 "bulletedList", "numberedList", "todoList",
                 "note", "tip", "important", "caution", "warning",
                 "collapsible", "tabs", "multicolumn-layout-2", "multicolumn-layout-3",
-                "multicolumn-layout-4"
+                "multicolumn-layout-4", "aside"
             ]);
             expect(flagged("willTransform")).toEqual([
                 "paragraph", "indent", "outdent",
@@ -756,6 +756,7 @@ describe("buildTriliumSlashCommands", () => {
     // One case per entry rather than a test each: the shape is identical, only the data differs.
     it.each([
         [ "collapsible", "Collapsible block", "collapsible" ],
+        [ "aside", "Aside", "insertAside" ],
         [ "footnote", "Footnote", "InsertFootnote" ],
         [ "web-link", "Link to a web page", INTERNAL_LINK_COMMAND ],
         [ "web-link-icon", "Link to a web page (with icon)", INTERNAL_LINK_COMMAND ],
@@ -1002,6 +1003,15 @@ describe("buildTriliumSlashCommands", () => {
             expect(layouts(query)).toEqual(all);
         }
         expect(matchSlashCommands(definitions, "3")[0]?.id).toBe("multicolumn-layout-3");
+    });
+
+    it("finds the aside first by the names of a box beside the text", () => {
+        const definitions = buildTriliumSlashCommands(editor);
+
+        const queries = [ "aside", "sidebar", "side note", "margin note", "text box", "float" ];
+        for (const query of queries) {
+            expect(matchSlashCommands(definitions, query)[0]?.id, query).toBe("aside");
+        }
     });
 
     it("lists the link entries first for /link, and finds each by the words people type", () => {

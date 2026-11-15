@@ -2,7 +2,7 @@ import type { Editor, ModelApplyOperationEvent, ModelElement } from "ckeditor5";
 import { describe, expect, it } from "vitest";
 
 import {
-    createVimEditor, getContent, getCursor, getLines, getStatus, item, paragraphs, press,
+    aside, createVimEditor, getContent, getCursor, getLines, getStatus, item, paragraphs, press,
     setVimData, typeText
 } from "../../../test/vim-kit.js";
 import {
@@ -83,6 +83,21 @@ describe("Vim mode line editing", () => {
             setVimData(editor, paragraphs("[]z", "y") + table([ [ "a" ] ]));
             press(editor, "jdj");
             expect(getContent(editor)).toBe(paragraphs("z"));
+        });
+
+        it("keeps an aside whose lines all go, and takes it with a line outside it", async () => {
+            const editor = await createVimEditor(aside(paragraphs("[]a", "b")) + paragraphs("z"));
+            press(editor, "2dd");
+            expect(getContent(editor)).toBe(aside(paragraphs("")) + paragraphs("z"));
+            press(editor, "ujdj");
+            expect(getContent(editor)).toBe(aside(paragraphs("a")));
+
+            setVimData(editor, paragraphs("[]x") + aside(paragraphs("a")) + paragraphs("z"));
+            press(editor, "dj");
+            expect(getContent(editor)).toBe(paragraphs("z"));
+            press(editor, "u");
+            expect(getContent(editor)).toBe(
+                paragraphs("x") + aside(paragraphs("a")) + paragraphs("z"));
         });
 
         it("puts a collapsed heading back collapsed on undo", async () => {
@@ -576,6 +591,18 @@ describe("Vim mode line editing", () => {
             expect(getLines(editor)).toBe("Y|Title|X|body");
         });
 
+        it("open a line inside an aside, at its edges too", async () => {
+            const editor = await createVimEditor(paragraphs("x") + aside(paragraphs("[]a"))
+                + paragraphs("y"));
+            press(editor, "o");
+            typeText(editor, "b");
+            press(editor, "<Esc>2GO");
+            typeText(editor, "c");
+            press(editor, "<Esc>");
+            expect(getContent(editor)).toBe(paragraphs("x") + aside(paragraphs("c", "a", "b"))
+                + paragraphs("y"));
+        });
+
         it("open a line above the first line", async () => {
             const editor = await createVimEditor(paragraphs("[]a"));
             press(editor, "O");
@@ -630,16 +657,19 @@ describe("Vim mode line editing", () => {
             expect(getContent(editor)).toBe(item("one two", "a"));
         });
 
-        it("do nothing next to a widget, a cell or a collapsible block", async () => {
+        it("do nothing next to a widget, a cell, a collapsible block or the edge of an aside",
+            async () => {
             const editor = await createVimEditor(
                 `${paragraphs("[]a")}<horizontalLine></horizontalLine>`
                 + table([ [ "b" ], [ "c" ] ]) + paragraphs("d") + details("T", paragraphs("e"))
-                    + paragraphs("f"));
+                    + paragraphs("f") + aside(paragraphs("g", "h")) + paragraphs("i"));
             const before = getContent(editor);
-            for (const line of [ 0, 2, 3, 4, 7 ]) {
+            for (const line of [ 0, 2, 3, 4, 7, 9, 10 ]) {
                 press(editor, `${line + 1}GJ`);
-                expect(getContent(editor)).toBe(before);
+                expect(getContent(editor), `J on line ${line}`).toBe(before);
             }
+            press(editor, "9GJ");
+            expect(getContent(editor)).toContain(aside(paragraphs("g h")));
         });
 
         it("join the first body line of a collapsible block to its title", async () => {

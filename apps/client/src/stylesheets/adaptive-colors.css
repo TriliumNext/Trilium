@@ -11,6 +11,16 @@ body.dark-theme {
     --_adaptive-table-background-min: 0;
     --_adaptive-table-background-max: var(--adaptive-table-background-dark-max-lightness);
     --_adaptive-table-background-chroma: var(--adaptive-table-background-dark-max-chroma);
+    --_adaptive-aside-background-min: 0;
+    --_adaptive-aside-background-max: var(--adaptive-aside-background-dark-max-lightness);
+    --_adaptive-aside-background-chroma: var(--adaptive-aside-background-dark-max-chroma);
+}
+
+/* The color tiles of the aside toolbar show the shades of an aside background. */
+.ck-balloon-panel.aside-toolbar .ck-color-grid__tile {
+    --_adaptive-background-min: var(--_adaptive-aside-background-min);
+    --_adaptive-background-max: var(--_adaptive-aside-background-max);
+    --_adaptive-background-chroma: var(--_adaptive-aside-background-chroma);
 }
 
 /* The shared stylesheet adapts the `color` or `background-color` of each tile from its variable. */

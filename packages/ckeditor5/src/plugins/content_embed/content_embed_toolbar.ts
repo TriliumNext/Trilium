@@ -1,19 +1,17 @@
 import { MEDIA_EMBED_CLASS } from "@triliumnext/commons";
 import {
-    BalloonPanelView, isWidget, Plugin, type PositioningFunction, type ViewDocumentSelection,
-    type ViewElement, WidgetToolbarRepository
+    isWidget, Plugin, type ViewDocumentSelection, type ViewElement, WidgetToolbarRepository
 } from "ckeditor5";
 
 import {
     LinkEmbedCopyUrlButton, LinkEmbedDisplayDropdown
 } from "../link_embed/link_embed_toolbar.js";
-import type { ResizeAnchor } from "../resizable_widgets/resizable_widgets.js";
+import PositionedWidgets, { getAnchoredToolbarPositions } from "../positioned_widgets.js";
 import ContentEmbed, {
     CONTENT_EMBED_MENU,
     CONTENT_EMBED_DISPLAY_MODE_SEPARATOR,
     DISPLAY_MODE_BUTTONS,
     DISPLAY_MODES,
-    getEmbedAnchor,
     TOGGLE_CAPTION_COMMAND_NAME,
     TOGGLE_EDITABLE_COMMAND_NAME
 } from "./content_embed.js";
@@ -39,18 +37,19 @@ export default class ContentEmbedToolbar extends Plugin {
     afterInit() {
         const editor = this.editor;
         const widgetToolbarRepository = editor.plugins.get(WidgetToolbarRepository);
+        const positionedWidgets = editor.plugins.get(PositionedWidgets);
         const getAnchor = () => {
             const selection = editor.editing.view.document.selection;
             const embed = findRelatedEmbed(selection) ?? findRelatedMedia(selection);
             const modelEmbed = embed && editor.editing.mapper.toModelElement(embed);
-            return modelEmbed ? getEmbedAnchor(modelEmbed) : "center";
+            return modelEmbed ? positionedWidgets.getAnchor(modelEmbed) : "center";
         };
 
         // Media has the copy and display items of a link preview, and the menu of an embed.
         widgetToolbarRepository.register("mediaEmbed", {
             items: [ "linkEmbedCopyUrl", "|", "linkEmbedDisplayDropdown", CONTENT_EMBED_MENU ],
             balloonClassName: "ck-toolbar-container include-note-toolbar",
-            positions: getToolbarPositions(getAnchor),
+            positions: getAnchoredToolbarPositions(getAnchor),
             getRelatedElement: findRelatedMedia
         });
 
@@ -67,7 +66,7 @@ export default class ContentEmbedToolbar extends Plugin {
                 CONTENT_EMBED_MENU
             ],
             balloonClassName: "ck-toolbar-container include-note-toolbar",
-            positions: getToolbarPositions(getAnchor),
+            positions: getAnchoredToolbarPositions(getAnchor),
             getRelatedElement: findRelatedEmbed
         });
     }
@@ -110,50 +109,4 @@ function isContentEmbedWidget(element: ViewElement): boolean {
 
 function isMediaEmbedWidget(element: ViewElement): boolean {
     return isWidget(element) && element.hasClass(MEDIA_EMBED_CLASS);
-}
-
-/**
- * The positions of the toolbar: level with the edge of the embed that `getAnchor()` returns, then,
- * or where those do not fit, the positions that `WidgetToolbarRepository` gives a widget toolbar.
- */
-function getToolbarPositions(getAnchor: () => ResizeAnchor): PositioningFunction[] {
-    const {
-        northArrowSouth, northArrowSouthWest, northArrowSouthEast, southArrowNorth,
-        southArrowNorthWest, southArrowNorthEast, viewportStickyNorth
-    } = BalloonPanelView.defaultPositions;
-
-    return [
-        alignToAnchor(northArrowSouth, { left: "arrow_sw", right: "arrow_se" }, getAnchor),
-        alignToAnchor(southArrowNorth, { left: "arrow_nw", right: "arrow_ne" }, getAnchor),
-        alignToAnchor(viewportStickyNorth, { left: "arrowless", right: "arrowless" }, getAnchor),
-        northArrowSouth, northArrowSouthWest, northArrowSouthEast,
-        southArrowNorth, southArrowNorthWest, southArrowNorthEast, viewportStickyNorth
-    ];
-}
-
-/** The arrow names of a toolbar level with the left and with the right edge of its target. */
-type EdgeArrows = Record<"left" | "right", string>;
-
-/**
- * `position` moved level with the edge of the target that `getAnchor()` returns, with the arrow
- * that `arrows` names for that edge. A centered target gets no position.
- */
-function alignToAnchor(
-    position: PositioningFunction,
-    arrows: EdgeArrows,
-    getAnchor: () => ResizeAnchor
-): PositioningFunction {
-    return (targetRect, balloonRect, viewportRect, limiterRect) => {
-        const anchor = getAnchor();
-        if (anchor !== "left" && anchor !== "right") {
-            return null;
-        }
-
-        const result = position(targetRect, balloonRect, viewportRect, limiterRect);
-        return result && {
-            ...result,
-            left: anchor === "left" ? targetRect.left : targetRect.right - balloonRect.width,
-            name: arrows[anchor]
-        };
-    };
 }

@@ -382,6 +382,7 @@ describe("openBlockHandleMenu", () => {
             buildBlock("aside"),
             buildBlock("details"),
             buildBlock("multicolumnLayout"),
+            buildBlock("asideBlock"),
             buildBlock("footnoteContent"),
             buildBlock("contentEmbed", { url: "https://example.com/a.mp4", embedType: "video" }),
             buildBlock("contentEmbed", { url: "https://example.com/a.mp3", embedType: "audio" }),
@@ -406,9 +407,9 @@ describe("openBlockHandleMenu", () => {
 
         expect(titles).toEqual([
             "paragraph", "heading:3", "list_item", "list_item", "todo_item", "table",
-            "admonition", "collapsible", "columns", "footnote", "video", "audio", "mermaid",
-            "code_block", "included_note", "excerpt", "drawing", "mermaid", "attachment",
-            "attachment", "attachment", "block"
+            "admonition", "collapsible", "columns", "aside", "footnote", "video", "audio",
+            "mermaid", "code_block", "included_note", "excerpt", "drawing", "mermaid",
+            "attachment", "attachment", "attachment", "block"
         ].map((type) => `block_handle_menu.types.${type}`));
     });
 

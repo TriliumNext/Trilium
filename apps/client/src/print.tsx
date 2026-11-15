@@ -123,6 +123,7 @@ export function SingleNoteRenderer({ note, onReady }: RendererProps) {
                 if (note.type === "text") {
                     await import("@triliumnext/ckeditor5/src/theme/ck-content.css");
                     await import("@triliumnext/ckeditor5/src/theme/multicolumn.css");
+                    await import("@triliumnext/ckeditor5/src/theme/aside.css");
                 }
                 // Printing preserves full embed nesting (see expandNestedEmbeds). The print page has
                 // no component tree, so a JSX render note mounts under a bare root `Component`.

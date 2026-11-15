@@ -72,6 +72,16 @@ group covers the monorepo wiring/convention defects. For the idiomatic "how it s
 - Fix: don't register converters for things you don't want; rely on conversion + (if needed) GHS
   config, not schema alone.
 
+**Refusing a nested object in the schema.**
+- Spot: a child check (`addChildCheck()`, or an `allowIn`/`allowContentOf` that leaves it out)
+  that refuses an object holding the user's text, such as a box inside another box's editable.
+- Why: `model.insertContent()`, which paste, drop and snippets go through, checks every level of
+  the inserted content against the schema and removes a refused object with all its content (only
+  a refused element that is not an object is unwrapped), so the pasted text is lost.
+- Fix: allow the nesting in the schema, move the inner object's blocks out in a post-fixer, and
+  disable the insert command where it would nest, as the aside does (`fixAside()`). Details:
+  "Forbid nesting in the post-fixer" in `references/widgets.md` of `ckeditor5-plugin-development`.
+
 **Inline-widget position mapping missing.**
 - Spot: an inline object whose view has more content than the model (e.g. `<placeholder>` →
   `<span>{name}</span>`) without a `viewToModelPosition` mapper.

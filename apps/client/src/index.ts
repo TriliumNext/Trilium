@@ -3,6 +3,7 @@
 // which loads ahead of the stylesheets `loadStylesheets()` appends.
 import "@triliumnext/ckeditor5/src/theme/adaptive_colors.css";
 import "@triliumnext/ckeditor5/src/theme/admonitions.css";
+import "@triliumnext/ckeditor5/src/theme/aside.css";
 import "@triliumnext/ckeditor5/src/theme/collapsible_blocks.css";
 import "@triliumnext/ckeditor5/src/theme/external_links.css";
 import "@triliumnext/ckeditor5/src/theme/footnotes.css";

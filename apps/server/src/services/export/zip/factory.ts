@@ -6,7 +6,7 @@ import { getResourceDir, isDev } from "../../utils.js";
 
 /**
  * The stylesheet of an HTML export: CKEditor's content styles, Trilium's content colors over them,
- * then the multicolumn layout's.
+ * then the styles of the multicolumn layout and of the aside.
  */
 function readContentCss(): string {
     const cssFiles = isDev
@@ -14,10 +14,13 @@ function readContentCss(): string {
             require.resolve("ckeditor5/ckeditor5-content.css"),
             // In development the resource directory is `apps/server/src`.
             path.join(getResourceDir(), "../../../packages/ckeditor5/src/theme/content_colors.css"),
-            path.join(getResourceDir(), "../../../packages/ckeditor5/src/theme/multicolumn.css")
+            path.join(getResourceDir(), "../../../packages/ckeditor5/src/theme/multicolumn.css"),
+            path.join(getResourceDir(), "../../../packages/ckeditor5/src/theme/aside.css")
         ]
-        : [ "ckeditor5-content.css", "ckeditor5-content-colors.css", "ckeditor5-multicolumn.css" ]
-            .map((fileName) => path.join(getResourceDir(), fileName));
+        : [
+            "ckeditor5-content.css", "ckeditor5-content-colors.css", "ckeditor5-multicolumn.css",
+            "ckeditor5-aside.css"
+        ].map((fileName) => path.join(getResourceDir(), fileName));
     return cssFiles.map((cssFile) => fs.readFileSync(cssFile, "utf-8")).join("\n");
 }
 
