@@ -9,7 +9,9 @@ import { TREE_CLIPBOARD_TYPE } from "../react/hooks/drag.js";
 import { ParentComponent } from "../react/react_utils.js";
 import LauncherContainer, { useLauncherChildNotes } from "./LauncherContainer.js";
 
-const h = vi.hoisted(() => ({ isElectron: false, showLauncherContextMenu: vi.fn(), tabSwitcherLoaded: false }));
+const h = vi.hoisted(() => ({
+    isElectron: false, showLauncherContextMenu: vi.fn(), tabSwitcherLoaded: false, recordMeetingLoaded: false
+}));
 
 vi.mock("../../services/utils", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../services/utils")>(),
@@ -26,9 +28,10 @@ vi.mock("../mobile_widgets/TabSwitcher", () => {
         LaunchBarTabSwipe: () => <span className="tab-swipe-stub" />
     };
 });
-vi.mock("./RecordMeetingButton", () => ({
-    default: () => <span className="record-meeting-button" />
-}));
+vi.mock("./RecordMeetingButton", () => {
+    h.recordMeetingLoaded = true;
+    return { default: () => <span className="record-meeting-button" /> };
+});
 vi.mock("./GenericButtons", async (importOriginal) => ({
     ...await importOriginal<typeof import("./GenericButtons")>(),
     CustomNoteLauncher: ({ launcherNote, getTargetNoteId, getOpenMode, parentNoteId }: {
@@ -135,13 +138,13 @@ describe("LauncherContainer", () => {
         await flush();
         expect(container.querySelector("#launcher-container")).not.toBeNull();
         expect(container.querySelector(".record-meeting-button")).toBeNull();
+        expect(h.recordMeetingLoaded).toBe(false);
         act(() => render(null, container));
         container.remove();
 
         h.isElectron = true;
         mount();
-        await flush();
-        expect(container.querySelector(".record-meeting-button")).not.toBeNull();
+        await vi.waitFor(() => expect(container.querySelector(".record-meeting-button")).not.toBeNull());
     });
 
     it("shows a note cloned into the bar as a launcher of itself, and takes drops", async () => {

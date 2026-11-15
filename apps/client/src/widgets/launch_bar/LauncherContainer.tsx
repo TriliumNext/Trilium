@@ -22,7 +22,6 @@ import {
 } from "./LauncherDefinitions";
 import LauncherDropTarget from "./LauncherDropTarget";
 import ProtectedSessionStatusWidget from "./ProtectedSessionStatusWidget";
-import RecordMeetingButton from "./RecordMeetingButton";
 import SidebarChatButton from "./SidebarChatButton";
 import SpacerWidget from "./SpacerWidget";
 import SyncStatus from "./SyncStatus";
@@ -148,7 +147,7 @@ function initBuiltinWidget(note: FNote, isHorizontalLayout: boolean) {
         case "sidebarChat":
             return isExperimentalFeatureEnabled("llm") ? <SidebarChatButton launcherNote={note} /> : undefined;
         case "recordMeeting":
-            return isElectron() ? <RecordMeetingButton launcherNote={note} /> : undefined;
+            return isElectron() ? <LazyRecordMeetingButton launcherNote={note} /> : undefined;
         case "colorSchemeSwitcher":
             return <ColorSchemeSwitcher launcherNote={note} />;
         default:
@@ -156,29 +155,39 @@ function initBuiltinWidget(note: FNote, isHorizontalLayout: boolean) {
     }
 }
 
+// The mobile tab switcher shows only in the mobile launch bar, and the meeting button only in
+// the desktop app, so the other bars never load them.
+const loadTabSwitcher = () => import("../mobile_widgets/TabSwitcher");
+const loadRecordMeetingButton = () => import("./RecordMeetingButton");
+
 function LazyTabSwitcher({ launcherNote }: { launcherNote: FNote }) {
-    const tabSwitcher = useTabSwitcherModule();
+    const tabSwitcher = useLazyModule(loadTabSwitcher);
     return tabSwitcher && <tabSwitcher.default launcherNote={launcherNote} />;
 }
 
 function LazyTabSwipe({ containerRef }: { containerRef: RefObject<HTMLElement | null> }) {
-    const tabSwitcher = useTabSwitcherModule();
+    const tabSwitcher = useLazyModule(loadTabSwitcher);
     return tabSwitcher && <tabSwitcher.LaunchBarTabSwipe containerRef={containerRef} />;
 }
 
-/** Imports the mobile tab switcher once a launch bar shows it, which the desktop one never does. */
-function useTabSwitcherModule() {
-    const [ tabSwitcher, setTabSwitcher ] = useState<typeof import("../mobile_widgets/TabSwitcher")>();
+function LazyRecordMeetingButton({ launcherNote }: { launcherNote: FNote }) {
+    const recordMeeting = useLazyModule(loadRecordMeetingButton);
+    return recordMeeting && <recordMeeting.default launcherNote={launcherNote} />;
+}
+
+/** The module `load` imports, once the component that calls it has mounted. */
+function useLazyModule<T>(load: () => Promise<T>) {
+    const [ module, setModule ] = useState<T>();
     useEffect(() => {
         let cancelled = false;
-        void import("../mobile_widgets/TabSwitcher").then((module) => {
-            if (!cancelled) setTabSwitcher(module);
+        void load().then((loaded) => {
+            if (!cancelled) setModule(() => loaded);
         });
         return () => {
             cancelled = true;
         };
-    }, []);
-    return tabSwitcher;
+    }, [ load ]);
+    return module;
 }
 
 export function useLauncherChildNotes() {
