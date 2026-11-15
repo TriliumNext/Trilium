@@ -50,14 +50,14 @@ None of this is documented API, so an engine upgrade can change any of it:
 | Adds a `paste` listener in `enterVimMode()` that enters Insert mode. `leaveVimMode()` removes it through `getOnPasteFn()`, which makes a new function once the engine replaced `cm.state.vim` after a command threw, so the old listener stayed on the root and threw on every later paste | The session removes the listener right after `enterVimMode()`. `onPaste()` listens to `contentInsertion` of `ClipboardPipeline` at `lowest` and moves the cursor instead | `VimSession` constructor, `onPaste()` |
 | Keeps one jump list for every editor | Each session has its own, swapped into the global state before every key | `createJumpList()`, `runKeys()` |
 | Signals `vim-mode-change` from `enterVimMode()` before it creates `cm.state.vim` | The session adds its `vim-mode-change` and `vim-command-done` handlers after `enterVimMode()`, since `onModeChange()` reads the state | `VimSession` constructor |
-| Marks the one-command state after `Ctrl+O` with `insertModeReturn`, while `insertMode` is false | `escape()`, `getHints()` and `onOperationEnd()` test `insertModeReturn` as well | `vim.ts` |
+| Marks the one-command state after `Ctrl+O` with `insertModeReturn`, while `insertMode` is false | `escape()`, `getHints()` and `onOperationEnd()` test `insertModeReturn` as well | `vim_session.ts` |
 | Records `nohlsearch` in the `:` register when `handleEx()` runs it | `escape()` puts the last command back after clearing the highlights | `escape()` |
 | Does not collapse the selection after a redo, as it does after an undo | `redo()` sets the cursor to the start of what changed. Without it `Ctrl+R` ended in Visual mode | `VimSession.redo()` |
 | Runs the callback of a prompt outside an operation. The search prompt's close handler scrolls back to where the view was | The Enter of a prompt runs inside `asVimOperation()`. Without it `d/x<CR>` threw in `wrapRegisters()` and `/pat<CR>` did not scroll to the match | `openDialog()` |
 | Passes a template without an input field to `openDialog()` for "recording @a" | The session sets `status.recording` and returns a function that clears it | `openDialog()` |
 | Keeps its keymap (`defaultKeymap`) private | The key hints are a curated table. A new key gets its hint by hand | `vim_hints.ts`, `vim_key_reference.ts` |
-| Gives an operator of one key no `operatorShortcut`, only its name | `getOperatorKeys()` maps `delete`, `yank`, `change` and `indent` back to keys | `vim.ts` |
-| Has no notion of a balloon: `Ctrl+[` and `Ctrl+C` typed in a link balloon never reach it | `onBalloonKey()` closes the balloon as Escape does and focuses the editor, which the balloon's own Escape does not | `vim.ts` |
+| Gives an operator of one key no `operatorShortcut`, only its name | `getOperatorKeys()` maps `delete`, `yank`, `change` and `indent` back to keys | `vim_session.ts` |
+| Has no notion of a balloon: `Ctrl+[` and `Ctrl+C` typed in a link balloon never reach it | `onBalloonKey()` closes the balloon as Escape does and focuses the editor, which the balloon's own Escape does not | `vim_session.ts` |
 
 ## Mappings
 

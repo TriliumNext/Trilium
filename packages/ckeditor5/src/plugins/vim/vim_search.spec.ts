@@ -5,7 +5,7 @@ import {
     createVimEditor, getAdapter, getContent, getCursor, getLines, getStatus, paragraphs, press,
     typeText
 } from "../../../test/vim-kit.js";
-import { SEARCH_MARKER } from "./vim_search.js";
+import { SEARCH_MARKER } from "./vim.js";
 
 function getHighlights(editor: Editor): string[] {
     const adapter = getAdapter(editor);

@@ -38,7 +38,7 @@ Every place a kind of change must reach. Paths without a folder are in
    key most users need.
 
 A Ctrl key of Insert mode is different: add it to `INSERT_KEYS` or `OPTIONAL_INSERT_KEYS` in
-`vim.ts`, and to `runInsertKey()` when the engine has no command for it. Check first what the key
+`vim_session.ts`, and to `runInsertKey()` when the engine has no command for it. Check first what the key
 does in the app without Vim, since Insert mode shadows it: the table _Shortcuts that change in the
 editor_ in `Vim mode.md` lists every one.
 
@@ -110,7 +110,7 @@ Text that the plugin shows is `editor.t("English text")`, or `t("…")` in the m
 - `pnpm --filter client test i18n.spec` fails on a missing entry and on a stale one, so remove the
   entry when the text goes.
 - A message of the engine itself, such as the one for a pattern that is not found, is English
-  only. `translateMessage()` in `vim.ts` translates the yank messages; add a case there for
+  only. `translateMessage()` in `vim_session.ts` translates the yank messages; add a case there for
   another engine message worth translating.
 
 The rules for `editor.t()` are in the `ckeditor5-plugin-development` skill, and
@@ -174,7 +174,7 @@ for them.
 
 ## Which keys Vim takes
 
-The decision is in `onCommandKey()` and `onInsertKey()` (`vim.ts`). A key taken in Normal mode
+The decision is in `onCommandKey()` and `onInsertKey()` (`vim_session.ts`). A key taken in Normal mode
 shadows the app shortcut of that key while the focus is in the editor.
 
 - macOS differs: the app's shortcuts are Cmd chords there and Vim's are Ctrl chords, and
@@ -213,7 +213,7 @@ Vim mode has to read the new structure as lines, and every line command has to l
    `getParagraphObjectDescription()` (`vim_hints.ts`). If blocks put into it must be paragraphs,
    add it to `PARAGRAPH_CONTAINERS` in `vim_registers.ts`.
 5. **It is a widget with something to edit** (a caption, an editor inside): `i` and `a` on it go
-   through `enterWidget()` in `vim.ts`. An embed with its own editor needs nothing more when it
+   through `enterWidget()` in `vim_session.ts`. An embed with its own editor needs nothing more when it
    is a content embed; the nested editor has its own Vim session.
 6. **It lays blocks out in two dimensions**, like a table: `getVerticalNeighbor()` in the adapter
    for `j` and `k`, and `getColumnParts()` for linewise operators.
