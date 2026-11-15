@@ -20,7 +20,7 @@ import { ATTRIBUTE_HELP_PAGE } from "../../services/in_app_help";
 import { ViewScope } from "../../services/link";
 import { NOTE_TYPES } from "../../services/note_types";
 import server from "../../services/server";
-import { openInAppHelpFromUrl } from "../../services/utils";
+import { formatSize, openInAppHelpFromUrl } from "../../services/utils";
 import { formatDateTime } from "../../utils/formatters";
 import AttributeEditor, { AttributeEditorImperativeHandlers } from "../attribute_widgets/AttributeEditor";
 import AttributeHelp from "../attribute_widgets/AttributeHelp";
@@ -39,6 +39,7 @@ import { useStaticTooltip } from "../react/hooks/tooltip";
 import { useLegacyImperativeHandlers } from "../react/hooks/legacy";
 import Icon from "../react/Icon";
 import LinkButton from "../react/LinkButton";
+import LoadingSpinner from "../react/LoadingSpinner";
 import NoItems from "../react/NoItems";
 import NoteLink from "../react/NoteLink";
 import { ParentComponent } from "../react/react_utils";
@@ -50,7 +51,7 @@ import Breadcrumb from "./Breadcrumb";
 import {
     type CodeMenu, useCodeLanguageMenu, useNoteCodeSettings, useTabWidthMenu
 } from "./code_menus";
-import { NoteSizeWidget, useNoteMetadata } from "./note_metadata";
+import { useNoteMetadata } from "./note_metadata";
 import {
     useVimStatus, VimCommandLineSlot, VimHintStrip, VimMessagePanel, VimModeBadge, VimStatusLine
 } from "./VimStatus";
@@ -726,3 +727,23 @@ function BottomPanel({ children, title, visible, setVisible, className, buttons,
     </div>;
 }
 //#endregion
+
+function NoteSizeWidget({ isLoading, noteSizeResponse, subtreeSizeResponse, requestSizeInfo }: Omit<ReturnType<typeof useNoteMetadata>, "metadata">) {
+    return <>
+        {!isLoading && !noteSizeResponse && !subtreeSizeResponse && (
+            <LinkButton
+                text={t("note_info_widget.calculate")}
+                onClick={requestSizeInfo}
+            />
+        )}
+
+        <span className="note-sizes-wrapper selectable-text">
+            <span className="note-size">{formatSize(noteSizeResponse?.noteSize)}</span>
+            {" "}
+            {subtreeSizeResponse && subtreeSizeResponse.subTreeNoteCount > 1 &&
+                <span className="subtree-size">{t("note_info_widget.subtree_size", { size: formatSize(subtreeSizeResponse.subTreeSize), count: subtreeSizeResponse.subTreeNoteCount })}</span>
+            }
+            {isLoading && <LoadingSpinner />}
+        </span>
+    </>;
+}
