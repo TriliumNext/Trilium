@@ -88,6 +88,7 @@ beforeEach(() => {
     ctrl.checkForUpdates = true;
     ctrl.mobile = false;
     status = undefined;
+    localStorage.clear();
 
     window.glob = { ...window.glob, triliumVersion: "0.104.0" };
     fetchMock = vi.fn().mockResolvedValue({ json: async () => ({ tag_name: "v0.104.1" }) });
@@ -147,6 +148,21 @@ describe("useTriliumUpdateStatus", () => {
 
         unmount();
         await advance(UPDATE_CHECK_INTERVAL * 2);
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it("reuses a recent check after a reload, and checks again once it is due", async () => {
+        await mount();
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        unmount();
+
+        await advance(UPDATE_CHECK_INTERVAL / 2);
+        await mount();
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(status?.latestVersion).toBe("0.104.1");
+        expect(status?.isUpdateAvailable).toBe(true);
+
+        await advance(UPDATE_CHECK_INTERVAL / 2);
         expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 

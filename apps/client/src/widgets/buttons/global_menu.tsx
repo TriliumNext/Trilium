@@ -72,17 +72,28 @@ export const RELEASES_API_URL = "https://api.github.com/repos/TriliumNext/Triliu
 /** How often to re-check for a newer release, in milliseconds. */
 export const UPDATE_CHECK_INTERVAL = 8 * 60 * 60 * 1000;
 
+/** The `localStorage` key of the last successful check, which reloads and other windows reuse. */
+const LAST_CHECK_KEY = "trilium-update-check";
+
+interface LastCheck {
+    checkedAt: number;
+    latestVersion?: string;
+}
+
 /**
  * Watches GitHub for a release newer than the version this client is running, so the menu can show
- * the update badge and a download link.
+ * the update badge and a download link. A check younger than {@link UPDATE_CHECK_INTERVAL} is reused
+ * from `localStorage`, so a reload or another window sends no request to GitHub.
  *
  * Standalone is left out: it is served from the web and picks up new versions on reload, so there is
  * no release for the user to go and download. Every other client — desktop and server alike — is
  * updated by hand and wants the hint.
  */
 export function useTriliumUpdateStatus() {
-    const [ latestVersion, setLatestVersion ] = useState<string>();
     const [ checkForUpdates ] = useTriliumOptionBool("checkForUpdates");
+    const [ latestVersion, setLatestVersion ] = useState<string | undefined>(() => (checkForUpdates && !isStandalone
+        ? readLastCheck()?.latestVersion
+        : undefined));
     const isUpdateAvailable = utils.isUpdateAvailable(latestVersion, window.glob.triliumVersion);
 
     useEffect(() => {
@@ -94,6 +105,7 @@ export function useTriliumUpdateStatus() {
         // A request still in flight when the option is switched off (or the menu unmounts) must not
         // resurrect the version afterwards, so ignore whatever it resolves to.
         let cancelled = false;
+        let timeout: ReturnType<typeof setTimeout> | undefined;
 
         async function updateVersionStatus() {
             let latestVersion: string | undefined;
@@ -101,21 +113,29 @@ export function useTriliumUpdateStatus() {
                 const resp = await fetch(RELEASES_API_URL);
                 const data = await resp.json();
                 latestVersion = parseLatestVersion(data);
+                writeLastCheck({ checkedAt: Date.now(), latestVersion });
             } catch (e) {
                 console.warn("Unable to fetch latest version info from GitHub releases API", e);
             }
 
             if (!cancelled) {
                 setLatestVersion(latestVersion);
+                timeout = setTimeout(() => void updateVersionStatus(), UPDATE_CHECK_INTERVAL);
             }
         }
 
-        void updateVersionStatus();
+        const lastCheck = readLastCheck();
+        const age = lastCheck ? Date.now() - lastCheck.checkedAt : Infinity;
+        if (lastCheck && age >= 0 && age < UPDATE_CHECK_INTERVAL) {
+            setLatestVersion(lastCheck.latestVersion);
+            timeout = setTimeout(() => void updateVersionStatus(), UPDATE_CHECK_INTERVAL - age);
+        } else {
+            void updateVersionStatus();
+        }
 
-        const interval = setInterval(() => void updateVersionStatus(), UPDATE_CHECK_INTERVAL);
         return () => {
             cancelled = true;
-            clearInterval(interval);
+            clearTimeout(timeout);
         };
     }, [ checkForUpdates ]);
 
@@ -126,4 +146,25 @@ export function useTriliumUpdateStatus() {
 export function parseLatestVersion(payload: unknown): string | undefined {
     const tagName = (payload as { tag_name?: unknown } | null | undefined)?.tag_name;
     return typeof tagName === "string" ? tagName.replace(/^v/, "") : undefined;
+}
+
+function readLastCheck(): LastCheck | undefined {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(LAST_CHECK_KEY) ?? "null") as Partial<LastCheck> | null;
+        if (typeof parsed?.checkedAt !== "number") return undefined;
+        return {
+            checkedAt: parsed.checkedAt,
+            latestVersion: typeof parsed.latestVersion === "string" ? parsed.latestVersion : undefined
+        };
+    } catch {
+        return undefined;
+    }
+}
+
+function writeLastCheck(check: LastCheck) {
+    try {
+        localStorage.setItem(LAST_CHECK_KEY, JSON.stringify(check));
+    } catch {
+        // Without storage, the next reload checks again.
+    }
 }
