@@ -2,6 +2,7 @@ import type { StandaloneApi } from "@triliumnext/commons";
 
 import { t } from "./i18n.js";
 import { getSetupAuthToken } from "./setup_auth.js";
+import { takeStartupResponse } from "./startup_requests.js";
 import utils, { isShare } from "./utils.js";
 import ValidationError from "./validation_error.js";
 
@@ -315,19 +316,43 @@ async function call<T>(method: string, url: string, componentId?: string, option
     });
     const { data } = options;
 
+    if (method === "GET" && !options.raw) {
+        const startup = await takeStartupBody(url);
+        if (startup) return startup.body as T;
+    }
+
     // In Electron the page is loaded from the `trilium-app://` custom
     // protocol, whose handler routes everything through the same Express
     // app the browser build talks to over HTTP. So a single $.ajax path
     // covers both — no IPC bridge needed.
     const resp = await ajax(url, method, data, headers, options);
-
-    const maxEntityChangeIdStr = resp.headers["trilium-max-entity-change-id"];
-
-    if (maxEntityChangeIdStr && maxEntityChangeIdStr.trim()) {
-        maxKnownEntityChangeId = Math.max(maxKnownEntityChangeId, parseInt(maxEntityChangeIdStr));
-    }
+    recordMaxEntityChangeId(resp.headers["trilium-max-entity-change-id"]);
 
     return resp.body as T;
+}
+
+/**
+ * The body of the request `index.ts` started for `url` as the app started, if it did and the
+ * request succeeded; otherwise `call()` sends the request itself, reporting any failure.
+ */
+async function takeStartupBody(url: string): Promise<{ body: unknown } | undefined> {
+    const request = takeStartupResponse(url);
+    if (!request) return;
+
+    try {
+        const response = await request;
+        if (!response.ok) return;
+        recordMaxEntityChangeId(response.headers.get("trilium-max-entity-change-id"));
+        return { body: await response.json() };
+    } catch {
+        return;
+    }
+}
+
+function recordMaxEntityChangeId(header: string | null | undefined) {
+    if (header?.trim()) {
+        maxKnownEntityChangeId = Math.max(maxKnownEntityChangeId, parseInt(header));
+    }
 }
 
 function ajax(url: string, method: string, data: unknown, headers: Headers, opts: CallOptions): Promise<Response> {

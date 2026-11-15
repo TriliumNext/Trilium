@@ -9,6 +9,7 @@ import { createFontPreloadLink, createFontStylesheet } from "./services/font";
 import {
     CLIENT_STARTUP_PHASES, hideSplash, initSplashProgress, reportSplashPhase, showSplashError
 } from "./services/splash";
+import { requestStartupData } from "./services/startup_requests";
 import {
     buildThemeStylesheetRefs, createStylesheetLink, getThemeStyle, initThemeChangeNotifier, rememberRootBackground,
     StylesheetRef
@@ -39,6 +40,7 @@ async function bootstrap() {
     document.documentElement.classList.toggle("ios-web-app", isIosWebApp && extendsUnderStatusBar());
     await setupGlob();
     requestStartupCatalogues();
+    requestStartupApiData();
     await Promise.all([
         initJQuery(),
         loadBootstrapCss()
@@ -266,6 +268,20 @@ function requestStartupCatalogues() {
         requestCatalogues(locale, "entry");
     } else if (glob.device !== "print") {
         requestCatalogues(locale, "app");
+    }
+}
+
+/**
+ * Starts the API requests the desktop and mobile app make as their modules load, so they travel
+ * meanwhile; `server.get()` hands them over. Standalone answers its API in the page itself, and the
+ * other pages make none.
+ */
+function requestStartupApiData() {
+    const hasSession = glob.dbInitialized && glob.passwordSet !== false && glob.loggedIn !== false
+        && !glob.setupAuthRequired;
+    if (!hasSession || glob.isStandalone || window.standaloneApi) return;
+    if (glob.device === "desktop" || glob.device === "mobile") {
+        requestStartupData();
     }
 }
 

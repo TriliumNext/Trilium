@@ -38,6 +38,7 @@ const serverModule = (await vi.importActual("./server.js")) as {
     default: typeof import("./server.js").default;
 };
 const server = serverModule.default;
+const { requestStartupData } = await import("./startup_requests.js");
 
 type AjaxOptions = JQueryAjaxSettings & {
     success: (body: unknown, textStatus: string, jqXhr: any) => void;
@@ -686,5 +687,58 @@ describe("uploadForm", () => {
         });
         expect((opts.data as FormData).get("upload")).toBeInstanceOf(File);
         expect((opts.data as FormData).get("taskId")).toBe("t1");
+    });
+});
+
+describe("requests started at startup", () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    function stubFetch(responses: Record<string, Response>) {
+        const fetchSpy = vi.fn(async (url: string, _init?: RequestInit) => responses[url] ?? new Response("{}"));
+        vi.stubGlobal("fetch", fetchSpy);
+        return fetchSpy;
+    }
+
+    it("sends the startup GETs with the session's headers, and hands each response to the first get()", async () => {
+        const fetchSpy = stubFetch({
+            "/api/options": new Response(JSON.stringify({ theme: "next" }), {
+                headers: { "content-type": "application/json", "trilium-max-entity-change-id": "4242" }
+            })
+        });
+        const ajaxSpy = vi.fn((opts: AjaxOptions) => opts.success({ theme: "from ajax" }, "success", fakeJqXhr("")));
+        (window as any).$.ajax = ajaxSpy;
+
+        requestStartupData();
+        expect(fetchSpy.mock.calls.map(([ url ]) => url)).toEqual([ "/api/options", "/api/tree", "/api/keyboard-actions" ]);
+        expect(fetchSpy.mock.calls[0][1]).toMatchObject({
+            headers: { "trilium-component-id": "comp-glob", "x-csrf-token": "csrf-1" }
+        });
+
+        expect(await server.get("options")).toEqual({ theme: "next" });
+        expect(ajaxSpy).not.toHaveBeenCalled();
+        expect(server.getMaxKnownEntityChangeId()).toBeGreaterThanOrEqual(4242);
+
+        // Taken once: a later call asks again.
+        expect(await server.get("options")).toEqual({ theme: "from ajax" });
+        expect(ajaxSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("sends the request itself when the startup one failed, or a caller asks for more than its body", async () => {
+        stubFetch({
+            "/api/options": new Response("boom", { status: 500 }),
+            "/api/tree": new Response(JSON.stringify({ notes: [] }), { headers: { "content-type": "application/json" } })
+        });
+        const ajaxSpy = vi.fn((opts: AjaxOptions) => opts.success({ from: "ajax" }, "success", fakeJqXhr("")));
+        (window as any).$.ajax = ajaxSpy;
+
+        requestStartupData();
+        expect(await server.get("options")).toEqual({ from: "ajax" });
+        expect(ajaxSpy.mock.calls[0][0].url).toBe("/api/options");
+
+        // A raw read wants the text as is, which only the ordinary request gives it.
+        expect(await server.get("tree", undefined, true)).toEqual({ from: "ajax" });
+        expect(ajaxSpy).toHaveBeenCalledTimes(2);
     });
 });
