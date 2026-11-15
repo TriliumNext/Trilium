@@ -39,6 +39,7 @@ import appContext from "../components/app_context.js";
 import NoteContext from "../components/note_context.js";
 import LoadResults from "../services/load_results.js";
 import options from "../services/options.js";
+import server from "../services/server.js";
 import { buildNote } from "../test/easy-froca.js";
 import { renderInto } from "../test/render.js";
 import { ParentComponent } from "../widgets/react/react_utils.js";
@@ -188,6 +189,10 @@ describe("DesktopLayout", () => {
 
     it("adds the custom widgets of `#widget` notes to their slots once they have loaded", async () => {
         window.glob.layoutOrientation = "vertical";
+        // The split shows an empty note, whose view searches for the workspaces.
+        const get = server.get.bind(server);
+        const serverGet = vi.spyOn(server, "get").mockImplementation((async (url: string) =>
+            (url.startsWith("search?") ? [] : get(url))) as typeof server.get);
         let container: HTMLElement | undefined;
         act(() => { container = renderInto(<Layout />); });
         const noteContext = new NoteContext("main");
@@ -219,6 +224,7 @@ describe("DesktopLayout", () => {
         expect(follows(split?.querySelector(".custom-note-detail-pane"), findBar)).toBe(true);
         expect(follows(split?.querySelector(".custom-legacy-detail"), findBar)).toBe(true);
         appContext.tabManager = originalTabManager;
+        serverGet.mockRestore();
     });
 
     it("runs the command of a legacy widget's `data-trigger-command` element on a click", () => {
