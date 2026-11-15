@@ -29,6 +29,7 @@
 /api/keyboard-actions
 /api/keyboard-shortcuts-for-notes
 /api/notes/*/attachments
+/api/notes/*/blob
 /api/notes/*/metadata
 /api/recent-notes
 /api/script/startup?mobile=true
@@ -106,6 +107,7 @@
 /src/services/image_embed.ts
 /src/services/image_urls.ts
 /src/services/import.ts
+/src/services/in_app_help.ts
 /src/services/keyboard_actions.ts
 /src/services/keyboard_shortcut_display.ts
 /src/services/link.ts
@@ -154,8 +156,11 @@
 /src/widgets/NoteDetail.tsx
 /src/widgets/attribute_widgets/attribute_types.ts
 /src/widgets/basic_widget.ts
+/src/widgets/buttons/close_pane_button.tsx
+/src/widgets/buttons/create_pane_button.tsx
 /src/widgets/buttons/global_menu.css
 /src/widgets/buttons/global_menu.tsx
+/src/widgets/buttons/move_pane_button.tsx
 /src/widgets/collections/NoteList.css
 /src/widgets/collections/NoteList.tsx
 /src/widgets/collections/interface.ts
@@ -186,6 +191,10 @@
 /src/widgets/layout/ActiveContentBadges.tsx
 /src/widgets/layout/InlineTitle.css
 /src/widgets/layout/InlineTitle.tsx
+/src/widgets/layout/NoteActions.css
+/src/widgets/layout/NoteActions.tsx
+/src/widgets/layout/NoteActionsCustom.css
+/src/widgets/layout/NoteActionsCustom.tsx
 /src/widgets/layout/NoteBadges.css
 /src/widgets/layout/NoteBadges.tsx
 /src/widgets/layout/NoteTitleActions.css
@@ -196,6 +205,7 @@
 /src/widgets/layout/note_metadata.tsx
 /src/widgets/mobile_widgets/TabSwitcher.css
 /src/widgets/mobile_widgets/TabSwitcher.tsx
+/src/widgets/mobile_widgets/mobile_detail_menu.tsx
 /src/widgets/mobile_widgets/tab_navigation.ts
 /src/widgets/mobile_widgets/tab_swipe.ts
 /src/widgets/note_context_aware_widget.ts
@@ -215,6 +225,7 @@
 /src/widgets/react/Collapsible.css
 /src/widgets/react/Collapsible.tsx
 /src/widgets/react/Dropdown.tsx
+/src/widgets/react/FormFileUpload.tsx
 /src/widgets/react/FormList.css
 /src/widgets/react/FormList.tsx
 /src/widgets/react/FormTextBox.css
@@ -254,6 +265,7 @@
 /src/widgets/react/shortcut_kbd.tsx
 /src/widgets/react/tooltip.css
 /src/widgets/scroll_padding.tsx
+/src/widgets/type_widgets/helpers/split_editor_mode.ts
 /src/widgets/widget_utils.ts
 ws://*/
 ? /api/notes/download/*
@@ -261,5 +273,5 @@ ws://*/
 ? /src/services/note_types.ts
 ? /src/widgets/layout/NoteTypeSwitcher.css
 ? /src/widgets/layout/NoteTypeSwitcher.tsx
-? /src/widgets/react/hooks/editor.ts
 ? /src/widgets/react/NoteStore.ts
+? /src/widgets/react/hooks/editor.ts

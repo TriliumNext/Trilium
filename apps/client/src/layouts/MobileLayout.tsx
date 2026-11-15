@@ -9,6 +9,7 @@ import LauncherContainer from "../widgets/launch_bar/LauncherContainer.js";
 import InlineTitle from "../widgets/layout/InlineTitle.js";
 import NoteBadges from "../widgets/layout/NoteBadges.js";
 import NoteTitleActions from "../widgets/layout/NoteTitleActions.js";
+import MobileDetailMenu from "../widgets/mobile_widgets/mobile_detail_menu.js";
 import NoteIcon from "../widgets/note_icon.js";
 import NoteTitleWidget from "../widgets/note_title.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
@@ -34,8 +35,8 @@ export default function MobileLayout() {
 }
 
 /**
- * One note split per note context of the active tab, each with a title row (the note's icon, title
- * and badges) above the note's inline title, title actions, content, list of child notes and scroll
+ * One note split per note context of the active tab, each with a title row (the note's icon, title,
+ * badges and menu) above its inline title, title actions, content, list of child notes and scroll
  * padding. The splits are the children of `#detail-container`, as the stylesheets select them.
  */
 function NoteSplits() {
@@ -45,7 +46,8 @@ function NoteSplits() {
                 .class("title-row note-split-title")
                 .child(<NoteIcon />)
                 .child(<NoteTitleWidget placement="split" />)
-                .child(<NoteBadges />))
+                .child(<NoteBadges />)
+                .child(<MobileDetailMenu />))
             .child(new ScrollingContainer()
                 .filling()
                 .child(<InlineTitle />)

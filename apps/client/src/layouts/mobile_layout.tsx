@@ -9,7 +9,6 @@ import ScrollingContainer from "../widgets/containers/scrolling_container.js";
 import SplitNoteContainer from "../widgets/containers/split_note_container.js";
 import FindWidget from "../widgets/find.js";
 import HideKeyboardButton from "../widgets/mobile_widgets/hide_keyboard_button.jsx";
-import MobileDetailMenu from "../widgets/mobile_widgets/mobile_detail_menu.js";
 import MobileNoteNavigator from "../widgets/mobile_widgets/MobileNoteNavigator.jsx";
 import MobileNotePanel from "../widgets/mobile_widgets/MobileNotePanel.jsx";
 import ScreenContainer from "../widgets/mobile_widgets/screen_container.js";
@@ -66,7 +65,6 @@ export default class MobileLayout {
                                                 .css("align-items", "center")
                                                 .child(<ToggleSidebarButton />)
                                                 .child(<MobileNotePanel widgetsByParent={this.customWidgets} />)
-                                                .child(<MobileDetailMenu />)
                                         )
                                         .child(
                                             new ScrollingContainer()

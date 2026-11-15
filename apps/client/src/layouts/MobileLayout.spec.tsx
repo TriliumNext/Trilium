@@ -28,7 +28,7 @@ describe("MobileLayout", () => {
         window.glob.device = device;
     });
 
-    it("gives each note split a title row with the icon, title and badges, and the inline title, title actions, content, note list and scroll padding in its scroller", async () => {
+    it("gives each note split a title row with the icon, title, badges and note menu, and the inline title, title actions, content, note list and scroll padding in its scroller", async () => {
         let container: HTMLElement | undefined;
         act(() => { container = renderLayout(); });
         const splits = container?.querySelector("#mobile-rest-container > #detail-container > .split-note-container-widget");
@@ -51,6 +51,9 @@ describe("MobileLayout", () => {
         expect(titleRow?.firstElementChild?.querySelector("button.note-icon")).toBeInstanceOf(HTMLElement);
         expect(titleRow?.children[1]?.classList.contains("note-title-widget")).toBe(true);
         expect(titleRow?.children[2]?.classList.contains("note-badges")).toBe(true);
+        // The note menu ends the row; with no note open, its place holds the button that closes the split.
+        expect(titleRow?.children).toHaveLength(4);
+        expect(titleRow?.lastElementChild?.querySelector("button.bx-x")).toBeInstanceOf(HTMLElement);
         const scroller = split?.querySelector(":scope > .scrolling-container");
         expect(scroller?.firstElementChild?.classList.contains("inline-title")).toBe(true);
         expect(scroller?.children[1]?.classList.contains("title-actions")).toBe(true);
