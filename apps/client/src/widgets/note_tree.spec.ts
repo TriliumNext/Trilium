@@ -148,6 +148,32 @@ describe("NoteTreeWidget", () => {
         expect(isHoisted).toHaveBeenCalledWith("_taskStates");
     });
 
+    it("brings the first active note into view at once, and later ones with the scroll animation", async () => {
+        const widget = await renderWidget();
+        (widget as { noteContext?: unknown }).noteContext = { notePath: "root/child", hoistedNoteId: "root" };
+        vi.spyOn(options, "is").mockImplementation((name) => name === "treeScrollFollowNavigation");
+        vi.spyOn(widget, "activityDetected").mockImplementation(() => {});
+        vi.spyOn(widget, "filterHoistedBranch").mockResolvedValue(undefined);
+        const calls: string[] = [];
+        const node = {
+            isVisible: () => true,
+            scrollIntoView: vi.fn((effects: boolean) => { calls.push(`scrollIntoView ${effects}`); }),
+            setActive: vi.fn(() => { calls.push("setActive"); })
+        };
+        vi.spyOn(widget, "getNodeFromPath").mockResolvedValue(node as unknown as Fancytree.FancytreeNode);
+        const getActiveNode = vi.spyOn(widget, "getActiveNode").mockReturnValue(null);
+
+        await widget.refresh();
+        expect(calls).toEqual([ "scrollIntoView false", "setActive" ]);
+
+        calls.length = 0;
+        getActiveNode.mockReturnValue({
+            hasFocus: () => false, setActive: () => {}, setFocus: () => {}
+        } as unknown as Fancytree.FancytreeNode);
+        await widget.refresh();
+        expect(calls).toEqual([ "setActive" ]);
+    });
+
     it("follows the display density option, also when it changes", async () => {
         options.set("treeDensity", "dense");
         const widget = await renderWidget();

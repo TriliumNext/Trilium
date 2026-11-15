@@ -1115,6 +1115,11 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                     setTimeout(() => {
                         this.tree.options.activeVisible = true;
                     }, 0);
+                } else if (!oldActiveNode) {
+                    // `setActive()` scrolls with an animation, which on the tree's first activation
+                    // slides the freshly painted tree down from its top. Scrolling at once, in the
+                    // same task, leaves it nothing to animate.
+                    void newActiveNode.scrollIntoView(false);
                 }
 
                 newActiveNode.setActive(true, {
