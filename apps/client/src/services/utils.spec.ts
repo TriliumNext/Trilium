@@ -144,6 +144,16 @@ describe("formatSize", () => {
         // Nothing below a byte to show, however many places were asked for.
         expect(formatSize(512, 2)).toBe("512 B");
     });
+
+    it("moves to the next unit when the size rounds up to 1024 of its own", () => {
+        expect(formatSize(1024 * 1024 - 1)).toBe("1 MiB");
+        expect(formatSize(1024 ** 3 - 1024)).toBe("1 GiB");
+        expect(formatSize(1024 * 1024 - 1, 1)).toBe("1.0 MiB");
+        expect(formatSize(1023, 2)).toBe("1023 B");
+        expect(formatSize(1024 * 1024 - 6000)).toBe("1018.14 KiB");
+        // a unit given by unitOf stays, as the column shares it
+        expect(formatSize(1024 * 1024 - 1, 0, 1024 * 1024 - 1)).toBe("1024 KiB");
+    });
 });
 
 describe("formatDateTime / date helpers", () => {
