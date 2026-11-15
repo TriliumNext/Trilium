@@ -5,6 +5,7 @@ import type { Request } from "../../http_interface";
 
 import { ValidationError } from "../../errors.js";
 import markdown from "../../services/export/markdown.js";
+import { generateIconRegistry, getIconPacks } from "../../services/icon_packs.js";
 import markdownImportService from "../../services/import/markdown.js";
 
 function renderMarkdown(req: Request) {
@@ -55,7 +56,13 @@ function getIconUsage() {
     return { iconClassToCountMap };
 }
 
+/** Every icon of each icon pack, which the icon picker searches. */
+function getIconRegistry() {
+    return generateIconRegistry(getIconPacks());
+}
+
 export default {
+    getIconRegistry,
     getIconUsage,
     renderMarkdown,
     toMarkdown

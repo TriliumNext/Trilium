@@ -105,7 +105,7 @@ export async function loadIconFonts(glyphs: Iterable<IconGlyph>) {
  * fonts without knowing how any of them are named.
  */
 export function warmIconFonts(host?: HTMLElement) {
-    const packIcons = (glob.iconRegistry?.sources ?? []).map((source) => source.icon);
+    const packIcons = (glob.iconPacks ?? []).map((pack) => pack.icon);
     return loadIconFonts(resolveIconGlyphs(packIcons, host).values());
 }
 

@@ -15,12 +15,23 @@ vi.mock("../../services/utils", async (importOriginal) => ({
 const openDialogMock = vi.hoisted(() => vi.fn(async (dialog: JQuery<HTMLElement>, _closeActDialog?: boolean) => dialog));
 vi.mock("../../services/dialog", () => ({ openDialog: openDialogMock }));
 
-// The grid asks the server which icons the tree already uses, to lead with those. Anything else
-// asked of the server here is a module loading beside the picker, and wants a list back.
+// The grid asks the server for every icon, and for which icons the tree already uses, to lead with
+// those. Anything else asked of the server here is a module loading beside the picker, and wants a
+// list back.
+const iconRegistryMock = vi.hoisted(() => ({ sources: [] as { prefix: string, name: string, icon: string, icons: { id: string, terms: string[] }[] }[] }));
 vi.mock("../../services/server", () => ({
     default: {
-        get: async (url: string) => (url === "other/icon-usage" ? { iconClassToCountMap: {} } : [])
+        get: async (url: string) => {
+            if (url === "other/icon-usage") return { iconClassToCountMap: {} };
+            if (url === "other/icon-registry") return iconRegistryMock;
+            return [];
+        }
     }
+}));
+
+// The grid is virtualized; a stub tells how many rows of icons it was handed.
+vi.mock("react-window", () => ({
+    Grid: ({ rowCount }: { rowCount: number }) => <div className="icon-grid-stub" data-rows={rowCount} />
 }));
 
 import { renderInto } from "../../test/render";
@@ -64,7 +75,7 @@ describe("IconPickerButton", () => {
      */
     it("opens the picker on a phone without closing the dialog it stands in", () => {
         // Opening builds the grid, which reads the installed packs off the page.
-        glob.iconRegistry = { sources: [] };
+        glob.iconPacks = [];
 
         const mobile = renderButton(true);
         openDialogMock.mockClear();
@@ -82,8 +93,22 @@ describe("IconPickerButton", () => {
 });
 
 describe("IconPicker", () => {
+    it("lists the icons the server returns, which `/bootstrap` leaves out", async () => {
+        glob.iconPacks = [ { prefix: "bx", name: "Boxicons", icon: "bx bx-box" } ];
+        iconRegistryMock.sources = [ {
+            prefix: "bx", name: "Boxicons", icon: "bx bx-box",
+            icons: [ { id: "bx bx-star", terms: [ "star" ] }, { id: "bx bx-heart", terms: [ "heart" ] } ]
+        } ];
+
+        const picker = renderInto(<IconPicker columnCount={1} onSelect={() => {}} />);
+        expect(picker.querySelector(".no-results")).not.toBeNull();
+        await vi.waitFor(() => expect(picker.querySelector(".icon-grid-stub")?.getAttribute("data-rows")).toBe("2"));
+        iconRegistryMock.sources = [];
+    });
+
+
     it("draws the compact grid smaller than the one a note's icon is picked from", () => {
-        glob.iconRegistry = { sources: [] };
+        glob.iconPacks = [];
 
         const regular = renderInto(<IconPicker columnCount={9} onSelect={() => {}} />);
         const compact = renderInto(<IconPicker columnCount={9} compact onSelect={() => {}} />);

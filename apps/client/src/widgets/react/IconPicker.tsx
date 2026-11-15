@@ -301,6 +301,7 @@ interface IconToCountCache {
 }
 
 let iconToCountCache!: Promise<IconToCountCache> | null;
+let iconRegistryCache: Promise<IconRegistry> | undefined;
 
 function FilterRow({ filterByPrefix, search, setSearch, setFilterByPrefix, filteredIcons, onReset, resetText }: {
     filterByPrefix: string | null;
@@ -323,9 +324,9 @@ function FilterRow({ filterByPrefix, search, setSearch, setFilterByPrefix, filte
                 placeholder={ filterByPrefix
                     ? t("note_icon.search_placeholder_filtered", {
                         number: filteredIcons.length ?? 0,
-                        name: glob.iconRegistry.sources.find(s => s.prefix === filterByPrefix)?.name ?? ""
+                        name: glob.iconPacks.find(s => s.prefix === filterByPrefix)?.name ?? ""
                     })
-                    : t("note_icon.search_placeholder", { number: filteredIcons.length ?? 0, count: glob.iconRegistry.sources.length })}
+                    : t("note_icon.search_placeholder", { number: filteredIcons.length ?? 0, count: glob.iconPacks.length })}
                 currentValue={search} onChange={setSearch}
                 autoFocus
             />
@@ -407,9 +408,9 @@ function IconFilterContent({ filterByPrefix, setFilterByPrefix }: {
                 checked={filterByPrefix === "bx"}
                 onClick={() => setFilterByPrefix("bx")}
             >{t("note_icon.filter-default")}</FormListItem>
-            {glob.iconRegistry.sources.length > 1 && <FormDropdownDivider />}
+            {glob.iconPacks.length > 1 && <FormDropdownDivider />}
 
-            {glob.iconRegistry.sources.map(({ prefix, name, icon }) => (
+            {glob.iconPacks.map(({ prefix, name, icon }) => (
                 prefix !== "bx" && <FormListItem
                     key={prefix}
                     onClick={() => setFilterByPrefix(prefix)}
@@ -425,9 +426,9 @@ function useAllIcons() {
     const [ allIcons, setAllIcons ] = useState<IconWithName[]>();
 
     useEffect(() => {
-        getIconToCountMap().then((iconsToCount) => {
+        Promise.all([ getIconRegistry(), getIconToCountMap() ]).then(([ iconRegistry, iconsToCount ]) => {
             const allIcons = [
-                ...glob.iconRegistry.sources.flatMap(s => s.icons.map((i) => ({
+                ...iconRegistry.sources.flatMap(s => s.icons.map((i) => ({
                     ...i,
                     iconPack: s.name,
                 })))
@@ -475,6 +476,12 @@ function useFilteredIcons(allIcons: IconWithName[] | undefined, search: string |
         return icons;
     }, [ allIcons, search, filterByPrefix ]);
     return filteredIcons;
+}
+
+/** Every icon of each pack, fetched once per page: `/bootstrap` names only the packs. */
+function getIconRegistry() {
+    iconRegistryCache ??= server.get<IconRegistry>("other/icon-registry");
+    return iconRegistryCache;
 }
 
 async function getIconToCountMap() {

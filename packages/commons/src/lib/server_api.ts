@@ -1006,17 +1006,22 @@ export interface OCRProcessResponse {
     minConfidence?: number;
 }
 
+/** An icon pack as `/bootstrap` names it, without its icons. */
+export interface IconPackSummary {
+    prefix: string;
+    name: string;
+    /** An icon class to identify this icon pack. */
+    icon: string;
+}
+
+/** Every icon of each icon pack, as `GET /api/other/icon-registry` returns them. */
 export interface IconRegistry {
-    sources: {
-        prefix: string;
-        name: string;
-        /** An icon class to identify this icon pack. */
-        icon: string;
+    sources: (IconPackSummary & {
         icons: {
             id: string;
             terms: string[];
         }[]
-    }[];
+    })[];
 }
 
 /**
@@ -1105,7 +1110,8 @@ export type BootstrapDefinition = {
     iconPackCss: string;
     /** The font files the first render uses, for the client to preload. */
     preloadFonts?: string[];
-    iconRegistry: IconRegistry;
+    /** The icon packs whose icons the client can show, in the order of the icon picker. */
+    iconPacks: IconPackSummary[];
     device: "mobile" | "desktop" | "print" | false;
     csrfToken?: string;
     headingStyle: "plain" | "underline" | "markdown";

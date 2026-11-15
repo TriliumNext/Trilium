@@ -122,6 +122,11 @@ function mockServer() {
             return { iconClassToCountMap: {} };
         }
 
+        // Asked for by the icon picker as it opens, for the icons to list.
+        if (url === "other/icon-registry") {
+            return { sources: [] };
+        }
+
         if (url === "tree") {
             return {
                 branches: [],

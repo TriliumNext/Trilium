@@ -7133,6 +7133,59 @@ Returns the IDs of the most recently modified live notes under the ancestor, new
 
     No content.
 
+### Get every icon of each icon pack
+
+`GET /api/other/icon-registry` · `getIconRegistry`
+
+Lists the icons that the icon picker searches. The bootstrap data names only the icon packs, since the full list runs to over a megabyte with many packs installed.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Responses**
+
+=== "200: The icons of each icon pack"
+
+    *   `application/json`: `object`
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `sources` | `array of object` |
+    | `sources[].prefix` | `string` |
+    | `sources[].name` | `string` |
+    | `sources[].icon` | `string`  <br>An icon class that identifies the pack |
+    | `sources[].icons` | `array of object` |
+    | `sources[].icons[].id` | `string`  <br>The icon's classes, such as `bx bx-star` |
+    | `sources[].icons[].terms` | `array of string` |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "sources": [
+            {
+                "prefix": "string",
+                "name": "string",
+                "icon": "string",
+                "icons": [
+                    {
+                        "id": "string",
+                        "terms": [
+                            "string"
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+    ```
+
+    </div>
+    </div>
+
 ### Get icon usage statistics
 
 `GET /api/other/icon-usage` · `getIconUsage`

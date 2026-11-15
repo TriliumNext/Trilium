@@ -75,11 +75,11 @@ export default function getSharedBootstrapItems(assetPath: string, dbInitialized
     }
 }
 
-export function getIconConfig(assetPath: string): Pick<BootstrapDefinition, "iconRegistry" | "iconPackCss"> {
+export function getIconConfig(assetPath: string): Pick<BootstrapDefinition, "iconPacks" | "iconPackCss"> {
     const iconPacks = getIconPacks();
 
     return {
-        iconRegistry: generateIconRegistry(iconPacks),
+        iconPacks: generateIconRegistry(iconPacks).sources.map(({ prefix, name, icon }) => ({ prefix, name, icon })),
         iconPackCss: [
             ...iconPacks.map(p => generateCss(p, getIconPackFontUrl(p, assetPath))),
             generateTaskStateCss(iconPacks)

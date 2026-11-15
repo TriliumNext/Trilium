@@ -75,7 +75,7 @@ function leadWithFirstIcon(container: HTMLElement) {
  */
 function isIconClass(text: string) {
     const [ prefix, name, ...rest ] = text.split(" ");
-    return !rest.length && !!name && (glob.iconRegistry?.sources ?? []).some((source) => source.prefix === prefix);
+    return !rest.length && !!name && (glob.iconPacks ?? []).some((pack) => pack.prefix === prefix);
 }
 
 /** An icon of the map as the exported SVG has to carry it. See {@link renderExportedIcons}. */

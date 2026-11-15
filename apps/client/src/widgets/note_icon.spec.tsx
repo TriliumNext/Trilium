@@ -56,9 +56,11 @@ vi.mock("./react/hooks/tooltip", async (importOriginal) => ({
 
 vi.mock("../services/server", () => ({
     default: {
-        get: vi.fn(async (url: string) => url === "other/icon-usage"
-            ? { iconClassToCountMap: {} }
-            : [])
+        get: vi.fn(async (url: string) => {
+            if (url === "other/icon-usage") return { iconClassToCountMap: {} };
+            if (url === "other/icon-registry") return { sources: [] };
+            return [];
+        })
     }
 }));
 
@@ -132,7 +134,7 @@ describe("NoteIcon", () => {
     });
 
     it("stays in the legacy widget tree when the active note changes", () => {
-        glob.iconRegistry = { sources: [] };
+        glob.iconPacks = [];
         noteContext.initialNote = buildNote("note-a");
         const widget = new ReactWrappedWidget(<NoteIcon />);
         widget.doRender();
@@ -153,7 +155,7 @@ describe("NoteIcon", () => {
     });
 
     it("closes an open icon picker when the active note changes", () => {
-        glob.iconRegistry = { sources: [] };
+        glob.iconPacks = [];
         noteContext.initialNote = buildNote("note-a");
         const container = renderInto(<NoteIcon />);
         const toggle = container.querySelector<HTMLButtonElement>("button");

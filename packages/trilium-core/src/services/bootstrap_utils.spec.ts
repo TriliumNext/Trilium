@@ -46,7 +46,7 @@ describe("bootstrap_utils (real DB)", () => {
         expect(items.appCssNoteIds).toEqual([]);
         // Common items + icon config are always present.
         expect(items.assetPath).toBe(ASSET_PATH);
-        expect(items.iconRegistry).toBeTruthy();
+        expect(items.iconPacks.length).toBeGreaterThan(0);
         expect(typeof items.iconPackCss).toBe("string");
     });
 
@@ -221,9 +221,12 @@ describe("bootstrap_utils (real DB)", () => {
         expect(items.customThemeCssUrl).toBeUndefined();
     });
 
-    it("getIconConfig produces an icon registry and CSS", () => {
+    it("getIconConfig names the icon packs, leaving their icons to the icon registry route, and produces their CSS", () => {
         const config = getIconConfig(ASSET_PATH);
-        expect(config.iconRegistry).toBeTruthy();
+        expect(config.iconPacks).toContainEqual({ prefix: "bx", name: expect.any(String), icon: expect.any(String) });
+        for (const pack of config.iconPacks) {
+            expect(pack).not.toHaveProperty("icons");
+        }
         expect(typeof config.iconPackCss).toBe("string");
     });
 
