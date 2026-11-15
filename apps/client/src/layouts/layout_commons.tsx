@@ -238,9 +238,9 @@ export interface NoteSplitParts {
     /**
      * What goes in each gap around the split's children: the title row, the scroller, the bar that
      * picks the type of an empty note, the find bar and the parts around it, from the gap before the
-     * first child to the one after the last.
+     * first child to the one after the last. `split` is the same object for every gap of a split.
      */
-    between?: (gap: number, builtInCount: number) => SplitPart[];
+    between?: (gap: number, builtInCount: number, split: object) => SplitPart[];
 }
 
 /**
@@ -278,10 +278,11 @@ export function NoteSplits({ parts, containerId, containerClassName }: {
             ...parts.afterFind?.() ?? []
         ];
         const wrapper = new NoteWrapperWidget();
+        const split = {};
         for (const [ gap, child ] of children.entries()) {
-            wrapper.child(...parts.between?.(gap, children.length) ?? [], child);
+            wrapper.child(...parts.between?.(gap, children.length, split) ?? [], child);
         }
-        return wrapper.child(...parts.between?.(children.length, children.length) ?? []);
+        return wrapper.child(...parts.between?.(children.length, children.length, split) ?? []);
     }), { containerId, containerClassName });
     return splits;
 }

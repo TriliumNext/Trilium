@@ -1,6 +1,8 @@
 import { act } from "preact/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+/** How many times each legacy custom widget class was constructed. */
+const constructedWidgets = vi.hoisted(() => new Map<string, number>());
 const electron = vi.hoisted(() => ({ isElectron: vi.fn(() => false), areWindowControlsOnLeft: vi.fn(() => false) }));
 
 vi.mock("../services/utils.js", async (importOriginal) => ({
@@ -18,7 +20,13 @@ vi.mock("../services/bundle.js", async (importOriginal) => {
     const { h } = await import("preact");
     const { default: BasicWidget } = await import("../widgets/basic_widget.js");
     const { default: NoteContextAwareWidget } = await import("../widgets/note_context_aware_widget.js");
+    const countConstruction = (name: string) => constructedWidgets.set(name, (constructedWidgets.get(name) ?? 0) + 1);
     class LegacyCenterWidget extends NoteContextAwareWidget {
+        constructor() {
+            super();
+            countConstruction(new.target.name);
+        }
+
         static get parentWidget() {
             return "center-pane";
         }
@@ -28,6 +36,11 @@ vi.mock("../services/bundle.js", async (importOriginal) => {
         }
     }
     class LegacyDetailWidget extends BasicWidget {
+        constructor() {
+            super();
+            countConstruction(new.target.name);
+        }
+
         static get parentWidget() {
             return "note-detail-pane";
         }
@@ -279,6 +292,7 @@ describe("DesktopLayout", () => {
 
     it("adds the custom widgets of `#widget` notes to their slots once they have loaded", async () => {
         options.set("layoutOrientation", "vertical");
+        constructedWidgets.clear();
         let container: HTMLElement | undefined;
         act(() => { container = renderInto(<Layout />); });
         const noteContext = new NoteContext("main");
@@ -315,6 +329,13 @@ describe("DesktopLayout", () => {
         const positionedLegacy = split?.querySelector(".custom-legacy-detail-25");
         expect(follows(positionedLegacy, scroller)).toBe(true);
         expect(follows(split?.querySelector(":scope > .note-type-switcher-bar"), positionedLegacy)).toBe(true);
+        // A legacy widget class is built once for the center pane and once for the split, not once
+        // for each gap among their parts.
+        expect(Object.fromEntries(constructedWidgets)).toEqual({
+            LegacyCenterWidget: 1,
+            LegacyDetailWidget: 1,
+            PositionedLegacyDetailWidget: 1
+        });
         restoreTabManager();
     });
 

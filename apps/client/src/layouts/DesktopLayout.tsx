@@ -41,6 +41,7 @@ export default function DesktopLayout() {
     useAppearance();
     const widgetsByParent = useCustomWidgets();
     useLoadCustomWidgets();
+    const [ paneSlots ] = useState(() => ({ leftPane: {}, centerPane: {} }));
     // Above the launch bar, across the whole window, in the horizontal layout and wherever the window
     // controls sit on the left: the rest pane starts past the launch bar, so a tab bar there would
     // leave the controls drawn over the launch bar.
@@ -66,15 +67,15 @@ export default function DesktopLayout() {
             >
                 {!isHorizontal && launcherPane}
                 <LeftPanePeekButton />
-                <LeftPane pane={leftPane} between={(gap, builtInCount) => <CustomWidgets parent="left-pane" gap={gap} builtInCount={builtInCount} />} />
+                <LeftPane pane={leftPane} between={(gap, builtInCount) => <CustomWidgets parent="left-pane" slot={paneSlots.leftPane} gap={gap} builtInCount={builtInCount} />} />
                 <div id="rest-pane">
                     {!fullWidthTabBar && <TabBar fullWidth={false} leftPaneToggle={false} />}
                     <FixedFormattingToolbar />
                     <div id="vertical-main-container">
                         <div id="center-pane">
-                            <CustomWidgets parent="center-pane" gap={0} builtInCount={1} />
+                            <CustomWidgets parent="center-pane" slot={paneSlots.centerPane} gap={0} builtInCount={1} />
                             <NoteSplits parts={NOTE_SPLIT_PARTS} containerClassName="note-splits-host" />
-                            <CustomWidgets parent="center-pane" gap={1} builtInCount={1} />
+                            <CustomWidgets parent="center-pane" slot={paneSlots.centerPane} gap={1} builtInCount={1} />
                         </div>
                         <RightPanelContainer widgetsByParent={widgetsByParent} />
                     </div>
@@ -92,7 +93,9 @@ export default function DesktopLayout() {
 /** A split's actions end its title row, after a spacer, and its custom widgets go among its parts. */
 const NOTE_SPLIT_PARTS: NoteSplitParts = {
     titleRowEnd: () => [ <SpacerWidget baseSize={0} growthFactor={1} />, <NoteActions /> ],
-    between: (gap, builtInCount) => [ <CustomWidgets key={gap} parent="note-detail-pane" gap={gap} builtInCount={builtInCount} keepsRoot /> ]
+    between: (gap, builtInCount, split) => [
+        <CustomWidgets key={gap} parent="note-detail-pane" slot={split} gap={gap} builtInCount={builtInCount} keepsRoot />
+    ]
 };
 
 const PASSWORD_NOT_SET_EVENTS: EventNames[] = [ "showPasswordNotSet" ];
@@ -127,6 +130,8 @@ function TabBar({ fullWidth, leftPaneToggle }: { fullWidth: boolean, leftPaneTog
 /**
  * The widgets that `#widget` notes add to `parent`, once they have loaded, that go in gap `gap` of
  * the `builtInCount` built-in children of the pane, by their `position` (see `placeCustomWidgets()`).
+ * The gaps of a pane or of a split share one `slot`, for which `placeSlotWidgets()` builds the
+ * widgets once.
  * A legacy widget in a split gets the note context of that split. One outside the splits starts on
  * the active note context and follows it through `activeContextChanged`, as a child of `appContext`:
  * `useNoteContext()` there would take the context of any tab that switches its note, even a tab in
@@ -135,8 +140,9 @@ function TabBar({ fullWidth, leftPaneToggle }: { fullWidth: boolean, leftPaneTog
  * set: a part of a legacy container must keep its one root element, since the widgets load after
  * the container is built.
  */
-function CustomWidgets({ parent, gap, builtInCount, keepsRoot }: {
+function CustomWidgets({ parent, slot, gap, builtInCount, keepsRoot }: {
     parent: Exclude<ParentName, "right-pane">;
+    slot: object;
     gap: number;
     builtInCount: number;
     keepsRoot?: boolean;
@@ -144,16 +150,13 @@ function CustomWidgets({ parent, gap, builtInCount, keepsRoot }: {
     const widgetsByParent = useCustomWidgets();
     const { noteContext: splitNoteContext } = useNoteContext();
     const noteContext = parent === "note-detail-pane" ? splitNoteContext : undefined;
-    // A legacy widget given as a class is built once per slot, so that each split has its own. Its
-    // position is read from the instance.
-    const widgets = useMemo(() => {
-        if (!widgetsByParent) return [];
-        const legacyWidgets = widgetsByParent.getLegacyWidgets(parent)
-            .map((widget) => ({ widget: { legacy: widget }, position: widget.position }));
-        const preactWidgets = widgetsByParent.getPreactWidgets(parent)
-            .map((widget, index) => ({ widget: { preact: widget, key: `preact-${index}` }, position: widget.position }));
-        return placeCustomWidgets<PlacedWidget>([ ...legacyWidgets, ...preactWidgets ], builtInCount)[gap] ?? [];
-    }, [ widgetsByParent, parent, gap, builtInCount ]);
+    const widgets = useMemo(() => (widgetsByParent
+        ? placeSlotWidgets(slot, widgetsByParent, parent, builtInCount)[gap] ?? []
+        : []), [ widgetsByParent, slot, parent, gap, builtInCount ]);
+    // A gap that mounts again builds the widgets anew, as the ones it unmounted have been cleaned up.
+    useEffect(() => () => {
+        placedSlotWidgets.delete(slot);
+    }, [ slot ]);
 
     if (!widgets.length && !keepsRoot) return null;
     return (
@@ -167,6 +170,32 @@ function CustomWidgets({ parent, gap, builtInCount, keepsRoot }: {
 }
 
 type PlacedWidget = { legacy: BasicWidget } | { preact: ReturnType<WidgetsByParent["getPreactWidgets"]>[number], key: string };
+
+/** The custom widgets of each slot, by gap, with what they were placed from. */
+const placedSlotWidgets = new WeakMap<object, {
+    widgetsByParent: WidgetsByParent;
+    builtInCount: number;
+    gaps: PlacedWidget[][];
+}>();
+
+/**
+ * The custom widgets of `slot`, by gap. A legacy widget given as a class is built once per slot,
+ * so that each split has its own, and its position is read from the instance.
+ */
+function placeSlotWidgets(slot: object, widgetsByParent: WidgetsByParent, parent: ParentName, builtInCount: number) {
+    const placed = placedSlotWidgets.get(slot);
+    if (placed?.widgetsByParent === widgetsByParent && placed.builtInCount === builtInCount) {
+        return placed.gaps;
+    }
+
+    const legacyWidgets = widgetsByParent.getLegacyWidgets(parent)
+        .map((widget) => ({ widget: { legacy: widget }, position: widget.position }));
+    const preactWidgets = widgetsByParent.getPreactWidgets(parent)
+        .map((widget, index) => ({ widget: { preact: widget, key: `preact-${index}` }, position: widget.position }));
+    const gaps = placeCustomWidgets<PlacedWidget>([ ...legacyWidgets, ...preactWidgets ], builtInCount);
+    placedSlotWidgets.set(slot, { widgetsByParent, builtInCount, gaps });
+    return gaps;
+}
 
 function LegacyCustomWidget({ widget, noteContext }: { widget: BasicWidget, noteContext?: NoteContext }) {
     // The tabs can load before the widget does, which then misses their `activeContextChanged`.
