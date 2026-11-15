@@ -26,7 +26,7 @@ import NoteEmbeddable from "./NoteEmbeddable";
 
 // currently required by excalidraw, in order to allows self-hosting fonts locally.
 // this avoids making excalidraw load the fonts from an external CDN.
-window.EXCALIDRAW_ASSET_PATH = `${window.location.pathname}/node_modules/@excalidraw/excalidraw/dist/prod`;
+window.EXCALIDRAW_ASSET_PATH = getExcalidrawAssetPath(window.location.pathname);
 
 export default function Canvas({ note, noteContext }: TypeWidgetProps) {
     const apiRef = useRef<ExcalidrawImperativeAPI>(null);
@@ -188,4 +188,9 @@ function getNoteIdFromEmbeddableLink(link: string | null) {
     }
 
     return tree.getNoteIdFromUrl(cleaned);
+}
+
+/** Where Excalidraw downloads its fonts from, for a page served at `pathname`. */
+export function getExcalidrawAssetPath(pathname: string) {
+    return `${pathname.replace(/\/+$/, "")}/node_modules/@excalidraw/excalidraw/dist/prod`;
 }
