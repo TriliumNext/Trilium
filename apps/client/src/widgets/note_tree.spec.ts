@@ -7,6 +7,7 @@ import type TabManager from "../components/tab_manager.js";
 import FBranch from "../entities/fbranch.js";
 import froca from "../services/froca.js";
 import hoistedNoteService from "../services/hoisted_note.js";
+import keyboardActionsService from "../services/keyboard_actions.js";
 import LoadResults from "../services/load_results.js";
 import noteCreateService from "../services/note_create.js";
 import options from "../services/options.js";
@@ -85,6 +86,17 @@ describe("NoteTreeWidget", () => {
         await new Promise((resolve) => setTimeout(resolve));
         return widget;
     }
+
+    it("shows the shortcuts of its buttons, as it renders after the startup", async () => {
+        const updateDisplayedShortcuts = vi.spyOn(keyboardActionsService, "updateDisplayedShortcuts")
+            .mockImplementation(() => {});
+        const widget = await renderWidget();
+
+        const [ $container ] = updateDisplayedShortcuts.mock.calls[0] ?? [];
+        expect($container?.find("[data-trigger-command=collapseTree]")).toHaveLength(1);
+        expect($container?.find("[data-trigger-command=scrollToActiveNote]")).toHaveLength(1);
+        expect(widget.$widget.has($container?.get(0) ?? "")).toHaveLength(1);
+    });
 
     it("creates new notes in the tree's own note context (not the active tab's)", async () => {
         const widget = await renderWidget();

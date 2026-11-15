@@ -233,6 +233,8 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         });
 
         this.setupNoteTitleTooltip();
+        // The tree renders when its pane first opens, after the startup has done this for the layout.
+        keyboardActionsService.updateDisplayedShortcuts(this.$treeActions);
     }
 
     setupNoteTitleTooltip() {
