@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import Component from "../../components/component.js";
 import type FNote from "../../entities/fnote.js";
+import options from "../../services/options.js";
 import { buildNote } from "../../test/easy-froca.js";
 import { TREE_CLIPBOARD_TYPE } from "../react/hooks/drag.js";
 import { ParentComponent } from "../react/react_utils.js";
@@ -159,7 +160,17 @@ describe("LauncherContainer", () => {
         act(() => render(null, container));
         container.remove();
 
+        // The button is hidden while transcription is off, so the desktop app loads it only once on.
         h.isElectron = true;
+        options.set("transcriptionEnabled", "false");
+        mount();
+        await flush();
+        expect(container.querySelector("#launcher-container")).not.toBeNull();
+        expect(h.recordMeetingLoaded).toBe(false);
+        act(() => render(null, container));
+        container.remove();
+
+        options.set("transcriptionEnabled", "true");
         mount();
         await vi.waitFor(() => expect(container.querySelector(".record-meeting-button")).not.toBeNull());
     });

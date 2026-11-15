@@ -9,7 +9,8 @@ import froca from "../../services/froca";
 import { isDesktop, isElectron, isMobile } from "../../services/utils";
 import { useTriliumEvent } from "../react/hooks/events";
 import { useNoteLabelBoolean } from "../react/hooks/note";
-import { useLazyModule } from "../react/LazyComponent";
+import { useTriliumOptionBool } from "../react/hooks/options";
+import { useLazyModule, WithLazyModule } from "../react/LazyComponent";
 import { onWheelHorizontalScroll } from "../widget_utils";
 import BookmarkButtons, { BookmarkFolder, getBookmarkOpenMode } from "./BookmarkButtons";
 import CalendarWidget from "./CalendarWidget";
@@ -194,9 +195,19 @@ function LazyLauncherDropTarget(props: ComponentProps<typeof LauncherDropTarget>
     return dropTarget && <dropTarget.default {...props} />;
 }
 
+/**
+ * The meeting button, loaded once `transcriptionEnabled` is on, since it is hidden while the switch
+ * is off. It stays mounted after the switch turns off, to show the stop button of a recording.
+ */
 function LazyRecordMeetingButton({ launcherNote }: { launcherNote: FNote }) {
-    const recordMeeting = useLazyModule(loadRecordMeetingButton);
-    return recordMeeting && <recordMeeting.default launcherNote={launcherNote} />;
+    const [ isEnabled ] = useTriliumOptionBool("transcriptionEnabled");
+    const wasEnabled = useRef(false);
+    wasEnabled.current ||= isEnabled;
+    return wasEnabled.current && (
+        <WithLazyModule load={loadRecordMeetingButton}>
+            {({ default: RecordMeetingButton }) => <RecordMeetingButton launcherNote={launcherNote} />}
+        </WithLazyModule>
+    );
 }
 
 export function useLauncherChildNotes() {
