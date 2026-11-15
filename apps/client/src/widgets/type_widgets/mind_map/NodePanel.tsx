@@ -15,7 +15,7 @@ import { FormFileUploadActionButton } from "../../react/FormFileUpload";
 import { useNote, useNoteIcon } from "../../react/hooks/note";
 import { useNoteTitle } from "../../react/hooks/tree";
 import Icon from "../../react/Icon";
-import { IconPickerButton } from "../../react/IconPicker";
+import { IconPickerButton } from "../../react/IconPickerButton";
 import OverlayPanel, { OverlayPanelBody, OverlayPanelSection, OverlayPanelTitle } from "../../react/OverlayPanel";
 import SegmentedChoice from "../../react/SegmentedChoice";
 import TabStrip, { type TabStripTabDefinition } from "../../react/TabStrip";

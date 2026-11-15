@@ -904,7 +904,7 @@ export default function Column({
  * Loaded once a column can change its icon, so a read-only board never loads the picker and the
  * grid of every icon pack it brings.
  */
-const IconPickerButton = lazy(() => import("../../react/IconPicker")
+const IconPickerButton = lazy(() => import("../../react/IconPickerButton")
     .then(({ IconPickerButton: button }) => ({ default: button })));
 
 /** The column's icon on its ring, as the picker's button draws it, for a column that cannot change it. */

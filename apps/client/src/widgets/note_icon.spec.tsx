@@ -71,8 +71,8 @@ vi.mock("../services/attributes", () => ({
     }
 }));
 
-vi.mock("./react/IconPicker", async (importOriginal) => {
-    const original = await importOriginal<typeof import("./react/IconPicker")>();
+vi.mock("./react/IconPickerButton", async (importOriginal) => {
+    const original = await importOriginal<typeof import("./react/IconPickerButton")>();
     return {
         ...original,
         IconPickerButton: (props: Parameters<typeof original.IconPickerButton>[0]) => {
@@ -154,7 +154,7 @@ describe("NoteIcon", () => {
         }
     });
 
-    it("closes an open icon picker when the active note changes", () => {
+    it("closes an open icon picker when the active note changes", async () => {
         glob.iconPacks = [];
         noteContext.initialNote = buildNote("note-a");
         const container = renderInto(<NoteIcon />);
@@ -165,7 +165,8 @@ describe("NoteIcon", () => {
         void act(() => {
             $(dropdown as HTMLElement).children("button:not([aria-expanded=true])").trigger("click");
         });
-        expect(document.body.querySelector(".tn-dropdown-portal .icon-picker")).not.toBeNull();
+        // The picker comes with its module, which the button imports on the first opening.
+        await vi.waitFor(() => expect(document.body.querySelector(".tn-dropdown-portal .icon-picker")).not.toBeNull());
 
         void act(() => noteContext.setNote?.(buildNote("note-a", "bx-updated")));
 

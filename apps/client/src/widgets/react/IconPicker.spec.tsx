@@ -35,7 +35,8 @@ vi.mock("react-window", () => ({
 }));
 
 import { renderInto } from "../../test/render";
-import IconPicker, { IconPickerButton } from "./IconPicker";
+import IconPicker from "./IconPicker";
+import { IconPickerButton } from "./IconPickerButton";
 
 describe("IconPickerButton", () => {
     /** Renders the button as the given device would see it. */
@@ -46,7 +47,7 @@ describe("IconPickerButton", () => {
         );
     }
 
-    it("hangs the picker under the button on a desktop, and gives it a screen of its own on a phone", () => {
+    it("hangs the picker under the button on a desktop, and gives it a screen of its own on a phone", async () => {
         const desktop = renderButton(false);
 
         // The button stands where it was put; what it opens is a menu, which is neither built nor
@@ -60,7 +61,8 @@ describe("IconPickerButton", () => {
         // A menu at the width of the picker is wider than a phone, so what opens there is the modal
         // the note's own icon is picked through, which the stylesheet gives the whole screen to.
         expect(mobile.querySelector(".note-icon-widget button.note-icon")).toBeTruthy();
-        expect(document.body.querySelector(".modal.icon-switcher")).toBeTruthy();
+        // The modal comes with the picker's module, which the button imports as it mounts.
+        await vi.waitFor(() => expect(document.body.querySelector(".modal.icon-switcher")).toBeTruthy());
         expect(document.body.querySelector(".dropdown-menu")).toBeNull();
 
         // On either device the picker itself waits to be asked for: it holds every icon of every
@@ -73,11 +75,12 @@ describe("IconPickerButton", () => {
      * sheet, the quick editor. A picker that closed the active dialog closed the one it was rendered
      * inside, taking itself down with it and leaving the backdrop over an empty page.
      */
-    it("opens the picker on a phone without closing the dialog it stands in", () => {
+    it("opens the picker on a phone without closing the dialog it stands in", async () => {
         // Opening builds the grid, which reads the installed packs off the page.
         glob.iconPacks = [];
 
         const mobile = renderButton(true);
+        await vi.waitFor(() => expect(document.body.querySelector(".modal.icon-switcher")).toBeTruthy());
         openDialogMock.mockClear();
 
         const button = mobile.querySelector<HTMLElement>(".note-icon-widget button.note-icon");

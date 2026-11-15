@@ -88,7 +88,7 @@ const NOTE_TYPE_OPTIONS = [
     id, title, icon, group: "type" as const, options: { type, mime }
 })) as NoteTypeOption[];
 
-vi.mock("../../react/IconPicker", () => ({
+vi.mock("../../react/IconPickerButton", () => ({
     IconPickerButton: ({ className, icon, onSelect, onOpened, onClosed }: {
         className?: string, icon: string, onSelect: (picked: string) => void,
         onOpened?: () => void, onClosed?: () => void
