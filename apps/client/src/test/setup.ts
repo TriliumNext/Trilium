@@ -7,6 +7,7 @@ import { Modal } from "bootstrap";
 import $ from "jquery";
 import { afterAll, vi } from "vitest";
 
+import { loadTooltips } from "../widgets/react/hooks/tooltip";
 import { stubHighlightApi } from "./highlights";
 
 // Top level, not in a beforeAll: vi.mock is hoisted either way, and nesting it only makes the order lie.
@@ -18,6 +19,8 @@ stubHighlightApi();
 survivePendingModalCallbacks();
 deferSelectionChange();
 drainBootstrapTransitions();
+// The app loads tooltips at the first hover; specs inspect them right after rendering.
+await loadTooltips();
 
 function injectGlobals() {
     const uncheckedWindow = window as any;

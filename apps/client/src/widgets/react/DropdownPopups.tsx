@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
 import { focusListItem } from "./FormList";
+import { suspendModalFocusTraps } from "./modal_focustrap";
 import Popup, { type PopupProps } from "./Popup";
 
 /*
  * The popups of `Dropdown` and `DropdownPanel`. `Dropdown.tsx` imports this module once a toggle is
  * about to be pressed, so closed dropdowns load none of the menu code.
  */
-export { focusListItem };
+export { focusListItem, suspendModalFocusTraps };
 export { default as Menu } from "./Menu";
 
 /** A panel's popup, whose items Up and Down move between. */

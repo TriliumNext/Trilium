@@ -11,7 +11,6 @@ import { isMobile, isNarrowLayout, onNarrowLayoutChange } from "../../services/u
 import type * as DropdownPopups from "./DropdownPopups";
 import { useBodyClass, useUniqueName } from "./hooks/dom";
 import { useTooltip } from "./hooks/tooltip";
-import { suspendModalFocusTraps } from "./modal_focustrap";
 import type { PopupProps } from "./Popup";
 
 type DataAttributes = {
@@ -236,8 +235,8 @@ function DropdownToggle({ id, className, buttonClassName, title, text, dropdownC
         shownRef.current = open;
         // A dialog's focus trap would pull focus out of a popup that stands outside the dialog. The
         // traps go before the render, since a bottom sheet takes focus in the effect that places it.
-        if (open) {
-            restoreFocusTraps.current = suspendModalFocusTraps();
+        if (open && dropdownPopups) {
+            restoreFocusTraps.current = dropdownPopups.suspendModalFocusTraps();
         }
         // Focus that the popup holds goes back to the toggle, as a native menu button's does; a
         // command that moved it elsewhere keeps it there.
@@ -297,8 +296,13 @@ function DropdownToggle({ id, className, buttonClassName, title, text, dropdownC
     useEffect(() => {
         if (!shown || dropdownPopups) return;
         let cancelled = false;
-        void preloadDropdownPopups().then(() => {
-            if (!cancelled) setPopupsLoaded(true);
+        void preloadDropdownPopups().then((popups) => {
+            if (cancelled) return;
+            // Before the popup draws, as `setOpen()` does once the popups have loaded.
+            if (shownRef.current && !restoreFocusTraps.current) {
+                restoreFocusTraps.current = popups.suspendModalFocusTraps();
+            }
+            setPopupsLoaded(true);
         });
         return () => {
             cancelled = true;
