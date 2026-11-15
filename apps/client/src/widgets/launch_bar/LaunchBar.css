@@ -1,0 +1,26 @@
+#launcher-container {
+    display: flex;
+    flex-grow: 1;
+
+    #launcher-pane.vertical & {
+        flex-direction: column;
+        overflow: hidden auto;
+    }
+
+    #launcher-pane.horizontal & {
+        overflow: auto hidden;
+    }
+
+    .launcher-placeholder {
+        position: relative;
+
+        &::before {
+            content: "";
+            position: absolute;
+            inset: 25%;
+            border-radius: 6px;
+            background-color: currentColor;
+            opacity: 0.15;
+        }
+    }
+}

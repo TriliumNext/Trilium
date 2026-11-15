@@ -16,7 +16,6 @@ import SplitNoteContainer from "../widgets/containers/split_note_container.js";
 import PasswordNoteSetDialog from "../widgets/dialogs/password_not_set.js";
 import UploadAttachmentsDialog from "../widgets/dialogs/upload_attachments.js";
 import FindWidget from "../widgets/find.js";
-import LauncherContainer from "../widgets/launch_bar/LauncherContainer.jsx";
 import SpacerWidget from "../widgets/launch_bar/SpacerWidget.jsx";
 import { FixedFormattingToolbar } from "../widgets/layout/FormattingToolbar.jsx";
 import InlineTitle from "../widgets/layout/InlineTitle.jsx";
@@ -169,14 +168,12 @@ export default class DesktopLayout {
             launcherPane = new FlexContainer("row")
                 .css("height", "53px")
                 .class("horizontal")
-                .child(<LauncherContainer isHorizontalLayout={true} />)
                 .child(<GlobalMenu isHorizontalLayout={true} />);
         } else {
             launcherPane = new FlexContainer("column")
                 .css("width", "53px")
                 .class("vertical")
                 .child(<GlobalMenu isHorizontalLayout={false} />)
-                .child(<LauncherContainer isHorizontalLayout={false} />)
                 .child(<LeftPaneToggle isHorizontalLayout={false} />);
         }
 

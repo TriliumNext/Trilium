@@ -1,3 +1,25 @@
 .desktop-layout {
+    display: flex;
+    flex-direction: column;
     height: 100dvh;
+
+    #horizontal-main-container {
+        display: flex;
+        flex-grow: 1;
+        min-height: 0;
+    }
+
+    #launcher-pane {
+        display: flex;
+        flex-shrink: 0;
+
+        &.vertical {
+            flex-direction: column;
+            width: 53px;
+        }
+
+        &.horizontal {
+            height: 53px;
+        }
+    }
 }
