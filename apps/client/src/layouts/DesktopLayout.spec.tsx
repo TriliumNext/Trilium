@@ -139,8 +139,9 @@ describe("DesktopLayout", () => {
         expect(tabBar?.parentElement?.id).toBe("rest-pane");
         expect(tabBar?.querySelector(".tab-row-widget.full-width")).toBeNull();
         expect(tabBar?.querySelector(".tab-row-widget")).not.toBeNull();
-        // The left pane toggle follows the menu, and the left pane follows the launch bar.
-        expect(launcherPane?.children[1]?.classList.contains("left-pane-toggle-button")).toBe(true);
+        // The left pane toggle ends the bar, after the launchers, and the left pane follows the bar.
+        expect(launcherPane?.lastElementChild?.classList.contains("left-pane-toggle-button")).toBe(true);
+        expect(launcherPane?.lastElementChild?.previousElementSibling?.id).toBe("launcher-container");
         expect(launcherPane?.nextElementSibling?.classList.contains("left-pane-peek-button")).toBe(true);
         const leftPaneHost = root?.querySelector("#left-pane-host");
         expect(leftPaneHost?.previousElementSibling?.classList.contains("left-pane-peek-button")).toBe(true);

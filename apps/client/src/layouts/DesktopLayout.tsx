@@ -48,12 +48,11 @@ export default function DesktopLayout() {
         || (isElectron() && !window.glob.hasNativeTitleBar && areWindowControlsOnLeft());
     const launcherPane = (
         <div id="launcher-pane" className={orientation}>
-            {!isHorizontal && <>
-                <GlobalMenu isHorizontalLayout={false} />
-                <LeftPaneToggle isHorizontalLayout={false} />
-            </>}
+            {!isHorizontal && <GlobalMenu isHorizontalLayout={false} />}
             <LauncherContainer isHorizontalLayout={isHorizontal} />
-            {isHorizontal && <GlobalMenu isHorizontalLayout={true} />}
+            {isHorizontal
+                ? <GlobalMenu isHorizontalLayout={true} />
+                : <LeftPaneToggle isHorizontalLayout={false} />}
         </div>
     );
 
