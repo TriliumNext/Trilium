@@ -1,6 +1,13 @@
 import { act } from "preact/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const electron = vi.hoisted(() => ({ isElectron: vi.fn(() => false), areWindowControlsOnLeft: vi.fn(() => false) }));
+
+vi.mock("../services/utils.js", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../services/utils.js")>()),
+    isElectron: () => electron.isElectron(),
+    areWindowControlsOnLeft: () => electron.areWindowControlsOnLeft()
+}));
 vi.mock("../services/keyboard_actions", () => ({
     default: { getAction: vi.fn().mockResolvedValue({ effectiveShortcuts: [] }), updateDisplayedShortcuts: vi.fn() }
 }));
@@ -53,11 +60,12 @@ describe("DesktopLayout", () => {
         buildNote({ id: "_lbForwardInHistory", title: "Forward", type: "launcher" });
         options.set("leftPaneVisible", "false");
         options.set("experimentalFeatures", "[]");
-        // A split shows an empty note, whose view searches for the workspaces, also after its case.
+        // A split shows an empty note, whose view searches for the workspaces, and a search note,
+        // whose view reads its attachments, also after their cases.
         if (!vi.isMockFunction(server.get)) {
             const get = server.get.bind(server);
             vi.spyOn(server, "get").mockImplementation((async (url: string) =>
-                (url.startsWith("search?") ? [] : get(url))) as typeof server.get);
+                (url.startsWith("search?") || url.endsWith("/attachments") ? [] : get(url))) as typeof server.get);
         }
     });
 
@@ -137,6 +145,55 @@ describe("DesktopLayout", () => {
         expect(statusBar).toBeInstanceOf(HTMLElement);
         expect(statusBar?.parentElement).toBe(root);
         expect(statusBar?.previousElementSibling).toBe(mainContainer);
+    });
+
+    it("spans the window with the tab bar in the desktop app's vertical layout when the window controls are on the left", () => {
+        options.set("layoutOrientation", "vertical");
+        electron.isElectron.mockReturnValue(true);
+        electron.areWindowControlsOnLeft.mockReturnValue(true);
+        const hadNativeTitleBar = window.glob.hasNativeTitleBar;
+        window.glob.hasNativeTitleBar = false;
+        let container: HTMLElement | undefined;
+        act(() => { container = renderInto(<Layout />); });
+        electron.isElectron.mockReturnValue(false);
+        electron.areWindowControlsOnLeft.mockReturnValue(false);
+        window.glob.hasNativeTitleBar = hadNativeTitleBar;
+        const root = container?.querySelector("#root-widget");
+
+        const tabBar = root?.firstElementChild;
+        expect(tabBar?.classList.contains("tab-row-container")).toBe(true);
+        expect(tabBar?.querySelector(".tab-row-widget.full-width")).not.toBeNull();
+        expect(root?.querySelector("#rest-pane .tab-row-container")).toBeNull();
+        // The launch bar stays beside the main container, and keeps the left pane toggle.
+        expect(tabBar?.nextElementSibling?.id).toBe("horizontal-main-container");
+        expect(tabBar?.querySelector(".left-pane-toggle-button")).toBeNull();
+        expect(root?.querySelector("#horizontal-main-container > #launcher-pane .left-pane-toggle-button")).not.toBeNull();
+    });
+
+    it("shows the results of a search note under its note list", async () => {
+        options.set("layoutOrientation", "vertical");
+        const searchNote = buildNote({ title: "Search", type: "search" });
+        let container: HTMLElement | undefined;
+        act(() => { container = renderInto(<Layout />); });
+        const noteContext = new NoteContext("main");
+        noteContext.noteId = searchNote.noteId;
+        noteContext.notePath = searchNote.noteId;
+        const originalTabManager = appContext.tabManager;
+        appContext.tabManager = {
+            noteContexts: [ noteContext ],
+            getActiveMainContext: () => noteContext,
+            getActiveContext: () => noteContext
+        } as unknown as typeof appContext.tabManager;
+        const splits = container?.querySelector(".split-note-container-widget");
+        expect(splits).not.toBeNull();
+        await act(async () => {
+            await $(splits as HTMLElement).prop("component").handleEvent("newNoteContextCreated", { noteContext });
+        });
+
+        const host = container?.querySelector(".note-split[data-ntx-id=main] .search-result-host");
+        expect(host).toBeInstanceOf(HTMLElement);
+        await vi.waitFor(() => expect(host?.querySelector(".search-result-widget")).not.toBeNull());
+        appContext.tabManager = originalTabManager;
     });
 
     it("gives each note split a title row, and the inline title, title actions, content, note list, search results and scroll padding in its scroller", async () => {

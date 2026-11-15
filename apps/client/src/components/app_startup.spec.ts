@@ -4,9 +4,18 @@ const mocks = vi.hoisted(() => ({
     loadTabs: vi.fn(async () => {}),
     executeStartupBundles: vi.fn(),
     updateDisplayedShortcuts: vi.fn(),
-    setupWindowShortcuts: vi.fn(async () => {})
+    setupWindowShortcuts: vi.fn(async () => {}),
+    isElectron: vi.fn(() => false)
 }));
 
+vi.mock("../services/utils.js", async (importOriginal) => {
+    const original = await importOriginal<typeof import("../services/utils.js")>();
+    return { ...original, default: { ...original.default, isElectron: () => mocks.isElectron() } };
+});
+vi.mock("./zoom.js", async () => {
+    const { default: Component } = await import("./component.js");
+    return { default: new Component() };
+});
 vi.mock("./tab_manager.js", async (importOriginal) => {
     const { default: TabManager } = await importOriginal<typeof import("./tab_manager.js")>();
     return {
@@ -33,9 +42,13 @@ import Entrypoints from "./entrypoints.js";
 import MainTreeExecutors from "./main_tree_executors.js";
 import RootCommandExecutor from "./root_command_executor.js";
 import TabManager from "./tab_manager.js";
+import zoomComponent from "./zoom.js";
 
 describe("startAppAroundLayout", () => {
     afterEach(() => {
+        if (appContext.children.includes(zoomComponent)) {
+            appContext.removeChild(zoomComponent);
+        }
         vi.useRealTimers();
         vi.restoreAllMocks();
     });
@@ -68,5 +81,15 @@ describe("startAppAroundLayout", () => {
         vi.advanceTimersByTime(2000);
         expect(mocks.executeStartupBundles).toHaveBeenCalledTimes(1);
         appContext.removeHandler("initialRenderComplete", rendered);
+        expect(appContext.children).not.toContain(zoomComponent);
+    });
+
+    it("adds the zoom of the window in the desktop app", async () => {
+        vi.spyOn(server, "get").mockResolvedValue([]);
+        mocks.isElectron.mockReturnValue(true);
+        await startAppAroundLayout(document.createElement("div"));
+        mocks.isElectron.mockReturnValue(false);
+
+        expect(appContext.children).toContain(zoomComponent);
     });
 });

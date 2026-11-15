@@ -1,9 +1,11 @@
+import { h, type VNode } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import options from "../services/options.js";
 import { renderInto } from "../test/render.js";
-import { Modals } from "./layout_commons.js";
+import { POPUP_EDITOR_NTX_ID } from "../widgets/react/react_utils.js";
+import { LazyDialog, Modals, modals } from "./layout_commons.js";
 
 vi.mock("../services/keyboard_actions", () => ({
     default: { getAction: vi.fn().mockResolvedValue({ effectiveShortcuts: [] }), updateDisplayedShortcuts: vi.fn() }
@@ -26,3 +28,27 @@ describe("Modals", () => {
         expect(document.querySelector(".modal.call-to-action")).toBeNull();
     });
 });
+
+describe("modals", () => {
+    it("loads a component for each dialog, and binds each popup editor to its note context and command", async () => {
+        const loaded = await Promise.all(modals()
+            .filter((modal) => modal.type === LazyDialog)
+            .map(async (modal) => ({ key: modal.key, module: await (modal as VNode<LazyDialogProps>).props.loader() })));
+
+        // All but the call to action and the toasts.
+        expect(loaded).toHaveLength(modals().length - 2);
+        for (const { module } of loaded) {
+            expect(typeof module.default).toBe("function");
+        }
+        const popupEditors = loaded.filter(({ key }) => typeof key === "string" && key.startsWith("popup_editor"));
+        expect(popupEditors.map(({ module }) => {
+            const { props } = (h(module.default, null).type as () => VNode<{ ntxId: string, openCommand: string }>)();
+            return [ props.ntxId, props.openCommand ];
+        })).toEqual([
+            [ POPUP_EDITOR_NTX_ID, "openInPopup" ],
+            [ `${POPUP_EDITOR_NTX_ID}-nested`, "openInNestedPopup" ]
+        ]);
+    });
+});
+
+type LazyDialogProps = Parameters<typeof LazyDialog>[0];
