@@ -9,7 +9,7 @@ import { TREE_CLIPBOARD_TYPE } from "../react/hooks/drag.js";
 import { ParentComponent } from "../react/react_utils.js";
 import LauncherContainer, { useLauncherChildNotes } from "./LauncherContainer.js";
 
-const h = vi.hoisted(() => ({ isElectron: false, showLauncherContextMenu: vi.fn() }));
+const h = vi.hoisted(() => ({ isElectron: false, showLauncherContextMenu: vi.fn(), tabSwitcherLoaded: false }));
 
 vi.mock("../../services/utils", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../services/utils")>(),
@@ -19,6 +19,13 @@ vi.mock("../../menus/launcher_button_context_menu", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../menus/launcher_button_context_menu")>(),
     showLauncherContextMenu: h.showLauncherContextMenu
 }));
+vi.mock("../mobile_widgets/TabSwitcher", () => {
+    h.tabSwitcherLoaded = true;
+    return {
+        default: () => <span className="tab-switcher-stub" />,
+        LaunchBarTabSwipe: () => <span className="tab-swipe-stub" />
+    };
+});
 vi.mock("./RecordMeetingButton", () => ({
     default: () => <span className="record-meeting-button" />
 }));
@@ -205,5 +212,45 @@ describe("LauncherContainer", () => {
             expect.anything(),
             { parentNoteId: "_lbVisibleLaunchers" }
         );
+    });
+
+    it("loads the tab switcher only for a bar that shows it", async () => {
+        const mount = (isHorizontalLayout: boolean) => {
+            container = document.createElement("div");
+            document.body.appendChild(container);
+            act(() => render(
+                <ParentComponent.Provider value={new Component()}>
+                    <LauncherContainer isHorizontalLayout={isHorizontalLayout} />
+                </ParentComponent.Provider>, container));
+        };
+
+        buildNote({
+            id: "_lbVisibleLaunchers",
+            title: "Visible Launchers",
+            children: [ { title: "Spacer", type: "launcher", "#launcherType": "builtinWidget", "#builtinWidget": "spacer" } ]
+        });
+        mount(true);
+        await flush();
+        expect(container.querySelector(".spacer")).not.toBeNull();
+        expect(h.tabSwitcherLoaded).toBe(false);
+        act(() => render(null, container));
+        container.remove();
+
+        buildNote({
+            id: "_lbVisibleLaunchers",
+            title: "Visible Launchers",
+            children: [ {
+                id: "_lbTabSwitcher",
+                title: "Tabs",
+                type: "launcher",
+                "#launcherType": "builtinWidget",
+                "#builtinWidget": "mobileTabSwitcher"
+            } ]
+        });
+        mount(true);
+        await flush();
+        expect(h.tabSwitcherLoaded).toBe(true);
+        expect(container.querySelector(".launcher-slot[data-launcher-id='_lbTabSwitcher'] .tab-switcher-stub")).not.toBeNull();
+        expect(container.querySelector(".tab-swipe-stub")).not.toBeNull();
     });
 });

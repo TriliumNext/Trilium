@@ -85,6 +85,12 @@ interface SwipeGesture {
  * that ends a swipe reaches none of the bar's buttons. A swipe that starts on the bar follows the
  * pointer off it, since a mouse, unlike a finger, does not keep sending its events to the bar.
  */
+/** Lets a finger swipe across the launch bar between tabs, for as long as it is mounted. */
+export function LaunchBarTabSwipe({ containerRef }: { containerRef: RefObject<HTMLElement | null> }) {
+    useLaunchBarTabSwipe(containerRef, true);
+    return null;
+}
+
 export function useLaunchBarTabSwipe(containerRef: RefObject<HTMLElement | null>, enabled: boolean) {
     const swipe = useTabSwipe();
     const swipeRef = useRef(swipe);

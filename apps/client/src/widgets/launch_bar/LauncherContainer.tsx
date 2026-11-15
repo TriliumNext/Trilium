@@ -1,12 +1,12 @@
 import "./LauncherContainer.css";
 
-import { useCallback, useLayoutEffect, useRef, useState } from "preact/hooks";
+import type { RefObject } from "preact";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
 import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 import froca from "../../services/froca";
 import { isDesktop, isElectron, isMobile } from "../../services/utils";
-import TabSwitcher, { useLaunchBarTabSwipe } from "../mobile_widgets/TabSwitcher";
 import { useTriliumEvent } from "../react/hooks/events";
 import { useNoteLabelBoolean } from "../react/hooks/note";
 import { onWheelHorizontalScroll } from "../widget_utils";
@@ -31,7 +31,6 @@ export default function LauncherContainer({ isHorizontalLayout }: { isHorizontal
     const childNotes = useLauncherChildNotes();
     const containerRef = useLauncherScrollbarCompensation(isHorizontalLayout, childNotes);
     const hasTabSwitcher = !!childNotes?.some((note) => note.getLabelValue("builtinWidget") === "mobileTabSwitcher");
-    useLaunchBarTabSwipe(containerRef, isHorizontalLayout && hasTabSwitcher);
 
     return (
         <div
@@ -67,6 +66,7 @@ export default function LauncherContainer({ isHorizontalLayout }: { isHorizontal
                     );
                 })}
             </LaunchBarContext.Provider>
+            {isHorizontalLayout && hasTabSwitcher && <LazyTabSwipe containerRef={containerRef} />}
             <LauncherDropTarget
                 containerRef={containerRef}
                 parentNoteId={getVisibleLaunchersRootId()}
@@ -144,7 +144,7 @@ function initBuiltinWidget(note: FNote, isHorizontalLayout: boolean) {
         case "quickSearch":
             return <QuickSearchLauncherWidget launcherNote={note} />;
         case "mobileTabSwitcher":
-            return <TabSwitcher launcherNote={note} />;
+            return <LazyTabSwitcher launcherNote={note} />;
         case "sidebarChat":
             return isExperimentalFeatureEnabled("llm") ? <SidebarChatButton launcherNote={note} /> : undefined;
         case "recordMeeting":
@@ -154,6 +154,31 @@ function initBuiltinWidget(note: FNote, isHorizontalLayout: boolean) {
         default:
             console.warn(`Unrecognized builtin widget ${builtinWidget} for launcher ${note.noteId} "${note.title}"`);
     }
+}
+
+function LazyTabSwitcher({ launcherNote }: { launcherNote: FNote }) {
+    const tabSwitcher = useTabSwitcherModule();
+    return tabSwitcher && <tabSwitcher.default launcherNote={launcherNote} />;
+}
+
+function LazyTabSwipe({ containerRef }: { containerRef: RefObject<HTMLElement | null> }) {
+    const tabSwitcher = useTabSwitcherModule();
+    return tabSwitcher && <tabSwitcher.LaunchBarTabSwipe containerRef={containerRef} />;
+}
+
+/** Imports the mobile tab switcher once a launch bar shows it, which the desktop one never does. */
+function useTabSwitcherModule() {
+    const [ tabSwitcher, setTabSwitcher ] = useState<typeof import("../mobile_widgets/TabSwitcher")>();
+    useEffect(() => {
+        let cancelled = false;
+        void import("../mobile_widgets/TabSwitcher").then((module) => {
+            if (!cancelled) setTabSwitcher(module);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+    return tabSwitcher;
 }
 
 export function useLauncherChildNotes() {
