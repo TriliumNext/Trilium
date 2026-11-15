@@ -108,7 +108,6 @@
 /src/menus/context_menu.ts
 /src/menus/image_context_menu.ts
 /src/mobile.ts
-/src/mobile_startup.ts
 /src/services/appearance.ts
 /src/services/attributes.ts
 /src/services/backend_scripting.ts

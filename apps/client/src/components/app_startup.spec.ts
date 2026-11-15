@@ -5,8 +5,26 @@ const mocks = vi.hoisted(() => ({
     executeStartupBundles: vi.fn(),
     updateDisplayedShortcuts: vi.fn(),
     setupWindowShortcuts: vi.fn(async () => {}),
-    isElectron: vi.fn(() => false)
+    isElectron: vi.fn(() => false),
+    setupGlobs: vi.fn(),
+    setupClipboardImageEmbed: vi.fn(),
+    setupLinkHandlers: vi.fn(),
+    showPersistent: vi.fn(),
+    preloadCommonNoteTypes: vi.fn()
 }));
+
+vi.mock("../services/glob.js", () => ({ default: { setupGlobs: mocks.setupGlobs } }));
+vi.mock("../services/clipboard_image_embed.js", () => ({ setupClipboardImageEmbed: mocks.setupClipboardImageEmbed }));
+vi.mock("../services/link.js", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../services/link.js")>()),
+    setupLinkHandlers: mocks.setupLinkHandlers
+}));
+vi.mock("../services/i18n.js", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../services/i18n.js")>()),
+    t: (key: string, values?: Record<string, string>) => (values ? `${key} ${JSON.stringify(values)}` : key)
+}));
+vi.mock("../services/toast.js", () => ({ default: { showPersistent: mocks.showPersistent } }));
+vi.mock("../widgets/note_types.js", () => ({ preloadCommonNoteTypes: mocks.preloadCommonNoteTypes }));
 
 vi.mock("../services/utils.js", async (importOriginal) => {
     const original = await importOriginal<typeof import("../services/utils.js")>();
@@ -51,6 +69,40 @@ describe("startAppAroundLayout", () => {
         }
         vi.useRealTimers();
         vi.restoreAllMocks();
+        vi.clearAllMocks();
+    });
+
+    it("sets up the globals and the handlers of links and pasted images, and preloads the common note types once started", async () => {
+        vi.spyOn(server, "get").mockResolvedValue([]);
+        const started = startAppAroundLayout(document.createElement("div"));
+        // Before the tabs are restored, so a link clicked meanwhile opens.
+        expect(mocks.setupGlobs).toHaveBeenCalled();
+        expect(mocks.setupClipboardImageEmbed).toHaveBeenCalled();
+        expect(mocks.setupLinkHandlers).toHaveBeenCalled();
+        expect(mocks.preloadCommonNoteTypes).not.toHaveBeenCalled();
+
+        expect(await started).toBe(true);
+        expect(mocks.preloadCommonNoteTypes).toHaveBeenCalled();
+        expect(mocks.showPersistent).not.toHaveBeenCalled();
+    });
+
+    it("shows a critical error, and preloads nothing, when the app fails to start", async () => {
+        vi.spyOn(server, "get").mockResolvedValue([]);
+        vi.spyOn(console, "error").mockImplementation(() => {});
+        mocks.loadTabs.mockRejectedValueOnce(new Error("no tree"));
+        expect(await startAppAroundLayout(document.createElement("div"))).toBe(false);
+
+        expect(mocks.showPersistent).toHaveBeenCalledWith(expect.objectContaining({
+            id: "critical-error",
+            message: expect.stringContaining("no tree")
+        }));
+        expect(mocks.preloadCommonNoteTypes).not.toHaveBeenCalled();
+
+        mocks.loadTabs.mockRejectedValueOnce("offline");
+        await startAppAroundLayout(document.createElement("div"));
+        expect(mocks.showPersistent).toHaveBeenLastCalledWith(expect.objectContaining({
+            message: expect.stringContaining("offline")
+        }));
     });
 
     it("builds the components that execute commands around a rendered layout, then restores the tabs", async () => {

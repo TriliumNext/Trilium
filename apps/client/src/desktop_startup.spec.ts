@@ -1,26 +1,18 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-    startAppAroundLayout: vi.fn(async (_root: HTMLElement) => {}),
-    setupGlobs: vi.fn(),
+    startAppAroundLayout: vi.fn(async (_root: HTMLElement) => true),
     setupGlobalTooltip: vi.fn(),
-    setupClipboardImageEmbed: vi.fn(),
-    setupLinkHandlers: vi.fn(),
     setupBrowserContextMenu: vi.fn(),
     setupElectronContextMenu: vi.fn(),
     syncNativeWindowWithTheme: vi.fn(),
     setBackgroundEffectsSuspended: vi.fn(),
     onEffectiveThemeStyleChange: vi.fn(),
-    showPersistent: vi.fn(),
-    preloadCommonNoteTypes: vi.fn(),
     isElectron: vi.fn(() => false)
 }));
 
 vi.mock("./components/app_startup.js", () => ({ startAppAroundLayout: mocks.startAppAroundLayout }));
-vi.mock("./services/glob.js", () => ({ default: { setupGlobs: mocks.setupGlobs } }));
 vi.mock("./services/note_tooltip.js", () => ({ default: { setupGlobalTooltip: mocks.setupGlobalTooltip } }));
-vi.mock("./services/clipboard_image_embed.js", () => ({ setupClipboardImageEmbed: mocks.setupClipboardImageEmbed }));
-vi.mock("./services/link.js", () => ({ setupLinkHandlers: mocks.setupLinkHandlers }));
 vi.mock("./menus/browser_context_menu.js", () => ({ setupContextMenu: mocks.setupBrowserContextMenu }));
 vi.mock("./menus/electron_context_menu.js", () => ({ default: { setupContextMenu: mocks.setupElectronContextMenu } }));
 vi.mock("./services/native_window.js", () => ({ syncNativeWindowWithTheme: mocks.syncNativeWindowWithTheme }));
@@ -28,11 +20,6 @@ vi.mock("./services/theme.js", () => ({
     onEffectiveThemeStyleChange: mocks.onEffectiveThemeStyleChange,
     setBackgroundEffectsSuspended: mocks.setBackgroundEffectsSuspended
 }));
-vi.mock("./services/i18n.js", () => ({
-    t: (key: string, values?: Record<string, string>) => (values ? `${key} ${JSON.stringify(values)}` : key)
-}));
-vi.mock("./services/toast.js", () => ({ default: { showPersistent: mocks.showPersistent } }));
-vi.mock("./widgets/note_types.js", () => ({ preloadCommonNoteTypes: mocks.preloadCommonNoteTypes }));
 vi.mock("./services/utils.js", async (importOriginal) => {
     const original = await importOriginal<typeof import("./services/utils.js")>();
     return { ...original, default: { ...original.default, isElectron: () => mocks.isElectron() } };
@@ -49,37 +36,28 @@ describe("startDesktop", () => {
         delete window.electronApi;
     });
 
-    it("starts the app around the layout, sets up the page's handlers, then preloads the common note types", async () => {
+    it("starts the app around the layout, then sets up the tooltips and the browser's context menu", async () => {
         const root = document.createElement("div");
         await startDesktop(root);
 
-        expect(mocks.setupGlobs).toHaveBeenCalled();
         expect(mocks.startAppAroundLayout).toHaveBeenCalledWith(root);
         expect(mocks.setupGlobalTooltip).toHaveBeenCalled();
-        expect(mocks.setupClipboardImageEmbed).toHaveBeenCalled();
-        expect(mocks.setupLinkHandlers).toHaveBeenCalled();
         expect(mocks.setupBrowserContextMenu).toHaveBeenCalled();
         expect(mocks.setupElectronContextMenu).not.toHaveBeenCalled();
-        expect(mocks.preloadCommonNoteTypes).toHaveBeenCalled();
-        expect(mocks.showPersistent).not.toHaveBeenCalled();
     });
 
-    it("shows a critical error, and preloads nothing, when the app fails to start", async () => {
-        vi.spyOn(console, "error").mockImplementation(() => {});
-        mocks.startAppAroundLayout.mockRejectedValueOnce(new Error("no tree"));
-        await startDesktop(document.createElement("div"));
+    it("reports no full render when the app fails to start", async () => {
+        mocks.isElectron.mockReturnValue(true);
+        vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { callback(0); return 0; });
+        const reportStartupMetric = vi.fn();
+        window.electronApi = { window: {
+            onGlobalShortcut: vi.fn(), onOpenInSameTab: vi.fn(), isDevToolsDocked: vi.fn(() => false),
+            onDevToolsDockChanged: vi.fn(), reportStartupMetric
+        }, navigation: { clearNavigationHistory: vi.fn() } } as unknown as typeof window.electronApi;
+        mocks.startAppAroundLayout.mockResolvedValueOnce(false);
 
-        expect(mocks.showPersistent).toHaveBeenCalledWith(expect.objectContaining({
-            id: "critical-error",
-            message: expect.stringContaining("no tree")
-        }));
-        expect(mocks.preloadCommonNoteTypes).not.toHaveBeenCalled();
-
-        mocks.startAppAroundLayout.mockRejectedValueOnce("offline");
         await startDesktop(document.createElement("div"));
-        expect(mocks.showPersistent).toHaveBeenLastCalledWith(expect.objectContaining({
-            message: expect.stringContaining("offline")
-        }));
+        expect(reportStartupMetric).not.toHaveBeenCalled();
     });
 
     it("connects the Electron window, and reports the full render after a painted frame", async () => {
@@ -135,6 +113,5 @@ describe("startDesktop", () => {
         expect(rejections).not.toHaveBeenCalled();
         expect(mocks.setupBrowserContextMenu).not.toHaveBeenCalled();
         expect(mocks.setupElectronContextMenu).not.toHaveBeenCalled();
-        expect(mocks.preloadCommonNoteTypes).toHaveBeenCalled();
     });
 });

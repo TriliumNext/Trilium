@@ -8,6 +8,10 @@ vi.mock("../services/bundle.js", async (importOriginal) => {
     return { ...original, default: { ...original.default, getWidgetBundlesByParent: bundles.getWidgetBundlesByParent } };
 });
 
+// The sidebar loads them after the first paint, and the navigator then reads the tree from the server.
+vi.mock("../widgets/mobile_widgets/MobileNoteNavigator.js", () => ({ default: () => null }));
+vi.mock("../widgets/quick_search.js", () => ({ default: () => null }));
+
 import appContext from "../components/app_context.js";
 import NoteContext from "../components/note_context.js";
 import LoadResults from "../services/load_results.js";
