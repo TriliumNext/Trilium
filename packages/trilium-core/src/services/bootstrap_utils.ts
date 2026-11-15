@@ -1,4 +1,4 @@
-import { BootstrapDefinition, type OptionMap } from "@triliumnext/commons";
+import { BootstrapDefinition, buildFontCss, type OptionMap } from "@triliumnext/commons";
 import { getSql } from "./sql";
 import protected_session from "./protected_session";
 import { generateCss, generateIconRegistry, getIconPacks, MIME_TO_EXTENSION_MAPPINGS, type ProcessedIconPack } from "./icon_packs";
@@ -72,6 +72,7 @@ export default function getSharedBootstrapItems(assetPath: string, dbInitialized
         themeUseNextAsBase: themeNote?.getAttributeValue("label", "appThemeBase") as "next" | "next-light" | "next-dark",
         appCssNoteIds: getAppCssNoteIds(),
         preloadFonts: getPreloadFonts(assetPath, theme, themeUseNextAsBase, options),
+        fontCss: buildFontCss(options),
     }
 }
 

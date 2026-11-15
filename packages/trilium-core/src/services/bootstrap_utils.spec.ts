@@ -172,7 +172,7 @@ describe("bootstrap_utils (real DB)", () => {
         }
     });
 
-    it("preloads the icon font, and Inter while a Next-based theme draws the main font", () => {
+    it("preloads the icon font and Inter, and applies the font options, while a Next-based theme draws the main font", () => {
         const boxicons = `${ASSET_PATH}/fonts/boxicons.woff2`;
         const inter = `${ASSET_PATH}/fonts/Inter/Inter-VariableFont_opsz,wght.woff2`;
         expect(getSharedBootstrapItems(ASSET_PATH, false).preloadFonts).toEqual([ boxicons, inter ]);
@@ -202,10 +202,14 @@ describe("bootstrap_utils (real DB)", () => {
             expect(fullPayload("next").preloadFonts).toEqual([ boxicons, inter ]);
 
             cls.init(() => options.setOption("mainFontFamily", "Arial"));
-            expect(fullPayload("next").preloadFonts).toEqual([ boxicons ]);
+            const overridden = fullPayload("next");
+            expect(overridden.preloadFonts).toEqual([ boxicons ]);
+            expect(overridden.fontCss).toContain("--main-font-family: Arial;");
 
             cls.init(() => options.setOption("overrideThemeFonts", "false"));
-            expect(fullPayload("next").preloadFonts).toEqual([ boxicons, inter ]);
+            const themed = fullPayload("next");
+            expect(themed.preloadFonts).toEqual([ boxicons, inter ]);
+            expect(themed.fontCss).toBe("");
         } finally {
             cls.init(() => {
                 for (const [ name, value ] of previous) {

@@ -131,6 +131,25 @@ describe("bootstrap auth gating (desktop build, #10589)", () => {
 });
 
 describe("bootstrap payloads", () => {
+    it("sends the font options only once the user is signed in", () => {
+        state.current.sharedItems = { ...state.current.sharedItems, fontCss: "html:root {}" };
+
+        const login = makeRes();
+        bootstrap(makeReq({ loggedIn: false }), login.res);
+        expect(login.body().loggedIn).toBe(false);
+        expect(login.body().fontCss).toBeUndefined();
+
+        const signedIn = makeRes();
+        bootstrap(makeReq({ loggedIn: true }), signedIn.res);
+        expect(signedIn.body().fontCss).toBe("html:root {}");
+
+        state.current.isPasswordSet = false;
+        const setPassword = makeRes();
+        bootstrap(makeReq(), setPassword.res);
+        expect(setPassword.body().passwordSet).toBe(false);
+        expect(setPassword.body().fontCss).toBeUndefined();
+    });
+
     it("serves the setup payload before the database exists, with background effects only for the renderer", () => {
         state.current.isDbInitialized = false;
         state.current.isMac = true;

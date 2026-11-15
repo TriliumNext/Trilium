@@ -100,6 +100,8 @@ export function bootstrap(req: Request, res: Response) {
             ...commonItems,
             passwordSet: false,
             setPasswordInDesktopApp: isElectron,
+            // The font options belong to the user, who has not signed in yet.
+            fontCss: undefined,
             hasNativeTitleBar: false,
             hasBackgroundEffects: false,
             isMainWindow: true
@@ -130,6 +132,7 @@ export function bootstrap(req: Request, res: Response) {
         res.send({
             ...commonItems,
             loggedIn: false,
+            fontCss: undefined,
             login: {
                 ssoEnabled: openID.isOpenIDEnabled(),
                 ssoIssuerName: openID.getSSOIssuerName(),

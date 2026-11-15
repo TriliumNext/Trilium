@@ -21,7 +21,6 @@
 /.cache/vite/deps/react-i18next.js
 /.cache/vite/deps/rolldown-runtime-*.js
 /@vite/client
-/api/fonts
 /api/keyboard-actions
 /api/options
 /api/tree

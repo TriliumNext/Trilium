@@ -4,7 +4,7 @@
 import "./content.css";
 
 import { requestCatalogues } from "./services/catalogue_requests";
-import { createFontPreloadLink, createFontStylesheetLink } from "./services/font";
+import { createFontPreloadLink, createFontStylesheet } from "./services/font";
 import {
     CLIENT_STARTUP_PHASES, hideSplash, initSplashProgress, reportSplashPhase, showSplashError
 } from "./services/splash";
@@ -187,14 +187,8 @@ function loadStylesheets() {
 
     const stylesheetsPath = `${assetPath}/stylesheets`;
     const stylesheets = [ appendStylesheet({ href: `${stylesheetsPath}/ckeditor-theme.css` }) ];
-    // Marked so it can be swapped when font options change without reloading. Skipped on the
-    // login / set-password pre-auth screens, where the /api/fonts request 401s (and, under nosniff,
-    // surfaces as a MIME-type console error) — those screens use the theme's fonts (#10589). This is
-    // the inline equivalent of utils.isPreAuthScreen(): index.ts runs before setupGlob() populates
-    // window.glob, and utils.ts reads window.glob at module scope, so index.ts must not import utils.
-    if (glob.loggedIn !== false && glob.passwordSet !== false) {
-        document.head.appendChild(createFontStylesheetLink());
-    }
+    // `applyFontCss()` replaces its content when a font option changes.
+    document.head.appendChild(createFontStylesheet(window.glob.fontCss ?? ""));
     // The light theme is always loaded as the baseline and acts as the anchor for live theme swapping.
     stylesheets.push(appendStylesheet({ href: `${stylesheetsPath}/theme-light.css` }, { base: true }));
     for (const ref of buildThemeStylesheetRefs(theme, customThemeCssUrl, themeBase)) {

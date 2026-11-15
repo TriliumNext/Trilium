@@ -1,24 +1,16 @@
-import type { OptionNames } from "@triliumnext/commons";
+import { buildFontCss, FONT_OPTION_NAMES } from "@triliumnext/commons/src/lib/font_css.js";
 import { LOCALES } from "@triliumnext/commons/src/lib/i18n.js";
 
 import { EventData } from "../../components/app_context.js";
 import { getEnabledExperimentalFeatureIds } from "../../services/experimental_features.js";
 import { applyCustomFontsFromOptions, hasCustomFontContentChanged } from "../../services/custom_fonts.js";
-import { applyFontsFromOptions } from "../../services/font.js";
+import { applyFontCss } from "../../services/font.js";
 import options from "../../services/options.js";
 import { applyThemeFromOptions, onEffectiveThemeStyleChange, updateColorSchemeClasses, updateThemeCapabilities } from "../../services/theme.js";
 import utils, { isIOS, isMobile, isMobileApp } from "../../services/utils.js";
 import type BasicWidget from "../basic_widget.js";
 import FlexContainer from "./flex_container.js";
 
-/** Font options whose change requires re-applying the server-generated fonts stylesheet. */
-const FONT_OPTIONS: OptionNames[] = [
-    "overrideThemeFonts",
-    "mainFontFamily", "mainFontSize",
-    "treeFontFamily", "treeFontSize",
-    "detailFontFamily", "detailFontSize",
-    "monospaceFontFamily", "monospaceFontSize"
-];
 
 /**
  * The root container is the top-most widget/container, from which the entire layout derives.
@@ -79,11 +71,11 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
             void applyThemeFromOptions();
         }
 
-        if (FONT_OPTIONS.some((optionName) => loadResults.isOptionReloaded(optionName))) {
-            applyFontsFromOptions();
+        if (FONT_OPTION_NAMES.some((optionName) => loadResults.isOptionReloaded(optionName))) {
+            applyFontCss(buildFontCss(Object.fromEntries(FONT_OPTION_NAMES.map((name) => [ name, options.get(name) ]))));
             void applyCustomFontsFromOptions();
         } else if (hasCustomFontContentChanged(loadResults)) {
-            // The options still name the same fonts, so the stylesheet they are served as holds; only
+            // The options still name the same fonts, so the stylesheet of the font options holds; only
             // the faces their files were loaded into have to be built again.
             void applyCustomFontsFromOptions();
         }
@@ -202,8 +194,7 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
 
     /**
      * Ligatures are a property of how the monospace font renders, not of which font is selected, so
-     * this rides a body class rather than the server-generated fonts stylesheet — no round-trip to
-     * `api/fonts` is needed to flip it.
+     * this rides a body class rather than the stylesheet of the font options.
      */
     #setMonospaceLigatures() {
         const enabled = options.is("monospaceLigaturesEnabled");

@@ -1110,6 +1110,11 @@ export type BootstrapDefinition = {
     iconPackCss: string;
     /** The font files the first render uses, for the client to preload. */
     preloadFonts?: string[];
+    /**
+     * The stylesheet of the font options, from `buildFontCss()`. Absent before the database is
+     * initialized and on the login and set-password screens, which keep the theme's fonts.
+     */
+    fontCss?: string;
     /** The icon packs whose icons the client can show, in the order of the icon picker. */
     iconPacks: IconPackSummary[];
     device: "mobile" | "desktop" | "print" | false;
