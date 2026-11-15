@@ -7,8 +7,10 @@ import type BasicWidget from "../../basic_widget";
 import NoteContextAwareWidget from "../../note_context_aware_widget";
 import { ParentComponent } from "../react_utils";
 
-export function useLegacyWidget<T extends BasicWidget>(widgetFactory: () => T, { noteContext, containerClassName, containerStyle }: {
+export function useLegacyWidget<T extends BasicWidget>(widgetFactory: () => T, { noteContext, containerId, containerClassName, containerStyle }: {
     noteContext?: NoteContext;
+    /** The id of the element the widget is attached to, for stylesheets that select the widget as its child. */
+    containerId?: string;
     containerClassName?: string;
     containerStyle?: CSSProperties;
 } = {}): [VNode, T] {
@@ -65,7 +67,7 @@ export function useLegacyWidget<T extends BasicWidget>(widgetFactory: () => T, {
 
     useDebugValue(widget);
 
-    return [ <div className={containerClassName} style={containerStyle} ref={ref} />, widget ];
+    return [ <div id={containerId} className={containerClassName} style={containerStyle} ref={ref} />, widget ];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type

@@ -21,4 +21,9 @@ await Promise.all([
 const container = new DocumentFragment();
 // `appContext` is the parent component, so the layout's `useTriliumEvent()` handlers hear its events.
 render(h(ParentComponent.Provider, { value: appContext }, h(MobileLayout, null)), container);
+const root = container.firstElementChild as HTMLElement;
 document.body.append(container);
+
+// After the first render: the components that execute commands, the tabs, which wait for froca's
+// note tree in any case, and the handlers of links and pasted images.
+void import("./mobile_startup.js").then(({ startMobile }) => startMobile(root));

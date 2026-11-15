@@ -9,6 +9,16 @@
         min-height: 0;
     }
 
+    #detail-container {
+        display: flex;
+        flex-grow: 1;
+        min-width: 0;
+    }
+
+    .note-split-title {
+        align-items: center;
+    }
+
     #launcher-pane {
         display: flex;
         height: 53px;

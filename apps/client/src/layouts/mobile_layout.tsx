@@ -3,14 +3,12 @@ import "./mobile_layout.css";
 import type AppContext from "../components/app_context.js";
 import type { WidgetsByParent } from "../services/bundle.js";
 import CloseZenModeButton from "../widgets/close_zen_button.js";
-import NoteList from "../widgets/collections/NoteList.jsx";
 import FlexContainer from "../widgets/containers/flex_container.js";
 import RootContainer from "../widgets/containers/root_container.js";
 import ScrollingContainer from "../widgets/containers/scrolling_container.js";
 import SplitNoteContainer from "../widgets/containers/split_note_container.js";
 import FindWidget from "../widgets/find.js";
 import InlineTitle from "../widgets/layout/InlineTitle.jsx";
-import NoteBadges from "../widgets/layout/NoteBadges.jsx";
 import NoteTitleActions from "../widgets/layout/NoteTitleActions.jsx";
 import HideKeyboardButton from "../widgets/mobile_widgets/hide_keyboard_button.jsx";
 import MobileDetailMenu from "../widgets/mobile_widgets/mobile_detail_menu.js";
@@ -19,12 +17,9 @@ import MobileNotePanel from "../widgets/mobile_widgets/MobileNotePanel.jsx";
 import ScreenContainer from "../widgets/mobile_widgets/screen_container.js";
 import SidebarContainer from "../widgets/mobile_widgets/sidebar_container.js";
 import ToggleSidebarButton from "../widgets/mobile_widgets/toggle_sidebar_button.jsx";
-import NoteIconWidget from "../widgets/note_icon.jsx";
-import NoteTitleWidget, { NoteTypeSwitcherBar } from "../widgets/note_title.js";
+import { NoteTypeSwitcherBar } from "../widgets/note_title.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
-import NoteDetail from "../widgets/NoteDetail.jsx";
 import QuickSearch from "../widgets/quick_search.jsx";
-import ScrollPadding from "../widgets/scroll_padding";
 import SearchResult from "../widgets/search_result.jsx";
 import MobileEditorToolbar from "../widgets/type_widgets/text/mobile_editor_toolbar.jsx";
 import { applyModals } from "./layout_commons.js";
@@ -72,9 +67,6 @@ export default class MobileLayout {
                                                 .contentSized()
                                                 .css("align-items", "center")
                                                 .child(<ToggleSidebarButton />)
-                                                .child(<NoteIconWidget />)
-                                                .child(<NoteTitleWidget placement="split" />)
-                                                .child(<NoteBadges />)
                                                 .child(<MobileNotePanel widgetsByParent={this.customWidgets} />)
                                                 .child(<MobileDetailMenu />)
                                         )
@@ -84,10 +76,7 @@ export default class MobileLayout {
                                                 .contentSized()
                                                 .child(<InlineTitle />)
                                                 .child(<NoteTitleActions />)
-                                                .child(<NoteDetail />)
-                                                .child(<NoteList media="screen" />)
                                                 .child(<SearchResult />)
-                                                .child(<ScrollPadding />)
                                         )
                                         .child(<NoteTypeSwitcherBar />)
                                         .child(<MobileEditorToolbar />)
