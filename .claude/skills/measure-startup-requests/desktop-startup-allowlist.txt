@@ -9,6 +9,7 @@
 /.cache/vite/deps/color-name-*.js
 /.cache/vite/deps/color.js
 /.cache/vite/deps/compat-*.js
+/.cache/vite/deps/draggabilly.js
 /.cache/vite/deps/hooks-*.js
 /.cache/vite/deps/i18next.js
 /.cache/vite/deps/jquery.js
@@ -39,6 +40,7 @@
 /packages/commons/src/lib/promoted_attribute_definition_parser.ts
 /packages/commons/src/lib/shared_constants.ts
 /packages/commons/src/lib/utils.ts
+? /repos/TriliumNext/Trilium/releases/latest
 /src/components/app_context.ts
 /src/components/component.ts
 /src/components/note_context.ts
@@ -84,6 +86,7 @@
 /src/services/splash.ts
 /src/services/sync.ts
 /src/services/tab_pinning.ts
+/src/services/tab_title.ts
 /src/services/theme.ts
 /src/services/toast.tsx
 /src/services/tree.ts
@@ -98,8 +101,14 @@
 /src/translations/en/entry.json
 /src/translations/en/translation.json
 /src/utils/css-var.ts
+/src/widgets/TabHistoryNavigationButtons.css
+/src/widgets/TabHistoryNavigationButtons.tsx
+/src/widgets/basic_widget.ts
 /src/widgets/buttons/global_menu.css
 /src/widgets/buttons/global_menu.tsx
+/src/widgets/buttons/right_pane_toggle.tsx
+/src/widgets/close_zen_button.css
+/src/widgets/close_zen_button.tsx
 /src/widgets/hold_context_menu.ts
 /src/widgets/launch_bar/BookmarkButtons.css
 /src/widgets/launch_bar/BookmarkButtons.tsx
@@ -117,6 +126,7 @@
 /src/widgets/launch_bar/SyncStatus.css
 /src/widgets/launch_bar/SyncStatus.tsx
 /src/widgets/launch_bar/launch_bar_widgets.tsx
+/src/widgets/note_context_aware_widget.ts
 /src/widgets/react/ActionButton.tsx
 /src/widgets/react/Dropdown.tsx
 /src/widgets/react/Icon.css
@@ -126,6 +136,7 @@
 /src/widgets/react/ResponsiveContainer.tsx
 /src/widgets/react/hooks/dom.ts
 /src/widgets/react/hooks/events.ts
+/src/widgets/react/hooks/legacy.tsx
 /src/widgets/react/hooks/note.ts
 /src/widgets/react/hooks/options.ts
 /src/widgets/react/hooks/shortcuts.ts
@@ -133,6 +144,7 @@
 /src/widgets/react/open_popups.ts
 /src/widgets/react/react_utils.tsx
 /src/widgets/react/tooltip.css
+/src/widgets/tab_row.ts
 /src/widgets/widget_utils.ts
 ws://*/
 ? /api/recent-notes
