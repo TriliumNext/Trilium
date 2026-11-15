@@ -16,7 +16,7 @@ import CalendarWidget from "./CalendarWidget";
 import ColorSchemeSwitcher from "./ColorSchemeSwitcher";
 import { CustomNoteLauncher } from "./GenericButtons";
 import HistoryNavigationButton from "./HistoryNavigation";
-import { LaunchBarContext } from "./launch_bar_widgets";
+import { LaunchBarActionButton, LaunchBarContext } from "./launch_bar_widgets";
 import {
     CommandButton, NoteLauncher, QuickSearchLauncherWidget, ScriptLauncher, TodayLauncher
 } from "./LauncherDefinitions";
@@ -167,9 +167,16 @@ const loadRecordMeetingButton = () => import("./RecordMeetingButton");
 const loadCustomWidget = () => import("./CustomWidget");
 const loadLauncherDropTarget = () => import("./LauncherDropTarget");
 
+/**
+ * The tab switcher, or until its module loads a button that looks like `TabSwitcher`'s, so the bar
+ * spreads its launchers once and they do not move when it arrives.
+ */
 function LazyTabSwitcher({ launcherNote }: { launcherNote: FNote }) {
     const tabSwitcher = useLazyModule(loadTabSwitcher);
-    return tabSwitcher && <tabSwitcher.default launcherNote={launcherNote} />;
+    if (!tabSwitcher) {
+        return <LaunchBarActionButton launcherNote={launcherNote} className="mobile-tab-switcher" icon="bx bx-rectangle" text="Tabs" />;
+    }
+    return <tabSwitcher.default launcherNote={launcherNote} />;
 }
 
 function LazyTabSwipe({ containerRef }: { containerRef: RefObject<HTMLElement | null> }) {

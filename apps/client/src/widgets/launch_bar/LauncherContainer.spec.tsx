@@ -11,8 +11,15 @@ import LauncherContainer, { useLauncherChildNotes } from "./LauncherContainer.js
 
 const h = vi.hoisted(() => ({
     isElectron: false, showLauncherContextMenu: vi.fn(), tabSwitcherLoaded: false, recordMeetingLoaded: false,
-    dropTargetLoaded: false, customWidgetLoaded: false
+    dropTargetLoaded: false, customWidgetLoaded: false, ...gate()
 }));
+
+/** A promise the tab switcher's module waits on, so a case can see the bar before it loads. */
+function gate() {
+    let openTabSwitcherGate = () => {};
+    const tabSwitcherGate = new Promise<void>((resolve) => { openTabSwitcherGate = resolve; });
+    return { tabSwitcherGate, openTabSwitcherGate };
+}
 
 vi.mock("../../services/utils", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../services/utils")>(),
@@ -22,8 +29,9 @@ vi.mock("../../menus/launcher_button_context_menu", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../menus/launcher_button_context_menu")>(),
     showLauncherContextMenu: h.showLauncherContextMenu
 }));
-vi.mock("../mobile_widgets/TabSwitcher", () => {
+vi.mock("../mobile_widgets/TabSwitcher", async () => {
     h.tabSwitcherLoaded = true;
+    await h.tabSwitcherGate;
     return {
         default: () => <span className="tab-switcher-stub" />,
         LaunchBarTabSwipe: () => <span className="tab-swipe-stub" />
@@ -275,7 +283,15 @@ describe("LauncherContainer", () => {
         mount(true);
         await flush();
         expect(h.tabSwitcherLoaded).toBe(true);
-        expect(container.querySelector(".launcher-slot[data-launcher-id='_lbTabSwitcher'] .tab-switcher-stub")).not.toBeNull();
+        // Until it loads, a button of the same size holds its place, so the launchers do not move.
+        const slot = container.querySelector(".launcher-slot[data-launcher-id='_lbTabSwitcher']");
+        expect(slot?.querySelector("button.launcher-button.mobile-tab-switcher")).not.toBeNull();
+        expect(slot?.querySelector(".tab-switcher-stub")).toBeNull();
+
+        h.openTabSwitcherGate();
+        await flush();
+        expect(slot?.querySelector(".tab-switcher-stub")).not.toBeNull();
+        expect(slot?.querySelector("button.mobile-tab-switcher")).toBeNull();
         expect(container.querySelector(".tab-swipe-stub")).not.toBeNull();
     });
 });
