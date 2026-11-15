@@ -59,8 +59,8 @@ export function LaunchBarActionButton({ className, launcherNote, onContextMenu, 
 export function LaunchBarDropdownButton({
     children, icon, launcherNote, parentNoteId, buttonProps, panel, ...props
 }: Pick<
-    DropdownProps, "title" | "children" | "onShown" | "autoClose" | "dropdownRef" | "buttonProps"
-        | "filterable" | "keepOrder"
+    DropdownProps, "title" | "children" | "onShown" | "ready" | "autoClose" | "dropdownRef"
+        | "buttonProps" | "filterable" | "keepOrder"
 > & {
     icon: string,
     launcherNote?: FNote,

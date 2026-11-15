@@ -51,6 +51,11 @@ export interface DropdownProps extends Pick<HTMLAttributes<HTMLDivElement>, "id"
     text?: ComponentChildren;
     onShown?: () => void;
     onHidden?: () => void;
+    /**
+     * Whether the popup's content can draw. While `false`, an open dropdown draws no popup, as for
+     * content whose module is still loading. Defaults to `true`.
+     */
+    ready?: boolean;
     /** The side of the toggle the popup prefers; it flips to the other near the viewport's edge. */
     placement?: Placement;
     /**
@@ -193,7 +198,7 @@ interface PopupSlot {
  * The toggle both kinds of dropdown share: the button, its tooltip, the open state and its
  * callbacks, the handle, and the phone's cover. `popup` draws what opens under it.
  */
-function DropdownToggle({ id, className, buttonClassName, title, text, dropdownContainerStyle, dropdownContainerClassName, dropdownContainerRef: externalContainerRef, hideToggleArrow, iconAction, disabled, noSelectButtonStyle, bareButton, onShown, onHidden, placement, autoClose = true, buttonProps, dropdownRef, titlePosition, titleOptions, mobileBackdrop: mobileBackdropProp, mobileBottomSheet, backdrop, hasPopup, onToggleArrow, popup }: Omit<DropdownProps, "children"> & {
+function DropdownToggle({ id, className, buttonClassName, title, text, dropdownContainerStyle, dropdownContainerClassName, dropdownContainerRef: externalContainerRef, hideToggleArrow, iconAction, disabled, noSelectButtonStyle, bareButton, onShown, onHidden, ready = true, placement, autoClose = true, buttonProps, dropdownRef, titlePosition, titleOptions, mobileBackdrop: mobileBackdropProp, mobileBottomSheet, backdrop, hasPopup, onToggleArrow, popup }: Omit<DropdownProps, "children"> & {
     hasPopup: "menu" | "true";
     /** Called for Up or Down on the toggle while the popup is up. */
     onToggleArrow?(popup: HTMLElement, edge: "first" | "last", popups: typeof DropdownPopups): void;
@@ -387,7 +392,7 @@ function DropdownToggle({ id, className, buttonClassName, title, text, dropdownC
                 <span className="caret" />
             </button>
 
-            {shown && triggerRef.current && dropdownPopups && popup({
+            {shown && ready && triggerRef.current && dropdownPopups && popup({
                 popupProps: {
                     anchor: triggerRef.current,
                     placement,

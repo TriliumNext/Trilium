@@ -1,5 +1,6 @@
 import { type ComponentChildren, render } from "preact";
-import { useRef } from "preact/hooks";
+import { useRef, useState } from "preact/hooks";
+import { act } from "preact/test-utils";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import Dropdown, {
@@ -270,6 +271,24 @@ describe("Dropdown", () => {
         await vi.waitFor(() => expect(popup()).toBeNull());
         const disabledToggle = host.querySelector<HTMLButtonElement>("button");
         expect(disabledToggle?.disabled).toBe(true);
+    });
+
+    it("waits to draw an open popup until its content is ready", async () => {
+        let setReady: (ready: boolean) => void = () => {};
+        function Harness() {
+            const [ ready, setReadyState ] = useState(false);
+            setReady = setReadyState;
+            return <DropdownPanel text="Sort" ready={ready}><p>Calendar</p></DropdownPanel>;
+        }
+        render(<Harness />, host);
+        const toggle = host.querySelector<HTMLButtonElement>("button");
+        expect(toggle).not.toBeNull();
+        if (toggle) click(toggle);
+        await vi.waitFor(() => expect(toggle?.getAttribute("aria-expanded")).toBe("true"));
+        expect(popup()).toBeNull();
+
+        act(() => setReady(true));
+        await vi.waitFor(() => expect(popup()?.textContent).toBe("Calendar"));
     });
 
     it("draws a disabled icon toggle muted, as an icon button", () => {

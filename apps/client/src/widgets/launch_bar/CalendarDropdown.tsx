@@ -1,7 +1,7 @@
 import "./CalendarWidget.css";
 
 import type { RefObject } from "preact";
-import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
 import FNote from "../../entities/fnote";
@@ -63,7 +63,8 @@ export default function CalendarDropdown({ shownCount, dropdownRef }: {
         }
     }
 
-    useEffect(() => {
+    // Before the paint, so the dropdown never shows without its dates.
+    useLayoutEffect(() => {
         const dateNote = appContext.tabManager.getActiveContextNote()?.getOwnedLabelValue("dateNote");
         const activeDate = dateNote ? dayjs(`${dateNote}T12:00:00`) : null;
         const todaysDate = dayjs();
