@@ -437,7 +437,8 @@
       "collapsible_details": "세부정보",
       "table_column": "열 {{number}}",
       "tab_title": "탭 {{number}}",
-      "tab_content": "내용"
+      "tab_content": "내용",
+      "aside": "곁글"
     },
     "titles": {
       "date": "날짜/시간 삽입",
@@ -457,9 +458,11 @@
       "caution": "주의",
       "warning": "경고",
       "todo": "작업: {{title}}",
-      "tabs": "탭"
+      "tabs": "탭",
+      "aside": "곁글"
     },
-    "tabs": "한 번에 하나의 패널을 표시하는 제목 있는 탭 삽입"
+    "tabs": "한 번에 하나의 패널을 표시하는 제목 있는 탭 삽입",
+    "aside": "본문이 주위로 둘러싸도록 텍스트 상자 삽입"
   },
   "move_to": {
     "dialog_title": "노트를 이동할 위치...",
@@ -3712,7 +3715,8 @@
     "open_externally": "외부에서 열기",
     "mermaid_diagram_error": "Mermaid 다이어그램을 렌더링하지 못했습니다: {{error}}",
     "office_rendering": "미리보기 렌더링 중…",
-    "office_render_error": "이 문서는 미리보기로 렌더링할 수 없었습니다. 여전히 다운로드하거나 외부에서 열 수 있습니다."
+    "office_render_error": "이 문서는 미리보기로 렌더링할 수 없었습니다. 여전히 다운로드하거나 외부에서 열 수 있습니다.",
+    "office_too_large": "이 문서는 너무 커서 미리 볼 수 없습니다. 다운로드하거나 외부에서 열 수는 있습니다."
   },
   "modal": {
     "close": "닫기",
@@ -4769,7 +4773,13 @@
       "next-previous-suggestion": "다음, 이전 제안",
       "run-the-command": "명령 실행",
       "earlier-commands-or-suggestions-after-typing": "이전 명령 또는 입력 후 제안",
-      "commands": "명령"
+      "commands": "명령",
+      "aside": "곁글",
+      "type-the-content-of-the-aside": "곁글 내용 입력",
+      "remove-aside": "곁글 제거",
+      "aside-toolbar": "곁글 도구 모음",
+      "insert-a-box-of-text-that-the-main-text-wraps-around": "본문이 주위로 둘러싸도록 텍스트 상자를 삽입합니다.",
+      "background-color": "배경색"
     },
     "toolbar-groups": {
       "text-formatting": "텍스트 서식",
@@ -5316,7 +5326,8 @@
       "audio": "오디오",
       "link_preview": "링크 미리보기",
       "embed": "임베드",
-      "block": "블록"
+      "block": "블록",
+      "aside": "곁글"
     },
     "block_count_other": "블록 {{count}}개",
     "collapse_section": "섹션 접기",
