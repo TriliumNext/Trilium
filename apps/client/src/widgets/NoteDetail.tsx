@@ -46,9 +46,7 @@ export default function NoteDetail() {
     const fillsPane = checkFillsPane(noteContext, type);
     useParentClass(containerRef, "detail-full-height", isFullHeight);
     useParentClass(containerRef, "detail-fills-pane", fillsPane);
-    const [ noteTypesToRender, setNoteTypesToRender ] = useState<{ [ key in ExtendedNoteType ]?: (props: TypeWidgetProps) => VNode }>({});
-    const [ activeNoteType, setActiveNoteType ] = useState<ExtendedNoteType>();
-    const widgetRequestId = useRef(0);
+    const { noteTypesToRender, activeNoteType, loadingType } = useTypeWidgets(type, note);
 
     const props: TypeWidgetProps = {
         note: note!,
@@ -57,28 +55,6 @@ export default function NoteDetail() {
         parentComponent,
         noteContext
     };
-
-    useEffect(() => {
-        if (!type) return;
-        const requestId = ++widgetRequestId.current;
-
-        if (!noteTypesToRender[type]) {
-            getCorrespondingWidget(type).then((el) => {
-                if (!el) return;
-
-                // Ignore stale requests
-                if (requestId !== widgetRequestId.current) return;
-
-                setNoteTypesToRender(prev => ({
-                    ...prev,
-                    [type]: el
-                }));
-                setActiveNoteType(type);
-            });
-        } else {
-            setActiveNoteType(type);
-        }
-    }, [ note, viewScope, type, noteTypesToRender ]);
 
     // Detect note type changes.
     useTriliumEvent("entitiesReloaded", async ({ loadResults }) => {
@@ -205,7 +181,7 @@ export default function NoteDetail() {
                 />;
             })}
 
-            <NoteDetailLoadingOverlay noteContext={noteContext} />
+            <NoteDetailLoadingOverlay noteContext={noteContext} isLoadingWidget={!!loadingType} />
         </div>
     );
 }
@@ -247,7 +223,7 @@ export function useDeferredDetailFocus(isReady: boolean, replay: (data: EventDat
  * Wraps a single note type widget, in order to keep it in the DOM even after the user has switched away to another note type. This allows faster loading of the same note type again. The properties are cached, so that they are updated only
  * while the widget is visible, to avoid rendering in the background. When not visible, the DOM element is simply hidden.
  */
-export function NoteDetailWrapper({ Element, type, isVisible, isFullHeight, props }: { Element: (props: TypeWidgetProps) => VNode, type: ExtendedNoteType, isVisible: boolean, isFullHeight: boolean, props: TypeWidgetProps }) {
+export function NoteDetailWrapper({ Element, type, isVisible, isFullHeight, props }: { Element: TypeWidget, type: ExtendedNoteType, isVisible: boolean, isFullHeight: boolean, props: TypeWidgetProps }) {
     // False when an enclosing dialog (e.g. the quick-edit popup) is hidden but kept in the DOM, so a widget
     // there is told it isn't displayed even though it's the context's current type — letting a media player
     // inside a closed popup stop, just like one in a navigated-away tab.
@@ -354,9 +330,13 @@ function useTypeWidgetEventGate(isDisplayed: boolean) {
  * slow loads fade it in, and loads stuck past the stall threshold (or failed outright)
  * offer a retry.
  */
-function NoteDetailLoadingOverlay({ noteContext }: { noteContext: NoteContext | null | undefined }) {
+function NoteDetailLoadingOverlay({ noteContext, isLoadingWidget }: {
+    noteContext: NoteContext | null | undefined,
+    /** Whether the module of the note's type widget is still being imported. */
+    isLoadingWidget: boolean
+}) {
     const contentLoad = useGetContextDataFrom(noteContext, "contentLoad");
-    const phase = useDelayedVisibility(contentLoad?.state === "loading");
+    const phase = useDelayedVisibility(contentLoad?.state === "loading" || isLoadingWidget);
     const isError = contentLoad?.state === "error";
 
     if (!isError && phase === "hidden") {
@@ -378,6 +358,52 @@ function NoteDetailLoadingOverlay({ noteContext }: { noteContext: NoteContext | 
             )}
         </div>
     );
+}
+
+/**
+ * Imports the type widget of `type` and keeps every widget imported so far, so that switching
+ * back to a type shows its widget at once. `loadingType` is the type whose widget is being
+ * imported, until the import settles, whether it yields a widget or not; it is derived in the
+ * render that changes `type`, so the loading overlay never sees a frame without it. A failed
+ * import is tried again for the next note.
+ *
+ * Exported for testing.
+ */
+export function useTypeWidgets(
+    type: ExtendedNoteType | undefined,
+    note?: FNote | null,
+    load: (type: ExtendedNoteType) => Promise<TypeWidget | null> = getCorrespondingWidget
+) {
+    const [ noteTypesToRender, setNoteTypesToRender ] = useState<{ [ key in ExtendedNoteType ]?: TypeWidget }>({});
+    const [ activeNoteType, setActiveNoteType ] = useState<ExtendedNoteType>();
+    /** The type whose last import settled, with a widget or without one. */
+    const [ settledType, setSettledType ] = useState<ExtendedNoteType>();
+    const requestIdRef = useRef(0);
+
+    useEffect(() => {
+        if (!type) return;
+        const requestId = ++requestIdRef.current;
+
+        if (noteTypesToRender[type]) {
+            setActiveNoteType(type);
+            return;
+        }
+
+        setSettledType(undefined);
+        load(type)
+            .then((widget) => {
+                if (!widget || requestId !== requestIdRef.current) return;
+                setNoteTypesToRender((prev) => ({ ...prev, [type]: widget }));
+                setActiveNoteType(type);
+            })
+            .catch((e: unknown) => console.error(`Unable to load the widget of the note type ${type}`, e))
+            .finally(() => {
+                if (requestId === requestIdRef.current) setSettledType(type);
+            });
+    }, [ type, note, noteTypesToRender, load ]);
+
+    const loadingType = type && !noteTypesToRender[type] && settledType !== type ? type : undefined;
+    return { noteTypesToRender, activeNoteType, loadingType };
 }
 
 /**
