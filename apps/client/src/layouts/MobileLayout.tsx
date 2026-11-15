@@ -16,6 +16,7 @@ import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import NoteDetail from "../widgets/NoteDetail.js";
 import { useLegacyWidget } from "../widgets/react/hooks/legacy.js";
 import ScrollPadding from "../widgets/scroll_padding.js";
+import MobileEditorToolbar from "../widgets/type_widgets/text/mobile_editor_toolbar.js";
 
 /** The mobile layout as a single Preact tree, which `mobile_layout.tsx` is moved into piece by piece. */
 export default function MobileLayout() {
@@ -37,7 +38,8 @@ export default function MobileLayout() {
 /**
  * One note split per note context of the active tab, each with a title row (the note's icon, title,
  * badges and menu) above its inline title, title actions, content, list of child notes and scroll
- * padding. The splits are the children of `#detail-container`, as the stylesheets select them.
+ * padding, then the text editor's toolbar. The splits are the children of `#detail-container`, as
+ * the stylesheets select them.
  */
 function NoteSplits() {
     const [ splits ] = useLegacyWidget(() => new SplitNoteContainer(() =>
@@ -55,6 +57,7 @@ function NoteSplits() {
                 .child(<NoteDetail />)
                 .child(<NoteList media="screen" />)
                 .child(<ScrollPadding />))
+            .child(<MobileEditorToolbar />)
     ), { containerId: "detail-container" });
     return splits;
 }

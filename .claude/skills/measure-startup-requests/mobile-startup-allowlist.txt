@@ -205,6 +205,8 @@
 /src/widgets/layout/note_metadata.tsx
 /src/widgets/mobile_widgets/TabSwitcher.css
 /src/widgets/mobile_widgets/TabSwitcher.tsx
+/src/widgets/mobile_widgets/hide_keyboard_button.css
+/src/widgets/mobile_widgets/hide_keyboard_button.tsx
 /src/widgets/mobile_widgets/mobile_detail_menu.tsx
 /src/widgets/mobile_widgets/tab_navigation.ts
 /src/widgets/mobile_widgets/tab_swipe.ts
@@ -266,6 +268,9 @@
 /src/widgets/react/tooltip.css
 /src/widgets/scroll_padding.tsx
 /src/widgets/type_widgets/helpers/split_editor_mode.ts
+/src/widgets/type_widgets/text/mobile_editor_toolbar.css
+/src/widgets/type_widgets/text/mobile_editor_toolbar.tsx
+/src/widgets/type_widgets/text/nested_editor.ts
 /src/widgets/widget_utils.ts
 ws://*/
 ? /api/notes/download/*

@@ -28,7 +28,7 @@ describe("MobileLayout", () => {
         window.glob.device = device;
     });
 
-    it("gives each note split a title row with the icon, title, badges and note menu, and the inline title, title actions, content, note list and scroll padding in its scroller", async () => {
+    it("gives each note split a title row with the icon, title, badges and note menu, and the inline title, title actions, content, note list and scroll padding in its scroller, then the editor toolbar", async () => {
         let container: HTMLElement | undefined;
         act(() => { container = renderLayout(); });
         const splits = container?.querySelector("#mobile-rest-container > #detail-container > .split-note-container-widget");
@@ -61,6 +61,7 @@ describe("MobileLayout", () => {
         expect(scroller?.children[3]?.classList.contains("note-list-widget")).toBe(true);
         // The scroll padding ends the scroller; with no note open, it is an empty element.
         expect(scroller?.children).toHaveLength(5);
+        expect(scroller?.nextElementSibling?.classList.contains("classic-toolbar-outer-container")).toBe(true);
     });
 
     it("ends with the bottom bar, holding the launchers and then the global menu", () => {

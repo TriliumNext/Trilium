@@ -18,7 +18,6 @@ import { NoteTypeSwitcherBar } from "../widgets/note_title.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import QuickSearch from "../widgets/quick_search.jsx";
 import SearchResult from "../widgets/search_result.jsx";
-import MobileEditorToolbar from "../widgets/type_widgets/text/mobile_editor_toolbar.jsx";
 import { applyModals } from "./layout_commons.js";
 
 export default class MobileLayout {
@@ -73,7 +72,6 @@ export default class MobileLayout {
                                                 .child(<SearchResult />)
                                         )
                                         .child(<NoteTypeSwitcherBar />)
-                                        .child(<MobileEditorToolbar />)
                                         .child(new FindWidget())
                                 )
                             )
