@@ -217,6 +217,8 @@ stylesheet is `src/theme/aside.css`.
   figure of a table after a wrapped box is a flex column with no width. The browser specs run in
   Chromium and never reach that rule: check it in Firefox. A new block with a box of its own
   needs the same, unless it already is a formatting context (`overflow: hidden`, flex, grid).
+  An embed box is a flex container that clears (`.include-note { clear: both }` in the client's
+  `style.css`), so it goes below a wrapped box; the extended code block lifts the `clear` there.
 - **Placing, resizing and the selected look** come from the shared parts below; the aside only
   registers with them.
 - **A color dropdown from CKEditor's own.** `AsideColorUI` extends `FontColorUIBase`, so the
