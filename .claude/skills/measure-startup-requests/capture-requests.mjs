@@ -67,6 +67,9 @@ const page = await context.newPage();
 const initiators = new Map();
 const cdp = await context.newCDPSession(page);
 await cdp.send("Network.enable");
+// Without the debugger, a stack ends at the first `await`, so a fetch shows only `server.ts`.
+await cdp.send("Debugger.enable");
+await cdp.send("Debugger.setAsyncCallStackDepth", { maxDepth: 32 });
 // A module answered from the cache reports no body size, and the reload after a login would
 // otherwise be answered from it.
 await cdp.send("Network.setCacheDisabled", { cacheDisabled: true });
@@ -81,7 +84,10 @@ cdp.on("Network.requestWillBeSent", ({ request, initiator }) => {
         type: initiator.type,
         url: initiator.url ?? frame?.url ?? null,
         // A static import has no stack: the module loader made the request, not running script.
-        dynamic: !!frame
+        dynamic: !!frame,
+        // Every script on the stack, async parents included, so a fetch can be traced to the
+        // module whose code made it and not only to the library that sent it.
+        stack: [ ...new Set(frames.map((f) => f.url).filter(Boolean)) ]
     });
 });
 

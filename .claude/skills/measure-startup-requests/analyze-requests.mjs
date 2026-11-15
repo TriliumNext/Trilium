@@ -156,7 +156,8 @@ function graph(file) {
             size: r.bodySize || 0,
             type: r.resourceType,
             parent: r.initiator?.url ? normalize(r.initiator.url) : null,
-            dynamic: !r.initiator || r.initiator.dynamic || r.initiator.type !== "script"
+            dynamic: !r.initiator || r.initiator.dynamic || r.initiator.type !== "script",
+            stack: (r.initiator?.stack ?? []).map(normalize)
         });
     }
     return nodes;
@@ -196,6 +197,33 @@ function rootOf(nodes, node) {
         current = nodes.get(current.parent);
     }
     return current;
+}
+
+/** The module that renders the open note; what it requests is the note's own load. */
+const NOTE_DETAIL = "/src/widgets/NoteDetail.tsx";
+
+/**
+ * The paths of the requests that load the open note rather than the app: those with
+ * `NoteDetail.tsx` on their stack, the static import graphs they start, and, in turn, what the
+ * modules of that load request. Which requests these are depends on the note, so `check` leaves
+ * them out. A capture without stacks (taken before they were recorded) yields none.
+ */
+function noteLoadPaths(nodes) {
+    const paths = new Set();
+    let changed = true;
+    while (changed) {
+        changed = false;
+        for (const node of nodes.values()) {
+            if (paths.has(node.path)) continue;
+            const root = rootOf(nodes, node);
+            const callers = root.parent ? [ root.parent, ...root.stack ] : root.stack;
+            if (callers.some((caller) => caller === NOTE_DETAIL || paths.has(caller))) {
+                paths.add(node.path);
+                changed = true;
+            }
+        }
+    }
+    return paths;
 }
 
 function roots(file, topN) {
@@ -256,7 +284,12 @@ function check(file, allowlistFile, update) {
         console.error(`${file} has no /bootstrap request, so it did not capture an app startup.`);
         process.exit(1);
     }
-    const actual = [ ...new Set(requests.map(stableName)) ].sort();
+    const noteLoad = requests.some((request) => request.initiator) ? noteLoadPaths(graph(file)) : new Set();
+    const startupRequests = requests.filter((request) => !noteLoad.has(normalize(request.url)));
+    const actual = [ ...new Set(startupRequests.map(stableName)) ].sort();
+    if (noteLoad.size) {
+        console.log(`Left out ${noteLoad.size} requests that load the open note.`);
+    }
     const lines = fs.existsSync(allowlistFile)
         ? fs.readFileSync(allowlistFile, "utf8").split("\n").map((line) => line.trim())
             .filter((line) => line && !line.startsWith("#"))
