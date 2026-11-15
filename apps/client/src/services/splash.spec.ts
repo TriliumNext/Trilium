@@ -110,7 +110,7 @@ describe("splash", () => {
         expect(document.getElementById("splash")).toBeNull();
     });
 
-    it("reports only an error when the splash is not in the document", async () => {
+    it("reports only an error when the splash is not in the document, on a screen of its own", async () => {
         const {
             initSplashProgress, reportSplashPhase, updateSplashStatus, showSplashError, hideSplash
         } = await freshSplash();
@@ -125,7 +125,9 @@ describe("splash", () => {
         expect(document.body.childElementCount).toBe(0);
 
         showSplashError("something broke");
-        const alert = document.body.querySelector("[role=alert]");
-        expect(alert?.textContent).toBe("something broke");
+        const alert = document.body.querySelector("#startup-error[role=alert]");
+        expect(alert?.querySelector("img.startup-error-logo")).toBeInstanceOf(HTMLImageElement);
+        expect(alert?.querySelector(".startup-error-title")?.textContent).toBe("Trilium Notes");
+        expect(alert?.querySelector(".startup-error-message")?.textContent).toBe("something broke");
     });
 });

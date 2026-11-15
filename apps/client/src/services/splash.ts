@@ -4,9 +4,13 @@
  * the splash runs while the backend that serves the translation catalogues is still starting,
  * so `initLocale()` has neither a locale nor an `assetPath` to fetch one with.
  *
- * Kept free of imports: index.ts loads it before setupGlob() populates window.glob, which most
+ * Imports no client module: index.ts loads it before setupGlob() populates window.glob, which most
  * client modules read at module scope.
  */
+
+import "./splash.css";
+
+import logoUrl from "../assets/icon-color.svg?url";
 
 /** Matches the `#splash` opacity transition in index.html. */
 const SPLASH_FADE_MS = 400;
@@ -100,15 +104,12 @@ export function updateSplashStatus(status: string): void {
 
 /**
  * Switches the splash to its error state: the progress bar goes away and the message shows. A
- * page without a splash gets the message as an alert at the top of the body.
+ * page without a splash gets a screen of its own with the logo, the app's name and the message.
  */
 export function showSplashError(message: string): void {
     const splashEl = document.getElementById("splash");
     if (!splashEl) {
-        const alertEl = document.createElement("p");
-        alertEl.setAttribute("role", "alert");
-        alertEl.textContent = message;
-        document.body.prepend(alertEl);
+        document.body.append(buildStartupError(message));
         return;
     }
     splashEl.classList.add("splash-error");
@@ -128,6 +129,28 @@ export function hideSplash(): void {
 
     splashEl.classList.add("splash-hidden");
     setTimeout(() => splashEl.remove(), SPLASH_FADE_MS);
+}
+
+function buildStartupError(message: string) {
+    const screenEl = document.createElement("div");
+    screenEl.id = "startup-error";
+    screenEl.setAttribute("role", "alert");
+
+    const logoEl = document.createElement("img");
+    logoEl.className = "startup-error-logo";
+    logoEl.src = logoUrl;
+    logoEl.alt = "";
+
+    const titleEl = document.createElement("div");
+    titleEl.className = "startup-error-title";
+    titleEl.textContent = "Trilium Notes";
+
+    const messageEl = document.createElement("p");
+    messageEl.className = "startup-error-message";
+    messageEl.textContent = message;
+
+    screenEl.append(logoEl, titleEl, messageEl);
+    return screenEl;
 }
 
 function setFillWidth(fraction: number): void {

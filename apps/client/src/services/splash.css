@@ -1,0 +1,45 @@
+#startup-error {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: #ffffff;
+    color: #666666;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    text-align: center;
+
+    .startup-error-logo {
+        width: 96px;
+        height: 96px;
+    }
+
+    .startup-error-title {
+        margin-top: 16px;
+        font-size: 22px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        color: #333333;
+    }
+
+    .startup-error-message {
+        max-width: min(480px, 85vw);
+        margin: 12px 0 0;
+        font-size: 13px;
+        color: #e33f3b;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    #startup-error {
+        background: #242424;
+        color: #999999;
+
+        .startup-error-title {
+            color: #cccccc;
+        }
+    }
+}
