@@ -98,7 +98,7 @@ async function setupGlob() {
     const startedAt = performance.now();
     const response = localFetch
         ? await withTimeout(localFetch(new Request(url)), LOCAL_BOOTSTRAP_TIMEOUT_MS)
-        : await fetch(url);
+        : await (window.bootstrapRequest ?? fetch(url));
     if (!response.ok) {
         throw new Error(await readErrorMessage(response));
     }

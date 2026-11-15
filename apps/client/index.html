@@ -9,6 +9,11 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
         <link rel="manifest" crossorigin="use-credentials" href="manifest.webmanifest">
         <title>Trilium Notes</title>
+        <!-- Requests the bootstrap data while index.ts downloads; `setupGlob()` in index.ts takes the response. -->
+        <script>
+            window.bootstrapRequest = fetch("./bootstrap" + location.search);
+            window.bootstrapRequest.catch(() => {});
+        </script>
         <!-- Paints the root background of the last start until the theme's stylesheets apply; `rememberRootBackground()` in services/theme.ts stores it. -->
         <script>
             try {
