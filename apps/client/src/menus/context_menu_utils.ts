@@ -3,7 +3,6 @@ import type { MenuCommandItem, MenuItem } from "./context_menu"
 import froca from "../services/froca"
 import { t } from "../services/i18n"
 import { setArchivedOnNotes, shared } from "../services/note_set"
-import tree, { NOTE_PATH_TITLE_SEPARATOR } from "../services/tree"
 import { escapeHtml } from "../services/utils"
 
 /**
@@ -46,6 +45,7 @@ export async function notePathMenuItem<T>(
     notePath: string,
     handler: () => void
 ): Promise<MenuCommandItem<T>> {
+    const { default: tree, NOTE_PATH_TITLE_SEPARATOR } = await import("../services/tree");
     const titles = await tree.getNotePathTitleComponents(notePath);
     const title = titles.pop() ?? "";
     const noteId = notePath.split("/").at(-1) ?? "";

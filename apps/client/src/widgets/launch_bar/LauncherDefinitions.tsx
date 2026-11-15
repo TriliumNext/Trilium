@@ -4,7 +4,6 @@ import appContext, { CommandNames } from "../../components/app_context";
 import FNote from "../../entities/fnote";
 import type { MenuItem } from "../../menus/context_menu";
 import { showLauncherContextMenu } from "../../menus/launcher_button_context_menu";
-import { getRecentlyChangedNotesMenuItems } from "../../menus/recent_changes_menu_items";
 import date_notes from "../../services/date_notes";
 import { LauncherWidgetDefinitionWithType } from "../../services/frontend_script_api_preact";
 import { t } from "../../services/i18n";
@@ -42,7 +41,10 @@ export function CommandButton({ launcherNote }: LauncherNoteProps) {
 
 /** The menu sections that command launchers list above "Remove from launch bar". */
 const COMMAND_MENU_ITEMS: Partial<Record<string, () => Promise<MenuItem<CommandNames>[]>>> = {
-    showRecentChanges: getRecentlyChangedNotesMenuItems
+    showRecentChanges: async () => {
+        const { getRecentlyChangedNotesMenuItems } = await import("../../menus/recent_changes_menu_items");
+        return await getRecentlyChangedNotesMenuItems();
+    }
 };
 
 /**
