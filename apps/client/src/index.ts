@@ -8,7 +8,10 @@ import { createFontStylesheetLink } from "./services/font";
 import {
     CLIENT_STARTUP_PHASES, hideSplash, initSplashProgress, reportSplashPhase, showSplashError
 } from "./services/splash";
-import { buildThemeStylesheetRefs, createStylesheetLink, getThemeStyle, initThemeChangeNotifier, StylesheetRef } from "./services/theme";
+import {
+    buildThemeStylesheetRefs, createStylesheetLink, getThemeStyle, initThemeChangeNotifier, rememberRootBackground,
+    StylesheetRef
+} from "./services/theme";
 
 /**
  * How long the tab that owns the SQLite worker waits for it to answer `/bootstrap`. Matches the
@@ -179,7 +182,7 @@ function loadStylesheets() {
     }
 
     const stylesheetsPath = `${assetPath}/stylesheets`;
-    appendStylesheet({ href: `${stylesheetsPath}/ckeditor-theme.css` });
+    const stylesheets = [ appendStylesheet({ href: `${stylesheetsPath}/ckeditor-theme.css` }) ];
     // Marked so it can be swapped when font options change without reloading. Skipped on the
     // login / set-password pre-auth screens, where the /api/fonts request 401s (and, under nosniff,
     // surfaces as a MIME-type console error) — those screens use the theme's fonts (#10589). This is
@@ -189,15 +192,16 @@ function loadStylesheets() {
         document.head.appendChild(createFontStylesheetLink());
     }
     // The light theme is always loaded as the baseline and acts as the anchor for live theme swapping.
-    appendStylesheet({ href: `${stylesheetsPath}/theme-light.css` }, { base: true });
+    stylesheets.push(appendStylesheet({ href: `${stylesheetsPath}/theme-light.css` }, { base: true }));
     for (const ref of buildThemeStylesheetRefs(theme, customThemeCssUrl, themeBase)) {
-        appendStylesheet(ref, { theme: true });
+        stylesheets.push(appendStylesheet(ref, { theme: true }));
     }
-    appendStylesheet({ href: `${stylesheetsPath}/style.css` });
+    stylesheets.push(appendStylesheet({ href: `${stylesheetsPath}/style.css` }));
+    void rememberRootBackground(stylesheets);
 }
 
 function appendStylesheet(ref: StylesheetRef, opts?: { base?: boolean; theme?: boolean }) {
-    document.head.appendChild(createStylesheetLink(ref, opts));
+    return document.head.appendChild(createStylesheetLink(ref, opts));
 }
 
 function loadIcons() {

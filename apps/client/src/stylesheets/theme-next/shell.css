@@ -12,6 +12,7 @@
     --dropdown-border-radius: 10px;
 }
 
+body.desktop,
 #root-widget {
     background-color: var(--root-background);
 }

@@ -9,6 +9,15 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
         <link rel="manifest" crossorigin="use-credentials" href="manifest.webmanifest">
         <title>Trilium Notes</title>
+        <!-- Paints the root background of the last start until the theme's stylesheets apply; `rememberRootBackground()` in services/theme.ts stores it. -->
+        <script>
+            try {
+                const rootBackground = localStorage.getItem("trilium-root-background");
+                if (rootBackground && !new URLSearchParams(location.search).has("print")) {
+                    document.documentElement.style.backgroundColor = rootBackground;
+                }
+            } catch {}
+        </script>
     </head>
 
     <body id="trilium-app">
