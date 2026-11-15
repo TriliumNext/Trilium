@@ -9,6 +9,7 @@ import GlobalMenu from "../widgets/buttons/global_menu.js";
 import LeftPaneToggle, { LeftPanePeekButton } from "../widgets/buttons/left_pane_toggle.js";
 import RightPaneToggle from "../widgets/buttons/right_pane_toggle.js";
 import { LeaveFullScreenButton } from "../widgets/close_zen_button.js";
+import NoteList from "../widgets/collections/NoteList.js";
 import FlexContainer from "../widgets/containers/flex_container.js";
 import LeftPane, { useLeftPane } from "../widgets/containers/LeftPane.js";
 import ScrollingContainer from "../widgets/containers/scrolling_container.js";
@@ -17,7 +18,7 @@ import LauncherContainer from "../widgets/launch_bar/LauncherContainer.js";
 import InlineTitle from "../widgets/layout/InlineTitle.js";
 import StatusBar from "../widgets/layout/StatusBar.js";
 import NoteIcon from "../widgets/note_icon.js";
-import NoteTitleWidget from "../widgets/note_title.js";
+import NoteTitleWidget, { NoteTypeSwitcherBar } from "../widgets/note_title.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import NoteDetail from "../widgets/NoteDetail.js";
 import { useLegacyWidget } from "../widgets/react/hooks/legacy.js";
@@ -92,7 +93,8 @@ function TabBar({ fullWidth, leftPaneToggle }: { fullWidth: boolean, leftPaneTog
 
 /**
  * One note split per note context of the active tab, each with a title row (the note's icon and
- * its compact title) above the note's inline title and content.
+ * its compact title) above the note's inline title, content and list of child notes, and the bar
+ * that picks the type of an empty note at the bottom.
  */
 function NoteSplits() {
     const [ splits ] = useLegacyWidget(() => new SplitNoteContainer(() =>
@@ -105,7 +107,9 @@ function NoteSplits() {
             .child(new ScrollingContainer()
                 .filling()
                 .child(<InlineTitle />)
-                .child(<NoteDetail />))
+                .child(<NoteDetail />)
+                .child(<NoteList media="screen" />))
+            .child(<NoteTypeSwitcherBar />)
     ), { containerClassName: "note-splits-host" });
     return splits;
 }

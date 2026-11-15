@@ -2,7 +2,6 @@ import type { AppContext } from "../components/app_context.js";
 import type { WidgetsByParent } from "../services/bundle.js";
 import options from "../services/options.js";
 import CloseZenModeButton from "../widgets/close_zen_button.jsx";
-import NoteList from "../widgets/collections/NoteList.jsx";
 import FlexContainer from "../widgets/containers/flex_container.js";
 import RootContainer from "../widgets/containers/root_container.js";
 import ScrollingContainer from "../widgets/containers/scrolling_container.js";
@@ -15,7 +14,6 @@ import { FixedFormattingToolbar } from "../widgets/layout/FormattingToolbar.jsx"
 import NoteActions from "../widgets/layout/NoteActions.jsx";
 import NoteBadges from "../widgets/layout/NoteBadges.jsx";
 import NoteTitleActions from "../widgets/layout/NoteTitleActions.jsx";
-import { NoteTypeSwitcherBar } from "../widgets/layout/NoteTypeSwitcher.jsx";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import ScrollPadding from "../widgets/scroll_padding.js";
 import SearchResult from "../widgets/search_result.jsx";
@@ -71,11 +69,9 @@ export default class DesktopLayout {
                                                             new ScrollingContainer()
                                                                 .filling()
                                                                 .child(<NoteTitleActions />)
-                                                                .child(<NoteList media="screen" />)
                                                                 .child(<SearchResult />)
                                                                 .child(<ScrollPadding />)
                                                         )
-                                                        .child(<NoteTypeSwitcherBar />)
                                                         .child(new FindWidget())
                                                         .child(...this.customWidgets.get("note-detail-pane"))
                                                 )

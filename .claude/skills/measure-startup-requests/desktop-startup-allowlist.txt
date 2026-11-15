@@ -32,6 +32,7 @@
 /.cache/vite/deps/jquery__fancytree_dist_modules_jquery__fancytree__filter__js.js
 /.cache/vite/deps/preact-*.js
 /.cache/vite/deps/preact.js
+/.cache/vite/deps/preact_compat.js
 /.cache/vite/deps/preact_hooks.js
 /.cache/vite/deps/preact_jsx-dev-runtime.js
 /.cache/vite/deps/react-i18next.js
@@ -40,7 +41,6 @@
 /api/icon-packs.css
 /api/keyboard-actions
 /api/note-map/*/backlink-count
-/api/notes/*/attachments
 /api/notes/*/metadata
 /api/options
 /api/tree
@@ -176,7 +176,11 @@
 /src/widgets/buttons/show_all_notes_button.tsx
 /src/widgets/close_zen_button.css
 /src/widgets/close_zen_button.tsx
+/src/widgets/collections/NoteList.css
+/src/widgets/collections/NoteList.tsx
 /src/widgets/collections/calendar/recurrence.ts
+/src/widgets/collections/interface.ts
+/src/widgets/collections/view_mode_storage.ts
 /src/widgets/containers/LeftPane.css
 /src/widgets/containers/LeftPane.tsx
 /src/widgets/containers/container.ts
@@ -302,6 +306,9 @@
 /src/widgets/type_widgets/options/components/OptionsRow.tsx
 /src/widgets/widget_utils.ts
 ws://*/
+? /api/attachments/download/*
+? /api/notes/*/attachments
 ? /api/recent-notes
 ? /api/tree/load
 ? /repos/TriliumNext/Trilium/releases/latest
+? /src/fonts/JetBrainsMono/JetBrainsMono-VariableFont_wght.woff2

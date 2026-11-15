@@ -99,7 +99,7 @@ describe("DesktopLayout", () => {
         expect(statusBar?.previousElementSibling).toBe(mainContainer);
     });
 
-    it("gives each note split a title row with the note's icon and title, above its inline title", async () => {
+    it("gives each note split a title row, and the inline title, content and note list in its scroller", async () => {
         window.glob.layoutOrientation = "vertical";
         let container: HTMLElement | undefined;
         act(() => { container = renderInto(<Layout />); });
@@ -124,7 +124,11 @@ describe("DesktopLayout", () => {
         expect(titleRow?.querySelector(".note-title-widget")).toBeInstanceOf(HTMLElement);
         const scroller = split?.querySelector(":scope > .scrolling-container");
         expect(scroller?.firstElementChild?.classList.contains("inline-title")).toBe(true);
-        expect(scroller?.querySelector(":scope > .note-detail")).toBeInstanceOf(HTMLElement);
+        const detail = scroller?.querySelector(":scope > .note-detail");
+        expect(detail).toBeInstanceOf(HTMLElement);
+        expect(detail?.nextElementSibling?.classList.contains("note-list-widget")).toBe(true);
+        // The note type switcher's bar ends the split, under the scroller.
+        expect(scroller?.nextElementSibling?.classList.contains("note-type-switcher-bar")).toBe(true);
     });
 
     it("runs the command of a legacy widget's `data-trigger-command` element on a click", () => {

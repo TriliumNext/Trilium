@@ -16,6 +16,7 @@ import FormToggle from "../../react/FormToggle";
 import { useUniqueName } from "../../react/hooks/dom";
 import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
 import Icon from "../../react/Icon";
+import Modal from "../../react/Modal";
 import { type SortableItem, SortableCard } from "../../react/SortableCard";
 
 interface CodeMimeTypesCardProps {
@@ -26,8 +27,8 @@ interface CodeMimeTypesCardProps {
 /**
  * The code languages offered by the language lists, in the order the lists show them.
  *
- * In its own module because the always-loaded note type switcher also renders it, while
- * `code_notes.tsx` loads all of CodeMirror. Only the syntax highlighting tables are imported here.
+ * In its own module because the note type switcher also renders it, in {@link CodeMimeTypesModal},
+ * while `code_notes.tsx` loads all of CodeMirror. Only the syntax highlighting tables are imported here.
  */
 export function CodeMimeTypesCard({ heading }: CodeMimeTypesCardProps) {
     const [ storedOrder, setStoredOrder ] = useTriliumOption("codeNotesMimeTypes");
@@ -193,4 +194,18 @@ function highlightingTooltip(mime: string) {
         `${mark(!!codeBlockMimeTypes[mime])} ${t("code_mime_types.tooltip_code_block_syntax")}`,
         `${mark(!!codeNoteMimeTypes[mime])} ${t("code_mime_types.tooltip_code_note_syntax")}`
     ].join("\n");
+}
+
+/** {@link CodeMimeTypesCard} in a dialog, as the code language menus open it. */
+export function CodeMimeTypesModal({ modalShown, setModalShown }: { modalShown: boolean, setModalShown: (shown: boolean) => void }) {
+    return (
+        <Modal
+            className="code-mime-types-modal"
+            title={t("code_mime_types.title")}
+            show={modalShown} onHidden={() => setModalShown(false)}
+            size="md" scrollable
+        >
+            <CodeMimeTypesCard />
+        </Modal>
+    );
 }

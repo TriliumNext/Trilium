@@ -72,7 +72,7 @@ node .claude/skills/measure-startup-requests/analyze-requests.mjs check <capture
 ```
 
 - The allowlist is the startup of the new desktop layout as built so far (the launch bar, the tab
-  bar, the left pane in the vertical layout, the note title and content, and the status bar). A feature that is moved into the layout makes the check fail, and the failure
+  bar, the left pane in the vertical layout, the note title, content and note list, the note type switcher's bar and the status bar). A feature that is moved into the layout makes the check fail, and the failure
   lists what it loads: shrink that list first, then add what is left with `--update`. Never run
   `--update` to make a failure go away without reading it.
 - Names drop what changes between runs: the content hash of a pre-bundled dependency chunk
@@ -81,11 +81,13 @@ node .claude/skills/measure-startup-requests/analyze-requests.mjs check <capture
   the open tabs) is written with a leading `?`: it is allowed without being required. `--update`
   keeps those lines.
 - The open note's own load is left out of the check, since it depends on the note: every request
-  with `NoteDetail.tsx` on its stack (the note's blob, its type widget's import graph, the
-  editor's searches and data), and in turn what those modules request. The capture records each
-  request's full stack, async parents included, for this; a capture taken before that has no
-  stacks and gets no such exclusion. `NoteDetail` and the containers around it stay in the
-  allowlist: they load whatever the note.
+  with `NoteDetail.tsx` or `NoteList.tsx` on its stack (the note's blob, its type widget's or
+  collection view's import graph, the editor's searches and data, the previews of the child notes),
+  and in turn what those modules request. The capture records each request's full stack, async
+  parents included, for this; a capture taken before that has no stacks and gets no such
+  exclusion. `NoteDetail`, `NoteList` and the containers around them stay in the allowlist: they
+  load whatever the note. What the previews' markup and stylesheets fetch (images, a code font)
+  carries no stack, so it is written with a `?`.
 
 ## Timing one module graph, without logging in
 

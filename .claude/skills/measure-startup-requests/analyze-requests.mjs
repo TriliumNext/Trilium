@@ -199,12 +199,15 @@ function rootOf(nodes, node) {
     return current;
 }
 
-/** The module that renders the open note; what it requests is the note's own load. */
-const NOTE_DETAIL = "/src/widgets/NoteDetail.tsx";
+/**
+ * The modules that render the open note: its content and the list of its child notes. What they
+ * request is the note's own load.
+ */
+const NOTE_RENDERERS = new Set([ "/src/widgets/NoteDetail.tsx", "/src/widgets/collections/NoteList.tsx" ]);
 
 /**
- * The paths of the requests that load the open note rather than the app: those with
- * `NoteDetail.tsx` on their stack, the static import graphs they start, and, in turn, what the
+ * The paths of the requests that load the open note rather than the app: those with one of
+ * {@link NOTE_RENDERERS} on their stack, the static import graphs they start, and, in turn, what the
  * modules of that load request. Which requests these are depends on the note, so `check` leaves
  * them out. A capture without stacks (taken before they were recorded) yields none.
  */
@@ -217,7 +220,7 @@ function noteLoadPaths(nodes) {
             if (paths.has(node.path)) continue;
             const root = rootOf(nodes, node);
             const callers = root.parent ? [ root.parent, ...root.stack ] : root.stack;
-            if (callers.some((caller) => caller === NOTE_DETAIL || paths.has(caller))) {
+            if (callers.some((caller) => NOTE_RENDERERS.has(caller) || paths.has(caller))) {
                 paths.add(node.path);
                 changed = true;
             }
@@ -265,11 +268,13 @@ function why(file, name) {
 /**
  * The name a request has in an allowlist: its normalized path without what changes between runs
  * (the content hash of a pre-bundled dependency chunk, the query string of the HMR websocket) or
- * between sessions (the ID of the open note in `/api/notes/<id>/...` and `/api/note-map/<id>/...`).
+ * between sessions (the ID of the open note in `/api/notes/<id>/...` and `/api/note-map/<id>/...`,
+ * and of an attachment the open note shows).
  */
 function stableName(request) {
     return normalize(request.url)
         .replace(/^\/api\/(notes|note-map)\/[A-Za-z0-9_]+\//, "/api/$1/*/")
+        .replace(/^\/api\/attachments\/download\/[A-Za-z0-9_]+$/, "/api/attachments/download/*")
         .replace(/-[A-Za-z0-9_-]{8}\.js$/, "-*.js")
         .replace(/^(wss?:\/\/)[^/]+(\/[^?]*).*$/, "$1*$2");
 }
