@@ -10,7 +10,6 @@ import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
 import branches from "../../services/branches";
 import { copyTextWithToast } from "../../services/clipboard_ext";
-import dialog from "../../services/dialog";
 import { t } from "../../services/i18n";
 import { goToLinkExt } from "../../services/link";
 import server from "../../services/server";
@@ -380,6 +379,7 @@ export function useShareState(note: FNote | null | undefined) {
         if (shouldShare) {
             await branches.cloneNoteToParentNote(note.noteId, "_share");
         } else {
+            const { default: dialog } = await import("../../services/dialog");
             if (note?.getParentBranches().length === 1 && !(await dialog.confirm(t("shared_switch.shared-branch")))) {
                 return;
             }

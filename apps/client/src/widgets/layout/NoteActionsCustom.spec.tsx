@@ -10,10 +10,13 @@ import { ParentComponent } from "../react/react_utils";
 import NoteActionsCustom from "./NoteActionsCustom";
 
 describe("NoteActionsCustom", () => {
-    it("offers to copy an image reference only for content it can show, in the note's own view", () => {
-        expect(renderCopyButton({})).not.toBeNull();
-        expect(renderCopyButton({ isProtected: true })).toBeNull();
-        expect(renderCopyButton({}, { viewMode: "attachments" })).toBeNull();
+    it("offers to copy an image reference only for content it can show, in the note's own view", async () => {
+        // The button loads the image service with the first note that offers it.
+        const first = renderCopyButton({});
+        await vi.waitFor(() => expect(first.querySelector("button.bx-copy")).not.toBeNull());
+        expect(renderCopyButton({}).querySelector("button.bx-copy")).not.toBeNull();
+        expect(renderCopyButton({ isProtected: true }).querySelector("button.bx-copy")).toBeNull();
+        expect(renderCopyButton({}, { viewMode: "attachments" }).querySelector("button.bx-copy")).toBeNull();
     });
 
     it("opens the note type's help over the quick edit popup it stands in", () => {
@@ -63,6 +66,6 @@ describe("NoteActionsCustom", () => {
                 <NoteActionsCustom note={note} ntxId="ntx" noteContext={noteContext} />
             </ParentComponent.Provider>
         );
-        return container.querySelector("button.bx-copy");
+        return container;
     }
 });

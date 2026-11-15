@@ -13,7 +13,8 @@ import { openHelpPageFor } from "../react/HelpButton";
 import { useTriliumEvent } from "../react/hooks/events";
 import { useNoteProperty } from "../react/hooks/note";
 import { useNoteContext } from "../react/hooks/note_context";
-import { BookProperty, ViewProperty } from "../react/NotePropertyMenu";
+import { WithLazyModule } from "../react/LazyComponent";
+import type { BookProperty } from "../react/NotePropertyMenu";
 
 const NON_DANGEROUS_ACTIVE_CONTENT = [ "appCss", "appTheme" ];
 const DANGEROUS_ATTRIBUTES = BUILTIN_ATTRIBUTES.filter(a => a.isDangerous || NON_DANGEROUS_ACTIVE_CONTENT.includes(a.name));
@@ -24,6 +25,8 @@ interface ActiveContentInfo {
     isEnabled: boolean;
     canToggleEnabled: boolean;
 }
+
+const loadNotePropertyMenu = () => import("../react/NotePropertyMenu");
 
 const executeOption: BookProperty = {
     type: "button",
@@ -181,9 +184,11 @@ function ActiveContentBadge({ info, note, ntxId }: { note: FNote, info: ActiveCo
         >
             {additionalOptions?.length && (
                 <>
-                    {additionalOptions?.map((property, i) => (
-                        <ViewProperty key={i} note={note} property={property} />
-                    ))}
+                    <WithLazyModule load={loadNotePropertyMenu}>
+                        {({ ViewProperty }) => additionalOptions.map((property, i) => (
+                            <ViewProperty key={i} note={note} property={property} />
+                        ))}
+                    </WithLazyModule>
                     <FormDropdownDivider />
                 </>
             )}

@@ -15,7 +15,10 @@ import LeftPane, { useLeftPane } from "../widgets/containers/LeftPane.js";
 import ScrollingContainer from "../widgets/containers/scrolling_container.js";
 import SplitNoteContainer from "../widgets/containers/split_note_container.js";
 import LauncherContainer from "../widgets/launch_bar/LauncherContainer.js";
+import SpacerWidget from "../widgets/launch_bar/SpacerWidget.js";
 import InlineTitle from "../widgets/layout/InlineTitle.js";
+import NoteActions from "../widgets/layout/NoteActions.js";
+import NoteBadges from "../widgets/layout/NoteBadges.js";
 import NoteTitleActions from "../widgets/layout/NoteTitleActions.js";
 import StatusBar from "../widgets/layout/StatusBar.js";
 import NoteIcon from "../widgets/note_icon.js";
@@ -95,8 +98,8 @@ function TabBar({ fullWidth, leftPaneToggle }: { fullWidth: boolean, leftPaneTog
 }
 
 /**
- * One note split per note context of the active tab, each with a title row (the note's icon and
- * its compact title) above the note's inline title, title actions, content and list of child
+ * One note split per note context of the active tab, each with a title row (the note's icon, its
+ * compact title, its badges and its actions) above the note's inline title, title actions, content and list of child
  * notes, and the bar that picks the type of an empty note at the bottom.
  */
 function NoteSplits() {
@@ -106,7 +109,10 @@ function NoteSplits() {
                 .class("title-row note-split-title")
                 .cssBlock(".title-row > * { margin: 5px; }")
                 .child(<NoteIcon />)
-                .child(<NoteTitleWidget placement="split" />))
+                .child(<NoteTitleWidget placement="split" />)
+                .child(<NoteBadges />)
+                .child(<SpacerWidget baseSize={0} growthFactor={1} />)
+                .child(<NoteActions />))
             .child(new ScrollingContainer()
                 .filling()
                 .child(<InlineTitle />)

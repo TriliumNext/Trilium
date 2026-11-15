@@ -111,6 +111,7 @@ describe("DesktopLayout", () => {
         const noteContext = new NoteContext("main");
         const originalTabManager = appContext.tabManager;
         appContext.tabManager = {
+            noteContexts: [ noteContext ],
             getActiveMainContext: () => noteContext,
             getActiveContext: () => noteContext
         } as unknown as typeof appContext.tabManager;
@@ -127,6 +128,13 @@ describe("DesktopLayout", () => {
         expect(titleRow).toBeInstanceOf(HTMLElement);
         expect(titleRow?.querySelector(".note-icon-widget button.note-icon")).toBeInstanceOf(HTMLElement);
         expect(titleRow?.querySelector(".note-title-widget")).toBeInstanceOf(HTMLElement);
+        // The badges follow the title, and the actions end the row after a spacer.
+        const badges = titleRow?.querySelector(":scope > .note-badges");
+        expect(badges).toBeInstanceOf(HTMLElement);
+        expect(badges?.previousElementSibling?.classList.contains("note-title-widget")).toBe(true);
+        const actions = titleRow?.querySelector(":scope > .note-actions-bar");
+        expect(actions).toBeInstanceOf(HTMLElement);
+        expect(actions?.previousElementSibling?.classList.contains("spacer")).toBe(true);
         const scroller = split?.querySelector(":scope > .scrolling-container");
         expect(scroller?.firstElementChild?.classList.contains("inline-title")).toBe(true);
         expect(scroller?.children[1]?.classList.contains("title-actions")).toBe(true);

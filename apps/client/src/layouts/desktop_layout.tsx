@@ -7,12 +7,8 @@ import RootContainer from "../widgets/containers/root_container.js";
 import ScrollingContainer from "../widgets/containers/scrolling_container.js";
 import SplitNoteContainer from "../widgets/containers/split_note_container.js";
 import PasswordNoteSetDialog from "../widgets/dialogs/password_not_set.js";
-import UploadAttachmentsDialog from "../widgets/dialogs/upload_attachments.js";
 import FindWidget from "../widgets/find.js";
-import SpacerWidget from "../widgets/launch_bar/SpacerWidget.jsx";
 import { FixedFormattingToolbar } from "../widgets/layout/FormattingToolbar.jsx";
-import NoteActions from "../widgets/layout/NoteActions.jsx";
-import NoteBadges from "../widgets/layout/NoteBadges.jsx";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import ScrollPadding from "../widgets/scroll_padding.js";
 import SearchResult from "../widgets/search_result.jsx";
@@ -57,12 +53,6 @@ export default class DesktopLayout {
                                             .child(
                                                 new SplitNoteContainer(() =>
                                                     new NoteWrapperWidget()
-                                                        .child(new FlexContainer("row")
-                                                            .class("title-row note-split-title")
-                                                            .cssBlock(".title-row > * { margin: 5px; }")
-                                                            .child(<NoteBadges />)
-                                                            .child(<SpacerWidget baseSize={0} growthFactor={1} />)
-                                                            .child(<NoteActions />))
                                                         .child(
                                                             new ScrollingContainer()
                                                                 .filling()
