@@ -3739,7 +3739,8 @@
       "collapsible_details": "詳細",
       "table_column": "{{number}} 列",
       "tab_title": "タブ {{number}}",
-      "tab_content": "内容"
+      "tab_content": "内容",
+      "aside": "補足メモ"
     },
     "page_break": "改ページを挿入（印刷用）",
     "table": "表を挿入",
@@ -3761,9 +3762,11 @@
       "caution": "注意",
       "warning": "警告",
       "todo": "タスク: {{title}}",
-      "tabs": "タブ"
+      "tabs": "タブ",
+      "aside": "サイドノート"
     },
-    "tabs": "一度に 1 つのパネルを表示する、タイトル付きタブを挿入"
+    "tabs": "一度に 1 つのパネルを表示する、タイトル付きタブを挿入",
+    "aside": "本文が回り込むテキストボックスを挿入"
   },
   "mobile_note_navigator": {
     "back": "1つ上の階層へ移動",
@@ -4345,7 +4348,13 @@
       "next-previous-suggestion": "次、前の候補",
       "run-the-command": "コマンドを実行",
       "earlier-commands-or-suggestions-after-typing": "過去のコマンド、または入力後の補完候補",
-      "commands": "コマンド"
+      "commands": "コマンド",
+      "aside": "サイドノート",
+      "type-the-content-of-the-aside": "サイドノートの内容を入力",
+      "remove-aside": "サイドノートを削除",
+      "aside-toolbar": "サイドノートツールバー",
+      "insert-a-box-of-text-that-the-main-text-wraps-around": "本文が回り込むテキストボックスを挿入します。",
+      "background-color": "背景色"
     },
     "toolbar-groups": {
       "text-formatting": "テキストの書式設定",
@@ -5319,7 +5328,8 @@
       "audio": "音声",
       "link_preview": "リンクプレビュー",
       "embed": "埋め込み",
-      "block": "ブロック"
+      "block": "ブロック",
+      "aside": "サイドノート"
     },
     "collapse_section": "セクションを折りたたむ",
     "expand_section": "セクションを展開"
