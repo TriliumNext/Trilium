@@ -384,6 +384,33 @@ describe("the drop marker's distance from the row boundary", () => {
     });
 });
 
+describe("focusing the tree", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("keeps a focus asked for before the tree is built, and focuses it once it is", async () => {
+        const widget = new NoteTreeWidget();
+        vi.spyOn(widget, "initFancyTree").mockImplementation(() => {});
+        widget.doRender();
+        await new Promise((resolve) => setTimeout(resolve));
+        await widget.focusTreeEvent();
+
+        const focus = vi.fn();
+        const setFocus = vi.fn();
+        vi.mocked(widget.initFancyTree).mockRestore();
+        vi.spyOn(widget, "prepareRootNode").mockReturnValue({ key: "root" } as never);
+        vi.spyOn($.fn, "fancytree").mockImplementation(function (this: JQuery) {
+            return this;
+        } as never);
+        vi.spyOn($.ui.fancytree, "getTree").mockReturnValue({ $container: { focus }, setFocus } as never);
+        widget.initFancyTree();
+
+        expect(focus).toHaveBeenCalledTimes(1);
+        expect(setFocus).toHaveBeenCalledWith(true);
+    });
+});
+
 describe("drags onto the tree", () => {
     const target = { data: { noteId: "target", noteType: "text" } };
 

@@ -3,6 +3,7 @@ import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from "vitest";
 
 const setupLeftPaneResizer = vi.hoisted(() => vi.fn());
+const focusTree = vi.hoisted(() => vi.fn());
 vi.mock("../../services/resizer", () => ({ default: { setupLeftPaneResizer } }));
 vi.mock("../note_tree", async () => {
     const { default: NoteContextAwareWidget } = await import("../note_context_aware_widget");
@@ -14,6 +15,10 @@ vi.mock("../note_tree", async () => {
 
             isEnabled() {
                 return !!this.noteContext;
+            }
+
+            focusTreeEvent() {
+                focusTree();
             }
         }
     };
@@ -35,6 +40,7 @@ describe("LeftPane", () => {
 
     beforeEach(() => {
         setupLeftPaneResizer.mockClear();
+        focusTree.mockClear();
         save = vi.spyOn(options, "save").mockResolvedValue(undefined);
         triggerEvent = vi.spyOn(appContext, "triggerEvent");
         appContext.tabManager = { getActiveContext: () => null } as typeof appContext.tabManager;
@@ -70,6 +76,8 @@ describe("LeftPane", () => {
         expect(triggerEvent).toHaveBeenCalledWith("paneModeChanged", { pane: "left", mode: "peek" });
         await vi.waitFor(() => expect(host.querySelector("#left-pane .tree-stub")).not.toBeNull());
         expect(appContext.noteTreeWidget).toBeDefined();
+        // The tree loads after the peek asked for its focus, and takes it once it has.
+        await vi.waitFor(() => expect(focusTree).toHaveBeenCalledTimes(1));
 
         // "Show panel" docks the peek.
         await trigger("setLeftPaneVisibility", { leftPaneVisible: true });

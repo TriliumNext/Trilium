@@ -57,6 +57,8 @@ export function useLeftPane(isHorizontalLayout: boolean): LeftPaneController {
         const focus = pendingFocus.current;
         pendingFocus.current = null;
         if (focus === "tree") {
+            // On the first opening the tree is still loading, so it takes the focus once it is built.
+            treeFocusRequested = !appContext.noteTreeWidget;
             void parentComponent?.triggerEvent("focusTree", {});
         } else if (focus === "detail") {
             const ntxId = appContext.tabManager?.getActiveContext()?.ntxId;
@@ -125,6 +127,9 @@ export default function LeftPane({ pane, children }: { pane: LeftPaneController,
 
 const loadNoteTree = () => import("../note_tree");
 
+/** Set while the pane asked to focus the tree before the tree was loaded. */
+let treeFocusRequested = false;
+
 function NoteTree() {
     const noteTree = useLazyModule(loadNoteTree);
     return noteTree ? <LoadedNoteTree NoteTreeWidget={noteTree.default} /> : null;
@@ -136,6 +141,10 @@ function LoadedNoteTree({ NoteTreeWidget }: { NoteTreeWidget: typeof import("../
     const [ tree ] = useLegacyWidget(() => {
         const widget = new NoteTreeWidget();
         appContext.noteTreeWidget = widget;
+        if (treeFocusRequested) {
+            treeFocusRequested = false;
+            void widget.focusTreeEvent();
+        }
         return widget;
     }, { containerClassName: "note-tree-host", noteContext });
     return tree;

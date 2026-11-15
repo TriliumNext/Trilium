@@ -160,6 +160,8 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
     private spotlightedNotePath?: string | null;
     private spotlightedNode: Fancytree.FancytreeNode | null = null;
     private tree!: Fancytree.Fancytree;
+    /** Set while a focus asked for before the tree was built waits for it. */
+    private focusesOnBuild = false;
 
     constructor() {
         super();
@@ -659,6 +661,10 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         let touchStart;
 
         this.tree = $.ui.fancytree.getTree(this.$tree);
+        if (this.focusesOnBuild && this.tree) {
+            this.focusesOnBuild = false;
+            void this.focusTreeEvent();
+        }
     }
 
     showContextMenu(e: PointerEvent | JQuery.TouchStartEvent | JQuery.ContextMenuEvent) {
@@ -941,6 +947,12 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
     }
 
     async focusTreeEvent() {
+        // The tree is built once froca has the notes; `initFancyTree()` focuses it then.
+        if (!this.tree) {
+            this.focusesOnBuild = true;
+            return;
+        }
+
         this.tree.$container.focus();
         this.tree.setFocus(true);
     }
