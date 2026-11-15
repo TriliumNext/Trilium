@@ -430,10 +430,43 @@ describe("window service", () => {
             hiddenWindow.fire("show");
             expect(state.windowStateManage).toHaveBeenCalledOnce();
 
+            hiddenWindow.fire("ready-to-show");
+            expect(hiddenWindow.show).toHaveBeenCalledOnce();
+        });
+
+        it("shows the main window on its first frame, so it never appears blank", async () => {
             await windowService.createMainWindow();
-            const visibleWindow = state.windows[state.windows.length - 1];
-            expect((visibleWindow.opts as Record<string, unknown>).show).toBe(true);
-            expect(state.windowStateManage).toHaveBeenLastCalledWith(visibleWindow);
+            const win = state.windows[state.windows.length - 1];
+            win.isVisible.mockReturnValue(false);
+            expect((win.opts as Record<string, unknown>).show).toBe(false);
+            expect(win.show).not.toHaveBeenCalled();
+            expect(state.windowStateManage).not.toHaveBeenCalled();
+
+            win.fire("ready-to-show");
+            expect(win.show).toHaveBeenCalledOnce();
+            expect(state.windowStateManage).toHaveBeenCalledWith(win);
+            expect(state.windowStateManage.mock.invocationCallOrder[0])
+                .toBeLessThan(win.show.mock.invocationCallOrder[0]);
+        });
+
+        it("shows the main window after a timeout when the renderer never paints", async () => {
+            vi.useFakeTimers();
+            try {
+                await windowService.createMainWindow();
+                const win = state.windows[state.windows.length - 1];
+                win.isVisible.mockReturnValue(false);
+
+                vi.advanceTimersByTime(2999);
+                expect(win.show).not.toHaveBeenCalled();
+                vi.advanceTimersByTime(1);
+                expect(win.show).toHaveBeenCalledOnce();
+
+                win.isVisible.mockReturnValue(true);
+                win.fire("ready-to-show");
+                expect(win.show).toHaveBeenCalledOnce();
+            } finally {
+                vi.useRealTimers();
+            }
         });
 
         it("uses the show event as a one-time fallback", async () => {

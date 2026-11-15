@@ -33,6 +33,9 @@ function getPreloadScript(): string {
     return preloadScriptCache;
 }
 
+/** How long the main window stays hidden at most while waiting for the renderer's first frame. */
+const MAIN_WINDOW_REVEAL_TIMEOUT_MS = 3000;
+
 // Prevent the window being garbage collected
 let mainWindow: BrowserWindow | null;
 let setupWindow: BrowserWindow | null;
@@ -141,10 +144,8 @@ async function createMainWindow(startHidden = false) {
         minWidth: 500,
         minHeight: 400,
         title: "Trilium Notes",
-        // Start hidden (launched at login with hide-on-autostart) means the window
-        // is never shown until the user summons it from the tray. Constructing it
-        // hidden avoids a visible flash that show()-then-hide() would cause.
-        show: !startHidden,
+        // Shown on the renderer's first frame, or never when started hidden in the tray.
+        show: false,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -166,18 +167,27 @@ async function createMainWindow(startHidden = false) {
     mainWindow.once("ready-to-show", () => markStartupMetric("main-window-first-paint"));
     mainWindow.webContents.once("did-finish-load", () => markStartupMetric("main-window-load-finished"));
 
-    if (startHidden) {
-        const hiddenWindow = mainWindow;
-        const manageWindowState = () => {
-            if (deferredWindowStateManagers.delete(hiddenWindow)) {
-                mainWindowState.manage(hiddenWindow);
+    // `manage()` maximizes, which reveals a hidden window, so it runs on the reveal.
+    const win = mainWindow;
+    const manageWindowState = () => {
+        if (deferredWindowStateManagers.delete(win)) {
+            mainWindowState.manage(win);
+        }
+    };
+    deferredWindowStateManagers.set(win, manageWindowState);
+    // This event is a fallback for a reveal that does not use showWindow().
+    win.once("show", manageWindowState);
+
+    if (!startHidden) {
+        const reveal = () => {
+            clearTimeout(revealTimeout);
+            if (!win.isDestroyed() && !win.isVisible()) {
+                showWindow(win);
             }
         };
-        deferredWindowStateManagers.set(hiddenWindow, manageWindowState);
-        // This event is a fallback for a reveal that does not use showWindow().
-        hiddenWindow.once("show", manageWindowState);
-    } else {
-        mainWindowState.manage(mainWindow);
+        // The fallback shows the window if the renderer never paints (a crash, a hung server).
+        const revealTimeout = setTimeout(reveal, MAIN_WINDOW_REVEAL_TIMEOUT_MS);
+        win.once("ready-to-show", reveal);
     }
 
     mainWindow.setMenuBarVisibility(false);
