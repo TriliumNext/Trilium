@@ -7,17 +7,13 @@ import FlexContainer from "../widgets/containers/flex_container.js";
 import RootContainer from "../widgets/containers/root_container.js";
 import ScrollingContainer from "../widgets/containers/scrolling_container.js";
 import SplitNoteContainer from "../widgets/containers/split_note_container.js";
-import FindWidget from "../widgets/find.js";
 import HideKeyboardButton from "../widgets/mobile_widgets/hide_keyboard_button.jsx";
 import MobileNoteNavigator from "../widgets/mobile_widgets/MobileNoteNavigator.jsx";
 import MobileNotePanel from "../widgets/mobile_widgets/MobileNotePanel.jsx";
 import ScreenContainer from "../widgets/mobile_widgets/screen_container.js";
 import SidebarContainer from "../widgets/mobile_widgets/sidebar_container.js";
-import ToggleSidebarButton from "../widgets/mobile_widgets/toggle_sidebar_button.jsx";
-import { NoteTypeSwitcherBar } from "../widgets/note_title.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import QuickSearch from "../widgets/quick_search.jsx";
-import SearchResult from "../widgets/search_result.jsx";
 import { applyModals } from "./layout_commons.js";
 
 export default class MobileLayout {
@@ -62,17 +58,13 @@ export default class MobileLayout {
                                                 .class("title-row note-split-title")
                                                 .contentSized()
                                                 .css("align-items", "center")
-                                                .child(<ToggleSidebarButton />)
                                                 .child(<MobileNotePanel widgetsByParent={this.customWidgets} />)
                                         )
                                         .child(
                                             new ScrollingContainer()
                                                 .filling()
                                                 .contentSized()
-                                                .child(<SearchResult />)
                                         )
-                                        .child(<NoteTypeSwitcherBar />)
-                                        .child(new FindWidget())
                                 )
                             )
                     )

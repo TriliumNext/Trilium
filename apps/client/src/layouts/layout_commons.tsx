@@ -5,6 +5,9 @@ import type { EventData, EventNames } from "../components/app_context.js";
 import Component from "../components/component.js";
 import type RootContainer from "../widgets/containers/root_container.js";
 import { useTriliumEvents } from "../widgets/react/hooks/events.js";
+import { useNoteProperty } from "../widgets/react/hooks/note.js";
+import { useNoteContext } from "../widgets/react/hooks/note_context.js";
+import { WithLazyModule } from "../widgets/react/LazyComponent.js";
 import { ParentComponent, POPUP_EDITOR_NTX_ID } from "../widgets/react/react_utils.jsx";
 import ToastContainer from "../widgets/Toast.jsx";
 
@@ -167,3 +170,25 @@ export function LazyDialog({ loader, triggerEvents }: LazyDialogProps) {
         </div>
     );
 }
+
+const loadSearchResult = () => import("../widgets/search_result.js");
+
+/**
+ * The results of a search note, whose module loads once a search note shows. The host keeps one
+ * root element, which the legacy widget adapter requires, and takes no box of its own.
+ */
+export function SearchResults() {
+    const { note } = useNoteContext();
+    const noteType = useNoteProperty(note, "type");
+
+    return (
+        <div className="search-result-host">
+            {noteType === "search" && (
+                <WithLazyModule load={loadSearchResult}>
+                    {({ default: SearchResult }) => <SearchResult />}
+                </WithLazyModule>
+            )}
+        </div>
+    );
+}
+

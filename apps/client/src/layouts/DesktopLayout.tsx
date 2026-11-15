@@ -36,14 +36,12 @@ import NoteDetail from "../widgets/NoteDetail.js";
 import { useTriliumEvent } from "../widgets/react/hooks/events.js";
 import { useLegacyWidget } from "../widgets/react/hooks/legacy.js";
 import { useTriliumOption } from "../widgets/react/hooks/options.js";
-import { useNoteProperty } from "../widgets/react/hooks/note.js";
 import { useNoteContext } from "../widgets/react/hooks/note_context.js";
-import { WithLazyModule } from "../widgets/react/LazyComponent.js";
 import ScrollPadding from "../widgets/scroll_padding.js";
 import RightPanelContainer from "../widgets/sidebar/RightPanelContainer.js";
 import TabRowWidget from "../widgets/tab_row.js";
 import TabHistoryNavigationButtons from "../widgets/TabHistoryNavigationButtons.js";
-import { LazyDialog, Modals } from "./layout_commons.js";
+import { LazyDialog, Modals, SearchResults } from "./layout_commons.js";
 
 /** The desktop layout, as a single Preact tree. */
 export default function DesktopLayout() {
@@ -229,27 +227,6 @@ function CustomWidgets({ parent }: { parent: Exclude<ParentName, "right-pane"> }
 function LegacyCustomWidget({ widget, noteContext }: { widget: BasicWidget, noteContext?: NoteContext }) {
     const [ el ] = useLegacyWidget(() => widget, { noteContext, containerClassName: "custom-widget-host" });
     return el;
-}
-
-const loadSearchResult = () => import("../widgets/search_result.js");
-
-/**
- * The results of a search note, whose module loads once a search note shows. The host keeps one
- * root element, which the legacy widget adapter requires, and takes no box of its own.
- */
-function SearchResults() {
-    const { note } = useNoteContext();
-    const noteType = useNoteProperty(note, "type");
-
-    return (
-        <div className="search-result-host">
-            {noteType === "search" && (
-                <WithLazyModule load={loadSearchResult}>
-                    {({ default: SearchResult }) => <SearchResult />}
-                </WithLazyModule>
-            )}
-        </div>
-    );
 }
 
 /**

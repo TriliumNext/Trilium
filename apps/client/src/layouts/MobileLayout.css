@@ -19,6 +19,10 @@
         align-items: center;
     }
 
+    .search-result-host {
+        display: contents;
+    }
+
     #launcher-pane {
         display: flex;
         height: 53px;

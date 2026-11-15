@@ -75,6 +75,7 @@
 /src/index.ts
 /src/layouts/MobileLayout.css
 /src/layouts/MobileLayout.tsx
+/src/layouts/layout_commons.tsx
 /src/mobile.ts
 /src/mobile_startup.ts
 /src/services/attributes.ts
@@ -154,6 +155,8 @@
 /src/widgets/LazyQuickSearch.tsx
 /src/widgets/NoteDetail.css
 /src/widgets/NoteDetail.tsx
+/src/widgets/Toast.css
+/src/widgets/Toast.tsx
 /src/widgets/attribute_widgets/attribute_types.ts
 /src/widgets/basic_widget.ts
 /src/widgets/buttons/close_pane_button.tsx
@@ -171,6 +174,7 @@
 /src/widgets/containers/scrolling_container.css
 /src/widgets/containers/scrolling_container.ts
 /src/widgets/containers/split_note_container.ts
+/src/widgets/find.ts
 /src/widgets/hold_context_menu.ts
 /src/widgets/launch_bar/BookmarkButtons.css
 /src/widgets/launch_bar/BookmarkButtons.tsx
@@ -210,6 +214,8 @@
 /src/widgets/mobile_widgets/mobile_detail_menu.tsx
 /src/widgets/mobile_widgets/tab_navigation.ts
 /src/widgets/mobile_widgets/tab_swipe.ts
+/src/widgets/mobile_widgets/toggle_sidebar_button.css
+/src/widgets/mobile_widgets/toggle_sidebar_button.tsx
 /src/widgets/note_context_aware_widget.ts
 /src/widgets/note_icon.css
 /src/widgets/note_icon.tsx

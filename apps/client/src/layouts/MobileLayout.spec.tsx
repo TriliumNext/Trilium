@@ -28,7 +28,7 @@ describe("MobileLayout", () => {
         window.glob.device = device;
     });
 
-    it("gives each note split a title row with the icon, title, badges and note menu, and the inline title, title actions, content, note list and scroll padding in its scroller, then the editor toolbar", async () => {
+    it("gives each note split a title row, a scroller with the note and its search results, then the type bar, editor toolbar and find bar", async () => {
         let container: HTMLElement | undefined;
         act(() => { container = renderLayout(); });
         const splits = container?.querySelector("#mobile-rest-container > #detail-container > .split-note-container-widget");
@@ -48,20 +48,25 @@ describe("MobileLayout", () => {
 
         const split = container?.querySelector(".note-split[data-ntx-id=main]");
         const titleRow = split?.querySelector(":scope > .title-row");
-        expect(titleRow?.firstElementChild?.querySelector("button.note-icon")).toBeInstanceOf(HTMLElement);
-        expect(titleRow?.children[1]?.classList.contains("note-title-widget")).toBe(true);
-        expect(titleRow?.children[2]?.classList.contains("note-badges")).toBe(true);
+        expect(titleRow?.firstElementChild?.classList.contains("toggle-sidebar-button")).toBe(true);
+        expect(titleRow?.children[1]?.querySelector("button.note-icon")).toBeInstanceOf(HTMLElement);
+        expect(titleRow?.children[2]?.classList.contains("note-title-widget")).toBe(true);
+        expect(titleRow?.children[3]?.classList.contains("note-badges")).toBe(true);
         // The note menu ends the row; with no note open, its place holds the button that closes the split.
-        expect(titleRow?.children).toHaveLength(4);
+        expect(titleRow?.children).toHaveLength(5);
         expect(titleRow?.lastElementChild?.querySelector("button.bx-x")).toBeInstanceOf(HTMLElement);
         const scroller = split?.querySelector(":scope > .scrolling-container");
         expect(scroller?.firstElementChild?.classList.contains("inline-title")).toBe(true);
         expect(scroller?.children[1]?.classList.contains("title-actions")).toBe(true);
         expect(scroller?.children[2]?.classList.contains("note-detail")).toBe(true);
         expect(scroller?.children[3]?.classList.contains("note-list-widget")).toBe(true);
+        expect(scroller?.children[4]?.classList.contains("search-result-host")).toBe(true);
         // The scroll padding ends the scroller; with no note open, it is an empty element.
-        expect(scroller?.children).toHaveLength(5);
-        expect(scroller?.nextElementSibling?.classList.contains("classic-toolbar-outer-container")).toBe(true);
+        expect(scroller?.children).toHaveLength(6);
+        const typeBar = scroller?.nextElementSibling;
+        expect(typeBar?.classList.contains("note-type-switcher-bar")).toBe(true);
+        expect(typeBar?.nextElementSibling?.classList.contains("classic-toolbar-outer-container")).toBe(true);
+        expect(typeBar?.nextElementSibling?.nextElementSibling?.classList.contains("find-replace-widget")).toBe(true);
     });
 
     it("ends with the bottom bar, holding the launchers and then the global menu", () => {
