@@ -259,7 +259,8 @@
       "background-color": "Background colour"
     },
     "ck": {
-      "center-this-line": "centre this line"
+      "center-this-line": "centre this line",
+      "background-color": "Background colour"
     }
   },
   "link_context_menu": {

@@ -2,14 +2,16 @@ import { t } from "../../../services/i18n.js";
 import { DEFAULT_COLOR_PALETTE } from "../../react/ColorPicker.js";
 
 /**
- * The swatches of the Font Color and Font Background Color dropdowns: four greys, then the hues of
- * the note color palette. Black and white have an edge, since either can match a menu's background.
+ * The swatches of the Font Color and Font Background Color dropdowns, and of the background color
+ * of an aside: four greys, then the hues of the note color palette. Black and white have an edge,
+ * since either can match a menu's background.
  */
 export function buildFontColorConfig() {
     const colors = buildSwatches();
     return {
         fontColor: { colors, columns: 4 },
-        fontBackgroundColor: { colors, columns: 4 }
+        fontBackgroundColor: { colors, columns: 4 },
+        asideColor: { colors, columns: 4 }
     };
 }
 

@@ -475,6 +475,13 @@ body:not(.math-loaded) .math-tex {
         margin: 1em 0;
         width: auto;
     }
+
+    :root .ck-content aside:not(.admonition)[data-position] {
+        float: none;
+        clear: both;
+        margin: var(--aside-margin-block) 0;
+        width: auto;
+    }
 }
 
 .ck-content :is(.include-note, .captioned-content-embed) > figcaption {

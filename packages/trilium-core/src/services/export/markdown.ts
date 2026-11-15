@@ -2,7 +2,9 @@ import {
     CAPTIONED_CONTENT_EMBED_CLASS, getMarkdownNameFromCKEditorLanguage, MIME_TYPE_AUTO,
     MULTICOLUMN_COLUMN_CLASS, MULTICOLUMN_LAYOUT_CLASS, safeLinkPreviewHref, type TaskStateDef
 } from "@triliumnext/commons";
-import { ADMONITION_TYPE_MAPPINGS } from "@triliumnext/commons/src/lib/markdown_renderer.js";
+import {
+    ADMONITION_TYPE_MAPPINGS, BARE_ASIDE_BACKGROUND, BARE_ASIDE_POSITION
+} from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { HIGHLIGHT_BACKGROUND } from "@triliumnext/commons/src/lib/marked_extensions.js";
 import { gfm, serializeStructuralHtml } from "@triliumnext/turndown-plugin-gfm";
 import { parse as parseHtml } from "node-html-parser";
@@ -83,6 +85,9 @@ function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
                 if (isMulticolumnLayout(node) || isMulticolumnColumn(node)) {
                     return blankMulticolumnReplacement(node);
                 }
+                if (isAside(node)) {
+                    return asideReplacement(node, "");
+                }
                 // Original implementation as per https://github.com/mixmark-io/turndown/blob/master/src/turndown.js.
                 return ("isBlock" in node && node.isBlock) ? '\n\n' : '';
             },
@@ -95,6 +100,7 @@ function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
         instance.addRule("tabTitle", buildTabTitleFilter());
         instance.addRule("tabPanel", buildTabPanelFilter());
         instance.addRule("multicolumn", buildMulticolumnFilter());
+        instance.addRule("aside", buildAsideFilter());
         instance.addRule("inlineLink", buildInlineLinkFilter());
         instance.addRule("bookmark", buildBookmarkFilter());
         instance.addRule("figure", buildFigureFilter());
@@ -471,10 +477,10 @@ function buildMulticolumnFilter(): Rule {
 function multicolumnReplacement(node: Element, content: string): string {
     if (isMulticolumnColumn(node)) {
         const body = content.trim();
-        const opening = multicolumnOpeningTag(node);
+        const opening = getOpeningTag(node);
         return `\n${opening}\n${body ? `\n${body}\n\n` : ""}</div>\n`;
     }
-    const opening = multicolumnOpeningTag(node);
+    const opening = getOpeningTag(node);
     return `\n\n${opening}\n${content.trim()}\n</div>\n\n`;
 }
 
@@ -487,10 +493,62 @@ function blankMulticolumnReplacement(node: Element): string {
     return multicolumnReplacement(node, columns.join("\n"));
 }
 
-function multicolumnOpeningTag(node: Element): string {
+/** The opening tag of `node`, with its attributes as they are. */
+function getOpeningTag(node: Element): string {
     const attributes = Array.from(node.attributes)
         .map(({ name, value }) => ` ${name}="${escapeHtml(value)}"`);
-    return `<div${attributes.join("")}>`;
+    return `<${node.nodeName.toLowerCase()}${attributes.join("")}>`;
+}
+
+/**
+ * Exports an aside as `<aside>` tags on lines of their own around the Markdown of its blocks, as a
+ * column of a multicolumn layout is, so that the import gets the aside back.
+ */
+function buildAsideFilter(): Rule {
+    return {
+        filter(node) {
+            return isAside(node);
+        },
+        replacement(content, node) {
+            return asideReplacement(node, content);
+        }
+    };
+}
+
+function asideReplacement(node: Element, content: string): string {
+    const body = content.trim();
+    return `\n\n${getAsideOpeningTag(node)}\n${body ? `\n${body}\n\n` : ""}</aside>\n\n`;
+}
+
+/**
+ * The opening tag of an aside in Markdown, where a bare `<aside>` is placed at
+ * `BARE_ASIDE_POSITION` in `BARE_ASIDE_BACKGROUND`. An aside in the flow, saved without
+ * attributes, gets `data-position="center"`.
+ */
+function getAsideOpeningTag(node: Element): string {
+    if (!node.attributes.length) {
+        return `<aside data-position="center">`;
+    }
+    return isBareAside(node) ? "<aside>" : getOpeningTag(node);
+}
+
+/** Whether `node` has only the position and the background color of a new aside. */
+function isBareAside(node: Element): boolean {
+    const names = Array.from(node.attributes, ({ name }) => name).sort();
+    // The text editor repeats the color in a `--tn-*` variable for the theme to adapt.
+    const declarations = parseStyleDeclarations(node.getAttribute("style"))
+        .filter(({ property }) => !property.startsWith("--tn-"));
+    const [ declaration ] = declarations;
+
+    return names.join(" ") === "data-position style"
+        && node.getAttribute("data-position") === BARE_ASIDE_POSITION
+        && declarations.length === 1 && declaration.property === "background-color"
+        && normalizeColor(declaration.value) === normalizeColor(BARE_ASIDE_BACKGROUND);
+}
+
+/** Whether `node` is an aside, which an admonition is not, although it is saved as `<aside>`. */
+function isAside(node: Node): boolean {
+    return isElement(node) && node.nodeName === "ASIDE" && !node.classList.contains("admonition");
 }
 
 function isMulticolumnLayout(node: Node): boolean {

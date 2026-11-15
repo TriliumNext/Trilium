@@ -84,9 +84,9 @@ the element to the figure (`moveBoxToCaptionedFigure()`), which the share CSS pl
 export keeps the figure as raw HTML.
 
 **An embed whose caption has the selection looks selected**, as one whose player or editor has
-the focus (which selects it): `markEmbedOfSelectedCaption()` adds `ck-widget_selected` after
-`Widget` marks the selection and takes it away on `cleanSelection`. `Widget` itself marks only
-widgets inside the selection.
+the focus (which selects it): `markWidgetOfSelection()` (`widget_utils.ts`, shared with the aside)
+adds `ck-widget_selected` after `Widget` marks the selection and takes it away on
+`cleanSelection`. `Widget` itself marks only widgets inside the selection.
 
 - **Inline source** (`inline_source.ts`, `ContentEmbedInlineSource`) keeps the document readable
   elsewhere: the note exports to Markdown as a fenced `mermaid` block, other apps render it, and

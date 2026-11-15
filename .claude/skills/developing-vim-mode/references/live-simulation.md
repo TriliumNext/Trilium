@@ -76,7 +76,8 @@ In the page, both scripts provide:
 inline object, numbers, brackets, headings with a collapsed section, bulleted, numbered and to-do
 lists with nesting and a collapsed item, a quote, an admonition, a code block, a table with a
 header, a cell of two paragraphs and a caption, a horizontal line, a page break, an open and a
-closed collapsible block, tabs, columns and a footnote. Every line starts with an ID such as
+closed collapsible block, tabs, columns, an aside in the flow and one beside the text, and a
+footnote. Every line starts with an ID such as
 `C03`, so that a line can be found again after an edit and named in a report.
 
 - **Check it with `simulate.mjs lines`** after any change. Each structure must show with the kind

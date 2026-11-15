@@ -7,7 +7,7 @@ This is the internal API used by the Trilium Notes client application.
 
 Most endpoints require session-based authentication. You can authenticate using:
 
-*   **Password login**: POST to `/api/login` with password
+*   **Password login**: POST to `/login` with password
 *   **Token authentication**: Generate a token via `/api/login/token`
 *   **Sync authentication**: Use document secret for sync operations
 
@@ -39,7 +39,7 @@ Login, logout, and session management
 
 ### Login with password
 
-`POST /api/login` · `login`
+`POST /login` · `login`
 
 Responds with 401 when the password is wrong or, with two-factor authentication enabled, the TOTP token is missing or wrong.
 
@@ -180,6 +180,52 @@ Responds with 401 when the password is wrong or, with two-factor authentication 
     {
         "instanceId": "string",
         "maxEntityChangeId": "string"
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "400: Sync version / document secret mismatch"
+
+    *   `application/json`: `object`
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `message` | `string` |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "message": "Non-matching sync versions, local is version ${server syncVersion}, remote is ${requested syncVersion}. It is recommended to run same version of Trilium on both sides of sync"
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "401: Timestamp mismatch"
+
+    *   `application/json`: `object`
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `message` | `string` |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "message": "Auth request time is out of sync, please check that both client and server have correct time. The difference between clocks has to be smaller than 5 minutes"
     }
     ```
 
@@ -354,10 +400,10 @@ Core note operations
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -370,10 +416,10 @@ Core note operations
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -400,9 +446,9 @@ Core note operations
 
 | Name | Description |
 | --- | --- |
-| `taskId`  <br>_required_ | `string` |
+| `taskId`  <br>_required_ | `string`  <br>Task group identifier |
 | `eraseNotes` | `boolean` |
-| `last`  <br>_required_ | `boolean` |
+| `last`  <br>_required_ | `boolean`  <br>Whether this is the last request of this task group |
 
 **Responses**
 
@@ -430,17 +476,34 @@ Core note operations
 
 === "200: Note content"
 
-    === "`text/html`: `string`"
+    *   `application/json`: [`Blob`](#schema-Blob)
 
-    === "`text/plain`: `string`"
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
 
-    === "`application/json`: `object`"
+    | Property | Description |
+    | --- | --- |
+    | `blobId` | `string` |
+    | `content` | `string \| null`  <br>`null` if not text. |
+    | `contentLength` | `integer` |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
-        ```json
-        {}
-        ```
+    </div>
+    <div class="trilium-multicolumn-column">
 
-    === "`application/octet-stream`: `string (binary)`"
+    ```json
+    {
+        "blobId": "8iqMIB8eiY1tPYmElfjm",
+        "content": "string",
+        "contentLength": 0,
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
+    }
+    ```
+
+    </div>
+    </div>
 
 === "404: Note not found"
 
@@ -484,8 +547,8 @@ Core note operations
             "mime": "string",
             "title": "string",
             "blobId": "string",
-            "dateModified": "2019-08-24T14:15:22Z",
-            "utcDateModified": "2019-08-24T14:15:22Z"
+            "dateModified": "2025-02-14 08:19:59.203+0100",
+            "utcDateModified": "2025-02-13 07:42:47.698Z"
         }
     ]
 }
@@ -527,20 +590,20 @@ Core note operations
 
     | Property | Description |
     | --- | --- |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
 
     ```json
     {
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -780,10 +843,10 @@ Core note operations
             "mime": "text/html",
             "isProtected": true,
             "blobId": "string",
-            "dateCreated": "2019-08-24T14:15:22Z",
-            "dateModified": "2019-08-24T14:15:22Z",
-            "utcDateCreated": "2019-08-24T14:15:22Z",
-            "utcDateModified": "2019-08-24T14:15:22Z"
+            "dateCreated": "2025-02-14 08:19:59.203+0100",
+            "dateModified": "2025-02-14 08:19:59.203+0100",
+            "utcDateCreated": "2025-02-13 07:42:47.698Z",
+            "utcDateModified": "2025-02-13 07:42:47.698Z"
         },
         "branch": {
             "branchId": "string",
@@ -829,10 +892,10 @@ Core note operations
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -845,10 +908,10 @@ Core note operations
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -883,8 +946,8 @@ Core note operations
     | `title` | `string` |
     | `type` | [`NoteType`](#schema-NoteType)  <br>One of `text`, `code`, `render`, `file`, `image`, `search`, `relationMap`, `book`, `noteMap`, `mermaid`, `canvas`, `webView`, `launcher`, `doc`, `contentWidget`, `mindMap`, `geoMap`. |
     | `mime` | `string` |
-    | `dateCreated` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -896,8 +959,8 @@ Core note operations
         "title": "string",
         "type": "text",
         "mime": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -982,8 +1045,8 @@ Core note operations
     | `mime`  <br>_required_ | `string` |
     | `title`  <br>_required_ | `string` |
     | `blobId` | `string` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -996,8 +1059,8 @@ Core note operations
         "mime": "string",
         "title": "string",
         "blobId": "string",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -1173,6 +1236,47 @@ Core note operations
 === "204: Note updated from file"
 
     No content.
+
+### Retrieve the timestamps of several notes at once
+
+`POST /api/notes/metadata` · `notesMetadata`
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Request body** (required)
+
+*   `application/json`: `object`
+
+<div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+<div class="trilium-multicolumn-column">
+
+| Property | Description |
+| --- | --- |
+| `noteIds` | `array of string` |
+
+</div>
+<div class="trilium-multicolumn-column">
+
+```json
+{
+    "noteIds": [
+        "string"
+    ]
+}
+```
+
+</div>
+</div>
+
+**Responses**
+
+=== "200: The timestamps of each note found, keyed by note ID"
+
+    *   `application/json`: `object`
+
+    ```json
+    {}
+    ```
 
 ### Get image from note
 
@@ -1432,10 +1536,10 @@ Note tree structure and branches
                 "mime": "text/html",
                 "isProtected": true,
                 "blobId": "string",
-                "dateCreated": "2019-08-24T14:15:22Z",
-                "dateModified": "2019-08-24T14:15:22Z",
-                "utcDateCreated": "2019-08-24T14:15:22Z",
-                "utcDateModified": "2019-08-24T14:15:22Z"
+                "dateCreated": "2025-02-14 08:19:59.203+0100",
+                "dateModified": "2025-02-14 08:19:59.203+0100",
+                "utcDateCreated": "2025-02-13 07:42:47.698Z",
+                "utcDateModified": "2025-02-13 07:42:47.698Z"
             }
         ],
         "branches": [
@@ -1524,10 +1628,10 @@ Note tree structure and branches
                 "mime": "text/html",
                 "isProtected": true,
                 "blobId": "string",
-                "dateCreated": "2019-08-24T14:15:22Z",
-                "dateModified": "2019-08-24T14:15:22Z",
-                "utcDateCreated": "2019-08-24T14:15:22Z",
-                "utcDateModified": "2019-08-24T14:15:22Z"
+                "dateCreated": "2025-02-14 08:19:59.203+0100",
+                "dateModified": "2025-02-14 08:19:59.203+0100",
+                "utcDateCreated": "2025-02-13 07:42:47.698Z",
+                "utcDateModified": "2025-02-13 07:42:47.698Z"
             }
         ],
         "branches": [
@@ -1573,9 +1677,9 @@ Note tree structure and branches
 
 | Name | Description |
 | --- | --- |
-| `taskId`  <br>_required_ | `string` |
+| `taskId`  <br>_required_ | `string`  <br>Task group identifier |
 | `eraseNotes` | `boolean` |
-| `last`  <br>_required_ | `boolean` |
+| `last`  <br>_required_ | `boolean`  <br>Whether this is the last request of this task group |
 
 **Responses**
 
@@ -1588,7 +1692,7 @@ Note tree structure and branches
 
     | Property | Description |
     | --- | --- |
-    | `noteDeleted` | `boolean` |
+    | `noteDeleted` | `boolean`  <br>Whether the last note clone was deleted |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -2373,8 +2477,8 @@ File attachments
             "mime": "string",
             "title": "string",
             "blobId": "string",
-            "dateModified": "2019-08-24T14:15:22Z",
-            "utcDateModified": "2019-08-24T14:15:22Z"
+            "dateModified": "2025-02-14 08:19:59.203+0100",
+            "utcDateModified": "2025-02-13 07:42:47.698Z"
         }
     ]
     ```
@@ -2412,8 +2516,8 @@ File attachments
 | `mime`  <br>_required_ | `string` |
 | `title`  <br>_required_ | `string` |
 | `blobId` | `string` |
-| `dateModified` | `string (date-time)` |
-| `utcDateModified` | `string (date-time)` |
+| `dateModified` | [`DateTime`](#schema-DateTime) |
+| `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
 </div>
 <div class="trilium-multicolumn-column">
@@ -2426,8 +2530,8 @@ File attachments
     "mime": "string",
     "title": "string",
     "blobId": "string",
-    "dateModified": "2019-08-24T14:15:22Z",
-    "utcDateModified": "2019-08-24T14:15:22Z"
+    "dateModified": "2025-02-14 08:19:59.203+0100",
+    "utcDateModified": "2025-02-13 07:42:47.698Z"
 }
 ```
 
@@ -2451,8 +2555,8 @@ File attachments
     | `mime`  <br>_required_ | `string` |
     | `title`  <br>_required_ | `string` |
     | `blobId` | `string` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -2465,8 +2569,8 @@ File attachments
         "mime": "string",
         "title": "string",
         "blobId": "string",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -2516,8 +2620,8 @@ File attachments
     | `mime`  <br>_required_ | `string` |
     | `title`  <br>_required_ | `string` |
     | `blobId` | `string` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -2530,8 +2634,8 @@ File attachments
         "mime": "string",
         "title": "string",
         "blobId": "string",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -2567,8 +2671,8 @@ File attachments
     | `mime`  <br>_required_ | `string` |
     | `title`  <br>_required_ | `string` |
     | `blobId` | `string` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -2581,8 +2685,8 @@ File attachments
         "mime": "string",
         "title": "string",
         "blobId": "string",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -2701,10 +2805,10 @@ File attachments
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -2717,10 +2821,10 @@ File attachments
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -3017,8 +3121,8 @@ Note revision history
             "title": "string",
             "type": "text",
             "mime": "string",
-            "dateCreated": "2019-08-24T14:15:22Z",
-            "utcDateCreated": "2019-08-24T14:15:22Z"
+            "dateCreated": "2025-02-14 08:19:59.203+0100",
+            "utcDateCreated": "2025-02-13 07:42:47.698Z"
         }
     ]
     ```
@@ -3069,8 +3173,8 @@ Note revision history
     | `title` | `string` |
     | `type` | [`NoteType`](#schema-NoteType)  <br>One of `text`, `code`, `render`, `file`, `image`, `search`, `relationMap`, `book`, `noteMap`, `mermaid`, `canvas`, `webView`, `launcher`, `doc`, `contentWidget`, `mindMap`, `geoMap`. |
     | `mime` | `string` |
-    | `dateCreated` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -3082,8 +3186,8 @@ Note revision history
         "title": "string",
         "type": "text",
         "mime": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -3163,10 +3267,10 @@ Note revision history
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -3179,10 +3283,10 @@ Note revision history
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -3300,10 +3404,10 @@ Note revision history
             "mime": "text/html",
             "isProtected": true,
             "blobId": "string",
-            "dateCreated": "2019-08-24T14:15:22Z",
-            "dateModified": "2019-08-24T14:15:22Z",
-            "utcDateCreated": "2019-08-24T14:15:22Z",
-            "utcDateModified": "2019-08-24T14:15:22Z"
+            "dateCreated": "2025-02-14 08:19:59.203+0100",
+            "dateModified": "2025-02-14 08:19:59.203+0100",
+            "utcDateCreated": "2025-02-13 07:42:47.698Z",
+            "utcDateModified": "2025-02-13 07:42:47.698Z"
         }
     ]
     ```
@@ -3551,10 +3655,10 @@ Search and discovery
             "mime": "text/html",
             "isProtected": true,
             "blobId": "string",
-            "dateCreated": "2019-08-24T14:15:22Z",
-            "dateModified": "2019-08-24T14:15:22Z",
-            "utcDateCreated": "2019-08-24T14:15:22Z",
-            "utcDateModified": "2019-08-24T14:15:22Z"
+            "dateCreated": "2025-02-14 08:19:59.203+0100",
+            "dateModified": "2025-02-14 08:19:59.203+0100",
+            "utcDateCreated": "2025-02-13 07:42:47.698Z",
+            "utcDateModified": "2025-02-13 07:42:47.698Z"
         }
     ]
     ```
@@ -3707,10 +3811,10 @@ Import and export operations
             "mime": "text/html",
             "isProtected": true,
             "blobId": "string",
-            "dateCreated": "2019-08-24T14:15:22Z",
-            "dateModified": "2019-08-24T14:15:22Z",
-            "utcDateCreated": "2019-08-24T14:15:22Z",
-            "utcDateModified": "2019-08-24T14:15:22Z"
+            "dateCreated": "2025-02-14 08:19:59.203+0100",
+            "dateModified": "2025-02-14 08:19:59.203+0100",
+            "utcDateCreated": "2025-02-13 07:42:47.698Z",
+            "utcDateModified": "2025-02-13 07:42:47.698Z"
         }
     }
     ```
@@ -3741,6 +3845,156 @@ Import and export operations
 **Responses**
 
 === "200: Import results"
+
+    No content.
+
+## <span class="tn-icon bx bx-file"></span> OCR
+
+Text recognition
+
+### Process OCR for a specific note
+
+`POST /api/ocr/process-note/{noteId}` · `ocrProcessNote`
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `noteId`  <br>_required_ | `string`  <br>12-character note ID |
+
+**Request body**
+
+*   `application/json`: `object`
+
+<div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+<div class="trilium-multicolumn-column">
+
+| Property | Description |
+| --- | --- |
+| `language` | `string`  <br>Tesseract language code to use (e.g. 'eng', 'fra', 'deu', 'eng+fra'). If omitted, the language is resolved automatically from the note's language label, the enabled content languages, or the UI locale. |
+| `forceReprocess` | `boolean`  <br>Force reprocessing even if OCR already exists |
+
+</div>
+<div class="trilium-multicolumn-column">
+
+```json
+{
+    "language": "string",
+    "forceReprocess": false
+}
+```
+
+</div>
+</div>
+
+**Responses**
+
+=== "200: OCR processing completed successfully"
+
+    No content.
+
+=== "400: Bad request - unsupported file type"
+
+    No content.
+
+=== "404: Note not found"
+
+    No content.
+
+=== "500: Internal server error"
+
+    No content.
+
+### Process OCR for a specific attachment
+
+`POST /api/ocr/process-attachment/{attachmentId}` · `ocrProcessAttachment`
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `attachmentId`  <br>_required_ | `string`  <br>ID of the attachment to process |
+
+**Request body**
+
+*   `application/json`: `object`
+
+<div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+<div class="trilium-multicolumn-column">
+
+| Property | Description |
+| --- | --- |
+| `language` | `string`  <br>Tesseract language code to use (e.g. 'eng', 'fra', 'deu', 'eng+fra'). If omitted, the language is resolved automatically from the owner note's language label, the enabled content languages, or the UI locale. |
+| `forceReprocess` | `boolean`  <br>Force reprocessing even if OCR already exists |
+
+</div>
+<div class="trilium-multicolumn-column">
+
+```json
+{
+    "language": "string",
+    "forceReprocess": false
+}
+```
+
+</div>
+</div>
+
+**Responses**
+
+=== "200: OCR processing completed successfully"
+
+    No content.
+
+=== "400: Bad request - unsupported file type"
+
+    No content.
+
+=== "404: Attachment not found"
+
+    No content.
+
+=== "500: Internal server error"
+
+    No content.
+
+### Process OCR for all images without existing OCR results
+
+`POST /api/ocr/batch-process` · `ocrBatchProcess`
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Responses**
+
+=== "200: Batch processing initiated successfully"
+
+    No content.
+
+=== "400: Bad request - OCR disabled or already processing"
+
+    No content.
+
+=== "500: Internal server error"
+
+    No content.
+
+### Get batch OCR processing progress
+
+`GET /api/ocr/batch-progress` · `ocrBatchProgress`
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Responses**
+
+=== "200: Batch processing progress information"
+
+    No content.
+
+=== "500: Internal server error"
 
     No content.
 
@@ -3820,6 +4074,7 @@ Synchronization between instances
 | `instanceId`  <br>_required_ | `string` |
 | `lastEntityChangeId`  <br>_required_ | `integer` |
 | `logMarkerId`  <br>_required_ | `string` |
+| `maxBlobContentSize` | `integer`  <br>If set, blob rows whose content exceeds this many bytes are returned with empty content; the entity\_change metadata (including its hash) is unaffected. |
 
 **Responses**
 
@@ -3833,8 +4088,8 @@ Synchronization between instances
     | Property | Description |
     | --- | --- |
     | `entityChanges` | array of [`EntityChange`](#schema-EntityChange) |
-    | `lastEntityChangeId` | `integer` |
-    | `outstandingPullCount` | `integer` |
+    | `lastEntityChangeId` | `integer`  <br>If `outstandingPullCount > 0`, pass this as parameter in your next request to continue. |
+    | `outstandingPullCount` | `integer`  <br>Number of changes not yet returned by the remote. |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -3861,6 +4116,8 @@ Synchronization between instances
 ### Push sync changes
 
 `PUT /api/sync/update` · `pushSyncChanges`
+
+Basic usage: set `pageCount = 1`, `pageIndex = 0`, and omit `requestId`. Supply your entity changes in the request body.
 
 **Authorization**: `sessionAuth` or `tokenAuth`
 
@@ -4396,20 +4653,23 @@ System options and settings
 
     | Property | Description |
     | --- | --- |
-    | `syncVersion` | `integer` |
-    | `schemaVersion` | `integer` |
-    | `documentSecret` | `string` |
-    | `maxSyncId` | `integer` |
+    | `options`  <br>_required_ | `array of object` |
+    | `options[].name`  <br>_required_ | `string`  <br>Either `"documentId"` or `"documentSecret"`. |
+    | `options[].value`  <br>_required_ | `string` |
+    | `syncVersion`  <br>_required_ | `integer` |
 
     </div>
     <div class="trilium-multicolumn-column">
 
     ```json
     {
-        "syncVersion": 0,
-        "schemaVersion": 0,
-        "documentSecret": "string",
-        "maxSyncId": 0
+        "options": [
+            {
+                "name": "string",
+                "value": "string"
+            }
+        ],
+        "syncVersion": 0
     }
     ```
 
@@ -5226,7 +5486,7 @@ Returns an empty array if no recovery codes are set, otherwise an object listing
             "etapiTokenId": "string",
             "name": "string",
             "token": "string",
-            "dateCreated": "2019-08-24T14:15:22Z",
+            "dateCreated": "2025-02-14 08:19:59.203+0100",
             "isDeleted": true
         }
     ]
@@ -5275,7 +5535,7 @@ Returns an empty array if no recovery codes are set, otherwise an object listing
     | `etapiTokenId` | `string` |
     | `name` | `string` |
     | `token` | `string` |
-    | `dateCreated` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
     | `isDeleted` | `boolean` |
 
     </div>
@@ -5286,7 +5546,7 @@ Returns an empty array if no recovery codes are set, otherwise an object listing
         "etapiTokenId": "string",
         "name": "string",
         "token": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
         "isDeleted": true
     }
     ```
@@ -5361,7 +5621,7 @@ Returns an empty array if no recovery codes are set, otherwise an object listing
     | `etapiTokenId` | `string` |
     | `name` | `string` |
     | `token` | `string` |
-    | `dateCreated` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
     | `isDeleted` | `boolean` |
 
     </div>
@@ -5372,7 +5632,7 @@ Returns an empty array if no recovery codes are set, otherwise an object listing
         "etapiTokenId": "string",
         "name": "string",
         "token": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
         "isDeleted": true
     }
     ```
@@ -5413,10 +5673,10 @@ Special note types (calendar, inbox)
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -5429,10 +5689,10 @@ Special note types (calendar, inbox)
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -5505,10 +5765,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -5521,10 +5781,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -5560,10 +5820,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -5576,10 +5836,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -5615,10 +5875,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -5631,10 +5891,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -5670,10 +5930,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -5686,10 +5946,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -5719,10 +5979,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -5735,10 +5995,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -5768,10 +6028,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -5784,10 +6044,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -5824,10 +6084,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -5840,10 +6100,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -5877,10 +6137,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
             "mime": "text/html",
             "isProtected": true,
             "blobId": "string",
-            "dateCreated": "2019-08-24T14:15:22Z",
-            "dateModified": "2019-08-24T14:15:22Z",
-            "utcDateCreated": "2019-08-24T14:15:22Z",
-            "utcDateModified": "2019-08-24T14:15:22Z"
+            "dateCreated": "2025-02-14 08:19:59.203+0100",
+            "dateModified": "2025-02-14 08:19:59.203+0100",
+            "utcDateCreated": "2025-02-13 07:42:47.698Z",
+            "utcDateModified": "2025-02-13 07:42:47.698Z"
         }
     ]
     ```
@@ -5914,10 +6174,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -5930,10 +6190,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -6006,10 +6266,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -6022,10 +6282,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -6080,10 +6340,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -6096,10 +6356,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -6154,10 +6414,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -6170,10 +6430,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -6226,10 +6486,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -6242,10 +6502,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -6492,10 +6752,10 @@ External integrations (clipper, sender)
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -6508,10 +6768,10 @@ External integrations (clipper, sender)
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -6568,10 +6828,10 @@ External integrations (clipper, sender)
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -6584,10 +6844,10 @@ External integrations (clipper, sender)
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -6720,10 +6980,10 @@ External integrations (clipper, sender)
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -6736,10 +6996,10 @@ External integrations (clipper, sender)
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -6794,10 +7054,10 @@ External integrations (clipper, sender)
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -6810,10 +7070,10 @@ External integrations (clipper, sender)
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -6834,19 +7094,110 @@ Miscellaneous utilities
 
 | Name | Description |
 | --- | --- |
-| `format` | `string`  <br>One of `prometheus`, `json`. |
+| `format` | `string`  <br>Response format - 'prometheus' (default) for Prometheus text format, 'json' for JSON. One of `prometheus`, `json`. |
 
 **Responses**
 
-=== "200: System metrics"
+=== "200: Instance metrics"
+
+    === "`text/plain`: `string`"
 
     === "`application/json`: `object`"
 
+        <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+        <div class="trilium-multicolumn-column">
+
+        | Property | Description |
+        | --- | --- |
+        | `version` | `object` |
+        | `version.app` | `string` |
+        | `version.db` | `integer` |
+        | `version.node` | `string` |
+        | `version.sync` | `integer` |
+        | `version.buildDate` | `string` |
+        | `version.buildRevision` | `string` |
+        | `database` | `object` |
+        | `database.totalNotes` | `integer` |
+        | `database.deletedNotes` | `integer` |
+        | `database.activeNotes` | `integer` |
+        | `database.protectedNotes` | `integer` |
+        | `database.totalAttachments` | `integer` |
+        | `database.deletedAttachments` | `integer` |
+        | `database.activeAttachments` | `integer` |
+        | `database.totalRevisions` | `integer` |
+        | `database.totalBranches` | `integer` |
+        | `database.totalAttributes` | `integer` |
+        | `database.totalBlobs` | `integer` |
+        | `database.totalEtapiTokens` | `integer` |
+        | `database.totalRecentNotes` | `integer` |
+        | `noteTypes` | `object` |
+        | `attachmentTypes` | `object` |
+        | `statistics` | `object` |
+        | `statistics.oldestNote` | `string \| null` |
+        | `statistics.newestNote` | `string \| null` |
+        | `statistics.lastModified` | `string \| null` |
+        | `statistics.databaseSizeBytes` | `integer \| null` |
+        | `timestamp` | `string` |
+
+        </div>
+        <div class="trilium-multicolumn-column">
+
         ```json
-        {}
+        {
+            "version": {
+                "app": "0.91.6",
+                "db": 231,
+                "node": "v18.17.0",
+                "sync": 35,
+                "buildDate": "2024-09-07T18:36:34Z",
+                "buildRevision": "7c0d6930fa8f20d269dcfbcbc8f636a25f6bb9a7"
+            },
+            "database": {
+                "totalNotes": 1234,
+                "deletedNotes": 56,
+                "activeNotes": 1178,
+                "protectedNotes": 23,
+                "totalAttachments": 89,
+                "deletedAttachments": 5,
+                "activeAttachments": 84,
+                "totalRevisions": 567,
+                "totalBranches": 1200,
+                "totalAttributes": 345,
+                "totalBlobs": 678,
+                "totalEtapiTokens": 3,
+                "totalRecentNotes": 50
+            },
+            "noteTypes": {
+                "text": 800,
+                "code": 200,
+                "image": 100,
+                "file": 50
+            },
+            "attachmentTypes": {
+                "image/png": 45,
+                "image/jpeg": 30,
+                "application/pdf": 14
+            },
+            "statistics": {
+                "oldestNote": "2020-01-01T00:00:00.000Z",
+                "newestNote": "2024-12-01T12:00:00.000Z",
+                "lastModified": "2024-12-01T11:30:00.000Z",
+                "databaseSizeBytes": 52428800
+            },
+            "timestamp": "2024-12-01T12:00:00.000Z"
+        }
         ```
 
-    === "`text/plain`: `string`"
+        </div>
+        </div>
+
+=== "400: Invalid format parameter"
+
+    No content.
+
+=== "500: Error collecting metrics"
+
+    No content.
 
 ### Run system diagnostics
 
@@ -7304,16 +7655,26 @@ Lists the icons that the icon picker searches. The bootstrap data names only the
 | `mime`  <br>_required_ | `string`  <br>MIME type |
 | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
 | `blobId` | `string`  <br>ID of content blob |
-| `dateCreated` | `string (date-time)` |
-| `dateModified` | `string (date-time)` |
-| `utcDateCreated` | `string (date-time)` |
-| `utcDateModified` | `string (date-time)` |
+| `dateCreated` | [`DateTime`](#schema-DateTime) |
+| `dateModified` | [`DateTime`](#schema-DateTime) |
+| `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+| `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
 ### <a id="schema-NoteType"></a>`NoteType`
 
 Type: `string`
 
 One of `text`, `code`, `render`, `file`, `image`, `search`, `relationMap`, `book`, `noteMap`, `mermaid`, `canvas`, `webView`, `launcher`, `doc`, `contentWidget`, `mindMap`, `geoMap`.
+
+### <a id="schema-Blob"></a>`Blob`
+
+| Property | Description |
+| --- | --- |
+| `blobId` | `string` |
+| `content` | `string \| null`  <br>`null` if not text. |
+| `contentLength` | `integer` |
+| `dateModified` | [`DateTime`](#schema-DateTime) |
+| `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
 ### <a id="schema-Branch"></a>`Branch`
 
@@ -7348,8 +7709,8 @@ One of `text`, `code`, `render`, `file`, `image`, `search`, `relationMap`, `book
 | `mime`  <br>_required_ | `string` |
 | `title`  <br>_required_ | `string` |
 | `blobId` | `string` |
-| `dateModified` | `string (date-time)` |
-| `utcDateModified` | `string (date-time)` |
+| `dateModified` | [`DateTime`](#schema-DateTime) |
+| `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
 ### <a id="schema-Revision"></a>`Revision`
 
@@ -7360,8 +7721,8 @@ One of `text`, `code`, `render`, `file`, `image`, `search`, `relationMap`, `book
 | `title` | `string` |
 | `type` | [`NoteType`](#schema-NoteType)  <br>One of `text`, `code`, `render`, `file`, `image`, `search`, `relationMap`, `book`, `noteMap`, `mermaid`, `canvas`, `webView`, `launcher`, `doc`, `contentWidget`, `mindMap`, `geoMap`. |
 | `mime` | `string` |
-| `dateCreated` | `string (date-time)` |
-| `utcDateCreated` | `string (date-time)` |
+| `dateCreated` | [`DateTime`](#schema-DateTime) |
+| `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
 ### <a id="schema-SearchResult"></a>`SearchResult`
 
@@ -7382,14 +7743,28 @@ One of `text`, `code`, `render`, `file`, `image`, `search`, `relationMap`, `book
 | `entityChange.changeId` | `string` |
 | `entity` | `object` |
 
+### <a id="schema-DateTime"></a>`DateTime`
+
+Type: `string`
+
+Example: `2025-02-14 08:19:59.203+0100`
+
+### <a id="schema-UtcDateTime"></a>`UtcDateTime`
+
+Result of `new Date().toISOString().replace('T', ' ')`
+
+Type: `string`
+
+Example: `2025-02-13 07:42:47.698Z`
+
 ### <a id="schema-Timestamps"></a>`Timestamps`
 
 | Property | Description |
 | --- | --- |
-| `dateCreated` | `string (date-time)` |
-| `dateModified` | `string (date-time)` |
-| `utcDateCreated` | `string (date-time)` |
-| `utcDateModified` | `string (date-time)` |
+| `dateCreated` | [`DateTime`](#schema-DateTime) |
+| `dateModified` | [`DateTime`](#schema-DateTime) |
+| `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+| `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
 ### <a id="schema-CreateNoteRequest"></a>`CreateNoteRequest`
 
@@ -7436,5 +7811,5 @@ One of `text`, `code`, `render`, `file`, `image`, `search`, `relationMap`, `book
 | `etapiTokenId` | `string` |
 | `name` | `string` |
 | `token` | `string` |
-| `dateCreated` | `string (date-time)` |
+| `dateCreated` | [`DateTime`](#schema-DateTime) |
 | `isDeleted` | `boolean` |
