@@ -42,20 +42,35 @@ export default function LazyComponent({ loader }: LazyComponentProps) {
     );
 }
 
+/** The modules {@link useLazyModule} has loaded, by their loader. */
+const loadedModules = new Map<() => Promise<unknown>, unknown>();
+
+/**
+ * Starts loading the module of `load`, so that {@link useLazyModule} returns it from the first
+ * render once it has loaded, as for a menu about to open.
+ */
+export function preloadLazyModule<T>(load: () => Promise<T>) {
+    if (loadedModules.has(load)) return;
+    void load().then((loaded) => loadedModules.set(load, loaded));
+}
+
 /**
  * Returns the module `load` imports, once the component that calls it has mounted, and `undefined`
- * until then. `load` must keep its identity across renders, so it is declared at module level.
+ * until then. A module loaded before is returned from the first render. `load` must keep its
+ * identity across renders, so it is declared at module level.
  */
 export function useLazyModule<T>(load: () => Promise<T>) {
-    const [ module, setModule ] = useState<T>();
+    const [ module, setModule ] = useState(() => loadedModules.get(load) as T | undefined);
     useEffect(() => {
+        if (module) return;
         let cancelled = false;
         void load().then((loaded) => {
+            loadedModules.set(load, loaded);
             if (!cancelled) setModule(() => loaded);
         });
         return () => {
             cancelled = true;
         };
-    }, [ load ]);
+    }, [ load, module ]);
     return module;
 }

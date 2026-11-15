@@ -1,7 +1,7 @@
 import $ from "jquery";
 import { type ComponentChildren, render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
     electron: true,
@@ -60,7 +60,10 @@ vi.mock("./components/OptionsPageHeader", () => ({
 }));
 
 import { formatSize } from "../../../services/utils";
+import { preloadDropdownPopups } from "../../react/Dropdown";
 import TranscriptionSettings from "./transcription";
+
+beforeAll(() => preloadDropdownPopups());
 
 globalThis.ResizeObserver = globalThis.ResizeObserver ?? (class {
     observe() {}

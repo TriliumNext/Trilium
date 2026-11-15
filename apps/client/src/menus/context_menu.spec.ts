@@ -119,7 +119,7 @@ describe("contextMenu", () => {
     it("hides for `closeOpenPopups()`, as a keyboard shortcut opening a dialog calls it", async () => {
         buildPage();
         const contextMenu = await buildContextMenu();
-        const { closeOpenPopups } = await import("../widgets/react/Popup");
+        const { closeOpenPopups } = await import("../widgets/react/open_popups");
         const onHide = vi.fn();
 
         await contextMenu.show({ x: 10, y: 20, items, selectMenuItemHandler: () => {}, onHide });
@@ -134,7 +134,7 @@ describe("contextMenu", () => {
     it("cancels a menu still loading `Menu` for `closeOpenPopups()`", async () => {
         buildPage();
         const contextMenu = await buildContextMenu();
-        const { closeOpenPopups } = await import("../widgets/react/Popup");
+        const { closeOpenPopups } = await import("../widgets/react/open_popups");
         const onShow = vi.fn();
 
         const shown = contextMenu.show({ x: 10, y: 20, items, selectMenuItemHandler: () => {}, onShow });

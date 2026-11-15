@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ActionKeyboardShortcut } from "@triliumnext/commons";
 import appContext from "../components/app_context.js";
-import { closeOpenPopups } from "../widgets/react/Popup";
+import { closeOpenPopups } from "../widgets/react/open_popups";
 
 // `appContext` pulls in a very large dependency graph (CKEditor, CodeMirror,
 // Tabulator, …) and at module-load `keyboard_actions.ts` only needs
@@ -14,7 +14,7 @@ vi.mock("../components/app_context.js", () => ({
     }
 }));
 
-vi.mock("../widgets/react/Popup", () => ({ closeOpenPopups: vi.fn() }));
+vi.mock("../widgets/react/open_popups", () => ({ closeOpenPopups: vi.fn() }));
 
 // `updateDisplayedShortcuts` formats shortcuts via keyboard_shortcut_display, which resolves each key
 // label through i18n. Stub `t` to resolve the shortcut-key labels the way the translation files do.

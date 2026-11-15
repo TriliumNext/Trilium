@@ -1,6 +1,6 @@
 import { type ComponentChildren, render, type RefObject } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type FNote from "../../entities/fnote";
 import type { ViewScope } from "../../services/link";
@@ -140,8 +140,11 @@ vi.mock("../note_icon", () => ({ default: () => <div className="note-icon-stub" 
 vi.mock("../note_title", () => ({ default: () => <div className="note-title-stub" /> }));
 
 import Component from "../../components/component";
+import { preloadDropdownPopups } from "../react/Dropdown";
 import { ParentComponent } from "../react/react_utils";
 import PopupEditor from "./PopupEditor";
+
+beforeAll(() => preloadDropdownPopups());
 
 const ATTACHMENT_SCOPE: ViewScope = { viewMode: "attachments", attachmentId: "att-1" };
 /** A view mode of the note itself, as the sidebar's note map card expands into the popup with. */

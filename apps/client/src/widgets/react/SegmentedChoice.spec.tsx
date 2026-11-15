@@ -1,7 +1,7 @@
 import $ from "jquery";
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // The collapsed rendering is chosen at render time, so the screen has to be answerable per test.
 // Hoisted alongside the mock: `ActionButton` reads `isMobile()` as its module loads, which happens
@@ -24,7 +24,10 @@ vi.mock("./hooks/tooltip", async (importOriginal) => ({
     useTooltip: () => ({ showTooltip: vi.fn(), hideTooltip: vi.fn() })
 }));
 
+import { preloadDropdownPopups } from "./Dropdown";
 import SegmentedChoice from "./SegmentedChoice";
+
+beforeAll(() => preloadDropdownPopups());
 
 // happy-dom has no ResizeObserver; the dropdown only needs observe/disconnect to exist.
 class ResizeObserverStub {

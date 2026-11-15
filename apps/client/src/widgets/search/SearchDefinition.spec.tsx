@@ -1,5 +1,5 @@
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import FAttribute from "../../entities/fattribute";
 import FNote from "../../entities/fnote";
@@ -11,7 +11,10 @@ import toast from "../../services/toast";
 import { renderInto } from "../../test/render";
 import { ActionDefinition } from "../bulk_actions/abstract_bulk_action";
 import DeleteNoteBulkAction from "../bulk_actions/note/delete_note";
+import { preloadDropdownPopups } from "../react/Dropdown";
 import SearchDefinition from "./SearchDefinition";
+
+beforeAll(() => preloadDropdownPopups());
 
 // Echoes the key, so a spec can find a button by its label.
 vi.mock("../../services/i18n", async (importOriginal) => ({

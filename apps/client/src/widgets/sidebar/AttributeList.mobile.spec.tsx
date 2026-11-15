@@ -1,6 +1,6 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import FNote from "../../entities/fnote";
 
@@ -30,7 +30,10 @@ import noteAttributeCache from "../../services/note_attribute_cache";
 import options from "../../services/options";
 import server from "../../services/server";
 import { buildNote } from "../../test/easy-froca";
+import { preloadDropdownPopups } from "../react/Dropdown";
 import AttributeList from "./AttributeList";
+
+beforeAll(() => preloadDropdownPopups());
 
 describe("AttributeList on a phone", () => {
     let container: HTMLElement;

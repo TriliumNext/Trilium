@@ -1,5 +1,5 @@
 import { act } from "preact/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import type NoteContext from "../../components/note_context";
 import type { MenuCommandItem } from "../../menus/context_menu";
@@ -7,9 +7,12 @@ import froca from "../../services/froca";
 import protectedSessionHolder from "../../services/protected_session_holder";
 import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
+import { preloadDropdownPopups } from "../react/Dropdown";
 import {
     BreadcrumbNoteTitle, BreadcrumbSeparator, buildChildNoteItems, noteTitleHtml
 } from "./Breadcrumb";
+
+beforeAll(() => preloadDropdownPopups());
 
 vi.mock("../../services/i18n", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../services/i18n")>()),

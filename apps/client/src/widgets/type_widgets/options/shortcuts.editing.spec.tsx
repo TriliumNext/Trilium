@@ -1,7 +1,7 @@
 import type { KeyboardShortcut } from "@triliumnext/commons";
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * Two actions clash on Ctrl+J, one of them also carries an OS-level shortcut, and two differ from
@@ -75,7 +75,10 @@ vi.mock("../../react/hooks/tooltip", async (importOriginal) => ({
     useStaticTooltip: vi.fn()
 }));
 
+import { preloadDropdownPopups } from "../../react/Dropdown";
 import ShortcutSettings from "./shortcuts";
+
+beforeAll(() => preloadDropdownPopups());
 
 let host: HTMLElement;
 

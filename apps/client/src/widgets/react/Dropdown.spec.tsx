@@ -1,8 +1,10 @@
 import { type ComponentChildren, render } from "preact";
 import { useRef } from "preact/hooks";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import Dropdown, { type DropdownHandle, DropdownPanel, type DropdownPanelProps } from "./Dropdown";
+import Dropdown, {
+    type DropdownHandle, DropdownPanel, type DropdownPanelProps, preloadDropdownPopups
+} from "./Dropdown";
 import { FormDropdownSubmenu, FormListItem } from "./FormList";
 import { MenuItemRows } from "./Menu";
 
@@ -19,6 +21,8 @@ vi.mock("../../services/utils", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../services/utils")>()),
     isMobile: () => layout.onMobile
 }));
+
+beforeAll(() => preloadDropdownPopups());
 
 describe("Dropdown", () => {
     const host = document.createElement("div");

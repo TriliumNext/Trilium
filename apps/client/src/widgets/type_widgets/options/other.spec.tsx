@@ -1,7 +1,7 @@
 import { SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons/src/lib/shared_constants.js";
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
     stored: {} as Record<string, string>,
@@ -55,7 +55,10 @@ vi.mock("../../react/hooks/note_context", async (importOriginal) => ({
 
 vi.mock("./components/OptionsPageHeader", () => ({ default: () => <div className="header-stub" /> }));
 
+import { preloadDropdownPopups } from "../../react/Dropdown";
 import OtherSettings, { getSearchEngineChoice } from "./other";
+
+beforeAll(() => preloadDropdownPopups());
 
 let host: HTMLElement;
 

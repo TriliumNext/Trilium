@@ -7,7 +7,7 @@ import type { NotePresetId } from "../services/note_presets.js";
 import { onSystemBack } from "../services/system_back.js";
 import utils from "../services/utils.js";
 import { suspendModalFocusTraps } from "../widgets/react/modal_focustrap";
-import { registerOpenPopup } from "../widgets/react/Popup";
+import { registerOpenPopup } from "../widgets/react/open_popups";
 
 /**
  * Where the menu opens: beside a point, towards the right unless `orientation` says otherwise, or

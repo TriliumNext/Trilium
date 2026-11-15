@@ -1,6 +1,6 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * The images card: everything that happens to an image on its way in, compression included — the
@@ -84,7 +84,10 @@ vi.mock("../../react/hooks/note_context", async (importOriginal) => ({
 vi.mock("./components/OptionsPageHeader", () => ({ default: () => <div className="header-stub" /> }));
 vi.mock("./components/RelatedSettings", () => ({ default: () => <div className="related-stub" /> }));
 
+import { preloadDropdownPopups } from "../../react/Dropdown";
 import MediaSettings from "./media";
+
+beforeAll(() => preloadDropdownPopups());
 
 /** What an untouched install has: everything on, PNGs converted, as automatic shrinking always did. */
 const DEFAULTS: Record<string, string> = {

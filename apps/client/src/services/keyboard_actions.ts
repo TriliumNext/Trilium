@@ -4,7 +4,7 @@ import { formatShortcut, joinShortcut } from "./keyboard_shortcut_display.js";
 import shortcutService, { ShortcutBinding } from "./shortcuts.js";
 import { isPreAuthScreen, isShare } from "./utils.js";
 import type Component from "../components/component.js";
-import { closeOpenPopups } from "../widgets/react/Popup";
+import { closeOpenPopups } from "../widgets/react/open_popups";
 import type { ActionKeyboardShortcut } from "@triliumnext/commons";
 
 const keyboardActionRepo: Record<string, ActionKeyboardShortcut> = {};
