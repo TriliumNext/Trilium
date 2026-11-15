@@ -16,6 +16,8 @@
     "vite.config.mts",
     "vite-plugins.mts",
     "vite-plugins.spec.ts",
+    "translation-catalogues.mts",
+    "translation-catalogues.spec.ts",
     "vitest.config.ts",
     "vitest.config.mts",
     "src/**/*.test.ts",

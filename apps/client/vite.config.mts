@@ -5,12 +5,13 @@ import { join } from 'path';
 import { defineConfig } from 'vite';
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 
+import { translationCatalogues } from './translation-catalogues.mjs';
 import {
     flattenCssNesting, narrowThirdPartySelectors, shareTheme, stripUniverEmojiData,
     stripUniverHyphenation
 } from './vite-plugins.mjs';
 
-const assets = [ "assets", "stylesheets", "fonts", "translations" ];
+const assets = [ "assets", "stylesheets", "fonts" ];
 
 const isDev = process.env.NODE_ENV === "development";
 let plugins: any = [];
@@ -24,6 +25,7 @@ if (isDev) {
         stripUniverHyphenation(),
         stripUniverEmojiData(),
         narrowThirdPartySelectors(),
+        translationCatalogues(join(import.meta.dirname, "src/translations")),
         ...shareTheme()
     ];
 } else {
@@ -31,6 +33,7 @@ if (isDev) {
         stripUniverHyphenation(),
         stripUniverEmojiData(),
         narrowThirdPartySelectors(),
+        translationCatalogues(join(import.meta.dirname, "src/translations")),
         ...shareTheme(),
         viteStaticCopy({
             targets: assets.map((asset) => ({

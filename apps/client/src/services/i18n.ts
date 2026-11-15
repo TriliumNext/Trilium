@@ -34,7 +34,11 @@ export async function initLocale(locale: LOCALE_IDS = "en", scope: "app" | "entr
     i18next.use(initReactI18next);
     await i18next.use(i18nextHttpBackend).init({
         lng: locale,
-        fallbackLng: "en",
+        // Each catalogue arrives completed with the English strings its language lacks (see
+        // translation-catalogues.mts), so neither English nor a base language such as `pt` for
+        // `pt_br` is fetched as a fallback.
+        fallbackLng: false,
+        load: "currentOnly",
         ns: entryOnly ? [ ENTRY_NAMESPACE ] : [ APP_NAMESPACE, ENTRY_NAMESPACE ],
         defaultNS: entryOnly ? ENTRY_NAMESPACE : APP_NAMESPACE,
         // Resolving through the entry catalogue on a miss keeps every call site writing
