@@ -43,8 +43,13 @@ export function takeCatalogue(lng: string, ns: string): Promise<Catalogue> {
     return request;
 }
 
+/** The locales that read another locale's catalogues, as they have no folder of their own. */
+const CATALOGUE_LOCALES: Record<string, string> = {
+    en_rtl: "en"
+};
+
 async function fetchCatalogue(lng: string, ns: string): Promise<Catalogue> {
-    const url = `${window.glob.assetPath}/translations/${lng}/${ns}.json`;
+    const url = `${window.glob.assetPath}/translations/${CATALOGUE_LOCALES[lng] ?? lng}/${ns}.json`;
     const response = await fetch(url);
     if (!response.ok) {
         throw new Error(`Could not load ${url}: ${response.status} ${response.statusText}`.trim());

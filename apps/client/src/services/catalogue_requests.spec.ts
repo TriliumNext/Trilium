@@ -37,6 +37,12 @@ describe("catalogue requests", () => {
         expect(fetchMock).toHaveBeenCalledTimes(3);
     });
 
+    it("reads the English catalogues for English RTL, which has none of its own", async () => {
+        requestCatalogues("en_rtl", "entry");
+        expect(await takeCatalogue("en_rtl", "entry")).toEqual({ url: "assets/v1/translations/en/entry.json" });
+        expect(await takeCatalogue("en_rtl", "translation")).toEqual({ url: "assets/v1/translations/en/translation.json" });
+    });
+
     it("reports a catalogue the server does not have, and only to whoever takes it", async () => {
         fetchMock.mockImplementation(async () => new Response("missing", { status: 404, statusText: "Not Found" }));
         const unhandled = vi.fn();
