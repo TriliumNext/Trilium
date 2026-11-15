@@ -161,8 +161,8 @@ file as word-level snippets, which is the readable form of the prod bundle.
   another way.
 - **At an upgrade:** chunk names are content hashes, so `rebase` reports both chunks as `GONE`.
   Find the new ones (the dev chunk that defines `getFreeDrawSvgPath`, the prod chunk with
-  `size:e.strokeWidth*4.25`), carry the block and the hook over, and add the files with `open
-  --add`. The block copies perfect-freehand 1.2.0's arithmetic: if a release bumps
+  `size:e.strokeWidth*4.25`), `add` them to the rebased scratch repo, and carry the block and the
+  hook over. The block copies perfect-freehand 1.2.0's arithmetic: if a release bumps
   perfect-freehand, the outline spec fails until the block follows it.
 
 ## What the contract spec checks besides the patch

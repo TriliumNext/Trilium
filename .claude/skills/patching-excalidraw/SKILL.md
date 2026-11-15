@@ -1,6 +1,6 @@
 ---
 name: patching-excalidraw
-description: Use when changing, regenerating, checking or upgrading Trilium's patch of @excalidraw/excalidraw (`patches/@excalidraw__excalidraw@<version>.patch`): adding or editing a hunk in the dev bundle, the minified prod bundle or the `.d.ts` files, a new `UIOptions` hook or export, bumping Excalidraw to a new release (including Renovate's bump PR), a failing `excalidraw_contract.spec.ts`, `excalidraw_offsets.spec.ts` or `excalidraw_freedraw_outline.spec.ts`, an install that fails on the patch, the lockfile `patch_hash`, or "is the installed Excalidraw patched?". Covers what each hunk does and which Trilium code depends on it, the scratch-repo workflow that replaces `pnpm patch`, carrying the patch to a new release (three-way merge for the readable files, re-applying the minified prod changes by hand), and the upgrade checklist beyond the patch (asset paths, stylesheets, the three Excalidraw editors). Includes excalidraw_patch.mjs (check, open, changes, save, rebase); don't hand-roll a scratch repo, a hash update or a tar extraction.
+description: Use when changing, regenerating, checking or upgrading Trilium's patch of @excalidraw/excalidraw (`patches/@excalidraw__excalidraw@<version>.patch`): adding or editing a hunk in the dev bundle, the minified prod bundle or the `.d.ts` files, a new `UIOptions` hook or export, bumping Excalidraw to a new release (including Renovate's bump PR), a failing `excalidraw_contract.spec.ts`, `excalidraw_offsets.spec.ts` or `excalidraw_freedraw_outline.spec.ts`, an install that fails on the patch, the lockfile `patch_hash`, or "is the installed Excalidraw patched?". Covers what each hunk does and which Trilium code depends on it, the scratch-repo workflow that replaces `pnpm patch`, carrying the patch to a new release (three-way merge for the readable files, re-applying the minified prod changes by hand), and the upgrade checklist beyond the patch (asset paths, stylesheets, the three Excalidraw editors). Includes excalidraw_patch.mjs (check, open, add, changes, save, rebase); don't hand-roll a scratch repo, a hash update or a tar extraction.
 ---
 
 # Patching Excalidraw
@@ -46,7 +46,8 @@ directory (`<os tmp>/trilium-excalidraw-patch`, or `--dir`), and never runs pnpm
 | Command | Does |
 |---|---|
 | `check` | Checks that the workspace entry, the pinned versions, the hash in both lockfiles and the patch agree, and that each installed file is the patched one (by its git blob id, which the patch records). Exit code 1 on any mismatch |
-| `open` | Builds a scratch git repo for the patched version: the release's files staged as the base, the patch applied in the working tree. Confirms that it reproduces the patch byte for byte. Refuses to overwrite unsaved edits without `--force`. `--add <path,...>` also takes release files that the patch does not change yet |
+| `open` | Builds a scratch git repo for the patched version: the release's files staged as the base, the patch applied in the working tree. Confirms that it reproduces the patch byte for byte. Refuses to overwrite unsaved edits without `--force` |
+| `add <path...>` | Takes release files that the patch does not change yet into the scratch repo of `open` or `rebase`, keeping its edits |
 | `changes [file...]` | Prints the patch as word-level snippets, `[-removed-]{+added+}` with some context. The readable view of the minified prod bundle. `--version` reads another version's repo, `--context n` |
 | `save` | Checks that each script parses, writes the patch with `git diff --full-index --diff-algorithm=patience`, replaces the hash everywhere in both lockfiles and copies the files into `node_modules`. After a rebase it writes the new version's patch, moves the workspace entry and the pins, and deletes the old patch file. Refuses a patch that leaves a file unchanged without `--force` |
 | `rebase <version>` | Carries the patch onto another release: a three-way merge per file, the minified prod bundle reset to the release's own file for work by hand. Lists what needs attention |
@@ -70,9 +71,9 @@ directory (`<os tmp>/trilium-excalidraw-patch`, or `--dir`), and never runs pnpm
    at another call site that both bundles share, and check that the alias is not declared again in
    the scope you patch. If prod's `index.js` does not import a helper at all, the import would
    come from a content-hashed `chunk-*.js` file; choose another place for the change instead.
-   Code that only a chunk calls (the outline of a stroke, hunk 9) is patched in that chunk: `open
-   --add dist/dev/chunk-<hash>.js,dist/prod/chunk-<hash>.js` takes the two files into the scratch
-   repo, and once saved the patch lists them. A block of new code can be the same text in both
+   Code that only a chunk calls (the outline of a stroke, hunk 9) is patched in that chunk: `add
+   dist/dev/chunk-<hash>.js dist/prod/chunk-<hash>.js` takes the two files into the scratch repo,
+   and once saved the patch lists them. A block of new code can be the same text in both
    chunks, with only its call written in each bundle's names.
 5. Add the contract spec assertion for the new hunk **before** `save`: it fails against the
    installed bundle (red), then passes once `save` copies the patched files in (green). Check both
@@ -98,7 +99,10 @@ on a branch.
    upstream replacements in waiting (`getFormFactor`, the freedraw width, the `interaction` prop for
    the no-tool mode); drop what the release makes unnecessary.
 2. `rebase <version>`. Per file it reports `merged`, `CONFLICTS` (ours is the new release,
-   theirs the patched old one), `BY HAND` (minified: reset to the release) or `GONE`.
+   theirs the patched old one), `BY HAND` (minified: reset to the release) or `GONE` (the file is
+   not in the release, and leaves the scratch repo). Content-hashed chunks are always `GONE`: find
+   the new chunk by the code it defines, `add` it, and carry the changes over with `changes
+   --version <old> <old chunk>`.
 3. **Review every clean merge.** A hunk can apply cleanly in code that upstream changed around
    it. The command that `rebase` prints (`git -C <repo> diff <old tree> <new tree> -- <path>`) shows
    upstream's changes; read the ones near each hunk. For hunk 7, search the new dev bundle for
