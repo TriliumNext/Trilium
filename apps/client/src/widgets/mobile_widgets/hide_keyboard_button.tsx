@@ -7,11 +7,11 @@ import { useCallback, useEffect, useRef } from "preact/hooks";
 import { t } from "../../services/i18n";
 import { isIOS, isMobileApp } from "../../services/utils";
 import ActionButton from "../react/ActionButton";
-import { useDocumentFocus } from "../react/hooks";
+import { useDocumentFocus } from "../react/hooks/dom";
 
 /**
  * Closes the virtual keyboard by blurring the focused element. The button stands at the bottom-end
- * corner, just above the keyboard, while `RootContainer` marks the keyboard as open with
+ * corner, just above the keyboard, while `trackVirtualKeyboard()` marks the keyboard as open with
  * `virtual-keyboard-opened`. While `MobileEditorToolbar` is shown, which it is while its editor has
  * the focus, the toolbar carries the button instead (see `hide_keyboard_button.css`).
  * In the iOS app, the keyboard has no _Done_ button of its own, as `@capacitor/keyboard` hides the

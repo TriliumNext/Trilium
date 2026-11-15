@@ -1,6 +1,6 @@
 import type { ComponentChildren } from "preact";
 
-import { useUniqueName } from "./hooks";
+import { useUniqueName } from "./hooks/dom";
 
 interface FormRadioProps {
     name: string;

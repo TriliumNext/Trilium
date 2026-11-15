@@ -4,7 +4,7 @@ import Button from "../react/Button";
 import FormTextBox from "../react/FormTextBox";
 import Modal from "../react/Modal";
 import protected_session from "../../services/protected_session";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 
 export default function ProtectedSessionPasswordDialog() {
     const [ shown, setShown ] = useState(false);

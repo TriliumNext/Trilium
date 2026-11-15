@@ -150,8 +150,10 @@ Add a validator for any new channel that takes a path, a URL, or anything else t
 ## The main bundle is ESM with code splitting
 
 `scripts/build.ts` builds `src/main.ts` with `buildBackend(..., { format: "esm" })`: the
-production entry is **`dist/main.mjs`** plus lazy chunks under `dist/chunks/` (the generated
-`dist/package.json` points Electron's `main` at it). The preload and `image_worker.cjs` stay
+production bundle is **`dist/main.mjs`** plus lazy chunks under `dist/chunks/`. The generated
+`dist/package.json` points Electron's `main` at **`dist/entry.mjs`** (`src/entry.ts`), which turns
+on Node's compile cache and then imports `main.mjs`; it must stay free of Trilium imports, since
+anything it imports statically is compiled before the cache is on. The preload and `image_worker.cjs` stay
 CJS — the sandboxed renderer can't load an ESM preload, and the worker is spawned by its
 `.cjs` path. Three rules follow:
 

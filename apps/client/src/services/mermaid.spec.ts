@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getMermaidConfig, postprocessMermaidSvg } from "./mermaid.js";
-import { trimIndentation } from "@triliumnext/commons";
+import { trimIndentation } from "@triliumnext/commons/src/lib/test-utils.js";
 
 describe("Mermaid", () => {
     it("converts <br> properly", () => {

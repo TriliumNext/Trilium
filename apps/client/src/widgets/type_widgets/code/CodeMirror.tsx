@@ -2,7 +2,7 @@ import { EditorConfig, default as VanillaCodeMirror } from "@triliumnext/codemir
 import { Ref } from "preact";
 import { useEffect, useLayoutEffect, useRef } from "preact/hooks";
 
-import { useSyncedRef } from "../../react/hooks";
+import { useSyncedRef } from "../../react/hooks/dom";
 import { codeCompletions } from "./code_completions";
 import type { CodeSnippet } from "./snippets";
 

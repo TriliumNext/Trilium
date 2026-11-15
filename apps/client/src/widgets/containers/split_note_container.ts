@@ -4,7 +4,6 @@ import NoteContext from "../../components/note_context.js";
 import splitService from "../../services/resizer.js";
 import { isMobile } from "../../services/utils.js";
 import type BasicWidget from "../basic_widget.js";
-import { getTabToward } from "../mobile_widgets/tab_swipe.js";
 import NoteContextAwareWidget from "../note_context_aware_widget.js";
 import { createCaretStop, markVisibleSplits } from "../note_wrapper.js";
 import FlexContainer from "./flex_container.js";
@@ -366,19 +365,22 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
         if (!isMobile()) return;
 
         clearTimeout(this.neighbourRenderTimer);
-        const renderNext = () => {
-            const tab = getNeighbourTabs().find((neighbour) => neighbour.getSubContexts()
+        const renderNext = async () => {
+            const timer = this.neighbourRenderTimer;
+            const neighbourTabs = await getNeighbourTabs();
+            if (this.neighbourRenderTimer !== timer) return;
+
+            const tab = neighbourTabs.find((neighbour) => neighbour.getSubContexts()
                 .some((subContext) => subContext.ntxId && !this.widgets[subContext.ntxId]?.hasBeenAlreadyShown));
             if (!tab) return;
 
-            const timer = this.neighbourRenderTimer;
             void this.refreshNotShown({ noteContext: tab }).then(() => {
                 if (this.neighbourRenderTimer === timer) {
-                    this.neighbourRenderTimer = setTimeout(renderNext, NEIGHBOUR_RENDER_DELAY);
+                    this.neighbourRenderTimer = setTimeout(() => void renderNext(), NEIGHBOUR_RENDER_DELAY);
                 }
             });
         };
-        this.neighbourRenderTimer = setTimeout(renderNext, NEIGHBOUR_RENDER_DELAY);
+        this.neighbourRenderTimer = setTimeout(() => void renderNext(), NEIGHBOUR_RENDER_DELAY);
     }
 
     /** Sends `setNoteContext` to the widget, unless the widget has already received it. */
@@ -402,6 +404,7 @@ function recursiveCleanup(widget: Component) {
 }
 
 /** The tabs before and after the active one, which a swipe on mobile leads to. */
-function getNeighbourTabs() {
+async function getNeighbourTabs() {
+    const { getTabToward } = await import("../mobile_widgets/tab_swipe.js");
     return [ getTabToward("next"), getTabToward("previous") ].filter((tab) => !!tab);
 }

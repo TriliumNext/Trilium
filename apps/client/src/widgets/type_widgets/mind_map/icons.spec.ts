@@ -7,7 +7,7 @@ import { LEAD_ICON_CLASS, renderExportedIcons, renderIconClasses } from "./icons
 // this environment has; the service has its own tests for that.
 vi.mock("../../../services/icon_glyphs", () => ({ renderIconImage: vi.fn() }));
 
-const uncheckedWindow = window as unknown as { glob: { iconRegistry?: unknown } };
+const uncheckedWindow = window as unknown as { glob: { iconPacks?: unknown } };
 
 /**
  * Renders what Mind Elixir makes of a node: its text, and after it the icons it was given as the
@@ -27,11 +27,11 @@ function icons(container: HTMLElement) {
 
 describe("renderIconClasses", () => {
     beforeEach(() => {
-        uncheckedWindow.glob.iconRegistry = { sources: [ { prefix: "bx" }, { prefix: "mdi" } ] };
+        uncheckedWindow.glob.iconPacks = [ { prefix: "bx" }, { prefix: "mdi" } ];
     });
 
     afterEach(() => {
-        delete uncheckedWindow.glob.iconRegistry;
+        delete uncheckedWindow.glob.iconPacks;
     });
 
     it("dresses a Trilium icon class, whichever pack it belongs to", () => {
@@ -119,7 +119,7 @@ describe("renderIconClasses", () => {
     });
 
     it("holds off until the icon packs are known", () => {
-        delete uncheckedWindow.glob.iconRegistry;
+        delete uncheckedWindow.glob.iconPacks;
         const container = buildNode("bx bx-star");
 
         renderIconClasses(container);
@@ -130,13 +130,13 @@ describe("renderIconClasses", () => {
 
 describe("renderExportedIcons", () => {
     beforeEach(() => {
-        uncheckedWindow.glob.iconRegistry = { sources: [ { prefix: "bx" } ] };
+        uncheckedWindow.glob.iconPacks = [ { prefix: "bx" } ];
         vi.mocked(renderIconImage).mockReset();
         vi.mocked(renderIconImage).mockImplementation(async (iconClass) => `data:image/png;drawn-${iconClass}`);
     });
 
     afterEach(() => {
-        delete uncheckedWindow.glob.iconRegistry;
+        delete uncheckedWindow.glob.iconPacks;
         vi.restoreAllMocks();
     });
 

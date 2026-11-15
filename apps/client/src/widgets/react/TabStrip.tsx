@@ -3,7 +3,7 @@ import "./TabStrip.css";
 import clsx from "clsx";
 import { useRef } from "preact/hooks";
 
-import { useStaticTooltip } from "./hooks";
+import { useStaticTooltip } from "./hooks/tooltip";
 
 export interface TabStripTabDefinition<T extends string> {
     id: T;

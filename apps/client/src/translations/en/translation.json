@@ -3089,8 +3089,7 @@
     "open_mode_new_window": "New window",
     "open_mode_quick_edit": "Quick edit",
     "configure_launch_bar": "Configure launch bar...",
-    "launch_bar_orientation": "Launch bar orientation",
-    "will_reload_frontend": "(will reload app)"
+    "launch_bar_orientation": "Launch bar orientation"
   },
   "highlighting": {
     "title": "Code Blocks",

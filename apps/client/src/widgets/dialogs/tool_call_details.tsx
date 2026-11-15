@@ -4,7 +4,7 @@ import { useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
 import CodeBlock from "../react/CodeBlock";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import Modal from "../react/Modal";
 import { type ToolCall, toolCallLabelKey } from "../type_widgets/llm_chat/llm_chat_types";
 

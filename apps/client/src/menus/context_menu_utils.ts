@@ -3,7 +3,6 @@ import type { MenuCommandItem, MenuItem } from "./context_menu"
 import froca from "../services/froca"
 import { t } from "../services/i18n"
 import { setArchivedOnNotes, shared } from "../services/note_set"
-import tree, { NOTE_PATH_TITLE_SEPARATOR } from "../services/tree"
 import { escapeHtml } from "../services/utils"
 
 /**
@@ -31,21 +30,12 @@ export function getArchiveMenuItems<T>(notes: FNote[]): MenuItem<T>[] {
         } ]
 }
 
-/**
- * A name the user wrote, as a menu title.
- *
- * A menu reads a title as markup, so the name is escaped into the text it is meant to be, and boxed
- * so that `style.css` clips a long one rather than letting it widen the menu.
- */
-export function menuName(name: string) {
-    return `<span class="tn-menu-name">${escapeHtml(name)}</span>`
-}
-
 /** A row with the icon and title of the note at `notePath`, with its path in the shortcut slot. */
 export async function notePathMenuItem<T>(
     notePath: string,
     handler: () => void
 ): Promise<MenuCommandItem<T>> {
+    const { default: tree, NOTE_PATH_TITLE_SEPARATOR } = await import("../services/tree");
     const titles = await tree.getNotePathTitleComponents(notePath);
     const title = titles.pop() ?? "";
     const noteId = notePath.split("/").at(-1) ?? "";

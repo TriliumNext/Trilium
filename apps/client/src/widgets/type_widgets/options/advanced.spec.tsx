@@ -28,8 +28,8 @@ vi.mock("../../../services/toast", () => ({
     default: { showMessage: vi.fn(), showError: vi.fn() }
 }));
 
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useTriliumOptionJson: () => [ mocks.enabled, (value: string[]) => void mocks.saved.push(value) ]
 }));
 

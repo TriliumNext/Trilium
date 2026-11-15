@@ -15,10 +15,11 @@ import { bindAttachmentEditor, type ContentEditor } from "../../../services/cont
 import options from "../../../services/options";
 import { getEffectiveThemeStyle } from "../../../services/theme";
 import { isDesktop, isMobile } from "../../../services/utils";
-import {
-    useColorScheme, useEffectiveReadOnly, useElementSize, useFindShortcut, useTriliumEvent,
-    useWhenShown
-} from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useElementSize, useWhenShown } from "../../react/hooks/dom";
+import { useColorScheme } from "../../react/hooks/options";
+import { useEffectiveReadOnly } from "../../react/hooks/note_context";
+import { useFindShortcut } from "../../react/hooks/shortcuts";
 import { useAttachmentEditor } from "../text/attachment_saves";
 import {
     isInFullscreen, registerEmbedFindTarget, useContentEmbedAttribute, useContentEmbedEvent,

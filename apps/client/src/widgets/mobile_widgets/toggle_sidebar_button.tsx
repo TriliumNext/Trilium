@@ -5,7 +5,7 @@ import { useEffect, useState } from "preact/hooks";
 import { t } from "../../services/i18n";
 import { isNarrowLayout, onNarrowLayoutChange } from "../../services/utils";
 import ActionButton from "../react/ActionButton";
-import { useNoteContext } from "../react/hooks";
+import { useNoteContext } from "../react/hooks/note_context";
 
 export default function ToggleSidebarButton() {
     const { noteContext, parentComponent } = useNoteContext();

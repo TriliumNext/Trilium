@@ -22,7 +22,8 @@ const { getRenderedContent, drawingMounts, uploadFiles } = vi.hoisted(() => ({
 // key instead is enough to tell which of them the list reached for.
 vi.mock("i18next", () => {
     const t = (key: string) => key;
-    return { default: { t }, t };
+    // `services/dayjs` follows the language through `on()`.
+    return { default: { t, on: () => {} }, t };
 });
 
 // The cards' content is drawn imperatively; nothing here asks what a preview looks like, only how many

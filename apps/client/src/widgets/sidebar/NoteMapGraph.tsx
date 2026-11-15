@@ -4,7 +4,7 @@ import { useRef } from "preact/hooks";
 
 // The map itself is shared with the note map note type; only the framing differs here.
 import NoteMapEl from "../note_map/NoteMap";
-import { useActiveNoteContext } from "../react/hooks";
+import { useActiveNoteContext } from "../react/hooks/tree";
 
 /**
  * The map of the connections tab, kept in a module of its own so that the card around it (see

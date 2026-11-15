@@ -2,7 +2,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import becca from "../becca/becca";
 import { buildNote } from "../test/becca_easy_mocking";
-import { determineBestFontAttachment, generateCss, generateIconRegistry, generateIconTransformCss, getIconPacks, IconPackManifest, processIconPack } from "./icon_packs";
+import {
+    determineBestFontAttachment, generateCss, generateIconPackFontCss, generateIconPackGlyphCss, generateIconRegistry,
+    generateIconTransformCss, getIconPacks, IconPackManifest, processIconPack
+} from "./icon_packs";
 import { getLog } from "./log";
 import { getPlatform } from "./platform";
 import search from "./search/services/search";
@@ -167,6 +170,16 @@ describe("CSS generation", () => {
         expect(css).toContain("font-family: 'trilium-icon-pack-bx' !important;");
         expect(css).toContain(`.bx.bx-ball::before { content: "\ue9c2"; }`);
         expect(css).toContain(`.bx.bxs-party::before { content: "\uec92"; }`);
+
+        // The font and the glyphs apart, for the glyphs to load after the first render.
+        const fontCss = generateIconPackFontCss(processedResult!, "/font.woff2");
+        expect(fontCss).toContain("@font-face");
+        expect(fontCss).toContain("font-family: 'trilium-icon-pack-bx' !important;");
+        expect(fontCss).not.toContain("::before");
+        const glyphCss = generateIconPackGlyphCss(processedResult!);
+        expect(glyphCss).toContain(`.bx.bx-ball::before { content: "\ue9c2"; }`);
+        expect(glyphCss).not.toContain("url(");
+        expect(glyphCss).not.toContain("@font-face");
     });
 
     it("declares the box a pack was measured in, and nothing where it was not", () => {

@@ -1,4 +1,4 @@
-import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
+import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons/src/lib/notes.js";
 import { SHEET_DRAWING_RESOURCE } from "@triliumnext/commons/src/lib/spreadsheet/workbook_model";
 import { CommandType, FUniver, IDisposable, IWorkbookData, LocaleType } from "@univerjs/presets";
 import { RefObject } from "preact";
@@ -8,7 +8,7 @@ import NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
 import { uploadImageAttachment } from "../../../services/image_upload";
 import { randomString } from "../../../services/utils";
-import { SavedData, useEditorSpacedUpdate } from "../../react/hooks";
+import { SavedData, useEditorSpacedUpdate } from "../../react/hooks/editor";
 
 interface PersistedData {
     version: number;

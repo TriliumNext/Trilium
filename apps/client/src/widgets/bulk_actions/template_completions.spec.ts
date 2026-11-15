@@ -1,4 +1,6 @@
-import { TEMPLATE_ALLOWED_METHODS, TEMPLATE_ALLOWED_PROPERTIES } from "@triliumnext/commons";
+import {
+    TEMPLATE_ALLOWED_METHODS, TEMPLATE_ALLOWED_PROPERTIES
+} from "@triliumnext/commons/src/lib/safe_template.js";
 import { describe, expect, it, vi } from "vitest";
 
 import { NOTE_TEMPLATE_MEMBERS, templateCompletionAt } from "./template_completions";

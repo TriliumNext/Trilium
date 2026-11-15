@@ -4,7 +4,7 @@ import clsx from "clsx";
 import { hierarchy, type HierarchyRectangularNode, treemap, treemapSquarify } from "d3-hierarchy";
 import { useMemo } from "preact/hooks";
 
-import { useElementSize } from "../hooks";
+import { useElementSize } from "../hooks/dom";
 import { useChartTooltip } from "./chart_tooltip";
 
 export interface TreemapItem<T = unknown> {

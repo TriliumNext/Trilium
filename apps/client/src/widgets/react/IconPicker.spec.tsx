@@ -1,5 +1,5 @@
 import { act } from "preact/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Hoisted: a module in the import chain reads the device once as it loads (see ActionButton), which
 // happens before a plain `const` here would have been initialized.
@@ -15,18 +15,35 @@ vi.mock("../../services/utils", async (importOriginal) => ({
 const openDialogMock = vi.hoisted(() => vi.fn(async (dialog: JQuery<HTMLElement>, _closeActDialog?: boolean) => dialog));
 vi.mock("../../services/dialog", () => ({ openDialog: openDialogMock }));
 
-// The grid asks the server which icons the tree already uses, to lead with those. Anything else
-// asked of the server here is a module loading beside the picker, and wants a list back.
+// The grid asks the server for every icon, and for which icons the tree already uses, to lead with
+// those. Anything else asked of the server here is a module loading beside the picker, and wants a
+// list back.
+const iconRegistryMock = vi.hoisted(() => ({ sources: [] as { prefix: string, name: string, icon: string, icons: { id: string, terms: string[] }[] }[] }));
 vi.mock("../../services/server", () => ({
     default: {
-        get: async (url: string) => (url === "other/icon-usage" ? { iconClassToCountMap: {} } : [])
+        get: async (url: string) => {
+            if (url === "other/icon-usage") return { iconClassToCountMap: {} };
+            if (url === "other/icon-registry") return iconRegistryMock;
+            return [];
+        }
     }
 }));
 
+// The grid is virtualized; a stub tells how many rows of icons it was handed.
+vi.mock("react-window", () => ({
+    Grid: ({ rowCount }: { rowCount: number }) => <div className="icon-grid-stub" data-rows={rowCount} />
+}));
+
 import { renderInto } from "../../test/render";
-import IconPicker, { IconPickerButton } from "./IconPicker";
+import IconPicker from "./IconPicker";
+import { IconPickerButton } from "./IconPickerButton";
 
 describe("IconPickerButton", () => {
+    beforeEach(() => {
+        // Opening builds the grid, which reads the installed packs off the page.
+        glob.iconPacks = [];
+    });
+
     /** Renders the button as the given device would see it. */
     function renderButton(mobile: boolean) {
         isMobileMock.mockReturnValue(mobile);
@@ -35,7 +52,7 @@ describe("IconPickerButton", () => {
         );
     }
 
-    it("hangs the picker under the button on a desktop, and gives it a screen of its own on a phone", () => {
+    it("hangs the picker under the button on a desktop, and gives it a screen of its own on a phone", async () => {
         const desktop = renderButton(false);
 
         // The button stands where it was put; what it opens is a menu, which is neither built nor
@@ -48,13 +65,18 @@ describe("IconPickerButton", () => {
 
         // A menu at the width of the picker is wider than a phone, so what opens there is the modal
         // the note's own icon is picked through, which the stylesheet gives the whole screen to.
-        expect(mobile.querySelector(".note-icon-widget button.note-icon")).toBeTruthy();
-        expect(document.body.querySelector(".modal.icon-switcher")).toBeTruthy();
+        const mobileButton = mobile.querySelector<HTMLElement>(".note-icon-widget button.note-icon");
+        expect(mobileButton).toBeTruthy();
+        // The modal comes with the picker's module, which loads once the button is about to be
+        // pressed, and is rendered from the first press.
+        // Long enough for a modal that came with the button to have rendered.
+        await act(async () => { await new Promise((resolve) => setTimeout(resolve, 200)); });
+        expect(document.body.querySelector(".modal.icon-switcher")).toBeNull();
+        act(() => { mobileButton?.dispatchEvent(new PointerEvent("pointerenter")); });
+        act(() => { mobileButton?.dispatchEvent(new MouseEvent("click", { bubbles: true })); });
+        await vi.waitFor(() => expect(document.body.querySelector(".modal.icon-switcher")).toBeTruthy());
         expect(document.body.querySelector(".dropdown-menu")).toBeNull();
 
-        // On either device the picker itself waits to be asked for: it holds every icon of every
-        // installed pack, which is far more work than a button on screen should be doing.
-        expect(document.body.querySelector(".icon-picker")).toBeNull();
     });
 
     /**
@@ -62,10 +84,7 @@ describe("IconPickerButton", () => {
      * sheet, the quick editor. A picker that closed the active dialog closed the one it was rendered
      * inside, taking itself down with it and leaving the backdrop over an empty page.
      */
-    it("opens the picker on a phone without closing the dialog it stands in", () => {
-        // Opening builds the grid, which reads the installed packs off the page.
-        glob.iconRegistry = { sources: [] };
-
+    it("opens the picker on a phone without closing the dialog it stands in", async () => {
         const mobile = renderButton(true);
         openDialogMock.mockClear();
 
@@ -75,15 +94,29 @@ describe("IconPickerButton", () => {
             button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
         });
 
-        expect(openDialogMock).toHaveBeenCalledOnce();
+        await vi.waitFor(() => expect(openDialogMock).toHaveBeenCalledOnce());
         // The `closeActDialog` argument, which is what stands a dialog down to make room.
         expect(openDialogMock.mock.calls[0][1]).toBe(false);
     });
 });
 
 describe("IconPicker", () => {
+    it("lists the icons the server returns, which `/bootstrap` leaves out", async () => {
+        glob.iconPacks = [ { prefix: "bx", name: "Boxicons", icon: "bx bx-box" } ];
+        iconRegistryMock.sources = [ {
+            prefix: "bx", name: "Boxicons", icon: "bx bx-box",
+            icons: [ { id: "bx bx-star", terms: [ "star" ] }, { id: "bx bx-heart", terms: [ "heart" ] } ]
+        } ];
+
+        const picker = renderInto(<IconPicker columnCount={1} onSelect={() => {}} />);
+        expect(picker.querySelector(".no-results")).not.toBeNull();
+        await vi.waitFor(() => expect(picker.querySelector(".icon-grid-stub")?.getAttribute("data-rows")).toBe("2"));
+        iconRegistryMock.sources = [];
+    });
+
+
     it("draws the compact grid smaller than the one a note's icon is picked from", () => {
-        glob.iconRegistry = { sources: [] };
+        glob.iconPacks = [];
 
         const regular = renderInto(<IconPicker columnCount={9} onSelect={() => {}} />);
         const compact = renderInto(<IconPicker columnCount={9} compact onSelect={() => {}} />);

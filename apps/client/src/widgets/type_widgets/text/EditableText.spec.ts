@@ -74,16 +74,34 @@ vi.mock("../../dialogs/content_embed", () => ({
     }
 }));
 vi.mock("./snippets.js", () => ({ default: async () => [], updateTemplateCache: vi.fn() }));
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...await importOriginal<typeof import("../../react/hooks")>(),
-    useEditorSpacedUpdate: () => ({}),
-    useLegacyImperativeHandlers: () => {},
-    useNoteLabel: () => [ null ],
-    useSameNoteSwitch: () => {},
-    useSearchTermsConsumer: () => {},
-    useTriliumEvent: () => {},
+vi.mock("../../react/hooks/events", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/events")>()),
+    useTriliumEvent: () => {}
+}));
+vi.mock("../../react/hooks/note", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/note")>()),
+    useNoteLabel: () => [ null ]
+}));
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useTriliumOption: () => [ "" ],
     useTriliumOptionBool: () => [ false ]
+}));
+vi.mock("../../react/hooks/note_context", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/note_context")>()),
+    useSameNoteSwitch: () => {}
+}));
+vi.mock("../../react/hooks/editor", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/editor")>()),
+    useEditorSpacedUpdate: () => ({})
+}));
+vi.mock("../../react/hooks/legacy", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/legacy")>()),
+    useLegacyImperativeHandlers: () => {}
+}));
+vi.mock("../../react/hooks/note_context", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/note_context")>()),
+    useSearchTermsConsumer: () => {}
 }));
 
 const { default: appContext } = await import("../../../components/app_context");

@@ -7,7 +7,7 @@ import { t } from "../../../services/i18n.js";
 import tree from "../../../services/tree.js";
 import Button from "../../react/Button.js";
 import { Card, CardSection } from "../../react/Card.js";
-import { useTriliumEvent } from "../../react/hooks.js";
+import { useTriliumEvent } from "../../react/hooks/events.js";
 import Modal from "../../react/Modal.js";
 import SelectableCard, { SelectableCardGrid } from "../../react/SelectableCard.js";
 import { importProviders } from "./index.js";

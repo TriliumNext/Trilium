@@ -4,7 +4,7 @@ import clsx from "clsx";
 
 import { t } from "../../services/i18n";
 import Button from "../react/Button";
-import { useActiveNoteContext } from "../react/hooks";
+import { useActiveNoteContext } from "../react/hooks/tree";
 
 /** Unhoists the active note context. Shown above the note tree while a note is hoisted. */
 export default function ShowAllNotesButton() {

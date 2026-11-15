@@ -4587,6 +4587,73 @@ paths:
         '400':
           description: Missing or non-positive limit
 
+  /api/icon-packs.css:
+    get:
+      tags: [Utilities]
+      summary: Get the glyph of every icon
+      description: >-
+        A stylesheet with the `::before` rule that places the character of each icon of each icon
+        pack. The bootstrap data carries the fonts of the packs and links this stylesheet with a
+        `v` parameter derived from its content, so the response can be cached for good. Served
+        without a session, like the bootstrap data that names it on the login screen.
+      operationId: getIconPackGlyphCss
+      security: []
+      parameters:
+        - name: v
+          in: query
+          required: false
+          description: The content version the bootstrap data names; any value returns the current stylesheet
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The glyph rules of the icon packs
+          content:
+            text/css:
+              schema:
+                type: string
+
+  /api/other/icon-registry:
+    get:
+      tags: [Utilities]
+      summary: Get every icon of each icon pack
+      description: >-
+        Lists the icons that the icon picker searches. The bootstrap data names only the icon packs,
+        since the full list runs to over a megabyte with many packs installed.
+      operationId: getIconRegistry
+      responses:
+        '200':
+          description: The icons of each icon pack
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sources:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        prefix:
+                          type: string
+                        name:
+                          type: string
+                        icon:
+                          type: string
+                          description: An icon class that identifies the pack
+                        icons:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                description: The icon's classes, such as `bx bx-star`
+                              terms:
+                                type: array
+                                items:
+                                  type: string
+
   /api/other/icon-usage:
     get:
       tags: [Utilities]

@@ -4,7 +4,7 @@ import { t } from "../../services/i18n";
 import options from "../../services/options";
 import ActionButton from "../react/ActionButton";
 import { useState, useCallback } from "preact/hooks";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 
 export default function RightPaneToggle() {
     const [ rightPaneVisible, setRightPaneVisible ] = useState(options.is("rightPaneVisible"));

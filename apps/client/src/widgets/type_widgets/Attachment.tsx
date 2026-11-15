@@ -1,8 +1,10 @@
 import "./Attachment.css";
 
+import type { AttachmentRow } from "@triliumnext/commons";
 import {
-    type AttachmentRow, attachmentIcon, CANVAS_ATTACHMENT_MIME, isImageAttachmentRole
-} from "@triliumnext/commons";
+    attachmentIcon, isImageAttachmentRole
+} from "@triliumnext/commons/src/lib/attachment_roles.js";
+import { CANVAS_ATTACHMENT_MIME } from "@triliumnext/commons/src/lib/notes.js";
 import { t } from "i18next";
 import { Fragment } from "preact";
 import { lazy, Suspense } from "preact/compat";
@@ -36,7 +38,9 @@ import { ExternallyControlledCollapsible } from "../react/Collapsible";
 import Dropdown from "../react/Dropdown";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
 import HelpButton from "../react/HelpButton";
-import { useAttachments, useFileDrop, useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useAttachments } from "../react/hooks/note";
+import { useFileDrop } from "../react/hooks/drag";
 import Icon from "../react/Icon";
 import ImageViewer from "../react/ImageViewer";
 import NoItems from "../react/NoItems";

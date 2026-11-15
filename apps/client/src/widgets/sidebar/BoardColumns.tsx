@@ -2,7 +2,7 @@ import "./BoardColumns.css";
 
 import { t } from "../../services/i18n";
 import SimpleBadge from "../react/Badge";
-import { useGetContextData } from "../react/hooks";
+import { useGetContextData } from "../react/hooks/tree";
 import Icon from "../react/Icon";
 import RightPanelWidget from "./RightPanelWidget";
 

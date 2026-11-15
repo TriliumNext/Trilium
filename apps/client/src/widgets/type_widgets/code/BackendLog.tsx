@@ -1,12 +1,13 @@
 import "./code.css";
 
-import { MIME_TYPE_TRILIUM_LOG } from "@triliumnext/commons";
+import { MIME_TYPE_TRILIUM_LOG } from "@triliumnext/commons/src/lib/mime_type.js";
 import CodeMirror from "@triliumnext/codemirror";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import server from "../../../services/server";
 import utils from "../../../services/utils";
-import { useNote, useNoteLabelOptionalBool, useTriliumEvent } from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useNote, useNoteLabelOptionalBool } from "../../react/hooks/note";
 import { TypeWidgetProps } from "../type_widget";
 import { CodeEditor } from "./Code";
 

@@ -1,6 +1,12 @@
 import "./setup.css";
 
-import { LOCALES, MOBILE_SYNC_MAX_BLOB_CONTENT_SIZE, NetworkAddressesResponse, SetupSyncFromServerResponse, type SetupTargetScreen } from "@triliumnext/commons";
+import type {
+    NetworkAddressesResponse, SetupSyncFromServerResponse, SetupTargetScreen
+} from "@triliumnext/commons";
+import { LOCALES } from "@triliumnext/commons/src/lib/i18n.js";
+import {
+    MOBILE_SYNC_MAX_BLOB_CONTENT_SIZE
+} from "@triliumnext/commons/src/lib/shared_constants.js";
 import clsx from "clsx";
 import { render } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";

@@ -1,4 +1,4 @@
-import { ATTACHMENT_ROLES } from "@triliumnext/commons";
+import { ATTACHMENT_ROLES } from "@triliumnext/commons/src/lib/attachment_roles.js";
 import { describe, expect, it, vi } from "vitest";
 
 // Nothing initializes i18next for the tests, so the wording is stood in for by the key — which is

@@ -14,8 +14,9 @@ import {
     SnippetDefinition
 } from "@triliumnext/ckeditor5";
 import {
-    deferred, encodeBlockParameter, formatBlockRange, parseBlockRange
-} from "@triliumnext/commons";
+    encodeBlockParameter, formatBlockRange, parseBlockRange
+} from "@triliumnext/commons/src/lib/block_reference.js";
+import { deferred } from "@triliumnext/commons/src/lib/utils.js";
 import { createPortal } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
@@ -33,10 +34,13 @@ import toast from "../../../services/toast";
 import utils, { isMobile } from "../../../services/utils";
 import { ContentEmbedBalloon, type ContentEmbedOpts } from "../../dialogs/content_embed";
 import { EditLinkBalloon, type EditLinkOpts, type LinkHeading } from "../../dialogs/edit_link";
-import {
-    useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useSameNoteSwitch,
-    useSearchTermsConsumer, useTriliumEvent, useTriliumOption, useTriliumOptionBool
-} from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useNoteLabel } from "../../react/hooks/note";
+import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
+import { useSameNoteSwitch } from "../../react/hooks/note_context";
+import { useEditorSpacedUpdate } from "../../react/hooks/editor";
+import { useLegacyImperativeHandlers } from "../../react/hooks/legacy";
+import { useSearchTermsConsumer } from "../../react/hooks/note_context";
 import { setEditorNoteId } from "../../react/NoteStore";
 import { TypeWidgetProps } from "../type_widget";
 import AttachmentSaves, { InlineSourceSaves, useNoteEditor } from "./attachment_saves";

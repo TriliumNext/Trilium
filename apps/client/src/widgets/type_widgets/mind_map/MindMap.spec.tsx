@@ -3,7 +3,9 @@
 // mishandles it and strips valid markup (surfaced by dompurify 3.4.8). Run the
 // sanitization-dependent specs under jsdom, which matches real-browser behavior.
 import i18next from "i18next";
-import { DARK_THEME, type default as MindElixirInstance, type MindElixirData, THEME as LIGHT_THEME } from "mind-elixir";
+import {
+    DARK_THEME, type default as MindElixirInstance, type MindElixirData, THEME as LIGHT_THEME
+} from "mind-elixir";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
@@ -11,7 +13,10 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { renderInto } from "../../../test/render";
 import englishTranslation from "../../../translations/en/translation.json";
 
-import { buildTheme, loadMapData, localizeBuiltLabels, MindElixir, renameOverlayLabel, sanitizeMindMapData } from "./MindMap.js";
+import {
+    buildTheme, loadMapData, localizeBuiltLabels, MindElixir, renameOverlayLabel,
+    sanitizeMindMapData
+} from "./MindMap.js";
 
 interface FakeMap {
     destroyed: boolean;
@@ -88,8 +93,8 @@ function resize() {
     });
 }
 
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useColorScheme: () => "light",
     useTriliumOption: () => [ "en" ]
 }));

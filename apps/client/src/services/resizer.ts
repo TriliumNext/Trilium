@@ -6,7 +6,6 @@ import options from "./options.js";
 export const DEFAULT_GUTTER_SIZE = 5;
 
 let leftPaneWidth: number;
-let layoutOrientation: string;
 let leftInstance: ReturnType<typeof Split> | null;
 let leftRafId: number | undefined;
 
@@ -29,7 +28,7 @@ function setupLeftPaneResizer(mode: PaneMode) {
         leftInstance = null;
     }
 
-    layoutOrientation = layoutOrientation ?? options.get("layoutOrientation");
+    const layoutOrientation = options.get("layoutOrientation");
     // `.left-pane-peek-button` follows `#launcher-pane` in the vertical layout, and is not
     // displayed while the pane is docked.
     const reservedPx = layoutOrientation === "vertical"

@@ -12,7 +12,8 @@ import CollectionProperties, {
 } from "../../note_bars/CollectionProperties";
 import Button, { ButtonOrActionButton } from "../../react/Button";
 import { FormListItem } from "../../react/FormList";
-import { useEffectiveReadOnly, useNoteContext, useTriliumEvent } from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useEffectiveReadOnly, useNoteContext } from "../../react/hooks/note_context";
 import { ParentComponent } from "../../react/react_utils";
 import { ViewModeProps } from "../interface";
 import { useContextMenu } from "./context_menu";

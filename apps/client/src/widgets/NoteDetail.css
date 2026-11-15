@@ -15,6 +15,10 @@ body.prefers-centered-content .note-detail {
     contain: none;
 }
 
+.note-detail:has(> .note-detail-loading-overlay) {
+    min-height: 100%;
+}
+
 .note-detail-loading-overlay {
     position: absolute;
     inset: 0;
@@ -22,9 +26,19 @@ body.prefers-centered-content .note-detail {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     background: var(--main-background-color);
     animation: note-detail-loading-overlay-fade-in 100ms ease-in;
+
+    > * {
+        position: sticky;
+        top: 50%;
+        translate: 0 -50%;
+    }
+
+    > .no-items {
+        flex-grow: 0;
+        height: auto;
+    }
 
     > .bx-loader-alt {
         font-size: 2em;

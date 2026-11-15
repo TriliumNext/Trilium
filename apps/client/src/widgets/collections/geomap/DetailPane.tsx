@@ -1,7 +1,12 @@
 import "./DetailPane.css";
 
-import { GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE, MAP_POSITION_ATTRIBUTE, MAP_SHAPE_ATTRIBUTE } from "@triliumnext/commons";
-import type { EaseToOptions, GeoJSONSource, MapGeoJSONFeature, Map as MapLibreGLMap, MapMouseEvent, MapSourceDataEvent } from "maplibre-gl";
+import {
+    GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE, MAP_POSITION_ATTRIBUTE, MAP_SHAPE_ATTRIBUTE
+} from "@triliumnext/commons/src/lib/notes.js";
+import type {
+    EaseToOptions, GeoJSONSource, MapGeoJSONFeature, Map as MapLibreGLMap, MapMouseEvent,
+    MapSourceDataEvent
+} from "maplibre-gl";
 import { useCallback, useContext, useEffect, useMemo, useRef } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
@@ -9,11 +14,15 @@ import { copyTextWithToast } from "../../../services/clipboard_ext";
 import { t } from "../../../services/i18n";
 import link from "../../../services/link";
 import { isMobile } from "../../../services/utils";
-import { announceEmbeddedNoteClosing, EmbeddedNoteActions, EmbeddedNoteScope, EmbeddedNoteSurface, NoteColorAction, OpenNoteActions, SelectTitleOnFirstOpen, useEmbeddedNoteContext } from "../../EmbeddedNotePane";
+import {
+    announceEmbeddedNoteClosing, EmbeddedNoteActions, EmbeddedNoteScope, EmbeddedNoteSurface,
+    NoteColorAction, OpenNoteActions, SelectTitleOnFirstOpen, useEmbeddedNoteContext
+} from "../../EmbeddedNotePane";
 import NoteDetail from "../../NoteDetail";
 import PromotedAttributes from "../../PromotedAttributes";
 import ActionButton from "../../react/ActionButton";
-import { useNoteLabelByName, useStaticTooltip } from "../../react/hooks";
+import { useNoteLabelByName } from "../../react/hooks/note";
+import { useStaticTooltip } from "../../react/hooks/tooltip";
 import { removeFromMap } from "./api";
 import { type Bounds, boundsOf } from "./coordinates";
 import { trackSourceId } from "./GpxTrack";

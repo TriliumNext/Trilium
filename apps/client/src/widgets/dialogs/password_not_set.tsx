@@ -3,7 +3,7 @@ import { t } from "../../services/i18n";
 import Button from "../react/Button";
 import appContext from "../../components/app_context";
 import { useState } from "preact/hooks";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 
 export default function PasswordNotSetDialog() {
     const [ shown, setShown ] = useState(false);

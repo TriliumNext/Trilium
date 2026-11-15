@@ -10,19 +10,17 @@ import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import appContext from "../../components/app_context";
 import type NoteContext from "../../components/note_context";
 import type FNote from "../../entities/fnote";
-import contextMenu from "../../menus/context_menu";
 import { setLabelValueWithInheritance } from "../../services/attributes";
 import { t } from "../../services/i18n";
 import options from "../../services/options";
 import { isMobile } from "../../services/utils";
 import Button from "../react/Button";
 import { openHelpPageFor } from "../react/HelpButton";
-import {
-    useGetContextDataFrom, useNoteContext, useNoteLabel, useStaticTooltip, useTriliumOptionBool
-} from "../react/hooks";
-import ScrollableLabel from "../react/ScrollableLabel";
-import { toggleVimKeyReference } from "../type_widgets/text/vim_key_reference";
-import { setCommandLineSlot } from "../type_widgets/text/vim_mode";
+import { useNoteLabel } from "../react/hooks/note";
+import { useTriliumOptionBool } from "../react/hooks/options";
+import { useGetContextDataFrom, useNoteContext } from "../react/hooks/note_context";
+import { useStaticTooltip } from "../react/hooks/tooltip";
+import { preloadLazyModule, WithLazyModule } from "../react/LazyComponent";
 
 /**
  * The status of the Vim mode that the status bar shows for `noteContext`, or `null` while its
@@ -92,6 +90,7 @@ export function VimStatusLine({ status, vim }: { status: VimStatus; vim?: Triliu
     const { message, recording, pendingKeys, hints } = status;
     const [ areHintsEnabled ] = useTriliumOptionBool("vimModeHintsEnabled");
     const isPendingShown = !!pendingKeys && hints?.kind !== "command";
+    useEffect(() => preloadLazyModule(loadScrollableLabel), []);
 
     return (
         <span className="vim-status-line">
@@ -163,8 +162,10 @@ function VimModeIndicator({ status, vim, isInTitleRow = false }: {
             text={getModeName(status)}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => {
-                if (vim && modeRef.current) {
-                    toggleVimKeyReference(vim, modeRef.current);
+                const mode = modeRef.current;
+                if (vim && mode) {
+                    void import("../type_widgets/text/vim_key_reference").then(({ toggleVimKeyReference }) =>
+                        toggleVimKeyReference(vim, mode));
                 }
             }}
         />
@@ -189,12 +190,18 @@ export function VimHintStrip({ hints }: { hints: VimHints }) {
                     {typedKeys.map((key, index) => <kbd key={index}>{key}</kbd>)}
                 </span>
             )}
-            <ScrollableLabel key={JSON.stringify(hints)} className="vim-hints" isScrolledByWheel>
-                {hints.hints.map((hint, index) => <VimHintItem key={index} hint={hint} />)}
-            </ScrollableLabel>
+            <WithLazyModule load={loadScrollableLabel}>
+                {({ default: ScrollableLabel }) => (
+                    <ScrollableLabel key={JSON.stringify(hints)} className="vim-hints" isScrolledByWheel>
+                        {hints.hints.map((hint, index) => <VimHintItem key={index} hint={hint} />)}
+                    </ScrollableLabel>
+                )}
+            </WithLazyModule>
         </div>
     );
 }
+
+const loadScrollableLabel = () => import("../react/ScrollableLabel");
 
 /**
  * Keys in keyboard style and what they do. Text to type, such as `$1`, shows as code, and the part
@@ -228,7 +235,12 @@ function VimHintItem({ hint }: { hint: VimHint }) {
 
 /** The place of the command line of `:`, `/` and `?`, which replaces the breadcrumb. */
 export function VimCommandLineSlot() {
-    return <div className="vim-command-line-slot" ref={setCommandLineSlot} />;
+    return <div className="vim-command-line-slot" ref={attachCommandLineSlot} />;
+}
+
+/** Hands the command line slot to `vim_mode.ts`, which the shown Vim mode has already loaded. */
+function attachCommandLineSlot(element: HTMLDivElement | null) {
+    void import("../type_widgets/text/vim_mode").then(({ setCommandLineSlot }) => setCommandLineSlot(element));
 }
 
 /** A message of several lines, such as the list of `:registers`, until the next key. */
@@ -257,11 +269,12 @@ const VIM_MODE_HELP_PAGE = "enVNpi1Njswq";
  * Opens the menu of the Vim mode badge of `note` at the pointer. Its switch changes the label that
  * `note` owns, which also reaches the notes under it when the label is inheritable.
  */
-function showVimModeMenu(
+async function showVimModeMenu(
     event: MouseEvent, { note, ntxId, isInTitleRow }: VimModeBadgeProps, isEnabled: boolean,
     toggle: () => void
 ) {
     const isSubtree = !!note.getOwnedLabel("vimMode")?.isInheritable;
+    const { default: contextMenu } = await import("../../menus/context_menu");
     return contextMenu.show({
         x: event.pageX,
         y: event.pageY,

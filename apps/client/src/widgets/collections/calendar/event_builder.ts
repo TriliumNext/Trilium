@@ -1,10 +1,11 @@
-import { dayjs, evaluateTemplate } from "@triliumnext/commons";
+import { evaluateTemplate } from "@triliumnext/commons/src/lib/safe_template.js";
 import clsx from "clsx";
 import { EventInput, EventSourceFuncInfo, EventSourceInput } from "fullcalendar";
 import * as rruleLib from 'rrule';
 
 import FAttribute from "../../../entities/fattribute";
 import FNote from "../../../entities/fnote";
+import { dayjs } from "../../../services/dayjs";
 import froca from "../../../services/froca";
 import server from "../../../services/server";
 import toastService from "../../../services/toast";

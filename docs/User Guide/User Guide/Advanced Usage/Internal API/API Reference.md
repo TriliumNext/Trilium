@@ -7484,6 +7484,79 @@ Returns the IDs of the most recently modified live notes under the ancestor, new
 
     No content.
 
+### Get the glyph of every icon
+
+`GET /api/icon-packs.css` · `getIconPackGlyphCss`
+
+A stylesheet with the `::before` rule that places the character of each icon of each icon pack. The bootstrap data carries the fonts of the packs and links this stylesheet with a `v` parameter derived from its content, so the response can be cached for good. Served without a session, like the bootstrap data that names it on the login screen.
+
+**Authorization**: none
+
+**Query parameters**
+
+| Name | Description |
+| --- | --- |
+| `v` | `string`  <br>The content version the bootstrap data names; any value returns the current stylesheet |
+
+**Responses**
+
+=== "200: The glyph rules of the icon packs"
+
+    *   `text/css`: `string`
+
+### Get every icon of each icon pack
+
+`GET /api/other/icon-registry` · `getIconRegistry`
+
+Lists the icons that the icon picker searches. The bootstrap data names only the icon packs, since the full list runs to over a megabyte with many packs installed.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Responses**
+
+=== "200: The icons of each icon pack"
+
+    *   `application/json`: `object`
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `sources` | `array of object` |
+    | `sources[].prefix` | `string` |
+    | `sources[].name` | `string` |
+    | `sources[].icon` | `string`  <br>An icon class that identifies the pack |
+    | `sources[].icons` | `array of object` |
+    | `sources[].icons[].id` | `string`  <br>The icon's classes, such as `bx bx-star` |
+    | `sources[].icons[].terms` | `array of string` |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "sources": [
+            {
+                "prefix": "string",
+                "name": "string",
+                "icon": "string",
+                "icons": [
+                    {
+                        "id": "string",
+                        "terms": [
+                            "string"
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+    ```
+
+    </div>
+    </div>
+
 ### Get icon usage statistics
 
 `GET /api/other/icon-usage` · `getIconUsage`

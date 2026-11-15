@@ -5,7 +5,7 @@
  * The reference is the note's id, not the font's name. The name a font is offered under is the
  * note's title, which the user is free to change at any time, and an option holding that name would
  * stop resolving the moment they did. The id also keeps user-authored text out of the stylesheet the
- * font options are served as (see `getFontCss`): what reaches a CSS declaration is the family below,
+ * font options are served as (see `buildFontCss()`): what reaches a CSS declaration is the family below,
  * built from an id this module has checked.
  */
 const OPTION_PREFIX = "customFont:";

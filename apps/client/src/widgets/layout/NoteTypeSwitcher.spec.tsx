@@ -12,10 +12,11 @@ import options from "../../services/options.js";
 import type { NoteTypeData } from "../../services/note_types.js";
 import server from "../../services/server.js";
 import { buildNote } from "../../test/easy-froca.js";
+import { NoteTypeSwitcherBar } from "../note_title.js";
 import { noteSavedDataStore } from "../react/NoteStore.js";
 import { NoteContextContext, ParentComponent } from "../react/react_utils.js";
 import NoteTypeSwitcher, {
-    codeLanguageItems, NoteTypeBadges, NoteTypeSwitcherBar, toSwitcherItems, useNoteTypeData
+    codeLanguageItems, NoteTypeBadges, toSwitcherItems, useNoteTypeData
 } from "./NoteTypeSwitcher.js";
 
 vi.mock("../../services/i18n.js", () => ({
@@ -35,7 +36,7 @@ afterEach(() => {
 });
 
 describe("NoteTypeSwitcherBar", () => {
-    it("carries the switcher of the compact title, in the note's default view only", () => {
+    it("carries the switcher of the compact title, in the note's default view only", async () => {
         vi.spyOn(server, "get").mockResolvedValue({ templateNoteIds: [], newTemplateNoteIds: [] });
         buildNote({ id: "_templates", title: "Templates" });
         const note = buildNote({ id: "barNote", title: "Note", type: "text" });
@@ -49,6 +50,9 @@ describe("NoteTypeSwitcherBar", () => {
                 .querySelector(".note-type-switcher-bar > .note-type-switcher");
         };
 
+        // The switcher loads with the first text note; after that it shows from the first render.
+        switcherIn("compact", "default");
+        await vi.waitFor(() => expect(container?.querySelector(".note-type-switcher-bar > .note-type-switcher")).not.toBeNull());
         expect(switcherIn("compact", "default")).not.toBeNull();
         expect(switcherIn("large", "default")).toBeNull();
         expect(switcherIn("compact", "source")).toBeNull();

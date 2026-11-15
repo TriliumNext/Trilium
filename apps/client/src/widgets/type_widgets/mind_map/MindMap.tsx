@@ -1,16 +1,23 @@
 import "mind-elixir/style";
 import "./MindMap.css";
 
-import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
+import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons/src/lib/notes.js";
 import { t } from "i18next";
-import { DARK_THEME, default as VanillaMindElixir, MindElixirData, NodeObj, Operation, Theme, THEME as LIGHT_THEME } from "mind-elixir";
+import {
+    DARK_THEME, default as VanillaMindElixir, MindElixirData, NodeObj, Operation, Theme,
+    THEME as LIGHT_THEME
+} from "mind-elixir";
 import { ComponentChildren, createPortal, HTMLAttributes, RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { sanitizeNoteContentHtml } from "../../../services/sanitize_content";
 import toast from "../../../services/toast";
 import utils from "../../../services/utils";
-import { useColorScheme, useEditorSpacedUpdate, useEffectiveReadOnly, useSyncedRef, useTriliumEvent, useTriliumEvents, useTriliumOption } from "../../react/hooks";
+import { useTriliumEvent, useTriliumEvents } from "../../react/hooks/events";
+import { useSyncedRef } from "../../react/hooks/dom";
+import { useColorScheme, useTriliumOption } from "../../react/hooks/options";
+import { useEffectiveReadOnly } from "../../react/hooks/note_context";
+import { useEditorSpacedUpdate } from "../../react/hooks/editor";
 import { refToJQuerySelector } from "../../react/react_utils";
 import { TypeWidgetProps } from "../type_widget";
 import { renderMindMapPreviewSvg } from "./export";

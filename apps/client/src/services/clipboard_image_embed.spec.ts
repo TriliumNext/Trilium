@@ -1,11 +1,11 @@
-import { TRILIUM_SRC_ATTRIBUTE } from "@triliumnext/commons";
+import { TRILIUM_SRC_ATTRIBUTE } from "@triliumnext/commons/src/lib/shared_constants.js";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupClipboardImageEmbed } from "./clipboard_image_embed.js";
-import { embedReferenceImageAsDataUrl, resetImageEmbedBudget } from "./image.js";
+import { embedReferenceImageAsDataUrl, resetImageEmbedBudget } from "./image_embed.js";
 import options from "./options.js";
 
-vi.mock("./image.js", () => ({
+vi.mock("./image_embed.js", () => ({
     embedReferenceImageAsDataUrl: vi.fn(),
     resetImageEmbedBudget: vi.fn()
 }));

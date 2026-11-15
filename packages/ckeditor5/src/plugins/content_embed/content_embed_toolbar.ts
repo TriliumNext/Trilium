@@ -1,4 +1,4 @@
-import { MEDIA_EMBED_CLASS } from "@triliumnext/commons";
+import { MEDIA_EMBED_CLASS } from "@triliumnext/commons/src/lib/content_embeds.js";
 import {
     isWidget, Plugin, type ViewDocumentSelection, type ViewElement, WidgetToolbarRepository
 } from "ckeditor5";

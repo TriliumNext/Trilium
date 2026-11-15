@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import options from "../services/options";
-import { useIsNoteReadOnly, useNoteContext } from "./react/hooks";
+import { useIsNoteReadOnly, useNoteContext } from "./react/hooks/note_context";
 
 export default function ScrollPadding() {
     const { note, noteContext, parentComponent, ntxId, viewScope } = useNoteContext();

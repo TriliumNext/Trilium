@@ -24,7 +24,7 @@ const noteContentState = vi.hoisted(() => ({
     ready: true,
     reportReady: undefined as (() => void) | undefined
 }));
-vi.mock("../legacy/ListOrGridView", async () => {
+vi.mock("../legacy/NoteContent", async () => {
     const { useEffect } = await import("preact/hooks");
     return {
         NoteContent: ({ onReady }: { onReady?: () => void }) => {

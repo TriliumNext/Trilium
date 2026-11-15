@@ -1,4 +1,5 @@
-import { MimeType, shouldSyntaxHighlight } from "@triliumnext/commons";
+import type { MimeType } from "@triliumnext/commons";
+import { shouldSyntaxHighlight } from "@triliumnext/commons/src/lib/mime_type.js";
 // highlight.js is heavy and this module is reachable from the startup graph (note tooltips →
 // content renderer), so the library itself is only imported dynamically when highlighting runs.
 import type { AutoHighlightResult, HighlightResult, Theme } from "@triliumnext/highlightjs";
@@ -10,7 +11,8 @@ import options from "./options.js";
 import { getEffectiveThemeStyle, onEffectiveThemeStyleChange } from "./theme.js";
 import { isShare } from "./utils.js";
 
-let highlightingLoaded = false;
+let themeLoaded = false;
+let allMimeTypesLoaded = false;
 
 function getEffectiveCodeBlockTheme(): string {
     const theme = options.get("codeBlockThemeMatchesApp") === "true"
@@ -29,7 +31,7 @@ export function ensureColorSchemeListener() {
     colorSchemeListenerRegistered = true;
 
     onEffectiveThemeStyleChange(() => {
-        if (highlightingLoaded && options.get("codeBlockThemeMatchesApp") === "true") {
+        if (themeLoaded && options.get("codeBlockThemeMatchesApp") === "true") {
             loadHighlightingTheme(getEffectiveCodeBlockTheme());
         }
     });
@@ -162,14 +164,15 @@ export async function applySingleBlockSyntaxHighlight($codeBlock: JQuery<HTMLEle
 }
 
 export async function ensureMimeTypesForHighlighting(mimeTypeHint?: string) {
-    if (!mimeTypeHint && highlightingLoaded) {
+    if (!mimeTypeHint && allMimeTypesLoaded) {
         return;
     }
 
     // Load theme.
-    if (!highlightingLoaded) {
+    if (!themeLoaded) {
         await loadHighlightingTheme(getEffectiveCodeBlockTheme());
         ensureColorSchemeListener();
+        themeLoaded = true;
     }
 
     // Load mime types.
@@ -190,7 +193,9 @@ export async function ensureMimeTypesForHighlighting(mimeTypeHint?: string) {
     const { ensureMimeTypes } = await import("@triliumnext/highlightjs");
     await ensureMimeTypes(mimeTypes);
 
-    highlightingLoaded = true;
+    if (!mimeTypeHint) {
+        allMimeTypesLoaded = true;
+    }
 }
 
 export async function loadHighlightingTheme(themeName: string) {

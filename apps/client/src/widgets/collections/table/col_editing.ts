@@ -1,4 +1,6 @@
-import { extractAttributeDefinitionTypeAndName } from "@triliumnext/commons";
+import {
+    extractAttributeDefinitionTypeAndName
+} from "@triliumnext/commons/src/lib/promoted_attribute_definition_parser.js";
 import { t } from "i18next";
 import { RefObject } from "preact";
 import { useRef } from "preact/hooks";
@@ -11,7 +13,7 @@ import attributes from "../../../services/attributes";
 import { executeBulkActions } from "../../../services/bulk_action";
 import dialog from "../../../services/dialog";
 import AttributeDetailWidget from "../../attribute_widgets/attribute_detail";
-import { useLegacyImperativeHandlers } from "../../react/hooks";
+import { useLegacyImperativeHandlers } from "../../react/hooks/legacy";
 import { getAttributeFromField } from "./utils";
 
 export default function useColTableEditing(

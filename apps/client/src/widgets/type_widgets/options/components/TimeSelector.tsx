@@ -3,7 +3,7 @@ import FormTextBox from "../../../react/FormTextBox";
 import FormSelect from "../../../react/FormSelect";
 import { useEffect, useMemo, useState } from "preact/hooks";
 import { t } from "../../../../services/i18n";
-import { useTriliumOption } from "../../../react/hooks";
+import { useTriliumOption } from "../../../react/hooks/options";
 import toast from "../../../../services/toast";
 
 type TimeSelectorScale = "seconds" | "minutes" | "hours" | "days";

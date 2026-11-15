@@ -1,4 +1,4 @@
-import { toAspectRatio } from "@triliumnext/commons";
+import { toAspectRatio } from "@triliumnext/commons/src/lib/link_embed.js";
 
 import { getUrlForDownload } from "./open.js";
 import server from "./server.js";

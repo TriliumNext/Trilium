@@ -15,7 +15,8 @@ import type VanillaCodeMirror from "@triliumnext/codemirror";
 import type {
     HostedCompletionApply
 } from "@triliumnext/codemirror/src/extensions/hosted_completion";
-import { isAnchorState, type TaskStateDef } from "@triliumnext/commons";
+import type { TaskStateDef } from "@triliumnext/commons";
+import { isAnchorState } from "@triliumnext/commons/src/lib/task_states.js";
 import bxBulb from "boxicons/svg/regular/bx-bulb.svg?raw";
 import bxCommentError from "boxicons/svg/regular/bx-comment-error.svg?raw";
 import bxError from "boxicons/svg/regular/bx-error.svg?raw";

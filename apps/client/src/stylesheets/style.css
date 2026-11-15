@@ -446,7 +446,7 @@ samp {
 /*
  * Programming ligatures: the bundled JetBrains Mono renders `!=` as `≠`, `->` as `→` and so on,
  * which reads as the characters having been silently replaced (see #2851). The `monospaceLigatures-
- * Enabled` option gates this; the class is applied by RootContainer.
+ * Enabled` option gates this; the class is applied by `applyAppearance()`.
  *
  * Scoped to the monospace surfaces rather than set on `body`: `font-variant-ligatures` is inherited,
  * so a blanket rule would also disable `fi`/`fl` in prose, which is a typographic regression in note
@@ -2077,7 +2077,7 @@ pre.code-embed-editor > .cm-editor:not(.cm-focused) {
 
 /* Keeps the style and layout of hidden tabs, so showing one again needs no full relayout. */
 @supports (content-visibility: hidden) {
-    #center-pane > .split-note-container-widget > .note-split.hidden-ext {
+    #center-pane > .note-splits-host > .split-note-container-widget > .note-split.hidden-ext {
         display: flex !important;
         flex: 0 0 100% !important;
         margin-inline: -100% 0;

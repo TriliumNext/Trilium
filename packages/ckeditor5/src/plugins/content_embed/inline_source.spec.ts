@@ -12,7 +12,7 @@ import {
     Undo,
     Widget
 } from "ckeditor5";
-import { BOX_SIZES } from "@triliumnext/commons";
+import { BOX_SIZES } from "@triliumnext/commons/src/lib/content_embeds.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";

@@ -1,4 +1,4 @@
-import { promotedAttributeDefinitionParser } from "@triliumnext/commons";
+import promotedAttributeDefinitionParser from "@triliumnext/commons/src/lib/promoted_attribute_definition_parser.js";
 
 import attribute_parser, { Attribute } from "./attribute_parser.js";
 import { formatValue } from "./attribute_renderer.js";

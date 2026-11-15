@@ -1,7 +1,7 @@
 import { useState } from "preact/hooks";
 import { t } from "../services/i18n";
 import ActionButton from "./react/ActionButton";
-import { useTriliumEvent } from "./react/hooks";
+import { useTriliumEvent } from "./react/hooks/events";
 import "./close_zen_button.css";
 
 export default function CloseZenModeButton() {

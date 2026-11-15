@@ -33,7 +33,7 @@ import resourcesRoute from "./api/resources.js";
 import senderRoute from "./api/sender.js";
 import setupRestoreRoute from "./api/setup_restore.js";
 import shareTargetRoute from "./api/share_target.js";
-import systemInfoRoute from "./api/system_info.js";
+import systemInfoRoute, { checkCpuArchMismatch } from "./api/system_info.js";
 import totp from './api/totp.js';
 import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 import * as indexRoute from "./index.js";
@@ -121,7 +121,7 @@ function register(app: express.Application) {
         mediaProxyRoute.streamProxy, null);
 
     apiRoute(GET, "/api/metrics", metricsRoute.getMetrics);
-    apiRoute(GET, "/api/system-checks", systemInfoRoute.systemChecks);
+    asyncApiRoute(GET, "/api/system-checks", systemInfoRoute.systemChecks);
     apiRoute(GET, "/api/network-addresses", systemInfoRoute.getNetworkAddresses);
 
     // docker health check
@@ -214,6 +214,10 @@ function register(app: express.Application) {
     asyncApiRoute(DEL, "/api/resources/:id", resourcesRoute.deleteResource);
 
     app.use("", router);
+
+    // Started once the startup work in progress has run, so that `/bootstrap` can pass the result on
+    // without a request of its own, and nothing on the way to the first page waits for `sysctl`.
+    setTimeout(() => void checkCpuArchMismatch());
 }
 
 export default {

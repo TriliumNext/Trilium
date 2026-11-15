@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import branches from "../../services/branches";
 import { buildNote } from "../../test/easy-froca";
-import { TREE_CLIPBOARD_TYPE } from "../react/hooks";
+import { TREE_CLIPBOARD_TYPE } from "../react/hooks/drag";
 import LauncherDropTarget, {
     dropNotesOnLaunchBar, findInsertionPoint, getDropAnchor
 } from "./LauncherDropTarget";

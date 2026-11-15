@@ -2,7 +2,7 @@ import { RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
-import { useTrackedElement } from "../../react/hooks";
+import { useTrackedElement } from "../../react/hooks/dom";
 import {
     type CardBox, cardInsertionIndex, columnAt, type ColumnBox, columnCovers, type ColumnEnd,
     columnEndAt, columnInsertionIndex

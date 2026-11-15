@@ -1,13 +1,16 @@
 import "./text_notes.css";
 
-import { normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
+import { normalizeMimeTypeForCKEditor } from "@triliumnext/commons/src/lib/mime_type.js";
 import { getThemeVariant, Themes } from "@triliumnext/highlightjs";
 import type { CSSProperties } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
+import { formatCustomDateTime } from "../../../services/dayjs";
 import { t } from "../../../services/i18n";
-import { ensureMimeTypesForHighlighting, loadHighlightingTheme } from "../../../services/syntax_highlight";
-import { formatDateTime, toggleBodyClass } from "../../../services/utils";
+import {
+    ensureMimeTypesForHighlighting, loadHighlightingTheme
+} from "../../../services/syntax_highlight";
+import { toggleBodyClass } from "../../../services/utils";
 import ActionButton from "../../react/ActionButton";
 import { Card, CardSection, OptionCardSection } from "../../react/Card";
 import Dropdown from "../../react/Dropdown";
@@ -16,7 +19,7 @@ import FormSelect, { FormSelectGroup, FormSelectWithGroups } from "../../react/F
 import FormTextArea from "../../react/FormTextArea";
 import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
-import { useColorScheme, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useColorScheme, useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
 import { getHtml } from "../../react/RawHtml";
 import { QUOTE_MARK_PRESETS } from "../text/quotes";
 import { type CustomReplacement, parseCustomReplacements } from "../text/replacements";
@@ -555,7 +558,7 @@ function Editor() {
             <OptionCardSection
                 name="custom-date-time-format"
                 label={t("custom_date_time_format.title")}
-                description={<>{t("custom_date_time_format.description_short")} {t("custom_date_time_format.preview", { preview: formatDateTime(new Date(), customDateTimeFormat) })}</>}
+                description={<>{t("custom_date_time_format.description_short")} {t("custom_date_time_format.preview", { preview: formatCustomDateTime(new Date(), customDateTimeFormat) })}</>}
             >
                 <FormTextBox
                     placeholder="YYYY-MM-DD HH:mm"

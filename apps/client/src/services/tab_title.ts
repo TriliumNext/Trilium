@@ -2,6 +2,9 @@
  * Pure helpers for assembling a tab's title from its splits. Kept free of DOM/appContext so the
  * formatting rules (separator, empty-split fallback, per-segment active flag) can be unit-tested.
  */
+import type FNote from "../entities/fnote.js";
+import { t } from "./i18n.js";
+import utils from "./utils.js";
 
 export const TAB_TITLE_SEPARATOR = " • ";
 
@@ -57,4 +60,20 @@ export function buildTabTitle(
         tooltip: `${prefix}${body}`,
         tooltipHtml: `${escapeHtml(prefix)}${bodyHtml}`
     };
+}
+
+/** The classes of the lock beside the title of a protected note. */
+export const PROTECTED_ICON = "bx bx-lock-alt protected-icon";
+
+/** The HTML of a note's title in a tab or the breadcrumb, with the lock of a protected note. */
+export function noteTitleHtml(note: FNote) {
+    const title = noteTitleTextHtml(note);
+    return note.isProtected ? `${title}<span class="${PROTECTED_ICON} tn-icon"></span>` : title;
+}
+
+/** The HTML of the note's title, or of "Protected" while the protected session is locked. */
+export function noteTitleTextHtml(note: FNote) {
+    if (note.isContentAvailable()) return utils.escapeHtml(note.title);
+    const locked = utils.escapeHtml(t("protected_session.locked_note_title"));
+    return `<span class="protected-title">${locked}</span>`;
 }

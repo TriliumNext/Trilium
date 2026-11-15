@@ -1,6 +1,6 @@
 import type { ContentEmbedCodeView } from "@triliumnext/ckeditor5";
 import type VanillaCodeMirror from "@triliumnext/codemirror";
-import { getMimeTypeFromCKEditorLanguage } from "@triliumnext/commons";
+import { getMimeTypeFromCKEditorLanguage } from "@triliumnext/commons/src/lib/mime_type.js";
 import moveVerticalIcon from "boxicons/svg/regular/bx-move-vertical.svg?raw";
 import { createPortal, type RefObject } from "preact";
 import { lazy, Suspense, useSyncExternalStore } from "preact/compat";
@@ -23,9 +23,9 @@ import {
 import { SaveStateBadge } from "../../layout/NoteBadges";
 import { useMimeTypes } from "../../layout/NoteTypeSwitcher";
 import ActionButton from "../../react/ActionButton";
-import {
-    useNoteBlob, useNoteLabelOptionalBool, useTriliumEvent, useWhenShown
-} from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useWhenShown } from "../../react/hooks/dom";
+import { useNoteBlob, useNoteLabelOptionalBool } from "../../react/hooks/note";
 import { useContentEmbedMenus } from "../text/content_embed_menus";
 import {
     type ContentEmbedToolbarItem, useContentEmbedAttribute, useContentEmbedFlag

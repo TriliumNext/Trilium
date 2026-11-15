@@ -1,9 +1,12 @@
 import "./TranscriptView.css";
 
+import type {
+    TranscriptSource, TranscriptSourceIssue, TranscriptUtterance
+} from "@triliumnext/commons";
 import {
     cleanUtteranceText, getSpeakerKey, markDisfluencies, MAX_SPEAKER_NAME_LENGTH, parseTranscript,
-    setSpeakerName, type TranscriptSource, type TranscriptSourceIssue, type TranscriptUtterance
-} from "@triliumnext/commons";
+    setSpeakerName
+} from "@triliumnext/commons/src/lib/transcript.js";
 import clsx from "clsx";
 import { Fragment } from "preact";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
@@ -17,7 +20,9 @@ import utils from "../../../services/utils";
 import { useTranscriptionState } from "../../launch_bar/RecordMeetingButton";
 import ActionButton from "../../react/ActionButton";
 import FormTextBox from "../../react/FormTextBox";
-import { useStaticTooltip, useTriliumEvent, useTriliumOptionBool } from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useTriliumOptionBool } from "../../react/hooks/options";
+import { useStaticTooltip } from "../../react/hooks/tooltip";
 import LinkButton from "../../react/LinkButton";
 import NoItems from "../../react/NoItems";
 

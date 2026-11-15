@@ -3,7 +3,7 @@ import "./ChatHighlightsList.css";
 import dialog from "../../services/dialog";
 import { t } from "../../services/i18n";
 import ActionButton from "../react/ActionButton";
-import { useGetContextData } from "../react/hooks";
+import { useGetContextData } from "../react/hooks/tree";
 import RightPanelWidget from "./RightPanelWidget";
 
 /**

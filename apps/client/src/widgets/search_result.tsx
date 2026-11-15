@@ -9,7 +9,8 @@ import search from "../services/search";
 import toast from "../services/toast";
 import { SearchNoteList } from "./collections/NoteList";
 import Button from "./react/Button";
-import { useNoteContext, useTriliumEvent } from "./react/hooks";
+import { useTriliumEvent } from "./react/hooks/events";
+import { useNoteContext } from "./react/hooks/note_context";
 import NoItems from "./react/NoItems";
 
 enum SearchResultState {

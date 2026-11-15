@@ -1,5 +1,5 @@
 import { act } from "preact/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import type NoteContext from "../../components/note_context";
 import type { MenuCommandItem } from "../../menus/context_menu";
@@ -7,9 +7,12 @@ import froca from "../../services/froca";
 import protectedSessionHolder from "../../services/protected_session_holder";
 import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
+import { preloadDropdownPopups } from "../react/Dropdown";
 import {
-    BreadcrumbNoteTitle, BreadcrumbSeparator, buildChildNoteItems, noteTitleHtml
+    BreadcrumbNoteTitle, BreadcrumbSeparator, buildChildNoteItems
 } from "./Breadcrumb";
+
+beforeAll(() => preloadDropdownPopups());
 
 vi.mock("../../services/i18n", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../services/i18n")>()),
@@ -124,25 +127,6 @@ describe("BreadcrumbSeparator", () => {
         expect(matches.map((row) => !!row.querySelector(lock))).toEqual([ true, false ]);
         expect(matches.map((row) => row.classList.contains("archived"))).toEqual([ false, true ]);
         vi.restoreAllMocks();
-    });
-});
-
-describe("noteTitleHtml", () => {
-    afterEach(() => {
-        vi.restoreAllMocks();
-    });
-
-    it("escapes the title, and reads Protected with a lock while the session is locked", () => {
-        const note = buildNote({ title: "R&D <b>" });
-        expect(noteTitleHtml(note)).toBe("R&amp;D &lt;b&gt;");
-
-        note.isProtected = true;
-        const lock = `<span class="bx bx-lock-alt protected-icon tn-icon"></span>`;
-        vi.spyOn(protectedSessionHolder, "isProtectedSessionAvailable").mockReturnValue(true);
-        expect(noteTitleHtml(note)).toBe(`R&amp;D &lt;b&gt;${lock}`);
-        vi.spyOn(protectedSessionHolder, "isProtectedSessionAvailable").mockReturnValue(false);
-        const locked = `<span class="protected-title">protected_session.locked_note_title</span>`;
-        expect(noteTitleHtml(note)).toBe(`${locked}${lock}`);
     });
 });
 

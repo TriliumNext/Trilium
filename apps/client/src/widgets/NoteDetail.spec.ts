@@ -15,9 +15,11 @@ vi.mock("./note_tree", () => ({ default: class {} }));
 
 import {
     checkFillsPane, getExtendedWidgetType, NoteDetailWrapper, shouldFocusOnNoteChange,
-    useDeferredDetailFocus, useNoteInfo
+    useDeferredDetailFocus, useNoteInfo, useTypeWidgets
 } from "./NoteDetail";
-import { useLegacyImperativeHandlers, useTriliumEvent } from "./react/hooks";
+import type { ExtendedNoteType, TypeWidget } from "./note_types";
+import { useTriliumEvent } from "./react/hooks/events";
+import { useLegacyImperativeHandlers } from "./react/hooks/legacy";
 import {
     ContainerVisibilityContext, NoteContextContext, ParentComponent
 } from "./react/react_utils";
@@ -122,6 +124,69 @@ describe("useDeferredDetailFocus", () => {
         renderHarness(true);
         expect(replay).not.toHaveBeenCalled();
     });
+});
+
+describe("useTypeWidgets", () => {
+    const host = document.createElement("div");
+    let result: ReturnType<typeof useTypeWidgets> | undefined;
+    /** `loadingType` in every render, as the loading overlay sees it. */
+    let rendered: (ExtendedNoteType | undefined)[] = [];
+
+    function Harness({ type, load }: { type: ExtendedNoteType | undefined, load: (type: ExtendedNoteType) => Promise<TypeWidget | null> }) {
+        result = useTypeWidgets(type, null, load);
+        rendered.push(result.loadingType);
+        return null;
+    }
+
+    afterEach(() => {
+        act(() => render(null, host));
+    });
+
+    it("reports the type whose widget is being loaded, until its import settles", async () => {
+        const pending = new Map<ExtendedNoteType, { resolve: (widget: TypeWidget | null) => void, reject: (error: Error) => void }>();
+        const load = (type: ExtendedNoteType) => new Promise<TypeWidget | null>((resolve, reject) => {
+            pending.set(type, { resolve, reject });
+        });
+        const Widget = (() => null) as unknown as TypeWidget;
+
+        act(() => render(h(Harness, { type: "editableText", load }), host));
+        expect(result?.loadingType).toBe("editableText");
+        expect(result?.activeNoteType).toBeUndefined();
+
+        await settle(() => pending.get("editableText")?.resolve(Widget));
+        expect(result?.loadingType).toBeUndefined();
+        expect(result?.activeNoteType).toBe("editableText");
+
+        // Loading from the render that changes the type, with no render in between without it.
+        rendered = [];
+        act(() => render(h(Harness, { type: "book", load }), host));
+        expect(rendered.length).toBeGreaterThan(0);
+        expect(rendered.every((loadingType) => loadingType === "book")).toBe(true);
+
+        // A type without a widget, or whose import fails, does not stay loading.
+        await settle(() => pending.get("book")?.resolve(null));
+        expect(result?.loadingType).toBeUndefined();
+
+        act(() => render(h(Harness, { type: "editableCode", load }), host));
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+        await settle(() => pending.get("editableCode")?.reject(new Error("offline")));
+        expect(consoleError).toHaveBeenCalled();
+        consoleError.mockRestore();
+        expect(result?.loadingType).toBeUndefined();
+
+        // A loaded widget is shown again at once.
+        act(() => render(h(Harness, { type: "editableText", load }), host));
+        expect(result?.loadingType).toBeUndefined();
+        expect(result?.activeNoteType).toBe("editableText");
+    });
+
+    /** Settles an import, and lets the hook's promise chain run to its end. */
+    async function settle(settleImport: () => void) {
+        await act(async () => {
+            settleImport();
+            await new Promise((resolve) => setTimeout(resolve));
+        });
+    }
 });
 
 describe("useNoteInfo", () => {

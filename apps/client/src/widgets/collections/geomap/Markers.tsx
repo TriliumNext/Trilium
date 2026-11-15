@@ -1,12 +1,19 @@
-import { AddLayerObject, type CircleLayerSpecification, type ExpressionSpecification, type GeoJSONSource, type MapGeoJSONFeature, type Map as MapLibreGLMap, type MapMouseEvent, type SymbolLayerSpecification } from "maplibre-gl";
+import {
+    AddLayerObject, type CircleLayerSpecification, type ExpressionSpecification, type GeoJSONSource,
+    type MapGeoJSONFeature, type Map as MapLibreGLMap, type MapMouseEvent,
+    type SymbolLayerSpecification
+} from "maplibre-gl";
 import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
 import { getReadableTextColor } from "../../../services/css_class_manager";
 import { renderIconImage } from "../../../services/icon_glyphs";
-import { useTriliumEvent } from "../../react/hooks";
-import { CLUSTER_LAYERS, CLUSTER_SOURCE_OPTIONS, installClusterLayers, UNCLUSTERED_ONLY, useClusterExpansion } from "./clusters";
+import { useTriliumEvent } from "../../react/hooks/events";
+import {
+    CLUSTER_LAYERS, CLUSTER_SOURCE_OPTIONS, installClusterLayers, UNCLUSTERED_ONLY,
+    useClusterExpansion
+} from "./clusters";
 import { type Bounds, boundsOf } from "./coordinates";
 import { MapStyleLoaded, ParentMap } from "./map";
 import { NOTE_ZOOM } from "./results";

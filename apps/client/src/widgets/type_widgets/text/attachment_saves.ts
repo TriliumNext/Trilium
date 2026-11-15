@@ -8,7 +8,7 @@ import froca from "../../../services/froca";
 import protected_session_holder from "../../../services/protected_session_holder";
 import server from "../../../services/server";
 import SpacedUpdate from "../../../services/spaced_update";
-import { type SavedData, useSaveBeforeLeaving } from "../../react/hooks";
+import { type SavedData, useSaveBeforeLeaving } from "../../react/hooks/editor";
 import { ParentComponent } from "../../react/react_utils";
 
 type SavedAttachments = NonNullable<SavedData["attachments"]>;

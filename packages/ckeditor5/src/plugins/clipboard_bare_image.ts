@@ -1,4 +1,4 @@
-import { TRILIUM_SRC_ATTRIBUTE } from "@triliumnext/commons";
+import { TRILIUM_SRC_ATTRIBUTE } from "@triliumnext/commons/src/lib/shared_constants.js";
 import { createImageTypeRegExp, ImageUpload, Plugin } from "ckeditor5";
 import type { ViewDocumentClipboardInputEvent } from "ckeditor5";
 

@@ -25,8 +25,8 @@ vi.mock("../../../services/utils", async (importOriginal) => ({
 // assertion about a description true of any string at all.
 vi.mock("../../../services/i18n", () => ({ t: (key: string) => key }));
 
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useTriliumOptionBool: (name: string) => [ mocks.stored[name] === true, vi.fn() ]
 }));
 

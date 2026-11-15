@@ -1,187 +1,40 @@
-import { useMemo, useRef, useState } from "preact/hooks";
-import FNote from "../../entities/fnote";
-import { LaunchBarDropdownButton, LauncherNoteProps, useLauncherIconAndTitle } from "./launch_bar_widgets";
-import { Dayjs, dayjs } from "@triliumnext/commons";
-import appContext from "../../components/app_context";
-import "./CalendarWidget.css";
-import Calendar, { CalendarArgs } from "./Calendar";
-import ActionButton from "../react/ActionButton";
-import { t } from "../../services/i18n";
+import { useRef, useState } from "preact/hooks";
+
 import type { DropdownHandle } from "../react/Dropdown";
-import FormDropdownList from "../react/FormDropdownList";
-import FormTextBox from "../react/FormTextBox";
-import toast from "../../services/toast";
-import date_notes from "../../services/date_notes";
-import search from "../../services/search";
-import server from "../../services/server";
+import { preloadLazyModule } from "../react/LazyComponent";
+import { LaunchBarDropdownButton, LauncherNoteProps, useLauncherIconAndTitle } from "./launch_bar_widgets";
 
-export const MONTHS = [
-    t("calendar.january"),
-    t("calendar.february"),
-    t("calendar.march"),
-    t("calendar.april"),
-    t("calendar.may"),
-    t("calendar.june"),
-    t("calendar.july"),
-    t("calendar.august"),
-    t("calendar.september"),
-    t("calendar.october"),
-    t("calendar.november"),
-    t("calendar.december")
-];
+const loadDropdown = () => import("./CalendarDropdown");
+const preloadDropdown = () => preloadLazyModule(loadDropdown);
 
+/**
+ * The calendar launcher: a button whose dropdown, with its dates and day notes, loads when first
+ * shown. Pointing at the button or focusing it starts the load, and the dropdown opens once it is
+ * done.
+ */
 export default function CalendarWidget({ launcherNote }: LauncherNoteProps) {
     const { title, icon } = useLauncherIconAndTitle(launcherNote);
-    const [ calendarArgs, setCalendarArgs ] = useState<Pick<CalendarArgs, "activeDate" | "todaysDate">>();
-    const [ date, setDate ] = useState<Dayjs>();
     const dropdownRef = useRef<DropdownHandle>(null);
-    const [ enableWeekNotes, setEnableWeekNotes ] = useState(false);
-    const [ weekNotes, setWeekNotes ] = useState<string[]>([]);
-    const calendarRootRef = useRef<FNote | undefined>(undefined);
-
-    async function checkEnableWeekNotes() {
-        if (!calendarRootRef.current) {
-            const notes = await search.searchForNotes("#calendarRoot");
-            if (!notes.length) return;
-            calendarRootRef.current = notes[0];
-        }
-
-        if (!calendarRootRef.current) return;
-
-        const enableWeekNotes = calendarRootRef.current.hasLabel("enableWeekNote");
-        setEnableWeekNotes(enableWeekNotes);
-
-        if (enableWeekNotes) {
-            server.get<string[]>(`attribute-values/weekNote`).then(setWeekNotes);
-        }
-    }
+    const [ shownCount, setShownCount ] = useState(0);
+    const [ calendarDropdown, setCalendarDropdown ] = useState<Awaited<ReturnType<typeof loadDropdown>>>();
 
     return (
         <LaunchBarDropdownButton
             panel
             launcherNote={launcherNote}
             icon={icon} title={title}
-            onShown={async () => {
-                const dateNote = appContext.tabManager.getActiveContextNote()?.getOwnedLabelValue("dateNote");
-                const activeDate = dateNote ? dayjs(`${dateNote}T12:00:00`) : null
-                const todaysDate = dayjs();
-                setCalendarArgs({
-                    activeDate,
-                    todaysDate,
-                });
-                setDate(dayjs(activeDate || todaysDate).startOf('month'));
-                try {
-                    await checkEnableWeekNotes();
-                } catch (e: unknown) {
-                    // Non-critical.
-                }
+            buttonProps={{ onPointerEnter: preloadDropdown, onPointerDown: preloadDropdown, onFocus: preloadDropdown }}
+            onShown={() => {
+                setShownCount((count) => count + 1);
+                void loadDropdown().then(setCalendarDropdown);
             }}
+            ready={!!calendarDropdown}
             dropdownRef={dropdownRef}
             autoClose="outside"
         >
-            {calendarArgs && date && <div className="calendar-dropdown-widget">
-                <CalendarHeader date={date} setDate={setDate} />
-                <Calendar
-                    date={date}
-                    onDateClicked={async (date, e) => {
-                        const note = await date_notes.getDayNote(date);
-                        if (note) {
-                            appContext.tabManager.getActiveContext()?.setNote(note.noteId);
-                            dropdownRef.current?.hide();
-                        } else {
-                            toast.showError(t("calendar.cannot_find_day_note"));
-                        }
-                        e.stopPropagation();
-                    }}
-                    onWeekClicked={enableWeekNotes ? async (week, e) => {
-                        const note = await date_notes.getWeekNote(week);
-                        if (note) {
-                            appContext.tabManager.getActiveContext()?.setNote(note.noteId);
-                            dropdownRef.current?.hide();
-                        } else {
-                            toast.showError(t("calendar.cannot_find_week_note"));
-                        }
-                        e.stopPropagation();
-                    } : undefined}
-                    weekNotes={weekNotes}
-                    {...calendarArgs}
-                />
-            </div>}
+            {calendarDropdown && shownCount > 0 && (
+                <calendarDropdown.default shownCount={shownCount} dropdownRef={dropdownRef} />
+            )}
         </LaunchBarDropdownButton>
-    )
-}
-
-interface CalendarHeaderProps {
-    date: Dayjs;
-    setDate(date: Dayjs): void;
-}
-
-function CalendarHeader(props: CalendarHeaderProps) {
-    return (
-        <div className="calendar-header">
-            <CalendarMonthSelector {...props} />
-            <CalendarYearSelector {...props} />
-        </div>
-    )
-}
-
-function CalendarMonthSelector({ date, setDate }: CalendarHeaderProps) {
-    const months = useMemo(() => (
-        Array.from(MONTHS.entries().map(([ index, text ]) => ({
-            index: index.toString(), text
-        })))
-    ), []);
-
-    return (
-        <div className="calendar-month-selector">
-            <AdjustDateButton date={date} setDate={setDate} direction="prev" unit="month" />
-            <FormDropdownList
-                values={months} currentValue={date.month().toString()}
-                keyProperty="index" titleProperty="text"
-                onChange={(index) => setDate(date.set("month", parseInt(index, 10)))}
-                buttonProps={{ "data-calendar-input": "month" }}
-            />
-            <AdjustDateButton date={date} setDate={setDate} direction="next" unit="month" />
-        </div>
     );
-}
-
-function CalendarYearSelector({ date, setDate }: CalendarHeaderProps) {
-    return (
-        <div className="calendar-year-selector">
-            <AdjustDateButton date={date} setDate={setDate} direction="prev" unit="year" />
-            <FormTextBox
-                type="number"
-                min="1900" max="2999" step="1"
-                currentValue={date.year().toString()}
-                onChange={(newValue) => {
-                    const year = parseInt(newValue, 10);
-                    if (!Number.isNaN(year)) {
-                        setDate(date.set("year", year));
-                    }
-                }}
-                data-calendar-input="year"
-            />
-            <AdjustDateButton date={date} setDate={setDate} direction="next" unit="year" />
-        </div>
-    )
-}
-
-export function AdjustDateButton({ date, setDate, unit, direction }: CalendarHeaderProps & {
-    direction: "prev" | "next",
-    unit: "month" | "year"
-}) {
-    return (
-        <ActionButton
-            icon={direction === "prev" ? "bx bx-chevron-left" : "bx bx-chevron-right" }
-            className="calendar-btn tn-tool-button"
-            noIconActionClass
-            text=""
-            onClick={(e) => {
-                e.stopPropagation();
-                const newDate = direction === "prev" ? date.subtract(1, unit) : date.add(1, unit);
-                setDate(newDate);
-            }}
-        />
-    )
 }

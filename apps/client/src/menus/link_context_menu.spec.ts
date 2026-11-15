@@ -1,5 +1,5 @@
 import type { ToolbarGroupMenuItem } from "@triliumnext/ckeditor5";
-import { EXTENDED_CODE_BLOCK_CLASS } from "@triliumnext/commons";
+import { EXTENDED_CODE_BLOCK_CLASS } from "@triliumnext/commons/src/lib/content_embeds.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ViewScope } from "../services/link";

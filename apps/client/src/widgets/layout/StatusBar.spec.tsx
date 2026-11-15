@@ -11,10 +11,10 @@ import FNote from "../../entities/fnote";
 // is read in — neither of which a rendered widget brings with it.
 const shownNote = vi.hoisted(() => ({ current: null as FNote | null }));
 const contextData = vi.hoisted(() => new Map<string, unknown>());
-vi.mock("../react/hooks", async (importOriginal) => {
+vi.mock("../react/hooks/tree", async (importOriginal) => {
     const noteContext = { ntxId: "ntx1", getContextData: (key: string) => contextData.get(key) };
     return {
-        ...(await importOriginal<typeof import("../react/hooks")>()),
+        ...(await importOriginal<typeof import("../react/hooks/tree")>()),
         useActiveNoteContext: () => ({
             note: shownNote.current,
             noteContext,
@@ -77,13 +77,13 @@ describe("StatusBar panels", () => {
         contextData.clear();
     });
 
-    it("opens the similar notes panel on the keyboard action, and puts it away on a second press", () => {
+    it("opens the similar notes panel on the keyboard action, and puts it away on a second press", async () => {
         renderBar();
         expect(container.querySelector(".similar-notes-pane")).toBeNull();
 
         fire("toggleRibbonTabSimilarNotes");
         // The panel carries the list, which is the whole point of the action reaching the bar at all.
-        expect(container.querySelector(".similar-notes-pane .similar-notes-widget")).not.toBeNull();
+        await waitForElement(".similar-notes-pane .similar-notes-widget");
         expect(document.body.classList.contains("status-bar-panel-open")).toBe(true);
 
         fire("toggleRibbonTabSimilarNotes");
@@ -100,33 +100,34 @@ describe("StatusBar panels", () => {
         expect(document.body.classList.contains("status-bar-panel-open")).toBe(false);
     });
 
-    it("shows one panel at a time, the newer taking the place of the one already open", () => {
+    it("shows one panel at a time, the newer taking the place of the one already open", async () => {
         renderBar();
 
         fire("toggleRibbonTabOwnedAttributes");
+        await waitForElement(".attribute-list");
         expect(isShown(".attribute-list")).toBe(true);
         expect(container.querySelector(".similar-notes-pane")).toBeNull();
 
         fire("toggleRibbonTabSimilarNotes");
-        expect(container.querySelector(".similar-notes-pane")).not.toBeNull();
+        await waitForElement(".similar-notes-pane");
         expect(isShown(".attribute-list")).toBe(false);
     });
 
-    it("hands the shortcut that opens the attributes panel to the editor it mounts", () => {
+    it("hands the shortcut that opens the attributes panel to the editor it mounts", async () => {
         renderBar();
         fire("addNewRelation");
 
+        await waitForElement(".attribute-list");
         expect(isShown(".attribute-list")).toBe(true);
         expect(editorProps.current?.initialCommand).toBe("addNewRelation");
     });
 
-    it("offers the attributes panel a way to the sidebar's own, and steps aside once taken", () => {
+    it("offers the attributes panel a way to the sidebar's own, and steps aside once taken", async () => {
         const triggerEvent = vi.spyOn(appContext, "triggerEvent").mockResolvedValue(undefined);
         renderBar();
         fire("toggleRibbonTabOwnedAttributes");
 
-        const sidebarLink = container.querySelector<HTMLElement>(".attribute-list .bottom-panel-title-bar .status-bar-sidebar-link");
-        expect(sidebarLink).not.toBeNull();
+        const sidebarLink = await waitForElement(".attribute-list .bottom-panel-title-bar .status-bar-sidebar-link");
 
         act(() => sidebarLink?.click());
         expect(triggerEvent).toHaveBeenCalledWith("selectRightPaneTab", { tabId: "attributes", peek: true });
@@ -137,25 +138,25 @@ describe("StatusBar panels", () => {
     it("offers no attributes panel for a note that cannot be edited, not even on the shortcut", () => {
         renderBar(false);
         expect(container.querySelector(".attributes-button")).toBeNull();
+        expect(eventHandlers.has("addNewLabel")).toBe(false);
 
         fire("addNewLabel");
         expect(container.querySelector(".attribute-editor-stub")).toBeNull();
     });
 
-    it("closes the similar notes panel from its own title bar", () => {
+    it("closes the similar notes panel from its own title bar", async () => {
         renderBar();
         fire("toggleRibbonTabSimilarNotes");
 
         // Looked up and vouched for before the press: a panel that never opened has no close button
         // either, and the assertion below would then hold for the wrong reason.
-        const closeButton = container.querySelector<HTMLElement>(".similar-notes-pane .bottom-panel-title-bar .bx-x");
-        expect(closeButton).not.toBeNull();
+        const closeButton = await waitForElement(".similar-notes-pane .bottom-panel-title-bar .bx-x");
 
-        act(() => closeButton?.click());
+        act(() => closeButton.click());
         expect(container.querySelector(".similar-notes-pane")).toBeNull();
     });
 
-    it("shows the cursor position of a code note first in the row, and follows the cursor", () => {
+    it("shows the cursor position of a code note first in the row, and follows the cursor", async () => {
         let report: ((position: CursorPosition) => void) | undefined;
         const unsubscribe = vi.fn();
         contextData.set("codeEditor", {
@@ -186,8 +187,7 @@ describe("StatusBar panels", () => {
         };
 
         renderBar(true, "code");
-        const position = container.querySelector(".actions-row > .cursor-position");
-        expect(position).not.toBeNull();
+        const position = await waitForElement(".actions-row > .cursor-position");
         expect(position?.previousElementSibling).toBeNull();
         expect(getParts()).toEqual([
             [ "status_bar.cursor_line", "12" ],
@@ -331,6 +331,15 @@ describe("StatusBar panels", () => {
     /** Hands the bar one of the keyboard actions it listens for, as the app's event bus would. */
     function fire(eventName: string) {
         act(() => eventHandlers.get(eventName)?.({}));
+    }
+
+    /** Waits for the element of `selector`, which can be in a module the bar loads on demand. */
+    function waitForElement(selector: string) {
+        return vi.waitFor(() => {
+            const element = container.querySelector<HTMLElement>(selector);
+            expect(element).toBeInstanceOf(HTMLElement);
+            return element as HTMLElement;
+        });
     }
 
     /** A panel that is always rendered says whether it is up through a class rather than by absence. */

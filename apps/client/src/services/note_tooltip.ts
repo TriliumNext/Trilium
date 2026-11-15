@@ -1,21 +1,21 @@
-import { encodeBlockParameter } from "@triliumnext/commons";
+import { encodeBlockParameter } from "@triliumnext/commons/src/lib/block_reference.js";
 
 import appContext from "../components/app_context.js";
 import type FAttachment from "../entities/fattachment.js";
 import type FNote from "../entities/fnote.js";
-import attributeRenderer from "./attribute_renderer.js";
-import { revealHighlightedBlocks } from "./block_reference.js";
-import contentRenderer from "./content_renderer.js";
+import { onContextMenuShow } from "../menus/context_menu.js";
+import { loadBootstrap } from "../widgets/react/hooks/tooltip.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import linkService, { type BlockJump } from "./link.js";
-import { sanitizeNoteContentHtml } from "./sanitize_content.js";
 import treeService from "./tree.js";
 import utils from "./utils.js";
 
 // Track all elements that open tooltips
 let openTooltipElements: JQuery<HTMLElement>[] = [];
 let dismissTimer: ReturnType<typeof setTimeout>;
+
+onContextMenuShow(dismissAllTooltips);
 
 function setupGlobalTooltip() {
     $(document).on("pointerenter", "a:not(.no-tooltip-preview)", mouseEnterHandler);
@@ -131,8 +131,12 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
         renderPromise = renderTooltip(note, detail, viewScope?.block, blockJump);
     }
 
-    const [content] = await Promise.all([
+    const [ content, { sanitizeNoteContentHtml }, blockReference ] = await Promise.all([
         renderPromise,
+        import("./sanitize_content.js"),
+        viewScope?.block ? import("./block_reference.js") : undefined,
+        // The preview is a tooltip of Bootstrap's jQuery plugin, which Bootstrap installs as it loads.
+        loadBootstrap(),
         // to reduce flicker due to accidental mouseover, cursor must stay for a bit over the link for tooltip to appear
         new Promise((res) => setTimeout(res, 500))
     ]);
@@ -181,8 +185,8 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
         openTooltipElements.push($link);
 
         const tooltipContent = $(`.${linkId} .note-tooltip-content`).get(0);
-        if (viewScope?.block && tooltipContent) {
-            revealHighlightedBlocks(tooltipContent);
+        if (blockReference && tooltipContent) {
+            blockReference.revealHighlightedBlocks(tooltipContent);
         }
 
         $(`.${linkId} .jump-to-blocks-button`).on("click", (e) => {
@@ -257,8 +261,10 @@ export async function renderTooltip(
     // An attachment has no attributes, and those of its note describe the note.
     const $renderedAttributes = attachment
         ? null
-        : (await attributeRenderer.renderNormalAttributes(note)).$renderedAttributes;
+        : (await (await import("./attribute_renderer.js")).default.renderNormalAttributes(note)).$renderedAttributes;
 
+    // Loaded with the first tooltip: the content renderer imports the renderers of every note type.
+    const { default: contentRenderer } = await import("./content_renderer.js");
     const { $renderedContent } = await contentRenderer.getRenderedContent(entity, {
         tooltip: true,
         trim: true,

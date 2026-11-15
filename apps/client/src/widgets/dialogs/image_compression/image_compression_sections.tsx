@@ -1,6 +1,8 @@
 import "./image_compression_sections.css";
 
-import { IMAGE_JPEG_HANDLINGS, IMAGE_PNG_HANDLINGS } from "@triliumnext/commons";
+import {
+    IMAGE_JPEG_HANDLINGS, IMAGE_PNG_HANDLINGS
+} from "@triliumnext/commons/src/lib/server_api.js";
 import clsx from "clsx";
 
 import { t } from "../../../services/i18n";

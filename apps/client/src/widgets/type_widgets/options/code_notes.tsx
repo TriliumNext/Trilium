@@ -8,7 +8,7 @@ import { Card, CardSection, OptionCardSection } from "../../react/Card";
 import FormSelect from "../../react/FormSelect";
 import { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
-import { useColorScheme, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useColorScheme, useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
 import { CODE_THEME_DEFAULT_PREFIX as DEFAULT_PREFIX } from "../constants";
 import { CodeMimeTypesCard } from "./code_mime_types_card";
 import OptionsPageHeader from "./components/OptionsPageHeader";

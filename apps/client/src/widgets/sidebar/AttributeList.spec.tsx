@@ -1,6 +1,6 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import FNote from "../../entities/fnote";
 
@@ -8,11 +8,11 @@ import FNote from "../../entities/fnote";
 // redraws it, as the real hook does by listening for the switch — rendering the panel a second time
 // would not: the same element with no props of its own is the same vnode to Preact, which skips it.
 const shownNote = vi.hoisted(() => ({ current: null as FNote | null, listeners: new Set<() => void>() }));
-vi.mock("../react/hooks", async (importOriginal) => {
+vi.mock("../react/hooks/tree", async (importOriginal) => {
     const { useEffect, useState } = await import("preact/hooks");
 
     return {
-        ...(await importOriginal<typeof import("../react/hooks")>()),
+        ...(await importOriginal<typeof import("../react/hooks/tree")>()),
         useActiveNoteContext: () => {
             const [ , setRevision ] = useState(0);
             useEffect(() => {
@@ -59,7 +59,9 @@ vi.mock("../react/NoteAutocomplete", async () => {
 import appContext from "../../components/app_context";
 import type Component from "../../components/component";
 import FAttribute, { FAttributeRow } from "../../entities/fattribute";
-import { getHeldAttributes, holdAttributes, writeAttributes } from "../../services/attribute_clipboard";
+import {
+    getHeldAttributes, holdAttributes, writeAttributes
+} from "../../services/attribute_clipboard";
 import type { Attribute } from "../../services/attribute_parser";
 import froca from "../../services/froca";
 import type LoadResults from "../../services/load_results";
@@ -67,8 +69,11 @@ import noteAttributeCache from "../../services/note_attribute_cache";
 import options from "../../services/options";
 import server from "../../services/server";
 import { buildNote } from "../../test/easy-froca";
+import { preloadDropdownPopups } from "../react/Dropdown";
 import { ParentComponent } from "../react/react_utils";
 import AttributeList, { getAttributeKind, getDisplayName, listInherited, listInternal, listOwned, splitIntoSections } from "./AttributeList";
+
+beforeAll(() => preloadDropdownPopups());
 
 describe("listOwned", () => {
     it("orders by position and leaves out the attributes Trilium maintains itself", () => {

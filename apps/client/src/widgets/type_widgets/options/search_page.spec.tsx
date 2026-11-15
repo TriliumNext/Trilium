@@ -14,8 +14,8 @@ vi.mock("../../dialogs/OptionsDialog", () => ({
     useOptionPages: () => mocks.pages
 }));
 
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
+vi.mock("../../react/hooks/note_context", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/note_context")>()),
     useNoteContext: () => ({})
 }));
 

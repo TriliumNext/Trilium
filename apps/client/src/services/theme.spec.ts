@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
     applyTheme, buildThemeStylesheetRefs, getConfiguredThemeStylesheets, getEffectiveThemeStyle, getThemeStyle,
-    initThemeChangeNotifier, onEffectiveThemeStyleChange, updateColorSchemeClasses
+    initThemeChangeNotifier, onEffectiveThemeStyleChange, rememberRootBackground, updateColorSchemeClasses
 } from "./theme.js";
 
 // theme.ts lazily imports the app context to emit `themeChanged`; mock it so the tests capture the emission
@@ -441,3 +441,37 @@ function fireLoadOnPendingThemeLinks() {
         link.dispatchEvent(new Event("load"));
     }
 }
+
+describe("rememberRootBackground", () => {
+    afterEach(() => {
+        document.getElementById("background-color-tracker")?.remove();
+        document.documentElement.style.removeProperty("background-color");
+        localStorage.clear();
+    });
+
+    it("hands the page background to the stylesheets once all have loaded, and stores each color", async () => {
+        const tracker = document.createElement("div");
+        tracker.id = "background-color-tracker";
+        tracker.style.color = "rgb(242, 242, 242)";
+        document.body.append(tracker);
+        document.documentElement.style.backgroundColor = "rgb(1, 2, 3)";
+        const theme = document.createElement("link");
+        const style = document.createElement("link");
+
+        const remembered = rememberRootBackground([ theme, style ]);
+        style.dispatchEvent(new Event("load"));
+        await Promise.resolve();
+        expect(document.documentElement.style.backgroundColor).toBe("rgb(1, 2, 3)");
+        expect(localStorage.getItem("trilium-root-background")).toBeNull();
+
+        theme.dispatchEvent(new Event("error"));
+        await remembered;
+        expect(document.documentElement.style.backgroundColor).toBe("");
+        expect(localStorage.getItem("trilium-root-background")).toBe("rgb(242, 242, 242)");
+
+        // A theme switched later changes `--root-background`, which the tracker transitions to.
+        tracker.style.color = "rgb(31, 31, 31)";
+        tracker.dispatchEvent(new Event("transitionend"));
+        expect(localStorage.getItem("trilium-root-background")).toBe("rgb(31, 31, 31)");
+    });
+});

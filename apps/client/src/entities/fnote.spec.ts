@@ -307,6 +307,17 @@ describe("FNote attachments", () => {
         expect((await note.getAttachmentById("att2"))?.attachmentId).toBe("att2");
         expect(await note.getAttachmentById("missing")).toBeUndefined();
     });
+
+    it("loads the attachments once for callers that ask before they arrive", async () => {
+        const attachments = [ makeAttachment({ attachmentId: "att1", role: "image" }) ];
+        const getAttachmentsForNote = vi.fn(async () => attachments);
+        const note = makeNote({ getAttachmentsForNote });
+
+        const results = await Promise.all([ note.getAttachments(), note.getAttachments(), note.getAttachmentsByRole("image") ]);
+
+        expect(getAttachmentsForNote).toHaveBeenCalledTimes(1);
+        expect(results).toEqual([ attachments, attachments, attachments ]);
+    });
 });
 
 describe("FNote isEligibleForConversionToAttachment", () => {

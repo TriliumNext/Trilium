@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preac
 import Component from "./components/component";
 import FNote from "./entities/fnote";
 import content_renderer from "./services/content_renderer";
+import { createFontStylesheet } from "./services/font";
 import froca from "./services/froca";
 import { waitForPendingRenders } from "./services/pending_renders";
 import { isElectron } from "./services/utils";
@@ -43,11 +44,8 @@ export async function main() {
         document.head.appendChild(style);
     }
 
-    // Load the user's font preferences so that --detail-font-family is available.
-    const fontLink = document.createElement("link");
-    fontLink.rel = "stylesheet";
-    fontLink.href = "api/fonts";
-    document.head.appendChild(fontLink);
+    // The font options declare `--detail-font-family`, which the printed content is drawn in.
+    document.head.appendChild(createFontStylesheet(window.glob.fontCss ?? ""));
 
     const note = await froca.getNote(noteId);
     console.debug("[print] Note loaded:", noteId, note?.type);

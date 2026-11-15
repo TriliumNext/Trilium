@@ -1,4 +1,4 @@
-import { MERMAID_ATTACHMENT_MIME } from "@triliumnext/commons";
+import { MERMAID_ATTACHMENT_MIME } from "@triliumnext/commons/src/lib/notes.js";
 import type { ComponentType } from "preact";
 
 import type { ContentEditor } from "./content_renderer";

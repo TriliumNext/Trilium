@@ -6,20 +6,32 @@ import {
     type VimConfig
 } from "@triliumnext/ckeditor5";
 import emojiDefinitionsUrl from "@triliumnext/ckeditor5/src/emoji_definitions/en.json?url";
-import { ALLOWED_PROTOCOLS, DISPLAYABLE_LOCALE_IDS, formatShortcut, IMAGE_UPLOAD_SUBTYPES, joinShortcut, KATEX_MACROS, MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
+import type { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
+import { IMAGE_UPLOAD_SUBTYPES } from "@triliumnext/commons/src/lib/image_mimes.js";
+import { KATEX_MACROS } from "@triliumnext/commons/src/lib/katex_macros.js";
+import {
+    formatShortcut, joinShortcut
+} from "@triliumnext/commons/src/lib/keyboard_shortcut_display.js";
+import {
+    MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor
+} from "@triliumnext/commons/src/lib/mime_type.js";
+import { ALLOWED_PROTOCOLS } from "@triliumnext/commons/src/lib/shared_constants.js";
 import i18next from "i18next";
 
 import type { CommandMappings, CommandNames } from "../../../components/app_context.js";
 import { openInCurrentNoteContext } from "../../../components/note_context.js";
 import linkContextMenu from "../../../menus/link_context_menu.js";
 import { buildReferenceConfig, type ReferenceSource } from "../../../services/block_reference.js";
+import { takeCatalogue } from "../../../services/catalogue_requests.js";
 import { copyHtmlWithToast, copyTextWithToast } from "../../../services/clipboard_ext.js";
 import { getEmbedContentInfo, getUploadBoxDefaults } from "../../../services/content_renderer.js";
+import { formatCustomDateTime } from "../../../services/dayjs.js";
 import { prompt } from "../../../services/dialog.js";
 import { isExperimentalFeatureEnabled } from "../../../services/experimental_features.js";
 import froca from "../../../services/froca.js";
 import { t } from "../../../services/i18n.js";
 import imageService from "../../../services/image.js";
+import { embedReferenceImageAsDataUrl } from "../../../services/image_embed.js";
 import { getNoteImageSourceToLoad } from "../../../services/image_urls.js";
 import linkService from "../../../services/link.js";
 import { detectEmbedType, fetchMetadata, renderEmbedPreview, renderMentionPreview, unresolvedMetadata } from "../../../services/link_embed.js";
@@ -31,7 +43,7 @@ import server from "../../../services/server.js";
 import { getSourceEmbedTypeByLanguage, SOURCE_EMBED_TYPES } from "../../../services/source_embeds.js";
 import { ensureMimeTypesForHighlighting, isSyntaxHighlightEnabled } from "../../../services/syntax_highlight.js";
 import { getTaskStateDefinitions, openCustomTaskStateConfig } from "../../../services/task_states.js";
-import { formatDateTime, isMac, isMobile } from "../../../services/utils.js";
+import { isMac, isMobile } from "../../../services/utils.js";
 import { resolveContentLanguage } from "../../../utils/formatters.js";
 import { FLOATING_LAYER_SELECTOR } from "../../react/floating_layers.js";
 import { convertImageToDrawing } from "../canvas/image_to_drawing.js";
@@ -265,8 +277,9 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             list: createEmojiList
         },
         syntaxHighlighting: {
-            loadHighlightJs: async () => {
-                await ensureMimeTypesForHighlighting();
+            // Auto-detection needs every language; any other block only its own.
+            loadHighlightJs: async (mimeType) => {
+                await ensureMimeTypesForHighlighting(mimeType === MIME_TYPE_AUTO ? undefined : mimeType);
                 return await import("@triliumnext/highlightjs");
             },
             mapLanguageName: getHighlightJsNameForMime,
@@ -278,7 +291,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             copyHtml: copyHtmlWithToast
         },
         // Reads `customDateTimeFormat` on each call, so a changed format applies to open editors.
-        formatDateTime: (date, format) => formatDateTime(date, format ?? options.get("customDateTimeFormat")),
+        formatDateTime: (date, format) => formatCustomDateTime(date, format ?? options.get("customDateTimeFormat")),
         referenceLink: {
             getTitle: linkService.getReferenceLinkTitle,
             getTitleSync: (href, storedTitle, content) => linkService.getReferenceLinkTitleSync(
@@ -355,7 +368,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         removePlugins: getDisabledPlugins(),
         // The locale's CKEditor translations, plus the dictionary of Trilium-authored editor
         // strings resolved through the app's i18n (see `messages.ts` in the ckeditor5 package).
-        ...await getCkLocale(opts.uiLanguage, { englishMessages: getEnglishEditorMessages(), translate: (key) => t(key) })
+        ...await getCkLocale(opts.uiLanguage, { englishMessages: await getEnglishEditorMessages(), translate: (key) => t(key) })
     };
 
     // User-configurable todo task states (from the `_taskStates` hidden subtree).
@@ -405,7 +418,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
     // boolean would leave an open editor still embedding after the switch was flipped.
     config.clipboardImageEmbed = {
         enabled: () => options.get("clipboardImageEmbedEnabled") === "true",
-        embedImage: (src: string) => imageService.embedReferenceImageAsDataUrl(src)
+        embedImage: (src: string) => embedReferenceImageAsDataUrl(src)
     };
 
     // Table sorting reads dates inserted in the user's own format.
@@ -604,16 +617,30 @@ function buildTransformationsConfig(contentLanguage: string | null): TextTransfo
  * registry of Trilium-authored editor strings — there is no list of them in code — so reading it
  * back is what lets the message dictionary be built.
  *
- * English is always loaded, being i18next's `fallbackLng`; an empty section only means every editor
- * string renders its English message id, which is what an unconfigured editor does anyway.
+ * i18next holds the English catalog only while the app is in English, so in another language it is
+ * fetched once, with the first editor. An empty section only means every editor string renders its
+ * English message id, which is what an unconfigured editor does anyway.
  *
  * `getResourceBundle` is bound onto the i18next instance by `init()`, so it is missing until
  * `initLocale()` has run — the case for a test that builds a config without booting i18n.
  */
-function getEnglishEditorMessages(): Record<string, string> {
-    const bundle = i18next.getResourceBundle?.("en", "translation") as
+async function getEnglishEditorMessages(): Promise<Record<string, string>> {
+    if (!i18next.getResourceBundle) return {};
+    const bundle = (i18next.getResourceBundle("en", "translation") ?? await loadEnglishCatalogue()) as
         { "text-editor"?: { ck?: Record<string, string> } } | undefined;
     return bundle?.["text-editor"]?.ck ?? {};
+}
+
+let englishCatalogue: Promise<Record<string, unknown> | undefined> | undefined;
+
+/** The English `translation` catalog, fetched once; a failed fetch is tried again by the next editor. */
+function loadEnglishCatalogue() {
+    englishCatalogue ??= takeCatalogue("en", "translation").catch((e: unknown) => {
+        console.warn("Could not load the English editor messages:", e);
+        englishCatalogue = undefined;
+        return undefined;
+    });
+    return englishCatalogue;
 }
 
 function buildListOfLanguages() {

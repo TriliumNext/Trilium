@@ -28,8 +28,8 @@ vi.mock("../../../components/app_context", () => ({
     default: { triggerCommand: mocks.triggerCommand }
 }));
 
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useTriliumOption: (name: string) => [
         mocks.languageCode,
         (value: string) => void mocks.saved.push([ name, value ])

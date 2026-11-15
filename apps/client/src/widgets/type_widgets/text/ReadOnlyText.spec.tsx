@@ -30,8 +30,12 @@ import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
 import ReadOnlyText, { ReadOnlyTextContent } from "./ReadOnlyText";
 
-// Imported by ReadOnlyText only for its content styles; irrelevant (and heavy) in happy-dom.
-vi.mock("@triliumnext/ckeditor5", () => ({}));
+// KaTeX, which the math service loads; `loaded` says whether anything has imported it.
+const math = vi.hoisted(() => ({ loaded: false, renderMathInElement: vi.fn() }));
+vi.mock("../../../services/math", () => {
+    math.loaded = true;
+    return { default: {}, renderMathInElement: math.renderMathInElement };
+});
 vi.mock("../../../services/i18n", async (importOriginal) => ({
     ...(await importOriginal<object>()),
     t: (key: string) => key
@@ -763,6 +767,26 @@ describe("ReadOnlyText lists", () => {
             .toEqual([ "trilium-list-item-aligned-right", "" ]);
         await act(async () => render(null, harness.container));
         harness.container.remove();
+    });
+});
+
+describe("ReadOnlyText math", () => {
+    it("loads KaTeX only for content with formulas, and renders them before printing", async () => {
+        const container = document.createElement("div");
+        document.body.appendChild(container);
+
+        await act(async () => render(<ReadOnlyTextContent html="<p>No formulas here.</p>" />, container));
+        expect(math.loaded).toBe(false);
+
+        const html = "<p>Area: <span class=\"math-tex\">\\(\\pi r^2\\)</span></p>";
+        await act(async () => render(<ReadOnlyTextContent html={html} />, container));
+        const { waitForPendingRenders } = await import("../../../services/pending_renders");
+        await waitForPendingRenders(container);
+
+        expect(math.renderMathInElement).toHaveBeenCalledWith(
+            container.querySelector("span.math-tex"), { trust: true, throwOnError: false });
+        await act(async () => render(null, container));
+        container.remove();
     });
 });
 

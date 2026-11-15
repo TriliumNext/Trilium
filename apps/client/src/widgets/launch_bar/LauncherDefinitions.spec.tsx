@@ -4,9 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type FNote from "../../entities/fnote";
 import { buildNote } from "../../test/easy-froca";
-import { useCommandLauncherContextMenu } from "./LauncherDefinitions";
+import { LaunchBarContext } from "./launch_bar_widgets";
+import { QuickSearchLauncherWidget, useCommandLauncherContextMenu } from "./LauncherDefinitions";
 
 const mocks = vi.hoisted(() => ({
+    quickSearchLoaded: false,
     showLauncherContextMenu: vi.fn(),
     getRecentlyChangedNotesMenuItems: vi.fn()
 }));
@@ -14,6 +16,10 @@ const mocks = vi.hoisted(() => ({
 vi.mock("../../menus/launcher_button_context_menu", () => ({
     showLauncherContextMenu: mocks.showLauncherContextMenu
 }));
+vi.mock("../quick_search", () => {
+    mocks.quickSearchLoaded = true;
+    return { default: () => <div className="quick-search-stub" /> };
+});
 vi.mock("../../menus/recent_changes_menu_items", () => ({
     getRecentlyChangedNotesMenuItems: mocks.getRecentlyChangedNotesMenuItems
 }));
@@ -105,4 +111,27 @@ describe("useCommandLauncherContextMenu", () => {
         if (!button) throw new Error("The probe did not render its button.");
         return button;
     }
+});
+
+describe("QuickSearchLauncherWidget", () => {
+    it("loads the search field only for the horizontal launch bar, which shows it", async () => {
+        const launcherNote = buildNote({ id: "_lbQuickSearch", title: "Quick search" });
+        const container = document.createElement("div");
+        document.body.append(container);
+        const draw = (isHorizontalLayout: boolean) => act(() => render(
+            <LaunchBarContext.Provider value={{ isHorizontalLayout }}>
+                <QuickSearchLauncherWidget launcherNote={launcherNote} />
+            </LaunchBarContext.Provider>, container));
+
+        draw(false);
+        await act(async () => { await new Promise((resolve) => setTimeout(resolve)); });
+        expect(mocks.quickSearchLoaded).toBe(false);
+
+        draw(true);
+        await vi.waitFor(() => expect(container.querySelector(".quick-search-stub")).not.toBeNull());
+        expect(mocks.quickSearchLoaded).toBe(true);
+
+        act(() => render(null, container));
+        container.remove();
+    });
 });

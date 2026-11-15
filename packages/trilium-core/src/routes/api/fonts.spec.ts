@@ -1,8 +1,9 @@
 import type { Request, Response } from "../../http_interface";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as cls from "../../services/context.js";
 import optionService from "../../services/options.js";
+import sqlInit from "../../services/sql_init.js";
 import fontsRoute from "./fonts.js";
 
 function fakeRes() {
@@ -26,89 +27,33 @@ describe("Fonts API", () => {
         cls.init(() => optionService.setOption("overrideThemeFonts", "false"));
     });
 
-    it("always sets a CSS content type", () => {
-        const { headers } = getCss();
+    it("serves the stylesheet of the font options as CSS", () => {
+        const empty = getCss();
+        expect(empty.headers["Content-Type"]).toBe("text/css");
+        expect(empty.body).toBe("");
+
+        cls.init(() => {
+            optionService.setOption("overrideThemeFonts", "true");
+            optionService.setOption("detailFontFamily", "Arial");
+        });
+        const { headers, body } = getCss();
         expect(headers["Content-Type"]).toBe("text/css");
-    });
-
-    it("returns empty CSS when font override is disabled", () => {
-        expect(getCss().body).toBe("");
-    });
-
-    it("emits font-size variables and resolves 'system' / 'theme' families", () => {
-        cls.init(() => {
-            optionService.setOption("overrideThemeFonts", "true");
-            optionService.setOption("mainFontFamily", "system");
-            optionService.setOption("treeFontFamily", "theme");
-            optionService.setOption("detailFontFamily", "Arial");
-            optionService.setOption("monospaceFontFamily", "system");
-        });
-
-        const { body } = getCss();
-        // The client sizes `<html>` from `--main-font-size`, so it cannot be declared on `body`.
         expect(body).toMatch(/^html:root \{/);
-        expect(body).toContain("--main-font-size:");
-        expect(body).toContain("--tree-font-size:");
-        // 'system' is expanded to a font stack, 'theme' is omitted entirely
-        expect(body).toContain("--main-font-family:");
-        expect(body).not.toContain("--tree-font-family:");
         expect(body).toContain("--detail-font-family: Arial;");
-        expect(body).toContain("--monospace-font-family:");
     });
 
-    it("leaves every family that follows the theme to the theme", () => {
+    it("serves an empty stylesheet before the database is initialized", () => {
         cls.init(() => {
             optionService.setOption("overrideThemeFonts", "true");
-            for (const option of [ "mainFontFamily", "treeFontFamily", "detailFontFamily", "monospaceFontFamily" ] as const) {
-                optionService.setOption(option, "theme");
-            }
-        });
-
-        const { body } = getCss();
-        expect(body).toContain("--main-font-size:");
-        expect(body).not.toContain("-font-family:");
-    });
-
-    it("expands every family when all are set to 'system'", () => {
-        cls.init(() => {
-            optionService.setOption("overrideThemeFonts", "true");
-            optionService.setOption("mainFontFamily", "system");
-            optionService.setOption("treeFontFamily", "system");
-            optionService.setOption("detailFontFamily", "system");
-            optionService.setOption("monospaceFontFamily", "system");
-        });
-
-        const { body } = getCss();
-        for (const v of ["--main-font-family:", "--tree-font-family:", "--detail-font-family:", "--monospace-font-family:"]) {
-            expect(body).toContain(v);
-        }
-    });
-
-    it("names one of the user's own fonts by the family its file is registered under", () => {
-        cls.init(() => {
-            optionService.setOption("overrideThemeFonts", "true");
-            optionService.setOption("mainFontFamily", "customFont:abc123XYZ");
-            // A reference to no note Trilium could have minted is left as it stands rather than
-            // built into a declaration.
-            optionService.setOption("treeFontFamily", "customFont:not a note id");
             optionService.setOption("detailFontFamily", "Arial");
         });
-
-        const { body } = getCss();
-        expect(body).toContain('--main-font-family: "trilium-font-abc123XYZ";');
-        expect(body).toContain("--tree-font-family: customFont:not a note id;");
-        expect(body).toContain("--detail-font-family: Arial;");
-    });
-
-    it("names the generic monospace twice, so the browser keeps the chosen font size", () => {
-        cls.init(() => {
-            optionService.setOption("overrideThemeFonts", "true");
-            optionService.setOption("detailFontFamily", "monospace");
-            optionService.setOption("monospaceFontFamily", "monospace");
-        });
-
-        const { body } = getCss();
-        expect(body).toContain("--detail-font-family: monospace, monospace;");
-        expect(body).toContain("--monospace-font-family: monospace, monospace;");
+        const initialized = vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(false);
+        try {
+            const { headers, body } = getCss();
+            expect(headers["Content-Type"]).toBe("text/css");
+            expect(body).toBe("");
+        } finally {
+            initialized.mockRestore();
+        }
     });
 });

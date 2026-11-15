@@ -6,12 +6,13 @@ import prefresh from "@prefresh/vite";
 import { defaultClientConditions, defineConfig, type Plugin } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 
+import { translationCatalogues } from "../client/translation-catalogues.mjs";
 import {
-    flattenCssNesting, narrowThirdPartySelectors, shareTheme, stripUniverEmojiData,
+    bundleStylesheet, narrowThirdPartySelectors, shareTheme, stripUniverEmojiData,
     stripUniverHyphenation
 } from "../client/vite-plugins.mjs";
 
-const clientAssets = ["assets", "stylesheets", "fonts", "translations"];
+const clientAssets = ["assets", "stylesheets", "fonts"];
 
 const isDev = process.env.NODE_ENV === "development";
 const FULL_COVERAGE = { lines: 100, functions: 100, branches: 100, statements: 100 };
@@ -200,12 +201,13 @@ let plugins: any = [
     narrowThirdPartySelectors(),
     sqliteWasmDedupePlugin(),
     sqliteWasmPlugin,
+    translationCatalogues(join(__dirname, "../client/src/translations")),
     viteStaticCopy({
         targets: clientAssets.map((asset) => ({
             src: `../../client/src/${asset}/**/*`,
             dest: asset,
             rename: { stripBase: 3 },
-            ...(asset === "stylesheets" && { transform: flattenCssNesting })
+            ...(asset === "stylesheets" && { transform: bundleStylesheet })
         })),
         // Enable watching in development
         ...(isDev && {

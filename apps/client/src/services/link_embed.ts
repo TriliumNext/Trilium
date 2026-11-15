@@ -1,10 +1,13 @@
 import "../widgets/type_widgets/text/LinkEmbed.css";
 
+import type { LinkEmbedMetadata, LinkPreviewData } from "@triliumnext/commons";
 import {
-    enhanceLinkPreviews, getMediaFileTitle, getMediaFileTypeOfUrl, type LinkEmbedMetadata,
-    type LinkPreviewData, readLinkPreviewData, renderLinkEmbedBoxHtml, renderLinkEmbedHtml,
-    renderLinkMentionHtml, safeHostname, YOUTUBE_REGEX
-} from "@triliumnext/commons";
+    getMediaFileTitle, getMediaFileTypeOfUrl, safeHostname, YOUTUBE_REGEX
+} from "@triliumnext/commons/src/lib/link_embed.js";
+import { enhanceLinkPreviews } from "@triliumnext/commons/src/lib/link_embed_dom.js";
+import {
+    readLinkPreviewData, renderLinkEmbedBoxHtml, renderLinkEmbedHtml, renderLinkMentionHtml
+} from "@triliumnext/commons/src/lib/link_embed_markup.js";
 
 import { t } from "./i18n.js";
 import server from "./server.js";

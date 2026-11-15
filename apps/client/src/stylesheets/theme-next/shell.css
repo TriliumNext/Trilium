@@ -12,6 +12,7 @@
     --dropdown-border-radius: 10px;
 }
 
+body.desktop,
 #root-widget {
     background-color: var(--root-background);
 }
@@ -912,7 +913,8 @@ body.layout-vertical #left-pane .quick-search {
 
 /* Limit the drag area for the previous elements to include just to the element itself
    and not its descendants also */
-body.layout-horizontal .tab-row-container > *,
+body.layout-horizontal .tab-row-container > :not(.tab-row-host),
+body.layout-horizontal .tab-row-host > *,
 body.layout-vertical .tab-row-widget > *:not(.tab-row-filler),
 body.layout-vertical #left-pane .quick-search > * {
     -webkit-app-region: no-drag;
@@ -1167,7 +1169,7 @@ body.desktop.status-bar-panel-open .vertical-layout #center-pane
 }
 
 /* The active split in a multi-split view */
-#center-pane > .split-note-container-widget.multiple-splits > .note-split.active::after,
+#center-pane > .note-splits-host > .split-note-container-widget.multiple-splits > .note-split.active::after,
 body.mobile #detail-container > .split-note-container-widget.multiple-splits
     > .note-split.active::after {
     border-color: var(--link-selection-outline-color);
@@ -1175,7 +1177,13 @@ body.mobile #detail-container > .split-note-container-widget.multiple-splits
 
 
 body:not(.background-effects) #center-pane .note-split {
-    animation: note-entrance 100ms linear;
+    > * {
+        animation: note-entrance 100ms linear;
+    }
+
+    &.hidden-ext > * {
+        animation: none;
+    }
 }
 
 @keyframes note-entrance {

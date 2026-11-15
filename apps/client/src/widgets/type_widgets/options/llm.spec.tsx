@@ -41,10 +41,10 @@ vi.mock("../../../services/i18n", () => ({
 }));
 
 // Each call keeps its own copy of the value, as the real hook does until `entitiesReloaded` arrives.
-vi.mock("../../react/hooks", async (importOriginal) => {
+vi.mock("../../react/hooks/options", async (importOriginal) => {
     const { useState } = await import("preact/hooks");
     return {
-        ...(await importOriginal<typeof import("../../react/hooks")>()),
+        ...(await importOriginal<typeof import("../../react/hooks/options")>()),
         useTriliumOption: (name: string) => {
             const [ value, setValue ] = useState(mocks.stored[name] ?? "");
             return [ value, (newValue: string) => {

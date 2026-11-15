@@ -19,10 +19,10 @@ vi.mock("../../services/i18n", () => ({
 
 // Attaches from an effect with the real hook's dependencies, so an element that is not rendered
 // yet when the effect runs gets no tooltip, as in the app.
-vi.mock("../react/hooks", async (importOriginal) => {
+vi.mock("../react/hooks/tooltip", async (importOriginal) => {
     const { useEffect } = await import("preact/hooks");
     return {
-        ...(await importOriginal<typeof import("../react/hooks")>()),
+        ...(await importOriginal<typeof import("../react/hooks/tooltip")>()),
         useStaticTooltip: (ref: { current: Element | null }, config?: Partial<Tooltip.Options>) => {
             useEffect(() => {
                 if (ref.current && config) {

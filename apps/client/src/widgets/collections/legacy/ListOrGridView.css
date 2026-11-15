@@ -120,25 +120,6 @@
     }
 }
 
-.note-book-content {
-    height: 100%;
-
-    &.type-image, &.type-file, &.type-protectedSession {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        padding: 10px;
-        flex-grow: 1;
-    }
-
-    &.type-image img, &.type-canvas svg {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
-    }
-}
-
 .note-content-preview:has(.note-book-content:empty) {
     display: none;
 }

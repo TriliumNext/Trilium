@@ -7,7 +7,8 @@ import { List, type RowComponentProps } from "react-window";
 
 import { NoteContextDataMap } from "../../../components/note_context";
 import { t } from "../../../services/i18n";
-import { useActiveNoteContext, useGetContextData, useNoteProperty } from "../../react/hooks";
+import { useNoteProperty } from "../../react/hooks/note";
+import { useActiveNoteContext, useGetContextData } from "../../react/hooks/tree";
 import RightPanelWidget, { NavigatedInNote } from "../RightPanelWidget";
 import { showCopyReferenceMenu } from "./PdfAnnotations";
 

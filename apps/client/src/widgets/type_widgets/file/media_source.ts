@@ -1,6 +1,7 @@
+import type { LinkPreviewData, MediaFileEmbedType } from "@triliumnext/commons";
 import {
-    getMediaFileTitle, type LinkPreviewData, type MediaFileEmbedType, safeLinkPreviewImageSrc
-} from "@triliumnext/commons";
+    getMediaFileTitle, safeLinkPreviewImageSrc
+} from "@triliumnext/commons/src/lib/link_embed.js";
 
 import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";

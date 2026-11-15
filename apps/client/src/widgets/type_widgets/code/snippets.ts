@@ -1,14 +1,14 @@
 import type {
     HostedCompletionApply
 } from "@triliumnext/codemirror/src/extensions/hosted_completion";
-import { isMarkdownMime } from "@triliumnext/commons";
+import { isMarkdownMime } from "@triliumnext/commons/src/lib/notes.js";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
 import type FNote from "../../../entities/fnote.js";
 import type LoadResults from "../../../services/load_results.js";
 import search from "../../../services/search.js";
 import { logError } from "../../../services/ws.js";
-import { useTriliumEvent } from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
 import type { CommandEntry } from "../../react/NoteAutocomplete";
 
 /** Matches a `/command` token at the start of a line or after whitespace. Shared by every editor. */

@@ -268,20 +268,18 @@ describe("setupLeftPaneResizer", () => {
         expect(cancelledRafIds).toHaveLength(1);
     });
 
-    it("reuses cached layout/width state on subsequent calls instead of re-reading options", async () => {
+    it("keeps the width it read first, and reads the orientation on every call, which can change", async () => {
         const { resizer, options } = await loadResizer({ layoutOrientation: "horizontal", leftPaneWidth: 30 });
 
         resizer.setupLeftPaneResizer("docked");
         flushRaf();
-        const getCallsAfterFirst = (options.get as ReturnType<typeof vi.fn>).mock.calls.length;
         const getIntCallsAfterFirst = (options.getInt as ReturnType<typeof vi.fn>).mock.calls.length;
 
         resizer.setupLeftPaneResizer("docked");
         flushRaf();
 
-        // layoutOrientation / leftPaneWidth are cached after the first call (?? short-circuits).
-        expect((options.get as ReturnType<typeof vi.fn>).mock.calls.length).toBe(getCallsAfterFirst);
         expect((options.getInt as ReturnType<typeof vi.fn>).mock.calls.length).toBe(getIntCallsAfterFirst);
+        expect(vi.mocked(options.get).mock.calls.filter(([ name ]) => name === "layoutOrientation")).toHaveLength(2);
     });
 });
 

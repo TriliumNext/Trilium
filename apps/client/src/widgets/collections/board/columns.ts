@@ -1,6 +1,6 @@
-import {
-    buildNoteTypeId, DEFAULT_BOARD_GROUP_BY, type DefinitionObject
-} from "@triliumnext/commons";
+import type { DefinitionObject } from "@triliumnext/commons";
+import { DEFAULT_BOARD_GROUP_BY } from "@triliumnext/commons/src/lib/board_columns.js";
+import { buildNoteTypeId } from "@triliumnext/commons/src/lib/note_type_ids.js";
 
 import type FAttribute from "../../../entities/fattribute";
 import type FNote from "../../../entities/fnote";

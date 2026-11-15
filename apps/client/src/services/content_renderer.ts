@@ -1,10 +1,16 @@
 import "./content_renderer.css";
 
+import type { BoxSize, TextRepresentationResponse } from "@triliumnext/commons";
 import {
-    attachmentIcon, type BoxSize, getEditableBlockRun, getFileContentType, getMimeTypeFromFileName,
-    getNoteContentType, hasCompactContent, isAcceptedImageMime, isImageAttachmentRole,
-    isMarkdownMime, type TextRepresentationResponse
-} from "@triliumnext/commons";
+    attachmentIcon, isImageAttachmentRole
+} from "@triliumnext/commons/src/lib/attachment_roles.js";
+import { getEditableBlockRun } from "@triliumnext/commons/src/lib/block_reference.js";
+import { hasCompactContent } from "@triliumnext/commons/src/lib/content_embeds.js";
+import { isAcceptedImageMime } from "@triliumnext/commons/src/lib/image_mimes.js";
+import { getMimeTypeFromFileName } from "@triliumnext/commons/src/lib/mime_type.js";
+import {
+    getFileContentType, getNoteContentType, isMarkdownMime
+} from "@triliumnext/commons/src/lib/notes.js";
 import DOMPurify from "dompurify";
 import { h, type JSX, render } from "preact";
 

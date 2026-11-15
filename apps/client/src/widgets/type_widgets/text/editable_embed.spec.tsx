@@ -1,5 +1,6 @@
 import type { EmbedEdge } from "@triliumnext/ckeditor5";
-import { deferred, type DeferredPromise } from "@triliumnext/commons";
+import type { DeferredPromise } from "@triliumnext/commons";
+import { deferred } from "@triliumnext/commons/src/lib/utils.js";
 import { createRef, render } from "preact";
 import { useRef } from "preact/hooks";
 import { act } from "preact/test-utils";
@@ -14,8 +15,9 @@ import {
 import {
     EditableEmbedContent, type EditableEmbedOptions, type EmbeddedCaretEditor, EmbedPreview,
     NestedEmbedContext, useEditableEmbed, useEmbedCaretNavigation, useEmbedEditors,
-    useEmbedPreview, useNestedEditor
+    useEmbedPreview
 } from "./editable_embed";
+import { useNestedEditor } from "./nested_editor";
 
 const figures: HTMLElement[] = [];
 

@@ -3,8 +3,10 @@
 // mishandles it and strips valid markup (surfaced by dompurify 3.4.8). Run the
 // sanitization-dependent specs under jsdom, which matches real-browser behavior.
 import {
-    KATEX_MACROS, MULTICOLUMN_COLUMN_CLASS, MULTICOLUMN_LAYOUT_CLASS, trimIndentation
-} from "@triliumnext/commons";
+    MULTICOLUMN_COLUMN_CLASS, MULTICOLUMN_LAYOUT_CLASS
+} from "@triliumnext/commons/src/lib/block_reference.js";
+import { KATEX_MACROS } from "@triliumnext/commons/src/lib/katex_macros.js";
+import { trimIndentation } from "@triliumnext/commons/src/lib/test-utils.js";
 import DOMPurify from "dompurify";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -55,6 +57,12 @@ vi.mock("./math.js", async (importOriginal) => {
     };
 });
 
+const blockReference = vi.hoisted(() => ({ loaded: false }));
+vi.mock("./block_reference.js", async (importOriginal) => {
+    blockReference.loaded = true;
+    return await importOriginal<typeof import("./block_reference.js")>();
+});
+
 const disposeStickyTableHeaders = vi.hoisted(() => vi.fn());
 const applyStickyTableHeaders = vi.hoisted(() => vi.fn(() => disposeStickyTableHeaders));
 vi.mock("@triliumnext/ckeditor5/src/plugins/table_sticky_header_read_only.js", () => ({
@@ -79,6 +87,17 @@ import renderText, {
 } from "./content_renderer_text";
 
 describe("Text content renderer", () => {
+    it("loads the block reference service only to highlight a block", async () => {
+        const note = buildNote({ title: "Plain", content: "<p data-trilium-block-id=\"b1\">Block</p>" });
+        await renderText(note, $(document.createElement("div")), {});
+        expect(blockReference.loaded).toBe(false);
+
+        const contentEl = document.createElement("div");
+        await renderText(note, $(contentEl), { highlightBlock: "b1" });
+        expect(blockReference.loaded).toBe(true);
+        expect(contentEl.querySelector(".block-reference-highlight")?.textContent).toBe("Block");
+    });
+
     it("renders embedded note", async () => {
         const contentEl = document.createElement("div");
         const embeddedNote = buildNote({

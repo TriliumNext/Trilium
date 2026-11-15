@@ -3,9 +3,15 @@ import "./MarkdownCommons.css";
 
 import { revealTab } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import VanillaCodeMirror from "@triliumnext/codemirror";
-import { findWikilinkNoteIds, triliumNoteChips } from "@triliumnext/codemirror/src/extensions/trilium_note_chips";
-import { CustomMarkdownRenderer, renderToHtml } from "@triliumnext/commons/src/lib/markdown_renderer";
-import { createLiteralTildeExtension, createTabsExtensions } from "@triliumnext/commons/src/lib/marked_extensions";
+import {
+    findWikilinkNoteIds, triliumNoteChips
+} from "@triliumnext/codemirror/src/extensions/trilium_note_chips";
+import {
+    CustomMarkdownRenderer, renderToHtml
+} from "@triliumnext/commons/src/lib/markdown_renderer";
+import {
+    createLiteralTildeExtension, createTabsExtensions
+} from "@triliumnext/commons/src/lib/marked_extensions";
 import DOMPurify from "dompurify";
 import { Marked, type Token, type Tokens } from "marked";
 import { createContext } from "preact";
@@ -18,9 +24,12 @@ import keyboard_actions from "../../../services/keyboard_actions";
 import note_create from "../../../services/note_create";
 import { removeIndividualBinding } from "../../../services/shortcuts";
 import { isDesktop } from "../../../services/utils";
-import { useLegacyImperativeHandlers, useTriliumEvent } from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useLegacyImperativeHandlers } from "../../react/hooks/legacy";
 import { resolveNoteChip } from "../../search_field_editor";
-import { extractHighlightsFromStaticHtml, type RawHighlight } from "../../sidebar/highlights_extract";
+import {
+    extractHighlightsFromStaticHtml, type RawHighlight
+} from "../../sidebar/highlights_extract";
 import SplitEditor from "../helpers/SplitEditor";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText";
 import { TypeWidgetProps } from "../type_widget";

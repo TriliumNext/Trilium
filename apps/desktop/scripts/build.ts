@@ -15,8 +15,9 @@ async function main() {
     await build.buildBackend([ "src/preload.ts" ], { importMetaUrlShim: false });
     // ESM so dynamic-import boundaries split into chunks/ that only load on
     // first use; the preload above must stay CJS (sandboxed renderer) and the
-    // image worker below is spawned by its .cjs path.
-    await build.buildBackend([ "src/main.ts" ], { format: "esm" });
+    // image worker below is spawned by its .cjs path. Built together so that the entry's import()
+    // of main.ts points at main.mjs rather than at a second copy of it.
+    await build.buildBackend([ "src/entry.ts", "src/main.ts" ], { format: "esm" });
     // The image compression worker, which lives in the server it embeds. Built here too so the
     // desktop app can compress off-thread rather than falling back to doing it in the main process.
     await build.buildBackend([ "../server/src/services/image_worker.ts" ]);
@@ -72,7 +73,7 @@ function generatePackageJson() {
     const { version, author, license, description, dependencies, devDependencies } = originalPackageJson;
     const packageJson = {
         name: "trilium",
-        main: "main.mjs",
+        main: "entry.mjs",
         version, author, license, description,
         dependencies: {
             "better-sqlite3": dependencies["better-sqlite3"],

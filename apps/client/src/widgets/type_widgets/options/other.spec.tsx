@@ -1,7 +1,7 @@
-import { SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
+import { SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons/src/lib/shared_constants.js";
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
     stored: {} as Record<string, string>,
@@ -33,9 +33,8 @@ vi.mock("../../../services/search", () => ({
     default: { searchForNotes: async () => mocks.shareRoots }
 }));
 
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
-    useNoteContext: () => ({ noteContext: undefined }),
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useTriliumOption: (name: string) => [
         mocks.stored[name] ?? "",
         (value: string) => void mocks.saved.push([ name, value ])
@@ -49,10 +48,17 @@ vi.mock("../../react/hooks", async (importOriginal) => ({
         (value: unknown) => void mocks.saved.push([ name, value ])
     ]
 }));
+vi.mock("../../react/hooks/note_context", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/note_context")>()),
+    useNoteContext: () => ({ noteContext: undefined })
+}));
 
 vi.mock("./components/OptionsPageHeader", () => ({ default: () => <div className="header-stub" /> }));
 
+import { preloadDropdownPopups } from "../../react/Dropdown";
 import OtherSettings, { getSearchEngineChoice } from "./other";
+
+beforeAll(() => preloadDropdownPopups());
 
 let host: HTMLElement;
 
