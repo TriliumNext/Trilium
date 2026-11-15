@@ -1,10 +1,15 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { buildNote } from "../test/easy-froca.js";
 import { renderInto } from "../test/render.js";
 import DesktopLayout from "./DesktopLayout.js";
 
 describe("DesktopLayout", () => {
     const originalOrientation = window.glob.layoutOrientation;
+
+    beforeEach(() => {
+        buildNote({ id: "_lbVisibleLaunchers", title: "Visible Launchers" });
+    });
 
     afterEach(() => {
         window.glob.layoutOrientation = originalOrientation;
@@ -18,6 +23,7 @@ describe("DesktopLayout", () => {
         const launcherPane = root?.querySelector("#launcher-pane");
         expect(launcherPane?.classList.contains("vertical")).toBe(true);
         expect(launcherPane?.parentElement?.id).toBe("horizontal-main-container");
+        expect(launcherPane?.querySelector("#launcher-container")).not.toBeNull();
     });
 
     it("puts the launch bar above the main container in the horizontal layout", () => {

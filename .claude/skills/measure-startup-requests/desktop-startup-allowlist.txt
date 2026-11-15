@@ -1,0 +1,31 @@
+# Every request the desktop client is allowed to make during startup, in dev mode.
+# Checked by `analyze-requests.mjs check`; regenerate with `--update` only for a request that is wanted.
+/
+/.cache/vite/deps/@prefresh_core.js
+/.cache/vite/deps/@prefresh_utils.js
+/.cache/vite/deps/jquery.js
+/.cache/vite/deps/jquery.module-*.js
+/.cache/vite/deps/preact-*.js
+/.cache/vite/deps/preact.js
+/.cache/vite/deps/preact_jsx-dev-runtime.js
+/.cache/vite/deps/rolldown-runtime-*.js
+/@vite/client
+/api/fonts
+/bootstrap
+/node_modules/bootstrap/dist/css/bootstrap.min.css
+/node_modules/vite/dist/client/env.mjs
+/src/content.css
+/src/desktop.ts
+/src/index.ts
+/src/layouts/DesktopLayout.css
+/src/layouts/DesktopLayout.tsx
+/src/services/font.ts
+/src/services/splash.ts
+/src/services/theme.ts
+/src/stylesheets/ckeditor-theme.css
+/src/stylesheets/style.css
+/src/stylesheets/theme-light.css
+/src/stylesheets/theme-next-dark.css
+/src/stylesheets/theme-next-light.css
+/src/utils/css-var.ts
+ws://*/

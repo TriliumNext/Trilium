@@ -59,6 +59,27 @@ removing the first one can leave the module loaded through another.
 3. Capture again and compare: `analyze-requests.mjs diff baseline.json after.json`.
 4. `probe` confirms specific heavy deps stayed off the boot path.
 
+## The startup allowlist
+
+`desktop-startup-allowlist.txt` lists every request the desktop client is allowed to make during
+startup, one normalized name per line. `check-startup.mjs` captures a startup of the running dev
+server and exits with 1 when the two differ in either direction:
+
+```bash
+TRILIUM_PASSWORD=<password> node .claude/skills/measure-startup-requests/check-startup.mjs [--update] [baseUrl]
+# or, on a capture already taken:
+node .claude/skills/measure-startup-requests/analyze-requests.mjs check <capture.json> [allowlist.txt] [--update]
+```
+
+- The allowlist is the startup of the desktop layout with nothing mounted in it. A feature that
+  is moved into the layout makes the check fail, and the failure lists what it loads: shrink that
+  list first, then add what is left with `--update`. Never run `--update` to make a failure go
+  away without reading it.
+- Names drop what changes between runs: the content hash of a pre-bundled dependency chunk
+  (`preact-*.js`) and the HMR websocket's host and token.
+- A request that depends on the session (a font fetched only once text is on screen, the notes of
+  the open tabs) belongs in the list only when every startup makes it.
+
 ## Timing one module graph, without logging in
 
 The capture above needs a session. To weigh a *single* entry point instead — "what does reaching

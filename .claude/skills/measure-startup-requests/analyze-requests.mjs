@@ -9,6 +9,7 @@
  *   node analyze-requests.mjs modules <capture.json> [--depth N] [--list <regex>]
  *   node analyze-requests.mjs roots <capture.json> [--top N]
  *   node analyze-requests.mjs why <capture.json> <name>
+ *   node analyze-requests.mjs check <capture.json> [allowlist.txt] [--update]
  *
  * summary  totals by resource type plus the N largest requests (default 25)
  * probe    checks whether known heavy dependencies were loaded (or the given names)
@@ -18,11 +19,17 @@
  * roots    what started each group of requests: the page, or a dynamic import / fetch made by
  *          running script, with how many requests its static imports then pulled in
  * why      the chain of importers from the page down to the first module matching <name>
+ * check    fails when the requests differ from the allowlist (default: desktop-startup-allowlist.txt
+ *          beside this script); --update rewrites the allowlist from the capture
  *
  * modules, roots and why attribute each request to whatever asked for it first, so they need a
  * capture that recorded initiators.
  */
 import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const DEFAULT_ALLOWLIST = path.join(path.dirname(fileURLToPath(import.meta.url)), "desktop-startup-allowlist.txt");
 
 // Heavy dependencies worth keeping off the startup path. Extend as new ones appear.
 const DEFAULT_PROBES = [
@@ -227,6 +234,69 @@ function why(file, name) {
     }
 }
 
+/**
+ * The name a request has in an allowlist: its normalized path without what changes between runs
+ * (the content hash of a pre-bundled dependency chunk, the query string of the HMR websocket).
+ */
+function stableName(request) {
+    return normalize(request.url)
+        .replace(/-[A-Za-z0-9_-]{8}\.js$/, "-*.js")
+        .replace(/^(wss?:\/\/)[^/]+(\/[^?]*).*$/, "$1*$2");
+}
+
+/**
+ * Compares the requests of a capture with an allowlist, one name per line, and exits with 1 when
+ * the two differ in either direction. `--update` writes the allowlist from the capture instead.
+ */
+function check(file, allowlistFile, update) {
+    const requests = load(file);
+    if (!requests.some((request) => normalize(request.url).startsWith("/bootstrap"))) {
+        console.error(`${file} has no /bootstrap request, so it did not capture an app startup.`);
+        process.exit(1);
+    }
+    const actual = [ ...new Set(requests.map(stableName)) ].sort();
+
+    if (update) {
+        const header = [
+            "# Every request the desktop client is allowed to make during startup, in dev mode.",
+            "# Checked by `analyze-requests.mjs check`; regenerate with `--update` only for a request that is wanted."
+        ];
+        fs.writeFileSync(allowlistFile, `${[ ...header, ...actual ].join("\n")}\n`);
+        console.log(`Wrote ${actual.length} names to ${allowlistFile}`);
+        return;
+    }
+
+    const allowed = new Set(fs.readFileSync(allowlistFile, "utf8").split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line && !line.startsWith("#")));
+    const unexpected = actual.filter((name) => !allowed.has(name));
+    const missing = [ ...allowed ].filter((name) => !actual.includes(name)).sort();
+
+    if (!unexpected.length && !missing.length) {
+        console.log(`OK: the ${actual.length} startup requests match ${allowlistFile}`);
+        return;
+    }
+
+    const sizes = new Map();
+    for (const request of requests) {
+        sizes.set(stableName(request), request.bodySize ?? 0);
+    }
+    if (unexpected.length) {
+        console.log(`${unexpected.length} requests are not in the allowlist:`);
+        for (const name of unexpected) {
+            console.log(`  + ${kb(sizes.get(name) ?? 0).padStart(8)} ${name}`);
+        }
+    }
+    if (missing.length) {
+        console.log(`${missing.length} allowlisted requests were not made:`);
+        for (const name of missing) {
+            console.log(`  - ${name}`);
+        }
+    }
+    console.log(`FAILED: ${actual.length} requests, ${allowed.size} allowed`);
+    process.exit(1);
+}
+
 const [command, ...args] = process.argv.slice(2);
 switch (command) {
     case "summary": {
@@ -253,10 +323,15 @@ switch (command) {
         roots(args[0], topIndex >= 0 ? parseInt(args[topIndex + 1], 10) : 30);
         break;
     }
+    case "check": {
+        const positional = args.filter((arg) => arg !== "--update");
+        check(positional[0], positional[1] ?? DEFAULT_ALLOWLIST, args.includes("--update"));
+        break;
+    }
     case "why":
         why(args[0], args[1]);
         break;
     default:
-        console.error("Usage: analyze-requests.mjs <summary|probe|diff|modules|roots|why> ... (see file header)");
+        console.error("Usage: analyze-requests.mjs <summary|probe|diff|modules|roots|why|check> ... (see file header)");
         process.exit(1);
 }
