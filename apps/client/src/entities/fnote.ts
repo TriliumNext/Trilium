@@ -63,6 +63,8 @@ export default class FNote {
     parentToBranch: Record<string, string>;
     childToBranch: Record<string, string>;
     attachments: FAttachment[] | null;
+    /** The request for {@link attachments} while it is under way. */
+    #attachmentsLoad: Promise<FAttachment[]> | undefined;
 
     // Managed by Froca.
     searchResultsLoaded?: boolean;
@@ -290,11 +292,14 @@ export default class FNote {
     }
 
     async getAttachments() {
-        if (!this.attachments) {
-            this.attachments = await this.froca.getAttachmentsForNote(this.noteId);
-        }
+        if (this.attachments) return this.attachments;
 
-        return this.attachments;
+        this.#attachmentsLoad ??= this.froca.getAttachmentsForNote(this.noteId)
+            .then((attachments) => (this.attachments = attachments))
+            .finally(() => {
+                this.#attachmentsLoad = undefined;
+            });
+        return await this.#attachmentsLoad;
     }
 
     async getAttachmentsByRole(role: string) {
