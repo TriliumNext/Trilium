@@ -4,7 +4,7 @@ import FNote from "../../entities/fnote";
 import contextMenu, { MenuCommandItem } from "../../menus/context_menu";
 import { notePathMenuItem } from "../../menus/context_menu_utils";
 import { showLauncherContextMenu } from "../../menus/launcher_button_context_menu";
-import link from "../../services/link";
+import { parseNavigationStateFromUrl } from "../../services/navigation_state";
 import { useHoldContextMenu } from "../react/hooks/dom";
 import { LaunchBarActionButton, useLauncherIconAndTitle } from "./launch_bar_widgets";
 
@@ -74,7 +74,7 @@ export async function getHistoryItems(
     for (const { url, go } of getReachableEntries(direction)) {
         if (items.length >= HISTORY_LIMIT) break;
 
-        const { noteId, notePath } = link.parseNavigationStateFromUrl(url);
+        const { noteId, notePath } = parseNavigationStateFromUrl(url);
         if (!noteId || !notePath) continue;
 
         items.push(await notePathMenuItem(notePath, go));

@@ -7,7 +7,6 @@ import appContext from "../../components/app_context";
 import type FNote from "../../entities/fnote";
 import type { MenuCommandItem } from "../../menus/context_menu";
 import { menuName } from "../../menus/context_menu_utils";
-import link_context_menu from "../../menus/link_context_menu";
 import { t } from "../../services/i18n";
 import { isCtrlKey, isMobile } from "../../services/utils";
 import { FormDropdownSubmenu, FormListItem } from "../react/FormList";
@@ -227,7 +226,8 @@ function getLinkHandlers(note: FNote) {
         middleClickHandler: (e: MouseEvent) => launchNote(e, note),
         contextMenuHandler: isMobile() ? undefined : (e: MouseEvent) => {
             e.preventDefault();
-            void link_context_menu.openContextMenu(note.noteId, e);
+            void import("../../menus/link_context_menu").then(({ default: linkContextMenu }) =>
+                linkContextMenu.openContextMenu(note.noteId, e));
         }
     };
 }

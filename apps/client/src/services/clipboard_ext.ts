@@ -1,5 +1,4 @@
 import { t } from "./i18n.js";
-import link from "./link.js";
 import toast from "./toast.js";
 import utils from "./utils.js";
 
@@ -99,6 +98,7 @@ export async function copyHtmlWithToast(html: string, plainText: string = html) 
  * written here reaches non-Trilium targets alone.
  */
 export async function copyReferenceWithToast(href: string) {
+    const { default: link } = await import("./link.js");
     const $link = $("<a>").addClass("reference-link").attr("href", href);
     await link.loadReferenceLinkTitle($link, href);
 

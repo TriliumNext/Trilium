@@ -293,8 +293,9 @@ describe("BookmarkFolder", () => {
         expect(h.opened).toEqual([ "link1", "branch", "link15" ]);
         expect(vi.mocked(launchCustomNoteLauncher).mock.calls.map(([ e ]) => e.type))
             .toEqual([ "auxclick", "auxclick", "auxclick" ]);
-        expect(h.openContextMenu.mock.calls.map(([ notePath ]) => notePath))
-            .toEqual([ "link1", "branch", "link15" ]);
+        // The link menu is imported on the first right-click.
+        await vi.waitFor(() => expect(h.openContextMenu.mock.calls.map(([ notePath ]) => notePath))
+            .toEqual([ "link1", "branch", "link15" ]));
         expect(popup()).not.toBeNull();
 
         // Shift opens a new window, and the menu closes.

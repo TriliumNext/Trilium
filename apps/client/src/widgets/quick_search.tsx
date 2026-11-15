@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../components/app_context";
 import { t } from "../services/i18n";
-import { calculateHash, type ViewScope } from "../services/link";
+import { calculateHash, type ViewScope } from "../services/navigation_state";
 import server from "../services/server";
 import type { ShortcutHintDefinition } from "../services/shortcut_hints";
 import { isMobile } from "../services/utils";
