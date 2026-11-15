@@ -588,6 +588,18 @@ describe("Files API (core)", () => {
             expect(changed.body).toContain("Changed");
         });
 
+        it("matches an If-None-Match header sent more than once, weak or as a wildcard", async () => {
+            const noteId = await createRtfNote();
+            const url = `/api/notes/${noteId}/office-preview`;
+            const etag = (await api.get(url)).headers.ETag;
+
+            const revalidate = async (header: string | string[]) =>
+                (await api.get(url, { headers: { "if-none-match": header } })).status;
+            expect(await revalidate([ `"other"`, `W/${etag}` ])).toBe(304);
+            expect(await revalidate("*")).toBe(304);
+            expect(await revalidate([ `"other"`, `"another"` ])).toBe(200);
+        });
+
         it("keys a release's ETag to its build, so the cache outlives a restart", async () => {
             const noteId = await createRtfNote();
             const url = `/api/notes/${noteId}/office-preview`;

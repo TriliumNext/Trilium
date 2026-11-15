@@ -6,7 +6,7 @@ import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
 
 import { ValidationError } from "../errors.js";
-import { convertOfficeToHtml } from "./office_preview.js";
+import { convertOfficeToHtml, convertXlsxToWorkbook } from "./office_preview.js";
 
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -60,6 +60,16 @@ describe("convertOfficeToHtml", () => {
         const loaded = new ExcelJS.Workbook();
         await loaded.xlsx.load(toArrayBuffer(zipSync(files)));
         expect(Object.keys(loaded.worksheets[0].dataValidations.model)).toEqual([ "A1:A65536" ]);
+    });
+});
+
+describe("convertXlsxToWorkbook", () => {
+    it("refuses a workbook above the preview size limit", async () => {
+        const tooLarge = new Uint8Array(20 * 1024 * 1024 + 1);
+
+        const conversion = convertXlsxToWorkbook(tooLarge, XLSX_MIME);
+        await expect(conversion).rejects.toBeInstanceOf(ValidationError);
+        await expect(conversion).rejects.toThrow("Workbook is too large to preview (20971521 bytes).");
     });
 });
 
