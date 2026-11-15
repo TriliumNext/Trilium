@@ -551,6 +551,8 @@ type EventMappings = {
     newNoteContextCreated: {
         noteContext: NoteContext;
     };
+    /** `TabManager.loadTabs()` has opened the saved tabs, or an empty one if that failed. */
+    tabsRestored: {};
     noteContextRemoved: {
         ntxIds: string[];
     };

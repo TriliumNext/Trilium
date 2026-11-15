@@ -43,6 +43,8 @@ export default class TabManager extends Component {
     public activeNtxId: string | null;
     public recentlyClosedTabs: TabState[];
     public tabsUpdate: SpacedUpdate;
+    /** Whether `loadTabs()` has finished and triggered `tabsRestored`. */
+    public tabsRestored = false;
     /** The current `switchToHistoryEntry()` call, until another note context is activated. */
     private historyEntry: HistoryEntry | null = null;
 
@@ -177,6 +179,9 @@ export default class TabManager extends Component {
             // try to recover
             await this.openEmptyTab();
         }
+
+        this.tabsRestored = true;
+        await this.triggerEvent("tabsRestored", {});
     }
 
     noteSwitchedEvent({ noteContext }: EventData<"noteSwitched">) {

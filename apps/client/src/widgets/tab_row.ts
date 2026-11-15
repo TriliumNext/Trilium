@@ -64,6 +64,10 @@ const TAB_ROW_TPL = `
         background: var(--launcher-pane-background-color);
     }
 
+    .tab-row-widget.tabs-restoring > * {
+        visibility: hidden;
+    }
+
     .tab-row-widget * {
         box-sizing: inherit;
         font: inherit;
@@ -395,6 +399,7 @@ export default class TabRowWidget extends BasicWidget {
 
     doRender() {
         this.$widget = $(TAB_ROW_TPL);
+        this.$widget.toggleClass("tabs-restoring", !appContext.tabManager?.tabsRestored);
         this.$tabScrollingContainer = this.$widget.children(".tab-row-widget-scrolling-container");
         this.$tabContainer = this.$widget.find(".tab-row-widget-container");
         this.$scrollButtonLeft = this.$widget.children(".tab-scroll-button-left");
@@ -650,9 +655,10 @@ export default class TabRowWidget extends BasicWidget {
 
         keyboardActionService.updateDisplayedShortcuts($tab);
 
-        $tab.addClass("note-tab-was-just-added");
-
-        setTimeout(() => $tab.removeClass("note-tab-was-just-added"), 500);
+        if (!this.$widget.hasClass("tabs-restoring")) {
+            $tab.addClass("note-tab-was-just-added");
+            setTimeout(() => $tab.removeClass("note-tab-was-just-added"), 500);
+        }
         this.$containerAnchor.before($tab);
         // When opened from a link the model may place this tab before the end; mirror that order in
         // the DOM. When appended (the common case) it is already correct, so skip the O(n) walk.
@@ -747,6 +753,13 @@ export default class TabRowWidget extends BasicWidget {
         // (re)emphasize the focused split within the now-active tab — also covers switching panes
         // within the same tab, where the active tab element itself doesn't change
         this.refreshTab(activeNoteContext.ntxId);
+    }
+
+    /** Shows the restored tabs together, once each has its final title and icon. */
+    async tabsRestoredEvent() {
+        await Promise.all(appContext.tabManager.getMainNoteContexts().map((noteContext) =>
+            this.updateTab(this.getTabById(noteContext.ntxId), noteContext)));
+        this.$widget.removeClass("tabs-restoring");
     }
 
     newNoteContextCreatedEvent({ noteContext }: EventData<"newNoteContextCreated">) {

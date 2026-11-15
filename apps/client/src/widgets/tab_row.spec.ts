@@ -91,3 +91,45 @@ describe("TabRowWidget tab activation", () => {
         expect(activateTabContext.mock.calls).toEqual([ [ "touch-tab" ] ]);
     });
 });
+
+describe("TabRowWidget tab restore", () => {
+    const originalTabManager = appContext.tabManager;
+
+    afterEach(() => {
+        appContext.tabManager = originalTabManager;
+        vi.restoreAllMocks();
+    });
+
+    it("shows the restored tabs together once their titles are set", async () => {
+        const mainContexts = [ { ntxId: "first" }, { ntxId: "second" } ];
+        appContext.tabManager = {
+            tabsRestored: false,
+            getMainNoteContexts: () => mainContexts
+        } as unknown as TabManager;
+        const widget = new TabRowWidget();
+        widget.render();
+        for (const { ntxId } of mainContexts) {
+            widget.addTab(ntxId);
+        }
+        expect(widget.$widget.hasClass("tabs-restoring")).toBe(true);
+        expect(widget.$widget.find(".note-tab").length).toBe(2);
+        expect(widget.$widget.find(".note-tab-was-just-added").length).toBe(0);
+
+        let finishTitles = () => {};
+        const updateTab = vi.spyOn(widget, "updateTab").mockReturnValue(
+            new Promise<void>((resolve) => { finishTitles = resolve; }));
+        const restored = widget.tabsRestoredEvent();
+        expect(updateTab.mock.calls.map(([ $tab ]) => $tab.attr("data-ntx-id")))
+            .toEqual([ "first", "second" ]);
+        expect(widget.$widget.hasClass("tabs-restoring")).toBe(true);
+
+        finishTitles();
+        await restored;
+        expect(widget.$widget.hasClass("tabs-restoring")).toBe(false);
+
+        (appContext.tabManager as { tabsRestored: boolean }).tabsRestored = true;
+        const later = new TabRowWidget();
+        later.render();
+        expect(later.$widget.hasClass("tabs-restoring")).toBe(false);
+    });
+});
