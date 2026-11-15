@@ -8,10 +8,10 @@ import { t } from "../../services/i18n";
 import toast from "../../services/toast";
 import { isMobile } from "../../services/utils";
 import type BasicWidget from "../basic_widget";
+import LazyQuickSearch from "../LazyQuickSearch";
 import { useHoldContextMenu } from "../react/hooks/dom";
 import { useNoteLabel } from "../react/hooks/note";
 import { useGlobalShortcut } from "../react/hooks/shortcuts";
-import LazyComponent from "../react/LazyComponent";
 import { ParentComponent } from "../react/react_utils";
 import { CustomNoteLauncher } from "./GenericButtons";
 import {
@@ -138,7 +138,7 @@ export function QuickSearchLauncherWidget({ launcherNote }: LauncherNoteProps) {
 
     return (
         <div onContextMenu={launcherContextMenuHandler(launcherNote)}>
-            {isEnabled && <LazyComponent loader={() => import("../quick_search")} />}
+            {isEnabled && <LazyQuickSearch />}
         </div>
     );
 }

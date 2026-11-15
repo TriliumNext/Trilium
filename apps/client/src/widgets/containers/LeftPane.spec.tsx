@@ -107,8 +107,11 @@ describe("LeftPane", () => {
     });
 
     it("peeks only a hidden pane in the vertical layout, which has the quick search", async () => {
-        await mount(true, false);
+        await mount(true, false, false);
+        // The box is drawn at once, and the real one takes its place.
+        expect(getHost().querySelector("#left-pane .quick-search .search-string-placeholder")).not.toBeNull();
         await vi.waitFor(() => expect(getHost().querySelector("#left-pane .quick-search-stub")).not.toBeNull());
+        expect(getHost().querySelector(".search-string-placeholder")).toBeNull();
 
         triggerEvent.mockClear();
         await trigger("peekLeftPane", {});
@@ -213,18 +216,21 @@ describe("LeftPane", () => {
         expect(getHost().classList.contains("hidden-int")).toBe(false);
     });
 
-    async function mount(docked: boolean, isHorizontalLayout = true) {
+    /** @param settle whether to wait for the lazy modules the first render starts loading. */
+    async function mount(docked: boolean, isHorizontalLayout = true, settle = true) {
         options.set("leftPaneVisible", docked.toString());
         container = document.createElement("div");
         document.body.append(container);
-        await act(async () => {
-            render(
-                <ParentComponent.Provider value={appContext}>
-                    <Host isHorizontalLayout={isHorizontalLayout} />
-                </ParentComponent.Provider>,
-                container
-            );
-        });
+        const vnode = (
+            <ParentComponent.Provider value={appContext}>
+                <Host isHorizontalLayout={isHorizontalLayout} />
+            </ParentComponent.Provider>
+        );
+        if (settle) {
+            await act(async () => { render(vnode, container); });
+        } else {
+            act(() => { render(vnode, container); });
+        }
     }
 });
 

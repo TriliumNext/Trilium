@@ -9,7 +9,8 @@ import ShowAllNotesButton from "../buttons/show_all_notes_button";
 import { useTriliumEvent } from "../react/hooks/events";
 import { useLegacyWidget } from "../react/hooks/legacy";
 import { useActiveNoteContext } from "../react/hooks/tree";
-import LazyComponent, { useLazyModule } from "../react/LazyComponent";
+import LazyQuickSearch from "../LazyQuickSearch";
+import { useLazyModule } from "../react/LazyComponent";
 import {
     type PaneAction, type PaneModeController, reducePaneMode, usePaneMode, usePeekDismiss
 } from "../react/peek_pane";
@@ -106,7 +107,7 @@ export default function LeftPane({ pane }: { pane: LeftPaneController }) {
             className={clsx("peek-pane-host side-start", mode === "peek" && "peek", !visible && "hidden-int")}
         >
             <div id="left-pane" className="peek-pane">
-                {!isHorizontalLayout && <LazyComponent loader={() => import("../quick_search")} />}
+                {!isHorizontalLayout && <LazyQuickSearch />}
                 <ShowAllNotesButton />
                 {wasShown.current && <NoteTree />}
             </div>
