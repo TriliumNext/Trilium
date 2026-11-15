@@ -28,7 +28,7 @@ describe("MobileLayout", () => {
         window.glob.device = device;
     });
 
-    it("gives each note split a title row with the icon, title and badges, and the inline title, content, note list and scroll padding in its scroller", async () => {
+    it("gives each note split a title row with the icon, title and badges, and the inline title, title actions, content, note list and scroll padding in its scroller", async () => {
         let container: HTMLElement | undefined;
         act(() => { container = renderLayout(); });
         const splits = container?.querySelector("#mobile-rest-container > #detail-container > .split-note-container-widget");
@@ -53,10 +53,11 @@ describe("MobileLayout", () => {
         expect(titleRow?.children[2]?.classList.contains("note-badges")).toBe(true);
         const scroller = split?.querySelector(":scope > .scrolling-container");
         expect(scroller?.firstElementChild?.classList.contains("inline-title")).toBe(true);
-        expect(scroller?.children[1]?.classList.contains("note-detail")).toBe(true);
-        expect(scroller?.children[2]?.classList.contains("note-list-widget")).toBe(true);
+        expect(scroller?.children[1]?.classList.contains("title-actions")).toBe(true);
+        expect(scroller?.children[2]?.classList.contains("note-detail")).toBe(true);
+        expect(scroller?.children[3]?.classList.contains("note-list-widget")).toBe(true);
         // The scroll padding ends the scroller; with no note open, it is an empty element.
-        expect(scroller?.children).toHaveLength(4);
+        expect(scroller?.children).toHaveLength(5);
     });
 
     it("ends with the bottom bar, holding the launchers and then the global menu", () => {

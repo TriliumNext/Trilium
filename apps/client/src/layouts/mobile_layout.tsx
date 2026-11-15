@@ -8,7 +8,6 @@ import RootContainer from "../widgets/containers/root_container.js";
 import ScrollingContainer from "../widgets/containers/scrolling_container.js";
 import SplitNoteContainer from "../widgets/containers/split_note_container.js";
 import FindWidget from "../widgets/find.js";
-import NoteTitleActions from "../widgets/layout/NoteTitleActions.jsx";
 import HideKeyboardButton from "../widgets/mobile_widgets/hide_keyboard_button.jsx";
 import MobileDetailMenu from "../widgets/mobile_widgets/mobile_detail_menu.js";
 import MobileNoteNavigator from "../widgets/mobile_widgets/MobileNoteNavigator.jsx";
@@ -73,7 +72,6 @@ export default class MobileLayout {
                                             new ScrollingContainer()
                                                 .filling()
                                                 .contentSized()
-                                                .child(<NoteTitleActions />)
                                                 .child(<SearchResult />)
                                         )
                                         .child(<NoteTypeSwitcherBar />)
