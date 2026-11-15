@@ -61,11 +61,33 @@ describe("useWorkbookFile", () => {
         expect(states).toEqual([]);
     });
 
-    async function mount(entity: FNote | FAttachment = buildNote({ title: "Budget.xlsx", type: "file" })) {
+    it("leaves the note detail's load state alone while the viewer is hidden", async () => {
+        vi.spyOn(server, "getWithSilentErrors").mockResolvedValue(JSON.stringify({ version: 1, workbook: {} }));
+        const { univerAPI, states } = await mount(undefined, { isVisible: false });
+
+        await vi.waitFor(() => expect(univerAPI.createWorkbook).toHaveBeenCalledOnce());
+        expect(states).toEqual([]);
+    });
+
+    async function mount(entity: FNote | FAttachment = buildNote({ title: "Budget.xlsx", type: "file" }),
+        { isVisible = true, stage = LIFECYCLE_STAGES.Rendered }: { isVisible?: boolean; stage?: number } = {}) {
+        let currentStage = stage;
+        const stageListeners = new Set<(event: { stage: number }) => void>();
         const univerAPI = {
-            getActiveWorkbook: vi.fn(() => null),
-            createWorkbook: vi.fn(() => ({})),
-            disposeUnit: vi.fn()
+            getActiveWorkbook: vi.fn<() => MockWorkbook | null>(() => null),
+            createWorkbook: vi.fn(() => mockWorkbook()),
+            disposeUnit: vi.fn(),
+            getCurrentLifecycleStage: () => currentStage,
+            addEvent: vi.fn((_event: string, listener: (event: { stage: number }) => void) => {
+                stageListeners.add(listener);
+                return { dispose: () => stageListeners.delete(listener) };
+            }),
+            Event: { LifeCycleChanged: "LifeCycleChanged" },
+            Enum: { LifecycleStages: LIFECYCLE_STAGES }
+        };
+        const enterStage = (next: number) => {
+            currentStage = next;
+            for (const listener of [ ...stageListeners ]) listener({ stage: next });
         };
         const states: string[] = [];
         const noteContext = {
@@ -75,16 +97,35 @@ describe("useWorkbookFile", () => {
         } as unknown as NoteContext;
         const onError = vi.fn();
 
-        await act(async () => {
-            render(<Harness entity={entity} noteContext={noteContext} univerAPI={univerAPI as unknown as FUniver} onError={onError} />, container);
-        });
-        return { univerAPI, states, onError };
+        const show = async (shown: FNote | FAttachment) => {
+            await act(async () => {
+                render(<Harness entity={shown} noteContext={noteContext} isVisible={isVisible}
+                    univerAPI={univerAPI as unknown as FUniver} onError={onError} />, container);
+            });
+        };
+        await show(entity);
+        return { univerAPI, states, onError, enterStage, rerender: show };
     }
 });
 
-function Harness({ entity, noteContext, univerAPI, onError }: { entity: FNote | FAttachment; noteContext: NoteContext; univerAPI: FUniver; onError: () => void }) {
+const LIFECYCLE_STAGES = { Starting: 0, Ready: 1, Rendered: 2, Steady: 3 };
+
+type MockWorkbook = ReturnType<typeof mockWorkbook>;
+
+function mockWorkbook() {
+    const setReadOnly = vi.fn();
+    return {
+        disableSelection: vi.fn(),
+        getWorkbookPermission: () => ({ setReadOnly }),
+        setReadOnly
+    };
+}
+
+function Harness({ entity, noteContext, isVisible, univerAPI, onError }: {
+    entity: FNote | FAttachment; noteContext: NoteContext; isVisible: boolean; univerAPI: FUniver; onError: () => void;
+}) {
     const containerRef = useRef<HTMLDivElement>(null);
     const apiRef = useRef<FUniver | undefined>(univerAPI);
-    useWorkbookFile(entity, noteContext, undefined, apiRef, containerRef, onError);
+    useWorkbookFile({ entity, noteContext, componentId: undefined, isVisible }, apiRef, containerRef, onError);
     return <div ref={containerRef} />;
 }

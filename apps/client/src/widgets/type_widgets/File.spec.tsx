@@ -1,3 +1,4 @@
+import { XLSX_MIME } from "@triliumnext/commons";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -22,10 +23,10 @@ vi.mock("./file/MediaPreview", () => ({ default: () => <div class="media-preview
 vi.mock("./file/FontPreview", () => ({ default: () => <div class="font-preview-stub" /> }));
 vi.mock("./file/Office", () => ({ default: () => <div class="office-preview-stub" /> }));
 vi.mock("./file/Pdf", () => ({ default: () => <div class="pdf-preview-stub" /> }));
-const spreadsheetErrors = vi.hoisted(() => [] as (() => void)[]);
+const spreadsheetProps = vi.hoisted(() => [] as { onError: () => void; isVisible?: boolean }[]);
 vi.mock("./spreadsheet/Spreadsheet", () => ({
-    SpreadsheetFile: ({ onError }: { onError: () => void }) => {
-        spreadsheetErrors.push(onError);
+    SpreadsheetFile: (props: { onError: () => void; isVisible?: boolean }) => {
+        spreadsheetProps.push(props);
         return <div class="spreadsheet-file-stub" />;
     }
 }));
@@ -107,9 +108,22 @@ describe("FileTypeWidget", () => {
         expect(container.querySelector(".office-preview-stub")).toBeNull();
         expect(vi.mocked(useNoteBlob).mock.calls[0][0]).toBeNull();
 
-        await act(async () => spreadsheetErrors.at(-1)?.());
+        await act(async () => spreadsheetProps.at(-1)?.onError());
         expect(container.querySelector(".office-preview-stub")).not.toBeNull();
         expect(container.querySelector(".spreadsheet-file-stub")).toBeNull();
+    });
+
+    it("tells the spreadsheet whether it shows", async () => {
+        vi.mocked(useNoteBlob).mockReturnValue(null);
+        for (const isVisible of [ false, true ]) {
+            await showWorkbook("blob1", isVisible);
+            await vi.waitFor(() => expect(spreadsheetProps.at(-1)?.isVisible).toBe(isVisible));
+        }
+    });
+
+    const showWorkbook = (blobId: string, isVisible = true) => act(async () => {
+        const props = { note: { noteId: "note1", mime: XLSX_MIME, blobId }, isVisible } as unknown as Parameters<typeof FileTypeWidget>[0];
+        render(<FileTypeWidget {...props} />, container);
     });
 
     it("prefers OfficePreview over the text branch for RTF, whose blob content is a string", () => {

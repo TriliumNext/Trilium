@@ -27,8 +27,6 @@ import { RefObject } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import type NoteContext from "../../../components/note_context";
-import type FAttachment from "../../../entities/fattachment";
-import type FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
 import { useColorScheme, useEffectiveReadOnly, useTriliumEvent, useTriliumEvents } from "../../react/hooks";
@@ -36,7 +34,7 @@ import { TypeWidgetProps } from "../type_widget";
 import useStripPastedFontFamily from "./clipboard";
 import useSpreadsheetExport from "./export";
 import { loadUniverLocale, UniverLocale } from "./locales";
-import { useWorkbookFile } from "./loading";
+import { useWorkbookFile, type WorkbookFileSource } from "./loading";
 import useClampEdgeNavigation from "./navigation";
 import usePersistence from "./persistence";
 import useFixRadixPortals from "./radix_portals";
@@ -121,10 +119,7 @@ function SpreadsheetEditor({ note, noteContext, readOnly, locale }: TypeWidgetPr
     return <div ref={containerRef} className="spreadsheet" />;
 }
 
-interface SpreadsheetFileProps {
-    /** The XLSX file note or attachment to show. */
-    entity: FNote | FAttachment;
-    noteContext: NoteContext | null | undefined;
+interface SpreadsheetFileProps extends Omit<WorkbookFileSource, "componentId"> {
     componentId?: string;
     onError: () => void;
 }
@@ -143,14 +138,14 @@ export function SpreadsheetFile(props: SpreadsheetFileProps) {
     return <SpreadsheetFileViewer {...props} locale={locale} />;
 }
 
-function SpreadsheetFileViewer({ entity, noteContext, componentId, locale, onError }: SpreadsheetFileProps & { locale: UniverLocale }) {
+function SpreadsheetFileViewer({ entity, noteContext, componentId, isVisible, locale, onError }: SpreadsheetFileProps & { locale: UniverLocale }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const apiRef = useRef<FUniver | undefined>(undefined);
 
     useInitializeSpreadsheet(containerRef, apiRef, true, locale);
     useClampEdgeNavigation(apiRef);
     useDarkMode(apiRef);
-    useWorkbookFile(entity, noteContext, componentId, apiRef, containerRef, onError);
+    useWorkbookFile({ entity, noteContext, componentId, isVisible }, apiRef, containerRef, onError);
     useSearchIntegration(apiRef, noteContext);
     useDismissDialogsOnNoteSwitch(apiRef);
     useFixRadixPortals();

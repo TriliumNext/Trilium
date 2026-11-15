@@ -135,15 +135,15 @@ export function useWorkbookDisplay(apiRef: RefObject<FUniver | undefined>, conta
  * A note's workbook loads through `useNoteBlob()`, so the note detail sees it load and it follows
  * the note's content. An attachment's loads once; its view remounts when the attachment changes.
  */
-export function useWorkbookFile(entity: FNote | FAttachment, noteContext: NoteContext | null | undefined,
-    componentId: string | undefined, apiRef: RefObject<FUniver | undefined>,
-    containerRef: RefObject<HTMLDivElement | null>, onError: () => void) {
+export function useWorkbookFile({ entity, noteContext, componentId, isVisible }: WorkbookFileSource,
+    apiRef: RefObject<FUniver | undefined>, containerRef: RefObject<HTMLDivElement | null>, onError: () => void) {
     const onErrorRef = useRef(onError);
     onErrorRef.current = onError;
     const display = useWorkbookDisplay(apiRef, containerRef);
     const attachment = "attachmentId" in entity ? entity : null;
     const noteWorkbook = useNoteBlob<WorkbookFile>(attachment ? null : entity as FNote, componentId, {
         reportLoadStateTo: noteContext,
+        isVisible,
         load: (note) => fetchWorkbook("notes", note.noteId)
     });
     const attachmentWorkbook = useAttachmentWorkbook(attachment);
@@ -157,6 +157,15 @@ export function useWorkbookFile(entity: FNote | FAttachment, noteContext: NoteCo
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `display` holds refs only
     }, [ workbook ]);
+}
+
+export interface WorkbookFileSource {
+    /** The XLSX file note or attachment to show. */
+    entity: FNote | FAttachment;
+    noteContext: NoteContext | null | undefined;
+    componentId: string | undefined;
+    /** Whether the viewer is displayed. A hidden viewer reports no load state to `noteContext`. */
+    isVisible?: boolean;
 }
 
 interface WorkbookFile {

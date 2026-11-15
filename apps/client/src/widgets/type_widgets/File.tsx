@@ -36,7 +36,7 @@ export default function FileTypeWidget({ note, parentComponent, noteContext, isV
         return (
             <Suspense fallback={null}>
                 <SpreadsheetFile entity={note} noteContext={noteContext} componentId={parentComponent?.componentId}
-                    onError={() => setWorkbookFailedFor(note.noteId)} />
+                    isVisible={isVisible} onError={() => setWorkbookFailedFor(note.noteId)} />
             </Suspense>
         );
     } else if (isOffice) {
