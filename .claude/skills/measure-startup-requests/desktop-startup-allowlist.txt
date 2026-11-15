@@ -42,6 +42,7 @@
 /api/keyboard-actions
 /api/note-map/*/backlink-count
 /api/notes/*/attachments
+/api/notes/*/blob
 /api/notes/*/metadata
 /api/options
 /api/tree
@@ -312,6 +313,7 @@
 /src/widgets/react/react_utils.tsx
 /src/widgets/react/shortcut_kbd.tsx
 /src/widgets/react/tooltip.css
+/src/widgets/scroll_padding.tsx
 /src/widgets/search/SearchStringEditor.tsx
 /src/widgets/search/search_completions.ts
 /src/widgets/search_field_editor.css
@@ -330,6 +332,7 @@
 ws://*/
 ? /api/attachments/download/*
 ? /api/recent-notes
+? /api/search-templates
 ? /api/tree/load
 ? /packages/commons/src/lib/note_type_ids.ts
 ? /repos/TriliumNext/Trilium/releases/latest

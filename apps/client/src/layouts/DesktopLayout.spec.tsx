@@ -104,7 +104,7 @@ describe("DesktopLayout", () => {
         expect(statusBar?.previousElementSibling).toBe(mainContainer);
     });
 
-    it("gives each note split a title row, and the inline title, title actions, content and note list in its scroller", async () => {
+    it("gives each note split a title row, and the inline title, title actions, content, note list, search results and scroll padding in its scroller", async () => {
         window.glob.layoutOrientation = "vertical";
         let container: HTMLElement | undefined;
         act(() => { container = renderInto(<Layout />); });
@@ -142,6 +142,10 @@ describe("DesktopLayout", () => {
         expect(detail).toBeInstanceOf(HTMLElement);
         expect(detail?.previousElementSibling?.classList.contains("title-actions")).toBe(true);
         expect(detail?.nextElementSibling?.classList.contains("note-list-widget")).toBe(true);
+        // The search results follow the note list, and the scroll padding ends the scroller.
+        const searchResults = detail?.nextElementSibling?.nextElementSibling;
+        expect(searchResults?.classList.contains("search-result-host")).toBe(true);
+        expect(searchResults?.nextElementSibling).toBe(scroller?.lastElementChild);
         // The note type switcher's bar ends the split, under the scroller.
         expect(scroller?.nextElementSibling?.classList.contains("note-type-switcher-bar")).toBe(true);
     });

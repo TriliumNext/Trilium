@@ -4,14 +4,11 @@ import options from "../services/options.js";
 import CloseZenModeButton from "../widgets/close_zen_button.jsx";
 import FlexContainer from "../widgets/containers/flex_container.js";
 import RootContainer from "../widgets/containers/root_container.js";
-import ScrollingContainer from "../widgets/containers/scrolling_container.js";
 import SplitNoteContainer from "../widgets/containers/split_note_container.js";
 import PasswordNoteSetDialog from "../widgets/dialogs/password_not_set.js";
 import FindWidget from "../widgets/find.js";
 import { FixedFormattingToolbar } from "../widgets/layout/FormattingToolbar.jsx";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
-import ScrollPadding from "../widgets/scroll_padding.js";
-import SearchResult from "../widgets/search_result.jsx";
 import { applyModals } from "./layout_commons.js";
 
 export default class DesktopLayout {
@@ -53,12 +50,6 @@ export default class DesktopLayout {
                                             .child(
                                                 new SplitNoteContainer(() =>
                                                     new NoteWrapperWidget()
-                                                        .child(
-                                                            new ScrollingContainer()
-                                                                .filling()
-                                                                .child(<SearchResult />)
-                                                                .child(<ScrollPadding />)
-                                                        )
                                                         .child(new FindWidget())
                                                         .child(...this.customWidgets.get("note-detail-pane"))
                                                 )

@@ -26,6 +26,10 @@ import NoteTitleWidget, { NoteTypeSwitcherBar } from "../widgets/note_title.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import NoteDetail from "../widgets/NoteDetail.js";
 import { useLegacyWidget } from "../widgets/react/hooks/legacy.js";
+import { useNoteProperty } from "../widgets/react/hooks/note.js";
+import { useNoteContext } from "../widgets/react/hooks/note_context.js";
+import { WithLazyModule } from "../widgets/react/LazyComponent.js";
+import ScrollPadding from "../widgets/scroll_padding.js";
 import RightPanelContainer from "../widgets/sidebar/RightPanelContainer.js";
 import TabRowWidget from "../widgets/tab_row.js";
 import TabHistoryNavigationButtons from "../widgets/TabHistoryNavigationButtons.js";
@@ -99,8 +103,9 @@ function TabBar({ fullWidth, leftPaneToggle }: { fullWidth: boolean, leftPaneTog
 
 /**
  * One note split per note context of the active tab, each with a title row (the note's icon, its
- * compact title, its badges and its actions) above the note's inline title, title actions, content and list of child
- * notes, and the bar that picks the type of an empty note at the bottom.
+ * compact title, its badges and its actions) above the note's inline title, title actions,
+ * content, list of child notes, search results and scroll padding, and the bar that picks the type
+ * of an empty note at the bottom.
  */
 function NoteSplits() {
     const [ splits ] = useLegacyWidget(() => new SplitNoteContainer(() =>
@@ -118,10 +123,33 @@ function NoteSplits() {
                 .child(<InlineTitle />)
                 .child(<NoteTitleActions />)
                 .child(<NoteDetail />)
-                .child(<NoteList media="screen" />))
+                .child(<NoteList media="screen" />)
+                .child(<SearchResults />)
+                .child(<ScrollPadding />))
             .child(<NoteTypeSwitcherBar />)
     ), { containerClassName: "note-splits-host" });
     return splits;
+}
+
+const loadSearchResult = () => import("../widgets/search_result.js");
+
+/**
+ * The results of a search note, whose module loads once a search note shows. The host keeps one
+ * root element, which the legacy widget adapter requires, and takes no box of its own.
+ */
+function SearchResults() {
+    const { note } = useNoteContext();
+    const noteType = useNoteProperty(note, "type");
+
+    return (
+        <div className="search-result-host">
+            {noteType === "search" && (
+                <WithLazyModule load={loadSearchResult}>
+                    {({ default: SearchResult }) => <SearchResult />}
+                </WithLazyModule>
+            )}
+        </div>
+    );
 }
 
 /**

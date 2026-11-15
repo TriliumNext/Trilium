@@ -51,7 +51,8 @@
         min-width: 0;
     }
 
-    .note-splits-host {
+    .note-splits-host,
+    .search-result-host {
         display: contents;
     }
 
