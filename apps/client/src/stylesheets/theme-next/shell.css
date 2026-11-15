@@ -1177,7 +1177,13 @@ body.mobile #detail-container > .split-note-container-widget.multiple-splits
 
 
 body:not(.background-effects) #center-pane .note-split {
-    animation: note-entrance 100ms linear;
+    > * {
+        animation: note-entrance 100ms linear;
+    }
+
+    &.hidden-ext > * {
+        animation: none;
+    }
 }
 
 @keyframes note-entrance {
