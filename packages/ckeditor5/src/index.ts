@@ -1,10 +1,4 @@
-import "ckeditor5/ckeditor5.css";
-// Baseline block-quote styling from CKEditor's block-quote feature. It arrived here with the
-// admonition plugin (which was forked from block-quote) but styles `blockquote`, not admonitions —
-// the client's theme-next stylesheet overrides parts of it with `!important`.
-import "./theme/blockquote.css";
-import "./theme/content_colors.css";
-import "./theme/code_block_toolbar.css";
+import "./styles.js";
 import type { ClipboardImageEmbedConfig } from "./plugins/clipboard_image_embed.js";
 import type { ImageEditingSourceConfig } from "./plugins/image_editing_source.js";
 import type { PasteTarget } from "./plugins/cuttonote.js";
