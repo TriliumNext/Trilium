@@ -50,9 +50,10 @@ async function getWithSilentNotFound<T>(url: string, componentId?: string) {
 
 /**
  * @param raw if `true`, the value will be returned as a string instead of a JavaScript object if JSON, XMLDocument if XML, etc.
+ * @param silence suppresses the error toast for a 400, for a caller that shows the failure itself.
  */
-async function get<T>(url: string, componentId?: string, raw?: boolean) {
-    return await call<T>("GET", url, componentId, { raw });
+async function get<T>(url: string, componentId?: string, raw?: boolean, silence?: Pick<CallOptions, "silentBadRequest">) {
+    return await call<T>("GET", url, componentId, { raw, ...silence });
 }
 
 async function getWithSilentUnauthorized<T>(url: string, componentId?: string) {

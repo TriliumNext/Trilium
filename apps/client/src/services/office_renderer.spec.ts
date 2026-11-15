@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Mock collaborators before importing the SUT. ---
-const serverGet = vi.fn(async (_url: string, _componentId?: string, _raw?: boolean) => "<h1>Doc</h1>");
+const serverGet = vi.fn(async (_url: string, _componentId?: string, _raw?: boolean, _silence?: object) => "<h1>Doc</h1>");
 vi.mock("./server.js", () => ({
-    default: { get: (url: string, componentId?: string, raw?: boolean) => serverGet(url, componentId, raw) }
+    default: {
+        get: (url: string, componentId?: string, raw?: boolean, silence?: object) => serverGet(url, componentId, raw, silence)
+    }
 }));
 
 const sanitizeNoteContentHtml = vi.fn((s: string) => `SANITIZED:${s}`);
@@ -11,13 +13,16 @@ vi.mock("./sanitize_content.js", () => ({ sanitizeNoteContentHtml: (s: string) =
 
 import { OfficePreviewTooLargeError, renderOfficeToHtml } from "./office_renderer.js";
 
+// The preview shows its own placeholder for a refusal, so the request raises no error toast.
+const SILENT = { silentBadRequest: true };
+
 beforeEach(() => vi.clearAllMocks());
 
 describe("renderOfficeToHtml", () => {
     it("fetches the server-rendered note preview and returns sanitized output", async () => {
         const { html } = await renderOfficeToHtml("notes", "n1");
 
-        expect(serverGet).toHaveBeenCalledWith("notes/n1/office-preview", undefined, true);
+        expect(serverGet).toHaveBeenCalledWith("notes/n1/office-preview", undefined, true, SILENT);
         expect(sanitizeNoteContentHtml).toHaveBeenCalledWith("<h1>Doc</h1>");
         expect(html).toBe("SANITIZED:<h1>Doc</h1>");
     });
@@ -36,7 +41,7 @@ describe("renderOfficeToHtml", () => {
 
     it("builds the attachment URL variant", async () => {
         await renderOfficeToHtml("attachments", "a9");
-        expect(serverGet).toHaveBeenCalledWith("attachments/a9/office-preview", undefined, true);
+        expect(serverGet).toHaveBeenCalledWith("attachments/a9/office-preview", undefined, true, SILENT);
     });
 
     it("strips default hyperlink colors so the theme's link color applies, keeping other styling", async () => {
@@ -133,10 +138,10 @@ describe("renderOfficeToHtml", () => {
 
     it("asks the route to trim when the caller wants a card-sized preview", async () => {
         await renderOfficeToHtml("notes", "n1", { trim: true });
-        expect(serverGet).toHaveBeenCalledWith("notes/n1/office-preview?trim=1", undefined, true);
+        expect(serverGet).toHaveBeenCalledWith("notes/n1/office-preview?trim=1", undefined, true, SILENT);
 
         // Left off otherwise, so the whole document and the corner never share a cache entry.
         await renderOfficeToHtml("notes", "n1");
-        expect(serverGet).toHaveBeenLastCalledWith("notes/n1/office-preview", undefined, true);
+        expect(serverGet).toHaveBeenLastCalledWith("notes/n1/office-preview", undefined, true, SILENT);
     });
 });

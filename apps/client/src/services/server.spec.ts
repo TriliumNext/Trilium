@@ -222,6 +222,8 @@ describe("ajax error handling", () => {
         };
         await expect(server.postWithTimeout("url", 1000, {}, undefined, { silentBadRequest: true }))
             .rejects.toBe(JSON.stringify({ message: "CLI not found" }));
+        await expect(server.get("url", undefined, true, { silentBadRequest: true }))
+            .rejects.toBe(JSON.stringify({ message: "CLI not found" }));
         expect(toastMock.showError).not.toHaveBeenCalled();
     });
 

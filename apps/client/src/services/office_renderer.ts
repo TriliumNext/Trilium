@@ -29,7 +29,7 @@ export async function renderOfficeToHtml(
     const url = `${entityType}/${entityId}/office-preview${trim ? "?trim=1" : ""}`;
     let body: string;
     try {
-        body = await server.get<string>(url, undefined, true);
+        body = await server.get<string>(url, undefined, true, { silentBadRequest: true });
     } catch (e) {
         throw isTooLargeRefusal(e) ? new OfficePreviewTooLargeError() : e;
     }
