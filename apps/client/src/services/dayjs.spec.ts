@@ -11,6 +11,24 @@ describe("dayjs", () => {
         await i18next.changeLanguage("fr");
         await vi.waitFor(() => expect(dayjs.locale()).toBe("fr"));
     });
+
+    it("finishes loading without waiting for the locale", async () => {
+        // In the bundled client, a dayjs locale chunk imports the chunk that holds this module, so
+        // it cannot evaluate before this module has.
+        vi.resetModules();
+        vi.doMock("@triliumnext/commons/src/lib/dayjs.js", async (importOriginal) => ({
+            ...await importOriginal<typeof import("@triliumnext/commons/src/lib/dayjs.js")>(),
+            setDayjsLocale: () => new Promise<void>(() => {})
+        }));
+        try {
+            await i18next.init({ lng: "de", resources: {} });
+            const loaded = import("./dayjs").then(() => "loaded");
+            const pending = new Promise((resolve) => setTimeout(() => resolve("pending"), 1000));
+            expect(await Promise.race([ loaded, pending ])).toBe("loaded");
+        } finally {
+            vi.doUnmock("@triliumnext/commons/src/lib/dayjs.js");
+        }
+    });
 });
 
 describe("formatCustomDateTime", () => {
