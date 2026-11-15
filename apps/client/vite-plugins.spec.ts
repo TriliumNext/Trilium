@@ -9,6 +9,7 @@ import { findSlowSelectors } from "./src/test/css_invalidation";
 import {
     buildShareThemeManifest,
     checkHostedGroups,
+    ENGINE_RENDER_CHUNK,
     ENGINE_RENDER_ENTRY,
     flattenCssNesting,
     LANGUAGE_DETECTOR_PACKAGE,
@@ -22,49 +23,56 @@ import {
 
 const entryPath = createRequire(import.meta.url).resolve("@univerjs/engine-render/lib/es/index.js");
 const entrySource = readFileSync(entryPath, "utf8");
+const chunkImport = entrySource.match(/\bfrom\s*"(\.\/worker-[^"]+\.js)"/)?.[1];
+const chunkPath = join(dirname(entryPath), chunkImport ?? "worker.js");
+const chunkSource = readFileSync(chunkPath, "utf8");
 
 /**
  * Canary for `stripUniverHyphenation`. The rules it applies hold for the installed
- * version, but an upgrade could rename the entry, inline the tables, start importing a
+ * version, but an upgrade could rename the chunk, inline the tables, start importing a
  * real sibling module, or reach for `franc-min` somewhere the stub does not cover. The
  * first two turn the plugin into a no-op that silently puts 4.4 MB back into the build;
  * the others make it stub out live code.
  */
 describe("stripUniverHyphenation", () => {
-    it("matches an entry that still lazy-loads a pattern table per locale", () => {
+    it("matches a shared chunk that still lazy-loads a pattern table per locale", () => {
         expect(entryPath.replace(/\\/g, "/")).toContain(ENGINE_RENDER_ENTRY);
+        expect(chunkImport).toBeDefined();
+        expect(chunkPath.replace(/\\/g, "/")).toMatch(ENGINE_RENDER_CHUNK);
         expect(patternLoaders().length).toBeGreaterThan(50);
     });
 
-    it("finds nothing relative in the entry beyond the tables, so the blanket rule stays safe", () => {
-        const relativeImports = [...entrySource.matchAll(/\bimport\("(\.[^"]*)"\)/g)].map(([, source]) => source);
+    it("finds nothing relative in the chunk beyond the tables, so the blanket rule stays safe", () => {
+        const relativeImports = [...chunkSource.matchAll(/\bimport\("(\.[^"]*)"\)/g)].map(([, source]) => source);
 
         expect(new Set(relativeImports)).toEqual(new Set(patternLoaders().map(({ source }) => source)));
-        expect([...entrySource.matchAll(/\bfrom\s*"(\.[^"]*)"/g)]).toHaveLength(0);
+        expect([...chunkSource.matchAll(/\bfrom\s*"(\.[^"]*)"/g)]).toHaveLength(0);
     });
 
     it("intercepts every table the loader map points at", () => {
         for (const { locale, source } of patternLoaders()) {
-            expect(resolveUniverHyphenationStub(source, entryPath)).toContain("univer_hyphenation_pattern");
+            expect(resolveUniverHyphenationStub(source, chunkPath)).toContain("univer_hyphenation_pattern");
 
             // Each table exports its locale Pascal-cased (`de-ch-1901` -> `DeCh1901`),
             // which is also how `Hyphen.loadPattern()` reads it back off the namespace.
-            const table = readFileSync(join(dirname(entryPath), source), "utf8");
+            const table = readFileSync(join(dirname(chunkPath), source), "utf8");
             expect(table).toContain(`export { ${pascalCaseLocale(locale)} }`);
         }
     });
 
-    it("intercepts the language detector the entry imports, taking only what it uses", () => {
-        expect(entrySource).toContain(`import { franc } from "${LANGUAGE_DETECTOR_PACKAGE}"`);
-        expect(resolveUniverHyphenationStub(LANGUAGE_DETECTOR_PACKAGE, entryPath)).toContain("franc_min");
+    it("intercepts the language detector the chunk imports, taking only what it uses", () => {
+        expect(chunkSource).toContain(`import { franc } from "${LANGUAGE_DETECTOR_PACKAGE}"`);
+        expect(resolveUniverHyphenationStub(LANGUAGE_DETECTOR_PACKAGE, chunkPath)).toContain("franc_min");
 
         // `detect()` maps franc's code through this table, so the stub's `und` has to
         // land on `unknown` — the value that makes `shaping()` skip hyphenation.
-        expect(entrySource).toMatch(/\bund:\s*"unknown"/);
+        expect(chunkSource).toMatch(/\bund:\s*"unknown"/);
     });
 
-    it("declines a bare specifier and any importer outside the entry", () => {
-        expect(resolveUniverHyphenationStub("rxjs", entryPath)).toBeNull();
+    it("declines a bare specifier, the entry's import of the chunk and any importer outside the chunk", () => {
+        expect(resolveUniverHyphenationStub(chunkImport ?? "./worker.js", entryPath)).toBeNull();
+        expect(resolveUniverHyphenationStub(LANGUAGE_DETECTOR_PACKAGE, entryPath)).toBeNull();
+        expect(resolveUniverHyphenationStub("rxjs", chunkPath)).toBeNull();
         expect(resolveUniverHyphenationStub(LANGUAGE_DETECTOR_PACKAGE, "/app/src/services/froca.ts")).toBeNull();
         expect(resolveUniverHyphenationStub("./hu-DVk7Y_ka.js", "/app/src/services/froca.ts")).toBeNull();
         expect(resolveUniverHyphenationStub("./hu-DVk7Y_ka.js", undefined)).toBeNull();
@@ -367,7 +375,7 @@ describe("narrowThirdPartySelectors", () => {
 
 /** Reads the generated `PATTERN_LOADERS` map, whose keys are the locales Univer hyphenates. */
 function patternLoaders(): { locale: string; source: string }[] {
-    const entries = entrySource.matchAll(/\["([a-z0-9-]+)"\]\s*:\s*\(\)\s*=>\s*import\("(\.[^"]*)"\)/g);
+    const entries = chunkSource.matchAll(/\["([a-z0-9-]+)"\]\s*:\s*\(\)\s*=>\s*import\("(\.[^"]*)"\)/g);
 
     return [...entries].map(([, locale, source]) => ({ locale, source }));
 }
