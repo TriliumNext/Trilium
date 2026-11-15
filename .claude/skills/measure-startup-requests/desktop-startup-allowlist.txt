@@ -101,7 +101,9 @@
 /src/index.ts
 /src/layouts/DesktopLayout.css
 /src/layouts/DesktopLayout.tsx
+/src/layouts/layout_commons.css
 /src/layouts/layout_commons.tsx
+/src/layouts/render_layout.ts
 /src/menus/browser_context_menu.ts
 /src/menus/context_menu.ts
 /src/services/appearance.ts

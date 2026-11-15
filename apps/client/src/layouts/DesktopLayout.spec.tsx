@@ -48,6 +48,7 @@ import LoadResults from "../services/load_results.js";
 import options from "../services/options.js";
 import server from "../services/server.js";
 import { buildNote } from "../test/easy-froca.js";
+import { showNoteSplit } from "../test/note_splits.js";
 import { renderInto } from "../test/render.js";
 import { ParentComponent } from "../widgets/react/react_utils.js";
 import DesktopLayout from "./DesktopLayout.js";
@@ -178,22 +179,12 @@ describe("DesktopLayout", () => {
         const noteContext = new NoteContext("main");
         noteContext.noteId = searchNote.noteId;
         noteContext.notePath = searchNote.noteId;
-        const originalTabManager = appContext.tabManager;
-        appContext.tabManager = {
-            noteContexts: [ noteContext ],
-            getActiveMainContext: () => noteContext,
-            getActiveContext: () => noteContext
-        } as unknown as typeof appContext.tabManager;
-        const splits = container?.querySelector(".split-note-container-widget");
-        expect(splits).not.toBeNull();
-        await act(async () => {
-            await $(splits as HTMLElement).prop("component").handleEvent("newNoteContextCreated", { noteContext });
-        });
+        const restoreTabManager = await showNoteSplit(container, noteContext);
 
         const host = container?.querySelector(".note-split[data-ntx-id=main] .search-result-host");
         expect(host).toBeInstanceOf(HTMLElement);
         await vi.waitFor(() => expect(host?.querySelector(".search-result-widget")).not.toBeNull());
-        appContext.tabManager = originalTabManager;
+        restoreTabManager();
     });
 
     it("gives each note split a title row, and the inline title, title actions, content, note list, search results and scroll padding in its scroller", async () => {
@@ -201,18 +192,8 @@ describe("DesktopLayout", () => {
         let container: HTMLElement | undefined;
         act(() => { container = renderInto(<Layout />); });
         const noteContext = new NoteContext("main");
-        const originalTabManager = appContext.tabManager;
-        appContext.tabManager = {
-            noteContexts: [ noteContext ],
-            getActiveMainContext: () => noteContext,
-            getActiveContext: () => noteContext
-        } as unknown as typeof appContext.tabManager;
-        const splits = container?.querySelector(".split-note-container-widget");
-        expect(splits).not.toBeNull();
-        await act(async () => {
-            await $(splits as HTMLElement).prop("component").handleEvent("newNoteContextCreated", { noteContext });
-        });
-        appContext.tabManager = originalTabManager;
+        const restoreTabManager = await showNoteSplit(container, noteContext);
+        restoreTabManager();
 
         const split = container?.querySelector(".note-split[data-ntx-id=main]");
         expect(split).not.toBeNull();
@@ -249,17 +230,8 @@ describe("DesktopLayout", () => {
         let container: HTMLElement | undefined;
         act(() => { container = renderInto(<Layout />); });
         const noteContext = new NoteContext("main");
-        const originalTabManager = appContext.tabManager;
-        appContext.tabManager = {
-            noteContexts: [ noteContext ],
-            getActiveMainContext: () => noteContext,
-            getActiveContext: () => noteContext
-        } as unknown as typeof appContext.tabManager;
+        const restoreTabManager = await showNoteSplit(container, noteContext);
         const splits = container?.querySelector(".split-note-container-widget");
-        expect(splits).not.toBeNull();
-        await act(async () => {
-            await $(splits as HTMLElement).prop("component").handleEvent("newNoteContextCreated", { noteContext });
-        });
 
         const follows = (later: Element | null | undefined, earlier: Element | null | undefined) =>
             !!later && !!earlier && !!(earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING);
@@ -276,7 +248,7 @@ describe("DesktopLayout", () => {
         await vi.waitFor(() => expect(split?.querySelector(".custom-legacy-detail")).not.toBeNull());
         expect(follows(split?.querySelector(".custom-note-detail-pane"), findBar)).toBe(true);
         expect(follows(split?.querySelector(".custom-legacy-detail"), findBar)).toBe(true);
-        appContext.tabManager = originalTabManager;
+        restoreTabManager();
     });
 
     it("runs the command of a legacy widget's `data-trigger-command` element on a click", () => {

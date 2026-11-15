@@ -18,8 +18,9 @@ import LoadResults from "../services/load_results.js";
 import options from "../services/options.js";
 import server from "../services/server.js";
 import { buildNote } from "../test/easy-froca.js";
-import { setCustomWidgets, useCustomWidgets } from "../widgets/react/hooks/custom_widgets.js";
+import { showNoteSplit } from "../test/note_splits.js";
 import { renderInto } from "../test/render.js";
+import { setCustomWidgets, useCustomWidgets } from "../widgets/react/hooks/custom_widgets.js";
 import { ParentComponent } from "../widgets/react/react_utils.js";
 import MobileLayout from "./MobileLayout.js";
 
@@ -48,16 +49,8 @@ describe("MobileLayout", () => {
         expect(splits).not.toBeNull();
 
         const noteContext = new NoteContext("main");
-        const originalTabManager = appContext.tabManager;
-        appContext.tabManager = {
-            noteContexts: [ noteContext ],
-            getActiveMainContext: () => noteContext,
-            getActiveContext: () => noteContext
-        } as unknown as typeof appContext.tabManager;
-        await act(async () => {
-            await $(splits as HTMLElement).prop("component").handleEvent("newNoteContextCreated", { noteContext });
-        });
-        appContext.tabManager = originalTabManager;
+        const restoreTabManager = await showNoteSplit(container, noteContext);
+        restoreTabManager();
 
         const split = container?.querySelector(".note-split[data-ntx-id=main]");
         const titleRow = split?.querySelector(":scope > .title-row");

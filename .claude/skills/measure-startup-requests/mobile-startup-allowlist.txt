@@ -104,7 +104,9 @@
 /src/index.ts
 /src/layouts/MobileLayout.css
 /src/layouts/MobileLayout.tsx
+/src/layouts/layout_commons.css
 /src/layouts/layout_commons.tsx
+/src/layouts/render_layout.ts
 /src/menus/context_menu.ts
 /src/menus/image_context_menu.ts
 /src/mobile.ts

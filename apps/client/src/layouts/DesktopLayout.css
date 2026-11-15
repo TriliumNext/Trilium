@@ -51,8 +51,7 @@
         min-width: 0;
     }
 
-    .note-splits-host,
-    .search-result-host {
+    .note-splits-host {
         display: contents;
     }
 
@@ -75,4 +74,8 @@
 .custom-widgets,
 .custom-widget-host {
     display: contents;
+}
+
+.title-row > * {
+    margin: 5px;
 }

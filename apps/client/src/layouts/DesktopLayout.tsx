@@ -12,33 +12,20 @@ import GlobalMenu from "../widgets/buttons/global_menu.js";
 import LeftPaneToggle, { LeftPanePeekButton } from "../widgets/buttons/left_pane_toggle.js";
 import RightPaneToggle from "../widgets/buttons/right_pane_toggle.js";
 import CloseZenModeButton, { LeaveFullScreenButton } from "../widgets/close_zen_button.js";
-import NoteList from "../widgets/collections/NoteList.js";
-import FlexContainer from "../widgets/containers/flex_container.js";
 import LeftPane, { useLeftPane } from "../widgets/containers/LeftPane.js";
-import ScrollingContainer from "../widgets/containers/scrolling_container.js";
-import SplitNoteContainer from "../widgets/containers/split_note_container.js";
-import FindWidget from "../widgets/find.js";
 import LauncherContainer from "../widgets/launch_bar/LauncherContainer.js";
 import SpacerWidget from "../widgets/launch_bar/SpacerWidget.js";
 import { FixedFormattingToolbar } from "../widgets/layout/FormattingToolbar.js";
-import InlineTitle from "../widgets/layout/InlineTitle.js";
 import NoteActions from "../widgets/layout/NoteActions.js";
-import NoteBadges from "../widgets/layout/NoteBadges.js";
-import NoteTitleActions from "../widgets/layout/NoteTitleActions.js";
 import StatusBar from "../widgets/layout/StatusBar.js";
-import NoteIcon from "../widgets/note_icon.js";
-import NoteTitleWidget, { NoteTypeSwitcherBar } from "../widgets/note_title.js";
-import NoteWrapperWidget from "../widgets/note_wrapper.js";
-import NoteDetail from "../widgets/NoteDetail.js";
 import { useCustomWidgets, useLoadCustomWidgets } from "../widgets/react/hooks/custom_widgets.js";
 import { useLegacyWidget } from "../widgets/react/hooks/legacy.js";
 import { useTriliumOption } from "../widgets/react/hooks/options.js";
 import { useNoteContext } from "../widgets/react/hooks/note_context.js";
-import ScrollPadding from "../widgets/scroll_padding.js";
 import RightPanelContainer from "../widgets/sidebar/RightPanelContainer.js";
 import TabRowWidget from "../widgets/tab_row.js";
 import TabHistoryNavigationButtons from "../widgets/TabHistoryNavigationButtons.js";
-import { LazyDialog, Modals, SearchResults, triggerLegacyCommand, useAppearance } from "./layout_commons.js";
+import { LazyDialog, Modals, NoteSplits, type NoteSplitParts, triggerLegacyCommand, useAppearance } from "./layout_commons.js";
 
 /** The desktop layout, as a single Preact tree. */
 export default function DesktopLayout() {
@@ -88,7 +75,7 @@ export default function DesktopLayout() {
                     <FixedFormattingToolbar />
                     <div id="vertical-main-container">
                         <div id="center-pane">
-                            <NoteSplits />
+                            <NoteSplits parts={NOTE_SPLIT_PARTS} containerClassName="note-splits-host" />
                             <CustomWidgets parent="center-pane" />
                         </div>
                         <RightPanelContainer widgetsByParent={widgetsByParent} />
@@ -103,6 +90,12 @@ export default function DesktopLayout() {
         </div>
     );
 }
+
+/** A split's actions end its title row, after a spacer, and its custom widgets follow the find bar. */
+const NOTE_SPLIT_PARTS: NoteSplitParts = {
+    titleRowEnd: () => [ <SpacerWidget baseSize={0} growthFactor={1} />, <NoteActions /> ],
+    afterFind: () => [ <CustomWidgets parent="note-detail-pane" /> ]
+};
 
 const PASSWORD_NOT_SET_EVENTS: EventNames[] = [ "showPasswordNotSet" ];
 const loadPasswordNotSetDialog = () => import("../widgets/dialogs/password_not_set.js");
@@ -132,37 +125,6 @@ function TabBar({ fullWidth, leftPaneToggle }: { fullWidth: boolean, leftPaneTog
     );
 }
 
-/**
- * One note split per note context of the active tab, each with a title row (the note's icon, its
- * compact title, its badges and its actions) above the note's inline title, title actions,
- * content, list of child notes, search results and scroll padding, then the bar that picks the type
- * of an empty note, the find bar and the custom widgets of the split.
- */
-function NoteSplits() {
-    const [ splits ] = useLegacyWidget(() => new SplitNoteContainer(() =>
-        new NoteWrapperWidget()
-            .child(new FlexContainer("row")
-                .class("title-row note-split-title")
-                .cssBlock(".title-row > * { margin: 5px; }")
-                .child(<NoteIcon />)
-                .child(<NoteTitleWidget placement="split" />)
-                .child(<NoteBadges />)
-                .child(<SpacerWidget baseSize={0} growthFactor={1} />)
-                .child(<NoteActions />))
-            .child(new ScrollingContainer()
-                .filling()
-                .child(<InlineTitle />)
-                .child(<NoteTitleActions />)
-                .child(<NoteDetail />)
-                .child(<NoteList media="screen" />)
-                .child(<SearchResults />)
-                .child(<ScrollPadding />))
-            .child(<NoteTypeSwitcherBar />)
-            .child(new FindWidget())
-            .child(<CustomWidgets parent="note-detail-pane" />)
-    ), { containerClassName: "note-splits-host" });
-    return splits;
-}
 
 /**
  * The widgets that `#widget` notes add to `parent`, once they have loaded. A legacy widget gets the

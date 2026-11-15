@@ -1,14 +1,31 @@
+import "./layout_commons.css";
+
 import { ComponentType, VNode } from "preact";
 import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import type { CommandNames, EventData, EventNames } from "../components/app_context.js";
 import Component from "../components/component.js";
 import { applyAppearance, applyReloadedAppearance } from "../services/appearance.js";
+import type BasicWidget from "../widgets/basic_widget.js";
+import NoteList from "../widgets/collections/NoteList.js";
+import FlexContainer from "../widgets/containers/flex_container.js";
+import ScrollingContainer from "../widgets/containers/scrolling_container.js";
+import SplitNoteContainer from "../widgets/containers/split_note_container.js";
+import FindWidget from "../widgets/find.js";
+import InlineTitle from "../widgets/layout/InlineTitle.js";
+import NoteBadges from "../widgets/layout/NoteBadges.js";
+import NoteTitleActions from "../widgets/layout/NoteTitleActions.js";
+import NoteIcon from "../widgets/note_icon.js";
+import NoteTitleWidget, { NoteTypeSwitcherBar } from "../widgets/note_title.js";
+import NoteWrapperWidget from "../widgets/note_wrapper.js";
+import NoteDetail from "../widgets/NoteDetail.js";
 import { useTriliumEvent, useTriliumEvents } from "../widgets/react/hooks/events.js";
+import { useLegacyWidget } from "../widgets/react/hooks/legacy.js";
 import { useNoteProperty } from "../widgets/react/hooks/note.js";
 import { useNoteContext } from "../widgets/react/hooks/note_context.js";
 import { WithLazyModule } from "../widgets/react/LazyComponent.js";
 import { ParentComponent, POPUP_EDITOR_NTX_ID } from "../widgets/react/react_utils.jsx";
+import ScrollPadding from "../widgets/scroll_padding.js";
 import ToastContainer from "../widgets/Toast.jsx";
 
 /**
@@ -170,7 +187,7 @@ const loadSearchResult = () => import("../widgets/search_result.js");
  * The results of a search note, whose module loads once a search note shows. The host keeps one
  * root element, which the legacy widget adapter requires, and takes no box of its own.
  */
-export function SearchResults() {
+function SearchResults() {
     const { note } = useNoteContext();
     const noteType = useNoteProperty(note, "type");
 
@@ -204,4 +221,54 @@ export function triggerLegacyCommand(e: MouseEvent) {
 
     const component = $(target).closest(".component").prop("component") as Component | undefined;
     void component?.triggerCommand(target.dataset.triggerCommand as CommandNames, { $el: $(target) });
+}
+
+type SplitPart = BasicWidget | VNode;
+
+/** What a layout adds to the parts every note split has, each built anew for every split. */
+export interface NoteSplitParts {
+    /** Before the note's icon in the title row. */
+    titleRowStart?: () => SplitPart[];
+    /** After the note's badges in the title row. */
+    titleRowEnd?: () => SplitPart[];
+    /** Between the bar that picks the type of an empty note and the find bar. */
+    beforeFind?: () => SplitPart[];
+    /** After the find bar. */
+    afterFind?: () => SplitPart[];
+}
+
+/**
+ * One note split per note context of the active tab. Each has a title row (the note's icon, title
+ * and badges) above a scroller with the note's inline title, title actions, content, list of child
+ * notes, search results and scroll padding, then the bar that picks the type of an empty note and the
+ * find bar, with the layout's own `parts` around them. `SplitNoteContainer` is a legacy widget, so
+ * the splits are attached to a host element named by `containerId` and `containerClassName`.
+ */
+export function NoteSplits({ parts, containerId, containerClassName }: {
+    parts: NoteSplitParts;
+    containerId?: string;
+    containerClassName?: string;
+}) {
+    const [ splits ] = useLegacyWidget(() => new SplitNoteContainer(() => new NoteWrapperWidget()
+        .child(new FlexContainer("row")
+            .class("title-row note-split-title")
+            .child(...parts.titleRowStart?.() ?? [])
+            .child(<NoteIcon />)
+            .child(<NoteTitleWidget placement="split" />)
+            .child(<NoteBadges />)
+            .child(...parts.titleRowEnd?.() ?? []))
+        .child(new ScrollingContainer()
+            .filling()
+            .child(<InlineTitle />)
+            .child(<NoteTitleActions />)
+            .child(<NoteDetail />)
+            .child(<NoteList media="screen" />)
+            .child(<SearchResults />)
+            .child(<ScrollPadding />))
+        .child(<NoteTypeSwitcherBar />)
+        .child(...parts.beforeFind?.() ?? [])
+        .child(new FindWidget())
+        .child(...parts.afterFind?.() ?? [])
+    ), { containerId, containerClassName });
+    return splits;
 }
