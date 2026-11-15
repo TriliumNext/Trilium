@@ -8,3 +8,6 @@ import DesktopLayout from "./layouts/DesktopLayout.js";
 const container = new DocumentFragment();
 render(h(DesktopLayout, null), container);
 document.body.append(container);
+
+// After the first render, so `link.ts` and its imports stay off the first paint.
+void import("./services/link.js").then(({ setupLinkHandlers }) => setupLinkHandlers());

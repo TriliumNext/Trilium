@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import $ from "jquery";
 
@@ -71,7 +71,8 @@ import linkService, {
     calculateExtraWindowUrl,
     calculateHash,
     goToLinkExt,
-    parseNavigationStateFromUrl
+    parseNavigationStateFromUrl,
+    setupLinkHandlers
 } from "./link.js";
 import utils from "./utils.js";
 
@@ -1266,7 +1267,9 @@ describe("loadReferenceLinkTitle", () => {
     });
 });
 
-describe("module-level click handlers", () => {
+describe("setupLinkHandlers", () => {
+    beforeAll(() => setupLinkHandlers());
+
     it("prevents default paste on middle mouse button down on an anchor", () => {
         const $a = $("<a href='#root/aaaaaaaaaaaa'>link</a>");
         $("body").append($a);

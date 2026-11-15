@@ -8,6 +8,7 @@ import bundleService from "./services/bundle.js";
 import { setupClipboardImageEmbed } from "./services/clipboard_image_embed.js";
 import glob from "./services/glob.js";
 import { t } from "./services/i18n.js";
+import { setupLinkHandlers } from "./services/link.js";
 import { syncNativeWindowWithTheme } from "./services/native_window.js";
 import noteTooltipService from "./services/note_tooltip.js";
 import { onEffectiveThemeStyleChange, setBackgroundEffectsSuspended } from "./services/theme.js";
@@ -57,6 +58,7 @@ if (utils.isElectron()) {
 noteTooltipService.setupGlobalTooltip();
 
 setupClipboardImageEmbed();
+setupLinkHandlers();
 
 if (utils.isElectron()) {
     electronContextMenu.setupContextMenu();

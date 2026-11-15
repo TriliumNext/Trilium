@@ -2,11 +2,11 @@ import type { EditorView } from "@codemirror/view";
 import type { QuickSearchResponse } from "@triliumnext/commons";
 import { options, type VNode } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import appContext from "../components/app_context";
 import Component from "../components/component";
-import { calculateHash } from "../services/link";
+import { calculateHash, setupLinkHandlers } from "../services/link";
 import server from "../services/server";
 import { renderInto } from "../test/render";
 import QuickSearch from "./quick_search";
@@ -29,6 +29,9 @@ vi.mock("./search/search_completions", () => ({
 }));
 
 describe("QuickSearch", () => {
+    // A result is a link, which the app's link handlers open.
+    beforeAll(() => setupLinkHandlers());
+
     afterEach(() => {
         vi.restoreAllMocks();
         completions.at = null;

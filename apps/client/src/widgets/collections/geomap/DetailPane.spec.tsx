@@ -1,7 +1,7 @@
 import { render } from "preact";
 import { useState } from "preact/hooks";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import appContext from "../../../components/app_context";
 import Component from "../../../components/component";
@@ -10,7 +10,7 @@ import type FNote from "../../../entities/fnote";
 import attributes from "../../../services/attributes";
 import linkContextMenu from "../../../menus/link_context_menu";
 import froca from "../../../services/froca";
-import link from "../../../services/link";
+import link, { setupLinkHandlers } from "../../../services/link";
 import server from "../../../services/server";
 import { buildNote } from "../../../test/easy-froca";
 import { useTriliumEvent } from "../../react/hooks/events";
@@ -904,6 +904,9 @@ describe("DetailPane", () => {
      * keeps meaning what it means anywhere in the app.
      */
     describe("following a link inside the pane", () => {
+        // A click the pane leaves alone reaches the app's link handlers.
+        beforeAll(() => setupLinkHandlers());
+
         function twoMarkersAndAStray() {
             buildNote({ id: "root", title: "root", children: [
                 { id: "fromhere", title: "From here", "#geolocation": "1,2" },

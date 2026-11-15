@@ -616,9 +616,17 @@ function getPdfReferenceLabel(pageNumber: string, annotation: string | undefined
     return t(annotation ? "pdf.annotation_reference" : "pdf.page_reference", { pageNumber });
 }
 
-// A shared page hosting an app view keeps its links as plain links to other shared pages.
-/* v8 ignore next -- the `print` device branch is evaluated once at module load; under test glob.device is undefined, so the false arm cannot be exercised */
-if (glob.device !== "print" && !isShare) {
+/**
+ * Opens notes from the links of the app: a click, middle click or double click on an `<a>` goes
+ * through {@link goToLink}, a right-click opens the link menu. An entry that shows notes calls it
+ * once at startup. A shared page hosting an app view keeps its links as plain links to other shared
+ * pages, and a printed note keeps them as they are.
+ */
+export function setupLinkHandlers() {
+    if (glob.device === "print" || isShare) {
+        return;
+    }
+
     // TODO: Check why the event is not supported.
     //@ts-ignore
     $(document).on("click", "a", goToLink);

@@ -3,6 +3,7 @@ import { startApp } from "./components/app_startup.js";
 import bundleService from "./services/bundle.js";
 import { setupClipboardImageEmbed } from "./services/clipboard_image_embed.js";
 import glob from "./services/glob.js";
+import { setupLinkHandlers } from "./services/link.js";
 import { preloadCommonNoteTypes } from "./widgets/note_types.js";
 
 glob.setupGlobs();
@@ -10,6 +11,7 @@ glob.setupGlobs();
 await appContext.earlyInit();
 
 setupClipboardImageEmbed();
+setupLinkHandlers();
 
 const widgetBundles = await bundleService.getWidgetBundlesByParent();
 
