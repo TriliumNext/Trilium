@@ -22,7 +22,7 @@ import search from "../../services/search";
 import { onSystemBack, type SystemBackHandler } from "../../services/system_back";
 import tree from "../../services/tree";
 import utils, { isIOS } from "../../services/utils";
-import { NoteContent } from "../collections/legacy/ListOrGridView";
+import { NoteContent } from "../collections/legacy/NoteContent";
 import { useShareState } from "../layout/NoteBadges";
 import { useTriliumEvent } from "../react/hooks/events";
 import { useLongPressContextMenu } from "../react/hooks/dom";
@@ -36,7 +36,7 @@ import NoItems from "../react/NoItems";
 import { ParentComponent } from "../react/react_utils";
 import {
     enterHoistedNote, getLastSegment, getParentStack, getSpotlightedNoteId, getTreeStack,
-    leaveHoistedNote, setTabTree
+    leaveHoistedNote, setTabTree, useNavigatorChildren
 } from "./tab_navigation";
 
 /**
@@ -795,56 +795,6 @@ export function getListedChildCount(note: FNote, hideArchived: boolean) {
         count++;
     }
     return count;
-}
-
-interface NavigatorChild {
-    note: FNote;
-    branchId: string;
-}
-
-export function useNavigatorChildren(
-    parentNote: FNote | null | undefined,
-    hideArchived: boolean,
-    isLoaded: boolean,
-    isParentSubtreeHidden: boolean,
-    spotlightedNoteId: string | undefined
-): NavigatorChild[] {
-    const [children, setChildren] = useState<NavigatorChild[]>([]);
-    // Re-run when the parent's child list mutates in place (e.g., a new branch is added by
-    // froca_updater). The join captures the current ordered noteIds so a real change in the
-    // children set produces a new dep value.
-    const childrenKey = parentNote?.children?.join(",");
-
-    useEffect(() => {
-        if (!parentNote || !isLoaded || (isParentSubtreeHidden && !spotlightedNoteId)) {
-            setChildren([]);
-            return;
-        }
-        let cancelled = false;
-        // A parent with `#subtreeHidden` lists only the child on the active note's path.
-        const branches = parentNote.getChildBranches()
-            .filter((b): b is NonNullable<typeof b> => !!b)
-            .filter((b) => !isParentSubtreeHidden || b.noteId === spotlightedNoteId);
-        // Use the async loader so notes that aren't yet in cache (e.g., freshly created via "+")
-        // are pulled in. `processNoteChange` only updates notes already in froca, so without this
-        // newly-created child notes would be silently skipped.
-        froca.getNotes(branches.map((b) => b.noteId), true).then((notes) => {
-            if (cancelled) return;
-            const noteMap = new Map(notes.map((n) => [n.noteId, n]));
-            const result: NavigatorChild[] = [];
-            for (const branch of branches) {
-                const note = noteMap.get(branch.noteId);
-                if (!note) continue;
-                if (note.noteId === "_hidden") continue;
-                if (hideArchived && note.isArchived) continue;
-                result.push({ note, branchId: branch.branchId });
-            }
-            setChildren(result);
-        });
-        return () => { cancelled = true; };
-    }, [parentNote, childrenKey, hideArchived, isLoaded, isParentSubtreeHidden, spotlightedNoteId]);
-
-    return children;
 }
 
 /**

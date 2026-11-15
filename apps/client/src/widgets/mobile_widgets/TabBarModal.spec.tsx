@@ -1,6 +1,12 @@
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const noteContent = vi.hoisted(() => ({ loaded: false }));
+vi.mock("../collections/legacy/NoteContent", async (importOriginal) => {
+    noteContent.loaded = true;
+    return await importOriginal<typeof import("../collections/legacy/NoteContent")>();
+});
+
 import type NoteContext from "../../components/note_context";
 import froca from "../../services/froca";
 import { buildNotes } from "../../test/easy-froca";
@@ -17,7 +23,8 @@ describe("Tab", () => {
         { id: "collection", title: "Collection", "#subtreeHidden": "", children: [
             { id: "shown", title: "Shown" },
             { id: "spotlit", title: "Spotlit" }
-        ] }
+        ] },
+        { id: "board", title: "Board", type: "book", "#viewType": "board" }
     ]);
 
     let isNarrow: boolean;
@@ -36,11 +43,11 @@ describe("Tab", () => {
         vi.restoreAllMocks();
     });
 
-    async function renderTab(ntxId: string) {
+    async function renderTab(ntxId: string, noteId = "second") {
         const noteContext = {
             ntxId,
-            note: froca.getNoteFromCache("second"),
-            notePath: "root/folder/second",
+            note: froca.getNoteFromCache(noteId),
+            notePath: `root/folder/${noteId}`,
             isMainContext: () => true,
             getNavigationTitle: async () => null
         } as unknown as NoteContext;
@@ -50,6 +57,21 @@ describe("Tab", () => {
         await act(async () => {});
         return container;
     }
+
+    it("loads the content preview only for a tab that previews a note's content", async () => {
+        setTabScreen("on-board", "detail");
+        const boardCard = await renderTab("on-board", "board");
+        expect(boardCard.querySelector(".tab-preview-placeholder .bx-columns")).not.toBeNull();
+        setTabTree("on-folder", { notePath: "root/folder/second", hoistedNoteId: "root", stack: [ "root", "root/folder" ] });
+        setTabScreen("on-folder", "tree");
+        await renderTab("on-folder");
+        expect(noteContent.loaded).toBe(false);
+
+        setTabScreen("on-text", "detail");
+        const textCard = await renderTab("on-text");
+        await vi.waitFor(() => expect(textCard.querySelector(".tab-preview.type-text .note-book-content")).not.toBeNull());
+        expect(noteContent.loaded).toBe(true);
+    });
 
     it("shows the tree column a tab was left on, with the tab's note highlighted", async () => {
         setTabTree("on-tree", { notePath: "root/folder/second", hoistedNoteId: "root", stack: [ "root", "root/folder" ] });

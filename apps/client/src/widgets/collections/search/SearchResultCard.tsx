@@ -14,7 +14,7 @@ import { useNoteTitle } from "../../react/hooks/tree";
 import Icon from "../../react/Icon";
 import LinkButton from "../../react/LinkButton";
 import { HighlightedText, RawHtmlBlock } from "../../react/RawHtml";
-import { NoteContent } from "../legacy/ListOrGridView";
+import { NoteContent } from "../legacy/NoteContent";
 
 interface SearchResultCardProps {
     noteId: string;

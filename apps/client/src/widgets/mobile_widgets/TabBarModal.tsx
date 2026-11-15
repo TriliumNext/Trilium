@@ -13,17 +13,16 @@ import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import type { ViewMode, ViewScope } from "../../services/link";
 import { isNarrowLayout } from "../../services/utils";
-import { NoteContent } from "../collections/legacy/ListOrGridView";
-import { ICON_MAPPINGS } from "../note_bars/CollectionProperties";
+import { ICON_MAPPINGS } from "../collections/interface";
 import ActionButton from "../react/ActionButton";
 import { useNote, useNoteColorClass, useNoteIcon, useNoteLabelBoolean } from "../react/hooks/note";
 import { useTriliumOptionBool } from "../react/hooks/options";
 import { useActiveNoteContext, useNoteTitle } from "../react/hooks/tree";
 import Icon from "../react/Icon";
+import { useLazyModule } from "../react/LazyComponent";
 import LinkButton from "../react/LinkButton";
 import Modal from "../react/Modal";
-import { useNavigatorChildren } from "./MobileNoteNavigator";
-import { getLastSegment, getSpotlightedNoteId, getTabNavigation, type TreeStack } from "./tab_navigation";
+import { getLastSegment, getSpotlightedNoteId, getTabNavigation, type TreeStack, useNavigatorChildren } from "./tab_navigation";
 
 const VIEW_MODE_ICON_MAPPINGS: Record<Exclude<ViewMode, "default">, string> = {
     source: "bx bx-code",
@@ -263,18 +262,21 @@ function TabPreviewContent({ note, viewScope }: {
     } else if (viewScope?.viewMode && viewScope.viewMode !== "default") {
         el = <PreviewPlaceholder icon={VIEW_MODE_ICON_MAPPINGS[viewScope?.viewMode ?? ""] ?? "bx bx-empty"} />;
     } else {
-        el = <NoteContent
-            note={note}
-            highlightedTokens={undefined}
-            trim
-            includeArchivedNotes={false}
-        />;
+        el = <LazyNoteContent note={note} />;
         isPlaceholder = false;
     }
 
     return (
         <div className={clsx("tab-preview", `type-${note?.type ?? "empty"}`, { "tab-preview-placeholder": isPlaceholder })}>{el}</div>
     );
+}
+
+// The content renderer loads with the first tab that previews a note's content.
+const loadNoteContent = () => import("../collections/legacy/NoteContent");
+
+function LazyNoteContent({ note }: { note: FNote }) {
+    const noteContent = useLazyModule(loadNoteContent);
+    return noteContent && <noteContent.NoteContent note={note} highlightedTokens={undefined} trim includeArchivedNotes={false} />;
 }
 
 function PreviewPlaceholder({ icon}: {

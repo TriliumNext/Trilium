@@ -13,11 +13,13 @@ vi.mock("../react/NoteAutocomplete", () => ({
     }
 }));
 
-vi.mock("../collections/legacy/ListOrGridView", () => ({
+vi.mock("../collections/legacy/NoteContent", () => ({
     NoteContent: ({ note }: { note: { noteId: string } }) => {
         noteContent.rendered.push(note.noteId);
         return <div className="stub-content">{`content of ${note.noteId}`}</div>;
-    },
+    }
+}));
+vi.mock("../collections/legacy/ListOrGridView", () => ({
     NoteAttributes: () => <span className="stub-attributes" />
 }));
 

@@ -20,7 +20,8 @@ import { useCollectionTreeDrag } from "../../react/hooks/drag";
 import Icon from "../../react/Icon";
 import NoteLink from "../../react/NoteLink";
 import { ViewModeProps } from "../interface";
-import { getNotePath, NoteContent } from "../legacy/ListOrGridView";
+import { getNotePath } from "../legacy/ListOrGridView";
+import { NoteContent } from "../legacy/NoteContent";
 import openWidgetContextMenu from "./context_menu";
 import {
     computeDropCell, DEFAULT_WIDGET_SIZE, GRID_COLUMNS, reconcilePersistedLayout, sameLayout,

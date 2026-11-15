@@ -12,7 +12,7 @@ import dialogService from "../../services/dialog";
 import server from "../../services/server";
 import toast from "../../services/toast";
 import { getErrorMessage, isShare } from "../../services/utils";
-import { resolveViewType, ViewTypeOptions } from "../collections/interface";
+import { ICON_MAPPINGS, resolveViewType, ViewTypeOptions } from "../collections/interface";
 import { searchTermsFor } from "../collections/search/SearchResultCard";
 import ActionButton from "../react/ActionButton";
 import { Card } from "../react/Card";
@@ -27,18 +27,6 @@ import {
     CheckBoxProperty, NumberProperty, PropertyHelp, ViewProperty, ViewPropertySection
 } from "../react/NotePropertyMenu";
 import { bookPropertiesConfig } from "./collection-properties-config";
-
-export const ICON_MAPPINGS: Record<ViewTypeOptions, string> = {
-    grid: "bx bxs-grid",
-    list: "bx bx-list-ul",
-    searchPreview: "bx bx-news",
-    calendar: "bx bx-calendar",
-    table: "bx bx-table",
-    geoMap: "bx bx-map-alt",
-    board: "bx bx-columns",
-    presentation: "bx bx-rectangle",
-    dashboard: "bx bxs-dashboard"
-};
 
 export const VIEW_TYPE_MAPPINGS: Record<ViewTypeOptions, string> = {
     grid: t("book_properties.grid"),
