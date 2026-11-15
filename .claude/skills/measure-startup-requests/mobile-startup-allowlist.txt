@@ -28,6 +28,7 @@
 /api/icon-packs.css
 /api/keyboard-actions
 /api/keyboard-shortcuts-for-notes
+/api/notes/*/metadata
 /api/recent-notes
 /api/script/startup?mobile=true
 /api/tree
