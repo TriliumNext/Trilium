@@ -117,6 +117,13 @@ page.on("websocket", (ws) => {
     });
 });
 
+// A startup that throws loads less than it should, so say so rather than leave a short capture
+// looking like a win.
+page.on("pageerror", (error) => console.error(`Page error: ${error.stack ?? error.message}`));
+page.on("console", (message) => {
+    if (message.type() === "error") console.error(`Console error: ${message.text()}`);
+});
+
 console.log(`Navigating to ${baseUrl}...`);
 await page.goto(baseUrl, { waitUntil: "networkidle" });
 
