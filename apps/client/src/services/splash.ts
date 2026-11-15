@@ -13,7 +13,7 @@ import "./splash.css";
 import logoUrl from "../assets/icon-color.svg?url";
 
 /** Matches the `#splash` opacity transition in index.html. */
-const SPLASH_FADE_MS = 400;
+const SPLASH_FADE_MS = 150;
 
 /**
  * How full the bar can get while the startup is still running. The last phase would otherwise
