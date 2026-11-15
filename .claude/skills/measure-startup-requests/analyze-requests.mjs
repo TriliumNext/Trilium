@@ -278,13 +278,17 @@ function why(file, name) {
  * The name a request has in an allowlist: its normalized path without what changes between runs
  * (the content hash of a pre-bundled dependency chunk, the query string of the HMR websocket) or
  * between sessions (the ID of the open note in `/api/notes/<id>/...` and `/api/note-map/<id>/...`,
- * of an attachment the open note shows, and of each `#appCss` note in `/api/notes/download/<id>`).
+ * of an attachment the open note shows, of each `#appCss` note in `/api/notes/download/<id>`, and
+ * of an expanded note whose subtree the tree loads or whose expansion it saves).
  */
 function stableName(request) {
     return normalize(request.url)
         .replace(/^\/api\/notes\/download\/[A-Za-z0-9_]+$/, "/api/notes/download/*")
         .replace(/^\/api\/(notes|note-map)\/(?!download\/\*$)[A-Za-z0-9_]+\//, "/api/$1/*/")
         .replace(/^\/api\/attachments\/download\/[A-Za-z0-9_]+$/, "/api/attachments/download/*")
+        .replace(/^\/api\/attachments\/[A-Za-z0-9_]+\/image\/.*$/, "/api/attachments/*/image/*")
+        .replace(/^\/api\/tree\?subTreeNoteId=(?!root$)[A-Za-z0-9_]+$/, "/api/tree?subTreeNoteId=*")
+        .replace(/^\/api\/branches\/[A-Za-z0-9_]+\/expanded\/[01]$/, "/api/branches/*/expanded/*")
         .replace(/-[A-Za-z0-9_-]{8}\.js$/, "-*.js")
         .replace(/^(wss?:\/\/)[^/]+(\/[^?]*).*$/, "$1*$2");
 }

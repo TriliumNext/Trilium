@@ -85,25 +85,32 @@ node .claude/skills/measure-startup-requests/analyze-requests.mjs check electron
 
 `desktop-startup-allowlist.txt` lists every request the desktop client is allowed to make during
 startup, one normalized name per line, and `mobile-startup-allowlist.txt` the mobile client's.
-`check-startup.mjs` captures a startup of the running dev server and exits with 1 when the two
-differ in either direction; `--mobile` captures the mobile layout, in a phone's viewport with touch
-and the `trilium-device=mobile` cookie, and checks it against the mobile allowlist:
+`check-startup.mjs` captures a startup of the dev server and exits with 1 when the two differ in
+either direction; `--mobile` captures the mobile layout, in a phone's viewport with touch and the
+`trilium-device=mobile` cookie, and checks it against the mobile allowlist:
 
 ```bash
+pnpm dev:check-startup [--update] [--out <dir>]   # what CI runs: both layouts on the e2e fixture
 TRILIUM_PASSWORD=<password> node .claude/skills/measure-startup-requests/check-startup.mjs [--update] [--mobile] [baseUrl]
 # or, on a capture already taken:
 node .claude/skills/measure-startup-requests/analyze-requests.mjs check <capture.json> [allowlist.txt] [--update]
 ```
 
-- The mobile allowlist is the startup of the legacy mobile layout, as a baseline for moving it to
-  Preact as the desktop layout was; it shrinks as that work goes on.
-- The desktop allowlist is the startup of the new desktop layout as built so far (the launch bar, the tab
-  bar, the left pane in the vertical layout, the note title, content and note list, the note type
-  switcher's bar, the status bar and the right pane). A feature that is moved into the layout makes
+- **CI runs the check** (`.github/workflows/startup.yml`) through `pnpm dev:check-startup`, which is
+  `check-startup.mjs --fixture`: it boots a dev server on the e2e fixture database, in memory and
+  without a login (`apps/server/spec/db/config.ini`), checks the desktop layout and then the mobile
+  one, and stops the server. It takes about 30 s, on a cold Vite cache too. A failed run uploads
+  both captures and the server's log. Regenerate the allowlists with this command, not against
+  your own database: the fixture is the baseline, and the allowlists must also pass against a real
+  database, which is what the `?` lines are for.
+- The capture always reloads once and records the second load only, so neither the login page nor
+  a first load in which Vite optimizes the dependencies of a cold cache reaches it.
+- The allowlists are the startup of the two layouts. A feature that is moved into a layout makes
   the check fail, and the failure lists what it loads: shrink that list first, then add what is
   left with `--update`. Never run `--update` to make a failure go away without reading it.
 - Names drop what changes between runs: the content hash of a pre-bundled dependency chunk
-  (`preact-*.js`) and the HMR websocket's host and token.
+  (`preact-*.js`) and the HMR websocket's host and token. They drop the note IDs of the database as
+  well (`stableName()` in `analyze-requests.mjs` lists them), so an allowlist never names a note.
 - A request that depends on the session (a font fetched only once text is on screen, the notes of
   the open tabs) is written with a leading `?`: it is allowed without being required. `--update`
   keeps those lines.

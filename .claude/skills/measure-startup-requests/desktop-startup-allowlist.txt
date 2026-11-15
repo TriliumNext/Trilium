@@ -45,10 +45,8 @@
 /api/notes/*/attachments
 /api/notes/*/blob
 /api/notes/*/metadata
-/api/options
 /api/script/startup
 /api/script/widgets
-/api/system-checks
 /api/tree
 /bootstrap
 /node_modules/bootstrap/dist/css/bootstrap.min.css
@@ -97,7 +95,6 @@
 /src/entities/fnote.ts
 /src/fonts/Inter/Inter-VariableFont_opsz,wght.woff2
 /src/fonts/boxicons.woff2
-? /src/fonts/brand-icons.woff2
 /src/index.ts
 /src/layouts/DesktopLayout.css
 /src/layouts/DesktopLayout.tsx
@@ -106,7 +103,6 @@
 /src/layouts/render_layout.ts
 /src/menus/browser_context_menu.ts
 /src/menus/context_menu.ts
-? /src/menus/electron_context_menu.ts
 /src/services/appearance.ts
 /src/services/attributes.ts
 /src/services/backend_scripting.ts
@@ -145,7 +141,6 @@
 /src/services/link.ts
 /src/services/load_results.ts
 /src/services/navigation_state.ts
-? /src/services/native_window.ts
 /src/services/note_attribute_cache.ts
 /src/services/note_autocomplete.ts
 /src/services/note_create.ts
@@ -166,6 +161,7 @@
 /src/services/shortcuts.ts
 /src/services/spaced_update.ts
 /src/services/splash.ts
+/src/services/startup_requests.ts
 /src/services/sync.ts
 /src/services/system_back.ts
 /src/services/tab_pinning.ts
@@ -374,15 +370,21 @@
 /src/widgets/type_widgets/text/nested_editor.ts
 /src/widgets/widget_utils.ts
 ws://*/
+? /api/attachments/*/image/*
 ? /api/attachments/download/*
+? /api/branches/*/expanded/*
 ? /api/notes/download/*
 ? /api/recent-notes
 ? /api/search-templates
 ? /api/tree/load
+? /api/tree?subTreeNoteId=*
 ? /packages/commons/src/lib/note_type_ids.ts
 ? /repos/TriliumNext/Trilium/releases/latest
 ? /src/fonts/JetBrainsMono/JetBrainsMono-VariableFont_wght.woff2
+? /src/fonts/brand-icons.woff2
+? /src/menus/electron_context_menu.ts
 ? /src/services/mime_types.ts
+? /src/services/native_window.ts
 ? /src/services/note_types.ts
 ? /src/widgets/PromotedAttributes.css
 ? /src/widgets/PromotedAttributes.tsx

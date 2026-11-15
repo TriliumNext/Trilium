@@ -385,12 +385,14 @@
 /src/widgets/type_widgets/text/read_only_helper.ts
 /src/widgets/widget_utils.ts
 ws://*/
-? /api/attachments/KWya4AN5eAyI/image/Trilium%20Demo_icon-color.svg
+? /api/attachments/*/image/*
+? /api/branches/*/expanded/*
 ? /api/notes/download/*
 ? /api/search?searchString=%23workspace%20%23!template
-? /api/tree?subTreeNoteId=YWtM9eFuSqSl
+? /api/tree?subTreeNoteId=*
 ? /api/tree?subTreeNoteId=root
 ? /packages/commons/src/lib/note_type_ids.ts
+? /repos/TriliumNext/Trilium/releases/latest
 ? /src/fonts/JetBrainsMono/JetBrainsMono-VariableFont_wght.woff2
 ? /src/services/note_types.ts
 ? /src/widgets/layout/NoteTypeSwitcher.css

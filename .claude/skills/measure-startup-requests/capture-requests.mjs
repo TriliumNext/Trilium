@@ -170,18 +170,26 @@ page.on("console", (message) => {
     if (message.type() === "error") console.error(`Console error: ${message.text()}`);
 });
 
-if (cdpEndpoint) {
-    console.log(`Reloading ${page.url()}...`);
-    await page.reload({ waitUntil: "networkidle" });
-} else {
+if (!cdpEndpoint) {
     console.log(`Navigating to ${baseUrl}...`);
     await page.goto(baseUrl, { waitUntil: "networkidle" });
+    await logIn();
 }
 
-// The login page is rendered by the client at the same URL as the app, so the password field is
-// what tells them apart.
-const passwordField = page.locator("input[type=password]");
-if (await passwordField.count()) {
+// Everything so far belongs to the login page, or to a first load in which Vite discovers the
+// dependencies of a cold cache and can reload the page. Start over, so that the capture holds one
+// startup of the app and nothing else.
+requests.length = 0;
+seq = 0;
+initiators.clear();
+console.log("Reloading to capture the startup on its own...");
+await page.reload({ waitUntil: "networkidle" });
+
+/** Logs in when the page is the login page, which the client renders at the same URL as the app. */
+async function logIn() {
+    // The app has password fields of its own, as the protected session's.
+    const passwordField = page.locator(".page.login input[type=password]");
+    if (!await passwordField.count()) return;
     const password = process.env.TRILIUM_PASSWORD;
     if (!password) {
         console.error("The instance requires a login; set the TRILIUM_PASSWORD environment variable.");
@@ -193,14 +201,6 @@ if (await passwordField.count()) {
     await passwordField.first().press("Enter");
     await passwordField.first().waitFor({ state: "detached", timeout: 30000 });
     await page.waitForLoadState("networkidle", { timeout: 30000 });
-
-    // Everything so far belongs to the login page. Start over, so that the capture holds one
-    // startup of the app and nothing else.
-    requests.length = 0;
-    seq = 0;
-    initiators.clear();
-    console.log("Reloading to capture the startup on its own...");
-    await page.reload({ waitUntil: "networkidle" });
 }
 
 console.log("Waiting for the app to fully load...");
