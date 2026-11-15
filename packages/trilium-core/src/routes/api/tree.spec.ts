@@ -87,7 +87,11 @@ describe("Tree API (core)", () => {
         const savedTabs = optionService.getOption("openNoteContexts");
         const tabs = [
             { ntxId: "a", notePath: `root/${parent.noteId}/${tabNote.noteId}`, hoistedNoteId: hoisted.noteId, active: true },
-            { ntxId: "b", notePath: "root/noLongerThere", hoistedNoteId: "root", active: false }
+            { ntxId: "b", notePath: "root/noLongerThere", hoistedNoteId: "root", active: false },
+            // Entries the client did not write, which are skipped without dropping the rest.
+            null,
+            { ntxId: "c", notePath: "", hoistedNoteId: 42 },
+            { ntxId: "d", notePath: [ "root" ] }
         ];
         await api.put("/api/options", { body: { openNoteContexts: JSON.stringify(tabs) } });
         try {
@@ -106,6 +110,56 @@ describe("Tree API (core)", () => {
             }
         } finally {
             await api.put("/api/options", { body: { openNoteContexts: savedTabs } });
+        }
+    });
+
+    it("returns the same tree without saved tabs as with an empty list of them", async () => {
+        const savedTabs = optionService.getOption("openNoteContexts");
+        await api.put("/api/options", { body: { openNoteContexts: "[]" } });
+        try {
+            const withEmptyList = (await api.get<TreeResponse>("/api/tree")).body;
+
+            const original = optionService.getOptionOrNull.bind(optionService);
+            const spy = vi.spyOn(optionService, "getOptionOrNull")
+                .mockImplementation((name) => (name === "openNoteContexts" ? null : original(name)));
+            try {
+                const res = await api.get<TreeResponse>("/api/tree");
+                expect(res.status).toBe(200);
+                expect(spy).toHaveBeenCalledWith("openNoteContexts");
+                expect(res.body).toEqual(withEmptyList);
+            } finally {
+                spy.mockRestore();
+            }
+        } finally {
+            await api.put("/api/options", { body: { openNoteContexts: savedTabs } });
+        }
+    });
+
+    it("leaves out the startup notes a database does not have", async () => {
+        // Collapsed, so the tree reaches the hidden subtree only through the startup notes.
+        const hiddenBranch = becca.getBranchFromChildAndParent("_hidden", "root");
+        const wasExpanded = !!hiddenBranch?.isExpanded;
+        if (hiddenBranch) hiddenBranch.isExpanded = false;
+        const missingNoteIds = [ "_lbMobileVisibleLaunchers", "_lbBackInHistory" ];
+        const missingNotes = missingNoteIds.map((noteId) => becca.getNoteOrThrow(noteId));
+        const mobileLauncherIds = missingNotes[0].children.map((child) => child.noteId);
+        expect(mobileLauncherIds.length).toBeGreaterThan(0);
+        for (const noteId of missingNoteIds) delete becca.notes[noteId];
+        try {
+            const res = await api.get<TreeResponse>("/api/tree");
+            expect(res.status).toBe(200);
+            const noteIds = new Set(res.body.notes.map((n) => n.noteId));
+
+            for (const noteId of [ ...missingNoteIds, ...mobileLauncherIds ]) {
+                expect(noteIds.has(noteId)).toBe(false);
+            }
+            // The startup notes the database has still come along.
+            for (const noteId of [ "_lbVisibleLaunchers", "_lbForwardInHistory" ]) {
+                expect(noteIds.has(noteId)).toBe(true);
+            }
+        } finally {
+            for (const note of missingNotes) becca.notes[note.noteId] = note;
+            if (hiddenBranch) hiddenBranch.isExpanded = wasExpanded;
         }
     });
 

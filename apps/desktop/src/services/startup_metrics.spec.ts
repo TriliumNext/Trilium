@@ -102,6 +102,32 @@ describe("startup metrics", () => {
         }
     });
 
+    it("falls back to getCreationTime() where /proc has no start time, and outside Linux", async () => {
+        vi.useFakeTimers({ toFake: [ "Date" ] });
+        vi.setSystemTime(1_000_000);
+        const platform = vi.spyOn(process, "platform", "get");
+        const restoreCreationTime = stubCreationTime(1_000_000 - 250);
+        const stat = "4242 (trilium) S 1 4242 4242 0 -1 4194304 177 0 0 0 0 0 0 0 20 0 1 0 2000 13631488 825\n";
+        // The first is cut off before the `starttime` field.
+        const cases = [ [ "linux", "4242 (trilium) S 1 4242 4242 0 -1\n" ], [ "darwin", stat ] ] as const;
+        h.procFiles.set("/proc/uptime", "25.37 682270.12\n");
+        try {
+            for (const [ os, procStat ] of cases) {
+                platform.mockReturnValue(os);
+                h.procFiles.set("/proc/self/stat", procStat);
+                vi.resetModules();
+                metrics = await import("./startup_metrics.js");
+                metrics.markStartupMetric("test-phase");
+
+                expect(metrics.getStartupMetrics().get("test-phase"), os).toBe(250);
+            }
+        } finally {
+            platform.mockRestore();
+            restoreCreationTime();
+            vi.useRealTimers();
+        }
+    });
+
     it("falls back to getCreationTime() where /proc cannot be read", async () => {
         vi.useFakeTimers({ toFake: [ "Date" ] });
         vi.setSystemTime(1_000_000);

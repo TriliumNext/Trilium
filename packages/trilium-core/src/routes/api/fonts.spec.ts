@@ -1,8 +1,9 @@
 import type { Request, Response } from "../../http_interface";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as cls from "../../services/context.js";
 import optionService from "../../services/options.js";
+import sqlInit from "../../services/sql_init.js";
 import fontsRoute from "./fonts.js";
 
 function fakeRes() {
@@ -39,5 +40,20 @@ describe("Fonts API", () => {
         expect(headers["Content-Type"]).toBe("text/css");
         expect(body).toMatch(/^html:root \{/);
         expect(body).toContain("--detail-font-family: Arial;");
+    });
+
+    it("serves an empty stylesheet before the database is initialized", () => {
+        cls.init(() => {
+            optionService.setOption("overrideThemeFonts", "true");
+            optionService.setOption("detailFontFamily", "Arial");
+        });
+        const initialized = vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(false);
+        try {
+            const { headers, body } = getCss();
+            expect(headers["Content-Type"]).toBe("text/css");
+            expect(body).toBe("");
+        } finally {
+            initialized.mockRestore();
+        }
     });
 });

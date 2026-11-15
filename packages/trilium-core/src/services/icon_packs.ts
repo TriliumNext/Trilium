@@ -230,45 +230,39 @@ export function generateIconTransformCss(): string {
 }
 
 export function generateCss(iconPack: ProcessedIconPack, fontUrl: string) {
-    const fontCss = generateIconPackFontCss(iconPack, fontUrl);
     const glyphCss = generateIconPackGlyphCss(iconPack);
-    return fontCss !== null && glyphCss !== null ? `${fontCss}\n${glyphCss}` : null;
+    return glyphCss !== null ? `${generateIconPackFontCss(iconPack, fontUrl)}\n${glyphCss}` : null;
 }
 
 /** The font of an icon pack and the rule that draws its prefix in it, without any glyph. */
 export function generateIconPackFontCss({ manifest, fontMime, builtin, fontAttachmentId, prefix }: ProcessedIconPack, fontUrl: string) {
-    try {
-        const fontFamily = builtin ? fontAttachmentId : `trilium-icon-pack-${prefix}`;
-        const fontFace = [
-            `font-family: '${fontFamily}';`,
-            "font-weight: normal;",
-            "font-style: normal;",
-            `src: url('${fontUrl}') format('${MIME_TO_CSS_FORMAT_MAPPINGS[fontMime]}');`,
-            ...iconFontFaceOverrides(manifest.metrics)
-        ].join("\n                ");
+    const fontFamily = builtin ? fontAttachmentId : `trilium-icon-pack-${prefix}`;
+    const fontFace = [
+        `font-family: '${fontFamily}';`,
+        "font-weight: normal;",
+        "font-style: normal;",
+        `src: url('${fontUrl}') format('${MIME_TO_CSS_FORMAT_MAPPINGS[fontMime]}');`,
+        ...iconFontFaceOverrides(manifest.metrics)
+    ].join("\n            ");
 
-        return `\
-            @font-face {
-                ${fontFace}
-            }
+    return `\
+        @font-face {
+            ${fontFace}
+        }
 
-            .${prefix} {
-                font-family: '${fontFamily}' !important;
-                font-weight: normal;
-                font-style: normal;
-                font-variant: normal;
-                line-height: 1;
-                text-rendering: auto;
-                display: inline-block;
-                text-transform: none;
-                -webkit-font-smoothing: antialiased;
-                -moz-osx-font-smoothing: grayscale;
-            }
-        `;
-    } catch (e) {
-        getLog().error(safeExtractMessageAndStackFromError(e));
-        return null;
-    }
+        .${prefix} {
+            font-family: '${fontFamily}' !important;
+            font-weight: normal;
+            font-style: normal;
+            font-variant: normal;
+            line-height: 1;
+            text-rendering: auto;
+            display: inline-block;
+            text-transform: none;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+    `;
 }
 
 /** The `::before` rule of each icon of a pack, which places its character. */

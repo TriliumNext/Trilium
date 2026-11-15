@@ -117,6 +117,7 @@ function getPreloadFonts(assetPath: string, theme: string, themeBase: string | u
     const fonts: string[] = [];
 
     const boxicons = getIconPacks().find((iconPack) => iconPack.builtin && iconPack.fontAttachmentId === "boxicons");
+    /* v8 ignore else -- `getIconPacks()` always lists the built-in Boxicons pack */
     if (boxicons) {
         fonts.push(getIconPackFontUrl(boxicons, assetPath));
     }
