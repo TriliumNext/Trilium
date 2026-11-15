@@ -287,7 +287,9 @@ entry (closed issues are listed without one).
    the bug or the author of the idea, and leave it out when the maintainers wrote the change.
 5. The body is one line, past tense for a fix, describing what the user saw, not the code: "Typing `/2`
    in the slash command menu suggested the column layout before the heading", not "Rank exact alias
-   matches first".
+   matches first". A highlight is a few short paragraphs in the same plain register; its numbers are
+   the ones a user feels, never request counts or sizes (`writing-documentation` skill,
+   `references/changelog-entries.md`).
 6. `pnpm changelog:lint`, then commit the entry with the code.
 
 ```markdown
