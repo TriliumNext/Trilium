@@ -72,17 +72,6 @@ describe("splash", () => {
         expect(fillWidth()).toBe("95%");
     });
 
-    it("keeps the sequence the first caller installed", async () => {
-        const { initSplashProgress, reportSplashPhase } = await freshSplash();
-        initSplashProgress(PHASES);
-        // Standalone claims the bar before the client's own, shorter list is offered.
-        initSplashProgress([ { id: "other", weight: 1, status: "Other…" } ]);
-
-        reportSplashPhase("other");
-        expect(document.getElementById("splash-status")?.textContent).toBe("");
-        expect(fillWidth()).toBe("");
-    });
-
     it("never moves backwards, and ignores an unknown phase", async () => {
         const { initSplashProgress, reportSplashPhase } = await freshSplash();
         initSplashProgress(PHASES);

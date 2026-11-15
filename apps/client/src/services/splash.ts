@@ -31,18 +31,6 @@ export interface SplashPhase {
     status: string;
 }
 
-/**
- * What a server or desktop client passes through, where the backend is already running and only
- * the frontend has to start. Standalone reports a longer sequence of its own first — see
- * `STANDALONE_STARTUP_PHASES` in apps/standalone/src/main.ts.
- */
-export const CLIENT_STARTUP_PHASES: SplashPhase[] = [
-    { id: "bootstrap", weight: 1, status: "Opening your notes…" },
-    { id: "application", weight: 3, status: "Loading the application…" },
-    { id: "interface", weight: 2, status: "Building the interface…" },
-    { id: "notes", weight: 2, status: "Loading the note tree…" }
-];
-
 let phases: SplashPhase[] = [];
 let totalWeight = 0;
 
@@ -50,12 +38,11 @@ let totalWeight = 0;
 let currentPhase = -1;
 
 /**
- * Hands the progress bar the sequence it is to track, replacing its indeterminate animation. The
- * first caller wins, so standalone's longer sequence survives the client's own call later in the
- * same startup.
+ * Hands the progress bar the sequence it is to track, replacing its indeterminate animation.
+ * Standalone's `main.ts` calls it with `STANDALONE_STARTUP_PHASES`.
  */
 export function initSplashProgress(startupPhases: SplashPhase[]): void {
-    if (phases.length || !startupPhases.length) {
+    if (!startupPhases.length) {
         return;
     }
     phases = startupPhases;

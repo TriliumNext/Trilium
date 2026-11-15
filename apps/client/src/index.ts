@@ -7,7 +7,7 @@ import { requestCatalogues } from "./services/catalogue_requests";
 import { loadIconPackGlyphs } from "./services/icon_pack_glyphs";
 import { createFontPreloadLink, createFontStylesheet } from "./services/font";
 import {
-    CLIENT_STARTUP_PHASES, hideSplash, initSplashProgress, reportSplashPhase, showSplashError
+    hideSplash, reportSplashPhase, showSplashError
 } from "./services/splash";
 import { requestStartupData } from "./services/startup_requests";
 import {
@@ -31,10 +31,6 @@ const LOCAL_BOOTSTRAP_TIMEOUT_MS = 270_000;
 const USE_LOCAL_FETCH = import.meta.env.VITE_DISABLE_LOCAL_FETCH !== "true";
 
 async function bootstrap() {
-    // The splash from index.html covers the page until hideSplash(). Standalone reports a longer
-    // sequence of its own before this one, so these phases only take effect on server and desktop.
-    initSplashProgress(CLIENT_STARTUP_PHASES);
-    reportSplashPhase("bootstrap");
     // Only iOS sets `navigator.standalone`, and only for a web app added to the home screen.
     const isIosWebApp = (navigator as Navigator & { standalone?: boolean }).standalone === true;
     document.documentElement.classList.toggle("ios-web-app", isIosWebApp && extendsUnderStatusBar());
@@ -57,6 +53,7 @@ async function bootstrap() {
     if (debugSafeAreaInsets) {
         (await import("./services/debug_safe_area")).default(debugSafeAreaInsets);
     }
+    // Standalone's splash covers the page until hideSplash(); server and desktop pages have none.
     reportSplashPhase("application");
     await loadScripts();
     hideSplash();
@@ -250,11 +247,8 @@ function setBodyAttributes() {
 async function loadScripts() {
     const entry = await importEntry();
 
-    // Every entry point renders after its module has finished evaluating: the desktop layout, the
-    // note tree and the locale catalogue are all fetched from there. Waiting for the `ready` it
-    // exports keeps the splash up until the screen is actually populated, instead of handing the
-    // user a blank page for the seconds those fetches take on a slow connection.
-    reportSplashPhase("interface");
+    // The desktop and mobile entries render their layout while they evaluate. The other pages
+    // render after it and export a `ready` that settles once they have.
     await entry.ready;
 }
 
