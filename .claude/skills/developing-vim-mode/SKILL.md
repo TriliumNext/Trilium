@@ -242,7 +242,9 @@ else: other browsers distort the numbers.
 Each of these reads as a bug and is by design. Change one only with the User Guide.
 
 - `dd` on a title clears it, and on the only line of a cell, column, tab panel or aside leaves an
-  empty line. `dd` on a heading removes the heading line, not its section.
+  empty line. So does `dd` on the last line outside the asides of a note or a container: the
+  post-fixer of the aside puts an empty paragraph there. `dd` on a heading removes the heading
+  line, not its section.
 - A put next to a title lands at the start of the content under it, and around a closed
   collapsible block.
 - `yy` and `y{motion}` leave the cursor where it was. A count that passes the edge of the note

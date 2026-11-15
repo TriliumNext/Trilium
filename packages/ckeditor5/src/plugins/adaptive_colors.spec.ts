@@ -130,11 +130,11 @@ describe("AdaptiveColors", () => {
                 Essentials, Paragraph, Aside, AdaptiveColors
             ]);
             const saved = "<aside style=\"--tn-background:#e64d4d;background-color:#e64d4d;\">" +
-                "<p>A</p></aside>";
+                "<p>A</p></aside><p>Text</p>";
             withAside.setData(saved);
             expect(getModelData(withAside.model, { withoutSelection: true })).toBe(
                 "<asideBlock backgroundColor=\"#e64d4d\"><asideContent><paragraph>A</paragraph>" +
-                "</asideContent></asideBlock>");
+                "</asideContent></asideBlock><paragraph>Text</paragraph>");
             expect(withAside.getData()).toBe(saved);
             const widget = withAside.editing.view.getDomRoot()?.querySelector("aside");
             expect(widget?.style.getPropertyValue("--tn-background")).toBe("#e64d4d");
@@ -142,7 +142,7 @@ describe("AdaptiveColors", () => {
             const aside = withAside.model.document.getRoot()?.getChild(0) as ModelElement;
             withAside.model.change((writer) => writer.setSelection(aside, "on"));
             withAside.execute("asideColor", { value: null });
-            expect(withAside.getData()).toBe("<aside><p>A</p></aside>");
+            expect(withAside.getData()).toBe("<aside><p>A</p></aside><p>Text</p>");
             expect(widget?.style.getPropertyValue("--tn-background")).toBe("");
 
             const { staticColorsGrid } = openColorDropdown(withAside, "asideColor");
