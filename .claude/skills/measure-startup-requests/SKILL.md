@@ -52,6 +52,28 @@ removing the first one can leave the module loaded through another.
 - Playwright is resolved from `packages/trilium-e2e`; the script prefers system Edge/Chrome, so no
   `playwright install` is needed.
 
+## The desktop app (Electron)
+
+Start the dev desktop app with a debugging port, then attach to it with `--cdp`. The capture
+reloads its main window and checks against the desktop allowlist as usual:
+
+```bash
+cd apps/desktop && env -u ELECTRON_RUN_AS_NODE -u ELECTRON_NO_ATTACH_CONSOLE pnpm dev --remote-debugging-port=9222
+node .claude/skills/measure-startup-requests/capture-requests.mjs --cdp http://127.0.0.1:9222 electron.json
+node .claude/skills/measure-startup-requests/analyze-requests.mjs check electron.json .claude/skills/measure-startup-requests/desktop-startup-allowlist.txt
+```
+
+- A shell inside VS Code inherits `ELECTRON_RUN_AS_NODE=1`, which makes Electron run as Node and
+  fail with "Not running in an Electron environment!", hence the `env -u`.
+- The dev app has its own database (`apps/desktop/data`), so its open notes differ from the
+  server's; compare the two through `check`, which leaves those out, not through `diff`.
+- The window is real: requests made before the reloaded document (seq below the one of `/`)
+  belong to the page before, and modules loaded at the very end from a Preact event handler (a
+  hover preload of the calendar or the global menu) come from the mouse over the window.
+- Sizes read as negative: the `trilium-app://` protocol reports none. Compare the request sets.
+- `electron_context_menu.ts` and `native_window.ts` load only in Electron, so the allowlist lists
+  them with a `?`.
+
 ## Workflow for lazy-loading work
 
 1. Capture a **baseline** before changing anything: `capture-requests.mjs baseline.json`.

@@ -54,7 +54,7 @@ const DEFAULT_PROBES = [
  */
 function normalize(url) {
     return url
-        .replace(/^https?:\/\/[^/]+/, "")
+        .replace(/^(https?|trilium-app):\/\/[^/]+/, "")
         .replace(/[?&](v|t)=[a-z0-9]+/gi, "")
         .replace(/\/assets\/v[^/]+\//, "/")
         .replace(/\/@fs\/.*?\/(packages|apps|node_modules|\.cache)\//, "/$1/")

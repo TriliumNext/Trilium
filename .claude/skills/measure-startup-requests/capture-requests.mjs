@@ -6,8 +6,11 @@
  *
  * Usage:
  *   node .claude/skills/measure-startup-requests/capture-requests.mjs [--mobile] [output.json] [baseUrl]
+ *   node .claude/skills/measure-startup-requests/capture-requests.mjs --cdp <endpoint> [output.json]
  *
  * --mobile loads the mobile layout, in a phone's viewport with touch, as a phone's browser would.
+ * --cdp attaches to a running Electron app started with `--remote-debugging-port`, for example
+ * `http://127.0.0.1:9222`, and reloads its main window instead of launching a browser.
  *
  * Environment:
  *   TRILIUM_PASSWORD  password of the dev instance (required if a login page appears)
@@ -28,8 +31,10 @@ const { chromium } = e2eRequire("playwright");
 
 const cliArgs = process.argv.slice(2);
 const mobile = cliArgs.includes("--mobile");
+const cdpIndex = cliArgs.indexOf("--cdp");
+const cdpEndpoint = cdpIndex >= 0 ? cliArgs[cdpIndex + 1] : undefined;
 const [ outputPath = "requests.json", baseUrl = process.env.TRILIUM_URL ?? "http://localhost:8080" ] =
-    cliArgs.filter((arg) => arg !== "--mobile");
+    cliArgs.filter((arg, index) => arg !== "--mobile" && (cdpIndex < 0 || (index !== cdpIndex && index !== cdpIndex + 1)));
 
 /**
  * A phone's browser: the server picks the mobile layout off the `trilium-device` cookie, and the
@@ -74,12 +79,28 @@ function findOnPath(command) {
 const requests = [];
 let seq = 0;
 
-const browser = await launchBrowser();
-const context = await browser.newContext(mobile ? MOBILE_CONTEXT : {});
-if (mobile) {
-    await context.addCookies([ { name: "trilium-device", value: "mobile", url: baseUrl } ]);
+const { browser, context, page } = cdpEndpoint ? await attachToElectron(cdpEndpoint) : await openBrowser();
+
+async function openBrowser() {
+    const browser = await launchBrowser();
+    const context = await browser.newContext(mobile ? MOBILE_CONTEXT : {});
+    if (mobile) {
+        await context.addCookies([ { name: "trilium-device", value: "mobile", url: baseUrl } ]);
+    }
+    return { browser, context, page: await context.newPage() };
 }
-const page = await context.newPage();
+
+/** The main window of the Electron app listening on `endpoint`, the one that is not an extra window. */
+async function attachToElectron(endpoint) {
+    const browser = await chromium.connectOverCDP(endpoint);
+    const context = browser.contexts()[0];
+    const page = context?.pages().find((p) => p.url().startsWith("trilium-app:") && !p.url().includes("extraWindow"));
+    if (!page) {
+        console.error(`No Trilium main window at ${endpoint}.`);
+        process.exit(1);
+    }
+    return { browser, context, page };
+}
 
 // What asked for each URL, which Playwright does not expose. A static import names the importing
 // module; a dynamic import, a fetch or an injected element carries the stack that made the call.
@@ -149,8 +170,13 @@ page.on("console", (message) => {
     if (message.type() === "error") console.error(`Console error: ${message.text()}`);
 });
 
-console.log(`Navigating to ${baseUrl}...`);
-await page.goto(baseUrl, { waitUntil: "networkidle" });
+if (cdpEndpoint) {
+    console.log(`Reloading ${page.url()}...`);
+    await page.reload({ waitUntil: "networkidle" });
+} else {
+    console.log(`Navigating to ${baseUrl}...`);
+    await page.goto(baseUrl, { waitUntil: "networkidle" });
+}
 
 // The login page is rendered by the client at the same URL as the app, so the password field is
 // what tells them apart.
@@ -189,4 +215,8 @@ try {
 
 fs.writeFileSync(outputPath, JSON.stringify(requests, null, 2));
 console.log(`Captured ${requests.length} requests -> ${outputPath}`);
+// Closing a browser attached over CDP would quit the Electron app.
+if (cdpEndpoint) {
+    process.exit(0);
+}
 await browser.close();

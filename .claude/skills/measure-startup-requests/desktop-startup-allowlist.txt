@@ -106,6 +106,7 @@
 /src/layouts/render_layout.ts
 /src/menus/browser_context_menu.ts
 /src/menus/context_menu.ts
+? /src/menus/electron_context_menu.ts
 /src/services/appearance.ts
 /src/services/attributes.ts
 /src/services/backend_scripting.ts
@@ -144,6 +145,7 @@
 /src/services/link.ts
 /src/services/load_results.ts
 /src/services/navigation_state.ts
+? /src/services/native_window.ts
 /src/services/note_attribute_cache.ts
 /src/services/note_autocomplete.ts
 /src/services/note_create.ts
