@@ -80,7 +80,7 @@ type SyntaxHighlightModule = typeof import("./syntax_highlight.js");
 let currentOptions: typeof OptionsType;
 
 /**
- * Each scenario uses a fresh module copy so the module-level `highlightingLoaded`
+ * Each scenario uses a fresh module copy so the module-level `themeLoaded`, `allMimeTypesLoaded`
  * and `colorSchemeListenerRegistered` flags + the highlight cache start clean.
  */
 async function freshModule(): Promise<SyntaxHighlightModule> {
@@ -207,7 +207,7 @@ describe("syntax_highlight", () => {
             // getMimeTypes() returns the full dictionary (an array).
             expect(Array.isArray(hl.ensureMimeTypes.mock.calls[0][0])).toBe(true);
 
-            // second call with no hint and highlightingLoaded -> early return
+            // second call with no hint and allMimeTypesLoaded -> early return
             await mod.ensureMimeTypesForHighlighting();
             expect(hl.loadTheme).toHaveBeenCalledTimes(1);
             expect(hl.ensureMimeTypes).toHaveBeenCalledTimes(1);
@@ -226,6 +226,12 @@ describe("syntax_highlight", () => {
             expect(hl.ensureMimeTypes).toHaveBeenLastCalledWith([
                 { title: "text-x-csrc", enabled: true, mime: "text/x-csrc" }
             ]);
+
+            // Auto-detection needs every language, even after some were loaded one at a time.
+            await mod.ensureMimeTypesForHighlighting();
+            expect(hl.ensureMimeTypes).toHaveBeenCalledTimes(3);
+            expect((hl.ensureMimeTypes.mock.calls[2][0] as unknown[]).length).toBeGreaterThan(1);
+            expect(hl.loadTheme).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -437,12 +443,12 @@ describe("syntax_highlight", () => {
             (window as any).matchMedia = vi.fn(() => ({ matches: true, addEventListener: vi.fn() }));
             (window as any).glob = { isMainWindow: true, theme: "auto" };
 
-            // first ensure registers the listener and marks highlightingLoaded
+            // first ensure registers the listener and marks themeLoaded
             await mod.ensureMimeTypesForHighlighting("text-css");
             expect(themeSubscription.listeners).toHaveLength(1);
 
             hl.loadTheme.mockClear();
-            // Scheme change with matchesApp=true + highlightingLoaded -> re-load theme
+            // Scheme change with matchesApp=true + themeLoaded -> re-load theme
             // (the handler resolves highlight.js via a dynamic import, hence the waitFor)
             themeSubscription.listeners[0]?.();
             await vi.waitFor(() => expect(hl.loadTheme).toHaveBeenCalledTimes(1));

@@ -276,8 +276,9 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             list: createEmojiList
         },
         syntaxHighlighting: {
-            loadHighlightJs: async () => {
-                await ensureMimeTypesForHighlighting();
+            // Auto-detection needs every language; any other block only its own.
+            loadHighlightJs: async (mimeType) => {
+                await ensureMimeTypesForHighlighting(mimeType === MIME_TYPE_AUTO ? undefined : mimeType);
                 return await import("@triliumnext/highlightjs");
             },
             mapLanguageName: getHighlightJsNameForMime,

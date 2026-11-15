@@ -147,7 +147,7 @@ declare module "ckeditor5" {
 
     interface EditorConfig {
         syntaxHighlighting?: {
-            loadHighlightJs: () => Promise<any>;
+            loadHighlightJs: (mimeType: string) => Promise<any>;
             mapLanguageName(mimeType: string): string;
             defaultMimeType: string;
             enabled: boolean;

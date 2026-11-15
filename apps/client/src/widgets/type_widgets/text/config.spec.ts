@@ -4,6 +4,7 @@ import froca from "../../../services/froca.js";
 import type { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { LOCALES } from "@triliumnext/commons/src/lib/i18n.js";
 import { IMAGE_MIMES } from "@triliumnext/commons/src/lib/image_mimes.js";
+import { MIME_TYPE_AUTO } from "@triliumnext/commons/src/lib/mime_type.js";
 import { SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons/src/lib/shared_constants.js";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
@@ -165,7 +166,7 @@ interface DynamicConfig {
     };
     math: { enableMathField: boolean; lazyLoad(): Promise<void> };
     contentEmbed: { inlineLanguages: string[] };
-    syntaxHighlighting: { loadHighlightJs(): Promise<{ default: unknown }> };
+    syntaxHighlighting: { loadHighlightJs(mimeType: string): Promise<{ default: unknown }> };
     mention?: {
         feeds: unknown[];
         hostedFeeds?: { marker: string; minimumCharacters?: number; allowSpaces?: boolean; list(): unknown }[];
@@ -939,9 +940,12 @@ describe("CK config - lazy loaders", () => {
         await config.math.lazyLoad();
         expect((window as unknown as { katex: unknown }).katex).toEqual({ name: "katex-stub" });
 
-        const hljs = await config.syntaxHighlighting.loadHighlightJs();
+        // The language of the code block, or every language for one that is auto-detected.
+        const hljs = await config.syntaxHighlighting.loadHighlightJs("text-css");
         expect(hljs.default).toEqual({ name: "hljs-stub" });
-        expect(ensureMimeTypesForHighlighting).toHaveBeenCalled();
+        expect(ensureMimeTypesForHighlighting).toHaveBeenLastCalledWith("text-css");
+        await config.syntaxHighlighting.loadHighlightJs(MIME_TYPE_AUTO);
+        expect(ensureMimeTypesForHighlighting).toHaveBeenLastCalledWith(undefined);
     });
 });
 
