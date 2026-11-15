@@ -41,3 +41,21 @@ export default function LazyComponent({ loader }: LazyComponentProps) {
         </div>
     );
 }
+
+/**
+ * Returns the module `load` imports, once the component that calls it has mounted, and `undefined`
+ * until then. `load` must keep its identity across renders, so it is declared at module level.
+ */
+export function useLazyModule<T>(load: () => Promise<T>) {
+    const [ module, setModule ] = useState<T>();
+    useEffect(() => {
+        let cancelled = false;
+        void load().then((loaded) => {
+            if (!cancelled) setModule(() => loaded);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [ load ]);
+    return module;
+}

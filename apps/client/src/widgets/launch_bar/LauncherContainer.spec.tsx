@@ -10,7 +10,8 @@ import { ParentComponent } from "../react/react_utils.js";
 import LauncherContainer, { useLauncherChildNotes } from "./LauncherContainer.js";
 
 const h = vi.hoisted(() => ({
-    isElectron: false, showLauncherContextMenu: vi.fn(), tabSwitcherLoaded: false, recordMeetingLoaded: false
+    isElectron: false, showLauncherContextMenu: vi.fn(), tabSwitcherLoaded: false, recordMeetingLoaded: false,
+    dropTargetLoaded: false, customWidgetLoaded: false
 }));
 
 vi.mock("../../services/utils", async (importOriginal) => ({
@@ -31,6 +32,14 @@ vi.mock("../mobile_widgets/TabSwitcher", () => {
 vi.mock("./RecordMeetingButton", () => {
     h.recordMeetingLoaded = true;
     return { default: () => <span className="record-meeting-button" /> };
+});
+vi.mock("./LauncherDropTarget", async (importOriginal) => {
+    h.dropTargetLoaded = true;
+    return await importOriginal<typeof import("./LauncherDropTarget")>();
+});
+vi.mock("./CustomWidget", () => {
+    h.customWidgetLoaded = true;
+    return { default: () => <span className="custom-widget-stub" /> };
 });
 vi.mock("./GenericButtons", async (importOriginal) => ({
     ...await importOriginal<typeof import("./GenericButtons")>(),
@@ -152,7 +161,8 @@ describe("LauncherContainer", () => {
             id: "_lbVisibleLaunchers",
             title: "Visible Launchers",
             children: [
-                { id: "clonedNote", title: "Cloned note", "#bookmarkOpenMode": "newWindow" }
+                { id: "clonedNote", title: "Cloned note", "#bookmarkOpenMode": "newWindow" },
+                { id: "widgetLauncher", title: "Widget", type: "launcher", "#launcherType": "customWidget" }
             ]
         });
         container = document.createElement("div");
@@ -170,16 +180,28 @@ describe("LauncherContainer", () => {
         // "Remove from launch bar" removes this placement, not a bookmark of the note.
         expect(launcher?.getAttribute("data-parent")).toBe("_lbVisibleLaunchers");
 
+        // A custom widget loads with its launcher, and the drop target with the first drag.
+        await vi.waitFor(() => expect(container.querySelector(".custom-widget-stub")).not.toBeNull());
+        expect(h.customWidgetLoaded).toBe(true);
+        expect(h.dropTargetLoaded).toBe(false);
+
         const bar = container.querySelector("#launcher-container");
         expect(bar).not.toBeNull();
-        const dragOver = new Event("dragover", { bubbles: true, cancelable: true });
-        Object.defineProperty(dragOver, "dataTransfer", {
-            value: { types: [ TREE_CLIPBOARD_TYPE ] }
+        const dispatchDrag = (type: string) => {
+            const event = new Event(type, { bubbles: true, cancelable: true });
+            Object.defineProperty(event, "dataTransfer", {
+                value: { types: [ TREE_CLIPBOARD_TYPE ] }
+            });
+            act(() => {
+                bar?.dispatchEvent(event);
+            });
+        };
+        dispatchDrag("dragenter");
+        await vi.waitFor(() => {
+            dispatchDrag("dragover");
+            expect(document.body.querySelector(".launcher-drop-indicator")).not.toBeNull();
         });
-        act(() => {
-            bar?.dispatchEvent(dragOver);
-        });
-        expect(document.body.querySelector(".launcher-drop-indicator")).not.toBeNull();
+        expect(h.dropTargetLoaded).toBe(true);
     });
 
     it("shows a cloned note with #bookmarkFolder as a folder of its children", async () => {
@@ -210,11 +232,11 @@ describe("LauncherContainer", () => {
         act(() => {
             button?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
         });
-        expect(h.showLauncherContextMenu).toHaveBeenCalledExactlyOnceWith(
+        await vi.waitFor(() => expect(h.showLauncherContextMenu).toHaveBeenCalledExactlyOnceWith(
             expect.objectContaining({ noteId: "clonedFolder" }),
             expect.anything(),
             { parentNoteId: "_lbVisibleLaunchers" }
-        );
+        ));
     });
 
     it("loads the tab switcher only for a bar that shows it", async () => {

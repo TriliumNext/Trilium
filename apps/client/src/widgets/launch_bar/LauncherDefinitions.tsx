@@ -1,26 +1,22 @@
-import { useCallback, useContext, useEffect, useState } from "preact/hooks";
+import { useCallback, useContext } from "preact/hooks";
 
-import appContext, { CommandNames } from "../../components/app_context";
+import type { CommandNames } from "../../components/app_context";
 import FNote from "../../entities/fnote";
 import type { MenuItem } from "../../menus/context_menu";
-import { showLauncherContextMenu } from "../../menus/launcher_button_context_menu";
 import date_notes from "../../services/date_notes";
-import { LauncherWidgetDefinitionWithType } from "../../services/frontend_script_api_preact";
 import { t } from "../../services/i18n";
 import toast from "../../services/toast";
-import { getErrorMessage, isMobile } from "../../services/utils";
-import BasicWidget from "../basic_widget";
-import NoteContextAwareWidget from "../note_context_aware_widget";
+import { isMobile } from "../../services/utils";
+import type BasicWidget from "../basic_widget";
 import { useHoldContextMenu } from "../react/hooks/dom";
-import { useLegacyWidget } from "../react/hooks/legacy";
-import { useNoteLabel, useNoteRelationTarget } from "../react/hooks/note";
+import { useNoteLabel } from "../react/hooks/note";
 import { useGlobalShortcut } from "../react/hooks/shortcuts";
 import LazyComponent from "../react/LazyComponent";
 import { ParentComponent } from "../react/react_utils";
 import { CustomNoteLauncher } from "./GenericButtons";
 import {
     LaunchBarActionButton, LaunchBarContext, launcherContextMenuHandler, LauncherNoteProps,
-    useLauncherIconAndTitle
+    showLauncherContextMenu, useLauncherIconAndTitle
 } from "./launch_bar_widgets";
 
 export function CommandButton({ launcherNote }: LauncherNoteProps) {
@@ -144,56 +140,4 @@ export function QuickSearchLauncherWidget({ launcherNote }: LauncherNoteProps) {
             {isEnabled && <LazyComponent loader={() => import("../quick_search")} />}
         </div>
     );
-}
-
-export function CustomWidget({ launcherNote }: LauncherNoteProps) {
-    const [ widgetNote ] = useNoteRelationTarget(launcherNote, "widget");
-    const [ widget, setWidget ] = useState<BasicWidget | NoteContextAwareWidget | LauncherWidgetDefinitionWithType>();
-
-    const parentComponent = useContext(ParentComponent) as BasicWidget | null;
-    parentComponent?.contentSized();
-
-    useEffect(() => {
-        (async function() {
-            let widget: BasicWidget;
-            try {
-                widget = await widgetNote?.executeScript();
-            } catch (e) {
-                toast.showError(t("toast.bundle-error.message", {
-                    id: widgetNote?.noteId,
-                    title: widgetNote?.title,
-                    message: getErrorMessage(e)
-                }));
-                return;
-            }
-
-            if (widgetNote && widget instanceof BasicWidget) {
-                widget._noteId = widgetNote.noteId;
-            }
-            setWidget(widget);
-        })();
-    }, [ widgetNote ]);
-
-    return (
-        <div onContextMenu={launcherContextMenuHandler(launcherNote)}>
-            {widget && (
-                ("type" in widget && widget.type === "preact-launcher-widget")
-                    ? <ReactWidgetRenderer widget={widget as LauncherWidgetDefinitionWithType} />
-                    : <LegacyWidgetRenderer widget={widget as BasicWidget} />
-            )}
-        </div>
-    );
-}
-
-export function LegacyWidgetRenderer({ widget }: { widget: BasicWidget }) {
-    const [ widgetEl ] = useLegacyWidget(() => widget, {
-        noteContext: appContext.tabManager.getActiveContext() ?? undefined
-    });
-
-    return widgetEl;
-}
-
-function ReactWidgetRenderer({ widget }: { widget: LauncherWidgetDefinitionWithType }) {
-    const El = widget.render;
-    return <El />;
 }

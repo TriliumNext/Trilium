@@ -1,12 +1,10 @@
 import { useCallback } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
-import contextMenu, { MenuCommandItem } from "../../menus/context_menu";
-import { notePathMenuItem } from "../../menus/context_menu_utils";
-import { showLauncherContextMenu } from "../../menus/launcher_button_context_menu";
+import type { MenuCommandItem } from "../../menus/context_menu";
 import { parseNavigationStateFromUrl } from "../../services/navigation_state";
 import { useHoldContextMenu } from "../react/hooks/dom";
-import { LaunchBarActionButton, useLauncherIconAndTitle } from "./launch_bar_widgets";
+import { LaunchBarActionButton, showLauncherContextMenu, useLauncherIconAndTitle } from "./launch_bar_widgets";
 
 export type HistoryDirection = "back" | "forward";
 
@@ -62,6 +60,7 @@ async function showHistoryContextMenu(
     if (launcherNote) {
         await showLauncherContextMenu(launcherNote, e, { extraItems: items });
     } else if (items.length > 0) {
+        const { default: contextMenu } = await import("../../menus/context_menu");
         await contextMenu.show({ x: e.pageX, y: e.pageY, items, selectMenuItemHandler: () => {} });
     }
 }
@@ -69,6 +68,7 @@ async function showHistoryContextMenu(
 export async function getHistoryItems(
     direction: HistoryDirection
 ): Promise<MenuCommandItem<string>[]> {
+    const { notePathMenuItem } = await import("../../menus/context_menu_utils");
     const items: MenuCommandItem<string>[] = [];
 
     for (const { url, go } of getReachableEntries(direction)) {

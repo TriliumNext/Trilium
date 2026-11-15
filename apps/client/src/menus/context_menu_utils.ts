@@ -30,16 +30,6 @@ export function getArchiveMenuItems<T>(notes: FNote[]): MenuItem<T>[] {
         } ]
 }
 
-/**
- * A name the user wrote, as a menu title.
- *
- * A menu reads a title as markup, so the name is escaped into the text it is meant to be, and boxed
- * so that `style.css` clips a long one rather than letting it widen the menu.
- */
-export function menuName(name: string) {
-    return `<span class="tn-menu-name">${escapeHtml(name)}</span>`
-}
-
 /** A row with the icon and title of the note at `notePath`, with its path in the shortcut slot. */
 export async function notePathMenuItem<T>(
     notePath: string,

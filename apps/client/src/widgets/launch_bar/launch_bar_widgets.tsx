@@ -3,7 +3,8 @@ import { createContext } from "preact";
 import { useContext } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
-import { showLauncherContextMenu } from "../../menus/launcher_button_context_menu";
+import type { ContextMenuEvent } from "../../menus/context_menu";
+import type { ShowLauncherContextMenuOptions } from "../../menus/launcher_button_context_menu";
 import utils from "../../services/utils";
 import ActionButton, { ActionButtonProps } from "../react/ActionButton";
 import Dropdown, { DropdownPanel, DropdownProps } from "../react/Dropdown";
@@ -109,6 +110,20 @@ export function useLauncherIconAndTitle(note: FNote) {
 export function useLaunchBarTitlePosition() {
     const { isHorizontalLayout } = useContext(LaunchBarContext);
     return getTitlePosition(isHorizontalLayout);
+}
+
+/**
+ * Shows the launch bar menu of `launcherNote`, as `launcher_button_context_menu` does, which it
+ * imports on the first right-click. The browser's own menu is prevented before the import.
+ */
+export async function showLauncherContextMenu<T extends string>(
+    launcherNote: FNote | null | undefined,
+    e: ContextMenuEvent,
+    options?: ShowLauncherContextMenuOptions<T>
+) {
+    e.preventDefault();
+    const menu = await import("../../menus/launcher_button_context_menu");
+    await menu.showLauncherContextMenu(launcherNote, e, options);
 }
 
 function getTitlePosition(isHorizontalLayout: boolean) {

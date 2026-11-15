@@ -6,9 +6,8 @@ import { useContext, useMemo } from "preact/hooks";
 import appContext from "../../components/app_context";
 import type FNote from "../../entities/fnote";
 import type { MenuCommandItem } from "../../menus/context_menu";
-import { menuName } from "../../menus/context_menu_utils";
 import { t } from "../../services/i18n";
-import { isCtrlKey, isMobile } from "../../services/utils";
+import { isCtrlKey, isMobile, menuName } from "../../services/utils";
 import { FormDropdownSubmenu, FormListItem } from "../react/FormList";
 import {
     useChildNotes, useNote, useNoteIcon, useNoteLabelBoolean, useNoteProperty

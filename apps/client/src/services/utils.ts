@@ -251,6 +251,16 @@ export function escapeHtml(str: string) {
     return str.replace(/[&<>"'`=\/]/g, (s) => entityMap[s]);
 }
 
+/**
+ * A name the user wrote, as a menu title.
+ *
+ * A menu reads a title as markup, so the name is escaped into the text it is meant to be, and boxed
+ * so that `style.css` clips a long one rather than letting it widen the menu.
+ */
+export function menuName(name: string) {
+    return `<span class="tn-menu-name">${escapeHtml(name)}</span>`;
+}
+
 export function escapeQuotes(value: string) {
     return value.replaceAll('"', "&quot;");
 }

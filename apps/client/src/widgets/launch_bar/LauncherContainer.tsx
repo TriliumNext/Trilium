@@ -1,7 +1,7 @@
 import "./LauncherContainer.css";
 
-import type { RefObject } from "preact";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+import type { ComponentProps, RefObject } from "preact";
+import { useCallback, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
 import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
@@ -9,6 +9,7 @@ import froca from "../../services/froca";
 import { isDesktop, isElectron, isMobile } from "../../services/utils";
 import { useTriliumEvent } from "../react/hooks/events";
 import { useNoteLabelBoolean } from "../react/hooks/note";
+import { useLazyModule } from "../react/LazyComponent";
 import { onWheelHorizontalScroll } from "../widget_utils";
 import BookmarkButtons, { BookmarkFolder, getBookmarkOpenMode } from "./BookmarkButtons";
 import CalendarWidget from "./CalendarWidget";
@@ -17,10 +18,9 @@ import { CustomNoteLauncher } from "./GenericButtons";
 import HistoryNavigationButton from "./HistoryNavigation";
 import { LaunchBarContext } from "./launch_bar_widgets";
 import {
-    CommandButton, CustomWidget, NoteLauncher, QuickSearchLauncherWidget, ScriptLauncher,
-    TodayLauncher
+    CommandButton, NoteLauncher, QuickSearchLauncherWidget, ScriptLauncher, TodayLauncher
 } from "./LauncherDefinitions";
-import LauncherDropTarget from "./LauncherDropTarget";
+import type LauncherDropTarget from "./LauncherDropTarget";
 import ProtectedSessionStatusWidget from "./ProtectedSessionStatusWidget";
 import SidebarChatButton from "./SidebarChatButton";
 import SpacerWidget from "./SpacerWidget";
@@ -30,6 +30,7 @@ export default function LauncherContainer({ isHorizontalLayout }: { isHorizontal
     const childNotes = useLauncherChildNotes();
     const containerRef = useLauncherScrollbarCompensation(isHorizontalLayout, childNotes);
     const hasTabSwitcher = !!childNotes?.some((note) => note.getLabelValue("builtinWidget") === "mobileTabSwitcher");
+    const [ dragEntered, setDragEntered ] = useState(false);
 
     return (
         <div
@@ -40,6 +41,7 @@ export default function LauncherContainer({ isHorizontalLayout }: { isHorizontal
                 flexGrow: 1,
                 flexDirection: isHorizontalLayout ? "row" : "column"
             }}
+            onDragEnter={dragEntered ? undefined : () => setDragEntered(true)}
             onWheel={isHorizontalLayout ? (e) => {
                 if ((e.target as HTMLElement).closest(".dropdown-menu")) return;
                 onWheelHorizontalScroll(e);
@@ -66,11 +68,13 @@ export default function LauncherContainer({ isHorizontalLayout }: { isHorizontal
                 })}
             </LaunchBarContext.Provider>
             {isHorizontalLayout && hasTabSwitcher && <LazyTabSwipe containerRef={containerRef} />}
-            <LauncherDropTarget
-                containerRef={containerRef}
-                parentNoteId={getVisibleLaunchersRootId()}
-                isHorizontalLayout={isHorizontalLayout}
-            />
+            {dragEntered && (
+                <LazyLauncherDropTarget
+                    containerRef={containerRef}
+                    parentNoteId={getVisibleLaunchersRootId()}
+                    isHorizontalLayout={isHorizontalLayout}
+                />
+            )}
         </div>
     );
 }
@@ -91,7 +95,7 @@ function Launcher({ note, isHorizontalLayout }: { note: FNote, isHorizontalLayou
         case "script":
             return <ScriptLauncher launcherNote={note} />;
         case "customWidget":
-            return <CustomWidget launcherNote={note} />;
+            return <LazyCustomWidget launcherNote={note} />;
         case "builtinWidget":
             return initBuiltinWidget(note, isHorizontalLayout);
         default:
@@ -156,9 +160,12 @@ function initBuiltinWidget(note: FNote, isHorizontalLayout: boolean) {
 }
 
 // The mobile tab switcher shows only in the mobile launch bar, and the meeting button only in
-// the desktop app, so the other bars never load them.
+// the desktop app, so the other bars never load them. A custom widget loads with the first launcher
+// that uses one, and the drop target with the first drag over the bar.
 const loadTabSwitcher = () => import("../mobile_widgets/TabSwitcher");
 const loadRecordMeetingButton = () => import("./RecordMeetingButton");
+const loadCustomWidget = () => import("./CustomWidget");
+const loadLauncherDropTarget = () => import("./LauncherDropTarget");
 
 function LazyTabSwitcher({ launcherNote }: { launcherNote: FNote }) {
     const tabSwitcher = useLazyModule(loadTabSwitcher);
@@ -170,24 +177,19 @@ function LazyTabSwipe({ containerRef }: { containerRef: RefObject<HTMLElement | 
     return tabSwitcher && <tabSwitcher.LaunchBarTabSwipe containerRef={containerRef} />;
 }
 
+function LazyCustomWidget({ launcherNote }: { launcherNote: FNote }) {
+    const customWidget = useLazyModule(loadCustomWidget);
+    return customWidget && <customWidget.default launcherNote={launcherNote} />;
+}
+
+function LazyLauncherDropTarget(props: ComponentProps<typeof LauncherDropTarget>) {
+    const dropTarget = useLazyModule(loadLauncherDropTarget);
+    return dropTarget && <dropTarget.default {...props} />;
+}
+
 function LazyRecordMeetingButton({ launcherNote }: { launcherNote: FNote }) {
     const recordMeeting = useLazyModule(loadRecordMeetingButton);
     return recordMeeting && <recordMeeting.default launcherNote={launcherNote} />;
-}
-
-/** The module `load` imports, once the component that calls it has mounted. */
-function useLazyModule<T>(load: () => Promise<T>) {
-    const [ module, setModule ] = useState<T>();
-    useEffect(() => {
-        let cancelled = false;
-        void load().then((loaded) => {
-            if (!cancelled) setModule(() => loaded);
-        });
-        return () => {
-            cancelled = true;
-        };
-    }, [ load ]);
-    return module;
 }
 
 export function useLauncherChildNotes() {
