@@ -19,8 +19,8 @@
  * roots    what started each group of requests: the page, or a dynamic import / fetch made by
  *          running script, with how many requests its static imports then pulled in
  * why      the chain of importers from the page down to the first module matching <name>
- * check    fails when the requests differ from the allowlist (default: desktop-startup-allowlist.txt
- *          beside this script); --update rewrites the allowlist from the capture
+ * check    fails when the requests differ from the allowlist (default: desktop-startup-allowlist.txt;
+ *          mobile-startup-allowlist.txt for the mobile client); --update rewrites it from the capture
  *
  * modules, roots and why attribute each request to whatever asked for it first, so they need a
  * capture that recorded initiators.
@@ -203,10 +203,12 @@ function rootOf(nodes, node) {
  * The modules that render what the session has open: the note's content, the list of its child
  * notes, and the tab the right pane is open on. What they request is the session's own load. The
  * user's `#widget` and startup scripts count as well: `script_context.ts` imports the script API
- * only to run one.
+ * only to run one. So does `note_types.tsx`, which imports the views of the common note types once
+ * the browser is idle (`preloadCommonNoteTypes()`), and those of the open notes.
  */
 const SESSION_RENDERERS = new Set([
     "/src/widgets/NoteDetail.tsx",
+    "/src/widgets/note_types.tsx",
     "/src/widgets/collections/NoteList.tsx",
     "/src/widgets/sidebar/RightPanelContainer.tsx",
     "/src/services/script_context.ts"
@@ -316,8 +318,12 @@ function check(file, allowlistFile, update) {
     const made = new Set(requests.map(stableName));
 
     if (update) {
-        const header = [
-            "# Every request the desktop client is allowed to make during startup, in dev mode.",
+        const existingHeader = fs.existsSync(allowlistFile)
+            ? fs.readFileSync(allowlistFile, "utf8").split("\n").filter((line) => line.startsWith("#"))
+            : [];
+        const client = path.basename(allowlistFile).startsWith("mobile") ? "mobile" : "desktop";
+        const header = existingHeader.length ? existingHeader : [
+            `# Every request the ${client} client is allowed to make during startup, in dev mode.`,
             "# Checked by `analyze-requests.mjs check`; regenerate with `--update` only for a request that is wanted.",
             "# A `?` marks a request that depends on the session: allowed, but not required."
         ];

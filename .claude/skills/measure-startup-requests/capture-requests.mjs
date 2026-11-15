@@ -5,7 +5,9 @@
  * JSON file for analysis with analyze-requests.mjs.
  *
  * Usage:
- *   node .claude/skills/measure-startup-requests/capture-requests.mjs [output.json] [baseUrl]
+ *   node .claude/skills/measure-startup-requests/capture-requests.mjs [--mobile] [output.json] [baseUrl]
+ *
+ * --mobile loads the mobile layout, in a phone's viewport with touch, as a phone's browser would.
  *
  * Environment:
  *   TRILIUM_PASSWORD  password of the dev instance (required if a login page appears)
@@ -24,8 +26,22 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const e2eRequire = createRequire(path.join(repoRoot, "packages", "trilium-e2e", "package.json"));
 const { chromium } = e2eRequire("playwright");
 
-const outputPath = process.argv[2] ?? "requests.json";
-const baseUrl = process.argv[3] ?? process.env.TRILIUM_URL ?? "http://localhost:8080";
+const cliArgs = process.argv.slice(2);
+const mobile = cliArgs.includes("--mobile");
+const [ outputPath = "requests.json", baseUrl = process.env.TRILIUM_URL ?? "http://localhost:8080" ] =
+    cliArgs.filter((arg) => arg !== "--mobile");
+
+/**
+ * A phone's browser: the server picks the mobile layout off the `trilium-device` cookie, and the
+ * client tells a phone from a tablet by the viewport's width.
+ */
+const MOBILE_CONTEXT = {
+    viewport: { width: 412, height: 915 },
+    deviceScaleFactor: 2.625,
+    isMobile: true,
+    hasTouch: true,
+    userAgent: "Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36"
+};
 
 // The pinned Playwright browser build is usually not downloaded in dev setups,
 // so prefer system browsers before falling back to the bundled one.
@@ -59,7 +75,10 @@ const requests = [];
 let seq = 0;
 
 const browser = await launchBrowser();
-const context = await browser.newContext();
+const context = await browser.newContext(mobile ? MOBILE_CONTEXT : {});
+if (mobile) {
+    await context.addCookies([ { name: "trilium-device", value: "mobile", url: baseUrl } ]);
+}
 const page = await context.newPage();
 
 // What asked for each URL, which Playwright does not expose. A static import names the importing

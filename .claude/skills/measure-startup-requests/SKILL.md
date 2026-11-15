@@ -9,7 +9,7 @@ Two scripts in this folder do everything; don't reinvent them:
 
 ```bash
 # 1. Capture a full startup (login → network quiet) into a JSON file:
-TRILIUM_PASSWORD=<password> node .claude/skills/measure-startup-requests/capture-requests.mjs <out.json> [baseUrl]
+TRILIUM_PASSWORD=<password> node .claude/skills/measure-startup-requests/capture-requests.mjs [--mobile] <out.json> [baseUrl]
 
 # 2. Analyze captures:
 node .claude/skills/measure-startup-requests/analyze-requests.mjs summary <capture.json> [--top N]
@@ -62,16 +62,20 @@ removing the first one can leave the module loaded through another.
 ## The startup allowlist
 
 `desktop-startup-allowlist.txt` lists every request the desktop client is allowed to make during
-startup, one normalized name per line. `check-startup.mjs` captures a startup of the running dev
-server and exits with 1 when the two differ in either direction:
+startup, one normalized name per line, and `mobile-startup-allowlist.txt` the mobile client's.
+`check-startup.mjs` captures a startup of the running dev server and exits with 1 when the two
+differ in either direction; `--mobile` captures the mobile layout, in a phone's viewport with touch
+and the `trilium-device=mobile` cookie, and checks it against the mobile allowlist:
 
 ```bash
-TRILIUM_PASSWORD=<password> node .claude/skills/measure-startup-requests/check-startup.mjs [--update] [baseUrl]
+TRILIUM_PASSWORD=<password> node .claude/skills/measure-startup-requests/check-startup.mjs [--update] [--mobile] [baseUrl]
 # or, on a capture already taken:
 node .claude/skills/measure-startup-requests/analyze-requests.mjs check <capture.json> [allowlist.txt] [--update]
 ```
 
-- The allowlist is the startup of the new desktop layout as built so far (the launch bar, the tab
+- The mobile allowlist is the startup of the legacy mobile layout, as a baseline for moving it to
+  Preact as the desktop layout was; it shrinks as that work goes on.
+- The desktop allowlist is the startup of the new desktop layout as built so far (the launch bar, the tab
   bar, the left pane in the vertical layout, the note title, content and note list, the note type
   switcher's bar, the status bar and the right pane). A feature that is moved into the layout makes
   the check fail, and the failure lists what it loads: shrink that list first, then add what is
@@ -87,7 +91,9 @@ node .claude/skills/measure-startup-requests/analyze-requests.mjs check <capture
   the previews of the child notes, the widgets of the right pane's open tab), and in turn what those
   modules request. The user's scripts are left out the same way, through `script_context.ts`: the
   script API it imports to run a `#widget` or startup script, with every Preact component a script
-  can use (tabulator, FullCalendar, CKEditor), loads only for a user who has such notes. The capture records each request's full stack, async parents included, for
+  can use (tabulator, FullCalendar, CKEditor), loads only for a user who has such notes. So is the
+  idle preload of the common note types (`preloadCommonNoteTypes()` in `note_types.tsx`): which of
+  its views an open note has already requested depends on the session. The capture records each request's full stack, async parents included, for
   this; a capture taken before that has no stacks and gets no such exclusion. `NoteDetail`,
   `NoteList`, `RightPanelContainer` and the containers around them stay in the allowlist: they
   load whatever the session has open. What the previews' markup and stylesheets fetch (images, a
