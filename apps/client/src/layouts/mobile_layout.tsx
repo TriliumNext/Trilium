@@ -2,7 +2,6 @@ import "./mobile_layout.css";
 
 import type AppContext from "../components/app_context.js";
 import type { WidgetsByParent } from "../services/bundle.js";
-import GlobalMenuWidget from "../widgets/buttons/global_menu.js";
 import CloseZenModeButton from "../widgets/close_zen_button.js";
 import NoteList from "../widgets/collections/NoteList.jsx";
 import FlexContainer from "../widgets/containers/flex_container.js";
@@ -10,7 +9,6 @@ import RootContainer from "../widgets/containers/root_container.js";
 import ScrollingContainer from "../widgets/containers/scrolling_container.js";
 import SplitNoteContainer from "../widgets/containers/split_note_container.js";
 import FindWidget from "../widgets/find.js";
-import LauncherContainer from "../widgets/launch_bar/LauncherContainer.jsx";
 import InlineTitle from "../widgets/layout/InlineTitle.jsx";
 import NoteBadges from "../widgets/layout/NoteBadges.jsx";
 import NoteTitleActions from "../widgets/layout/NoteTitleActions.jsx";
@@ -97,17 +95,6 @@ export default class MobileLayout {
                                 )
                             )
                     )
-            )
-            .child(
-                new FlexContainer("column")
-                    .contentSized()
-                    .id("mobile-bottom-bar")
-                    .child(new FlexContainer("row")
-                        .class("horizontal")
-                        .css("height", "53px")
-                        .child(<LauncherContainer isHorizontalLayout />)
-                        .child(<GlobalMenuWidget isHorizontalLayout />)
-                        .id("launcher-pane"))
             )
             .child(<CloseZenModeButton />)
             .child(<HideKeyboardButton />);
