@@ -1176,6 +1176,16 @@ export type BootstrapDefinition = {
      * [DEPTH_ZERO_SELF_SIGNED_CERT]`), shown verbatim in monospace; non-empty whenever present.
      */
     oauthConnectionFailed?: string;
+    /**
+     * The options as `/api/options` returns them, for a signed-in client, which then does not ask
+     * for them.
+     */
+    options?: Record<string, string>;
+    /**
+     * Whether the app runs under x64 emulation on an ARM CPU, once the server has found out; absent
+     * until then, and the client asks `/api/system-checks` instead.
+     */
+    isCpuArchMismatch?: boolean;
 };
 
 /**

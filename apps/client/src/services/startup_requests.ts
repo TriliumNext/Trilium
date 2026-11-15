@@ -19,6 +19,8 @@ export function requestStartupData() {
     };
 
     for (const url of STARTUP_URLS) {
+        // `/bootstrap` brings them to a client with a session.
+        if (url === "options" && window.glob.options) continue;
         const request = fetch(`${window.glob.baseApiUrl}${url}`, { headers });
         // A failure goes to whoever takes the request, which then sends it again, not as an
         // unhandled rejection.

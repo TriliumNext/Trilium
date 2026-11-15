@@ -725,6 +725,14 @@ describe("requests started at startup", () => {
         expect(ajaxSpy).toHaveBeenCalledTimes(1);
     });
 
+    it("leaves out the options when /bootstrap brought them", () => {
+        const fetchSpy = stubFetch({});
+        (window as any).glob.options = { theme: "next" };
+
+        requestStartupData();
+        expect(fetchSpy.mock.calls.map(([ url ]) => url)).toEqual([ "/api/tree", "/api/keyboard-actions" ]);
+    });
+
     it("sends the request itself when the startup one failed, or a caller asks for more than its body", async () => {
         stubFetch({
             "/api/options": new Response("boom", { status: 500 }),

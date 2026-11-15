@@ -44,6 +44,9 @@ import llmRoute from "./api/llm";
 
 export { type CustomRequestResponse, handleCustomRequest } from "./custom";
 
+/** The options a client reads, as `/api/options` returns them, which `/bootstrap` hands over too. */
+export const getClientOptions = optionsApiRoute.getOptions;
+
 // TODO: Deduplicate with routes.ts
 const GET = "get",
     PST = "post",

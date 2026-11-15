@@ -12,6 +12,8 @@ const state = vi.hoisted(() => {
         isPasswordSet: true,
         sharedItems: {} as Record<string, unknown>,
         optionMap: {} as Record<string, string>,
+        clientOptions: { theme: "next" } as Record<string, string>,
+        cpuArchMismatch: undefined as boolean | undefined,
         csrfToken: "csrf-test-token" as string | undefined,
         logInfo: [] as string[]
     });
@@ -47,6 +49,7 @@ vi.mock("../services/open_id.js", () => ({
     default: { isOpenIDEnabled: () => false, getSSOIssuerName: () => "", getSSOIssuerIcon: () => "" }
 }));
 vi.mock("../services/totp.js", () => ({ default: { isTotpEnabled: () => false } }));
+vi.mock("./api/system_info.js", () => ({ getKnownCpuArchMismatch: () => state.current.cpuArchMismatch }));
 
 vi.mock("@triliumnext/core", () => ({
     attributes: {},
@@ -54,6 +57,7 @@ vi.mock("@triliumnext/core", () => ({
     getSharedBootstrapItems: () => state.current.sharedItems,
     icon_packs: { getIconPacks: () => [], generateCss: () => "", MIME_TO_EXTENSION_MAPPINGS: {} },
     options: { getOptionMap: () => state.current.optionMap },
+    routes: { getClientOptions: () => state.current.clientOptions },
     password: { isPasswordSet: () => state.current.isPasswordSet },
     sql_init: { isDbInitialized: () => state.current.isDbInitialized },
     task_states: { generateTaskStateCss: () => "" },
@@ -318,5 +322,26 @@ describe("getView view resolution (desktop build, #10720)", () => {
 
         const desktopUa = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome";
         expect(getView(makeReq({ userAgent: desktopUa }))).toBe("desktop");
+    });
+});
+
+describe("bootstrap startup data", () => {
+    it("hands a signed-in client its options, and the CPU check once it is known", () => {
+        const signedIn = makeRes();
+        bootstrap(makeReq({ loggedIn: true }), signedIn.res);
+        expect(signedIn.body().options).toEqual({ theme: "next" });
+        // Unknown while the check is still running, which the client then asks `/api/system-checks` for.
+        expect(signedIn.body().isCpuArchMismatch).toBeUndefined();
+
+        state.current.cpuArchMismatch = true;
+        const checked = makeRes();
+        bootstrap(makeReq({ loggedIn: true }), checked.res);
+        expect(checked.body().isCpuArchMismatch).toBe(true);
+
+        // The login screen has no session to read them with.
+        const login = makeRes();
+        bootstrap(makeReq({ loggedIn: false }), login.res);
+        expect(login.body().options).toBeUndefined();
+        expect(login.body().isCpuArchMismatch).toBeUndefined();
     });
 });
