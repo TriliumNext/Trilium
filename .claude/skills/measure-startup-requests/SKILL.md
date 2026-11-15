@@ -15,9 +15,31 @@ TRILIUM_PASSWORD=<password> node .claude/skills/measure-startup-requests/capture
 node .claude/skills/measure-startup-requests/analyze-requests.mjs summary <capture.json> [--top N]
 node .claude/skills/measure-startup-requests/analyze-requests.mjs probe <capture.json> [name ...]
 node .claude/skills/measure-startup-requests/analyze-requests.mjs diff <before.json> <after.json> [--filter <regex>]
+node .claude/skills/measure-startup-requests/analyze-requests.mjs modules <capture.json> [--depth N] [--list <regex>]
+node .claude/skills/measure-startup-requests/analyze-requests.mjs roots <capture.json> [--top N]
+node .claude/skills/measure-startup-requests/analyze-requests.mjs why <capture.json> <name>
 ```
 
+The capture records what asked for each request, so the last three attribute a startup instead of
+only counting it:
+
+- `roots` splits the requests into groups by what started them: the page itself, or a dynamic
+  import or fetch made by running script. Each group is one static import graph, so its size is
+  what that one `import()` costs. Start here.
+- `modules` counts requests by where the module lives; `--list <regex>` prints each matching
+  module with its importer.
+- `why <name>` prints the chain of importers from the page down to a module.
+
+A module is attributed to whatever requested it first. A second importer is not recorded, so
+removing the first one can leave the module loaded through another.
+
 ## Prerequisites
+
+- **No password at hand?** Boot a login-free dev server on the e2e fixture database, in memory
+  (`references/inspecting-the-running-app.md` in the `building-client-ui` skill has the command and
+  how to stop it), and pass its URL as `baseUrl`. Request counts there are within a few of a real
+  database's, as long as the startup does not depend on the open tabs.
+- On NixOS the script launches the `chromium` on the PATH; set `CHROME_BIN` to use another browser.
 
 - The dev server must already be running (`pnpm server:start`, http://localhost:8080 by default).
   Note which checkout it serves: the capture reflects the tree the *server* runs from, not your cwd
