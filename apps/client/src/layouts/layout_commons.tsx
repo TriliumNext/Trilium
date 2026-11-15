@@ -235,6 +235,12 @@ export interface NoteSplitParts {
     beforeFind?: () => SplitPart[];
     /** After the find bar. */
     afterFind?: () => SplitPart[];
+    /**
+     * What goes in each gap around the split's children: the title row, the scroller, the bar that
+     * picks the type of an empty note, the find bar and the parts around it, from the gap before the
+     * first child to the one after the last.
+     */
+    between?: (gap: number, builtInCount: number) => SplitPart[];
 }
 
 /**
@@ -249,26 +255,33 @@ export function NoteSplits({ parts, containerId, containerClassName }: {
     containerId?: string;
     containerClassName?: string;
 }) {
-    const [ splits ] = useLegacyWidget(() => new SplitNoteContainer(() => new NoteWrapperWidget()
-        .child(new FlexContainer("row")
-            .class("title-row note-split-title")
-            .child(...parts.titleRowStart?.() ?? [])
-            .child(<NoteIcon />)
-            .child(<NoteTitleWidget placement="split" />)
-            .child(<NoteBadges />)
-            .child(...parts.titleRowEnd?.() ?? []))
-        .child(new ScrollingContainer()
-            .filling()
-            .child(<InlineTitle />)
-            .child(<NoteTitleActions />)
-            .child(<NoteDetail />)
-            .child(<NoteList media="screen" />)
-            .child(<SearchResults />)
-            .child(<ScrollPadding />))
-        .child(<NoteTypeSwitcherBar />)
-        .child(...parts.beforeFind?.() ?? [])
-        .child(new FindWidget())
-        .child(...parts.afterFind?.() ?? [])
-    ), { containerId, containerClassName });
+    const [ splits ] = useLegacyWidget(() => new SplitNoteContainer(() => {
+        const children: SplitPart[] = [
+            new FlexContainer("row")
+                .class("title-row note-split-title")
+                .child(...parts.titleRowStart?.() ?? [])
+                .child(<NoteIcon />)
+                .child(<NoteTitleWidget placement="split" />)
+                .child(<NoteBadges />)
+                .child(...parts.titleRowEnd?.() ?? []),
+            new ScrollingContainer()
+                .filling()
+                .child(<InlineTitle />)
+                .child(<NoteTitleActions />)
+                .child(<NoteDetail />)
+                .child(<NoteList media="screen" />)
+                .child(<SearchResults />)
+                .child(<ScrollPadding />),
+            <NoteTypeSwitcherBar />,
+            ...parts.beforeFind?.() ?? [],
+            new FindWidget(),
+            ...parts.afterFind?.() ?? []
+        ];
+        const wrapper = new NoteWrapperWidget();
+        for (const [ gap, child ] of children.entries()) {
+            wrapper.child(...parts.between?.(gap, children.length) ?? [], child);
+        }
+        return wrapper.child(...parts.between?.(children.length, children.length) ?? []);
+    }), { containerId, containerClassName });
     return splits;
 }

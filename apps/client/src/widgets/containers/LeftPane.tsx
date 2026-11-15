@@ -97,11 +97,16 @@ export function useLeftPane(isHorizontalLayout: boolean): LeftPaneController {
 }
 
 /**
- * The note tree, with the quick search above it in the vertical layout and `children` after it. The
- * tree is loaded once the pane is first shown, and stays mounted while it is closed again.
+ * The note tree, with the quick search above it in the vertical layout. `between` gives what goes in
+ * each gap around these built-in children, from the one before the first to the one after the last.
+ * The tree is loaded once the pane is first shown, and stays mounted while it is closed again.
  */
-export default function LeftPane({ pane, children }: { pane: LeftPaneController, children?: ComponentChildren }) {
+export default function LeftPane({ pane, between }: {
+    pane: LeftPaneController;
+    between?: (gap: number, builtInCount: number) => ComponentChildren;
+}) {
     const { mode, visible, isHorizontalLayout } = pane;
+    const builtInCount = isHorizontalLayout ? 2 : 3;
     const wasShown = useRef(false);
     wasShown.current ||= visible;
     // The width `resizer.setupLeftPaneResizer()` gives the docked pane, which Split.js applies only
@@ -115,10 +120,13 @@ export default function LeftPane({ pane, children }: { pane: LeftPaneController,
             style={{ "--left-pane-width": `${Math.max(leftPaneWidth ?? 0, 5)}%` }}
         >
             <div id="left-pane" className="peek-pane">
+                {between?.(0, builtInCount)}
                 {!isHorizontalLayout && <LazyQuickSearch />}
+                {!isHorizontalLayout && between?.(1, builtInCount)}
                 <ShowAllNotesButton />
+                {between?.(builtInCount - 1, builtInCount)}
                 {wasShown.current && <NoteTree />}
-                {children}
+                {between?.(builtInCount, builtInCount)}
             </div>
             <div className="peek-pane-spacer" />
         </div>

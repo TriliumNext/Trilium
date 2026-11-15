@@ -33,3 +33,27 @@ export function setCustomWidgets(widgets: WidgetsByParent | undefined) {
         listener();
     }
 }
+
+/**
+ * Places the custom widgets of a slot among its `builtInCount` built-in children as
+ * `BasicWidget.child()` orders the children of a container: the n-th built-in child at position
+ * 10n, and a widget without a position after the built-in children, in the order given. A widget
+ * goes after every child of a lower or equal position. Returns the widgets of each gap, from the
+ * one before the first built-in child to the one after the last.
+ */
+export function placeCustomWidgets<T>(widgets: { widget: T, position?: number }[], builtInCount: number) {
+    let nextPosition = (builtInCount + 1) * 10;
+    const positioned = widgets.map(({ widget, position }) => {
+        if (position !== undefined) return { widget, position };
+        const assigned = nextPosition;
+        nextPosition += 10;
+        return { widget, position: assigned };
+    });
+    positioned.sort((a, b) => a.position - b.position);
+
+    const gaps: T[][] = Array.from({ length: builtInCount + 1 }, () => []);
+    for (const { widget, position } of positioned) {
+        gaps[Math.min(builtInCount, Math.max(0, Math.floor(position / 10)))].push(widget);
+    }
+    return gaps;
+}

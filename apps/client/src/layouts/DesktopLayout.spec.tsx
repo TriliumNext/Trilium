@@ -26,6 +26,15 @@ vi.mock("../services/bundle.js", async (importOriginal) => {
             this.$widget = $("<div class=\"custom-legacy-detail\">");
         }
     }
+    class PositionedLegacyDetailWidget extends LegacyDetailWidget {
+        get position() {
+            return 25;
+        }
+
+        doRender() {
+            this.$widget = $("<div class=\"custom-legacy-detail-25\">");
+        }
+    }
     return {
         ...original,
         default: {
@@ -35,7 +44,15 @@ vi.mock("../services/bundle.js", async (importOriginal) => {
                 for (const parent of [ "left-pane", "center-pane", "note-detail-pane" ] as const) {
                     widgets.add({ type: "preact-widget", parent, render: () => h("div", { className: `custom-${parent}` }), _noteId: parent } as never);
                 }
+                // Positions among the built-in children, which the n-th takes at 10n.
+                for (const [ parent, position ] of [ [ "left-pane", 15 ], [ "center-pane", 5 ], [ "note-detail-pane", 10 ] ] as const) {
+                    widgets.add({
+                        type: "preact-widget", parent, position, _noteId: parent,
+                        render: () => h("div", { className: `custom-${parent}-${position}` })
+                    } as never);
+                }
                 widgets.add(LegacyDetailWidget as never);
+                widgets.add(PositionedLegacyDetailWidget as never);
                 return widgets;
             }
         }
@@ -219,10 +236,11 @@ describe("DesktopLayout", () => {
         const searchResults = detail?.nextElementSibling?.nextElementSibling;
         expect(searchResults?.classList.contains("search-result-host")).toBe(true);
         expect(searchResults?.nextElementSibling).toBe(scroller?.lastElementChild);
-        // The note type switcher's bar ends the split, under the scroller.
-        expect(scroller?.nextElementSibling?.classList.contains("note-type-switcher-bar")).toBe(true);
-        // The find bar follows it.
-        expect(scroller?.nextElementSibling?.nextElementSibling?.classList.contains("find-replace-widget")).toBe(true);
+        // Under the scroller, the note type switcher's bar, then the find bar. The hosts of the custom
+        // widgets sit around each of them.
+        const partClasses = [ "title-row", "scrolling-container", "note-type-switcher-bar", "find-replace-widget" ];
+        const parts = [ ...split?.children ?? [] ].filter((child) => partClasses.some((name) => child.classList.contains(name)));
+        expect(parts.map((part) => partClasses.find((name) => part.classList.contains(name)))).toEqual(partClasses);
     });
 
     it("adds the custom widgets of `#widget` notes to their slots once they have loaded", async () => {
@@ -236,18 +254,33 @@ describe("DesktopLayout", () => {
         const follows = (later: Element | null | undefined, earlier: Element | null | undefined) =>
             !!later && !!earlier && !!(earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING);
         await vi.waitFor(() => expect(container?.querySelector("#left-pane .custom-left-pane")).not.toBeNull());
-        // After the note tree, in the pane that holds it.
-        expect(follows(container?.querySelector(".custom-left-pane"), container?.querySelector("#left-pane .show-all-notes"))).toBe(true);
-        // After the note splits, spanning them.
+        // Without a position, after the note tree, in the pane that holds it.
+        const showAllNotes = container?.querySelector("#left-pane .show-all-notes");
+        expect(follows(container?.querySelector(".custom-left-pane"), showAllNotes)).toBe(true);
+        // At 15, between the quick search (10) and the button that shows all notes (20).
+        const positionedLeft = container?.querySelector("#left-pane .custom-left-pane-15");
+        expect(follows(positionedLeft, container?.querySelector("#left-pane .quick-search"))).toBe(true);
+        expect(follows(showAllNotes, positionedLeft)).toBe(true);
+        // After the note splits, spanning them, and at 5 before them.
         const centerWidget = container?.querySelector("#center-pane .custom-center-pane");
         expect(follows(centerWidget, splits)).toBe(true);
         expect(splits?.contains(centerWidget ?? null)).toBe(false);
+        expect(follows(splits, container?.querySelector("#center-pane .custom-center-pane-5"))).toBe(true);
         // At the end of each split, after the find bar.
         const split = container?.querySelector(".note-split[data-ntx-id=main]");
         const findBar = split?.querySelector(".find-replace-widget");
         await vi.waitFor(() => expect(split?.querySelector(".custom-legacy-detail")).not.toBeNull());
         expect(follows(split?.querySelector(".custom-note-detail-pane"), findBar)).toBe(true);
         expect(follows(split?.querySelector(".custom-legacy-detail"), findBar)).toBe(true);
+        // At 10, after the title row (10) and above the scroller (20); at 25, between the scroller
+        // and the note type switcher's bar (30).
+        const scroller = split?.querySelector(":scope > .scrolling-container");
+        const positionedDetail = split?.querySelector(".custom-note-detail-pane-10");
+        expect(follows(positionedDetail, split?.querySelector(":scope > .title-row"))).toBe(true);
+        expect(follows(scroller, positionedDetail)).toBe(true);
+        const positionedLegacy = split?.querySelector(".custom-legacy-detail-25");
+        expect(follows(positionedLegacy, scroller)).toBe(true);
+        expect(follows(split?.querySelector(":scope > .note-type-switcher-bar"), positionedLegacy)).toBe(true);
         restoreTabManager();
     });
 

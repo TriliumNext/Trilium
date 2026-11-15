@@ -5,7 +5,7 @@ import { useEffect, useLayoutEffect, useMemo } from "preact/hooks";
 
 import appContext, { type EventNames } from "../components/app_context.js";
 import type NoteContext from "../components/note_context.js";
-import type { ParentName } from "../services/bundle.js";
+import type { ParentName, WidgetsByParent } from "../services/bundle.js";
 import { areWindowControlsOnLeft, isElectron } from "../services/utils.js";
 import type BasicWidget from "../widgets/basic_widget.js";
 import GlobalMenu from "../widgets/buttons/global_menu.js";
@@ -18,7 +18,7 @@ import SpacerWidget from "../widgets/launch_bar/SpacerWidget.js";
 import { FixedFormattingToolbar } from "../widgets/layout/FormattingToolbar.js";
 import NoteActions from "../widgets/layout/NoteActions.js";
 import StatusBar from "../widgets/layout/StatusBar.js";
-import { useCustomWidgets, useLoadCustomWidgets } from "../widgets/react/hooks/custom_widgets.js";
+import { placeCustomWidgets, useCustomWidgets, useLoadCustomWidgets } from "../widgets/react/hooks/custom_widgets.js";
 import { useLegacyWidget } from "../widgets/react/hooks/legacy.js";
 import { useTriliumOption } from "../widgets/react/hooks/options.js";
 import { useNoteContext } from "../widgets/react/hooks/note_context.js";
@@ -67,16 +67,15 @@ export default function DesktopLayout() {
             >
                 {!isHorizontal && launcherPane}
                 <LeftPanePeekButton />
-                <LeftPane pane={leftPane}>
-                    <CustomWidgets parent="left-pane" />
-                </LeftPane>
+                <LeftPane pane={leftPane} between={(gap, builtInCount) => <CustomWidgets parent="left-pane" gap={gap} builtInCount={builtInCount} />} />
                 <div id="rest-pane">
                     {!fullWidthTabBar && <TabBar fullWidth={false} leftPaneToggle={false} />}
                     <FixedFormattingToolbar />
                     <div id="vertical-main-container">
                         <div id="center-pane">
+                            <CustomWidgets parent="center-pane" gap={0} builtInCount={1} />
                             <NoteSplits parts={NOTE_SPLIT_PARTS} containerClassName="note-splits-host" />
-                            <CustomWidgets parent="center-pane" />
+                            <CustomWidgets parent="center-pane" gap={1} builtInCount={1} />
                         </div>
                         <RightPanelContainer widgetsByParent={widgetsByParent} />
                     </div>
@@ -91,10 +90,10 @@ export default function DesktopLayout() {
     );
 }
 
-/** A split's actions end its title row, after a spacer, and its custom widgets follow the find bar. */
+/** A split's actions end its title row, after a spacer, and its custom widgets go among its parts. */
 const NOTE_SPLIT_PARTS: NoteSplitParts = {
     titleRowEnd: () => [ <SpacerWidget baseSize={0} growthFactor={1} />, <NoteActions /> ],
-    afterFind: () => [ <CustomWidgets parent="note-detail-pane" /> ]
+    between: (gap, builtInCount) => [ <CustomWidgets key={gap} parent="note-detail-pane" gap={gap} builtInCount={builtInCount} keepsRoot /> ]
 };
 
 const PASSWORD_NOT_SET_EVENTS: EventNames[] = [ "showPasswordNotSet" ];
@@ -127,26 +126,44 @@ function TabBar({ fullWidth, leftPaneToggle }: { fullWidth: boolean, leftPaneTog
 
 
 /**
- * The widgets that `#widget` notes add to `parent`, once they have loaded. A legacy widget gets the
- * note context of the split it is in, if any. The host takes no box of its own, so the widgets lay
- * out as children of the pane, and keeps one root element, which the legacy widget adapter requires.
+ * The widgets that `#widget` notes add to `parent`, once they have loaded, that go in gap `gap` of
+ * the `builtInCount` built-in children of the pane, by their `position` (see `placeCustomWidgets()`).
+ * A legacy widget gets the note context of the split it is in, if any. The host takes no box of its
+ * own, so the widgets lay out as children of the pane. An empty gap renders nothing, which keeps the
+ * built-in children adjacent, unless `keepsRoot` is set: a part of a legacy container must keep its
+ * one root element, since the widgets load after the container is built.
  */
-function CustomWidgets({ parent }: { parent: Exclude<ParentName, "right-pane"> }) {
+function CustomWidgets({ parent, gap, builtInCount, keepsRoot }: {
+    parent: Exclude<ParentName, "right-pane">;
+    gap: number;
+    builtInCount: number;
+    keepsRoot?: boolean;
+}) {
     const widgetsByParent = useCustomWidgets();
     const { noteContext } = useNoteContext();
-    // A legacy widget given as a class is built once per slot, so that each split has its own.
-    const legacyWidgets = useMemo(() => widgetsByParent?.getLegacyWidgets(parent) ?? [], [ widgetsByParent, parent ]);
-    const preactWidgets = widgetsByParent?.getPreactWidgets(parent) ?? [];
+    // A legacy widget given as a class is built once per slot, so that each split has its own. Its
+    // position is read from the instance.
+    const widgets = useMemo(() => {
+        if (!widgetsByParent) return [];
+        const legacyWidgets = widgetsByParent.getLegacyWidgets(parent)
+            .map((widget) => ({ widget: { legacy: widget }, position: widget.position }));
+        const preactWidgets = widgetsByParent.getPreactWidgets(parent)
+            .map((widget, index) => ({ widget: { preact: widget, key: `preact-${index}` }, position: widget.position }));
+        return placeCustomWidgets<PlacedWidget>([ ...legacyWidgets, ...preactWidgets ], builtInCount)[gap] ?? [];
+    }, [ widgetsByParent, parent, gap, builtInCount ]);
 
+    if (!widgets.length && !keepsRoot) return null;
     return (
         <div className="custom-widgets">
-            {legacyWidgets.map((widget) => (
-                <LegacyCustomWidget key={widget.componentId} widget={widget} noteContext={noteContext} />
+            {widgets.map((widget) => ("legacy" in widget
+                ? <LegacyCustomWidget key={widget.legacy.componentId} widget={widget.legacy} noteContext={noteContext} />
+                : <widget.preact.render key={widget.key} />
             ))}
-            {preactWidgets.map((widget, index) => <widget.render key={index} />)}
         </div>
     );
 }
+
+type PlacedWidget = { legacy: BasicWidget } | { preact: ReturnType<WidgetsByParent["getPreactWidgets"]>[number], key: string };
 
 function LegacyCustomWidget({ widget, noteContext }: { widget: BasicWidget, noteContext?: NoteContext }) {
     const [ el ] = useLegacyWidget(() => widget, { noteContext, containerClassName: "custom-widget-host" });
