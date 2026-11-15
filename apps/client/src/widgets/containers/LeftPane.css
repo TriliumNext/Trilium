@@ -73,6 +73,13 @@ body.backdrop-effects-disabled #left-pane-host.peek > #left-pane {
     background: var(--left-pane-background-color);
 }
 
+/* Split.js sets the width and inserts the gutter; the margin is `DEFAULT_GUTTER_SIZE` in resizer.ts. */
+#left-pane-host:not(.peek):not(:has(+ .gutter)) {
+    flex-shrink: 0;
+    width: calc(var(--left-pane-width) - 2.5px);
+    margin-inline-end: 5px;
+}
+
 .note-tree-host {
     display: contents;
 }

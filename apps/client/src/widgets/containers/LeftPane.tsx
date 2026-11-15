@@ -8,6 +8,7 @@ import resizer from "../../services/resizer";
 import ShowAllNotesButton from "../buttons/show_all_notes_button";
 import { useTriliumEvent } from "../react/hooks/events";
 import { useLegacyWidget } from "../react/hooks/legacy";
+import { useTriliumOptionInt } from "../react/hooks/options";
 import { useActiveNoteContext } from "../react/hooks/tree";
 import LazyQuickSearch from "../LazyQuickSearch";
 import { useLazyModule } from "../react/LazyComponent";
@@ -100,11 +101,15 @@ export default function LeftPane({ pane }: { pane: LeftPaneController }) {
     const { mode, visible, isHorizontalLayout } = pane;
     const wasShown = useRef(false);
     wasShown.current ||= visible;
+    // The width `resizer.setupLeftPaneResizer()` gives the docked pane, which Split.js applies only
+    // a frame after the pane is in the page. LeftPane.css holds the pane to it until then.
+    const [ leftPaneWidth ] = useTriliumOptionInt("leftPaneWidth");
 
     return (
         <div
             id="left-pane-host"
             className={clsx("peek-pane-host side-start", mode === "peek" && "peek", !visible && "hidden-int")}
+            style={{ "--left-pane-width": `${Math.max(leftPaneWidth ?? 0, 5)}%` }}
         >
             <div id="left-pane" className="peek-pane">
                 {!isHorizontalLayout && <LazyQuickSearch />}
