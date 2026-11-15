@@ -44,7 +44,23 @@
         }
     }
 
-    .tab-row-host {
+    .tab-row-host,
+    .note-splits-host {
         display: contents;
+    }
+
+    #vertical-main-container {
+        display: flex;
+        flex-grow: 1;
+        min-height: 0;
+        min-width: 0;
+    }
+
+    #center-pane {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        min-height: 0;
+        min-width: 0;
     }
 }

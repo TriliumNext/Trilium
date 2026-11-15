@@ -21,7 +21,6 @@ import StatusBar from "../widgets/layout/StatusBar.jsx";
 import NoteIconWidget from "../widgets/note_icon.jsx";
 import NoteTitleWidget from "../widgets/note_title.jsx";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
-import NoteDetail from "../widgets/NoteDetail.jsx";
 import ScrollPadding from "../widgets/scroll_padding.js";
 import SearchResult from "../widgets/search_result.jsx";
 import RightPanelContainer from "../widgets/sidebar/RightPanelContainer.jsx";
@@ -79,7 +78,6 @@ export default class DesktopLayout {
                                                                 .filling()
                                                                 .child(<InlineTitle />)
                                                                 .child(<NoteTitleActions />)
-                                                                .child(<NoteDetail />)
                                                                 .child(<NoteList media="screen" />)
                                                                 .child(<SearchResult />)
                                                                 .child(<ScrollPadding />)

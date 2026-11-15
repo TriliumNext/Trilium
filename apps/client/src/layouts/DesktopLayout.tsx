@@ -10,7 +10,11 @@ import LeftPaneToggle, { LeftPanePeekButton } from "../widgets/buttons/left_pane
 import RightPaneToggle from "../widgets/buttons/right_pane_toggle.js";
 import { LeaveFullScreenButton } from "../widgets/close_zen_button.js";
 import LeftPane, { useLeftPane } from "../widgets/containers/LeftPane.js";
+import ScrollingContainer from "../widgets/containers/scrolling_container.js";
+import SplitNoteContainer from "../widgets/containers/split_note_container.js";
 import LauncherContainer from "../widgets/launch_bar/LauncherContainer.js";
+import NoteDetail from "../widgets/NoteDetail.js";
+import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import { useLegacyWidget } from "../widgets/react/hooks/legacy.js";
 import TabRowWidget from "../widgets/tab_row.js";
 import TabHistoryNavigationButtons from "../widgets/TabHistoryNavigationButtons.js";
@@ -49,6 +53,11 @@ export default function DesktopLayout() {
                 <LeftPane pane={leftPane} />
                 <div id="rest-pane">
                     {!fullWidthTabBar && <TabBar fullWidth={false} leftPaneToggle={false} />}
+                    <div id="vertical-main-container">
+                        <div id="center-pane">
+                            <NoteSplits />
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -72,6 +81,17 @@ function TabBar({ fullWidth, leftPaneToggle }: { fullWidth: boolean, leftPaneTog
             <RightPaneToggle />
         </div>
     );
+}
+
+/** One note split per note context of the active tab, each showing its note's content. */
+function NoteSplits() {
+    const [ splits ] = useLegacyWidget(() => new SplitNoteContainer(() =>
+        new NoteWrapperWidget()
+            .child(new ScrollingContainer()
+                .filling()
+                .child(<NoteDetail />))
+    ), { containerClassName: "note-splits-host" });
+    return splits;
 }
 
 /**

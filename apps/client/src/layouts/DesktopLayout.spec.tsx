@@ -54,6 +54,10 @@ describe("DesktopLayout", () => {
         expect(leftPaneHost?.previousElementSibling?.classList.contains("left-pane-peek-button")).toBe(true);
         expect(leftPaneHost?.nextElementSibling?.id).toBe("rest-pane");
         expect(root?.querySelector("#horizontal-main-container.left-pane-hidden")).not.toBeNull();
+        // The note splits fill the center pane, under the tab bar.
+        const centerPane = root?.querySelector("#rest-pane > #vertical-main-container > #center-pane");
+        expect(centerPane?.querySelector(".split-note-container-widget")).not.toBeNull();
+        expect(tabBar?.nextElementSibling?.id).toBe("vertical-main-container");
     });
 
     it("puts the launch bar above the main container in the horizontal layout", () => {
