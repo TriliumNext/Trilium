@@ -67,9 +67,9 @@ export function translationCatalogues(translationsDir: string): Plugin {
 }
 
 /**
- * Returns `locale` with every key of `english` it lacks, at any depth. A plural key the locale
- * lacks gets each form `lng` uses, filled with the English text of that form or with its `_other`
- * text. A key the locale has, a plural form included, is kept as it is.
+ * Returns `locale` with every key of `english` it lacks, at any depth. Each form `lng` uses of a
+ * plural key that the locale lacks or left empty gets the English text of that form, or its
+ * `_other` text. A key the locale translated, a plural form included, is kept as it is.
  */
 export function mergeCatalogue(english: Catalogue, locale: Catalogue, lng: string): Catalogue {
     const merged: Catalogue = { ...locale };
@@ -88,12 +88,12 @@ export function mergeCatalogue(english: Catalogue, locale: Catalogue, lng: strin
             continue;
         }
 
-        if (hasPlural(locale, pluralBase)) continue;
         const otherForm = english[`${pluralBase}_other`];
         for (const category of pluralCategories) {
-            const englishForm = english[`${pluralBase}_${category}`] ?? otherForm;
-            if (typeof englishForm === "string") {
-                merged[`${pluralBase}_${category}`] ??= englishForm;
+            const form = `${pluralBase}_${category}`;
+            const englishForm = english[form] ?? otherForm;
+            if (typeof englishForm === "string" && !merged[form]) {
+                merged[form] = englishForm;
             }
         }
     }
@@ -110,10 +110,6 @@ async function readMergedCatalogue(translationsDir: string, lng: string, ns: str
 async function readCatalogue(translationsDir: string, lng: string, ns: string): Promise<Catalogue> {
     if (!/^[\w-]+$/.test(lng)) throw new Error(`Not a language: ${lng}`);
     return JSON.parse(await readFile(join(translationsDir, lng, `${ns}.json`), "utf8"));
-}
-
-function hasPlural(catalogue: Catalogue, base: string) {
-    return Object.keys(catalogue).some((key) => key.replace(PLURAL_SUFFIX, "") === base && key !== base);
 }
 
 /**

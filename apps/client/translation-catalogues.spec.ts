@@ -46,6 +46,18 @@ describe("mergeCatalogue", () => {
 
         expect(mergeCatalogue(english, romanian, "ro")).toEqual(romanian);
     });
+
+    it("fills the forms of a plural the locale left empty or missing, keeping the ones it translated", () => {
+        const english = { notes_one: "{{count}} note", notes_other: "{{count}} notes" };
+        const polish = { notes_one: "{{count}} notatka", notes_few: "", notes_many: "" };
+
+        expect(mergeCatalogue(english, polish, "pl")).toEqual({
+            notes_one: "{{count}} notatka",
+            notes_few: "{{count}} notes",
+            notes_many: "{{count}} notes",
+            notes_other: "{{count}} notes"
+        });
+    });
 });
 
 describe("translationCatalogues", () => {
