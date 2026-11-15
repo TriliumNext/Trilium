@@ -2,7 +2,7 @@ import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../services/keyboard_actions", () => ({
-    default: { getAction: vi.fn().mockResolvedValue({ effectiveShortcuts: [] }) }
+    default: { getAction: vi.fn().mockResolvedValue({ effectiveShortcuts: [] }), updateDisplayedShortcuts: vi.fn() }
 }));
 vi.mock("../services/resizer", () => ({ default: { setupLeftPaneResizer: vi.fn() } }));
 
@@ -171,6 +171,25 @@ describe("DesktopLayout", () => {
         newTabButton?.click();
         expect(triggerCommand).not.toHaveBeenCalled();
         triggerCommand.mockRestore();
+    });
+
+    it("ends with the zen mode button and the toasts, and opens a dialog on its first summons for it alone", async () => {
+        window.glob.layoutOrientation = "vertical";
+        let container: HTMLElement | undefined;
+        act(() => { container = renderInto(<Layout />); });
+        const root = container?.querySelector("#root-widget");
+        expect(root?.querySelector(":scope > .close-zen-container")).not.toBeNull();
+        expect(root?.querySelector("#toast-container")).not.toBeNull();
+        expect(document.querySelector(".password-not-set-dialog")).toBeNull();
+
+        // The dialog loads on the summons and hears it once loaded; nothing else hears it twice.
+        const heard = vi.fn();
+        appContext.registerHandler("showPasswordNotSet", heard);
+        await act(async () => { await appContext.triggerEvent("showPasswordNotSet", {}); });
+        await vi.waitFor(() => expect(document.querySelector(".password-not-set-dialog")).not.toBeNull());
+        await act(async () => { await new Promise((resolve) => setTimeout(resolve)); });
+        expect(heard).toHaveBeenCalledTimes(1);
+        appContext.removeHandler("showPasswordNotSet", heard);
     });
 });
 

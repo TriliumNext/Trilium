@@ -86,6 +86,7 @@
 /src/index.ts
 /src/layouts/DesktopLayout.css
 /src/layouts/DesktopLayout.tsx
+/src/layouts/layout_commons.tsx
 /src/menus/context_menu.ts
 /src/services/attributes.ts
 /src/services/block_excerpts.ts
@@ -156,6 +157,8 @@
 /src/widgets/NoteDetail.tsx
 /src/widgets/TabHistoryNavigationButtons.css
 /src/widgets/TabHistoryNavigationButtons.tsx
+/src/widgets/Toast.css
+/src/widgets/Toast.tsx
 /src/widgets/attribute_widgets/attr_help.ts
 /src/widgets/attribute_widgets/attribute_detail.css
 /src/widgets/attribute_widgets/attribute_detail.tsx
@@ -195,6 +198,7 @@
 /src/widgets/containers/scrolling_container.css
 /src/widgets/containers/scrolling_container.ts
 /src/widgets/containers/split_note_container.ts
+/src/widgets/dialogs/call_to_action_definitions.ts
 /src/widgets/find.ts
 /src/widgets/hold_context_menu.ts
 /src/widgets/launch_bar/BookmarkButtons.css

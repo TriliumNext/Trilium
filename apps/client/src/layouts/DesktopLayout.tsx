@@ -2,13 +2,13 @@ import "./DesktopLayout.css";
 
 import clsx from "clsx";
 
-import type { CommandNames } from "../components/app_context.js";
+import type { CommandNames, EventNames } from "../components/app_context.js";
 import type Component from "../components/component.js";
 import { areWindowControlsOnLeft, isElectron } from "../services/utils.js";
 import GlobalMenu from "../widgets/buttons/global_menu.js";
 import LeftPaneToggle, { LeftPanePeekButton } from "../widgets/buttons/left_pane_toggle.js";
 import RightPaneToggle from "../widgets/buttons/right_pane_toggle.js";
-import { LeaveFullScreenButton } from "../widgets/close_zen_button.js";
+import CloseZenModeButton, { LeaveFullScreenButton } from "../widgets/close_zen_button.js";
 import NoteList from "../widgets/collections/NoteList.js";
 import FlexContainer from "../widgets/containers/flex_container.js";
 import LeftPane, { useLeftPane } from "../widgets/containers/LeftPane.js";
@@ -35,6 +35,7 @@ import ScrollPadding from "../widgets/scroll_padding.js";
 import RightPanelContainer from "../widgets/sidebar/RightPanelContainer.js";
 import TabRowWidget from "../widgets/tab_row.js";
 import TabHistoryNavigationButtons from "../widgets/TabHistoryNavigationButtons.js";
+import { LazyDialog, Modals } from "./layout_commons.js";
 
 /** The desktop layout as a single Preact tree, which `desktop_layout.tsx` is moved into piece by piece. */
 export default function DesktopLayout() {
@@ -81,9 +82,15 @@ export default function DesktopLayout() {
                 </div>
             </div>
             {isHorizontal && <StatusBar />}
+            <CloseZenModeButton />
+            <LazyDialog triggerEvents={PASSWORD_NOT_SET_EVENTS} loader={loadPasswordNotSetDialog} />
+            <Modals />
         </div>
     );
 }
+
+const PASSWORD_NOT_SET_EVENTS: EventNames[] = [ "showPasswordNotSet" ];
+const loadPasswordNotSetDialog = () => import("../widgets/dialogs/password_not_set.js");
 
 /** The tabs with the history buttons before them, and the full screen and right pane toggles after. */
 function TabBar({ fullWidth, leftPaneToggle }: { fullWidth: boolean, leftPaneToggle: boolean }) {
