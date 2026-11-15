@@ -6,6 +6,7 @@ import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import appContext from "../../components/app_context";
+import Component from "../../components/component";
 import type NoteContext from "../../components/note_context";
 import type TabManager from "../../components/tab_manager";
 import keyboard_actions from "../../services/keyboard_actions";
@@ -17,10 +18,11 @@ import {
     useFocusWithin, useHoldContextMenu, useMediaQuery, useParentClass, useUniqueName, useWhenShown
 } from "./hooks/dom";
 import { useNoteLabelBoolean } from "./hooks/note";
-import { useDetachedNoteContext } from "./hooks/note_context";
+import { useDetachedNoteContext, useNoteContext } from "./hooks/note_context";
 import { useStaticTooltip, useTooltip } from "./hooks/tooltip";
 import { useFindShortcut } from "./hooks/shortcuts";
 import { useImperativeSearchHighlighlighting } from "./hooks/highlight";
+import { ParentComponent } from "./react_utils";
 
 let currentPhase: DelayedVisibilityPhase | undefined;
 
@@ -127,6 +129,31 @@ describe("useDetachedNoteContext", () => {
         } finally {
             appContext.tabManager = tabManager;
         }
+    });
+});
+
+describe("useNoteContext", () => {
+    it("has the note of the context it switches to from its first render on it", async () => {
+        const host = new Component();
+        const note = buildNote({ id: "switchedTo", title: "Switched to" });
+        const noteContext = {
+            ntxId: "ntx", notePath: "root/switchedTo", note, hoistedNoteId: "root", viewScope: { viewMode: "default" }
+        } as unknown as NoteContext;
+        const rendered: string[] = [];
+        function Host() {
+            const { note, notePath } = useNoteContext();
+            rendered.push(`${notePath} ${note?.noteId}`);
+            return null;
+        }
+        const container = document.createElement("div");
+        act(() => render(<ParentComponent.Provider value={host}><Host /></ParentComponent.Provider>, container));
+
+        await act(async () => {
+            await host.handleEvent("noteSwitched", { noteContext, notePath: "root/switchedTo" });
+        });
+        // Every render that sees the new path sees its note, so nothing paints a frame in between.
+        expect(rendered.filter((entry) => entry.startsWith("root/switchedTo"))).toEqual([ "root/switchedTo switchedTo" ]);
+        act(() => render(null, container));
     });
 });
 

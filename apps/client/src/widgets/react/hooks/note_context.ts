@@ -38,10 +38,6 @@ export function useNoteContext() {
         setIsReadOnlyTemporarilyDisabled(noteContextContext?.viewScope?.readOnlyTemporarilyDisabled);
     }, [ noteContextContext ]);
 
-    useEffect(() => {
-        setNote(noteContext?.note);
-    }, [ notePath ]);
-
     useTriliumEvents([ "setNoteContext", "activeContextChanged", "noteSwitchedAndActivated", "noteSwitched" ], ({ noteContext }) => {
         // When bound to a specific context via the provider (the quick-edit popup), ignore events for
         // other contexts, but still react when our own bound context navigates in place (e.g. switching
@@ -50,6 +46,8 @@ export function useNoteContext() {
         setNoteContext(noteContext);
         setHoistedNoteId(noteContext.hoistedNoteId);
         setNotePath(noteContext.notePath);
+        // With the path, so the first render on the new note context already has its note.
+        setNote(noteContext.note);
         setViewScope(noteContext.viewScope);
         // Navigating resets the view scope, so the temporary "enable editing" toggle must be reset too.
         // Otherwise the stale value prevents consumers from refreshing when the user
