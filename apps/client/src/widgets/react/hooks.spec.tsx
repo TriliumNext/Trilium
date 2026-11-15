@@ -11,10 +11,10 @@ import type TabManager from "../../components/tab_manager";
 import keyboard_actions from "../../services/keyboard_actions";
 import { buildNote } from "../../test/easy-froca";
 import { highlightedTexts } from "../../test/highlights";
-import { setupHoldContextMenu } from "../widget_utils";
+import { setupHoldContextMenu } from "../hold_context_menu";
 import {
     type DelayedVisibilityPhase, useBodyClass, useDelayedVisibility, useDocumentFocus,
-    useFocusWithin, useHoldContextMenu, useMediaQuery, useParentClass, useWhenShown
+    useFocusWithin, useHoldContextMenu, useMediaQuery, useParentClass, useUniqueName, useWhenShown
 } from "./hooks/dom";
 import { useNoteLabelBoolean } from "./hooks/note";
 import { useDetachedNoteContext } from "./hooks/note_context";
@@ -1115,5 +1115,26 @@ describe("useFindShortcut", () => {
             root.remove();
             vi.restoreAllMocks();
         }
+    });
+});
+
+describe("useUniqueName", () => {
+    it("gives each caller its own prefixed name and keeps it across renders", () => {
+        const names: string[] = [];
+        function Named({ prefix }: { prefix?: string }) {
+            names.push(useUniqueName(prefix));
+            return null;
+        }
+        const root = document.createElement("div");
+        act(() => render(<><Named prefix="field" /><Named prefix="field" /><Named /></>, root));
+        act(() => render(<><Named prefix="field" /><Named prefix="field" /><Named /></>, root));
+
+        const [ first, second, unprefixed ] = names;
+        expect(first).toMatch(/^field-/);
+        expect(second).toMatch(/^field-/);
+        expect(first).not.toBe(second);
+        expect(unprefixed).not.toMatch(/^-/);
+        expect(names.slice(3)).toEqual(names.slice(0, 3));
+        act(() => render(null, root));
     });
 });

@@ -9,11 +9,11 @@ The hooks are split by what they import, so a component pays only for the servic
 | File | Holds | Imports beyond Preact |
 |---|---|---|
 | `events.ts` | `useTriliumEvent`, `useTriliumEvents` | `react_utils` |
-| `dom.ts` | element size, visibility, focus, fullscreen, media queries, refs, long press, debounce | `utils`, `widget_utils` |
+| `dom.ts` | element size, visibility, focus, fullscreen, media queries, refs, long press, debounce | `hold_context_menu` |
 | `tooltip.ts` | `useTooltip`, `useStaticTooltip` | Bootstrap (patches `Tooltip.dispose()` and loads `tooltip.css`) |
 | `highlight.ts` | `useImperativeSearchHighlighlighting` | `highlight_matches`, `collapsible` |
 | `note.ts` | note fields, labels, relations, blobs, children, attachments | `froca`, `attributes` |
-| `options.ts` | `useTriliumOption*`, `useUserThemes`, `useColorScheme` | `options`, `server`, `ws`, `theme` |
+| `options.ts` | `useTriliumOption*`, `useUserThemes`, `useColorScheme` | `options`, `server`, `theme` (`ws` only once a save fails) |
 | `note_context.ts` | `useNoteContext`, context data, read-only state, `useSearchTermsConsumer` | `app_context`, `options`, `search_jump` |
 | `tree.ts` | `useActiveNoteContext`, `useGetContextData`, `useNoteTitle` | `services/tree` |
 | `editor.ts` | spaced updates and saved-data plumbing | `spaced_update`, `server`, `NoteStore` |

@@ -1,20 +1,21 @@
 import type { Ref, RefObject } from "preact";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
-import utils from "../../../services/utils";
-import { createHoldContextMenu } from "../../widget_utils";
+import { createHoldContextMenu } from "../../hold_context_menu";
+
+let uniqueNameCounter = 0;
 
 /**
- * Generates a unique name via a random alphanumeric string of a fixed length.
+ * Generates a name that no other caller in the page gets, which stays the same across renders.
  *
  * <p>
  * Generally used to assign names to inputs that are unique, especially useful for widgets inside tabs.
  *
  * @param prefix a prefix to add to the unique name.
- * @returns a name with the given prefix and a random alpanumeric string appended to it.
+ * @returns a name with the given prefix and a number appended to it.
  */
 export function useUniqueName(prefix?: string) {
-    return useMemo(() => (prefix ? `${prefix}-` : "") + utils.randomString(10), [ prefix ]);
+    return useMemo(() => `${prefix ? `${prefix}-` : ""}unique-${++uniqueNameCounter}`, [ prefix ]);
 }
 
 /**

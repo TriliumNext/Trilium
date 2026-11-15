@@ -5,7 +5,6 @@ import options, { type OptionValue } from "../../../services/options";
 import server from "../../../services/server";
 import { getEffectiveThemeStyle } from "../../../services/theme";
 import { getErrorMessage, reloadFrontendApp } from "../../../services/utils";
-import ws from "../../../services/ws";
 import { useTriliumEvent } from "./events";
 
 /**
@@ -29,7 +28,8 @@ export function useTriliumOption(name: OptionNames, needsRefresh?: boolean): [st
             try {
                 await options.save(name, newValue);
             } catch (e: unknown) {
-                ws.logError(getErrorMessage(e));
+                const message = getErrorMessage(e);
+                void import("../../../services/ws").then(({ default: ws }) => ws.logError(message));
                 setValue(originalValue);
             }
 

@@ -26,7 +26,7 @@ import {
 } from "../menus/text_editor_context_menu.js";
 import { getBlockExcerpt } from "./block_excerpts.js";
 import { copyHtml, copyHtmlWithToast, copyTextWithToast } from "./clipboard_ext.js";
-import { revealElement } from "./collapsible.js";
+import { revealElement } from "./bookmark_jump.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import { byBlockType } from "./in_app_help.js";

@@ -16,7 +16,8 @@ import { buildTabTitle, TAB_TITLE_SEPARATOR } from "../services/tab_title.js";
 import utils from "../services/utils.js";
 import BasicWidget from "./basic_widget.js";
 import { noteTitleHtml } from "./layout/Breadcrumb.js";
-import { setupHoldContextMenu, setupHorizontalScrollViaWheel } from "./widget_utils.js";
+import { setupHoldContextMenu } from "./hold_context_menu.js";
+import { setupHorizontalScrollViaWheel } from "./widget_utils.js";
 
 const isDesktop = utils.isDesktop();
 
