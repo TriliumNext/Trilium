@@ -9,7 +9,7 @@ import Popup, { type PopupProps } from "./Popup";
  * about to be pressed, so closed dropdowns load none of the menu code.
  */
 export { focusListItem, suspendModalFocusTraps };
-export { default as Menu } from "./Menu";
+export { default as Menu, MenuItemRows } from "./Menu";
 
 /** A panel's popup, whose items Up and Down move between. */
 export function PanelPopup({ startAt, elementRef, ...props }: PopupProps & { startAt: "first" | "last" | undefined }) {

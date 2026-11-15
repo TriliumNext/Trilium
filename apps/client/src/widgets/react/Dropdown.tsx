@@ -102,6 +102,16 @@ export interface DropdownHandle {
 const TOGGLE_GAP = 2;
 
 /**
+ * The `MenuItemRows` of `Menu.tsx`, for rows given as data among the children of a {@link Dropdown}.
+ * A dropdown draws its children only once its popups have loaded, so this keeps `Menu.tsx` out of
+ * the modules that a closed dropdown loads.
+ */
+export function DropdownMenuItemRows<T>({ items }: { items: MenuItem<T>[] }) {
+    const MenuItemRows = dropdownPopups?.MenuItemRows;
+    return MenuItemRows ? <MenuItemRows items={items} /> : null;
+}
+
+/**
  * A menu under a toggle: its rows are `FormListItem`s and the other `FormList` rows, which the
  * menu's keys move between. For anything else, such as a picker or a form, use {@link DropdownPanel}.
  */
