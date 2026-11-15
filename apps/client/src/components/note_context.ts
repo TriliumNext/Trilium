@@ -414,8 +414,11 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
         });
     }
 
-    /** @returns {Promise<boolean>} */
-    async isReadOnly() {
+    /**
+     * {@link isReadOnly} as far as it can tell without the note's content: `undefined` while the
+     * auto read-only check, which reads the content's size, has not run for the view.
+     */
+    isReadOnlyIfKnown(): boolean | undefined {
         if (this?.viewScope?.readOnlyTemporarilyDisabled && this.note?.isContentWritable !== false) {
             return false;
         }
@@ -449,6 +452,16 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
         // Auto read-only based on content size is only configurable for text/code.
         if (this.note.type !== "text" && this.note.type !== "code") {
             return false;
+        }
+
+        return this.viewScope?.isReadOnly;
+    }
+
+    /** @returns {Promise<boolean>} */
+    async isReadOnly() {
+        const known = this.isReadOnlyIfKnown();
+        if (known !== undefined || !this.note) {
+            return known ?? false;
         }
 
         // Store the initial decision about read-only status in the viewScope

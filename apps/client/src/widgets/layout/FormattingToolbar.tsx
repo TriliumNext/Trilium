@@ -148,19 +148,46 @@ export function FixedFormattingToolbar() {
     );
 }
 
+/**
+ * The state of the toolbar for the active note. Until `getFormattingToolbarState()` has settled for
+ * that note, it is the state {@link getKnownFormattingToolbarState} tells without the note's
+ * content, so that the toolbar takes its place in the same render as the note.
+ */
 function useRenderState(activeNoteContext: NoteContext | undefined, activeNote: FNote | null | undefined) {
     const [ textNoteEditorType ] = useTriliumOption("textNoteEditorType");
-    const [ state, setState ] = useState("hidden");
+    const [ settled, setSettled ] = useState<{ noteContext?: NoteContext, note?: FNote | null, state: string }>();
 
-    useTriliumEvents([ "newNoteContextCreated", "noteContextRemoved", "readOnlyTemporarilyDisabled", "noteTypeMimeChanged" ], () => {
-        getFormattingToolbarState(activeNoteContext, activeNote, textNoteEditorType).then(setState);
-    });
+    function refresh() {
+        void getFormattingToolbarState(activeNoteContext, activeNote, textNoteEditorType)
+            .then((state) => setSettled({ noteContext: activeNoteContext, note: activeNote, state }));
+    }
 
-    useEffect(() => {
-        getFormattingToolbarState(activeNoteContext, activeNote, textNoteEditorType).then(setState);
-    }, [ activeNoteContext, activeNote, textNoteEditorType ]);
+    useTriliumEvents([ "newNoteContextCreated", "noteContextRemoved", "readOnlyTemporarilyDisabled", "noteTypeMimeChanged" ], refresh);
+    useEffect(refresh, [ activeNoteContext, activeNote, textNoteEditorType ]);
 
-    return state;
+    if (settled && settled.noteContext === activeNoteContext && settled.note === activeNote) {
+        return settled.state;
+    }
+    return getKnownFormattingToolbarState(activeNoteContext, activeNote, textNoteEditorType)
+        ?? settled?.state ?? "hidden";
+}
+
+/**
+ * The state of the toolbar as far as it is known without the note's content, which the auto
+ * read-only check reads: that check is taken to pass. `undefined` for a note shown in splits, where
+ * the state depends on the other notes as well.
+ */
+export function getKnownFormattingToolbarState(activeNoteContext: NoteContext | undefined, activeNote: FNote | null | undefined, textNoteEditorType: string) {
+    if (!activeNoteContext || textNoteEditorType !== "ckeditor-classic") {
+        return "hidden";
+    }
+    if (activeNoteContext.getMainContext().getSubContexts().length !== 1) {
+        return undefined;
+    }
+    if (activeNote?.type !== "text" || activeNoteContext.viewScope?.viewMode !== "default") {
+        return "hidden";
+    }
+    return activeNoteContext.isReadOnlyIfKnown() ? "hidden" : "visible";
 }
 
 export async function getFormattingToolbarState(activeNoteContext: NoteContext | undefined, activeNote: FNote | null | undefined, textNoteEditorType: string) {
