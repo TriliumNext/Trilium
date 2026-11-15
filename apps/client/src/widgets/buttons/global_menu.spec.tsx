@@ -339,4 +339,24 @@ describe("GlobalMenu", () => {
             expect(phone.topLevel.some((row) => row?.startsWith(key))).toBe(false);
         }
     });
+
+    it("names itself under its icon in the navigation rail, and tells the rail when it opens", async () => {
+        const toggle = () => container?.querySelector<HTMLButtonElement>("button.global-menu-button");
+        await act(async () => {
+            if (container) render(<GlobalMenu isHorizontalLayout />, container);
+        });
+        expect(toggle()?.querySelector(".launcher-button-label")).toBeNull();
+        await act(async () => {
+            if (container) render(null, container);
+        });
+
+        const onShown = vi.fn();
+        await act(async () => {
+            if (container) render(<GlobalMenu isHorizontalLayout showLabel onShown={onShown} />, container);
+        });
+        expect(toggle()?.querySelector(".launcher-button-label")?.textContent).toBe("global_menu.menu");
+        await act(async () => toggle()?.click());
+        await vi.waitFor(() => expect(popup()).not.toBeNull());
+        expect(onShown).toHaveBeenCalledTimes(1);
+    });
 });

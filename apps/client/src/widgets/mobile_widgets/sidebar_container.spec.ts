@@ -257,4 +257,94 @@ describe("SidebarContainer", () => {
             expect(tree.style.transform).toBe("");
         });
     });
+
+    describe("with the navigation rail on a tablet", () => {
+        let content: HTMLElement;
+        let contentLink: HTMLElement;
+        let titleButton: HTMLElement;
+
+        // The note's split as the mobile layout builds it: the title row, then the content.
+        beforeEach(() => {
+            vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+                matches: false,
+                media: query,
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn()
+            }) as unknown as MediaQueryList);
+            const detail = document.body.appendChild(document.createElement("div"));
+            detail.id = "detail-container";
+            const titleRow = detail.appendChild(document.createElement("div"));
+            titleRow.className = "title-row";
+            titleButton = titleRow.appendChild(document.createElement("button"));
+            const scrolling = detail.appendChild(document.createElement("div"));
+            scrolling.className = "scrolling-container";
+            content = scrolling.appendChild(document.createElement("div"));
+            contentLink = content.appendChild(document.createElement("a"));
+        });
+
+        afterEach(() => {
+            document.body.innerHTML = "";
+            options.set("mobileNavigationRail", "false");
+        });
+
+        /** Renders the sidebar into the page, as the layout does. */
+        function renderShown(rail: boolean) {
+            options.set("mobileNavigationRail", `${rail}`);
+            const sidebar = render(true);
+            document.body.appendChild(sidebar.$widget[0]);
+            return sidebar;
+        }
+
+        /** Presses `target` and reports what reached it. */
+        function press(target: HTMLElement) {
+            const reached = vi.fn();
+            target.addEventListener("pointerdown", reached);
+            target.addEventListener("click", reached);
+            const down = new PointerEvent("pointerdown", { bubbles: true, cancelable: true });
+            target.dispatchEvent(down);
+            target.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+            target.removeEventListener("pointerdown", reached);
+            target.removeEventListener("click", reached);
+            return { prevented: down.defaultPrevented, reached };
+        }
+
+        it("closes the tree at a press on the note's content, which does nothing else", () => {
+            const sidebar = renderShown(true);
+
+            const first = press(content);
+            expect(sidebar.$widget.hasClass("left-pane-hidden")).toBe(true);
+            expect(save).toHaveBeenLastCalledWith("leftPaneVisible", "false");
+            expect(first.prevented).toBe(true);
+            expect(first.reached).not.toHaveBeenCalled();
+
+            // With the tree closed, the content takes its presses again.
+            expect(press(content).reached).toHaveBeenCalledTimes(2);
+        });
+
+        it("lets the buttons of the title row and the controls in the content work at the first tap", () => {
+            const sidebar = renderShown(true);
+
+            for (const control of [ titleButton, contentLink ]) {
+                const { prevented, reached } = press(control);
+                expect(prevented).toBe(false);
+                expect(reached).toHaveBeenCalledTimes(2);
+                expect(sidebar.$widget.hasClass("left-pane-hidden")).toBe(false);
+            }
+        });
+
+        it("leaves the note's presses alone without the rail", () => {
+            const sidebar = renderShown(false);
+
+            expect(press(content).reached).toHaveBeenCalledTimes(2);
+            expect(sidebar.$widget.hasClass("left-pane-hidden")).toBe(false);
+        });
+
+        it("stops listening to the page once cleaned up", () => {
+            const sidebar = renderShown(true);
+            sidebar.cleanup();
+
+            expect(press(content).reached).toHaveBeenCalledTimes(2);
+            expect(sidebar.$widget.hasClass("left-pane-hidden")).toBe(false);
+        });
+    });
 });

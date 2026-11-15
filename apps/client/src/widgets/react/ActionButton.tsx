@@ -1,5 +1,5 @@
 import { Tooltip } from "bootstrap";
-import { HTMLAttributes } from "preact";
+import { ComponentChildren, HTMLAttributes } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { CommandNames } from "../../components/app_context";
@@ -37,11 +37,13 @@ export interface ActionButtonProps extends Pick<
     frame?: boolean;
     active?: boolean;
     disabled?: boolean;
+    /** Content shown inside the button after its icon, such as a launcher's label in the navigation rail. */
+    children?: ComponentChildren;
 }
 
 const cachedIsMobile = isMobile();
 
-export default function ActionButton({ text, icon, className, triggerCommand, shortcut, titlePosition, tooltipClass, tooltipHtml, noIconActionClass, noTooltipOnTouch, frame, active, disabled, ...restProps }: ActionButtonProps) {
+export default function ActionButton({ text, icon, className, triggerCommand, shortcut, titlePosition, tooltipClass, tooltipHtml, noIconActionClass, noTooltipOnTouch, frame, active, disabled, children, ...restProps }: ActionButtonProps) {
     const buttonRef = useRef<HTMLButtonElement>(null);
     const [ actionShortcuts, setKeyboardShortcut ] = useState<string[]>();
     const keyboardShortcut = actionShortcuts ?? (shortcut ? [ shortcut ] : undefined);
@@ -97,5 +99,5 @@ export default function ActionButton({ text, icon, className, triggerCommand, sh
         aria-label={declined ? title : undefined}
         disabled={disabled}
         {...restProps}
-    />;
+    >{children}</button>;
 }

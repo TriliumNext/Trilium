@@ -32,7 +32,12 @@ interface MenuItemProps<T> {
     keyboardShortcut?: KeyboardActionNames;
 }
 
-export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout: boolean }) {
+export default function GlobalMenu({ isHorizontalLayout, showLabel, onShown }: {
+    isHorizontalLayout: boolean;
+    /** Shows "Menu" under the icon, as the mobile navigation rail does with every launcher. */
+    showLabel?: boolean;
+    onShown?: () => void;
+}) {
     const isVerticalLayout = !isHorizontalLayout;
     const parentComponent = useContext(ParentComponent);
     const { isUpdateAvailable, latestVersion } = useTriliumUpdateStatus();
@@ -57,8 +62,10 @@ export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout:
                 {isUpdateAvailable && <div class="global-menu-button-update-available">
                     <span className="bx bxs-down-arrow-alt global-menu-button-update-available-button" title={t("update_available.update_available")} />
                 </div>}
+                {showLabel && <span className="launcher-button-label">{t("global_menu.menu")}</span>}
             </>}
             mobileBackdrop
+            onShown={onShown}
         >
             {isMobile() ? (
                 <MenuItemRows items={[ { kind: "actions", items: mobileActions, className: "global-menu-strip tn-menu-actions-cards" } ]} />

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import options from "../../services/options";
 import { renderInto } from "../../test/render";
 
 const { triggerCommand } = vi.hoisted(() => ({ triggerCommand: vi.fn() }));
@@ -75,5 +76,19 @@ describe("ToggleSidebarButton", () => {
 
         expect(triggerCommand).toHaveBeenCalledWith("toggleLeftPane");
         expect(triggerCommand).not.toHaveBeenCalledWith("setActiveScreen", expect.anything());
+    });
+
+    it("leaves the tree to the navigation rail, which has its own button, but not on a phone", () => {
+        options.set("mobileNavigationRail", "true");
+        try {
+            mockWidth("tablet");
+            expect(renderInto(<ToggleSidebarButton />).querySelector("button")).toBeNull();
+
+            vi.restoreAllMocks();
+            mockWidth("phone");
+            expect(renderInto(<ToggleSidebarButton />).querySelector("button.bx-chevron-left")).not.toBeNull();
+        } finally {
+            options.set("mobileNavigationRail", "false");
+        }
     });
 });

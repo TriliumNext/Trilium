@@ -24,6 +24,7 @@ import {
     useActiveNoteContext,
     useChildNotes,
     useLongPressContextMenu,
+    useNavigationRail,
     useNote,
     useNoteColorClass,
     useNoteIcon,
@@ -232,12 +233,13 @@ export default function MobileNoteNavigator() {
     };
     useEffect(() => onSystemBack(() => goBackOnSystemBack.current()), []);
 
+    const isNavigationRail = useNavigationRail();
     const openNotePath = useCallback(
         async (notePath: string) => {
             await noteContext?.setNote(notePath);
-            parentComponent?.triggerCommand("setActiveScreen", { screen: "detail" });
+            showOpenedNote(parentComponent, isNavigationRail);
         },
-        [noteContext, parentComponent]
+        [noteContext, parentComponent, isNavigationRail]
     );
 
     const openCurrent = useCallback(() => {
@@ -421,6 +423,17 @@ export default function MobileNoteNavigator() {
 
 /** How many columns keep their rendered preview. */
 const PREVIEW_CACHE_SIZE = 5;
+
+/**
+ * Shows a note opened from the tree: the note's screen on a phone. The navigation rail closes the
+ * tree too, which it opens only to pick a note.
+ */
+export function showOpenedNote(parentComponent: Component | null | undefined, isNavigationRail: boolean) {
+    parentComponent?.triggerCommand("setActiveScreen", { screen: "detail" });
+    if (isNavigationRail) {
+        parentComponent?.triggerCommand("hideLeftPane");
+    }
+}
 
 /**
  * The columns whose preview stays rendered: the current one, the pending one and those shown

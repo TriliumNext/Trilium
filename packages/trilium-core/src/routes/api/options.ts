@@ -150,6 +150,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "clipboardImageEmbedEnabled",
     "layoutOrientation",
     "noteTitleStyle",
+    "mobileNavigationRail",
     "backgroundEffects",
     "allowedHtmlTags",
     "cleanupToolOptions",
