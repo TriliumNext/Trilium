@@ -41,6 +41,7 @@
 /api/icon-packs.css
 /api/keyboard-actions
 /api/note-map/*/backlink-count
+/api/notes/*/attachments
 /api/notes/*/metadata
 /api/options
 /api/tree
@@ -305,6 +306,8 @@
 /src/widgets/shortcut_hints/shortcut_hint_button.css
 /src/widgets/shortcut_hints/shortcut_hint_button.tsx
 /src/widgets/shortcut_hints/shortcut_hints_kbd.css
+/src/widgets/sidebar/RightPanelContainer.css
+/src/widgets/sidebar/RightPanelContainer.tsx
 /src/widgets/tab_row.ts
 /src/widgets/type_widgets/options/components/LocaleSelector.tsx
 /src/widgets/type_widgets/options/components/OptionsRow.css
@@ -312,7 +315,6 @@
 /src/widgets/widget_utils.ts
 ws://*/
 ? /api/attachments/download/*
-? /api/notes/*/attachments
 ? /api/recent-notes
 ? /api/tree/load
 ? /packages/commons/src/lib/note_type_ids.ts

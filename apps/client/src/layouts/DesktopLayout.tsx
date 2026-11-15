@@ -23,6 +23,7 @@ import NoteTitleWidget, { NoteTypeSwitcherBar } from "../widgets/note_title.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import NoteDetail from "../widgets/NoteDetail.js";
 import { useLegacyWidget } from "../widgets/react/hooks/legacy.js";
+import RightPanelContainer from "../widgets/sidebar/RightPanelContainer.js";
 import TabRowWidget from "../widgets/tab_row.js";
 import TabHistoryNavigationButtons from "../widgets/TabHistoryNavigationButtons.js";
 
@@ -64,6 +65,7 @@ export default function DesktopLayout() {
                         <div id="center-pane">
                             <NoteSplits />
                         </div>
+                        <RightPanelContainer />
                     </div>
                     {!isHorizontal && <StatusBar />}
                 </div>

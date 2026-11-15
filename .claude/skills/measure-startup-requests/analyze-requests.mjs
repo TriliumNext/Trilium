@@ -200,16 +200,20 @@ function rootOf(nodes, node) {
 }
 
 /**
- * The modules that render the open note: its content and the list of its child notes. What they
- * request is the note's own load.
+ * The modules that render what the session has open: the note's content, the list of its child
+ * notes, and the tab the right pane is open on. What they request is the session's own load.
  */
-const NOTE_RENDERERS = new Set([ "/src/widgets/NoteDetail.tsx", "/src/widgets/collections/NoteList.tsx" ]);
+const SESSION_RENDERERS = new Set([
+    "/src/widgets/NoteDetail.tsx",
+    "/src/widgets/collections/NoteList.tsx",
+    "/src/widgets/sidebar/RightPanelContainer.tsx"
+]);
 
 /**
- * The paths of the requests that load the open note rather than the app: those with one of
- * {@link NOTE_RENDERERS} on their stack, the static import graphs they start, and, in turn, what the
- * modules of that load request. Which requests these are depends on the note, so `check` leaves
- * them out. A capture without stacks (taken before they were recorded) yields none.
+ * The paths of the requests that load what the session has open rather than the app: those with
+ * one of {@link SESSION_RENDERERS} on their stack, the static import graphs they start, and, in
+ * turn, what the modules of that load request. Which requests these are depends on the session, so
+ * `check` leaves them out. A capture without stacks (taken before they were recorded) yields none.
  */
 function noteLoadPaths(nodes) {
     const paths = new Set();
@@ -220,7 +224,7 @@ function noteLoadPaths(nodes) {
             if (paths.has(node.path)) continue;
             const root = rootOf(nodes, node);
             const callers = root.parent ? [ root.parent, ...root.stack ] : root.stack;
-            if (callers.some((caller) => NOTE_RENDERERS.has(caller) || paths.has(caller))) {
+            if (callers.some((caller) => SESSION_RENDERERS.has(caller) || paths.has(caller))) {
                 paths.add(node.path);
                 changed = true;
             }
@@ -295,7 +299,7 @@ function check(file, allowlistFile, update) {
     const startupRequests = requests.filter((request) => !noteLoad.has(normalize(request.url)));
     const actual = [ ...new Set(startupRequests.map(stableName)) ].sort();
     if (noteLoad.size) {
-        console.log(`Left out ${noteLoad.size} requests that load the open note.`);
+        console.log(`Left out ${noteLoad.size} requests that load what the session has open.`);
     }
     const lines = fs.existsSync(allowlistFile)
         ? fs.readFileSync(allowlistFile, "utf8").split("\n").map((line) => line.trim())
@@ -303,6 +307,9 @@ function check(file, allowlistFile, update) {
         : [];
     const optional = new Set(lines.filter((line) => line.startsWith("?"))
         .map((line) => line.slice(1).trim()));
+    // A request is attributed to whatever made it first, so a module the app loads can be requested
+    // first by the session's load. It was made all the same.
+    const made = new Set(requests.map(stableName));
 
     if (update) {
         const header = [
@@ -310,7 +317,10 @@ function check(file, allowlistFile, update) {
             "# Checked by `analyze-requests.mjs check`; regenerate with `--update` only for a request that is wanted.",
             "# A `?` marks a request that depends on the session: allowed, but not required."
         ];
-        const required = actual.filter((name) => !optional.has(name));
+        // A name the session's load requested first is kept: `--update` cannot tell it from one the
+        // app no longer loads, which is removed by hand.
+        const kept = lines.filter((line) => !line.startsWith("?") && made.has(line));
+        const required = [ ...new Set([ ...actual, ...kept ]) ].filter((name) => !optional.has(name)).sort();
         const optionalLines = [ ...optional ].sort().map((name) => `? ${name}`);
         fs.writeFileSync(allowlistFile, `${[ ...header, ...required, ...optionalLines ].join("\n")}\n`);
         console.log(`Wrote ${required.length} names and ${optional.size} optional ones to ${allowlistFile}`);
@@ -319,7 +329,7 @@ function check(file, allowlistFile, update) {
 
     const required = new Set(lines.filter((line) => !line.startsWith("?")));
     const unexpected = actual.filter((name) => !required.has(name) && !optional.has(name));
-    const missing = [ ...required ].filter((name) => !actual.includes(name)).sort();
+    const missing = [ ...required ].filter((name) => !made.has(name)).sort();
 
     if (!unexpected.length && !missing.length) {
         console.log(`OK: the ${actual.length} startup requests match ${allowlistFile}`);

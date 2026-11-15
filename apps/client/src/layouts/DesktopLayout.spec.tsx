@@ -59,6 +59,11 @@ describe("DesktopLayout", () => {
         const centerPane = root?.querySelector("#rest-pane > #vertical-main-container > #center-pane");
         expect(centerPane?.querySelector(".split-note-container-widget")).not.toBeNull();
         expect(tabBar?.nextElementSibling?.id).toBe("vertical-main-container");
+        // The right pane and its peek button follow the center pane.
+        const rightPaneHost = root?.querySelector("#vertical-main-container > #right-pane-host");
+        expect(rightPaneHost).toBeInstanceOf(HTMLElement);
+        expect(rightPaneHost?.previousElementSibling?.classList.contains("right-pane-peek-button")).toBe(true);
+        expect(rightPaneHost?.previousElementSibling?.previousElementSibling).toBe(centerPane);
         // The status bar ends the pane beside the launch bar.
         const statusBar = root?.querySelector(".status-bar");
         expect(statusBar).toBeInstanceOf(HTMLElement);

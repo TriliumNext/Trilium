@@ -72,22 +72,27 @@ node .claude/skills/measure-startup-requests/analyze-requests.mjs check <capture
 ```
 
 - The allowlist is the startup of the new desktop layout as built so far (the launch bar, the tab
-  bar, the left pane in the vertical layout, the note title, content and note list, the note type switcher's bar and the status bar). A feature that is moved into the layout makes the check fail, and the failure
-  lists what it loads: shrink that list first, then add what is left with `--update`. Never run
-  `--update` to make a failure go away without reading it.
+  bar, the left pane in the vertical layout, the note title, content and note list, the note type
+  switcher's bar, the status bar and the right pane). A feature that is moved into the layout makes
+  the check fail, and the failure lists what it loads: shrink that list first, then add what is
+  left with `--update`. Never run `--update` to make a failure go away without reading it.
 - Names drop what changes between runs: the content hash of a pre-bundled dependency chunk
   (`preact-*.js`) and the HMR websocket's host and token.
 - A request that depends on the session (a font fetched only once text is on screen, the notes of
   the open tabs) is written with a leading `?`: it is allowed without being required. `--update`
   keeps those lines.
-- The open note's own load is left out of the check, since it depends on the note: every request
-  with `NoteDetail.tsx` or `NoteList.tsx` on its stack (the note's blob, its type widget's or
-  collection view's import graph, the editor's searches and data, the previews of the child notes),
-  and in turn what those modules request. The capture records each request's full stack, async
-  parents included, for this; a capture taken before that has no stacks and gets no such
-  exclusion. `NoteDetail`, `NoteList` and the containers around them stay in the allowlist: they
-  load whatever the note. What the previews' markup and stylesheets fetch (images, a code font)
-  carries no stack, so it is written with a `?`.
+- What the session has open is left out of the check, since it depends on the session: every
+  request with `NoteDetail.tsx`, `NoteList.tsx` or `RightPanelContainer.tsx` on its stack (the
+  note's blob, its type widget's or collection view's import graph, the editor's searches and data,
+  the previews of the child notes, the widgets of the right pane's open tab), and in turn what those
+  modules request. The capture records each request's full stack, async parents included, for
+  this; a capture taken before that has no stacks and gets no such exclusion. `NoteDetail`,
+  `NoteList`, `RightPanelContainer` and the containers around them stay in the allowlist: they
+  load whatever the session has open. What the previews' markup and stylesheets fetch (images, a
+  code font) carries no stack, so it is written with a `?`. A module of the allowlist that this
+  load requests first, before the app does, still counts as made, and `--update` keeps it; a
+  module the app no longer loads at startup but the session's load still requests is therefore
+  removed from the allowlist by hand.
 
 ## Timing one module graph, without logging in
 

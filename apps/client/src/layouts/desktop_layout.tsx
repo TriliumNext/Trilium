@@ -16,7 +16,6 @@ import NoteBadges from "../widgets/layout/NoteBadges.jsx";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import ScrollPadding from "../widgets/scroll_padding.js";
 import SearchResult from "../widgets/search_result.jsx";
-import RightPanelContainer from "../widgets/sidebar/RightPanelContainer.jsx";
 import { applyModals } from "./layout_commons.js";
 
 export default class DesktopLayout {
@@ -77,7 +76,6 @@ export default class DesktopLayout {
                                             .child(...this.customWidgets.get("center-pane"))
 
                                     )
-                                    .child(<RightPanelContainer widgetsByParent={this.customWidgets} />)
                             )
                     )
             )
