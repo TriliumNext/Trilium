@@ -1,4 +1,4 @@
-import { Tooltip } from "bootstrap";
+import type { Tooltip } from "bootstrap";
 import Draggabilly, { type MoveVector } from "draggabilly";
 
 import appContext, { type CommandListenerData, type CommandNames, type EventData } from "../components/app_context.js";
@@ -16,6 +16,7 @@ import { buildTabTitle, noteTitleHtml, TAB_TITLE_SEPARATOR } from "../services/t
 import utils from "../services/utils.js";
 import BasicWidget from "./basic_widget.js";
 import { setupHoldContextMenu } from "./hold_context_menu.js";
+import { attachTooltip, getTooltipInstance } from "./react/hooks/tooltip.js";
 import { setupHorizontalScrollViaWheel } from "./widget_utils.js";
 
 const isDesktop = utils.isDesktop();
@@ -383,6 +384,8 @@ export default class TabRowWidget extends BasicWidget {
     private $filler!: JQuery<HTMLElement>;
     private $newTab!: JQuery<HTMLElement>;
     private updateScrollTimeout: ReturnType<typeof setTimeout> | undefined;
+    /** Disposes of the tooltips of each tab, or stops them waiting for Bootstrap to load. */
+    private tabTooltipDetachers = new WeakMap<Element, () => void>();
 
     private newTabOuterWidth: number = 0;
     private scrollButtonsOuterWidth: number = 0;
@@ -520,7 +523,7 @@ export default class TabRowWidget extends BasicWidget {
     getTabTooltips(tabEl: Element): Tooltip[] {
         return [".note-tab-drag-handle", ".note-tab-close"]
             .map((selector) => tabEl.querySelector(selector))
-            .map((el) => (el ? Tooltip.getInstance(el) : null))
+            .map((el) => (el ? getTooltipInstance(el) : null))
             .filter((tooltip): tooltip is Tooltip => !!tooltip);
     }
 
@@ -665,7 +668,7 @@ export default class TabRowWidget extends BasicWidget {
         // Attach to the drag handle (the full-tab interaction layer, `pointer-events` enabled) rather
         // than .note-tab, whose `pointer-events: none` makes Bootstrap's hover tracking misfire. The
         // close button sits above the handle (higher z-index) with its own tooltip, so they never overlap.
-        new Tooltip($tab.find(".note-tab-drag-handle")[0], {
+        const detachTitle = attachTooltip($tab.find(".note-tab-drag-handle")[0], {
             // titles are pre-escaped in buildTabTitle (only the <strong> wrapper and a split's
             // `html` are trusted); Bootstrap's own sanitizer stays on as a second layer
             html: true,
@@ -676,12 +679,16 @@ export default class TabRowWidget extends BasicWidget {
             delay: { show: 500, hide: 0 }
         });
 
-        new Tooltip($tab.find(".note-tab-close")[0], {
+        const detachClose = attachTooltip($tab.find(".note-tab-close")[0], {
             title: t("tab_row.close_tab"),
             trigger: "hover",
             placement: "bottom",
             container: "body",
             delay: { show: 500, hide: 0 }
+        });
+        this.tabTooltipDetachers.set($tab[0], () => {
+            detachTitle();
+            detachClose();
         });
 
         this.cleanUpPreviouslyDraggedTabs();
@@ -752,9 +759,8 @@ export default class TabRowWidget extends BasicWidget {
         const tabEl = this.getTabById(ntxId)[0];
 
         if (tabEl) {
-            for (const tooltip of this.getTabTooltips(tabEl)) {
-                tooltip.dispose();
-            }
+            this.tabTooltipDetachers.get(tabEl)?.();
+            this.tabTooltipDetachers.delete(tabEl);
             tabEl.parentNode?.removeChild(tabEl);
             this.cleanUpPreviouslyDraggedTabs();
             this.layoutTabs();
@@ -939,7 +945,7 @@ export default class TabRowWidget extends BasicWidget {
         this.$newTab = $(NEW_TAB_BUTTON_TPL);
         this.$widget.append(this.$newTab);
 
-        new Tooltip(this.$newTab[0], {
+        attachTooltip(this.$newTab[0], {
             html: true,
             title: `<span class="action">${utils.escapeHtml(t("tab_row.add_new_tab"))}</span>`
                 + `<span class="hint">${utils.escapeHtml(t("tab_row.add_new_tab_hint"))}</span>`,

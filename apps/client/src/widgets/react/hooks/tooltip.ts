@@ -293,6 +293,19 @@ export function loadTooltips() {
     return tooltipsLoad;
 }
 
+/**
+ * Attaches a Bootstrap tooltip to `element` once Bootstrap has loaded, as the hooks do, for a
+ * widget that is not a Preact component.
+ *
+ * @returns a function that disposes of the tooltip, or stops waiting for it.
+ */
+export function attachTooltip(element: Element, config: Partial<Tooltip.Options>) {
+    return whenTooltipsLoad(element, (Tooltip) => {
+        const tooltip = new Tooltip(element, config);
+        return () => tooltip.dispose();
+    });
+}
+
 /** The tooltip on `element`, if Bootstrap has loaded and one is attached. */
 export function getTooltipInstance(element: Element) {
     return BootstrapTooltip?.getInstance(element) ?? null;

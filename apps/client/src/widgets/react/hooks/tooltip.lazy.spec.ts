@@ -37,3 +37,26 @@ describe("useStaticTooltip", () => {
         container.remove();
     });
 });
+
+describe("attachTooltip", () => {
+    it("waits for a hover like the hooks, and attaches nothing once detached", async () => {
+        vi.resetModules();
+        const { attachTooltip, getTooltipInstance, loadTooltips } = await import("./tooltip");
+        const kept = document.createElement("button");
+        const removed = document.createElement("button");
+        document.body.append(kept, removed);
+
+        attachTooltip(kept, { title: "Kept" });
+        const detach = attachTooltip(removed, { title: "Removed" });
+        expect(getTooltipInstance(kept)).toBeNull();
+
+        detach();
+        kept.dispatchEvent(new PointerEvent("pointerenter"));
+        await loadTooltips();
+        expect(getTooltipInstance(kept)).not.toBeNull();
+        expect(getTooltipInstance(removed)).toBeNull();
+
+        kept.remove();
+        removed.remove();
+    });
+});
