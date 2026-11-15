@@ -1,5 +1,6 @@
 import "./DesktopLayout.css";
 
+import GlobalMenu from "../widgets/buttons/global_menu.js";
 import LauncherContainer from "../widgets/launch_bar/LauncherContainer.js";
 
 /** The desktop layout as a single Preact tree, which `desktop_layout.tsx` is moved into piece by piece. */
@@ -8,7 +9,9 @@ export default function DesktopLayout() {
     const orientation = isHorizontal ? "horizontal" : "vertical";
     const launcherPane = (
         <div id="launcher-pane" className={orientation}>
+            {!isHorizontal && <GlobalMenu isHorizontalLayout={false} />}
             <LauncherContainer isHorizontalLayout={isHorizontal} />
+            {isHorizontal && <GlobalMenu isHorizontalLayout={true} />}
         </div>
     );
 

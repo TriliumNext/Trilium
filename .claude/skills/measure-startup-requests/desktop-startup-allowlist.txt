@@ -98,6 +98,8 @@
 /src/translations/en/entry.json
 /src/translations/en/translation.json
 /src/utils/css-var.ts
+/src/widgets/buttons/global_menu.css
+/src/widgets/buttons/global_menu.tsx
 /src/widgets/hold_context_menu.ts
 /src/widgets/launch_bar/BookmarkButtons.css
 /src/widgets/launch_bar/BookmarkButtons.tsx

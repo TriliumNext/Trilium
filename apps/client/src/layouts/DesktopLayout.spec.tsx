@@ -24,6 +24,8 @@ describe("DesktopLayout", () => {
         expect(launcherPane?.classList.contains("vertical")).toBe(true);
         expect(launcherPane?.parentElement?.id).toBe("horizontal-main-container");
         expect(launcherPane?.querySelector("#launcher-container")).not.toBeNull();
+        // The menu heads the bar.
+        expect(launcherPane?.firstElementChild?.classList.contains("global-menu")).toBe(true);
     });
 
     it("puts the launch bar above the main container in the horizontal layout", () => {
@@ -35,5 +37,7 @@ describe("DesktopLayout", () => {
         expect(launcherPane?.classList.contains("horizontal")).toBe(true);
         expect(launcherPane?.parentElement).toBe(root);
         expect(launcherPane?.nextElementSibling?.id).toBe("horizontal-main-container");
+        // The menu ends the bar.
+        expect(launcherPane?.lastElementChild?.classList.contains("global-menu")).toBe(true);
     });
 });

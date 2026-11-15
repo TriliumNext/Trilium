@@ -5,7 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // Shared, mutable control state for the mocks below. `vi.hoisted` runs before the hoisted `vi.mock`
 // factories, so they can safely reference it.
 const ctrl = vi.hoisted(() => ({
-    standalone: false, checkForUpdates: true, mobile: false, theme: "next", setTheme: vi.fn()
+    standalone: false, checkForUpdates: true, mobile: false, theme: "next", setTheme: vi.fn(),
+    itemsLoaded: false
 }));
 
 // `isStandalone` is a const in the target, read here as a live getter so each scenario can flip the
@@ -33,6 +34,11 @@ vi.mock("../react/hooks/options", async (importOriginal) => {
             ? [ ctrl.theme, ctrl.setTheme ]
             : original.useTriliumOption(...args))
     };
+});
+
+vi.mock("./GlobalMenuItems", async (importOriginal) => {
+    ctrl.itemsLoaded = true;
+    return await importOriginal<typeof import("./GlobalMenuItems")>();
 });
 
 // Import AFTER the mocks (vi.mock is hoisted, but the import must resolve the mocked deps).
@@ -166,6 +172,23 @@ describe("parseLatestVersion", () => {
     });
 });
 
+describe("GlobalMenu's rows", () => {
+    it("load once the pointer enters the toggle, before the menu opens", async () => {
+        vi.useRealTimers();
+        container = document.body.appendChild(document.createElement("div"));
+        await act(async () => {
+            if (container) render(<GlobalMenu isHorizontalLayout />, container);
+        });
+        await act(async () => { await new Promise((resolve) => setTimeout(resolve)); });
+        expect(ctrl.itemsLoaded).toBe(false);
+
+        const toggle = container.querySelector<HTMLButtonElement>("button.global-menu-button");
+        expect(toggle).not.toBeNull();
+        toggle?.dispatchEvent(new PointerEvent("pointerenter"));
+        await vi.waitFor(() => expect(ctrl.itemsLoaded).toBe(true));
+    });
+});
+
 describe("GlobalMenu", () => {
     const popup = () => document.querySelector<HTMLElement>(".tn-popup:not([data-closing])");
     /** The keys of the rows at the top of the menu, or of the submenu page open over it. */
@@ -181,7 +204,7 @@ describe("GlobalMenu", () => {
         });
         const toggle = container?.querySelector<HTMLButtonElement>("button.global-menu-button");
         await act(async () => toggle?.click());
-        await vi.waitFor(() => expect(popup()).not.toBeNull());
+        await vi.waitFor(() => expect(popup()?.querySelector("li.dropdown-submenu")).toBeTruthy());
         const topLevelScroll = popup()?.querySelector(".tn-menu-scroll");
         const topLevel = rows(topLevelScroll);
 
