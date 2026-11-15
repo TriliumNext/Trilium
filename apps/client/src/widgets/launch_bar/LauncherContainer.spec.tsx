@@ -163,12 +163,23 @@ describe("LauncherContainer", () => {
         // The button is hidden while transcription is off, so the desktop app loads it only once on.
         h.isElectron = true;
         options.set("transcriptionEnabled", "false");
+        const getState = vi.fn(async () => ({ status: "idle", noteId: null, pendingSources: [] }));
+        window.electronApi = { transcription: { getState } } as unknown as typeof window.electronApi;
         mount();
         await flush();
         expect(container.querySelector("#launcher-container")).not.toBeNull();
+        expect(getState).toHaveBeenCalled();
         expect(h.recordMeetingLoaded).toBe(false);
         act(() => render(null, container));
         container.remove();
+
+        // A recording outlives the switch, so a frontend reloaded during one shows its stop button.
+        getState.mockResolvedValue({ status: "recording", noteId: null, pendingSources: [] });
+        mount();
+        await vi.waitFor(() => expect(container.querySelector(".record-meeting-button")).not.toBeNull());
+        act(() => render(null, container));
+        container.remove();
+        delete window.electronApi;
 
         options.set("transcriptionEnabled", "true");
         mount();

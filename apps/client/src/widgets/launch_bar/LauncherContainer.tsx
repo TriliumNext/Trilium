@@ -1,7 +1,7 @@
 import "./LauncherContainer.css";
 
 import type { ComponentProps, RefObject } from "preact";
-import { useCallback, useLayoutEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
 import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
@@ -197,13 +197,27 @@ function LazyLauncherDropTarget(props: ComponentProps<typeof LauncherDropTarget>
 
 /**
  * The meeting button, loaded once `transcriptionEnabled` is on, since it is hidden while the switch
- * is off. It stays mounted after the switch turns off, to show the stop button of a recording.
+ * is off. A recording outlives the switch, so the button also loads while the main process reports
+ * one, and stays mounted after the switch turns off, to show its stop button.
  */
 function LazyRecordMeetingButton({ launcherNote }: { launcherNote: FNote }) {
     const [ isEnabled ] = useTriliumOptionBool("transcriptionEnabled");
-    const wasEnabled = useRef(false);
-    wasEnabled.current ||= isEnabled;
-    return wasEnabled.current && (
+    const [ isRecording, setRecording ] = useState(false);
+    const wasShown = useRef(false);
+    wasShown.current ||= isEnabled || isRecording;
+
+    useEffect(() => {
+        if (wasShown.current) return;
+        let cancelled = false;
+        void window.electronApi?.transcription.getState().then(({ status }) => {
+            if (!cancelled && status !== "idle") setRecording(true);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    return wasShown.current && (
         <WithLazyModule load={loadRecordMeetingButton}>
             {({ default: RecordMeetingButton }) => <RecordMeetingButton launcherNote={launcherNote} />}
         </WithLazyModule>
