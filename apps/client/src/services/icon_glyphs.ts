@@ -1,5 +1,7 @@
 import "./icon_glyphs.css";
 
+import { whenIconPackGlyphsLoaded } from "./icon_pack_glyphs";
+
 /**
  * Icons, for the places they have to leave the page behind.
  *
@@ -104,7 +106,8 @@ export async function loadIconFonts(glyphs: Iterable<IconGlyph>) {
  * Each pack names an icon of its own to be known by, so one class per pack is enough to find the
  * fonts without knowing how any of them are named.
  */
-export function warmIconFonts(host?: HTMLElement) {
+export async function warmIconFonts(host?: HTMLElement) {
+    await whenIconPackGlyphsLoaded();
     const packIcons = (glob.iconPacks ?? []).map((pack) => pack.icon);
     return loadIconFonts(resolveIconGlyphs(packIcons, host).values());
 }
@@ -165,6 +168,7 @@ const DEFAULT_ICON_COLOR = "black";
 const renderedIcons = new Map<string, Promise<string | null>>();
 
 async function drawIcon(iconClass: string, options: Required<IconImageOptions>) {
+    await whenIconPackGlyphsLoaded();
     const glyph = resolveIconGlyph(iconClass);
     if (!glyph) {
         return null;

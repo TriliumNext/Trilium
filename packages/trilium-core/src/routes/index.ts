@@ -334,6 +334,8 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     apiRoute(PST, "/api/other/to-markdown", otherRoute.toMarkdown);
 
     route(GET, "/api/fonts", [checkApiAuthOrElectron], fontsRoute.getFontCss);
+    // Unauthenticated like `/bootstrap`, which hands the same icon packs to the login screen.
+    route(GET, "/api/icon-packs.css", [], otherRoute.serveIconPackGlyphCss);
 
     asyncApiRoute(GET, "/api/similar-notes/:noteId", similarNotesRoute.getSimilarNotes);
     apiRoute(PST, "/api/relation-map", relationMapApiRoute.getRelationMap);

@@ -7133,6 +7133,26 @@ Returns the IDs of the most recently modified live notes under the ancestor, new
 
     No content.
 
+### Get the glyph of every icon
+
+`GET /api/icon-packs.css` · `getIconPackGlyphCss`
+
+A stylesheet with the `::before` rule that places the character of each icon of each icon pack. The bootstrap data carries the fonts of the packs and links this stylesheet with a `v` parameter derived from its content, so the response can be cached for good. Served without a session, like the bootstrap data that names it on the login screen.
+
+**Authorization**: none
+
+**Query parameters**
+
+| Name | Description |
+| --- | --- |
+| `v` | `string`  <br>The content version the bootstrap data names; any value returns the current stylesheet |
+
+**Responses**
+
+=== "200: The glyph rules of the icon packs"
+
+    *   `text/css`: `string`
+
 ### Get every icon of each icon pack
 
 `GET /api/other/icon-registry` · `getIconRegistry`

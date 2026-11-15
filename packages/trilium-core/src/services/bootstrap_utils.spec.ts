@@ -231,7 +231,10 @@ describe("bootstrap_utils (real DB)", () => {
         for (const pack of config.iconPacks) {
             expect(pack).not.toHaveProperty("icons");
         }
-        expect(typeof config.iconPackCss).toBe("string");
+        // The fonts come inline, and the glyph of each icon from a stylesheet named after its content.
+        expect(config.iconPackCss).toContain("@font-face");
+        expect(config.iconPackCss).not.toContain("::before");
+        expect(config.iconPackGlyphCssUrl).toMatch(/^api\/icon-packs\.css\?v=[0-9a-f]{32}$/);
     });
 
     it("getIconConfig serves a built-in pack's font from the assets and a user pack's from its attachment", () => {

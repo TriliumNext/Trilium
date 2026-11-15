@@ -4,6 +4,7 @@
 import "./content.css";
 
 import { requestCatalogues } from "./services/catalogue_requests";
+import { loadIconPackGlyphs } from "./services/icon_pack_glyphs";
 import { createFontPreloadLink, createFontStylesheet } from "./services/font";
 import {
     CLIENT_STARTUP_PHASES, hideSplash, initSplashProgress, reportSplashPhase, showSplashError
@@ -44,8 +45,12 @@ async function bootstrap() {
     ]);
     loadStylesheets();
     initThemeChangeNotifier();
-    loadIcons();
+    const iconPackGlyphs = loadIcons();
     setBodyAttributes();
+    // A printed note keeps the icons it shows, which therefore have to be in place before it renders.
+    if (glob.device === "print") {
+        await iconPackGlyphs;
+    }
     const debugSafeAreaInsets = import.meta.env.VITE_DEBUG_SAFE_AREA_INSETS;
     if (debugSafeAreaInsets) {
         (await import("./services/debug_safe_area")).default(debugSafeAreaInsets);
@@ -209,6 +214,7 @@ function loadIcons() {
     // scan walks all of them on every keyboard focus, freezing the app for seconds.
     styleEl.textContent = window.glob.iconPackCss;
     document.head.appendChild(styleEl);
+    return loadIconPackGlyphs(window.glob.iconPackGlyphCssUrl);
 }
 
 function setBodyAttributes() {

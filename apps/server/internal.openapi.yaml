@@ -4312,6 +4312,32 @@ paths:
         '400':
           description: Missing or non-positive limit
 
+  /api/icon-packs.css:
+    get:
+      tags: [Utilities]
+      summary: Get the glyph of every icon
+      description: >-
+        A stylesheet with the `::before` rule that places the character of each icon of each icon
+        pack. The bootstrap data carries the fonts of the packs and links this stylesheet with a
+        `v` parameter derived from its content, so the response can be cached for good. Served
+        without a session, like the bootstrap data that names it on the login screen.
+      operationId: getIconPackGlyphCss
+      security: []
+      parameters:
+        - name: v
+          in: query
+          required: false
+          description: The content version the bootstrap data names; any value returns the current stylesheet
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The glyph rules of the icon packs
+          content:
+            text/css:
+              schema:
+                type: string
+
   /api/other/icon-registry:
     get:
       tags: [Utilities]

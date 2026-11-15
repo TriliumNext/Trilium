@@ -1,7 +1,10 @@
 import { BootstrapDefinition, buildFontCss, type OptionMap } from "@triliumnext/commons";
 import { getSql } from "./sql";
 import protected_session from "./protected_session";
-import { generateCss, generateIconRegistry, getIconPacks, MIME_TO_EXTENSION_MAPPINGS, type ProcessedIconPack } from "./icon_packs";
+import {
+    generateIconPackFontCss, generateIconPackGlyphCss, generateIconRegistry, getIconPacks, MIME_TO_EXTENSION_MAPPINGS,
+    type ProcessedIconPack
+} from "./icon_packs";
 import { generateTaskStateCss } from "./task_states";
 import optionService from "./options";
 import { getCurrentLocale } from "./i18n";
@@ -11,6 +14,7 @@ import { getPlatform } from "./platform";
 import { isSetupAuthRequired, isSetupSecondFactorRequired } from "./setup_auth";
 import { getSetupTargetScreen, hasExistingData, isSetupRequested } from "./setup_mode";
 import sqlInit from "./sql_init";
+import { md5 } from "./utils/index";
 
 export default function getSharedBootstrapItems(assetPath: string, dbInitialized: boolean) {
     const sql = getSql();
@@ -76,18 +80,25 @@ export default function getSharedBootstrapItems(assetPath: string, dbInitialized
     }
 }
 
-export function getIconConfig(assetPath: string): Pick<BootstrapDefinition, "iconPacks" | "iconPackCss"> {
+export function getIconConfig(assetPath: string): Pick<BootstrapDefinition, "iconPacks" | "iconPackCss" | "iconPackGlyphCssUrl"> {
     const iconPacks = getIconPacks();
 
     return {
         iconPacks: generateIconRegistry(iconPacks).sources.map(({ prefix, name, icon }) => ({ prefix, name, icon })),
         iconPackCss: [
-            ...iconPacks.map(p => generateCss(p, getIconPackFontUrl(p, assetPath))),
+            ...iconPacks.map(p => generateIconPackFontCss(p, getIconPackFontUrl(p, assetPath))),
             generateTaskStateCss(iconPacks)
         ]
             .filter(Boolean)
             .join("\n\n"),
+        // Named after its content, so the browser keeps it until an icon pack changes.
+        iconPackGlyphCssUrl: `api/icon-packs.css?v=${md5(getIconPackGlyphCss(iconPacks))}`
     };
+}
+
+/** The glyph of every icon of the icon packs, which `GET /api/icon-packs.css` serves. */
+export function getIconPackGlyphCss(iconPacks = getIconPacks()) {
+    return iconPacks.map((iconPack) => generateIconPackGlyphCss(iconPack)).filter(Boolean).join("\n");
 }
 
 function getIconPackFontUrl(iconPack: ProcessedIconPack, assetPath: string) {

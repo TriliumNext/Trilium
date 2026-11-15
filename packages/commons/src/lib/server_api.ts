@@ -1107,7 +1107,10 @@ export type BootstrapDefinition = {
     theme: string;
     themeBase?: "next" | "next-light" | "next-dark";
     customThemeCssUrl?: string;
+    /** The fonts of the icon packs, and the rule that draws each pack's prefix in its font. */
     iconPackCss: string;
+    /** The stylesheet that places the character of every icon, which loads after the first render. */
+    iconPackGlyphCssUrl: string;
     /** The font files the first render uses, for the client to preload. */
     preloadFonts?: string[];
     /**

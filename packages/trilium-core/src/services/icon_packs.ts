@@ -229,26 +229,15 @@ export function generateIconTransformCss(): string {
         .join("\n");
 }
 
-export function generateCss({ manifest, fontMime, builtin, fontAttachmentId, prefix }: ProcessedIconPack, fontUrl: string) {
+export function generateCss(iconPack: ProcessedIconPack, fontUrl: string) {
+    const fontCss = generateIconPackFontCss(iconPack, fontUrl);
+    const glyphCss = generateIconPackGlyphCss(iconPack);
+    return fontCss !== null && glyphCss !== null ? `${fontCss}\n${glyphCss}` : null;
+}
+
+/** The font of an icon pack and the rule that draws its prefix in it, without any glyph. */
+export function generateIconPackFontCss({ manifest, fontMime, builtin, fontAttachmentId, prefix }: ProcessedIconPack, fontUrl: string) {
     try {
-        const iconDeclarations: string[] = [];
-        const skippedKeys: string[] = [];
-        for (const [ key, mapping ] of Object.entries(manifest.icons)) {
-            if (!CSS_CLASS_NAME_PATTERN.test(key)) {
-                skippedKeys.push(key);
-                continue;
-            }
-
-            const glyph = escapeCssString(decodeCssEscapes(String(mapping.glyph ?? "")));
-            iconDeclarations.push(`.${prefix}.${key}::before { content: "${glyph}"; }`);
-        }
-
-        if (skippedKeys.length) {
-            const examples = skippedKeys.slice(0, MAX_LOGGED_SKIPPED_KEYS).map((key) => `'${key}'`).join(", ");
-            const rest = skippedKeys.length > MAX_LOGGED_SKIPPED_KEYS ? ", …" : "";
-            getLog().warn(`Skipping ${skippedKeys.length} icons of icon pack '${prefix}' (${examples}${rest}): keys allow only letters, digits, dashes, underscores and non-ASCII characters.`);
-        }
-
         const fontFamily = builtin ? fontAttachmentId : `trilium-icon-pack-${prefix}`;
         const fontFace = [
             `font-family: '${fontFamily}';`,
@@ -275,9 +264,35 @@ export function generateCss({ manifest, fontMime, builtin, fontAttachmentId, pre
                 -webkit-font-smoothing: antialiased;
                 -moz-osx-font-smoothing: grayscale;
             }
-
-            ${iconDeclarations.join("\n")}
         `;
+    } catch (e) {
+        getLog().error(safeExtractMessageAndStackFromError(e));
+        return null;
+    }
+}
+
+/** The `::before` rule of each icon of a pack, which places its character. */
+export function generateIconPackGlyphCss({ manifest, prefix }: ProcessedIconPack) {
+    try {
+        const iconDeclarations: string[] = [];
+        const skippedKeys: string[] = [];
+        for (const [ key, mapping ] of Object.entries(manifest.icons)) {
+            if (!CSS_CLASS_NAME_PATTERN.test(key)) {
+                skippedKeys.push(key);
+                continue;
+            }
+
+            const glyph = escapeCssString(decodeCssEscapes(String(mapping.glyph ?? "")));
+            iconDeclarations.push(`.${prefix}.${key}::before { content: "${glyph}"; }`);
+        }
+
+        if (skippedKeys.length) {
+            const examples = skippedKeys.slice(0, MAX_LOGGED_SKIPPED_KEYS).map((key) => `'${key}'`).join(", ");
+            const rest = skippedKeys.length > MAX_LOGGED_SKIPPED_KEYS ? ", …" : "";
+            getLog().warn(`Skipping ${skippedKeys.length} icons of icon pack '${prefix}' (${examples}${rest}): keys allow only letters, digits, dashes, underscores and non-ASCII characters.`);
+        }
+
+        return iconDeclarations.join("\n");
     } catch (e) {
         getLog().error(safeExtractMessageAndStackFromError(e));
         return null;

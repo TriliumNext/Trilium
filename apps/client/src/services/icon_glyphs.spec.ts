@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+// The glyph stylesheet loads after the first render; a test holds it back to see what waits for it.
+const glyphStylesheet = vi.hoisted(() => ({ loaded: Promise.resolve() }));
+vi.mock("./icon_pack_glyphs", () => ({ whenIconPackGlyphsLoaded: () => glyphStylesheet.loaded }));
+
 import {
     drawIconGlyph, type IconGlyph, loadIconFonts, renderIconImage, resolveIconGlyphs, warmIconFonts
 } from "./icon_glyphs";
@@ -210,6 +214,24 @@ describe("renderIconImage", () => {
         await renderIconImage("bx bx-kept", { size: 20, color: "red" });
         expect(resolve).toHaveBeenCalledTimes(4);
         expect(context.fillStyle).toBe("red");
+    });
+
+    it("reads an icon only once the glyph stylesheet has applied", async () => {
+        let release = () => {};
+        glyphStylesheet.loaded = new Promise((resolve) => {
+            release = resolve;
+        });
+        const resolve = answerWith({ "bx bx-late": { content: `"${FILE_GLYPH}"`, fontFamily: "boxicons" } });
+        answerWithCanvas();
+        answerWithFonts(() => Promise.resolve([]));
+
+        const image = renderIconImage("bx bx-late", { size: 20 });
+        await Promise.resolve();
+        expect(resolve).not.toHaveBeenCalled();
+
+        release();
+        await expect(image).resolves.toBe("data:image/png;base64,DRAWN");
+        glyphStylesheet.loaded = Promise.resolve();
     });
 
     it("keeps an icon it could not draw, rather than trying it again per frame", async () => {
