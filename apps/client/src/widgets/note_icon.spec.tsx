@@ -1,7 +1,7 @@
 import $ from "jquery";
 import { useState } from "preact/hooks";
 import { act } from "preact/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import FNote from "../entities/fnote";
 import attributes from "../services/attributes";
@@ -82,6 +82,9 @@ vi.mock("./react/IconPicker", async (importOriginal) => {
 });
 
 import NoteIcon from "./note_icon";
+import { preloadDropdownPopups } from "./react/Dropdown";
+
+beforeAll(() => preloadDropdownPopups());
 
 class ResizeObserverStub {
     observe() {}
