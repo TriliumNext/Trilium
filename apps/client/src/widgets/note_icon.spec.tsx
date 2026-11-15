@@ -9,7 +9,9 @@ import { renderInto } from "../test/render";
 import { ReactWrappedWidget } from "./basic_widget";
 
 vi.mock("bootstrap", () => ({
-    Tooltip: class {}
+    Tooltip: class {},
+    // `Modal.tsx`, which the icon picker loads, hands it over as its module loads.
+    Modal: class {}
 }));
 
 // i18next is not initialized under test, where t() answers with nothing; echoing the key back keeps

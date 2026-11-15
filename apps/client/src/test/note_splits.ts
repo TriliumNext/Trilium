@@ -14,7 +14,9 @@ export async function showNoteSplit(container: HTMLElement | undefined, noteCont
     appContext.tabManager = {
         noteContexts: [ noteContext ],
         getActiveMainContext: () => noteContext,
-        getActiveContext: () => noteContext
+        getActiveContext: () => noteContext,
+        // The split container reads its contexts by ID as the active context changes.
+        getNoteContextById: (ntxId: string | null) => (ntxId === noteContext.ntxId ? noteContext : null)
     } as unknown as typeof appContext.tabManager;
     const splits = container?.querySelector<HTMLElement>(".split-note-container-widget");
     if (!splits) throw new Error("The layout has no note splits.");
