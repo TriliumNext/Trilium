@@ -154,6 +154,15 @@ describe("window.onerror handler", () => {
         expect(msg).toContain("No details available");
     });
 
+    it("ignores the benign ResizeObserver loop notifications", () => {
+        window.onerror!("ResizeObserver loop completed with undelivered notifications.", "u", 0, 0, undefined);
+        window.onerror!("ResizeObserver loop limit exceeded", "u", 0, 0, undefined);
+        expect((ws as any).logError).not.toHaveBeenCalled();
+
+        window.onerror!("Some failure", "u", 1, 2, undefined);
+        expect((ws as any).logError).toHaveBeenCalledOnce();
+    });
+
     it("falls back to toString when the error object cannot be JSON-stringified", () => {
         const circular: any = {};
         circular.self = circular;

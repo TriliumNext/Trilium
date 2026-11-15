@@ -24,6 +24,12 @@ function setupGlobs() {
     window.__triliumHandleBack = handleSystemBack;
 
     window.onerror = function (msg, url, lineNo, columnNo, error) {
+        // The browser reports a resize that triggers another resize in the same frame and
+        // delivers the notification on the next frame, so nothing is lost.
+        if (String(msg).startsWith("ResizeObserver loop")) {
+            return true;
+        }
+
         ws.logError(formatUncaughtError(String(msg), error, `${url}:${lineNo}:${columnNo}`));
 
         return false;
