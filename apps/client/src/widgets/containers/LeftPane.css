@@ -72,3 +72,7 @@ body.layout-vertical #horizontal-main-container {
 body.backdrop-effects-disabled #left-pane-host.peek > #left-pane {
     background: var(--left-pane-background-color);
 }
+
+.note-tree-host {
+    display: contents;
+}

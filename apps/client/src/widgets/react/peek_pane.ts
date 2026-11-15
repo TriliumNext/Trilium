@@ -19,9 +19,8 @@ import { ParentComponent } from "./react_utils";
  *   interaction or Escape.
  *
  * These primitives are side-agnostic (left/right) and content-agnostic; a consumer supplies the
- * persisted option key, the commands/keyboard actions, and the DOM. `RightPanelContainer` uses the
- * hooks; the jQuery `LeftPaneContainer` uses `reducePaneMode`, `persistedPaneVisible` and
- * `watchPeekDismiss`. Both share `PeekPaneButton` and `peek_pane.css`. Only the docked/closed
+ * persisted option key, the commands/keyboard actions, and the DOM. `RightPanelContainer` and
+ * `LeftPane` use the hooks, and share `PeekPaneButton` and `peek_pane.css`. Only the docked/closed
  * distinction is persisted; peek is runtime-only.
  *
  * Each pane raises `paneModeChanged` when its mode changes, and dismisses its own peek when another

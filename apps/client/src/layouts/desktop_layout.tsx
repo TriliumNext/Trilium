@@ -1,12 +1,9 @@
 import type { AppContext } from "../components/app_context.js";
 import type { WidgetsByParent } from "../services/bundle.js";
 import options from "../services/options.js";
-import LeftPaneToggle, { LeftPanePeekButton } from "../widgets/buttons/left_pane_toggle.js";
-import ShowAllNotesButton from "../widgets/buttons/show_all_notes_button.jsx";
 import CloseZenModeButton from "../widgets/close_zen_button.jsx";
 import NoteList from "../widgets/collections/NoteList.jsx";
 import FlexContainer from "../widgets/containers/flex_container.js";
-import LeftPaneContainer from "../widgets/containers/left_pane_container.js";
 import RootContainer from "../widgets/containers/root_container.js";
 import ScrollingContainer from "../widgets/containers/scrolling_container.js";
 import SplitNoteContainer from "../widgets/containers/split_note_container.js";
@@ -23,10 +20,8 @@ import { NoteTypeSwitcherBar } from "../widgets/layout/NoteTypeSwitcher.jsx";
 import StatusBar from "../widgets/layout/StatusBar.jsx";
 import NoteIconWidget from "../widgets/note_icon.jsx";
 import NoteTitleWidget from "../widgets/note_title.jsx";
-import NoteTreeWidget from "../widgets/note_tree.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import NoteDetail from "../widgets/NoteDetail.jsx";
-import QuickSearch from "../widgets/quick_search.jsx";
 import ScrollPadding from "../widgets/scroll_padding.js";
 import SearchResult from "../widgets/search_result.jsx";
 import RightPanelContainer from "../widgets/sidebar/RightPanelContainer.jsx";
@@ -41,34 +36,18 @@ export default class DesktopLayout {
     }
 
     getRootWidget(appContext: AppContext) {
-        appContext.noteTreeWidget = new NoteTreeWidget();
-
         const launcherPaneIsHorizontal = options.get("layoutOrientation") === "horizontal";
         const launcherPane = this.#buildLauncherPane(launcherPaneIsHorizontal);
 
         const rootContainer = new RootContainer(true)
             .setParent(appContext)
             .class(`${launcherPaneIsHorizontal ? "horizontal" : "vertical"  }-layout`)
-            .optChild(
-                launcherPaneIsHorizontal,
-                new FlexContainer("row")
-                    .child(<LeftPaneToggle isHorizontalLayout={true} />)
-                    .setParent(appContext)
-            )
             .optChild(launcherPaneIsHorizontal, launcherPane)
             .child(
                 new FlexContainer("row")
                     .css("flex-grow", "1")
                     .id("horizontal-main-container")
                     .optChild(!launcherPaneIsHorizontal, launcherPane)
-                    .child(<LeftPanePeekButton />)
-                    .child(
-                        new LeftPaneContainer(launcherPaneIsHorizontal)
-                            .optChild(!launcherPaneIsHorizontal, <QuickSearch />)
-                            .child(<ShowAllNotesButton />)
-                            .child(appContext.noteTreeWidget)
-                            .child(...this.customWidgets.get("left-pane"))
-                    )
                     .child(
                         new FlexContainer("column")
                             .id("rest-pane")
@@ -138,8 +117,7 @@ export default class DesktopLayout {
         } else {
             launcherPane = new FlexContainer("column")
                 .css("width", "53px")
-                .class("vertical")
-                .child(<LeftPaneToggle isHorizontalLayout={false} />);
+                .class("vertical");
         }
 
         launcherPane.id("launcher-pane");

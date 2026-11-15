@@ -3,9 +3,9 @@ import "./left_pane_toggle.css";
 import clsx from "clsx";
 import { useCallback, useContext, useState } from "preact/hooks";
 
-import { showLaunchBarManagementContextMenu } from "../../menus/launcher_button_context_menu";
 import { t } from "../../services/i18n";
 import options from "../../services/options";
+import { showLauncherContextMenu } from "../launch_bar/launch_bar_widgets";
 import ActionButton from "../react/ActionButton";
 import { useTriliumEvent } from "../react/hooks/events";
 import type { PaneMode } from "../react/peek_pane";
@@ -26,7 +26,7 @@ export default function LeftPaneToggle({ isHorizontalLayout }: { isHorizontalLay
             titlePosition={isHorizontalLayout ? "bottom" : "right"}
             triggerCommand={isDocked ? "hideLeftPane" : "showLeftPane"}
             icon={isHorizontalLayout ? "bx bx-sidebar" : "bx bx-chevrons-left"}
-            onContextMenu={showLaunchBarManagementContextMenu}
+            onContextMenu={(e) => void showLauncherContextMenu(null, e)}
         />
     );
 }
@@ -53,7 +53,7 @@ export function LeftPanePeekButton() {
     );
 }
 
-/** The mode `LeftPaneContainer` reports for the left pane. */
+/** The mode `useLeftPane()` reports for the left pane. */
 function useLeftPaneMode() {
     const [ mode, setMode ] = useState<PaneMode>(() => options.is("leftPaneVisible") ? "docked" : "closed");
     useTriliumEvent("paneModeChanged", (data) => {

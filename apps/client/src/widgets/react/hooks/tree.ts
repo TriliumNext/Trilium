@@ -16,7 +16,8 @@ import { useGetContextDataFrom } from "./note_context";
  * (the note currently focused by the user).
  */
 export function useActiveNoteContext() {
-    const [ noteContext, setNoteContext ] = useState<NoteContext | undefined>(appContext.tabManager.getActiveContext() ?? undefined);
+    // `desktop.ts` creates the tab manager after the first render of the layout.
+    const [ noteContext, setNoteContext ] = useState<NoteContext | undefined>(appContext.tabManager?.getActiveContext() ?? undefined);
     const [ notePath, setNotePath ] = useState<string | null | undefined>();
     const [ note, setNote ] = useState<FNote | null | undefined>();
     const [ , setViewScope ] = useState<ViewScope>();
@@ -26,7 +27,7 @@ export function useActiveNoteContext() {
 
     useEffect(() => {
         if (!noteContext) {
-            setNoteContext(appContext.tabManager.getActiveContext() ?? undefined);
+            setNoteContext(appContext.tabManager?.getActiveContext() ?? undefined);
         }
     }, [ noteContext ]);
 

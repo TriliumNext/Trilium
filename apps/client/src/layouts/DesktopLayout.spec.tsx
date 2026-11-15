@@ -1,8 +1,16 @@
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("../services/keyboard_actions", () => ({
+    default: { getAction: vi.fn().mockResolvedValue({ effectiveShortcuts: [] }) }
+}));
+vi.mock("../services/resizer", () => ({ default: { setupLeftPaneResizer: vi.fn() } }));
+
+import appContext from "../components/app_context.js";
+import options from "../services/options.js";
 import { buildNote } from "../test/easy-froca.js";
 import { renderInto } from "../test/render.js";
+import { ParentComponent } from "../widgets/react/react_utils.js";
 import DesktopLayout from "./DesktopLayout.js";
 
 describe("DesktopLayout", () => {
@@ -13,6 +21,7 @@ describe("DesktopLayout", () => {
         // The tab bar's history buttons follow these launchers.
         buildNote({ id: "_lbBackInHistory", title: "Back", type: "launcher" });
         buildNote({ id: "_lbForwardInHistory", title: "Forward", type: "launcher" });
+        options.set("leftPaneVisible", "false");
     });
 
     afterEach(() => {
@@ -23,7 +32,7 @@ describe("DesktopLayout", () => {
         window.glob.layoutOrientation = "vertical";
         let container: HTMLElement | undefined;
         // In `act()`, so the tab row widget is attached by its effect.
-        act(() => { container = renderInto(<DesktopLayout />); });
+        act(() => { container = renderInto(<Layout />); });
         const root = container?.querySelector("#root-widget");
 
         expect(root?.classList.contains("vertical-layout")).toBe(true);
@@ -38,13 +47,20 @@ describe("DesktopLayout", () => {
         expect(tabBar?.parentElement?.id).toBe("rest-pane");
         expect(tabBar?.querySelector(".tab-row-widget.full-width")).toBeNull();
         expect(tabBar?.querySelector(".tab-row-widget")).not.toBeNull();
+        // The left pane toggle follows the menu, and the left pane follows the launch bar.
+        expect(launcherPane?.children[1]?.classList.contains("left-pane-toggle-button")).toBe(true);
+        expect(launcherPane?.nextElementSibling?.classList.contains("left-pane-peek-button")).toBe(true);
+        const leftPaneHost = root?.querySelector("#left-pane-host");
+        expect(leftPaneHost?.previousElementSibling?.classList.contains("left-pane-peek-button")).toBe(true);
+        expect(leftPaneHost?.nextElementSibling?.id).toBe("rest-pane");
+        expect(root?.querySelector("#horizontal-main-container.left-pane-hidden")).not.toBeNull();
     });
 
     it("puts the launch bar above the main container in the horizontal layout", () => {
         window.glob.layoutOrientation = "horizontal";
         let container: HTMLElement | undefined;
         // In `act()`, so the tab row widget is attached by its effect.
-        act(() => { container = renderInto(<DesktopLayout />); });
+        act(() => { container = renderInto(<Layout />); });
         const root = container?.querySelector("#root-widget");
 
         expect(root?.classList.contains("horizontal-layout")).toBe(true);
@@ -60,5 +76,20 @@ describe("DesktopLayout", () => {
         expect(tabBar?.nextElementSibling).toBe(launcherPane);
         expect(tabBar?.querySelector(".tab-row-widget.full-width")).not.toBeNull();
         expect(root?.querySelector("#rest-pane .tab-row-container")).toBeNull();
+        // The left pane toggle follows the spacer of the tab bar, and the left pane starts the main container.
+        expect(tabBar?.children[1]?.classList.contains("left-pane-toggle-button")).toBe(true);
+        expect(launcherPane?.querySelector(".left-pane-toggle-button")).toBeNull();
+        const mainContainer = root?.querySelector("#horizontal-main-container");
+        expect(mainContainer?.firstElementChild?.classList.contains("left-pane-peek-button")).toBe(true);
+        expect(mainContainer?.children[1]?.id).toBe("left-pane-host");
     });
 });
+
+/** `desktop.ts` renders the layout with `appContext` as its parent component. */
+function Layout() {
+    return (
+        <ParentComponent.Provider value={appContext}>
+            <DesktopLayout />
+        </ParentComponent.Provider>
+    );
+}

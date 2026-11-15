@@ -33,7 +33,6 @@ import treeService from "../services/tree.js";
 import utils from "../services/utils.js";
 import ws from "../services/ws.js";
 import NoteContextAwareWidget from "./note_context_aware_widget.js";
-import TreeSettings from "./note_tree_settings.jsx";
 import { disposeReactWidget, renderReactWidgetAtElement } from "./react/react_utils.jsx";
 
 const TPL = /*html*/`
@@ -293,11 +292,14 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             return;
         }
 
-        renderReactWidgetAtElement(this, h(TreeSettings, {
-            anchor: this.$treeActions[0],
-            onHideArchivedNotesChange: () => this.reloadTreeFromCache(),
-            onClose: () => this.toggleSettings(false)
-        }), this.settingsContainer);
+        void import("./note_tree_settings.jsx").then(({ default: TreeSettings }) => {
+            if (!this.isSettingsShown) return;
+            renderReactWidgetAtElement(this, h(TreeSettings, {
+                anchor: this.$treeActions[0],
+                onHideArchivedNotesChange: () => this.reloadTreeFromCache(),
+                onClose: () => this.toggleSettings(false)
+            }), this.settingsContainer);
+        });
     }
 
     cleanup() {

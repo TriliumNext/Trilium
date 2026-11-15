@@ -202,22 +202,6 @@ function buildShowAsFolderItem(note: FNote): MenuItem<string> {
 }
 
 /**
- * Shows a context menu containing only the shared launch-bar management segment. Used by launch-bar chrome
- * that is not itself a launcher (e.g. the left-pane toggle), which has no launcher-specific items to add.
- */
-export function showLaunchBarManagementContextMenu(e: ContextMenuEvent) {
-    e.preventDefault();
-
-    contextMenu.show<string>({
-        x: e.pageX ?? 0,
-        y: e.pageY ?? 0,
-        items: buildLaunchBarManagementItems(),
-        // The items are self-contained via their own handlers, so nothing needs to be routed here.
-        selectMenuItemHandler: () => {}
-    });
-}
-
-/**
  * Builds the shared segment shown at the top of every launch-bar context menu: the "Configure launch bar"
  * entry and (on desktop) the "Launch bar orientation" submenu. Each item is self-contained via its own
  * {@link MenuCommandItem.handler}, so it works regardless of the widget-specific `onCommand` router.
