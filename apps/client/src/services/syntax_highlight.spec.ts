@@ -461,6 +461,22 @@ describe("syntax_highlight", () => {
             // copy button added only to the labeled <pre> (the unlabeled one is skipped)
             expect($container.find("pre button.copy-button").length).toBe(1);
         });
+
+        it("leaves a code block that shows a static code preview as it is", async () => {
+            const mod = await freshModule();
+            setOptions({ codeBlockThemeMatchesApp: "false", codeBlockTheme: "default:vs" });
+            const $container = $("<div>");
+            const $code = $("<code>").text("a{}")
+                .addClass("language-text-css code-preview-content");
+            $container.append($("<pre>").addClass("code-preview").append($code));
+
+            await mod.formatCodeBlocks($container);
+            await flush();
+
+            expect($code.html()).toBe("a{}");
+            expect(hl.highlight).not.toHaveBeenCalled();
+            expect($container.find("button.copy-button").length).toBe(0);
+        });
     });
 
     describe("color scheme listener + cache eviction", () => {

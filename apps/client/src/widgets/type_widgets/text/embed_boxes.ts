@@ -6,16 +6,14 @@ import {
     getLinkPreviewPlayer, getVideoAspectRatio, readLinkPreviewData, readMediaEmbedBox,
     VIDEO_ASPECT_RATIO_PROPERTY
 } from "@triliumnext/commons/src/lib/link_embed_markup.js";
-import { MIME_TYPE_AUTO } from "@triliumnext/commons/src/lib/mime_type.js";
 import clsx from "clsx";
 
 import {
-    applyInlineMermaid, emptyUnknownEmbeds, loadReferenceLink, replaceWithEmbedBox,
-    replaceWithReferenceLink, rewriteMermaidDiagramsInContainer
+    applyInlineMermaid, emptyUnknownEmbeds, getShownCodeLanguage, loadReferenceLink,
+    replaceWithEmbedBox, replaceWithReferenceLink, rewriteMermaidDiagramsInContainer
 } from "../../../services/content_renderer_text";
 import { isExperimentalFeatureEnabled } from "../../../services/experimental_features";
 import { getSourceEmbedTypeByLanguage } from "../../../services/source_embeds";
-import { detectCodeLanguage } from "../../../services/syntax_highlight";
 import {
     getAttachmentHref, loadEmbeddedAttachment, loadEmbeddedNote, loadInlineEmbed, loadMediaEmbed,
     loadUnknownEmbed
@@ -214,7 +212,7 @@ function prepareSourceEmbeds(container: HTMLElement, isNested: boolean) {
 
         const source = code.textContent;
         loads.push(async () => {
-            const shownLanguage = await getShownLanguage(language, source);
+            const shownLanguage = await getShownCodeLanguage(language, source);
             figure.dataset.language = shownLanguage;
             await loadInlineEmbed({
                 language: shownLanguage,
@@ -226,15 +224,4 @@ function prepareSourceEmbeds(container: HTMLElement, isNested: boolean) {
         });
     }
     return loads;
-}
-
-/**
- * The language that a read-only box shows `source` in: `language`, or the one detected in the
- * source for a code block saved as `MIME_TYPE_AUTO`, which the editor sets on the block instead.
- */
-async function getShownLanguage(language: string, source: string) {
-    if (language !== MIME_TYPE_AUTO) {
-        return language;
-    }
-    return await detectCodeLanguage(source) ?? EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE;
 }

@@ -115,7 +115,13 @@ adds `ck-widget_selected` after `Widget` marks the selection and takes it away o
   language of `contentEmbed.detectLanguage()` (highlight.js, `detectCodeLanguage()`), written
   outside the undo stack; a read-only box detects the language of a `MIME_TYPE_AUTO` block each
   time. Only an editor whose host has content embed handlers gets the replacement: the chat
-  input and the mind map memo keep their code blocks.
+  input and the mind map memo keep their code blocks. Where a text note renders without embed
+  boxes (tooltips, collection previews, text notes on a canvas or a slide),
+  `renderCodeBlockPreviews()` (`content_renderer_text.ts`) fills the `<pre>` and `<code>` of each
+  block with the static HTML of `renderCodeNotePreview()`, CodeMirror's highlighter in the code
+  note theme, and marks the `<pre>` `code-block-preview`; `formatCodeBlocks()` skips
+  `code.code-preview-content`. Print, Markdown notes and content that changes as it is typed
+  keep highlight.js.
 - **Media** (`media_embed.ts`, `ContentEmbedMedia`) is the _Embed_ display mode of a link
   preview that plays something (`getLinkPreviewPlayer()` in commons): a YouTube video
   (`embedType` `youtube`), or the video or audio file at its URL (`video`, `audio`). It keeps the

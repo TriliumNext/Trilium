@@ -70,7 +70,8 @@ function setCachedHighlight(language: string, text: string, value: string) {
 export async function formatCodeBlocks($container: JQuery<HTMLElement>) {
     const syntaxHighlightingEnabled = isSyntaxHighlightEnabled();
 
-    const codeBlocks = $container.find("pre code");
+    // `renderCodeBlockPreviews()` has highlighted a block that shows a static code preview.
+    const codeBlocks = $container.find("pre code:not(.code-preview-content)");
     for (const codeBlock of codeBlocks) {
         const normalizedMimeType = extractLanguageFromClassList(codeBlock);
         if (!normalizedMimeType) {
@@ -250,7 +251,7 @@ export function isSyntaxHighlightEnabled() {
  * @param el the HTML element from which to extract the language tag.
  * @returns the normalized MIME type (e.g. `text-css` instead of `language-text-css`).
  */
-function extractLanguageFromClassList(el: HTMLElement) {
+export function extractLanguageFromClassList(el: HTMLElement) {
     const prefix = "language-";
     for (const className of el.classList) {
         if (className.startsWith(prefix)) {
