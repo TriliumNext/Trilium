@@ -1,6 +1,6 @@
 import {
-    type DowncastCleanSelectionEvent, type DowncastSelectionEvent, type Editor, isWidget,
-    type ModelElement, type ModelPosition, type Plugin, type ViewDocumentSelection,
+    ClipboardObserver, type DowncastCleanSelectionEvent, type DowncastSelectionEvent, type Editor,
+    isWidget, type ModelElement, type ModelPosition, type Plugin, type ViewDocumentSelection,
     type ViewElement, WIDGET_SELECTED_CLASS_NAME
 } from "ckeditor5";
 
@@ -27,6 +27,25 @@ export function preventCKEditorHandling(domElement: HTMLElement, editor: Editor)
         //@ts-expect-error: We are accessing a private field.
         editor.editing.view._renderer.isFocused = false;
     }
+}
+
+/**
+ * Makes a drag that starts in `domElement`, the UI element of a widget, move the whole widget, as
+ * a drag from its selection handle does. `ClipboardObserver` ignores the events of widget UI
+ * (`data-cke-ignore-events`), so the browser would drag a link in the UI by itself.
+ */
+export function dragWidgetFromUi(domElement: HTMLElement, editor: Editor) {
+    const forward = (evt: DragEvent) => {
+        editor.editing.view.getObserver(ClipboardObserver)?.onDomEvent(evt);
+    };
+    domElement.addEventListener("dragstart", (evt) => {
+        forward(evt);
+        // The browser shows a dragged link as its text and URL, not as the widget that moves.
+        const widget = domElement.parentElement as HTMLElement;
+        const { left, top } = widget.getBoundingClientRect();
+        evt.dataTransfer?.setDragImage(widget, evt.clientX - left, evt.clientY - top);
+    });
+    domElement.addEventListener("dragend", forward);
 }
 
 /**

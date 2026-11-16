@@ -7,7 +7,9 @@ import {
 import { CLIPBOARD_PLAIN_TEXT_PROPERTY } from "../clipboard_plain_text_indent.js";
 import ColoredWidgets from "../colored_widgets.js";
 import ContentEmbed from '../content_embed/content_embed.js';
-import { preventCKEditorHandling, restoreRendererFocusOnInput } from '../widget_utils.js';
+import {
+    dragWidgetFromUi, preventCKEditorHandling, restoreRendererFocusOnInput
+} from '../widget_utils.js';
 import {
     CHANGE_LINK_DISPLAY_COMMAND,
     ChangeLinkDisplayCommand,
@@ -124,14 +126,13 @@ export default class LinkEmbedEditing extends Plugin {
                         url, embedType, title, description, favicon, siteName, image, aspectRatio
                     }, true);
                     preventCKEditorHandling(domElement, editor);
+                    dragWidgetFromUi(domElement, editor);
                     return domElement;
                 });
 
                 writer.insert(writer.createPositionAt(section, 0), preview);
                 // hasSelectionHandle gives the block preview (both card and video) CKEditor's own
-                // widget drag handle — the same one tables use. Without a handle the user grabs the
-                // preview's own content and the browser's native drag tears the image and text apart;
-                // the handle moves the whole widget atomically instead.
+                // widget drag handle, the same one tables use.
                 // The label is announced by screen readers; lowercase to match the "image widget" /
                 // "table widget" labels CKEditor gives its own widgets.
                 return toWidget(section, writer, { label: editor.t('link embed widget'), hasSelectionHandle: true });
@@ -180,6 +181,7 @@ export default class LinkEmbedEditing extends Plugin {
                     const domElement = this.toDomElement(domDocument);
                     getLinkEmbedHost(editor).renderMention(domElement, { url, title, favicon }, true);
                     preventCKEditorHandling(domElement, editor);
+                    dragWidgetFromUi(domElement, editor);
                     return domElement;
                 });
 
