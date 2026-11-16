@@ -79,7 +79,7 @@
     "happy-dom": "21.0.4",
     "jsdom": "31.0.0",
     "lightningcss": "1.33.0",
-    "sass": "1.108.1",
+    "sass": "1.108.2",
     "stylelint": "18.0.0",
     "vite-plugin-static-copy": "4.1.1"
   }
