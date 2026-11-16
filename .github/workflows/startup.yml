@@ -36,7 +36,7 @@ permissions:
 
 jobs:
   check:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     name: Check the startup requests
     steps:
       - uses: actions/checkout@v7
