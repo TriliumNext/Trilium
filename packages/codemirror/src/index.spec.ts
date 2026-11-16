@@ -322,6 +322,23 @@ describe("CodeMirror", () => {
             expect(editor.getText()).toBe("b");
         });
 
+        it("turns the Vim keybindings on and off in place", () => {
+            editor = build({ vimKeybindings: true });
+            const dispatch = vi.spyOn(editor, "dispatch");
+            editor.setVimKeybindings(true);
+            expect(dispatch).not.toHaveBeenCalled();
+            editor.setText("text");
+
+            editor.setVimKeybindings(false);
+            expect(getCM(editor)).toBeNull();
+            expect(editor.scrollDOM.classList.contains("cm-vimMode")).toBe(false);
+
+            editor.setVimKeybindings(true);
+            expect(getCM(editor)).not.toBeNull();
+            expect(editor.scrollDOM.classList.contains("cm-vimMode")).toBe(true);
+            expect(editor.getText()).toBe("text");
+        });
+
         it("hides the caret of a read-only editor over that of the color theme", async () => {
             const theme = getThemeById("github-dark");
             expect(theme).not.toBeNull();

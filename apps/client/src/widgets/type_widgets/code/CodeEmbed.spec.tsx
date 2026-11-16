@@ -19,7 +19,7 @@ import LoadResults from "../../../services/load_results";
 import options from "../../../services/options";
 import search from "../../../services/search";
 import {
-    buildCodeViewTextEditor, getEmbedMenuItems, runEmbedMenuItem, summarizeMenuItem
+    buildCodeViewTextEditor, buildVimPlugin, getEmbedMenuItems, runEmbedMenuItem, summarizeMenuItem
 } from "../../../test/content_embed";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
@@ -854,6 +854,47 @@ describe("InlineCodeEmbed", () => {
         });
         await findView(shown, true);
         expect(copyButton(shown)).not.toBeNull();
+    });
+
+    it("takes the Vim keys of the text note around it, of code notes elsewhere", async () => {
+        options.set("vimKeymapEnabled", "true");
+        const hasVimKeys = (view: { scrollDOM: HTMLElement }) =>
+            view.scrollDOM.classList.contains("cm-vimMode");
+        const vim = buildVimPlugin();
+        const { editable } = buildCodeViewTextEditor({ TriliumVim: vim });
+        const { figure } = await mountInline("pass", buildEditor(), {
+            language: "text-x-python", isEditable: true, container: editable
+        });
+        const view = await findView(figure);
+        const { figure: included } = await mount(buildCodeNote("print(1)"), buildEditor(), {
+            container: editable
+        });
+        const includedView = await findView(included, true);
+        expect([ hasVimKeys(view), hasVimKeys(includedView) ]).toEqual([ false, false ]);
+
+        act(() => vim.setMode("normal"));
+        expect([ hasVimKeys(view), hasVimKeys(includedView) ]).toEqual([ true, true ]);
+        const { figure: added } = await mountInline("x", buildEditor(), {
+            language: "text-x-python", container: editable
+        });
+        expect(hasVimKeys(await findView(added, true))).toBe(true);
+        act(() => vim.setMode(null));
+        expect(hasVimKeys(view)).toBe(false);
+
+        // A read-only text note has no Vim mode. Outside a text note, the option applies.
+        const readOnlyText = document.createElement("div");
+        readOnlyText.className = "note-detail-readonly-text-content";
+        document.body.append(readOnlyText);
+        const { figure: shown } = await mountInline("x", undefined, {
+            language: "text-x-python", container: readOnlyText
+        });
+        const shownView = await findView(shown, true);
+        const { figure: apart } = await mount(buildCodeNote("print(2)"), undefined);
+        const apartView = await findView(apart, true);
+        await vi.waitFor(() => expect(hasVimKeys(apartView)).toBe(true));
+        expect(hasVimKeys(shownView)).toBe(false);
+        readOnlyText.remove();
+        options.set("vimKeymapEnabled", "false");
     });
 });
 

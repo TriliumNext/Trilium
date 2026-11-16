@@ -129,6 +129,8 @@ export default class CodeMirror extends EditorView {
     private searchHighlightCompartment: Compartment;
     private typeCompletionCompartment: Compartment;
     private completionSourceCompartment: Compartment;
+    private vimCompartment: Compartment;
+    private hasVimKeybindings: boolean;
     private searchPlugin?: SearchHighlighter | null;
     private sharedHistory: SharedHistory | null = null;
     private namedCompartments = new Map<string, Compartment>();
@@ -157,15 +159,10 @@ export default class CodeMirror extends EditorView {
         const searchHighlightCompartment = new Compartment();
         const typeCompletionCompartment = new Compartment();
         const completionSourceCompartment = new Compartment();
+        const vimCompartment = new Compartment();
 
-        let extensions: Extension[] = [];
-
-        if (config.vimKeybindings) {
-            extensions.push(vim());
-        }
-
-        extensions = [
-            ...extensions,
+        let extensions: Extension[] = [
+            vimCompartment.of(config.vimKeybindings ? vim() : []),
             languageCompartment.of([]),
             lineWrappingCompartment.of(config.lineWrapping ? EditorView.lineWrapping : []),
             keyboardSuggestionsCompartment.of(config.allowKeyboardSuggestions ? proseKeyboardAttributes : noKeyboardSuggestions),
@@ -231,6 +228,8 @@ export default class CodeMirror extends EditorView {
         this.searchHighlightCompartment = searchHighlightCompartment;
         this.typeCompletionCompartment = typeCompletionCompartment;
         this.completionSourceCompartment = completionSourceCompartment;
+        this.vimCompartment = vimCompartment;
+        this.hasVimKeybindings = !!config.vimKeybindings;
     }
 
     #onDocumentUpdated(v: ViewUpdate) {
@@ -427,6 +426,16 @@ export default class CodeMirror extends EditorView {
         this.hasLineNumbers = isShown;
         this.dispatch({
             effects: [ this.lineNumbersCompartment.reconfigure(buildLineNumbers(isShown)) ]
+        });
+    }
+
+    /** Turns the Vim keybindings on or off without replacing the view. */
+    setVimKeybindings(isEnabled: boolean) {
+        if (isEnabled === this.hasVimKeybindings) return;
+
+        this.hasVimKeybindings = isEnabled;
+        this.dispatch({
+            effects: [ this.vimCompartment.reconfigure(isEnabled ? vim() : []) ]
         });
     }
 

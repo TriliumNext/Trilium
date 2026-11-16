@@ -14,7 +14,7 @@ import options from "../../../services/options";
 import { useNoteLabelBoolean } from "../../react/hooks/note";
 import {
     type ContentEmbedToolProvider, registerContentEmbedTools, registerEmbedCaretTarget,
-    useIsContentEmbedEditable
+    useIsContentEmbedEditable, whenInPage
 } from "./content_embed_tools";
 import { EDITOR_ROOT_SELECTOR, type EditorRootElement } from "./nested_editor";
 
@@ -247,6 +247,45 @@ export function hasFixedToolbarAround(element: HTMLElement | null) {
     return !!findTextEditorAround(element)?.ui.view.toolbar;
 }
 
+/**
+ * Whether the text note around `ref` is in Vim mode, which follows it as it turns on and off.
+ * `false` in read-only text and until the content is in the page, `undefined` outside a text note.
+ */
+export function useTextNoteVimMode(ref: RefObject<HTMLElement | null>) {
+    const [ isOn, setIsOn ] = useState<boolean | undefined>(false);
+
+    useEffect(() => {
+        const element = ref.current;
+        if (!element) return;
+
+        let stopListening: (() => void) | undefined;
+        const stopWaiting = whenInPage(element, () => {
+            const editor = findTextEditorAround(element);
+            if (!editor) {
+                setIsOn(element.closest(READ_ONLY_TEXT_SELECTOR) ? false : undefined);
+                return;
+            }
+            if (!editor.plugins.has("TriliumVim")) {
+                setIsOn(false);
+                return;
+            }
+
+            const vim = editor.plugins.get("TriliumVim");
+            // `isActive` is still false while a new session sets its first status.
+            const update = () => setIsOn(!!vim.status.mode);
+            vim.on("change:status", update);
+            stopListening = () => vim.off("change:status", update);
+            update();
+        });
+        return () => {
+            stopWaiting();
+            stopListening?.();
+        };
+    }, [ ref ]);
+
+    return isOn;
+}
+
 /** The text editor whose editable root contains `element`, as the editor around an embed. */
 export function findTextEditorAround(element: HTMLElement | null) {
     return element?.closest<EditorRootElement>(EDITOR_ROOT_SELECTOR)?.ckeditorInstance;
@@ -263,6 +302,9 @@ export function findTextEditorIn(element: HTMLElement | null) {
  * such as `MarkdownEmbed`.
  */
 export const CaretNavigationContext = createContext<RefObject<HTMLElement | null> | null>(null);
+
+/** The content of a read-only text note, as `ReadOnlyText` renders it. */
+const READ_ONLY_TEXT_SELECTOR = ".note-detail-readonly-text-content";
 
 const EDITABLE_FLAG_TOOLS: ContentEmbedToolProvider = {
     hasEditableFlag: true,
