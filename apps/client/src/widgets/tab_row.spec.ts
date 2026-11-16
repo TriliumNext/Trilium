@@ -205,4 +205,23 @@ describe("TabRowWidget tab restore", () => {
         expect(updateTab).toHaveBeenCalledTimes(2);
         expect(widget.getTabById("second").attr("active")).toBe("");
     });
+
+    it("adds no second tab for one it heard of before showing the existing tabs", async () => {
+        const mainContexts = [ { ntxId: "first" }, { ntxId: "second" } ];
+        appContext.tabManager = {
+            tabsRestored: true,
+            getMainNoteContexts: () => mainContexts,
+            getActiveContext: () => mainContexts[0]
+        } as unknown as TabManager;
+        const widget = new TabRowWidget();
+        widget.render();
+        vi.spyOn(widget, "updateTab").mockResolvedValue(undefined);
+        vi.spyOn(widget, "refreshTab").mockImplementation(() => {});
+        widget.newNoteContextCreatedEvent({ noteContext: mainContexts[0] as unknown as NoteContext });
+
+        await widget.showExistingTabs();
+
+        expect(widget.$widget.find(".note-tab").toArray().map((tab) => tab.getAttribute("data-ntx-id")))
+            .toEqual([ "first", "second" ]);
+    });
 });

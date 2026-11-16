@@ -759,12 +759,14 @@ export default class TabRowWidget extends BasicWidget {
 
     /**
      * Adds a tab for each tab the tab manager restored before this tab row was rendered, as when the
-     * layout moves the tab bar, and marks the active one.
+     * layout moves the tab bar, and marks the active one. A tab the row already shows is skipped: the
+     * row receives `newNoteContextCreated` from its creation, which can come before `TabBar`'s
+     * effect calls this.
      */
     async showExistingTabs() {
         this.$widget.addClass("tabs-restoring");
         for (const noteContext of appContext.tabManager.getMainNoteContexts()) {
-            if (noteContext.ntxId) {
+            if (noteContext.ntxId && !this.getTabById(noteContext.ntxId).length) {
                 this.addTab(noteContext.ntxId);
             }
         }
