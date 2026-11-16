@@ -1,11 +1,11 @@
 import { LINK_PREVIEW_DATA_ATTRIBUTES } from '@triliumnext/commons';
-import { safeLinkPreviewHref } from '@triliumnext/commons/src/lib/link_embed.js';
+import { safeLinkPreviewHref } from "@triliumnext/commons/src/lib/link_embed.js";
 import {
     Plugin, toWidget, type ViewContainerElement, type ViewDowncastWriter, type ViewElement,
     viewToModelPositionOutsideModelElement, Widget
 } from 'ckeditor5';
-import { CLIPBOARD_PLAIN_TEXT_PROPERTY } from '../clipboard_plain_text_indent.js';
-import ColoredWidgets from '../colored_widgets.js';
+import { CLIPBOARD_PLAIN_TEXT_PROPERTY } from "../clipboard_plain_text_indent.js";
+import ColoredWidgets from "../colored_widgets.js";
 import ContentEmbed from '../content_embed/content_embed.js';
 import { preventCKEditorHandling, restoreRendererFocusOnInput } from '../widget_utils.js';
 import {
@@ -33,8 +33,8 @@ export default class LinkEmbedEditing extends Plugin {
         this._defineSchema();
         this._defineConverters();
         const coloredWidgets = this.editor.plugins.get(ColoredWidgets);
-        coloredWidgets.register('linkEmbed');
-        coloredWidgets.register('linkMention');
+        coloredWidgets.register("linkEmbed");
+        coloredWidgets.register("linkMention");
 
         // linkMention is an empty inline object whose editing view holds a UIElement child, so a
         // view position inside the rendered widget would otherwise resolve to a degenerate model
@@ -199,10 +199,10 @@ function addClipboardLink(
     wrapper: ViewContainerElement,
     modelElement: { getAttribute(key: string): unknown }
 ) {
-    const url = modelElement.getAttribute('url') as string;
-    const title = modelElement.getAttribute('title') as string | undefined;
+    const url = modelElement.getAttribute("url") as string;
+    const title = modelElement.getAttribute("title") as string | undefined;
     const link = writer.createContainerElement(
-        'a', { href: safeLinkPreviewHref(url) }, writer.createText(title || url)
+        "a", { href: safeLinkPreviewHref(url) }, writer.createText(title || url)
     );
     writer.insert(writer.createPositionAt(wrapper, 0), link);
     writer.setCustomProperty(CLIPBOARD_PLAIN_TEXT_PROPERTY, url, wrapper);

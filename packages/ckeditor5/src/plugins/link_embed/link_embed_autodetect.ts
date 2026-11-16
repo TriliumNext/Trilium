@@ -1,6 +1,6 @@
 import { chooseLinkPreviewKind, isUrlAloneInBlock, type BlockChildLike } from '@triliumnext/commons';
 import { Plugin } from 'ckeditor5';
-import { copyColors } from '../colored_widgets.js';
+import { copyColors } from "../colored_widgets.js";
 import {
     createLinkPreview, EMBEDDABLE_URL_REGEX, getLinkEmbedHost, getMetadataAttributes
 } from './link_embed_commands.js';
@@ -143,7 +143,7 @@ export default class AutoLinkToMention extends Plugin {
                             // first: the fetch was async and the caret may be words away by now, so
                             // the replacement must not drag it back to the mention.
                             const urlRange = writer.createRangeOn(item.item);
-                            const mention = writer.createElement('linkMention', attributes);
+                            const mention = writer.createElement("linkMention", attributes);
                             copyColors(writer, item.item, mention);
                             editor.model.insertContent(mention, urlRange);
                             return;

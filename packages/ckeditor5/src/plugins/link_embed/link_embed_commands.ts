@@ -6,7 +6,7 @@ import {
     type ModelTextProxy, type ModelWriter
 } from 'ckeditor5';
 
-import { copyColors } from '../colored_widgets.js';
+import { copyColors } from "../colored_widgets.js";
 import { getCaption, getCaptionedEmbed, isContentEmbed } from '../content_embed/content_embed.js';
 import {
     createChangedMediaEmbed, createMediaEmbed, isMediaEmbed
@@ -357,7 +357,7 @@ async function replaceLinkWithPreview(
 
         model.change(writer => {
             const link = Array.from(currentRange.getItems()).find((item) =>
-                item.is('$textProxy') && item.getAttribute('linkHref') === href);
+                item.is("$textProxy") && item.getAttribute("linkHref") === href);
             if (!link) return;
 
             const element = createLinkPreview(writer, mode,

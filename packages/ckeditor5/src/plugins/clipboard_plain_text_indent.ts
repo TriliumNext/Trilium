@@ -89,7 +89,7 @@ export function viewToIndentedPlainText(editor: Editor, fragment: ViewDocumentFr
     const view = editor.editing.view;
     const writer = new UpcastWriter(view.document);
     const offset = indentOffset(editor);
-    const replacements = replaceWithPlainText(view, writer, fragment);
+    const restores = replaceWithPlainText(view, writer, fragment);
 
     const insertions: { parent: ViewElement; index: number; tabs: string }[] = [];
     for (const { item } of view.createRangeIn(fragment)) {
@@ -126,34 +126,48 @@ export function viewToIndentedPlainText(editor: Editor, fragment: ViewDocumentFr
         for (const text of inserted) {
             writer.remove(text);
         }
-        for (const { element, replacement } of replacements.reverse()) {
-            writer.replace(replacement, element);
+        for (const restore of restores.reverse()) {
+            restore();
         }
     }
 }
 
 /**
- * Replaces each element in `fragment` that carries {@link CLIPBOARD_PLAIN_TEXT_PROPERTY} with an
- * inline element that holds only that text, and returns the pairs to swap back.
+ * Writes the text of each element in `fragment` that carries {@link CLIPBOARD_PLAIN_TEXT_PROPERTY}
+ * in place of its content, and returns the functions that undo it. A block element keeps its
+ * element, so that `viewToPlainText()` still separates it from its siblings. An inline element
+ * becomes a `span`, which `viewToPlainText()` separates from nothing.
  */
 function replaceWithPlainText(
     view: EditingView, writer: UpcastWriter, fragment: ViewDocumentFragment
 ) {
-    const replacements: { element: ViewElement; replacement: ViewElement }[] = [];
+    const restores: (() => void)[] = [];
     for (const item of Array.from(view.createRangeIn(fragment).getItems())) {
         if (!item.is("element")) {
             continue;
         }
 
         const plainText = item.getCustomProperty(CLIPBOARD_PLAIN_TEXT_PROPERTY);
-        if (typeof plainText === "string") {
-            const replacement = writer.createElement("span", null, writer.createText(plainText));
+        if (typeof plainText !== "string") {
+            continue;
+        }
+
+        const text = writer.createText(plainText);
+        if (view.domConverter.blockElements.includes(item.name)) {
+            const children = writer.removeChildren(0, item.childCount, item);
+            writer.appendChild(text, item);
+            restores.push(() => {
+                writer.remove(text);
+                writer.appendChild(children, item);
+            });
+        } else {
+            const replacement = writer.createElement("span", null, text);
             writer.replace(item, replacement);
-            replacements.push({ element: item, replacement });
+            restores.push(() => writer.replace(replacement, item));
         }
     }
 
-    return replacements;
+    return restores;
 }
 
 /** The width of one indent level, from the `indentBlock` config `IndentBlock` defaults to `40px`. */

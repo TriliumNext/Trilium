@@ -114,12 +114,13 @@ describe("ClipboardPlainTextIndent", () => {
                 writer.createEmptyElement("br"), writer.createText("Next")
             ]),
             preview("section"),
+            preview("section"),
             writer.createContainerElement("p", {}, [ writer.createText("End") ])
         ]);
         const before = editor.data.processor.toData(content);
 
         expect(viewToIndentedPlainText(editor, content))
-            .toBe("\tSee https://e.com/ now\n\tNext\n\nhttps://e.com/\n\nEnd");
+            .toBe("\tSee https://e.com/ now\n\tNext\n\nhttps://e.com/\n\nhttps://e.com/\n\nEnd");
         expect(editor.data.processor.toData(content)).toBe(before);
     });
 
