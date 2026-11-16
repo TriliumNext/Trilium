@@ -177,10 +177,11 @@ describe("handing a tab over to a window of its own", () => {
         split.notePath = "root/bbbbbbbbbbbb";
         const triggerCommand = vi.spyOn(tm, "triggerCommand").mockReturnValue(undefined);
 
-        await tm.moveTabToNewWindowCommand({ ntxId: main.ntxId ?? "" });
+        await tm.moveTabToNewWindowCommand({ ntxId: main.ntxId ?? "", windowPosition: { x: 40, y: 60 } });
 
         expect(triggerCommand).toHaveBeenCalledWith("openInWindow", expect.objectContaining({
             notePath: "root/aaaaaaaaaaaa",
+            windowPosition: { x: 40, y: 60 },
             splits: [ expect.objectContaining({ notePath: "root/bbbbbbbbbbbb" }) ]
         }));
         // the tab left with its split, leaving the neighbouring tab behind

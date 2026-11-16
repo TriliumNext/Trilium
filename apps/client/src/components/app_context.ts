@@ -76,6 +76,13 @@ export interface NoteCommandData extends CommandData {
     splits?: HashPane[] | null;
     /** Index into `[main pane, ...splits]` of the pane to focus. Defaults to the main pane. */
     activeSplit?: number;
+    /** Screen position, in CSS pixels, of the new window's top-left corner. Honoured only by `openInWindow`. */
+    windowPosition?: WindowPosition;
+}
+
+export interface WindowPosition {
+    x: number;
+    y: number;
 }
 
 /** The note a quick-edit popup opens, and how. */
@@ -296,7 +303,7 @@ export type CommandMappings = {
     pinTab: CommandData;
     unpinTab: CommandData;
     reopenLastTab: CommandData;
-    moveTabToNewWindow: CommandData;
+    moveTabToNewWindow: CommandData & { windowPosition?: WindowPosition };
     copyTabToNewWindow: CommandData;
     closeActiveTab: CommandData & {
         $el: JQuery<HTMLElement>;

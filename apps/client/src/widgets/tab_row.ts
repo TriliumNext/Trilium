@@ -1,7 +1,7 @@
 import type { Tooltip } from "bootstrap";
 import Draggabilly, { type MoveVector } from "draggabilly";
 
-import appContext, { type CommandListenerData, type CommandNames, type EventData } from "../components/app_context.js";
+import appContext, { type CommandListenerData, type CommandNames, type EventData, type WindowPosition } from "../components/app_context.js";
 import type NoteContext from "../components/note_context.js";
 import type { MenuItem } from "../menus/context_menu.js";
 import attributeService from "../services/attributes.js";
@@ -872,7 +872,11 @@ export default class TabRowWidget extends BasicWidget {
                 if (event.pointerType !== "mouse") activate();
             });
 
-            draggabilly.on("dragStart", () => {
+            let grabOffset = { x: 0, y: 0 };
+
+            draggabilly.on("dragStart", (event: unknown, pointer: PointerEvent) => {
+                const tabRect = tabEl.getBoundingClientRect();
+                grabOffset = { x: pointer.clientX - tabRect.left, y: pointer.clientY - tabRect.top };
                 this.isDragging = true;
                 this.draggabillyDragging = draggabilly;
                 tabEl.classList.add("note-tab-is-dragging");
@@ -954,10 +958,30 @@ export default class TabRowWidget extends BasicWidget {
 
                 // pinned tabs stay put — don't trigger the drag-to-new-window tear-off
                 if (Math.abs(moveVector.y) > 100 && !tabEl.hasAttribute("pinned")) {
-                    this.triggerCommand("moveTabToNewWindow", { ntxId: this.getTabId($(tabEl)) });
+                    this.triggerCommand("moveTabToNewWindow", {
+                        ntxId: this.getTabId($(tabEl)),
+                        windowPosition: this.getTornOffWindowPosition(tabEl, pointer, grabOffset)
+                    });
                 }
             });
         });
+    }
+
+    /**
+     * Where a window torn off by dragging `tabEl` goes, so that its tab, which becomes the first one,
+     * sits under the pointer at the spot the tab was grabbed. The new window's interior is laid out
+     * like this one's, so the first tab slot and the window frame are measured here.
+     */
+    getTornOffWindowPosition(tabEl: HTMLElement, pointer: PointerEvent, grabOffset: { x: number; y: number }): WindowPosition {
+        const firstSlotLeft = this.$tabContainer[0]?.getBoundingClientRect().left ?? 0;
+        const tabTop = tabEl.getBoundingClientRect().top;
+        const frameLeft = Math.max(0, (window.outerWidth - window.innerWidth) / 2);
+        const frameTop = Math.max(0, window.outerHeight - window.innerHeight - frameLeft);
+
+        return {
+            x: Math.round(pointer.screenX - frameLeft - firstSlotLeft - grabOffset.x),
+            y: Math.round(pointer.screenY - frameTop - tabTop - grabOffset.y)
+        };
     }
 
     animateTabMove(tabEl: HTMLElement, originIndex: number, destinationIndex: number) {

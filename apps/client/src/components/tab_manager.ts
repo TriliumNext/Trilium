@@ -10,7 +10,7 @@ import { calculateHash, getNoteIdFromUrl, parseNavigationStateFromUrl } from "..
 import NoteContext from "./note_context.js";
 import appContext from "./app_context.js";
 import { partitionPinnedFirst } from "../services/tab_pinning.js";
-import type { EventData, NoteCommandData } from "./app_context.js";
+import type { EventData, NoteCommandData, WindowPosition } from "./app_context.js";
 import type FNote from "../entities/fnote.js";
 
 /** Where a newly created tab is inserted in the row: appended to the end, or right after the active tab. */
@@ -861,12 +861,12 @@ export default class TabManager extends Component {
         await this.removeNoteContext(ntxId);
     }
 
-    async moveTabToNewWindowCommand({ ntxId }: { ntxId: string }) {
+    async moveTabToNewWindowCommand({ ntxId, windowPosition }: { ntxId: string; windowPosition?: WindowPosition }) {
         // capture before removing: closing the tab takes its split panes down with it
         const target = this.captureTabAsWindowTarget(ntxId);
 
         if (target && await this.removeNoteContext(ntxId)) {
-            this.triggerCommand("openInWindow", target);
+            this.triggerCommand("openInWindow", { ...target, windowPosition });
         }
     }
 

@@ -9,7 +9,7 @@ import { armFirstPaintGate, releaseFirstPaint } from "./first_paint_gate.js";
 import { markStartupMetric } from "./startup_metrics.js";
 import { isTriliumAppShellUrl, TRILIUM_APP_BASE_URL } from "./trilium_app_origin.js";
 import { setupWebContentsSecurity } from "./web_contents_security.js";
-import { createWindowStateKeeper } from "./window_state.js";
+import { createWindowStateKeeper, keepInsideWorkArea } from "./window_state.js";
 
 // Preload bundle path. Two layouts:
 //   - Dev: this file lives at apps/desktop/src/services/window.ts, and the
@@ -115,6 +115,7 @@ function getExtraWindowOptions(): BrowserWindowConstructorOptions {
 
 /** Per-window wiring for an extra window, whichever way it was created. */
 function adoptExtraWindow(win: BrowserWindow) {
+    keepInsideWorkArea(win);
     win.setMenuBarVisibility(false);
     armFirstPaintGate(win.webContents);
     revealOnFirstPaint(win);

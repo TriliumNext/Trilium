@@ -220,7 +220,8 @@ vi.mock("electron", () => ({
 
 // Window state persistence has its own suite (window_state.spec.ts).
 vi.mock("./window_state", () => ({
-    createWindowStateKeeper: () => ({ x: 0, y: 0, width: 1200, height: 800, manage: state.windowStateManage })
+    createWindowStateKeeper: () => ({ x: 0, y: 0, width: 1200, height: 800, manage: state.windowStateManage }),
+    keepInsideWorkArea: vi.fn()
 }));
 
 // setupWindowing() installs the WebContents security policy; that behaviour has
