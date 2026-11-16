@@ -314,6 +314,12 @@
           installCommands = ''
             mkdir -p $out/{bin,share/icons/hicolor/512x512/apps,opt/trilium}
             cp --archive apps/desktop/dist/* $out/opt/trilium
+            ${lib.optionalString stdenv.hostPlatform.isLinux ''
+              # Electron links libc++ statically, so nothing in its process provides the
+              # libstdc++ that prebuilt addons (better-sqlite3, sherpa-onnx) link against.
+              find $out/opt/trilium/node_modules -type f \( -name '*.node' -o -name '*.so' \) \
+                -exec patchelf --add-rpath ${lib.getLib stdenv.cc.cc}/lib {} \;
+            ''}
             cp apps/client/src/assets/icon.png $out/share/icons/hicolor/512x512/apps/trilium.png
             makeShellWrapper ${lib.getExe electron} $out/bin/trilium \
               "''${gappsWrapperArgs[@]}" \
