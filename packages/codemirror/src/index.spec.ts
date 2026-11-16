@@ -3,7 +3,7 @@ import { undo } from "@codemirror/commands";
 import { indentUnit } from "@codemirror/language";
 import { EditorSelection, EditorState, StateEffect } from "@codemirror/state";
 import { EditorView, showTooltip, type ViewUpdate } from "@codemirror/view";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 vi.mock("./type_completion/index.js", async (importOriginal) => {
     const original = await importOriginal<typeof import("./type_completion/index.js")>();
@@ -363,6 +363,31 @@ describe("CodeMirror", () => {
             await instance.setVimKeybindings(false);
             await loading;
             expect(getCM(instance)).toBeNull();
+        });
+
+        it("loads the Vim keybindings again after a load that failed", async () => {
+            const { getCM } = await import("@replit/codemirror-vim");
+            // A module that has not loaded them yet, whose first load fails.
+            vi.resetModules();
+            vi.doMock("@replit/codemirror-vim", () => {
+                throw new Error("The download failed.");
+            });
+            onTestFinished(() => vi.doUnmock("@replit/codemirror-vim"));
+            const { default: FreshCodeMirror } = await import("./index.js");
+            const failed = editor = new FreshCodeMirror({ parent: document.createElement("div") });
+            await expect(failed.setVimKeybindings(true)).rejects
+                .toHaveProperty("cause.message", "The download failed.");
+            expect(getCM(failed)).toBeNull();
+            vi.doUnmock("@replit/codemirror-vim");
+
+            // Another editor, as when the note opens again.
+            const other = new FreshCodeMirror({ parent: document.createElement("div") });
+            onTestFinished(() => other.destroy());
+            await other.setVimKeybindings(true);
+            expect(getCM(other)).not.toBeNull();
+
+            await failed.setVimKeybindings(true);
+            expect(getCM(failed)).not.toBeNull();
         });
 
         it("hides the caret of a read-only editor over that of the color theme", async () => {

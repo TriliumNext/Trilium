@@ -437,7 +437,14 @@ export default class CodeMirror extends EditorView {
         if (isEnabled === this.hasVimKeybindings) return;
 
         this.hasVimKeybindings = isEnabled;
-        const extension = isEnabled ? (await loadVim())() : [];
+        let extension: Extension = [];
+        try {
+            extension = isEnabled ? (await loadVim())() : [];
+        } catch (error) {
+            // Lets the next call that turns them on load them again.
+            this.hasVimKeybindings = false;
+            throw error;
+        }
         // A call made while the keybindings load wins over this one.
         if (isEnabled !== this.hasVimKeybindings) return;
 
@@ -753,8 +760,8 @@ export default class CodeMirror extends EditorView {
 let vimLoading: Promise<typeof import("@replit/codemirror-vim").vim> | null = null;
 
 /**
- * Loads the extension of the Vim keybindings on the first call. Vim's `u` and `Ctrl-R` then run
- * the shared history of an editor first.
+ * Loads the extension of the Vim keybindings on the first call, and again after a load that
+ * failed. Vim's `u` and `Ctrl-R` then run the shared history of an editor first.
  */
 function loadVim() {
     vimLoading ??= import("@replit/codemirror-vim").then(({ CodeMirror: VimEditor, vim }) => {
@@ -767,6 +774,9 @@ function loadVim() {
             };
         }
         return vim;
+    }, (error: unknown) => {
+        vimLoading = null;
+        throw error;
     });
     return vimLoading;
 }
