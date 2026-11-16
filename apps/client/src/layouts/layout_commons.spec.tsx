@@ -19,7 +19,8 @@ describe("Modals", () => {
     it("shows the call to action once the layout has rendered, only while one applies", async () => {
         options.load({ theme: "light", seenCallToActions: "[]", backendScriptingEnabled: "true" });
         act(() => { renderInto(<Modals />); });
-        await vi.waitFor(() => expect(document.querySelector(".modal.call-to-action")).not.toBeNull());
+        // Bootstrap's `_showElement()` puts a detached dialog back into the body, so wait for it to finish.
+        await vi.waitFor(() => expect(document.querySelector(".modal.call-to-action.show")).not.toBeNull());
 
         document.body.innerHTML = "";
         options.load({ theme: "light", seenCallToActions: JSON.stringify([ "background_effects", "scripting_disabled", "next_theme" ]) });
