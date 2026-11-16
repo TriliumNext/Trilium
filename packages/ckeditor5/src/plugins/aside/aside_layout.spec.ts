@@ -1,3 +1,4 @@
+import "../../theme/table_scroll.css";
 import "../../theme/tables.css";
 import "../../theme/todo_lists.css";
 
@@ -6,6 +7,7 @@ import editorStylesheetUrl from "ckeditor5/ckeditor5.css?url";
 import { beforeAll, describe, expect, it, onTestFinished } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
+import { applyTableScroll } from "../table_scroll_read_only.js";
 import Aside from "./aside.js";
 
 const WIDTH = 800;
@@ -154,6 +156,48 @@ describe("aside styles", () => {
         const cell = measure(container, "td > div");
         const inner = measure(container, "td > figure.table");
         expect([ inner.left, inner.right ]).toEqual([ cell.left, cell.right ]);
+    });
+
+    it("sets a scrollable table of the read-only view in the width beside a wrapped aside", () => {
+        const table = (style = "") => `<figure class="table"${style}><table><tbody><tr>` +
+            "<td>a</td><td>b</td></tr></tbody></table></figure>";
+        const render = (position: string, width = WIDTH) => {
+            const container = renderContent(`<aside data-position="${position}" ` +
+                `style="--aside-width:16em;">${"<p>A</p>".repeat(12)}</aside>` +
+                `${table()}${table(" style=\"width:20%;\"")}`, width);
+            applyTableScroll(container);
+            return container;
+        };
+
+        for (const position of [ "wrap-left", "wrap-right" ]) {
+            const container = render(position);
+            const aside = measure(container, "aside");
+            const style = getComputedStyle(aside.element);
+            const free = position === "wrap-left"
+                ? [ aside.right + parseFloat(style.marginRight), WIDTH ]
+                : [ 0, aside.left - parseFloat(style.marginLeft) ];
+            const unsized = measure(container, "figure:nth-of-type(1)");
+            const sized = measure(container, "figure:nth-of-type(2)");
+
+            expect(unsized.element.style.getPropertyValue("--table-width")).not.toBe("");
+            expect([ unsized.left, unsized.right ].map(Math.round), position)
+                .toEqual(free.map(Math.round));
+            expect(unsized.top, position).toBeLessThan(aside.bottom);
+            // A saved width narrower than the free width stays, centered in it.
+            const [ start = NaN, end = NaN ] = free;
+            expect(Math.round(sized.right - sized.left), position).toBe(WIDTH / 5);
+            expect(Math.abs((sized.left - start) - (end - sized.right)), position)
+                .toBeLessThan(1);
+            expect(sized.top, position).toBeLessThan(aside.bottom);
+        }
+
+        // A free width narrower than 200px leaves the table below the aside, at its full width.
+        const narrow = render("wrap-right", 400);
+        const aside = measure(narrow, "aside");
+        const unsized = measure(narrow, "figure:nth-of-type(1)");
+        expect(aside.left).toBeLessThan(200);
+        expect([ unsized.left, unsized.right ]).toEqual([ 0, 400 ]);
+        expect(unsized.top).toBeGreaterThanOrEqual(aside.bottom);
     });
 
     it("moves a heading below a wrapped aside that leaves no room for its longest word", () => {

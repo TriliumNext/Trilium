@@ -3,6 +3,7 @@
     flex-direction: column;
     /* Outranks the width that the editor saves on the figure. */
     width: var(--table-width) !important;
+    min-width: min(var(--table-width), 100%, 200px);
     max-width: 100%;
     overflow: auto hidden;
 
@@ -24,6 +25,22 @@
         > table {
             width: 100%;
         }
+    }
+}
+
+@supports (width: stretch) {
+    .ck-content figure.table:not(.layout-table, .ck-widget)[style*="--table-width"] {
+        max-width: stretch;
+    }
+}
+
+/* Without `stretch`, a flex container with no width takes the width beside a wrapped box. */
+@supports not (width: stretch) {
+    .ck-content :is([data-position^="wrap-"], .image-style-align-left, .image-style-align-right,
+        .image-style-side) ~ figure.table:not(.layout-table, .ck-widget, .table-style-align-left,
+        .table-style-align-right)[style*="--table-width"] {
+        width: auto !important;
+        max-width: var(--table-width);
     }
 }
 

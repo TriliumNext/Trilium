@@ -1578,7 +1578,6 @@ figure.captioned-content-embed {
     clear: both;
 }
 
-/* As a code block does, an extended one takes the width beside a wrapped box. */
 .include-note.extended-code-block:not([data-position^="wrap-"]) {
     clear: none;
     min-width: min(100%, 200px);
