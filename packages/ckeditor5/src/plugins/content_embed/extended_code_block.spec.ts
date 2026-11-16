@@ -111,27 +111,32 @@ describe("ExtendedCodeBlock", () => {
             editor.model.schema.register("placeholder", { inheritAllFrom: "$inlineObject" });
             editor.conversion.elementToElement({ model: "placeholder", view: "span" });
             const scroll = vi.spyOn(editor.editing.view, "scrollToTheSelection");
-            setModelData(editor.model, `<paragraph alignment="right" listIndent="0" listItemId="a"`
-                + ` listType="bulleted">[a<softBreak></softBreak>b<placeholder></placeholder>`
-                + `</paragraph><paragraph>c</paragraph>`
+            const item = (id: string) => `listIndent="0" listItemId="${id}" listType="bulleted"`;
+            setModelData(editor.model, `<paragraph alignment="right" ${item("a")}>`
+                + `[a<softBreak></softBreak>b<placeholder></placeholder></paragraph>`
+                + `<paragraph ${item("a")}>c</paragraph><paragraph ${item("b")}>d</paragraph>`
+                + `<paragraph>e</paragraph>`
                 + `<contentEmbed language="mermaid" source="graph"></contentEmbed>`
-                + `<paragraph>d]</paragraph>`);
+                + `<paragraph>f]</paragraph>`);
             const before = getModelData(editor.model, { withoutSelection: true });
             loadInline.mockClear();
 
             editor.execute("codeBlock");
 
             const box = `boxSize="full" editable="true" hideTitle="true" language="text-plain"`;
-            // A block of a list item stays one, and takes no attribute that an embed cannot have.
+            // Each list item gets one block, which takes no attribute that an embed cannot have.
             expect(getModelData(editor.model)).toBe(
-                `[<contentEmbed ${box} listIndent="0" listItemId="a" listType="bulleted"`
-                + ` source="a\nb\nc"></contentEmbed>]`
+                `[<contentEmbed ${box} ${item("a")} source="a\nb\nc"></contentEmbed>]`
+                + `<contentEmbed ${box} ${item("b")} source="d"></contentEmbed>`
+                + `<contentEmbed ${box} source="e"></contentEmbed>`
                 + `<contentEmbed language="mermaid" source="graph"></contentEmbed>`
-                + `<contentEmbed ${box} source="d"></contentEmbed>`);
+                + `<contentEmbed ${box} source="f"></contentEmbed>`);
             const loads = loadInline.mock.calls.map((call) => [ call[0].getSource(), call[3] ]);
-            expect(loads).toHaveLength(2);
+            expect(loads).toHaveLength(4);
             expect(loads).toContainEqual([ "a\nb\nc", { isFocused: true } ]);
             expect(loads).toContainEqual([ "d", { isFocused: false } ]);
+            expect(loads).toContainEqual([ "e", { isFocused: false } ]);
+            expect(loads).toContainEqual([ "f", { isFocused: false } ]);
             expect(scroll).toHaveBeenCalledOnce();
 
             editor.execute("undo");

@@ -165,12 +165,17 @@ interface CodeBlockOptions {
     forceValue?: boolean;
 }
 
-/** `blocks`, in document order, as the runs of blocks that follow each other in one parent. */
+/**
+ * `blocks`, in document order, as the runs of blocks that follow each other in one parent and in
+ * one list item, or outside a list.
+ */
 function getSiblingRuns(blocks: ModelElement[]) {
     const runs: ModelElement[][] = [];
     for (const block of blocks) {
         const run = runs.at(-1);
-        if (run && run[run.length - 1].nextSibling === block) {
+        const last = run?.at(-1);
+        if (run && last?.nextSibling === block
+            && last.getAttribute("listItemId") === block.getAttribute("listItemId")) {
             run.push(block);
         } else {
             runs.push([ block ]);
