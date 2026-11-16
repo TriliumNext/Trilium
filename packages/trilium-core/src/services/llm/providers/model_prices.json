@@ -10,6 +10,11 @@
       "output": 50,
       "ctx": 1000000
     },
+    "claude-fable-5-2": {
+      "input": 8,
+      "output": 40,
+      "ctx": 1000000
+    },
     "claude-haiku-4-5": {
       "input": 1,
       "output": 5,
@@ -33,6 +38,11 @@
     "claude-mythos-5-1": {
       "input": 10,
       "output": 50,
+      "ctx": 1000000
+    },
+    "claude-mythos-5-2": {
+      "input": 8,
+      "output": 40,
       "ctx": 1000000
     },
     "claude-mythos-preview": {
