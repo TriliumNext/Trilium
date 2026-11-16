@@ -30,7 +30,7 @@
     "node-html-parser": "9.0.7",
     "officeparser": "8.7.1",
     "sanitize-filename": "1.6.5",
-    "sanitize-html": "2.18.1",
+    "sanitize-html": "2.18.2",
     "sax": "1.6.1",
     "sucrase": "3.35.1",
     "turnish": "1.13.0",
