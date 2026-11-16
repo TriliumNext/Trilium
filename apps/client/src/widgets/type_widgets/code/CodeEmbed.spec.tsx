@@ -873,11 +873,13 @@ describe("InlineCodeEmbed", () => {
         expect([ hasVimKeys(view), hasVimKeys(includedView) ]).toEqual([ false, false ]);
 
         act(() => vim.setMode("normal"));
-        expect([ hasVimKeys(view), hasVimKeys(includedView) ]).toEqual([ true, true ]);
+        await vi.waitFor(() =>
+            expect([ hasVimKeys(view), hasVimKeys(includedView) ]).toEqual([ true, true ]));
         const { figure: added } = await mountInline("x", buildEditor(), {
             language: "text-x-python", container: editable
         });
-        expect(hasVimKeys(await findView(added, true))).toBe(true);
+        const addedView = await findView(added, true);
+        await vi.waitFor(() => expect(hasVimKeys(addedView)).toBe(true));
         act(() => vim.setMode(null));
         expect(hasVimKeys(view)).toBe(false);
 

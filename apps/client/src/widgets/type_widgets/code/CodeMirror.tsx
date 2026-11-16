@@ -96,7 +96,7 @@ export default function CodeMirror({
 
     // React to the Vim keybindings.
     useEffect(() => {
-        codeEditorRef.current?.setVimKeybindings(!!extraOpts.vimKeybindings);
+        void codeEditorRef.current?.setVimKeybindings(!!extraOpts.vimKeybindings);
     }, [ extraOpts.vimKeybindings ]);
 
     // React to indent size / style changes.

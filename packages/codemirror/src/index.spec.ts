@@ -3,7 +3,6 @@ import { undo } from "@codemirror/commands";
 import { indentUnit } from "@codemirror/language";
 import { EditorSelection, EditorState, StateEffect } from "@codemirror/state";
 import { EditorView, showTooltip, type ViewUpdate } from "@codemirror/view";
-import { CodeMirror as VimEditor, getCM } from "@replit/codemirror-vim";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("./type_completion/index.js", async (importOriginal) => {
@@ -11,11 +10,20 @@ vi.mock("./type_completion/index.js", async (importOriginal) => {
     return { ...original, buildTypeCompletion: vi.fn(original.buildTypeCompletion) };
 });
 
+const vimModule = vi.hoisted(() => ({ loads: 0 }));
+vi.mock("@replit/codemirror-vim", async (importOriginal) => {
+    vimModule.loads++;
+    return await importOriginal();
+});
+
 import { hostedCompletion } from "./extensions/hosted_completion.js";
 import CodeMirror, {
     type EditorConfig, getThemeById, type HostHistory, SCRIPT_MIME_BACKEND, SharedHistory
 } from "./index.js";
 import { buildTypeCompletion } from "./type_completion/index.js";
+
+/** The loads of `@replit/codemirror-vim` that importing `index.ts` caused. */
+const vimLoadsOnImport = vimModule.loads;
 
 let editor: CodeMirror | undefined;
 
@@ -322,21 +330,39 @@ describe("CodeMirror", () => {
             expect(editor.getText()).toBe("b");
         });
 
-        it("turns the Vim keybindings on and off in place", () => {
-            editor = build({ vimKeybindings: true });
-            const dispatch = vi.spyOn(editor, "dispatch");
-            editor.setVimKeybindings(true);
+        it("loads the Vim keybindings once an editor turns them on", async () => {
+            expect(vimLoadsOnImport).toBe(0);
+            const { getCM } = await import("@replit/codemirror-vim");
+            const instance = editor = build({ vimKeybindings: true });
+            await vi.waitFor(() => expect(getCM(instance)).not.toBeNull());
+        });
+
+        it("turns the Vim keybindings on and off in place", async () => {
+            const instance = editor = build();
+            const { getCM } = await import("@replit/codemirror-vim");
+            await instance.setVimKeybindings(true);
+            const dispatch = vi.spyOn(instance, "dispatch");
+            await instance.setVimKeybindings(true);
             expect(dispatch).not.toHaveBeenCalled();
-            editor.setText("text");
+            instance.setText("text");
 
-            editor.setVimKeybindings(false);
-            expect(getCM(editor)).toBeNull();
-            expect(editor.scrollDOM.classList.contains("cm-vimMode")).toBe(false);
+            await instance.setVimKeybindings(false);
+            expect(getCM(instance)).toBeNull();
+            expect(instance.scrollDOM.classList.contains("cm-vimMode")).toBe(false);
 
-            editor.setVimKeybindings(true);
-            expect(getCM(editor)).not.toBeNull();
-            expect(editor.scrollDOM.classList.contains("cm-vimMode")).toBe(true);
-            expect(editor.getText()).toBe("text");
+            await instance.setVimKeybindings(true);
+            expect(getCM(instance)).not.toBeNull();
+            expect(instance.scrollDOM.classList.contains("cm-vimMode")).toBe(true);
+            expect(instance.getText()).toBe("text");
+        });
+
+        it("keeps the Vim keybindings off when they are turned off while loading", async () => {
+            const instance = editor = build();
+            const { getCM } = await import("@replit/codemirror-vim");
+            const loading = instance.setVimKeybindings(true);
+            await instance.setVimKeybindings(false);
+            await loading;
+            expect(getCM(instance)).toBeNull();
         });
 
         it("hides the caret of a read-only editor over that of the color theme", async () => {
@@ -538,25 +564,27 @@ describe("CodeMirror", () => {
             expect(host.redo).toHaveBeenCalledTimes(3);
         });
 
-        it("runs the shared history from Vim, and the editor's own without one", () => {
-            editor = build({ vimKeybindings: true });
-            const cm = getCM(editor);
+        it("runs the shared history from Vim, and the editor's own without one", async () => {
+            const instance = editor = build();
+            await instance.setVimKeybindings(true);
+            const { CodeMirror: VimEditor, getCM } = await import("@replit/codemirror-vim");
+            const cm = getCM(instance);
             expect(cm).not.toBeNull();
             if (!cm) return;
-            editor.setText("typed");
+            instance.setText("typed");
 
             VimEditor.commands.undo(cm);
-            expect(editor.getText()).toBe("");
+            expect(instance.getText()).toBe("");
             VimEditor.commands.redo(cm);
-            expect(editor.getText()).toBe("typed");
+            expect(instance.getText()).toBe("typed");
 
             const { host, history } = createSharedHistory();
-            editor.setSharedHistory(history);
+            instance.setSharedHistory(history);
             VimEditor.commands.undo(cm);
             VimEditor.commands.redo(cm);
             expect(host.undo).toHaveBeenCalledOnce();
             expect(host.redo).toHaveBeenCalledOnce();
-            expect(editor.getText()).toBe("typed");
+            expect(instance.getText()).toBe("typed");
         });
 
         it("leaves the shared history as it is destroyed, with the document it shows", () => {
