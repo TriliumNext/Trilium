@@ -179,13 +179,14 @@ export function buildClassicToolbar(multilineToolbar: boolean, aiAssistant: bool
                 {
                     ...buildInsertGroup(),
                     items: [
-                        "bookmark", "internallink", "childNote", "contentEmbed",
-                        "|",
                         "collapsible", "tabs", "multicolumnLayout", ...getExtendedCodeBlockItems(),
                         "aside", "math", "drawingCanvas", "mermaid", "insertMedia",
-                        "horizontalLine", "pageBreak", "footnote",
+                        "horizontalLine", "pageBreak",
                         "|",
-                        "dateTime", "specialCharacters", "emoji", "insertIcon"
+                        "bookmark", "footnote", "dateTime",
+                        "specialCharacters", "emoji", "insertIcon",
+                        "|",
+                        "contentEmbed", "childNote"
                     ]
                 },
                 "|",
@@ -258,11 +259,13 @@ export function buildFloatingToolbar(aiAssistant: boolean) {
             {
                 ...buildInsertGroup(),
                 items: [
-                    "bookmark", "internallink", "childNote", "contentEmbed",
-                    "|",
                     "collapsible", "tabs", "multicolumnLayout", ...getExtendedCodeBlockItems(),
                     "aside", "math", "drawingCanvas", "mermaid", "insertMedia",
-                    "horizontalLine", "pageBreak", "footnote", "dateTime"
+                    "horizontalLine", "pageBreak",
+                    "|",
+                    "bookmark", "footnote", "dateTime",
+                    "|",
+                    "contentEmbed", "childNote"
                 ]
             },
             "|",

@@ -56,6 +56,9 @@ describe("CKEditor config", () => {
         // have no natural slot in the floating selection/block toolbar — so exclude them from the
         // fixed-vs-floating parity check.
         const FIXED_ONLY_ITEMS = new Set(["undo", "redo"]);
+        // The selection popup keeps the internal link button beside the link button, whose dialog
+        // also inserts links to notes.
+        const FLOATING_ONLY_ITEMS = new Set(["internallink"]);
 
         const classicToolbarConfig = buildClassicToolbar(false, true);
         const classicToolbarItems = new Set(
@@ -63,7 +66,8 @@ describe("CKEditor config", () => {
         );
 
         const floatingToolbarConfig = buildFloatingToolbar(true);
-        const floatingToolbarItems = traverseItems(floatingToolbarConfig.toolbar);
+        const floatingToolbarItems = traverseItems(floatingToolbarConfig.toolbar)
+            .filter((item) => !FLOATING_ONLY_ITEMS.has(item));
         const floatingBlockToolbarItems = traverseItems({ items: floatingToolbarConfig.blockToolbar });
         const floatingToolbarAllItems = new Set([ ...floatingToolbarItems, ...floatingBlockToolbarItems ]);
 
@@ -220,31 +224,34 @@ describe("the insert menus", () => {
         return group?.items ?? [];
     }
 
-    it("list the new child note right above the included note", () => {
+    it("end with the included note and the new child note, in a group of their own", () => {
         const classic = buildClassicToolbar(false, true).toolbar.items;
         const floating = buildFloatingToolbar(true).blockToolbar;
         for (const items of [ classic, floating ]) {
-            const insert = insertItems(items);
-            expect(insert).toContain("childNote");
-            expect(insert.indexOf("contentEmbed")).toBe(insert.indexOf("childNote") + 1);
+            expect(insertItems(items).slice(-3))
+                .toStrictEqual([ "|", "contentEmbed", "childNote" ]);
         }
     });
 
-    it("list the footnote right below the page break", () => {
+    it("open the group of the date and time with the anchor, then the footnote", () => {
         const classic = buildClassicToolbar(false, true).toolbar.items;
         const floating = buildFloatingToolbar(true).blockToolbar;
         for (const items of [ classic, floating ]) {
             const insert = insertItems(items);
-            expect(insert.indexOf("footnote")).toBe(insert.indexOf("pageBreak") + 1);
+            const index = insert.indexOf("bookmark");
+            expect(insert.slice(index - 1, index + 3))
+                .toStrictEqual([ "|", "bookmark", "footnote", "dateTime" ]);
             expect(items).not.toContain("footnote");
         }
     });
 
-    it("leave the link to the bar, right ahead of the attach menu", () => {
+    it("leave links to the link button on the bar, right ahead of the attach menu", () => {
         const classic = buildClassicToolbar(false, true).toolbar.items;
         const floating = buildFloatingToolbar(true).blockToolbar;
         for (const items of [ classic, floating ]) {
-            expect(insertItems(items)).not.toContain("link");
+            const insert = insertItems(items);
+            expect(insert).not.toContain("link");
+            expect(insert).not.toContain("internallink");
             expect(items.indexOf("attachMenu")).toBe(items.indexOf("link") + 1);
         }
     });
@@ -344,7 +351,6 @@ describe("buildMobileToolbar", () => {
         const MOBILE_VARIANTS: Record<string, string> = {
             insertTable: "insertTableMenu",
             link: "addLink",
-            internallink: "addLink",
             heading: "blockType",
             bulletedList: "blockType",
             numberedList: "blockType",
