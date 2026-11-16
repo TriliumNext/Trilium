@@ -2814,7 +2814,8 @@
     "open_externally": "用外部程序打开",
     "mermaid_diagram_error": "Mermaid 图表渲染失败：{{error}}",
     "office_rendering": "正在渲染预览…",
-    "office_render_error": "此文档无法渲染为预览。您仍可下载它或从外部打开。"
+    "office_render_error": "此文档无法渲染为预览。您仍可下载它或从外部打开。",
+    "office_too_large": "此文档过大，无法预览。你仍可以下载它，或在外部打开。"
   },
   "modal": {
     "close": "关闭",
@@ -3753,7 +3754,8 @@
       "collapsible_details": "详细内容",
       "table_column": "第{{number}}列",
       "tab_title": "标签页 {{number}}",
-      "tab_content": "内容"
+      "tab_content": "内容",
+      "aside": "旁注"
     },
     "page_break": "插入分页符（用于打印）",
     "table": "插入表格",
@@ -3775,9 +3777,11 @@
       "caution": "注意",
       "warning": "警告",
       "todo": "任务：{{title}}",
-      "tabs": "标签页"
+      "tabs": "标签页",
+      "aside": "旁注"
     },
-    "tabs": "插入带标题的标签页，一次显示一个面板"
+    "tabs": "插入带标题的标签页，一次显示一个面板",
+    "aside": "插入一个正文环绕排布的文本框"
   },
   "mobile_note_navigator": {
     "back": "返回上一级",
@@ -4359,7 +4363,13 @@
       "next-previous-suggestion": "下一个、上一个建议",
       "run-the-command": "运行命令",
       "earlier-commands-or-suggestions-after-typing": "更早的命令，或输入后的建议",
-      "commands": "命令"
+      "commands": "命令",
+      "aside": "旁注",
+      "type-the-content-of-the-aside": "输入旁注内容",
+      "remove-aside": "移除旁注",
+      "aside-toolbar": "旁注工具栏",
+      "insert-a-box-of-text-that-the-main-text-wraps-around": "插入一个正文环绕排布的文本框。",
+      "background-color": "背景颜色"
     },
     "toolbar-groups": {
       "text-formatting": "文本格式",
@@ -5317,7 +5327,8 @@
       "audio": "音频",
       "link_preview": "链接预览",
       "embed": "嵌入",
-      "block": "块"
+      "block": "块",
+      "aside": "旁注"
     },
     "collapse_section": "折叠区块",
     "expand_section": "展开区块"
