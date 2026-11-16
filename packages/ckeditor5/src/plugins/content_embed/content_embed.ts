@@ -2197,6 +2197,16 @@ export interface ContentEmbedHost {
 	 */
 	inlineLanguages: string[];
 	/**
+	 * Whether extended code blocks replace the code blocks of the editor: every `<pre><code>`
+	 * loads as one, and the `codeBlock` command makes one.
+	 */
+	isCodeBlockExtended: boolean;
+	/**
+	 * The language that `code` is written in, as a code block language, or `null` when it reads
+	 * as no language. The editor sets it on a code block saved as `MIME_TYPE_AUTO`.
+	 */
+	detectLanguage( code: string ): Promise<string | null>;
+	/**
 	 * Renders the `source` of an inline language into `container`, outside an embed, as the AI
 	 * assistant previews a response.
 	 */

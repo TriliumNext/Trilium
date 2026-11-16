@@ -104,19 +104,24 @@ describe("the Insert group", () => {
 describe("the extended code block", () => {
     afterEach(() => experimentalState.enabled.clear());
 
-    it("follows the columns in the Insert group of every toolbar, while its feature is on", () => {
-        experimentalState.enabled.add("extendedCodeBlocks");
-        for (const items of getInsertGroups()) {
-            const index = items.indexOf("multicolumnLayout");
-            expect(items.slice(index, index + 2))
-                .toEqual([ "multicolumnLayout", "extendedCodeBlock" ]);
-        }
+    it("has no button of its own: the code block button makes one while its feature is on", () => {
+        const getToolbars = () => [
+            buildClassicToolbar(false, true).toolbar.items,
+            buildFloatingToolbar(true).blockToolbar
+        ];
+        const before = JSON.stringify([ getToolbars(), getInsertGroups() ]);
 
-        experimentalState.enabled.clear();
+        experimentalState.enabled.add("extendedCodeBlocks");
+        expect(JSON.stringify([ getToolbars(), getInsertGroups() ])).toBe(before);
+        for (const items of getToolbars()) {
+            expect(items).toContain("codeBlock");
+        }
         for (const items of getInsertGroups()) {
             expect(items).toContain("multicolumnLayout");
             expect(items).not.toContain("extendedCodeBlock");
         }
+        // The mobile toolbar offers the code block in its Insert group.
+        expect(getInsertGroups()[2]).toContain("codeBlock");
     });
 });
 

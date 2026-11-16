@@ -1,5 +1,7 @@
 import type { MimeType } from "@triliumnext/commons";
-import { shouldSyntaxHighlight } from "@triliumnext/commons/src/lib/mime_type.js";
+import {
+    normalizeMimeTypeForCKEditor, shouldSyntaxHighlight
+} from "@triliumnext/commons/src/lib/mime_type.js";
 // highlight.js is heavy and this module is reachable from the startup graph (note tooltips →
 // content renderer), so the library itself is only imported dynamically when highlighting runs.
 import type { AutoHighlightResult, HighlightResult, Theme } from "@triliumnext/highlightjs";
@@ -196,6 +198,24 @@ export async function ensureMimeTypesForHighlighting(mimeTypeHint?: string) {
     if (!mimeTypeHint) {
         allMimeTypesLoaded = true;
     }
+}
+
+/**
+ * The language that highlight.js reads `code` as, among those that a code block of a text note
+ * offers, as a CKEditor code block language such as `text-x-python`. `null` for code that reads
+ * as no language, and for code too long to highlight.
+ */
+export async function detectCodeLanguage(code: string): Promise<string | null> {
+    if (!code.trim() || !shouldSyntaxHighlight(code)) {
+        return null;
+    }
+
+    const mimeTypes = mime_types.getCodeBlockMimeTypes();
+    const { ensureMimeTypes, highlightAuto } = await import("@triliumnext/highlightjs");
+    await ensureMimeTypes(mimeTypes);
+    // Languages that share a grammar tie, and the first of them in the list wins.
+    const languages = mimeTypes.map((mimeType) => normalizeMimeTypeForCKEditor(mimeType.mime));
+    return highlightAuto(code, languages).language ?? null;
 }
 
 export async function loadHighlightingTheme(themeName: string) {

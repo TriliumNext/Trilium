@@ -130,6 +130,20 @@ describe("mime_types service", () => {
             .toEqual([ "text/plain", "text/css", "text/x-python" ]);
     });
 
+    it("getCodeBlockMimeTypes leaves out the Trilium script variants of JavaScript", () => {
+        const enabled = [
+            "text/javascript", "application/javascript;env=backend",
+            "application/javascript;env=frontend", "text/css"
+        ];
+        options.getJson = vi.fn(() => enabled) as typeof options.getJson;
+        options.is = vi.fn(() => false) as typeof options.is;
+        mimeTypesService.loadMimeTypes();
+
+        expect(mimeTypesService.getEnabledMimeTypes()).toHaveLength(5);
+        expect(mimeTypesService.getCodeBlockMimeTypes().map((mt) => mt.mime))
+            .toEqual([ "text/plain", "text/javascript", "text/css" ]);
+    });
+
     it("re-exports MIME_TYPE_AUTO and the public helpers", () => {
         expect(mimeTypesService.MIME_TYPE_AUTO).toBe(MIME_TYPE_AUTO);
         expect(typeof mimeTypesService.getMimeTypes).toBe("function");

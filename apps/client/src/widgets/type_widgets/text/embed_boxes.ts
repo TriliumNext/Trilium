@@ -6,13 +6,16 @@ import {
     getLinkPreviewPlayer, getVideoAspectRatio, readLinkPreviewData, readMediaEmbedBox,
     VIDEO_ASPECT_RATIO_PROPERTY
 } from "@triliumnext/commons/src/lib/link_embed_markup.js";
+import { MIME_TYPE_AUTO } from "@triliumnext/commons/src/lib/mime_type.js";
 import clsx from "clsx";
 
 import {
     applyInlineMermaid, emptyUnknownEmbeds, loadReferenceLink, replaceWithEmbedBox,
     replaceWithReferenceLink, rewriteMermaidDiagramsInContainer
 } from "../../../services/content_renderer_text";
+import { isExperimentalFeatureEnabled } from "../../../services/experimental_features";
 import { getSourceEmbedTypeByLanguage } from "../../../services/source_embeds";
+import { detectCodeLanguage } from "../../../services/syntax_highlight";
 import {
     getAttachmentHref, loadEmbeddedAttachment, loadEmbeddedNote, loadInlineEmbed, loadMediaEmbed,
     loadUnknownEmbed
@@ -160,16 +163,19 @@ function prepareMediaEmbeds(container: HTMLElement) {
 /**
  * Replaces each code block in `container` that keeps the source of an embed, such as a Mermaid
  * diagram, with the embed box the editor shows it in, and returns the calls that fill the boxes,
- * read-only.
+ * read-only. While the experimental feature `extendedCodeBlocks` is on, every other code block
+ * is an extended code block, as in the editor.
  */
 function prepareSourceEmbeds(container: HTMLElement, isNested: boolean) {
+    const isCodeBlockExtended = isExperimentalFeatureEnabled("extendedCodeBlocks");
     const loads: (() => Promise<void>)[] = [];
     for (const code of container.querySelectorAll<HTMLElement>("pre > code")) {
         const pre = code.parentElement;
         const codeLanguage = [ ...code.classList ]
             .find((name) => name.startsWith("language-"))?.slice("language-".length);
         const isDiagram = !!codeLanguage && !!getSourceEmbedTypeByLanguage(codeLanguage);
-        const isCodeBlock = !isDiagram && !!pre?.classList.contains(EXTENDED_CODE_BLOCK_CLASS);
+        const isCodeBlock = !isDiagram
+            && (isCodeBlockExtended || !!pre?.classList.contains(EXTENDED_CODE_BLOCK_CLASS));
         if (!pre || (!isDiagram && !isCodeBlock)) continue;
         const language = codeLanguage ?? EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE;
 
@@ -182,7 +188,6 @@ function prepareSourceEmbeds(container: HTMLElement, isNested: boolean) {
         if (boxSize) {
             figure.dataset.boxSize = boxSize;
         }
-        figure.dataset.language = language;
         const views = {
             displayMode, position, codeWrapLines, codeLineNumbers, codeTabWidth, codeIndentWithTabs
         };
@@ -208,13 +213,28 @@ function prepareSourceEmbeds(container: HTMLElement, isNested: boolean) {
         pre.replaceWith(figure);
 
         const source = code.textContent;
-        loads.push(() => loadInlineEmbed({
-            language,
-            getSource: () => source,
-            setSource: () => {},
-            subscribe: () => () => {},
-            isReadOnly: () => true
-        }, $(figure), figure.dataset.boxSize, { isFocused: false, isNested }));
+        loads.push(async () => {
+            const shownLanguage = await getShownLanguage(language, source);
+            figure.dataset.language = shownLanguage;
+            await loadInlineEmbed({
+                language: shownLanguage,
+                getSource: () => source,
+                setSource: () => {},
+                subscribe: () => () => {},
+                isReadOnly: () => true
+            }, $(figure), figure.dataset.boxSize, { isFocused: false, isNested });
+        });
     }
     return loads;
+}
+
+/**
+ * The language that a read-only box shows `source` in: `language`, or the one detected in the
+ * source for a code block saved as `MIME_TYPE_AUTO`, which the editor sets on the block instead.
+ */
+async function getShownLanguage(language: string, source: string) {
+    if (language !== MIME_TYPE_AUTO) {
+        return language;
+    }
+    return await detectCodeLanguage(source) ?? EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE;
 }

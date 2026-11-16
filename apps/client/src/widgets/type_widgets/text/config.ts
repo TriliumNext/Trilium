@@ -41,7 +41,9 @@ import options from "../../../services/options.js";
 import { sanitizeNoteContentHtml } from "../../../services/sanitize_content.js";
 import server from "../../../services/server.js";
 import { getSourceEmbedTypeByLanguage, SOURCE_EMBED_TYPES } from "../../../services/source_embeds.js";
-import { ensureMimeTypesForHighlighting, isSyntaxHighlightEnabled } from "../../../services/syntax_highlight.js";
+import {
+    detectCodeLanguage, ensureMimeTypesForHighlighting, isSyntaxHighlightEnabled
+} from "../../../services/syntax_highlight.js";
 import { getTaskStateDefinitions, openCustomTaskStateConfig } from "../../../services/task_states.js";
 import { isMac, isMobile } from "../../../services/utils.js";
 import { resolveContentLanguage } from "../../../utils/formatters.js";
@@ -118,13 +120,14 @@ export interface BuildEditorOptions {
 
 /** The members of `contentEmbed` that the component hosting the editor implements. */
 export type ContentEmbedHandlers = Omit<ContentEmbedHost,
-    "pickNote" | "inlineLanguages" | "renderInlinePreview" | "sanitizeHtml"
-    | "captureVideoThumbnail" | "getEmbedContentInfo">;
+    "pickNote" | "inlineLanguages" | "isCodeBlockExtended" | "detectLanguage"
+    | "renderInlinePreview" | "sanitizeHtml" | "captureVideoThumbnail" | "getEmbedContentInfo">;
 
 export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfig> {
     // `undefined` when the AI features are off or no LLM provider is configured. Decided once:
     // it both disables the assistant's command and keeps its entries off the toolbar.
     const aiAssistantStream = buildAiAssistantStream(opts.getNoteLocation);
+    const isCodeBlockExtended = hasExtendedCodeBlocks(opts);
     const config: EditorConfig = {
         licenseKey: OPEN_SOURCE_LICENSE_KEY,
         placeholder: t("editable_text.placeholder"),
@@ -134,7 +137,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             overlayContainer: document.body
         },
         codeBlock: {
-            languages: buildListOfLanguages()
+            languages: buildListOfLanguages(isCodeBlockExtended)
         },
         math: {
             engine: "katex",
@@ -155,6 +158,8 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         contentEmbed: {
             pickNote: (request) => opts.showContentEmbedDialog?.(request) ?? null,
             inlineLanguages: SOURCE_EMBED_TYPES.map((type) => type.language),
+            isCodeBlockExtended,
+            detectLanguage: detectCodeLanguage,
             renderInlinePreview: (language, source, container) => {
                 void getSourceEmbedTypeByLanguage(language)?.renderPreview(source, container);
             },
@@ -337,8 +342,8 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         },
         slashCommand: {
             // Drop CKEditor's built-in list slash commands, whose Title Case titles the palette
-            // re-defines in sentence case, and those of the experimental features that are off.
-            removeCommands: ["bulletedList", "numberedList", ...getDisabledExperimentalCommands()],
+            // re-defines in sentence case.
+            removeCommands: ["bulletedList", "numberedList"],
             list: createSlashCommandList
         },
         ...(options.get("textNoteSlashCommandsEnabled") === "true" && {
@@ -496,9 +501,12 @@ function bindContentEmbedHandlers(
     };
 }
 
-/** The slash commands of the experimental features that are off. */
-function getDisabledExperimentalCommands(): string[] {
-    return isExperimentalFeatureEnabled("extendedCodeBlocks") ? [] : [ "extended-code-block" ];
+/**
+ * Whether the code blocks of the editor are extended code blocks: the experimental feature is on,
+ * and the component that hosts the editor renders its embeds.
+ */
+function hasExtendedCodeBlocks(opts: BuildEditorOptions) {
+    return !!opts.getContentEmbedHandlers?.() && isExperimentalFeatureEnabled("extendedCodeBlocks");
 }
 
 /** A callback that triggers `command` on the component that hosts the editor, and waits for it. */
@@ -643,17 +651,18 @@ function loadEnglishCatalogue() {
     return englishCatalogue;
 }
 
-function buildListOfLanguages() {
-    const userLanguages = mimeTypesService
-        .getEnabledMimeTypes()
-        // The `env=frontend`/`env=backend` JavaScript variants are Trilium script environments,
-        // which are meaningless inside a (display-only) code block. Plain `text/javascript`
-        // already provides JavaScript highlighting, so omit the script-specific variants here.
-        .filter((mt) => mt.mime && !mt.mime.startsWith("application/javascript;env="))
-        .map((mt) => ({
-            language: normalizeMimeTypeForCKEditor(mt.mime),
-            label: mt.title
-        }));
+/**
+ * The languages that a code block offers. An extended code block always has a language of its
+ * own, so the list then has no entry that detects it.
+ */
+function buildListOfLanguages(isCodeBlockExtended: boolean) {
+    const userLanguages = mimeTypesService.getCodeBlockMimeTypes().map((mt) => ({
+        language: normalizeMimeTypeForCKEditor(mt.mime),
+        label: mt.title
+    }));
+    if (isCodeBlockExtended) {
+        return userLanguages;
+    }
 
     return [
         {

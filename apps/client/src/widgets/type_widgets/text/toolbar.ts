@@ -71,7 +71,7 @@ export function buildMobileToolbar(aiAssistant: boolean) {
                         "|",
                         "codeBlock", "blockQuote", "admonition",
                         "|",
-                        "collapsible", "tabs", "multicolumnLayout", ...getExtendedCodeBlockItems(),
+                        "collapsible", "tabs", "multicolumnLayout",
                         "|",
                         "horizontalLine", "pageBreak", "footnote",
                         "|",
@@ -179,7 +179,7 @@ export function buildClassicToolbar(multilineToolbar: boolean, aiAssistant: bool
                 {
                     ...buildInsertGroup(),
                     items: [
-                        "collapsible", "tabs", "multicolumnLayout", ...getExtendedCodeBlockItems(),
+                        "collapsible", "tabs", "multicolumnLayout",
                         "aside", "math", "drawingCanvas", "mermaid", "insertMedia",
                         "horizontalLine", "pageBreak",
                         "|",
@@ -259,7 +259,7 @@ export function buildFloatingToolbar(aiAssistant: boolean) {
             {
                 ...buildInsertGroup(),
                 items: [
-                    "collapsible", "tabs", "multicolumnLayout", ...getExtendedCodeBlockItems(),
+                    "collapsible", "tabs", "multicolumnLayout",
                     "aside", "math", "drawingCanvas", "mermaid", "insertMedia",
                     "horizontalLine", "pageBreak",
                     "|",
@@ -302,11 +302,6 @@ function buildInsertGroup() {
         // the `ToolbarGroupMenu` plugin) opens it as the app's menu of icon-and-label rows instead.
         asMenu: true
     };
-}
-
-/** The button that inserts an extended code block, while its experimental feature is on. */
-function getExtendedCodeBlockItems(): string[] {
-    return isExperimentalFeatureEnabled("extendedCodeBlocks") ? [ "extendedCodeBlock" ] : [];
 }
 
 /** The button that sorts the selection, while its experimental feature is on. */

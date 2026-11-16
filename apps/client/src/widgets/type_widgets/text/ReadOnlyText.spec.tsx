@@ -64,6 +64,17 @@ vi.mock("./utils", async (importOriginal) => ({
     loadMediaEmbed
 }));
 
+const experimentalState = vi.hoisted(() => ({ enabled: new Set<string>() }));
+vi.mock("../../../services/experimental_features", async (importOriginal) => ({
+    ...await importOriginal<typeof import("../../../services/experimental_features")>(),
+    isExperimentalFeatureEnabled: (id: string) => experimentalState.enabled.has(id)
+}));
+const detectCodeLanguage = vi.hoisted(() => vi.fn(async (_code: string) => null as string | null));
+vi.mock("../../../services/syntax_highlight", async (importOriginal) => ({
+    ...await importOriginal<typeof import("../../../services/syntax_highlight")>(),
+    detectCodeLanguage
+}));
+
 const disposeStickyTableHeaders = vi.hoisted(() => vi.fn());
 const applyStickyTableHeaders = vi.hoisted(() => vi.fn(() => disposeStickyTableHeaders));
 vi.mock("@triliumnext/ckeditor5/src/plugins/table_sticky_header_read_only.js", () => ({
@@ -705,13 +716,11 @@ describe("ReadOnlyText videos", () => {
 });
 
 describe("ReadOnlyText extended code blocks", () => {
-    it("shows each extended code block in the embed box of the editor, and no other", async () => {
+    afterEach(() => experimentalState.enabled.clear());
+
+    /** What each box of `html` was loaded with, and the container, which the caller removes. */
+    async function loadBoxes(html: string) {
         loadInlineEmbed.mockClear();
-        const html = `<pre class="extended-code-block" data-box-size="medium"`
-            + ` data-hide-title="true" data-code-tab-width="2" data-code-indent-with-tabs="false">`
-            + `<code class="language-text-x-python">pass</code></pre>`
-            + `<pre class="extended-code-block"><code data-trilium-block-id="b1">x</code></pre>`
-            + `<pre><code class="language-text-x-python">plain</code></pre>`;
         const container = document.createElement("div");
         document.body.append(container);
         await act(async () => render(<ReadOnlyTextContent html={html} />, container));
@@ -729,6 +738,17 @@ describe("ReadOnlyText extended code blocks", () => {
                 data: { ...figure.dataset }
             };
         });
+        return { embeds, container };
+    }
+
+    it("shows each extended code block in the embed box of the editor, and no other", async () => {
+        const { embeds, container } = await loadBoxes(
+            `<pre class="extended-code-block" data-box-size="medium"`
+            + ` data-hide-title="true" data-code-tab-width="2" data-code-indent-with-tabs="false">`
+            + `<code class="language-text-x-python">pass</code></pre>`
+            + `<pre class="extended-code-block"><code data-trilium-block-id="b1">x</code></pre>`
+            + `<pre><code class="language-text-x-python">plain</code></pre>`);
+
         expect(embeds).toEqual([
             {
                 language: "text-x-python", source: "pass", boxSize: "resizable",
@@ -749,6 +769,43 @@ describe("ReadOnlyText extended code blocks", () => {
         ]);
         expect(container.querySelector("pre > code.language-text-x-python")?.textContent)
             .toBe("plain");
+        await act(async () => render(null, container));
+        container.remove();
+    });
+
+    it("shows every code block in a box while the feature is on", async () => {
+        experimentalState.enabled.add("extendedCodeBlocks");
+        detectCodeLanguage.mockClear();
+        detectCodeLanguage.mockResolvedValueOnce("text-x-python").mockResolvedValueOnce(null);
+        const { embeds, container } = await loadBoxes(
+            `<pre><code class="language-text-css">a {}</code></pre>`
+            + `<pre><code class="language-text-x-trilium-auto">print(1)</code></pre>`
+            + `<pre><code class="language-text-x-trilium-auto">lorem</code></pre>`
+            + `<pre><code class="language-mermaid">graph TD;</code></pre>`);
+
+        const box = { boxSize: "full", className: "include-note extended-code-block" };
+        // A box whose language is detected loads after the others.
+        expect(embeds.toSorted((a, b) => a.source.localeCompare(b.source))).toEqual([
+            {
+                ...box, language: "text-css", source: "a {}",
+                data: { boxSize: "full", hideTitle: "true", language: "text-css" }
+            },
+            {
+                language: "mermaid", source: "graph TD;", boxSize: "resizable",
+                className: "include-note",
+                data: { boxSize: "resizable", hideTitle: "true", language: "mermaid" }
+            },
+            {
+                ...box, language: "text-plain", source: "lorem",
+                data: { boxSize: "full", hideTitle: "true", language: "text-plain" }
+            },
+            {
+                ...box, language: "text-x-python", source: "print(1)",
+                data: { boxSize: "full", hideTitle: "true", language: "text-x-python" }
+            }
+        ]);
+        expect(detectCodeLanguage.mock.calls).toEqual([ [ "print(1)" ], [ "lorem" ] ]);
+        expect(container.querySelector("pre")).toBeNull();
         await act(async () => render(null, container));
         container.remove();
     });
