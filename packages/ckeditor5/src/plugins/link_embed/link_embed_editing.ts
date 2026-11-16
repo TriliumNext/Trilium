@@ -5,6 +5,7 @@ import {
     viewToModelPositionOutsideModelElement, Widget
 } from 'ckeditor5';
 import { CLIPBOARD_PLAIN_TEXT_PROPERTY } from '../clipboard_plain_text_indent.js';
+import ColoredWidgets from '../colored_widgets.js';
 import ContentEmbed from '../content_embed/content_embed.js';
 import { preventCKEditorHandling, restoreRendererFocusOnInput } from '../widget_utils.js';
 import {
@@ -25,12 +26,15 @@ import {
  */
 export default class LinkEmbedEditing extends Plugin {
     static get requires() {
-        return [Widget, ContentEmbed];
+        return [Widget, ContentEmbed, ColoredWidgets];
     }
 
     init() {
         this._defineSchema();
         this._defineConverters();
+        const coloredWidgets = this.editor.plugins.get(ColoredWidgets);
+        coloredWidgets.register('linkEmbed');
+        coloredWidgets.register('linkMention');
 
         // linkMention is an empty inline object whose editing view holds a UIElement child, so a
         // view position inside the rendered widget would otherwise resolve to a degenerate model

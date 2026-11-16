@@ -1,7 +1,13 @@
-import { _getViewData as getViewData, _setModelData as setModelData, type ClassicEditor, type ViewElement } from "ckeditor5";
+import {
+    _getViewData as getViewData, _setModelData as setModelData, type ClassicEditor,
+    FontBackgroundColor, FontColor, type ViewElement
+} from "ckeditor5";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { createLinkEmbedHost, createTestEditor, LINK_EMBED_TEST_PLUGINS, type LinkEmbedHostMocks } from "../../../test/link-embed-kit.js";
+import {
+    createLinkEmbedHost, createTestEditor, findElement, LINK_EMBED_TEST_PLUGINS,
+    type LinkEmbedHostMocks
+} from "../../../test/link-embed-kit.js";
 import ClipboardPlainTextIndent from "../clipboard_plain_text_indent.js";
 
 describe("LinkEmbedEditing", () => {
@@ -223,6 +229,34 @@ describe("LinkEmbedEditing", () => {
         expect(copied.get("text/plain"))
             .toBe("https://e.com/\n\nSee https://f.com/, or javascript:alert(1)");
         expect(copying.getData()).not.toContain("<a");
+    });
+
+    it("lets the font color commands color link previews and the text by a mention", async () => {
+        const plugins = [ ...LINK_EMBED_TEST_PLUGINS, FontColor, FontBackgroundColor ];
+        const coloring = await createTestEditor(plugins, { linkEmbed: createLinkEmbedHost() });
+        setModelData(coloring.model,
+            '<paragraph>[See <linkMention url="https://e.com/"></linkMention>]</paragraph>'
+            + '<linkEmbed url="https://f.com/" embedType="opengraph"></linkEmbed>');
+        coloring.execute("fontColor", { value: "#e64d4d" });
+        const card = findElement(coloring, "linkEmbed");
+        if (!card) {
+            throw new Error("Expected a card.");
+        }
+        coloring.model.change((writer) => writer.setSelection(card, "on"));
+        coloring.execute("fontBackgroundColor", { value: "#e5e64d" });
+
+        const data = coloring.getData();
+        expect(data).toBe('<p><span style="color:#e64d4d;">See&nbsp;</span>'
+            + '<span class="link-mention" style="--tn-color:#e64d4d;color:#e64d4d;"'
+            + ' data-url="https://e.com/">&nbsp;</span></p>'
+            + '<section class="link-embed"'
+            + ' style="--tn-background:#e5e64d;background-color:#e5e64d;"'
+            + ' data-url="https://f.com/" data-embed-type="opengraph">&nbsp;</section>');
+
+        coloring.setData(data);
+        expect(findElement(coloring, "linkMention")?.getAttribute("fontColor")).toBe("#e64d4d");
+        expect(findElement(coloring, "linkEmbed")?.getAttribute("fontBackgroundColor"))
+            .toBe("#e5e64d");
     });
 
     it("editing-downcasts a linkMention to an inline widget and renders it via the component", () => {
