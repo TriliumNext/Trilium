@@ -468,7 +468,7 @@ export function useContentEmbedEvent(
  * Calls `callback` once `element` is in the page: at once, or when it joins it. Stops waiting
  * when the returned function is called.
  */
-function whenInPage(element: HTMLElement, callback: () => void) {
+export function whenInPage(element: HTMLElement, callback: () => void) {
     if (element.isConnected) {
         callback();
         return () => {};

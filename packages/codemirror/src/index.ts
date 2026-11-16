@@ -7,7 +7,6 @@ import {
 } from "@codemirror/state";
 import { highlightSelectionMatches } from "@codemirror/search";
 import { autocompletion, completionStatus, type CompletionSource } from "@codemirror/autocomplete";
-import { CodeMirror as VimEditor, vim } from "@replit/codemirror-vim";
 import { indentationMarkers } from "@replit/codemirror-indentation-markers";
 import byMimeType, { MIME_ALIASES } from "./syntax_highlighting.js";
 import smartIndentWithTab from "./extensions/custom_tab.js";
@@ -129,6 +128,8 @@ export default class CodeMirror extends EditorView {
     private searchHighlightCompartment: Compartment;
     private typeCompletionCompartment: Compartment;
     private completionSourceCompartment: Compartment;
+    private vimCompartment: Compartment;
+    private hasVimKeybindings: boolean;
     private searchPlugin?: SearchHighlighter | null;
     private sharedHistory: SharedHistory | null = null;
     private namedCompartments = new Map<string, Compartment>();
@@ -157,15 +158,10 @@ export default class CodeMirror extends EditorView {
         const searchHighlightCompartment = new Compartment();
         const typeCompletionCompartment = new Compartment();
         const completionSourceCompartment = new Compartment();
+        const vimCompartment = new Compartment();
 
-        let extensions: Extension[] = [];
-
-        if (config.vimKeybindings) {
-            extensions.push(vim());
-        }
-
-        extensions = [
-            ...extensions,
+        let extensions: Extension[] = [
+            vimCompartment.of([]),
             languageCompartment.of([]),
             lineWrappingCompartment.of(config.lineWrapping ? EditorView.lineWrapping : []),
             keyboardSuggestionsCompartment.of(config.allowKeyboardSuggestions ? proseKeyboardAttributes : noKeyboardSuggestions),
@@ -231,6 +227,9 @@ export default class CodeMirror extends EditorView {
         this.searchHighlightCompartment = searchHighlightCompartment;
         this.typeCompletionCompartment = typeCompletionCompartment;
         this.completionSourceCompartment = completionSourceCompartment;
+        this.vimCompartment = vimCompartment;
+        this.hasVimKeybindings = false;
+        void this.setVimKeybindings(!!config.vimKeybindings);
     }
 
     #onDocumentUpdated(v: ViewUpdate) {
@@ -427,6 +426,30 @@ export default class CodeMirror extends EditorView {
         this.hasLineNumbers = isShown;
         this.dispatch({
             effects: [ this.lineNumbersCompartment.reconfigure(buildLineNumbers(isShown)) ]
+        });
+    }
+
+    /**
+     * Turns the Vim keybindings on or off without replacing the view. The first editor to turn
+     * them on loads them.
+     */
+    async setVimKeybindings(isEnabled: boolean) {
+        if (isEnabled === this.hasVimKeybindings) return;
+
+        this.hasVimKeybindings = isEnabled;
+        let extension: Extension = [];
+        try {
+            extension = isEnabled ? (await loadVim())() : [];
+        } catch (error) {
+            // Lets the next call that turns them on load them again.
+            this.hasVimKeybindings = false;
+            throw error;
+        }
+        // A call made while the keybindings load wins over this one.
+        if (isEnabled !== this.hasVimKeybindings) return;
+
+        this.dispatch({
+            effects: [ this.vimCompartment.reconfigure(extension) ]
         });
     }
 
@@ -734,14 +757,28 @@ export default class CodeMirror extends EditorView {
     }
 }
 
-// Vim's `u` and `Ctrl-R` run these commands, which use the shared history of an editor first.
-for (const name of [ "undo", "redo" ] as const) {
-    const run = VimEditor.commands[name];
-    VimEditor.commands[name] = (cm) => {
-        if (!(cm.cm6 instanceof CodeMirror && cm.cm6.runSharedHistory(name))) {
-            run(cm);
+let vimLoading: Promise<typeof import("@replit/codemirror-vim").vim> | null = null;
+
+/**
+ * Loads the extension of the Vim keybindings on the first call, and again after a load that
+ * failed. Vim's `u` and `Ctrl-R` then run the shared history of an editor first.
+ */
+function loadVim() {
+    vimLoading ??= import("@replit/codemirror-vim").then(({ CodeMirror: VimEditor, vim }) => {
+        for (const name of [ "undo", "redo" ] as const) {
+            const run = VimEditor.commands[name];
+            VimEditor.commands[name] = (cm) => {
+                if (!(cm.cm6 instanceof CodeMirror && cm.cm6.runSharedHistory(name))) {
+                    run(cm);
+                }
+            };
         }
-    };
+        return vim;
+    }, (error: unknown) => {
+        vimLoading = null;
+        throw error;
+    });
+    return vimLoading;
 }
 
 const HISTORY_INPUT_TYPES: Record<string, "undo" | "redo" | undefined> = {

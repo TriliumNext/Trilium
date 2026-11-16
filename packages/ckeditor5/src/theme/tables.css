@@ -3,6 +3,30 @@
     width: 100%;
 }
 
+/* Unlike `100%`, `stretch` is the width that a box wrapped beside the table leaves free. */
+@supports (width: stretch) {
+    :root .ck-content figure.table:not(.layout-table) {
+        width: stretch;
+    }
+}
+
+/* In a browser without `stretch`, a flex container with no width takes the free width too. */
+@supports not (width: stretch) {
+    :root .ck-content :is([data-position^="wrap-"], .image-style-align-left,
+        .image-style-align-right, .image-style-side) ~ figure.table:not(.layout-table,
+        .ck-table-overflowing, .table-style-align-left, .table-style-align-right,
+        [style*="--table-width"]) {
+        display: flex;
+        flex-direction: column;
+        width: auto;
+        min-width: min-content;
+    }
+
+    .ck-content figure.table > figcaption {
+        order: -1;
+    }
+}
+
 /* Outranks the row border that Bootstrap's `.table` class adds in the app. */
 .ck-content figure.table > table > :is(thead, tbody, tfoot) > tr {
     border-style: none;

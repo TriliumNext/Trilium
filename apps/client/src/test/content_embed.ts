@@ -18,16 +18,20 @@ const editables: HTMLElement[] = [];
 /**
  * The editable root of a text editor, in the page, and the editor, whose code view command sets
  * the `data-code-*` attributes of the embed it selects, as the text editor renders them. Put the
- * embed in `editable`; it leaves the page after each test.
+ * embed in `editable`; it leaves the page after each test. `plugins` are further plugins of the
+ * editor by name, such as a fake `TriliumVim`.
  */
-export function buildCodeViewTextEditor() {
+export function buildCodeViewTextEditor(plugins: Record<string, unknown> = {}) {
     let selected: Element | null = null;
     const textEditor = {
         selectEmbedAt: vi.fn((element: Element) => {
             selected = element.closest(".include-note");
             return true;
         }),
-        plugins: { get: () => ({ selectEmbedAt: textEditor.selectEmbedAt }) },
+        plugins: {
+            has: (name: string) => name === "ContentEmbed" || name in plugins,
+            get: (name: string) => plugins[name] ?? { selectEmbedAt: textEditor.selectEmbedAt }
+        },
         execute: vi.fn((_name: string, codeView: Record<string, unknown>) => {
             for (const [ setting, attribute ] of Object.entries(CODE_VIEW_ATTRIBUTES)) {
                 const value = codeView[setting];
@@ -45,6 +49,23 @@ export function buildCodeViewTextEditor() {
     document.body.append(editable);
     editables.push(editable);
     return { textEditor, editable };
+}
+
+/** A fake `TriliumVim` plugin for `buildCodeViewTextEditor()`, whose mode `setMode()` changes. */
+export function buildVimPlugin() {
+    const listeners = new Set<() => void>();
+    const vim = {
+        status: { mode: null as string | null },
+        on: (_event: string, listener: () => void) => listeners.add(listener),
+        off: (_event: string, listener: () => void) => listeners.delete(listener),
+        setMode(mode: string | null) {
+            vim.status = { mode };
+            for (const listener of listeners) {
+                listener();
+            }
+        }
+    };
+    return vim;
 }
 
 /** The items that the content of `figure` adds to the menu of its embed. */

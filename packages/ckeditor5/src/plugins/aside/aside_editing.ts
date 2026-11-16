@@ -206,12 +206,14 @@ export default class AsideEditing extends Plugin {
     /**
      * Keeps every aside valid however it was produced (paste, import, undo): it has one content,
      * which holds at least one block. An aside cannot hold another, so one inside an aside, as a
-     * paste or a drop can put it, is replaced by its blocks.
+     * paste or a drop can put it, is replaced by its blocks. A parent that holds only asides gets
+     * an empty paragraph after them, where the caret can go.
      */
     private registerPostFixer() {
         const model = this.editor.model;
         model.document.registerPostFixer((writer) => {
             const asides = new Set<ModelElement>();
+            const parents = new Set<ModelElement>();
             for (const change of model.document.differ.getChanges()) {
                 if (change.type === "attribute") {
                     continue;
@@ -220,11 +222,18 @@ export default class AsideEditing extends Plugin {
                 if (change.type === "insert") {
                     collectAsidesWithin(change.position.nodeAfter, asides);
                 }
+                parents.add(change.position.parent as ModelElement);
+            }
+            for (const aside of asides) {
+                parents.add(aside.parent as ModelElement);
             }
 
             let changed = false;
             for (const aside of asides) {
                 changed = fixAside(writer, aside) || changed;
+            }
+            for (const parent of parents) {
+                changed = addParagraphAfterAsides(writer, parent) || changed;
             }
             return changed;
         });
@@ -286,4 +295,19 @@ function fixAside(writer: ModelWriter, aside: ModelElement): boolean {
         changed = true;
     }
     return changed;
+}
+
+/** Appends an empty paragraph to `parent` when all of its children are asides. */
+function addParagraphAfterAsides(writer: ModelWriter, parent: ModelElement): boolean {
+    if (parent.isEmpty) {
+        return false;
+    }
+    for (const child of parent.getChildren()) {
+        if (!child.is("element", ELEMENTS.aside)) {
+            return false;
+        }
+    }
+
+    writer.appendElement("paragraph", parent);
+    return true;
 }

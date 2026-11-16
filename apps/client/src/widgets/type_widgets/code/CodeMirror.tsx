@@ -94,6 +94,11 @@ export default function CodeMirror({
     // React to line numbers.
     useEffect(() => codeEditorRef.current?.setLineNumbers(lineNumbers), [ lineNumbers ]);
 
+    // React to the Vim keybindings.
+    useEffect(() => {
+        void codeEditorRef.current?.setVimKeybindings(!!extraOpts.vimKeybindings);
+    }, [ extraOpts.vimKeybindings ]);
+
     // React to indent size / style changes.
     useEffect(() => {
         if (extraOpts.indentSize != null || extraOpts.useTabs != null) {

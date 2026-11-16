@@ -231,7 +231,6 @@ So with a link balloon open in Insert mode, the first press closes the balloon a
 *   Visual Block mode is not supported. <kbd>Ctrl</kbd>+<kbd>V</kbd> pastes, except in Insert mode when _Vim keys in Insert mode_ is on.
 *   Search patterns are JavaScript regular expressions, not Vim's own, and a match cannot span more than one line.
 *   `:q!` and `ZQ` only show a message: notes are saved as you type, so there is nothing to discard.
-*   A code note that is included in a text note follows the _Vim keybindings_ option of code notes.
 
 ## See also
 
