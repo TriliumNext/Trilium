@@ -280,10 +280,10 @@ importers:
         version: 3.0.0
       force-graph:
         specifier: 1.52.0
-        version: 1.52.0(preact-render-to-string@6.8.2)
+        version: 1.52.0(preact-render-to-string@6.8.3)
       fullcalendar:
         specifier: 7.1.5
-        version: 7.1.5(preact-render-to-string@6.8.2)(temporal-polyfill@1.0.8)
+        version: 7.1.5(preact-render-to-string@6.8.3)(temporal-polyfill@1.0.8)
       gridstack:
         specifier: 14.1.0
         version: 14.1.0
@@ -313,7 +313,7 @@ importers:
         version: 6.0.0
       preact:
         specifier: 11.2.0
-        version: 11.2.0(preact-render-to-string@6.8.2)
+        version: 11.2.0(preact-render-to-string@6.8.3)
       qrcode-generator:
         specifier: 2.0.4
         version: 2.0.4
@@ -879,10 +879,10 @@ importers:
         version: 0.8.3
       force-graph:
         specifier: 1.52.0
-        version: 1.52.0(preact-render-to-string@6.8.2)
+        version: 1.52.0(preact-render-to-string@6.8.3)
       fullcalendar:
         specifier: 7.1.5
-        version: 7.1.5(preact-render-to-string@6.8.2)(temporal-polyfill@1.0.8)
+        version: 7.1.5(preact-render-to-string@6.8.3)(temporal-polyfill@1.0.8)
       i18next:
         specifier: 27.1.1
         version: 27.1.1(typescript@6.0.3)
@@ -912,7 +912,7 @@ importers:
         version: 6.0.0
       preact:
         specifier: 11.2.0
-        version: 11.2.0(preact-render-to-string@6.8.2)
+        version: 11.2.0(preact-render-to-string@6.8.3)
       react-i18next:
         specifier: 18.0.1
         version: 18.0.1(i18next@27.1.1(typescript@6.0.3))(react@18.3.1)(typescript@6.0.3)
@@ -976,7 +976,7 @@ importers:
         version: 0.19.6
       preact:
         specifier: 11.2.0
-        version: 11.2.0(preact-render-to-string@6.8.2)
+        version: 11.2.0(preact-render-to-string@6.8.3)
     devDependencies:
       '@triliumnext/client':
         specifier: workspace:*
@@ -1001,13 +1001,13 @@ importers:
         version: 27.1.1(typescript@6.0.3)
       preact:
         specifier: 11.2.0
-        version: 11.2.0(preact-render-to-string@6.8.2)
+        version: 11.2.0(preact-render-to-string@6.8.3)
       preact-iso:
         specifier: 2.12.2
-        version: 2.12.2(preact-render-to-string@6.8.2)(preact@11.2.0)
+        version: 2.12.2(preact-render-to-string@6.8.3)(preact@11.2.0)
       preact-render-to-string:
-        specifier: 6.8.2
-        version: 6.8.2(preact@11.2.0)
+        specifier: 6.8.3
+        version: 6.8.3(preact@11.2.0)
       react-i18next:
         specifier: 18.0.1
         version: 18.0.1(i18next@27.1.1(typescript@6.0.3))(react@19.3.0)(typescript@6.0.3)
@@ -1284,7 +1284,7 @@ importers:
         version: 21.0.4
       preact:
         specifier: 11.2.0
-        version: 11.2.0(preact-render-to-string@6.8.2)
+        version: 11.2.0(preact-render-to-string@6.8.3)
 
   packages/highlightjs:
     dependencies:
@@ -9654,8 +9654,8 @@ packages:
       preact: 11.2.0
       preact-render-to-string: '>=6.4.0'
 
-  preact-render-to-string@6.8.2:
-    resolution: {integrity: sha512-Hdx7cKD3AMYgt795TdddBpUbuGEFoL/VeA6s7VrBt9Gjt0r6rCy5wMp5xkDjQ9cbKj62frHsEx1x8yV6EjoOpg==}
+  preact-render-to-string@6.8.3:
+    resolution: {integrity: sha512-yg04edGH7f5yfBUV4uyL2brzPB3e26AimLO5WNfUtwoCv8LBJ7Z+dElG8P5v+o8UqMUM6kZhnn4I/HEXNyP0ZQ==}
     peerDependencies:
       preact: 11.2.0
 
@@ -14671,13 +14671,13 @@ snapshots:
   '@preact/signals@2.11.4(preact@11.2.0)':
     dependencies:
       '@preact/signals-core': 1.14.5
-      preact: 11.2.0(preact-render-to-string@6.8.2)
+      preact: 11.2.0(preact-render-to-string@6.8.3)
 
   '@prefresh/babel-plugin@0.5.3': {}
 
   '@prefresh/core@1.5.11(preact@11.2.0)':
     dependencies:
-      preact: 11.2.0(preact-render-to-string@6.8.2)
+      preact: 11.2.0(preact-render-to-string@6.8.3)
 
   '@prefresh/rolldown@0.1.0(rolldown@1.2.8)(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.108.2)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.0))':
     dependencies:
@@ -14698,7 +14698,7 @@ snapshots:
       '@prefresh/core': 1.5.11(preact@11.2.0)
       '@prefresh/utils': 1.2.1
       '@rollup/pluginutils': 4.2.1
-      preact: 11.2.0(preact-render-to-string@6.8.2)
+      preact: 11.2.0(preact-render-to-string@6.8.3)
       vite: 8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.108.2)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.0)
     transitivePeerDependencies:
       - supports-color
@@ -14709,7 +14709,7 @@ snapshots:
       '@prefresh/rolldown': 0.1.0(rolldown@1.2.8)(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.108.2)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.0))
       '@prefresh/utils': 1.2.1
       '@rollup/pluginutils': 4.2.1
-      preact: 11.2.0(preact-render-to-string@6.8.2)
+      preact: 11.2.0(preact-render-to-string@6.8.3)
       rolldown: 1.2.8
       vite: 8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.108.2)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.0)
     optionalDependencies:
@@ -19278,11 +19278,11 @@ snapshots:
 
   flatted@3.4.4: {}
 
-  float-tooltip@1.7.5(preact-render-to-string@6.8.2):
+  float-tooltip@1.7.5(preact-render-to-string@6.8.3):
     dependencies:
       d3-selection: 3.0.0
       kapsule: 1.16.3
-      preact: 11.2.0(preact-render-to-string@6.8.2)
+      preact: 11.2.0(preact-render-to-string@6.8.3)
     transitivePeerDependencies:
       - preact-render-to-string
 
@@ -19305,7 +19305,7 @@ snapshots:
     dependencies:
       is-callable: 1.2.7
 
-  force-graph@1.52.0(preact-render-to-string@6.8.2):
+  force-graph@1.52.0(preact-render-to-string@6.8.3):
     dependencies:
       '@tweenjs/tween.js': 25.0.0
       accessor-fn: 1.5.3
@@ -19318,7 +19318,7 @@ snapshots:
       d3-scale-chromatic: 3.1.0
       d3-selection: 3.0.0
       d3-zoom: 3.0.0
-      float-tooltip: 1.7.5(preact-render-to-string@6.8.2)
+      float-tooltip: 1.7.5(preact-render-to-string@6.8.3)
       index-array-by: 1.4.2
       kapsule: 1.16.3
       lodash-es: 4.18.1
@@ -19397,11 +19397,11 @@ snapshots:
       mkdirp: 0.5.6
       rimraf: 2.7.1
 
-  fullcalendar@7.1.5(preact-render-to-string@6.8.2)(temporal-polyfill@1.0.8):
+  fullcalendar@7.1.5(preact-render-to-string@6.8.3)(temporal-polyfill@1.0.8):
     dependencies:
       '@full-ui/headless-calendar': 7.1.5(temporal-polyfill@1.0.8)
       '@fullcalendar/core': 7.1.5(@full-ui/headless-calendar@7.1.5(temporal-polyfill@1.0.8))(temporal-polyfill@1.0.8)
-      preact: 11.2.0(preact-render-to-string@6.8.2)
+      preact: 11.2.0(preact-render-to-string@6.8.3)
       temporal-polyfill: 1.0.8
     transitivePeerDependencies:
       - preact-render-to-string
@@ -21823,18 +21823,18 @@ snapshots:
 
   powershell-utils@0.2.1: {}
 
-  preact-iso@2.12.2(preact-render-to-string@6.8.2)(preact@11.2.0):
+  preact-iso@2.12.2(preact-render-to-string@6.8.3)(preact@11.2.0):
     dependencies:
-      preact: 11.2.0(preact-render-to-string@6.8.2)
-      preact-render-to-string: 6.8.2(preact@11.2.0)
+      preact: 11.2.0(preact-render-to-string@6.8.3)
+      preact-render-to-string: 6.8.3(preact@11.2.0)
 
-  preact-render-to-string@6.8.2(preact@11.2.0):
+  preact-render-to-string@6.8.3(preact@11.2.0):
     dependencies:
-      preact: 11.2.0(preact-render-to-string@6.8.2)
+      preact: 11.2.0(preact-render-to-string@6.8.3)
 
-  preact@11.2.0(preact-render-to-string@6.8.2):
+  preact@11.2.0(preact-render-to-string@6.8.3):
     optionalDependencies:
-      preact-render-to-string: 6.8.2(preact@11.2.0)
+      preact-render-to-string: 6.8.3(preact@11.2.0)
 
   prelude-ls@1.2.1: {}
 
