@@ -13,8 +13,6 @@ vi.mock("./theme.js", () => ({ getThemeStyle: themeCtrl.getThemeStyle }));
 const win = {
     getZoomFactor: vi.fn(() => 1),
     setNativeThemeSource: vi.fn(),
-    setBackgroundMaterial: vi.fn(),
-    setVibrancy: vi.fn(),
     setTitleBarOverlay: vi.fn(),
     setWindowButtonPosition: vi.fn()
 };
@@ -58,26 +56,6 @@ describe("syncNativeWindowWithTheme", () => {
         themeCtrl.getThemeStyle.mockReturnValue("dark");
         syncNativeWindowWithTheme();
         expect(win.setNativeThemeSource).toHaveBeenCalledWith("dark");
-    });
-
-    it("applies the background material only where the platform supports it", () => {
-        stubThemeVariables({ "--background-material": " mica " });
-        setPlatform("win32");
-        syncNativeWindowWithTheme();
-        expect(win.setBackgroundMaterial).toHaveBeenCalledWith("mica");
-        expect(win.setVibrancy).not.toHaveBeenCalled();
-
-        // A material the platform does not know about is ignored rather than passed through.
-        vi.clearAllMocks();
-        stubThemeVariables({ "--background-material": "under-window" });
-        syncNativeWindowWithTheme();
-        expect(win.setBackgroundMaterial).not.toHaveBeenCalled();
-
-        vi.clearAllMocks();
-        setPlatform("darwin");
-        syncNativeWindowWithTheme();
-        expect(win.setVibrancy).toHaveBeenCalledWith("under-window");
-        expect(win.setBackgroundMaterial).not.toHaveBeenCalled();
     });
 
     it("sets the title bar overlay colors on Windows and Linux, with an opt-in height", () => {

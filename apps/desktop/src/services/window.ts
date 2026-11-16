@@ -1,4 +1,4 @@
-import { app_info, cls, events, getLog, isSetupRequested, keyboard_actions as keyboardActionsService, options as optionService, sql_init, utils as coreUtils } from "@triliumnext/core";
+import { app_info, cls, events, getLog, isNextBasedTheme, isSetupRequested, keyboard_actions as keyboardActionsService, options as optionService, sql_init, utils as coreUtils } from "@triliumnext/core";
 import { RESOURCE_DIR } from "@triliumnext/server/src/services/resource_dir.js";
 import { supportsBackgroundMaterial } from "@triliumnext/server/src/services/utils.js";
 import { type BrowserWindow, type BrowserWindowConstructorOptions, default as electron, type Session, type WebContents } from "electron";
@@ -43,6 +43,10 @@ let allWindows: BrowserWindow[] = []; // Used to store all windows, sorted by th
 const loadedSpellcheckSessions = new WeakSet<Session>();
 const exportRevealSessions = new WeakSet<Session>();
 const deferredWindowStateManagers = new WeakMap<BrowserWindow, () => void>();
+/** Windows created with background effects, whose material follows the `theme` and `layoutOrientation` options. */
+const backgroundEffectWindows = new Set<BrowserWindow>();
+/** The options {@link getBackgroundMaterial} and {@link getVibrancy} derive the material from. */
+const BACKGROUND_MATERIAL_OPTIONS = new Set([ "theme", "layoutOrientation" ]);
 
 // Set to `true` once the app is genuinely quitting (via `before-quit`, which fires
 // for every real quit path: Cmd+Q, the tray "Quit" item, the app menu, OS shutdown).
@@ -108,6 +112,7 @@ function getExtraWindowOptions(): BrowserWindowConstructorOptions {
 /** Per-window wiring for an extra window, whichever way it was created. */
 function adoptExtraWindow(win: BrowserWindow) {
     win.setMenuBarVisibility(false);
+    trackBackgroundEffects(win);
     configureWebContents(win.webContents, optionService.getOptionBool("spellCheckEnabled"));
     trackWindowFocus(win);
 }
@@ -161,6 +166,7 @@ async function createMainWindow(startHidden = false) {
         ...getWindowExtraOpts()
     });
 
+    trackBackgroundEffects(mainWindow);
     markStartupMetric("main-window-created");
     // First time the renderer has produced a frame of the page — the closest
     // main-process signal to "the window displays something".
@@ -224,19 +230,72 @@ function getWindowExtraOpts() {
             extraOpts.frame = false;
         }
 
-        // Window effects (Mica on Windows and Vibrancy on macOS)
-        // These only work if native title bar is not enabled.
-        if (optionService.getOptionBool("backgroundEffects")) {
+        // The material is set at creation so that the first frame the window shows already has it.
+        if (hasBackgroundEffects()) {
             if (coreUtils.isMac()) {
                 extraOpts.transparent = true;
                 extraOpts.visualEffectState = "active";
-            } else if (coreUtils.isWindows() && supportsBackgroundMaterial) {
-                extraOpts.backgroundMaterial = "auto";
+                const vibrancy = getVibrancy();
+                if (vibrancy) {
+                    extraOpts.vibrancy = vibrancy;
+                }
+            } else {
+                extraOpts.backgroundMaterial = getBackgroundMaterial();
             }
         }
     }
 
     return extraOpts;
+}
+
+/**
+ * Whether windows are created with background effects (Mica on Windows, vibrancy on macOS). They
+ * need the window controls overlay, so the native title bar turns them off.
+ */
+function hasBackgroundEffects() {
+    return !optionService.getOptionBool("nativeTitleBarVisible")
+        && optionService.getOptionBool("backgroundEffects")
+        && (coreUtils.isMac() || (coreUtils.isWindows() && supportsBackgroundMaterial));
+}
+
+/**
+ * The Windows backdrop under the translucent background of the Next themes: `tabbed` behind the
+ * tab bar of the horizontal layout, `mica` otherwise. Other themes paint an opaque background and
+ * get `auto`, which draws no backdrop.
+ */
+function getBackgroundMaterial(): "auto" | "mica" | "tabbed" {
+    if (!isNextBasedTheme(optionService.getOption("theme"))) {
+        return "auto";
+    }
+    return optionService.getOption("layoutOrientation") === "horizontal" ? "tabbed" : "mica";
+}
+
+/** The macOS counterpart of {@link getBackgroundMaterial}; `null` removes the vibrancy. */
+function getVibrancy(): "under-window" | "hud" | null {
+    if (!isNextBasedTheme(optionService.getOption("theme"))) {
+        return null;
+    }
+    return optionService.getOption("layoutOrientation") === "horizontal" ? "hud" : "under-window";
+}
+
+/** Registers `win` for {@link updateBackgroundMaterials} if it was created with background effects. */
+function trackBackgroundEffects(win: BrowserWindow) {
+    if (!hasBackgroundEffects()) {
+        return;
+    }
+    backgroundEffectWindows.add(win);
+    win.once("closed", () => backgroundEffectWindows.delete(win));
+}
+
+/** Applies the material of the current theme and layout to every window created with background effects. */
+function updateBackgroundMaterials() {
+    for (const win of backgroundEffectWindows) {
+        if (coreUtils.isMac()) {
+            win.setVibrancy(getVibrancy());
+        } else {
+            win.setBackgroundMaterial(getBackgroundMaterial());
+        }
+    }
 }
 
 async function configureWebContents(webContents: WebContents, spellcheckEnabled: boolean) {
@@ -626,16 +685,6 @@ export function setupWindowing() {
         electron.BrowserWindow.fromWebContents(event.sender)?.setWindowButtonPosition(position);
     });
 
-    electron.ipcMain.on("set-background-material", (event, material: string) => {
-        const win = electron.BrowserWindow.fromWebContents(event.sender);
-        win?.setBackgroundMaterial(material as Parameters<typeof win.setBackgroundMaterial>[0]);
-    });
-
-    electron.ipcMain.on("set-vibrancy", (event, vibrancy: string) => {
-        const win = electron.BrowserWindow.fromWebContents(event.sender);
-        win?.setVibrancy(vibrancy as Parameters<typeof win.setVibrancy>[0]);
-    });
-
     electron.ipcMain.on("clear-navigation-history", (event) => {
         electron.BrowserWindow.fromWebContents(event.sender)?.webContents.navigationHistory.clear();
     });
@@ -713,6 +762,12 @@ export function setupWindowing() {
 
     electron.ipcMain.on("navigation-history-go-to-index", (event, index: number) => {
         event.sender.navigationHistory.goToIndex(index);
+    });
+
+    events.subscribe(events.ENTITY_CHANGED, ({ entityName, entity }) => {
+        if (entityName === "options" && BACKGROUND_MATERIAL_OPTIONS.has(entity.name)) {
+            updateBackgroundMaterials();
+        }
     });
 
     // Swap the setup wizard window for the main app window once the DB

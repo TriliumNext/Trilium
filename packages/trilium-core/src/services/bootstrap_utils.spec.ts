@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import attributes from "./attributes.js";
-import getSharedBootstrapItems, { getIconConfig } from "./bootstrap_utils.js";
+import getSharedBootstrapItems, { getIconConfig, isNextBasedTheme } from "./bootstrap_utils.js";
 import * as cls from "./context.js";
 import * as iconPacks from "./icon_packs.js";
 import notes from "./notes.js";
@@ -145,6 +145,28 @@ describe("bootstrap_utils (real DB)", () => {
         expect(items.themeCssUrl).toBe(`api/notes/download/${noteId}`);
         expect(items.customThemeCssUrl).toBe(`api/notes/download/${noteId}`);
         expect(items.themeBase).toBe("next-dark");
+    });
+
+    it("tells which themes include the Next theme's stylesheets", () => {
+        const customThemes: [ string, string | undefined ][] = [ [ "customOnNext", "next-light" ], [ "customStandalone", undefined ] ];
+        cls.init(() => {
+            for (const [ theme, base ] of customThemes) {
+                const { note } = notes.createNewNote({
+                    parentNoteId: "root", title: theme, content: "body {}", type: "code", mime: "text/css"
+                });
+                attributes.createLabel(note.noteId, "appTheme", theme);
+                if (base) {
+                    attributes.createLabel(note.noteId, "appThemeBase", base);
+                }
+            }
+        });
+
+        for (const theme of [ "next", "next-light", "next-dark", "customOnNext" ]) {
+            expect(isNextBasedTheme(theme), `theme=${theme}`).toBe(true);
+        }
+        for (const theme of [ "auto", "light", "dark", "customStandalone", "missing" ]) {
+            expect(isNextBasedTheme(theme), `theme=${theme}`).toBe(false);
+        }
     });
 
     it("withholds both custom theme URLs in safe mode", () => {

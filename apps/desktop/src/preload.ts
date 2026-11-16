@@ -97,14 +97,6 @@ contextBridge.exposeInMainWorld("electronApi", {
             ipcRenderer.send("report-startup-metric", metric);
         },
 
-        // Background effects
-        setBackgroundMaterial(material: string) {
-            ipcRenderer.send("set-background-material", material);
-        },
-        setVibrancy(vibrancy: string) {
-            ipcRenderer.send("set-vibrancy", vibrancy);
-        },
-
         // Main → renderer events
         onGlobalShortcut(callback: (actionName: string) => void) {
             ipcRenderer.on("globalShortcut", (_event, actionName) => callback(actionName));

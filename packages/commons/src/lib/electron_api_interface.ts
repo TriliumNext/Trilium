@@ -165,23 +165,6 @@ export interface ElectronWindowApi {
 
     // #endregion
 
-    // #region Background effects
-
-    /**
-     * Sets the Windows 11 backdrop material applied behind the window contents. No-op on other
-     * platforms.
-     * @param material The material, such as `"mica"`, `"acrylic"`, `"tabbed"` or `"none"`.
-     */
-    setBackgroundMaterial(material: string): void;
-
-    /**
-     * Sets the macOS vibrancy effect applied behind the window contents. No-op on other platforms.
-     * @param vibrancy The effect, such as `"sidebar"`, `"under-window"` or `"fullscreen-ui"`.
-     */
-    setVibrancy(vibrancy: string): void;
-
-    // #endregion
-
     // #region App lifecycle
 
     /** Triggers a hard reload of every open Trilium window. */

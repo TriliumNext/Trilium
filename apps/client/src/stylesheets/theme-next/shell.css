@@ -55,29 +55,6 @@ body.mobile {
 
 /* #region Mica */
 
-/* Quirk: --background-material is read before "theme-supports-background-effects" class
- * is applied. Apply the matterial even if the theme doesn't support it. */
-body.background-effects.platform-win32 {
-    &.layout-vertical {
-        --background-material: mica;
-    }
-
-    &.layout-horizontal {
-        --background-material: tabbed;
-    }
-}
-
-body.background-effects.platform-darwin {
-    /** Reference: https://developer.apple.com/documentation/appkit/nsvisualeffectview?preferredLanguage=objc **/
-    &.layout-vertical {
-        --background-material: under-window;
-    }
-
-    &.layout-horizontal {
-        --background-material: hud;
-    }
-}
-
 body.background-effects.theme-supports-background-effects {
     --launcher-pane-horiz-border-color: var(--launcher-pane-horiz-border-color-bgfx);
     --launcher-pane-horiz-background-color: var(--launcher-pane-horiz-background-color-bgfx);

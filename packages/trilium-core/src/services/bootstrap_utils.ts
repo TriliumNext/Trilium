@@ -122,7 +122,7 @@ function getPreloadFonts(assetPath: string, theme: string, themeBase: string | u
         fonts.push(getIconPackFontUrl(boxicons, assetPath));
     }
 
-    const isNextBased = NEXT_THEMES.includes(theme) || (!!themeBase && NEXT_THEMES.includes(themeBase));
+    const isNextBased = isNextTheme(theme) || isNextTheme(themeBase);
     const mainFontOverridden = options?.overrideThemeFonts === "true" && options.mainFontFamily !== "theme";
     if (isNextBased && !mainFontOverridden) {
         fonts.push(`${assetPath}/fonts/Inter/Inter-VariableFont_opsz,wght.woff2`);
@@ -132,6 +132,19 @@ function getPreloadFonts(assetPath: string, theme: string, themeBase: string | u
 }
 
 const NEXT_THEMES = [ "next", "next-light", "next-dark" ];
+
+function isNextTheme(theme: string | undefined) {
+    return !!theme && NEXT_THEMES.includes(theme);
+}
+
+/**
+ * Whether the stylesheets of `theme` include the Next theme's, either because it is one of the Next
+ * themes or because it is a custom theme whose `appThemeBase` names one.
+ */
+export function isNextBasedTheme(theme: string) {
+    const themeNote = attributes.getNoteWithLabel("appTheme", theme);
+    return isNextTheme(theme) || isNextTheme(themeNote?.getAttributeValue("label", "appThemeBase") ?? undefined);
+}
 
 function getAppCssNoteIds() {
     return attributes.getNotesWithLabel("appCss").map((note) => note.noteId);

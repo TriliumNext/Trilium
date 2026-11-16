@@ -261,6 +261,7 @@ vi.mock("@triliumnext/core", async (importOriginal) => {
         },
         sql_init: { ...actual.sql_init, dbReady: Promise.resolve() },
         isSetupRequested: () => state.isSetupRequested,
+        isNextBasedTheme: (theme: string) => [ "next", "next-light", "next-dark", "custom-on-next" ].includes(theme),
         keyboard_actions: { ...actual.keyboard_actions, getKeyboardActions: () => state.keyboardActions },
         cls: { ...actual.cls, wrap: (fn: Handler) => fn },
         events: {
@@ -356,24 +357,41 @@ describe("window service", () => {
             expect(state.windows.length).toBeGreaterThan(0);
         });
 
-        it("applies macOS hidden-inset title bar + vibrancy effects", async () => {
+        it("applies macOS hidden-inset title bar + the vibrancy of the theme and layout", async () => {
             state.isMac = true;
             state.optionBools = { backgroundEffects: true, spellCheckEnabled: true };
-            await windowService.createMainWindow();
-            const opts = state.windows[state.windows.length - 1].opts as Record<string, unknown>;
+            const createdOpts = async (theme: string, layoutOrientation: string) => {
+                state.options = { theme, layoutOrientation };
+                await windowService.createMainWindow();
+                return state.windows[state.windows.length - 1].opts as Record<string, unknown>;
+            };
+
+            const opts = await createdOpts("next", "vertical");
             expect(opts.titleBarStyle).toBe("hiddenInset");
             expect(opts.transparent).toBe(true);
             expect(opts.visualEffectState).toBe("active");
+            expect(opts.vibrancy).toBe("under-window");
+            expect((await createdOpts("next-dark", "horizontal")).vibrancy).toBe("hud");
+            // A theme without the Next stylesheets paints an opaque background.
+            expect((await createdOpts("dark", "vertical")).vibrancy).toBeUndefined();
         });
 
-        it("applies Windows hidden title bar + mica material", async () => {
+        it("applies Windows hidden title bar + the material of the theme and layout", async () => {
             state.isWindows = true;
             state.supportsBackgroundMaterial = true;
             state.optionBools = { backgroundEffects: true };
-            await windowService.createMainWindow();
-            const opts = state.windows[state.windows.length - 1].opts as Record<string, unknown>;
+            const createdOpts = async (theme: string, layoutOrientation: string) => {
+                state.options = { theme, layoutOrientation };
+                await windowService.createMainWindow();
+                return state.windows[state.windows.length - 1].opts as Record<string, unknown>;
+            };
+
+            const opts = await createdOpts("next", "vertical");
             expect(opts.titleBarStyle).toBe("hidden");
-            expect(opts.backgroundMaterial).toBe("auto");
+            expect(opts.backgroundMaterial).toBe("mica");
+            expect((await createdOpts("next-light", "horizontal")).backgroundMaterial).toBe("tabbed");
+            expect((await createdOpts("custom-on-next", "vertical")).backgroundMaterial).toBe("mica");
+            expect((await createdOpts("light", "horizontal")).backgroundMaterial).toBe("auto");
         });
 
         it("omits the window material on Windows builds without backdrop support (Win10 / Win11 21H2)", async () => {
@@ -1063,17 +1081,13 @@ describe("window service", () => {
             }
         });
 
-        it("title bar / material / vibrancy / button position setters", () => {
+        it("title bar / button position setters", () => {
             const win = state.windows[state.windows.length - 1];
             fireOn("set-title-bar-overlay", makeEvent(), { color: "#fff", symbolColor: "#000" });
             fireOn("set-window-button-position", makeEvent(), { x: 1, y: 2 });
-            fireOn("set-background-material", makeEvent(), "mica");
-            fireOn("set-vibrancy", makeEvent(), "sidebar");
             fireOn("clear-navigation-history", makeEvent());
             expect(win.setTitleBarOverlay).toHaveBeenCalled();
             expect(win.setWindowButtonPosition).toHaveBeenCalled();
-            expect(win.setBackgroundMaterial).toHaveBeenCalledWith("mica");
-            expect(win.setVibrancy).toHaveBeenCalledWith("sidebar");
             expect(win.webContents.navigationHistory.clear).toHaveBeenCalled();
         });
 
@@ -1081,8 +1095,6 @@ describe("window service", () => {
             state.fromWebContentsResult = "null";
             fireOn("set-title-bar-overlay", makeEvent(), { color: "#fff", symbolColor: "#000" });
             fireOn("set-window-button-position", makeEvent(), { x: 1, y: 2 });
-            fireOn("set-background-material", makeEvent(), "mica");
-            fireOn("set-vibrancy", makeEvent(), "sidebar");
             fireOn("clear-navigation-history", makeEvent());
             // no throw
         });
@@ -1301,6 +1313,63 @@ describe("window service", () => {
             await cb();
             spy.mockRestore();
             expect(state.log.error).toHaveBeenCalledWith(expect.stringContaining("Failed to swap"));
+        });
+    });
+
+    describe("background material", () => {
+        beforeEach(() => {
+            state.eventSubs.clear();
+            setupWindowing();
+        });
+
+        /** Saves an option the way `BOption` reports it, through the `ENTITY_CHANGED` subscriber. */
+        function changeOption(name: string, value: string) {
+            state.options[name] = value;
+            const cb = state.eventSubs.get("ENTITY_CHANGED");
+            if (!cb) throw new Error("no ENTITY_CHANGED subscriber");
+            cb({ entityName: "options", entity: { name, value } });
+        }
+
+        it("follows the theme and layout on Windows, only in windows created with effects", async () => {
+            state.isWindows = true;
+            state.supportsBackgroundMaterial = true;
+            state.options = { theme: "next", layoutOrientation: "vertical" };
+            state.optionBools = { backgroundEffects: true };
+            await windowService.createMainWindow();
+            const win = state.windows[state.windows.length - 1];
+            state.optionBools = { nativeTitleBarVisible: true };
+            await windowService.createExtraWindow("");
+            const plainWin = state.windows[state.windows.length - 1];
+
+            changeOption("layoutOrientation", "horizontal");
+            expect(win.setBackgroundMaterial).toHaveBeenLastCalledWith("tabbed");
+            changeOption("theme", "dark");
+            expect(win.setBackgroundMaterial).toHaveBeenLastCalledWith("auto");
+            changeOption("theme", "next-light");
+            expect(win.setBackgroundMaterial).toHaveBeenLastCalledWith("tabbed");
+            expect(plainWin.setBackgroundMaterial).not.toHaveBeenCalled();
+
+            // Other options and other entities leave the material alone, as does a closed window.
+            win.setBackgroundMaterial.mockClear();
+            changeOption("zoomFactor", "1.2");
+            state.eventSubs.get("ENTITY_CHANGED")?.({ entityName: "notes", entity: { name: "theme" } });
+            win.fire("closed");
+            changeOption("theme", "next");
+            expect(win.setBackgroundMaterial).not.toHaveBeenCalled();
+        });
+
+        it("follows the theme and layout on macOS through the vibrancy", async () => {
+            state.isMac = true;
+            state.options = { theme: "next", layoutOrientation: "vertical" };
+            state.optionBools = { backgroundEffects: true };
+            await windowService.createMainWindow();
+            const win = state.windows[state.windows.length - 1];
+
+            changeOption("layoutOrientation", "horizontal");
+            expect(win.setVibrancy).toHaveBeenLastCalledWith("hud");
+            changeOption("theme", "light");
+            expect(win.setVibrancy).toHaveBeenLastCalledWith(null);
+            expect(win.setBackgroundMaterial).not.toHaveBeenCalled();
         });
     });
 

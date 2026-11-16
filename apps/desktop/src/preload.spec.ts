@@ -234,16 +234,6 @@ describe("preload script", () => {
             expect(ipcRendererInvoked).toContainEqual({ channel: "clear-cache", args: [] });
         });
 
-        it("setBackgroundMaterial sends correct IPC message", () => {
-            win().setBackgroundMaterial("mica");
-            expect(ipcRendererSent).toContainEqual({ channel: "set-background-material", args: ["mica"] });
-        });
-
-        it("setVibrancy sends correct IPC message", () => {
-            win().setVibrancy("under-window");
-            expect(ipcRendererSent).toContainEqual({ channel: "set-vibrancy", args: ["under-window"] });
-        });
-
         it("onGlobalShortcut registers and forwards globalShortcut channel", () => {
             const callback = vi.fn();
             win().onGlobalShortcut(callback);

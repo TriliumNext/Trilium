@@ -114,14 +114,6 @@ Window-level controls: zoom, theme, title bar, full screen, lifecycle, and a han
             <td><pre><code class="language-application-typescript">isDevToolsDocked(): boolean</code></pre><p>Synchronously returns whether DevTools is currently open and docked into this window (as opposed to detached into a separate window).</p></td>
         </tr>
         <tr>
-            <td><code>setBackgroundMaterial</code></td>
-            <td><pre><code class="language-application-typescript">setBackgroundMaterial(material: string): void</code></pre><p>Sets the Windows 11 backdrop material applied behind the window contents. No-op on other platforms.</p><figure class="table"><table><thead><tr><th>Parameter</th><th>Description</th></tr></thead><tbody><tr><td><code>material</code></td><td><code>string</code><br>The material, such as <code>"mica"</code>, <code>"acrylic"</code>, <code>"tabbed"</code> or <code>"none"</code>.</td></tr></tbody></table></figure></td>
-        </tr>
-        <tr>
-            <td><code>setVibrancy</code></td>
-            <td><pre><code class="language-application-typescript">setVibrancy(vibrancy: string): void</code></pre><p>Sets the macOS vibrancy effect applied behind the window contents. No-op on other platforms.</p><figure class="table"><table><thead><tr><th>Parameter</th><th>Description</th></tr></thead><tbody><tr><td><code>vibrancy</code></td><td><code>string</code><br>The effect, such as <code>"sidebar"</code>, <code>"under-window"</code> or <code>"fullscreen-ui"</code>.</td></tr></tbody></table></figure></td>
-        </tr>
-        <tr>
             <td><code>reloadAllWindows</code></td>
             <td><pre><code class="language-application-typescript">reloadAllWindows(): void</code></pre><p>Triggers a hard reload of every open Trilium window.</p></td>
         </tr>
