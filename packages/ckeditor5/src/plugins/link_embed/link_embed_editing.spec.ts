@@ -2,6 +2,7 @@ import { _getViewData as getViewData, _setModelData as setModelData, type Classi
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { createLinkEmbedHost, createTestEditor, LINK_EMBED_TEST_PLUGINS, type LinkEmbedHostMocks } from "../../../test/link-embed-kit.js";
+import ClipboardPlainTextIndent from "../clipboard_plain_text_indent.js";
 
 describe("LinkEmbedEditing", () => {
     let editor: ClassicEditor;
@@ -193,6 +194,35 @@ describe("LinkEmbedEditing", () => {
         const data = editor.getData();
         expect(data).not.toContain("<a");
         expect(data).toContain('data-url="https://e.com/"');
+    });
+
+    it("copies link previews as links to their URL, and saves them without one", async () => {
+        const plugins = [ ...LINK_EMBED_TEST_PLUGINS, ClipboardPlainTextIndent ];
+        const copying = await createTestEditor(plugins, { linkEmbed: createLinkEmbedHost() });
+        setModelData(copying.model,
+            '<linkEmbed url="https://e.com/" embedType="opengraph" title="T"></linkEmbed>'
+            + '<paragraph>See <linkMention url="https://f.com/"></linkMention>, or'
+            + ' <linkMention url="javascript:alert(1)" title="X"></linkMention>[]</paragraph>');
+        copying.execute("selectAll");
+
+        const copied = new Map<string, string>();
+        copying.editing.view.document.fire("copy", {
+            dataTransfer: { setData: (type: string, data: string) => copied.set(type, data) },
+            preventDefault: () => {},
+            method: "copy"
+        });
+
+        expect(copied.get("text/html")).toBe(
+            '<section class="link-embed" data-url="https://e.com/" data-embed-type="opengraph"'
+            + ' data-title="T"><a href="https://e.com/">T</a></section>'
+            + '<p>See&nbsp;<span class="link-mention" data-url="https://f.com/">'
+            + '<a href="https://f.com/">https://f.com/</a></span>'
+            + ', or&nbsp;<span class="link-mention" data-url="javascript:alert(1)" data-title="X">'
+            + '<a href="about:blank">X</a></span></p>'
+        );
+        expect(copied.get("text/plain"))
+            .toBe("https://e.com/\n\nSee https://f.com/, or javascript:alert(1)");
+        expect(copying.getData()).not.toContain("<a");
     });
 
     it("editing-downcasts a linkMention to an inline widget and renders it via the component", () => {

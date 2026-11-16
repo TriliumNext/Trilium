@@ -1,7 +1,10 @@
 import { LINK_PREVIEW_DATA_ATTRIBUTES } from '@triliumnext/commons';
+import { safeLinkPreviewHref } from '@triliumnext/commons/src/lib/link_embed.js';
 import {
-    Plugin, toWidget, type ViewElement, viewToModelPositionOutsideModelElement, Widget
+    Plugin, toWidget, type ViewContainerElement, type ViewDowncastWriter, type ViewElement,
+    viewToModelPositionOutsideModelElement, Widget
 } from 'ckeditor5';
+import { CLIPBOARD_PLAIN_TEXT_PROPERTY } from '../clipboard_plain_text_indent.js';
 import ContentEmbed from '../content_embed/content_embed.js';
 import { preventCKEditorHandling, restoreRendererFocusOnInput } from '../widget_utils.js';
 import {
@@ -79,11 +82,15 @@ export default class LinkEmbedEditing extends Plugin {
 
         conversion.for('dataDowncast').elementToElement({
             model: 'linkEmbed',
-            view: (modelElement, { writer }) => {
-                return writer.createContainerElement(
+            view: (modelElement, { writer, options }) => {
+                const section = writer.createContainerElement(
                     'section',
                     metadataViewAttributes(modelElement, 'link-embed', ['url', 'embedType'])
                 );
+                if (options.isClipboardPipeline) {
+                    addClipboardLink(writer, section, modelElement);
+                }
+                return section;
             }
         });
 
@@ -138,11 +145,15 @@ export default class LinkEmbedEditing extends Plugin {
 
         conversion.for('dataDowncast').elementToElement({
             model: 'linkMention',
-            view: (modelElement, { writer }) => {
-                return writer.createContainerElement(
+            view: (modelElement, { writer, options }) => {
+                const span = writer.createContainerElement(
                     'span',
                     metadataViewAttributes(modelElement, 'link-mention', ['url'])
                 );
+                if (options.isClipboardPipeline) {
+                    addClipboardLink(writer, span, modelElement);
+                }
+                return span;
             }
         });
 
@@ -173,6 +184,24 @@ export default class LinkEmbedEditing extends Plugin {
             }
         });
     }
+}
+
+/**
+ * Gives a link preview on the clipboard a link to its URL, which applications that do not know
+ * the preview paste, and the URL as its `text/plain` form. Upcast ignores the link.
+ */
+function addClipboardLink(
+    writer: ViewDowncastWriter,
+    wrapper: ViewContainerElement,
+    modelElement: { getAttribute(key: string): unknown }
+) {
+    const url = modelElement.getAttribute('url') as string;
+    const title = modelElement.getAttribute('title') as string | undefined;
+    const link = writer.createContainerElement(
+        'a', { href: safeLinkPreviewHref(url) }, writer.createText(title || url)
+    );
+    writer.insert(writer.createPositionAt(wrapper, 0), link);
+    writer.setCustomProperty(CLIPBOARD_PLAIN_TEXT_PROPERTY, url, wrapper);
 }
 
 /** The model attributes of a linkEmbed/linkMention element, read from its `data-*` attributes. */
