@@ -4029,8 +4029,6 @@
       "header-columns": "ヘッダー列",
       "header-rows": "ヘッダー行",
       "enter-a-whole-number-between-0-and-0": "0 から %0 までの整数を入力してください。",
-      "extended-code-block": "拡張コードブロック",
-      "insert-a-code-block-that-is-edited-as-a-code-note": "コードノートとして編集可能なコードブロックを挿入します。",
       "unknown-embed-widget": "不明な埋め込みウィジェット",
       "new-child-note": "新しい子ノート",
       "create-a-new-child-note": "新しい子ノートを作成",

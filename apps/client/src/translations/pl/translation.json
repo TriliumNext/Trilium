@@ -4859,8 +4859,6 @@
       "image-position": "Położenie obrazu",
       "list": "Lista",
       "list-type": "Typ listy",
-      "extended-code-block": "Rozszerzony blok kodu",
-      "insert-a-code-block-that-is-edited-as-a-code-note": "Wstaw blok kodu edytowany jako notatka z kodem.",
       "new-child-note": "Nowa notatka podrzędna",
       "create-a-new-child-note": "Utwórz nową notatkę podrzędną",
       "create-a-new-child-note-and-insert-a-link-to-it": "Utwórz nową notatkę podrzędną i wstaw do niej link",

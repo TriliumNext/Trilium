@@ -4251,9 +4251,7 @@
       "use-headers": "Sử dụng tiêu đề",
       "header-columns": "Cột tiêu đề",
       "header-rows": "Hàng tiêu đề",
-      "enter-a-whole-number-between-0-and-0": "Nhập một số nguyên từ 0 đến %0.",
-      "extended-code-block": "Khối code mở rộng",
-      "insert-a-code-block-that-is-edited-as-a-code-note": "Chèn một khối code được chỉnh sửa dưới dạng ghi chú code."
+      "enter-a-whole-number-between-0-and-0": "Nhập một số nguyên từ 0 đến %0."
     },
     "toolbar-groups": {
       "insert": "Insert",

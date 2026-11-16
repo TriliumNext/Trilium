@@ -4137,8 +4137,6 @@
       "header-columns": "Столбцы заголовка",
       "header-rows": "Строки заголовка",
       "enter-a-whole-number-between-0-and-0": "Введите целое число от 0 до %0.",
-      "extended-code-block": "Расширенный блок кода",
-      "insert-a-code-block-that-is-edited-as-a-code-note": "Вставить блок кода, который редактируется как заметка с кодом.",
       "unknown-embed-widget": "неизвестный встроенный виджет",
       "table-size": "Размер таблицы",
       "table-headers": "Заголовки таблицы",

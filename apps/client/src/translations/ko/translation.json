@@ -4456,8 +4456,6 @@
       "header-rows": "헤더 행",
       "enter-a-whole-number-between-0-and-0": "0에서 %0 사이의 정수를 입력하세요.",
       "unknown-embed-widget": "알 수 없는 삽입 위젯",
-      "extended-code-block": "확장 코드 블록",
-      "insert-a-code-block-that-is-edited-as-a-code-note": "코드 노트처럼 편집할 수 있는 코드 블록을 삽입합니다.",
       "new-child-note": "새 하위 노트",
       "create-a-new-child-note": "새 하위 노트 만들기",
       "create-a-new-child-note-and-insert-a-link-to-it": "새 하위 노트를 만들고 해당 노트의 링크 삽입",
