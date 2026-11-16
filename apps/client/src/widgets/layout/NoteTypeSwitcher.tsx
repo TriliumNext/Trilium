@@ -251,8 +251,10 @@ interface CodeLanguageListProps {
 }
 
 /** The code languages to switch a note to, the current one ticked, as menu items. */
-export function codeLanguageItems({ currentMimeType, mimeTypes, changeNoteType, onConfigure }: CodeLanguageListProps) {
-    const items: MenuItem<unknown>[] = mimeTypes.map((mimeType) => ({
+export function codeLanguageItems<T = unknown>({
+    currentMimeType, mimeTypes, changeNoteType, onConfigure
+}: CodeLanguageListProps) {
+    const items: MenuItem<T>[] = mimeTypes.map((mimeType) => ({
         title: escapeHtml(mimeType.title),
         uiIcon: getCodeLanguageIcon(mimeType),
         checked: mimeType.mime === currentMimeType,

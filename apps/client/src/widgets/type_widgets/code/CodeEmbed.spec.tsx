@@ -823,6 +823,40 @@ describe("InlineCodeEmbed", () => {
         expect(getLabel(figure)).toBe("Shell (bash)");
     });
 
+    it("offers the tab width in the menu of its embed after the line numbers", async () => {
+        const { textEditor, editable } = buildCodeViewTextEditor();
+        const { figure } = await mountInline("pass", buildEditor(), {
+            language: "text-x-python", container: editable
+        });
+        await findView(figure, true);
+        expect(getContentEmbedTools(figure)?.getTools().map(({ id }) => id))
+            .toEqual([ "codeLanguage" ]);
+        const getStyleItems = () => {
+            const item = getEmbedMenuItems(figure)[2];
+            if (!item || "kind" in item) throw new Error("Expected the tab width submenu.");
+            return [ item.title, item.uiIcon, item.items?.slice(0, 3).map(summarizeMenuItem) ];
+        };
+        expect(getEmbedMenuItems(figure).map((item) => "title" in item && item.title)).toEqual([
+            "note_actions.word_wrap", "link_context_menu.line_numbers",
+            "link_context_menu.tab_width"
+        ]);
+        expect(getStyleItems()).toEqual([
+            "link_context_menu.tab_width", "bx bx-right-indent", [
+                { kind: "header", title: "status_bar.tab_width_style_header" },
+                { title: "status_bar.tab_width_style_spaces", checked: true },
+                { title: "status_bar.tab_width_style_tabs", checked: false }
+            ]
+        ]);
+
+        await runEmbedMenuItem(figure, 2, 2);
+        expect(textEditor.execute).toHaveBeenLastCalledWith(
+            "setContentEmbedCodeView", { tabWidth: undefined, indentWithTabs: true }
+        );
+        await vi.waitFor(() => expect(getStyleItems()[2]).toMatchObject([
+            {}, { checked: false }, { checked: true }
+        ]));
+    });
+
     it("names the language while edited, and offers a copy button otherwise", async () => {
         const copyButton = (figure: HTMLElement) =>
             figure.querySelector<HTMLElement>(".code-embed-content > button.copy-button");
