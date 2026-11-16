@@ -29,7 +29,7 @@
     "@triliumnext/highlightjs": "workspace:*",
     "@triliumnext/share-theme": "workspace:*",
     "@triliumnext/split.js": "workspace:*",
-    "bootstrap": "5.3.8",
+    "bootstrap": "5.3.9",
     "buffer": "6.0.3",
     "boxicons": "2.1.4",
     "clsx": "2.1.1",
