@@ -246,7 +246,7 @@
     "export_filter": "Documento PDF (*.pdf)",
     "unable-to-export-message": "No se ha podido exportar la nota actual como PDF.",
     "unable-to-export-title": "No es posible exportar como PDF",
-    "unable-to-save-message": "No se pudo escribir en el archivo seleccionado. Intente de nuevo o seleccione otro destino.",
+    "unable-to-save-message": "No se ha podido escribir en el archivo seleccionado. Inténtelo de nuevo o seleccione otro destino.",
     "unable-to-print": "No se puede imprimir la nota",
     "render-timeout": "La nota no terminó de renderizarse en {{seconds}} segundos."
   },
