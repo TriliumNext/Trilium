@@ -48,6 +48,16 @@ function getEnabledMimeTypes(): MimeType[] {
 }
 
 /**
+ * The enabled MIME types that a code block of a text note offers, in display order. The
+ * `env=frontend` and `env=backend` JavaScript variants are Trilium script environments, which mean
+ * nothing in a code block: `text/javascript` highlights the same.
+ */
+function getCodeBlockMimeTypes(): MimeType[] {
+    return getEnabledMimeTypes()
+        .filter((mimeType) => !mimeType.mime.startsWith("application/javascript;env="));
+}
+
+/**
  * Returns the enabled entries of `mimeTypes` in display order. Plain text comes first, except in a
  * stored order that places it elsewhere.
  *
@@ -108,6 +118,7 @@ export default {
     MIME_TYPE_AUTO,
     getMimeTypes,
     getEnabledMimeTypes,
+    getCodeBlockMimeTypes,
     loadMimeTypes,
     getHighlightJsNameForMime
 };

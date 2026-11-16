@@ -27,7 +27,8 @@ const hl = vi.hoisted(() => ({
     ensureMimeTypes: vi.fn(async (_types: unknown) => {}),
     loadTheme: vi.fn(async (_theme: unknown) => {}),
     highlight: vi.fn((_text: string, _opts: { language: string }) => ({ value: "HL" }) as { value: string } | null),
-    highlightAuto: vi.fn((_text: string) => ({ value: "AUTO" }) as { value: string } | null)
+    highlightAuto: vi.fn((_text: string, _languages?: string[]) =>
+        ({ value: "AUTO" }) as { value: string; language?: string } | null)
 }));
 
 vi.mock("@triliumnext/highlightjs", () => {
@@ -41,7 +42,7 @@ vi.mock("@triliumnext/highlightjs", () => {
         ensureMimeTypes: (t: unknown) => hl.ensureMimeTypes(t),
         loadTheme: (t: unknown) => hl.loadTheme(t),
         highlight: (text: string, opts: { language: string }) => hl.highlight(text, opts),
-        highlightAuto: (text: string) => hl.highlightAuto(text)
+        highlightAuto: (...args: [ string, string[]? ]) => hl.highlightAuto(...args)
     };
 });
 
@@ -304,6 +305,38 @@ describe("syntax_highlight", () => {
         });
     });
 
+    describe("detectCodeLanguage", () => {
+        it("asks highlight.js for the language, among those that a code block offers", async () => {
+            const mod = await freshModule();
+            setOptions({
+                codeNotesMimeTypes: JSON.stringify([
+                    "text/x-python", "application/javascript;env=backend"
+                ])
+            });
+            hl.highlightAuto.mockImplementation(() => ({ value: "", language: "text-x-python" }));
+
+            expect(await mod.detectCodeLanguage("print(1)")).toBe("text-x-python");
+            const languages = [ "text-plain", "text-x-python" ];
+            expect(hl.highlightAuto).toHaveBeenCalledExactlyOnceWith("print(1)", languages);
+            const loaded = hl.ensureMimeTypes.mock.calls[0][0] as { mime: string }[];
+            expect(loaded.map(({ mime }) => mime)).toEqual([ "text/plain", "text/x-python" ]);
+            // Detection draws nothing, so it loads no theme.
+            expect(hl.loadTheme).not.toHaveBeenCalled();
+
+            hl.highlightAuto.mockImplementation(() => ({ value: "" }));
+            expect(await mod.detectCodeLanguage("lorem ipsum")).toBeNull();
+        });
+
+        it("reads blank code, and code beyond the size cutoff, as no language", async () => {
+            const mod = await freshModule();
+
+            expect(await mod.detectCodeLanguage(" \n ")).toBeNull();
+            expect(await mod.detectCodeLanguage(Array(501).fill("x").join("\n"))).toBeNull();
+            expect(hl.ensureMimeTypes).not.toHaveBeenCalled();
+            expect(hl.highlightAuto).not.toHaveBeenCalled();
+        });
+    });
+
     describe("copy buttons", () => {
         it("appends a copy button that copies via toast when not in share mode", async () => {
             clip.copyText.mockClear();
@@ -427,6 +460,22 @@ describe("syntax_highlight", () => {
             expect(hl.highlight).not.toHaveBeenCalled();
             // copy button added only to the labeled <pre> (the unlabeled one is skipped)
             expect($container.find("pre button.copy-button").length).toBe(1);
+        });
+
+        it("leaves a code block that shows a static code preview as it is", async () => {
+            const mod = await freshModule();
+            setOptions({ codeBlockThemeMatchesApp: "false", codeBlockTheme: "default:vs" });
+            const $container = $("<div>");
+            const $code = $("<code>").text("a{}")
+                .addClass("language-text-css code-preview-content");
+            $container.append($("<pre>").addClass("code-preview").append($code));
+
+            await mod.formatCodeBlocks($container);
+            await flush();
+
+            expect($code.html()).toBe("a{}");
+            expect(hl.highlight).not.toHaveBeenCalled();
+            expect($container.find("button.copy-button").length).toBe(0);
         });
     });
 

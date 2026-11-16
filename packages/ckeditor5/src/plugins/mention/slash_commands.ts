@@ -26,7 +26,6 @@ import {
 } from "@ckeditor/ckeditor5-icons";
 import bxBookmark from "boxicons/svg/regular/bx-bookmark.svg?raw";
 import bxBulb from "boxicons/svg/regular/bx-bulb.svg?raw";
-import bxCodeBlock from "boxicons/svg/regular/bx-code-block.svg?raw";
 import bxCommentError from "boxicons/svg/regular/bx-comment-error.svg?raw";
 import bxError from "boxicons/svg/regular/bx-error.svg?raw";
 import bxErrorCircle from "boxicons/svg/regular/bx-error-circle.svg?raw";
@@ -57,9 +56,6 @@ import { getAdmonitionTitle } from "../admonition/admonition_ui.js";
 import aiIcon from "../ai_assistant/theme/icons/ai.svg?raw";
 import { COMMAND_NAME as CHILD_NOTE_COMMAND } from "../child_note.js";
 import { COMMAND_NAME as CONTENT_EMBED_COMMAND } from "../content_embed/content_embed.js";
-import {
-    INSERT_EXTENDED_CODE_BLOCK_COMMAND, insertExtendedCodeBlock
-} from "../content_embed/extended_code_block.js";
 import { insertDrawingCanvas } from "../file_upload/file_upload_ui.js";
 import { INSERT_ICON_COMMAND } from "../inline_icon/inline_icon_editing.js";
 import InlineIconUI from "../inline_icon/inline_icon_ui.js";
@@ -442,16 +438,6 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
             execute: insertDrawingCanvas
         },
         ...buildMermaidSlashCommands(editor),
-        {
-            id: "extended-code-block",
-            title: t("Extended code block"),
-            description: t("Insert a code block that is edited as a code note."),
-            aliases: [ "code", "codemirror", "pre" ],
-            icon: bxCodeBlock,
-            willInsert: true,
-            commandName: INSERT_EXTENDED_CODE_BLOCK_COMMAND,
-            execute: insertExtendedCodeBlock
-        },
         {
             id: "ai-assistant",
             title: t("AI assistant"),

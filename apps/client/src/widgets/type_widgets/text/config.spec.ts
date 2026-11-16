@@ -11,10 +11,14 @@ import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 
 import linkContextMenu from "../../../menus/link_context_menu.js";
 import imageService from "../../../services/image.js";
 import linkService from "../../../services/link.js";
-import { ensureMimeTypesForHighlighting } from "../../../services/syntax_highlight.js";
+import {
+    detectCodeLanguage, ensureMimeTypesForHighlighting
+} from "../../../services/syntax_highlight.js";
 import type { EditLinkOpts } from "../../dialogs/edit_link.js";
 import { FLOATING_LAYER_SELECTOR } from "../../react/floating_layers.js";
-import { buildConfig, type BuildEditorOptions, OPEN_SOURCE_LICENSE_KEY } from "./config.js";
+import {
+    buildConfig, type BuildEditorOptions, type ContentEmbedHandlers, OPEN_SOURCE_LICENSE_KEY
+} from "./config.js";
 
 // Mutable option values, reset before each test (see `beforeEach`).
 const optionsState = vi.hoisted(() => ({
@@ -963,14 +967,33 @@ describe("CK config - inline embeds", () => {
         expect(config.contentEmbed.inlineLanguages).toEqual([ "mermaid" ]);
     });
 
-    it("offers the slash command of extended code blocks while their feature is on", async () => {
-        const getRemoved = async () =>
-            (await buildConfig(baseOpts())).slashCommand?.removeCommands ?? [];
+    it("makes the code blocks extended ones where the host renders embeds", async () => {
+        const handlers = {} as ContentEmbedHandlers;
+        const build = async (hasHandlers: boolean) => {
+            const config = await buildConfig(baseOpts({
+                getContentEmbedHandlers: () => (hasHandlers ? handlers : undefined)
+            }));
+            return {
+                isExtended: config.contentEmbed?.isCodeBlockExtended,
+                languages: (config.codeBlock?.languages ?? []).map((l) => l.language),
+                detectLanguage: config.contentEmbed?.detectLanguage
+            };
+        };
 
-        expect(await getRemoved()).toContain("extended-code-block");
+        const plain = await build(true);
+        expect([ plain.isExtended, plain.languages[0] ]).toEqual([ false, MIME_TYPE_AUTO ]);
+
         experimentalState.enabled.add("extendedCodeBlocks");
-        expect(await getRemoved()).not.toContain("extended-code-block");
-        expect(await getRemoved()).toEqual([ "bulletedList", "numberedList" ]);
+        const extended = await build(true);
+        expect(extended.isExtended).toBe(true);
+        // An extended code block has a language of its own, so the list offers no detection.
+        expect(extended.languages).toEqual([ "text-plain", "text-javascript", "text-css" ]);
+        expect(extended.detectLanguage).toBe(detectCodeLanguage);
+
+        // An editor whose host renders no embeds, such as the one of a chat, keeps its code blocks.
+        const bare = await build(false);
+        expect([ bare.isExtended, bare.languages[0] ]).toEqual([ false, MIME_TYPE_AUTO ]);
+        expect((await buildConfig(baseOpts())).contentEmbed?.isCodeBlockExtended).toBe(false);
     });
 });
 

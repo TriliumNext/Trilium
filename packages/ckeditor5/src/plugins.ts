@@ -16,6 +16,7 @@ import ReferenceLink from "./plugins/referencelink.js";
 import NoPoweredByBadge from "./plugins/no_powered_by_badge.js";
 import DragOutOfEditor from "./plugins/drag_out_of_editor.js";
 import HiddenEditorBalloons from "./plugins/hidden_editor_balloons.js";
+import KeepBalloonPositions from "./plugins/keep_balloon_positions.js";
 import InlineFillerSpellcheck from "./plugins/inline_filler_spellcheck.js";
 import KeepViewMappings from "./plugins/keep_view_mappings.js";
 import DropDisallowedAttributes from "./plugins/drop_disallowed_attributes.js";
@@ -229,7 +230,8 @@ export const CORE_PLUGINS: typeof Plugin[] = [
     KeepViewMappings,
     DropDisallowedAttributes,
     DragOutOfEditor,
-    HiddenEditorBalloons
+    HiddenEditorBalloons,
+    KeepBalloonPositions
 ];
 
 /**

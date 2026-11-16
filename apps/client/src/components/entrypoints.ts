@@ -2,7 +2,6 @@ import { CreateChildrenResponse, SqlExecuteResponse } from "@triliumnext/commons
 
 import { runBackendScript, showBackendScriptingDisabledToast } from "../services/backend_scripting.js";
 import bundleService from "../services/bundle.js";
-import dialog from "../services/dialog.js";
 import dateNoteService from "../services/date_notes.js";
 import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
@@ -227,6 +226,7 @@ export default class Entrypoints extends Component {
         const noteId = appContext.tabManager.getCommandContext(ntxId)?.noteId;
         if (!noteId) return;
 
+        const { default: dialog } = await import("../services/dialog.js");
         const name = await dialog.prompt({
             title: t("entrypoints.save-named-revision-title"),
             message: t("entrypoints.save-named-revision-message"),

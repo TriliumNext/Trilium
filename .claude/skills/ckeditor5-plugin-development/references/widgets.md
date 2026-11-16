@@ -270,6 +270,20 @@ A block widget that the user places in the text, resizes or types in reuses thes
     rules tie with the anchor rules on specificity and must stay after them.
   - Specs stub `Element.prototype.setPointerCapture`, and emulate a touch screen with CDP
     `Emulation.setTouchEmulationEnabled` to check the edge grips.
+- **`ColoredWidgets`** (`plugins/colored_widgets.ts`) lets CKEditor's `fontColor` and
+  `fontBackgroundColor` commands color a selected widget, block or inline, as they color text.
+  Call `register(modelName)` from `init()`, after the schema: it allows both attributes on the
+  element, saves each as the element's own inline style with its `--tn-*` variable
+  (`color`/`--tn-color`, `background-color`/`--tn-background`, at `highest` priority, so the text
+  color converters never wrap the widget in a `<span>`), reads them back before General HTML
+  Support keeps the styles, and gives the commands the selected widget's color (a selection reads
+  the colors of an inline object, not of a block). The shared adaptive rules adapt the color on
+  the element; the widget's stylesheet decides which inner parts show it, typically `color:
+  inherit` on text that sets its own color and a transparent background on an inner box. A feature
+  that replaces a widget or text with another calls `copyColors(writer, source, target)`, which
+  copies only what the target's schema allows. Link previews (`linkMention`, `linkEmbed`) are the
+  first users. Unlike the aside's own `backgroundColor`, the color comes from the text color
+  commands and the text roles of the shared stylesheet.
 - **`NestedLimitSelection`** (`plugins/nested_limit_selection.ts`) widens a selection that leaves
   a nested editable only as far as the innermost limit that holds both ends, where CKEditor would
   select the whole outer widget. The aside and the column layout require it.

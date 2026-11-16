@@ -1,5 +1,7 @@
 import type { MimeType } from "@triliumnext/commons";
-import { shouldSyntaxHighlight } from "@triliumnext/commons/src/lib/mime_type.js";
+import {
+    normalizeMimeTypeForCKEditor, shouldSyntaxHighlight
+} from "@triliumnext/commons/src/lib/mime_type.js";
 // highlight.js is heavy and this module is reachable from the startup graph (note tooltips →
 // content renderer), so the library itself is only imported dynamically when highlighting runs.
 import type { AutoHighlightResult, HighlightResult, Theme } from "@triliumnext/highlightjs";
@@ -68,7 +70,8 @@ function setCachedHighlight(language: string, text: string, value: string) {
 export async function formatCodeBlocks($container: JQuery<HTMLElement>) {
     const syntaxHighlightingEnabled = isSyntaxHighlightEnabled();
 
-    const codeBlocks = $container.find("pre code");
+    // `renderCodeBlockPreviews()` has highlighted a block that shows a static code preview.
+    const codeBlocks = $container.find("pre code:not(.code-preview-content)");
     for (const codeBlock of codeBlocks) {
         const normalizedMimeType = extractLanguageFromClassList(codeBlock);
         if (!normalizedMimeType) {
@@ -198,6 +201,24 @@ export async function ensureMimeTypesForHighlighting(mimeTypeHint?: string) {
     }
 }
 
+/**
+ * The language that highlight.js reads `code` as, among those that a code block of a text note
+ * offers, as a CKEditor code block language such as `text-x-python`. `null` for code that reads
+ * as no language, and for code too long to highlight.
+ */
+export async function detectCodeLanguage(code: string): Promise<string | null> {
+    if (!code.trim() || !shouldSyntaxHighlight(code)) {
+        return null;
+    }
+
+    const mimeTypes = mime_types.getCodeBlockMimeTypes();
+    const { ensureMimeTypes, highlightAuto } = await import("@triliumnext/highlightjs");
+    await ensureMimeTypes(mimeTypes);
+    // Languages that share a grammar tie, and the first of them in the list wins.
+    const languages = mimeTypes.map((mimeType) => normalizeMimeTypeForCKEditor(mimeType.mime));
+    return highlightAuto(code, languages).language ?? null;
+}
+
 export async function loadHighlightingTheme(themeName: string) {
     const { loadTheme, Themes } = await import("@triliumnext/highlightjs");
     const themePrefix = "default:";
@@ -230,7 +251,7 @@ export function isSyntaxHighlightEnabled() {
  * @param el the HTML element from which to extract the language tag.
  * @returns the normalized MIME type (e.g. `text-css` instead of `language-text-css`).
  */
-function extractLanguageFromClassList(el: HTMLElement) {
+export function extractLanguageFromClassList(el: HTMLElement) {
     const prefix = "language-";
     for (const className of el.classList) {
         if (className.startsWith(prefix)) {

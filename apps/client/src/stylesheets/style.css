@@ -1941,6 +1941,29 @@ pre.code-embed-editor > .cm-editor:not(.cm-focused) {
     }
 }
 
+:root pre.code-preview.code-block-preview {
+    padding: 0;
+
+    > .code-preview-content {
+        padding-block: var(--padding-size, 1em);
+        padding-inline-end: calc(var(--copy-button-width) + var(--copy-button-margin-size) * 2);
+    }
+
+    &.code-preview-no-line-numbers > .code-preview-content {
+        padding-inline-start: var(--padding-size, 1em);
+    }
+}
+
+pre.code-block-preview[data-code-theme-t="vs-code-light"],
+body:not(.dark-theme) pre.code-block-preview[data-code-theme-l="vs-code-light"] {
+    --code-preview-background: #f6f6f6;
+}
+
+pre.code-block-preview[data-code-theme-t="vs-code-dark"],
+body.dark-theme pre.code-block-preview[data-code-theme-d="vs-code-dark"] {
+    --code-preview-background: #1c1b1b;
+}
+
 /* Takes the wheel and the touch gestures for the page until the content has the focus. */
 .include-note-backdrop {
     position: absolute;
