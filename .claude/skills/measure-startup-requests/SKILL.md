@@ -103,8 +103,11 @@ node .claude/skills/measure-startup-requests/analyze-requests.mjs check <capture
   both captures and the server's log. Regenerate the allowlists with this command, not against
   your own database: the fixture is the baseline, and the allowlists must also pass against a real
   database, which is what the `?` lines are for.
-- The capture always reloads once and records the second load only, so neither the login page nor
-  a first load in which Vite optimizes the dependencies of a cold cache reaches it.
+- The capture loads the app twice and records the second load only, in a new page, so neither the
+  login page nor a first load in which Vite optimizes the dependencies of a cold cache reaches it.
+  The first page is closed rather than reloaded: on a slow runner it can still be importing modules
+  after its network goes quiet, and after a reload those responses reach the capture without an
+  initiator, which puts the graph they start (the right pane's, for one) in the startup.
 - The allowlists are the startup of the two layouts. A feature that is moved into a layout makes
   the check fail, and the failure lists what it loads: shrink that list first, then add what is
   left with `--update`. Never run `--update` to make a failure go away without reading it.

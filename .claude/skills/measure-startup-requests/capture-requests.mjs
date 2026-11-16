@@ -79,15 +79,45 @@ function findOnPath(command) {
 const requests = [];
 let seq = 0;
 
-const { browser, context, page } = cdpEndpoint ? await attachToElectron(cdpEndpoint) : await openBrowser();
+const { browser, context, page, startUrl } = cdpEndpoint ? await attachToElectron(cdpEndpoint) : await openBrowser();
 
+/**
+ * A browser context that has loaded the app once, and a new page to capture the second load in.
+ * The first load logs in, and Vite can optimize the dependencies of a cold cache during it. That
+ * load can still be importing modules after its network went quiet, so it gets a page of its own,
+ * closed before the capture starts.
+ */
 async function openBrowser() {
     const browser = await launchBrowser();
     const context = await browser.newContext(mobile ? MOBILE_CONTEXT : {});
     if (mobile) {
         await context.addCookies([ { name: "trilium-device", value: "mobile", url: baseUrl } ]);
     }
-    return { browser, context, page: await context.newPage() };
+    const firstLoad = await context.newPage();
+    console.log(`Navigating to ${baseUrl}...`);
+    await firstLoad.goto(baseUrl, { waitUntil: "networkidle" });
+    await logIn(browser, firstLoad);
+    const startUrl = firstLoad.url();
+    await firstLoad.close();
+    return { browser, context, page: await context.newPage(), startUrl };
+}
+
+/** Logs in when the page is the login page, which the client renders at the same URL as the app. */
+async function logIn(browser, page) {
+    // The app has password fields of its own, as the protected session's.
+    const passwordField = page.locator(".page.login input[type=password]");
+    if (!await passwordField.count()) return;
+    const password = process.env.TRILIUM_PASSWORD;
+    if (!password) {
+        console.error("The instance requires a login; set the TRILIUM_PASSWORD environment variable.");
+        await browser.close();
+        process.exit(1);
+    }
+    console.log("Logging in...");
+    await passwordField.first().fill(password);
+    await passwordField.first().press("Enter");
+    await passwordField.first().waitFor({ state: "detached", timeout: 30000 });
+    await page.waitForLoadState("networkidle", { timeout: 30000 });
 }
 
 /** The main window of the Electron app listening on `endpoint`, the one that is not an extra window. */
@@ -170,37 +200,11 @@ page.on("console", (message) => {
     if (message.type() === "error") console.error(`Console error: ${message.text()}`);
 });
 
-if (!cdpEndpoint) {
-    console.log(`Navigating to ${baseUrl}...`);
-    await page.goto(baseUrl, { waitUntil: "networkidle" });
-    await logIn();
-}
-
-// Everything so far belongs to the login page, or to a first load in which Vite discovers the
-// dependencies of a cold cache and can reload the page. Start over, so that the capture holds one
-// startup of the app and nothing else.
-requests.length = 0;
-seq = 0;
-initiators.clear();
-console.log("Reloading to capture the startup on its own...");
-await page.reload({ waitUntil: "networkidle" });
-
-/** Logs in when the page is the login page, which the client renders at the same URL as the app. */
-async function logIn() {
-    // The app has password fields of its own, as the protected session's.
-    const passwordField = page.locator(".page.login input[type=password]");
-    if (!await passwordField.count()) return;
-    const password = process.env.TRILIUM_PASSWORD;
-    if (!password) {
-        console.error("The instance requires a login; set the TRILIUM_PASSWORD environment variable.");
-        await browser.close();
-        process.exit(1);
-    }
-    console.log("Logging in...");
-    await passwordField.first().fill(password);
-    await passwordField.first().press("Enter");
-    await passwordField.first().waitFor({ state: "detached", timeout: 30000 });
-    await page.waitForLoadState("networkidle", { timeout: 30000 });
+console.log("Loading the app again to capture the startup on its own...");
+if (cdpEndpoint) {
+    await page.reload({ waitUntil: "networkidle" });
+} else {
+    await page.goto(startUrl, { waitUntil: "networkidle" });
 }
 
 console.log("Waiting for the app to fully load...");
