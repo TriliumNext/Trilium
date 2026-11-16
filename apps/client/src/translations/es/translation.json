@@ -140,7 +140,7 @@
     "confirmation": "Confirmación",
     "cancel": "Cancelar",
     "ok": "Aceptar",
-    "are_you_sure_remove_note": "¿Está seguro que desea eliminar la nota \"{{title}}\" del mapa de relaciones? ",
+    "are_you_sure_remove_note": "¿Está seguro de que desea eliminar la nota \"{{title}}\" del mapa de relaciones? ",
     "if_you_dont_check": "La nota en sí se conserva; solo se elimina su lugar aquí.",
     "also_delete_note": "También eliminar la nota",
     "delete_note_keeps_note_one": "La nota tiene {{count}} clon más, por lo que la nota en sí se conserva.",
@@ -201,14 +201,14 @@
   "help": {
     "noteNavigation": "Navegación de notas",
     "goUpDown": "subir/bajar en la lista de notas",
-    "collapseExpand": "colapsar/expandir nodo",
+    "collapseExpand": "contraer/expandir nodo",
     "notSet": "no establecido",
     "goBackForwards": "retroceder / avanzar en la historia",
     "showJumpToNoteDialog": "mostrar <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">el diálogo «Saltar a»</a>",
     "scrollToActiveNote": "desplazarse hasta la nota activa",
     "jumpToParentNote": "saltar a la nota padre",
-    "collapseWholeTree": "colapsar todo el árbol de notas",
-    "collapseSubTree": "colapsar subárbol",
+    "collapseWholeTree": "contraer todo el árbol de notas",
+    "collapseSubTree": "contraer subárbol",
     "tabShortcuts": "Atajos de pestañas",
     "newTabNoteLink": "en el enlace de la nota abre la nota en una nueva pestaña",
     "newTabWithActivationNoteLink": "en el enlace de la nota abre y activa la nota en una nueva pestaña",
@@ -967,7 +967,7 @@
     "save_revision": "Guardar revisión",
     "convert_into_attachment_failed": "La conversión de nota '{{title}}' falló.",
     "convert_into_attachment_successful": "La nota '{{title}}' ha sido convertida a un archivo adjunto.",
-    "convert_into_attachment_prompt": "¿Está seguro que desea convertir la nota '{{title}}' en un archivo adjunto de la nota padre?",
+    "convert_into_attachment_prompt": "¿Está seguro de que desea convertir la nota '{{title}}' en un archivo adjunto de la nota principal?",
     "print_pdf": "Exportar como PDF...",
     "open_note_on_server": "Abrir nota en servidor",
     "view_revisions": "Revisiones de la nota...",
@@ -1062,7 +1062,7 @@
     "grid": "Cuadrícula",
     "list": "Lista",
     "collapse_all_notes": "Contraer todas las notas",
-    "collapse": "Colapsar",
+    "collapse": "Contraer",
     "expand": "Expandir",
     "invalid_view_type": "Tipo de vista inválida '{{type}}'",
     "calendar": "Calendario",
@@ -1225,7 +1225,7 @@
     "date_created": "Fecha de creación",
     "date_modified": "Fecha de la última modificación",
     "content_size": "Tamaño del contenido de la nota",
-    "content_and_attachments_size": "Tenga en cuenta el tamaño del contenido, incluidos los archivos adjuntos",
+    "content_and_attachments_size": "Tamaño del contenido de la nota, incluidos los archivos adjuntos",
     "content_and_attachments_and_revisions_size": "Tamaño de la nota con archivos adjuntos y revisiones",
     "revision_count": "Número de revisiones",
     "children_count": "Número de subnotas",
@@ -1547,7 +1547,7 @@
   },
   "vim_key_bindings": {
     "use_vim_keybindings_in_code_notes": "Combinaciones de teclas Vim",
-    "enable_vim_keybindings": "Habilitar los atajos de teclas de Vim en la notas de código (no es modo ex)"
+    "enable_vim_keybindings": "Habilitar los atajos de teclado de Vim en las notas de código (sin modo Ex)"
   },
   "wrap_lines": {
     "wrap_lines_in_code_notes": "Ajustar líneas en notas de código",
@@ -1764,7 +1764,7 @@
     "created": "Creado",
     "actions": "Acciones",
     "new_token_title": "Nuevo token ETAPI",
-    "new_token_message": "Por favor ingresa el nombre del nuevo token",
+    "new_token_message": "Introduzca el nombre del nuevo token",
     "default_token_name": "nuevo token",
     "error_empty_name": "El nombre del token no puede estar vacío",
     "token_created_title": "Token ETAPI creado",
@@ -1794,7 +1794,7 @@
     "for_more_info": "para más información.",
     "protected_session_timeout_label": "Cerrar sesión automáticamente después de",
     "reset_confirmation": "Al restablecer la contraseña, perderá para siempre el acceso a todas sus notas protegidas existentes. ¿Realmente desea restablecer la contraseña?",
-    "reset_success_message": "La contraseña ha sido restablecida. Por favor establezca una nueva contraseña",
+    "reset_success_message": "La contraseña se ha restablecido. Establezca una contraseña nueva.",
     "change_password_heading": "Cambiar contraseña",
     "set_password_heading": "Establecer contraseña",
     "set_password": "Establecer contraseña",
@@ -1990,7 +1990,7 @@
     "edit-branch-prefix": "Editar prefijo de rama...",
     "advanced": "Avanzado",
     "expand-subtree": "Expandir subárbol",
-    "collapse-subtree": "Colapsar subárbol",
+    "collapse-subtree": "Contraer subárbol",
     "sort-by": "Ordenar por...",
     "recent-changes-in-subtree": "Cambios recientes en subárbol",
     "convert-to-attachment": "Convertir en adjunto...",
@@ -2009,7 +2009,7 @@
     "converted-to-attachments_one": "{{count}} nota se ha convertido en archivos adjuntos.",
     "converted-to-attachments_many": "{{count}} notas se han convertido en archivos adjuntos.",
     "converted-to-attachments_other": "{{count}} notas se han convertido en archivos adjuntos.",
-    "convert-to-attachment-confirm": "¿Está seguro que desea convertir las notas seleccionadas en archivos adjuntos de sus notas padres? Esta operación solo aplica a notas de Imagen, otras notas serán omitidas.",
+    "convert-to-attachment-confirm": "¿Está seguro de que desea convertir las notas seleccionadas en archivos adjuntos de sus notas principales? Esta operación solo se aplica a las notas de imagen; el resto se omitirán.",
     "open-in-popup": "Edición rápida",
     "archive": "Archivar",
     "unarchive": "Desarchivar",
@@ -2100,11 +2100,11 @@
     }
   },
   "note_tree": {
-    "collapse-title": "Colapsar árbol de nota",
+    "collapse-title": "Contraer el árbol de notas",
     "scroll-active-title": "Desplazarse a nota activa",
     "tree-settings-title": "Ajustes de árbol",
     "hide-archived-notes": "Ocultar notas archivadas",
-    "automatically-collapse-notes": "Colapsar notas automaticamente",
+    "automatically-collapse-notes": "Contraer notas automáticamente",
     "automatically-collapse-notes-title": "Las notas serán colapsadas después de un periodo de inactividad para despejar el árbol.",
     "auto-collapsing-notes-after-inactivity": "Colapsando notas automáticamente después de inactividad...",
     "saved-search-note-refreshed": "La nota de búsqueda guardada fue recargada.",
@@ -2214,7 +2214,7 @@
     "message": "El archivo abierto externamente se guardó a las {{time}}. Cargarlo sustituye el contenido en Trilium; la versión actual se conserva como revisión."
   },
   "app_context": {
-    "please_wait_for_save": "Por favor espere algunos segundos a que se termine de guardar, después intente de nuevo."
+    "please_wait_for_save": "Espere unos segundos a que termine el guardado e inténtelo de nuevo."
   },
   "note_create": {
     "duplicated": "La nota \"{{title}}\" ha sido duplicada."
@@ -2522,8 +2522,8 @@
     "share_root_not_shared": "La nota '{{noteTitle}}' tiene la etiqueta #shareRoot pero no ha sido compartida"
   },
   "time_selector": {
-    "invalid_input": "El valor de tiempo ingresado no es un número válido.",
-    "minimum_input": "El valor de tiempo ingresado necesita ser de al menos {{minimumSeconds}} segundos."
+    "invalid_input": "El valor de tiempo introducido no es un número válido.",
+    "minimum_input": "El valor de tiempo introducido debe ser de al menos {{minimumSeconds}} segundos."
   },
   "tasks": {
     "due": {
@@ -2573,10 +2573,10 @@
     "dark_theme": "Tema oscuro"
   },
   "cpu_arch_warning": {
-    "title": "Por favor descargue la versión ARM64",
+    "title": "Descargue la versión ARM64",
     "message_macos": "TriliumNext está siendo ejecutado bajo traducción Rosetta 2, lo que significa que está usando la versión Intel (x64) en Apple Silicon Mac. Esto impactará significativamente en el rendimiento y la vida de la batería.",
     "message_windows": "TriliumNext está siendo ejecutado bajo emulación, lo que significa que está usando la version Intel (x64) en Windows en un dispositivo ARM. Esto impactará significativamente en el rendimiento y la vida de la batería.",
-    "recommendation": "Para la mejor experiencia, por favor descargue la versión nativa ARM64 de TriliumNext desde nuestra página de lanzamientos.",
+    "recommendation": "Para la mejor experiencia, descargue la versión nativa ARM64 de TriliumNext desde nuestra página de versiones.",
     "download_link": "Descargar versión nativa",
     "continue_anyway": "Continuar de todas maneras",
     "dont_show_again": "No mostrar esta advertencia otra vez"
@@ -2632,7 +2632,7 @@
     "insert-above": "Insertar nuevo arriba",
     "insert-below": "Insertar nuevo abajo",
     "delete-column": "Eliminar columna...",
-    "delete-column-confirmation": "¿Seguro que desea eliminar esta columna? El atributo correspondiente también se eliminará de las notas de esta columna.",
+    "delete-column-confirmation": "¿Está seguro de que desea eliminar esta columna? También se eliminará el atributo correspondiente de las notas de esta columna.",
     "add-column": "Añadir columna",
     "new-item": "Nuevo elemento",
     "archive-note": "Archivar nota",
@@ -2798,7 +2798,7 @@
     "add-column-to-the-left": "Añadir columna a la izquierda",
     "add-column-to-the-right": "Añadir columna a la derecha",
     "edit-column": "Editar columna...",
-    "delete_column_confirmation": "¿Seguro que desea eliminar esta columna? Se eliminará el atributo asociado de todas las notas.",
+    "delete_column_confirmation": "¿Está seguro de que desea eliminar esta columna? Se eliminará el atributo correspondiente de todas las notas.",
     "new-column-label": "Etiqueta...",
     "new-column-relation": "Relación...",
     "delete-column": "Eliminar columna...",
@@ -3576,7 +3576,7 @@
     "failed_to_load": "Fallo al cargar texto OCR",
     "process_now": "Proceso OCR",
     "processing": "Procesando...",
-    "processing_started": "Se ha iniciado el procesamiento de OCR. Por favor, espere un momento y refresque.",
+    "processing_started": "Se ha iniciado el procesamiento OCR. Espere un momento y actualice.",
     "processing_complete": "Procesamiento de OCR completo.",
     "processing_failed": "Fallo al iniciar procesamiento de OCR",
     "text_filtered_low_confidence": "Texto OCR detectado con {{confidence}}% de confianza, pero fue descartado porque su umbral mínimo es {{threshold}}%.",
@@ -4650,10 +4650,10 @@
       "map-keys-in-normal-mode": "asignar teclas en el modo Normal",
       "map-keys-in-visual-mode": "asignar teclas en el modo Visual",
       "map-keys-in-insert-mode": "asignar teclas en el modo Inserción",
-      "map-keys-in-every-mode-not-remapped": "asignar teclas en todos los modos, sin recursión",
-      "map-keys-in-normal-mode-not-remapped": "asignar teclas en el modo Normal, sin recursión",
-      "map-keys-in-visual-mode-not-remapped": "asignar teclas en el modo Visual, sin recursión",
-      "map-keys-in-insert-mode-not-remapped": "asignar teclas en el modo Inserción, sin recursión",
+      "map-keys-in-every-mode-not-remapped": "asignar teclas en todos los modos, sin reasignar",
+      "map-keys-in-normal-mode-not-remapped": "asignar teclas en el modo Normal, sin reasignar",
+      "map-keys-in-visual-mode-not-remapped": "asignar teclas en el modo Visual, sin reasignar",
+      "map-keys-in-insert-mode-not-remapped": "asignar teclas en el modo Inserción, sin reasignar",
       "remove-a-mapping": "quitar una asignación",
       "remove-all-mappings": "quitar todas las asignaciones",
       "no-command-starts-with-0": "ningún comando empieza por %0",
@@ -5548,7 +5548,7 @@
     "badge_on_tooltip": "Modo Vim activado para esta nota. Haga clic para desactivarlo.",
     "badge_off_tooltip": "Modo Vim desactivado para esta nota. Haga clic para activarlo.",
     "menu_note": "Modo Vim",
-    "menu_settings": "Ajustes de Vim",
+    "menu_settings": "Configuración",
     "menu_help": "Ayuda",
     "menu_note_description": "Se aplica solo a esta nota.",
     "menu_note_description_subtree": "Se aplica a esta nota y a las notas situadas debajo."
