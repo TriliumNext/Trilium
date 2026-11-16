@@ -2981,7 +2981,8 @@
     "copy_url": "주소(URL) 복사",
     "display_as": "표시 형식",
     "edit": "편집...",
-    "include_size_default": "기본값"
+    "include_size_default": "기본값",
+    "tab_width": "탭 너비"
   },
   "electron_integration": {
     "desktop-application": "데스크톱 애플리케이션",
