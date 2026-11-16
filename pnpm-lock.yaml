@@ -388,8 +388,8 @@ importers:
   apps/db-compare:
     dependencies:
       better-sqlite3:
-        specifier: 13.0.3
-        version: 13.0.3
+        specifier: 13.1.1
+        version: 13.1.1
       diff:
         specifier: 9.0.0
         version: 9.0.0
@@ -407,8 +407,8 @@ importers:
   apps/desktop:
     dependencies:
       better-sqlite3:
-        specifier: 13.0.3
-        version: 13.0.3
+        specifier: 13.1.1
+        version: 13.1.1
       electron-debug:
         specifier: 5.0.0
         version: 5.0.0
@@ -477,8 +477,8 @@ importers:
   apps/dump-db:
     dependencies:
       better-sqlite3:
-        specifier: 13.0.3
-        version: 13.0.3
+        specifier: 13.1.1
+        version: 13.1.1
       mime-types:
         specifier: 3.0.2
         version: 3.0.2
@@ -508,8 +508,8 @@ importers:
         specifier: 8.0.0
         version: 8.0.0
       better-sqlite3:
-        specifier: 13.0.3
-        version: 13.0.3
+        specifier: 13.1.1
+        version: 13.1.1
     devDependencies:
       '@triliumnext/client':
         specifier: workspace:*
@@ -643,8 +643,8 @@ importers:
         specifier: 7.0.170
         version: 7.0.170(zod@4.6.7)
       better-sqlite3:
-        specifier: 13.0.3
-        version: 13.0.3
+        specifier: 13.1.1
+        version: 13.1.1
       i18next:
         specifier: 27.1.1
         version: 27.1.1(typescript@6.0.3)
@@ -5835,8 +5835,8 @@ packages:
   before-after-hook@4.0.0:
     resolution: {integrity: sha512-q6tR3RPqIB1pMiTRMFcZwuG5T8vwp+vUvEG0vuI6B+Rikh5BfPp2fQ82c925FOs+b0lcFQ8CFrL+KbilfZFhOQ==}
 
-  better-sqlite3@13.0.3:
-    resolution: {integrity: sha512-RbOBxmLBG8uvFUc15X9+9SFemKcQ0WBuISBVkpuiaUB2qblC8UWlHEjdWVoZ8AdhSwmoEgsiXKfopX0CQxaACQ==}
+  better-sqlite3@13.1.1:
+    resolution: {integrity: sha512-JjyLCATp+VLxZVFyWkicyzKYwpEFLCrV4MmshW97xv3JXdhw5jBDcsbEWRGm2L/96E+k7rtjON8q9nml05h3Pw==}
     engines: {node: '>=22'}
 
   bezier-js@6.1.4:
@@ -17182,7 +17182,7 @@ snapshots:
 
   before-after-hook@4.0.0: {}
 
-  better-sqlite3@13.0.3:
+  better-sqlite3@13.1.1:
     dependencies:
       node-addon-api: 8.9.2
 
