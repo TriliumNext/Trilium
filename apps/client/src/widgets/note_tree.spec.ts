@@ -431,6 +431,23 @@ describe("rendering before the tabs exist", () => {
         vi.restoreAllMocks();
     });
 
+    it("settles its first render once Fancytree has built the tree", async () => {
+        const widget = new NoteTreeWidget();
+        vi.spyOn(widget, "prepareRootNode").mockReturnValue({ key: "root" } as never);
+        const fancytree = vi.spyOn($.fn, "fancytree").mockImplementation(function (this: JQuery) {
+            return this;
+        } as never);
+        vi.spyOn($.ui.fancytree, "getTree").mockReturnValue({} as never);
+        let buildsAtSettle: number | undefined;
+        void widget.firstRender.then(() => { buildsAtSettle = fancytree.mock.calls.length; });
+
+        await new Promise((resolve) => setTimeout(resolve));
+        expect(buildsAtSettle).toBeUndefined();
+        widget.doRender();
+        await widget.firstRender;
+        expect(buildsAtSettle).toBe(1);
+    });
+
     it("renders a note's title while the tab manager is not created yet", async () => {
         buildNote({ id: "early", title: "Early" });
         const widget = new NoteTreeWidget();

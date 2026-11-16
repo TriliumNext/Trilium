@@ -162,6 +162,11 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
     private tree!: Fancytree.Fancytree;
     /** Set while a focus asked for before the tree was built waits for it. */
     private focusesOnBuild = false;
+    private settleFirstRender!: () => void;
+    /** Settles once `initFancyTree()` has rendered the first nodes. */
+    readonly firstRender = new Promise<void>((resolve) => {
+        this.settleFirstRender = resolve;
+    });
 
     constructor() {
         super();
@@ -230,6 +235,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         Promise.all([options.initializedPromise, froca.initializedPromise]).then(() => {
             this.applyDensity();
             this.initFancyTree();
+            this.settleFirstRender();
         });
 
         this.setupNoteTitleTooltip();

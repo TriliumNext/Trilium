@@ -221,6 +221,11 @@ describe("preload script", () => {
             expect(ipcRendererSent).toContainEqual({ channel: "show-window", args: [] });
         });
 
+        it("releaseFirstPaint sends correct IPC message", () => {
+            win().releaseFirstPaint();
+            expect(ipcRendererSent).toContainEqual({ channel: "release-first-paint", args: [] });
+        });
+
         it("reportStartupMetric sends correct IPC message", () => {
             win().reportStartupMetric("client-full-render");
             expect(ipcRendererSent).toContainEqual({

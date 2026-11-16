@@ -8,7 +8,8 @@ const mocks = vi.hoisted(() => ({
     syncNativeWindowWithTheme: vi.fn(),
     setBackgroundEffectsSuspended: vi.fn(),
     onEffectiveThemeStyleChange: vi.fn(),
-    isElectron: vi.fn(() => false)
+    isElectron: vi.fn(() => false),
+    noteTreeFirstRender: Promise.resolve()
 }));
 
 vi.mock("./components/app_startup.js", () => ({ startAppAroundLayout: mocks.startAppAroundLayout }));
@@ -19,6 +20,9 @@ vi.mock("./services/native_window.js", () => ({ syncNativeWindowWithTheme: mocks
 vi.mock("./services/theme.js", () => ({
     onEffectiveThemeStyleChange: mocks.onEffectiveThemeStyleChange,
     setBackgroundEffectsSuspended: mocks.setBackgroundEffectsSuspended
+}));
+vi.mock("./widgets/containers/LeftPane.js", () => ({
+    get noteTreeFirstRender() { return mocks.noteTreeFirstRender; }
 }));
 vi.mock("./services/utils.js", async (importOriginal) => {
     const original = await importOriginal<typeof import("./services/utils.js")>();
@@ -32,8 +36,69 @@ describe("startDesktop", () => {
     afterEach(() => {
         vi.clearAllMocks();
         vi.unstubAllGlobals();
+        vi.useRealTimers();
         mocks.isElectron.mockReturnValue(false);
+        mocks.noteTreeFirstRender = Promise.resolve();
         delete window.electronApi;
+    });
+
+    /** An Electron window API with the methods the startup calls, all spied. */
+    function stubElectronWindow() {
+        const win = {
+            onGlobalShortcut: vi.fn(), onOpenInSameTab: vi.fn(), isDevToolsDocked: vi.fn(() => false),
+            onDevToolsDockChanged: vi.fn(), reportStartupMetric: vi.fn(), releaseFirstPaint: vi.fn()
+        };
+        window.electronApi = { window: win, navigation: { clearNavigationHistory: vi.fn() } } as unknown as typeof window.electronApi;
+        return win;
+    }
+
+    /** Makes `document.getAnimations()` return `animations`. */
+    function stubAnimations(animations: ReturnType<typeof stubAnimation>[]) {
+        Object.defineProperty(document, "getAnimations", { value: () => animations, configurable: true });
+    }
+
+    /** An animation that `getComputedTiming()` reports as ending at `endTime`. */
+    function stubAnimation(endTime: number) {
+        return { effect: { getComputedTiming: () => ({ endTime }) }, finish: vi.fn() };
+    }
+
+    it("releases the first paint once the note tree has rendered, with the entrance animations finished", async () => {
+        mocks.isElectron.mockReturnValue(true);
+        vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { callback(0); return 0; });
+        const win = stubElectronWindow();
+        let renderTree = () => {};
+        mocks.noteTreeFirstRender = new Promise<void>((resolve) => { renderTree = resolve; });
+        const fade = stubAnimation(200);
+        const spinner = stubAnimation(Infinity);
+        stubAnimations([ fade, spinner ]);
+
+        const startup = startDesktop(document.createElement("div"));
+        await vi.waitFor(() => expect(mocks.startAppAroundLayout).toHaveBeenCalled());
+        await new Promise((resolve) => setTimeout(resolve));
+        expect(win.releaseFirstPaint).not.toHaveBeenCalled();
+
+        renderTree();
+        await startup;
+        expect(win.releaseFirstPaint).toHaveBeenCalledTimes(1);
+        // An infinite animation, such as a loading spinner, has no end to jump to.
+        expect(fade.finish).toHaveBeenCalled();
+        expect(spinner.finish).not.toHaveBeenCalled();
+        expect(fade.finish.mock.invocationCallOrder[0]).toBeLessThan(win.releaseFirstPaint.mock.invocationCallOrder[0]);
+    });
+
+    it("releases the first paint without the note tree after a while", async () => {
+        vi.useFakeTimers();
+        mocks.isElectron.mockReturnValue(true);
+        const win = stubElectronWindow();
+        mocks.noteTreeFirstRender = new Promise<void>(() => {});
+        stubAnimations([]);
+
+        const startup = startDesktop(document.createElement("div"));
+        await vi.advanceTimersByTimeAsync(499);
+        expect(win.releaseFirstPaint).not.toHaveBeenCalled();
+        await vi.advanceTimersByTimeAsync(1);
+        await startup;
+        expect(win.releaseFirstPaint).toHaveBeenCalledTimes(1);
     });
 
     it("starts the app around the layout, then sets up the tooltips and the browser's context menu", async () => {
@@ -46,18 +111,16 @@ describe("startDesktop", () => {
         expect(mocks.setupElectronContextMenu).not.toHaveBeenCalled();
     });
 
-    it("reports no full render when the app fails to start", async () => {
+    it("reports no full render when the app fails to start, but still paints its error", async () => {
         mocks.isElectron.mockReturnValue(true);
         vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { callback(0); return 0; });
-        const reportStartupMetric = vi.fn();
-        window.electronApi = { window: {
-            onGlobalShortcut: vi.fn(), onOpenInSameTab: vi.fn(), isDevToolsDocked: vi.fn(() => false),
-            onDevToolsDockChanged: vi.fn(), reportStartupMetric
-        }, navigation: { clearNavigationHistory: vi.fn() } } as unknown as typeof window.electronApi;
+        stubAnimations([]);
+        const win = stubElectronWindow();
         mocks.startAppAroundLayout.mockResolvedValueOnce(false);
 
         await startDesktop(document.createElement("div"));
-        expect(reportStartupMetric).not.toHaveBeenCalled();
+        expect(win.reportStartupMetric).not.toHaveBeenCalled();
+        expect(win.releaseFirstPaint).toHaveBeenCalledTimes(1);
     });
 
     it("connects the Electron window, and reports the full render after a painted frame", async () => {
@@ -69,8 +132,10 @@ describe("startDesktop", () => {
             onOpenInSameTab: vi.fn((callback: (noteId: string) => void) => { handlers.sameTab = callback; }),
             isDevToolsDocked: vi.fn(() => true),
             onDevToolsDockChanged: vi.fn((callback: (docked: boolean) => void) => { handlers.dock = callback; }),
-            reportStartupMetric: vi.fn()
+            reportStartupMetric: vi.fn(),
+            releaseFirstPaint: vi.fn()
         };
+        stubAnimations([]);
         const clearNavigationHistory = vi.fn();
         window.electronApi = { window: win, navigation: { clearNavigationHistory } } as unknown as typeof window.electronApi;
 

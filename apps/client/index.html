@@ -9,6 +9,16 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
         <link rel="manifest" crossorigin="use-credentials" href="manifest.webmanifest">
         <title>Trilium Notes</title>
+        <!-- Desktop only: the first paint waits for this render-blocking script, which the main process answers once `desktop_startup.ts` releases it (see `first_paint_gate.ts`). -->
+        <script>
+            if (window.electronApi) {
+                const firstPaintGate = document.createElement("script");
+                firstPaintGate.src = "./startup-gate.js";
+                firstPaintGate.async = true;
+                firstPaintGate.setAttribute("blocking", "render");
+                document.head.append(firstPaintGate);
+            }
+        </script>
         <!-- Requests the bootstrap data while index.ts downloads; `setupGlob()` in index.ts takes the response. -->
         <script>
             window.bootstrapRequest = fetch("./bootstrap" + location.search);

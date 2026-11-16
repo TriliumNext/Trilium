@@ -5,6 +5,7 @@ import { type BrowserWindow, type BrowserWindowConstructorOptions, default as el
 import { t } from "i18next";
 import path from "path";
 
+import { armFirstPaintGate, releaseFirstPaint } from "./first_paint_gate.js";
 import { markStartupMetric } from "./startup_metrics.js";
 import { isTriliumAppShellUrl, TRILIUM_APP_BASE_URL } from "./trilium_app_origin.js";
 import { setupWebContentsSecurity } from "./web_contents_security.js";
@@ -33,8 +34,8 @@ function getPreloadScript(): string {
     return preloadScriptCache;
 }
 
-/** How long the main window stays hidden at most while waiting for the renderer's first frame. */
-const MAIN_WINDOW_REVEAL_TIMEOUT_MS = 3000;
+/** How long an app window stays hidden at most while waiting for the renderer's first frame. */
+const WINDOW_REVEAL_TIMEOUT_MS = 3000;
 
 // Prevent the window being garbage collected
 let mainWindow: BrowserWindow | null;
@@ -83,8 +84,9 @@ async function createExtraWindow(extraWindowHash: string) {
     const { BrowserWindow } = await import("electron");
 
     const win = new BrowserWindow(getExtraWindowOptions());
-    win.loadURL(`${TRILIUM_APP_BASE_URL}?extraWindow=1${extraWindowHash}`);
+    // Before the page loads, so that its first paint is held from its first request on.
     adoptExtraWindow(win);
+    win.loadURL(`${TRILIUM_APP_BASE_URL}?extraWindow=1${extraWindowHash}`);
 }
 
 /** Constructor options shared by both ways an extra window is created. */
@@ -93,6 +95,8 @@ function getExtraWindowOptions(): BrowserWindowConstructorOptions {
         width: 1000,
         height: 800,
         title: "Trilium Notes",
+        // Shown on the renderer's first frame, which `armFirstPaintGate()` holds until the interface is rendered.
+        show: false,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -112,6 +116,8 @@ function getExtraWindowOptions(): BrowserWindowConstructorOptions {
 /** Per-window wiring for an extra window, whichever way it was created. */
 function adoptExtraWindow(win: BrowserWindow) {
     win.setMenuBarVisibility(false);
+    armFirstPaintGate(win.webContents);
+    revealOnFirstPaint(win);
     trackBackgroundEffects(win);
     configureWebContents(win.webContents, optionService.getOptionBool("spellCheckEnabled"));
     trackWindowFocus(win);
@@ -185,18 +191,11 @@ async function createMainWindow(startHidden = false) {
     win.once("show", manageWindowState);
 
     if (!startHidden) {
-        const reveal = () => {
-            clearTimeout(revealTimeout);
-            if (!win.isDestroyed() && !win.isVisible()) {
-                showWindow(win);
-            }
-        };
-        // The fallback shows the window if the renderer never paints (a crash, a hung server).
-        const revealTimeout = setTimeout(reveal, MAIN_WINDOW_REVEAL_TIMEOUT_MS);
-        win.once("ready-to-show", reveal);
+        revealOnFirstPaint(win);
     }
 
     mainWindow.setMenuBarVisibility(false);
+    armFirstPaintGate(mainWindow.webContents);
     mainWindow.loadURL(TRILIUM_APP_BASE_URL);
     // Close-to-tray: when enabled, closing the main window hides it to the tray
     // instead of quitting. Only intercepts a genuine window close (not an app
@@ -211,6 +210,22 @@ async function createMainWindow(startHidden = false) {
 
     configureWebContents(mainWindow.webContents, spellcheckEnabled);
     trackWindowFocus(mainWindow);
+}
+
+/**
+ * Shows a window created hidden on the renderer's first frame, which the first-paint gate holds
+ * until the interface is rendered, or after {@link WINDOW_REVEAL_TIMEOUT_MS} if the renderer never
+ * paints (a crash, a hung server).
+ */
+function revealOnFirstPaint(win: BrowserWindow) {
+    const reveal = () => {
+        clearTimeout(revealTimeout);
+        if (!win.isDestroyed() && !win.isVisible()) {
+            showWindow(win);
+        }
+    };
+    const revealTimeout = setTimeout(reveal, WINDOW_REVEAL_TIMEOUT_MS);
+    win.once("ready-to-show", reveal);
 }
 
 function getWindowExtraOpts() {
@@ -639,6 +654,10 @@ export function setupWindowing() {
             }
         }
         return "";
+    });
+
+    electron.ipcMain.on("release-first-paint", (event) => {
+        releaseFirstPaint(event.sender.id);
     });
 
     electron.ipcMain.on("show-window", (event) => {

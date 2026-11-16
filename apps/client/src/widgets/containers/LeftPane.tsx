@@ -109,6 +109,11 @@ export default function LeftPane({ pane, between }: {
     const builtInCount = isHorizontalLayout ? 2 : 3;
     const wasShown = useRef(false);
     wasShown.current ||= visible;
+    useLayoutEffect(() => {
+        if (!wasShown.current) {
+            settleNoteTreeFirstRender();
+        }
+    }, []);
     // The width `resizer.setupLeftPaneResizer()` gives the docked pane, which Split.js applies only
     // a frame after the pane is in the page. LeftPane.css holds the pane to it until then.
     const [ leftPaneWidth ] = useTriliumOptionInt("leftPaneWidth");
@@ -138,6 +143,15 @@ const loadNoteTree = () => import("../note_tree");
 /** Set while the pane asked to focus the tree before the tree was loaded. */
 let treeFocusRequested = false;
 
+let settleNoteTreeFirstRender: () => void = () => {};
+/**
+ * Settles once the note tree has rendered its first nodes, or as soon as the pane first renders
+ * closed, since the tree is only loaded once the pane is shown.
+ */
+export const noteTreeFirstRender = new Promise<void>((resolve) => {
+    settleNoteTreeFirstRender = resolve;
+});
+
 function NoteTree() {
     const noteTree = useLazyModule(loadNoteTree);
     return noteTree ? <LoadedNoteTree NoteTreeWidget={noteTree.default} /> : null;
@@ -146,7 +160,7 @@ function NoteTree() {
 function LoadedNoteTree({ NoteTreeWidget }: { NoteTreeWidget: typeof import("../note_tree").default }) {
     // The tabs can be restored before the tree loads, so it would miss `activeContextChanged`.
     const { noteContext } = useActiveNoteContext();
-    const [ tree ] = useLegacyWidget(() => {
+    const [ tree, widget ] = useLegacyWidget(() => {
         const widget = new NoteTreeWidget();
         appContext.noteTreeWidget = widget;
         if (treeFocusRequested) {
@@ -155,5 +169,10 @@ function LoadedNoteTree({ NoteTreeWidget }: { NoteTreeWidget: typeof import("../
         }
         return widget;
     }, { containerClassName: "note-tree-host", noteContext });
+    // Runs after the effect of `useLegacyWidget()` that attaches the tree to the page, whose entrance
+    // animation only starts then.
+    useEffect(() => {
+        void widget.firstRender.then(settleNoteTreeFirstRender);
+    }, [ widget ]);
     return tree;
 }

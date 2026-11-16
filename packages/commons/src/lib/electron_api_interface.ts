@@ -186,6 +186,14 @@ export interface ElectronWindowApi {
     showWindow(): void;
 
     /**
+     * Lets the window paint for the first time. The main process holds the first paint of a
+     * starting main or extra window, and with it the reveal of the window, until the client has
+     * rendered its interface, so that the window never shows a half-built one. No-op for other
+     * windows and once released.
+     */
+    releaseFirstPaint(): void;
+
+    /**
      * Reports a renderer startup milestone to the main process, which records
      * it relative to OS process creation alongside the main-process startup
      * metrics. Only the first report of each metric is recorded; later reports

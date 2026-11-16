@@ -93,6 +93,9 @@ contextBridge.exposeInMainWorld("electronApi", {
         showWindow() {
             ipcRenderer.send("show-window");
         },
+        releaseFirstPaint() {
+            ipcRenderer.send("release-first-paint");
+        },
         reportStartupMetric(metric: RendererStartupMetric) {
             ipcRenderer.send("report-startup-metric", metric);
         },

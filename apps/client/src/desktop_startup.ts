@@ -6,6 +6,10 @@ import { setupContextMenu as setupBrowserContextMenu } from "./menus/browser_con
 import noteTooltipService from "./services/note_tooltip.js";
 import { onEffectiveThemeStyleChange, setBackgroundEffectsSuspended } from "./services/theme.js";
 import utils from "./services/utils.js";
+import { noteTreeFirstRender } from "./widgets/containers/LeftPane.js";
+
+/** How long the first paint waits at most for the note tree, once the rest of the startup is done. */
+const NOTE_TREE_FIRST_RENDER_WAIT_MS = 500;
 
 /**
  * The part of the desktop startup that `desktop.ts` runs after the first render of the layout:
@@ -22,9 +26,32 @@ export async function startDesktop(root: HTMLElement) {
         setupBrowserContextMenu();
     }
 
-    if (await started) {
+    const succeeded = await started;
+    const electronWindow = window.electronApi?.window;
+    if (electronWindow) {
+        await releaseFirstPaint(electronWindow);
+    }
+    if (succeeded) {
         reportFullRenderStartupMetric();
     }
+}
+
+/**
+ * Lets the main window paint once the note tree has rendered too, with the entrance animations
+ * finished, so that its first frame shows the settled interface. `index.html` holds that paint
+ * until then. It is released on a failed startup as well, which shows its error.
+ */
+async function releaseFirstPaint(electronWindow: ElectronWindowApi) {
+    await Promise.race([
+        noteTreeFirstRender,
+        new Promise((resolve) => setTimeout(resolve, NOTE_TREE_FIRST_RENDER_WAIT_MS))
+    ]);
+    for (const animation of document.getAnimations()) {
+        if (Number.isFinite(animation.effect?.getComputedTiming().endTime)) {
+            animation.finish();
+        }
+    }
+    electronWindow.releaseFirstPaint();
 }
 
 /** Connects the Electron window: its shortcuts, theme, DevTools dock and context menu. */

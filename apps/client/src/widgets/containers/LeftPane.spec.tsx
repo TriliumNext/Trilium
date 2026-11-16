@@ -4,11 +4,18 @@ import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } fr
 
 const setupLeftPaneResizer = vi.hoisted(() => vi.fn());
 const focusTree = vi.hoisted(() => vi.fn());
+/** What the stub tree's `firstRender` returns; `renderTree()` settles it. */
+const treeRender = vi.hoisted(() => {
+    const state = { firstRender: Promise.resolve(), renderTree: () => {} };
+    return state;
+});
 vi.mock("../../services/resizer", () => ({ default: { setupLeftPaneResizer } }));
 vi.mock("../note_tree", async () => {
     const { default: NoteContextAwareWidget } = await import("../note_context_aware_widget");
     return {
         default: class extends NoteContextAwareWidget {
+            readonly firstRender = treeRender.firstRender;
+
             doRender() {
                 this.$widget = $(`<div class="tree-stub" tabindex="-1">`);
             }
@@ -240,6 +247,75 @@ describe("LeftPane", () => {
             act(() => { render(vnode, container); });
         }
     }
+});
+
+describe("noteTreeFirstRender", () => {
+    let container: HTMLDivElement;
+
+    afterEach(() => {
+        act(() => render(null, container));
+        document.body.replaceChildren();
+        treeRender.firstRender = Promise.resolve();
+        vi.restoreAllMocks();
+    });
+
+    /**
+     * Renders the pane from fresh modules, as each load of `LeftPane` has its own
+     * `noteTreeFirstRender`, and returns that promise, wrapped so that awaiting the call
+     * does not wait for it.
+     */
+    async function mountFresh(docked: boolean) {
+        vi.resetModules();
+        const [ leftPane, { default: freshAppContext }, { default: freshOptions }, { ParentComponent: FreshParent } ] = await Promise.all([
+            import("./LeftPane"),
+            import("../../components/app_context"),
+            import("../../services/options"),
+            import("../react/react_utils")
+        ]);
+        vi.spyOn(freshOptions, "save").mockResolvedValue(undefined);
+        freshOptions.set("leftPaneVisible", docked.toString());
+        freshAppContext.tabManager = { getActiveContext: () => null } as typeof freshAppContext.tabManager;
+        function FreshHost() {
+            const pane = leftPane.useLeftPane(true);
+            return <leftPane.default pane={pane} />;
+        }
+        container = document.createElement("div");
+        document.body.append(container);
+        await act(async () => {
+            render(<FreshParent.Provider value={freshAppContext}><FreshHost /></FreshParent.Provider>, container);
+        });
+        return { firstRender: leftPane.noteTreeFirstRender };
+    }
+
+    /** Whether `promise` has settled by the time the pending tasks have run. */
+    async function hasSettled(promise: Promise<void>) {
+        return Promise.race([ promise.then(() => true), new Promise((resolve) => setTimeout(() => resolve(false))) ]);
+    }
+
+    it("settles as soon as the pane renders closed, since no tree renders then", async () => {
+        treeRender.firstRender = new Promise(() => {});
+        const { firstRender } = await mountFresh(false);
+        expect(await hasSettled(firstRender)).toBe(true);
+    });
+
+    it("follows the first render of the tree in a pane that starts open", async () => {
+        treeRender.firstRender = new Promise((resolve) => { treeRender.renderTree = resolve; });
+        const { firstRender } = await mountFresh(true);
+        await vi.waitFor(() => expect(container.querySelector(".tree-stub")).not.toBeNull());
+        expect(await hasSettled(firstRender)).toBe(false);
+
+        treeRender.renderTree();
+        expect(await hasSettled(firstRender)).toBe(true);
+    });
+
+    it("waits for the built tree to be attached to the page, where its entrance animation starts", async () => {
+        treeRender.firstRender = Promise.resolve();
+        const { firstRender } = await mountFresh(true);
+        let attachedAtSettle: boolean | undefined;
+        void firstRender.then(() => { attachedAtSettle = !!container.querySelector(".tree-stub"); });
+        await vi.waitFor(() => expect(attachedAtSettle).toBeDefined());
+        expect(attachedAtSettle).toBe(true);
+    });
 });
 
 /** Stands in for `DesktopLayout`, which marks the main container while the pane is not docked. */

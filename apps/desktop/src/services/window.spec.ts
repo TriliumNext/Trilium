@@ -49,6 +49,7 @@ interface FakeSession {
 }
 
 class FakeWebContents {
+    public id = 101;
     public send = vi.fn();
     public on = vi.fn((event: string, cb: Handler) => {
         const list = this.listeners.get(event) ?? [];
@@ -230,6 +231,8 @@ vi.mock("./web_contents_security", () => ({ setupWebContentsSecurity: vi.fn() })
 // Startup timing has its own suite (startup_metrics.spec.ts); here we only
 // verify that window creation marks the right milestones.
 vi.mock("./startup_metrics", () => ({ markStartupMetric: vi.fn() }));
+const firstPaintGate = vi.hoisted(() => ({ armFirstPaintGate: vi.fn(), releaseFirstPaint: vi.fn() }));
+vi.mock("./first_paint_gate", () => firstPaintGate);
 
 // The real value is an import-time constant derived from the OS running the tests;
 // route it through mutable state so Windows 10 and 11 scenarios are both testable.
@@ -344,6 +347,10 @@ describe("window service", () => {
             const win = state.windows[state.windows.length - 1];
             expect(win.setMenuBarVisibility).toHaveBeenCalledWith(false);
             expect(win.loadURL).toHaveBeenCalledWith("trilium-app://app/");
+            // The first paint is held from the first request of the page on.
+            expect(firstPaintGate.armFirstPaintGate).toHaveBeenCalledWith(win.webContents);
+            expect(firstPaintGate.armFirstPaintGate.mock.invocationCallOrder[0])
+                .toBeLessThan(win.loadURL.mock.invocationCallOrder[0]);
             // closed handler nulls out mainWindow
             win.fire("closed");
             expect(windowService.getMainWindow()).toBeNull();
@@ -531,6 +538,35 @@ describe("window service", () => {
             expect(win.webContents.session.setSpellCheckerLanguages).toHaveBeenCalled();
         });
 
+        it("holds an extra window hidden until its first paint, which the gate holds from its first request on", async () => {
+            await windowService.createExtraWindow("");
+            const win = state.windows[state.windows.length - 1];
+            expect((win.opts as Record<string, unknown>).show).toBe(false);
+            expect(firstPaintGate.armFirstPaintGate).toHaveBeenCalledWith(win.webContents);
+            expect(firstPaintGate.armFirstPaintGate.mock.invocationCallOrder[0])
+                .toBeLessThan(win.loadURL.mock.invocationCallOrder[0]);
+
+            win.isVisible.mockReturnValue(false);
+            expect(win.show).not.toHaveBeenCalled();
+            win.fire("ready-to-show");
+            expect(win.show).toHaveBeenCalledTimes(1);
+        });
+
+        it("shows an extra window whose renderer never paints after a while", async () => {
+            vi.useFakeTimers();
+            try {
+                await windowService.createExtraWindow("");
+                const win = state.windows[state.windows.length - 1];
+                win.isVisible.mockReturnValue(false);
+                vi.advanceTimersByTime(2999);
+                expect(win.show).not.toHaveBeenCalled();
+                vi.advanceTimersByTime(1);
+                expect(win.show).toHaveBeenCalledTimes(1);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
         it("adopts a window the renderer opened through window.open", async () => {
             state.optionBools = { spellCheckEnabled: false };
             await windowService.createExtraWindow("#opener");
@@ -541,6 +577,11 @@ describe("window service", () => {
 
             expect(child.setMenuBarVisibility).toHaveBeenCalledWith(false);
             expect(child.webContents.session.setSpellCheckerEnabled).toHaveBeenCalledWith(false);
+            // Hidden by the window-open policy's `show: false`, it is shown on its first paint.
+            expect(firstPaintGate.armFirstPaintGate).toHaveBeenCalledWith(child.webContents);
+            child.isVisible.mockReturnValue(false);
+            child.fire("ready-to-show");
+            expect(child.show).toHaveBeenCalledTimes(1);
             state.ipcEmit.mockClear();
             child.fire("focus");
             expect(state.ipcEmit).toHaveBeenCalledWith("reload-tray");
@@ -1097,6 +1138,11 @@ describe("window service", () => {
             fireOn("set-window-button-position", makeEvent(), { x: 1, y: 2 });
             fireOn("clear-navigation-history", makeEvent());
             // no throw
+        });
+
+        it("release-first-paint releases the gate of the sender", () => {
+            fireOn("release-first-paint", makeEvent());
+            expect(firstPaintGate.releaseFirstPaint).toHaveBeenCalledWith(101);
         });
 
         it("set-native-theme-source updates the theme", () => {

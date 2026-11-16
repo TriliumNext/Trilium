@@ -134,6 +134,10 @@ Window-level controls: zoom, theme, title bar, full screen, lifecycle, and a han
             <td><pre><code class="language-application-typescript">showWindow(): void</code></pre><p>Brings the main window to the foreground, restoring it if minimized.</p></td>
         </tr>
         <tr>
+            <td><code>releaseFirstPaint</code></td>
+            <td><pre><code class="language-application-typescript">releaseFirstPaint(): void</code></pre><p>Lets the window paint for the first time. The main process holds the first paint of a starting main or extra window, and with it the reveal of the window, until the client has rendered its interface, so that the window never shows a half-built one. No-op for other windows and once released.</p></td>
+        </tr>
+        <tr>
             <td><code>reportStartupMetric</code></td>
             <td><pre><code class="language-application-typescript">reportStartupMetric(metric: "client-full-render"): void</code></pre><p>Reports a renderer startup milestone to the main process, which records it relative to OS process creation alongside the main-process startup metrics. Only the first report of each metric is recorded; later reports (e.g. after a window reload or from extra windows) are ignored.</p><figure class="table"><table><thead><tr><th>Parameter</th><th>Description</th></tr></thead><tbody><tr><td><code>metric</code></td><td><code>"client-full-render"</code><br>The milestone the renderer reached.</td></tr></tbody></table></figure></td>
         </tr>
