@@ -25,6 +25,7 @@ vi.mock("./child_note", () => ({ createChildNote, openChildNote }));
 
 import contextMenu, { type MenuCommandItem } from "../../../menus/context_menu";
 import { createAnchorTargets, type LinkTarget } from "../../../services/link_targets";
+import options from "../../../services/options";
 import {
     createAutocompleteMentionList, createEmojiList, createNoteMentionList, createSlashCommandList,
     openSlashCommandMenu
@@ -68,6 +69,8 @@ describe("createNoteMentionList", () => {
     });
 
     it("links the note picked, then points its link at a heading, in a text editor", async () => {
+        options.set("textNoteCompletionLinkTargetsEnabled", "true");
+        onTestFinished(() => options.set("textNoteCompletionLinkTargetsEnabled", "false"));
         const createLinkPath = vi.fn(() => "root/a?block=Intro");
         const getOwnLinkTargets = vi.fn((): LinkTarget[] => [
             { kind: "heading", title: "Intro", level: 2, createLinkPath },
@@ -131,6 +134,14 @@ describe("createNoteMentionList", () => {
         expect(await second.press("Enter")).toBe(true);
         expect(second.state.dismiss).toHaveBeenCalledOnce();
         expect(second.state.commit).not.toHaveBeenCalled();
+
+        // A list follows the option as it changes: turned off, it mentions the note picked.
+        options.set("textNoteCompletionLinkTargetsEnabled", "false");
+        const state = createState("al");
+        await second.show(state);
+        expect(await second.press("Enter")).toBe(true);
+        expect(state.commit).toHaveBeenCalledExactlyOnceWith(linked);
+        expect(state.commitAndFollowUp).not.toHaveBeenCalled();
         second.list.destroy?.();
     });
 

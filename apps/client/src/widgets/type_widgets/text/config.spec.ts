@@ -1030,24 +1030,9 @@ describe("CK config - mention feed", () => {
         expect(hosted?.list()).toEqual(expect.objectContaining({ show: expect.any(Function), handleKeyDown: expect.any(Function) }));
     });
 
-    it("follows a note picked after @ with its headings and anchors only when enabled", async () => {
-        optionsState.map["textNoteCompletionEnabled"] = "true";
-        createNoteMentionList.mockClear();
-        const off = await buildDynamicConfig({ getNoteId: () => "noteAbc" });
-        off.mention?.hostedFeeds?.[0]?.list({ model: {} });
-        expect(createNoteMentionList).toHaveBeenCalledOnce();
-        expect(createNoteMentionList.mock.lastCall?.[0].getOwnLinkTargets).toBeUndefined();
-
-        optionsState.map["textNoteCompletionLinkTargetsEnabled"] = "true";
-        const on = await buildDynamicConfig({ getNoteId: () => "noteAbc" });
-        on.mention?.hostedFeeds?.[0]?.list({ model: {} });
-        expect(createNoteMentionList.mock.lastCall?.[0].getOwnLinkTargets)
-            .toEqual(expect.any(Function));
-    });
-
     it("has the @ list read the headings and anchors of its own note from the editor", async () => {
+        // With `textNoteCompletionLinkTargetsEnabled` off too: the list reads it as it draws.
         optionsState.map["textNoteCompletionEnabled"] = "true";
-        optionsState.map["textNoteCompletionLinkTargetsEnabled"] = "true";
         let noteId: string | undefined = "noteAbc";
         const config = await buildDynamicConfig({ getNoteId: () => noteId });
         const editor = { model: { name: "model" } };

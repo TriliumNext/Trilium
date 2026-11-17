@@ -269,9 +269,10 @@ A new kind needs none of this; it matters when the lists themselves change.
   while the highlighted row cannot be picked (`canPick()`: a target only once the link is in the
   text, the whole note at any time).
 - **The option.** `textNoteCompletionLinkTargetsEnabled` turns the second page off in both
-  editors: the text editor's config then passes no `getOwnLinkTargets`, and
-  `createNoteMentionList()` (`text/mention_list_view.tsx`) draws `NoteMentionList`; the Markdown
-  `createCompletionList()` checks the option itself. The link dialog does not read it.
+  editors. Each list reads it as it draws, so an open editor follows a change without a rebuild:
+  `createNoteMentionList()` (`text/mention_list_view.tsx`) then draws `NoteMentionList` although
+  the text editor's config passes `getOwnLinkTargets`, and the Markdown `createCompletionList()`
+  does the same. The link dialog does not read it.
 - **Links that match no target.** The dialog's selection is a `NotePart`: `{ target }`,
   `{ params }` or `null`. A link being edited whose parameters match no listed target (a
   paragraph, a range of blocks) is `{ params }` and keeps them until another target is picked.

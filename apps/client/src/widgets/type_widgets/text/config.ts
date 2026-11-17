@@ -468,9 +468,8 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
                 list: (editor) => createNoteMentionList({
                     allowCreatingNotes: true,
                     getChildNoteParent: opts.getChildNoteParent,
-                    getOwnLinkTargets: options.is("textNoteCompletionLinkTargetsEnabled")
-                        ? (notePath) => getOwnLinkTargets(editor, opts.getNoteId?.(), notePath)
-                        : undefined
+                    getOwnLinkTargets: (notePath) =>
+                        getOwnLinkTargets(editor, opts.getNoteId?.(), notePath)
                 })
             }
         ] : []

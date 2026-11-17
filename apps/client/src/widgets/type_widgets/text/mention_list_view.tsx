@@ -5,6 +5,7 @@ import type { ComponentChildren } from "preact";
 import contextMenu from "../../../menus/context_menu";
 import { buildInsertMenuItems, keepEditorFocused } from "../../../menus/text_editor_context_menu";
 import type { LinkTarget } from "../../../services/link_targets";
+import options from "../../../services/options";
 import { AutocompleteList } from "../../react/FormAutocomplete";
 import LinkMentionList from "../../react/LinkMentionList";
 import {
@@ -45,7 +46,7 @@ export function createNoteMentionList({
             })
         };
 
-        if (!getOwnLinkTargets) {
+        if (!getOwnLinkTargets || !options.is("textNoteCompletionLinkTargetsEnabled")) {
             return <NoteMentionList {...props} />;
         }
 
@@ -75,11 +76,12 @@ interface NoteMentionListOptions {
      */
     getChildNoteParent?(): ChildNoteParent | undefined;
     /**
-     * When given, a note picked from the list is linked at once and the list follows up on the
-     * link with a second page, which lists the targets of the note, such as its headings and
-     * anchors, for the text typed after the link. A pick there points the link at the target. It
-     * returns the targets of the note at `notePath` from the editor, when the editor is open on
-     * that note. The server reads those of any other note.
+     * When given, and while `textNoteCompletionLinkTargetsEnabled` is on, a note picked from the
+     * list is linked at once and the list follows up on the link with a second page, which lists
+     * the targets of the note, such as its headings and anchors, for the text typed after the
+     * link. A pick there points the link at the target. It returns the targets of the note at
+     * `notePath` from the editor, when the editor is open on that note. The server reads those of
+     * any other note.
      */
     getOwnLinkTargets?(notePath: string): LinkTarget[] | undefined;
 }

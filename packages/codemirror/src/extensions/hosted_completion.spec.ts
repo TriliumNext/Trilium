@@ -285,6 +285,28 @@ describe("hostedCompletion", () => {
         await settle();
         expect(list.show).toHaveBeenCalledTimes(shownCount);
         expect(editor?.state.doc.toString()).toBe("x [[a]]y [[b]] [[c]]z [[d]]z [[e]] [[gf]]");
+
+        // Text that was already after the inserted text is no part of the query: a caret moved
+        // into it ends the follow-up, and a late commit leaves that text in place.
+        editor?.dispatch({
+            changes: { from: 0, to: editor.state.doc.length, insert: "word" },
+            selection: EditorSelection.cursor(0)
+        });
+        type("@h");
+        await vi.waitFor(() => expect(shown()?.match.query).toBe("h"));
+        shown()?.commitAndFollowUp("[[h]]", "h");
+        await vi.waitFor(() => expect(shown()?.followUp?.of).toBe("h"));
+        type("q");
+        await vi.waitFor(() => expect(shown()?.followUp?.query).toBe("q"));
+        shownCount = list.show.mock.calls.length;
+        const hiddenCount = list.hide.mock.calls.length;
+        editor?.dispatch({ selection: EditorSelection.cursor(7) });
+        await settle();
+        expect(list.show).toHaveBeenCalledTimes(shownCount);
+        expect(list.hide).toHaveBeenCalledTimes(hiddenCount + 1);
+        expect(followUpMark()).toBeNull();
+        shown()?.commit("[[h?block=b]]");
+        expect(editor?.state.doc.toString()).toBe("[[h]]qword");
     });
 
     it("follows up on what a function commits, up to where it leaves the caret", async () => {

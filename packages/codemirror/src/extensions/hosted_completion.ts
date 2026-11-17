@@ -295,7 +295,9 @@ export function hostedCompletion<M extends HostedCompletionMatch>({ match, opens
 
         /** Commits `insert` and follows up on the text it inserts. */
         private commitAndFollowUp(found: Found<M>, insert: HostedCompletionInsert, of: string) {
-            const followUp: FollowUp<M> = { of, match: found.match, from: found.from, to: -1, text: "" };
+            const followUp: FollowUp<M> = {
+                of, match: found.match, from: found.from, to: -1, end: -1, text: ""
+            };
             this.commit(found.from, insert, followUp);
 
             // The commit inserted nothing.
@@ -311,24 +313,27 @@ export function hostedCompletion<M extends HostedCompletionMatch>({ match, opens
         private mapFollowUp(followUp: FollowUp<M>, update: ViewUpdate) {
             if (followUp.to < 0) {
                 followUp.to = update.state.selection.main.head;
+                followUp.end = followUp.to;
                 followUp.text = update.state.sliceDoc(followUp.from, followUp.to);
                 return;
             }
 
-            // Text typed on either side of it stays out of it.
+            // Text typed on either side of it stays out of it, and text typed at `end` extends it.
             followUp.from = update.changes.mapPos(followUp.from, 1);
             followUp.to = update.changes.mapPos(followUp.to, -1);
+            followUp.end = update.changes.mapPos(followUp.end, 1);
         }
 
         /**
          * The text typed after the text of the follow-up as a match, or `null` once the caret is
-         * elsewhere, that text changed or a space follows it.
+         * outside the text typed, that text changed or a space follows it.
          */
         private matchFollowUp(): Found<M> | null {
             const followUp = this.followUp;
             const { state } = this.view;
             const { main } = state.selection;
             if (!followUp || followUp.to < 0 || !main.empty || main.head < followUp.to
+                || main.head > followUp.end
                 || state.sliceDoc(followUp.from, followUp.to) !== followUp.text) {
                 return null;
             }
@@ -471,6 +476,8 @@ interface FollowUp<M extends HostedCompletionMatch> {
     from: number;
     /** `-1` until the commit inserts the text. */
     to: number;
+    /** Where the text typed after `to` ends. Text that followed `to` already is not part of it. */
+    end: number;
     text: string;
 }
 
