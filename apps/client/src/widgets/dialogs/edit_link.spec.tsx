@@ -1303,6 +1303,25 @@ describe("EditLinkDialog", () => {
         });
         expect(addLink).toHaveBeenCalledOnce();
         expect(showError).toHaveBeenCalledOnce();
+
+        // Nor does one whose server answers while it fades out.
+        const fading = deferred<CreateReferenceResponse>();
+        createHeadingReference.mockReturnValueOnce(fading.promise);
+        await reopen();
+        await pickNote(path);
+        await checkNoteChoice("Setup");
+        await requestSubmit();
+        const modal = container.querySelector(".modal");
+        await act(async () => {
+            modal?.dispatchEvent(new Event("hide.bs.modal"));
+        });
+        fading.resolve({ params: { block: "Fading" } });
+        await settle();
+        await act(async () => {
+            modal?.dispatchEvent(new Event("hidden.bs.modal"));
+        });
+        expect(createHeadingReference).toHaveBeenCalledTimes(4);
+        expect(addLink).toHaveBeenCalledOnce();
     });
 
     it("has the editors of the note save before the heading gets its block id", async () => {

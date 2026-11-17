@@ -171,6 +171,7 @@ export default function EditLinkDialog() {
             }
             onSubmit={() => void onSubmit()}
             onShown={form.onShown}
+            onHide={form.cancelReference}
             onHidden={() => {
                 const applyLink = submittedLinkRef.current;
                 submittedLinkRef.current = null;
@@ -267,7 +268,8 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     ], [ opts ]);
     const ownTree = useMemo(() => nestTargets(ownTargets), [ ownTargets ]);
     const noteTree = useMemo(() => nestTargets(noteTargets ?? []), [ noteTargets ]);
-    // Changes when the form is reset or unmounted, so a reference created later applies no link.
+    // Changes when the form is reset, canceled or unmounted, so a reference created later applies
+    // no link.
     const generationRef = useRef(0);
     // The page's own title, of the link preview being edited or retrieved from the page, while the
     // title field still shows it.
@@ -744,6 +746,10 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         /** Whether `createReference()` gives the target picked a reference before `applyLink()`. */
         needsReference,
         createReference,
+        /** Makes a `createReference()` still waiting on the server apply no link. */
+        cancelReference: () => {
+            generationRef.current++;
+        },
         isCreatingReference,
         applyLink,
         reset,
