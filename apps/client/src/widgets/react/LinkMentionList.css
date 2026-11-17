@@ -1,0 +1,81 @@
+.dropdown-menu.note-mention-menu.link-mention-menu {
+    display: flex;
+    flex-direction: column;
+    min-width: min(22rem, calc(100vw - 10px));
+}
+
+.link-mention-pages {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    position: relative;
+    margin: calc(0px - var(--tn-popup-padding));
+    border-radius: inherit;
+    min-height: 0;
+    overflow: clip;
+}
+
+.link-mention-page {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    border-radius: inherit;
+    min-height: 0;
+
+    > .tn-menu-scroll {
+        margin: 0;
+    }
+
+    &.link-mention-page-entering,
+    &.link-mention-page-leaving {
+        animation-duration: 0.2s;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: forwards;
+    }
+
+    &.link-mention-page-leaving {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+    }
+}
+
+.link-mention-notes {
+    &.link-mention-page-entering {
+        animation-name: tn-slide-in-from-left;
+    }
+
+    &.link-mention-page-leaving {
+        animation-name: tn-slide-out-to-left;
+    }
+
+    body[dir=rtl] &.link-mention-page-entering {
+        animation-name: tn-slide-in-from-right;
+    }
+
+    body[dir=rtl] &.link-mention-page-leaving {
+        animation-name: tn-slide-out-to-right;
+    }
+}
+
+.link-mention-destinations {
+    &.link-mention-page-entering {
+        animation-name: tn-slide-in-from-right;
+    }
+
+    &.link-mention-page-leaving {
+        animation-name: tn-slide-out-to-right;
+    }
+
+    body[dir=rtl] &.link-mention-page-entering {
+        animation-name: tn-slide-in-from-left;
+    }
+
+    body[dir=rtl] &.link-mention-page-leaving {
+        animation-name: tn-slide-out-to-left;
+    }
+
+    .dropdown-item > span:not([class]) {
+        padding-inline-start: calc(var(--link-mention-depth, 0) * 1.25em);
+    }
+}

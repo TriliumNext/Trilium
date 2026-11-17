@@ -325,6 +325,51 @@ export interface MetadataResponse {
     utcDateModified: string | undefined;
 }
 
+/**
+ * The kinds of place inside a note that a link can point at. A kind sets how the link lists show
+ * a target, whatever the note type: text notes and Markdown notes both have headings.
+ */
+export const REFERENCE_KINDS = [ "heading", "anchor" ] as const;
+
+export type ReferenceKind = (typeof REFERENCE_KINDS)[number];
+
+/**
+ * The parameters of a link that point inside a note, not encoded, such as
+ * `{ block: "eaJkN47U8kI4" }`. Each name is a field of the client's `ViewScope`.
+ */
+export type ReferenceParams = Record<string, string>;
+
+/** A place inside a note that a link can point at. */
+export interface ReferenceTarget {
+    kind: ReferenceKind;
+    /** The plain text that the lists show, never HTML. */
+    title: string;
+    /** For a kind that nests, the depth of the target, such as 2 for an `<h2>`. */
+    level?: number;
+    /** The link parameters that point at the target. Without them, it needs a reference first. */
+    params?: ReferenceParams;
+}
+
+/** The answer of `GET /api/notes/:noteId/references`. */
+export interface NoteReferencesResponse {
+    /** In the order that the lists show them, the targets of each kind together. */
+    targets: ReferenceTarget[];
+}
+
+/** Names a target without `params` for `POST /api/notes/:noteId/references`. */
+export interface CreateReferenceRequest {
+    kind: ReferenceKind;
+    /** The position of the target among the `targets` of its kind. */
+    index: number;
+    /** Its `title` there. */
+    title: string;
+}
+
+export interface CreateReferenceResponse {
+    /** The link parameters that point at the target. */
+    params: ReferenceParams;
+}
+
 export interface NoteSizeResponse {
     noteSize: number;
 }

@@ -1,6 +1,6 @@
 import {
-    type AttachmentUploadHost, type ContentEmbedDialogRequest, type ContentEmbedHost,
-    type EditorConfig, getCkLocale,
+    assignBlockId, type AttachmentUploadHost, type ContentEmbedDialogRequest,
+    type ContentEmbedHost, type EditorConfig, getAnchorNames, getCkLocale, getHeadings,
     type IconPickerRequest, LINK_TOOLBAR, type LinkDialogRequest, type LinkEmbedHost,
     type InsertMediaRequest, type LinkMenuHost, SnippetDefinition, type TextTransformationConfig,
     type VimConfig
@@ -35,8 +35,12 @@ import { embedReferenceImageAsDataUrl } from "../../../services/image_embed.js";
 import { getNoteImageSourceToLoad } from "../../../services/image_urls.js";
 import linkService from "../../../services/link.js";
 import { detectEmbedType, fetchMetadata, renderEmbedPreview, renderMentionPreview, unresolvedMetadata } from "../../../services/link_embed.js";
+import {
+    createAnchorTargets, createEditorHeadings, type LinkTarget
+} from "../../../services/link_targets.js";
 import { captureVideoThumbnail } from "../../../services/media_thumbnail.js";
 import { default as mimeTypesService, getHighlightJsNameForMime } from "../../../services/mime_types.js";
+import { getNoteIdFromUrl } from "../../../services/navigation_state.js";
 import options from "../../../services/options.js";
 import { sanitizeNoteContentHtml } from "../../../services/sanitize_content.js";
 import server from "../../../services/server.js";
@@ -461,9 +465,11 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
                 minimumCharacters: 0,
                 // Note titles contain spaces, so the query must be allowed to as well.
                 allowSpaces: true,
-                list: () => createNoteMentionList({
+                list: (editor) => createNoteMentionList({
                     allowCreatingNotes: true,
-                    getChildNoteParent: opts.getChildNoteParent
+                    getChildNoteParent: opts.getChildNoteParent,
+                    getOwnLinkTargets: (notePath) =>
+                        getOwnLinkTargets(editor, opts.getNoteId?.(), notePath)
                 })
             }
         ] : []
@@ -479,6 +485,23 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         ...config,
         ...buildToolbarConfig(opts.isClassicEditor, !!aiAssistantStream)
     };
+}
+
+/**
+ * The headings and anchors of the document in `editor`, for a link at `notePath` to the note
+ * `noteId` that the editor is open on. `undefined` for a link to another note.
+ */
+function getOwnLinkTargets(
+    editor: Parameters<typeof getHeadings>[0], noteId: string | undefined, notePath: string
+): LinkTarget[] | undefined {
+    if (!noteId || getNoteIdFromUrl(notePath) !== noteId) return undefined;
+
+    return [
+        ...createEditorHeadings(
+            getHeadings(editor), notePath, (heading) => assignBlockId(editor.model, heading.element)
+        ),
+        ...createAnchorTargets(getAnchorNames(editor), notePath)
+    ];
 }
 
 /** The `contentEmbed` members that call the handlers `getHandlers()` returns at the time. */

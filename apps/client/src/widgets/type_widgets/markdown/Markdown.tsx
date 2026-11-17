@@ -26,7 +26,6 @@ import { removeIndividualBinding } from "../../../services/shortcuts";
 import { isDesktop } from "../../../services/utils";
 import { useTriliumEvent } from "../../react/hooks/events";
 import { useLegacyImperativeHandlers } from "../../react/hooks/legacy";
-import { resolveNoteChip } from "../../search_field_editor";
 import {
     extractHighlightsFromStaticHtml, type RawHighlight
 } from "../../sidebar/highlights_extract";
@@ -34,8 +33,8 @@ import SplitEditor from "../helpers/SplitEditor";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText";
 import { TypeWidgetProps } from "../type_widget";
 import {
-    insertDateTime, insertText, replaceSelection, showEditLinkDialog, showIncludeNoteDialog,
-    uploadImageAndInsert
+    insertDateTime, insertText, replaceSelection, resolveWikilinkChip, showEditLinkDialog,
+    showIncludeNoteDialog, uploadImageAndInsert
 } from "./editor_utils";
 
 const marked = new Marked({ breaks: true, gfm: true });
@@ -453,7 +452,7 @@ export function useNoteLinkChips(editorView: VanillaCodeMirror | null) {
     useEffect(() => {
         if (!editorView) return;
 
-        editorView.setNamedExtension("noteLinkChips", triliumNoteChips(resolveNoteChip, {
+        editorView.setNamedExtension("noteLinkChips", triliumNoteChips(resolveWikilinkChip, {
             find: findWikilinkNoteIds,
             revealAtSelection: true
         }));

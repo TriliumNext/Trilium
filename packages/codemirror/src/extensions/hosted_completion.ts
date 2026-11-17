@@ -1,5 +1,7 @@
 import { type EditorState, type Extension, Prec } from "@codemirror/state";
-import { EditorView, ViewPlugin, type ViewUpdate } from "@codemirror/view";
+import {
+    Decoration, type DecorationSet, EditorView, ViewPlugin, type ViewUpdate, WidgetType
+} from "@codemirror/view";
 
 /** What {@link HostedCompletionConfig.match} finds before the caret. */
 export interface HostedCompletionMatch {
@@ -16,9 +18,20 @@ export type HostedCompletionApply = (view: EditorView, from: number, to: number)
 /** What a pick puts in place of the match: text, or what an {@link HostedCompletionApply} does. */
 export type HostedCompletionInsert = string | HostedCompletionApply;
 
+/** The text inserted with `commitAndFollowUp()`, as the list that follows up on it gets it. */
+export interface HostedCompletionFollowUp {
+    /** The value passed to `commitAndFollowUp()`. */
+    of: string;
+    /** The text typed after the inserted text, up to the caret. */
+    query: string;
+}
+
 /** What a {@link HostedCompletionList} is shown for, each time the text before the caret changes. */
 export interface HostedCompletionState<M extends HostedCompletionMatch> {
+    /** The match the list completes. During a follow-up, the match that the inserted text replaced. */
     match: M;
+    /** The follow-up on the text that `commitAndFollowUp()` inserted, or `null`. */
+    followUp: HostedCompletionFollowUp | null;
     /** Where the caret is, in viewport coordinates. */
     caretRect(): DOMRect;
     /** The editor's element. A list anchored at {@link caretRect} watches the containers around it. */
@@ -31,6 +44,17 @@ export interface HostedCompletionState<M extends HostedCompletionMatch> {
      * content, gives the commit up.
      */
     commit(insert: HostedCompletionInsert | Promise<HostedCompletionInsert | undefined>): void;
+    /**
+     * Commits `insert` as `commit()` does, and keeps the list open for the text it inserted: from
+     * the start of the match to where the commit leaves the caret. The list is shown again with
+     * `followUp` for the text typed after it. The follow-up ends on the next commit, on a
+     * dismissal, when a space is typed right after the inserted text, on Backspace there, and when
+     * the caret leaves. A commit during the follow-up replaces the inserted text and the text
+     * typed after it.
+     */
+    commitAndFollowUp(insert: HostedCompletionInsert, of: string): void;
+    /** Closes the list, as Escape does. */
+    dismiss(): void;
     /**
      * Points the editor at the list's highlighted entry through `aria-activedescendant`, by the id
      * of the entry's element, or at none for `null`. Once the list closes, it points at none.
@@ -79,6 +103,8 @@ export interface HostedCompletionConfig<M extends HostedCompletionMatch> {
  * The counterpart of CKEditor's `mention.hostedFeeds`, so that a host can serve both editors with
  * the same lists. The list closes when nothing matches, when the editor loses the focus, and on
  * Escape, after which it stays closed for that match.
+ *
+ * A list can also follow up on what it commits, as `commitAndFollowUp()` describes.
  */
 export function hostedCompletion<M extends HostedCompletionMatch>({ match, opensOnCaretMove = true, list }: HostedCompletionConfig<M>): Extension {
     const plugin = ViewPlugin.fromClass(class {
@@ -93,7 +119,11 @@ export function hostedCompletion<M extends HostedCompletionMatch>({ match, opens
         private dismissedAt = -1;
         /** The text that commits waiting on a promise replace, mapped through the edits since. */
         private readonly pending = new Set<{ from: number; to: number }>();
+        /** The text that `commitAndFollowUp()` inserted, or `null`. */
+        private followUp: FollowUp<M> | null = null;
         private destroyed = false;
+        /** The mark after the text of the follow-up. */
+        decorations: DecorationSet = Decoration.none;
 
         constructor(private readonly view: EditorView) {
             this.list = list(view);
@@ -106,6 +136,9 @@ export function hostedCompletion<M extends HostedCompletionMatch>({ match, opens
             if (update.docChanged && this.dismissedAt >= 0) {
                 // With `assoc` 1, so text inserted right before the match leaves it on the match.
                 this.dismissedAt = update.changes.mapPos(this.dismissedAt, 1);
+            }
+            if (update.docChanged && this.followUp) {
+                this.mapFollowUp(this.followUp, update);
             }
             if (update.docChanged) {
                 for (const range of this.pending) {
@@ -121,6 +154,11 @@ export function hostedCompletion<M extends HostedCompletionMatch>({ match, opens
             if (update.docChanged || update.selectionSet || update.focusChanged) {
                 this.sync(update.docChanged);
             }
+
+            const followUp = this.followUp;
+            this.decorations = followUp && followUp.to >= 0
+                ? Decoration.set(followUpMark.range(followUp.to))
+                : Decoration.none;
         }
 
         handleKeyDown(event: KeyboardEvent) {
@@ -145,8 +183,11 @@ export function hostedCompletion<M extends HostedCompletionMatch>({ match, opens
                     return false;
                 }
 
-                this.dismissedAt = this.from;
+                this.dismiss();
+            } else if (event.key === "Backspace" && this.isCaretAfterFollowUp()) {
+                // Ends the follow-up and keeps the inserted text.
                 this.close();
+                this.endFollowUp();
             } else if (!this.list.handleKeyDown(event)) {
                 return false;
             }
@@ -165,7 +206,13 @@ export function hostedCompletion<M extends HostedCompletionMatch>({ match, opens
 
         /** `typed`: the document changed, as typing or a commit does, rather than only the caret. */
         private sync(typed: boolean) {
-            const found = this.view.hasFocus ? matchAt(this.view.state, match, this.explicit) : null;
+            const followUpMatch = this.view.hasFocus ? this.matchFollowUp() : null;
+            if (!followUpMatch) {
+                this.followUp = null;
+            }
+
+            const found = followUpMatch
+                ?? (this.view.hasFocus ? matchAt(this.view.state, match, this.explicit) : null);
             if (found?.from !== this.dismissedAt) {
                 this.dismissedAt = -1;
             }
@@ -198,9 +245,16 @@ export function hostedCompletion<M extends HostedCompletionMatch>({ match, opens
                     let showing = true;
                     this.list.show({
                         match: found.match,
+                        followUp: found.followUp ?? null,
                         caretRect: () => (showing ? measured : caretRect(this.view)),
                         editable: this.view.dom,
                         commit: (insert) => this.commit(found.from, insert),
+                        commitAndFollowUp: (insert, of) => this.commitAndFollowUp(found, insert, of),
+                        dismiss: () => {
+                            if (this.from === found.from) {
+                                this.dismiss();
+                            }
+                        },
                         setActiveDescendant: (id) => {
                             if (this.from === found.from) {
                                 this.setActiveDescendant(id);
@@ -212,11 +266,15 @@ export function hostedCompletion<M extends HostedCompletionMatch>({ match, opens
             });
         }
 
-        private commit(from: number, insert: HostedCompletionInsert | Promise<HostedCompletionInsert | undefined>) {
+        private commit(
+            from: number, insert: HostedCompletionInsert | Promise<HostedCompletionInsert | undefined>,
+            followUp: FollowUp<M> | null = null
+        ) {
             if (this.from !== from) {
                 return;
             }
 
+            this.followUp = followUp;
             this.explicit = false;
             if (typeof insert === "function") {
                 insert(this.view, from, this.view.state.selection.main.head);
@@ -233,6 +291,87 @@ export function hostedCompletion<M extends HostedCompletionMatch>({ match, opens
                 selection: { anchor: from + text.length },
                 userEvent: "input.complete"
             });
+        }
+
+        /** Commits `insert` and follows up on the text it inserts. */
+        private commitAndFollowUp(found: Found<M>, insert: HostedCompletionInsert, of: string) {
+            const followUp: FollowUp<M> = {
+                of, match: found.match, from: found.from, to: -1, end: -1, text: ""
+            };
+            this.commit(found.from, insert, followUp);
+
+            // The commit inserted nothing.
+            if (this.followUp === followUp && followUp.to < 0) {
+                this.followUp = null;
+            }
+        }
+
+        /**
+         * Maps the text of `followUp` through the changes of `update`. The first change after
+         * `commitAndFollowUp()` is the commit, which inserted the text up to the caret.
+         */
+        private mapFollowUp(followUp: FollowUp<M>, update: ViewUpdate) {
+            if (followUp.to < 0) {
+                followUp.to = update.state.selection.main.head;
+                followUp.end = followUp.to;
+                followUp.text = update.state.sliceDoc(followUp.from, followUp.to);
+                return;
+            }
+
+            // Text typed on either side of it stays out of it, and text typed at `end` extends it.
+            followUp.from = update.changes.mapPos(followUp.from, 1);
+            followUp.to = update.changes.mapPos(followUp.to, -1);
+            followUp.end = update.changes.mapPos(followUp.end, 1);
+        }
+
+        /**
+         * The text typed after the text of the follow-up as a match, or `null` once the caret is
+         * outside the text typed, that text changed or a space follows it.
+         */
+        private matchFollowUp(): Found<M> | null {
+            const followUp = this.followUp;
+            const { state } = this.view;
+            const { main } = state.selection;
+            if (!followUp || followUp.to < 0 || !main.empty || main.head < followUp.to
+                || main.head > followUp.end
+                || state.sliceDoc(followUp.from, followUp.to) !== followUp.text) {
+                return null;
+            }
+
+            const query = state.sliceDoc(followUp.to, main.head);
+            if (/^\s|\n/.test(query)) {
+                return null;
+            }
+
+            const line = state.doc.lineAt(main.head);
+            return {
+                match: followUp.match,
+                from: followUp.from,
+                before: line.text.slice(0, main.head - line.from),
+                followUp: { of: followUp.of, query }
+            };
+        }
+
+        private isCaretAfterFollowUp() {
+            const { main } = this.view.state.selection;
+            return !!this.followUp && main.empty && main.head === this.followUp.to;
+        }
+
+        /** Closes the list, which stays closed on its match. A follow-up ends for good instead. */
+        private dismiss() {
+            this.dismissedAt = this.followUp ? -1 : this.from;
+            this.close();
+            this.endFollowUp();
+        }
+
+        /** Ends the follow-up outside an update, and redraws the decorations without its mark. */
+        private endFollowUp() {
+            if (!this.followUp) {
+                return;
+            }
+
+            this.followUp = null;
+            this.view.dispatch({});
         }
 
         /** Closes the list, which stays closed on the match, and replaces the match once `insert` settles. */
@@ -281,6 +420,7 @@ export function hostedCompletion<M extends HostedCompletionMatch>({ match, opens
             }
         }
     }, {
+        decorations: (value) => value.decorations,
         eventHandlers: {
             keydown(event) {
                 return this.handleKeyDown(event);
@@ -289,8 +429,28 @@ export function hostedCompletion<M extends HostedCompletionMatch>({ match, opens
     });
 
     // Ahead of the field's keymap, so the list takes Enter and the arrows while it is open.
-    return Prec.highest(plugin);
+    return [ Prec.highest(plugin), followUpTheme ];
 }
+
+/** The `¶` drawn after the text that a list follows up on, as the text editor draws it. */
+class FollowUpMarkWidget extends WidgetType {
+    override toDOM() {
+        const mark = document.createElement("span");
+        mark.className = "cm-completion-follow-up";
+        mark.setAttribute("aria-hidden", "true");
+        return mark;
+    }
+}
+
+const followUpMark = Decoration.widget({ widget: new FollowUpMarkWidget(), side: 1 });
+
+const followUpTheme = EditorView.baseTheme({
+    ".cm-completion-follow-up::after": {
+        content: "\"\\b6\"",
+        marginInlineStart: "0.25em",
+        opacity: "0.5"
+    }
+});
 
 /** Whether a list of {@link hostedCompletion} shows entries in `view` and takes the arrow keys. */
 export function isHostedCompletionShown(view: EditorView) {
@@ -299,13 +459,37 @@ export function isHostedCompletionShown(view: EditorView) {
 
 const hostedLists = new WeakMap<EditorView, Set<HostedCompletionList<never>>>();
 
+/** A match found before the caret, with where it starts in the document. */
+interface Found<M extends HostedCompletionMatch> {
+    match: M;
+    from: number;
+    /** The text before the caret on its line. */
+    before: string;
+    followUp?: HostedCompletionFollowUp;
+}
+
+/** The text that `commitAndFollowUp()` inserted, from `from` to `to`. */
+interface FollowUp<M extends HostedCompletionMatch> {
+    of: string;
+    /** The match the text replaced. */
+    match: M;
+    from: number;
+    /** `-1` until the commit inserts the text. */
+    to: number;
+    /** Where the text typed after `to` ends. Text that followed `to` already is not part of it. */
+    end: number;
+    text: string;
+}
+
 /** Ctrl-Space, or Alt-` as CodeMirror binds it on a Mac, where Ctrl-Space switches the input source. */
 function isExplicitRequest(event: KeyboardEvent) {
     return (event.ctrlKey && event.key === " ") || (event.altKey && event.key === "`");
 }
 
 /** What `match` finds before the caret, with where it starts in the document. */
-function matchAt<M extends HostedCompletionMatch>(state: EditorState, match: HostedCompletionConfig<M>["match"], explicit: boolean) {
+function matchAt<M extends HostedCompletionMatch>(
+    state: EditorState, match: HostedCompletionConfig<M>["match"], explicit: boolean
+): Found<M> | null {
     const { main } = state.selection;
     if (!main.empty) {
         return null;

@@ -306,6 +306,11 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     textNoteEmojiCompletionEnabled: boolean;
     /** Whether keyboard auto-completion for notes is triggered when typing `@` in text notes (attribute editing is not affected). */
     textNoteCompletionEnabled: boolean;
+    /**
+     * Whether a note picked after `@` is followed by a list of its headings and anchors to point
+     * the link at.
+     */
+    textNoteCompletionLinkTargetsEnabled: boolean;
     /** Whether keyboard auto-completion for editing commands is triggered when typing `/`. */
     textNoteSlashCommandsEnabled: boolean;
     /** Whether the MathLive visual editor is shown when editing math. If false, only the LaTeX textarea is used. */

@@ -31,7 +31,7 @@ import type { CompletionMatch, SlashCommand } from "../code/editor_completions";
 import { SLASH_COMMAND_REGEX } from "../code/snippets";
 import SAMPLE_DIAGRAMS from "../mermaid/sample_diagrams";
 import {
-    insertDateTime, showEditLinkDialog, showIncludeNoteDialog, uploadImageAndInsert
+    insertDateTime, showEditLinkDialog, showIncludeNoteDialog, toWikilink, uploadImageAndInsert
 } from "./editor_utils";
 
 /** What the Markdown commands are built from, read again each time the list looks them up. */
@@ -345,25 +345,22 @@ function command(name: string, entry: Omit<SlashCommand, "id" | "apply">, apply:
 }
 
 /**
- * Puts the link to the note at `notePath` in place of the typed note. Where the caret is inside a
- * Wikilink already closed, the rest of the link up to its `]]` goes too.
+ * Puts the link to the note at `notePath` in place of the typed text. Where that text opens a
+ * Wikilink and the caret is inside one already closed, the rest of the link up to its `]]` goes too.
  */
 export function linkToNote(notePath: string): HostedCompletionApply {
     return (view, from, to) => {
-        const isWikilink = view.state.sliceDoc(from, from + 2) === "[[";
-        const rest = isWikilink ? /^[^[\]\n]*\]\]/.exec(view.state.sliceDoc(to, view.state.doc.lineAt(to).to)) : null;
-        const link = noteLink(notePath);
+        const isOpenWikilink = /^\[\[[^[\]]*$/.test(view.state.sliceDoc(from, to));
+        const rest = isOpenWikilink
+            ? /^[^[\]\n]*\]\]/.exec(view.state.sliceDoc(to, view.state.doc.lineAt(to).to))
+            : null;
+        const link = toWikilink(notePath);
         view.dispatch({
             changes: { from, to: to + (rest?.[0].length ?? 0), insert: link },
             selection: { anchor: from + link.length },
             userEvent: "input.complete"
         });
     };
-}
-
-/** The reference link to the note at `notePath`, which the preview renders with the note's title. */
-function noteLink(notePath: string) {
-    return `[[${notePath.split("/").pop()}]]`;
 }
 
 /**

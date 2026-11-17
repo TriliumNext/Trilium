@@ -61,8 +61,6 @@
     "note": "Note",
     "search_note": "search for note by its name",
     "link_title": "Link title",
-    "anchor": "Anchor (optional)",
-    "anchor_none": "None (link to note)",
     "button_add_link": "Insert link",
     "button_edit_link": "Save link",
     "button_fix_link": "Fix link",
@@ -86,7 +84,14 @@
     "no_headings_or_anchors": "This note doesn't contain any headings or anchors.",
     "title_from_heading": "If not set, will always reflect the heading's text",
     "retrieving_from_page": "Retrieving from the web page...",
-    "title_from_attachment": "If not set, will always reflect the attachment's title"
+    "title_from_attachment": "If not set, will always reflect the attachment's title",
+    "top_of_note": "Link to the whole note",
+    "select_note_for_targets": "Select a note to show the headings and anchors you can link to.",
+    "inspecting_note": "Inspecting note structure",
+    "heading_reference_failed": "Unable to create reference to the given heading",
+    "link_to_heading": "Link to a heading",
+    "link_to_anchor": "Link to an anchor",
+    "no_link_targets": "There are no headings and anchors available to link to."
   },
   "branch_prefix": {
     "edit_branch_prefix": "Edit branch prefix",
@@ -3678,6 +3683,8 @@
     "emoji_completion_description": "Emojis can be easily inserted into text by typing `:`, followed by the name of an emoji.",
     "note_completion_enabled": "Note auto-completion",
     "note_completion_description": "Links to notes can be created by typing `@` followed by the title of a note.",
+    "note_completion_link_targets_enabled": "Suggest headings and anchors to link to",
+    "note_completion_link_targets_description": "After selecting a note, also suggest a heading or anchor as a destination within the target note.",
     "slash_commands_enabled": "Slash commands",
     "slash_commands_description": "Editing commands such as inserting line breaks or headings can be toggled by typing `/`.",
     "content_hints_enabled": "Content hints",

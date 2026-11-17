@@ -131,6 +131,22 @@ describe("the editor features", () => {
             [ "textNoteStickyTableHeadersEnabled", true ]
         ]));
     });
+
+    it("offers heading and anchor suggestions under note auto-completion while it is on", () => {
+        open();
+        expect(optionLabels()).toContain("editorfeatures.note_completion_enabled");
+        expect(toggle("note-completion-link-targets-enabled")).toBeNull();
+
+        mocks.stored = { ...mocks.stored, textNoteCompletionEnabled: true };
+        open();
+        const labels = optionLabels();
+        expect(labels[labels.indexOf("editorfeatures.note_completion_enabled") + 1])
+            .toBe("editorfeatures.note_completion_link_targets_enabled");
+        const linkTargets = toggle("note-completion-link-targets-enabled");
+        expect(linkTargets).not.toBeNull();
+        act(() => linkTargets?.click());
+        expect(mocks.saved).toEqual([ [ "textNoteCompletionLinkTargetsEnabled", true ] ]);
+    });
 });
 
 describe("Vim mode", () => {

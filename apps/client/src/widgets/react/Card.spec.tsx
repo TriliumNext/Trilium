@@ -210,6 +210,17 @@ describe("ChoiceCardSection", () => {
         expect(prevented).toStrictEqual([ true, true, false ]);
         expect(onCheck).toHaveBeenCalledTimes(3);
         expect(container.querySelector(".tn-card-choice-expander")).toBeNull();
+        expect([ unchecked?.id, unchecked?.hasAttribute("tabindex") ]).toStrictEqual([ "", true ]);
+
+        // A choice of a list whose host keeps the focus has an id for the host, and takes no focus.
+        const hosted = renderInto(
+            <Card>
+                <ChoiceCardSection id="pick" isFocusable={false} isChecked onCheck={vi.fn()}>
+                    hosted
+                </ChoiceCardSection>
+            </Card>
+        ).querySelector(".tn-card-choice");
+        expect([ hosted?.id, hosted?.hasAttribute("tabindex") ]).toStrictEqual([ "pick", false ]);
     });
 
     it("nests choices under an expander, which toggles them without checking the choice", () => {

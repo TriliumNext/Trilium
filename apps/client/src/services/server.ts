@@ -69,10 +69,13 @@ async function postWithSilentInternalServerError<T>(url: string, data?: unknown,
     return await call<T>("POST", url, componentId, { data, silentInternalServerError: true });
 }
 
-/** Posts without an error toast for a 400, 404 or 500, for a caller that handles the failure. */
+/**
+ * Posts without an error toast for a 400, 404, 409 or 500, for a caller that handles the failure.
+ */
 async function postWithSilentErrors<T>(url: string, data?: unknown, componentId?: string) {
     return await call<T>("POST", url, componentId, {
-        data, silentBadRequest: true, silentNotFound: true, silentInternalServerError: true
+        data, silentBadRequest: true, silentNotFound: true, silentConflict: true,
+        silentInternalServerError: true
     });
 }
 
@@ -279,6 +282,8 @@ interface CallOptions {
     silentInternalServerError?: boolean;
     /** Suppresses the error toast for a 400, for callers that show the server's message themselves. */
     silentBadRequest?: boolean;
+    /** Suppresses the error toast for a 409, for callers that handle the conflict themselves. */
+    silentConflict?: boolean;
     /** Suppresses the generic error toast for a 401, for callers that present the failure themselves
      *  (e.g. the OneNote import dialog showing an expired connection inline, with the server's reason). */
     silentUnauthorized?: boolean;
@@ -421,6 +426,8 @@ function ajax(url: string, method: string, data: unknown, headers: Headers, opts
                     // report nothing
                 } else if (opts.silentBadRequest && jqXhr.status === 400) {
                     // report nothing
+                } else if (opts.silentConflict && jqXhr.status === 409) {
+                    // report nothing
                 } else {
                     try {
                         await reportError(method, url, jqXhr.status, jqXhr.responseText);
@@ -517,7 +524,8 @@ async function localAjax(
         const silenced = (opts.silentNotFound && resp.status === 404)
             || (opts.silentInternalServerError && resp.status === 500)
             || (opts.silentUnauthorized && resp.status === 401)
-            || (opts.silentBadRequest && resp.status === 400);
+            || (opts.silentBadRequest && resp.status === 400)
+            || (opts.silentConflict && resp.status === 409);
 
         if (!silenced) {
             try {

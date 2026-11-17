@@ -249,6 +249,25 @@ describe("note switch save race (#9614)", () => {
         expect(editor.content).toBe("AAA typed elsewhere again");
     });
 
+    it("saves its pending changes when asked to for its note, not for another", async () => {
+        const harness = setupEditorHarness({ withParent: true });
+        cleanupContainer = harness.container;
+        const { noteA, noteB, editor, parent, putsTo, show } = harness;
+        if (!parent) throw new Error("Harness misconfigured");
+        await show(noteA);
+
+        editor.content = "AAA typed here";
+        getSpacedUpdate().scheduleUpdate();
+        await parent.handleEvent("saveNoteChanges", { noteId: noteB.noteId });
+        expect(putsTo(noteA)).toEqual([]);
+
+        await parent.handleEvent("saveNoteChanges", { noteId: noteA.noteId });
+        expect(putsTo(noteA)).toEqual([
+            { url: `notes/${noteA.noteId}/data`, content: "AAA typed here" }
+        ]);
+        expect(getSpacedUpdate().hasUnsavedChanges()).toBe(false);
+    });
+
     it("drops a save made elsewhere while hidden once a later save here replaces it", async () => {
         const resizeCallbacks: (() => void)[] = [];
         const { ResizeObserver } = globalThis;

@@ -12,15 +12,19 @@ export interface NoteChip {
 /**
  * Answers what a note is called. Returning a value rather than a promise draws the chip in the
  * same pass, so a note already to hand never flickers through its id; `null` means no such note,
- * and leaves the id standing as text.
+ * and leaves the id standing as text. `params` are the parameters of the link the id is in.
  */
-export type NoteChipResolver = (noteId: string) => NoteChip | Promise<NoteChip | null> | null;
+export type NoteChipResolver = (
+    noteId: string, params?: string
+) => NoteChip | Promise<NoteChip | null> | null;
 
 /** A note id found in the text, and the range its chip is drawn over. */
 export interface NoteIdRange {
     from: number;
     to: number;
     noteId: string;
+    /** The query of the link the id is in, without its `?`, such as `block=a1`. */
+    params?: string;
 }
 
 /** Finds the note ids in the document between `from` and `to`, left to right. */
@@ -104,14 +108,15 @@ class NoteChipsPlugin {
         const builder = new RangeSetBuilder<Decoration>();
 
         for (const visible of this.view.visibleRanges) {
-            for (const { from, to, noteId } of this.find(state, visible.from, visible.to)) {
+            for (const { from, to, noteId, params } of this.find(state, visible.from, visible.to)) {
                 if (this.revealAtSelection && state.selection.ranges.some((range) => range.from <= to && range.to >= from)) {
                     continue;
                 }
 
-                const chip = this.chipFor(noteId);
+                const chip = this.chipFor(noteId, params);
                 if (chip) {
-                    builder.add(from, to, Decoration.replace({ widget: new NoteChipWidget(noteId, chip) }));
+                    const widget = new NoteChipWidget(params ? `${noteId}?${params}` : noteId, chip);
+                    builder.add(from, to, Decoration.replace({ widget }));
                 }
             }
         }
@@ -119,30 +124,34 @@ class NoteChipsPlugin {
         return builder.finish();
     }
 
-    /** The chip for an id, asking for one that has not been looked up yet. */
-    private chipFor(noteId: string): NoteChip | null {
-        const known = this.resolved.get(noteId);
+    /**
+     * The chip for an id and the parameters of its link, asking for one that has not been looked
+     * up yet.
+     */
+    private chipFor(noteId: string, params: string | undefined): NoteChip | null {
+        const key = params ? `${noteId}?${params}` : noteId;
+        const known = this.resolved.get(key);
         if (known !== undefined) {
             return known;
         }
 
-        if (this.pending.has(noteId)) {
+        if (this.pending.has(key)) {
             return null;
         }
 
-        const answer = this.resolve(noteId);
+        const answer = this.resolve(noteId, params);
         if (!(answer instanceof Promise)) {
-            this.resolved.set(noteId, answer ?? null);
+            this.resolved.set(key, answer ?? null);
             return answer;
         }
 
-        this.pending.add(noteId);
+        this.pending.add(key);
         void answer
             .catch(() => null)
             .then((chip) => {
-                this.pending.delete(noteId);
+                this.pending.delete(key);
                 // `undefined` would read as never asked, and the dispatch below would ask again.
-                this.resolved.set(noteId, chip ?? null);
+                this.resolved.set(key, chip ?? null);
                 // Outside the update that asked for it, so dispatching here is safe.
                 this.view.dispatch({ effects: noteChipResolved.of() });
             });
@@ -152,12 +161,13 @@ class NoteChipsPlugin {
 }
 
 class NoteChipWidget extends WidgetType {
-    constructor(private readonly noteId: string, private readonly chip: NoteChip) {
+    /** `target` is the note id, followed by the query of its link. */
+    constructor(private readonly target: string, private readonly chip: NoteChip) {
         super();
     }
 
     override eq(other: NoteChipWidget) {
-        return other.noteId === this.noteId
+        return other.target === this.target
             && other.chip.title === this.chip.title
             && other.chip.icon === this.chip.icon;
     }
@@ -165,8 +175,8 @@ class NoteChipWidget extends WidgetType {
     override toDOM() {
         const element = document.createElement("span");
         element.className = "cm-note-chip";
-        // Names the id the chip stands for, which is what the query is actually run with.
-        element.title = this.noteId;
+        // The text behind the chip: the note id, and the query of a link.
+        element.title = this.target;
 
         const icon = document.createElement("span");
         icon.className = `cm-note-chip-icon ${this.chip.icon}`;
@@ -198,12 +208,16 @@ function findSearchNoteIds(state: EditorState, from: number, to: number) {
     return found;
 }
 
-/** A Markdown note link, `[[noteId]]`, as Trilium writes one. */
-const WIKILINK = /\[\[([A-Za-z0-9_]+)\]\]/g;
+/**
+ * A Markdown note link as Trilium writes one: `[[noteId]]`, or `[[noteId?block=a1]]` for a part
+ * of the note.
+ */
+const WIKILINK = /\[\[([A-Za-z0-9_]+)(?:\?([^[\]\s]+))?\]\]/g;
 
 /**
- * The `[[noteId]]` links of a Markdown note, each drawn whole, brackets included. A link in a code
- * block or a code span is code, so it is left as text.
+ * The `[[noteId]]` links of a Markdown note, each drawn whole, brackets included, with the query
+ * of a link to a part of the note as `params`. A link in a code block or a code span is code, so
+ * it is left as text.
  */
 export function findWikilinkNoteIds(state: EditorState, from: number, to: number) {
     const found: NoteIdRange[] = [];
@@ -218,7 +232,9 @@ export function findWikilinkNoteIds(state: EditorState, from: number, to: number
         }
 
         if (!inCode) {
-            found.push({ from: start, to: start + match[0].length, noteId: match[1] });
+            found.push({
+                from: start, to: start + match[0].length, noteId: match[1], params: match[2]
+            });
         }
     }
 

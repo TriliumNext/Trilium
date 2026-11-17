@@ -39,7 +39,14 @@ Since v0.107.0, to change a link, click it and press the <span class="tn-icon ck
 You can also insert internal links “inline” by using the `@` symbol:
 
 1.  Type `@` in a text note, which will open the note search menu.
-2.  Search for the desired note's title by typing a few characters. Use <kbd>Up</kbd> and <kbd>Down</kbd> to select the correct note, and press <kbd>Enter</kbd> or <kbd>Tab</kbd> to create the link. It's also possible to create new notes with this method by typing a non-existing note title and selecting _Create note_, as described above, or _Create child note_. _Create child note_ creates the note under the note being edited without asking for its type, inserts the link and opens the new note in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a>, which offers the note types to turn it into while it is still empty.
+2.  Search for the desired note's title by typing a few characters. Use <kbd>Up</kbd> and <kbd>Down</kbd> to select the correct note, and press <kbd>Enter</kbd> or <kbd>Tab</kbd> to pick it. It's also possible to create new notes with this method by typing a non-existing note title and selecting _Create note_, as described above, or _Create child note_. _Create child note_ creates the note under the note being edited without asking for its type, inserts the link and opens the new note in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a>, which offers the note types to turn it into while it is still empty.
+3.  Since v0.108.0, the note is linked as soon as it is picked. A ¶ then follows the link, and the menu lists where in the note the link can point: _Link to the whole note_, its headings and its anchors.
+    
+    *   To point the link at a heading or an anchor, type part of its name after the ¶ and press <kbd>Enter</kbd> or <kbd>Tab</kbd>, which takes the first match. <kbd>Up</kbd> and <kbd>Down</kbd> select another entry.
+    *   To keep the link to the whole note, press <kbd>Enter</kbd> on _Link to the whole note_, or press <kbd>Esc</kbd>. Pressing <kbd>Backspace</kbd> or typing a space right after the ¶ does the same, to go on writing.
+    *   The ¶ is not part of the note: it disappears with the menu. Text typed after it stays in the note, unless a heading or an anchor is picked.
+    
+    A note created from the menu is linked without this step. To skip it for every note, turn off _Suggest headings and anchors to link to_ under _Note auto-completion_ in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ → _Features_. See [Linking to a heading](../Block%20references.md) and <a class="reference-link" href="../Anchors.md">Anchors</a>.
 
 To create an empty child note and link to it before naming it, use _New child note_, described in <a class="reference-link" href="../Insert%20buttons.md">Insert buttons</a>.
 

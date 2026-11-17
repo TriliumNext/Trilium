@@ -489,3 +489,6 @@ The saved HTML on the backend (`packages/trilium-core/src/services`, `packages/c
   their own around the Markdown of its blocks, as a column of the column layout does.
 - **Block references** (`sliceToBlockReference()` in `packages/commons/src/lib/block_reference.ts`):
   decide what an excerpt keeps of the widget. An aside that is the only block loses its position.
+  Whether the widget can hold a block id, where the id is saved, how a link reveals it and what an
+  excerpt editor does with it: the `developing-block-references` skill,
+  `references/checklists.md`, "A new block, widget or container".

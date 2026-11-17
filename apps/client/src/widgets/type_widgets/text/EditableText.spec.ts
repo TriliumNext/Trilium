@@ -703,10 +703,17 @@ describe("getEditLinkOpts", () => {
     it("offers the headings of the note, which link to their blocks", () => {
         const heading = { element: {} as ModelElement, level: 2, text: "Intro" };
         const api = createApi(null, [], [ heading ]);
-        expect(getEditLinkOpts(api, ready).headings).toBeUndefined();
+        expect(getEditLinkOpts(api, ready)).toMatchObject({
+            headings: undefined, noteId: undefined
+        });
 
-        const headings = getEditLinkOpts(api, ready, { notePath: "root/abc" }).headings;
-        expect(headings).toMatchObject([ { title: "Intro", level: 2, blockId: undefined } ]);
+        const opts = getEditLinkOpts(api, ready, { notePath: "root/abc" });
+        // The note page lists the editor's headings for this note.
+        expect(opts.noteId).toBe("abc");
+        const headings = opts.headings;
+        expect(headings).toMatchObject([
+            { kind: "heading", title: "Intro", level: 2, params: undefined }
+        ]);
         expect(api.assignBlockId).not.toHaveBeenCalled();
         expect(headings?.[0]?.createLinkPath()).toBe("root/abc?block=new");
         expect(api.assignBlockId).toHaveBeenCalledExactlyOnceWith(heading);
@@ -725,7 +732,9 @@ describe("getEditLinkOpts", () => {
         );
 
         const opts = edit("#root/other/abc?block=a");
-        expect(opts).toMatchObject({ currentTitle: "See intro", currentHeading: { title: "Intro" } });
+        expect(opts).toMatchObject({
+            currentTitle: "See intro", currentHeading: { title: "Intro" }, noteId: "abc"
+        });
         expect(opts.currentHeading).toBe(opts.headings?.[0]);
         expect(opts.currentLink).toBeUndefined();
 

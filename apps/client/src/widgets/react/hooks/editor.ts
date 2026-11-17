@@ -141,6 +141,10 @@ export function useEditorSpacedUpdate({
 
     useSaveBeforeLeaving(spacedUpdate, noteContext);
 
+    useTriliumEvent("saveNoteChanges", async ({ noteId }) => {
+        if (noteId === note?.noteId) await spacedUpdate.updateNowIfNecessary();
+    });
+
     return spacedUpdate;
 }
 
