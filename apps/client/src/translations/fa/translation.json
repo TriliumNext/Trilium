@@ -2956,8 +2956,7 @@
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "حذف از نوار راه‌انداز",
     "configure_launch_bar": "پیکربندی نوار راه‌انداز",
-    "launch_bar_orientation": "جهت نوار راه‌انداز",
-    "will_reload_frontend": "(برنامه را مجدداً بارگذاری می‌کند)"
+    "launch_bar_orientation": "جهت نوار راه‌انداز"
   },
   "highlighting": {
     "title": "برجسته‌سازی",
@@ -4430,7 +4429,6 @@
       "markdown-import-from-clipboard": "درون‌برد Markdown از حافظهٔ موقت",
       "math-editor-unavailable": "ویرایشگر ریاضی در دسترس نیست",
       "math-equation": "معادلهٔ ریاضی",
-      "medium": "متوسط",
       "mermaid-diagram": "نمودار Mermaid",
       "mermaid-diagram-0": "نمودار Mermaid: %0",
       "missing-definition": "(تعریف موجود نیست)",
@@ -4503,7 +4501,6 @@
       "ascending": "صعودی",
       "descending": "نزولی",
       "some-rows-were-sorted-together-because-merged-cells-tie-them-to-each-other": "برخی سطرها با هم مرتب شدند، چون سلول‌های ادغام‌شده آن‌ها را به یکدیگر وابسته کرده‌اند",
-      "tiny": "ریز",
       "more-actions": "اقدام‌های بیشتر",
       "drawing-canvas": "بوم طراحی",
       "editable": "قابل ویرایش",

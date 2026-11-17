@@ -163,6 +163,7 @@
         "password-confirmation": "Deimhniú pasfhocail",
         "button": "Socraigh pasfhocal",
         "password-too-short": "Ní mór don phasfhocal a bheith {{length}} carachtar ar a laghad.",
-        "passwords-dont-match": "Ní hionann na pasfhocail a iontráladh."
+        "passwords-dont-match": "Ní hionann na pasfhocail a iontráladh.",
+        "desktop-description": "Níl pasfhocal ar an aip deisce Trilium seo go fóill, mar sin ní féidir í a oscailt ó bhrabhsálaí. San aip deisce, téigh chuig Options → Password & Auth agus socraigh pasfhocal; ansin, athlódáil an leathanach seo chun logáil isteach."
     }
 }

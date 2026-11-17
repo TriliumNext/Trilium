@@ -47,7 +47,7 @@
     "cancel": "İptal",
     "title": "Notları sil",
     "clones_label": "Klonlar",
-    "delete_clones_description_one": "Ayrıca {{count}} klonu da silin. Bu işlem, son değişiklikler bölümünden geri alınabilir.",
+    "delete_clones_description_one": "Ayrıca diğer klonu da silin. Bu işlem, son değişiklikler bölümünden geri alınabilir.",
     "delete_clones_description_other": "Ayrıca {{count}} klonu da silin. Bu işlem, son değişiklikler bölümünden geri alınabilir.",
     "erase_notes_label": "Kalıcı olarak sil",
     "table_note_with_relation": "İlişkili not",
@@ -58,8 +58,8 @@
   "export": {
     "close": "Kapat",
     "export_note_title": "Notu dışa aktar",
-    "export_type_subtree": "Bu not ve tüm torunları",
-    "export_type_single": "Yalnızca bu not, alt öğeleri olmadan",
+    "export_type_subtree": "Bu not ve tüm alt notları",
+    "export_type_single": "Yalnızca bu not",
     "export": "Dışa aktar",
     "choose_export_type": "Lütfen önce dışa aktarma türünü seçin",
     "export_finished_successfully": "Dışa aktarma başarıyla tamamlandı.",
@@ -174,20 +174,38 @@
     "anchor": "Bağlantı (isteğe bağlı)",
     "anchor_none": "Yok (not bağlantısı)",
     "edit_link": "Bağlantıyı düzenle",
-    "button_edit_link": "Bağlantıyı kaydet"
+    "button_edit_link": "Bağlantıyı kaydet",
+    "fix_link": "Linki düzelt",
+    "page_title": "Web sayfası başlığı",
+    "title_from_url": "URL ile aynı",
+    "title_from_note": "Eğer ayarlanmamışsa her zaman notun başlığını yansıtır",
+    "description": "Açıklama",
+    "page_description": "Web sayfasının açıklaması",
+    "headings": "Başlıklar",
+    "title_from_heading": "Eğer ayarlanmamışsa her zaman başlığın metnini yansıtır",
+    "retrieving_from_page": "Web sayfasından alınıyor..",
+    "title_from_attachment": "Eğer ayarlanmamışsa her zaman ekin başlığını yansıtır"
   },
   "bulk_actions": {
     "bulk_actions": "Toplu eylemler",
     "include_descendants": "Seçili notların alt notlarını da ekle",
     "chosen_actions": "Seçili eylemler",
-    "execute_bulk_actions_one": "Toplu eylemleri uygula",
-    "execute_bulk_actions_other": "",
+    "execute_bulk_actions_one": "{{count}} nota toplu eylemleri uygula",
+    "execute_bulk_actions_other": "{{count}} nota toplu eylemleri uygula",
     "bulk_actions_executed": "Toplu eylemler başarıyla uygulandı.",
-    "none_yet": "Henüz yok... yukarıda mevcut eylemler arasından birine tıklayarak eylem ekle.",
+    "none_yet": "Henüz eylem yok. Aşağıdan eylem ekle ile bir eylem seçin.",
     "labels": "Etiketler",
     "relations": "İlişkiler",
     "notes": "Notlar",
-    "other": "Diğer"
+    "other": "Diğer",
+    "selected_notes": "Seçili notlar",
+    "remove_from_selection": "Seçimden kaldır",
+    "affected_note_count_one": "Bu eylemler {{count}} nota uygulanacak.",
+    "affected_note_count_other": "Bu eylemler {{count}} nota uygulanacak.",
+    "add_action": "Eylem ekle",
+    "remove_action": "Bu eylemi kaldır",
+    "no_actions_to_execute": "Önce bir eylem ekleyin.",
+    "no_notes_to_execute_on": "Seçili notların hiçbiri artık yok."
   },
   "clone_to": {
     "clone_notes_to": "Notları şuraya klonla...",
@@ -540,7 +558,6 @@
       "markdown-import-from-clipboard": "Panodan Markdown içe aktarma",
       "math-editor-unavailable": "Matematik düzenleyici kullanılamıyor",
       "math-equation": "Matematik denklemi",
-      "medium": "Orta",
       "mermaid-diagram": "Mermaid diyagramı",
       "mermaid-diagram-0": "Mermaid diyagramı: %0",
       "missing-definition": "(eksik tanım)",
@@ -2770,8 +2787,7 @@
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "Başlatma çubuğundan kaldır",
     "configure_launch_bar": "Başlatma çubuğunu yapılandır",
-    "launch_bar_orientation": "Başlatma çubuğu yönü",
-    "will_reload_frontend": "(uygulamayı yeniden yükleyecek)"
+    "launch_bar_orientation": "Başlatma çubuğu yönü"
   },
   "highlighting": {
     "title": "Kod Blokları",
