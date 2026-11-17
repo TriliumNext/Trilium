@@ -1,0 +1,60 @@
+.search-provider-check-status {
+    padding: 1em;
+    text-align: center;
+    color: var(--muted-text-color);
+}
+
+.no-items.search-provider-check-error {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.search-provider-check-hint {
+    margin: 0.5em 0 0;
+    font-size: 0.9em;
+    color: var(--muted-text-color);
+}
+
+.search-provider-check-retry {
+    margin-top: 0.75em;
+}
+
+.search-provider-check {
+    .search-provider-check-passed {
+        display: flex;
+        align-items: center;
+        gap: 0.4em;
+        margin: 0 0 0.75em;
+
+        .bx {
+            color: var(--bs-success);
+            font-size: 1.2em;
+        }
+    }
+
+    .search-provider-check-results {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75em;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .search-provider-check-site {
+        margin-inline-start: 0.5em;
+        font-size: 0.85em;
+        color: var(--muted-text-color);
+    }
+
+    .search-provider-check-snippet {
+        display: -webkit-box;
+        margin: 0.2em 0 0;
+        overflow: hidden;
+        font-size: 0.9em;
+        color: var(--muted-text-color);
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+    }
+}

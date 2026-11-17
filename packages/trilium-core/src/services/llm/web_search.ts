@@ -4,6 +4,7 @@
  * built-in search, with a `read_web_page` tool to read what it finds.
  */
 
+import type { LlmWebSearchResult } from "@triliumnext/commons";
 import { tool } from "ai";
 import { parse as parseHtml } from "node-html-parser";
 import { z } from "zod";
@@ -21,12 +22,6 @@ export interface WebSearchSetup {
     name?: string;
     apiKey: string;
     baseURL?: string;
-}
-
-export interface WebSearchSource {
-    title: string;
-    url: string;
-    snippet: string;
 }
 
 const MAX_RESULTS = 8;
@@ -84,7 +79,7 @@ class SearchSetupError extends Error {}
  * A switch over literal cases, as `createProviderInstance()` is, because the provider type is
  * user-controlled.
  */
-export async function searchWeb(setup: WebSearchSetup, query: string, signal?: AbortSignal): Promise<WebSearchSource[]> {
+export async function searchWeb(setup: WebSearchSetup, query: string, signal?: AbortSignal): Promise<LlmWebSearchResult[]> {
     switch (setup.provider) {
         case "brave": {
             const base = setup.baseURL ?? "https://api.search.brave.com/res/v1";
@@ -316,8 +311,8 @@ function describeDeepSeekFailure(status: number): string | undefined {
 }
 
 /** The results that carry a web URL, read from `urlField`, with the excerpt read from `snippetField`. */
-function toSources(results: unknown[] | undefined, snippetField: string, urlField = "url"): WebSearchSource[] {
-    const sources: WebSearchSource[] = [];
+function toSources(results: unknown[] | undefined, snippetField: string, urlField = "url"): LlmWebSearchResult[] {
+    const sources: LlmWebSearchResult[] = [];
     for (const result of results ?? []) {
         const { title, [urlField]: url, [snippetField]: snippet } = (result ?? {}) as Record<string, unknown>;
         if (typeof url === "string" && /^https?:\/\//i.test(url)) {

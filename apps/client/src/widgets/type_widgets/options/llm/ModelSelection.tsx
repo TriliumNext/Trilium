@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "preact/hooks";
 import { t } from "../../../../services/i18n";
 import { fetchProviderModels, type ProviderModelsQuery } from "../../../../services/llm_chat";
 import { formatModelCost } from "../../../../services/llm_model_cost";
+import Button from "../../../react/Button";
 import FormCheckbox from "../../../react/FormCheckbox";
 import NoItems from "../../../react/NoItems";
 
@@ -40,8 +41,9 @@ export default function ModelSelection({ query, timeoutMs, selected, onChange, a
     const [models, setModels] = useState<LlmModelInfo[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | undefined>();
+    const [attempt, setAttempt] = useState(0);
 
-    // Refetch whenever the provider credentials change. A stale-guard flag drops
+    // Refetch whenever the provider credentials change, or on Retry. A stale-guard flag drops
     // the result of a superseded request so a slow earlier fetch can't overwrite
     // a newer one.
     useEffect(() => {
@@ -74,9 +76,9 @@ export default function ModelSelection({ query, timeoutMs, selected, onChange, a
                 setLoading(false);
             });
         return () => { active = false; };
-        // selected/onChange intentionally excluded: refetch tracks credentials only.
+        // selected/onChange intentionally excluded: refetch tracks credentials and Retry only.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [query.provider, query.apiKey, query.baseURL]);
+    }, [query.provider, query.apiKey, query.baseURL, attempt]);
 
     const isSelected = useCallback((model: LlmModelInfo) => selected.some(s => s.id === model.id), [selected]);
 
@@ -85,6 +87,8 @@ export default function ModelSelection({ query, timeoutMs, selected, onChange, a
             ? [...selected, model]
             : selected.filter(s => s.id !== model.id));
     }, [selected, onChange]);
+
+    const retryButton = <Button className="model-selection-retry" text={t("llm.retry")} icon="bx bx-refresh" onClick={() => setAttempt(n => n + 1)} />;
 
     if (loading) {
         return <div className="model-selection-status">{t("llm.models_loading")}</div>;
@@ -98,11 +102,17 @@ export default function ModelSelection({ query, timeoutMs, selected, onChange, a
                 text={t("llm.models_load_failed", { error, interpolation: { escapeValue: false } })}
             >
                 {troubleshooting}
+                {retryButton}
             </NoItems>
         );
     }
     if (models.length === 0) {
-        return <NoItems icon="bx bx-bot" text={t("llm.models_none_available")}>{troubleshooting}</NoItems>;
+        return (
+            <NoItems icon="bx bx-bot" text={t("llm.models_none_available")}>
+                {troubleshooting}
+                {retryButton}
+            </NoItems>
+        );
     }
 
     const allSelected = models.every(isSelected);

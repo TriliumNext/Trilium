@@ -8,7 +8,9 @@ const mocks = vi.hoisted(() => ({
     onHidden: vi.fn(),
     /** The Antigravity download found for the device running Trilium. */
     antigravityDownload: {} as { version?: string; url?: string },
-    standalone: false
+    standalone: false,
+    /** What the wizard last handed the search provider check. */
+    searchCheck: undefined as { query: unknown; onFailedChange: (failed: boolean) => void } | undefined
 }));
 
 vi.mock("./antigravity_download", () => ({ useAntigravityDownload: () => mocks.antigravityDownload }));
@@ -45,7 +47,7 @@ vi.mock("react-i18next", async () => {
 vi.mock("../../../react/WizardModal", () => ({
     default: ({ show, steps, step, onStepChange, onFinish }: {
         show?: boolean;
-        steps: { id: string; content: preact.ComponentChildren; canContinue?: boolean }[];
+        steps: { id: string; content: preact.ComponentChildren; canContinue?: boolean; nextLabel?: string }[];
         step: string;
         onStepChange: (id: string) => void;
         onFinish: () => void;
@@ -63,7 +65,7 @@ vi.mock("../../../react/WizardModal", () => ({
                     className="wizard-next"
                     disabled={current?.canContinue === false}
                     onClick={() => (isLast ? onFinish() : onStepChange(steps[index + 1].id))}
-                >next</button>
+                >{current?.nextLabel ?? "next"}</button>
             </div>
         );
     }
@@ -73,6 +75,14 @@ vi.mock("../../../react/WizardModal", () => ({
 // The stub renders the checklist it is handed, which the screen shows when listing fails.
 vi.mock("./ModelSelection", () => ({
     default: ({ troubleshooting }: { troubleshooting?: preact.ComponentChildren }) => <div className="model-selection-stub">{troubleshooting}</div>
+}));
+
+// The test search is a request of its own; the stub records what the wizard handed it.
+vi.mock("./SearchProviderCheck", () => ({
+    default: (props: { query: unknown; onFailedChange: (failed: boolean) => void }) => {
+        mocks.searchCheck = props;
+        return <div className="search-check-stub" />;
+    }
 }));
 
 import AddProviderModal, { type LlmProviderConfig } from "./AddProviderModal";
@@ -89,6 +99,7 @@ afterEach(() => {
     vi.clearAllMocks();
     mocks.antigravityDownload = {};
     mocks.standalone = false;
+    mocks.searchCheck = undefined;
 });
 
 function open(existingProvider?: LlmProviderConfig, kind?: LlmProviderKind) {
@@ -272,7 +283,7 @@ describe("what gets saved", () => {
         expect(saved.selectedModels).toEqual(existing.selectedModels);
     });
 
-    it("offers search services for a search provider, and saves one at the connection step", () => {
+    it("offers search services for a search provider, and checks one with a test search before saving it", () => {
         open(undefined, "search");
         expect(providerCard("OpenAI")).toBeUndefined();
         act(() => providerCard("SearXNG")?.click());
@@ -280,6 +291,12 @@ describe("what gets saved", () => {
         act(() => void nextButton()?.click());
 
         expect(document.querySelector(".model-selection-stub")).toBeNull();
+        expect(document.querySelector(".search-check-stub")).not.toBeNull();
+        expect(mocks.searchCheck?.query).toEqual({ provider: "searxng", apiKey: "", baseURL: "http://localhost:8888" });
+        expect(mocks.onSave).not.toHaveBeenCalled();
+        expect(nextButton()?.textContent).toBe("next");
+        act(() => void nextButton()?.click());
+
         const [ saved ] = mocks.onSave.mock.calls[0] as [ LlmProviderConfig ];
         expect(saved).toMatchObject({ provider: "searxng", name: "SearXNG", kind: "search", baseURL: "http://localhost:8888" });
         expect(saved).not.toHaveProperty("selectedModels");
@@ -309,13 +326,39 @@ describe("what gets saved", () => {
         expect(providerCard("Exa")?.textContent).toContain("llm.search_provider_unavailable_standalone");
     });
 
-    it("keeps the kind of the search provider being edited", () => {
+    it("offers to add or save anyway once the test search has failed", () => {
+        open(undefined, "search");
+        act(() => providerCard("SearXNG")?.click());
+        act(() => void nextButton()?.click());
+        act(() => mocks.searchCheck?.onFailedChange(true));
+        expect(nextButton()?.textContent).toBe("llm.add_provider_anyway");
+        act(() => void nextButton()?.click());
+        expect(mocks.onSave).toHaveBeenCalledOnce();
+
         open({ id: "brave_1", name: "Brave Search", provider: "brave", kind: "search", apiKey: "old" });
         type(textBoxes()[0], "new");
+        act(() => void nextButton()?.click());
+        act(() => mocks.searchCheck?.onFailedChange(true));
+        expect(nextButton()?.textContent).toBe("llm.save_anyway");
+    });
+
+    it("keeps the kind of the search provider being edited, testing a changed connection first", () => {
+        open({ id: "brave_1", name: "Brave Search", provider: "brave", kind: "search", apiKey: "old" });
+        type(textBoxes()[0], "new");
+        act(() => void nextButton()?.click());
+        expect(mocks.searchCheck?.query).toEqual({ provider: "brave", apiKey: "new", baseURL: undefined });
         act(() => void nextButton()?.click());
 
         const [ saved ] = mocks.onSave.mock.calls[0] as [ LlmProviderConfig ];
         expect(saved).toMatchObject({ id: "brave_1", kind: "search", apiKey: "new" });
+    });
+
+    it("saves an edited search provider from the connection step when its connection is unchanged", () => {
+        open({ id: "searxng_1", name: "SearXNG", provider: "searxng", kind: "search", apiKey: "", baseURL: "http://localhost:8888" });
+        act(() => void nextButton()?.click());
+
+        expect(mocks.searchCheck).toBeUndefined();
+        expect(mocks.onSave).toHaveBeenCalledWith(expect.objectContaining({ id: "searxng_1", baseURL: "http://localhost:8888" }));
     });
 
     it("puts the dialog away once it has saved", () => {
