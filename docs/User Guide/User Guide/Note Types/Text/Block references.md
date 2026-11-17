@@ -7,7 +7,7 @@ Block references are [links](Links.md) to a block of a text note, such as a para
 2.  Right-click the block handle, the sequence of dots to the left of the block (see <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>), and select _Copy reference_. With the fixed formatting toolbar, clicking the block handle opens the same menu. Alternatively, right-click the text and select _Copy reference to this block_ in the _Copy_ submenu, or _Copy reference to these blocks_ for a selection. The referenced blocks flash briefly.
 3.  Go to the note where to insert the link and press <kbd>Ctrl</kbd>+<kbd>V</kbd>.
 
-Inside a <a class="reference-link" href="Content%20tabs.md">Content tabs</a> block, the reference points to the whole block. To link to a single tab, use _Copy reference to this tab_ in the <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu of the tabs block instead. Inside a <a class="reference-link" href="Multicolumn%20layout.md">Multicolumn layout</a>, the reference points to the blocks in the column, and an include shows them without the layout around them.
+Inside a [table](Tables.md), an [aside](Aside%20blocks.md) or a <a class="reference-link" href="Content%20tabs.md">Content tabs</a> block, the reference points to the whole block. To link to a single tab, use _Copy reference to this tab_ in the <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu of the tabs block instead. Inside a <a class="reference-link" href="Multicolumn%20layout.md">Multicolumn layout</a>, the reference points to the blocks in the column, and an include shows them without the layout around them.
 
 The link shows the title of the note, followed by the beginning of the referenced text. A link to blocks of the same note shows only the beginning of the referenced text, and a link to a heading of the same note shows the whole heading.
 
@@ -45,7 +45,7 @@ This link is a block reference too. Linking to the heading saves an invisible id
 
 ## Following a reference
 
-Clicking a block reference opens the note, scrolls to the referenced blocks and flashes them. If a referenced block was deleted, an error message is shown instead, along with the blocks of the range that still exist.
+Clicking a block reference opens the note, scrolls to the referenced blocks and flashes them. If a referenced block was deleted, an error message is shown. When only the first or the last block of a range still exists, the note scrolls to that block.
 
 A link to blocks of the note it is in, such as a link to a heading, scrolls to them and flashes them without leaving the note, as a link within a web page does. This works in read-only notes and on shared pages too. While editing, clicking the link shows its popup: press _Jump to heading_ there, or _Jump to block_ for other blocks.
 
@@ -60,6 +60,6 @@ If a referenced block was deleted, the include shows _Broken reference_.
 ## Limitations
 
 *   References can be copied only from a note being edited, and not in the mobile layout.
-*   An include of a range that covers only part of a list or a quote, such as from its second item to a paragraph after it, cannot be edited in place.
-*   Deleting a block breaks the references to it.
-*   Block references are not kept when exporting to Markdown. On a [shared page](../../Advanced%20Usage/Sharing.md), a block reference opens the whole note.
+*   An include of a range that covers only part of a list or a quote, such as from its second item to a paragraph after it, cannot be edited in place. Neither can an include of a single code block or diagram.
+*   Deleting a block, or merging it into the block above with <kbd>Backspace</kbd>, breaks the references to it.
+*   When a subtree is [exported](../../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md), links to blocks lead to the whole note. Exporting to Markdown also removes the invisible identifiers of most blocks, so references to them break when the note is imported again.
