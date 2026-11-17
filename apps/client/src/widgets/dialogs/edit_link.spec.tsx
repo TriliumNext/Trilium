@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, type MockInstance, onTestFinished, vi
 import appContext from "../../components/app_context";
 import Component from "../../components/component";
 import type { PageDetails } from "../../services/link_embed";
+import type { LinkHeading } from "../../services/link_targets";
 import type { Suggestion } from "../../services/note_autocomplete";
 import options from "../../services/options";
 import server from "../../services/server";
@@ -16,8 +17,7 @@ import Modal from "../react/Modal";
 import type { NoteAutocompleteHandle } from "../react/NoteAutocomplete";
 import { ParentComponent } from "../react/react_utils";
 import EditLinkDialog, {
-    EditLinkBalloon, type EditLinkOpts, getShownDisplay, getWebLinkError, type LinkHeading,
-    normalizeWebLink
+    EditLinkBalloon, type EditLinkOpts, getShownDisplay, getWebLinkError, normalizeWebLink
 } from "./edit_link";
 
 const autocomplete = vi.hoisted(() => ({
@@ -191,7 +191,9 @@ describe("EditLinkDialog", () => {
     }
 
     function anchorRows() {
-        return [ ...container.querySelectorAll<HTMLElement>(".edit-link-anchors .tn-card-choice") ];
+        return [ ...container.querySelectorAll<HTMLElement>(
+            ".link-target-anchors .tn-card-choice"
+        ) ];
     }
 
     function checkedAnchor() {
@@ -199,7 +201,9 @@ describe("EditLinkDialog", () => {
     }
 
     function headingRows() {
-        return [ ...container.querySelectorAll<HTMLElement>(".edit-link-headings .tn-card-choice") ];
+        return [ ...container.querySelectorAll<HTMLElement>(
+            ".link-target-headings .tn-card-choice"
+        ) ];
     }
 
     function checkedHeading() {
@@ -964,7 +968,7 @@ describe("EditLinkDialog", () => {
         expect(headings()).toStrictEqual([ "add_link.target_anchor" ]);
         const titleCard = field("text")?.closest(".tn-card");
         expect(titleCard?.nextElementSibling?.matches(".edit-link-targets")).toBe(true);
-        expect(titleCard?.nextElementSibling?.firstElementChild?.matches(".edit-link-anchors"))
+        expect(titleCard?.nextElementSibling?.firstElementChild?.matches(".link-target-anchors"))
             .toBe(true);
         expect(anchorRows().map((row) => row.textContent)).toStrictEqual([ "intro", "outro" ]);
         expect(anchorRows().every((row) => row.querySelector(".tn-card-choice-icon.bx-bookmark")))
@@ -1024,7 +1028,7 @@ describe("EditLinkDialog", () => {
         await act(async () => choice()[2]?.click());
         expect(headings()).toStrictEqual([ "add_link.headings", "add_link.target_anchor" ]);
         expect(container.querySelector(".edit-link-targets")?.firstElementChild
-            ?.matches(".edit-link-headings")).toBe(true);
+            ?.matches(".link-target-headings")).toBe(true);
         // Sub-headings start collapsed.
         expect(headingRows().map((row) => row.textContent)).toStrictEqual([ "Intro", "Usage" ]);
         await toggleHeading(0);
@@ -1172,8 +1176,9 @@ describe("EditLinkDialog", () => {
         expect(noteTargets()?.getAttribute("role")).toBeNull();
         expect(headings()).toStrictEqual([ "add_link.link_to_heading", "add_link.link_to_anchor" ]);
         expect(noteTargets()?.querySelector(".no-items")).toBeNull();
-        expect(noteTargets()?.firstElementChild?.matches(".edit-link-top")).toBe(true);
-        expect(noteTargets()?.querySelector(".edit-link-top .bx-arrow-to-top")).not.toBeNull();
+        expect(noteTargets()?.firstElementChild?.matches(".link-target-whole-note")).toBe(true);
+        expect(noteTargets()?.querySelector(".link-target-whole-note .bx-arrow-to-top"))
+            .not.toBeNull();
         // Sub-headings start collapsed, and the anchors are sorted.
         expect(noteChoices())
             .toStrictEqual([ "*add_link.top_of_note", "Setup", "Usage", "alpha", "zeta" ]);
@@ -1446,7 +1451,7 @@ describe("EditLinkDialog", () => {
             await pickNote(`root/${other.noteId}`);
             expect(noteChoices()).toStrictEqual([ "*add_link.top_of_note" ]);
             // A placeholder takes the place of the headings and anchors.
-            const placeholder = noteTargets()?.querySelector(".edit-link-top + .no-items");
+            const placeholder = noteTargets()?.querySelector(".link-target-whole-note + .no-items");
             expect(placeholder?.textContent).toBe("add_link.no_link_targets");
             expect(placeholder?.querySelector(".bx-bookmark")).not.toBeNull();
         }
@@ -1597,7 +1602,7 @@ describe("EditLinkBalloon", () => {
         await submit(form);
         expect(onClose).toHaveBeenCalledOnce();
 
-        const row = form.querySelector<HTMLElement>(".edit-link-anchors .tn-card-choice");
+        const row = form.querySelector<HTMLElement>(".link-target-anchors .tn-card-choice");
         await act(async () => row?.click());
         await submit(form);
         expect(onClose).toHaveBeenCalledTimes(2);

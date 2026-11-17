@@ -1,12 +1,16 @@
+import "../../theme/mention.css";
+
 import {
     clickOutsideHandler,
     DomEmitterMixin,
     keyCodes,
     type Marker,
     type MentionFeedObjectItem,
+    type ModelElement,
     ModelLivePosition,
     ModelLiveRange,
     type ModelPosition,
+    type ModelRange,
     Plugin,
     Rect,
     TextWatcher,
@@ -17,9 +21,29 @@ import { createMarkerPattern, findMarkerMatch, type MarkerMatch } from "./marker
 import type { MentionHostedFeed, MentionHostedList } from "./types.js";
 
 const MARKER_NAME = "mention";
+/** The marker on the mention that the open list follows up on, which the editing view marks. */
+const FOLLOW_UP_MARKER_NAME = "mentionFollowUp";
 
 /** A marker of `mention.hostedFeeds` with its compiled trigger pattern and the host's list. */
 type Pattern = MentionHostedFeed & { pattern: RegExp; hostedList: MentionHostedList };
+
+/** A mention committed with `commitAndFollowUp()`, and the list that follows up on it. */
+interface FollowUp {
+    feed: Pattern;
+    item: MentionFeedObjectItem;
+    /** The position before the mention, set before the `mention` command inserts it. */
+    start: ModelLivePosition;
+    /** The mention in the document, or `null` until the `mention` command inserts it. */
+    mention: ModelElement | null;
+}
+
+/** The text before the caret, as the query of the list that follows up on a mention. */
+interface FollowUpMatch {
+    followUp: FollowUp;
+    /** The mention found in the document, or `null` while it is still to be inserted. */
+    mention: ModelElement | null;
+    query: string;
+}
 
 /**
  * A replacement for CKEditor's `MentionUI` that finds the markers typed in the editor and runs the
@@ -41,6 +65,11 @@ type Pattern = MentionHostedFeed & { pattern: RegExp; hostedList: MentionHostedL
  *    attributes commits a suggestion instead.
  * 3. **A stale query closes the list.** See {@link createMarkerPattern}.
  *
+ * A list can also follow up on a mention it commits with `commitAndFollowUp()`. It then stays open
+ * for the text typed after the mention, until it commits again or is dismissed, the caret leaves
+ * that text, a space is typed right after the mention, or Backspace is pressed there. Meanwhile
+ * the editing view gives the mention the class `ck-mention-follow-up`.
+ *
  * The `mention` model attribute, its post-fixers and the `mention` command are reused from upstream
  * unchanged. Pair this plugin with `MentionEditing` rather than the `Mention` façade, which pulls in
  * `MentionUI` too.
@@ -51,6 +80,8 @@ export default class TriliumMentionUI extends Plugin {
     private _feeds: Pattern[] = [];
     /** The marker whose list is open, or `null`. */
     private _open: Pattern | null = null;
+    /** The mention that the open list follows up on, or `null`. */
+    private _followUp: FollowUp | null = null;
     /** The id the editable's `aria-activedescendant` holds, or `null` while it holds none. */
     private _activeDescendant: string | null = null;
     /** Listens for presses outside the open list, which close it. */
@@ -108,6 +139,11 @@ export default class TriliumMentionUI extends Plugin {
             callback: () => this._hide()
         });
 
+        editor.conversion.for("editingDowncast").markerToHighlight({
+            model: FOLLOW_UP_MARKER_NAME,
+            view: { classes: "ck-mention-follow-up" }
+        });
+
         this._setupTextWatcher();
         this.listenTo(editor, "change:isReadOnly", () => this._hide());
     }
@@ -116,6 +152,8 @@ export default class TriliumMentionUI extends Plugin {
         super.destroy();
 
         this._clearDismissal();
+        this._followUp?.start.detach();
+        this._followUp = null;
         this._domEmitter.stopListening();
         for (const { hostedList } of this._feeds) {
             hostedList.destroy?.();
@@ -127,6 +165,12 @@ export default class TriliumMentionUI extends Plugin {
      * the host does, so that the dismissal is remembered.
      */
     private _handleKeyDown(list: MentionHostedList, keyCode: number, event: KeyboardEvent): boolean {
+        // Backspace right after the mention ends its follow-up, and the mention stays.
+        if (keyCode === keyCodes.backspace && this._isCaretAfterFollowedMention()) {
+            this._hide();
+            return true;
+        }
+
         if (keyCode !== keyCodes.esc) {
             return list.handleKeyDown(event);
         }
@@ -139,16 +183,26 @@ export default class TriliumMentionUI extends Plugin {
         return true;
     }
 
+    /** Whether the caret is right after the mention that the open list follows up on. */
+    private _isCaretAfterFollowedMention(): boolean {
+        const mention = this._followUp?.mention;
+        const { focus } = this.editor.model.document.selection;
+
+        return !!mention && !!focus && focus.nodeBefore === mention;
+    }
+
     /**
      * Hides the list and remembers that the user rejected *this* marker, so it does not immediately
-     * reopen on the next keystroke. No document mutation is involved.
+     * reopen on the next keystroke. No document mutation is involved. A follow-up ends for good,
+     * so its dismissal is not remembered.
      */
     private _dismiss() {
-        const start = this.editor.model.markers.get(MARKER_NAME)?.getStart();
+        const start = this._followUp
+            ? undefined
+            : this.editor.model.markers.get(MARKER_NAME)?.getStart();
 
         this._hide();
 
-        /* v8 ignore else -- an open list always has the mention marker, so there is a start */
         if (start) {
             this._clearDismissal();
             this._dismissedAt = ModelLivePosition.fromPosition(start, "toPrevious");
@@ -182,14 +236,22 @@ export default class TriliumMentionUI extends Plugin {
         const editor = this.editor;
 
         // Returning the match object makes `TextWatcher` merge it into the event data, so the
-        // handler does not have to re-derive the block text and re-run the patterns.
-        const watcher = new TextWatcher(editor.model, (text) => findMarkerMatch(this._feeds, text) ?? false);
+        // handler does not have to re-derive the block text and re-run the patterns. The text
+        // typed after a mention that the list follows up on is its query, whatever markers it has.
+        const watcher = new TextWatcher(editor.model, (text) =>
+            this._matchFollowUp(text) ?? findMarkerMatch(this._feeds, text) ?? false);
 
         // Only typing opens the list. `matched:selection` fires on any direct caret move — a click
         // or an arrow key — and reopening there is the "clicking always triggers an autocomplete"
         // bug; a caret move closes the list, which is anchored to a marker the user has just
         // navigated away from.
-        watcher.on<TriliumMatchedEvent>("matched:data", (evt, data) => this._onTyped(data));
+        watcher.on<TriliumMatchedEvent>("matched:data", (evt, data) => {
+            if ("followUp" in data) {
+                this._onFollowUpTyped(data);
+            } else {
+                this._onTyped(data);
+            }
+        });
         watcher.on("matched:selection", () => this._hide());
         watcher.on("unmatched", () => {
             this._clearDismissal();
@@ -224,25 +286,75 @@ export default class TriliumMentionUI extends Plugin {
             return;
         }
 
-        const range = model.createRange(start, end);
-        const existing = model.markers.get(MARKER_NAME);
+        // A marker typed where the follow-up no longer applies opens its own list.
+        this._endFollowUp();
+        this._setMarker(MARKER_NAME, model.createRange(start, end));
+        this._show(feed, query);
+    }
+
+    /**
+     * Matches `text`, the text before the caret, against the follow-up. Returns the query typed
+     * after the mention, with no mention while the `mention` command has yet to insert it, and
+     * `null` once the caret is elsewhere, the mention is gone or a space follows it.
+     */
+    private _matchFollowUp(text: string): FollowUpMatch | null {
+        const followUp = this._followUp;
+        const { focus } = this.editor.model.document.selection;
+
+        if (!followUp || !focus) {
+            return null;
+        }
+
+        const mention = followUp.start.nodeAfter;
+
+        if (!mention?.is("element") || !this.editor.model.schema.isObject(mention)) {
+            const isAwaited = !followUp.mention && focus.isEqual(followUp.start);
+
+            return isAwaited ? { followUp, mention: null, query: "" } : null;
+        }
+
+        const queryStart = this.editor.model.createPositionAfter(mention);
+        const isQuery = focus.getShiftedBy(-text.length).isEqual(queryStart) && !/^\s/.test(text);
+
+        return isQuery ? { followUp, mention, query: text } : null;
+    }
+
+    /** Shows the list that follows up on a mention, for the text typed after the mention. */
+    private _onFollowUpTyped({ followUp, mention, query }: FollowUpMatch) {
+        if (!mention) {
+            return;
+        }
+
+        if (followUp.mention !== mention) {
+            // A commit replaces everything from the marker up to the caret, so the mention too.
+            const range = this.editor.model.createRangeOn(mention);
+
+            followUp.mention = mention;
+            this._setMarker(MARKER_NAME, range);
+            this._setMarker(FOLLOW_UP_MARKER_NAME, range);
+        }
+
+        this._show(followUp.feed, query);
+    }
+
+    /** Puts the marker `name`, which is in neither the data nor the undo steps, on `range`. */
+    private _setMarker(name: string, range: ModelRange) {
+        const model = this.editor.model;
 
         model.change((writer) => {
-            if (existing) {
-                writer.updateMarker(existing, { range });
+            if (model.markers.has(name)) {
+                writer.updateMarker(name, { range });
             } else {
-                writer.addMarker(MARKER_NAME, { range, usingOperation: false, affectsData: false });
+                writer.addMarker(name, { range, usingOperation: false, affectsData: false });
             }
         });
-
-        this._show(feed, query);
     }
 
     /** Shows the host's list of `feed` for `query`, in place of any other list. */
     private _show(feed: Pattern, query: string) {
         const marker = this.editor.model.markers.get(MARKER_NAME);
 
-        /* v8 ignore next 3 -- `_onTyped()` sets the marker just before calling this; the guard only narrows its type */
+        /* v8 ignore next 3 -- the callers set the marker first; the guard only narrows its type */
         if (!marker) {
             return;
         }
@@ -251,16 +363,26 @@ export default class TriliumMentionUI extends Plugin {
             this._hideList();
         }
 
+        const followUp = this._followUp;
+        const mention = followUp?.mention ?? null;
+
         this._open = feed;
         feed.hostedList.show({
             query,
+            followUpOf: followUp?.item ?? null,
             caretRect: () => {
-                const { left, top, width, height } = this._caretRect(marker);
+                const { left, top, width, height } = this._anchorRect(marker, mention);
                 return new DOMRect(left, top, width, height);
             },
             /* v8 ignore next -- a live editor's editing view always has its DOM root, so the `?? null` arm never runs */
             editable: this.editor.editing.view.getDomRoot() ?? null,
             commit: (item) => this._commit(feed, item),
+            commitAndFollowUp: (item) => this._commit(feed, item, item),
+            dismiss: () => {
+                if (this._open === feed) {
+                    this._dismiss();
+                }
+            },
             setActiveDescendant: (id) => {
                 if (this._open === feed) {
                     this._setActiveDescendant(id);
@@ -271,9 +393,22 @@ export default class TriliumMentionUI extends Plugin {
 
     private _hide() {
         this._hideList();
+        this._endFollowUp();
 
         if (this.editor.model.markers.has(MARKER_NAME)) {
             this.editor.model.change((writer) => writer.removeMarker(MARKER_NAME));
+        }
+    }
+
+    /** Ends the follow-up on a mention, which loses its mark, and leaves the list open. */
+    private _endFollowUp() {
+        const model = this.editor.model;
+
+        this._followUp?.start.detach();
+        this._followUp = null;
+
+        if (model.markers.has(FOLLOW_UP_MARKER_NAME)) {
+            model.change((writer) => writer.removeMarker(FOLLOW_UP_MARKER_NAME));
         }
     }
 
@@ -311,22 +446,38 @@ export default class TriliumMentionUI extends Plugin {
 
     /**
      * Replaces the trigger text with a mention of `item`, or hands `item` to the feed's `commit`.
-     * For a promise, the text stays where it is, followed by a live range, until it settles.
+     * For a promise, the text stays where it is, followed by a live range, until it settles. With
+     * `followUpOf`, which is `item`, the list stays open to follow up on the mention.
      */
-    private _commit(feed: Pattern, item: MentionFeedObjectItem | Promise<MentionFeedObjectItem | undefined>) {
+    private _commit(
+        feed: Pattern, item: MentionFeedObjectItem | Promise<MentionFeedObjectItem | undefined>,
+        followUpOf?: MentionFeedObjectItem
+    ) {
         const editor = this.editor;
         const model = editor.model;
         const marker = model.markers.get(MARKER_NAME);
         const focus = model.document.selection.focus;
 
-        // A pick arriving after the list closed, such as a click racing a caret move.
-        if (!marker || !focus) {
+        // A pick arriving after the list closed, such as a click racing a caret move, or before
+        // the mention that the list follows up on is in the document.
+        if (!marker || !focus || (this._followUp && !this._followUp.mention)) {
             return;
         }
 
         // Everything from the marker up to the caret, not just the marker itself.
         const range = ModelLiveRange.fromRange(model.createRange(marker.getStart(), focus));
-        this._hide();
+
+        if (followUpOf) {
+            this._endFollowUp();
+            this._followUp = {
+                feed,
+                item: followUpOf,
+                start: ModelLivePosition.fromPosition(range.start, "toPrevious"),
+                mention: null
+            };
+        } else {
+            this._hide();
+        }
         this._clearDismissal();
 
         const insert = (mention: MentionFeedObjectItem | undefined) => {
@@ -347,6 +498,9 @@ export default class TriliumMentionUI extends Plugin {
                     editor.execute("mention", { mention, text: mention.text, marker: feed.marker, range: range.toRange() });
                     editor.editing.view.focus();
                 }
+            } else if (followUpOf) {
+                // The list has no mention to follow up on.
+                this._hide();
             }
             range.detach();
         };
@@ -358,9 +512,19 @@ export default class TriliumMentionUI extends Plugin {
         }
     }
 
-    /** The rect the list is placed against: the end of the marker, or of the selection once it is gone. */
-    private _caretRect(marker: Marker): Rect {
+    /**
+     * The rect the list is placed against: `mention`, which it follows up on, or else the end of
+     * the marker, or of the selection once the marker is gone.
+     */
+    private _anchorRect(marker: Marker, mention: ModelElement | null): Rect {
         const editing = this.editor.editing;
+        const viewElement = mention && editing.mapper.toViewElement(mention);
+        const domElement = viewElement && editing.view.domConverter.mapViewToDom(viewElement);
+
+        if (domElement) {
+            return new Rect(domElement);
+        }
+
         let range = marker.getRange();
 
         // The marker can already be gone; fall back to the selection, so the list can still be
@@ -379,7 +543,7 @@ export default class TriliumMentionUI extends Plugin {
 
 type TriliumMatchedEvent = {
     name: "matched:data";
-    args: [ MarkerMatch<Pattern> & { text: string } ];
+    args: [ (MarkerMatch<Pattern> | FollowUpMatch) & { text: string } ];
 };
 
 function isInExistingMention(position: ModelPosition): boolean {

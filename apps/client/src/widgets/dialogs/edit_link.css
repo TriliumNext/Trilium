@@ -68,34 +68,13 @@
     }
 
     .edit-link-targets {
-        --edit-link-targets-height: 240px;
-        max-height: var(--edit-link-targets-height);
-        overflow-y: auto;
-
-        .tn-card-choice {
-            .tn-icon {
-                color: var(--menu-item-icon-color);
-            }
-
-            &[aria-checked="true"] {
-                background-color: var(--low-profile-button-active-background-color);
-                color: var(--low-profile-button-active-color);
-
-                .tn-icon {
-                    color: inherit;
-                }
-            }
-
-            &:focus-visible {
-                outline-offset: -2px;
-            }
-        }
+        max-height: var(--link-target-list-height);
     }
 
     .edit-link-note-targets {
         display: flex;
         flex-direction: column;
-        height: var(--edit-link-targets-height);
+        height: var(--link-target-list-height);
 
         > * {
             flex-shrink: 0;
@@ -104,16 +83,6 @@
         > .no-items {
             flex-grow: 1;
             height: auto;
-        }
-    }
-
-    .edit-link-headings {
-        --card-nested-section-indent: 24px;
-
-        .tn-card-choice-label {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
         }
     }
 }

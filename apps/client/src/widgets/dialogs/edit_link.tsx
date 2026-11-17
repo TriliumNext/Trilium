@@ -2,42 +2,37 @@ import "./edit_link.css";
 
 import type { LinkDisplayMode } from "@triliumnext/ckeditor5";
 import internalLinkIcon from "@triliumnext/ckeditor5/src/icons/trilium.svg?raw";
-import type {
-    HeadingReference, HeadingReferenceRequest, HeadingReferenceResponse, NoteReferencesResponse
-} from "@triliumnext/commons";
 import { encodeBlockParameter } from "@triliumnext/commons/src/lib/block_reference.js";
 import { isHttpUrl } from "@triliumnext/commons/src/lib/link_embed.js";
 import { ALLOWED_PROTOCOLS } from "@triliumnext/commons/src/lib/shared_constants.js";
-import clsx from "clsx";
-import type { ComponentChildren, ComponentProps, RefObject } from "preact";
-import {
-    type Dispatch, type StateUpdater, useEffect, useMemo, useRef, useState
-} from "preact/hooks";
+import type { ComponentProps } from "preact";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
-import appContext from "../../components/app_context";
-import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import { detectEmbedType, fetchPageDetails, type PageDetails } from "../../services/link_embed";
+import {
+    addParameter, getAnchorLinkPath, getLinkTargets, getParentHeadings, type LinkHeading,
+    type LinkTargets, nestHeadings, splitBlockParameter
+} from "../../services/link_targets";
 import type { Suggestion } from "../../services/note_autocomplete";
 import options from "../../services/options";
-import server from "../../services/server";
 import toast from "../../services/toast";
 import tree from "../../services/tree";
 import { isMobile } from "../../services/utils";
 import { logError } from "../../services/ws";
 import Button from "../react/Button";
-import { Card, ChoiceCardSection, OptionCardSection } from "../react/Card";
+import { Card, OptionCardSection } from "../react/Card";
 import FormSelect from "../react/FormSelect";
 import FormTextArea from "../react/FormTextArea";
 import FormTextBox, { type FormTextBoxProps, FormTextBoxWithPaste } from "../react/FormTextBox";
 import { useTriliumEvent } from "../react/hooks/events";
+import LinkTargetList, { scrollToCheckedChoice } from "../react/LinkTargetList";
 import { InputGroupSpinner } from "../react/LoadingSpinner";
 import Modal from "../react/Modal";
 import { suspendModalFocusTraps } from "../react/modal_focustrap";
 import NoItems from "../react/NoItems";
 import NoteAutocomplete, { type NoteAutocompleteHandle } from "../react/NoteAutocomplete";
 import { refToJQuerySelector } from "../react/react_utils";
-import { useScrollFade } from "../react/scroll_fade";
 import SegmentedChoice, { type SegmentedChoiceOption } from "../react/SegmentedChoice";
 
 /**
@@ -48,29 +43,6 @@ export type LinkTarget = "note" | "url" | "anchor";
 
 /** An empty text of the link for each page. */
 const NO_LINK_TITLES: Readonly<Record<LinkTarget, string>> = { note: "", url: "", anchor: "" };
-
-/** A heading that a link can point at, in the document the link goes into or in another note. */
-export interface LinkHeading {
-    title: string;
-    /** 1 for `<h1>`, up to 6 for `<h6>`. */
-    level: number;
-    /** The block id of the heading, if it has one. */
-    blockId?: string;
-    /** Gives the heading a block id if it has none, and returns the note path of a link to it. */
-    createLinkPath(): string;
-    /**
-     * Gives a heading of another note a block id on the server, before `createLinkPath()` is
-     * called. Rejects when the server cannot give one.
-     */
-    createReference?(): Promise<void>;
-}
-
-/** The headings and anchors of a note, which a link to the note can point at. */
-interface LinkTargets {
-    /** In document order. */
-    headings: LinkHeading[];
-    anchors: string[];
-}
 
 /**
  * What a link on the note page points at inside the note: a heading, an anchor, or the block that
@@ -691,6 +663,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
 
         <LinkTargetList
             listRef={linkTargetsRef}
+            className="edit-link-targets"
             headingTree={headingTree}
             anchors={anchors}
             checkedHeading={heading}
@@ -736,13 +709,15 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         return (
             <LinkTargetList
                 listRef={noteTargetsRef}
-                className="edit-link-note-targets"
+                className="edit-link-targets edit-link-note-targets"
                 headingTree={noteHeadingTree}
                 anchors={noteTargets.anchors}
                 checkedHeading={noteHeading}
                 checkedAnchor={notePart && "bookmark" in notePart ? notePart.bookmark : undefined}
+                isWholeNoteChecked={notePart === null}
                 onCheckHeading={(item) => setNotePart({ heading: item })}
                 onCheckAnchor={(name) => setNotePart({ bookmark: name })}
+                onCheckWholeNote={() => setNotePart(null)}
                 expandedHeadings={expandedNoteHeadings}
                 setExpandedHeadings={setExpandedNoteHeadings}
                 headingsTitle={t("add_link.link_to_heading")}
@@ -750,17 +725,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                 placeholder={
                     <NoItems icon="bx bx-bookmark" text={t("add_link.no_link_targets")} />
                 }
-            >
-                <Card className="edit-link-top">
-                    <ChoiceCardSection
-                        icon="bx bx-arrow-to-top"
-                        isChecked={notePart === null}
-                        onCheck={() => setNotePart(null)}
-                    >
-                        {t("add_link.top_of_note")}
-                    </ChoiceCardSection>
-                </Card>
-            </LinkTargetList>
+            />
         );
     }
     const displays = [
@@ -927,106 +892,6 @@ function RetrievedTextArea({ isRetrieving, ...props }: ComponentProps<typeof For
     );
 }
 
-interface LinkTargetListProps {
-    listRef: RefObject<HTMLDivElement | null>;
-    className?: string;
-    /** Cards above the headings. */
-    children?: ComponentChildren;
-    /** The headings, nested as `nestHeadings()` returns them. */
-    headingTree: Map<LinkHeading | null, LinkHeading[]>;
-    anchors: string[];
-    checkedHeading: LinkHeading | null;
-    checkedAnchor?: string;
-    onCheckHeading(heading: LinkHeading): void;
-    onCheckAnchor(anchor: string): void;
-    /** The headings whose sub-headings are shown. */
-    expandedHeadings: ReadonlySet<LinkHeading>;
-    setExpandedHeadings: Dispatch<StateUpdater<ReadonlySet<LinkHeading>>>;
-    /** The heading of the card of the headings. */
-    headingsTitle: string;
-    /** The heading of the card of the anchors. */
-    anchorsTitle: string;
-    /** Shown in place of the headings and anchors when there are none. */
-    placeholder?: ComponentChildren;
-}
-
-/**
- * The headings of a note as a tree, then its anchors, as one choice of where a link points. The
- * list opens scrolled to the checked choice, and fades at the edges it continues past.
- */
-function LinkTargetList({
-    listRef, className, children, headingTree, anchors, checkedHeading, checkedAnchor,
-    onCheckHeading, onCheckAnchor, expandedHeadings, setExpandedHeadings, headingsTitle,
-    anchorsTitle, placeholder
-}: LinkTargetListProps) {
-    const fade = useScrollFade(listRef);
-    const topHeadings = headingTree.get(null) ?? [];
-
-    // Runs before `useScrollFade()` first measures, which takes one more render.
-    useEffect(() => {
-        scrollToCheckedChoice(listRef.current);
-    }, []);
-
-    /** The choice of `heading`, with the headings under it. */
-    function renderHeading(heading: LinkHeading, index: number) {
-        const subHeadings = headingTree.get(heading) ?? [];
-        return (
-            <ChoiceCardSection
-                key={index}
-                icon="bx bx-heading"
-                isChecked={heading === checkedHeading}
-                onCheck={() => onCheckHeading(heading)}
-                subSections={subHeadings.map(renderHeading)}
-                isExpanded={expandedHeadings.has(heading)}
-                onExpandedChange={(isExpanded) => setExpandedHeadings((expanded) => {
-                    const next = new Set(expanded);
-                    if (isExpanded) {
-                        next.add(heading);
-                    } else {
-                        next.delete(heading);
-                    }
-                    return next;
-                })}
-            >
-                {heading.title}
-            </ChoiceCardSection>
-        );
-    }
-
-    return (
-        <div
-            ref={listRef}
-            className={clsx("edit-link-targets", className, fade.className)}
-            style={fade.style}
-        >
-            {children}
-
-            {topHeadings.length === 0 && anchors.length === 0 && placeholder}
-
-            {topHeadings.length > 0 && (
-                <Card className="edit-link-headings" heading={headingsTitle}>
-                    {topHeadings.map(renderHeading)}
-                </Card>
-            )}
-
-            {anchors.length > 0 && (
-                <Card className="edit-link-anchors" heading={anchorsTitle}>
-                    {anchors.map((name) => (
-                        <ChoiceCardSection
-                            key={name}
-                            icon="bx bx-bookmark"
-                            isChecked={name === checkedAnchor}
-                            onCheck={() => onCheckAnchor(name)}
-                        >
-                            {name}
-                        </ChoiceCardSection>
-                    ))}
-                </Card>
-            )}
-        </div>
-    );
-}
-
 /**
  * The page the dialog opens on: Heading / anchor for an edited link to a heading or an anchor,
  * Web page when there is an `initialWebLink`, Heading / anchor for a new link that asks for it,
@@ -1041,49 +906,6 @@ function getInitialTarget(
 }
 
 /**
- * The headings nested under each heading of `headings`, with the top level under `null`. A heading
- * nests under the closest heading before it with a lower level.
- */
-function nestHeadings(headings: LinkHeading[]) {
-    const tree = new Map<LinkHeading | null, LinkHeading[]>();
-    const ancestors: LinkHeading[] = [];
-    for (const heading of headings) {
-        while ((ancestors.at(-1)?.level ?? 0) >= heading.level) {
-            ancestors.pop();
-        }
-
-        const parent = ancestors.at(-1) ?? null;
-        tree.set(parent, [ ...(tree.get(parent) ?? []), heading ]);
-        ancestors.push(heading);
-    }
-
-    return tree;
-}
-
-/** The headings that `heading` nests under in `headingTree`, from its parent up. */
-function getParentHeadings(
-    headingTree: Map<LinkHeading | null, LinkHeading[]>, heading: LinkHeading
-) {
-    const parents: LinkHeading[] = [];
-    let child = heading;
-    for (;;) {
-        const parent = [ ...headingTree ].find(([ , children ]) => children.includes(child))?.[0];
-        if (!parent) return parents;
-        parents.push(parent);
-        child = parent;
-    }
-}
-
-/** Scrolls the checked choice in `container` to the middle of it, if there is one. */
-function scrollToCheckedChoice(container: HTMLElement | null) {
-    const choice = container?.querySelector<HTMLElement>("[aria-checked=\"true\"]");
-    if (!container || !choice) return;
-
-    const offset = choice.getBoundingClientRect().top - container.getBoundingClientRect().top;
-    container.scrollTop += offset - (container.clientHeight - choice.offsetHeight) / 2;
-}
-
-/**
  * The address the dialog opens on, on the web link side: the external link being edited, a
  * selected text that is a URL, or an empty one for `target: "url"`. `null` opens it on the note
  * side.
@@ -1095,64 +917,6 @@ function getInitialWebLink(opts: EditLinkOpts): string | null {
     if (opts.hasSelection && hasScheme(text)) return text;
     return opts.target === "url" ? "" : null;
 }
-
-/**
- * The headings and anchors of the note `noteId` that the server reads, for a link at `notePath`.
- * A note that is not a text note, or is protected outside a protected session, has neither. A note
- * whose content cannot change lists only the headings that have a block id.
- */
-async function getLinkTargets(noteId: string, notePath: string): Promise<LinkTargets> {
-    try {
-        const note = await froca.getNote(noteId);
-        if (note?.type !== "text" || !note.isContentAvailable()) return NO_LINK_TARGETS;
-
-        const { headings, anchors, isWritable } = await server.get<NoteReferencesResponse>(
-            `notes/${noteId}/references`, undefined, false, { silentBadRequest: true }
-        );
-        return {
-            headings: headings.flatMap((heading, index) => heading.blockId || isWritable
-                ? [ createNoteHeading(noteId, notePath, heading, index) ]
-                : []),
-            anchors: [ ...anchors ].sort((a, b) => a.localeCompare(b))
-        };
-    } catch (e) {
-        console.error(`Failed to read the headings and anchors of note '${noteId}':`, e);
-        return NO_LINK_TARGETS;
-    }
-}
-
-/**
- * The heading of note `noteId` that the server lists at `index`, which links to its block in the
- * note at `notePath`, and which the server gives a block id when it has none.
- */
-function createNoteHeading(
-    noteId: string, notePath: string, { level, text, blockId }: HeadingReference, index: number
-): LinkHeading {
-    const heading: LinkHeading = {
-        title: text,
-        level,
-        blockId,
-        createLinkPath() {
-            return heading.blockId
-                ? addParameter(notePath, "block", encodeBlockParameter(heading.blockId))
-                : notePath;
-        },
-        async createReference() {
-            if (heading.blockId) return;
-            // An editor with unsaved changes skips the content the server writes, and its next
-            // save would drop the id.
-            await appContext.triggerEvent("saveNoteChanges", { noteId });
-            const request: HeadingReferenceRequest = { index, text };
-            const response = await server.postWithSilentErrors<HeadingReferenceResponse>(
-                `notes/${noteId}/references/heading`, request
-            );
-            heading.blockId = response.blockId;
-        }
-    };
-    return heading;
-}
-
-const NO_LINK_TARGETS: LinkTargets = { headings: [], anchors: [] };
 
 /** Where in its note the link being edited points, which the note page opens on. */
 function getInitialNotePart(opts: EditLinkOpts | undefined): NotePart {
@@ -1176,27 +940,8 @@ function getNoteLinkPath(notePath: string, part: NotePart) {
     const { path } = splitBlockParameter(notePath);
     if (!part) return path;
     if ("heading" in part) return part.heading.createLinkPath();
-    if ("bookmark" in part) {
-        return addParameter(path, "bookmark", encodeURIComponent(part.bookmark));
-    }
+    if ("bookmark" in part) return getAnchorLinkPath(path, part.bookmark);
     return addParameter(path, "block", encodeBlockParameter(part.block));
-}
-
-/** `notePath` without its `block` parameter, and the value of that parameter. */
-function splitBlockParameter(notePath: string) {
-    const [ path, query = "" ] = notePath.split("?", 2);
-    const params = new URLSearchParams(query);
-    const block = params.get("block");
-    if (block === null) return { path: notePath, block };
-
-    params.delete("block");
-    const rest = params.toString();
-    return { path: rest ? `${path}?${rest}` : path, block };
-}
-
-/** `notePath` with the parameter `name` set to `value`, which is encoded already. */
-function addParameter(notePath: string, name: string, value: string) {
-    return `${notePath}${notePath.includes("?") ? "&" : "?"}${name}=${value}`;
 }
 
 /**

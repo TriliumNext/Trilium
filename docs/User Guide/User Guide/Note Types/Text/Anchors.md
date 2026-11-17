@@ -42,6 +42,10 @@ To fix this, simply go that note and make any change (e.g. inserting a space), t
 
 Clicking on a reference link pointing to an anchor will automatically scroll to the desired section.
 
+### Linking to anchors through the `@` menu
+
+Since v0.108.0, type `@` in the text and pick the target note. Then type part of the anchor's name and press <kbd>Enter</kbd>, or select the anchor under _Link to an anchor_. See [In-place linking](Links/Internal%20\(reference\)%20links.md).
+
 ### Linking to anchors through the bookmark toolbar
 
 1.  Create an anchor in the target note using the same process as described above.

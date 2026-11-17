@@ -13,9 +13,7 @@ import {
     type LinkUnderCursor,
     SnippetDefinition
 } from "@triliumnext/ckeditor5";
-import {
-    encodeBlockParameter, formatBlockRange, parseBlockRange
-} from "@triliumnext/commons/src/lib/block_reference.js";
+import { formatBlockRange, parseBlockRange } from "@triliumnext/commons/src/lib/block_reference.js";
 import { deferred } from "@triliumnext/commons/src/lib/utils.js";
 import { createPortal } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
@@ -27,6 +25,7 @@ import dialog from "../../../services/dialog";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import link, { parseNavigationStateFromUrl, type ViewScope } from "../../../services/link";
+import { createEditorHeadings, type LinkHeading } from "../../../services/link_targets";
 import type LoadResults from "../../../services/load_results";
 import { getNoteIdFromUrl } from "../../../services/navigation_state";
 import note_create from "../../../services/note_create";
@@ -34,7 +33,7 @@ import { consumeSearchTerms } from "../../../services/search_jump";
 import toast from "../../../services/toast";
 import utils, { isMobile } from "../../../services/utils";
 import { ContentEmbedBalloon, type ContentEmbedOpts } from "../../dialogs/content_embed";
-import { EditLinkBalloon, type EditLinkOpts, type LinkHeading } from "../../dialogs/edit_link";
+import { EditLinkBalloon, type EditLinkOpts } from "../../dialogs/edit_link";
 import { useTriliumEvent } from "../../react/hooks/events";
 import { useNoteLabel } from "../../react/hooks/note";
 import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
@@ -690,15 +689,9 @@ export function getEditLinkOpts(
 
 /** The headings of the editor, which link to their blocks in the note at `notePath`. */
 function getLinkHeadings(api: CKEditorApi, notePath: string): LinkHeading[] {
-    return api.getHeadings().map((heading) => ({
-        title: heading.text,
-        level: heading.level,
-        blockId: heading.blockId,
-        createLinkPath() {
-            const blockId = api.assignBlockId(heading);
-            return blockId ? `${notePath}?block=${encodeBlockParameter(blockId)}` : notePath;
-        }
-    }));
+    return createEditorHeadings(
+        api.getHeadings(), notePath, (heading) => api.assignBlockId(heading)
+    );
 }
 
 /** The heading of `headings` whose block `href` links to, in the note at `notePath`. */
