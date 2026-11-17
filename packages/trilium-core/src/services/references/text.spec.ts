@@ -1,11 +1,52 @@
+import type { ReferenceTarget } from "@triliumnext/commons";
 import { parse } from "node-html-parser";
 import { describe, expect, it, vi } from "vitest";
 
-import { addHeadingReference, findNoteReferences, insertBlockId } from "./note_references";
+import textReferences, { addHeadingReference, findTextTargets, insertBlockId } from "./text";
 
-const NOTHING = { headings: [], anchors: [] };
+/** A heading as `findTextTargets()` lists it. */
+function heading(title: string, level: number, block?: string): ReferenceTarget {
+    return block
+        ? { kind: "heading", title, level, params: { block } }
+        : { kind: "heading", title, level };
+}
 
-describe("findNoteReferences", () => {
+/** An anchor as `findTextTargets()` lists it. */
+function anchor(name: string): ReferenceTarget {
+    return { kind: "anchor", title: name, params: { bookmark: name } };
+}
+
+function findHeadings(content: string) {
+    return findTextTargets(content).filter((target) => target.kind === "heading");
+}
+
+describe("textReferences", () => {
+    it("reads text notes, and gives only a heading a reference", () => {
+        const content = `<h2>Intro</h2><p><a id="top"></a></p>`;
+
+        expect(textReferences.isFor("text", "text/html")).toBe(true);
+        expect(textReferences.isFor("code", "text/html")).toBe(false);
+        expect(textReferences.findTargets(content)).toStrictEqual([
+            heading("Intro", 2), anchor("top")
+        ]);
+        expect(textReferences.findTargets(new Uint8Array([ 60, 104, 50, 62 ]))).toStrictEqual([]);
+
+        const created = textReferences.createReference?.(
+            content, { kind: "heading", index: 0, title: "Intro" }
+        );
+        expect(created?.params.block).toMatch(/^[A-Za-z0-9]{12}$/);
+        expect(created?.content)
+            .toBe(content.replace("<h2>", `<h2 data-trilium-block-id="${created?.params.block}">`));
+        expect(textReferences.createReference?.(
+            content, { kind: "anchor", index: 0, title: "top" }
+        )).toBeNull();
+        expect(textReferences.createReference?.(
+            new Uint8Array(), { kind: "heading", index: 0, title: "Intro" }
+        )).toBeNull();
+    });
+});
+
+describe("findTextTargets", () => {
     it("lists the headings with text at every depth, in document order", () => {
         const content = [
             `<h1>One</h1>`,
@@ -20,19 +61,16 @@ describe("findNoteReferences", () => {
             `<h3\nclass="y">Line break in the tag</h3>`
         ].join("\n");
 
-        expect(findNoteReferences(content)).toStrictEqual({
-            headings: [
-                { level: 1, text: "One" },
-                { level: 2, text: "Two" },
-                { level: 3, text: "In a cell" },
-                { level: 4, text: "Quoted" },
-                { level: 5, text: "Collapsed" },
-                { level: 6, text: "In a column" },
-                { level: 2, text: "Upper case" },
-                { level: 3, text: "Line break in the tag" }
-            ],
-            anchors: []
-        });
+        expect(findTextTargets(content)).toStrictEqual([
+            heading("One", 1),
+            heading("Two", 2),
+            heading("In a cell", 3),
+            heading("Quoted", 4),
+            heading("Collapsed", 5),
+            heading("In a column", 6),
+            heading("Upper case", 2),
+            heading("Line break in the tag", 3)
+        ]);
     });
 
     it("reads a heading as plain text, as the editor lists it", () => {
@@ -48,7 +86,7 @@ describe("findNoteReferences", () => {
             `<h2>Outer<h3>Inner</h3></h2>`
         ].join("");
 
-        expect(findNoteReferences(content).headings.map((heading) => heading.text)).toEqual([
+        expect(findHeadings(content).map((target) => target.title)).toEqual([
             "Tom & Jerry",
             "Line break",
             "Area formula",
@@ -67,13 +105,10 @@ describe("findNoteReferences", () => {
             + `<h6><span class="math-tex">\\(x\\)</span></h6><h2><a id="only"></a></h2>`
             + `<h2>Kept</h2>`;
 
-        expect(findNoteReferences(content)).toStrictEqual({
-            headings: [ { level: 2, text: "Kept" } ],
-            anchors: [ "only" ]
-        });
+        expect(findTextTargets(content)).toStrictEqual([ heading("Kept", 2), anchor("only") ]);
     });
 
-    it("reports the block id of a heading only when it is valid", () => {
+    it("links a heading to its block id only when the id is valid", () => {
         const content = `<h2 data-trilium-block-id="a1">A</h2>`
             + `<h2 data-trilium-block-id="">B</h2>`
             + `<h2 data-trilium-block-id>C</h2>`
@@ -81,22 +116,23 @@ describe("findNoteReferences", () => {
             + `<h2 DATA-TRILIUM-BLOCK-ID="Up">E</h2>`
             + `<h2 data-trilium-block-id="a&amp;b">F</h2>`;
 
-        expect(findNoteReferences(content).headings.map((heading) => heading.blockId)).toEqual([
-            "a1", undefined, undefined, undefined, "Up", "a&b"
+        expect(findHeadings(content).map((target) => target.params)).toEqual([
+            { block: "a1" }, undefined, undefined, undefined, { block: "Up" }, { block: "a&b" }
         ]);
     });
 
-    it("reports a block id only on the first element that has it, which a link reaches", () => {
-        const content = `<p data-trilium-block-id="para">P</p><h2 data-trilium-block-id="para">A</h2>`
+    it("links a block id only from the first element that has it, which a link reaches", () => {
+        const content = `<p data-trilium-block-id="para">P</p>`
+            + `<h2 data-trilium-block-id="para">A</h2>`
             + `<h2 data-trilium-block-id="twice">B</h2><h3 data-trilium-block-id="twice">C</h3>`
             + `<h2 data-trilium-block-id="outer"><span data-trilium-block-id="outer">D</span></h2>`;
 
-        expect(findNoteReferences(content).headings.map((heading) => heading.blockId)).toEqual([
+        expect(findHeadings(content).map((target) => target.params?.block)).toEqual([
             undefined, "twice", undefined, "outer"
         ]);
     });
 
-    it("lists each anchor once, in document order", () => {
+    it("lists each anchor once, sorted by name, with its decoded name as the parameter", () => {
         const content = `<p><a id="one"></a>Text</p>`
             + `<h2><a id="two"></a>Heading</h2>`
             + `<p><a id="a&amp;b"></a><a id="one"></a></p>`
@@ -104,8 +140,8 @@ describe("findNoteReferences", () => {
             + `<p><a href="#x" id="link">Link</a><a href="" id="empty-href"></a></p>`
             + `<p><a name="named"></a><a id=""></a></p>`;
 
-        expect(findNoteReferences(content).anchors)
-            .toEqual([ "one", "two", "a&b", "Upper", "split" ]);
+        const anchors = findTextTargets(content).filter((target) => target.kind === "anchor");
+        expect(anchors).toStrictEqual([ "a&b", "one", "split", "two", "Upper" ].map(anchor));
     });
 
     it("finds nothing in code blocks, comments, attribute values or tags that start alike", () => {
@@ -115,12 +151,9 @@ describe("findNoteReferences", () => {
             + `<p title="<h5>Attribute</h5>">Text</p>`
             + `<abbr id="abbr">A</abbr><aside id="aside">B</aside><hr id="rule"><h2>Real</h2>`;
 
-        expect(findNoteReferences(content)).toStrictEqual({
-            headings: [ { level: 2, text: "Real" } ],
-            anchors: []
-        });
+        expect(findTextTargets(content)).toStrictEqual([ heading("Real", 2) ]);
         for (const plain of [ "", "Plain text", "<p>Paragraph</p>", "<abbr>A</abbr><hr>" ]) {
-            expect(findNoteReferences(plain)).toStrictEqual(NOTHING);
+            expect(findTextTargets(plain)).toStrictEqual([]);
         }
     });
 
@@ -129,10 +162,7 @@ describe("findNoteReferences", () => {
         const content = `${"<div>".repeat(depth)}<h2>${"<span>".repeat(depth)}Deep<a id="deep"></a>`
             + `${"</span>".repeat(depth)}</h2>${"</div>".repeat(depth)}`;
 
-        expect(findNoteReferences(content)).toStrictEqual({
-            headings: [ { level: 2, text: "Deep" } ],
-            anchors: [ "deep" ]
-        });
+        expect(findTextTargets(content)).toStrictEqual([ heading("Deep", 2), anchor("deep") ]);
     });
 });
 
@@ -142,24 +172,23 @@ describe("addHeadingReference", () => {
             + `<pre><code>&lt;h2&gt;Code&lt;/h2&gt;</code></pre><h2 class="first">First</h2>\r\n`
             + `<figure class="table"><table><tbody><tr><td><H3`;
         const after = `\n class="c"\tdata-x='y'>In a cell</H3></td></tr></tbody></table></figure>`;
-        const request = { index: 1, text: "In a cell" };
+        const request = { index: 1, title: "In a cell" };
 
         const result = addHeadingReference(`${before}${after}`, request, () => "New1");
         expect(result).toStrictEqual({
-            blockId: "New1",
-            content: `${before} data-trilium-block-id="New1"${after}`
+            content: `${before} data-trilium-block-id="New1"${after}`,
+            params: { block: "New1" }
         });
-        expect(findNoteReferences(result?.content ?? "").headings).toStrictEqual([
-            { level: 2, text: "First" },
-            { level: 3, text: "In a cell", blockId: "New1" }
+        expect(findTextTargets(result?.content ?? "")).toStrictEqual([
+            heading("First", 2), heading("In a cell", 3, "New1")
         ]);
     });
 
     it("matches the text as it is listed, and tells headings of one text apart by index", () => {
         const tom = `Tom &amp; <em>Jerry</em><br>show</h2>`;
         const content = `<h2>${tom}<h2>Same</h2><h2>Same</h2>`;
-        const add = (index: number, text: string) => (
-            addHeadingReference(content, { index, text }, () => "Id")?.content
+        const add = (index: number, title: string) => (
+            addHeadingReference(content, { index, title }, () => "Id")?.content
         );
 
         expect(add(0, "Tom & Jerry show"))
@@ -172,8 +201,8 @@ describe("addHeadingReference", () => {
         const content = `<h2>New</h2><h2>Target</h2><h2>Twin</h2><h2>Twin</h2>`;
         const withId = `<h2>New</h2><h2 data-trilium-block-id="Id">Target</h2>`
             + `<h2>Twin</h2><h2>Twin</h2>`;
-        const add = (index: number, text: string) => (
-            addHeadingReference(content, { index, text }, () => "Id")?.content ?? null
+        const add = (index: number, title: string) => (
+            addHeadingReference(content, { index, title }, () => "Id")?.content ?? null
         );
 
         expect(add(0, "Target")).toBe(withId);
@@ -182,7 +211,7 @@ describe("addHeadingReference", () => {
         expect(add(0, "Twin")).toBeNull();
         expect(add(1, "Gone")).toBeNull();
         expect(add(0, "")).toBeNull();
-        expect(addHeadingReference("<p>Text</p>", { index: 0, text: "Text" }, () => "Id"))
+        expect(addHeadingReference("<p>Text</p>", { index: 0, title: "Text" }, () => "Id"))
             .toBeNull();
     });
 
@@ -190,8 +219,8 @@ describe("addHeadingReference", () => {
         const content = `<h2 data-trilium-block-id="kept">Kept</h2>`;
         const createId = vi.fn(() => "Id");
 
-        expect(addHeadingReference(content, { index: 0, text: "Kept" }, createId))
-            .toStrictEqual({ blockId: "kept", content });
+        expect(addHeadingReference(content, { index: 0, title: "Kept" }, createId))
+            .toStrictEqual({ content, params: { block: "kept" } });
         expect(createId).not.toHaveBeenCalled();
     });
 
@@ -202,23 +231,24 @@ describe("addHeadingReference", () => {
         for (const attribute of attributes) {
             const content = `<h2 ${attribute}>Heading</h2>`;
 
-            const result = addHeadingReference(content, { index: 0, text: "Heading" }, () => "Id");
+            const result = addHeadingReference(content, { index: 0, title: "Heading" }, () => "Id");
             expect(result?.content)
                 .toBe(`<h2 data-trilium-block-id="Id" ${attribute}>Heading</h2>`);
-            expect(findNoteReferences(result?.content ?? "").headings[0]?.blockId).toBe("Id");
+            expect(findHeadings(result?.content ?? "")[0]?.params).toStrictEqual({ block: "Id" });
         }
     });
 
     it("gives a new id to a heading whose id an earlier block has", () => {
-        const content = `<p data-trilium-block-id="dup">P</p><h2 data-trilium-block-id="dup">H</h2>`;
+        const content = `<p data-trilium-block-id="dup">P</p>`
+            + `<h2 data-trilium-block-id="dup">H</h2>`;
 
-        const result = addHeadingReference(content, { index: 0, text: "H" }, () => "Id");
+        const result = addHeadingReference(content, { index: 0, title: "H" }, () => "Id");
         expect(result).toStrictEqual({
-            blockId: "Id",
             content: `<p data-trilium-block-id="dup">P</p>`
-                + `<h2 data-trilium-block-id="Id" data-trilium-block-id="dup">H</h2>`
+                + `<h2 data-trilium-block-id="Id" data-trilium-block-id="dup">H</h2>`,
+            params: { block: "Id" }
         });
-        expect(findNoteReferences(result?.content ?? "").headings[0]?.blockId).toBe("Id");
+        expect(findHeadings(result?.content ?? "")[0]?.params).toStrictEqual({ block: "Id" });
     });
 
     it("draws another id while the one drawn occurs in the content", () => {
@@ -228,10 +258,10 @@ describe("addHeadingReference", () => {
             .mockReturnValueOnce("Head")
             .mockReturnValue("Free");
 
-        expect(addHeadingReference(content, { index: 0, text: "Heading" }, createId))
+        expect(addHeadingReference(content, { index: 0, title: "Heading" }, createId))
             .toStrictEqual({
-                blockId: "Free",
-                content: `<p>Taken</p><h2 data-trilium-block-id="Free">Heading</h2>`
+                content: `<p>Taken</p><h2 data-trilium-block-id="Free">Heading</h2>`,
+                params: { block: "Free" }
             });
         expect(createId).toHaveBeenCalledTimes(3);
     });
@@ -239,14 +269,14 @@ describe("addHeadingReference", () => {
 
 describe("insertBlockId", () => {
     it("refuses an element that is not at its offset in the content", () => {
-        const heading = parse("<h2>A</h2>").querySelector("h2");
-        if (!heading) {
+        const element = parse("<h2>A</h2>").querySelector("h2");
+        if (!element) {
             throw new Error("The heading was not parsed.");
         }
 
-        expect(insertBlockId("<h2>A</h2>", heading, "Id"))
+        expect(insertBlockId("<h2>A</h2>", element, "Id"))
             .toBe(`<h2 data-trilium-block-id="Id">A</h2>`);
-        expect(() => insertBlockId("<p>x</p><h2>A</h2>", heading, "Id")).toThrow();
-        expect(() => insertBlockId("<h3>A</h3>", heading, "Id")).toThrow();
+        expect(() => insertBlockId("<p>x</p><h2>A</h2>", element, "Id")).toThrow();
+        expect(() => insertBlockId("<h3>A</h3>", element, "Id")).toThrow();
     });
 });

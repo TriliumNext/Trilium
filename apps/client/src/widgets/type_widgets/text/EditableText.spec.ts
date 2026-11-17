@@ -711,7 +711,9 @@ describe("getEditLinkOpts", () => {
         // The note page lists the editor's headings for this note.
         expect(opts.noteId).toBe("abc");
         const headings = opts.headings;
-        expect(headings).toMatchObject([ { title: "Intro", level: 2, blockId: undefined } ]);
+        expect(headings).toMatchObject([
+            { kind: "heading", title: "Intro", level: 2, params: undefined }
+        ]);
         expect(api.assignBlockId).not.toHaveBeenCalled();
         expect(headings?.[0]?.createLinkPath()).toBe("root/abc?block=new");
         expect(api.assignBlockId).toHaveBeenCalledExactlyOnceWith(heading);

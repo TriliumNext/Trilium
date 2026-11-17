@@ -4,7 +4,7 @@ import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type FNote from "../../../entities/fnote";
-import type { LinkTargets } from "../../../services/link_targets";
+import type { LinkTarget } from "../../../services/link_targets";
 import type { NoteSuggestionOptions, Suggestion } from "../../../services/note_autocomplete";
 import options from "../../../services/options";
 import { type CompletionTarget, useEditorCompletions } from "./editor_completions";
@@ -25,7 +25,7 @@ vi.mock("../../../services/note_autocomplete", async (importOriginal) => ({
     createNoteFromSuggestion
 }));
 const { getLinkTargets } = vi.hoisted(() => ({
-    getLinkTargets: vi.fn<(noteId: string, notePath: string) => Promise<LinkTargets>>()
+    getLinkTargets: vi.fn<(noteId: string, notePath: string) => Promise<LinkTarget[]>>()
 }));
 vi.mock("../../../services/link_targets", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../../services/link_targets")>(),
@@ -257,13 +257,16 @@ describe("useEditorCompletions", () => {
     it("follows a note picked after an @ with its headings and anchors when enabled, and links the one picked", async () => {
         options.set("textNoteCompletionLinkTargetsEnabled", "true");
         getNoteSuggestions.mockResolvedValue([ ALPHA ]);
-        getLinkTargets.mockResolvedValue({
-            headings: [ {
-                title: "Install", level: 2, blockId: "h1",
+        getLinkTargets.mockResolvedValue([
+            {
+                kind: "heading", title: "Install", level: 2, params: { block: "h1" },
                 createLinkPath: () => "root/projects/abc123?block=h1"
-            } ],
-            anchors: [ "setup" ]
-        });
+            },
+            {
+                kind: "anchor", title: "setup", params: { bookmark: "setup" },
+                createLinkPath: () => "root/projects/abc123?bookmark=setup"
+            }
+        ]);
         const editor = buildEditor();
         mount(editor, MARKDOWN, {
             note: { noteId: "n1" } as FNote, getNotePath: () => "root/parent"

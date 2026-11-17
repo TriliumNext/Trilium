@@ -1,9 +1,9 @@
+import type { ComponentProps } from "preact";
 import { useRef } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
-import type { LinkHeading, LinkTargets } from "../../services/link_targets";
-import { nestHeadings } from "../../services/link_targets";
+import { createAnchorTargets, type LinkTarget, nestTargets } from "../../services/link_targets";
 import { renderInto } from "../../test/render";
 import LinkTargetList, {
     type LinkDestination, listLinkDestinations, useLinkDestinationKeys
@@ -11,29 +11,27 @@ import LinkTargetList, {
 
 vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
 
-function createHeading(title: string, level: number): LinkHeading {
-    return { title, level, createLinkPath: () => `root/note?block=${title}` };
+function createHeading(title: string, level: number): LinkTarget {
+    return { kind: "heading", title, level, createLinkPath: () => `root/note?block=${title}` };
 }
 
 const intro = createHeading("Intro", 2);
 const setup = createHeading("Setup", 3);
 const linux = createHeading("Linux", 4);
 const usage = createHeading("Usage", 2);
-const TARGETS: LinkTargets = {
-    headings: [ intro, setup, linux, usage ], anchors: [ "top", "end" ]
-};
+const [ top, end ] = createAnchorTargets([ "top", "end" ], "root/note");
+const TARGETS = [ intro, setup, linux, usage, top, end ];
 
 /** The text of a destination, as its choice shows it. */
 function nameOf(destination: LinkDestination) {
-    if (!destination) return "add_link.top_of_note";
-    return "heading" in destination ? destination.heading.title : destination.anchor;
+    return destination ? destination.title : "add_link.top_of_note";
 }
 
 describe("listLinkDestinations", () => {
-    it("lists the whole note, the headings under expanded headings, then the anchors", () => {
-        const tree = nestHeadings(TARGETS.headings);
-        const list = (expanded: LinkHeading[]) =>
-            listLinkDestinations(tree, TARGETS.anchors, new Set(expanded)).map(nameOf);
+    it("lists the whole note, then the targets of each kind under expanded targets", () => {
+        const tree = nestTargets(TARGETS);
+        const list = (expanded: LinkTarget[]) =>
+            listLinkDestinations(tree, new Set(expanded)).map(nameOf);
 
         expect(list([])).toStrictEqual([ "add_link.top_of_note", "Intro", "Usage", "top", "end" ]);
         expect(list([ intro ]))
@@ -41,31 +39,41 @@ describe("listLinkDestinations", () => {
         // A heading under a collapsed one stays hidden, though it is expanded itself.
         expect(list([ setup ])).toStrictEqual(list([]));
         expect(list([ intro, setup ])).toContain("Linux");
-        expect(listLinkDestinations(new Map(), [], new Set())).toStrictEqual([ null ]);
+        expect(listLinkDestinations(new Map(), new Set())).toStrictEqual([ null ]);
+
+        // The choices follow the cards, one per kind, whatever the order of the targets.
+        const mixed = nestTargets([ top, intro, end, usage ]);
+        expect(listLinkDestinations(mixed, new Set()).map(nameOf))
+            .toStrictEqual([ "add_link.top_of_note", "top", "end", "Intro", "Usage" ]);
     });
 });
 
 describe("LinkTargetList", () => {
-    it("starts with the whole note for a caller that takes it, with focusable choices", () => {
-        const onCheckWholeNote = vi.fn();
-        const render = (hasWholeNote: boolean) => renderInto(
+    function renderList(props: Partial<ComponentProps<typeof LinkTargetList>> = {}) {
+        return renderInto(
             <LinkTargetList
                 listRef={{ current: null }}
-                headingTree={nestHeadings([ intro ])}
-                anchors={[]}
-                checkedHeading={null}
-                isWholeNoteChecked
-                onCheckHeading={vi.fn()}
-                onCheckAnchor={vi.fn()}
-                onCheckWholeNote={hasWholeNote ? onCheckWholeNote : undefined}
-                expandedHeadings={new Set()}
-                setExpandedHeadings={vi.fn()}
-                headingsTitle="Headings"
-                anchorsTitle="Anchors"
+                targetTree={nestTargets(TARGETS)}
+                checkedTarget={null}
+                onCheckTarget={vi.fn()}
+                expandedTargets={new Set()}
+                setExpandedTargets={vi.fn()}
+                {...props}
             />
         );
-        const rows = (container: HTMLElement) =>
-            [ ...container.querySelectorAll<HTMLElement>(".tn-card-choice") ];
+    }
+
+    function rows(container: HTMLElement) {
+        return [ ...container.querySelectorAll<HTMLElement>(".tn-card-choice") ];
+    }
+
+    it("starts with the whole note for a caller that takes it, with focusable choices", () => {
+        const onCheckWholeNote = vi.fn();
+        const render = (hasWholeNote: boolean) => renderList({
+            targetTree: nestTargets([ intro ]),
+            isWholeNoteChecked: true,
+            onCheckWholeNote: hasWholeNote ? onCheckWholeNote : undefined
+        });
 
         expect(rows(render(false)).map((row) => row.textContent)).toStrictEqual([ "Intro" ]);
 
@@ -77,23 +85,57 @@ describe("LinkTargetList", () => {
         wholeNote?.click();
         expect(onCheckWholeNote).toHaveBeenCalledOnce();
     });
+
+    it("shows each kind in a card of its own, with the icon of the kind", () => {
+        const onCheckTarget = vi.fn();
+        const container = renderList({ checkedTarget: end, onCheckTarget });
+        const titles = (list: HTMLElement) =>
+            [ ...list.querySelectorAll(".tn-card-heading") ].map((title) => title.textContent);
+        // The name of the icon, and whether the row has an expander, which only a target with a
+        // level has.
+        const describeRow = (row: HTMLElement) => [
+            row.textContent,
+            [ ...row.querySelector(".tn-card-choice-icon")?.classList ?? [] ]
+                .find((name) => name.startsWith("bx-")),
+            !!row.querySelector(".tn-card-choice-expander")
+        ];
+
+        const rowsOfCard = (kind: string) => [
+            ...container.querySelectorAll<HTMLElement>(`.link-target-${kind} .tn-card-choice`)
+        ].map(describeRow);
+
+        expect(titles(container))
+            .toStrictEqual([ "add_link.link_to_heading", "add_link.link_to_anchor" ]);
+        expect(rowsOfCard("heading")).toStrictEqual([
+            [ "Intro", "bx-heading", true ], [ "Usage", "bx-heading", true ]
+        ]);
+        expect(rowsOfCard("anchor")).toStrictEqual([
+            [ "top", "bx-bookmark", false ], [ "end", "bx-bookmark", false ]
+        ]);
+        expect(rows(container).filter((row) => row.getAttribute("aria-checked") === "true")
+            .map((row) => row.textContent)).toStrictEqual([ "end" ]);
+        rows(container)[2]?.click();
+        expect(onCheckTarget).toHaveBeenCalledExactlyOnceWith(top);
+
+        // A caller can name the cards, and show a placeholder in place of no targets.
+        expect(titles(renderList({ getKindTitle: (kind) => `Own ${kind}` })))
+            .toStrictEqual([ "Own heading", "Own anchor" ]);
+        const empty = renderList({ targetTree: new Map(), placeholder: <p className="none" /> });
+        expect(empty.querySelector(".none")).not.toBeNull();
+        expect(empty.querySelector(".tn-card")).toBeNull();
+    });
 });
 
 describe("useLinkDestinationKeys", () => {
     type Keys = ReturnType<typeof useLinkDestinationKeys>;
 
-    function show(targets: LinkTargets = TARGETS) {
+    function show(targets: LinkTarget[] = TARGETS) {
         const onPick = vi.fn<(destination: LinkDestination) => void>();
         const keys: { current: Keys | null } = { current: null };
         function Host() {
             const listRef = useRef<HTMLDivElement>(null);
             keys.current = useLinkDestinationKeys(targets, onPick);
-            return (
-                <LinkTargetList
-                    listRef={listRef} {...keys.current.listProps}
-                    headingsTitle="Headings" anchorsTitle="Anchors"
-                />
-            );
+            return <LinkTargetList listRef={listRef} {...keys.current.listProps} />;
         }
         const container = renderInto(<Host />);
 
@@ -231,16 +273,16 @@ describe("useLinkDestinationKeys", () => {
         expect(onPick).toHaveBeenLastCalledWith(null);
         await press("ArrowDown");
         expect(await press("Tab")).toBe(true);
-        expect(onPick).toHaveBeenLastCalledWith({ heading: intro });
+        expect(onPick).toHaveBeenLastCalledWith(intro);
         await press("ArrowUp");
         await press("ArrowUp");
         await press("Enter");
-        expect(onPick).toHaveBeenLastCalledWith({ anchor: "end" });
+        expect(onPick).toHaveBeenLastCalledWith(end);
 
         await click("Usage");
-        expect(onPick).toHaveBeenLastCalledWith({ heading: usage });
+        expect(onPick).toHaveBeenLastCalledWith(usage);
         await click("top");
-        expect(onPick).toHaveBeenLastCalledWith({ anchor: "top" });
+        expect(onPick).toHaveBeenLastCalledWith(top);
         await click("add_link.top_of_note");
         expect(onPick).toHaveBeenLastCalledWith(null);
         expect(onPick).toHaveBeenCalledTimes(6);
@@ -271,7 +313,7 @@ describe("useLinkDestinationKeys", () => {
         await click("Intro", ".tn-card-choice-expander");
         expect(checked()).toBe("Intro");
         await press("Enter");
-        expect(onPick).toHaveBeenLastCalledWith({ heading: intro });
+        expect(onPick).toHaveBeenLastCalledWith(intro);
         // The expander does not pick.
         expect(onPick).toHaveBeenCalledOnce();
 

@@ -2,7 +2,7 @@ import "./edit_link.css";
 
 import type { LinkDisplayMode } from "@triliumnext/ckeditor5";
 import internalLinkIcon from "@triliumnext/ckeditor5/src/icons/trilium.svg?raw";
-import { encodeBlockParameter } from "@triliumnext/commons/src/lib/block_reference.js";
+import type { ReferenceKind, ReferenceParams } from "@triliumnext/commons";
 import { isHttpUrl } from "@triliumnext/commons/src/lib/link_embed.js";
 import { ALLOWED_PROTOCOLS } from "@triliumnext/commons/src/lib/shared_constants.js";
 import type { ComponentProps } from "preact";
@@ -11,8 +11,8 @@ import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { t } from "../../services/i18n";
 import { detectEmbedType, fetchPageDetails, type PageDetails } from "../../services/link_embed";
 import {
-    addParameter, getAnchorLinkPath, getLinkTargets, getParentHeadings, type LinkHeading,
-    type LinkTargets, nestHeadings, splitBlockParameter
+    addParameters, createAnchorTargets, findTarget, getLinkTargets, getParentTargets,
+    LINK_TARGET_KINDS, type LinkTarget, nestTargets, splitTargetParameters
 } from "../../services/link_targets";
 import type { Suggestion } from "../../services/note_autocomplete";
 import options from "../../services/options";
@@ -36,20 +36,20 @@ import { refToJQuerySelector } from "../react/react_utils";
 import SegmentedChoice, { type SegmentedChoiceOption } from "../react/SegmentedChoice";
 
 /**
- * What the link points at: a note, an address outside Trilium, or a heading or an anchor in the
- * document.
+ * The page of the dialog, by what the link points at: a note, an address outside Trilium, or a
+ * heading or an anchor in the document.
  */
-export type LinkTarget = "note" | "url" | "anchor";
+export type LinkPage = "note" | "url" | "anchor";
 
 /** An empty text of the link for each page. */
-const NO_LINK_TITLES: Readonly<Record<LinkTarget, string>> = { note: "", url: "", anchor: "" };
+const NO_LINK_TITLES: Readonly<Record<LinkPage, string>> = { note: "", url: "", anchor: "" };
 
 /**
- * What a link on the note page points at inside the note: a heading, an anchor, or the block that
- * the link being edited points at, which can be missing from the list. `null` is the top of the
- * note.
+ * What a link on the note page points at inside the note: a target of the note, or the link
+ * parameters of the link being edited, whose target can be missing from the list. `null` is the
+ * whole note.
  */
-type NotePart = { heading: LinkHeading } | { bookmark: string } | { block: string } | null;
+type NotePart = { target: LinkTarget } | { params: ReferenceParams } | null;
 
 export interface EditLinkOpts {
     text: string;
@@ -92,9 +92,9 @@ export interface EditLinkOpts {
      * The headings of the document that the link goes into, in document order. When given, the
      * Heading / anchor page lists them.
      */
-    headings?: LinkHeading[];
+    headings?: LinkTarget[];
     /** The heading in `headings` that the link being edited points at. */
-    currentHeading?: LinkHeading;
+    currentHeading?: LinkTarget;
     /**
      * The id of the note that the link goes into. When the note page picks this note, it lists
      * `headings` and `anchors`, which follow the editor, rather than those the server reads.
@@ -104,7 +104,7 @@ export interface EditLinkOpts {
      * The page a new link opens on, the note side by default. A selected URL opens on the web link
      * side.
      */
-    target?: LinkTarget;
+    target?: LinkPage;
     /**
      * Repoints a reference link to a missing note. The dialog is titled "Fix link", searches for
      * `text`, and offers only notes, always as a reference link.
@@ -235,20 +235,20 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const [ linkDescription, setLinkDescription ] = useState("");
     // The note picked on the note page.
     const [ suggestion, setSuggestion ] = useState<Suggestion | null>(null);
-    // The headings and anchors of that note, `null` while they load.
-    const [ noteTargets, setNoteTargets ] = useState<LinkTargets | null>(null);
+    // The targets of that note, `null` while they load.
+    const [ noteTargets, setNoteTargets ] = useState<LinkTarget[] | null>(null);
     const [ notePart, setNotePart ] = useState<NotePart>(null);
-    const [ expandedNoteHeadings, setExpandedNoteHeadings ] = useState<ReadonlySet<LinkHeading>>(
+    const [ expandedNoteTargets, setExpandedNoteTargets ] = useState<ReadonlySet<LinkTarget>>(
         new Set()
     );
     const [ isCreatingReference, setIsCreatingReference ] = useState(false);
     const [ noteTitle, setNoteTitle ] = useState("");
-    const [ target, setTarget ] = useState<LinkTarget>("note");
+    const [ target, setTarget ] = useState<LinkPage>("note");
     const [ webLink, setWebLink ] = useState("");
     const [ display, setDisplay ] = useState<LinkDisplayMode>("textLink");
-    const [ anchor, setAnchor ] = useState("");
-    const [ heading, setHeading ] = useState<LinkHeading | null>(null);
-    const [ expandedHeadings, setExpandedHeadings ] = useState<ReadonlySet<LinkHeading>>(
+    // The heading or the anchor of the document that the Heading / anchor page links to.
+    const [ ownTarget, setOwnTarget ] = useState<LinkTarget | null>(null);
+    const [ expandedOwnTargets, setExpandedOwnTargets ] = useState<ReadonlySet<LinkTarget>>(
         new Set()
     );
     const [ isShowPending, setIsShowPending ] = useState(false);
@@ -261,10 +261,12 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     // of the note page.
     const linkTargetsRef = useRef<HTMLDivElement>(null);
     const noteTargetsRef = useRef<HTMLDivElement>(null);
-    const headingTree = useMemo(() => nestHeadings(opts?.headings ?? []), [ opts ]);
-    const noteHeadingTree = useMemo(
-        () => nestHeadings(noteTargets?.headings ?? []), [ noteTargets ]
-    );
+    // The headings and anchors of the document, which the Heading / anchor page lists.
+    const ownTargets = useMemo(() => [
+        ...(opts?.headings ?? []), ...createOwnAnchors(opts?.anchors ?? [])
+    ], [ opts ]);
+    const ownTree = useMemo(() => nestTargets(ownTargets), [ ownTargets ]);
+    const noteTree = useMemo(() => nestTargets(noteTargets ?? []), [ noteTargets ]);
     // Changes when the form is reset or unmounted, so a reference created later applies no link.
     const generationRef = useRef(0);
     // The page's own title, of the link preview being edited or retrieved from the page, while the
@@ -288,16 +290,16 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         setTarget(initialTarget);
         setWebLink(initialWebLink ?? "");
         setDisplay(opts?.display ?? "textLink");
-        setAnchor(opts?.currentAnchor ?? "");
-        setHeading(opts?.currentHeading ?? null);
+        setOwnTarget(opts?.currentHeading ?? ownTargets.find((own) =>
+            own.kind === "anchor" && own.title === opts?.currentAnchor) ?? null);
         // Sub-headings start collapsed, except the ones above the heading being edited.
-        setExpandedHeadings(new Set(
-            opts?.currentHeading ? getParentHeadings(headingTree, opts.currentHeading) : []
+        setExpandedOwnTargets(new Set(
+            opts?.currentHeading ? getParentTargets(ownTree, opts.currentHeading) : []
         ));
         previewTitleRef.current = opts?.currentLink && opts.display && opts.display !== "textLink"
             ? opts.currentTitle ?? null : null;
         setNotePart(getInitialNotePart(opts));
-        setExpandedNoteHeadings(new Set());
+        setExpandedNoteTargets(new Set());
         setLinkTitles({ ...NO_LINK_TITLES, [initialTarget]: opts?.currentTitle ?? "" });
         previewDescriptionRef.current = opts?.currentDescription ?? null;
         setLinkDescription(opts?.currentDescription ?? "");
@@ -311,7 +313,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         setSuggestion(opts?.currentLink?.notePath ? opts.currentLink : null);
     }, [ opts ]);
 
-    function setLinkTitle(page: LinkTarget, title: string) {
+    function setLinkTitle(page: LinkPage, title: string) {
         setLinkTitles((titles) => ({ ...titles, [page]: title }));
     }
 
@@ -383,10 +385,13 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             if (!cancelled) setNoteTitle(title);
         });
 
+        const { path } = splitTargetParameters(notePath);
         if (showsNoteTargets && noteId === opts?.noteId) {
-            showNoteTargets({ headings: opts.headings ?? [], anchors: opts.anchors ?? [] });
+            showNoteTargets([
+                ...(opts.headings ?? []), ...createAnchorTargets(opts.anchors ?? [], path)
+            ]);
         } else if (showsNoteTargets) {
-            void getLinkTargets(noteId, splitBlockParameter(notePath).path).then((targets) => {
+            void getLinkTargets(noteId, path).then((targets) => {
                 if (!cancelled) showNoteTargets(targets);
             });
         }
@@ -399,22 +404,25 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         generationRef.current++;
     }, []);
 
-    /** Lists `targets` on the note page, with the headings above the linked one expanded. */
-    function showNoteTargets(targets: LinkTargets) {
+    /** Lists `targets` on the note page, with the targets above the linked one expanded. */
+    function showNoteTargets(targets: LinkTarget[]) {
         setNoteTargets(targets);
-        const linkedHeading = getPartHeading(targets.headings, notePart);
-        setExpandedNoteHeadings(new Set(linkedHeading
-            ? getParentHeadings(nestHeadings(targets.headings), linkedHeading)
+        const linkedTarget = getPartTarget(targets, notePart);
+        setExpandedNoteTargets(new Set(linkedTarget
+            ? getParentTargets(nestTargets(targets), linkedTarget)
             : []));
     }
 
-    // The heading that the link on the note page points at, if it points at one.
-    const noteHeading = getPartHeading(noteTargets?.headings ?? [], notePart);
-    const needsReference = target === "note" && !!noteHeading?.createReference
-        && !noteHeading.blockId;
+    // The target that the link on the note page points at, if it points at one in the list.
+    const noteTarget = getPartTarget(noteTargets ?? [], notePart);
+    // The target whose title a link without a text of its own mirrors.
+    const mirroredTarget = noteTarget && LINK_TARGET_KINDS[noteTarget.kind].isTitleMirrored
+        ? noteTarget : null;
+    const needsReference = target === "note" && !!noteTarget?.createReference
+        && !noteTarget.params;
 
     /**
-     * Gives the heading picked on the note page a block id on the server. Returns whether the link
+     * Gives the target picked on the note page a reference on the server. Returns whether the link
      * can be applied, which it cannot after the server failed, or once the form was reset or closed
      * meanwhile.
      */
@@ -422,10 +430,10 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         const generation = generationRef.current;
         setIsCreatingReference(true);
         try {
-            await noteHeading?.createReference?.();
+            await noteTarget?.createReference?.();
             return generation === generationRef.current;
         } catch (e) {
-            console.error("Failed to create a reference to the heading:", e);
+            console.error("Failed to create a reference to the target:", e);
             if (generation === generationRef.current) {
                 toast.showError(t("add_link.heading_reference_failed"));
             }
@@ -559,16 +567,16 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         if (!opts) return;
 
         if (target === "anchor") {
-            if (heading) {
-                // `null` makes a reference link, which shows the current text of the heading.
-                const title = opts.hasSelection
-                    ? opts.text || heading.title
-                    : linkTitle.trim() || null;
-                opts.addLink(heading.createLinkPath(), title);
-            } else {
+            if (ownTarget?.kind === "anchor") {
                 // A link without a text of its own reads as the anchor's name. `true` keeps the
                 // href of an anchor link as it is.
-                opts.addLink(`#${anchor}`, linkTitle.trim() || anchor, true);
+                opts.addLink(ownTarget.createLinkPath(), linkTitle.trim() || ownTarget.title, true);
+            } else if (ownTarget) {
+                // `null` makes a reference link, which shows the current text of the heading.
+                const title = opts.hasSelection
+                    ? opts.text || ownTarget.title
+                    : linkTitle.trim() || null;
+                opts.addLink(ownTarget.createLinkPath(), title);
             }
             return;
         }
@@ -576,10 +584,10 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         if (target === "note") {
             if (!suggestion?.notePath) return;
             // `null` makes a reference link, which shows the current title of the note or the
-            // text of the heading. A selection keeps its own text, but `addLink()` needs a title
-            // to link it rather than replace it.
+            // title of a mirrored target. A selection keeps its own text, but `addLink()` needs a
+            // title to link it rather than replace it.
             const title = opts.hasSelection
-                ? opts.text || noteHeading?.title || noteTitle
+                ? opts.text || mirroredTarget?.title || noteTitle
                 : linkTitle.trim() || null;
             opts.addLink(getNoteLinkPath(suggestion.notePath, notePart), title);
             return;
@@ -602,7 +610,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         generationRef.current++;
         setSuggestion(null);
         setNotePart(null);
-        setExpandedNoteHeadings(new Set());
+        setExpandedNoteTargets(new Set());
         setNoteTitle("");
     }
 
@@ -617,11 +625,14 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     /** The text the link reads as while the title field is empty. */
     function getTitlePlaceholder() {
         if (target === "anchor") {
-            return heading ? t("add_link.title_from_heading") : anchor || undefined;
+            if (!ownTarget) return undefined;
+            return ownTarget.kind === "anchor" ? ownTarget.title : t("add_link.title_from_heading");
         }
         if (isAttachmentLink) return t("add_link.title_from_attachment");
         if (target === "note") {
-            return noteHeading ? t("add_link.title_from_heading") : t("add_link.title_from_note");
+            return mirroredTarget
+                ? t("add_link.title_from_heading")
+                : t("add_link.title_from_note");
         }
         return isPreview ? t("add_link.page_title") : webLinkUrl ?? t("add_link.title_from_url");
     }
@@ -640,46 +651,34 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         </OptionCardSection>
     );
 
-    const targets: SegmentedChoiceOption<LinkTarget>[] = [
+    const pages: SegmentedChoiceOption<LinkPage>[] = [
         { value: "url", label: t("add_link.web_link"), icon: "bx-globe" },
         { value: "note", label: t("add_link.note"), iconSvg: internalLinkIcon }
     ];
     if (opts?.anchors || opts?.headings) {
-        targets.push({ value: "anchor", label: t("add_link.anchors"), icon: "bx-bookmark" });
+        pages.push({ value: "anchor", label: t("add_link.anchors"), icon: "bx-bookmark" });
     }
     const switcher = !opts?.fixLink && !isAttachmentLink && !isMedia && (
-        <SegmentedChoice<LinkTarget>
+        <SegmentedChoice<LinkPage>
             className="edit-link-target"
-            options={targets}
+            options={pages}
             currentValue={target}
             onChange={setTarget}
         />
     );
 
-    const anchors = opts?.anchors ?? [];
-    const topHeadings = headingTree.get(null) ?? [];
-    const anchorPage = topHeadings.length > 0 || anchors.length > 0 ? (<>
+    const anchorPage = ownTargets.length > 0 ? (<>
         {showsTitle && <Card>{titleSection}</Card>}
 
         <LinkTargetList
             listRef={linkTargetsRef}
             className="edit-link-targets"
-            headingTree={headingTree}
-            anchors={anchors}
-            checkedHeading={heading}
-            checkedAnchor={anchor}
-            onCheckHeading={(item) => {
-                setHeading(item);
-                setAnchor("");
-            }}
-            onCheckAnchor={(name) => {
-                setAnchor(name);
-                setHeading(null);
-            }}
-            expandedHeadings={expandedHeadings}
-            setExpandedHeadings={setExpandedHeadings}
-            headingsTitle={t("add_link.headings")}
-            anchorsTitle={t("add_link.target_anchor")}
+            targetTree={ownTree}
+            checkedTarget={ownTarget}
+            onCheckTarget={setOwnTarget}
+            expandedTargets={expandedOwnTargets}
+            setExpandedTargets={setExpandedOwnTargets}
+            getKindTitle={getOwnKindTitle}
         />
     </>) : (
         <NoItems icon="bx bx-bookmark" text={t("add_link.no_headings_or_anchors")} />
@@ -687,7 +686,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
 
     /**
      * Where in the note picked on the note page the link can point: a placeholder until a note is
-     * picked, a spinner while its headings and anchors load, then the whole note and those.
+     * picked, a spinner while its targets load, then the whole note and its targets.
      */
     function renderNoteTargets() {
         if (!notePath) {
@@ -710,18 +709,13 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             <LinkTargetList
                 listRef={noteTargetsRef}
                 className="edit-link-targets edit-link-note-targets"
-                headingTree={noteHeadingTree}
-                anchors={noteTargets.anchors}
-                checkedHeading={noteHeading}
-                checkedAnchor={notePart && "bookmark" in notePart ? notePart.bookmark : undefined}
+                targetTree={noteTree}
+                checkedTarget={noteTarget}
                 isWholeNoteChecked={notePart === null}
-                onCheckHeading={(item) => setNotePart({ heading: item })}
-                onCheckAnchor={(name) => setNotePart({ bookmark: name })}
+                onCheckTarget={(item) => setNotePart({ target: item })}
                 onCheckWholeNote={() => setNotePart(null)}
-                expandedHeadings={expandedNoteHeadings}
-                setExpandedHeadings={setExpandedNoteHeadings}
-                headingsTitle={t("add_link.link_to_heading")}
-                anchorsTitle={t("add_link.link_to_anchor")}
+                expandedTargets={expandedNoteTargets}
+                setExpandedTargets={setExpandedNoteTargets}
                 placeholder={
                     <NoItems icon="bx bx-bookmark" text={t("add_link.no_link_targets")} />
                 }
@@ -743,11 +737,11 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         /** Whether the side shown has a link to apply: an address, a note, a heading or an anchor. */
         hasLink: target === "url" ? !!webLinkUrl
             : target === "note" ? !!suggestion?.notePath
-            : !!heading || !!anchor,
+            : !!ownTarget,
         /** Fills and focuses the fields, once the form is on screen. */
         onShown: () => setIsShowPending(true),
         validate,
-        /** Whether `createReference()` gives the heading picked a block id before `applyLink()`. */
+        /** Whether `createReference()` gives the target picked a reference before `applyLink()`. */
         needsReference,
         createReference,
         isCreatingReference,
@@ -899,7 +893,7 @@ function RetrievedTextArea({ isRetrieving, ...props }: ComponentProps<typeof For
  */
 function getInitialTarget(
     opts: EditLinkOpts | undefined, initialWebLink: string | null
-): LinkTarget {
+): LinkPage {
     if (opts?.currentAnchor || opts?.currentHeading) return "anchor";
     if (initialWebLink !== null) return "url";
     return opts?.target === "anchor" && !opts.currentLink ? "anchor" : "note";
@@ -920,28 +914,40 @@ function getInitialWebLink(opts: EditLinkOpts): string | null {
 
 /** Where in its note the link being edited points, which the note page opens on. */
 function getInitialNotePart(opts: EditLinkOpts | undefined): NotePart {
-    if (opts?.currentBookmark) return { bookmark: opts.currentBookmark };
     const notePath = opts?.currentLink?.notePath;
-    const block = notePath ? splitBlockParameter(notePath).block : null;
-    return block ? { block } : null;
+    const params = notePath ? splitTargetParameters(notePath).params : {};
+    if (opts?.currentBookmark) {
+        params.bookmark = opts.currentBookmark;
+    }
+    return Object.keys(params).length > 0 ? { params } : null;
 }
 
-/** The heading of `headings` that `part` points at, if it points at one. */
-function getPartHeading(headings: LinkHeading[], part: NotePart) {
-    if (part && "heading" in part) return part.heading;
-    if (part && "block" in part) {
-        return headings.find((heading) => heading.blockId === part.block) ?? null;
-    }
-    return null;
+/** The target of `targets` that `part` points at, if it points at one. */
+function getPartTarget(targets: LinkTarget[], part: NotePart) {
+    if (!part) return null;
+    return "target" in part ? part.target : findTarget(targets, part.params) ?? null;
 }
 
 /** The path of a link to `part` of the note at `notePath`. */
 function getNoteLinkPath(notePath: string, part: NotePart) {
-    const { path } = splitBlockParameter(notePath);
+    const { path } = splitTargetParameters(notePath);
     if (!part) return path;
-    if ("heading" in part) return part.heading.createLinkPath();
-    if ("bookmark" in part) return getAnchorLinkPath(path, part.bookmark);
-    return addParameter(path, "block", encodeBlockParameter(part.block));
+    return "target" in part ? part.target.createLinkPath() : addParameters(path, part.params);
+}
+
+/** The anchors `names` of the document that the link goes into, which link as `#name`. */
+function createOwnAnchors(names: string[]): LinkTarget[] {
+    return names.map((name) => ({
+        kind: "anchor",
+        title: name,
+        params: { bookmark: name },
+        createLinkPath: () => `#${name}`
+    }));
+}
+
+/** The heading of the card of each kind on the Heading / anchor page. */
+function getOwnKindTitle(kind: ReferenceKind) {
+    return kind === "heading" ? t("add_link.headings") : t("add_link.target_anchor");
 }
 
 /**

@@ -1,4 +1,6 @@
-import type { HeadingReferenceResponse, NoteReferencesResponse } from "@triliumnext/commons";
+import type {
+    CreateReferenceResponse, NoteReferencesResponse, ReferenceTarget
+} from "@triliumnext/commons";
 import { createRef, render as preactRender } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from "vitest";
@@ -19,7 +21,7 @@ vi.mock("../../services/i18n", async (importOriginal) => ({
     t: (key: string) => key
 }));
 
-import type { LinkHeading, LinkTargets } from "../../services/link_targets";
+import { createAnchorTargets, type LinkTarget } from "../../services/link_targets";
 import type { Suggestion } from "../../services/note_autocomplete";
 import server from "../../services/server";
 import toast from "../../services/toast";
@@ -52,20 +54,30 @@ beforeEach(() => {
 
     noteReferences.clear();
     noteReferences.set(alpha.noteId, {
-        headings: [
-            { level: 2, text: "Setup" }, { level: 3, text: "Linux" },
-            { level: 2, text: "Usage", blockId: "U" }
-        ],
-        anchors: [ "a b" ],
-        isWritable: true
+        targets: [
+            headingTarget("Setup", 2), headingTarget("Linux", 3), headingTarget("Usage", 2, "U"),
+            anchorTarget("a b")
+        ]
     });
     getReferences = vi.spyOn(server, "get").mockImplementation((async (url: string) => {
         const noteId = /^notes\/(\w+)\/references$/.exec(url)?.[1] ?? "";
-        return noteReferences.get(noteId) ?? { headings: [], anchors: [], isWritable: true };
+        return noteReferences.get(noteId) ?? { targets: [] };
     }) as typeof server.get);
     createHeadingReference = vi.spyOn(server, "postWithSilentErrors")
-        .mockResolvedValue({ blockId: "NewId" } satisfies HeadingReferenceResponse);
+        .mockResolvedValue({ params: { block: "NewId" } } satisfies CreateReferenceResponse);
 });
+
+/** A heading as the server lists it, with the block id `block` when it has one. */
+function headingTarget(title: string, level: number, block?: string): ReferenceTarget {
+    return block
+        ? { kind: "heading", title, level, params: { block } }
+        : { kind: "heading", title, level };
+}
+
+/** An anchor as the server lists it. */
+function anchorTarget(name: string): ReferenceTarget {
+    return { kind: "anchor", title: name, params: { bookmark: name } };
+}
 
 afterEach(async () => {
     for (const host of hosts.splice(0)) {
@@ -259,9 +271,10 @@ describe("LinkMentionList", () => {
         expect(statusRow()?.querySelector(".bx-loader.bx-spin")).not.toBeNull();
 
         references.resolve({
-            headings: [ { level: 2, text: "Setup" }, { level: 3, text: "Linux" } ],
-            anchors: [ "zeta", "alpha" ],
-            isWritable: true
+            targets: [
+                headingTarget("Setup", 2), headingTarget("Linux", 3),
+                anchorTarget("alpha"), anchorTarget("zeta")
+            ]
         });
         // The rows follow the headings by a render, with nothing said in between.
         await act(async () => {
@@ -321,11 +334,7 @@ describe("LinkMentionList", () => {
 
     it("opens on the first match, also where a later one is named as the text", async () => {
         noteReferences.set(alphaPath.split("/")[1], {
-            headings: [
-                { level: 2, text: "Usage notes", blockId: "N" }, { level: 2, text: "Usage" }
-            ],
-            anchors: [],
-            isWritable: true
+            targets: [ headingTarget("Usage notes", 2, "N"), headingTarget("Usage", 2) ]
         });
         const { draw, press, onPick } = await showAlphaLinked();
 
@@ -392,7 +401,8 @@ describe("LinkMentionList", () => {
         const third = await showAlphaLinked();
         await clickRow("Setup");
         expect(createHeadingReference).toHaveBeenCalledExactlyOnceWith(
-            `notes/${alphaPath.split("/")[1]}/references/heading`, { index: 0, text: "Setup" }
+            `notes/${alphaPath.split("/")[1]}/references`,
+            { kind: "heading", index: 0, title: "Setup" }
         );
         expect(third.onPick).toHaveBeenCalledOnce();
         expect(third.onPick.mock.calls[0]?.[0]).toBeInstanceOf(Promise);
@@ -482,8 +492,7 @@ describe("LinkMentionList", () => {
         const references = deferred<NoteReferencesResponse>();
         noteReferences.set(alphaPath.split("/")[1], references.promise);
         noteReferences.set(betaPath.split("/")[1], {
-            headings: [ { level: 2, text: "Beta heading", blockId: "B" } ], anchors: [],
-            isWritable: true
+            targets: [ headingTarget("Beta heading", 2, "B") ]
         });
         const { press, draw, settle } = await show("al");
         await press("Enter");
@@ -492,18 +501,17 @@ describe("LinkMentionList", () => {
         await press("Enter");
         expect(rowNames()).toStrictEqual([ "*add_link.top_of_note", "Beta heading" ]);
 
-        references.resolve({
-            headings: [ { level: 2, text: "Alpha heading" } ], anchors: [], isWritable: true
-        });
+        references.resolve({ targets: [ headingTarget("Alpha heading", 2) ] });
         await settle();
         expect(rowNames()).toStrictEqual([ "*add_link.top_of_note", "Beta heading" ]);
     });
 
     it("lists the headings and anchors that the host's editor holds for its own note", async () => {
         const createLinkPath = vi.fn(() => `${betaPath}?block=Own`);
-        const intro: LinkHeading = { title: "Intro", level: 2, createLinkPath };
-        const getOwnTargets = vi.fn((notePath: string): LinkTargets | undefined =>
-            notePath === betaPath ? { headings: [ intro ], anchors: [ "top" ] } : undefined);
+        const intro: LinkTarget = { kind: "heading", title: "Intro", level: 2, createLinkPath };
+        const ownTargets = [ intro, ...createAnchorTargets([ "top" ], betaPath) ];
+        const getOwnTargets = vi.fn((notePath: string): LinkTarget[] | undefined =>
+            notePath === betaPath ? ownTargets : undefined);
         const { press, draw, onPick } = await show("al", { getOwnTargets });
 
         await press("ArrowDown");

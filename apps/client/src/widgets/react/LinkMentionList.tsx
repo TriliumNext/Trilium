@@ -7,7 +7,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 
 import { t } from "../../services/i18n";
 import {
-    getAnchorLinkPath, getHeadingAncestors, getLinkTargets, type LinkHeading, type LinkTargets
+    getLinkTargets, getTargetAncestors, LINK_TARGET_KINDS, type LinkTarget
 } from "../../services/link_targets";
 import { getNoteIdFromUrl } from "../../services/navigation_state";
 import toast from "../../services/toast";
@@ -33,17 +33,17 @@ export interface LinkMentionListProps extends NoteMentionListProps {
     /** Closes the list on the pick of the whole note, which the link of the host points at. */
     onKeepLink(): void;
     /**
-     * The headings and anchors of the note at `notePath`, read from the editor of the host,
-     * when the host edits that note. The server reads those of any other note.
+     * The targets of the note at `notePath`, such as its headings and anchors, read from the
+     * editor of the host when the host edits that note. The server reads those of any other note.
      */
-    getOwnTargets?(notePath: string): LinkTargets | undefined;
+    getOwnTargets?(notePath: string): LinkTarget[] | undefined;
 }
 
 /**
  * A `NoteMentionList` in two pages: the notes for the query, then the places in the note picked
- * that a link to it can point at, which are the whole note, its headings and its anchors. The
- * host links the note as soon as it is picked. The text typed after that link filters the second
- * page, and `onPick` receives the path of the link to the heading or anchor picked there.
+ * that a link to it can point at, which are the whole note and its targets, such as its headings
+ * and anchors. The host links the note as soon as it is picked. The text typed after that link
+ * filters the second page, and `onPick` receives the path of the link to the target picked there.
  */
 export default function LinkMentionList({
     anchor, handleRef, elementRef, onActiveDescendant, linkedNotePath, onLinkNote, onKeepLink,
@@ -52,9 +52,9 @@ export default function LinkMentionList({
     const { query, onPick } = mentions;
     // The note picked from the list, with the query it was picked for.
     const [ picked, setPicked ] = useState<{ notePath: string; query: string } | null>(null);
-    // The headings and anchors of that note, `null` while the server reads them.
-    const [ targets, setTargets ] = useState<LinkTargets | null>(null);
-    // Counts the notes picked, so the headings and anchors of an earlier one are dropped.
+    // The targets of that note, `null` while the server reads them.
+    const [ targets, setTargets ] = useState<LinkTarget[] | null>(null);
+    // Counts the notes picked, so the targets of an earlier one are dropped.
     const pickCountRef = useRef(0);
     // The width of the popup and the height of its pages when the note was picked.
     const [ frame, setFrame ] = useState<{ width: number; height: number }>();
@@ -117,19 +117,17 @@ export default function LinkMentionList({
 
     /**
      * Whether `destination` can be picked: the whole note at any time, as its pick only closes
-     * the list, and a heading or an anchor once the link that its pick changes is in the text.
+     * the list, and a target once the link that its pick changes is in the text.
      */
     function canPick(destination: Destination | undefined) {
-        return isLinked || destination?.kind === "note";
+        return isLinked || destination?.target === null;
     }
 
-    function pickDestination(destination: Destination) {
-        if (destination.kind === "note") {
+    function pickDestination({ target }: Destination) {
+        if (!target) {
             onKeepLink();
-        } else if (linkedNotePath !== undefined) {
-            onPick(destination.kind === "anchor"
-                ? getAnchorLinkPath(linkedNotePath, destination.name)
-                : getHeadingLinkPath(destination.heading));
+        } else if (isLinked) {
+            onPick(getTargetLinkPath(target));
         }
     }
 
@@ -219,25 +217,28 @@ export default function LinkMentionList({
 /** The pages of the list, in the order they are visited. */
 type Page = "notes" | "destinations";
 
-/** A row of the second page: the whole note, one of its headings or one of its anchors. */
-type Destination =
-    | { kind: "note" }
-    | { kind: "heading"; heading: LinkHeading; index: number; parents: LinkHeading[] }
-    | { kind: "anchor"; name: string };
+/** A row of the second page: the whole note for a `null` target, or one of its targets. */
+interface Destination {
+    target: LinkTarget | null;
+    /** The position of the target in the targets of the note. */
+    index: number;
+    /** The targets that the target nests under, the outermost first. */
+    parents: LinkTarget[];
+}
 
-const WHOLE_NOTE: Destination = { kind: "note" };
+const WHOLE_NOTE: Destination = { target: null, index: -1, parents: [] };
 
 /**
- * The second page as the rows of a menu: the whole note, then the headings at every level, each
- * indented under the heading it nests under, then the anchors. With a `filter`, it lists only
- * the headings and anchors whose title contains it, each heading with the headings above it.
+ * The second page as the rows of a menu: the whole note, then the targets of each kind under a
+ * header, each indented under the targets it nests under. With a `filter`, it lists only the
+ * targets whose title contains it, each with the targets that it nests under.
  */
 function LinkDestinationMenu({ autocomplete, filter, isLoading, hasTargets }: {
     autocomplete: ReturnType<typeof useAutocomplete<Destination>>;
     filter: string;
-    /** Whether the headings and anchors of the note are still to be read. */
+    /** Whether the targets of the note are still to be read. */
     isLoading: boolean;
-    /** Whether the note has a heading or an anchor, whatever `filter` leaves of them. */
+    /** Whether the note has targets, whatever `filter` leaves of them. */
     hasTargets: boolean;
 }) {
     const { items } = autocomplete;
@@ -251,23 +252,24 @@ function LinkDestinationMenu({ autocomplete, filter, isLoading, hasTargets }: {
             // Keeps the focus where the text is typed, which closes the list without it.
             onMouseDown={(e) => e.preventDefault()}
         >
-            {items.map((destination, index) => [
-                destination.kind !== "note" && destination.kind !== items[index - 1]?.kind && (
-                    <FormListHeader
-                        key={`${destination.kind}-header`}
-                        text={destination.kind === "heading"
-                            ? t("add_link.link_to_heading")
-                            : t("add_link.link_to_anchor")}
-                    />
-                ),
-                <SuggestionOption
-                    key={getDestinationKey(destination)} autocomplete={autocomplete} index={index}
-                >
-                    <LinkDestinationRow
-                        destination={destination} filter={filter} isFiltered={isFiltered}
-                    />
-                </SuggestionOption>
-            ])}
+            {items.map((destination, index) => {
+                const kind = destination.target?.kind;
+                return [
+                    kind && kind !== items[index - 1]?.target?.kind && (
+                        <FormListHeader
+                            key={`${kind}-header`} text={LINK_TARGET_KINDS[kind].getTitle()}
+                        />
+                    ),
+                    <SuggestionOption
+                        key={getDestinationKey(destination)} autocomplete={autocomplete}
+                        index={index}
+                    >
+                        <LinkDestinationRow
+                            destination={destination} filter={filter} isFiltered={isFiltered}
+                        />
+                    </SuggestionOption>
+                ];
+            })}
 
             {isLoading && (
                 <LinkDestinationStatus
@@ -290,7 +292,8 @@ function LinkDestinationRow({ destination, filter, isFiltered }: {
     filter: string;
     isFiltered: boolean;
 }) {
-    if (destination.kind === "note") {
+    const { target, parents } = destination;
+    if (!target) {
         return (
             <span>
                 <SuggestionRowContent
@@ -303,31 +306,15 @@ function LinkDestinationRow({ destination, filter, isFiltered }: {
         );
     }
 
-    if (destination.kind === "anchor") {
-        return (
-            <span>
-                <SuggestionRowContent
-                    icon={<Icon icon="bx bx-bookmark" />}
-                    header={(
-                        <span className="search-result-title">
-                            <HighlightedText text={destination.name} query={filter} />
-                        </span>
-                    )}
-                />
-            </span>
-        );
-    }
-
-    const { heading, parents } = destination;
     const isIndented = !isFiltered && parents.length > 0;
     const depthStyle = { "--link-mention-depth": parents.length } as CSSProperties;
     return (
         <span style={isIndented ? depthStyle : undefined}>
             <SuggestionRowContent
-                icon={<Icon icon="bx bx-heading" />}
+                icon={<Icon icon={LINK_TARGET_KINDS[target.kind].icon} />}
                 header={<>
                     <span className="search-result-title">
-                        <HighlightedText text={heading.title} query={filter} />
+                        <HighlightedText text={target.title} query={filter} />
                     </span>
                     {isFiltered && parents.length > 0 && (
                         <span className="note-suggestion-path">
@@ -354,45 +341,29 @@ function LinkDestinationStatus({ icon, text }: { icon: string; text: string }) {
     );
 }
 
-/** The headings of `targets` in the order of the document, then its anchors. */
-function listDestinations(targets: LinkTargets | null): Destination[] {
+/** The rows of the `targets` of a note, in the order that the note lists them. */
+function listDestinations(targets: LinkTarget[] | null): Destination[] {
     if (!targets) return [];
 
-    const ancestors = getHeadingAncestors(targets.headings);
-    return [
-        ...targets.headings.map((heading, index): Destination => ({
-            kind: "heading", heading, index, parents: ancestors.get(heading) ?? []
-        })),
-        ...targets.anchors.map((name): Destination => ({ kind: "anchor", name }))
-    ];
+    const ancestors = getTargetAncestors(targets);
+    return targets.map((target, index) => ({
+        target, index, parents: ancestors.get(target) ?? []
+    }));
 }
 
 /**
- * The rows for `filter`: the whole note and every heading and anchor while it is blank, then the
- * headings and anchors whose title contains it, whatever its case.
+ * The rows for `filter`: the whole note and every target while it is blank, then the targets
+ * whose title contains it, whatever its case.
  */
 function filterDestinations(destinations: Destination[], filter: string) {
     if (!filter.trim()) return [ WHOLE_NOTE, ...destinations ];
 
     const typed = filter.toLowerCase();
-    return destinations.filter((destination) =>
-        getDestinationTitle(destination).toLowerCase().includes(typed));
+    return destinations.filter(({ target }) => target?.title.toLowerCase().includes(typed));
 }
 
-function getDestinationTitle(destination: Destination) {
-    switch (destination.kind) {
-        case "note": return "";
-        case "heading": return destination.heading.title;
-        case "anchor": return destination.name;
-    }
-}
-
-function getDestinationKey(destination: Destination) {
-    switch (destination.kind) {
-        case "note": return "note";
-        case "heading": return `heading-${destination.index}`;
-        case "anchor": return `anchor-${destination.name}`;
-    }
+function getDestinationKey({ target, index }: Destination) {
+    return target ? `target-${index}` : "note";
 }
 
 /** Whether `e` is a key that picks the highlighted row, and no part of an input method's entry. */
@@ -401,14 +372,14 @@ function isPickKey(e: KeyboardEvent) {
 }
 
 /**
- * The path of a link to `heading`: at once, or once the server has given the heading a block id.
+ * The path of a link to `target`: at once, or once the server has given the target a reference.
  * When the server cannot give one, an error is shown and the promise resolves to `undefined`.
  */
-function getHeadingLinkPath(heading: LinkHeading): string | Promise<string | undefined> {
-    if (!heading.createReference || heading.blockId) return heading.createLinkPath();
+function getTargetLinkPath(target: LinkTarget): string | Promise<string | undefined> {
+    if (!target.createReference || target.params) return target.createLinkPath();
 
-    return heading.createReference().then(() => heading.createLinkPath(), (e: unknown) => {
-        console.error("Failed to create a reference to the heading:", e);
+    return target.createReference().then(() => target.createLinkPath(), (e: unknown) => {
+        console.error("Failed to create a reference to the target:", e);
         toast.showError(t("add_link.heading_reference_failed"));
         return undefined;
     });

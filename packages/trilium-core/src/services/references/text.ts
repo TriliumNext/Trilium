@@ -1,37 +1,58 @@
 import {
-    BLOCK_ID_ATTRIBUTE, type HeadingReference, type HeadingReferenceRequest, isValidBlockId,
-    type NoteReferencesResponse
+    BLOCK_ID_ATTRIBUTE, type CreateReferenceRequest, generateBlockId, isValidBlockId,
+    type ReferenceTarget
 } from "@triliumnext/commons";
 import { HTMLElement, type Node, parse, TextNode } from "node-html-parser";
 
-/** The headings that have text and the anchors of the HTML `content`, in document order. */
-export function findNoteReferences(
-    content: string
-): Pick<NoteReferencesResponse, "headings" | "anchors"> {
+import type { ReferenceProvider } from "./index.js";
+
+/**
+ * The headings and anchors of text notes. A heading links through `?block=` once it has a block
+ * id, which `createReference()` writes into its opening tag. An anchor links through `?bookmark=`.
+ */
+const textReferences: ReferenceProvider = {
+    isFor: (type) => type === "text",
+    findTargets: (content) => typeof content === "string" ? findTextTargets(content) : [],
+    createReference(content, request) {
+        if (typeof content !== "string" || request.kind !== "heading") {
+            return null;
+        }
+        return addHeadingReference(content, request, generateBlockId);
+    }
+};
+
+export default textReferences;
+
+/** The headings that have text, in document order, then the anchors, by name. */
+export function findTextTargets(content: string): ReferenceTarget[] {
     const { headings, anchors } = collectReferences(content);
-    return {
-        headings: headings.map(({ level, text, blockId }) => (
-            blockId ? { level, text, blockId } : { level, text }
-        )),
-        anchors: [ ...anchors ]
-    };
+    return [
+        ...headings.map(({ level, title, blockId }): ReferenceTarget => (blockId
+            ? { kind: "heading", title, level, params: { block: blockId } }
+            : { kind: "heading", title, level })),
+        // Sorted as `getAnchorNames()` sorts them in the editor.
+        ...[ ...anchors ].sort((a, b) => a.localeCompare(b)).map((name): ReferenceTarget => (
+            { kind: "anchor", title: name, params: { bookmark: name } }
+        ))
+    ];
 }
 
 /**
- * `content` with a block id on the heading that `request` names, and the id. That heading is the
- * one at `request.index` while its text is `request.text`, else the only heading with that text.
- * The content comes back unchanged when the heading has an id already, and `null` when no heading
- * matches.
+ * `content` with a block id on the heading that `request` names, and the link parameters of the
+ * heading. That heading is the one at `request.index` while its text is `request.title`, else the
+ * only heading with that text. The content comes back unchanged when the heading has an id
+ * already, and `null` when no heading matches.
  */
 export function addHeadingReference(
-    content: string, request: HeadingReferenceRequest, createId: () => string
+    content: string, request: Pick<CreateReferenceRequest, "index" | "title">,
+    createId: () => string
 ) {
     const heading = findHeading(collectReferences(content).headings, request);
     if (!heading) {
         return null;
     }
     if (heading.blockId) {
-        return { blockId: heading.blockId, content };
+        return { content, params: { block: heading.blockId } };
     }
 
     // An id found nowhere in the content is not the id of another block either.
@@ -39,7 +60,10 @@ export function addHeadingReference(
     while (content.includes(blockId)) {
         blockId = createId();
     }
-    return { blockId, content: insertBlockId(content, heading.element, blockId) };
+    return {
+        content: insertBlockId(content, heading.element, blockId),
+        params: { block: blockId }
+    };
 }
 
 /**
@@ -69,8 +93,13 @@ const HEADING_TAG = /^H([1-6])$/;
 /** The elements that `getHeadings()` in the editor reads as a space. */
 const SPACE_TAGS = new Set([ "BR", "IMG" ]);
 
-interface FoundHeading extends HeadingReference {
+interface FoundHeading {
     element: HTMLElement;
+    /** 1 for `<h1>`, up to 6 for `<h6>`. */
+    level: number;
+    /** The plain text of the heading. */
+    title: string;
+    blockId?: string;
 }
 
 function collectReferences(content: string) {
@@ -93,9 +122,9 @@ function collectReferences(content: string) {
 
         const level = getHeadingLevel(element);
         if (level) {
-            const text = getHeadingText(element);
-            if (text) {
-                headings.push({ element, level, text, blockId });
+            const title = getHeadingText(element);
+            if (title) {
+                headings.push({ element, level, title, blockId });
             }
         } else if (isAnchor(element)) {
             const anchorId = element.getAttribute("id");
@@ -162,12 +191,14 @@ function isAnchor(element: HTMLElement) {
     return element.tagName === "A" && !element.hasAttribute("href");
 }
 
-/** The heading at `index` while its text is `text`, else the only heading with that text. */
-function findHeading(headings: FoundHeading[], { index, text }: HeadingReferenceRequest) {
-    if (headings[index]?.text === text) {
+/** The heading at `index` while its text is `title`, else the only heading with that text. */
+function findHeading(
+    headings: FoundHeading[], { index, title }: Pick<CreateReferenceRequest, "index" | "title">
+) {
+    if (headings[index]?.title === title) {
         return headings[index];
     }
 
-    const matches = headings.filter((heading) => heading.text === text);
+    const matches = headings.filter((heading) => heading.title === title);
     return matches.length === 1 ? matches[0] : null;
 }

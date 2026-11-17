@@ -24,6 +24,7 @@ const { createChildNote, openChildNote } = vi.hoisted(() => ({
 vi.mock("./child_note", () => ({ createChildNote, openChildNote }));
 
 import contextMenu, { type MenuCommandItem } from "../../../menus/context_menu";
+import { createAnchorTargets, type LinkTarget } from "../../../services/link_targets";
 import {
     createAutocompleteMentionList, createEmojiList, createNoteMentionList, createSlashCommandList,
     openSlashCommandMenu
@@ -68,9 +69,10 @@ describe("createNoteMentionList", () => {
 
     it("links the note picked, then points its link at a heading, in a text editor", async () => {
         const createLinkPath = vi.fn(() => "root/a?block=Intro");
-        const getOwnLinkTargets = vi.fn(() => ({
-            headings: [ { title: "Intro", level: 2, createLinkPath } ], anchors: [ "top" ]
-        }));
+        const getOwnLinkTargets = vi.fn((): LinkTarget[] => [
+            { kind: "heading", title: "Intro", level: 2, createLinkPath },
+            ...createAnchorTargets([ "top" ], "root/a")
+        ]);
         const linked = { id: "@root/a", notePath: "root/a" };
         /** Picks the note from a new list, as the editor does before it shows the list again. */
         const linkNote = async () => {

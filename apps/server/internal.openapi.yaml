@@ -533,37 +533,40 @@ paths:
   /api/notes/{noteId}/references:
     get:
       tags: [Notes]
-      summary: List the headings and anchors of a text note
+      summary: List the places inside a note that a link can point at
       description: >-
-        The headings that have text and the anchors of a text note, in document order: what a link
-        can point at, a heading through `?block=` and its block id, an anchor through
-        `?bookmark=`. The text of a heading is plain text, never HTML. A heading whose block id an
-        earlier block of the note also has is listed without it, since a link reaches that block.
+        The targets of a note, such as the headings and anchors of a text note, in the order that
+        the link lists show them, the targets of each kind together. A link points at a target by
+        adding its `params` to the path of the note: a heading of a text note through `?block=`
+        and its block id, an anchor through `?bookmark=`. A target without `params` needs a
+        reference first, which `POST /api/notes/{noteId}/references` creates. Such a target is
+        listed only when the note can take one. Titles are plain text, never HTML. A note whose
+        type has no targets lists none.
       operationId: getNoteReferences
       parameters:
         - $ref: '#/components/parameters/noteId'
       responses:
         '200':
-          description: The headings and anchors of the note
+          description: The targets of the note
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NoteReferences'
         '400':
-          description: Not a text note, or a protected note without a protected session
+          description: A protected note without a protected session
         '404':
           description: Note not found
-
-  /api/notes/{noteId}/references/heading:
     post:
       tags: [Notes]
-      summary: Give a heading a block id
+      summary: Give a target a reference
       description: >-
-        Gives a heading of a text note a block id, unless it has one, and returns the id. The
-        heading is the one at `index` in the `headings` of `GET /api/notes/{noteId}/references`
-        while its text is still `text`, otherwise the only heading with that text. Read-only notes
-        get the id too. The attribute is the only change to the content, and no revision is saved.
-      operationId: createHeadingReference
+        Gives a target that `GET /api/notes/{noteId}/references` lists without `params` a
+        reference, unless it has one, and returns the link parameters that point at it. The
+        target is the one at `index` among the targets of its `kind` while its title is still
+        `title`, otherwise the only target of that kind with that title. For a heading of a text
+        note, the reference is a block id. Read-only notes get the reference too. It is the only
+        change to the content, and no revision is saved.
+      operationId: createNoteReference
       parameters:
         - $ref: '#/components/parameters/noteId'
       requestBody:
@@ -572,37 +575,39 @@ paths:
           application/json:
             schema:
               type: object
-              required: [index, text]
+              required: [kind, index, title]
               properties:
+                kind:
+                  $ref: '#/components/schemas/ReferenceKind'
                 index:
                   type: integer
                   minimum: 0
-                  description: The position of the heading in `headings`
+                  description: The position of the target among the targets of its kind
                   example: 0
-                text:
+                title:
                   type: string
                   minLength: 1
-                  description: The text of the heading at that position
+                  description: The title of the target at that position
                   example: Installation
       responses:
         '200':
-          description: The block id of the heading
+          description: The link parameters of the target
           content:
             application/json:
               schema:
                 type: object
+                required: [params]
                 properties:
-                  blockId:
-                    type: string
-                    example: eaJkN47U8kI4
+                  params:
+                    $ref: '#/components/schemas/ReferenceParams'
         '400':
           description: >-
-            A malformed request, a note that is not a text note, a protected note without a
-            protected session, or a note whose content cannot be changed, such as a help page
+            A malformed request, a note whose targets take no reference, a protected note without
+            a protected session, or a note whose content cannot be changed, such as a help page
         '404':
           description: Note not found
         '409':
-          description: No heading matches, because the headings changed since they were listed
+          description: No target matches, because the targets changed since they were listed
 
   /api/notes/{noteId}/title:
     put:
@@ -5031,41 +5036,47 @@ components:
         utcDateModified:
           $ref: '#/components/schemas/UtcDateTime'
           
-    HeadingReference:
+    ReferenceKind:
+      type: string
+      enum: [heading, anchor]
+      description: The kind of a target, which sets how the link lists show it
+      example: heading
+
+    ReferenceParams:
       type: object
-      required: [level, text]
+      additionalProperties:
+        type: string
+      description: The parameters of a link that point at a target, not encoded
+      example:
+        block: eaJkN47U8kI4
+
+    ReferenceTarget:
+      type: object
+      required: [kind, title]
       properties:
+        kind:
+          $ref: '#/components/schemas/ReferenceKind'
+        title:
+          type: string
+          description: The plain text that the lists show
+          example: Installation
         level:
           type: integer
           minimum: 1
-          maximum: 6
+          description: For a kind that nests, the depth of the target, such as 2 for an `<h2>`
           example: 2
-        text:
-          type: string
-          description: The plain text of the heading
-          example: Installation
-        blockId:
-          type: string
-          description: The block id of the heading; absent when it has none
-          example: eaJkN47U8kI4
+        params:
+          $ref: '#/components/schemas/ReferenceParams'
+          description: The link parameters that point at the target; absent while it needs a reference
 
     NoteReferences:
       type: object
-      required: [headings, anchors, isWritable]
+      required: [targets]
       properties:
-        headings:
+        targets:
           type: array
           items:
-            $ref: '#/components/schemas/HeadingReference'
-        anchors:
-          type: array
-          items:
-            type: string
-            example: setup-done
-          description: The ids of the anchors, the `bookmark` link parameter
-        isWritable:
-          type: boolean
-          description: Whether a heading without a block id can be given one
+            $ref: '#/components/schemas/ReferenceTarget'
 
     CreateNoteRequest:
       type: object

@@ -35,7 +35,9 @@ import { embedReferenceImageAsDataUrl } from "../../../services/image_embed.js";
 import { getNoteImageSourceToLoad } from "../../../services/image_urls.js";
 import linkService from "../../../services/link.js";
 import { detectEmbedType, fetchMetadata, renderEmbedPreview, renderMentionPreview, unresolvedMetadata } from "../../../services/link_embed.js";
-import { createEditorHeadings, type LinkTargets } from "../../../services/link_targets.js";
+import {
+    createAnchorTargets, createEditorHeadings, type LinkTarget
+} from "../../../services/link_targets.js";
 import { captureVideoThumbnail } from "../../../services/media_thumbnail.js";
 import { default as mimeTypesService, getHighlightJsNameForMime } from "../../../services/mime_types.js";
 import { getNoteIdFromUrl } from "../../../services/navigation_state.js";
@@ -492,15 +494,15 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
  */
 function getOwnLinkTargets(
     editor: Parameters<typeof getHeadings>[0], noteId: string | undefined, notePath: string
-): LinkTargets | undefined {
+): LinkTarget[] | undefined {
     if (!noteId || getNoteIdFromUrl(notePath) !== noteId) return undefined;
 
-    return {
-        headings: createEditorHeadings(
+    return [
+        ...createEditorHeadings(
             getHeadings(editor), notePath, (heading) => assignBlockId(editor.model, heading.element)
         ),
-        anchors: getAnchorNames(editor)
-    };
+        ...createAnchorTargets(getAnchorNames(editor), notePath)
+    ];
 }
 
 /** The `contentEmbed` members that call the handlers `getHandlers()` returns at the time. */

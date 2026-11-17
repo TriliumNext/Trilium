@@ -25,7 +25,9 @@ import dialog from "../../../services/dialog";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import link, { parseNavigationStateFromUrl, type ViewScope } from "../../../services/link";
-import { createEditorHeadings, type LinkHeading } from "../../../services/link_targets";
+import {
+    createEditorHeadings, findTarget, type LinkTarget, splitTargetParameters
+} from "../../../services/link_targets";
 import type LoadResults from "../../../services/load_results";
 import { getNoteIdFromUrl } from "../../../services/navigation_state";
 import note_create from "../../../services/note_create";
@@ -688,21 +690,20 @@ export function getEditLinkOpts(
 }
 
 /** The headings of the editor, which link to their blocks in the note at `notePath`. */
-function getLinkHeadings(api: CKEditorApi, notePath: string): LinkHeading[] {
+function getLinkHeadings(api: CKEditorApi, notePath: string): LinkTarget[] {
     return createEditorHeadings(
         api.getHeadings(), notePath, (heading) => api.assignBlockId(heading)
     );
 }
 
 /** The heading of `headings` whose block `href` links to, in the note at `notePath`. */
-function findLinkedHeading(href: string, headings: LinkHeading[], notePath: string) {
+function findLinkedHeading(href: string, headings: LinkTarget[], notePath: string) {
     if (!href.startsWith("#")) return undefined;
 
-    const [ path, query = "" ] = href.slice(1).split("?", 2);
-    const blockId = new URLSearchParams(query).get("block");
+    const [ path ] = href.slice(1).split("?", 1);
     const isSameNote = path.split("/").at(-1) === notePath.split("/").at(-1);
-    return blockId && isSameNote
-        ? headings.find((heading) => heading.blockId === blockId)
+    return isSameNote
+        ? findTarget(headings, splitTargetParameters(href.slice(1)).params)
         : undefined;
 }
 

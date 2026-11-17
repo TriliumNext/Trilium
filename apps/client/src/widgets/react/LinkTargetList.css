@@ -37,7 +37,7 @@
     }
 }
 
-.link-target-headings {
+.link-target-group {
     --card-nested-section-indent: 24px;
 
     .tn-card-choice-label {

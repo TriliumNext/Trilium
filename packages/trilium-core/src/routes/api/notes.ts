@@ -1,6 +1,7 @@
 import {
-    type AttributeRow, type CreateChildrenResponse, type DeleteNotesPreview, generateBlockId,
-    type HeadingReferenceResponse, isNoteType, type MetadataResponse, type NoteReferencesResponse
+    type AttributeRow, type CreateChildrenResponse, type CreateReferenceRequest,
+    type CreateReferenceResponse, type DeleteNotesPreview, isNoteType, type MetadataResponse,
+    type NoteReferencesResponse, REFERENCE_KINDS, type ReferenceKind
 } from "@triliumnext/commons";
 import { t } from "i18next";
 
@@ -9,14 +10,14 @@ import type { Request } from "../../http_interface";
 import blobService from "../../services/blob";
 import { getBlockRangeContent, replaceBlockRangeContent } from "../../services/block_ranges";
 import eraseService from "../../services/erase.js";
-import { ConflictError, NotFoundError, ValidationError } from "../../errors.js";
+import { NotFoundError, ValidationError } from "../../errors.js";
 import becca from "../../becca/becca.js";
 import type BBranch from "../../becca/entities/bbranch.js";
 import type BNote from "../../becca/entities/bnote.js";
 import { getLog } from "../../services/log.js";
 import noteFormatConversionService from "../../services/note_format_conversion.js";
-import { addHeadingReference, findNoteReferences } from "../../services/note_references";
 import noteService from "../../services/notes.js";
+import { createReference, findReferenceTargets } from "../../services/references/index.js";
 import { getSql } from "../../services/sql/index";
 import TaskContext from "../../services/task_context.js";
 import treeService from "../../services/tree.js";
@@ -138,44 +139,30 @@ function updateNoteBlocks(req: Request<{ noteId: string }>) {
     noteService.updateNoteData(req.params.noteId, newContent, attachments);
 }
 
-/** The headings and anchors of a text note, which a link can point at. */
-function getNoteReferences(req: Request<{ noteId: string }>) {
+/** The places inside a note that a link can point at, such as its headings and anchors. */
+async function getNoteReferences(req: Request<{ noteId: string }>) {
     const note = becca.getNoteOrThrow(req.params.noteId);
-    return {
-        ...findNoteReferences(getTextContent(note)),
-        isWritable: note.isContentWritable()
-    } satisfies NoteReferencesResponse;
+    return { targets: await findReferenceTargets(note) } satisfies NoteReferencesResponse;
 }
 
-/**
- * Gives a heading of a text note a block id, unless it has one, and returns the id. Read-only
- * notes get it too: the id is invisible, and a link to the heading needs it.
- */
-function createHeadingReference(req: Request<{ noteId: string }>) {
-    const { index, text } = req.body ?? {};
-    if (!Number.isSafeInteger(index) || index < 0 || typeof text !== "string" || !text) {
-        throw new ValidationError("Expected the 'index' and the 'text' of a heading.");
-    }
-
+/** Gives a target of a note a reference, unless it has one, and returns its link parameters. */
+function createNoteReference(req: Request<{ noteId: string }>) {
+    const request = parseReferenceRequest(req.body);
     const note = becca.getNoteOrThrow(req.params.noteId);
-    if (!note.isContentWritable()) {
-        throw new ValidationError(`The content of note '${note.noteId}' cannot be changed.`);
-    }
+    return { params: createReference(note, request) } satisfies CreateReferenceResponse;
+}
 
-    const content = getTextContent(note);
-    const reference = addHeadingReference(content, { index, text }, generateBlockId);
-    // The message leaves the text out: it reaches the log, and it can come from a protected note.
-    if (!reference) {
-        throw new ConflictError(
-            `The headings of note '${note.noteId}' changed: heading ${index} was not found.`
-        );
+function parseReferenceRequest(body: unknown): CreateReferenceRequest {
+    const { kind, index, title } = (body ?? {}) as Record<string, unknown>;
+    if (!isReferenceKind(kind) || typeof index !== "number" || !Number.isSafeInteger(index)
+        || index < 0 || typeof title !== "string" || !title) {
+        throw new ValidationError("Expected the 'kind', the 'index' and the 'title' of a target.");
     }
+    return { kind, index, title };
+}
 
-    // A plain save: the id is invisible, so it takes no revision, and it changes no link.
-    if (reference.content !== content) {
-        note.setContent(reference.content);
-    }
-    return { blockId: reference.blockId } satisfies HeadingReferenceResponse;
+function isReferenceKind(value: unknown): value is ReferenceKind {
+    return REFERENCE_KINDS.some((kind) => kind === value);
 }
 
 function getBlockRangeRequest(req: Request<{ noteId: string }>) {
@@ -509,7 +496,7 @@ export default {
     getNoteBlocks,
     updateNoteBlocks,
     getNoteReferences,
-    createHeadingReference,
+    createNoteReference,
     deleteNote,
     undeleteNote,
     createNote,

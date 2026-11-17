@@ -614,11 +614,11 @@ Core note operations
 
     No content.
 
-### List the headings and anchors of a text note
+### List the places inside a note that a link can point at
 
 `GET /api/notes/{noteId}/references` · `getNoteReferences`
 
-The headings that have text and the anchors of a text note, in document order: what a link can point at, a heading through `?block=` and its block id, an anchor through `?bookmark=`. The text of a heading is plain text, never HTML. A heading whose block id an earlier block of the note also has is listed without it, since a link reaches that block.
+The targets of a note, such as the headings and anchors of a text note, in the order that the link lists show them, the targets of each kind together. A link points at a target by adding its `params` to the path of the note: a heading of a text note through `?block=` and its block id, an anchor through `?bookmark=`. A target without `params` needs a reference first, which `POST /api/notes/{noteId}/references` creates. Such a target is listed only when the note can take one. Titles are plain text, never HTML. A note whose type has no targets lists none.
 
 **Authorization**: `sessionAuth` or `tokenAuth`
 
@@ -630,7 +630,7 @@ The headings that have text and the anchors of a text note, in document order: w
 
 **Responses**
 
-=== "200: The headings and anchors of the note"
+=== "200: The targets of the note"
 
     *   `application/json`: [`NoteReferences`](#schema-NoteReferences)
 
@@ -639,33 +639,30 @@ The headings that have text and the anchors of a text note, in document order: w
 
     | Property | Description |
     | --- | --- |
-    | `headings`  <br>_required_ | array of [`HeadingReference`](#schema-HeadingReference) |
-    | `anchors`  <br>_required_ | `array of string`  <br>The ids of the anchors, the `bookmark` link parameter |
-    | `isWritable`  <br>_required_ | `boolean`  <br>Whether a heading without a block id can be given one |
+    | `targets`  <br>_required_ | array of [`ReferenceTarget`](#schema-ReferenceTarget) |
 
     </div>
     <div class="trilium-multicolumn-column">
 
     ```json
     {
-        "headings": [
+        "targets": [
             {
+                "kind": "heading",
+                "title": "Installation",
                 "level": 2,
-                "text": "Installation",
-                "blockId": "eaJkN47U8kI4"
+                "params": {
+                    "block": "eaJkN47U8kI4"
+                }
             }
-        ],
-        "anchors": [
-            "setup-done"
-        ],
-        "isWritable": true
+        ]
     }
     ```
 
     </div>
     </div>
 
-=== "400: Not a text note, or a protected note without a protected session"
+=== "400: A protected note without a protected session"
 
     No content.
 
@@ -673,11 +670,11 @@ The headings that have text and the anchors of a text note, in document order: w
 
     No content.
 
-### Give a heading a block id
+### Give a target a reference
 
-`POST /api/notes/{noteId}/references/heading` · `createHeadingReference`
+`POST /api/notes/{noteId}/references` · `createNoteReference`
 
-Gives a heading of a text note a block id, unless it has one, and returns the id. The heading is the one at `index` in the `headings` of `GET /api/notes/{noteId}/references` while its text is still `text`, otherwise the only heading with that text. Read-only notes get the id too. The attribute is the only change to the content, and no revision is saved.
+Gives a target that `GET /api/notes/{noteId}/references` lists without `params` a reference, unless it has one, and returns the link parameters that point at it. The target is the one at `index` among the targets of its `kind` while its title is still `title`, otherwise the only target of that kind with that title. For a heading of a text note, the reference is a block id. Read-only notes get the reference too. It is the only change to the content, and no revision is saved.
 
 **Authorization**: `sessionAuth` or `tokenAuth`
 
@@ -696,16 +693,18 @@ Gives a heading of a text note a block id, unless it has one, and returns the id
 
 | Property | Description |
 | --- | --- |
-| `index`  <br>_required_ | `integer`  <br>The position of the heading in `headings` |
-| `text`  <br>_required_ | `string`  <br>The text of the heading at that position |
+| `kind`  <br>_required_ | [`ReferenceKind`](#schema-ReferenceKind)  <br>The kind of a target, which sets how the link lists show it. One of `heading`, `anchor`. |
+| `index`  <br>_required_ | `integer`  <br>The position of the target among the targets of its kind |
+| `title`  <br>_required_ | `string`  <br>The title of the target at that position |
 
 </div>
 <div class="trilium-multicolumn-column">
 
 ```json
 {
+    "kind": "heading",
     "index": 0,
-    "text": "Installation"
+    "title": "Installation"
 }
 ```
 
@@ -714,7 +713,7 @@ Gives a heading of a text note a block id, unless it has one, and returns the id
 
 **Responses**
 
-=== "200: The block id of the heading"
+=== "200: The link parameters of the target"
 
     *   `application/json`: `object`
 
@@ -723,21 +722,23 @@ Gives a heading of a text note a block id, unless it has one, and returns the id
 
     | Property | Description |
     | --- | --- |
-    | `blockId` | `string` |
+    | `params`  <br>_required_ | [`ReferenceParams`](#schema-ReferenceParams)  <br>The parameters of a link that point at a target, not encoded |
 
     </div>
     <div class="trilium-multicolumn-column">
 
     ```json
     {
-        "blockId": "eaJkN47U8kI4"
+        "params": {
+            "block": "eaJkN47U8kI4"
+        }
     }
     ```
 
     </div>
     </div>
 
-=== "400: A malformed request, a note that is not a text note, a protected note without a protected session, or a note whose content cannot be changed, such as a help page"
+=== "400: A malformed request, a note whose targets take no reference, a protected note without a protected session, or a note whose content cannot be changed, such as a help page"
 
     No content.
 
@@ -745,7 +746,7 @@ Gives a heading of a text note a block id, unless it has one, and returns the id
 
     No content.
 
-=== "409: No heading matches, because the headings changed since they were listed"
+=== "409: No target matches, because the targets changed since they were listed"
 
     No content.
 
@@ -7901,21 +7902,38 @@ Example: `2025-02-13 07:42:47.698Z`
 | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
-### <a id="schema-HeadingReference"></a>`HeadingReference`
+### <a id="schema-ReferenceKind"></a>`ReferenceKind`
+
+The kind of a target, which sets how the link lists show it
+
+Type: `string`
+
+One of `heading`, `anchor`.
+
+Example: `heading`
+
+### <a id="schema-ReferenceParams"></a>`ReferenceParams`
+
+The parameters of a link that point at a target, not encoded
+
+Type: `object`
+
+Example: `[object Object]`
+
+### <a id="schema-ReferenceTarget"></a>`ReferenceTarget`
 
 | Property | Description |
 | --- | --- |
-| `level`  <br>_required_ | `integer` |
-| `text`  <br>_required_ | `string`  <br>The plain text of the heading |
-| `blockId` | `string`  <br>The block id of the heading; absent when it has none |
+| `kind`  <br>_required_ | [`ReferenceKind`](#schema-ReferenceKind)  <br>The kind of a target, which sets how the link lists show it. One of `heading`, `anchor`. |
+| `title`  <br>_required_ | `string`  <br>The plain text that the lists show |
+| `level` | `integer`  <br>For a kind that nests, the depth of the target, such as 2 for an `<h2>` |
+| `params` | [`ReferenceParams`](#schema-ReferenceParams)  <br>The link parameters that point at the target; absent while it needs a reference |
 
 ### <a id="schema-NoteReferences"></a>`NoteReferences`
 
 | Property | Description |
 | --- | --- |
-| `headings`  <br>_required_ | array of [`HeadingReference`](#schema-HeadingReference) |
-| `anchors`  <br>_required_ | `array of string`  <br>The ids of the anchors, the `bookmark` link parameter |
-| `isWritable`  <br>_required_ | `boolean`  <br>Whether a heading without a block id can be given one |
+| `targets`  <br>_required_ | array of [`ReferenceTarget`](#schema-ReferenceTarget) |
 
 ### <a id="schema-CreateNoteRequest"></a>`CreateNoteRequest`
 

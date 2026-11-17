@@ -325,37 +325,49 @@ export interface MetadataResponse {
     utcDateModified: string | undefined;
 }
 
-/** A heading of a text note, as `GET /api/notes/:noteId/references` lists it. */
-export interface HeadingReference {
-    /** 1 for `<h1>`, up to 6 for `<h6>`. */
-    level: number;
-    /** The plain text of the heading, never HTML. */
-    text: string;
-    /** The block id of the heading, if it has one. */
-    blockId?: string;
+/**
+ * The kinds of place inside a note that a link can point at. A kind sets how the link lists show
+ * a target, whatever the note type: text notes and Markdown notes both have headings.
+ */
+export const REFERENCE_KINDS = [ "heading", "anchor" ] as const;
+
+export type ReferenceKind = (typeof REFERENCE_KINDS)[number];
+
+/**
+ * The parameters of a link that point inside a note, not encoded, such as
+ * `{ block: "eaJkN47U8kI4" }`. Each name is a field of the client's `ViewScope`.
+ */
+export type ReferenceParams = Record<string, string>;
+
+/** A place inside a note that a link can point at. */
+export interface ReferenceTarget {
+    kind: ReferenceKind;
+    /** The plain text that the lists show, never HTML. */
+    title: string;
+    /** For a kind that nests, the depth of the target, such as 2 for an `<h2>`. */
+    level?: number;
+    /** The link parameters that point at the target. Without them, it needs a reference first. */
+    params?: ReferenceParams;
 }
 
-/** What a link can point at inside a text note. */
+/** The answer of `GET /api/notes/:noteId/references`. */
 export interface NoteReferencesResponse {
-    /** The headings that have text, in document order. */
-    headings: HeadingReference[];
-    /** The ids of the anchors, the `bookmark` link parameter, in document order. */
-    anchors: string[];
-    /** Whether a heading without a block id can be given one. */
-    isWritable: boolean;
+    /** In the order that the lists show them, the targets of each kind together. */
+    targets: ReferenceTarget[];
 }
 
-/** Names a heading for `POST /api/notes/:noteId/references/heading`. */
-export interface HeadingReferenceRequest {
-    /** The position of the heading in `NoteReferencesResponse.headings`. */
+/** Names a target without `params` for `POST /api/notes/:noteId/references`. */
+export interface CreateReferenceRequest {
+    kind: ReferenceKind;
+    /** The position of the target among the `targets` of its kind. */
     index: number;
-    /** Its `text` there. */
-    text: string;
+    /** Its `title` there. */
+    title: string;
 }
 
-export interface HeadingReferenceResponse {
-    /** The block id of the heading. */
-    blockId: string;
+export interface CreateReferenceResponse {
+    /** The link parameters that point at the target. */
+    params: ReferenceParams;
 }
 
 export interface NoteSizeResponse {

@@ -1,4 +1,6 @@
-import type { HeadingReferenceResponse, NoteReferencesResponse } from "@triliumnext/commons";
+import type {
+    CreateReferenceResponse, NoteReferencesResponse, ReferenceTarget
+} from "@triliumnext/commons";
 import { type RefObject, render } from "preact";
 import { act } from "preact/test-utils";
 import { beforeEach, describe, expect, it, type MockInstance, onTestFinished, vi } from "vitest";
@@ -6,7 +8,7 @@ import { beforeEach, describe, expect, it, type MockInstance, onTestFinished, vi
 import appContext from "../../components/app_context";
 import Component from "../../components/component";
 import type { PageDetails } from "../../services/link_embed";
-import type { LinkHeading } from "../../services/link_targets";
+import type { LinkTarget } from "../../services/link_targets";
 import type { Suggestion } from "../../services/note_autocomplete";
 import options from "../../services/options";
 import server from "../../services/server";
@@ -75,11 +77,23 @@ beforeEach(() => {
     vi.spyOn(server, "get").mockImplementation((async (url: string) => {
         const noteId = /^notes\/(\w+)\/references$/.exec(url)?.[1];
         if (!noteId) return serverGet(url);
-        return noteReferences.get(noteId) ?? { headings: [], anchors: [], isWritable: true };
+        return noteReferences.get(noteId) ?? { targets: [] };
     }) as typeof server.get);
     createHeadingReference = vi.spyOn(server, "postWithSilentErrors")
-        .mockResolvedValue({ blockId: "NewId" } satisfies HeadingReferenceResponse);
+        .mockResolvedValue({ params: { block: "NewId" } } satisfies CreateReferenceResponse);
 });
+
+/** A heading as the server lists it, with the block id `block` when it has one. */
+function headingTarget(title: string, level: number, block?: string): ReferenceTarget {
+    return block
+        ? { kind: "heading", title, level, params: { block } }
+        : { kind: "heading", title, level };
+}
+
+/** An anchor as the server lists it. */
+function anchorTarget(name: string): ReferenceTarget {
+    return { kind: "anchor", title: name, params: { bookmark: name } };
+}
 
 describe("normalizeWebLink", () => {
     it("adds https:// to an address without a scheme, and keeps any other scheme", () => {
@@ -192,7 +206,7 @@ describe("EditLinkDialog", () => {
 
     function anchorRows() {
         return [ ...container.querySelectorAll<HTMLElement>(
-            ".link-target-anchors .tn-card-choice"
+            ".link-target-anchor .tn-card-choice"
         ) ];
     }
 
@@ -202,7 +216,7 @@ describe("EditLinkDialog", () => {
 
     function headingRows() {
         return [ ...container.querySelectorAll<HTMLElement>(
-            ".link-target-headings .tn-card-choice"
+            ".link-target-heading .tn-card-choice"
         ) ];
     }
 
@@ -428,7 +442,7 @@ describe("EditLinkDialog", () => {
 
     it("edits a link with its own text, keeping that text and its anchor", async () => {
         const note = buildNote({ title: "Target" });
-        noteReferences.set(note.noteId, { headings: [], anchors: [ "part" ], isWritable: true });
+        noteReferences.set(note.noteId, { targets: [ anchorTarget("part") ] });
         const edited = {
             currentLink: { notePath: `root/${note.noteId}` }, currentTitle: "See there"
         };
@@ -536,7 +550,7 @@ describe("EditLinkDialog", () => {
 
     it("keeps the state of each page while another is shown, and applies the page shown", async () => {
         const note = buildNote({ title: "Target" });
-        noteReferences.set(note.noteId, { headings: [], anchors: [ "part" ], isWritable: true });
+        noteReferences.set(note.noteId, { targets: [ anchorTarget("part") ] });
         const path = `root/${note.noteId}`;
         const noteField = () => container.querySelector<HTMLInputElement>(".note-autocomplete");
 
@@ -968,7 +982,7 @@ describe("EditLinkDialog", () => {
         expect(headings()).toStrictEqual([ "add_link.target_anchor" ]);
         const titleCard = field("text")?.closest(".tn-card");
         expect(titleCard?.nextElementSibling?.matches(".edit-link-targets")).toBe(true);
-        expect(titleCard?.nextElementSibling?.firstElementChild?.matches(".link-target-anchors"))
+        expect(titleCard?.nextElementSibling?.firstElementChild?.matches(".link-target-anchor"))
             .toBe(true);
         expect(anchorRows().map((row) => row.textContent)).toStrictEqual([ "intro", "outro" ]);
         expect(anchorRows().every((row) => row.querySelector(".tn-card-choice-icon.bx-bookmark")))
@@ -1028,7 +1042,7 @@ describe("EditLinkDialog", () => {
         await act(async () => choice()[2]?.click());
         expect(headings()).toStrictEqual([ "add_link.headings", "add_link.target_anchor" ]);
         expect(container.querySelector(".edit-link-targets")?.firstElementChild
-            ?.matches(".link-target-headings")).toBe(true);
+            ?.matches(".link-target-heading")).toBe(true);
         // Sub-headings start collapsed.
         expect(headingRows().map((row) => row.textContent)).toStrictEqual([ "Intro", "Usage" ]);
         await toggleHeading(0);
@@ -1165,12 +1179,10 @@ describe("EditLinkDialog", () => {
         expect(button()?.disabled).toBe(false);
 
         references.resolve({
-            headings: [
-                { level: 2, text: "Setup" }, { level: 3, text: "Linux", blockId: "L" },
-                { level: 2, text: "Usage" }
-            ],
-            anchors: [ "zeta", "alpha" ],
-            isWritable: true
+            targets: [
+                headingTarget("Setup", 2), headingTarget("Linux", 3, "L"),
+                headingTarget("Usage", 2), anchorTarget("alpha"), anchorTarget("zeta")
+            ]
         });
         await settle();
         expect(noteTargets()?.getAttribute("role")).toBeNull();
@@ -1179,7 +1191,7 @@ describe("EditLinkDialog", () => {
         expect(noteTargets()?.firstElementChild?.matches(".link-target-whole-note")).toBe(true);
         expect(noteTargets()?.querySelector(".link-target-whole-note .bx-arrow-to-top"))
             .not.toBeNull();
-        // Sub-headings start collapsed, and the anchors are sorted.
+        // Sub-headings start collapsed.
         expect(noteChoices())
             .toStrictEqual([ "*add_link.top_of_note", "Setup", "Usage", "alpha", "zeta" ]);
         const expander = noteRows()[1]?.querySelector<HTMLElement>(".tn-card-choice-expander");
@@ -1195,9 +1207,9 @@ describe("EditLinkDialog", () => {
         const note = buildNote({ title: "Target" });
         const path = `root/${note.noteId}`;
         noteReferences.set(note.noteId, {
-            headings: [ { level: 2, text: "Setup" }, { level: 2, text: "Usage", blockId: "U" } ],
-            anchors: [ "a b" ],
-            isWritable: true
+            targets: [
+                headingTarget("Setup", 2), headingTarget("Usage", 2, "U"), anchorTarget("a b")
+            ]
         });
 
         await open();
@@ -1214,7 +1226,8 @@ describe("EditLinkDialog", () => {
         await checkNoteChoice("Setup");
         await submitWithReference();
         expect(createHeadingReference).toHaveBeenCalledExactlyOnceWith(
-            `notes/${note.noteId}/references/heading`, { index: 0, text: "Setup" }
+            `notes/${note.noteId}/references`,
+            { kind: "heading", index: 0, title: "Setup" }
         );
         expect(addLink).toHaveBeenLastCalledWith(`${path}?block=NewId`, null);
 
@@ -1245,13 +1258,13 @@ describe("EditLinkDialog", () => {
         const note = buildNote({ title: "Target" });
         const path = `root/${note.noteId}`;
         noteReferences.set(note.noteId, {
-            headings: [ { level: 2, text: "Setup" } ], anchors: [], isWritable: true
+            targets: [ headingTarget("Setup", 2) ]
         });
 
         await open();
         await pickNote(path);
         await checkNoteChoice("Setup");
-        const created = deferred<HeadingReferenceResponse>();
+        const created = deferred<CreateReferenceResponse>();
         createHeadingReference.mockReturnValueOnce(created.promise);
         await requestSubmit();
         expect(button()?.disabled).toBe(true);
@@ -1271,7 +1284,7 @@ describe("EditLinkDialog", () => {
         expect(addLink).toHaveBeenCalledExactlyOnceWith(`${path}?block=NewId`, null);
 
         // A dialog closed while the server works applies nothing, then or when it next closes.
-        const late = deferred<HeadingReferenceResponse>();
+        const late = deferred<CreateReferenceResponse>();
         createHeadingReference.mockReturnValueOnce(late.promise);
         await reopen();
         await pickNote(path);
@@ -1281,7 +1294,7 @@ describe("EditLinkDialog", () => {
             container.querySelector(".modal")?.dispatchEvent(new Event("hidden.bs.modal"));
         });
         await waitForTransitions();
-        late.resolve({ blockId: "Late" });
+        late.resolve({ params: { block: "Late" } });
         await settle();
         await open();
         await pickNote(path);
@@ -1296,7 +1309,7 @@ describe("EditLinkDialog", () => {
         const note = buildNote({ title: "Target" });
         const path = `root/${note.noteId}`;
         noteReferences.set(note.noteId, {
-            headings: [ { level: 2, text: "Setup" } ], anchors: [], isWritable: true
+            targets: [ headingTarget("Setup", 2) ]
         });
         const saved = deferred<void>();
         const { triggerEvent } = appContext;
@@ -1326,25 +1339,24 @@ describe("EditLinkDialog", () => {
         const note = buildNote({ title: "Target" });
         const path = `root/${note.noteId}`;
         noteReferences.set(note.noteId, {
-            headings: [ { level: 2, text: "Setup" }, { level: 2, text: "Usage" } ],
-            anchors: [],
-            isWritable: true
+            targets: [ headingTarget("Setup", 2), headingTarget("Usage", 2) ]
         });
 
         await open();
         await pickNote(path);
         await checkNoteChoice("Setup");
-        const created = deferred<HeadingReferenceResponse>();
+        const created = deferred<CreateReferenceResponse>();
         createHeadingReference.mockReturnValueOnce(created.promise);
         await requestSubmit();
         await checkNoteChoice("Usage");
-        created.resolve({ blockId: "SetupId" });
+        created.resolve({ params: { block: "SetupId" } });
         await settle();
         await act(async () => {
             container.querySelector(".modal")?.dispatchEvent(new Event("hidden.bs.modal"));
         });
         expect(createHeadingReference).toHaveBeenCalledExactlyOnceWith(
-            `notes/${note.noteId}/references/heading`, { index: 0, text: "Setup" }
+            `notes/${note.noteId}/references`,
+            { kind: "heading", index: 0, title: "Setup" }
         );
         expect(addLink).toHaveBeenCalledExactlyOnceWith(`${path}?block=SetupId`, null);
     });
@@ -1374,12 +1386,10 @@ describe("EditLinkDialog", () => {
         expect(addLink).toHaveBeenLastCalledWith(`${path}?block=L`, null);
 
         noteReferences.set(note.noteId, {
-            headings: [
-                { level: 2, text: "Setup" }, { level: 3, text: "Linux", blockId: "L" },
-                { level: 2, text: "Usage" }
-            ],
-            anchors: [ "part" ],
-            isWritable: true
+            targets: [
+                headingTarget("Setup", 2), headingTarget("Linux", 3, "L"),
+                headingTarget("Usage", 2), anchorTarget("part")
+            ]
         });
         // The headings above the heading of the link are expanded.
         await reopen({ currentLink: { notePath: `${path}?block=L` } });
@@ -1408,13 +1418,13 @@ describe("EditLinkDialog", () => {
         expect(createHeadingReference).not.toHaveBeenCalled();
     });
 
-    it("reads the list again for another note, asking nothing of a note without text", async () => {
+    it("reads the list again for another note, asking nothing of a protected note", async () => {
         const first = buildNote({ title: "First" });
         const second = buildNote({ title: "Second" });
         const firstReferences = deferred<NoteReferencesResponse>();
         noteReferences.set(first.noteId, firstReferences.promise);
         noteReferences.set(second.noteId, {
-            headings: [ { level: 2, text: "Second heading" } ], anchors: [], isWritable: true
+            targets: [ headingTarget("Second heading", 2) ]
         });
 
         await open();
@@ -1423,7 +1433,7 @@ describe("EditLinkDialog", () => {
         await checkNoteChoice("Second heading");
         // The list of the first note, arriving late, does not replace it.
         firstReferences.resolve({
-            headings: [ { level: 2, text: "First heading" } ], anchors: [], isWritable: true
+            targets: [ headingTarget("First heading", 2) ]
         });
         await settle();
         expect(noteChoices()).toStrictEqual([ "add_link.top_of_note", "*Second heading" ]);
@@ -1433,16 +1443,7 @@ describe("EditLinkDialog", () => {
         await settle();
         expect(noteChoices()).toStrictEqual([ "*add_link.top_of_note", "First heading" ]);
 
-        // A heading without a block id is left out of a note whose content cannot change.
-        noteReferences.set(second.noteId, {
-            headings: [ { level: 2, text: "Kept", blockId: "K" }, { level: 2, text: "Left out" } ],
-            anchors: [],
-            isWritable: false
-        });
-        await pickNote(`root/${second.noteId}`);
-        expect(noteChoices()).toStrictEqual([ "*add_link.top_of_note", "Kept" ]);
-        expect(noteTargets()?.querySelector(".no-items")).toBeNull();
-
+        // The server lists nothing for a note type without targets.
         vi.mocked(server.get).mockClear();
         const code = buildNote({ title: "Code", type: "code" });
         const secret = buildNote({ title: "Secret" });
@@ -1455,7 +1456,9 @@ describe("EditLinkDialog", () => {
             expect(placeholder?.textContent).toBe("add_link.no_link_targets");
             expect(placeholder?.querySelector(".bx-bookmark")).not.toBeNull();
         }
-        expect(server.get).not.toHaveBeenCalled();
+        expect(server.get).toHaveBeenCalledExactlyOnceWith(
+            `notes/${code.noteId}/references`, undefined, false, { silentBadRequest: true }
+        );
     });
 });
 
@@ -1602,7 +1605,7 @@ describe("EditLinkBalloon", () => {
         await submit(form);
         expect(onClose).toHaveBeenCalledOnce();
 
-        const row = form.querySelector<HTMLElement>(".link-target-anchors .tn-card-choice");
+        const row = form.querySelector<HTMLElement>(".link-target-anchor .tn-card-choice");
         await act(async () => row?.click());
         await submit(form);
         expect(onClose).toHaveBeenCalledTimes(2);
@@ -1613,7 +1616,7 @@ describe("EditLinkBalloon", () => {
         const note = buildNote({ title: "Target" });
         const path = `root/${note.noteId}`;
         noteReferences.set(note.noteId, {
-            headings: [ { level: 2, text: "Setup" } ], anchors: [], isWritable: true
+            targets: [ headingTarget("Setup", 2) ]
         });
 
         async function showOnHeading() {
@@ -1629,7 +1632,7 @@ describe("EditLinkBalloon", () => {
         }
 
         const form = await showOnHeading();
-        const created = deferred<HeadingReferenceResponse>();
+        const created = deferred<CreateReferenceResponse>();
         createHeadingReference.mockReturnValueOnce(created.promise);
         await submit(form);
         expect(onClose).not.toHaveBeenCalled();
@@ -1637,19 +1640,19 @@ describe("EditLinkBalloon", () => {
             .toBe(true);
         await submit(form);
         expect(createHeadingReference).toHaveBeenCalledOnce();
-        created.resolve({ blockId: "NewId" });
+        created.resolve({ params: { block: "NewId" } });
         await settle();
         expect(onClose).toHaveBeenCalledOnce();
         expect(addLink).toHaveBeenCalledExactlyOnceWith(`${path}?block=NewId`, null);
 
         const closed = await showOnHeading();
-        const late = deferred<HeadingReferenceResponse>();
+        const late = deferred<CreateReferenceResponse>();
         createHeadingReference.mockReturnValueOnce(late.promise);
         await submit(closed);
         const container = closed.parentElement;
         if (!container) throw new Error("The balloon is not rendered.");
         await act(async () => render(null, container));
-        late.resolve({ blockId: "Late" });
+        late.resolve({ params: { block: "Late" } });
         await settle();
         expect(onClose).toHaveBeenCalledOnce();
         expect(addLink).toHaveBeenCalledOnce();
@@ -1682,10 +1685,11 @@ describe("EditLinkBalloon", () => {
 
 function createHeading(title: string, level: number) {
     return {
+        kind: "heading",
         title,
         level,
         createLinkPath: vi.fn(() => `root/note?block=${title}`)
-    } satisfies LinkHeading;
+    } satisfies LinkTarget;
 }
 
 async function type(input: HTMLInputElement | HTMLTextAreaElement | null, value: string) {

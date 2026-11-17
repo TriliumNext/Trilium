@@ -11,7 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 
 import linkContextMenu from "../../../menus/link_context_menu.js";
 import imageService from "../../../services/image.js";
 import linkService from "../../../services/link.js";
-import type { LinkTargets } from "../../../services/link_targets.js";
+import type { LinkTarget } from "../../../services/link_targets.js";
 import {
     detectCodeLanguage, ensureMimeTypesForHighlighting
 } from "../../../services/syntax_highlight.js";
@@ -1052,7 +1052,7 @@ describe("CK config - mention feed", () => {
         const config = await buildDynamicConfig({ getNoteId: () => noteId });
         const editor = { model: { name: "model" } };
         config.mention?.hostedFeeds?.[0]?.list(editor);
-        const getOwnLinkTargets: (notePath: string) => LinkTargets | undefined =
+        const getOwnLinkTargets: (notePath: string) => LinkTarget[] | undefined =
             createNoteMentionList.mock.lastCall?.[0].getOwnLinkTargets;
 
         // The server reads the headings and anchors of any other note.
@@ -1066,12 +1066,15 @@ describe("CK config - mention feed", () => {
         const targets = getOwnLinkTargets("root/parent/noteAbc");
         expect(editorTargets.getHeadings).toHaveBeenCalledExactlyOnceWith(editor);
         expect(editorTargets.getAnchorNames).toHaveBeenCalledExactlyOnceWith(editor);
-        expect(targets?.anchors).toStrictEqual([ "top" ]);
-        expect(targets?.headings).toMatchObject([ { title: "Intro", level: 2 } ]);
+        expect(targets).toMatchObject([
+            { kind: "heading", title: "Intro", level: 2 },
+            { kind: "anchor", title: "top", params: { bookmark: "top" } }
+        ]);
+        expect(targets?.[1]?.createLinkPath()).toBe("root/parent/noteAbc?bookmark=top");
         // The editor gives the heading its block id, so the server is never asked for one.
-        expect(targets?.headings[0]?.createReference).toBeUndefined();
+        expect(targets?.[0]?.createReference).toBeUndefined();
         expect(editorTargets.assignBlockId).not.toHaveBeenCalled();
-        expect(targets?.headings[0]?.createLinkPath()).toBe("root/parent/noteAbc?block=a%20b");
+        expect(targets?.[0]?.createLinkPath()).toBe("root/parent/noteAbc?block=a%20b");
         expect(editorTargets.assignBlockId)
             .toHaveBeenCalledExactlyOnceWith(editor.model, heading.element);
 
