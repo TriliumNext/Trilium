@@ -1307,7 +1307,8 @@
     "copy_url": "Копировать адрес (URL)",
     "display_as": "Отображать как",
     "edit": "Редактировать...",
-    "include_size_default": "По умолчанию"
+    "include_size_default": "По умолчанию",
+    "tab_width": "Ширина табуляции"
   },
   "image_context_menu": {
     "copy_image_to_clipboard": "Копировать изображение в буфер обмена",
