@@ -20,6 +20,7 @@ export const PROVIDER_ICONS: Record<string, string> = {
     "exa": "tn-brand tn-brand-exa",
     "google": "tn-brand tn-brand-gemini",
     "lmstudio": "tn-brand tn-brand-lmstudio",
+    "mistral": "tn-brand tn-brand-mistral",
     "ollama": "tn-brand tn-brand-ollama",
     "openai": "tn-brand tn-brand-openai",
     "openai-compatible": "bx bx-bot",

@@ -138,6 +138,7 @@ export const PROVIDER_TYPES: ProviderType[] = [
     // Also reachable through the custom endpoint card, but carded so its models are priced and
     // described from OpenRouter's own listing.
     { id: "openrouter", name: "OpenRouter", group: "cloud", defaultBaseUrl: "https://openrouter.ai/api/v1", icon: PROVIDER_ICONS.openrouter },
+    { id: "mistral", name: "Mistral", group: "cloud", defaultBaseUrl: "https://api.mistral.ai/v1", icon: PROVIDER_ICONS.mistral },
     // Uses the Claude Agent SDK on the server; auth belongs to Claude Code (`claude /login`),
     // and usage is covered by the subscription rather than charged per token.
     { id: "claude-agent", name: "Claude Code", group: "subscription", defaultBaseUrl: "", icon: PROVIDER_ICONS["claude-agent"], connectionDescription: t("llm.claude_agent_description"), apiKey: "none", baseUrl: "none", needsHostProcess: true },
