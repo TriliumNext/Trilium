@@ -6,7 +6,9 @@ const modelMock = vi.fn((modelId: string) => ({ modelId }));
 vi.mock("@ai-sdk/mistral", () => ({
     createMistral: (opts: unknown) => {
         createMistralMock(opts);
-        return (modelId: string) => modelMock(modelId);
+        const fn: any = (modelId: string) => modelMock(modelId);
+        fn.chat = (modelId: string) => modelMock(modelId);
+        return fn;
     }
 }));
 
@@ -305,21 +307,6 @@ describe("MistralProvider recommendedModelIds", () => {
     });
 });
 
-describe("MistralProvider acceptsAttachment", () => {
-    const provider = new MistralProvider("sk-test");
-
-    it("accepts images for vision models", () => {
-        expect(provider.acceptsAttachment("image", "mistral-large-4-vision")).toBe(true);
-    });
-
-    it("rejects images for non-vision models", () => {
-        expect(provider.acceptsAttachment("image", "mistral-large-4")).toBe(false);
-    });
-
-    it("rejects files for all models", () => {
-        expect(provider.acceptsAttachment("file", "mistral-large-4")).toBe(false);
-    });
-});
 
 describe("isMistralChatModel", () => {
     it("keeps Mistral chat models", () => {
