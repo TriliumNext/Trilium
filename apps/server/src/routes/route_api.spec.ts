@@ -418,10 +418,25 @@ describe("internalRoute without a result handler", () => {
         expect(res.body).toEqual({ message: "boom" });
     });
 
-    it("keeps the status of a rejected HttpError", async () => {
+    it("keeps the status of a rejected HttpError, and logs it as one line instead of an error", async () => {
+        const info = vi.spyOn(getLog(), "info");
+        const error = vi.spyOn(getLog(), "error");
+
         const res = await request(app).get("/no-handler/reject-http").timeout(2000).expect(404);
 
         expect(res.body).toEqual({ message: "missing" });
+        expect(error).not.toHaveBeenCalled();
+        expect(info).toHaveBeenCalledExactlyOnceWith("get /no-handler/reject-http rejected with 404: 'missing'");
+        vi.restoreAllMocks();
+    });
+
+    it("still logs a failure that is not the client's as an error", async () => {
+        const error = vi.spyOn(getLog(), "error");
+
+        await request(app).get("/no-handler/reject").timeout(2000).expect(500);
+
+        expect(error).toHaveBeenCalledExactlyOnceWith(expect.stringMatching(/^get \/no-handler\/reject threw exception: 'boom', stack: Error: boom/));
+        vi.restoreAllMocks();
     });
 });
 

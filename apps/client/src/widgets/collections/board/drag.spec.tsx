@@ -11,7 +11,7 @@ import Component from "../../../components/component";
 import branches from "../../../services/branches";
 import server from "../../../services/server";
 import { buildNote } from "../../../test/easy-froca";
-import { TREE_CLIPBOARD_TYPE } from "../../react/hooks";
+import { TREE_CLIPBOARD_TYPE } from "../../react/hooks/drag";
 import { ParentComponent } from "../../react/react_utils";
 import BoardView, { BoardViewData, loadBoardEditing } from ".";
 import { placeCard, settleCards } from "./column";

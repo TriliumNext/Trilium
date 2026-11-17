@@ -13,14 +13,17 @@ import {
 import { TextEditorFindTarget } from "../../find_in_text";
 import { SaveStatusBadge } from "../../layout/NoteBadges";
 import MergedFind from "../../merged_find";
-import { useLegacyComponentElement, useNoteContext, useTriliumEvent } from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useNoteContext } from "../../react/hooks/note_context";
+import { useLegacyComponentElement } from "../../react/hooks/legacy";
 import { registerEmbedFindTarget } from "./content_embed_tools";
 import EditableText, { getBlockData } from "./EditableText";
 import {
     EmbedEditorShownContext, findTextEditorIn, NestedEmbedContext, useEmbedBadgeSlot,
-    useEmbedCaretNavigation
+    useEmbedCaretNavigation, useTextNoteVimMode
 } from "./editable_embed";
 import { getClosingSave, trackClosingSave } from "./TextEmbed";
+import { HostVimModeContext } from "./vim_mode";
 
 interface TextEmbedEditorProps {
     note: FNote;
@@ -60,6 +63,7 @@ export default function TextEmbedEditor({
     useEmbedCaretNavigation(() => (
         findTextEditorIn(rootRef.current)?.plugins.get("ContentEmbedCaret")
     ));
+    const hostVimMode = useTextNoteVimMode(rootRef);
 
     // A layout cleanup runs while the editor is still mounted, so it saves what is left.
     useLayoutEffect(() => () => {
@@ -76,12 +80,14 @@ export default function TextEmbedEditor({
     return (
         <EmbeddedNoteScope component={component} noteContext={noteContext}>
             <NestedEmbedContext.Provider value={true}>
-                <ScopedEditor
-                    rootRef={rootRef}
-                    note={note}
-                    block={block}
-                    onBlockChange={onBlockChange}
-                />
+                <HostVimModeContext.Provider value={hostVimMode}>
+                    <ScopedEditor
+                        rootRef={rootRef}
+                        note={note}
+                        block={block}
+                        onBlockChange={onBlockChange}
+                    />
+                </HostVimModeContext.Provider>
             </NestedEmbedContext.Provider>
         </EmbeddedNoteScope>
     );

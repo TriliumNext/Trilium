@@ -1,16 +1,24 @@
 import type { EditorConfig, InlineEmbedSource } from "@triliumnext/ckeditor5";
 import { getEmbedContentInfo } from "../../../services/content_renderer.js";
 import froca from "../../../services/froca.js";
-import { DISPLAYABLE_LOCALE_IDS, IMAGE_MIMES, LOCALES, SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
+import type { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
+import { LOCALES } from "@triliumnext/commons/src/lib/i18n.js";
+import { IMAGE_MIMES } from "@triliumnext/commons/src/lib/image_mimes.js";
+import { MIME_TYPE_AUTO } from "@triliumnext/commons/src/lib/mime_type.js";
+import { SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons/src/lib/shared_constants.js";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import linkContextMenu from "../../../menus/link_context_menu.js";
 import imageService from "../../../services/image.js";
 import linkService from "../../../services/link.js";
-import { ensureMimeTypesForHighlighting } from "../../../services/syntax_highlight.js";
+import {
+    detectCodeLanguage, ensureMimeTypesForHighlighting
+} from "../../../services/syntax_highlight.js";
 import type { EditLinkOpts } from "../../dialogs/edit_link.js";
 import { FLOATING_LAYER_SELECTOR } from "../../react/floating_layers.js";
-import { buildConfig, type BuildEditorOptions, OPEN_SOURCE_LICENSE_KEY } from "./config.js";
+import {
+    buildConfig, type BuildEditorOptions, type ContentEmbedHandlers, OPEN_SOURCE_LICENSE_KEY
+} from "./config.js";
 
 // Mutable option values, reset before each test (see `beforeEach`).
 const optionsState = vi.hoisted(() => ({
@@ -20,12 +28,14 @@ const optionsState = vi.hoisted(() => ({
 // Toggles whether the editor advertises raw-image clipboard support.
 const imageState = vi.hoisted(() => ({ copySupported: false }));
 
-// The app catalog, as far as the config is concerned: `bundle` is the `translation` namespace the
-// editor messages are read back from, and `t` resolves a key against `entries`. Unknown keys echo
+// The app catalog, as far as the config is concerned: `bundle` is the English `translation`
+// namespace the editor messages are read back from, which i18next holds only while the app is in
+// English (`language`) and the server serves otherwise, and `t` resolves a key against `entries`. Unknown keys echo
 // back the way i18next does for a missing entry, which keeps every lookup visible in the assertions
 // rather than resolving to `undefined` against an uninitialized i18n.
 const catalogState = vi.hoisted(() => ({
     bundle: undefined as Record<string, unknown> | undefined,
+    language: "en",
     entries: {} as Record<string, string>
 }));
 vi.mock("../../../services/i18n.js", () => ({
@@ -40,12 +50,18 @@ vi.mock("i18next", () => ({
         // i18next binds `getResourceBundle` in `init()`, so it is absent until the app has booted —
         // the case for a test that builds a config without one.
         get getResourceBundle() {
-            return catalogState.bundle && (() => catalogState.bundle);
-        }
+            return catalogState.bundle && ((lng: string) => (lng === catalogState.language ? catalogState.bundle : undefined));
+        },
+        // `services/dayjs` follows the language from here.
+        on: () => {}
     }
 }));
 
 const experimentalState = vi.hoisted(() => ({ enabled: new Set<string>() }));
+vi.mock("../../../services/catalogue_requests.js", () => ({
+    takeCatalogue: async (lng: string, ns: string) => (lng === "en" && ns === "translation" ? catalogState.bundle : {})
+}));
+
 vi.mock("../../../services/experimental_features.js", () => ({
     isExperimentalFeatureEnabled: (id: string) => experimentalState.enabled.has(id)
 }));
@@ -160,7 +176,7 @@ interface DynamicConfig {
     };
     math: { enableMathField: boolean; lazyLoad(): Promise<void> };
     contentEmbed: { inlineLanguages: string[] };
-    syntaxHighlighting: { loadHighlightJs(): Promise<{ default: unknown }> };
+    syntaxHighlighting: { loadHighlightJs(mimeType: string): Promise<{ default: unknown }> };
     mention?: {
         feeds: unknown[];
         hostedFeeds?: { marker: string; minimumCharacters?: number; allowSpaces?: boolean; list(): unknown }[];
@@ -177,6 +193,7 @@ beforeEach(() => {
     experimentalState.enabled.clear();
     imageState.copySupported = false;
     catalogState.bundle = undefined;
+    catalogState.language = "en";
     catalogState.entries = {};
     window.glob.isDev = false;
 });
@@ -250,6 +267,7 @@ describe("CK config", () => {
 
     it("turns the English editor catalog into the dictionary the editor resolves messages through", async () => {
         catalogState.bundle = { "text-editor": { ck: { "insert-a-table": "Insert a table." } } };
+        catalogState.language = "de";
         catalogState.entries["text-editor.ck.insert-a-table"] = "Tabelle einfügen";
 
         const config = await buildConfig(baseOpts({ uiLanguage: "de" }));
@@ -934,9 +952,12 @@ describe("CK config - lazy loaders", () => {
         await config.math.lazyLoad();
         expect((window as unknown as { katex: unknown }).katex).toEqual({ name: "katex-stub" });
 
-        const hljs = await config.syntaxHighlighting.loadHighlightJs();
+        // The language of the code block, or every language for one that is auto-detected.
+        const hljs = await config.syntaxHighlighting.loadHighlightJs("text-css");
         expect(hljs.default).toEqual({ name: "hljs-stub" });
-        expect(ensureMimeTypesForHighlighting).toHaveBeenCalled();
+        expect(ensureMimeTypesForHighlighting).toHaveBeenLastCalledWith("text-css");
+        await config.syntaxHighlighting.loadHighlightJs(MIME_TYPE_AUTO);
+        expect(ensureMimeTypesForHighlighting).toHaveBeenLastCalledWith(undefined);
     });
 });
 
@@ -946,14 +967,33 @@ describe("CK config - inline embeds", () => {
         expect(config.contentEmbed.inlineLanguages).toEqual([ "mermaid" ]);
     });
 
-    it("offers the slash command of extended code blocks while their feature is on", async () => {
-        const getRemoved = async () =>
-            (await buildConfig(baseOpts())).slashCommand?.removeCommands ?? [];
+    it("makes the code blocks extended ones where the host renders embeds", async () => {
+        const handlers = {} as ContentEmbedHandlers;
+        const build = async (hasHandlers: boolean) => {
+            const config = await buildConfig(baseOpts({
+                getContentEmbedHandlers: () => (hasHandlers ? handlers : undefined)
+            }));
+            return {
+                isExtended: config.contentEmbed?.isCodeBlockExtended,
+                languages: (config.codeBlock?.languages ?? []).map((l) => l.language),
+                detectLanguage: config.contentEmbed?.detectLanguage
+            };
+        };
 
-        expect(await getRemoved()).toContain("extended-code-block");
+        const plain = await build(true);
+        expect([ plain.isExtended, plain.languages[0] ]).toEqual([ false, MIME_TYPE_AUTO ]);
+
         experimentalState.enabled.add("extendedCodeBlocks");
-        expect(await getRemoved()).not.toContain("extended-code-block");
-        expect(await getRemoved()).toEqual([ "bulletedList", "numberedList" ]);
+        const extended = await build(true);
+        expect(extended.isExtended).toBe(true);
+        // An extended code block has a language of its own, so the list offers no detection.
+        expect(extended.languages).toEqual([ "text-plain", "text-javascript", "text-css" ]);
+        expect(extended.detectLanguage).toBe(detectCodeLanguage);
+
+        // An editor whose host renders no embeds, such as the one of a chat, keeps its code blocks.
+        const bare = await build(false);
+        expect([ bare.isExtended, bare.languages[0] ]).toEqual([ false, MIME_TYPE_AUTO ]);
+        expect((await buildConfig(baseOpts())).contentEmbed?.isCodeBlockExtended).toBe(false);
     });
 });
 

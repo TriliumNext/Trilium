@@ -8,7 +8,7 @@ import { isDefinitionName } from "../../entities/fattribute";
 import { escapeHtml } from "../../services/utils";
 import { attributeKindIcon } from "../attribute_widgets/attribute_types";
 import Dropdown, { DropdownPanel, DropdownPanelProps } from "./Dropdown";
-import { useStaticTooltip } from "./hooks";
+import { useStaticTooltip } from "./hooks/tooltip";
 import Icon from "./Icon";
 import RawHtml from "./RawHtml";
 

@@ -14,10 +14,13 @@ const setSpellCheckLanguageCode = vi.fn();
 // `useTriliumOptionBool` drives the enabled state, `useTriliumOption` drives the language codes; both
 // return the value plus a setter spy so we can assert the persisted option is written. Partial-mock so
 // other hooks used by sibling components (e.g. `useUniqueName` in OptionCardSection) keep their real impl.
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useTriliumOptionBool: vi.fn(() => [true, setSpellCheckEnabled]),
-    useTriliumOption: vi.fn(() => ["en-US", setSpellCheckLanguageCode]),
+    useTriliumOption: vi.fn(() => ["en-US", setSpellCheckLanguageCode])
+}));
+vi.mock("../../react/hooks/note_context", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/note_context")>()),
     useNoteContext: vi.fn(() => ({ note: undefined }))
 }));
 

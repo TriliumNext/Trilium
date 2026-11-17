@@ -21,7 +21,7 @@ import { SplitButton } from "../react/Button";
 import { Card, CardSection } from "../react/Card";
 import Dropdown from "../react/Dropdown";
 import { FormListItem } from "../react/FormList";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import Icon from "../react/Icon";
 import { ParentComponent } from "../react/react_utils";
 import { SEARCH_OPTIONS, SearchOption } from "./SearchDefinitionOptions";

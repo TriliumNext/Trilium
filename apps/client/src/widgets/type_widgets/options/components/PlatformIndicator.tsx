@@ -3,7 +3,7 @@ import "./PlatformIndicator.css";
 import { useRef } from "preact/hooks";
 
 import { t } from "../../../../services/i18n";
-import { useStaticTooltip } from "../../../react/hooks";
+import { useStaticTooltip } from "../../../react/hooks/tooltip";
 import Icon from "../../../react/Icon";
 
 interface PlatformIndicatorProps {

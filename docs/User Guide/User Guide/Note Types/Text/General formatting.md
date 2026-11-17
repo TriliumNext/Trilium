@@ -63,7 +63,7 @@ For mathematical formulas, prefer the <a class="reference-link" href="Math%20Eq
 
 <figure class="image image-style-align-right"><img style="aspect-ratio:167/204;" src="1_General formatting_image.png" width="167" height="204"></figure>
 
-Selected text can be colored with one of the predefined colors from a palette or any color can be selected using the color picker (<span class="tn-icon cke cke-color-palette"></span>).
+Selected text can be colored with one of the predefined colors from a palette or any color can be selected using the color picker (<span class="tn-icon cke cke-color-palette"></span>). A selected link preview can be colored the same way (see <a class="reference-link" href="Link%20Previews.md">Link Previews</a>).
 
 Once there is at least one color defined in the document, it will appear in the list for easy reuse.
 

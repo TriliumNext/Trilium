@@ -5,7 +5,7 @@ import type { ComponentChildren, RefObject } from "preact";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import FormTextBox from "./FormTextBox";
-import { useUniqueName } from "./hooks";
+import { useUniqueName } from "./hooks/dom";
 import Popup, { type PopupProps } from "./Popup";
 
 /** Marks the dropdown, which is portalled to the body: popups checking for outside clicks must ignore it. */

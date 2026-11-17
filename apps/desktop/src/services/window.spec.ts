@@ -49,6 +49,7 @@ interface FakeSession {
 }
 
 class FakeWebContents {
+    public id = 101;
     public send = vi.fn();
     public on = vi.fn((event: string, cb: Handler) => {
         const list = this.listeners.get(event) ?? [];
@@ -219,7 +220,8 @@ vi.mock("electron", () => ({
 
 // Window state persistence has its own suite (window_state.spec.ts).
 vi.mock("./window_state", () => ({
-    createWindowStateKeeper: () => ({ x: 0, y: 0, width: 1200, height: 800, manage: state.windowStateManage })
+    createWindowStateKeeper: () => ({ x: 0, y: 0, width: 1200, height: 800, manage: state.windowStateManage }),
+    keepInsideWorkArea: vi.fn()
 }));
 
 // setupWindowing() installs the WebContents security policy; that behaviour has
@@ -230,6 +232,8 @@ vi.mock("./web_contents_security", () => ({ setupWebContentsSecurity: vi.fn() })
 // Startup timing has its own suite (startup_metrics.spec.ts); here we only
 // verify that window creation marks the right milestones.
 vi.mock("./startup_metrics", () => ({ markStartupMetric: vi.fn() }));
+const firstPaintGate = vi.hoisted(() => ({ armFirstPaintGate: vi.fn(), releaseFirstPaint: vi.fn() }));
+vi.mock("./first_paint_gate", () => firstPaintGate);
 
 // The real value is an import-time constant derived from the OS running the tests;
 // route it through mutable state so Windows 10 and 11 scenarios are both testable.
@@ -261,6 +265,7 @@ vi.mock("@triliumnext/core", async (importOriginal) => {
         },
         sql_init: { ...actual.sql_init, dbReady: Promise.resolve() },
         isSetupRequested: () => state.isSetupRequested,
+        isNextBasedTheme: (theme: string) => [ "next", "next-light", "next-dark", "custom-on-next" ].includes(theme),
         keyboard_actions: { ...actual.keyboard_actions, getKeyboardActions: () => state.keyboardActions },
         cls: { ...actual.cls, wrap: (fn: Handler) => fn },
         events: {
@@ -343,6 +348,10 @@ describe("window service", () => {
             const win = state.windows[state.windows.length - 1];
             expect(win.setMenuBarVisibility).toHaveBeenCalledWith(false);
             expect(win.loadURL).toHaveBeenCalledWith("trilium-app://app/");
+            // The first paint is held from the first request of the page on.
+            expect(firstPaintGate.armFirstPaintGate).toHaveBeenCalledWith(win.webContents);
+            expect(firstPaintGate.armFirstPaintGate.mock.invocationCallOrder[0])
+                .toBeLessThan(win.loadURL.mock.invocationCallOrder[0]);
             // closed handler nulls out mainWindow
             win.fire("closed");
             expect(windowService.getMainWindow()).toBeNull();
@@ -356,24 +365,41 @@ describe("window service", () => {
             expect(state.windows.length).toBeGreaterThan(0);
         });
 
-        it("applies macOS hidden-inset title bar + vibrancy effects", async () => {
+        it("applies macOS hidden-inset title bar + the vibrancy of the theme and layout", async () => {
             state.isMac = true;
             state.optionBools = { backgroundEffects: true, spellCheckEnabled: true };
-            await windowService.createMainWindow();
-            const opts = state.windows[state.windows.length - 1].opts as Record<string, unknown>;
+            const createdOpts = async (theme: string, layoutOrientation: string) => {
+                state.options = { theme, layoutOrientation };
+                await windowService.createMainWindow();
+                return state.windows[state.windows.length - 1].opts as Record<string, unknown>;
+            };
+
+            const opts = await createdOpts("next", "vertical");
             expect(opts.titleBarStyle).toBe("hiddenInset");
             expect(opts.transparent).toBe(true);
             expect(opts.visualEffectState).toBe("active");
+            expect(opts.vibrancy).toBe("under-window");
+            expect((await createdOpts("next-dark", "horizontal")).vibrancy).toBe("hud");
+            // A theme without the Next stylesheets paints an opaque background.
+            expect((await createdOpts("dark", "vertical")).vibrancy).toBeUndefined();
         });
 
-        it("applies Windows hidden title bar + mica material", async () => {
+        it("applies Windows hidden title bar + the material of the theme and layout", async () => {
             state.isWindows = true;
             state.supportsBackgroundMaterial = true;
             state.optionBools = { backgroundEffects: true };
-            await windowService.createMainWindow();
-            const opts = state.windows[state.windows.length - 1].opts as Record<string, unknown>;
+            const createdOpts = async (theme: string, layoutOrientation: string) => {
+                state.options = { theme, layoutOrientation };
+                await windowService.createMainWindow();
+                return state.windows[state.windows.length - 1].opts as Record<string, unknown>;
+            };
+
+            const opts = await createdOpts("next", "vertical");
             expect(opts.titleBarStyle).toBe("hidden");
-            expect(opts.backgroundMaterial).toBe("auto");
+            expect(opts.backgroundMaterial).toBe("mica");
+            expect((await createdOpts("next-light", "horizontal")).backgroundMaterial).toBe("tabbed");
+            expect((await createdOpts("custom-on-next", "vertical")).backgroundMaterial).toBe("mica");
+            expect((await createdOpts("light", "horizontal")).backgroundMaterial).toBe("auto");
         });
 
         it("omits the window material on Windows builds without backdrop support (Win10 / Win11 21H2)", async () => {
@@ -430,10 +456,43 @@ describe("window service", () => {
             hiddenWindow.fire("show");
             expect(state.windowStateManage).toHaveBeenCalledOnce();
 
+            hiddenWindow.fire("ready-to-show");
+            expect(hiddenWindow.show).toHaveBeenCalledOnce();
+        });
+
+        it("shows the main window on its first frame, so it never appears blank", async () => {
             await windowService.createMainWindow();
-            const visibleWindow = state.windows[state.windows.length - 1];
-            expect((visibleWindow.opts as Record<string, unknown>).show).toBe(true);
-            expect(state.windowStateManage).toHaveBeenLastCalledWith(visibleWindow);
+            const win = state.windows[state.windows.length - 1];
+            win.isVisible.mockReturnValue(false);
+            expect((win.opts as Record<string, unknown>).show).toBe(false);
+            expect(win.show).not.toHaveBeenCalled();
+            expect(state.windowStateManage).not.toHaveBeenCalled();
+
+            win.fire("ready-to-show");
+            expect(win.show).toHaveBeenCalledOnce();
+            expect(state.windowStateManage).toHaveBeenCalledWith(win);
+            expect(state.windowStateManage.mock.invocationCallOrder[0])
+                .toBeLessThan(win.show.mock.invocationCallOrder[0]);
+        });
+
+        it("shows the main window after a timeout when the renderer never paints", async () => {
+            vi.useFakeTimers();
+            try {
+                await windowService.createMainWindow();
+                const win = state.windows[state.windows.length - 1];
+                win.isVisible.mockReturnValue(false);
+
+                vi.advanceTimersByTime(2999);
+                expect(win.show).not.toHaveBeenCalled();
+                vi.advanceTimersByTime(1);
+                expect(win.show).toHaveBeenCalledOnce();
+
+                win.isVisible.mockReturnValue(true);
+                win.fire("ready-to-show");
+                expect(win.show).toHaveBeenCalledOnce();
+            } finally {
+                vi.useRealTimers();
+            }
         });
 
         it("uses the show event as a one-time fallback", async () => {
@@ -480,6 +539,35 @@ describe("window service", () => {
             expect(win.webContents.session.setSpellCheckerLanguages).toHaveBeenCalled();
         });
 
+        it("holds an extra window hidden until its first paint, which the gate holds from its first request on", async () => {
+            await windowService.createExtraWindow("");
+            const win = state.windows[state.windows.length - 1];
+            expect((win.opts as Record<string, unknown>).show).toBe(false);
+            expect(firstPaintGate.armFirstPaintGate).toHaveBeenCalledWith(win.webContents);
+            expect(firstPaintGate.armFirstPaintGate.mock.invocationCallOrder[0])
+                .toBeLessThan(win.loadURL.mock.invocationCallOrder[0]);
+
+            win.isVisible.mockReturnValue(false);
+            expect(win.show).not.toHaveBeenCalled();
+            win.fire("ready-to-show");
+            expect(win.show).toHaveBeenCalledTimes(1);
+        });
+
+        it("shows an extra window whose renderer never paints after a while", async () => {
+            vi.useFakeTimers();
+            try {
+                await windowService.createExtraWindow("");
+                const win = state.windows[state.windows.length - 1];
+                win.isVisible.mockReturnValue(false);
+                vi.advanceTimersByTime(2999);
+                expect(win.show).not.toHaveBeenCalled();
+                vi.advanceTimersByTime(1);
+                expect(win.show).toHaveBeenCalledTimes(1);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
         it("adopts a window the renderer opened through window.open", async () => {
             state.optionBools = { spellCheckEnabled: false };
             await windowService.createExtraWindow("#opener");
@@ -490,6 +578,11 @@ describe("window service", () => {
 
             expect(child.setMenuBarVisibility).toHaveBeenCalledWith(false);
             expect(child.webContents.session.setSpellCheckerEnabled).toHaveBeenCalledWith(false);
+            // Hidden by the window-open policy's `show: false`, it is shown on its first paint.
+            expect(firstPaintGate.armFirstPaintGate).toHaveBeenCalledWith(child.webContents);
+            child.isVisible.mockReturnValue(false);
+            child.fire("ready-to-show");
+            expect(child.show).toHaveBeenCalledTimes(1);
             state.ipcEmit.mockClear();
             child.fire("focus");
             expect(state.ipcEmit).toHaveBeenCalledWith("reload-tray");
@@ -1030,17 +1123,13 @@ describe("window service", () => {
             }
         });
 
-        it("title bar / material / vibrancy / button position setters", () => {
+        it("title bar / button position setters", () => {
             const win = state.windows[state.windows.length - 1];
             fireOn("set-title-bar-overlay", makeEvent(), { color: "#fff", symbolColor: "#000" });
             fireOn("set-window-button-position", makeEvent(), { x: 1, y: 2 });
-            fireOn("set-background-material", makeEvent(), "mica");
-            fireOn("set-vibrancy", makeEvent(), "sidebar");
             fireOn("clear-navigation-history", makeEvent());
             expect(win.setTitleBarOverlay).toHaveBeenCalled();
             expect(win.setWindowButtonPosition).toHaveBeenCalled();
-            expect(win.setBackgroundMaterial).toHaveBeenCalledWith("mica");
-            expect(win.setVibrancy).toHaveBeenCalledWith("sidebar");
             expect(win.webContents.navigationHistory.clear).toHaveBeenCalled();
         });
 
@@ -1048,10 +1137,13 @@ describe("window service", () => {
             state.fromWebContentsResult = "null";
             fireOn("set-title-bar-overlay", makeEvent(), { color: "#fff", symbolColor: "#000" });
             fireOn("set-window-button-position", makeEvent(), { x: 1, y: 2 });
-            fireOn("set-background-material", makeEvent(), "mica");
-            fireOn("set-vibrancy", makeEvent(), "sidebar");
             fireOn("clear-navigation-history", makeEvent());
             // no throw
+        });
+
+        it("release-first-paint releases the gate of the sender", () => {
+            fireOn("release-first-paint", makeEvent());
+            expect(firstPaintGate.releaseFirstPaint).toHaveBeenCalledWith(101);
         });
 
         it("set-native-theme-source updates the theme", () => {
@@ -1268,6 +1360,63 @@ describe("window service", () => {
             await cb();
             spy.mockRestore();
             expect(state.log.error).toHaveBeenCalledWith(expect.stringContaining("Failed to swap"));
+        });
+    });
+
+    describe("background material", () => {
+        beforeEach(() => {
+            state.eventSubs.clear();
+            setupWindowing();
+        });
+
+        /** Saves an option the way `BOption` reports it, through the `ENTITY_CHANGED` subscriber. */
+        function changeOption(name: string, value: string) {
+            state.options[name] = value;
+            const cb = state.eventSubs.get("ENTITY_CHANGED");
+            if (!cb) throw new Error("no ENTITY_CHANGED subscriber");
+            cb({ entityName: "options", entity: { name, value } });
+        }
+
+        it("follows the theme and layout on Windows, only in windows created with effects", async () => {
+            state.isWindows = true;
+            state.supportsBackgroundMaterial = true;
+            state.options = { theme: "next", layoutOrientation: "vertical" };
+            state.optionBools = { backgroundEffects: true };
+            await windowService.createMainWindow();
+            const win = state.windows[state.windows.length - 1];
+            state.optionBools = { nativeTitleBarVisible: true };
+            await windowService.createExtraWindow("");
+            const plainWin = state.windows[state.windows.length - 1];
+
+            changeOption("layoutOrientation", "horizontal");
+            expect(win.setBackgroundMaterial).toHaveBeenLastCalledWith("tabbed");
+            changeOption("theme", "dark");
+            expect(win.setBackgroundMaterial).toHaveBeenLastCalledWith("auto");
+            changeOption("theme", "next-light");
+            expect(win.setBackgroundMaterial).toHaveBeenLastCalledWith("tabbed");
+            expect(plainWin.setBackgroundMaterial).not.toHaveBeenCalled();
+
+            // Other options and other entities leave the material alone, as does a closed window.
+            win.setBackgroundMaterial.mockClear();
+            changeOption("zoomFactor", "1.2");
+            state.eventSubs.get("ENTITY_CHANGED")?.({ entityName: "notes", entity: { name: "theme" } });
+            win.fire("closed");
+            changeOption("theme", "next");
+            expect(win.setBackgroundMaterial).not.toHaveBeenCalled();
+        });
+
+        it("follows the theme and layout on macOS through the vibrancy", async () => {
+            state.isMac = true;
+            state.options = { theme: "next", layoutOrientation: "vertical" };
+            state.optionBools = { backgroundEffects: true };
+            await windowService.createMainWindow();
+            const win = state.windows[state.windows.length - 1];
+
+            changeOption("layoutOrientation", "horizontal");
+            expect(win.setVibrancy).toHaveBeenLastCalledWith("hud");
+            changeOption("theme", "light");
+            expect(win.setVibrancy).toHaveBeenLastCalledWith(null);
+            expect(win.setBackgroundMaterial).not.toHaveBeenCalled();
         });
     });
 

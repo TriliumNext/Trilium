@@ -4,7 +4,7 @@ import {
     COLOR_SCHEME_ICONS, ColorScheme, getNextColorSchemeTheme, resolveColorScheme
 } from "../../services/color_scheme";
 import { t } from "../../services/i18n";
-import { useTriliumOption } from "../react/hooks";
+import { useTriliumOption } from "../react/hooks/options";
 import { LaunchBarActionButton, LauncherNoteProps } from "./launch_bar_widgets";
 
 export default function ColorSchemeSwitcher({ launcherNote }: LauncherNoteProps) {

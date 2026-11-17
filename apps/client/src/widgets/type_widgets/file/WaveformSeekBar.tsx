@@ -4,7 +4,7 @@ import { RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
-import { useTriliumEvent } from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
 import { resolveCssColor } from "./css_color";
 import { formatRemainingTime, formatTime } from "./MediaPlayer";
 

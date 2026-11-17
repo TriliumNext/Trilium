@@ -1,7 +1,6 @@
-import {
-    buildNoteTypeId, buildTemplateId, getCodeLanguageIcon, type NoteType, type NoteTypeId,
-    type TemplatesResponse
-} from "@triliumnext/commons";
+import type { NoteType, NoteTypeId, TemplatesResponse } from "@triliumnext/commons";
+import { buildNoteTypeId, buildTemplateId } from "@triliumnext/commons/src/lib/note_type_ids.js";
+import { getCodeLanguageIcon } from "@triliumnext/commons/src/lib/notes.js";
 
 import appContext from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";

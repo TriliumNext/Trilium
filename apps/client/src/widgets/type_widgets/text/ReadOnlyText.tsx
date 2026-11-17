@@ -1,8 +1,7 @@
 import "./ReadOnlyText.css";
-// we load CKEditor also for read only notes because they contain content styles required for correct rendering of even read only notes
-// we could load just ckeditor-content.css but that causes CSS conflicts when both build CSS and this content CSS is loaded at the same time
-// (see https://github.com/zadam/trilium/issues/1590 for example of such conflict)
-import "@triliumnext/ckeditor5";
+// The editor's own stylesheets rather than the separately built ckeditor-content.css, which
+// conflicts with them when both load (https://github.com/zadam/trilium/issues/1590).
+import "@triliumnext/ckeditor5/src/styles.js";
 
 import {
     applyCollapsedHeadings
@@ -27,15 +26,16 @@ import { consumeBookmark } from "../../../services/bookmark_jump";
 import { t } from "../../../services/i18n";
 import { applyNoteImageVersions } from "../../../services/image_urls";
 import { applyLinkEmbeds } from "../../../services/link_embed";
-import { renderMathInElement } from "../../../services/math";
 import { trackPendingRender } from "../../../services/pending_renders";
 import { consumeSearchTerms } from "../../../services/search_jump";
 import { formatCodeBlocks } from "../../../services/syntax_highlight";
 import { isContentRightToLeft } from "../../../utils/formatters";
-import {
-    useNoteBlob, useNoteLabel, useSameNoteSwitch, useSearchTermsConsumer, useSyncedRef,
-    useTriliumEvent, useTriliumOption, useTriliumOptionBool
-} from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useSyncedRef } from "../../react/hooks/dom";
+import { useNoteBlob, useNoteLabel } from "../../react/hooks/note";
+import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
+import { useSameNoteSwitch } from "../../react/hooks/note_context";
+import { useSearchTermsConsumer } from "../../react/hooks/note_context";
 import { RawHtmlBlock } from "../../react/RawHtml";
 import { mountScrollableLabel } from "../../react/ScrollableLabel";
 import { TypeWidgetProps } from "../type_widget";
@@ -164,6 +164,7 @@ export function ReadOnlyTextContent({
             applyLinkEmbeds(container),
             applyReferenceLinks(container, noteId),
             formatCodeBlocks($(container)),
+            applyMath(container),
             // Last, so that no pass above reaches into the content of the boxes.
             loadEmbedBoxes()
         ]));
@@ -172,7 +173,6 @@ export function ReadOnlyTextContent({
         applyListItemAlignment(container);
         const disposeTableScroll = applyTableScroll(container);
         const disposeStickyTableHeaders = applyStickyTableHeaders(container);
-        applyMath(container);
         const disposeTabs = applyTabs(container, {
             placeholder: t("text-editor.ck.tab-title"),
             scrollLabels: {
@@ -245,8 +245,14 @@ function useNoteLanguage(note: FNote) {
     return { isRtl };
 }
 
-function applyMath(container: HTMLDivElement) {
+async function applyMath(container: HTMLDivElement) {
     const equations = container.querySelectorAll<HTMLElement>("span.math-tex");
+    if (equations.length === 0) {
+        return;
+    }
+
+    // KaTeX is heavy, so the math service only loads for content with formulas.
+    const { renderMathInElement } = await import("../../../services/math");
     for (const equation of equations) {
         // throwOnError: false renders invalid formulas as an inline red error (with the
         // parse message as a tooltip) instead of throwing and logging to the console.

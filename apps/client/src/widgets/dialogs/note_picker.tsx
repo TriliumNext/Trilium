@@ -5,7 +5,7 @@ import { Suggestion } from "../../services/note_autocomplete";
 import tree from "../../services/tree";
 import Button from "../react/Button";
 import FormGroup from "../react/FormGroup";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import Modal from "../react/Modal";
 import NoteAutocomplete, { type NoteAutocompleteHandle } from "../react/NoteAutocomplete";
 

@@ -20,10 +20,16 @@
 
 .layout-vertical .left-pane-toggle-button.action-collapse::before {
     rotate: 360deg;
-    animation: left-pane-toggle-button-collapse 600ms ease-in-out;
 }
 
 .layout-vertical .left-pane-toggle-button.action-expand::before {
     rotate: 180deg;
+}
+
+.layout-vertical .left-pane-toggle-button.animated.action-collapse::before {
+    animation: left-pane-toggle-button-collapse 600ms ease-in-out;
+}
+
+.layout-vertical .left-pane-toggle-button.animated.action-expand::before {
     animation: left-pane-toggle-button-expand 600ms ease-in-out;
 }

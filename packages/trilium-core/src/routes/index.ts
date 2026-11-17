@@ -44,6 +44,9 @@ import llmRoute from "./api/llm";
 
 export { type CustomRequestResponse, handleCustomRequest } from "./custom";
 
+/** The options a client reads, as `/api/options` returns them, which `/bootstrap` hands over too. */
+export const getClientOptions = optionsApiRoute.getOptions;
+
 // TODO: Deduplicate with routes.ts
 const GET = "get",
     PST = "post",
@@ -328,11 +331,14 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     asyncApiRoute(PST, "/api/database/backup-database", backupRoute.backupDatabase);
     asyncRoute(GET, "/api/database/backup/download", [checkApiAuthOrElectron], backupRoute.downloadBackup);
 
+    apiRoute(GET, "/api/other/icon-registry", otherRoute.getIconRegistry);
     apiRoute(GET, "/api/other/icon-usage", otherRoute.getIconUsage);
     apiRoute(PST, "/api/other/render-markdown", otherRoute.renderMarkdown);
     apiRoute(PST, "/api/other/to-markdown", otherRoute.toMarkdown);
 
     route(GET, "/api/fonts", [checkApiAuthOrElectron], fontsRoute.getFontCss);
+    // Unauthenticated like `/bootstrap`, which hands the same icon packs to the login screen.
+    route(GET, "/api/icon-packs.css", [], otherRoute.serveIconPackGlyphCss);
 
     asyncApiRoute(GET, "/api/similar-notes/:noteId", similarNotesRoute.getSimilarNotes);
     apiRoute(PST, "/api/relation-map", relationMapApiRoute.getRelationMap);

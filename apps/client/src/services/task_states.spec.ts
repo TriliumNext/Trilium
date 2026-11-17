@@ -1,16 +1,13 @@
 import {
-    DEFAULT_TASK_STATES,
-    DONE_STATE_ID,
-    DONE_TASK_STATE,
-    NONE_STATE_ID,
-    NONE_TASK_STATE,
+    DEFAULT_TASK_STATES, DONE_STATE_ID, DONE_TASK_STATE, NONE_STATE_ID, NONE_TASK_STATE,
     TASK_STATES_CONTAINER_ID
-} from "@triliumnext/commons";
+} from "@triliumnext/commons/src/lib/task_states.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import appContext from "../components/app_context.js";
 import { buildNote } from "../test/easy-froca.js";
 import froca from "./froca.js";
+import server from "./server.js";
 import toastService from "./toast.js";
 
 vi.mock("./i18n.js", () => ({
@@ -42,12 +39,40 @@ describe("getTaskStateDefinitions", () => {
     });
 
     it("falls back to the defaults when the container note is missing", async () => {
-        const original = froca.getNote;
-        froca.getNote = vi.fn(async () => null) as typeof froca.getNote;
+        const loadSubTree = vi.spyOn(froca, "loadSubTree").mockRejectedValue(new Error("Note '_taskStates' not found"));
         try {
             expect(await getTaskStateDefinitions()).toBe(DEFAULT_TASK_STATES);
+            expect(loadSubTree).toHaveBeenCalledWith(TASK_STATES_CONTAINER_ID);
         } finally {
-            froca.getNote = original;
+            loadSubTree.mockRestore();
+        }
+    });
+
+    it("loads the container and its states in one request when froca holds neither", async () => {
+        const row = (noteId: string, title: string) => ({ noteId, title, type: "text", mime: "text/html", isProtected: false, blobId: "" });
+        const get = vi.spyOn(server, "get").mockResolvedValue({
+            notes: [ row(TASK_STATES_CONTAINER_ID, "Task states"), row(DONE_STATE_ID, "Done"), row("one-request-state", "Waiting") ],
+            branches: [
+                { branchId: "b-done", noteId: DONE_STATE_ID, parentNoteId: TASK_STATES_CONTAINER_ID, notePosition: 10 },
+                { branchId: "b-waiting", noteId: "one-request-state", parentNoteId: TASK_STATES_CONTAINER_ID, notePosition: 20 }
+            ],
+            attributes: [
+                { attributeId: "a-waiting-id", noteId: "one-request-state", type: "label", name: "stateId", value: "waiting", position: 10, isInheritable: false },
+                { attributeId: "a-waiting-icon", noteId: "one-request-state", type: "label", name: "iconClass", value: "bx bx-time", position: 20, isInheritable: false }
+            ]
+        });
+        const post = vi.spyOn(server, "post");
+        try {
+            const states = await getTaskStateDefinitions();
+
+            expect(get).toHaveBeenCalledTimes(1);
+            expect(get).toHaveBeenCalledWith(`tree?subTreeNoteId=${TASK_STATES_CONTAINER_ID}`);
+            expect(post).not.toHaveBeenCalled();
+            expect(states.map((state) => state.name)).toEqual([ DONE_TASK_STATE.name, "waiting" ]);
+        } finally {
+            get.mockRestore();
+            post.mockRestore();
+            for (const noteId of [ DONE_STATE_ID, "one-request-state" ]) delete froca.notes[noteId];
         }
     });
 

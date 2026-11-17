@@ -10,7 +10,7 @@ import { calculateHash } from "../../../services/link.js";
 import { NOTE_TYPES } from "../../../services/note_types.js";
 import { formatSize, openInAppHelpFromUrl } from "../../../services/utils.js";
 import CodeBlock from "../../react/CodeBlock.js";
-import { useNote } from "../../react/hooks.js";
+import { useNote } from "../../react/hooks/note.js";
 import { TooltipIcon } from "../../react/Icon.js";
 import { PageLink } from "../../react/LinkButton.js";
 import { NewNoteLink } from "../../react/NoteLink.js";

@@ -95,6 +95,8 @@ Click on an inserted _Icon & text_ or _Card_ link preview to select it, and a sm
 
 Right-clicking a link preview selects it and opens its _More actions_ menu.
 
+To color a link preview, select it and pick a color with the <span class="tn-icon cke cke-font-color"></span> font color or <span class="tn-icon cke cke-font-background"></span> background color button, as for text. The font color applies to the title of an _Icon & text_ link and to the text of a _Card_; the background color fills the whole preview. A preview keeps its colors when its display mode changes, except for an _Embed_, which cannot be colored.
+
 ### Audio and video
 
 A YouTube video, a video file or an audio file shown as an _Embed_ has a size, a position, a title and a caption, like an <a class="reference-link" href="Include%20Note.md">Include Note</a>. A video keeps its shape, so a YouTube Short stands upright and an older video can be 4:3. A YouTube video inserted in an earlier version is 16:9 until it is inserted again. In the editor, a click on the video both plays it and selects it, and so does a later click on the player.

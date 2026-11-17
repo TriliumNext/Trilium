@@ -73,6 +73,15 @@ describe("sanitize", () => {
             .toBe(video.replace(` style="${width}"`, ""));
     });
 
+    it("keeps the width and the position of an aside, and drops other variables on it", () => {
+        const width = "--aside-width:18.5em";
+        const aside = `<aside style="${width}" data-position="wrap-right"><p>Text</p></aside>`;
+        expect(sanitizeHtml(aside)).toBe(aside);
+
+        expect(sanitizeHtml(aside.replace(width, "--aside-width:calc(100vh);--other:1em")))
+            .toBe(`<aside data-position="wrap-right"><p>Text</p></aside>`);
+    });
+
     it("keeps the hidden-border style on table header cells", () => {
         // The OneNote importer maps hidden borders to border-color:transparent on table, td and th —
         // all three must survive sanitization, or header cells render with visible borders.

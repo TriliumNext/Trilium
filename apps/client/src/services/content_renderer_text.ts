@@ -5,28 +5,40 @@ import { applyTableScroll } from "@triliumnext/ckeditor5/src/plugins/table_scrol
 import {
     applyStickyTableHeaders
 } from "@triliumnext/ckeditor5/src/plugins/table_sticky_header_read_only.js";
+import type { ContentEmbedContext } from "@triliumnext/commons";
 import {
-    BLOCK_ID_ATTRIBUTE, CAPTIONED_CONTENT_EMBED_CLASS, CONTENT_EMBED_KIND_ATTRIBUTE,
-    type ContentEmbedContext, getAttachmentEmbedHref, getEmbedKey, getNestedEmbedOptions,
-    getNoteEmbedHref, isEmbedShownAsLink, KATEX_MACROS, normalizeEmbedBox, resolveContentEmbed,
-    sliceToBlockReference
-} from "@triliumnext/commons";
+    BLOCK_ID_ATTRIBUTE, sliceToBlockReference
+} from "@triliumnext/commons/src/lib/block_reference.js";
+import {
+    CAPTIONED_CONTENT_EMBED_CLASS, CONTENT_EMBED_KIND_ATTRIBUTE,
+    EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE, getAttachmentEmbedHref, getEmbedKey,
+    getNestedEmbedOptions, getNoteEmbedHref, isEmbedShownAsLink, normalizeEmbedBox,
+    resolveContentEmbed
+} from "@triliumnext/commons/src/lib/content_embeds.js";
+import { KATEX_MACROS } from "@triliumnext/commons/src/lib/katex_macros.js";
+import {
+    getMimeTypeFromCKEditorLanguage, MIME_TYPE_AUTO
+} from "@triliumnext/commons/src/lib/mime_type.js";
 
 import FAttachment from "../entities/fattachment.js";
 import FNote from "../entities/fnote.js";
 import { getContentEmbedFlag } from "../widgets/type_widgets/text/content_embed_tools.js";
-import { highlightBlockReference } from "./block_reference.js";
 import {
     addContentDisposer, default as content_renderer, getContentType, type RenderOptions
 } from "./content_renderer.js";
+import { isExperimentalFeatureEnabled } from "./experimental_features.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import { applyNoteImageVersions, resolveContentImageUrls } from "./image_urls.js";
 import link from "./link.js";
 import { applyLinkEmbeds } from "./link_embed.js";
 import { getMermaidConfig, postprocessMermaidSvg } from "./mermaid.js";
+import { PLAIN_TEXT_MIME } from "./mime_types.js";
 import { sanitizeNoteContentHtml } from "./sanitize_content.js";
-import { formatCodeBlocks } from "./syntax_highlight.js";
+import { getSourceEmbedTypeByLanguage } from "./source_embeds.js";
+import {
+    applyCopyToClipboardButton, detectCodeLanguage, extractLanguageFromClassList, formatCodeBlocks
+} from "./syntax_highlight.js";
 import tree from "./tree.js";
 import { isHtmlEmpty } from "./utils.js";
 
@@ -60,10 +72,15 @@ export async function renderTextContent(
         addContentDisposer($content[0], applyTableScroll($content[0]));
         addContentDisposer($content[0], applyStickyTableHeaders($content[0]));
         // Runs before `postProcessRichContent()` renders embeds, so their blocks are not searched.
+        // `block_reference.ts` brings the block menus and clipboard, so only a highlight loads it.
         if (options.highlightBlock) {
+            const { highlightBlockReference } = await import("./block_reference.js");
             highlightBlockReference($content[0], options.highlightBlock);
         }
         $renderedContent.append($content);
+        if (hasCodeBlockPreviews(options)) {
+            await renderCodeBlockPreviews($content[0]);
+        }
         await postProcessRichContent(note, $renderedContent, options);
     } else if (note instanceof FNote && !options.noChildrenList) {
         await renderChildrenList($renderedContent, note, options.includeArchivedNotes ?? false);
@@ -83,7 +100,7 @@ export async function postProcessRichContent(note: FNote | FAttachment, $rendere
     seenNoteIds.add(getEmbedKey("noteId" in note ? note.noteId : note.attachmentId, options.block));
     const hostNoteId = note instanceof FNote ? note.noteId : undefined;
     applyListItemAlignment(container);
-    const loadEmbedBoxes = options.embedBoxes && !options.noContentEmbeds
+    const loadEmbedBoxes = hasEmbedBoxes(options)
         ? (await import("../widgets/type_widgets/text/embed_boxes.js")).prepareEmbedBoxes(
             container, { seenNoteIds, hostNoteId, isChanging: options.isChanging }, true)
         : undefined;
@@ -131,6 +148,88 @@ export async function postProcessRichContent(note: FNote | FAttachment, $rendere
 
     // Last, so that no pass above reaches into the content of the boxes.
     await loadEmbedBoxes?.();
+}
+
+/** Whether rendered text shows its embeds in the read-only boxes that the editor shows them in. */
+function hasEmbedBoxes(options: RenderOptions) {
+    return !!options.embedBoxes && !options.noContentEmbeds;
+}
+
+/**
+ * Whether the code blocks of a text note render as static code previews: on screen, while the
+ * experimental feature `extendedCodeBlocks` is on, unless the embed boxes show them in
+ * CodeMirror, as the note itself does.
+ */
+function hasCodeBlockPreviews(options: RenderOptions) {
+    return !hasEmbedBoxes(options) && glob.device !== "print"
+        && isExperimentalFeatureEnabled("extendedCodeBlocks");
+}
+
+/**
+ * Shows each code block in `container` as a static code preview, which CodeMirror highlights in
+ * the colors of the code note theme, as the editor of an extended code block does. The `<pre>`
+ * and the `<code>` of a block stay, with their attributes. A code block that keeps the source of
+ * an embed, such as a diagram, is left as it is.
+ */
+export async function renderCodeBlockPreviews(container: HTMLElement) {
+    if (!container.querySelector("pre > code")) return;
+
+    const { renderCodeNotePreview } = await import("./code_note_preview.js");
+    for (const pre of container.querySelectorAll<HTMLElement>("pre")) {
+        const code = pre.querySelector<HTMLElement>(":scope > code");
+        if (!code) continue;
+
+        const savedLanguage = extractLanguageFromClassList(code)
+            ?? EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE;
+        if (getSourceEmbedTypeByLanguage(savedLanguage)) continue;
+
+        const source = code.textContent;
+        const language = await getShownCodeLanguage(savedLanguage, source);
+        const { isCodeWrapped, hasCodeLineNumbers } = getEmbedCodeView(pre);
+        const preview = await renderCodeNotePreview(
+            source,
+            getMimeTypeFromCKEditorLanguage(language) ?? PLAIN_TEXT_MIME,
+            null,
+            { isWrapped: isCodeWrapped, hasLineNumbers: hasCodeLineNumbers }
+        );
+        showCodePreview(pre, code, preview);
+    }
+}
+
+/**
+ * The language that a read-only rendering shows `source` in: `language`, or the one detected in
+ * the source for a code block saved as `MIME_TYPE_AUTO`, which the editor sets on the block
+ * instead. Both are CKEditor code block languages.
+ */
+export async function getShownCodeLanguage(language: string, source: string) {
+    if (language !== MIME_TYPE_AUTO) {
+        return language;
+    }
+    return await detectCodeLanguage(source) ?? EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE;
+}
+
+/** The class of the `<pre>` of a code block that shows a static code preview. */
+const CODE_BLOCK_PREVIEW_CLASS = "code-block-preview";
+
+/** Shows `preview`, a static code preview, in the `pre` and `code` elements of a code block. */
+function showCodePreview(pre: HTMLElement, code: HTMLElement, preview: HTMLElement) {
+    const content = preview.firstElementChild;
+    if (!content) return;
+
+    for (const { name, value } of preview.attributes) {
+        if (name !== "class") {
+            pre.setAttribute(name, value);
+        }
+    }
+    pre.classList.add(...preview.classList, CODE_BLOCK_PREVIEW_CLASS);
+    code.classList.add(...content.classList);
+    code.replaceChildren(...content.childNodes);
+
+    const { codeTabWidth } = pre.dataset;
+    if (codeTabWidth) {
+        code.style.tabSize = codeTabWidth;
+    }
+    applyCopyToClipboardButton($(code));
 }
 
 /** Fills in the title, icon and color of `referenceLink`, a link in the content of `hostNoteId`. */

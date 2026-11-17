@@ -1,4 +1,5 @@
-import { normalizeMimeTypeForCKEditor, SupportedMimeTypes } from "@triliumnext/commons";
+import type { SupportedMimeTypes } from "@triliumnext/commons";
+import { normalizeMimeTypeForCKEditor } from "@triliumnext/commons/src/lib/mime_type.js";
 import type { LanguageFn } from "highlight.js";
 
 type MimeRecord = Record<SupportedMimeTypes, (() => Promise<{ default: LanguageFn}>) | null>;

@@ -22,7 +22,9 @@ import Button from "../../react/Button";
 import { Card, OptionCardSection } from "../../react/Card";
 import FormToggle from "../../react/FormToggle";
 import HelpButton from "../../react/HelpButton";
-import { useTriliumOption, useTriliumOptionBool, useTriliumOptionInt } from "../../react/hooks";
+import {
+    useTriliumOption, useTriliumOptionBool, useTriliumOptionInt
+} from "../../react/hooks/options";
 import Slider from "../../react/Slider";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 import RelatedSettings from "./components/RelatedSettings";

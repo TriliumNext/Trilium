@@ -1,7 +1,7 @@
 import "./MermaidDiagram.css";
 
 import type VanillaCodeMirror from "@triliumnext/codemirror";
-import { MERMAID_ATTACHMENT_MIME } from "@triliumnext/commons";
+import { MERMAID_ATTACHMENT_MIME } from "@triliumnext/commons/src/lib/notes.js";
 import fullscreenIcon from "boxicons/svg/regular/bx-fullscreen.svg?raw";
 import helpIcon from "boxicons/svg/regular/bx-help-circle.svg?raw";
 import zoomInIcon from "boxicons/svg/regular/bx-zoom-in.svg?raw";
@@ -16,7 +16,7 @@ import { t } from "../../../services/i18n";
 import { renderMermaidSvg } from "../../../services/mermaid";
 import type { SourceEmbedProps } from "../../../services/source_embeds";
 import { isMobile, openInAppHelpFromUrl } from "../../../services/utils";
-import { useDebouncedValue } from "../../react/hooks";
+import { useDebouncedValue } from "../../react/hooks/dom";
 import OverlayControlGroup, { OverlayFullscreenButton } from "../../react/OverlayControlGroup";
 import { useZoomPanWheel } from "../../react/zoom_pan";
 import { useZoomPanKeyboard } from "../../react/zoom_pan_keyboard";

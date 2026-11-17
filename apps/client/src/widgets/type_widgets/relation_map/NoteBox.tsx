@@ -8,7 +8,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/ho
 import FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
-import { useNoteColorClass, useNoteIcon, useNoteProperty } from "../../react/hooks";
+import { useNoteColorClass, useNoteIcon, useNoteProperty } from "../../react/hooks/note";
 import RelationMapApi, { MapDataNoteEntry } from "./api";
 import { buildNoteContextMenuHandler } from "./context_menu";
 import { noteIdToId } from "./utils";

@@ -4,7 +4,7 @@ import { t } from "../../services/i18n";
 import Button from "../react/Button";
 import { useRef, useState } from "preact/hooks";
 import { SanitizedHtml } from "../react/RawHtml";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import { isValidElement } from "preact";
 import { ConfirmWithMessageOptions } from "./confirm";
 import "./info.css";

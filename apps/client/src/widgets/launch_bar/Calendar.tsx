@@ -1,9 +1,11 @@
-import { useTriliumOptionInt } from "../react/hooks";
+import type { Dayjs } from "../../services/dayjs";
+import { useTriliumOptionInt } from "../react/hooks/options";
 import clsx from "clsx";
 import server from "../../services/server";
 import { TargetedMouseEvent, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import { Dayjs, getWeekInfo, WeekSettings } from "@triliumnext/commons";
+import type { WeekSettings } from "@triliumnext/commons";
+import { getWeekInfo } from "@triliumnext/commons/src/lib/week_utils.js";
 import { t } from "../../services/i18n";
 
 interface DateNotesForMonth {

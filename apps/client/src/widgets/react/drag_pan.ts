@@ -2,7 +2,7 @@ import { RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { isMobile } from "../../services/utils";
-import { useTrackedElement } from "./hooks";
+import { useTrackedElement } from "./hooks/dom";
 
 /** How much of the speed survives each frame once the pointer is up. */
 const FRICTION = 0.94;

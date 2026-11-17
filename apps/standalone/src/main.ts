@@ -14,14 +14,9 @@ import { createSecurityApi } from "./security_gate.js";
  * WASM binary and the core bundle — dominate; a warm start runs the same sequence from cache.
  *
  * The worker reports the middle of this sequence over `STARTUP_PROGRESS` (see local-bridge.ts),
- * and the client reports the last two once its entry point is loading its layout and note tree.
- * A follower tab has no worker of its own, so it sits on the first phase until the leader answers
- * its `/bootstrap` and the client's own phases carry the bar the rest of the way.
- *
- * The client's own `bootstrap` phase is deliberately absent: here `/bootstrap` is answered by the
- * worker, so it does not follow the worker's steps but spans them. Listing it would let index.ts
- * report it while the worker was still on `sqlite`, and the monotonic guard in reportSplashPhase()
- * would then swallow every later worker phase.
+ * and the client reports `application` once `/bootstrap` has answered, while it loads and renders
+ * its entry point. A follower tab has no worker of its own, so it sits on the first phase until
+ * the leader answers its `/bootstrap`.
  */
 const STANDALONE_STARTUP_PHASES: SplashPhase[] = [
     { id: "service-worker", weight: 1, status: "Setting up offline support…" },
@@ -30,9 +25,7 @@ const STANDALONE_STARTUP_PHASES: SplashPhase[] = [
     { id: "database", weight: 2, status: "Opening the database…" },
     { id: "core", weight: 4, status: "Loading Trilium…" },
     { id: "becca", weight: 2, status: "Reading your notes…" },
-    { id: "application", weight: 4, status: "Loading the application…" },
-    { id: "interface", weight: 2, status: "Building the interface…" },
-    { id: "notes", weight: 1, status: "Loading the note tree…" }
+    { id: "application", weight: 4, status: "Loading the application…" }
 ];
 
 async function waitForServiceWorkerControl(): Promise<void> {

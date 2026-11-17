@@ -19,7 +19,7 @@ vi.mock("../../services/server", () => ({
 
 // Fully mocked: the real hooks module imports half the app (app_context, keyboard actions) at module
 // scope, and capturing the handler is what lets a test drive the entity-change path directly.
-vi.mock("../react/hooks", () => ({
+vi.mock("../react/hooks/events", () => ({
     useTriliumEvent: (_name: string, handler: (data: { loadResults: unknown }) => void) => {
         mocks.entitiesReloadedHandler = handler;
     }

@@ -13,13 +13,20 @@ import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import ActionButton from "../../react/ActionButton";
-import { useCollectionTreeDrag, useEffectiveReadOnly, useElementSize, useNoteContext, useNoteLabelBoolean, useSpacedUpdate } from "../../react/hooks";
+import { useElementSize, useSpacedUpdate } from "../../react/hooks/dom";
+import { useNoteLabelBoolean } from "../../react/hooks/note";
+import { useEffectiveReadOnly, useNoteContext } from "../../react/hooks/note_context";
+import { useCollectionTreeDrag } from "../../react/hooks/drag";
 import Icon from "../../react/Icon";
 import NoteLink from "../../react/NoteLink";
 import { ViewModeProps } from "../interface";
-import { getNotePath, NoteContent } from "../legacy/ListOrGridView";
+import { getNotePath } from "../legacy/ListOrGridView";
+import { NoteContent } from "../legacy/NoteContent";
 import openWidgetContextMenu from "./context_menu";
-import { computeDropCell, DEFAULT_WIDGET_SIZE, GRID_COLUMNS, reconcilePersistedLayout, sameLayout, WidgetLayouts } from "./layout";
+import {
+    computeDropCell, DEFAULT_WIDGET_SIZE, GRID_COLUMNS, reconcilePersistedLayout, sameLayout,
+    WidgetLayouts
+} from "./layout";
 
 export interface DashboardViewConfig {
     widgets?: WidgetLayouts;

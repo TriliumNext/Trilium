@@ -17,7 +17,7 @@ import toast from "../../services/toast";
 import AbstractBulkAction from "../bulk_actions/abstract_bulk_action";
 import FNote from "../../entities/fnote";
 import froca from "../../services/froca";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import NoteChips from "../react/NoteChips";
 import { escapeHtml } from "../../services/utils";
 

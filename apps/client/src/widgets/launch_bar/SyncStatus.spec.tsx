@@ -36,12 +36,15 @@ vi.mock("../../services/i18n", async () => {
 });
 // `useTriliumOptionBool` is mocked alongside `useTriliumOption` rather than left to the original:
 // it reaches for its module's own binding, which a mock of the export does not reach.
-vi.mock("../react/hooks", async (importOriginal) => {
-    const hooks = await importOriginal<typeof import("../react/hooks")>();
+vi.mock("../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/options")>()),
+    useTriliumOption: (name: string) => [ mocks.options[name] ?? "", vi.fn() ],
+    useTriliumOptionBool: (name: string) => [ mocks.options[name] === "true", vi.fn() ]
+}));
+vi.mock("../react/hooks/tooltip", async (importOriginal) => {
+    const hooks = await importOriginal<typeof import("../react/hooks/tooltip")>();
     return {
         ...hooks,
-        useTriliumOption: (name: string) => [ mocks.options[name] ?? "", vi.fn() ],
-        useTriliumOptionBool: (name: string) => [ mocks.options[name] === "true", vi.fn() ],
         useStaticTooltip: (...args: Parameters<typeof hooks.useStaticTooltip>) =>
             hooks.useStaticTooltip(args[0], { ...args[1], animation: false })
     };

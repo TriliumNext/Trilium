@@ -13,7 +13,12 @@ import server from "../services/server";
 import { isIMEComposing } from "../services/shortcuts";
 import { shouldShowInlineTitle } from "./layout/InlineTitle";
 import FormTextBox from "./react/FormTextBox";
-import { useNoteContext, useNoteProperty, useSpacedUpdate, useTriliumEvents, useTriliumOption } from "./react/hooks";
+import { useSpacedUpdate } from "./react/hooks/dom";
+import { useTriliumEvents } from "./react/hooks/events";
+import { useNoteProperty } from "./react/hooks/note";
+import { useTriliumOption } from "./react/hooks/options";
+import { useNoteContext } from "./react/hooks/note_context";
+import { WithLazyModule } from "./react/LazyComponent";
 
 /**
  * Where a title sits in a note split, which has one in its title row and one in `InlineTitle`.
@@ -220,4 +225,28 @@ function ownsTitle(placement: TitlePlacement | undefined, noteContext: NoteConte
     const note = noteContext.note;
     const showsInlineTitle = shouldShowInlineTitle(note, note?.type, noteContext.viewScope, titleStyle);
     return showsInlineTitle === (placement === "inline");
+}
+
+const loadNoteTypeSwitcher = () => import("./layout/NoteTypeSwitcher");
+
+/**
+ * The note type switcher of the compact note title (`noteTitleStyle` option), mounted at the foot of
+ * the note split rather than above the content, so that it reads as a toolbar and not as part of the
+ * note. The switcher offers types only to a text note, so its module loads once one shows.
+ */
+export function NoteTypeSwitcherBar() {
+    const { note, viewScope } = useNoteContext();
+    const [ noteTitleStyle ] = useTriliumOption("noteTitleStyle");
+    const noteType = useNoteProperty(note, "type");
+    const isDefaultView = !viewScope?.viewMode || viewScope.viewMode === "default";
+
+    return (
+        <div className="note-type-switcher-bar">
+            {noteTitleStyle === "compact" && isDefaultView && noteType === "text" && (
+                <WithLazyModule load={loadNoteTypeSwitcher}>
+                    {({ default: NoteTypeSwitcher }) => <NoteTypeSwitcher note={note} />}
+                </WithLazyModule>
+            )}
+        </div>
+    );
 }

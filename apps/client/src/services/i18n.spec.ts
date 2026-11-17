@@ -1,27 +1,23 @@
 import { MESSAGE_KEY_PREFIX, MESSAGE_OVERRIDES, slugify } from "@triliumnext/ckeditor5";
-import { dayjs, findDuplicateJsonKeys, findMalformedPluralGroups, findPluralKeyConflicts, LOCALES } from "@triliumnext/commons";
+import { LOCALES } from "@triliumnext/commons/src/lib/i18n.js";
+import {
+    findDuplicateJsonKeys, findMalformedPluralGroups, findPluralKeyConflicts
+} from "@triliumnext/commons/src/lib/test-utils.js";
 import { readdirSync, readFileSync } from "fs";
 import i18next from "i18next";
 import { join } from "path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// Mock the http backend so i18next.init() never hits the network. The real
-// backend would try to fetch translation JSON over HTTP and the awaited init()
-// would hang until the connection fails. Our fake backend resolves read()
-// synchronously with an empty resource bundle.
-vi.mock("i18next-http-backend", () => {
-    class FakeBackend {
-        static type = "backend" as const;
-        type = "backend" as const;
-        init() {
-            // No configuration needed.
-        }
-        read(_language: string, _namespace: string, callback: (err: unknown, data: unknown) => void) {
-            callback(null, {});
-        }
+// The catalogues are read through `takeCatalogue()`, which here answers with an empty catalogue
+// instead of fetching one.
+const backendReads = vi.hoisted(() => [] as string[]);
+vi.mock("./catalogue_requests", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./catalogue_requests")>(),
+    takeCatalogue: async (lng: string, ns: string) => {
+        backendReads.push(`${lng}/${ns}`);
+        return {};
     }
-    return { default: FakeBackend };
-});
+}));
 
 const {
     getAvailableLocales, getCurrentLanguage, getEnglishAnnotation, getLocaleById, initLocale,
@@ -390,18 +386,29 @@ describe("i18n", () => {
     });
 
     describe("initLocale", () => {
-        it("initializes i18next with an explicit locale, sets dayjs and resolves the deferred", async () => {
+        it("initializes i18next with an explicit locale and resolves the deferred", async () => {
             (window as any).glob = { ...(window as any).glob, assetPath: "/assets" };
 
             await initLocale("de");
 
             expect(getCurrentLanguage()).toBe("de");
-            // The second responsibility of initLocale is `await setDayjsLocale(locale)`, which
-            // switches the global dayjs locale. Assert the observable side effect so removing or
-            // mis-passing the locale to setDayjsLocale would be caught.
-            expect(dayjs.locale()).toBe("de");
             // The deferred resolves once translations are ready.
             await expect(translationsInitializedPromise).resolves.toBeUndefined();
+        });
+
+        it("loads only the catalogues of the locale, which the build completes from English", async () => {
+            backendReads.length = 0;
+            await initLocale("pt_br");
+            expect(backendReads.sort()).toEqual([ "pt_br/entry", "pt_br/translation" ]);
+        });
+
+        it("reads the catalogue of a language picked once it is running, as the setup wizard does", async () => {
+            await initLocale("en", "entry");
+            backendReads.length = 0;
+
+            await i18next.changeLanguage("de");
+
+            expect(backendReads).toEqual([ "de/entry" ]);
         });
 
         it("uses the default 'en' locale when called without arguments", async () => {

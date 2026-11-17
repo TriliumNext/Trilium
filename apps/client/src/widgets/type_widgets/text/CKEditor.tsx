@@ -11,13 +11,17 @@ import { useEffect, useImperativeHandle, useRef, useState } from "preact/hooks";
 
 import froca from "../../../services/froca";
 import { isMobile } from "../../../services/utils";
-import { useKeyboardShortcuts, useNoteContext, useSyncedRef, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useSyncedRef } from "../../react/hooks/dom";
+import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
+import { useNoteContext } from "../../react/hooks/note_context";
+import { useKeyboardShortcuts } from "../../react/hooks/shortcuts";
 import { InsertMediaBalloon } from "../../dialogs/insert_media";
 import { openHelpPageFor } from "../../react/HelpButton";
 import IconPicker from "../../react/IconPicker";
 import type { AiNoteLocation } from "./ai_assistant_stream";
 import { useAiMenuFooter, useAiQuickActions } from "./ai_quick_actions";
 import { buildConfig, BuildEditorOptions, type ContentEmbedHandlers } from "./config";
+import { buildVimConfig, useVimMode } from "./vim_mode";
 
 export interface CKEditorApi {
     /** returns true if user selected some text, false if there's no selection */
@@ -97,13 +101,15 @@ interface CKEditorProps extends Pick<HTMLAttributes<HTMLDivElement>, "className"
     showContentEmbedDialog?: (request: ContentEmbedDialogRequest) => (() => void) | null;
     /** Whether the editor holds only some blocks of its note, as the editor of an excerpt does. */
     isExcerpt?: boolean;
+    /** Whether the type widget of the editor is displayed. Only a displayed one shows Vim mode. */
+    isVisible?: boolean;
 }
 
 export default function CKEditor({
     containerRef: externalContainerRef, contentLanguage, className, tabIndex, isClassicEditor,
     editorRef: externalEditorRef, onNotificationWarning, onNotificationInfo, onEditorError,
     onChange, onEditorInitialized, editorApi, templates, rebuildKey, contentEmbedHandlers,
-    showLinkDialog, showContentEmbedDialog, isExcerpt
+    showLinkDialog, showContentEmbedDialog, isExcerpt, isVisible
 }: CKEditorProps) {
     const containerRef = useSyncedRef<HTMLDivElement>(externalContainerRef, null);
     const editorRef = useRef<CKTextEditor>(null);
@@ -164,7 +170,7 @@ export default function CKEditor({
     const quickActions = useAiQuickActions();
     const menuFooter = useAiMenuFooter();
     const [ editor, setEditor ] = useState<CKTextEditor>();
-    const { parentComponent, ntxId, note, notePath } = useNoteContext();
+    const { parentComponent, ntxId, note, notePath, noteContext } = useNoteContext();
     // Which note the assistant says a run is writing into. Kept in a ref for the same reason the
     // snippets are: switching notes reuses the editor rather than rebuilding it, so a captured
     // note would name whichever one happened to be open when the editor was built.
@@ -212,6 +218,7 @@ export default function CKEditor({
     }
 
     useKeyboardShortcuts("text-detail", containerRef, parentComponent, ntxId);
+    useVimMode(editor, note, noteContext, isVisible);
 
     useImperativeHandle(editorApi, () => ({
         hasSelection() {
@@ -397,7 +404,11 @@ export default function CKEditor({
                 getContentEmbedHandlers: () => contentEmbedHandlersRef.current,
                 showLinkDialog: (request) => showLinkDialogRef.current?.(request) ?? null,
                 showContentEmbedDialog:
-                    (request) => showContentEmbedDialogRef.current?.(request) ?? null
+                    (request) => showContentEmbedDialogRef.current?.(request) ?? null,
+                vim: buildVimConfig({
+                    getContainer: () => containerRef.current,
+                    triggerHostCommand: (command) => parentComponent?.triggerCommand(command)
+                })
             });
 
             if (isStale) {

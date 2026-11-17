@@ -43,7 +43,8 @@ vi.mock("../../components/app_context", () => ({
 }));
 
 vi.mock("./modal_focustrap", () => ({
-    suspendModalFocusTraps: mocks.suspendModalFocusTraps
+    suspendModalFocusTraps: mocks.suspendModalFocusTraps,
+    setBootstrapModal: () => {}
 }));
 
 import { handleSystemBack } from "../../services/system_back";

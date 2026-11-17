@@ -189,7 +189,7 @@ body.mobile.ios {
         --mobile-title-row-height: 50px;
 
         /* Safari tints its bars from the page's background and from `theme-color`, which
-           `#initThemeColor()` in root_container.ts copies from `#background-color-tracker`. */
+           `initThemeColor()` in appearance.ts copies from `#background-color-tracker`. */
         &.mobile-sidebar-open {
             background-color: var(--grouped-background-color);
 

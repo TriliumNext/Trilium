@@ -4,7 +4,8 @@ import type { HTMLAttributes, RefObject } from "preact";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
 import { onEffectiveThemeStyleChange } from "../../../services/theme";
-import { useSyncedRef, useTriliumOption } from "../../react/hooks";
+import { useSyncedRef } from "../../react/hooks/dom";
+import { useTriliumOption } from "../../react/hooks/options";
 
 interface FontDefinition {
     name: string;

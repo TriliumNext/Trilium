@@ -1,4 +1,9 @@
-import { IMAGE_JPEG_HANDLINGS, IMAGE_PNG_HANDLINGS, type ImageCompressibleFormat, type ImageJpegHandling, type ImagePngHandling } from "@triliumnext/commons";
+import type {
+    ImageCompressibleFormat, ImageJpegHandling, ImagePngHandling
+} from "@triliumnext/commons";
+import {
+    IMAGE_JPEG_HANDLINGS, IMAGE_PNG_HANDLINGS
+} from "@triliumnext/commons/src/lib/server_api.js";
 
 /**
  * What the image compression tool is set to do. Persisted as JSON in the `imageCompressionToolOptions`

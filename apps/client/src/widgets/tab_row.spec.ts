@@ -91,3 +91,137 @@ describe("TabRowWidget tab activation", () => {
         expect(activateTabContext.mock.calls).toEqual([ [ "touch-tab" ] ]);
     });
 });
+
+describe("TabRowWidget context menus", () => {
+    afterEach(() => {
+        document.body.replaceChildren();
+        vi.doUnmock("../menus/context_menu");
+        vi.doUnmock("../menus/recent_changes_menu_items");
+        vi.doUnmock("../services/search");
+    });
+
+    it("loads the menu modules only once a tab is right-clicked", async () => {
+        // The spec's own static import of `tab_row` loaded the menus, so this one starts from fresh modules.
+        vi.resetModules();
+        const loaded = new Set<string>();
+        const show = vi.fn();
+        vi.doMock("../menus/context_menu", () => {
+            loaded.add("context_menu");
+            return { default: { show } };
+        });
+        vi.doMock("../menus/recent_changes_menu_items", () => {
+            loaded.add("recent_changes_menu_items");
+            return { getRecentChangesMenuItems: async () => [] };
+        });
+        vi.doMock("../services/search", () => {
+            loaded.add("search");
+            return { default: { searchForNotes: async () => [] } };
+        });
+        const { default: freshAppContext } = await import("../components/app_context");
+        const { default: FreshTabRowWidget } = await import("./tab_row");
+
+        const mainContexts = [ { ntxId: "tab", pinned: false, isEmpty: () => false } ];
+        freshAppContext.tabManager = {
+            getMainNoteContexts: () => mainContexts,
+            noteContexts: mainContexts,
+            recentlyClosedTabs: []
+        } as unknown as TabManager;
+        const widget = new FreshTabRowWidget();
+        document.body.append(widget.render()[0]);
+        widget.addTab("tab");
+        expect([ ...loaded ]).toEqual([]);
+
+        const tab = widget.$widget.find(`.note-tab[data-ntx-id="tab"]`)[0];
+        expect(tab).toBeInstanceOf(HTMLElement);
+        tab.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+        await vi.waitFor(() => expect(show).toHaveBeenCalledOnce());
+        expect([ ...loaded ]).toEqual([ "context_menu" ]);
+        const titles = show.mock.calls[0][0].items.map((item: { title?: string }) => item.title);
+        expect(titles).toContain("tab_row.close");
+
+        await widget.showNewTabContextMenu(0, 0);
+        expect(show).toHaveBeenCalledTimes(2);
+        expect([ ...loaded ].sort()).toEqual([ "context_menu", "recent_changes_menu_items", "search" ]);
+    });
+});
+
+describe("TabRowWidget tab restore", () => {
+    const originalTabManager = appContext.tabManager;
+
+    afterEach(() => {
+        appContext.tabManager = originalTabManager;
+        vi.restoreAllMocks();
+    });
+
+    it("shows the restored tabs together once their titles are set", async () => {
+        const mainContexts = [ { ntxId: "first" }, { ntxId: "second" } ];
+        appContext.tabManager = {
+            tabsRestored: false,
+            getMainNoteContexts: () => mainContexts
+        } as unknown as TabManager;
+        const widget = new TabRowWidget();
+        widget.render();
+        for (const { ntxId } of mainContexts) {
+            widget.addTab(ntxId);
+        }
+        expect(widget.$widget.hasClass("tabs-restoring")).toBe(true);
+        expect(widget.$widget.find(".note-tab").length).toBe(2);
+        expect(widget.$widget.find(".note-tab-was-just-added").length).toBe(0);
+
+        let finishTitles = () => {};
+        const updateTab = vi.spyOn(widget, "updateTab").mockReturnValue(
+            new Promise<void>((resolve) => { finishTitles = resolve; }));
+        const restored = widget.tabsRestoredEvent();
+        expect(updateTab.mock.calls.map(([ $tab ]) => $tab.attr("data-ntx-id")))
+            .toEqual([ "first", "second" ]);
+        expect(widget.$widget.hasClass("tabs-restoring")).toBe(true);
+
+        finishTitles();
+        await restored;
+        expect(widget.$widget.hasClass("tabs-restoring")).toBe(false);
+
+        (appContext.tabManager as { tabsRestored: boolean }).tabsRestored = true;
+        const later = new TabRowWidget();
+        later.render();
+        expect(later.$widget.hasClass("tabs-restoring")).toBe(false);
+    });
+
+    it("shows the tabs restored before it was rendered, with the active one marked", async () => {
+        const mainContexts = [ { ntxId: "first" }, { ntxId: "second" } ];
+        appContext.tabManager = {
+            tabsRestored: true,
+            getMainNoteContexts: () => mainContexts,
+            getActiveContext: () => mainContexts[1]
+        } as unknown as TabManager;
+        const widget = new TabRowWidget();
+        widget.render();
+        const updateTab = vi.spyOn(widget, "updateTab").mockResolvedValue(undefined);
+        vi.spyOn(widget, "refreshTab").mockImplementation(() => {});
+
+        await widget.showExistingTabs();
+
+        expect(widget.$widget.find(".note-tab").toArray().map((tab) => tab.getAttribute("data-ntx-id")))
+            .toEqual([ "first", "second" ]);
+        expect(updateTab).toHaveBeenCalledTimes(2);
+        expect(widget.getTabById("second").attr("active")).toBe("");
+    });
+
+    it("adds no second tab for one it heard of before showing the existing tabs", async () => {
+        const mainContexts = [ { ntxId: "first" }, { ntxId: "second" } ];
+        appContext.tabManager = {
+            tabsRestored: true,
+            getMainNoteContexts: () => mainContexts,
+            getActiveContext: () => mainContexts[0]
+        } as unknown as TabManager;
+        const widget = new TabRowWidget();
+        widget.render();
+        vi.spyOn(widget, "updateTab").mockResolvedValue(undefined);
+        vi.spyOn(widget, "refreshTab").mockImplementation(() => {});
+        widget.newNoteContextCreatedEvent({ noteContext: mainContexts[0] as unknown as NoteContext });
+
+        await widget.showExistingTabs();
+
+        expect(widget.$widget.find(".note-tab").toArray().map((tab) => tab.getAttribute("data-ntx-id")))
+            .toEqual([ "first", "second" ]);
+    });
+});

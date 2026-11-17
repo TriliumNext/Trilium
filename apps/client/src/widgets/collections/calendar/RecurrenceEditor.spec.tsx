@@ -1,14 +1,17 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import Component from "../../../components/component";
 import type FNote from "../../../entities/fnote";
 import attributes from "../../../services/attributes";
 import froca from "../../../services/froca";
 import { buildNote } from "../../../test/easy-froca";
+import { preloadDropdownPopups } from "../../react/Dropdown";
 import { ParentComponent } from "../../react/react_utils";
 import RecurrenceEditor, { YEAR_COUNT_TEMPLATE } from "./RecurrenceEditor";
+
+beforeAll(() => preloadDropdownPopups());
 
 vi.mock("../../../services/i18n", () => ({
     t: (key: string) => key

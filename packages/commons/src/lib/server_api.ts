@@ -1006,17 +1006,22 @@ export interface OCRProcessResponse {
     minConfidence?: number;
 }
 
+/** An icon pack as `/bootstrap` names it, without its icons. */
+export interface IconPackSummary {
+    prefix: string;
+    name: string;
+    /** An icon class to identify this icon pack. */
+    icon: string;
+}
+
+/** Every icon of each icon pack, as `GET /api/other/icon-registry` returns them. */
 export interface IconRegistry {
-    sources: {
-        prefix: string;
-        name: string;
-        /** An icon class to identify this icon pack. */
-        icon: string;
+    sources: (IconPackSummary & {
         icons: {
             id: string;
             terms: string[];
         }[]
-    }[];
+    })[];
 }
 
 /**
@@ -1102,8 +1107,19 @@ export type BootstrapDefinition = {
     theme: string;
     themeBase?: "next" | "next-light" | "next-dark";
     customThemeCssUrl?: string;
+    /** The fonts of the icon packs, and the rule that draws each pack's prefix in its font. */
     iconPackCss: string;
-    iconRegistry: IconRegistry;
+    /** The stylesheet that places the character of every icon, which loads after the first render. */
+    iconPackGlyphCssUrl: string;
+    /** The font files the first render uses, for the client to preload. */
+    preloadFonts?: string[];
+    /**
+     * The stylesheet of the font options, from `buildFontCss()`. Absent before the database is
+     * initialized and on the login and set-password screens, which keep the theme's fonts.
+     */
+    fontCss?: string;
+    /** The icon packs whose icons the client can show, in the order of the icon picker. */
+    iconPacks: IconPackSummary[];
     device: "mobile" | "desktop" | "print" | false;
     csrfToken?: string;
     headingStyle: "plain" | "underline" | "markdown";
@@ -1160,6 +1176,16 @@ export type BootstrapDefinition = {
      * [DEPTH_ZERO_SELF_SIGNED_CERT]`), shown verbatim in monospace; non-empty whenever present.
      */
     oauthConnectionFailed?: string;
+    /**
+     * The options as `/api/options` returns them, for a signed-in client, which then does not ask
+     * for them.
+     */
+    options?: Record<string, string>;
+    /**
+     * Whether the app runs under x64 emulation on an ARM CPU, once the server has found out; absent
+     * until then, and the client asks `/api/system-checks` instead.
+     */
+    isCpuArchMismatch?: boolean;
 };
 
 /**

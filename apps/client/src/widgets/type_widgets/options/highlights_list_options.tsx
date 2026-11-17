@@ -1,6 +1,6 @@
 import { t } from "../../../services/i18n";
 import FormText from "../../react/FormText";
-import { useTriliumOptionJson } from "../../react/hooks";
+import { useTriliumOptionJson } from "../../react/hooks/options";
 import CheckboxList from "./components/CheckboxList";
 
 /**

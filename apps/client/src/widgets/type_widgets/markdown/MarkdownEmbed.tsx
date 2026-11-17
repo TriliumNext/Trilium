@@ -13,7 +13,7 @@ import type { MenuItem } from "../../../menus/context_menu";
 import type { ContentEditor } from "../../../services/content_renderer";
 import { isDesktop } from "../../../services/utils";
 import { useNoteCodeSettings } from "../../layout/code_menus";
-import { useDebouncedValue } from "../../react/hooks";
+import { useDebouncedValue } from "../../react/hooks/dom";
 import { SaveStatus, useEmbedLines, useSavedContent } from "../code/CodeEmbed";
 import { EmbedSourcePane } from "../code/CodeEmbedEditor";
 import { resolveDisplayMode } from "../helpers/split_editor_mode";

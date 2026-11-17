@@ -86,7 +86,8 @@ public class NativeHttpProxyTest {
         assertEquals("trilium.sid=abc", response.headers.get("x-trilium-set-cookie"));
         assertFalse(hasHeader(response, "set-cookie"));
         assertFalse(hasHeader(response, "content-length"));
-        assertTrue(hasHeader(response, "content-type"));
+        assertFalse("WebResourceResponse sends mimeType as the Content-Type",
+                hasHeader(response, "content-type"));
         String multi = response.headers.get("X-Multi");
         assertTrue(multi, "a, b".equals(multi) || "b, a".equals(multi));
         assertEquals("{\"ok\":true}", read(response.body));

@@ -1,3 +1,4 @@
+import { dayjs } from "@triliumnext/commons/src/lib/dayjs.js";
 import type { ViteHotContext } from "vite/types/hot.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -144,22 +145,22 @@ describe("formatSize", () => {
         // Nothing below a byte to show, however many places were asked for.
         expect(formatSize(512, 2)).toBe("512 B");
     });
+
+    it("moves to the next unit when the size rounds up to 1024 of its own", () => {
+        expect(formatSize(1024 * 1024 - 1)).toBe("1 MiB");
+        expect(formatSize(1024 ** 3 - 1024)).toBe("1 GiB");
+        expect(formatSize(1024 * 1024 - 1, 1)).toBe("1.0 MiB");
+        expect(formatSize(1023, 2)).toBe("1023 B");
+        expect(formatSize(1024 * 1024 - 6000)).toBe("1018.14 KiB");
+        // a unit given by unitOf stays, as the column shares it
+        expect(formatSize(1024 * 1024 - 1, 0, 1024 * 1024 - 1)).toBe("1024 KiB");
+    });
 });
 
 describe("formatDateTime / date helpers", () => {
     it("uses the default ISO date + time format when no custom format is given", () => {
         const date = new Date(2024, 0, 5, 9, 7); // local time -> 2024-01-05 09:07
         expect(formatDateTime(date)).toBe("2024-01-05 09:07");
-    });
-
-    it("uses a user-supplied dayjs format when provided", () => {
-        const date = new Date(2024, 0, 5, 9, 7);
-        expect(formatDateTime(date, "YYYY")).toBe("2024");
-    });
-
-    it("treats a whitespace-only custom format as absent", () => {
-        const date = new Date(2024, 11, 31, 23, 59);
-        expect(formatDateTime(date, "   ")).toBe("2024-12-31 23:59");
     });
 
     it("formatDateISO (via default export) pads month and day", () => {
@@ -176,8 +177,16 @@ describe("formatDateTime / date helpers", () => {
         expect(utils.now()).toMatch(/^\d{2}:\d{2}:\d{2}$/);
     });
 
-    it("localNowDateTime() returns a dayjs formatted timestamp", () => {
-        expect(utils.localNowDateTime()).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\./);
+    it("localNowDateTime() matches dayjs' YYYY-MM-DD HH:mm:ss.SSSZZ, offset included", () => {
+        vi.useFakeTimers();
+        try {
+            for (const time of [ new Date(2024, 0, 5, 9, 7, 3, 45), new Date(2024, 6, 15, 23, 59, 59, 999) ]) {
+                vi.setSystemTime(time);
+                expect(utils.localNowDateTime()).toBe(dayjs(time).format("YYYY-MM-DD HH:mm:ss.SSSZZ"));
+            }
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });
 

@@ -1,4 +1,4 @@
-import { autoSort } from "@triliumnext/commons";
+import { autoSort } from "@triliumnext/commons/src/lib/auto_sort.js";
 import type { Editor, Model, ModelElement, ModelNode, ModelWriter } from "ckeditor5";
 
 /** Sibling nodes from `first` to `last` that move as one, and the text they sort by. */

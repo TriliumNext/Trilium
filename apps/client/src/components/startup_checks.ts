@@ -15,16 +15,22 @@ export class StartupChecks extends Component {
 
     constructor() {
         super();
-        this.checkCpuArchMismatch();
-        // Shared by desktop and mobile (both reach here via appContext.start), so the post-enrollment
-        // toast lives here rather than being duplicated in each entry point.
+        // Shared by desktop and mobile (both reach here via startAppAroundLayout()), so the
+        // post-enrollment toast lives here rather than being duplicated in each entry point.
         showOAuthEnrollmentResultToast();
+    }
+
+    /** Once the startup has attached this component, so that its command reaches `appContext`. */
+    initialRenderCompleteEvent() {
+        void this.checkCpuArchMismatch();
     }
 
     async checkCpuArchMismatch() {
         try {
-            const response = await server.get("system-checks") as CpuArchResponse;
-            if (response.isCpuArchMismatch) {
+            // `/bootstrap` reports it once the server has finished checking.
+            const isCpuArchMismatch = window.glob?.isCpuArchMismatch
+                ?? (await server.get<CpuArchResponse>("system-checks")).isCpuArchMismatch;
+            if (isCpuArchMismatch) {
                 this.triggerCommand("showCpuArchWarning", {});
             }
         } catch (error) {

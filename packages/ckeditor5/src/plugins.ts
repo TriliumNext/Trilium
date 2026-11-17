@@ -16,7 +16,10 @@ import ReferenceLink from "./plugins/referencelink.js";
 import NoPoweredByBadge from "./plugins/no_powered_by_badge.js";
 import DragOutOfEditor from "./plugins/drag_out_of_editor.js";
 import HiddenEditorBalloons from "./plugins/hidden_editor_balloons.js";
+import KeepBalloonPositions from "./plugins/keep_balloon_positions.js";
 import InlineFillerSpellcheck from "./plugins/inline_filler_spellcheck.js";
+import KeepViewMappings from "./plugins/keep_view_mappings.js";
+import DropDisallowedAttributes from "./plugins/drop_disallowed_attributes.js";
 import RemoveFormatLinksPlugin from "./plugins/remove_format_links.js";
 import IndentBlockShortcutPlugin from "./plugins/indent_block_shortcut.js";
 import MarkdownImportPlugin from "./plugins/markdownimport.js";
@@ -39,6 +42,7 @@ import Admonition from "./plugins/admonition/admonition.js";
 import Collapsible from "./plugins/collapsible/collapsible.js";
 import Tabs from "./plugins/tabs/tabs.js";
 import Multicolumn from "./plugins/multicolumn/multicolumn.js";
+import Aside from "./plugins/aside/aside.js";
 import Footnotes from "./plugins/footnotes/footnotes.js";
 import Math from "./plugins/math/math.js";
 import AutoformatMath from "./plugins/math/autoformat_math.js";
@@ -85,6 +89,7 @@ import ListItemAlignment from "./plugins/list_item_alignment.js";
 import ListItemInsert from "./plugins/list_item_insert.js";
 import TableIndent from "./plugins/table_indent.js";
 import TableContextMenu from "./plugins/table_context_menu.js";
+import TableExitCaret from "./plugins/table_exit_caret.js";
 import TableMove from "./plugins/table_move/table_move.js";
 import TablePasteRows from "./plugins/table_paste_rows.js";
 import TableSort from "./plugins/table_sort.js";
@@ -103,6 +108,7 @@ import ImagePosition from "./plugins/image_position.js";
 import ColorMenu from "./plugins/color_menu.js";
 import BlockDragHandle from "./plugins/block_drag_handle.js";
 import SkipUnchangedAttributes from "./plugins/skip_unchanged_attributes.js";
+import TriliumVim from "./plugins/vim/vim.js";
 
 /**
  * Plugins that are specific to Trilium and not part of the CKEditor 5 core, included in both text editors but not in the attribute editor.
@@ -152,6 +158,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     ListItemInsert,
     TableIndent,
     TableContextMenu,
+    TableExitCaret,
     TableMove,
     TablePasteRows,
     TableSort,
@@ -183,6 +190,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     TriliumAiAssistant,
     FindInLinkWidgets,
     SkipUnchangedAttributes,
+    TriliumVim,
 ];
 
 /**
@@ -195,6 +203,7 @@ const EXTERNAL_PLUGINS: typeof Plugin[] = [
     Collapsible,
     Tabs,
     Multicolumn,
+    Aside,
     Footnotes,
     Math,
 	AutoformatMath
@@ -218,8 +227,11 @@ export const CORE_PLUGINS: typeof Plugin[] = [
     ReferenceLink,
     NoPoweredByBadge,
     InlineFillerSpellcheck,
+    KeepViewMappings,
+    DropDisallowedAttributes,
     DragOutOfEditor,
-    HiddenEditorBalloons
+    HiddenEditorBalloons,
+    KeepBalloonPositions
 ];
 
 /**

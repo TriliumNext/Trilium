@@ -2,7 +2,8 @@ import type VanillaCodeMirror from "@triliumnext/codemirror";
 import {
     hostedCompletion, type HostedCompletionApply, type HostedCompletionState
 } from "@triliumnext/codemirror/src/extensions/hosted_completion";
-import { isMarkdownMime, type TaskStateDef } from "@triliumnext/commons";
+import type { TaskStateDef } from "@triliumnext/commons";
+import { isMarkdownMime } from "@triliumnext/commons/src/lib/notes.js";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
 import type FNote from "../../../entities/fnote";

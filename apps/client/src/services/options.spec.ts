@@ -178,6 +178,25 @@ describe("Options service", () => {
         expect(put).toHaveBeenLastCalledWith("options", { flag: "false" });
     });
 
+    it("reads the options /bootstrap brought, without asking for them", async () => {
+        vi.resetModules();
+        const get = vi.fn();
+        vi.doMock("./server.js", () => ({ default: { get } }));
+        const previousGlob = window.glob;
+        window.glob = { ...window.glob, options: { theme: "next-dark" } };
+        try {
+            const fresh = (await import("./options.js")).default;
+            await fresh.initializedPromise;
+
+            expect(fresh.get(k("theme"))).toBe("next-dark");
+            expect(get).not.toHaveBeenCalled();
+        } finally {
+            window.glob = previousGlob;
+            vi.doUnmock("./server.js");
+            vi.resetModules();
+        }
+    });
+
     it("readers tolerate an uninitialized record via optional chaining", async () => {
         // Re-import a fresh module copy with isShare=true so the constructor takes the
         // share branch (resolves immediately, never assigns arr).

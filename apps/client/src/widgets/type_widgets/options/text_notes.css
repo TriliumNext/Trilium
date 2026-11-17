@@ -183,3 +183,7 @@
     font-size: 18px;
     line-height: 1;
 }
+
+.vim-startup-commands {
+    font-family: var(--monospace-font-family);
+}

@@ -8,7 +8,7 @@ import Modal from "../react/Modal";
 import options from "../../services/options";
 import importService from "../../services/import.js";
 import tree from "../../services/tree";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 
 export default function UploadAttachmentsDialog() {
     const [ parentNoteId, setParentNoteId ] = useState<string>();

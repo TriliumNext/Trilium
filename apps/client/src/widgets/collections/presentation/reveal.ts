@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { RevealApi } from "reveal.js";
+import { useSpacedUpdate } from "../../react/hooks/dom";
 
-import { useSpacedUpdate } from "../../react/hooks";
 
 /** The view config of a presentation, kept in its `presentation.json` attachment. */
 export interface PresentationConfig {

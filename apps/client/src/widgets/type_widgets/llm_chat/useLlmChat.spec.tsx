@@ -24,8 +24,8 @@ vi.mock("../../../services/options.js", () => ({
 
 // useTriliumEvent subscribes to the app-wide event bus; stub it so the hook
 // renders without the full app context.
-vi.mock("../../react/hooks.js", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks.js")>()),
+vi.mock("../../react/hooks/events.js", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/events.js")>()),
     useTriliumEvent: vi.fn()
 }));
 

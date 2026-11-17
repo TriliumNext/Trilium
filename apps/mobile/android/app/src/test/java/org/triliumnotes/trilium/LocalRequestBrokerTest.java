@@ -102,6 +102,8 @@ public class LocalRequestBrokerTest {
         assertEquals("text/plain", response.mimeType);
         assertEquals("utf-8", response.encoding);
         assertEquals("1", response.headers.get("x-custom"));
+        assertFalse("WebResourceResponse sends mimeType as the Content-Type",
+                response.headers.containsKey("Content-Type"));
         assertFalse(response.headers.containsKey("Content-Length"));
         assertFalse(response.headers.containsKey("content-encoding"));
         assertEquals("hello", read(response.body));

@@ -39,8 +39,8 @@ vi.mock("@excalidraw/excalidraw", () => ({
         elements.reduce((sum, { version }) => sum + (version ?? 0), 0)
 }));
 // happy-dom lays nothing out: every element measures `measured`, 400 × 200 unless a test sets it.
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...await importOriginal<typeof import("../../react/hooks")>(),
+vi.mock("../../react/hooks/dom", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/dom")>()),
     useElementSize: () => measured.size
 }));
 vi.mock("./Canvas", () => ({ CanvasEditor: MockCanvasEditor }));

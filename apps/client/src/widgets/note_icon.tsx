@@ -5,8 +5,9 @@ import { useEffect, useState } from "preact/hooks";
 
 import FNote from "../entities/fnote";
 import attributes from "../services/attributes";
-import { useNoteContext, useNoteLabel } from "./react/hooks";
-import { IconPickerButton } from "./react/IconPicker";
+import { useNoteLabel } from "./react/hooks/note";
+import { useNoteContext } from "./react/hooks/note_context";
+import { IconPickerButton } from "./react/IconPickerButton";
 
 /**
  * The icon of the note being read, and the way to change it: the shared picking button, made to

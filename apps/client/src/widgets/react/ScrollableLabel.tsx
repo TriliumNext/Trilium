@@ -24,6 +24,11 @@ interface ScrollableLabelProps {
      * for one the reader is picking a part out of.
      */
     autoScroll?: boolean;
+    /**
+     * Whether a vertical mouse wheel scrolls the line too, as on a mouse with no horizontal wheel.
+     * For a label in a bar, where nothing else scrolls vertically.
+     */
+    isScrolledByWheel?: boolean;
 }
 
 /**
@@ -35,7 +40,9 @@ interface ScrollableLabelProps {
  * pane, a strip along the foot of a chart. A label that fits behaves as any other, showing no fade
  * and taking no swipe.
  */
-export default function ScrollableLabel({ children, className, autoScroll }: ScrollableLabelProps) {
+export default function ScrollableLabel({
+    children, className, autoScroll, isScrolledByWheel
+}: ScrollableLabelProps) {
     const ref = useRef<HTMLDivElement>(null);
     // The walk below starts over whenever the overflow changes, which is what walks a label whose
     // words arrived after it did, a path waiting on its titles, without asking the caller to say so
@@ -47,6 +54,7 @@ export default function ScrollableLabel({ children, className, autoScroll }: Scr
         minOverflow: 1
     });
     useMouseDragScroll(ref);
+    useWheelScroll(ref, !!isScrolledByWheel);
     // Set by the reader's own first scroll, and cleared only by a remount, which is what a new label
     // is: a walk they interrupted must not start again while the same line is still on screen. A
     // consumer whose label changes what it names keys it, so the new one arrives with a fresh walk.
@@ -228,6 +236,33 @@ function useMouseDragScroll(ref: RefObject<HTMLElement | null>) {
             element.removeAttribute("data-pressed");
         };
     }, [ ref ]);
+}
+
+/**
+ * Scrolls the label in `ref` along its line with a vertical wheel turned over it, when `isEnabled`
+ * is set and the line does not fit. One line of the wheel moves the label by its height, one page
+ * by its width.
+ */
+function useWheelScroll(ref: RefObject<HTMLElement | null>, isEnabled: boolean) {
+    useEffect(() => {
+        const element = ref.current;
+        if (!element || !isEnabled) return;
+
+        const onWheel = (event: WheelEvent) => {
+            const isVertical = Math.abs(event.deltaY) > Math.abs(event.deltaX);
+            if (!isVertical || element.scrollWidth <= element.clientWidth) return;
+
+            event.preventDefault();
+            const unit = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? element.clientHeight
+                : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? element.clientWidth
+                    : 1;
+            // A right-to-left line scrolls towards negative offsets.
+            const sign = getComputedStyle(element).direction === "rtl" ? -1 : 1;
+            element.scrollLeft += sign * event.deltaY * unit;
+        };
+        element.addEventListener("wheel", onWheel, { passive: false });
+        return () => element.removeEventListener("wheel", onWheel);
+    }, [ ref, isEnabled ]);
 }
 
 /** A line that moves on its own is the thing this setting is there to ask for less of. */

@@ -9,49 +9,6 @@ function getMinConfidenceThreshold(): number {
     return parseFloat(options.getOption('ocrMinConfidence'));
 }
 
-/**
- * @swagger
- * /api/ocr/process-note/{noteId}:
- *   post:
- *     summary: Process OCR for a specific note
- *     operationId: ocr-process-note
- *     parameters:
- *       - name: noteId
- *         in: path
- *         required: true
- *         schema:
- *           type: string
- *         description: ID of the note to process
- *     requestBody:
- *       required: false
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               language:
- *                 type: string
- *                 description: >
- *                   Tesseract language code to use (e.g. 'eng', 'fra', 'deu', 'eng+fra').
- *                   If omitted, the language is resolved automatically from the note's language label,
- *                   the enabled content languages, or the UI locale.
- *               forceReprocess:
- *                 type: boolean
- *                 description: Force reprocessing even if OCR already exists
- *                 default: false
- *     responses:
- *       '200':
- *         description: OCR processing completed successfully
- *       '400':
- *         description: Bad request - unsupported file type
- *       '404':
- *         description: Note not found
- *       '500':
- *         description: Internal server error
- *     security:
- *       - session: []
- *     tags: ["ocr"]
- */
 async function processNoteOCR(req: Request<{ noteId: string }>): Promise<OCRProcessResponse | [number, OCRProcessResponse]> {
     const { noteId } = req.params;
     const { language, forceReprocess = false } = req.body || {};
@@ -77,49 +34,6 @@ async function processNoteOCR(req: Request<{ noteId: string }>): Promise<OCRProc
     };
 }
 
-/**
- * @swagger
- * /api/ocr/process-attachment/{attachmentId}:
- *   post:
- *     summary: Process OCR for a specific attachment
- *     operationId: ocr-process-attachment
- *     parameters:
- *       - name: attachmentId
- *         in: path
- *         required: true
- *         schema:
- *           type: string
- *         description: ID of the attachment to process
- *     requestBody:
- *       required: false
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               language:
- *                 type: string
- *                 description: >
- *                   Tesseract language code to use (e.g. 'eng', 'fra', 'deu', 'eng+fra').
- *                   If omitted, the language is resolved automatically from the owner note's language label,
- *                   the enabled content languages, or the UI locale.
- *               forceReprocess:
- *                 type: boolean
- *                 description: Force reprocessing even if OCR already exists
- *                 default: false
- *     responses:
- *       '200':
- *         description: OCR processing completed successfully
- *       '400':
- *         description: Bad request - unsupported file type
- *       '404':
- *         description: Attachment not found
- *       '500':
- *         description: Internal server error
- *     security:
- *       - session: []
- *     tags: ["ocr"]
- */
 async function processAttachmentOCR(req: Request<{ attachmentId: string }>): Promise<OCRProcessResponse | [number, OCRProcessResponse]> {
     const { attachmentId } = req.params;
     const { language, forceReprocess = false } = req.body || {};
@@ -145,23 +59,6 @@ async function processAttachmentOCR(req: Request<{ attachmentId: string }>): Pro
     };
 }
 
-/**
- * @swagger
- * /api/ocr/batch-process:
- *   post:
- *     summary: Process OCR for all images without existing OCR results
- *     operationId: ocr-batch-process
- *     responses:
- *       '200':
- *         description: Batch processing initiated successfully
- *       '400':
- *         description: Bad request - OCR disabled or already processing
- *       '500':
- *         description: Internal server error
- *     security:
- *       - session: []
- *     tags: ["ocr"]
- */
 async function batchProcessOCR() {
     const result = await ocrService.startBatchProcessing();
     if (!result.success) {
@@ -170,21 +67,6 @@ async function batchProcessOCR() {
     return result;
 }
 
-/**
- * @swagger
- * /api/ocr/batch-progress:
- *   get:
- *     summary: Get batch OCR processing progress
- *     operationId: ocr-batch-progress
- *     responses:
- *       '200':
- *         description: Batch processing progress information
- *       '500':
- *         description: Internal server error
- *     security:
- *       - session: []
- *     tags: ["ocr"]
- */
 async function getBatchProgress() {
     return ocrService.getBatchProgress();
 }

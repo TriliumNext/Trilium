@@ -1,6 +1,6 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import $ from "jquery";
 
@@ -8,8 +8,11 @@ import Component from "../../../components/component";
 import type FNote from "../../../entities/fnote";
 import type { Attribute } from "../../../services/attribute_parser";
 import type { AttributeDetailOpts } from "../../attribute_widgets/attribute_detail";
+import { preloadDropdownPopups } from "../../react/Dropdown";
 import { ParentComponent } from "../../react/react_utils";
 import BoardGroupBy, { groupingOptions } from "./group_by";
+
+beforeAll(() => preloadDropdownPopups());
 
 // i18next is never initialised under test, so a translated title would come back undefined. What is
 // interpolated is carried along, for the titles these tests are about.

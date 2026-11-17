@@ -1,5 +1,5 @@
 import { SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES } from "@triliumnext/commons";
-import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "fs";
 import { createRequire } from "module";
 import { tmpdir } from "os";
 import { dirname, join } from "path";
@@ -8,7 +8,9 @@ import { describe, expect, it } from "vitest";
 import { findSlowSelectors } from "./src/test/css_invalidation";
 import {
     buildShareThemeManifest,
+    bundleStylesheet,
     checkHostedGroups,
+    ENGINE_RENDER_CHUNK,
     ENGINE_RENDER_ENTRY,
     flattenCssNesting,
     LANGUAGE_DETECTOR_PACKAGE,
@@ -22,49 +24,56 @@ import {
 
 const entryPath = createRequire(import.meta.url).resolve("@univerjs/engine-render/lib/es/index.js");
 const entrySource = readFileSync(entryPath, "utf8");
+const chunkImport = entrySource.match(/\bfrom\s*"(\.\/worker-[^"]+\.js)"/)?.[1];
+const chunkPath = join(dirname(entryPath), chunkImport ?? "worker.js");
+const chunkSource = readFileSync(chunkPath, "utf8");
 
 /**
  * Canary for `stripUniverHyphenation`. The rules it applies hold for the installed
- * version, but an upgrade could rename the entry, inline the tables, start importing a
+ * version, but an upgrade could rename the chunk, inline the tables, start importing a
  * real sibling module, or reach for `franc-min` somewhere the stub does not cover. The
  * first two turn the plugin into a no-op that silently puts 4.4 MB back into the build;
  * the others make it stub out live code.
  */
 describe("stripUniverHyphenation", () => {
-    it("matches an entry that still lazy-loads a pattern table per locale", () => {
+    it("matches a shared chunk that still lazy-loads a pattern table per locale", () => {
         expect(entryPath.replace(/\\/g, "/")).toContain(ENGINE_RENDER_ENTRY);
+        expect(chunkImport).toBeDefined();
+        expect(chunkPath.replace(/\\/g, "/")).toMatch(ENGINE_RENDER_CHUNK);
         expect(patternLoaders().length).toBeGreaterThan(50);
     });
 
-    it("finds nothing relative in the entry beyond the tables, so the blanket rule stays safe", () => {
-        const relativeImports = [...entrySource.matchAll(/\bimport\("(\.[^"]*)"\)/g)].map(([, source]) => source);
+    it("finds nothing relative in the chunk beyond the tables, so the blanket rule stays safe", () => {
+        const relativeImports = [...chunkSource.matchAll(/\bimport\("(\.[^"]*)"\)/g)].map(([, source]) => source);
 
         expect(new Set(relativeImports)).toEqual(new Set(patternLoaders().map(({ source }) => source)));
-        expect([...entrySource.matchAll(/\bfrom\s*"(\.[^"]*)"/g)]).toHaveLength(0);
+        expect([...chunkSource.matchAll(/\bfrom\s*"(\.[^"]*)"/g)]).toHaveLength(0);
     });
 
     it("intercepts every table the loader map points at", () => {
         for (const { locale, source } of patternLoaders()) {
-            expect(resolveUniverHyphenationStub(source, entryPath)).toContain("univer_hyphenation_pattern");
+            expect(resolveUniverHyphenationStub(source, chunkPath)).toContain("univer_hyphenation_pattern");
 
             // Each table exports its locale Pascal-cased (`de-ch-1901` -> `DeCh1901`),
             // which is also how `Hyphen.loadPattern()` reads it back off the namespace.
-            const table = readFileSync(join(dirname(entryPath), source), "utf8");
+            const table = readFileSync(join(dirname(chunkPath), source), "utf8");
             expect(table).toContain(`export { ${pascalCaseLocale(locale)} }`);
         }
     });
 
-    it("intercepts the language detector the entry imports, taking only what it uses", () => {
-        expect(entrySource).toContain(`import { franc } from "${LANGUAGE_DETECTOR_PACKAGE}"`);
-        expect(resolveUniverHyphenationStub(LANGUAGE_DETECTOR_PACKAGE, entryPath)).toContain("franc_min");
+    it("intercepts the language detector the chunk imports, taking only what it uses", () => {
+        expect(chunkSource).toContain(`import { franc } from "${LANGUAGE_DETECTOR_PACKAGE}"`);
+        expect(resolveUniverHyphenationStub(LANGUAGE_DETECTOR_PACKAGE, chunkPath)).toContain("franc_min");
 
         // `detect()` maps franc's code through this table, so the stub's `und` has to
         // land on `unknown` — the value that makes `shaping()` skip hyphenation.
-        expect(entrySource).toMatch(/\bund:\s*"unknown"/);
+        expect(chunkSource).toMatch(/\bund:\s*"unknown"/);
     });
 
-    it("declines a bare specifier and any importer outside the entry", () => {
-        expect(resolveUniverHyphenationStub("rxjs", entryPath)).toBeNull();
+    it("declines a bare specifier, the entry's import of the chunk and any importer outside the chunk", () => {
+        expect(resolveUniverHyphenationStub(chunkImport ?? "./worker.js", entryPath)).toBeNull();
+        expect(resolveUniverHyphenationStub(LANGUAGE_DETECTOR_PACKAGE, entryPath)).toBeNull();
+        expect(resolveUniverHyphenationStub("rxjs", chunkPath)).toBeNull();
         expect(resolveUniverHyphenationStub(LANGUAGE_DETECTOR_PACKAGE, "/app/src/services/froca.ts")).toBeNull();
         expect(resolveUniverHyphenationStub("./hu-DVk7Y_ka.js", "/app/src/services/froca.ts")).toBeNull();
         expect(resolveUniverHyphenationStub("./hu-DVk7Y_ka.js", undefined)).toBeNull();
@@ -367,7 +376,7 @@ describe("narrowThirdPartySelectors", () => {
 
 /** Reads the generated `PATTERN_LOADERS` map, whose keys are the locales Univer hyphenates. */
 function patternLoaders(): { locale: string; source: string }[] {
-    const entries = entrySource.matchAll(/\["([a-z0-9-]+)"\]\s*:\s*\(\)\s*=>\s*import\("(\.[^"]*)"\)/g);
+    const entries = chunkSource.matchAll(/\["([a-z0-9-]+)"\]\s*:\s*\(\)\s*=>\s*import\("(\.[^"]*)"\)/g);
 
     return [...entries].map(([, locale, source]) => ({ locale, source }));
 }
@@ -407,6 +416,46 @@ describe("flattenCssNesting", () => {
             expect(findNestedRules(flattenCssNesting(source, file)), file).toEqual([]);
         }
         expect(findNestedRules(readFileSync(join(dir, "style.css"), "utf8")).length).toBeGreaterThan(0);
+    });
+});
+
+describe("bundleStylesheet", () => {
+    it("inlines the imports of a stylesheet, pointing their URLs from where the stylesheet is", async () => {
+        const dir = mkdtempSync(join(tmpdir(), "bundle-stylesheet-"));
+        mkdirSync(join(dir, "nested/deeper"), { recursive: true });
+        writeFileSync(join(dir, "entry.css"), "@import url(./nested/a.css);\n.entry { background: url(own.png); }");
+        writeFileSync(join(dir, "nested/a.css"), [
+            "@import url(./deeper/b.css);",
+            ".a { background: url(\"img.png\"); & .inner { mask: url(#mask); } }",
+            ".data { background: url(data:image/png;base64,AAAA); }"
+        ].join("\n"));
+        writeFileSync(join(dir, "nested/deeper/b.css"), "@font-face { font-family: B; src: url(../../fonts/b.woff2); }");
+
+        const css = await bundleStylesheet(readFileSync(join(dir, "entry.css"), "utf8"), join(dir, "entry.css"));
+        expect(css).not.toContain("@import");
+        expect(css).toContain("url(\"own.png\")");
+        expect(css).toContain("url(\"nested/img.png\")");
+        expect(css).toContain("url(\"fonts/b.woff2\")");
+        expect(css).toContain("url(\"#mask\")");
+        expect(css).toContain("data:image/png;base64,AAAA");
+        expect(findNestedRules(css)).toEqual([]);
+    });
+
+    it("bundles the client's themes and `style.css` into one file each, with every URL still found", async () => {
+        const dir = join(__dirname, "src/stylesheets");
+        for (const file of [ "theme-next-light.css", "theme-next-dark.css", "style.css" ]) {
+            const css = await bundleStylesheet(readFileSync(join(dir, file), "utf8"), join(dir, file));
+            expect(css, file).not.toContain("@import");
+            for (const [ , url ] of css.matchAll(/url\("([^"#][^"]*)"\)/g)) {
+                if (url.startsWith("data:")) continue;
+                expect(existsSync(join(dir, url)), `${file}: ${url}`).toBe(true);
+            }
+        }
+    });
+
+    it("flattens a stylesheet without imports, and leaves other files untouched", async () => {
+        expect(findNestedRules(await bundleStylesheet(".a { &:hover { color: red; } }", "/x/plain.css"))).toEqual([]);
+        expect(await bundleStylesheet("const a = 1;", "/x/theme.ts")).toBe("const a = 1;");
     });
 });
 

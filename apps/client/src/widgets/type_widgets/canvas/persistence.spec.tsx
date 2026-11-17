@@ -26,7 +26,7 @@ import LoadResults from "../../../services/load_results";
 import server from "../../../services/server";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
-import type { SavedData } from "../../react/hooks";
+import type { SavedData } from "../../react/hooks/editor";
 import type { EmbedHostHistory } from "../text/embed_history";
 import { applyDrawingView, type DrawingView } from "./drawing_view";
 import { CANVAS_EXPORT_TITLE } from "./image_attachments";

@@ -13,7 +13,7 @@ The general styling rules (no inline styles, one `.css` file per component impor
 
 ## Don't reinvent froca-reactive state
 
-The most common mistake on this surface is writing `useState` + `server.get`/`froca` + a hand-rolled `entitiesReloaded` listener for something a **one-line hook already does** — with the right reload filter, the right echo-suppression, and the stale-request guard. `apps/client/src/widgets/react/hooks.tsx` exports 60 `use*` hooks. Check the catalogue first: [references/hooks-catalog.md](references/hooks-catalog.md).
+The most common mistake on this surface is writing `useState` + `server.get`/`froca` + a hand-rolled `entitiesReloaded` listener for something a **one-line hook already does** — with the right reload filter, the right echo-suppression, and the stale-request guard. `apps/client/src/widgets/react/hooks/` exports 79 `use*` hooks, one file per set of imports. Check the catalogue first: [references/hooks-catalog.md](references/hooks-catalog.md).
 
 | You need… | Use | It already wires |
 |---|---|---|
@@ -169,7 +169,7 @@ Rules for `OverlayControlButton`, which cover every case seen so far:
 - **`active`/`disabled` are props**, not classes concatenated into `className`.
 - **Pass `overCanvas`** when the group stands over something that is dragged (a map), so a press on a button is not taken for the start of a drag.
 - **Where the group stands is the group's own**, via `placement` (`top`/`bottom` × `start`/`center`/`end`): it pins itself over the nearest positioned ancestor, and its tooltips open away from that edge. **Never write `position: absolute` plus insets at the call site.** What the caller does hand over, in that widget's CSS, is the room to keep from the edges (`--overlay-group-inset`, or the per-edge `--overlay-group-inset-top`/`-bottom`/`-start`/`-end` where one edge differs — a fullscreen map clearing a notch, which spells that inset `var(--safe-area-inset-top, env(safe-area-inset-top))`, never a bare `env()`, since Android leaves `env()` at `0`) and the `z-index`. `titlePosition` overrides the tooltip direction and is rarely right; only add a class to a *button* if a rule actually uses it.
-- **Overlay controls exist in every layout.** Never gate a group on `isExperimentalFeatureEnabled("new-layout")`, and when an action moves onto a group, **delete its twin in `FloatingButtonsDefinitions.tsx`** rather than keeping both: that bar only renders in the old layout (`desktop_layout.tsx` mounts it with `!isNewLayout`), so a layout-gated group plus a floating fallback means two implementations of one button that drift. A Preact view wires its own groups to callbacks — the relation map's toolbars call `useMapZoom` and `useNotePlacement` directly rather than going through app events.
+- **Overlay controls exist in every layout.** A Preact view wires its own groups to callbacks — the relation map's toolbars call `useMapZoom` and `useNotePlacement` directly rather than going through app events.
 - Reuse shared labels from the `common` translation namespace (e.g. `common.fullscreen`) rather than adding a per-widget copy of a string the app already has.
 
 Worked examples to read before adding a new one: `apps/client/src/widgets/type_widgets/mind_map/MapToolbar.tsx` (group + toolbar + fullscreen), `type_widgets/relation_map/MapToolbar.tsx`, `collections/geomap/MapToolbar.tsx`, `type_widgets/helpers/SvgSplitEditor.tsx`.

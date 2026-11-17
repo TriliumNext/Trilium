@@ -13,7 +13,7 @@ vi.mock("../../../services/i18n", () => ({
 const setOffered = vi.fn();
 let isOffered = false;
 
-vi.mock("../../react/hooks", () => ({
+vi.mock("../../react/hooks/note", () => ({
     useNoteLabelBoolean: () => [ isOffered, setOffered ]
 }));
 

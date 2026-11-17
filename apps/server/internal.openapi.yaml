@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Internal Trilium API
-  version: 0.99.3
+  version: 0.107.0
   description: |
     This is the internal API used by the Trilium Notes client application.
     
@@ -11,7 +11,7 @@ info:
     ## Signing in
     
     Most endpoints require session-based authentication. You can authenticate using:
-    - **Password login**: POST to `/api/login` with password
+    - **Password login**: POST to `/login` with password
     - **Token authentication**: Generate a token via `/api/login/token`
     - **Sync authentication**: Use document secret for sync operations
     
@@ -62,6 +62,9 @@ tags:
   - name: Import/Export
     description: Import and export operations
     x-icon: bx bx-transfer
+  - name: OCR
+    description: Text recognition
+    x-icon: bx bx-file
   - name: Sync
     description: Synchronization between instances
     x-icon: bx bx-sync
@@ -74,9 +77,6 @@ tags:
   - name: Database
     description: Database operations
     x-icon: bx bx-data
-  - name: LLM
-    description: AI/LLM integration
-    x-icon: bx bx-bot
   - name: Security
     description: Security features (2FA, tokens)
     x-icon: bx bx-shield-quarter
@@ -99,7 +99,7 @@ security:
 
 paths:
   # Session endpoints
-  /api/login:
+  /login:
     post:
       tags: [Sessions]
       summary: Login with password
@@ -168,6 +168,9 @@ paths:
       tags: [Sessions, Sync]
       summary: Sync login using document secret
       operationId: loginSync
+      externalDocs:
+        description: HMAC calculation
+        url: https://github.com/TriliumNext/Trilium/blob/v0.107.0/apps/server/src/crypto_provider.ts#L33-L37
       security: []
       requestBody:
         required: true
@@ -197,7 +200,27 @@ paths:
                     type: string
                   maxEntityChangeId:
                     type: string
-                    
+        '400':
+          description: Sync version / document secret mismatch
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Non-matching sync versions, local is version ${server syncVersion}, remote is ${requested syncVersion}. It is recommended to run same version of Trilium on both sides of sync"
+        '401':
+          description: Timestamp mismatch
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Auth request time is out of sync, please check that both client and server have correct time. The difference between clocks has to be smaller than 5 minutes"
+
   /api/login/protected:
     post:
       tags: [Sessions, Security]
@@ -379,14 +402,24 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - options
+                  - syncVersion
                 properties:
+                  options:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - name
+                        - value
+                      properties:
+                        name:
+                          type: string
+                          description: Either `"documentId"` or `"documentSecret"`.
+                        value:
+                          type: string
                   syncVersion:
-                    type: integer
-                  schemaVersion:
-                    type: integer
-                  documentSecret:
-                    type: string
-                  maxSyncId:
                     type: integer
 
   # Note operations
@@ -418,6 +451,7 @@ paths:
           required: true
           schema:
             type: string
+          description: Task group identifier
         - name: eraseNotes
           in: query
           schema:
@@ -428,12 +462,13 @@ paths:
           required: true
           schema:
             type: boolean
+          description: Whether this is the last request of this task group
       responses:
         '204':
           description: Note deleted
         '404':
           description: Note not found
-          
+
   /api/notes/{noteId}/blob:
     get:
       tags: [Notes]
@@ -445,19 +480,9 @@ paths:
         '200':
           description: Note content
           content:
-            text/html:
-              schema:
-                type: string
-            text/plain:
-              schema:
-                type: string
             application/json:
               schema:
-                type: object
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
+                $ref: '#/components/schemas/Blob'
         '404':
           description: Note not found
           
@@ -857,6 +882,32 @@ paths:
         '204':
           description: Note updated from file
 
+  /api/notes/metadata:
+    post:
+      tags: [Notes]
+      summary: Retrieve the timestamps of several notes at once
+      operationId: notesMetadata
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                noteIds:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: The timestamps of each note found, keyed by note ID
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: "#/components/schemas/Timestamps"
+
   # Tree and branch operations
   /api/tree:
     get:
@@ -944,6 +995,7 @@ paths:
           required: true
           schema:
             type: string
+          description: Task group identifier
         - name: eraseNotes
           in: query
           schema:
@@ -953,6 +1005,7 @@ paths:
           required: true
           schema:
             type: boolean
+          description: Whether this is the last request of this task group
       responses:
         '200':
           description: Branch deleted
@@ -963,6 +1016,7 @@ paths:
                 properties:
                   noteDeleted:
                     type: boolean
+                    description: Whether the last note clone was deleted
                     
   /api/branches/{branchId}/move-to/{parentBranchId}:
     put:
@@ -2115,14 +2169,55 @@ paths:
                 type: array
                 items:
                   type: object
+                  required:
+                    - notePath
+                    - noteTitle
+                    - notePathTitle
+                    - icon
                   properties:
                     noteId:
                       type: string
-                    title:
+                      example: "_help_gcI7RPbaNSh3"
+                    notePath:
                       type: string
-                    path:
+                      example: "root/_hidden/_help/_help_CdNpE2pqjmI6/_help_yIhgI5H7A2Sm/_help_4Gn3psZKsfSm/_help_gcI7RPbaNSh3"
+                    noteTitle:
                       type: string
-                      
+                      example: "Analog Watch"
+                    notePathTitle:
+                      type: string
+                      example: "Hidden Notes › User Guide › Scripting › Frontend Basics › Launch Bar Widgets › Analog Watch"
+                    highlightedNotePathTitle:
+                      type: string
+                      example: "Hidden Notes › User Guide › Scripting › Frontend Basics › Launch Bar Widgets › Analog <b>Wat</b>ch"
+                    highlightedNoteTitle:
+                      type: string
+                      example: "Analog <b>Wat</b>ch"
+                    highlightedParentPathTitle:
+                      type: string
+                      example: "Hidden Notes › User Guide › Scripting › Frontend Basics › Launch Bar Widgets"
+                    contentSnippet:
+                      type: string
+                      example: "This is a more intricate example of a basic widget, which displays an analog watch in the launch bar."
+                    highlightedContentSnippet:
+                      type: string
+                      example: "This is a more intricate example of a basic widget, which displays an analog <b>wat</b>ch in the launch bar."
+                    contentSnippetTruncated:
+                      type: boolean
+                      example: true
+                    attributeSnippet:
+                      type: string
+                      example: ""
+                    matchedTerms:
+                      type: array
+                      items:
+                        type: string
+                      example:
+                        - "wat"
+                    icon:
+                      type: string
+                      example: "tn-icon bx bx-file"
+
   /api/similar-notes/{noteId}:
     get:
       tags: [Search]
@@ -2351,6 +2446,103 @@ paths:
         '200':
           description: Import results
 
+  /api/ocr/process-note/{noteId}:
+    post:
+      tags: [OCR]
+      summary: Process OCR for a specific note
+      operationId: ocrProcessNote
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                language:
+                  type: string
+                  description: >
+                    Tesseract language code to use (e.g. 'eng', 'fra', 'deu', 'eng+fra').
+                    If omitted, the language is resolved automatically from the note's language label,
+                    the enabled content languages, or the UI locale.
+                forceReprocess:
+                  type: boolean
+                  description: Force reprocessing even if OCR already exists
+                  default: false
+      responses:
+        '200':
+          description: OCR processing completed successfully
+        '400':
+          description: Bad request - unsupported file type
+        '404':
+          description: Note not found
+        '500':
+          description: Internal server error
+
+  /api/ocr/process-attachment/{attachmentId}:
+    post:
+      tags: [OCR]
+      summary: Process OCR for a specific attachment
+      operationId: ocrProcessAttachment
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the attachment to process
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                language:
+                  type: string
+                  description: >
+                    Tesseract language code to use (e.g. 'eng', 'fra', 'deu', 'eng+fra').
+                    If omitted, the language is resolved automatically from the owner note's language label,
+                    the enabled content languages, or the UI locale.
+                forceReprocess:
+                  type: boolean
+                  description: Force reprocessing even if OCR already exists
+                  default: false
+      responses:
+        '200':
+          description: OCR processing completed successfully
+        '400':
+          description: Bad request - unsupported file type
+        '404':
+          description: Attachment not found
+        '500':
+          description: Internal server error
+
+  /api/ocr/batch-process:
+    post:
+      tags: [OCR]
+      summary: Process OCR for all images without existing OCR results
+      operationId: ocrBatchProcess
+      responses:
+        '200':
+          description: Batch processing initiated successfully
+        '400':
+          description: Bad request - OCR disabled or already processing
+        '500':
+          description: Internal server error
+
+  /api/ocr/batch-progress:
+    get:
+      tags: [OCR]
+      summary: Get batch OCR processing progress
+      operationId: ocrBatchProgress
+      responses:
+        '200':
+          description: Batch processing progress information
+        '500':
+          description: Internal server error
+
   # Options
   /api/options:
     get:
@@ -2545,6 +2737,12 @@ paths:
           required: true
           schema:
             type: string
+        - name: maxBlobContentSize
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: If set, blob rows whose content exceeds this many bytes are returned with empty content; the entity_change metadata (including its hash) is unaffected.
       responses:
         '200':
           description: Sync changes
@@ -2559,13 +2757,16 @@ paths:
                       $ref: '#/components/schemas/EntityChange'
                   lastEntityChangeId:
                     type: integer
+                    description: If `outstandingPullCount > 0`, pass this as parameter in your next request to continue.
                   outstandingPullCount:
                     type: integer
+                    description: Number of changes not yet returned by the remote.
                     
   /api/sync/update:
     put:
       tags: [Sync]
       summary: Push sync changes
+      description: "Basic usage: set `pageCount = 1`, `pageIndex = 0`, and omit `requestId`. Supply your entity changes in the request body."
       operationId: pushSyncChanges
       parameters:
         - name: logMarkerId
@@ -2998,17 +3199,129 @@ paths:
             type: string
             enum: [prometheus, json]
             default: prometheus
+          description: Response format - 'prometheus' (default) for Prometheus text format, 'json' for JSON
       responses:
         '200':
-          description: System metrics
+          description: Instance metrics
           content:
-            application/json:
-              schema:
-                type: object
             text/plain:
               schema:
                 type: string
-                
+                example: |
+                  # HELP trilium_info Trilium instance information
+                  # TYPE trilium_info gauge
+                  trilium_info{version="0.91.6",db_version="231",node_version="v18.17.0"} 1 1701432000
+ 
+                  # HELP trilium_notes_total Total number of notes including deleted
+                  # TYPE trilium_notes_total gauge
+                  trilium_notes_total 1234 1701432000
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: object
+                    properties:
+                      app:
+                        type: string
+                        example: "0.91.6"
+                      db:
+                        type: integer
+                        example: 231
+                      node:
+                        type: string
+                        example: "v18.17.0"
+                      sync:
+                        type: integer
+                        example: 35
+                      buildDate:
+                        type: string
+                        example: "2024-09-07T18:36:34Z"
+                      buildRevision:
+                        type: string
+                        example: "7c0d6930fa8f20d269dcfbcbc8f636a25f6bb9a7"
+                  database:
+                    type: object
+                    properties:
+                      totalNotes:
+                        type: integer
+                        example: 1234
+                      deletedNotes:
+                        type: integer
+                        example: 56
+                      activeNotes:
+                        type: integer
+                        example: 1178
+                      protectedNotes:
+                        type: integer
+                        example: 23
+                      totalAttachments:
+                        type: integer
+                        example: 89
+                      deletedAttachments:
+                        type: integer
+                        example: 5
+                      activeAttachments:
+                        type: integer
+                        example: 84
+                      totalRevisions:
+                        type: integer
+                        example: 567
+                      totalBranches:
+                        type: integer
+                        example: 1200
+                      totalAttributes:
+                        type: integer
+                        example: 345
+                      totalBlobs:
+                        type: integer
+                        example: 678
+                      totalEtapiTokens:
+                        type: integer
+                        example: 3
+                      totalRecentNotes:
+                        type: integer
+                        example: 50
+                  noteTypes:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                    example:
+                      text: 800
+                      code: 200
+                      image: 100
+                      file: 50
+                  attachmentTypes:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                    example:
+                      "image/png": 45
+                      "image/jpeg": 30
+                      "application/pdf": 14
+                  statistics:
+                    type: object
+                    properties:
+                      oldestNote:
+                        type: [string, 'null']
+                        example: "2020-01-01T00:00:00.000Z"
+                      newestNote:
+                        type: [string, 'null']
+                        example: "2024-12-01T12:00:00.000Z"
+                      lastModified:
+                        type: [string, 'null']
+                        example: "2024-12-01T11:30:00.000Z"
+                      databaseSizeBytes:
+                        type: [integer, 'null']
+                        example: 52428800
+                  timestamp:
+                    type: string
+                    example: "2024-12-01T12:00:00.000Z"
+        '400':
+          description: Invalid format parameter
+        '500':
+          description: Error collecting metrics
+
   /api/system-checks:
     get:
       tags: [Utilities]
@@ -3772,312 +4085,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Note'
 
-  # LLM endpoints
-  /api/llm/chat:
-    post:
-      tags: [LLM]
-      summary: Create new chat session
-      operationId: createChatSession
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                title:
-                  type: string
-                systemPrompt:
-                  type: string
-                temperature:
-                  type: number
-                  minimum: 0
-                  maximum: 1
-                maxTokens:
-                  type: integer
-                model:
-                  type: string
-                provider:
-                  type: string
-                  enum: [openai, anthropic, ollama]
-                contextNoteId:
-                  type: string
-      responses:
-        '201':
-          description: Chat session created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ChatSession'
-                
-    get:
-      tags: [LLM]
-      summary: List all chat sessions
-      operationId: listChatSessions
-      responses:
-        '200':
-          description: Chat sessions
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ChatSession'
-                  
-  /api/llm/chat/{sessionId}:
-    get:
-      tags: [LLM]
-      summary: Get specific chat session
-      operationId: getChatSession
-      parameters:
-        - name: sessionId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Chat session details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ChatSession'
-                
-    patch:
-      tags: [LLM]
-      summary: Update chat session
-      operationId: updateChatSession
-      parameters:
-        - name: sessionId
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                title:
-                  type: string
-                systemPrompt:
-                  type: string
-                temperature:
-                  type: number
-                maxTokens:
-                  type: integer
-                model:
-                  type: string
-                provider:
-                  type: string
-                contextNoteId:
-                  type: string
-      responses:
-        '200':
-          description: Session updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ChatSession'
-                
-  /api/llm/chat/{chatNoteId}:
-    delete:
-      tags: [LLM]
-      summary: Delete chat session
-      operationId: deleteChatSession
-      parameters:
-        - name: chatNoteId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '204':
-          description: Session deleted
-          
-  /api/llm/chat/{chatNoteId}/messages:
-    post:
-      tags: [LLM]
-      summary: Send message to LLM
-      operationId: sendChatMessage
-      parameters:
-        - name: sessionId
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [message]
-              properties:
-                message:
-                  type: string
-                options:
-                  type: object
-                  properties:
-                    temperature:
-                      type: number
-                    maxTokens:
-                      type: integer
-                    model:
-                      type: string
-                    provider:
-                      type: string
-                includeContext:
-                  type: boolean
-                useNoteContext:
-                  type: boolean
-      responses:
-        '200':
-          description: LLM response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  response:
-                    type: string
-                  sources:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        noteId:
-                          type: string
-                        title:
-                          type: string
-                        similarity:
-                          type: number
-                          
-  /api/llm/chat/{chatNoteId}/messages/stream:
-    post:
-      tags: [LLM]
-      summary: Stream message to LLM
-      operationId: streamChatMessage
-      parameters:
-        - name: sessionId
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [content]
-              properties:
-                content:
-                  type: string
-                useAdvancedContext:
-                  type: boolean
-                showThinking:
-                  type: boolean
-                mentions:
-                  type: array
-                  items:
-                    type: string
-      responses:
-        '200':
-          description: Streaming started
-          
-  /api/llm/providers/ollama/models:
-    get:
-      tags: [LLM]
-      summary: List Ollama models
-      operationId: listOllamaModels
-      parameters:
-        - name: baseUrl
-          in: query
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Ollama models
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  models:
-                    type: array
-                    items:
-                      type: object
-                      
-  /api/llm/providers/openai/models:
-    get:
-      tags: [LLM]
-      summary: List OpenAI models
-      operationId: listOpenAIModels
-      responses:
-        '200':
-          description: OpenAI models
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  chatModels:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        name:
-                          type: string
-                        type:
-                          type: string
-                  embeddingModels:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        name:
-                          type: string
-                        type:
-                          type: string
-                          
-  /api/llm/providers/anthropic/models:
-    get:
-      tags: [LLM]
-      summary: List Anthropic models
-      operationId: listAnthropicModels
-      responses:
-        '200':
-          description: Anthropic models
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  chatModels:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        name:
-                          type: string
-                        type:
-                          type: string
-
   # TOTP/2FA
   /api/totp/generate:
     get:
@@ -4580,6 +4587,73 @@ paths:
         '400':
           description: Missing or non-positive limit
 
+  /api/icon-packs.css:
+    get:
+      tags: [Utilities]
+      summary: Get the glyph of every icon
+      description: >-
+        A stylesheet with the `::before` rule that places the character of each icon of each icon
+        pack. The bootstrap data carries the fonts of the packs and links this stylesheet with a
+        `v` parameter derived from its content, so the response can be cached for good. Served
+        without a session, like the bootstrap data that names it on the login screen.
+      operationId: getIconPackGlyphCss
+      security: []
+      parameters:
+        - name: v
+          in: query
+          required: false
+          description: The content version the bootstrap data names; any value returns the current stylesheet
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The glyph rules of the icon packs
+          content:
+            text/css:
+              schema:
+                type: string
+
+  /api/other/icon-registry:
+    get:
+      tags: [Utilities]
+      summary: Get every icon of each icon pack
+      description: >-
+        Lists the icons that the icon picker searches. The bootstrap data names only the icon packs,
+        since the full list runs to over a megabyte with many packs installed.
+      operationId: getIconRegistry
+      responses:
+        '200':
+          description: The icons of each icon pack
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sources:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        prefix:
+                          type: string
+                        name:
+                          type: string
+                        icon:
+                          type: string
+                          description: An icon class that identifies the pack
+                        icons:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                description: The icon's classes, such as `bx bx-star`
+                              terms:
+                                type: array
+                                items:
+                                  type: string
+
   /api/other/icon-usage:
     get:
       tags: [Utilities]
@@ -4693,17 +4767,13 @@ components:
           type: string
           description: ID of content blob
         dateCreated:
-          type: string
-          format: date-time
+          $ref: '#/components/schemas/DateTime'
         dateModified:
-          type: string
-          format: date-time
+          $ref: '#/components/schemas/DateTime'
         utcDateCreated:
-          type: string
-          format: date-time
+          $ref: '#/components/schemas/UtcDateTime'
         utcDateModified:
-          type: string
-          format: date-time
+          $ref: '#/components/schemas/UtcDateTime'
           
     NoteType:
       type: string
@@ -4725,7 +4795,25 @@ components:
         - contentWidget
         - mindMap
         - geoMap
-        
+
+    Blob:
+      type: object
+      properties:
+        blobId:
+          type: string
+          example: "8iqMIB8eiY1tPYmElfjm"
+        content:
+          type:
+            - string
+            - 'null'
+          description: "`null` if not text."
+        contentLength:
+          type: integer
+        dateModified:
+          $ref: "#/components/schemas/DateTime"
+        utcDateModified:
+          $ref: "#/components/schemas/UtcDateTime"
+
     Branch:
       type: object
       required:
@@ -4797,12 +4885,10 @@ components:
         blobId:
           type: string
         dateModified:
-          type: string
-          format: date-time
+          $ref: '#/components/schemas/DateTime'
         utcDateModified:
-          type: string
-          format: date-time
-          
+          $ref: '#/components/schemas/UtcDateTime'
+
     Revision:
       type: object
       properties:
@@ -4817,11 +4903,9 @@ components:
         mime:
           type: string
         dateCreated:
-          type: string
-          format: date-time
+          $ref: '#/components/schemas/DateTime'
         utcDateCreated:
-          type: string
-          format: date-time
+          $ref: '#/components/schemas/UtcDateTime'
           
     SearchResult:
       type: object
@@ -4851,22 +4935,27 @@ components:
               type: string
         entity:
           type: object
-          
+
+    DateTime:
+     type: string
+     example: "2025-02-14 08:19:59.203+0100"
+
+    UtcDateTime:
+      type: string
+      example: "2025-02-13 07:42:47.698Z"
+      description: "Result of `new Date().toISOString().replace('T', ' ')`"
+
     Timestamps:
       type: object
       properties:
         dateCreated:
-          type: string
-          format: date-time
+          $ref: '#/components/schemas/DateTime'
         dateModified:
-          type: string
-          format: date-time
+          $ref: '#/components/schemas/DateTime'
         utcDateCreated:
-          type: string
-          format: date-time
+          $ref: '#/components/schemas/UtcDateTime'
         utcDateModified:
-          type: string
-          format: date-time
+          $ref: '#/components/schemas/UtcDateTime'
           
     CreateNoteRequest:
       type: object
@@ -4933,36 +5022,7 @@ components:
         utcDateTime:
           type: string
           format: date-time
-          
-    ChatSession:
-      type: object
-      properties:
-        sessionId:
-          type: string
-        title:
-          type: string
-        messages:
-          type: array
-          items:
-            type: object
-            properties:
-              role:
-                type: string
-                enum: [user, assistant, system]
-              content:
-                type: string
-              timestamp:
-                type: string
-                format: date-time
-        createdAt:
-          type: string
-          format: date-time
-        lastActive:
-          type: string
-          format: date-time
-        messageCount:
-          type: integer
-          
+
     EtapiToken:
       type: object
       properties:
@@ -4973,7 +5033,6 @@ components:
         token:
           type: string
         dateCreated:
-          type: string
-          format: date-time
+          $ref: '#/components/schemas/DateTime'
         isDeleted:
           type: boolean

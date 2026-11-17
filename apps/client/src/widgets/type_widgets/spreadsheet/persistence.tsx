@@ -1,4 +1,4 @@
-import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
+import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons/src/lib/notes.js";
 import { SHEET_DRAWING_RESOURCE } from "@triliumnext/commons/src/lib/spreadsheet/workbook_model";
 import { CommandType, FUniver, IDisposable, IWorkbookData } from "@univerjs/presets";
 import { RefObject } from "preact";
@@ -7,7 +7,7 @@ import { useEffect, useRef } from "preact/hooks";
 import NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
 import { uploadImageAttachment } from "../../../services/image_upload";
-import { SavedData, useEditorSpacedUpdate } from "../../react/hooks";
+import { SavedData, useEditorSpacedUpdate } from "../../react/hooks/editor";
 import { useWorkbookDisplay } from "./loading";
 
 export default function usePersistence(note: FNote, noteContext: NoteContext | null | undefined, apiRef: RefObject<FUniver | undefined>, containerRef: RefObject<HTMLDivElement | null>, readOnly: boolean) {

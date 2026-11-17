@@ -1,10 +1,16 @@
 import "./content_renderer.css";
 
+import type { BoxSize, TextRepresentationResponse } from "@triliumnext/commons";
 import {
-    attachmentIcon, type BoxSize, getEditableBlockRun, getFileContentType, getMimeTypeFromFileName,
-    getNoteContentType, hasCompactContent, isAcceptedImageMime, isImageAttachmentRole,
-    isMarkdownMime, type TextRepresentationResponse
-} from "@triliumnext/commons";
+    attachmentIcon, isImageAttachmentRole
+} from "@triliumnext/commons/src/lib/attachment_roles.js";
+import { getEditableBlockRun } from "@triliumnext/commons/src/lib/block_reference.js";
+import { hasCompactContent } from "@triliumnext/commons/src/lib/content_embeds.js";
+import { isAcceptedImageMime } from "@triliumnext/commons/src/lib/image_mimes.js";
+import { getMimeTypeFromFileName } from "@triliumnext/commons/src/lib/mime_type.js";
+import {
+    getFileContentType, getNoteContentType, isMarkdownMime
+} from "@triliumnext/commons/src/lib/notes.js";
 import DOMPurify from "dompurify";
 import { h, type JSX, render } from "preact";
 
@@ -25,7 +31,7 @@ import renderText, {
 } from "./content_renderer_text.js";
 import renderDoc from "./doc_renderer.js";
 import { getAttachmentImageUrl, getNoteImageUrl } from "./image_urls.js";
-import { renderOfficeToHtml } from "./office_renderer.js";
+import { OfficePreviewTooLargeError, renderOfficeToHtml } from "./office_renderer.js";
 import openService from "./open.js";
 import { waitForPendingRenders } from "./pending_renders.js";
 import protectedSessionService from "./protected_session.js";
@@ -863,9 +869,13 @@ async function renderOffice(entity: FNote | FAttachment, $renderedContent: JQuer
             $body.prepend($("<style>").text(css));
         }
     } catch (e) {
-        console.warn("Failed to render office document preview:", getErrorMessage(e));
+        const tooLarge = e instanceof OfficePreviewTooLargeError;
+        if (!tooLarge) {
+            console.warn("Failed to render office document preview:", getErrorMessage(e));
+        }
+        const message = tooLarge ? "content_renderer.office_too_large" : "content_renderer.office_render_error";
         $scroll.remove();
-        $content.prepend($("<div>").addClass("admonition caution").text(t("content_renderer.office_render_error")));
+        $content.prepend($("<div>").addClass("admonition caution").text(t(message)));
     }
 
     appendNoteFileActions($content, entity);

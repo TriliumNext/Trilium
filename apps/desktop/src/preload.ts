@@ -93,16 +93,11 @@ contextBridge.exposeInMainWorld("electronApi", {
         showWindow() {
             ipcRenderer.send("show-window");
         },
+        releaseFirstPaint() {
+            ipcRenderer.send("release-first-paint");
+        },
         reportStartupMetric(metric: RendererStartupMetric) {
             ipcRenderer.send("report-startup-metric", metric);
-        },
-
-        // Background effects
-        setBackgroundMaterial(material: string) {
-            ipcRenderer.send("set-background-material", material);
-        },
-        setVibrancy(vibrancy: string) {
-            ipcRenderer.send("set-vibrancy", vibrancy);
         },
 
         // Main → renderer events

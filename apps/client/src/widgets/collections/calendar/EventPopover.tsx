@@ -7,12 +7,16 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
-import { announceEmbeddedNoteClosing, EmbeddedNoteActions, EmbeddedNoteScope, MaximizeAction, NoteColorAction, OpenNoteActions, useEmbeddedNoteContext, useFollowLinksWithin } from "../../EmbeddedNotePane";
+import {
+    announceEmbeddedNoteClosing, EmbeddedNoteActions, EmbeddedNoteScope, MaximizeAction,
+    NoteColorAction, OpenNoteActions, useEmbeddedNoteContext, useFollowLinksWithin
+} from "../../EmbeddedNotePane";
 import TitleRow from "../../layout/TitleRow";
 import NoteDetail from "../../NoteDetail";
 import PromotedAttributes from "../../PromotedAttributes";
 import ActionButton from "../../react/ActionButton";
-import { useLegacyComponentElement, useNote, useNoteColorClass } from "../../react/hooks";
+import { useNote, useNoteColorClass } from "../../react/hooks/note";
+import { useLegacyComponentElement } from "../../react/hooks/legacy";
 import Modal from "../../react/Modal";
 import Popover from "../../react/Popover";
 import { removeFromCalendar } from "./api";

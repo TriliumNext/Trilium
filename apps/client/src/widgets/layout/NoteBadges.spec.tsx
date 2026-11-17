@@ -13,8 +13,8 @@ const shownNote = vi.hoisted(() => ({
     viewScope: undefined as ViewScope | undefined,
     parentComponent: { triggerEvent: vi.fn() }
 }));
-vi.mock("../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../react/hooks")>()),
+vi.mock("../react/hooks/note_context", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/note_context")>()),
     useNoteContext: () => ({
         note: shownNote.current,
         viewScope: shownNote.viewScope,
@@ -30,7 +30,9 @@ vi.mock("../../services/i18n", () => ({
 
 import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
-import { ClippedNoteBadge, ExecuteBadge, OfficePreviewBadge, ReadOnlyBadge, TemplateBadge } from "./NoteBadges";
+import {
+    ClippedNoteBadge, ExecuteBadge, OfficePreviewBadge, ReadOnlyBadge, TemplateBadge
+} from "./NoteBadges";
 
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 

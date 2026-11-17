@@ -2,13 +2,13 @@ import type VanillaCodeMirror from "@triliumnext/codemirror";
 
 import appContext from "../../../components/app_context";
 import type FNote from "../../../entities/fnote";
+import { formatCustomDateTime } from "../../../services/dayjs";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import options from "../../../services/options";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import tree from "../../../services/tree";
-import utils from "../../../services/utils";
 
 /** Inserts text at the given position (or cursor) and moves the cursor to the end of the inserted text. */
 export function insertText(view: VanillaCodeMirror, text: string, pos?: number) {
@@ -81,7 +81,7 @@ export function showEditLinkDialog(view: VanillaCodeMirror) {
 
 /** Inserts the current date and time at the cursor, in the `customDateTimeFormat` option. */
 export function insertDateTime(view: VanillaCodeMirror) {
-    insertText(view, utils.formatDateTime(new Date(), options.get("customDateTimeFormat")));
+    insertText(view, formatCustomDateTime(new Date(), options.get("customDateTimeFormat")));
 }
 
 /** Opens the include note dialog, then inserts the embed or the image picked at the cursor. */

@@ -5,12 +5,14 @@ import { join } from 'path';
 import { defineConfig } from 'vite';
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 
+import { startupChunkGroup } from './startup-chunks.mjs';
+import { translationCatalogues } from './translation-catalogues.mjs';
 import {
-    flattenCssNesting, narrowThirdPartySelectors, shareTheme, stripUniverEmojiData,
+    bundleStylesheet, narrowThirdPartySelectors, shareTheme, stripUniverEmojiData,
     stripUniverHyphenation
 } from './vite-plugins.mjs';
 
-const assets = [ "assets", "stylesheets", "fonts", "translations" ];
+const assets = [ "assets", "stylesheets", "fonts" ];
 
 const isDev = process.env.NODE_ENV === "development";
 let plugins: any = [];
@@ -24,6 +26,7 @@ if (isDev) {
         stripUniverHyphenation(),
         stripUniverEmojiData(),
         narrowThirdPartySelectors(),
+        translationCatalogues(join(import.meta.dirname, "src/translations")),
         ...shareTheme()
     ];
 } else {
@@ -31,13 +34,14 @@ if (isDev) {
         stripUniverHyphenation(),
         stripUniverEmojiData(),
         narrowThirdPartySelectors(),
+        translationCatalogues(join(import.meta.dirname, "src/translations")),
         ...shareTheme(),
         viteStaticCopy({
             targets: assets.map((asset) => ({
                 src: `src/${asset}/**/*`,
                 dest: asset,
                 rename: { stripBase: 2 },
-                ...(asset === "stylesheets" && { transform: flattenCssNesting })
+                ...(asset === "stylesheets" && { transform: bundleStylesheet })
             }))
         }),
         viteStaticCopy({
@@ -131,7 +135,13 @@ export default defineConfig(() => ({
                     return "src/[name].js";
                 },
                 chunkFileNames: "src/[name]-[hash].js",
-                assetFileNames: "src/[name]-[hash].[ext]"
+                assetFileNames: "src/[name]-[hash].[ext]",
+                // By default every module that two lazily loaded parts share gets a chunk of its
+                // own, which made a start of the app request about 300 scripts.
+                codeSplitting: {
+                    includeDependenciesRecursively: false,
+                    groups: [ startupChunkGroup(import.meta.dirname) ]
+                }
             },
             onwarn(warning, rollupWarn) {
                 if (warning.code === "MODULE_LEVEL_DIRECTIVE") {

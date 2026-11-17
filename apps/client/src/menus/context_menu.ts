@@ -1,14 +1,14 @@
 import { KeyboardActionNames } from "@triliumnext/commons";
-import { Tooltip } from "bootstrap";
+import type { Tooltip } from "bootstrap";
 import clsx from "clsx";
 import { h, JSX, render } from "preact";
 
-import note_tooltip from "../services/note_tooltip.js";
 import type { NotePresetId } from "../services/note_presets.js";
 import { onSystemBack } from "../services/system_back.js";
 import utils from "../services/utils.js";
+import { loadBootstrap } from "../widgets/react/hooks/tooltip";
 import { suspendModalFocusTraps } from "../widgets/react/modal_focustrap";
-import { registerOpenPopup } from "../widgets/react/Popup";
+import { registerOpenPopup } from "../widgets/react/open_popups";
 
 /**
  * Where the menu opens: beside a point, towards the right unless `orientation` says otherwise, or
@@ -216,17 +216,22 @@ class ContextMenu {
     }
 
     async show<T>(options: ContextMenuOptions<T>) {
-        note_tooltip.dismissAllTooltips();
-        hideShownTooltips();
-
+        for (const listener of showListeners) {
+            listener();
+        }
         const request = ++this.lastShowRequest;
-        // Loaded here rather than imported: the core services that import this module would
-        // otherwise reach the widget tree through the rows `Menu` draws, in a cycle.
-        // `closeOpenPopups()` during the import cancels this menu before it opens.
+        // `Menu` is loaded here rather than imported: the core services that import this module
+        // would otherwise reach the widget tree through the rows `Menu` draws, in a cycle. Bootstrap
+        // loads with the first menu, which keeps it out of the startup.
+        // `closeOpenPopups()` during the imports cancels this menu before it opens.
         const cancelPending = registerOpenPopup(() => this.lastShowRequest++);
-        const { default: Menu } = await import("../widgets/react/Menu").finally(cancelPending);
-        // A later `show()` made during the import replaces this one.
+        const [ { default: Menu }, { Tooltip: BootstrapTooltip } ] = await Promise.all([
+            import("../widgets/react/Menu"),
+            loadBootstrap()
+        ]).finally(cancelPending);
+        // A later `show()` made during the imports replaces this one.
         if (request !== this.lastShowRequest) return;
+        hideShownTooltips(BootstrapTooltip);
 
         if (this.isShown) {
             // Unmount first so the menu opens fresh at the new location.
@@ -332,10 +337,20 @@ const contextMenu = new ContextMenu();
 
 export default contextMenu;
 
+const showListeners = new Set<() => void>();
+
+/**
+ * Calls `listener` each time a context menu is about to open. `note_tooltip` disposes its
+ * previews through it, which keeps the preview renderer out of this module's imports.
+ */
+export function onContextMenuShow(listener: () => void) {
+    showListeners.add(listener);
+}
+
 // Bootstrap sets `aria-describedby` on a trigger while its tooltip is shown. `hide()` also clears
 // the hover and focus triggers that keep the tooltip up.
-function hideShownTooltips() {
+function hideShownTooltips(BootstrapTooltip: typeof Tooltip) {
     for (const trigger of document.querySelectorAll("[aria-describedby]")) {
-        Tooltip.getInstance(trigger)?.hide();
+        BootstrapTooltip.getInstance(trigger)?.hide();
     }
 }

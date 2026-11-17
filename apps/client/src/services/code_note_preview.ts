@@ -4,7 +4,8 @@ import {
     buildCodePreviewCss, loadPreviewLanguage, loadPreviewTheme, type PreviewThemeSlot,
     renderCodePreview
 } from "@triliumnext/codemirror/src/code_preview.js";
-import { type OptionNames, shouldSyntaxHighlight } from "@triliumnext/commons";
+import type { OptionNames } from "@triliumnext/commons";
+import { shouldSyntaxHighlight } from "@triliumnext/commons/src/lib/mime_type.js";
 
 import type FNote from "../entities/fnote.js";
 import { CODE_THEME_DEFAULT_PREFIX } from "../widgets/type_widgets/constants.js";

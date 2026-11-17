@@ -1,4 +1,5 @@
-import { CANVAS_ATTACHMENT_MIME, isFullWidthNoteType, isImageAttachmentRole } from "@triliumnext/commons";
+import { isImageAttachmentRole } from "@triliumnext/commons/src/lib/attachment_roles.js";
+import { CANVAS_ATTACHMENT_MIME, isFullWidthNoteType } from "@triliumnext/commons/src/lib/notes.js";
 
 import type { EventData } from "../components/app_context.js";
 import type NoteContext from "../components/note_context.js";

@@ -1,4 +1,7 @@
-import { DEFAULT_TASK_STATES, DONE_STATE_NAME, NONE_STATE_NAME, type TaskStateDef } from "@triliumnext/commons";
+import type { TaskStateDef } from "@triliumnext/commons";
+import {
+    DEFAULT_TASK_STATES, DONE_STATE_NAME, NONE_STATE_NAME
+} from "@triliumnext/commons/src/lib/task_states.js";
 import { _setModelData as setModelData, ClassicEditor, Essentials, Paragraph, TodoList } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 

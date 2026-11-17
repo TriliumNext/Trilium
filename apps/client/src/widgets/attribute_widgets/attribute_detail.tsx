@@ -1,7 +1,8 @@
 import "./attribute_detail.css";
 import "./attribute_kind.css";
 
-import { type DefinitionObject, type LabelType, promotedAttributeDefinitionParser } from "@triliumnext/commons";
+import type { DefinitionObject, LabelType } from "@triliumnext/commons";
+import promotedAttributeDefinitionParser from "@triliumnext/commons/src/lib/promoted_attribute_definition_parser.js";
 import clsx from "clsx";
 import { ComponentChildren, ComponentProps } from "preact";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";

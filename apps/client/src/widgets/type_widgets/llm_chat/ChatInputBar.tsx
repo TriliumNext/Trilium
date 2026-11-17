@@ -1,7 +1,11 @@
 import "./ChatInputBar.css";
 
-import type { AttributeEditor as CKEditorAttributeEditor, CKTextEditor, EditorConfig, MentionHostedFeed } from "@triliumnext/ckeditor5";
-import type { DISPLAYABLE_LOCALE_IDS, LlmPermissionMode, LlmReasoningEffort } from "@triliumnext/commons";
+import type {
+    AttributeEditor as CKEditorAttributeEditor, CKTextEditor, EditorConfig, MentionHostedFeed
+} from "@triliumnext/ckeditor5";
+import type {
+    DISPLAYABLE_LOCALE_IDS, LlmPermissionMode, LlmReasoningEffort
+} from "@triliumnext/commons";
 import { Fragment } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
@@ -14,21 +18,27 @@ import Button from "../../react/Button.js";
 import CKEditor, { type CKEditorApi } from "../../react/CKEditor.js";
 import Dropdown from "../../react/Dropdown.js";
 import { FormListHeader, FormListItem } from "../../react/FormList.js";
-import { useTriliumOption } from "../../react/hooks.js";
+import { useTriliumOption } from "../../react/hooks/options.js";
 import Icon from "../../react/Icon.js";
 import LightboxLink from "../../react/LightboxLink.js";
 import AddProviderModal, { type LlmProviderConfig, type ProviderStep } from "../options/llm/AddProviderModal.js";
 import { providerIcon } from "../options/llm/provider_icons.js";
 import { createNoteMentionList } from "../text/mention_list_view.js";
 import { computeContextUsage } from "./chat_context_usage.js";
-import { insertNewBlock as insertNewBlockCommand, isSelectionInCodeBlock, outdentListItemAtStart } from "./chat_input_editing.js";
+import {
+    insertNewBlock as insertNewBlockCommand, isSelectionInCodeBlock, outdentListItemAtStart
+} from "./chat_input_editing.js";
 import { editorHtmlToMarkdown } from "./chat_input_markdown.js";
 import { shortModelName } from "./model_name.js";
 import ChatToolsDropdown, { useChatWebSearch } from "./ChatToolsDropdown.js";
 import ReasoningEffortDropdown from "./ReasoningEffortDropdown.js";
 import { SafeImage } from "./retry_image.js";
-import { getAttachmentLightbox, getUnreadableReasons, useChatAttachments } from "./useChatAttachments.js";
-import { type ModelOption, resolveSelectedModel, unreadableAttachments } from "../../../services/llm_providers.js";
+import {
+    getAttachmentLightbox, getUnreadableReasons, useChatAttachments
+} from "./useChatAttachments.js";
+import {
+    type ModelOption, resolveSelectedModel, unreadableAttachments
+} from "../../../services/llm_providers.js";
 import { type AttachmentBlock, type UseLlmChatReturn } from "./useLlmChat.js";
 
 const READ_ONLY_LOCK = "llm-chat-streaming";

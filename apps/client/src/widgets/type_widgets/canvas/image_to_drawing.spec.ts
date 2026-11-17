@@ -1,4 +1,6 @@
-import { CANVAS_ATTACHMENT_MIME, CANVAS_ATTACHMENT_TITLE } from "@triliumnext/commons";
+import {
+    CANVAS_ATTACHMENT_MIME, CANVAS_ATTACHMENT_TITLE
+} from "@triliumnext/commons/src/lib/notes.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import server from "../../../services/server";

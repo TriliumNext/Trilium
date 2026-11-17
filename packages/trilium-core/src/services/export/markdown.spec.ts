@@ -1150,4 +1150,87 @@ describe("Markdown export", () => {
                 </div>`);
         });
     });
+
+    describe("asides", () => {
+        it("writes the blocks of an aside as Markdown between its HTML tags", () => {
+            const html = "<p>Before</p>" +
+                "<aside style=\"--aside-width:18em;\" data-position=\"wrap-right\">" +
+                "<p>Side <strong>note</strong></p><ul><li>One</li></ul></aside><p>After</p>";
+            expect(markdownExportService.toMarkdown(html)).toBe(trimIndentation`\
+                Before
+
+                <aside style="--aside-width:18em;" data-position="wrap-right">
+
+                Side **note**
+
+                *   One
+
+                </aside>
+
+                After`);
+        });
+
+        it("writes an aside as inserted as a bare tag, and marks one in the flow", () => {
+            const html = "<aside style=\"--tn-background:#555555;background-color:#555555;\" " +
+                "data-position=\"wrap-right\"><p>As inserted</p></aside>" +
+                "<aside style=\"background-color: #555555\" data-position=\"wrap-right\">" +
+                "<p>Without its variable</p></aside>" +
+                "<aside data-position=\"wrap-right\"><p>Transparent</p></aside>" +
+                "<aside><p>In the flow</p></aside>" +
+                "<aside data-position=\"left\"><p>Left</p></aside>" +
+                "<aside style=\"--aside-width:18em;\"><p>Resized</p></aside>";
+            expect(markdownExportService.toMarkdown(html)).toBe(trimIndentation`\
+                <aside>
+
+                As inserted
+
+                </aside>
+
+                <aside>
+
+                Without its variable
+
+                </aside>
+
+                <aside data-position="wrap-right">
+
+                Transparent
+
+                </aside>
+
+                <aside data-position="center">
+
+                In the flow
+
+                </aside>
+
+                <aside data-position="left">
+
+                Left
+
+                </aside>
+
+                <aside style="--aside-width:18em;">
+
+                Resized
+
+                </aside>`);
+
+            const red = "<aside style=\"--tn-background:#e64d4d;background-color:#e64d4d;\" " +
+                "data-position=\"wrap-right\">";
+            expect(markdownExportService.toMarkdown(`${red}<p>Red</p></aside>`))
+                .toBe(`${red}\n\nRed\n\n</aside>`);
+        });
+
+        it("keeps an empty aside that Turndown would drop, apart from an admonition", () => {
+            const html = "<aside><p>&nbsp;</p></aside>" +
+                "<aside class=\"admonition tip\"><p>A tip.</p></aside>";
+            expect(markdownExportService.toMarkdown(html)).toBe(trimIndentation`\
+                <aside data-position="center">
+                </aside>
+
+                > [!TIP]
+                > A tip.`);
+        });
+    });
 });

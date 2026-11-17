@@ -1,8 +1,6 @@
 import {
-    CANVAS_ATTACHMENT_MIME,
-    CANVAS_ATTACHMENT_TITLE,
-    EMPTY_CANVAS_CONTENT
-} from "@triliumnext/commons";
+    CANVAS_ATTACHMENT_MIME, CANVAS_ATTACHMENT_TITLE, EMPTY_CANVAS_CONTENT
+} from "@triliumnext/commons/src/lib/notes.js";
 import {
     ButtonView,
     createDropdown,

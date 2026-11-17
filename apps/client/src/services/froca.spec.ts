@@ -57,6 +57,41 @@ describe("loadInitialTree", () => {
     });
 });
 
+describe("getNotes", () => {
+    it("waits for the initial tree before loading what froca does not hold", async () => {
+        const realInitialized = froca.initializedPromise;
+        let finishInitialTree = () => {};
+        froca.initializedPromise = new Promise<void>((resolve) => {
+            finishInitialTree = resolve;
+        });
+        const reloadNotes = vi.spyOn(froca, "reloadNotes").mockResolvedValue();
+
+        try {
+            const pending = froca.getNote("startup-launcher", true);
+            buildNote({ id: "startup-launcher", title: "From the initial tree" });
+            finishInitialTree();
+
+            expect((await pending)?.title).toBe("From the initial tree");
+            expect(reloadNotes).not.toHaveBeenCalled();
+        } finally {
+            froca.initializedPromise = realInitialized;
+        }
+    });
+
+    it("still loads a note once the initial tree failed", async () => {
+        const realInitialized = froca.initializedPromise;
+        froca.initializedPromise = Promise.reject(new Error("tree failed"));
+        const reloadNotes = vi.spyOn(froca, "reloadNotes").mockResolvedValue();
+
+        try {
+            await froca.getNote("not-in-the-tree", true);
+            expect(reloadNotes).toHaveBeenCalledWith([ "not-in-the-tree" ]);
+        } finally {
+            froca.initializedPromise = realInitialized;
+        }
+    });
+});
+
 describe("reloadAll", () => {
     it("reloads the initial tree, then every note froca held outside it", async () => {
         const held = buildNote({ title: "Held outside the tree" });
@@ -411,6 +446,43 @@ describe("getNotes / getNote / noteExists / getNoteFromCache", () => {
         expect(server.post).toHaveBeenCalledWith("tree/load", { noteIds: ["gn-loaded", "gn-unresolved"] });
         expect(notes.map((n) => n.noteId).sort()).toEqual(["gn-known", "gn-loaded"]);
         expect(trace).toHaveBeenCalled();
+    });
+
+
+    it("loads the notes asked for at the same time in one request, and a note asked for twice once", async () => {
+        const row = (noteId: string) => ({ noteId, title: noteId, type: "text", mime: "text/html", isProtected: false, blobId: "" });
+        server.post = vi.fn(async (_url: string, { noteIds }: { noteIds: string[] }) => ({
+            notes: noteIds.map(row), branches: [], attributes: []
+        })) as unknown as typeof server.post;
+
+        const notes = await Promise.all([
+            froca.getNote("batched-a"),
+            froca.getNote("batched-b"),
+            froca.getNote("batched-a"),
+            froca.getNotes([ "batched-b", "batched-c" ])
+        ]);
+
+        expect(server.post).toHaveBeenCalledTimes(1);
+        expect(server.post).toHaveBeenCalledWith("tree/load", { noteIds: [ "batched-a", "batched-b", "batched-c" ] });
+        expect(notes.flat().map((note) => note?.noteId)).toEqual([ "batched-a", "batched-b", "batched-a", "batched-b", "batched-c" ]);
+    });
+
+    it("lets a note asked for while its load is under way wait for that load", async () => {
+        const pending: (() => void)[] = [];
+        server.post = vi.fn(() => new Promise((resolve) => {
+            pending.push(() => resolve({ notes: [ { noteId: "in-flight", title: "In flight", type: "text", mime: "text/html", isProtected: false, blobId: "" } ], branches: [], attributes: [] }));
+        })) as unknown as typeof server.post;
+
+        const first = froca.getNote("in-flight");
+        await vi.waitFor(() => expect(server.post).toHaveBeenCalledTimes(1));
+        const second = froca.getNote("in-flight");
+        // Long enough for the second call to send a request of its own, if it were to.
+        await new Promise((resolve) => setTimeout(resolve));
+        for (const finish of pending) finish();
+
+        expect((await first)?.title).toBe("In flight");
+        expect((await second)?.title).toBe("In flight");
+        expect(server.post).toHaveBeenCalledTimes(1);
     });
 
     it("getNotes silently drops unknowns when silentNotFoundError is set", async () => {

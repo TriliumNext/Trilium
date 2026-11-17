@@ -446,7 +446,7 @@ samp {
 /*
  * Programming ligatures: the bundled JetBrains Mono renders `!=` as `≠`, `->` as `→` and so on,
  * which reads as the characters having been silently replaced (see #2851). The `monospaceLigatures-
- * Enabled` option gates this; the class is applied by RootContainer.
+ * Enabled` option gates this; the class is applied by `applyAppearance()`.
  *
  * Scoped to the monospace surfaces rather than set on `body`: `font-variant-ligatures` is inherited,
  * so a blanket rule would also disable `fi`/`fl` in prose, which is a typographic regression in note
@@ -1578,6 +1578,11 @@ figure.captioned-content-embed {
     clear: both;
 }
 
+.include-note.extended-code-block:not([data-position^="wrap-"]) {
+    clear: none;
+    min-width: min(100%, 200px);
+}
+
 .include-note[data-box-size="resizable"],
 .link-embed:where([data-embed-type="youtube"])[data-box-size="resizable"] {
     &[data-position="left"] {
@@ -1936,6 +1941,29 @@ pre.code-embed-editor > .cm-editor:not(.cm-focused) {
     }
 }
 
+:root pre.code-preview.code-block-preview {
+    padding: 0;
+
+    > .code-preview-content {
+        padding-block: var(--padding-size, 1em);
+        padding-inline-end: calc(var(--copy-button-width) + var(--copy-button-margin-size) * 2);
+    }
+
+    &.code-preview-no-line-numbers > .code-preview-content {
+        padding-inline-start: var(--padding-size, 1em);
+    }
+}
+
+pre.code-block-preview[data-code-theme-t="vs-code-light"],
+body:not(.dark-theme) pre.code-block-preview[data-code-theme-l="vs-code-light"] {
+    --code-preview-background: #f6f6f6;
+}
+
+pre.code-block-preview[data-code-theme-t="vs-code-dark"],
+body.dark-theme pre.code-block-preview[data-code-theme-d="vs-code-dark"] {
+    --code-preview-background: #1c1b1b;
+}
+
 /* Takes the wheel and the touch gestures for the page until the content has the focus. */
 .include-note-backdrop {
     position: absolute;
@@ -2077,7 +2105,7 @@ pre.code-embed-editor > .cm-editor:not(.cm-focused) {
 
 /* Keeps the style and layout of hidden tabs, so showing one again needs no full relayout. */
 @supports (content-visibility: hidden) {
-    #center-pane > .split-note-container-widget > .note-split.hidden-ext {
+    #center-pane > .note-splits-host > .split-note-container-widget > .note-split.hidden-ext {
         display: flex !important;
         flex: 0 0 100% !important;
         margin-inline: -100% 0;

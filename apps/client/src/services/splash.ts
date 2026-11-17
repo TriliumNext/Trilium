@@ -4,12 +4,16 @@
  * the splash runs while the backend that serves the translation catalogues is still starting,
  * so `initLocale()` has neither a locale nor an `assetPath` to fetch one with.
  *
- * Kept free of imports: index.ts loads it before setupGlob() populates window.glob, which most
+ * Imports no client module: index.ts loads it before setupGlob() populates window.glob, which most
  * client modules read at module scope.
  */
 
+import "./splash.css";
+
+import logoUrl from "../assets/icon-color.svg?url";
+
 /** Matches the `#splash` opacity transition in index.html. */
-const SPLASH_FADE_MS = 400;
+const SPLASH_FADE_MS = 150;
 
 /**
  * How full the bar can get while the startup is still running. The last phase would otherwise
@@ -27,18 +31,6 @@ export interface SplashPhase {
     status: string;
 }
 
-/**
- * What a server or desktop client passes through, where the backend is already running and only
- * the frontend has to start. Standalone reports a longer sequence of its own first — see
- * `STANDALONE_STARTUP_PHASES` in apps/standalone/src/main.ts.
- */
-export const CLIENT_STARTUP_PHASES: SplashPhase[] = [
-    { id: "bootstrap", weight: 1, status: "Opening your notes…" },
-    { id: "application", weight: 3, status: "Loading the application…" },
-    { id: "interface", weight: 2, status: "Building the interface…" },
-    { id: "notes", weight: 2, status: "Loading the note tree…" }
-];
-
 let phases: SplashPhase[] = [];
 let totalWeight = 0;
 
@@ -46,12 +38,11 @@ let totalWeight = 0;
 let currentPhase = -1;
 
 /**
- * Hands the progress bar the sequence it is to track, replacing its indeterminate animation. The
- * first caller wins, so standalone's longer sequence survives the client's own call later in the
- * same startup.
+ * Hands the progress bar the sequence it is to track, replacing its indeterminate animation.
+ * Standalone's `main.ts` calls it with `STANDALONE_STARTUP_PHASES`.
  */
 export function initSplashProgress(startupPhases: SplashPhase[]): void {
-    if (phases.length || !startupPhases.length) {
+    if (!startupPhases.length) {
         return;
     }
     phases = startupPhases;
@@ -98,14 +89,28 @@ export function updateSplashStatus(status: string): void {
     }
 }
 
-/** Switches the splash to its error state: the progress bar goes away and the message shows. */
+/**
+ * Switches the splash to its error state: the progress bar goes away and the message shows. A
+ * page without a splash gets a screen of its own with the logo, the app's name and the message.
+ */
 export function showSplashError(message: string): void {
     const splashEl = document.getElementById("splash");
-    if (!splashEl) {
+    if (!splashEl || splashEl.classList.contains("splash-hidden")) {
+        document.body.append(buildStartupError(message));
         return;
     }
     splashEl.classList.add("splash-error");
     updateSplashStatus(message);
+}
+
+/**
+ * Logs a failure to start and shows it with {@link showSplashError}. An entry point that starts the
+ * app after its first render calls it as well, as the page's `bootstrap()` has finished by then.
+ */
+export function showStartupFailure(err: unknown): void {
+    console.error("Trilium failed to start:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    showSplashError(`Trilium failed to start: ${message} — reload the page to try again.`);
 }
 
 /** Fades the splash out and removes it, revealing the application behind it. */
@@ -121,6 +126,28 @@ export function hideSplash(): void {
 
     splashEl.classList.add("splash-hidden");
     setTimeout(() => splashEl.remove(), SPLASH_FADE_MS);
+}
+
+function buildStartupError(message: string) {
+    const screenEl = document.createElement("div");
+    screenEl.id = "startup-error";
+    screenEl.setAttribute("role", "alert");
+
+    const logoEl = document.createElement("img");
+    logoEl.className = "startup-error-logo";
+    logoEl.src = logoUrl;
+    logoEl.alt = "";
+
+    const titleEl = document.createElement("div");
+    titleEl.className = "startup-error-title";
+    titleEl.textContent = "Trilium Notes";
+
+    const messageEl = document.createElement("p");
+    messageEl.className = "startup-error-message";
+    messageEl.textContent = message;
+
+    screenEl.append(logoEl, titleEl, messageEl);
+    return screenEl;
 }
 
 function setFillWidth(fraction: number): void {

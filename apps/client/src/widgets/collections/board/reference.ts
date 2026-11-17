@@ -10,7 +10,9 @@
  * rewrites the value its cards carry.
  */
 
-import { boardColumnsKey, boardGroupByFromColumnsKey } from "@triliumnext/commons";
+import {
+    boardColumnsKey, boardGroupByFromColumnsKey
+} from "@triliumnext/commons/src/lib/board_columns.js";
 import type { RefObject } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 

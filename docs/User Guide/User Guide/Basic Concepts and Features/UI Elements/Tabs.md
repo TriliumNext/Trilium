@@ -21,7 +21,7 @@ Depending on the <a class="reference-link" href="Vertical%20and%20horizontal%20
 *   To close a tab, press the corresponding <span class="tn-icon bx bx-x"></span> button.
 *   For multitasking, tabs can be used alongside <a class="reference-link" href="Split%20View.md">Split View</a>. Each tab can have one or more notes, displayed horizontally.
 *   Tabs can be reordered by drag-and-dropping it into a new position.
-*   An existing tab can be displayed in a new window by dragging the tab upwards or downwards. It is not possible to combine tabs back into another window.
+*   An existing tab can be displayed in a new window by dragging the tab upwards or downwards; the new window opens under the mouse cursor, with the tab under the pointer. It is not possible to combine tabs back into another window.
 
 ## Keyboard interaction
 

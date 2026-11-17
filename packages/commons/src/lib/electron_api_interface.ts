@@ -165,23 +165,6 @@ export interface ElectronWindowApi {
 
     // #endregion
 
-    // #region Background effects
-
-    /**
-     * Sets the Windows 11 backdrop material applied behind the window contents. No-op on other
-     * platforms.
-     * @param material The material, such as `"mica"`, `"acrylic"`, `"tabbed"` or `"none"`.
-     */
-    setBackgroundMaterial(material: string): void;
-
-    /**
-     * Sets the macOS vibrancy effect applied behind the window contents. No-op on other platforms.
-     * @param vibrancy The effect, such as `"sidebar"`, `"under-window"` or `"fullscreen-ui"`.
-     */
-    setVibrancy(vibrancy: string): void;
-
-    // #endregion
-
     // #region App lifecycle
 
     /** Triggers a hard reload of every open Trilium window. */
@@ -201,6 +184,14 @@ export interface ElectronWindowApi {
 
     /** Brings the main window to the foreground, restoring it if minimized. */
     showWindow(): void;
+
+    /**
+     * Lets the window paint for the first time. The main process holds the first paint of a
+     * starting main or extra window, and with it the reveal of the window, until the client has
+     * rendered its interface, so that the window never shows a half-built one. No-op for other
+     * windows and once released.
+     */
+    releaseFirstPaint(): void;
 
     /**
      * Reports a renderer startup milestone to the main process, which records

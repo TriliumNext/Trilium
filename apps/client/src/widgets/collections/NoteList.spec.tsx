@@ -9,7 +9,7 @@
  * the fresh post-clone one, leaving the new widget invisible until a manual reload. The hook guards
  * against this by only committing the most recently issued refresh.
  */
-import { deferred } from "@triliumnext/commons";
+import { deferred } from "@triliumnext/commons/src/lib/utils.js";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

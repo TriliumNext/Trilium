@@ -9,7 +9,9 @@ import dialogService from "../../../services/dialog";
 import { t } from "../../../services/i18n";
 import toast from "../../../services/toast";
 import { formatSize, isStandalone } from "../../../services/utils";
-import type { ImageCompressionToolOptions } from "../../dialogs/image_compression/image_compression_options";
+import type {
+    ImageCompressionToolOptions
+} from "../../dialogs/image_compression/image_compression_options";
 import {
     JpegHandlingSection,
     PngHandlingSection,
@@ -22,7 +24,8 @@ import DonutChart, { type DonutRing } from "../../react/charts/DonutChart";
 import ContextualHelp from "../../react/ContextualHelp";
 import FormTextBox from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
-import { useDebouncedValue, useTriliumOptionJson } from "../../react/hooks";
+import { useDebouncedValue } from "../../react/hooks/dom";
+import { useTriliumOptionJson } from "../../react/hooks/options";
 import Modal from "../../react/Modal";
 import { useFetch } from "../../react/use_fetch";
 import {

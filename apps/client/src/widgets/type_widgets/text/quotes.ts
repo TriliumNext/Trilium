@@ -1,5 +1,5 @@
 import type { TextTypingTransformationDescription } from "@triliumnext/ckeditor5";
-import { normalizeLocale } from "@triliumnext/commons";
+import { normalizeLocale } from "@triliumnext/commons/src/lib/i18n.js";
 
 /** The opening and closing mark of one quotation level — what a single quote key produces. */
 export type QuoteMarks = readonly [open: string, close: string];

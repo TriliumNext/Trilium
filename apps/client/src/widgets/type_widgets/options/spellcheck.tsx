@@ -6,7 +6,7 @@ import { isElectron } from "../../../services/utils";
 import Button from "../../react/Button";
 import { Card, CardSection, OptionCardSection } from "../../react/Card";
 import FormToggle from "../../react/FormToggle";
-import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
 import NoItems from "../../react/NoItems";
 import CheckboxList from "./components/CheckboxList";
 import OptionsPageHeader from "./components/OptionsPageHeader";

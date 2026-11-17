@@ -11,15 +11,17 @@ import type FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
 import LoadResults from "../../../services/load_results";
 import type { ContentEditor } from "../../../services/content_renderer";
+import { buildVimPlugin } from "../../../test/content_embed";
 import { buildNote } from "../../../test/easy-froca";
 import { TextEditorFindTarget } from "../../find_in_text";
 import MergedFind from "../../merged_find";
-import { useTriliumEvent } from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
 import { ParentComponent } from "../../react/react_utils";
 import type { TypeWidgetProps } from "../type_widget";
 import { getContentEmbedTools, getEmbedFindTarget } from "./content_embed_tools";
 import { NestedEmbedContext } from "./editable_embed";
 import TextEmbed from "./TextEmbed";
+import { HostVimModeContext } from "./vim_mode";
 
 const editorAskedToSave = vi.fn();
 const editorProps = vi.fn();
@@ -33,7 +35,8 @@ vi.mock("./EditableText", () => ({
     getBlockData: () => ({ content: editorData }),
     default: (props: TypeWidgetProps & { onContentShown?: () => void }) => {
         const isNested = useContext(NestedEmbedContext);
-        editorProps({ ...props, isNested });
+        const hostVimMode = useContext(HostVimModeContext);
+        editorProps({ ...props, isNested, hostVimMode });
         useTriliumEvent("beforeNoteContextRemove", editorAskedToSave);
         useEffect(() => {
             if (!isContentHeld) props.onContentShown?.();
@@ -162,6 +165,18 @@ describe("TextEmbed", () => {
         expect(figure.querySelector(".save-status-badge")).toBeNull();
         expect(figure.querySelector(".editable-text-stub")).toBeNull();
         expect(figure.querySelector<HTMLElement>(".editable-embed-preview")?.hidden).toBe(false);
+    });
+
+    it("gives its editor the Vim mode of the text note around it", async () => {
+        const hostVimMode = () => editorProps.mock.lastCall?.[0].hostVimMode;
+        const vim = buildVimPlugin();
+        vim.setMode("normal");
+        await mount(buildTextNote("vim"), buildEditor(), { isEditable: true, vim });
+        await vi.waitFor(() => expect(editorProps).toHaveBeenCalled(), { timeout: 5000 });
+        await vi.waitFor(() => expect(hostVimMode()).toBe(true));
+
+        act(() => vim.setMode(null));
+        expect(hostVimMode()).toBe(false);
     });
 
     it("keeps the preview in place until its editor shows the note", async () => {
@@ -458,6 +473,8 @@ interface MountOptions {
     content?: string;
     block?: string;
     onBlockChange?: (block: string) => void;
+    /** The `TriliumVim` plugin of the text editor around the embed. */
+    vim?: ReturnType<typeof buildVimPlugin>;
 }
 
 /** Renders `TextEmbed` in the markup of an embed, as the host does. */
@@ -480,7 +497,13 @@ async function mount(note: FNote, editor: ContentEditor | undefined, options: Mo
     const hostRoot = document.createElement("div");
     hostRoot.className = "ck-editor__editable";
     const toolbar = options.hasFixedToolbar ? { element: document.createElement("div") } : undefined;
-    Object.assign(hostRoot, { ckeditorInstance: { ui: { view: { toolbar } } } });
+    const { vim } = options;
+    Object.assign(hostRoot, {
+        ckeditorInstance: {
+            ui: { view: { toolbar } },
+            plugins: { has: (name: string) => name === "TriliumVim" && !!vim, get: () => vim }
+        }
+    });
     hostRoot.append(figure);
     document.body.append(hostRoot);
     figures.push(figure);

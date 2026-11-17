@@ -9,7 +9,7 @@ import CodeBlock from "../../react/CodeBlock";
 import Collapsible from "../../react/Collapsible";
 import FormToggle from "../../react/FormToggle";
 import HelpButton from "../../react/HelpButton";
-import { useTriliumOptionBool } from "../../react/hooks";
+import { useTriliumOptionBool } from "../../react/hooks/options";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 import RestartAction from "./components/RestartAction";
 

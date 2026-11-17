@@ -24,6 +24,12 @@ function setupGlobs() {
     window.__triliumHandleBack = handleSystemBack;
 
     window.onerror = function (msg, url, lineNo, columnNo, error) {
+        // The browser reports a resize that triggers another resize in the same frame and
+        // delivers the notification on the next frame, so nothing is lost.
+        if (String(msg).startsWith("ResizeObserver loop")) {
+            return true;
+        }
+
         ws.logError(formatUncaughtError(String(msg), error, `${url}:${lineNo}:${columnNo}`));
 
         return false;
@@ -38,27 +44,11 @@ function setupGlobs() {
         return false;
     });
 
-    for (const appCssNoteId of glob.appCssNoteIds || []) {
-        requireCss(`api/notes/download/${appCssNoteId}`, false);
-    }
-
     $("body").on("click", "a.external", function () {
         window.open($(this).attr("href"), "_blank");
 
         return false;
     });
-}
-
-export async function requireCss(url: string, prependAssetPath = true) {
-    const cssLinks = Array.from(document.querySelectorAll("link")).map((el) => el.href);
-
-    if (!cssLinks.some((l) => l.endsWith(url))) {
-        if (prependAssetPath) {
-            url = `${window.glob.assetPath}/${url}`;
-        }
-
-        $("head").append($('<link rel="stylesheet" type="text/css" />').attr("href", url));
-    }
 }
 
 /**

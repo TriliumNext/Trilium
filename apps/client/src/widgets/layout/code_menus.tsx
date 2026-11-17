@@ -1,5 +1,5 @@
 import type VanillaCodeMirror from "@triliumnext/codemirror";
-import { getCodeLanguageIcon } from "@triliumnext/commons";
+import { getCodeLanguageIcon } from "@triliumnext/commons/src/lib/notes.js";
 import { createPortal } from "preact";
 import { useMemo, useState } from "preact/hooks";
 
@@ -7,10 +7,8 @@ import type FNote from "../../entities/fnote";
 import type { MenuCommandItem, MenuItem } from "../../menus/context_menu";
 import { t } from "../../services/i18n";
 import server from "../../services/server";
-import {
-    useNoteLabelInt, useNoteLabelOptionalBool, useNoteProperty, useTriliumOptionBool,
-    useTriliumOptionInt
-} from "../react/hooks";
+import { useNoteLabelInt, useNoteLabelOptionalBool, useNoteProperty } from "../react/hooks/note";
+import { useTriliumOptionBool, useTriliumOptionInt } from "../react/hooks/options";
 import { codeLanguageItems, NoteTypeOptionsModal, useMimeTypes } from "./NoteTypeSwitcher";
 import { convertIndentation } from "./reindentation";
 
@@ -28,14 +26,14 @@ export interface CodeSettings {
 }
 
 /** A menu of the code settings, and what the control that opens it shows. */
-export interface CodeMenu {
+export interface CodeMenu<T = unknown> {
     /** The name of the menu, shown as the tooltip of the control. */
     title: string;
     /** The current setting, shown as the text of the control. */
     text: string;
     /** The icon of the current setting. */
     icon: string;
-    items: MenuItem<unknown>[];
+    items: MenuItem<T>[];
     filterable?: boolean;
 }
 
@@ -113,18 +111,18 @@ export function getLineNumbersMenu<T>(
  * The "Change language mode" menu of `settings`, and the dialog that its "Configure code notes"
  * item opens, which the caller renders.
  */
-export function useCodeLanguageMenu({ mime, setMime }: CodeSettings) {
+export function useCodeLanguageMenu<T = unknown>({ mime, setMime }: CodeSettings) {
     const [ isModalShown, setIsModalShown ] = useState(false);
     const { enabledMimeTypes, allMimeTypes } = useMimeTypes();
     const mimeType = useMemo(() => (
         allMimeTypes.find((candidate) => candidate.mime === mime)
     ), [ allMimeTypes, mime ]);
 
-    const menu: CodeMenu = {
+    const menu: CodeMenu<T> = {
         title: t("status_bar.code_note_switcher"),
         text: mimeType?.title ?? "",
         icon: getCodeLanguageIcon(mimeType),
-        items: codeLanguageItems({
+        items: codeLanguageItems<T>({
             currentMimeType: mime,
             mimeTypes: enabledMimeTypes,
             changeNoteType: (_type, newMime) => setMime(newMime),
@@ -145,10 +143,10 @@ const TAB_WIDTH_OPTIONS = [ 1, 2, 3, 4, 6, 8 ] as const;
  * The "Change tab width" menu of `settings`. Its re-indent items convert the text of
  * `getCodeEditor()`, and do nothing while it returns no editor.
  */
-export function useTabWidthMenu(
+export function useTabWidthMenu<T = unknown>(
     { tabWidth, useTabs, setIndentation }: CodeSettings,
     getCodeEditor: () => Promise<CodeText | null | undefined>
-): CodeMenu {
+): CodeMenu<T> {
     const [ globalTabWidth ] = useTriliumOptionInt("codeNoteTabWidth");
     const [ globalUseTabs ] = useTriliumOptionBool("codeNoteIndentWithTabs");
     const effectiveTabWidth = tabWidth ?? globalTabWidth ?? 4;
@@ -170,7 +168,7 @@ export function useTabWidthMenu(
 
     const spacesName = t("status_bar.tab_width_style_spaces");
     const tabsName = t("status_bar.tab_width_style_tabs");
-    const items: MenuItem<unknown>[] = [
+    const items: MenuItem<T>[] = [
         { kind: "header", title: t("status_bar.tab_width_style_header") },
         {
             title: spacesName,

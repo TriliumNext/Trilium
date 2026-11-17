@@ -4,7 +4,7 @@ import type { EventCallBackMethods, Tabulator } from "tabulator-tables";
 
 import type FNote from "../../../entities/fnote";
 import AttributeDetailWidget from "../../attribute_widgets/attribute_detail";
-import { useLegacyWidget } from "../../react/hooks";
+import { useLegacyWidget } from "../../react/hooks/legacy";
 import useColTableEditing from "./col_editing";
 import useRowTableEditing from "./row_editing";
 

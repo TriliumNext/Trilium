@@ -4,10 +4,13 @@ import type { CKTextEditor, ModelElement, ModelNode } from "@triliumnext/ckedito
 import clsx from "clsx";
 import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 
-import { revealElement } from "../../services/collapsible";
+import { revealElement } from "../../services/bookmark_jump";
 import { t } from "../../services/i18n";
 import { randomString } from "../../services/utils";
-import { useActiveNoteContext, useContentElement, useGetContextData, useIsNoteReadOnly, useMathRendering, useNoteProperty, useTextEditor } from "../react/hooks";
+import { useNoteProperty } from "../react/hooks/note";
+import { useContentElement, useIsNoteReadOnly, useTextEditor } from "../react/hooks/note_context";
+import { useActiveNoteContext, useGetContextData } from "../react/hooks/tree";
+import { useMathRendering } from "../react/hooks/content";
 import Icon from "../react/Icon";
 import { getEditorNoteId } from "../react/NoteStore";
 import RawHtml from "../react/RawHtml";

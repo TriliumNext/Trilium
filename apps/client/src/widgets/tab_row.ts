@@ -1,22 +1,21 @@
-import { Tooltip } from "bootstrap";
+import type { Tooltip } from "bootstrap";
 import Draggabilly, { type MoveVector } from "draggabilly";
 
-import appContext, { type CommandListenerData, type CommandNames, type EventData } from "../components/app_context.js";
+import appContext, { type CommandListenerData, type CommandNames, type EventData, type WindowPosition } from "../components/app_context.js";
 import type NoteContext from "../components/note_context.js";
-import contextMenu from "../menus/context_menu.js";
-import { getRecentChangesMenuItems } from "../menus/recent_changes_menu_items.js";
+import type { MenuItem } from "../menus/context_menu.js";
 import attributeService from "../services/attributes.js";
 import cssClassManager from "../services/css_class_manager.js";
 import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
 import keyboardActionService from "../services/keyboard_actions.js";
-import search from "../services/search.js";
 import { clampDragDestination } from "../services/tab_pinning.js";
-import { buildTabTitle, TAB_TITLE_SEPARATOR } from "../services/tab_title.js";
+import { buildTabTitle, noteTitleHtml, TAB_TITLE_SEPARATOR } from "../services/tab_title.js";
 import utils from "../services/utils.js";
 import BasicWidget from "./basic_widget.js";
-import { noteTitleHtml } from "./layout/Breadcrumb.js";
-import { setupHoldContextMenu, setupHorizontalScrollViaWheel } from "./widget_utils.js";
+import { setupHoldContextMenu } from "./hold_context_menu.js";
+import { attachTooltip, getTooltipInstance } from "./react/hooks/tooltip.js";
+import { setupHorizontalScrollViaWheel } from "./widget_utils.js";
 
 const isDesktop = utils.isDesktop();
 
@@ -61,6 +60,10 @@ const TAB_ROW_TPL = `
 
     .tab-row-widget.full-width {
         background: var(--launcher-pane-background-color);
+    }
+
+    .tab-row-widget.tabs-restoring > * {
+        visibility: hidden;
     }
 
     .tab-row-widget * {
@@ -383,6 +386,8 @@ export default class TabRowWidget extends BasicWidget {
     private $filler!: JQuery<HTMLElement>;
     private $newTab!: JQuery<HTMLElement>;
     private updateScrollTimeout: ReturnType<typeof setTimeout> | undefined;
+    /** Disposes of the tooltips of each tab, or stops them waiting for Bootstrap to load. */
+    private tabTooltipDetachers = new WeakMap<Element, () => void>();
 
     private newTabOuterWidth: number = 0;
     private scrollButtonsOuterWidth: number = 0;
@@ -392,6 +397,7 @@ export default class TabRowWidget extends BasicWidget {
 
     doRender() {
         this.$widget = $(TAB_ROW_TPL);
+        this.$widget.toggleClass("tabs-restoring", !appContext.tabManager?.tabsRestored);
         this.$tabScrollingContainer = this.$widget.children(".tab-row-widget-scrolling-container");
         this.$tabContainer = this.$widget.find(".tab-row-widget-container");
         this.$scrollButtonLeft = this.$widget.children(".tab-scroll-button-left");
@@ -421,35 +427,39 @@ export default class TabRowWidget extends BasicWidget {
             const isPinned = !!mainContext?.pinned;
             const isEmpty = !mainContext || mainContext.isEmpty();
 
-            contextMenu.show<CommandNames>({
-                x: e.pageX,
-                y: e.pageY,
-                items: [
-                    isPinned
-                        ? { title: t("tab_row.unpin_tab"), command: "unpinTab", uiIcon: "bx bx-pin" }
-                        : { title: t("tab_row.pin_tab"), command: "pinTab", uiIcon: "bx bx-pin", enabled: !isEmpty },
+            const items: MenuItem<CommandNames>[] = [
+                isPinned
+                    ? { title: t("tab_row.unpin_tab"), command: "unpinTab", uiIcon: "bx bx-pin" }
+                    : { title: t("tab_row.pin_tab"), command: "pinTab", uiIcon: "bx bx-pin", enabled: !isEmpty },
 
-                    { kind: "separator" },
+                { kind: "separator" },
 
-                    { title: t("tab_row.close"), command: "closeTab", uiIcon: "bx bx-x", enabled: !isPinned },
-                    { title: t("tab_row.close_other_tabs"), command: "closeOtherTabs", uiIcon: "bx bx-empty", enabled: appContext.tabManager.noteContexts.length !== 1 },
-                    { title: t("tab_row.close_right_tabs"), command: "closeRightTabs", uiIcon: "bx bx-empty", enabled: appContext.tabManager.noteContexts?.at(-1)?.ntxId !== ntxId },
-                    { title: t("tab_row.close_all_tabs"), command: "closeAllTabs", uiIcon: "bx bx-empty" },
+                { title: t("tab_row.close"), command: "closeTab", uiIcon: "bx bx-x", enabled: !isPinned },
+                { title: t("tab_row.close_other_tabs"), command: "closeOtherTabs", uiIcon: "bx bx-empty", enabled: appContext.tabManager.noteContexts.length !== 1 },
+                { title: t("tab_row.close_right_tabs"), command: "closeRightTabs", uiIcon: "bx bx-empty", enabled: appContext.tabManager.noteContexts?.at(-1)?.ntxId !== ntxId },
+                { title: t("tab_row.close_all_tabs"), command: "closeAllTabs", uiIcon: "bx bx-empty" },
 
-                    { kind: "separator" },
+                { kind: "separator" },
 
-                    { title: t("tab_row.reopen_last_tab"), command: "reopenLastTab", uiIcon: "bx bx-undo", enabled: appContext.tabManager.recentlyClosedTabs.length !== 0 },
+                { title: t("tab_row.reopen_last_tab"), command: "reopenLastTab", uiIcon: "bx bx-undo", enabled: appContext.tabManager.recentlyClosedTabs.length !== 0 },
 
-                    { kind: "separator" },
+                { kind: "separator" },
 
-                    { title: t("tab_row.move_tab_to_new_window"), command: "moveTabToNewWindow", uiIcon: "bx bx-window-open", enabled: !isPinned },
-                    { title: t("tab_row.copy_tab_to_new_window"), command: "copyTabToNewWindow", uiIcon: "bx bx-empty" }
-                ],
-                selectMenuItemHandler: ({ command }) => {
-                    if (command) {
-                        this.triggerCommand(command, { ntxId });
+                { title: t("tab_row.move_tab_to_new_window"), command: "moveTabToNewWindow", uiIcon: "bx bx-window-open", enabled: !isPinned },
+                { title: t("tab_row.copy_tab_to_new_window"), command: "copyTabToNewWindow", uiIcon: "bx bx-empty" }
+            ];
+            const { pageX: x, pageY: y } = e;
+            void import("../menus/context_menu.js").then(({ default: contextMenu }) => {
+                contextMenu.show<CommandNames>({
+                    x,
+                    y,
+                    items,
+                    selectMenuItemHandler: ({ command }) => {
+                        if (command) {
+                            this.triggerCommand(command, { ntxId });
+                        }
                     }
-                }
+                });
             });
         });
     }
@@ -520,7 +530,7 @@ export default class TabRowWidget extends BasicWidget {
     getTabTooltips(tabEl: Element): Tooltip[] {
         return [".note-tab-drag-handle", ".note-tab-close"]
             .map((selector) => tabEl.querySelector(selector))
-            .map((el) => (el ? Tooltip.getInstance(el) : null))
+            .map((el) => (el ? getTooltipInstance(el) : null))
             .filter((tooltip): tooltip is Tooltip => !!tooltip);
     }
 
@@ -647,9 +657,10 @@ export default class TabRowWidget extends BasicWidget {
 
         keyboardActionService.updateDisplayedShortcuts($tab);
 
-        $tab.addClass("note-tab-was-just-added");
-
-        setTimeout(() => $tab.removeClass("note-tab-was-just-added"), 500);
+        if (!this.$widget.hasClass("tabs-restoring")) {
+            $tab.addClass("note-tab-was-just-added");
+            setTimeout(() => $tab.removeClass("note-tab-was-just-added"), 500);
+        }
         this.$containerAnchor.before($tab);
         // When opened from a link the model may place this tab before the end; mirror that order in
         // the DOM. When appended (the common case) it is already correct, so skip the O(n) walk.
@@ -665,7 +676,7 @@ export default class TabRowWidget extends BasicWidget {
         // Attach to the drag handle (the full-tab interaction layer, `pointer-events` enabled) rather
         // than .note-tab, whose `pointer-events: none` makes Bootstrap's hover tracking misfire. The
         // close button sits above the handle (higher z-index) with its own tooltip, so they never overlap.
-        new Tooltip($tab.find(".note-tab-drag-handle")[0], {
+        const detachTitle = attachTooltip($tab.find(".note-tab-drag-handle")[0], {
             // titles are pre-escaped in buildTabTitle (only the <strong> wrapper and a split's
             // `html` are trusted); Bootstrap's own sanitizer stays on as a second layer
             html: true,
@@ -676,12 +687,16 @@ export default class TabRowWidget extends BasicWidget {
             delay: { show: 500, hide: 0 }
         });
 
-        new Tooltip($tab.find(".note-tab-close")[0], {
+        const detachClose = attachTooltip($tab.find(".note-tab-close")[0], {
             title: t("tab_row.close_tab"),
             trigger: "hover",
             placement: "bottom",
             container: "body",
             delay: { show: 500, hide: 0 }
+        });
+        this.tabTooltipDetachers.set($tab[0], () => {
+            detachTitle();
+            detachClose();
         });
 
         this.cleanUpPreviouslyDraggedTabs();
@@ -742,6 +757,30 @@ export default class TabRowWidget extends BasicWidget {
         this.refreshTab(activeNoteContext.ntxId);
     }
 
+    /**
+     * Adds a tab for each tab the tab manager restored before this tab row was rendered, as when the
+     * layout moves the tab bar, and marks the active one. A tab the row already shows is skipped: the
+     * row receives `newNoteContextCreated` from its creation, which can come before `TabBar`'s
+     * effect calls this.
+     */
+    async showExistingTabs() {
+        this.$widget.addClass("tabs-restoring");
+        for (const noteContext of appContext.tabManager.getMainNoteContexts()) {
+            if (noteContext.ntxId && !this.getTabById(noteContext.ntxId).length) {
+                this.addTab(noteContext.ntxId);
+            }
+        }
+        this.activeContextChangedEvent();
+        await this.tabsRestoredEvent();
+    }
+
+    /** Shows the restored tabs together, once each has its final title and icon. */
+    async tabsRestoredEvent() {
+        await Promise.all(appContext.tabManager.getMainNoteContexts().map((noteContext) =>
+            this.updateTab(this.getTabById(noteContext.ntxId), noteContext)));
+        this.$widget.removeClass("tabs-restoring");
+    }
+
     newNoteContextCreatedEvent({ noteContext }: EventData<"newNoteContextCreated">) {
         if (!noteContext.mainNtxId && noteContext.ntxId) {
             this.addTab(noteContext.ntxId);
@@ -752,9 +791,8 @@ export default class TabRowWidget extends BasicWidget {
         const tabEl = this.getTabById(ntxId)[0];
 
         if (tabEl) {
-            for (const tooltip of this.getTabTooltips(tabEl)) {
-                tooltip.dispose();
-            }
+            this.tabTooltipDetachers.get(tabEl)?.();
+            this.tabTooltipDetachers.delete(tabEl);
             tabEl.parentNode?.removeChild(tabEl);
             this.cleanUpPreviouslyDraggedTabs();
             this.layoutTabs();
@@ -836,7 +874,11 @@ export default class TabRowWidget extends BasicWidget {
                 if (event.pointerType !== "mouse") activate();
             });
 
-            draggabilly.on("dragStart", () => {
+            let grabOffset = { x: 0, y: 0 };
+
+            draggabilly.on("dragStart", (event: unknown, pointer: PointerEvent) => {
+                const tabRect = tabEl.getBoundingClientRect();
+                grabOffset = { x: pointer.clientX - tabRect.left, y: pointer.clientY - tabRect.top };
                 this.isDragging = true;
                 this.draggabillyDragging = draggabilly;
                 tabEl.classList.add("note-tab-is-dragging");
@@ -918,10 +960,30 @@ export default class TabRowWidget extends BasicWidget {
 
                 // pinned tabs stay put — don't trigger the drag-to-new-window tear-off
                 if (Math.abs(moveVector.y) > 100 && !tabEl.hasAttribute("pinned")) {
-                    this.triggerCommand("moveTabToNewWindow", { ntxId: this.getTabId($(tabEl)) });
+                    this.triggerCommand("moveTabToNewWindow", {
+                        ntxId: this.getTabId($(tabEl)),
+                        windowPosition: this.getTornOffWindowPosition(tabEl, pointer, grabOffset)
+                    });
                 }
             });
         });
+    }
+
+    /**
+     * Where a window torn off by dragging `tabEl` goes, so that its tab, which becomes the first one,
+     * sits under the pointer at the spot the tab was grabbed. The new window's interior is laid out
+     * like this one's, so the first tab slot and the window frame are measured here.
+     */
+    getTornOffWindowPosition(tabEl: HTMLElement, pointer: PointerEvent, grabOffset: { x: number; y: number }): WindowPosition {
+        const firstSlotLeft = this.$tabContainer[0]?.getBoundingClientRect().left ?? 0;
+        const tabTop = tabEl.getBoundingClientRect().top;
+        const frameLeft = Math.max(0, (window.outerWidth - window.innerWidth) / 2);
+        const frameTop = Math.max(0, window.outerHeight - window.innerHeight - frameLeft);
+
+        return {
+            x: Math.round(pointer.screenX - frameLeft - firstSlotLeft - grabOffset.x),
+            y: Math.round(pointer.screenY - frameTop - tabTop - grabOffset.y)
+        };
     }
 
     animateTabMove(tabEl: HTMLElement, originIndex: number, destinationIndex: number) {
@@ -939,7 +1001,7 @@ export default class TabRowWidget extends BasicWidget {
         this.$newTab = $(NEW_TAB_BUTTON_TPL);
         this.$widget.append(this.$newTab);
 
-        new Tooltip(this.$newTab[0], {
+        attachTooltip(this.$newTab[0], {
             html: true,
             title: `<span class="action">${utils.escapeHtml(t("tab_row.add_new_tab"))}</span>`
                 + `<span class="hint">${utils.escapeHtml(t("tab_row.add_new_tab_hint"))}</span>`,
@@ -957,9 +1019,12 @@ export default class TabRowWidget extends BasicWidget {
     }
 
     async showNewTabContextMenu(x: number, y: number) {
-        const [ workspaceNotes, recentChangesItems ] = await Promise.all([
-            search.searchForNotes("#workspace #!template"),
-            getRecentChangesMenuItems()
+        const [ { default: contextMenu }, workspaceNotes, recentChangesItems ] = await Promise.all([
+            import("../menus/context_menu.js"),
+            import("../services/search.js").then(({ default: search }) =>
+                search.searchForNotes("#workspace #!template")),
+            import("../menus/recent_changes_menu_items.js").then(({ getRecentChangesMenuItems }) =>
+                getRecentChangesMenuItems())
         ]);
 
         contextMenu.show<CommandNames>({

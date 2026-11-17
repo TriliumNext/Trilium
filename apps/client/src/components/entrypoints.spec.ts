@@ -39,6 +39,21 @@ describe("openInWindowCommand", () => {
         expect(String(url)).toMatch(/[?&]extraWindow=1/);
         expect(String(url)).toMatch(/#root\/abc123$/);
     });
+
+    it("places the window at the requested position, in device-independent pixels on desktop", async () => {
+        const open = vi.spyOn(window, "open").mockReturnValue(null);
+        const windowPosition = { x: 300, y: 200 };
+
+        await entrypoints.openInWindowCommand({ notePath: "root/abc123" });
+        expect(open.mock.calls[0][2]).toBe("width=1000,height=800");
+
+        await entrypoints.openInWindowCommand({ notePath: "root/abc123", windowPosition });
+        expect(open.mock.calls[1][2]).toBe("width=1000,height=800,left=300,top=200");
+
+        window.electronApi = { window: { getZoomFactor: () => 1.5 } } as unknown as ElectronApi;
+        await entrypoints.openInWindowCommand({ notePath: "root/abc123", windowPosition });
+        expect(open.mock.calls[2][2]).toBe("width=1000,height=800,left=450,top=300");
+    });
 });
 
 describe("logoutCommand", () => {

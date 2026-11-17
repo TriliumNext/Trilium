@@ -2,7 +2,9 @@ import "./branch_prefix.css";
 
 import { useRef, useState } from "preact/hooks";
 
-import { type ContextMenuCommandData, default as appContext } from "../../components/app_context.js";
+import {
+    type ContextMenuCommandData, default as appContext
+} from "../../components/app_context.js";
 import FBranch from "../../entities/fbranch.js";
 import froca from "../../services/froca.js";
 import { t } from "../../services/i18n.js";
@@ -12,7 +14,7 @@ import tree from "../../services/tree.js";
 import Button from "../react/Button.jsx";
 import { Card, CardSection } from "../react/Card.js";
 import FormGroup from "../react/FormGroup.js";
-import { useTriliumEvent } from "../react/hooks.jsx";
+import { useTriliumEvent } from "../react/hooks/events.js";
 import Icon from "../react/Icon.js";
 import Modal from "../react/Modal.jsx";
 

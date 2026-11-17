@@ -2,7 +2,8 @@ import "./PdfAttachments.css";
 
 import { t } from "../../../services/i18n";
 import { formatSize } from "../../../services/utils";
-import { useActiveNoteContext, useGetContextData, useNoteProperty } from "../../react/hooks";
+import { useNoteProperty } from "../../react/hooks/note";
+import { useActiveNoteContext, useGetContextData } from "../../react/hooks/tree";
 import Icon from "../../react/Icon";
 import RightPanelWidget from "../RightPanelWidget";
 

@@ -69,14 +69,17 @@ vi.mock("../../../services/toast", () => ({
 }));
 
 // useNoteTitle names the font a font option points at; the listing above is what the picker lists.
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
-    useNoteTitle: (noteId: string | undefined) => mocks.userFonts.find((font) => font.noteId === noteId)?.title,
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useTriliumOption: (name: string) => [
         String(mocks.stored[name] ?? ""),
         async (value: string) => void mocks.saved.push([ name, value ])
     ],
     useTriliumOptionBool: (name: string) => [ mocks.stored[name] === true, vi.fn() ]
+}));
+vi.mock("../../react/hooks/tree", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/tree")>()),
+    useNoteTitle: (noteId: string | undefined) => mocks.userFonts.find((font) => font.noteId === noteId)?.title
 }));
 
 import Fonts from "./appearance_fonts";

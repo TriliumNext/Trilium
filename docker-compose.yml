@@ -18,5 +18,9 @@ services:
       # Trilium stores its data in `trilium-data` next to this file. To use another directory
       # on the host, change the part before the colon only.
       - ./trilium-data:/home/node/trilium-data
-      - /etc/timezone:/etc/timezone:ro
+      # Uses the host's timezone instead of UTC. If the host has no /etc/localtime, remove this
+      # line and set `TZ` below instead.
       - /etc/localtime:/etc/localtime:ro
+    # environment:
+    #   # A timezone identifier from https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+    #   - TZ=America/New_York

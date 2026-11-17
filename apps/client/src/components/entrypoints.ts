@@ -2,7 +2,6 @@ import { CreateChildrenResponse, SqlExecuteResponse } from "@triliumnext/commons
 
 import { runBackendScript, showBackendScriptingDisabledToast } from "../services/backend_scripting.js";
 import bundleService from "../services/bundle.js";
-import dialog from "../services/dialog.js";
 import dateNoteService from "../services/date_notes.js";
 import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
@@ -13,7 +12,7 @@ import server from "../services/server.js";
 import toastService from "../services/toast.js";
 import utils from "../services/utils.js";
 import ws from "../services/ws.js";
-import appContext, { type CommandListenerData, type NoteCommandData } from "./app_context.js";
+import appContext, { type CommandListenerData, type NoteCommandData, type WindowPosition } from "./app_context.js";
 import Component from "./component.js";
 
 export default class Entrypoints extends Component {
@@ -151,12 +150,12 @@ export default class Entrypoints extends Component {
         utils.reloadFrontendApp("Switching to mobile version");
     }
 
-    async openInWindowCommand({ notePath, hoistedNoteId, viewScope, splits, activeSplit }: NoteCommandData) {
+    async openInWindowCommand({ notePath, hoistedNoteId, viewScope, splits, activeSplit, windowPosition }: NoteCommandData) {
         const target = { notePath, hoistedNoteId, viewScope, splits, activeSplit };
 
         // On desktop the main process turns this into an extra window that shares
         // this renderer's process (`installWindowOpenPolicy`).
-        window.open(linkService.calculateExtraWindowUrl(target), "", "width=1000,height=800");
+        window.open(linkService.calculateExtraWindowUrl(target), "", getWindowFeatures(windowPosition));
     }
 
     async openNewWindowCommand() {
@@ -227,6 +226,7 @@ export default class Entrypoints extends Component {
         const noteId = appContext.tabManager.getCommandContext(ntxId)?.noteId;
         if (!noteId) return;
 
+        const { default: dialog } = await import("../services/dialog.js");
         const name = await dialog.prompt({
             title: t("entrypoints.save-named-revision-title"),
             message: t("entrypoints.save-named-revision-message"),
@@ -239,4 +239,21 @@ export default class Entrypoints extends Component {
         await server.post(`notes/${noteId}/revision`, { description: name || undefined });
         toastService.showMessage(t("entrypoints.note-revision-created"));
     }
+}
+
+/**
+ * The `window.open` features of a new window, placed at `position` when one is given. Electron reads
+ * `left`/`top` as device-independent pixels, so on desktop the position is scaled by the page zoom;
+ * a browser converts them from CSS pixels itself.
+ */
+function getWindowFeatures(position: WindowPosition | undefined) {
+    const features = "width=1000,height=800";
+    if (!position) {
+        return features;
+    }
+
+    const zoomFactor = window.electronApi?.window.getZoomFactor() ?? 1;
+    const left = Math.round(position.x * zoomFactor);
+    const top = Math.round(position.y * zoomFactor);
+    return `${features},left=${left},top=${top}`;
 }

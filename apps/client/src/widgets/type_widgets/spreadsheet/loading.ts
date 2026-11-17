@@ -7,7 +7,7 @@ import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
 import server from "../../../services/server";
 import { randomString } from "../../../services/utils";
-import { useNoteBlob } from "../../react/hooks";
+import { useNoteBlob } from "../../react/hooks/note";
 
 type FWorkbook = ReturnType<FUniver["createWorkbook"]>;
 

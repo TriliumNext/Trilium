@@ -7,6 +7,7 @@ import type TabManager from "../components/tab_manager.js";
 import FBranch from "../entities/fbranch.js";
 import froca from "../services/froca.js";
 import hoistedNoteService from "../services/hoisted_note.js";
+import keyboardActionsService from "../services/keyboard_actions.js";
 import LoadResults from "../services/load_results.js";
 import noteCreateService from "../services/note_create.js";
 import options from "../services/options.js";
@@ -86,6 +87,17 @@ describe("NoteTreeWidget", () => {
         return widget;
     }
 
+    it("shows the shortcuts of its buttons, as it renders after the startup", async () => {
+        const updateDisplayedShortcuts = vi.spyOn(keyboardActionsService, "updateDisplayedShortcuts")
+            .mockImplementation(() => {});
+        const widget = await renderWidget();
+
+        const [ $container ] = updateDisplayedShortcuts.mock.calls[0] ?? [];
+        expect($container?.find("[data-trigger-command=collapseTree]")).toHaveLength(1);
+        expect($container?.find("[data-trigger-command=scrollToActiveNote]")).toHaveLength(1);
+        expect(widget.$widget.has($container?.get(0) ?? "")).toHaveLength(1);
+    });
+
     it("creates new notes in the tree's own note context (not the active tab's)", async () => {
         const widget = await renderWidget();
         const noteContext = { ntxId: "popup-ctx" };
@@ -146,6 +158,32 @@ describe("NoteTreeWidget", () => {
 
         // The popup's own hoisted note is passed explicitly — not the active tab's.
         expect(isHoisted).toHaveBeenCalledWith("_taskStates");
+    });
+
+    it("brings the first active note into view at once, and later ones with the scroll animation", async () => {
+        const widget = await renderWidget();
+        (widget as { noteContext?: unknown }).noteContext = { notePath: "root/child", hoistedNoteId: "root" };
+        vi.spyOn(options, "is").mockImplementation((name) => name === "treeScrollFollowNavigation");
+        vi.spyOn(widget, "activityDetected").mockImplementation(() => {});
+        vi.spyOn(widget, "filterHoistedBranch").mockResolvedValue(undefined);
+        const calls: string[] = [];
+        const node = {
+            isVisible: () => true,
+            scrollIntoView: vi.fn((effects: boolean) => { calls.push(`scrollIntoView ${effects}`); }),
+            setActive: vi.fn(() => { calls.push("setActive"); })
+        };
+        vi.spyOn(widget, "getNodeFromPath").mockResolvedValue(node as unknown as Fancytree.FancytreeNode);
+        const getActiveNode = vi.spyOn(widget, "getActiveNode").mockReturnValue(null);
+
+        await widget.refresh();
+        expect(calls).toEqual([ "scrollIntoView false", "setActive" ]);
+
+        calls.length = 0;
+        getActiveNode.mockReturnValue({
+            hasFocus: () => false, setActive: () => {}, setFocus: () => {}
+        } as unknown as Fancytree.FancytreeNode);
+        await widget.refresh();
+        expect(calls).toEqual([ "setActive" ]);
     });
 
     it("follows the display density option, also when it changes", async () => {
@@ -355,6 +393,82 @@ describe("the drop marker's distance from the row boundary", () => {
         publishDropMarkerShift({ span: undefined } as unknown as Fancytree.FancytreeNode);
 
         expect(shift()).toBe("8px");
+    });
+});
+
+describe("focusing the tree", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("keeps a focus asked for before the tree is built, and focuses it once it is", async () => {
+        const widget = new NoteTreeWidget();
+        vi.spyOn(widget, "initFancyTree").mockImplementation(() => {});
+        widget.doRender();
+        await new Promise((resolve) => setTimeout(resolve));
+        await widget.focusTreeEvent();
+
+        const focus = vi.fn();
+        const setFocus = vi.fn();
+        vi.mocked(widget.initFancyTree).mockRestore();
+        vi.spyOn(widget, "prepareRootNode").mockReturnValue({ key: "root" } as never);
+        vi.spyOn($.fn, "fancytree").mockImplementation(function (this: JQuery) {
+            return this;
+        } as never);
+        vi.spyOn($.ui.fancytree, "getTree").mockReturnValue({ $container: { focus }, setFocus } as never);
+        widget.initFancyTree();
+
+        expect(focus).toHaveBeenCalledTimes(1);
+        expect(setFocus).toHaveBeenCalledWith(true);
+    });
+});
+
+describe("rendering before the tabs exist", () => {
+    const originalTabManager = appContext.tabManager;
+
+    afterEach(() => {
+        appContext.tabManager = originalTabManager;
+        vi.restoreAllMocks();
+    });
+
+    it("settles its first render once Fancytree has built the tree", async () => {
+        const widget = new NoteTreeWidget();
+        vi.spyOn(widget, "prepareRootNode").mockReturnValue({ key: "root" } as never);
+        const fancytree = vi.spyOn($.fn, "fancytree").mockImplementation(function (this: JQuery) {
+            return this;
+        } as never);
+        vi.spyOn($.ui.fancytree, "getTree").mockReturnValue({} as never);
+        let buildsAtSettle: number | undefined;
+        void widget.firstRender.then(() => { buildsAtSettle = fancytree.mock.calls.length; });
+
+        await new Promise((resolve) => setTimeout(resolve));
+        expect(buildsAtSettle).toBeUndefined();
+        widget.doRender();
+        await widget.firstRender;
+        expect(buildsAtSettle).toBe(1);
+    });
+
+    it("renders a note's title while the tab manager is not created yet", async () => {
+        buildNote({ id: "early", title: "Early" });
+        const widget = new NoteTreeWidget();
+        let treeOptions: Fancytree.FancytreeOptions | undefined;
+        vi.spyOn(widget, "prepareRootNode").mockReturnValue({ key: "root" } as never);
+        vi.spyOn($.fn, "fancytree").mockImplementation(function (this: JQuery, opts: unknown) {
+            treeOptions = opts as Fancytree.FancytreeOptions;
+            return this;
+        } as never);
+        vi.spyOn($.ui.fancytree, "getTree").mockReturnValue({} as never);
+        widget.doRender();
+        await new Promise((resolve) => setTimeout(resolve));
+        widget.initFancyTree();
+
+        appContext.tabManager = undefined as unknown as TabManager;
+        const span = document.createElement("span");
+        span.innerHTML = `<span class="fancytree-title">Early</span>`;
+        const enhanceTitle = treeOptions?.enhanceTitle as ((event: Event, data: unknown) => Promise<void>) | undefined;
+        expect(enhanceTitle).toBeDefined();
+        await expect(enhanceTitle?.(new Event("render"), { node: { data: { noteId: "early" }, span, extraClasses: "" }, noteId: "early" }))
+            .resolves.toBeUndefined();
     });
 });
 

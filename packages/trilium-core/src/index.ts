@@ -87,7 +87,7 @@ export { default as handlers } from "./services/handlers";
 export { default as TaskContext } from "./services/task_context";
 export { default as revisions } from "./services/revisions";
 export { default as erase } from "./services/erase";
-export { default as getSharedBootstrapItems } from "./services/bootstrap_utils";
+export { default as getSharedBootstrapItems, isNextBasedTheme } from "./services/bootstrap_utils";
 export { default as branches } from "./services/branches";
 export { default as bulk_actions } from "./services/bulk_actions";
 export { default as hoisted_note } from "./services/hoisted_note";

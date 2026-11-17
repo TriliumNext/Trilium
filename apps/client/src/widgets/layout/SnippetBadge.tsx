@@ -5,7 +5,9 @@ import attributes from "../../services/attributes";
 import { t } from "../../services/i18n";
 import mimeTypesService from "../../services/mime_types";
 import { Badge } from "../react/Badge";
-import { useNoteContext, useNoteProperty, useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useNoteProperty } from "../react/hooks/note";
+import { useNoteContext } from "../react/hooks/note_context";
 
 interface SnippetInfo {
     /** Human-readable kind of snippet, e.g. "Text", "Markdown", "CSS". */

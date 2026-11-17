@@ -1,16 +1,11 @@
+import type { TaskStateDef, TaskStateValidationError } from "@triliumnext/commons";
 import {
-    DEFAULT_TASK_STATES,
-    DONE_STATE_ID,
-    DONE_TASK_STATE,
-    NONE_STATE_ID,
-    NONE_TASK_STATE,
-    TASK_STATES_CONTAINER_ID,
-    type TaskStateDef,
-    type TaskStateValidationError,
-    validateTaskStates
-} from "@triliumnext/commons";
+    DEFAULT_TASK_STATES, DONE_STATE_ID, DONE_TASK_STATE, NONE_STATE_ID, NONE_TASK_STATE,
+    TASK_STATES_CONTAINER_ID, validateTaskStates
+} from "@triliumnext/commons/src/lib/task_states.js";
 
 import appContext from "../components/app_context.js";
+import type FNote from "../entities/fnote.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import toastService from "./toast.js";
@@ -70,7 +65,7 @@ function reportValidationErrors(errors: TaskStateValidationError[]) {
  * editor, kanban and the todo collection view.
  */
 export async function getTaskStateDefinitions(): Promise<TaskStateDef[]> {
-    const container = await froca.getNote(TASK_STATES_CONTAINER_ID);
+    const container = await getContainer();
     if (!container) {
         return DEFAULT_TASK_STATES;
     }
@@ -111,4 +106,24 @@ export function openCustomTaskStateConfig(): void {
         noteIdOrPath: TASK_STATES_CONTAINER_ID,
         hoistedNoteId: TASK_STATES_CONTAINER_ID
     });
+}
+
+/** The load of {@link getContainer} while it is under way. */
+let containerLoad: Promise<FNote | null> | undefined;
+
+/**
+ * The `_taskStates` note with its children in froca. Neither is in the initial tree, so they come in
+ * one request for the subtree rather than one for the note and another for its children.
+ */
+async function getContainer() {
+    await froca.initializedPromise.catch(() => {});
+    const cached = froca.notes[TASK_STATES_CONTAINER_ID];
+    if (cached?.children.every((noteId) => noteId in froca.notes)) return cached;
+
+    containerLoad ??= froca.loadSubTree(TASK_STATES_CONTAINER_ID)
+        .then((note) => note ?? null, () => null)
+        .finally(() => {
+            containerLoad = undefined;
+        });
+    return await containerLoad;
 }
