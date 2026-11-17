@@ -531,8 +531,8 @@
   "search": {
     "error": {
       "in-context": "Błąd w {{- context}}: {{- message}}",
-      "reserved-keyword": "„{{- token}}” jest słowem zastrzeżonym. Aby wyszukać dosłowną wartość, ujmij ją w cudzysłów: „{{- token}}”",
-      "cannot-compare-with": "Nie można porównać z „{{- token}}”. Aby wyszukać dosłowną wartość, ujmij ją w cudzysłów: „{{- token}}”",
+      "reserved-keyword": "„{{- token}}” jest słowem zastrzeżonym. Aby wyszukać dosłowną wartość, ujmij ją w cudzysłów: \"{{- token}}\"",
+      "cannot-compare-with": "Nie można porównać z „{{- token}}”. Aby wyszukać dosłowną wartość, ujmij ją w cudzysłów: \"{{- token}}\"",
       "misplaced-expression": "Wyrażenie „{{- token}}” jest umieszczone w niewłaściwym miejscu lub niekompletne.",
       "fulltext-after-expression": "„{{- token}}” nie jest prawidłowym wyrażeniem. Aby wyszukać tekst, umieść go przed filtrami atrybutów (np. „{{- token}} #label” zamiast „#label {{- token}}”).",
       "unrecognized-expression": "Nierozpoznane wyrażenie „{{- token}}”",

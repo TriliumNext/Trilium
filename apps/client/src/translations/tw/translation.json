@@ -683,7 +683,7 @@
     "search_script": "執行一個後端腳本來產生此儲存搜尋的結果，而非解析 <code>#searchString</code>。該腳本會回傳一個包含筆記 ID 的陣列。",
     "ancestor": "將已儲存的搜尋限制在該搜尋所指向的筆記之子樹中。",
     "target": "啟動器被按下時所打開的筆記。",
-    "script": "啟動器被按下時所打開的腳本。",
+    "script": "啟動器被按下時所執行的腳本。",
     "hoisted_note": "啟動器被按下時所聚焦的筆記。",
     "share_logo": "用作共享頁面標誌的圖片筆記。必須位於共享子樹內。",
     "share_open_graph_image_relation": "用作共享頁面 <code>og:image</code> 的圖片筆記。改為設定同名的標籤，使其指向一個位址。",

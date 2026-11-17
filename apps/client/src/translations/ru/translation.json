@@ -3975,7 +3975,7 @@
       "footnote": "Сноска",
       "footnote-widget": "виджет сноски",
       "insert-a-math-equation": "Вставить математическое уравнение",
-      "insert-a-0-mermaid-diagram-template": "вставить",
+      "insert-a-0-mermaid-diagram-template": "Вставить шаблон диаграммы Mermaid \"%0\"",
       "insert-a-block-of-preformatted-code": "Вставить блок предварительно отформатированного кода.",
       "insert-a-horizontal-rule": "Вставить горизонтальную линию.",
       "insert-a-page-break-for-printing": "Вставить разрыв страницы (для печати)",
