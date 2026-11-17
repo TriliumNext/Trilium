@@ -1,9 +1,11 @@
+import type { AttachmentRow } from "@triliumnext/commons";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type NoteContext from "../components/note_context";
 import type FAttachment from "../entities/fattachment";
 import type FNote from "../entities/fnote";
 import froca from "../services/froca";
+import LoadResults from "../services/load_results";
 import { buildNote } from "../test/easy-froca";
 import NoteWrapperWidget, {
     hasBackgroundEffects, isAlwaysFullWidthByType, isFullWidthAttachment, isFullWidthNote, markVisibleSplits
@@ -270,6 +272,29 @@ describe("NoteWrapperWidget attachment width", () => {
         expect(widget.$widget.hasClass("full-content-width")).toBe(false);
         await vi.waitFor(() => expect(widget.$widget.hasClass("full-content-width")).toBe(true));
         expect(froca.getAttachment).toHaveBeenCalledOnce();
+    });
+
+    it("follows the open attachment when a new file replaces it, and ignores other attachments", async () => {
+        const note = buildNote({ title: "Owner", type: "text" });
+        const attachment = { attachmentId: "zipAttachment", ownerId: note.noteId, role: "file", mime: "application/zip" } as FAttachment;
+        froca.attachments.zipAttachment = attachment;
+        const widget = new NoteWrapperWidget();
+        widget.render();
+        showAttachment(widget, note, "zipAttachment");
+        expect(widget.$widget.hasClass("full-content-width")).toBe(false);
+
+        const reload = async (attachmentId: string) => {
+            const loadResults = new LoadResults([]);
+            loadResults.addAttachmentRow({ attachmentId, ownerId: note.noteId, role: "file", mime: attachment.mime, title: "" } as AttachmentRow);
+            await widget.entitiesReloadedEvent({ loadResults });
+        };
+
+        attachment.mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        const refresh = vi.spyOn(widget, "refresh");
+        await reload("otherAttachment");
+        expect(refresh).not.toHaveBeenCalled();
+        await reload("zipAttachment");
+        expect(widget.$widget.hasClass("full-content-width")).toBe(true);
     });
 });
 

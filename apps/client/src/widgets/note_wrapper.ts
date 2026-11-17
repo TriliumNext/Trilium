@@ -141,8 +141,12 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
         // listening on changes of note.type and CSS class
         const LABELS_CAUSING_REFRESH = ["cssClass", "language", "viewType", "color", "fullContentWidth"];
         const noteId = this.noteContext?.noteId;
+        const viewScope = this.noteContext?.viewScope;
+        const attachmentId = viewScope?.viewMode === "attachments" ? viewScope.attachmentId : undefined;
         if (
             loadResults.isNoteReloaded(noteId) ||
+            // Uploading a new file into the open attachment can change its MIME type, and so its width.
+            (attachmentId && loadResults.getAttachmentRows().some((row) => row.attachmentId === attachmentId)) ||
             // The direction of a note carrying no `#language` comes from this option, so a change to it
             // has to repaint the `rtl` class the same way a change to the label would.
             loadResults.isOptionReloaded("defaultContentLanguage") ||
