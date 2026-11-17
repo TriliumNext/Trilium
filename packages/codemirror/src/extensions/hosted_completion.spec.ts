@@ -365,6 +365,15 @@ describe("hostedCompletion", () => {
         type(" @");
         await vi.waitFor(() => expect(list.show).toHaveBeenCalledTimes(2));
         expect(shown()?.match.query).toBe("");
+
+        // A dismissal from the list of an earlier match leaves the list of the open one alone.
+        const earlier = shown();
+        type(" @");
+        await vi.waitFor(() => expect(shown()).not.toBe(earlier));
+        earlier?.dismiss();
+        expect(list.hide).toHaveBeenCalledOnce();
+        shown()?.dismiss();
+        expect(list.hide).toHaveBeenCalledTimes(2);
     });
 
     it("asks for an explicit match on Ctrl-Space or Alt-`, until the list closes", async () => {

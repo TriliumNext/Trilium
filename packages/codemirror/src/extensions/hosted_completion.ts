@@ -429,10 +429,6 @@ export function hostedCompletion<M extends HostedCompletionMatch>({ match, opens
 
 /** The `¶` drawn after the text that a list follows up on, as the text editor draws it. */
 class FollowUpMarkWidget extends WidgetType {
-    override eq() {
-        return true;
-    }
-
     override toDOM() {
         const mark = document.createElement("span");
         mark.className = "cm-completion-follow-up";
