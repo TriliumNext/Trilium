@@ -1,10 +1,4 @@
-import "ckeditor5/ckeditor5.css";
-// Baseline block-quote styling from CKEditor's block-quote feature. It arrived here with the
-// admonition plugin (which was forked from block-quote) but styles `blockquote`, not admonitions —
-// the client's theme-next stylesheet overrides parts of it with `!important`.
-import "./theme/blockquote.css";
-import "./theme/content_colors.css";
-import "./theme/code_block_toolbar.css";
+import "./styles.js";
 import type { ClipboardImageEmbedConfig } from "./plugins/clipboard_image_embed.js";
 import type { ImageEditingSourceConfig } from "./plugins/image_editing_source.js";
 import type { PasteTarget } from "./plugins/cuttonote.js";
@@ -18,8 +12,9 @@ export type { ImageEditingSourceConfig } from "./plugins/image_editing_source.js
 export type { FileUploadData, FileUploadEvent } from "./plugins/file_upload/fileuploadediting.js";
 export type { PasteTarget } from "./plugins/cuttonote.js";
 export type {
-    ContentEmbedCodeView, ContentEmbedState, PositionValue
+    ContentEmbedCodeView, ContentEmbedState
 } from "./plugins/content_embed/content_embed.js";
+export type { PositionValue } from "./plugins/positioned_widgets.js";
 export type { EmbedEdge } from "./plugins/content_embed/content_embed_caret.js";
 export { default as EmbedHistory } from "./plugins/content_embed/embed_history.js";
 export type {
@@ -54,6 +49,13 @@ export type { BlockReferenceHost } from "./plugins/block_reference/block_referen
 export type { BlockDragHandleHost } from "./plugins/block_drag_handle.js";
 export type { SortTargetKind } from "./plugins/sort_selection/sort_targets.js";
 export type { ColorMenuHost, ColorMenuRequest, ColorMenuTarget } from "./plugins/color_menu.js";
+export type {
+    LinkUnderCursor, default as TriliumVim, VimCommandLine, VimConfig, VimHost, VimMessage, VimMode,
+    VimStatus
+} from "./plugins/vim/vim.js";
+export { getLinkUnderCursor } from "./plugins/vim/vim.js";
+export type { VimHint, VimHintKind, VimHints } from "./plugins/vim/vim_hints.js";
+export type { VimHintSection } from "./plugins/vim/vim_key_reference.js";
 export { default as TriliumSnippets } from "./plugins/snippets/snippets.js";
 export type { SnippetDefinition } from "./plugins/snippets/snippetsconfig.js";
 export { default as TriliumAiAssistant } from "./plugins/ai_assistant/ai_assistant.js";
@@ -81,6 +83,7 @@ import "./plugins/markdownimport.js";
 import "./plugins/math/math.js";
 import "./plugins/tabs/tabs.js";
 import "./plugins/multicolumn/multicolumn.js";
+import "./plugins/aside/aside.js";
 import "./plugins/mermaid/mermaid.js";
 import "./plugins/referencelink.js";
 import "./plugins/sort_selection/sort_selection.js";
@@ -88,6 +91,7 @@ import "./plugins/table_column_bar/table_column_bar.js";
 import "./plugins/table_context_menu.js";
 import "./plugins/table_paste_rows.js";
 import "./plugins/insert_media.js";
+import "./plugins/vim/vim.js";
 
 window[Symbol.for("cke distribution")] = "trilium";
 
@@ -145,7 +149,7 @@ declare module "ckeditor5" {
 
     interface EditorConfig {
         syntaxHighlighting?: {
-            loadHighlightJs: () => Promise<any>;
+            loadHighlightJs: (mimeType: string) => Promise<any>;
             mapLanguageName(mimeType: string): string;
             defaultMimeType: string;
             enabled: boolean;

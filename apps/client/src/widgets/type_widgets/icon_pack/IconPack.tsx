@@ -4,7 +4,7 @@ import { useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
 import { isDesktop } from "../../../services/utils";
-import { useNoteBlob } from "../../react/hooks";
+import { useNoteBlob } from "../../react/hooks/note";
 import { TextPreview } from "../File";
 import SplitEditor from "../helpers/SplitEditor";
 import { TypeWidgetProps } from "../type_widget";

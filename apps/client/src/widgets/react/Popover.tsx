@@ -6,7 +6,7 @@ import { ComponentChildren, createPortal } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 
 import { FLOATING_LAYER_SELECTOR, isWithinFloatingLayer } from "./floating_layers";
-import { useBodyClass } from "./hooks";
+import { useBodyClass } from "./hooks/dom";
 import { placeFloating } from "./Popup";
 
 export interface PopoverProps {

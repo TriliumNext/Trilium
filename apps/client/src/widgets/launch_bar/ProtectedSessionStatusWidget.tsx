@@ -1,7 +1,7 @@
 import { useState } from "preact/hooks";
 import protected_session_holder from "../../services/protected_session_holder";
 import { LaunchBarActionButton, LauncherNoteProps } from "./launch_bar_widgets";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import { t } from "../../services/i18n";
 
 export default function ProtectedSessionStatusWidget({ launcherNote }: LauncherNoteProps) {

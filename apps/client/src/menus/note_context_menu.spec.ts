@@ -46,6 +46,7 @@ import { buildBlockReferenceMenuItems } from "../services/block_reference.js";
 import { copyHtml, copyTextWithToast } from "../services/clipboard_ext.js";
 import server from "../services/server.js";
 import { setEditorNoteId } from "../widgets/react/NoteStore.js";
+import { setupContextMenu } from "./browser_context_menu.js";
 import { buildCodeEditorContextMenuItems } from "./code_editor_context_menu.js";
 import contextMenu, { type MenuCommandItem, type MenuItem } from "./context_menu.js";
 import {
@@ -58,8 +59,7 @@ import {
     buildNoteContextMenuItems,
     type ContextMenuHost,
     type ContextMenuTarget,
-    getSelectedHtmlForMarkdown,
-    setupContextMenu
+    getSelectedHtmlForMarkdown
 } from "./note_context_menu.js";
 
 /**

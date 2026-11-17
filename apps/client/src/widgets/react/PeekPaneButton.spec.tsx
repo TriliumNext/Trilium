@@ -4,8 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Bootstrap's tooltip machinery is not what is under test here.
 const useStaticTooltipWithKeyboardShortcut = vi.hoisted(() => vi.fn());
-vi.mock("./hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("./hooks")>()),
+vi.mock("./hooks/shortcuts", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./hooks/shortcuts")>()),
     useStaticTooltipWithKeyboardShortcut
 }));
 

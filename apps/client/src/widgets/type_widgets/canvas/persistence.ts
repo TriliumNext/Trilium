@@ -8,9 +8,9 @@ import {
     AppState, BinaryFileData, BinaryFiles, ExcalidrawImperativeAPI, ExcalidrawInitialDataState,
     ExcalidrawProps, LibraryItem
 } from "@excalidraw/excalidraw/types";
-import {
-    deferred, type DeferredPromise, type DrawingFrame, getDrawingPictureTitle, readDrawingFrame
-} from "@triliumnext/commons";
+import type { DeferredPromise, DrawingFrame } from "@triliumnext/commons";
+import { getDrawingPictureTitle, readDrawingFrame } from "@triliumnext/commons/src/lib/notes.js";
+import { deferred } from "@triliumnext/commons/src/lib/utils.js";
 import { RefObject } from "preact";
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
@@ -21,9 +21,9 @@ import type { ContentEditor } from "../../../services/content_renderer";
 import froca from "../../../services/froca";
 import options from "../../../services/options";
 import server from "../../../services/server";
-import {
-    SavedData, useEditorSpacedUpdate, useTriliumEvent, useWhenShown
-} from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useWhenShown } from "../../react/hooks/dom";
+import { SavedData, useEditorSpacedUpdate } from "../../react/hooks/editor";
 import { isInFullscreen } from "../text/content_embed_tools";
 import {
     type DrawingScene, getDrawingHistory, isInteracting, type SavedAppState, showDrawingScene

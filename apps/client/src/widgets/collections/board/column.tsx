@@ -17,9 +17,9 @@ import { noteTypeOptionIcon } from "../../../services/note_types";
 import { isMobile } from "../../../services/utils";
 import ActionButton from "../../react/ActionButton";
 import Icon from "../../react/Icon";
-import {
-    type DragData, TREE_CLIPBOARD_TYPE, useIsOnScreen, useLingeringTrue, useStaticTooltip
-} from "../../react/hooks";
+import { useIsOnScreen, useLingeringTrue } from "../../react/hooks/dom";
+import { useStaticTooltip } from "../../react/hooks/tooltip";
+import { type DragData, TREE_CLIPBOARD_TYPE } from "../../react/hooks/drag";
 import { useFlip } from "../../react/flip";
 import { useScrollFade } from "../../react/scroll_fade";
 import { useSelection } from "../../react/selection";
@@ -904,7 +904,7 @@ export default function Column({
  * Loaded once a column can change its icon, so a read-only board never loads the picker and the
  * grid of every icon pack it brings.
  */
-const IconPickerButton = lazy(() => import("../../react/IconPicker")
+const IconPickerButton = lazy(() => import("../../react/IconPickerButton")
     .then(({ IconPickerButton: button }) => ({ default: button })));
 
 /** The column's icon on its ring, as the picker's button draws it, for a column that cannot change it. */

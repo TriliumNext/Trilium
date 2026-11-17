@@ -12,8 +12,8 @@ const shown = vi.hoisted(() => ({
     board: null as NoteContextDataMap["boardColumns"] | null
 }));
 vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
-vi.mock("../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../react/hooks")>()),
+vi.mock("../react/hooks/tree", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/tree")>()),
     useGetContextData: () => shown.board
 }));
 

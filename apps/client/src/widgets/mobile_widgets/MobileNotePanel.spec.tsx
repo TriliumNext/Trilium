@@ -6,10 +6,16 @@ import type FNote from "../../entities/fnote";
 
 const shownNote = vi.hoisted(() => ({ current: null as FNote | null }));
 const shownContext = vi.hoisted(() => ({ current: null as { isCommandTarget: (ntxId?: string | null) => boolean } | null }));
-vi.mock("../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../react/hooks")>()),
-    useActiveNoteContext: () => ({ note: shownNote.current }),
-    useNoteContext: () => ({ note: shownNote.current, noteContext: shownContext.current }),
+vi.mock("../react/hooks/note_context", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/note_context")>()),
+    useNoteContext: () => ({ note: shownNote.current, noteContext: shownContext.current })
+}));
+vi.mock("../react/hooks/tree", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/tree")>()),
+    useActiveNoteContext: () => ({ note: shownNote.current })
+}));
+vi.mock("../react/hooks/tooltip", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/tooltip")>()),
     useStaticTooltip: vi.fn()
 }));
 
@@ -41,6 +47,12 @@ vi.mock("../sidebar/pdf/PdfAttachments", () => stubWidget("pdf-attachments-stub"
 vi.mock("../sidebar/pdf/PdfLayers", () => stubWidget("pdf-layers-stub"));
 vi.mock("../sidebar/pdf/PdfAnnotations", () => stubWidget("pdf-annotations-stub"));
 
+const panelModal = vi.hoisted(() => ({ loaded: false }));
+vi.mock("./MobileNotePanelModal", async (importOriginal) => {
+    panelModal.loaded = true;
+    return await importOriginal<typeof import("./MobileNotePanelModal")>();
+});
+
 async function stubWidget(className: string) {
     const { h } = await import("preact");
     return { default: () => h("div", { className }) };
@@ -50,26 +62,12 @@ import appContext from "../../components/app_context";
 import type Component from "../../components/component";
 import options from "../../services/options";
 import { buildNote } from "../../test/easy-froca";
+import { setCustomWidgets } from "../react/hooks/custom_widgets";
 import { ParentComponent } from "../react/react_utils";
 import NoteMap from "../sidebar/NoteMap";
 import PdfPages from "../sidebar/pdf/PdfPages";
-import type { RightPaneTabContents } from "../sidebar/RightPanelContainer";
-import MobileNotePanel, { withFixedHeightWidgetsLast } from "./MobileNotePanel";
-
-describe("withFixedHeightWidgetsLast", () => {
-    it("moves the note map and the PDF pages last, keeping the order within each group", () => {
-        const first = <div key="first" />;
-        const second = <div key="second" />;
-        const map = <NoteMap key="map" />;
-        const pages = <PdfPages key="pages" />;
-        const tab = (items: RightPaneTabContents["items"]) => ({ id: "outline", items } as RightPaneTabContents);
-
-        expect(withFixedHeightWidgetsLast(tab([ pages, first, map, second ])).items)
-            .toEqual([ first, second, pages, map ]);
-        expect(withFixedHeightWidgetsLast(tab([ map ])).items).toEqual([ map ]);
-        expect(withFixedHeightWidgetsLast(tab([])).items).toEqual([]);
-    });
-});
+import type { RightPaneTabContents } from "../sidebar/RightPaneContent";
+import MobileNotePanel from "./MobileNotePanel";
 
 describe("MobileNotePanel", () => {
     let container: HTMLElement;
@@ -89,7 +87,19 @@ describe("MobileNotePanel", () => {
         for (const stub of document.body.querySelectorAll(".modal-stub")) stub.remove();
     });
 
-    it("mounts the tabs on the first open and keeps them mounted once closed", () => {
+    it("loads the panel once its button is about to be pressed, not with the button", async () => {
+        shownNote.current = buildNote({ title: "Read" });
+        renderPanel();
+        await act(async () => { await new Promise((resolve) => setTimeout(resolve, 100)); });
+        expect(panelModal.loaded).toBe(false);
+
+        const button = container.querySelector("button");
+        act(() => { button?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })); });
+        await vi.waitFor(() => expect(panelModal.loaded).toBe(true));
+        expect(document.body.querySelector(".modal-stub")).toBeNull();
+    });
+
+    it("mounts the tabs on the first open and keeps them mounted once closed", async () => {
         shownNote.current = buildNote({ title: "Read" });
         renderPanel();
         expect(document.body.querySelector(".toc-stub")).toBeNull();
@@ -97,13 +107,13 @@ describe("MobileNotePanel", () => {
         const button = container.querySelector("button");
         expect(button).not.toBeNull();
         act(() => button?.click());
-        expect(document.body.querySelector(".toc-stub")).not.toBeNull();
+        await vi.waitFor(() => expect(document.body.querySelector(".toc-stub")).not.toBeNull());
 
         act(() => modal.onHidden?.());
         expect(document.body.querySelector(".toc-stub")).not.toBeNull();
     });
 
-    it("opens on the attributes tab when the attributes are asked for in its own note context only", () => {
+    it("opens on the attributes tab when the attributes are asked for in its own note context only", async () => {
         shownNote.current = buildNote({ title: "Read" });
         shownContext.current = { isCommandTarget: (ntxId) => ntxId === "ntx1" };
         const handlers = renderPanel();
@@ -114,7 +124,11 @@ describe("MobileNotePanel", () => {
         expect(document.body.querySelector(".modal-stub")).toBeNull();
 
         act(() => showNoteAttributes?.({ ntxId: "ntx1" }));
-        const attributesTab = document.body.querySelector(".right-pane-flat-tab-body[data-tab-id='attributes']");
+        const attributesTab = await vi.waitFor(() => {
+            const tab = document.body.querySelector(".right-pane-flat-tab-body[data-tab-id='attributes']");
+            expect(tab).toBeInstanceOf(HTMLElement);
+            return tab;
+        });
         expect(attributesTab?.classList.contains("hidden-ext")).toBe(false);
         expect(attributesTab?.querySelector(".attribute-list-stub")).not.toBeNull();
         expect(document.body.querySelector(".toc-stub")).toBeNull();
@@ -130,14 +144,30 @@ describe("MobileNotePanel", () => {
                 if (handlers.get(name) === handler) handlers.delete(name);
             }
         } as unknown as Component;
-        const widgetsByParent = { getLegacyWidgets: () => [], getPreactWidgets: () => [] };
+        setCustomWidgets({ getLegacyWidgets: () => [], getPreactWidgets: () => [] } as never);
         act(() => {
             render((
                 <ParentComponent.Provider value={parent}>
-                    <MobileNotePanel widgetsByParent={widgetsByParent as never} />
+                    <MobileNotePanel />
                 </ParentComponent.Provider>
             ), container);
         });
         return handlers;
     }
+});
+
+describe("withFixedHeightWidgetsLast", () => {
+    it("moves the note map and the PDF pages last, keeping the order within each group", async () => {
+        const { withFixedHeightWidgetsLast } = await import("./MobileNotePanelModal");
+        const first = <div key="first" />;
+        const second = <div key="second" />;
+        const map = <NoteMap key="map" />;
+        const pages = <PdfPages key="pages" />;
+        const tab = (items: RightPaneTabContents["items"]) => ({ id: "outline", items } as RightPaneTabContents);
+
+        expect(withFixedHeightWidgetsLast(tab([ pages, first, map, second ])).items)
+            .toEqual([ first, second, pages, map ]);
+        expect(withFixedHeightWidgetsLast(tab([ map ])).items).toEqual([ map ]);
+        expect(withFixedHeightWidgetsLast(tab([])).items).toEqual([]);
+    });
 });

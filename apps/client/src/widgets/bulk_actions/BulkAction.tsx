@@ -5,13 +5,15 @@ import { memo } from "preact/compat";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
 import { t } from "../../services/i18n";
-import { AttributeNameSuggestion, fetchAttributeNames } from "../attribute_widgets/attribute_detail";
+import {
+    AttributeNameSuggestion, fetchAttributeNames
+} from "../attribute_widgets/attribute_detail";
 import { useLabelValueSuggestions } from "../attribute_widgets/label_value_input";
 import { CardSection } from "../react/Card";
 import FormAutocomplete from "../react/FormAutocomplete";
-import { useSpacedUpdate } from "../react/hooks";
 import HelpRemoveButtons from "../react/HelpRemoveButtons";
 import Icon from "../react/Icon";
+import { useSpacedUpdate } from "../react/hooks/dom";
 import AbstractBulkAction, { ActionDefinition } from "./abstract_bulk_action";
 
 interface BulkActionProps {

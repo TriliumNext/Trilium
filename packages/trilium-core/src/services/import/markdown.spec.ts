@@ -801,5 +801,35 @@ $$`;
                 "</section></div>";
             expect(roundTrip(original)).toStrictEqual(original);
         });
+
+        it("round-trips asides, empty ones and those in a column, unchanged", () => {
+            const original =
+                "<p>Before</p>" +
+                "<aside data-position=\"wrap-right\"><p>Side <strong>note</strong></p>" +
+                "<ul><li>One</li><li>Two</li></ul></aside>" +
+                "<aside style=\"--tn-background:#555555;background-color:#555555;\" " +
+                "data-position=\"wrap-right\"><p>As inserted</p></aside>" +
+                "<aside style=\"--tn-background:#e64d4d;background-color:#e64d4d;\">" +
+                "<p>Red</p></aside>" +
+                "<p>Beside</p>" +
+                "<aside><p>&nbsp;</p></aside>" +
+                layout("1-1",
+                    "<aside data-position=\"left\"><h2>In a column</h2></aside>", "<p>B</p>");
+            const markdown = markdownExportService.toMarkdown(original);
+
+            expect(roundTrip(original)).toStrictEqual(original);
+            expect(markdownExportService.toMarkdown(roundTrip(original))).toStrictEqual(markdown);
+
+            const resized = "<aside style=\"--aside-width:18em;\"><p>A</p></aside>";
+            expect(roundTrip(resized)).toStrictEqual(resized);
+        });
+
+        it("reads a bare aside as a new one, and one of raw text in the flow", () => {
+            expect(markdownService.renderToHtml("<aside>\n\nA *side* note\n\n</aside>", "Title"))
+                .toBe("<aside style=\"--tn-background:#555555;background-color:#555555;\" " +
+                    "data-position=\"wrap-right\"><p>A <em>side</em> note</p></aside>");
+            expect(markdownService.renderToHtml("<aside>\nA callout\n\n</aside>", "Title"))
+                .toBe("<aside>\nA callout</aside>");
+        });
     });
 });

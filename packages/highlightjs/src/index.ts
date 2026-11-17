@@ -1,5 +1,6 @@
 import hljs from "highlight.js/lib/core";
-import { normalizeMimeTypeForCKEditor, type MimeType } from "@triliumnext/commons";
+import type { MimeType } from "@triliumnext/commons";
+import { normalizeMimeTypeForCKEditor } from "@triliumnext/commons/src/lib/mime_type.js";
 import syntaxDefinitions from "./syntax_highlighting.js";
 import { type Theme } from "./themes.js";
 import { type HighlightOptions } from "highlight.js";

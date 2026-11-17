@@ -1,6 +1,8 @@
 import "./image_compression_sections.css";
 
-import { IMAGE_JPEG_HANDLINGS, IMAGE_PNG_HANDLINGS } from "@triliumnext/commons";
+import {
+    IMAGE_JPEG_HANDLINGS, IMAGE_PNG_HANDLINGS
+} from "@triliumnext/commons/src/lib/server_api.js";
 import clsx from "clsx";
 
 import { t } from "../../../services/i18n";
@@ -259,13 +261,17 @@ function HandlingChoice<T extends string>({ title, description, values, currentV
     labelKey: string;
     onChoose: (value: T) => void;
 } & ImageCompressionSectionProps) {
+    // A key built from the type parameter `T` stays generic, which i18next cannot check.
+    const label = (value: string) => t(`space_usage.${labelKey}_${value}`);
+    const choiceDescription = (value: string) => t(`space_usage.${labelKey}_${value}_description`);
+
     return (
         <>
             <SectionLabel title={title} description={description} />
             <Dropdown
                 className="image-compression-section-choice"
                 dropdownContainerClassName="image-compression-choice-menu"
-                text={t(`space_usage.${labelKey}_${currentValue}`)}
+                text={label(currentValue)}
                 disabled={disabled}
                 placement="bottom-end"
                 mobileBottomSheet
@@ -275,10 +281,10 @@ function HandlingChoice<T extends string>({ title, description, values, currentV
                         key={value}
                         checkable
                         checked={value === currentValue}
-                        description={t(`space_usage.${labelKey}_${value}_description`)}
+                        description={choiceDescription(value)}
                         onClick={() => onChoose(value)}
                     >
-                        {t(`space_usage.${labelKey}_${value}`)}
+                        {label(value)}
                     </FormListItem>
                 ))}
             </Dropdown>

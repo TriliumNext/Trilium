@@ -1,4 +1,4 @@
-import { parseNoteTypeId } from "@triliumnext/commons";
+import { parseNoteTypeId } from "@triliumnext/commons/src/lib/note_type_ids.js";
 
 import appContext from "../../components/app_context";
 import contextMenu from "../../menus/context_menu";

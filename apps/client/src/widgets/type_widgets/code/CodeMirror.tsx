@@ -2,7 +2,7 @@ import { EditorConfig, default as VanillaCodeMirror } from "@triliumnext/codemir
 import { Ref } from "preact";
 import { useEffect, useLayoutEffect, useRef } from "preact/hooks";
 
-import { useSyncedRef } from "../../react/hooks";
+import { useSyncedRef } from "../../react/hooks/dom";
 import { codeCompletions } from "./code_completions";
 import type { CodeSnippet } from "./snippets";
 
@@ -93,6 +93,11 @@ export default function CodeMirror({
 
     // React to line numbers.
     useEffect(() => codeEditorRef.current?.setLineNumbers(lineNumbers), [ lineNumbers ]);
+
+    // React to the Vim keybindings.
+    useEffect(() => {
+        void codeEditorRef.current?.setVimKeybindings(!!extraOpts.vimKeybindings);
+    }, [ extraOpts.vimKeybindings ]);
 
     // React to indent size / style changes.
     useEffect(() => {

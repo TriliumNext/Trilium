@@ -5,7 +5,8 @@ import { useEffect, useState } from "preact/hooks";
 import { t } from "../../services/i18n";
 import { ViewTypeOptions } from "../collections/interface";
 import CollectionProperties from "../note_bars/CollectionProperties";
-import { useNoteLabelWithDefault, useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useNoteLabelWithDefault } from "../react/hooks/note";
 import NoItems from "../react/NoItems";
 import { TypeWidgetProps } from "./type_widget";
 

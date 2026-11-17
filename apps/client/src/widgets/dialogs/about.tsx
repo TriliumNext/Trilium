@@ -16,7 +16,8 @@ import server from "../../services/server.js";
 import { isStandalone } from "../../services/utils.js";
 import { formatDateTime } from "../../utils/formatters.js";
 import DirectoryLink from "../react/DirectoryLink.js";
-import { useTooltip, useTriliumEvent } from "../react/hooks.jsx";
+import { useTriliumEvent } from "../react/hooks/events.js";
+import { useTooltip } from "../react/hooks/tooltip.js";
 import Modal from "../react/Modal.js";
 import { PropertySheet, PropertySheetItem } from "../react/PropertySheet.js";
 

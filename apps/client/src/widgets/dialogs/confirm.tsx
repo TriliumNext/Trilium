@@ -3,10 +3,12 @@ import "./confirm.css";
 import Modal from "../react/Modal";
 import Button from "../react/Button";
 import { t } from "../../services/i18n";
-import { describeNoteDeletion, type NoteDeletionTarget, planNoteDeletion } from "../../services/note_deletion";
+import {
+    describeNoteDeletion, type NoteDeletionTarget, planNoteDeletion
+} from "../../services/note_deletion";
 import { useMemo, useRef, useState } from "preact/hooks";
 import FormCheckbox from "../react/FormCheckbox";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import { isValidElement, type VNode } from "preact";
 import { SanitizedHtml } from "../react/RawHtml";
 

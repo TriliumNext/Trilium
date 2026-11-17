@@ -1,5 +1,4 @@
 import "./IconPicker.css";
-import "./IconPickerButton.css";
 
 import { IconRegistry } from "@triliumnext/commons";
 import type { Tooltip } from "bootstrap";
@@ -13,10 +12,11 @@ import { t } from "../../services/i18n";
 import server from "../../services/server";
 import { isDesktop, isMobile } from "../../services/utils";
 import ActionButton from "./ActionButton";
-import Dropdown, { type DropdownHandle, DropdownPanel } from "./Dropdown";
+import Dropdown from "./Dropdown";
 import { FormDropdownDivider, FormListItem } from "./FormList";
 import FormTextBox from "./FormTextBox";
-import { useStaticTooltip, useWindowSize } from "./hooks";
+import { useWindowSize } from "./hooks/dom";
+import { useStaticTooltip } from "./hooks/tooltip";
 import Modal from "./Modal";
 
 /** The room one icon takes in the grid, which also decides how many fit across a given width. */
@@ -40,7 +40,7 @@ const ICON_TOOLTIP_CONFIG: Partial<Tooltip.Options> = {
     title() { return this.getAttribute("title") || ""; },
 };
 
-interface IconPickerProps {
+export interface IconPickerProps {
     /** Receives the class of the icon picked, e.g. `bx bx-star`. */
     onSelect(iconClass: string): void;
     /**
@@ -125,135 +125,6 @@ export default function IconPicker({ onSelect, onReset, resetText, columnCount, 
     );
 }
 
-interface IconPickerButtonProps extends Pick<IconPickerProps, "onSelect" | "onReset" | "resetText"> {
-    /** The class the button wears, which is the icon it stands for, e.g. `bx bx-star`. */
-    icon: string;
-    /** What pressing it is for, worn as its tooltip and as the heading of the modal on a phone. */
-    title: string;
-    /** The host's own class, for a host that dresses the button or the widget around it. */
-    className?: string;
-    disabled?: boolean;
-    /**
-     * Said as the picker opens and closes, for a host that has to hold something open while the
-     * reader is in it: the picker takes focus with it, and an editor that closes on losing focus
-     * would take the picker down with itself.
-     */
-    onOpened?: () => void;
-    onClosed?: () => void;
-    /** Dim the page behind the picker, for a host that would rather it were answered before
-     * anything else. Has no effect on a phone, where the picker is a dialog with a backdrop of its
-     * own. */
-    backdrop?: boolean;
-}
-
-/**
- * The button an icon is picked through: the picker hangs under it, and what is picked is reported
- * and the picker put away.
- *
- * Where it is put differs with the screen. A desktop gets the menu under the button, at the width
- * twelve icons and a search field ask for. A phone gets a modal of its own instead: that width is
- * wider than the screen, and a menu of it — hung off a button that may itself be in the corner of a
- * panel — leaves the grid mostly off-screen, which is no way to pick from a thousand icons.
- */
-export function IconPickerButton({ className, ...props }: IconPickerButtonProps) {
-    // A constant of the session rather than of the render, as everywhere else it is branched on.
-    return isMobile()
-        ? <IconPickerModalButton className={className} {...props} />
-        : <IconPickerDropdownButton className={className} {...props} />;
-}
-
-/** The picker under the button, as a desktop shows it. */
-function IconPickerDropdownButton({
-    icon, title, className, disabled, onSelect, onReset, resetText, onOpened, onClosed, backdrop
-}: IconPickerButtonProps) {
-    const dropdownRef = useRef<DropdownHandle>(null);
-    const [ pickerShown, setPickerShown ] = useState(false);
-
-    return (
-        <DropdownPanel
-            // The legacy class dresses the menu the picker sits in, which the themes and the
-            // picker's own stylesheet reach through it.
-            className={clsx("note-icon-widget", className)}
-            buttonClassName={`note-icon tn-focusable-button ${icon}`}
-            title={disabled ? undefined : title}
-            disabled={disabled}
-            dropdownRef={dropdownRef}
-            autoClose="outside"
-            backdrop={backdrop}
-            hideToggleArrow
-            onShown={() => {
-                setPickerShown(true);
-                onOpened?.();
-            }}
-            onHidden={() => {
-                setPickerShown(false);
-                onClosed?.();
-            }}
-        >
-            {/* Built only once opened: it holds every icon of every installed pack, which is far
-                more work than a button that merely happens to be on screen should be doing. */}
-            {pickerShown && (
-                <IconPicker
-                    columnCount={12}
-                    resetText={resetText}
-                    onSelect={(iconClass) => {
-                        onSelect(iconClass);
-                        dropdownRef.current?.hide();
-                    }}
-                    onReset={onReset && (() => {
-                        onReset();
-                        dropdownRef.current?.hide();
-                    })}
-                />
-            )}
-        </DropdownPanel>
-    );
-}
-
-/** The picker on a screen of its own, as a phone shows it. */
-function IconPickerModalButton({
-    icon, title, className, disabled, onSelect, onReset, resetText, onOpened, onClosed
-}: IconPickerButtonProps) {
-    const [ modalShown, setModalShown ] = useState(false);
-
-    return (
-        <div className={clsx("note-icon-widget", className)}>
-            <ActionButton
-                className="note-icon"
-                icon={icon}
-                text={title}
-                // The dropdown button a desktop shows is a `btn`, which the note icon's own rules
-                // size. `icon-action` instead is sized by the theme as a toolbar button, which is
-                // larger, so the same icon would be drawn differently on the two.
-                noIconActionClass
-                onClick={() => {
-                    setModalShown(true);
-                    onOpened?.();
-                }}
-                disabled={disabled}
-            />
-
-            <IconPickerModal
-                title={title}
-                show={modalShown}
-                resetText={resetText}
-                onHidden={() => {
-                    setModalShown(false);
-                    onClosed?.();
-                }}
-                onSelect={(iconClass) => {
-                    onSelect(iconClass);
-                    setModalShown(false);
-                }}
-                onReset={onReset && (() => {
-                    onReset();
-                    setModalShown(false);
-                })}
-            />
-        </div>
-    );
-}
-
 interface IconPickerModalProps extends Pick<IconPickerProps, "onSelect" | "onReset" | "resetText"> {
     /** The modal title. */
     title: string;
@@ -300,6 +171,7 @@ interface IconToCountCache {
 }
 
 let iconToCountCache!: Promise<IconToCountCache> | null;
+let iconRegistryCache: Promise<IconRegistry> | undefined;
 
 function FilterRow({ filterByPrefix, search, setSearch, setFilterByPrefix, filteredIcons, onReset, resetText }: {
     filterByPrefix: string | null;
@@ -322,9 +194,9 @@ function FilterRow({ filterByPrefix, search, setSearch, setFilterByPrefix, filte
                 placeholder={ filterByPrefix
                     ? t("note_icon.search_placeholder_filtered", {
                         number: filteredIcons.length ?? 0,
-                        name: glob.iconRegistry.sources.find(s => s.prefix === filterByPrefix)?.name ?? ""
+                        name: glob.iconPacks.find(s => s.prefix === filterByPrefix)?.name ?? ""
                     })
-                    : t("note_icon.search_placeholder", { number: filteredIcons.length ?? 0, count: glob.iconRegistry.sources.length })}
+                    : t("note_icon.search_placeholder", { number: filteredIcons.length ?? 0, count: glob.iconPacks.length })}
                 currentValue={search} onChange={setSearch}
                 autoFocus
             />
@@ -406,9 +278,9 @@ function IconFilterContent({ filterByPrefix, setFilterByPrefix }: {
                 checked={filterByPrefix === "bx"}
                 onClick={() => setFilterByPrefix("bx")}
             >{t("note_icon.filter-default")}</FormListItem>
-            {glob.iconRegistry.sources.length > 1 && <FormDropdownDivider />}
+            {glob.iconPacks.length > 1 && <FormDropdownDivider />}
 
-            {glob.iconRegistry.sources.map(({ prefix, name, icon }) => (
+            {glob.iconPacks.map(({ prefix, name, icon }) => (
                 prefix !== "bx" && <FormListItem
                     key={prefix}
                     onClick={() => setFilterByPrefix(prefix)}
@@ -424,9 +296,9 @@ function useAllIcons() {
     const [ allIcons, setAllIcons ] = useState<IconWithName[]>();
 
     useEffect(() => {
-        getIconToCountMap().then((iconsToCount) => {
+        Promise.all([ getIconRegistry(), getIconToCountMap() ]).then(([ iconRegistry, iconsToCount ]) => {
             const allIcons = [
-                ...glob.iconRegistry.sources.flatMap(s => s.icons.map((i) => ({
+                ...iconRegistry.sources.flatMap(s => s.icons.map((i) => ({
                     ...i,
                     iconPack: s.name,
                 })))
@@ -474,6 +346,12 @@ function useFilteredIcons(allIcons: IconWithName[] | undefined, search: string |
         return icons;
     }, [ allIcons, search, filterByPrefix ]);
     return filteredIcons;
+}
+
+/** Every icon of each pack, fetched once per page: `/bootstrap` names only the packs. */
+function getIconRegistry() {
+    iconRegistryCache ??= server.get<IconRegistry>("other/icon-registry");
+    return iconRegistryCache;
 }
 
 async function getIconToCountMap() {

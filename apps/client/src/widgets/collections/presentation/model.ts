@@ -1,4 +1,5 @@
-import { getCodeLanguageIcon, NOTE_TYPE_ICONS, NoteType } from "@triliumnext/commons";
+import type { NoteType } from "@triliumnext/commons";
+import { getCodeLanguageIcon, NOTE_TYPE_ICONS } from "@triliumnext/commons/src/lib/notes.js";
 
 import FNote from "../../../entities/fnote";
 import branches from "../../../services/branches";

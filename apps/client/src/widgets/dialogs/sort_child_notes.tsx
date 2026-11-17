@@ -1,10 +1,8 @@
 import "./sort_child_notes.css";
 
-import {
-    ATTRIBUTE_NAME_PATTERN,
-    serializeSortCriteria,
-    type SortCriterion
-} from "@triliumnext/commons";
+import type { SortCriterion } from "@triliumnext/commons";
+import { ATTRIBUTE_NAME_PATTERN } from "@triliumnext/commons/src/lib/attribute_names.js";
+import { serializeSortCriteria } from "@triliumnext/commons/src/lib/sort_criteria.js";
 import { useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
@@ -15,7 +13,7 @@ import { Card, CardSection, ItemCreationRow, OptionCardSection } from "../react/
 import FormSelect from "../react/FormSelect";
 import FormTextBox from "../react/FormTextBox";
 import FormToggle from "../react/FormToggle";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import Modal from "../react/Modal";
 import SegmentedChoice, { type SegmentedChoiceOption } from "../react/SegmentedChoice";
 

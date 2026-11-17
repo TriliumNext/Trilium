@@ -1,18 +1,17 @@
-import type { CKTextEditor } from "@triliumnext/ckeditor5";
+import type { CKTextEditor, TriliumVim } from "@triliumnext/ckeditor5";
 import type CodeMirror from "@triliumnext/codemirror";
 
 import type FNote from "../entities/fnote.js";
-import { closeActiveDialog } from "../services/dialog.js";
 import froca from "../services/froca.js";
 import hoistedNoteService from "../services/hoisted_note.js";
-import type { ViewScope } from "../services/link.js";
+import { getNoteIdAndParentIdFromUrl, type ViewScope } from "../services/navigation_state.js";
 import options from "../services/options.js";
 import protectedSessionHolder from "../services/protected_session_holder.js";
 import server from "../services/server.js";
 import { shouldRedirectPinnedNavigation } from "../services/tab_pinning.js";
 import treeService from "../services/tree.js";
 import utils from "../services/utils.js";
-import { ReactWrappedWidget } from "../widgets/basic_widget.js";
+import type { ReactWrappedWidget } from "../widgets/basic_widget.js";
 import type { HighlightContext } from "../widgets/sidebar/HighlightsList.js";
 import type { HeadingContext } from "../widgets/sidebar/TableOfContents.js";
 import type { ChatHighlightsContext } from "../widgets/type_widgets/llm_chat/chat_highlights.js";
@@ -111,6 +110,11 @@ export interface NoteContextDataMap {
     };
     /** Published by the code editor of the note, so the status bar can show the cursor position. */
     codeEditor: CodeMirror;
+    /**
+     * Published by the text editor of the note, so the status bar can show the mode and the
+     * command line of its Vim mode, or of the one in the focused embed.
+     */
+    vimMode: TriliumVim;
     /** Published by content widgets (via `useNoteBlob`) while the note's content is being fetched,
      * so the note detail can show a loading state instead of the previous note's content. */
     contentLoad: {
@@ -201,7 +205,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
         }
 
         // Pinned tabs stay on the note they were pinned to — redirect navigation to a new tab instead.
-        const { noteId: targetNoteId } = treeService.getNoteIdAndParentIdFromUrl(resolvedNotePath);
+        const { noteId: targetNoteId } = getNoteIdAndParentIdFromUrl(resolvedNotePath);
         if (shouldRedirectPinnedNavigation(this.pinned, this.noteId, targetNoteId)) {
             return appContext.tabManager.openContextWithNote(resolvedNotePath, {
                 activate: true,
@@ -213,7 +217,9 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
 
         await this.triggerEvent("beforeNoteSwitch", { noteContext: this });
 
-        if (!opts.keepActiveDialog) {
+        // Only `dialog.openDialog()` sets `glob.activeDialog`, so `dialog.ts` is loaded whenever one is open.
+        if (!opts.keepActiveDialog && glob.activeDialog) {
+            const { closeActiveDialog } = await import("../services/dialog.js");
             closeActiveDialog();
         }
 
@@ -221,7 +227,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
 
         this.notePath = resolvedNotePath;
         this.viewScope = viewScope;
-        ({ noteId: this.noteId, parentNoteId: this.parentNoteId } = treeService.getNoteIdAndParentIdFromUrl(resolvedNotePath));
+        ({ noteId: this.noteId, parentNoteId: this.parentNoteId } = getNoteIdAndParentIdFromUrl(resolvedNotePath));
 
         // Clear context data only when actually switching to a different note.
         // Context data (e.g. ToC headings) is tied to the note content, so it
@@ -408,8 +414,11 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
         });
     }
 
-    /** @returns {Promise<boolean>} */
-    async isReadOnly() {
+    /**
+     * {@link isReadOnly} as far as it can tell without the note's content: `undefined` while the
+     * auto read-only check, which reads the content's size, has not run for the view.
+     */
+    isReadOnlyIfKnown(): boolean | undefined {
         if (this?.viewScope?.readOnlyTemporarilyDisabled && this.note?.isContentWritable !== false) {
             return false;
         }
@@ -443,6 +452,16 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
         // Auto read-only based on content size is only configurable for text/code.
         if (this.note.type !== "text" && this.note.type !== "code") {
             return false;
+        }
+
+        return this.viewScope?.isReadOnly;
+    }
+
+    /** @returns {Promise<boolean>} */
+    async isReadOnly() {
+        const known = this.isReadOnlyIfKnown();
+        if (known !== undefined || !this.note) {
+            return known ?? false;
         }
 
         // Store the initial decision about read-only status in the viewScope

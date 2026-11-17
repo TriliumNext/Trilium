@@ -3,7 +3,8 @@ import "./revisions.css";
 import {
     applyListItemAlignment
 } from "@triliumnext/ckeditor5/src/plugins/list_item_alignment_read_only.js";
-import { dayjs, type RevisionItem, type RevisionPojo, safeHostname, safeLinkPreviewHref } from "@triliumnext/commons";
+import type { RevisionItem, RevisionPojo } from "@triliumnext/commons";
+import { safeHostname, safeLinkPreviewHref } from "@triliumnext/commons/src/lib/link_embed.js";
 import clsx from "clsx";
 import { diffWords } from "diff";
 import { type CSSProperties, Fragment } from "preact";
@@ -11,6 +12,7 @@ import { Dispatch, StateUpdater, useEffect, useLayoutEffect, useRef, useState } 
 
 import appContext from "../../components/app_context";
 import FNote from "../../entities/fnote";
+import { dayjs } from "../../services/dayjs.js";
 import dialog from "../../services/dialog";
 import froca from "../../services/froca";
 import { diffHtml } from "../../services/html_diff";
@@ -28,8 +30,9 @@ import Button from "../react/Button";
 import Dropdown from "../react/Dropdown";
 import FormList, { FormDropdownDivider, FormListItem } from "../react/FormList";
 import FormToggle from "../react/FormToggle";
-import { useTriliumEvent } from "../react/hooks";
-import { DetailPane, MasterDetailHeader, MasterPane, useMobileMasterDetail } from "../react/master_detail";
+import { useTriliumEvent } from "../react/hooks/events";
+import { DetailPane, MasterPane, useMobileMasterDetail } from "../react/master_detail";
+import MasterDetailHeader from "../react/MasterDetailHeader";
 import Modal from "../react/Modal";
 import NoItems from "../react/NoItems";
 import { RawHtmlBlock, SanitizedHtml } from "../react/RawHtml";

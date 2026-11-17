@@ -4,8 +4,8 @@ import { renderInto } from "../../../../test/render";
 
 vi.mock("../../../../services/i18n", () => ({ t: (key: string) => key }));
 
-vi.mock("../../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../../react/hooks")>()),
+vi.mock("../../../react/hooks/tooltip", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../../react/hooks/tooltip")>()),
     useStaticTooltip: vi.fn()
 }));
 

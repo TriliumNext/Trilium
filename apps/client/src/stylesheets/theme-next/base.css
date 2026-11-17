@@ -13,7 +13,7 @@
     src: url(../../fonts/Inter/Inter-VariableFont_opsz,wght.woff2) format("woff2-variations");
     font-weight: 100 900;
     font-style: normal;
-    font-display: swap;
+    font-display: optional;
 }
 
 @font-face {

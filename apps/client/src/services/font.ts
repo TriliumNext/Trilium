@@ -1,43 +1,36 @@
-/** Marks the server-generated fonts stylesheet so it can be replaced when a font option changes. */
+/** Marks the `<style>` that holds the stylesheet of the font options. */
 const FONT_STYLESHEET_ATTR = "data-font-stylesheet";
 
-let version = 0;
-
-/** Creates the (marked) fonts stylesheet link. Used both at boot and when re-applying fonts live. */
-export function createFontStylesheetLink(): HTMLLinkElement {
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    // A bumped query param busts the browser cache so the server regenerates the CSS from the latest options.
-    link.href = version === 0 ? "api/fonts" : `api/fonts?v=${version}`;
-    link.setAttribute(FONT_STYLESHEET_ATTR, "true");
-    return link;
+/** Creates the marked `<style>` that holds the stylesheet of the font options. */
+export function createFontStylesheet(css: string): HTMLStyleElement {
+    const style = document.createElement("style");
+    style.setAttribute(FONT_STYLESHEET_ATTR, "true");
+    style.textContent = css;
+    return style;
 }
 
 /**
- * Re-fetches the server-generated fonts stylesheet and swaps it in without reloading. The server returns an empty
- * stylesheet when font overrides are disabled, so this also correctly reverts to the theme defaults. The previous
- * stylesheet is removed only once the new one has loaded, keeping the swap free of a flash of unstyled content.
+ * Creates a link that downloads a font file before any text needs it. `crossorigin` is required
+ * because fonts are fetched in CORS mode, and a preload in another mode is downloaded again.
  */
-export function applyFontsFromOptions() {
-    version++;
+export function createFontPreloadLink(href: string): HTMLLinkElement {
+    const link = document.createElement("link");
+    link.rel = "preload";
+    link.as = "font";
+    link.type = "font/woff2";
+    link.crossOrigin = "anonymous";
+    link.href = href;
+    return link;
+}
 
-    const oldLinks = Array.from(document.head.querySelectorAll<HTMLLinkElement>(`link[${FONT_STYLESHEET_ATTR}]`));
-    const newLink = createFontStylesheetLink();
-
-    const anchor = oldLinks.at(-1);
-    if (anchor) {
-        anchor.after(newLink);
+/** Replaces the stylesheet of the font options with `css`, from `buildFontCss()`. */
+export function applyFontCss(css: string) {
+    const style = document.head.querySelector<HTMLStyleElement>(`style[${FONT_STYLESHEET_ATTR}]`);
+    if (style) {
+        style.textContent = css;
     } else {
-        document.head.appendChild(newLink);
+        document.head.appendChild(createFontStylesheet(css));
     }
-
-    newLink.addEventListener("load", () => {
-        for (const oldLink of oldLinks) {
-            oldLink.remove();
-        }
-    }, { once: true });
-    // If the new stylesheet fails to load, keep the previous one rather than dropping fonts entirely.
-    newLink.addEventListener("error", () => newLink.remove(), { once: true });
 }
 
 /**

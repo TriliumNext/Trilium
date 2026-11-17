@@ -15,10 +15,10 @@ const state = vi.hoisted(() => ({
 // The stand-in holds the value in state and re-reads it when the store changes, as the real hook does
 // through `entitiesReloaded`: the cases below turn on the option moving underneath a mounted page,
 // which a stand-in only returning the current value could not reproduce.
-vi.mock("../../react/hooks", async (importOriginal) => {
+vi.mock("../../react/hooks/options", async (importOriginal) => {
     const { useEffect: onMount, useState: useLocal } = await import("preact/hooks");
     return {
-        ...(await importOriginal<typeof import("../../react/hooks")>()),
+        ...(await importOriginal<typeof import("../../react/hooks/options")>()),
         useTriliumOption: () => {
             const [ value, setValue ] = useLocal(state.stored);
             onMount(() => {

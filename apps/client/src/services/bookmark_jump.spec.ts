@@ -1,7 +1,7 @@
 import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { consumeBookmark } from "./bookmark_jump.js";
+import { consumeBookmark, revealElement } from "./bookmark_jump.js";
 import type { ViewScope } from "./link.js";
 
 function buildContainer(html: string) {
@@ -88,5 +88,26 @@ describe("consumeBookmark", () => {
 
         expect(scrollIntoView).not.toHaveBeenCalled();
         expect(viewScope.bookmark).toBeUndefined();
+    });
+});
+
+describe("revealElement", () => {
+    it("opens the collapsed blocks and shows the tabs around an element", () => {
+        const container = document.createElement("div");
+        container.innerHTML =
+            `<div class="trilium-tabs">` +
+                `<section class="trilium-tab"><p class="trilium-tab-title">A</p><div class="trilium-tab-panel"></div></section>` +
+                `<section class="trilium-tab"><p class="trilium-tab-title">B</p><div class="trilium-tab-panel">` +
+                    `<details><summary>s</summary><span class="m">hit</span></details>` +
+                `</div></section>` +
+            `</div>`;
+        applyTabs(container, { placeholder: "", scrollLabels: { start: "", end: "" } });
+        const match = container.querySelector(".m");
+        expect(match).not.toBeNull();
+
+        revealElement(match as Element);
+
+        expect(container.querySelector("details")?.open).toBe(true);
+        expect(container.querySelector(".trilium-tab-title--active")?.textContent).toBe("B");
     });
 });

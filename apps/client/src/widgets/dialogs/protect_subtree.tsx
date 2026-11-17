@@ -9,7 +9,7 @@ import protectedSessionHolder from "../../services/protected_session_holder";
 import Button from "../react/Button";
 import { Card, CardSection, OptionCardSection } from "../react/Card";
 import FormTextBox from "../react/FormTextBox";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import Icon from "../react/Icon";
 import Modal from "../react/Modal";
 

@@ -4,7 +4,20 @@ import type { Request } from "../../http_interface";
 import becca from "../../becca/becca.js";
 import { NotFoundError } from "../../errors.js";
 import { getLog } from "../../services/log.js";
+import optionService from "../../services/options.js";
 import type BNote from "../../becca/entities/bnote.js";
+
+/**
+ * Notes whose children the client reads as soon as it starts, whether or not they are expanded in
+ * the tree: the launch bar of each layout, its bookmarks, and the task states the text editor
+ * offers. The initial tree carries them, so none of them takes a request of its own.
+ */
+const STARTUP_PARENT_NOTE_IDS = [
+    "_lbVisibleLaunchers", "_lbMobileVisibleLaunchers", "_lbBookmarks", "_taskStates"
+];
+
+/** Notes the client reads as soon as it starts: the launchers of the tab bar's history buttons. */
+const STARTUP_NOTE_IDS = [ "_lbBackInHistory", "_lbForwardInHistory" ];
 
 function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
     const noteIds = new Set(_noteIds);
@@ -130,46 +143,6 @@ function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
     };
 }
 
-/**
- * @swagger
- * /api/tree:
- *   get:
- *     summary: Retrieve tree data
- *     operationId: tree
- *     externalDocs:
- *       description: Server implementation
- *       url: https://github.com/TriliumNext/Trilium/blob/v0.91.6/src/routes/api/tree.ts
- *     parameters:
- *       - in: query
- *         name: subTreeNoteId
- *         required: false
- *         schema:
- *           type: string
- *         description: Limit tree data to this note and descendants
- *     responses:
- *       '200':
- *         description: Notes, branches and attributes
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 branches:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Branch'
- *                 notes:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Note'
- *                 attributes:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Attribute'
- *     security:
- *       - session: []
- *     tags: ["data"]
- */
 function getTree(req: Request) {
     const subTreeNoteId = typeof req.query.subTreeNoteId === "string" ? req.query.subTreeNoteId : "root";
     const collectedNoteIds = new Set<string>([subTreeNoteId]);
@@ -197,7 +170,49 @@ function getTree(req: Request) {
 
     collect(becca.notes[subTreeNoteId]);
 
+    if (subTreeNoteId === "root") {
+        for (const noteId of STARTUP_PARENT_NOTE_IDS) {
+            const note = becca.notes[noteId];
+            if (!note) continue;
+
+            collectedNoteIds.add(noteId);
+            for (const childNote of note.children) {
+                collectedNoteIds.add(childNote.noteId);
+            }
+        }
+        for (const noteId of STARTUP_NOTE_IDS) {
+            if (noteId in becca.notes) collectedNoteIds.add(noteId);
+        }
+        for (const noteId of getSavedTabNoteIds()) {
+            if (noteId in becca.notes) collectedNoteIds.add(noteId);
+        }
+    }
+
     return getNotesAndBranchesAndAttributes(collectedNoteIds);
+}
+
+/**
+ * The note and the hoisted note of every tab saved in `openNoteContexts`, which the client opens
+ * as soon as it starts. Their ancestors come along with them.
+ */
+function getSavedTabNoteIds() {
+    let tabs: unknown;
+    try {
+        tabs = JSON.parse(optionService.getOptionOrNull("openNoteContexts") ?? "[]");
+    } catch {
+        return [];
+    }
+    if (!Array.isArray(tabs)) return [];
+
+    const noteIds: string[] = [];
+    for (const tab of tabs as { notePath?: unknown; hoistedNoteId?: unknown }[]) {
+        if (typeof tab?.notePath === "string") {
+            const noteId = tab.notePath.split(/[?#]/)[0].split("/").at(-1);
+            if (noteId) noteIds.push(noteId);
+        }
+        if (typeof tab?.hoistedNoteId === "string") noteIds.push(tab.hoistedNoteId);
+    }
+    return noteIds;
 }
 
 function load(req: Request) {

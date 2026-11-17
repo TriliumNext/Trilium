@@ -1,6 +1,6 @@
 import {
     MIME_TYPE_AUTO, MIME_TYPES_DICT, normalizeMimeTypeForCKEditor, resolveEnabledMimeTypes
-} from "@triliumnext/commons";
+} from "@triliumnext/commons/src/lib/mime_type.js";
 import { describe, expect, it, vi } from "vitest";
 
 // Wrap the real `normalizeMimeTypeForCKEditor` in a spy so we can observe how many
@@ -8,8 +8,8 @@ import { describe, expect, it, vi } from "vitest";
 // type while the map is being built and not at all on cached lookups, which is how
 // we prove the map is constructed exactly once.
 const normalizeSpy = vi.hoisted(() => vi.fn());
-vi.mock("@triliumnext/commons", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("@triliumnext/commons")>();
+vi.mock("@triliumnext/commons/src/lib/mime_type.js", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@triliumnext/commons/src/lib/mime_type.js")>();
     normalizeSpy.mockImplementation(actual.normalizeMimeTypeForCKEditor);
     return {
         ...actual,
@@ -128,6 +128,20 @@ describe("mime_types service", () => {
         options.is = vi.fn(() => true) as typeof options.is;
         expect(mimeTypesService.getEnabledMimeTypes().map((mt) => mt.mime))
             .toEqual([ "text/plain", "text/css", "text/x-python" ]);
+    });
+
+    it("getCodeBlockMimeTypes leaves out the Trilium script variants of JavaScript", () => {
+        const enabled = [
+            "text/javascript", "application/javascript;env=backend",
+            "application/javascript;env=frontend", "text/css"
+        ];
+        options.getJson = vi.fn(() => enabled) as typeof options.getJson;
+        options.is = vi.fn(() => false) as typeof options.is;
+        mimeTypesService.loadMimeTypes();
+
+        expect(mimeTypesService.getEnabledMimeTypes()).toHaveLength(5);
+        expect(mimeTypesService.getCodeBlockMimeTypes().map((mt) => mt.mime))
+            .toEqual([ "text/plain", "text/javascript", "text/css" ]);
     });
 
     it("re-exports MIME_TYPE_AUTO and the public helpers", () => {

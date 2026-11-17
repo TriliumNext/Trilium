@@ -1,12 +1,29 @@
-import { _getViewData as getViewData, _setModelData as setModelData, type ClassicEditor, type ViewElement } from "ckeditor5";
-import { beforeEach, describe, expect, it } from "vitest";
+import {
+    _getViewData as getViewData, _setModelData as setModelData, type ClassicEditor,
+    FontBackgroundColor, FontColor, type ViewElement
+} from "ckeditor5";
+import editorStylesheetUrl from "ckeditor5/ckeditor5.css?url";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createLinkEmbedHost, createTestEditor, LINK_EMBED_TEST_PLUGINS, type LinkEmbedHostMocks } from "../../../test/link-embed-kit.js";
+import {
+    createLinkEmbedHost, createTestEditor, findElement, LINK_EMBED_TEST_PLUGINS,
+    type LinkEmbedHostMocks
+} from "../../../test/link-embed-kit.js";
+import ClipboardPlainTextIndent from "../clipboard_plain_text_indent.js";
 
 describe("LinkEmbedEditing", () => {
     let editor: ClassicEditor;
     let renderEmbed: LinkEmbedHostMocks["renderEmbed"];
     let renderMention: LinkEmbedHostMocks["renderMention"];
+
+    beforeAll(() => new Promise<void>((resolve, reject) => {
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = editorStylesheetUrl;
+        link.onload = () => resolve();
+        link.onerror = () => reject(new Error("the editor stylesheet did not load"));
+        document.head.appendChild(link);
+    }));
 
     beforeEach(async () => {
         const host = createLinkEmbedHost();
@@ -95,8 +112,7 @@ describe("LinkEmbedEditing", () => {
         const view = getViewData(editor.editing.view);
         expect(view).toContain("link-embed");
         expect(view).toContain("ck-widget");
-        // The block preview carries CKEditor's own drag handle (as tables do), so the whole widget
-        // moves as one instead of the user tearing its image and text apart.
+        // The block preview carries CKEditor's own drag handle, as tables do.
         expect(view).toContain("ck-widget_with-selection-handle");
 
         // The editing wrapper must carry the full metadata, not just the URL: a copy that starts
@@ -195,6 +211,63 @@ describe("LinkEmbedEditing", () => {
         expect(data).toContain('data-url="https://e.com/"');
     });
 
+    it("copies link previews as links to their URL, and saves them without one", async () => {
+        const plugins = [ ...LINK_EMBED_TEST_PLUGINS, ClipboardPlainTextIndent ];
+        const copying = await createTestEditor(plugins, { linkEmbed: createLinkEmbedHost() });
+        setModelData(copying.model,
+            '<linkEmbed url="https://e.com/" embedType="opengraph" title="T"></linkEmbed>'
+            + '<paragraph>See <linkMention url="https://f.com/"></linkMention>, or'
+            + ' <linkMention url="javascript:alert(1)" title="X"></linkMention>[]</paragraph>');
+        copying.execute("selectAll");
+
+        const copied = new Map<string, string>();
+        copying.editing.view.document.fire("copy", {
+            dataTransfer: { setData: (type: string, data: string) => copied.set(type, data) },
+            preventDefault: () => {},
+            method: "copy"
+        });
+
+        expect(copied.get("text/html")).toBe(
+            '<section class="link-embed" data-url="https://e.com/" data-embed-type="opengraph"'
+            + ' data-title="T"><a href="https://e.com/">T</a></section>'
+            + '<p>See&nbsp;<span class="link-mention" data-url="https://f.com/">'
+            + '<a href="https://f.com/">https://f.com/</a></span>'
+            + ', or&nbsp;<span class="link-mention" data-url="javascript:alert(1)" data-title="X">'
+            + '<a href="about:blank">X</a></span></p>'
+        );
+        expect(copied.get("text/plain"))
+            .toBe("https://e.com/\n\nSee https://f.com/, or javascript:alert(1)");
+        expect(copying.getData()).not.toContain("<a");
+    });
+
+    it("lets the font color commands color link previews and the text by a mention", async () => {
+        const plugins = [ ...LINK_EMBED_TEST_PLUGINS, FontColor, FontBackgroundColor ];
+        const coloring = await createTestEditor(plugins, { linkEmbed: createLinkEmbedHost() });
+        setModelData(coloring.model,
+            '<paragraph>[See <linkMention url="https://e.com/"></linkMention>]</paragraph>'
+            + '<linkEmbed url="https://f.com/" embedType="opengraph"></linkEmbed>');
+        coloring.execute("fontColor", { value: "#e64d4d" });
+        const card = findElement(coloring, "linkEmbed");
+        if (!card) {
+            throw new Error("Expected a card.");
+        }
+        coloring.model.change((writer) => writer.setSelection(card, "on"));
+        coloring.execute("fontBackgroundColor", { value: "#e5e64d" });
+
+        const data = coloring.getData();
+        expect(data).toBe('<p><span style="color:#e64d4d;">See&nbsp;</span>'
+            + '<span class="link-mention" style="--tn-color:#e64d4d;color:#e64d4d;"'
+            + ' data-url="https://e.com/">&nbsp;</span></p>'
+            + '<section class="link-embed"'
+            + ' style="--tn-background:#e5e64d;background-color:#e5e64d;"'
+            + ' data-url="https://f.com/" data-embed-type="opengraph">&nbsp;</section>');
+
+        coloring.setData(data);
+        expect(findElement(coloring, "linkMention")?.getAttribute("fontColor")).toBe("#e64d4d");
+        expect(findElement(coloring, "linkEmbed")?.getAttribute("fontBackgroundColor"))
+            .toBe("#e5e64d");
+    });
+
     it("editing-downcasts a linkMention to an inline widget and renders it via the component", () => {
         setModelData(
             editor.model,
@@ -276,8 +349,70 @@ describe("LinkEmbedEditing", () => {
         expect(rendererIsFocused()).toBe(true);
     });
 
+    it("moves a link preview whole when a drag starts on its content", () => {
+        const renderLink = (container: HTMLElement) => {
+            container.innerHTML = '<a href="https://e.com/">T</a>';
+        };
+        renderEmbed.mockImplementation(renderLink);
+        renderMention.mockImplementation(renderLink);
+        setModelData(editor.model, "<paragraph>one</paragraph>"
+            + '<linkEmbed url="https://e.com/" embedType="opengraph"></linkEmbed>'
+            + '<paragraph>two <linkMention url="https://f.com/"></linkMention></paragraph>'
+            + "<paragraph>three</paragraph>");
+        const domRoot = editor.editing.view.getDomRoot();
+        if (!domRoot) {
+            throw new Error("The editor has no editable.");
+        }
+        domRoot.scrollIntoView();
+
+        const card = domRoot.querySelector(".link-embed");
+        const lastRect = domRoot.children[3].getBoundingClientRect();
+        expect(dragLinkTo(card, { clientX: lastRect.left + 5, clientY: lastRect.bottom - 2 }))
+            .toBe(card);
+        const mention = domRoot.querySelector(".link-mention");
+        const firstRect = domRoot.children[0].getBoundingClientRect();
+        expect(dragLinkTo(mention,
+            { clientX: firstRect.left + 1, clientY: firstRect.top + firstRect.height / 2 }))
+            .toBe(mention);
+
+        expect(editor.getData()).toBe('<p><span class="link-mention" data-url="https://f.com/">'
+            + "&nbsp;</span>one</p><p>two&nbsp;</p><p>three</p>"
+            + '<section class="link-embed" data-url="https://e.com/" data-embed-type="opengraph">'
+            + "&nbsp;</section>");
+    });
+
     function rendererIsFocused() {
         //@ts-expect-error: The renderer is a private field.
         return editor.editing.view._renderer.isFocused as boolean;
     }
 });
+
+/**
+ * Presses the link in `preview` and drags it to `point`, with the data that the browser gives a
+ * drag of a link, then drops it there. Returns the element that the drag image shows.
+ */
+function dragLinkTo(preview: Element | null, point: { clientX: number; clientY: number }) {
+    const link = preview?.querySelector("a");
+    if (!link) {
+        throw new Error("The preview has no link.");
+    }
+
+    const dataTransfer = new DataTransfer();
+    dataTransfer.setData("text/uri-list", link.href);
+    dataTransfer.setData("text/html", link.outerHTML);
+    // A constructed `DataTransfer` ignores `effectAllowed` and `dropEffect` writes.
+    Object.defineProperty(dataTransfer, "effectAllowed", { value: "copyLink", writable: true });
+    const setDragImage = vi.spyOn(dataTransfer, "setDragImage");
+    link.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+    link.dispatchEvent(new DragEvent("dragstart", {
+        bubbles: true, cancelable: true, dataTransfer
+    }));
+
+    const target = document.elementFromPoint(point.clientX, point.clientY) ?? document;
+    const dropInit = { bubbles: true, cancelable: true, dataTransfer, ...point };
+    target.dispatchEvent(new DragEvent("dragover", dropInit));
+    target.dispatchEvent(new DragEvent("drop", dropInit));
+    Object.defineProperty(dataTransfer, "dropEffect", { value: "move" });
+    link.dispatchEvent(new DragEvent("dragend", { bubbles: true, dataTransfer }));
+    return setDragImage.mock.calls.at(0)?.[0];
+}

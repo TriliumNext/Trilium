@@ -12,7 +12,7 @@ import { removeIndividualBinding } from "../../../services/shortcuts";
 import ActionButton from "../../react/ActionButton";
 import { Badge } from "../../react/Badge";
 import { ButtonGroup } from "../../react/Button";
-import { useFocusWithin } from "../../react/hooks";
+import { useFocusWithin } from "../../react/hooks/dom";
 import Icon from "../../react/Icon";
 import NoItems from "../../react/NoItems";
 import OverlayControlGroup, { OverlayControlButton } from "../../react/OverlayControlGroup";

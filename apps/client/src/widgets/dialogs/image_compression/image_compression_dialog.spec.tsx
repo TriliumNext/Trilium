@@ -1,7 +1,7 @@
 import type { ComponentChildren } from "preact";
 import { useEffect } from "preact/hooks";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { EMPTY_RESULT } = vi.hoisted(() => ({
     /** What a run reports when it found nothing; tests that care override it. */
@@ -112,6 +112,7 @@ vi.mock("../../react/Modal", () => ({
     }
 }));
 
+import { preloadDropdownPopups } from "../../react/Dropdown";
 import { showImageCompressionDialog } from "./image_compression_dialog";
 import { IMAGE_COMPRESSION_TOAST_ID, type ImageCompressionTarget } from "./image_compression_operation";
 import {
@@ -119,6 +120,8 @@ import {
     DEFAULT_MAX_WIDTH_HEIGHT,
     DEFAULT_QUALITY
 } from "./image_compression_options";
+
+beforeAll(() => preloadDropdownPopups());
 
 /** A note holding whatever it holds; the collection case, where every setting is in play. */
 const NOTE_TARGET: ImageCompressionTarget = { type: "note", noteId: "n1" };

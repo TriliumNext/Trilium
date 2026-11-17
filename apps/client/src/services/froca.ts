@@ -43,6 +43,12 @@ class FrocaImpl implements Froca {
     attachments!: Record<string, FAttachment>;
     blobPromises!: Record<string, Promise<FBlob | null> | null>;
     private source: FrocaSource = SERVER_SOURCE;
+    /** The load each note `getNotes()` asked for is waiting on, until it finishes. */
+    #noteLoads = new Map<string, Promise<void>>();
+    /** The notes `getNotes()` was asked for in the current task, which it loads in one request. */
+    #queuedNoteIds: Set<string> | undefined;
+    /** The load of {@link #queuedNoteIds}. */
+    #queuedLoad: Promise<void> = Promise.resolve();
 
     constructor() {
         this.initializedPromise = this.loadInitialTree();
@@ -287,9 +293,14 @@ class FrocaImpl implements Froca {
         }
 
         noteIds = Array.from(new Set(noteIds)); // make unique
-        const missingNoteIds = noteIds.filter((noteId) => !this.notes[noteId]);
-
-        await this.reloadNotes(missingNoteIds);
+        let missingNoteIds = noteIds.filter((noteId) => !this.notes[noteId]);
+        if (missingNoteIds.length) {
+            // The initial tree holds most of what is asked for at startup, and replaces the cache
+            // once it arrives, which would drop a note loaded in the meantime.
+            await this.initializedPromise.catch(() => {});
+            missingNoteIds = missingNoteIds.filter((noteId) => !this.notes[noteId]);
+            await this.#loadMissingNotes(missingNoteIds);
+        }
 
         return noteIds
             .map((noteId) => {
@@ -301,6 +312,42 @@ class FrocaImpl implements Froca {
                 return this.notes[noteId];
             })
             .filter((note) => !!note) as FNote[];
+    }
+
+    /**
+     * Loads `noteIds`. A note whose load is under way waits for that load, and the notes asked for
+     * in the same task go to `reloadNotes()` in one request.
+     */
+    async #loadMissingNotes(noteIds: string[]) {
+        const loads = new Set<Promise<void>>();
+        for (const noteId of noteIds) {
+            const load = this.#noteLoads.get(noteId) ?? this.#queueNoteLoad(noteId);
+            loads.add(load);
+        }
+        await Promise.all(loads);
+    }
+
+    /** Adds `noteId` to the request sent at the end of the current task, and returns its load. */
+    #queueNoteLoad(noteId: string) {
+        if (!this.#queuedNoteIds) {
+            const queued = new Set<string>();
+            this.#queuedNoteIds = queued;
+            const load: Promise<void> = Promise.resolve()
+                .then(() => {
+                    this.#queuedNoteIds = undefined;
+                    return this.reloadNotes([ ...queued ]);
+                })
+                .finally(() => {
+                    for (const queuedNoteId of queued) {
+                        if (this.#noteLoads.get(queuedNoteId) === load) this.#noteLoads.delete(queuedNoteId);
+                    }
+                });
+            this.#queuedLoad = load;
+        }
+
+        this.#queuedNoteIds.add(noteId);
+        this.#noteLoads.set(noteId, this.#queuedLoad);
+        return this.#queuedLoad;
     }
 
     async noteExists(noteId: string): Promise<boolean> {

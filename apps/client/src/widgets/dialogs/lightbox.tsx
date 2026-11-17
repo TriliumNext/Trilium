@@ -3,7 +3,7 @@ import "./lightbox.css";
 import { useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import ImageViewer from "../react/ImageViewer";
 import Modal from "../react/Modal";
 import { ZOOM_PAN_HINTS } from "../react/zoom_pan_keyboard";

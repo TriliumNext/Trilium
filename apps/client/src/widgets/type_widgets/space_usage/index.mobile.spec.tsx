@@ -29,8 +29,8 @@ vi.mock("../../../services/i18n", () => ({
 
 // The strip is measured with a ResizeObserver, which happy-dom does not provide; the page only
 // wants the height to leave the map room for it, so a fixed one stands in.
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...await importOriginal<typeof import("../../react/hooks")>(),
+vi.mock("../../react/hooks/dom", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/dom")>()),
     useElementSize: () => ({ height: 48 })
 }));
 

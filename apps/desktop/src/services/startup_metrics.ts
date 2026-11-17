@@ -7,11 +7,11 @@ import path from "path";
 /**
  * Startup timing instrumentation for the desktop app.
  *
- * Every mark is measured as the time elapsed since the OS created the Electron
- * main process (`process.getCreationTime()`), so the numbers include Chromium
- * bootstrap and the parse/evaluation of the main bundle — not just the parts
- * Trilium controls. Falls back to the load time of this module in the rare
- * case the OS does not report a creation time.
+ * Every mark is measured as the time elapsed since the OS started the Electron
+ * main process (see {@link readProcessStartEpochMs}), so the numbers include
+ * Chromium bootstrap and the parse/evaluation of the main bundle — not just the
+ * parts Trilium controls. Falls back to the load time of this module in the
+ * rare case the OS does not report a start time.
  *
  * The marks are always kept in memory, but they are only written to
  * {@link STARTUP_METRICS_FILE} when {@link metricsFileEnabled} — `pnpm
@@ -27,7 +27,10 @@ const STARTUP_METRICS_FILE = path.join(dataDir.LOG_DIR, "startup-metrics.log");
 
 const metricsFileEnabled = process.env.TRILIUM_ENV === "dev" || !!process.env.TRILIUM_STARTUP_METRICS;
 
-const baselineEpochMs: number = process.getCreationTime?.() ?? Date.now();
+/** The kernel reports a process's `starttime` in USER_HZ ticks, which Linux fixes at 100 per second. */
+const MS_PER_CLOCK_TICK = 10;
+
+const baselineEpochMs: number = readProcessStartEpochMs() ?? Date.now();
 
 const recordedMetrics = new Map<string, number>();
 
@@ -81,4 +84,42 @@ export function setupStartupMetricsIpc() {
             markStartupMetric(metric);
         }
     });
+}
+
+/**
+ * When the OS started this process, in epoch milliseconds.
+ *
+ * On Linux, `process.getCreationTime()` adds the start time to the boot time from `/proc/stat`,
+ * which is rounded to whole seconds, so it reports a start up to a second early, by an amount that
+ * changes with every boot. `/proc/self/stat` and `/proc/uptime` both count from boot, so their
+ * difference is the age of the process, to their 10 ms resolution.
+ */
+function readProcessStartEpochMs(): number | undefined {
+    if (process.platform === "linux") {
+        try {
+            const stat = fs.readFileSync("/proc/self/stat", "utf8");
+            const uptime = fs.readFileSync("/proc/uptime", "utf8");
+            const startEpochMs = getProcessStartFromProc(stat, uptime, Date.now());
+            if (startEpochMs !== undefined) {
+                return startEpochMs;
+            }
+        } catch {
+            // Without /proc, the value Electron reports is the best there is.
+        }
+    }
+
+    return process.getCreationTime?.() ?? undefined;
+}
+
+function getProcessStartFromProc(stat: string, uptime: string, nowMs: number) {
+    // The command name can contain spaces and parentheses, so the fields are counted from its end:
+    // `starttime` is field 22 of the line, the 20th after the command name.
+    const fieldsAfterCommand = stat.slice(stat.lastIndexOf(")") + 2).split(" ");
+    const startTicks = Number(fieldsAfterCommand[19]);
+    const uptimeSeconds = Number(uptime.split(" ")[0]);
+    if (!Number.isFinite(startTicks) || !Number.isFinite(uptimeSeconds)) {
+        return undefined;
+    }
+
+    return nowMs - (uptimeSeconds * 1000 - startTicks * MS_PER_CLOCK_TICK);
 }

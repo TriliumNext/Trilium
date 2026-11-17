@@ -1,10 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+// The glyph stylesheet loads after the first render; a test holds it back to see what waits for it.
+const glyphStylesheet = vi.hoisted(() => ({ loaded: Promise.resolve() }));
+vi.mock("./icon_pack_glyphs", () => ({ whenIconPackGlyphsLoaded: () => glyphStylesheet.loaded }));
+
 import {
     drawIconGlyph, type IconGlyph, loadIconFonts, renderIconImage, resolveIconGlyphs, warmIconFonts
 } from "./icon_glyphs";
 
-const uncheckedWindow = window as unknown as { glob: { iconRegistry?: unknown } };
+const uncheckedWindow = window as unknown as { glob: { iconPacks?: unknown } };
 
 /**
  * Two characters of the private-use block, which is where every icon pack numbers its icons — from
@@ -66,7 +70,7 @@ function answerWithFonts(load: (font: string, text?: string) => Promise<unknown>
 afterEach(() => {
     vi.restoreAllMocks();
     Reflect.deleteProperty(document, "fonts");
-    delete uncheckedWindow.glob.iconRegistry;
+    delete uncheckedWindow.glob.iconPacks;
 });
 
 describe("resolveIconGlyphs", () => {
@@ -137,9 +141,7 @@ describe("loadIconFonts", () => {
 
 describe("warmIconFonts", () => {
     it("loads every pack's font, each pack being found by the icon it names itself with", async () => {
-        uncheckedWindow.glob.iconRegistry = {
-            sources: [ { icon: "bx bx-package" }, { icon: "mdi mdi-cube" } ]
-        };
+        uncheckedWindow.glob.iconPacks = [ { icon: "bx bx-package" }, { icon: "mdi mdi-cube" } ];
         answerWith({
             "bx bx-package": { content: `"${FILE_GLYPH}"`, fontFamily: "boxicons" },
             "mdi mdi-cube": { content: `"${CUBE_GLYPH}"`, fontFamily: "trilium-icon-pack-mdi" }
@@ -212,6 +214,24 @@ describe("renderIconImage", () => {
         await renderIconImage("bx bx-kept", { size: 20, color: "red" });
         expect(resolve).toHaveBeenCalledTimes(4);
         expect(context.fillStyle).toBe("red");
+    });
+
+    it("reads an icon only once the glyph stylesheet has applied", async () => {
+        let release = () => {};
+        glyphStylesheet.loaded = new Promise((resolve) => {
+            release = resolve;
+        });
+        const resolve = answerWith({ "bx bx-late": { content: `"${FILE_GLYPH}"`, fontFamily: "boxicons" } });
+        answerWithCanvas();
+        answerWithFonts(() => Promise.resolve([]));
+
+        const image = renderIconImage("bx bx-late", { size: 20 });
+        await Promise.resolve();
+        expect(resolve).not.toHaveBeenCalled();
+
+        release();
+        await expect(image).resolves.toBe("data:image/png;base64,DRAWN");
+        glyphStylesheet.loaded = Promise.resolve();
     });
 
     it("keeps an icon it could not draw, rather than trying it again per frame", async () => {

@@ -7,7 +7,7 @@ import { isElectron, randomString } from "../../../services/utils.js";
 import Button from "../../react/Button.js";
 import { Card, CardSection } from "../../react/Card.js";
 import CheckboxTree, { type CheckboxTreeNode } from "../../react/CheckboxTree.js";
-import { useTriliumOptionBool } from "../../react/hooks.js";
+import { useTriliumOptionBool } from "../../react/hooks/options.js";
 import LoadingSpinner from "../../react/LoadingSpinner.js";
 import NoItems from "../../react/NoItems.js";
 import OptionsRow, { OptionsRowWithToggle } from "../../type_widgets/options/components/OptionsRow.js";

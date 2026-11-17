@@ -1,6 +1,6 @@
 import { type ComponentChildren, render, type RefObject } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type FNote from "../../entities/fnote";
 import type { ViewScope } from "../../services/link";
@@ -125,8 +125,11 @@ vi.mock("../collections/NoteList", () => ({ default: () => null }));
 vi.mock("../PromotedAttributes", () => ({ default: () => null }));
 vi.mock("../layout/NoteActions", () => ({ default: () => null }));
 // `BacklinksWidget` has its own spec; this one covers where its links navigate.
+vi.mock("../react/hooks/note", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/note")>()),
+    useBacklinkCount: mocks.backlinkCount
+}));
 vi.mock("../sidebar/Backlinks", () => ({
-    useBacklinkCount: mocks.backlinkCount,
     BacklinksWidget: () => <a className="backlink-stub" href="#root/source">Source</a>
 }));
 vi.mock("../layout/NoteBadges", () => ({ default: () => null }));
@@ -134,13 +137,17 @@ vi.mock("../layout/NoteTypeSwitcher", () => ({
     default: () => <div className="note-type-switcher-stub" />
 }));
 vi.mock("../layout/FormattingToolbar", () => ({ default: () => null }));
+vi.mock("../layout/VimStatus", () => ({ VimTitleStatus: () => null }));
 vi.mock("../type_widgets/text/mobile_editor_toolbar", () => ({ default: () => <div className="mobile-toolbar-stub" /> }));
 vi.mock("../note_icon", () => ({ default: () => <div className="note-icon-stub" /> }));
 vi.mock("../note_title", () => ({ default: () => <div className="note-title-stub" /> }));
 
 import Component from "../../components/component";
+import { preloadDropdownPopups } from "../react/Dropdown";
 import { ParentComponent } from "../react/react_utils";
 import PopupEditor from "./PopupEditor";
+
+beforeAll(() => preloadDropdownPopups());
 
 const ATTACHMENT_SCOPE: ViewScope = { viewMode: "attachments", attachmentId: "att-1" };
 /** A view mode of the note itself, as the sidebar's note map card expands into the popup with. */

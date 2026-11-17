@@ -11,7 +11,16 @@ import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
 import { consumeSearchTerms } from "../../../services/search_jump";
 import utils from "../../../services/utils";
-import { useColorScheme, useEditorSpacedUpdate, useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteBlob, useNoteLabel, useNoteLabelInt, useNoteLabelOptionalBool, useNoteProperty, useSearchTermsConsumer, useSyncedRef, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useSyncedRef } from "../../react/hooks/dom";
+import {
+    useNoteBlob, useNoteLabel, useNoteLabelInt, useNoteLabelOptionalBool, useNoteProperty
+} from "../../react/hooks/note";
+import { useColorScheme, useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
+import { useEditorSpacedUpdate } from "../../react/hooks/editor";
+import { useKeyboardShortcuts } from "../../react/hooks/shortcuts";
+import { useLegacyImperativeHandlers } from "../../react/hooks/legacy";
+import { useSearchTermsConsumer } from "../../react/hooks/note_context";
 import { refToJQuerySelector } from "../../react/react_utils";
 import { CODE_THEME_DEFAULT_PREFIX as DEFAULT_PREFIX } from "../constants";
 import { TypeWidgetProps } from "../type_widget";

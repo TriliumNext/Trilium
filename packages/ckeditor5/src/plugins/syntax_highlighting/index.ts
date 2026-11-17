@@ -18,18 +18,43 @@ interface SpanStackEntry {
 export default class SyntaxHighlighting extends Plugin {
 
     private config!: EditorConfig;
-    private hljs!: HighlightJs;
+    private hljs?: HighlightJs;
+    /** The languages that highlight.js has, `true`, or is loading, `false`. */
+    private readonly languages = new Map<string, boolean>();
 
-    async init() {
+    init() {
         const config = this.editor.config.get("syntaxHighlighting") as EditorConfig | null;
         if (!config || !config.enabled) {
             return;
         }
 
         this.config = config;
-        this.hljs = await config.loadHighlightJs();
-
         this.initTextEditor(this.editor);
+    }
+
+    /** Loads highlight.js with the language `mimeType`, then highlights the code blocks in it. */
+    private loadLanguage(mimeType: string) {
+        if (this.languages.has(mimeType)) {
+            return;
+        }
+        this.languages.set(mimeType, false);
+        void this.config.loadHighlightJs(mimeType).then((hljs) => {
+            this.hljs = hljs;
+            this.languages.set(mimeType, true);
+            if (this.editor.state === "destroyed") {
+                return;
+            }
+            const model = this.editor.model;
+            model.change((writer) => {
+                for (const root of model.document.getRoots()) {
+                    for (const { item } of model.createRangeIn(root)) {
+                        if (item.is("element", "codeBlock") && item.getAttribute("language") === mimeType) {
+                            this.highlightCodeBlock(item, writer);
+                        }
+                    }
+                }
+            });
+        });
     }
 
     initTextEditor(textEditor: Editor) {
@@ -190,6 +215,12 @@ export default class SyntaxHighlighting extends Plugin {
             return;
         }
 
+        const hljs = this.hljs;
+        if (!hljs || !this.languages.get(mimeType)) {
+            this.loadLanguage(mimeType);
+            return;
+        }
+
         // highlight.js needs the full text without HTML tags, eg for the
         // text
         // #include <stdio.h>
@@ -235,9 +266,9 @@ export default class SyntaxHighlighting extends Plugin {
 
         let highlightRes;
         if (mimeType === this.config.defaultMimeType) {
-            highlightRes = this.hljs.highlightAuto(text);
+            highlightRes = hljs.highlightAuto(text);
         } else {
-            highlightRes = this.hljs.highlight(text, { language: mimeType });
+            highlightRes = hljs.highlight(text, { language: mimeType });
         }
 
         if (!highlightRes) {

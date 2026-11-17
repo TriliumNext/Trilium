@@ -43,6 +43,21 @@ describe("Tree (real DB)", () => {
         expect(() => tree.sortNotesIfNeeded("missingNote123")).not.toThrow();
     });
 
+    it("keeps the hidden subtree after every other root note, in either direction", () => {
+        createNote("root", "aaa-before-hidden");
+        createNote("root", "zzz-after-hidden");
+
+        for (const reverse of [ false, true ]) {
+            getContext().init(() => tree.sortNotes("root", "title", reverse));
+
+            const rows = getSql().getRows<{ noteId: string; notePosition: number }>(
+                "SELECT noteId, notePosition FROM branches WHERE parentNoteId = 'root' AND isDeleted = 0 ORDER BY notePosition");
+            expect(rows.length).toBeGreaterThan(2);
+            expect(rows.at(-1)).toEqual({ noteId: "_hidden", notePosition: 999_999_999 });
+            expect(rows.slice(0, -1).every((row) => row.notePosition < 999_999_999)).toBe(true);
+        }
+    });
+
     it("setNoteToParent moves, removes and re-prefixes branches", () => {
         const { note: parentA } = createNote("root", "tree-parent-a");
         const { note: parentB } = createNote("root", "tree-parent-b");

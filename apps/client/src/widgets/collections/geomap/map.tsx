@@ -1,6 +1,10 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import { AttributionControl, type ErrorEvent as MapErrorEvent, Map as MapLibreGLMap, MapMouseEvent, type Point, type RequestTransformFunction, ScaleControl, setWorkerUrl, type StyleSpecification, type TransformStyleFunction } from "maplibre-gl";
+import {
+    AttributionControl, type ErrorEvent as MapErrorEvent, Map as MapLibreGLMap, MapMouseEvent,
+    type Point, type RequestTransformFunction, ScaleControl, setWorkerUrl, type StyleSpecification,
+    type TransformStyleFunction
+} from "maplibre-gl";
 import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { ComponentChildren, createContext, RefObject } from "preact";
 import { useEffect, useImperativeHandle, useRef, useState } from "preact/hooks";
@@ -8,7 +12,8 @@ import { useEffect, useImperativeHandle, useRef, useState } from "preact/hooks";
 import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
 import { getMeasurementSystem } from "../../../utils/formatters";
-import { useElementSize, useSyncedRef, useTriliumOption } from "../../react/hooks";
+import { useElementSize, useSyncedRef } from "../../react/hooks/dom";
+import { useTriliumOption } from "../../react/hooks/options";
 import NoItems from "../../react/NoItems";
 import { DEFAULT_RASTER_MAX_ZOOM, type MapLayer } from "./map_layer";
 

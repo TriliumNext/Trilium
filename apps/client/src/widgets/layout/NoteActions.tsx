@@ -10,9 +10,7 @@ import NoteContext from "../../components/note_context";
 import FNote from "../../entities/fnote";
 import type { MenuCommandItem } from "../../menus/context_menu";
 import branches from "../../services/branches";
-import dialog from "../../services/dialog";
 import { t } from "../../services/i18n";
-import protected_session from "../../services/protected_session";
 import server from "../../services/server";
 import toast from "../../services/toast";
 import { isElectron as getIsElectron, isMobile as getIsMobile } from "../../services/utils";
@@ -21,17 +19,27 @@ import ClosePaneButton from "../buttons/close_pane_button";
 import CreatePaneButton from "../buttons/create_pane_button";
 import MovePaneButton from "../buttons/move_pane_button";
 import { resolveViewType } from "../collections/interface";
-import { showImageCompressionDialog } from "../dialogs/image_compression/image_compression_dialog";
 import { isAlwaysFullWidthByType } from "../note_wrapper";
-import Dropdown, { type DropdownHandle } from "../react/Dropdown";
-import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem, FormListToggleableItem } from "../react/FormList";
-import { useEffectiveReadOnly, useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelOptionalBool, useNoteProperty, useNoteRelation, useSyncedRef, useTriliumEvent, useTriliumOption } from "../react/hooks";
-import { MenuItemRows } from "../react/Menu";
+import Dropdown, { type DropdownHandle, DropdownMenuItemRows } from "../react/Dropdown";
+import {
+    FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem, FormListToggleableItem
+} from "../react/FormList";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useSyncedRef } from "../react/hooks/dom";
+import {
+    useNoteLabel, useNoteLabelBoolean, useNoteLabelOptionalBool, useNoteProperty, useNoteRelation
+} from "../react/hooks/note";
+import { useTriliumOption } from "../react/hooks/options";
+import {
+    useEffectiveReadOnly, useIsNoteReadOnly, useNoteContext
+} from "../react/hooks/note_context";
+import { WithLazyModule } from "../react/LazyComponent";
 import { ParentComponent, POPUP_EDITOR_NTX_ID, useCommandTrigger } from "../react/react_utils";
-import { getWordWrapMenu } from "./code_menus";
-import NoteActionsCustom from "./NoteActionsCustom";
+import NoteActionsCustom, { showImageCompressionDialog } from "./NoteActionsCustom";
 import { useShareState } from "./NoteBadges";
-import { NoteTypeDropdownContent } from "./NoteTypeSwitcher";
+
+const loadCodeMenus = () => import("./code_menus");
+const loadNoteTypeSwitcher = () => import("./NoteTypeSwitcher");
 
 export default function NoteActions({ paneButtons = true }: {
     /** Whether to show the buttons that move, close and create splits, which only a split has. */
@@ -142,7 +150,7 @@ export function NoteContextMenu({ note, noteContext, leadingViewActions = [], tr
         ...trailingViewActions
     ];
     const viewStrip = viewActions.length > 0 && <>
-        <MenuItemRows items={viewActions.length > 1
+        <DropdownMenuItemRows items={viewActions.length > 1
             ? [ { kind: "actions", items: viewActions, className: "note-actions-strip tn-menu-actions-cards" } ]
             // One action, as in the quick edit popup on mobile, is too few for a strip, so it is a row under its full name.
             : viewActions.map((item) => ({ ...item, title: item.tooltip ?? item.title }))} />
@@ -269,7 +277,9 @@ function CodeProperties({ note }: { note: FNote }) {
 
     return (
         <>
-            <MenuItemRows items={[ getWordWrapMenu(wrapLines, setWrapLines) ]} />
+            <WithLazyModule load={loadCodeMenus}>
+                {({ getWordWrapMenu }) => <DropdownMenuItemRows items={[ getWordWrapMenu(wrapLines, setWrapLines) ]} />}
+            </WithLazyModule>
             <FormDropdownDivider />
         </>
     );
@@ -333,7 +343,8 @@ function NoteBasicProperties({ note, focus, isInPopup, settingsItems }: {
     const protect = <FormListToggleableItem
         icon="bx bx-lock-alt"
         title={t("protect_note.toggle-on")}
-        currentValue={!!isProtected} onChange={shouldProtect => protected_session.protectNote(note.noteId, shouldProtect, false)}
+        currentValue={!!isProtected} onChange={shouldProtect => void import("../../services/protected_session")
+            .then(({ default: protectedSession }) => protectedSession.protectNote(note.noteId, shouldProtect, false))}
     />;
     const bookmark = <FormListToggleableItem
         icon="bx bx-bookmark"
@@ -393,13 +404,17 @@ function NoteTypeDropdown({ note }: { note: FNote }) {
 
     return (
         <FormDropdownSubmenu title={t("basic_properties.note_type")} icon="bx bx-file">
-            <NoteTypeDropdownContent
-                currentNoteType={currentNoteType}
-                currentNoteMime={currentNoteMime}
-                note={note}
-                setModalShown={() => { /* no-op since no code notes are displayed here */ }}
-                noCodeNotes
-            />
+            <WithLazyModule load={loadNoteTypeSwitcher}>
+                {({ NoteTypeDropdownContent }) => (
+                    <NoteTypeDropdownContent
+                        currentNoteType={currentNoteType}
+                        currentNoteMime={currentNoteMime}
+                        note={note}
+                        setModalShown={() => { /* no-op since no code notes are displayed here */ }}
+                        noCodeNotes
+                    />
+                )}
+            </WithLazyModule>
         </FormDropdownSubmenu>
     );
 }
@@ -441,6 +456,7 @@ function ConvertToAttachment({ note }: { note: FNote }) {
         <FormListItem
             icon="bx bx-paperclip"
             onClick={async () => {
+                const { default: dialog } = await import("../../services/dialog");
                 if (!note || !(await dialog.confirm(t("note_actions.convert_into_attachment_prompt", { title: note.title })))) {
                     return;
                 }
@@ -476,6 +492,7 @@ function ConvertNoteFormat({ note }: { note: FNote }) {
                 const warning = isMarkdown
                     ? t("note_actions.convert_format_warning")
                     : t("note_actions.convert_format_warning_risky");
+                const { default: dialog } = await import("../../services/dialog");
                 if (!(await dialog.confirm(warning))) {
                     return;
                 }

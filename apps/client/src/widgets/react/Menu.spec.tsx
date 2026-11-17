@@ -172,7 +172,10 @@ describe("Menu with declared rows", () => {
     it("draws an item marked as a switch with a switch, on while it is checked", () => {
         const onSelect = vi.fn();
         const items: MenuItem<string>[] = [
-            { title: "Editable", uiIcon: "bx bx-edit-alt", isSwitch: true, checked: true },
+            {
+                title: "Editable", description: "Only here", uiIcon: "bx bx-edit-alt", isSwitch: true,
+                checked: true
+            },
             { title: "Show title", uiIcon: "bx bx-window-alt", isSwitch: true, checked: false, enabled: false }
         ];
         render(<Menu anchor={{ x: 10, y: 10 }} items={items} onSelect={onSelect} onClose={vi.fn()} />, host);
@@ -180,8 +183,14 @@ describe("Menu with declared rows", () => {
         expect(rows.map((row) => [
             row.querySelector(".switch-name")?.textContent,
             row.querySelector(".switch-button")?.classList.contains("on"),
-            row.classList.contains("disabled")
-        ])).toEqual([ [ "Editable", true, false ], [ "Show title", false, true ] ]);
+            row.classList.contains("disabled"),
+            row.querySelector(".description")?.textContent
+        ])).toEqual([
+            [ "Editable", true, false, "Only here" ],
+            [ "Show title", false, true, undefined ]
+        ]);
+        expect(rows[0]?.querySelector(".description")?.previousElementSibling
+            ?.classList.contains("switch-widget")).toBe(true);
         expect(document.querySelector(".dropdown-item .bx-check")).toBeNull();
 
         rows[1]?.click();

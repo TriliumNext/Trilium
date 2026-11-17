@@ -12,6 +12,7 @@
     --dropdown-border-radius: 10px;
 }
 
+body.desktop,
 #root-widget {
     background-color: var(--root-background);
 }
@@ -53,29 +54,6 @@ body.mobile {
 }
 
 /* #region Mica */
-
-/* Quirk: --background-material is read before "theme-supports-background-effects" class
- * is applied. Apply the matterial even if the theme doesn't support it. */
-body.background-effects.platform-win32 {
-    &.layout-vertical {
-        --background-material: mica;
-    }
-
-    &.layout-horizontal {
-        --background-material: tabbed;
-    }
-}
-
-body.background-effects.platform-darwin {
-    /** Reference: https://developer.apple.com/documentation/appkit/nsvisualeffectview?preferredLanguage=objc **/
-    &.layout-vertical {
-        --background-material: under-window;
-    }
-
-    &.layout-horizontal {
-        --background-material: hud;
-    }
-}
 
 body.background-effects.theme-supports-background-effects {
     --launcher-pane-horiz-border-color: var(--launcher-pane-horiz-border-color-bgfx);
@@ -151,8 +129,7 @@ body.layout-horizontal > .horizontal {
     align-items: center;
 }
 
-/* Thin launcher-rail scrollbar; the padding below (set from the JS-measured
- * `--launcher-scrollbar-size`) offsets its width so it never shifts the centred buttons. */
+/* Thin launcher-rail scrollbar. */
 #launcher-container {
     --scrollbar-thickness: 4px;
     --scrollbar-thumb-thickness: 4px;
@@ -193,14 +170,6 @@ body.layout-horizontal > .horizontal {
     padding-bottom: var(--launcher-pane-button-gap);
 }
 
-#launcher-pane.vertical #launcher-container {
-    width: var(--launcher-pane-size);
-    height: 100%;
-    overflow-x: hidden;
-    overflow-y: auto;
-    padding-inline-start: var(--launcher-scrollbar-size, 0px);
-}
-
 #launcher-pane.horizontal {
     --launcher-pane-border-color: var(--launcher-pane-horiz-border-color);
     --launcher-pane-background-color: var(--launcher-pane-horiz-background-color);
@@ -217,14 +186,6 @@ body.layout-horizontal > .horizontal {
 
     height: var(--launcher-pane-size) !important;
     align-items: center;
-}
-
-#launcher-pane.horizontal #launcher-container {
-    width: 100%;
-    height: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding-block-start: var(--launcher-scrollbar-size, 0px);
 }
 
 @media (max-width: 991px) {
@@ -929,7 +890,8 @@ body.layout-vertical #left-pane .quick-search {
 
 /* Limit the drag area for the previous elements to include just to the element itself
    and not its descendants also */
-body.layout-horizontal .tab-row-container > *,
+body.layout-horizontal .tab-row-container > :not(.tab-row-host),
+body.layout-horizontal .tab-row-host > *,
 body.layout-vertical .tab-row-widget > *:not(.tab-row-filler),
 body.layout-vertical #left-pane .quick-search > * {
     -webkit-app-region: no-drag;
@@ -1184,7 +1146,7 @@ body.desktop.status-bar-panel-open .vertical-layout #center-pane
 }
 
 /* The active split in a multi-split view */
-#center-pane > .split-note-container-widget.multiple-splits > .note-split.active::after,
+#center-pane > .note-splits-host > .split-note-container-widget.multiple-splits > .note-split.active::after,
 body.mobile #detail-container > .split-note-container-widget.multiple-splits
     > .note-split.active::after {
     border-color: var(--link-selection-outline-color);
@@ -1192,7 +1154,13 @@ body.mobile #detail-container > .split-note-container-widget.multiple-splits
 
 
 body:not(.background-effects) #center-pane .note-split {
-    animation: note-entrance 100ms linear;
+    > * {
+        animation: note-entrance 100ms linear;
+    }
+
+    &.hidden-ext > * {
+        animation: none;
+    }
 }
 
 @keyframes note-entrance {

@@ -18,6 +18,7 @@ vi.mock("./services/utils.js", async (importOriginal) => ({
 
 import buildApp from "./app.js";
 import config from "./services/config.js";
+import { getClientDir } from "./routes/assets.js";
 import { RESOURCE_DIR } from "./services/resource_dir.js";
 import { getResourceDir } from "./services/utils.js";
 
@@ -93,6 +94,13 @@ describe("buildApp", () => {
     it("serves the development icon in a checkout", async () => {
         const icon = await supertest(app).get("/favicon.ico").buffer(true).parse(binaryParser);
         expect(icon.body).toEqual(fs.readFileSync(path.join(RESOURCE_DIR, "icon-dev.ico")));
+    });
+
+    it("serves the Home Screen icon that iOS asks for at the root", async () => {
+        const icon = await supertest(app).get("/apple-touch-icon.png").buffer(true).parse(binaryParser);
+        expect(icon.status).toBe(200);
+        expect(icon.headers["content-type"]).toBe("image/png");
+        expect(icon.body).toEqual(fs.readFileSync(path.join(getClientDir(), "assets", "apple-touch-icon.png")));
     });
 
     it("builds the production app, falling back on an invalid resource policy and not waiting for becca before setup", async () => {

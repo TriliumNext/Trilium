@@ -7,7 +7,7 @@ import { useEffect, useState } from "preact/hooks";
 import keyboard_actions from "../../services/keyboard_actions.js";
 import { joinElements } from "../react/react_utils.js";
 import { renderShortcutKbds } from "../react/shortcut_kbd.js";
-import { useTriliumEvent } from "../react/hooks.jsx";
+import { useTriliumEvent } from "../react/hooks/events.js";
 
 export default function HelpDialog() {
     const [ shown, setShown ] = useState(false);

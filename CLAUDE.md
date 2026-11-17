@@ -18,9 +18,10 @@ pnpm --filter <pkg> test <pattern>      # e.g. pnpm --filter server test spec/et
 pnpm --filter <pkg> coverage             # per-package coverage (client, server, standalone)
 pnpm typecheck                           # all projects, native compiler, a few seconds
 pnpm dev:format-check | dev:format-fix   # stylistic formatting
+pnpm dev:check-startup [--update]        # client startup requests vs the allowlists, ~30 s
 ```
 
-- **Never run ESLint** (`dev:linter-check`, `dev:linter-fix`, `npx eslint`) — it dies with an out-of-memory error, so a run tells you nothing. CI does not lint either — there is no `eslint`/`linter-check` step anywhere in `.github/workflows/`, so lint findings never block a merge; the gates are `pnpm typecheck` and the per-package `test --coverage` runs. (`packages/*` is ignored by the ESLint config anyway.)
+- **Never run ESLint** (`dev:linter-check`, `dev:linter-fix`, `npx eslint`) — it dies with an out-of-memory error, so a run tells you nothing. CI does not lint either — there is no `eslint`/`linter-check` step anywhere in `.github/workflows/`, so lint findings never block a merge; the gates are `pnpm typecheck`, the per-package `test --coverage` runs and `pnpm dev:check-startup` (`startup.yml`), which fails when the client's startup makes a request its allowlist lacks: a module made eager by a change to the client shows up there (see the `measure-startup-requests` skill). (`packages/*` is ignored by the ESLint config anyway.)
 - **Never run `pnpm test:all`, `test:parallel`, `test:sequential`, or a whole-package `coverage`** during development — CI runs them on every push. Run the **narrowest** suite that covers what you touched: `pnpm --filter <pkg> test <pattern>` (Vitest treats the trailing argument as a substring filter over spec paths). Core specs need **two** runs, server and standalone (see Testing). Only reach for a full suite if the user asks or wants a final check.
 - **Typecheck with `pnpm typecheck`, not a raw `tsc`** — it resolves the project references a hand-written `tsc -p …` gets wrong, and is far cheaper than a test suite. Still, run it **once, after a piece of work is finished** — not after every edit: it builds the project references, and repeating it is a common way to lose minutes across a session. Two ways its output misleads: the incremental build does not recheck the files that use an ambient `.d.ts` (`types-lib.d.ts`) after it changes — delete `apps/client/dist/*.tsbuildinfo` (gitignored) before trusting the result; and a dependent project (`tsconfig.spec.json`, `apps/build-docs`) is checked only once the app project compiles, so its errors appear only after the app's are fixed, and some vanish with them.
 - **Two TypeScript versions, on purpose**: root `package.json` has `typescript` 6.x (the JS compiler API that TypeDoc, typescript-eslint and the browser-bundled language service in `packages/codemirror` load) and `@typescript/native` (7, drives `pnpm typecheck` and owns the `tsc` bin). Do **not** bump `typescript` to 7, dedupe them, or switch to the `@typescript/typescript6` shim (no `lib.*.d.ts` → client build breaks). Reasoning: `docs/Developer Guide/Developer Guide/Environment Setup.md`, "TypeScript".
@@ -164,6 +165,9 @@ Shared components live in `apps/client/src/widgets/react/` — **always** reuse 
 ### PDF viewer
 PDF notes render in Mozilla's PDF.js viewer plus Trilium's code from `packages/pdfjs-viewer`, which every app serves from the built `dist` — **rebuild it (`pnpm --filter @triliumnext/pdfjs-viewer build`) after every viewer change**, since no `*:start` script does; load the **`developing-pdf-viewer` skill** before touching the viewer, `Pdf.tsx` or the PDF sidebar panels.
 
+### Vim mode in text notes
+Text notes have an optional Vim mode: the Vim engine of code notes (`@replit/codemirror-vim-core`) drives CKEditor through an adapter in `packages/ckeditor5/src/plugins/vim/`, which reads the note as a list of lines. **A new block, widget or container in the text editor has to work as lines too**, and the engine's quirks are answered by wrappers that look removable and are not. Load the **`developing-vim-mode` skill** before touching the plugin, `text/vim_mode.ts`, `layout/VimStatus.tsx` or the structure of the text editor's model. The skill also holds the tools for testing Vim mode in the running app (`live.mjs`, `simulate.mjs`) and the plan of a simulation round.
+
 ### Database
 
 SQLite (`better-sqlite3` on Node, `@sqlite.org/sqlite-wasm` on OPFS in standalone) behind `packages/trilium-core/src/services/sql/` (`DatabaseProvider`, prepared-statement cache, transactions). Schema: `packages/trilium-core/src/assets/schema.sql`; migrations: integer-versioned entries in the descending `MIGRATIONS` array in `packages/trilium-core/src/migrations/migrations.ts` (inline SQL or a `NNNN__description.ts` module) — load the **`evolving-the-data-model` skill** before adding a column or migration.
@@ -196,6 +200,7 @@ Use `note.getOwnedAttribute()` for direct, `note.getAttribute()` for inherited.
 ### Shared Types Policy
 - Types shared between client and server belong in `@triliumnext/commons` (`packages/commons/src/lib/`)
 - Import shared types directly from `@triliumnext/commons` - do not re-export them from app-specific modules
+- **In code the browser loads** (`apps/client`, `packages/ckeditor5`, `packages/codemirror`, `packages/share-theme`), only `import type` comes from the `@triliumnext/commons` index. A value comes from its own file: `import { dayjs } from "@triliumnext/commons/src/lib/dayjs.js"`. The dev server serves modules one by one, so one value import from the index loads all of its ~60 files
 - Keep app-specific types (e.g., `LlmProvider` for server, `StreamCallbacks` for client) in their respective apps
 
 ## Important Patterns
@@ -282,7 +287,9 @@ entry (closed issues are listed without one).
    the bug or the author of the idea, and leave it out when the maintainers wrote the change.
 5. The body is one line, past tense for a fix, describing what the user saw, not the code: "Typing `/2`
    in the slash command menu suggested the column layout before the heading", not "Rank exact alias
-   matches first".
+   matches first". A highlight is a few short paragraphs in the same plain register; its numbers are
+   the ones a user feels, never request counts or sizes (`writing-documentation` skill,
+   `references/changelog-entries.md`).
 6. `pnpm changelog:lint`, then commit the entry with the code.
 
 ```markdown

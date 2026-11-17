@@ -1,10 +1,12 @@
 import becca from "../../becca/becca";
 
 import { RenderMarkdownResponse, ToMarkdownResponse } from "@triliumnext/commons";
-import type { Request } from "../../http_interface";
+import type { Request, Response } from "../../http_interface";
 
 import { ValidationError } from "../../errors.js";
 import markdown from "../../services/export/markdown.js";
+import { getIconPackGlyphCss } from "../../services/bootstrap_utils.js";
+import { generateIconRegistry, getIconPacks } from "../../services/icon_packs.js";
 import markdownImportService from "../../services/import/markdown.js";
 
 function renderMarkdown(req: Request) {
@@ -55,7 +57,24 @@ function getIconUsage() {
     return { iconClassToCountMap };
 }
 
+/** Every icon of each icon pack, which the icon picker searches. */
+function getIconRegistry() {
+    return generateIconRegistry(getIconPacks());
+}
+
+/**
+ * The glyph of every icon, which the client loads after its first render. The bootstrap names it
+ * by its content, so a URL always serves the same stylesheet.
+ */
+function serveIconPackGlyphCss(_req: Request, res: Response) {
+    res.setHeader("Content-Type", "text/css");
+    res.setHeader("Cache-Control", "private, max-age=31536000, immutable");
+    res.send(getIconPackGlyphCss());
+}
+
 export default {
+    serveIconPackGlyphCss,
+    getIconRegistry,
     getIconUsage,
     renderMarkdown,
     toMarkdown

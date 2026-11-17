@@ -4,7 +4,7 @@ import { cloneElement, ComponentChildren, VNode } from "preact";
 
 import Button from "../../../react/Button";
 import FormToggle from "../../../react/FormToggle";
-import { useUniqueName } from "../../../react/hooks";
+import { useUniqueName } from "../../../react/hooks/dom";
 
 interface OptionsRowProps {
     name: string;

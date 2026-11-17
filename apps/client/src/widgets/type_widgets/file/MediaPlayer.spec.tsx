@@ -1,7 +1,7 @@
 import $ from "jquery";
 import { RefObject, render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { getNote, setLabel, removeAttributeById, logError } = vi.hoisted(() => ({
     getNote: vi.fn(async (_noteId: string) => null as unknown),
@@ -28,10 +28,13 @@ import type NoteContext from "../../../components/note_context";
 import Component from "../../../components/component";
 import type FNote from "../../../entities/fnote";
 import { collectShortcutHints } from "../../../services/shortcut_hints";
+import { preloadDropdownPopups } from "../../react/Dropdown";
 import { ParentComponent } from "../../react/react_utils";
 import { claimsKeystroke, formatTime, getHttpStatusName, PlaybackSpeed, PlayModeButton, PlayPauseButton, SeekBar, SkipButton, useMediaPlayerShortcutHints, useMediaPlayMode, useMediaSessionController, VolumeControl } from "./MediaPlayer";
 import type { MediaPlayMode } from "./media_play_mode";
 import type { MediaSource } from "./media_source";
+
+beforeAll(() => preloadDropdownPopups());
 
 let container: HTMLDivElement;
 

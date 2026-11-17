@@ -4,11 +4,15 @@ import type {
 import {
     flashBlocks, getBlockBoxes, getBlockRangeElements, showBlockReference
 } from "@triliumnext/ckeditor5/src/plugins/block_reference/block_reference_read_only.js";
+import type { BlockRange } from "@triliumnext/commons";
 import {
-    type BlockRange, CANVAS_ATTACHMENT_MIME, encodeBlockParameter, EXCERPT_BOX_SIZE,
-    formatBlockRange, MERMAID_ATTACHMENT_MIME, parseBlockRange, resolveBlockRange,
+    encodeBlockParameter, formatBlockRange, parseBlockRange, resolveBlockRange,
     resolveBlockReference
-} from "@triliumnext/commons";
+} from "@triliumnext/commons/src/lib/block_reference.js";
+import { EXCERPT_BOX_SIZE } from "@triliumnext/commons/src/lib/content_embeds.js";
+import {
+    CANVAS_ATTACHMENT_MIME, MERMAID_ATTACHMENT_MIME
+} from "@triliumnext/commons/src/lib/notes.js";
 
 import type { CommandNames } from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
@@ -22,7 +26,7 @@ import {
 } from "../menus/text_editor_context_menu.js";
 import { getBlockExcerpt } from "./block_excerpts.js";
 import { copyHtml, copyHtmlWithToast, copyTextWithToast } from "./clipboard_ext.js";
-import { revealElement } from "./collapsible.js";
+import { revealElement } from "./bookmark_jump.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import { byBlockType } from "./in_app_help.js";
@@ -510,6 +514,7 @@ const BLOCK_TYPES: Record<string, BlockType> = {
     details: "collapsible",
     tabs: "tabs",
     multicolumnLayout: "columns",
+    asideBlock: "aside",
     "mathtex-display": "math",
     footnoteSection: "footnotes",
     footnoteItem: "footnote",
@@ -521,9 +526,9 @@ const BLOCK_TYPES: Record<string, BlockType> = {
 /** A type of block, by its key under `block_handle_menu.types`. */
 export type BlockType = "paragraph" | "heading" | "list_item" | "todo_item" | "block_quote"
     | "code_block" | "table" | "image" | "horizontal_line" | "page_break" | "admonition"
-    | "collapsible" | "tabs" | "columns" | "math" | "footnotes" | "footnote" | "included_note"
-    | "excerpt" | "attachment" | "drawing" | "mermaid" | "video" | "audio" | "link_preview"
-    | "embed" | "block";
+    | "collapsible" | "tabs" | "columns" | "aside" | "math" | "footnotes" | "footnote"
+    | "included_note" | "excerpt" | "attachment" | "drawing" | "mermaid" | "video" | "audio"
+    | "link_preview" | "embed" | "block";
 
 /** The commands of the insert items for a list item or a table cell. */
 type InsertCommandName = "triliumInsertListItemAbove" | "triliumInsertListItemBelow"

@@ -46,6 +46,7 @@ apps/desktop/
 - The UI loads from **`trilium-app://app/`**, a privileged custom scheme (`protocol.ts`). `registerTriliumAppScheme()` **must run before `app.ready`** (Electron ignores `registerSchemesAsPrivileged` afterwards and navigation aborts with `(blocked:origin)`); `setupTriliumAppProtocol(expressAppPromise)` installs the handler that synthesises a Node request/response and dispatches through the real Express app — session, CSRF, multer and error middleware all run. Requests arriving before the server is built simply wait on the promise. `apps/server/src/services/electron_request.ts` tags them so auth/CSRF middleware can tell them from external TCP traffic. The same two functions are reused by `apps/edit-docs`.
 - **WebSocket is replaced by IPC**: `ipc_messaging_provider.ts` implements `MessagingProvider` over `webContents.send` / `ipcMain.on`, one client per `webContents.id`; the client side picks it up through `window.electronApi.ws` (`apps/client/src/services/ws.ts`). Don't open a TCP WebSocket from desktop code.
 - Window creation is gated on core init, not full server startup, so the renderer spins up while Express is still building (`coreInitializedPromise` / `expressAppPromise` in `main.ts`).
+- **An app window's first paint is held until the interface is rendered** (`services/first_paint_gate.ts`). In Electron, `index.html` adds a render-blocking `startup-gate.js`; the frame guard in `protocol.ts` holds that request for a window `createMainWindow()` or `adoptExtraWindow()` armed (both create it hidden and show it on `ready-to-show`), until `desktop_startup.ts` calls `releaseFirstPaint()` once the layout and the note tree are rendered, or for at most 2 s. So `ready-to-show` fires on the finished interface and the window never shows a half-built one. While it is held there are **no frames**: `requestAnimationFrame` does not run and Preact runs `useEffect` only after its 100 ms fallback, so nothing on the path to the release may wait for a frame. Keeping the window hidden and revealing it later does not work instead: Chromium runs a hidden window's frames at about 1 Hz once it has something to draw, and neither `backgroundThrottling` nor the backgrounding switches change that.
 
 ## The `main()` prologue runs before the database
 
@@ -150,8 +151,10 @@ Add a validator for any new channel that takes a path, a URL, or anything else t
 ## The main bundle is ESM with code splitting
 
 `scripts/build.ts` builds `src/main.ts` with `buildBackend(..., { format: "esm" })`: the
-production entry is **`dist/main.mjs`** plus lazy chunks under `dist/chunks/` (the generated
-`dist/package.json` points Electron's `main` at it). The preload and `image_worker.cjs` stay
+production bundle is **`dist/main.mjs`** plus lazy chunks under `dist/chunks/`. The generated
+`dist/package.json` points Electron's `main` at **`dist/entry.mjs`** (`src/entry.ts`), which turns
+on Node's compile cache and then imports `main.mjs`; it must stay free of Trilium imports, since
+anything it imports statically is compiled before the cache is on. The preload and `image_worker.cjs` stay
 CJS — the sandboxed renderer can't load an ESM preload, and the worker is spawned by its
 `.cjs` path. Three rules follow:
 

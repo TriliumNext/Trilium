@@ -1,7 +1,8 @@
 import { type Diagnostic, linter } from "@codemirror/lint";
 import { type EditorState, type Extension, RangeSetBuilder, StateField } from "@codemirror/state";
 import { Decoration, type DecorationSet, EditorView } from "@codemirror/view";
-import { findTemplateIssues, type TemplateVariableTypes } from "@triliumnext/commons";
+import type { TemplateVariableTypes } from "@triliumnext/commons";
+import { findTemplateIssues } from "@triliumnext/commons/src/lib/safe_template.js";
 
 /**
  * Highlighting and linting for the templates `evaluateTemplate()` in `@triliumnext/commons` fills

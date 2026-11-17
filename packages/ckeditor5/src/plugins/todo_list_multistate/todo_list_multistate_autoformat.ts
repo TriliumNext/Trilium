@@ -1,4 +1,4 @@
-import { isAnchorState } from "@triliumnext/commons";
+import { isAnchorState } from "@triliumnext/commons/src/lib/task_states.js";
 import { Autoformat, blockAutoformatEditing, Plugin, TodoList } from "ckeditor5";
 
 import TodoListMultistateEditing, { getActiveTaskStates } from "./todo_list_multistate_editing.js";

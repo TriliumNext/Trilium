@@ -5,8 +5,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // The widget is rendered on its own, outside a note split, so the context it would pick up from the
 // tree is handed to it instead — a real note context, so the read-only decision is the actual one.
 const shownContext = vi.hoisted(() => ({ current: null as Record<string, unknown> | null }));
-vi.mock("./react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("./react/hooks")>()),
+vi.mock("./react/hooks/note_context", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./react/hooks/note_context")>()),
     useNoteContext: () => shownContext.current
 }));
 

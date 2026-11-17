@@ -1,4 +1,4 @@
-import { LOCALES } from "@triliumnext/commons";
+import { LOCALES } from "@triliumnext/commons/src/lib/i18n.js";
 import { readdirSync } from "fs";
 import { join } from "path";
 import { describe, expect, it } from "vitest";

@@ -8,8 +8,8 @@ import open from "../../../services/open";
 import type SpacedUpdate from "../../../services/spaced_update";
 import toast from "../../../services/toast";
 import utils from "../../../services/utils";
-import type { SavedData } from "../../react/hooks";
-import { useTriliumEvent } from "../../react/hooks";
+import type { SavedData } from "../../react/hooks/editor";
+import { useTriliumEvent } from "../../react/hooks/events";
 
 const CSV_MIME = "text/csv;charset=utf-8";
 const ZIP_MIME = "application/zip";

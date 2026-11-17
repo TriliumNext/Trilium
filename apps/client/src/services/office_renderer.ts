@@ -1,3 +1,5 @@
+import { OFFICE_PREVIEW_TOO_LARGE_MESSAGE } from "@triliumnext/commons/src/lib/office.js";
+
 import { sanitizeNoteContentHtml } from "./sanitize_content.js";
 import server from "./server.js";
 
@@ -14,8 +16,9 @@ import server from "./server.js";
  * element rather than as markup, keeping it clear of the sanitizer without reaching the DOM as
  * text. Every rule it carries is scoped under `.spreadsheet-table` by the renderer.
  *
- * Throws if the document is too large, unsupported, or conversion fails — callers should
- * catch and fall back to the usual download / open-externally affordance.
+ * Throws an {@link OfficePreviewTooLargeError} if the server refuses the document for its size,
+ * and the request's failure if the document is unsupported or the conversion fails. Callers
+ * catch either and fall back to the usual download / open-externally affordance.
  */
 export async function renderOfficeToHtml(
     entityType: "notes" | "attachments",
@@ -24,7 +27,12 @@ export async function renderOfficeToHtml(
 ): Promise<OfficePreview> {
     // `raw` keeps the response a plain string; the route sends the fragment as the body.
     const url = `${entityType}/${entityId}/office-preview${trim ? "?trim=1" : ""}`;
-    const body = await server.get<string>(url, undefined, true);
+    let body: string;
+    try {
+        body = await server.get<string>(url, undefined, true, { silentBadRequest: true });
+    } catch (e) {
+        throw isTooLargeRefusal(e) ? new OfficePreviewTooLargeError() : e;
+    }
     const { css, html } = splitStylesheet(body);
     const sanitized = sanitizeNoteContentHtml(html);
 
@@ -37,11 +45,33 @@ export async function renderOfficeToHtml(
     return { css, html: strippable ? stripLinkColors(sanitized) : sanitized };
 }
 
+/** The server refused to preview the document because it is above the preview size limit. */
+export class OfficePreviewTooLargeError extends Error {
+    constructor() {
+        super(OFFICE_PREVIEW_TOO_LARGE_MESSAGE);
+        this.name = "OfficePreviewTooLargeError";
+    }
+}
+
 export interface OfficePreview {
     /** The rules the fragment's classes refer to, or "" when it carries none. */
     css: string;
     /** The sanitized markup. */
     html: string;
+}
+
+/** Whether a failed request is the route's size refusal, which arrives as JSON response text. */
+function isTooLargeRefusal(error: unknown) {
+    if (typeof error !== "string") {
+        return false;
+    }
+
+    try {
+        const { message } = JSON.parse(error) as { message?: unknown };
+        return typeof message === "string" && message.startsWith(OFFICE_PREVIEW_TOO_LARGE_MESSAGE);
+    } catch {
+        return false;
+    }
 }
 
 /**

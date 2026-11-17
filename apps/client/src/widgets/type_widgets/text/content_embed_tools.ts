@@ -1,5 +1,5 @@
 import type { EmbedEdge } from "@triliumnext/ckeditor5";
-import { EMBED_HEIGHT_PROPERTY } from "@triliumnext/commons";
+import { EMBED_HEIGHT_PROPERTY } from "@triliumnext/commons/src/lib/content_embeds.js";
 import type { RefObject } from "preact";
 import { flushSync } from "preact/compat";
 import { useEffect, useRef, useState } from "preact/hooks";
@@ -468,7 +468,7 @@ export function useContentEmbedEvent(
  * Calls `callback` once `element` is in the page: at once, or when it joins it. Stops waiting
  * when the returned function is called.
  */
-function whenInPage(element: HTMLElement, callback: () => void) {
+export function whenInPage(element: HTMLElement, callback: () => void) {
     if (element.isConnected) {
         callback();
         return () => {};

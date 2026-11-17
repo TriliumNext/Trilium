@@ -3,11 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const renderOfficeToHtml = vi.fn<(entityType: string, entityId: string) => Promise<{ css: string; html: string }>>();
 
-vi.mock("../../../services/office_renderer", () => ({
+vi.mock("../../../services/office_renderer", async (importOriginal) => ({
+    ...await importOriginal<typeof import("../../../services/office_renderer")>(),
     renderOfficeToHtml: (...args: [string, string]) => renderOfficeToHtml(...args)
 }));
 
 const { default: OfficePreview } = await import("./Office");
+const { OfficePreviewTooLargeError } = await import("../../../services/office_renderer");
+const { t } = await import("../../../services/i18n");
 
 type OfficeNote = Parameters<typeof OfficePreview>[0]["note"];
 
@@ -50,12 +53,22 @@ describe("OfficePreview", () => {
         expect(container.querySelector(".office-preview-loading")).toBeNull();
     });
 
-    it("falls back to the not-available notice when the conversion fails", async () => {
+    it("falls back to the not-available placeholder when the conversion fails", async () => {
         vi.spyOn(console, "warn").mockImplementation(() => {});
         renderOfficeToHtml.mockRejectedValue(new Error("conversion exploded"));
 
         mount();
-        await vi.waitFor(() => expect(container.querySelector(".file-preview-not-available")).not.toBeNull());
+        await vi.waitFor(() => expect(container.querySelector(".no-items.file-preview-not-available")).not.toBeNull());
+        expect(container.querySelector(".no-items")?.textContent).toBe(t("content_renderer.office_render_error"));
+        expect(container.querySelector(".office-preview-body")).toBeNull();
+    });
+
+    it("says the document is too large when the server refuses it for its size", async () => {
+        renderOfficeToHtml.mockRejectedValue(new OfficePreviewTooLargeError());
+
+        mount();
+        await vi.waitFor(() => expect(container.querySelector(".no-items.file-preview-not-available")).not.toBeNull());
+        expect(container.querySelector(".no-items")?.textContent).toBe(t("content_renderer.office_too_large"));
         expect(container.querySelector(".office-preview-body")).toBeNull();
     });
 

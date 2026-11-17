@@ -5,7 +5,8 @@ import { useContext } from "preact/hooks";
 
 import contextMenu from "../../../menus/context_menu";
 import { t } from "../../../services/i18n";
-import { useActiveNoteContext, useGetContextData, useNoteProperty } from "../../react/hooks";
+import { useNoteProperty } from "../../react/hooks/note";
+import { useActiveNoteContext, useGetContextData } from "../../react/hooks/tree";
 import Icon from "../../react/Icon";
 import RightPanelWidget, { NavigatedInNote } from "../RightPanelWidget";
 

@@ -26,6 +26,10 @@ const ROLES = [
     {
         key: "table-background", variable: "--tn-background", property: "background-color",
         tag: "td"
+    },
+    {
+        key: "aside-background", variable: "--tn-background", property: "background-color",
+        tag: "aside"
     }
 ];
 

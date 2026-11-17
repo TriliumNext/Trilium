@@ -1,6 +1,4 @@
 import appContext from "../components/app_context.js";
-import treeService from "./tree.js";
-import dialogService from "./dialog.js";
 import froca from "./froca.js";
 import type NoteContext from "../components/note_context.js";
 import { t } from "./i18n.js";
@@ -43,6 +41,7 @@ async function isHoistedInHiddenSubtree(hoistedNoteId = getHoistedNoteId()) {
 }
 
 async function checkNoteAccess(notePath: string, noteContext: NoteContext) {
+    const { default: treeService } = await import("./tree.js");
     const resolvedNotePath = await treeService.resolveNotePath(notePath, noteContext.hoistedNoteId);
 
     if (!resolvedNotePath) {
@@ -59,6 +58,7 @@ async function checkNoteAccess(notePath: string, noteContext: NoteContext) {
         }
         const requestedNote = await froca.getNote(noteId);
         const hoistedNote = await froca.getNote(hoistedNoteId);
+        const { default: dialogService } = await import("./dialog.js");
 
         if (
             (!hoistedNote?.hasAncestor("_hidden") || resolvedNotePath.includes("_lbBookmarks")) &&

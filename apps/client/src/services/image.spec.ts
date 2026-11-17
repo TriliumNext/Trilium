@@ -1,7 +1,9 @@
 import $ from "jquery";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import imageService, { copyImageReferenceToClipboard, copyImageToClipboard, downloadImage, embedReferenceImageAsDataUrl, getFileNameFromSrc, getImageDownloadUrl, isImageCopySupported, resetImageEmbedBudget } from "./image.js";
+import imageService, { copyImageReferenceToClipboard, copyImageToClipboard, downloadImage, getFileNameFromSrc, isImageCopySupported } from "./image.js";
+import { embedReferenceImageAsDataUrl, resetImageEmbedBudget } from "./image_embed.js";
+import { getImageDownloadUrl } from "./image_urls.js";
 import open from "./open.js";
 import * as toastModule from "./toast.js";
 import toastService from "./toast.js";

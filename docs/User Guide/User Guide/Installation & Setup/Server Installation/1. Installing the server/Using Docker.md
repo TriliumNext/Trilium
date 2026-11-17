@@ -119,7 +119,7 @@ If you want to run your instance in a non-default way, please use the volume swi
 
 ### Note on timezones
 
-If you are having timezone issues and you are not using docker-compose, you may need to add a `TZ` environment variable with the [TZ identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) of your local timezone.
+By default, the container runs in UTC. The provided `docker-compose.yml` mounts the host's `/etc/localtime` so that the container uses the host's timezone instead. If the host has no `/etc/localtime`, or you are not using docker-compose, set a `TZ` environment variable with the [TZ identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) of your local timezone (for example `TZ=America/New_York`).
 
 ### Other environment variables
 

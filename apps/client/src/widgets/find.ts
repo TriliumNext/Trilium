@@ -6,10 +6,10 @@
 import { t } from "../services/i18n.js";
 import NoteContextAwareWidget from "./note_context_aware_widget.js";
 import attributeService from "../services/attributes.js";
-import FindInText from "./find_in_text.js";
-import FindInCode from "./find_in_code.js";
+import type FindInText from "./find_in_text.js";
+import type FindInCode from "./find_in_code.js";
 import { isIMEComposing } from "../services/shortcuts.js";
-import FindInHtml from "./find_in_html.js";
+import type FindInHtml from "./find_in_html.js";
 import utils from "../services/utils.js";
 import type { EventData, EventNames } from "../components/app_context.js";
 import type NoteContext from "../components/note_context.js";
@@ -25,7 +25,8 @@ export interface FindResult {
 // tabIndex=-1 on the checkbox labels is necessary, so when clicking on the label,
 // the focusout handler is called with relatedTarget equal to the label instead
 // of undefined. It's -1 instead of > 0, so they don't tabstop
-const TPL = /*html*/`
+/** The bar's markup, built as it renders, once the translations its labels take have loaded. */
+const buildTemplate = () => /*html*/`
 <div class='find-replace-widget' style="contain: none; border-top: 1px solid var(--main-border-color);">
     <style>
         .find-widget-box, .replace-widget-box {
@@ -112,9 +113,9 @@ export default class FindWidget extends NoteContextAwareWidget {
     private searchTerm: string | null;
     private pinnedNtxId?: string;
 
-    private textHandler: FindInText;
-    private codeHandler: FindInCode;
-    private htmlHandler: FindInHtml;
+    private textHandler?: FindInText;
+    private codeHandler?: FindInCode;
+    private htmlHandler?: FindInHtml;
     private handler?: FindInText | FindInCode | FindInHtml;
     private timeoutId?: number | null;
 
@@ -140,10 +141,6 @@ export default class FindWidget extends NoteContextAwareWidget {
 
         this.searchTerm = null;
         this.pinnedNtxId = pinnedNtxId;
-
-        this.textHandler = new FindInText(this);
-        this.codeHandler = new FindInCode(this);
-        this.htmlHandler = new FindInHtml(this);
     }
 
     handleEvent<T extends EventNames>(name: T, data: EventData<T>) {
@@ -162,7 +159,7 @@ export default class FindWidget extends NoteContextAwareWidget {
     }
 
     doRender() {
-        this.$widget = $(TPL);
+        this.$widget = $(buildTemplate());
         this.$widget.hide();
         this.$input = this.$widget.find(".find-widget-search-term-input");
         this.$currentFound = this.$widget.find(".find-widget-current-found");
@@ -302,7 +299,7 @@ export default class FindWidget extends NoteContextAwareWidget {
 
         // Multi-token highlight-all is only supported by the read-only HTML handler; the editable
         // CKEditor and CodeMirror find engines highlight the single seed term only.
-        if (extraTokens.length && this.handler instanceof FindInHtml) {
+        if (extraTokens.length && this.handler && "highlightExtraTokens" in this.handler) {
             await this.handler.highlightExtraTokens(extraTokens);
         }
     }
@@ -316,28 +313,47 @@ export default class FindWidget extends NoteContextAwareWidget {
     async getHandler() {
         // In source view, all note types render via a read-only CodeMirror editor.
         if (this.noteContext?.viewScope?.viewMode === "source") {
-            return this.codeHandler;
+            return this.getCodeHandler();
         }
 
         // Notes that use a CodeMirror editor but aren't of type "code".
         if (SUPPORTED_NOTE_IDS.includes(this.note?.noteId ?? "")) {
-            return this.codeHandler;
+            return this.getCodeHandler();
         }
 
         switch (this.note?.type) {
             case "render":
-                return this.htmlHandler;
+                return this.getHtmlHandler();
             case "code":
-                return this.codeHandler;
+                return this.getCodeHandler();
             case "text":
                 const readOnly = await this.noteContext?.isReadOnly();
-                return readOnly ? this.htmlHandler : this.textHandler;
+                return readOnly ? this.getHtmlHandler() : this.getTextHandler();
             case "mindMap":
             case "doc":
-                return this.htmlHandler;
+                return this.getHtmlHandler();
             default:
                 console.warn("FindWidget: Unsupported note type for find widget", this.note?.type);
         }
+    }
+
+    // Each backend loads the first time a note needs it, since the bar stays closed until asked for.
+    private async getTextHandler() {
+        const { default: FindInText } = await import("./find_in_text.js");
+        this.textHandler ??= new FindInText(this);
+        return this.textHandler;
+    }
+
+    private async getCodeHandler() {
+        const { default: FindInCode } = await import("./find_in_code.js");
+        this.codeHandler ??= new FindInCode(this);
+        return this.codeHandler;
+    }
+
+    private async getHtmlHandler() {
+        const { default: FindInHtml } = await import("./find_in_html.js");
+        this.htmlHandler ??= new FindInHtml(this);
+        return this.htmlHandler;
     }
 
     startSearch() {

@@ -16,13 +16,15 @@ vi.mock("../react/ActionButton", () => ({ default: () => <button class="code-blo
 
 // Stub the sibling previews (and the blob hook they feed on) so their service imports stay out of
 // the module graph; the markers let FileTypeWidget's mime routing be asserted without rendering them.
-vi.mock("../react/hooks", () => ({ useNoteBlob: vi.fn(() => null) }));
+vi.mock("../react/hooks/note", () => ({
+    useNoteBlob: vi.fn(() => null)
+}));
 vi.mock("./file/MediaPreview", () => ({ default: () => <div class="media-preview-stub" /> }));
 vi.mock("./file/FontPreview", () => ({ default: () => <div class="font-preview-stub" /> }));
 vi.mock("./file/Office", () => ({ default: () => <div class="office-preview-stub" /> }));
 vi.mock("./file/Pdf", () => ({ default: () => <div class="pdf-preview-stub" /> }));
 
-const { useNoteBlob } = await import("../react/hooks");
+const { useNoteBlob } = await import("../react/hooks/note");
 const { default: FileTypeWidget, TextPreview } = await import("./File");
 
 let container: HTMLDivElement;

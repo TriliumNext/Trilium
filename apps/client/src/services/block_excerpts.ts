@@ -1,6 +1,8 @@
 import "./block_reference.css";
 
-import { BLOCK_ID_ATTRIBUTE, parseBlockRange } from "@triliumnext/commons";
+import {
+    BLOCK_ID_ATTRIBUTE, parseBlockRange
+} from "@triliumnext/commons/src/lib/block_reference.js";
 
 import type FNote from "../entities/fnote.js";
 import { t } from "./i18n.js";

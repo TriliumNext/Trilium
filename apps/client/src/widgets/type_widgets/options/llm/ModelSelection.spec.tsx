@@ -16,7 +16,7 @@ vi.mock("../../../../services/i18n", async () => {
         lng: "en",
         resources: { en: { translation: { llm: { models_load_failed: "Could not load models: {{error}}" } } } }
     });
-    return { t: (key: string, options?: Record<string, unknown>) => i18next.t(key, options) };
+    return { t: (key: string, options?: Record<string, unknown>) => i18next.t(key, options ?? {}) };
 });
 
 // A lightweight checkbox that records its onChange so we can toggle it directly.

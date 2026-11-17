@@ -30,7 +30,7 @@ To keep links readable regardless of the theme, the default hyperlink color appl
 
 *   The preview is read-only. To edit the document, download it or open it in an external application; the content of the note is not affected by the preview. Alternatively copy and paste it into a text note.
 *   The preview is a simplified rendering: complex layouts (columns, text boxes, headers and footers), charts and the precise styling of table borders are not reproduced.
-*   Documents larger than 20 MB are not previewed, to keep the server responsive. The usual download and open actions remain available.
+*   Documents larger than 20 MB are not previewed, to keep the server responsive. A message says the document is too large to preview, and the usual download and open actions remain available.
 *   If the document cannot be converted, a notice is displayed instead and the file can still be downloaded or opened externally.
 
 ## Relation with other features

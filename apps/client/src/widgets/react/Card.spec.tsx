@@ -295,7 +295,7 @@ describe("a segment that leads somewhere", () => {
     });
 
     it("hands its handler the event, which is what lets an entry navigate for itself", () => {
-        const onAction = vi.fn();
+        const onAction = vi.fn((e: MouseEvent) => e.preventDefault());
         const container = renderInto(<OptionCardSection label="Task states" href="#root/_hidden/_taskStates" onAction={onAction} />);
 
         container.querySelector("a")?.click();

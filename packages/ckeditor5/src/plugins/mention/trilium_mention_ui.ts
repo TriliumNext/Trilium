@@ -71,6 +71,15 @@ export default class TriliumMentionUI extends Plugin {
         return !!this._open?.hostedList.element;
     }
 
+    /** Closes the open list as Escape does. Returns whether a list was open. */
+    dismiss(): boolean {
+        if (!this.isListShown) {
+            return false;
+        }
+        this._dismiss();
+        return true;
+    }
+
     init() {
         const editor = this.editor;
 

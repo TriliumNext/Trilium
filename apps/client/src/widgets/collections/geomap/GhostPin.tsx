@@ -1,6 +1,6 @@
 import "./GhostPin.css";
 
-import { GEO_MARKER_ICON } from "@triliumnext/commons";
+import { GEO_MARKER_ICON } from "@triliumnext/commons/src/lib/notes.js";
 import type { MapMouseEvent } from "maplibre-gl";
 import { useContext, useEffect, useRef } from "preact/hooks";
 

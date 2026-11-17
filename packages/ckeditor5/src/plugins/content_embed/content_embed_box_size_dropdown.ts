@@ -1,4 +1,5 @@
-import { BOX_SIZES, type BoxSize } from "@triliumnext/commons";
+import type { BoxSize } from "@triliumnext/commons";
+import { BOX_SIZES } from "@triliumnext/commons/src/lib/content_embeds.js";
 import {
     addListToDropdown, Collection, type Command, createDropdown, DropdownButtonView,
     type ListDropdownItemDefinition, Plugin, UIModel

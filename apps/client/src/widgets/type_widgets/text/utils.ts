@@ -1,8 +1,11 @@
 import type { CKTextEditor, InlineEmbedSource } from "@triliumnext/ckeditor5";
+import type { LinkPreviewData, LinkPreviewPlayer } from "@triliumnext/commons";
+import { attachmentIcon } from "@triliumnext/commons/src/lib/attachment_roles.js";
+import { getEmbedKey, MEDIA_EMBED_CLASS } from "@triliumnext/commons/src/lib/content_embeds.js";
 import {
-    attachmentIcon, getEmbedKey, getLinkPreviewPlayer, getMediaFileTitle, type LinkPreviewData,
-    type LinkPreviewPlayer, MEDIA_EMBED_CLASS, safeHostname, safeLinkPreviewHref
-} from "@triliumnext/commons";
+    getMediaFileTitle, safeHostname, safeLinkPreviewHref
+} from "@triliumnext/commons/src/lib/link_embed.js";
+import { getLinkPreviewPlayer } from "@triliumnext/commons/src/lib/link_embed_markup.js";
 import { h, type JSX } from "preact";
 
 import appContext from "../../../components/app_context";

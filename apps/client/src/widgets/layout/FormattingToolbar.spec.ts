@@ -1,11 +1,23 @@
 import { NoteType } from "@triliumnext/commons";
+import { h, render } from "preact";
+import { act } from "preact/test-utils";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
+import type Component from "../../components/component";
 import NoteContext from "../../components/note_context";
+import type FNote from "../../entities/fnote";
 import { ViewMode } from "../../services/link";
+import options from "../../services/options";
 import { randomString } from "../../services/utils";
 import { buildNote } from "../../test/easy-froca";
-import { getFormattingToolbarState } from "./FormattingToolbar";
+import { ParentComponent } from "../react/react_utils";
+import { FixedFormattingToolbar, getFormattingToolbarState } from "./FormattingToolbar";
+
+const active = vi.hoisted(() => ({ note: null as FNote | null, noteContext: undefined as NoteContext | undefined }));
+vi.mock("../react/hooks/tree", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/tree")>()),
+    useActiveNoteContext: () => ({ note: active.note, noteContext: active.noteContext, ntxId: active.noteContext?.ntxId })
+}));
 
 vi.mock("../../services/tree.ts", () => ({
     default: {
@@ -148,4 +160,36 @@ describe("Formatting toolbar logic", () => {
         });
     });
 
+
+    describe("FixedFormattingToolbar", () => {
+        // A note's auto read-only check waits for its content, which arrives after the note shows.
+        function renderWithPendingReadOnlyCheck(attributes: Record<string, string> = {}) {
+            options.set("textNoteEditorType", "ckeditor-classic");
+            const note = buildNote({ title: randomString(5), type: "text", ...attributes });
+            const noteContext = new NoteContext(randomString(10));
+            noteContext.noteId = note.noteId;
+            noteContext.viewScope = { viewMode: "default" };
+            noteContext.isReadOnly = () => new Promise<boolean>(() => {});
+            noteContext.getSubContexts = () => [ noteContext ];
+            noteContext.getMainContext = () => noteContext;
+            active.note = note;
+            active.noteContext = noteContext;
+
+            const parent = { registerHandler: () => {}, removeHandler: () => {} } as unknown as Component;
+            const container = document.createElement("div");
+            act(() => render(h(ParentComponent.Provider, { value: parent }, h(FixedFormattingToolbar, null)), container));
+            const toolbar = container.querySelector(".classic-toolbar-widget");
+            expect(toolbar).toBeInstanceOf(HTMLElement);
+            act(() => render(null, container));
+            return toolbar;
+        }
+
+        it("shows for an editable text note before its auto read-only check settles", () => {
+            expect(renderWithPendingReadOnlyCheck()?.classList.contains("hidden-ext")).toBe(false);
+        });
+
+        it("stays hidden for a read-only text note while the check is pending", () => {
+            expect(renderWithPendingReadOnlyCheck({ "#readOnly": "" })?.classList.contains("hidden-ext")).toBe(true);
+        });
+    });
 });

@@ -50,6 +50,8 @@ function makeImage(complete: boolean) {
     return img;
 }
 
+const FONT_CSS = "html:root {--detail-font-family: Arial;}";
+
 const countPageStyles = () =>
     [...document.head.querySelectorAll("style")].filter((s) => (s.textContent ?? "").includes("@page")).length;
 
@@ -78,12 +80,13 @@ afterEach(() => {
     containers.length = 0;
     document.body.replaceChildren();
     document.head
-        .querySelectorAll('link[href="api/fonts"], link[href^="/api/notes/"]')
+        .querySelectorAll('style[data-font-stylesheet], link[href^="/api/notes/"]')
         .forEach((n) => n.remove());
     [...document.head.querySelectorAll("style")]
         .filter((s) => (s.textContent ?? "").includes("@page"))
         .forEach((n) => n.remove());
     delete (window as any).electronApi;
+    delete window.glob.fontCss;
     window._noteReady = undefined;
     window.location.hash = "";
 });
@@ -284,15 +287,16 @@ describe("main", () => {
         await expect(main()).resolves.toBeUndefined();
     });
 
-    it("injects @page margins (browser) plus the font link and renders the app", async () => {
+    it("injects @page margins (browser) plus the font options and renders the app", async () => {
         buildNote({ id: "main-note", title: "Main Note", type: "text" });
         window.location.hash = "main-note";
         document.title = "Trilium Notes";
+        window.glob.fontCss = FONT_CSS;
 
         await main();
 
         expect(countPageStyles()).toBeGreaterThan(0);
-        expect(document.head.querySelector('link[href="api/fonts"]')).toBeTruthy();
+        expect(document.head.querySelector("style[data-font-stylesheet]")?.textContent).toBe(FONT_CSS);
         const titles = [...document.body.querySelectorAll("h1")].map((el) => el.textContent);
         expect(titles).toContain("Main Note");
         expect(document.title).toBe("Main Note");

@@ -1,5 +1,5 @@
 import FNote from "../../../entities/fnote";
-import { useNoteLabel, useNoteLabelByName } from "../../react/hooks";
+import { useNoteLabel, useNoteLabelByName } from "../../react/hooks/note";
 import { drawnEventLabels, EventLabelName } from "./utils";
 
 /**

@@ -2,13 +2,14 @@ import "./MobileNoteNavigator.css";
 
 import clsx from "clsx";
 import type { ComponentChildren } from "preact";
-import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
+import {
+    useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState
+} from "preact/hooks";
 
 import type Component from "../../components/component";
 import type { Screen } from "../../components/mobile_screen_switcher";
 import type FNote from "../../entities/fnote";
 import contextMenu from "../../menus/context_menu";
-import { buildTreeContextMenuItems, handleTreeContextMenuSelect } from "../../menus/tree_context_menu";
 import cssClassManager from "../../services/css_class_manager";
 import froca from "../../services/froca";
 import hoisted_note from "../../services/hoisted_note";
@@ -18,25 +19,22 @@ import search from "../../services/search";
 import { onSystemBack, type SystemBackHandler } from "../../services/system_back";
 import tree from "../../services/tree";
 import utils, { isIOS } from "../../services/utils";
-import { NoteContent } from "../collections/legacy/ListOrGridView";
+import { NoteContent } from "../collections/legacy/NoteContent";
 import { useShareState } from "../layout/NoteBadges";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useLongPressContextMenu } from "../react/hooks/dom";
 import {
-    useActiveNoteContext,
-    useChildNotes,
-    useLongPressContextMenu,
-    useNote,
-    useNoteColorClass,
-    useNoteIcon,
-    useNoteLabel,
-    useNoteLabelBoolean,
-    useNoteTitle,
-    useTriliumEvent,
-    useTriliumOptionBool
-} from "../react/hooks";
+    useChildNotes, useNote, useNoteColorClass, useNoteIcon, useNoteLabel, useNoteLabelBoolean
+} from "../react/hooks/note";
+import { useTriliumOptionBool } from "../react/hooks/options";
+import { useActiveNoteContext, useNoteTitle } from "../react/hooks/tree";
 import Icon from "../react/Icon";
 import NoItems from "../react/NoItems";
 import { ParentComponent } from "../react/react_utils";
-import { enterHoistedNote, getLastSegment, getParentStack, getSpotlightedNoteId, getTreeStack, leaveHoistedNote, setTabTree } from "./tab_navigation";
+import {
+    enterHoistedNote, getLastSegment, getParentStack, getSpotlightedNoteId, getTreeStack,
+    leaveHoistedNote, setTabTree, useNavigatorChildren
+} from "./tab_navigation";
 
 /**
  * A touch-native replacement for the Fancytree-based note tree on mobile. Shows one
@@ -796,62 +794,12 @@ export function getListedChildCount(note: FNote, hideArchived: boolean) {
     return count;
 }
 
-interface NavigatorChild {
-    note: FNote;
-    branchId: string;
-}
-
-export function useNavigatorChildren(
-    parentNote: FNote | null | undefined,
-    hideArchived: boolean,
-    isLoaded: boolean,
-    isParentSubtreeHidden: boolean,
-    spotlightedNoteId: string | undefined
-): NavigatorChild[] {
-    const [children, setChildren] = useState<NavigatorChild[]>([]);
-    // Re-run when the parent's child list mutates in place (e.g., a new branch is added by
-    // froca_updater). The join captures the current ordered noteIds so a real change in the
-    // children set produces a new dep value.
-    const childrenKey = parentNote?.children?.join(",");
-
-    useEffect(() => {
-        if (!parentNote || !isLoaded || (isParentSubtreeHidden && !spotlightedNoteId)) {
-            setChildren([]);
-            return;
-        }
-        let cancelled = false;
-        // A parent with `#subtreeHidden` lists only the child on the active note's path.
-        const branches = parentNote.getChildBranches()
-            .filter((b): b is NonNullable<typeof b> => !!b)
-            .filter((b) => !isParentSubtreeHidden || b.noteId === spotlightedNoteId);
-        // Use the async loader so notes that aren't yet in cache (e.g., freshly created via "+")
-        // are pulled in. `processNoteChange` only updates notes already in froca, so without this
-        // newly-created child notes would be silently skipped.
-        froca.getNotes(branches.map((b) => b.noteId), true).then((notes) => {
-            if (cancelled) return;
-            const noteMap = new Map(notes.map((n) => [n.noteId, n]));
-            const result: NavigatorChild[] = [];
-            for (const branch of branches) {
-                const note = noteMap.get(branch.noteId);
-                if (!note) continue;
-                if (note.noteId === "_hidden") continue;
-                if (hideArchived && note.isArchived) continue;
-                result.push({ note, branchId: branch.branchId });
-            }
-            setChildren(result);
-        });
-        return () => { cancelled = true; };
-    }, [parentNote, childrenKey, hideArchived, isLoaded, isParentSubtreeHidden, spotlightedNoteId]);
-
-    return children;
-}
-
 /**
  * Builds the same rich tree context menu as Fancytree's `TreeContextMenu`, but
  * sourced from a note path so it can be used from the mobile navigator. The
  * heavy lifting (item construction, command dispatch) lives in
- * `tree_context_menu.ts`; this function just resolves `notePath` into the shared
- * `TreeContextMenuContext` and wires up the `contextMenu.show(...)` boilerplate.
+ * `tree_context_menu.ts`, which loads with the first menu; this function just resolves `notePath`
+ * into the shared `TreeContextMenuContext` and wires up the `contextMenu.show(...)` boilerplate.
  */
 function buildNoteContextMenu(notePath: string, parentComponent: Component | null) {
     return async (e: MouseEvent) => {
@@ -891,6 +839,7 @@ function buildNoteContextMenu(notePath: string, parentComponent: Component | nul
             }
         };
 
+        const { buildTreeContextMenuItems, handleTreeContextMenuSelect } = await import("../../menus/tree_context_menu");
         await contextMenu.show({
             x: e.pageX,
             y: e.pageY,

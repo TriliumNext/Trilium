@@ -1,7 +1,9 @@
 import "./Button.css";
 
 import type { Tooltip } from "bootstrap";
-import type { ButtonHTMLAttributes, ComponentChildren, CSSProperties, MouseEventHandler, RefObject } from "preact";
+import type {
+    ButtonHTMLAttributes, ComponentChildren, CSSProperties, MouseEventHandler, RefObject
+} from "preact";
 import { useMemo, useRef } from "preact/hooks";
 
 import { CommandNames } from "../../components/app_context";
@@ -9,7 +11,7 @@ import { t } from "../../services/i18n";
 import { isDesktop, isMobile } from "../../services/utils";
 import ActionButton from "./ActionButton";
 import Dropdown from "./Dropdown";
-import { useStaticTooltip } from "./hooks";
+import { useStaticTooltip } from "./hooks/tooltip";
 import Icon, { SvgIcon } from "./Icon";
 import { useCommandTrigger } from "./react_utils";
 import { renderShortcutKbds } from "./shortcut_kbd";
@@ -17,7 +19,8 @@ import { renderShortcutKbds } from "./shortcut_kbd";
 const cachedIsMobile = isMobile();
 
 export interface ButtonProps extends Pick<ButtonHTMLAttributes<HTMLButtonElement>,
-    "tabIndex" | "aria-pressed" | "aria-haspopup" | "aria-expanded"> {
+    "tabIndex" | "aria-pressed" | "aria-haspopup" | "aria-expanded" | "onMouseDown"
+    | "onContextMenu"> {
     name?: string;
     /** Reference to the button element. Mostly useful for requesting focus. */
     buttonRef?: RefObject<HTMLButtonElement | null>;

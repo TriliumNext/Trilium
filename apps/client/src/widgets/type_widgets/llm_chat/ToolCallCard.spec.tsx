@@ -23,8 +23,8 @@ vi.mock("../../../services/utils.js", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../../services/utils.js")>()),
     openInAppHelpFromUrl: mocks.openInAppHelpFromUrl
 }));
-vi.mock("../../react/hooks.js", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks.js")>()),
+vi.mock("../../react/hooks/note.js", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/note.js")>()),
     useNote: (noteId: string) => mocks.notes[noteId]
 }));
 vi.mock("../text/ReadOnlyText.js", () => ({

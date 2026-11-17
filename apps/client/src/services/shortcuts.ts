@@ -206,10 +206,23 @@ export function matchesShortcut(e: KeyboardEvent, shortcut: string): boolean {
         return false;
     }
 
-    return e.ctrlKey === expectedCtrl &&
-           e.altKey === expectedAlt &&
+    const altGraph = isWindowsAltGraph(e);
+    return (e.ctrlKey || altGraph) === expectedCtrl &&
+           (e.altKey || altGraph) === expectedAlt &&
            e.shiftKey === expectedShift &&
            e.metaKey === expectedMeta;
+}
+
+/**
+ * Whether a keydown is Ctrl+Alt that Firefox on Windows reports as AltGr. Windows treats Ctrl+Alt as
+ * AltGr on layouts that have it, and Firefox then clears `ctrlKey` and `altKey` on keys with an AltGr
+ * character (Ctrl+Alt+2 on German types "²"), while Chromium keeps both set. On Linux AltGr is a key
+ * of its own, so it is left to type its character.
+ */
+function isWindowsAltGraph(e: KeyboardEvent): boolean {
+    return !e.ctrlKey && !e.altKey &&
+        navigator.platform.startsWith("Win") &&
+        e.getModifierState?.("AltGraph") === true;
 }
 
 export function keyMatches(e: KeyboardEvent, key: string): boolean {
@@ -227,7 +240,7 @@ export function keyMatches(e: KeyboardEvent, key: string): boolean {
     // For number keys, use the physical key code regardless of modifiers
     // This works across all keyboard layouts
     if (key >= '0' && key <= '9') {
-        return e.code === `Digit${key}`;
+        return e.code === `Digit${key}` || (e.code === `Numpad${key}` && e.key === key);
     }
 
     // For letter keys, use the physical key code for consistency

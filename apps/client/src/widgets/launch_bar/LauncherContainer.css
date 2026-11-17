@@ -1,3 +1,19 @@
 #launcher-container .launcher-slot {
     display: contents;
 }
+
+#launcher-pane.vertical #launcher-container {
+    width: var(--launcher-pane-size);
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-inline-start: var(--launcher-scrollbar-size, 0px);
+}
+
+#launcher-pane.horizontal #launcher-container {
+    width: 100%;
+    height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-block-start: var(--launcher-scrollbar-size, 0px);
+}

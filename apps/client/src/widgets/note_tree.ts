@@ -5,7 +5,9 @@ import "jquery.fancytree/dist/modules/jquery.fancytree.filter.js";
 import "../stylesheets/tree.css";
 import "./note_tree.css";
 
-import { GEO_LOCATION_ATTRIBUTE, MAP_POSITION_ATTRIBUTE } from "@triliumnext/commons";
+import {
+    GEO_LOCATION_ATTRIBUTE, MAP_POSITION_ATTRIBUTE
+} from "@triliumnext/commons/src/lib/notes.js";
 import { h } from "preact";
 
 import appContext, { type CommandListenerData, type EventData } from "../components/app_context.js";
@@ -31,7 +33,6 @@ import treeService from "../services/tree.js";
 import utils from "../services/utils.js";
 import ws from "../services/ws.js";
 import NoteContextAwareWidget from "./note_context_aware_widget.js";
-import TreeSettings from "./note_tree_settings.jsx";
 import { disposeReactWidget, renderReactWidgetAtElement } from "./react/react_utils.jsx";
 
 const TPL = /*html*/`
@@ -159,6 +160,13 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
     private spotlightedNotePath?: string | null;
     private spotlightedNode: Fancytree.FancytreeNode | null = null;
     private tree!: Fancytree.Fancytree;
+    /** Set while a focus asked for before the tree was built waits for it. */
+    private focusesOnBuild = false;
+    private settleFirstRender!: () => void;
+    /** Settles once `initFancyTree()` has rendered the first nodes. */
+    readonly firstRender = new Promise<void>((resolve) => {
+        this.settleFirstRender = resolve;
+    });
 
     constructor() {
         super();
@@ -227,9 +235,12 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         Promise.all([options.initializedPromise, froca.initializedPromise]).then(() => {
             this.applyDensity();
             this.initFancyTree();
+            this.settleFirstRender();
         });
 
         this.setupNoteTitleTooltip();
+        // The tree renders when its pane first opens, after the startup has done this for the layout.
+        keyboardActionsService.updateDisplayedShortcuts(this.$treeActions);
     }
 
     setupNoteTitleTooltip() {
@@ -291,11 +302,14 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             return;
         }
 
-        renderReactWidgetAtElement(this, h(TreeSettings, {
-            anchor: this.$treeActions[0],
-            onHideArchivedNotesChange: () => this.reloadTreeFromCache(),
-            onClose: () => this.toggleSettings(false)
-        }), this.settingsContainer);
+        void import("./note_tree_settings.jsx").then(({ default: TreeSettings }) => {
+            if (!this.isSettingsShown) return;
+            renderReactWidgetAtElement(this, h(TreeSettings, {
+                anchor: this.$treeActions[0],
+                onHideArchivedNotesChange: () => this.reloadTreeFromCache(),
+                onClose: () => this.toggleSettings(false)
+            }), this.settingsContainer);
+        });
     }
 
     cleanup() {
@@ -655,6 +669,10 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         let touchStart;
 
         this.tree = $.ui.fancytree.getTree(this.$tree);
+        if (this.focusesOnBuild && this.tree) {
+            this.focusesOnBuild = false;
+            void this.focusTreeEvent();
+        }
     }
 
     showContextMenu(e: PointerEvent | JQuery.TouchStartEvent | JQuery.ContextMenuEvent) {
@@ -937,6 +955,12 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
     }
 
     async focusTreeEvent() {
+        // The tree is built once froca has the notes; `initFancyTree()` focuses it then.
+        if (!this.tree) {
+            this.focusesOnBuild = true;
+            return;
+        }
+
         this.tree.$container.focus();
         this.tree.setFocus(true);
     }
@@ -1111,6 +1135,11 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                     setTimeout(() => {
                         this.tree.options.activeVisible = true;
                     }, 0);
+                } else if (!oldActiveNode) {
+                    // `setActive()` scrolls with an animation, which on the tree's first activation
+                    // slides the freshly painted tree down from its top. Scrolling at once, in the
+                    // same task, leaves it nothing to animate.
+                    void newActiveNode.scrollIntoView(false);
                 }
 
                 newActiveNode.setActive(true, {
@@ -1434,7 +1463,9 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             return;
         }
 
-        const follow = this.treeScrollFollowNavigation;
+        // An active note that stayed in place keeps its ancestors as the user left them;
+        // only a moved one is revealed under its new parent.
+        const follow = this.treeScrollFollowNavigation && !!movedActiveNode;
         let node: Fancytree.FancytreeNode | null | undefined = await this.getNodeFromPath(activeNotePath, follow, false);
 
         if (node && node.data.noteId !== treeService.getNoteIdFromUrl(activeNotePath)) {
@@ -1836,7 +1867,8 @@ function buildEnhanceTitle() {
         const note = froca.getNoteFromCache(node.data.noteId);
         if (!note) return;
 
-        const activeNoteContext = appContext.tabManager.getActiveContext();
+        // The tree can be built before `desktop.ts` creates the tab manager, which restores the tabs.
+        const activeNoteContext = appContext.tabManager?.getActiveContext();
 
         const $span = $(node.span);
 

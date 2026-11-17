@@ -14,9 +14,14 @@ import {
     FormDropdownDivider, FormDropdownSubmenu, FormListCustomItem, FormListHeader, FormListItem,
     FormListToggleableItem, MenuList
 } from "./FormList";
-import { useStaticTooltipWithKeyboardShortcut, useUniqueName } from "./hooks";
+import { useUniqueName } from "./hooks/dom";
+import { useStaticTooltipWithKeyboardShortcut } from "./hooks/shortcuts";
 import Icon, { SvgIcon } from "./Icon";
-import { type ActiveRow, isRightToLeft, MenuContext, type MenuContextValue, type MenuFilter, MenuFilterContext, MenuLevelContext, type OpenSubmenu, pointerMoved, type RowEntry, shouldDropStart } from "./menu_context";
+import {
+    type ActiveRow, isRightToLeft, MenuContext, type MenuContextValue, type MenuFilter,
+    MenuFilterContext, MenuLevelContext, type OpenSubmenu, pointerMoved, type RowEntry,
+    shouldDropStart
+} from "./menu_context";
 import Popup, { type PopupProps } from "./Popup";
 
 /**
@@ -659,8 +664,9 @@ function MenuItemRow<T>({ row, onSelect }: { row: MenuItem<T>, onSelect: MenuPro
     if (row.isSwitch) {
         return (
             <FormListToggleableItem
-                icon={uiIcon} title={title} currentValue={!!checked} disabled={enabled === false}
-                helpTooltip={tooltip} className={className} closeOnSelect={false}
+                icon={uiIcon} title={title} description={description} currentValue={!!checked}
+                disabled={enabled === false} helpTooltip={tooltip} className={className}
+                closeOnSelect={false}
                 onChange={(_, e) => select(e)}
             />
         );

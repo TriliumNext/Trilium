@@ -96,6 +96,40 @@ export default class CollapsibleListItems extends Plugin {
     }
 
     /**
+     * A test for whether a block is hidden under a collapsed list item, answered as of now. The
+     * items that Search in note shows for the moment hide nothing.
+     */
+    getHiddenSnapshot(): (block: ModelNode) => boolean {
+        const hiddenByParent = new Map<unknown, Set<ModelNode>>();
+        return (block) => {
+            let hidden = hiddenByParent.get(block.parent);
+            if (!hidden) {
+                hidden = this._getHiddenChildren(block.parent as ModelElement);
+                hiddenByParent.set(block.parent, hidden);
+            }
+            return hidden.has(block);
+        };
+    }
+
+    /** The children of `parent` that a collapsed list item hides. */
+    private _getHiddenChildren(parent: ModelElement): Set<ModelNode> {
+        const hidden = new Set<ModelNode>();
+        let hidingIndent = Infinity;
+        for (const child of parent.getChildren()) {
+            if (!isListBlock(child)) {
+                hidingIndent = Infinity;
+            } else if (getIndent(child) > hidingIndent) {
+                hidden.add(child);
+            } else {
+                const isHiding = !!child.getAttribute(LIST_COLLAPSED_ATTRIBUTE)
+                    && !this._findRevealed.has(child);
+                hidingIndent = isHiding ? getIndent(child) : Infinity;
+            }
+        }
+        return hidden;
+    }
+
+    /**
      * Temporarily reveals a collapsed item's hidden children while a find-in-note highlight sits
      * inside them, re-collapsing once the highlight moves away — the same treatment collapsible
      * `<details>` blocks get. Unlike {@link _enableAutoExpand} (which permanently drops the
@@ -134,6 +168,8 @@ export default class CollapsibleListItems extends Plugin {
             void Promise.resolve().then(() => {
                 this._findClosing = false;
             });
+        } else {
+            this._findClosing = false;
         }
 
         for (const revealed of this._findRevealed) {
@@ -381,7 +417,9 @@ export default class CollapsibleListItems extends Plugin {
 
             let changed = false;
             for (const block of changedBlocks) {
-                for (const ancestor of getCollapsedAncestors(block)) {
+                // Undo brings back the collapsed state that the change it takes back expanded.
+                const ancestors = writer.batch.isUndo ? [] : getCollapsedAncestors(block);
+                for (const ancestor of ancestors) {
                     // An ancestor inserted in the same change set arrived together with its
                     // hidden children (data load, paste of a collapsed subtree) — keep it.
                     if (insertedNodes.has(ancestor)) {

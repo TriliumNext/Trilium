@@ -7,9 +7,11 @@ import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import NoteIcon from "../note_icon";
 import NoteTitleWidget from "../note_title";
-import { useNoteContext, useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useNoteContext } from "../react/hooks/note_context";
 import Icon from "../react/Icon";
 import NoteBadges from "./NoteBadges";
+import { VimTitleStatus } from "./VimStatus";
 
 
 /**
@@ -34,6 +36,7 @@ export default function TitleRow({ compact }: {
         <div className={className}>
             <NoteIcon />
             <NoteTitleWidget />
+            <VimTitleStatus />
             <NoteBadges />
         </div>
     );

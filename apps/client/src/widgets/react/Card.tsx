@@ -9,7 +9,7 @@ import Button from "./Button";
 import {
     type FilterRole, FilterPassthrough, filterRoleClass, useFilterMatch, useIsFiltering
 } from "./filter";
-import { useUniqueName } from "./hooks";
+import { useUniqueName } from "./hooks/dom";
 import Icon from "./Icon";
 
 // #region Card Frame

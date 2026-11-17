@@ -15,8 +15,8 @@ vi.mock("../../../components/app_context.js", () => ({ default: { triggerCommand
 vi.mock("../../../services/options.js", () => ({
     default: { getJson: (name: string) => JSON.parse(mocks.stored[name] ?? "null") }
 }));
-vi.mock("../../react/hooks.js", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks.js")>()),
+vi.mock("../../react/hooks/options.js", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options.js")>()),
     useTriliumOption: (name: string) => [
         mocks.stored[name] ?? "",
         async (value: unknown) => void mocks.saved.push([ name, value ])

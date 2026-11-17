@@ -172,7 +172,9 @@ describe("useCodeLanguageMenu", () => {
 
         expect(document.querySelector(".code-mime-types-modal .modal-dialog")).toBeNull();
         await act(async () => select(menu().items, "basic_properties.configure_code_notes"));
-        expect(document.querySelector(".code-mime-types-modal .modal-dialog")).not.toBeNull();
+        // The dialog loads with its first opening.
+        await vi.waitFor(() =>
+            expect(document.querySelector(".code-mime-types-modal .modal-dialog")).not.toBeNull());
     });
 
     it("lists the languages in the stored order, or by name", () => {

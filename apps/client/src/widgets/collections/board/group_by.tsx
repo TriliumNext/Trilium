@@ -1,4 +1,9 @@
-import { DEFAULT_BOARD_GROUP_BY, extractAttributeDefinitionTypeAndName, normalizeBoardGroupBy } from "@triliumnext/commons";
+import {
+    DEFAULT_BOARD_GROUP_BY, normalizeBoardGroupBy
+} from "@triliumnext/commons/src/lib/board_columns.js";
+import {
+    extractAttributeDefinitionTypeAndName
+} from "@triliumnext/commons/src/lib/promoted_attribute_definition_parser.js";
 
 import { createPortal } from "preact";
 import { lazy, Suspense } from "preact/compat";

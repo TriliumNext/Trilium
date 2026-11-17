@@ -4,7 +4,7 @@ import utils from "../../services/utils.js";
 import Button from "../react/Button.js";
 import Modal from "../react/Modal.js";
 import { useState } from "preact/hooks";
-import { useTriliumEvent } from "../react/hooks.jsx";
+import { useTriliumEvent } from "../react/hooks/events.js";
 
 export default function IncorrectCpuArchDialogComponent() {
     const [ shown, setShown ] = useState(false);

@@ -1,4 +1,5 @@
-import { dayjs, formatLogMessage, type ToMarkdownResponse } from "@triliumnext/commons";
+import type { ToMarkdownResponse } from "@triliumnext/commons";
+import { formatLogMessage } from "@triliumnext/commons/src/lib/utils.js";
 import type { FrontendApi as PublicFrontendApi, ScriptFNote as PublicScriptFNote, ScriptLinkOptions } from "@triliumnext/commons/src/lib/script_api.js";
 import DOMPurify from "dompurify";
 
@@ -12,6 +13,7 @@ import NoteContextAwareWidget from "../widgets/note_context_aware_widget.js";
 import RightPanelWidget from "../widgets/right_panel_widget.js";
 import { BackendScriptingDisabledError, showBackendScriptingDisabledToast } from "./backend_scripting.js";
 import dateNotesService from "./date_notes.js";
+import { dayjs } from "./dayjs.js";
 import dialogService from "./dialog.js";
 import froca from "./froca.js";
 import { preactAPI } from "./frontend_script_api_preact.js";

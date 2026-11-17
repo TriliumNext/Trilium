@@ -110,6 +110,7 @@ export default async function buildApp() {
     app.use(`/manifest.webmanifest`, express.static(path.join(publicAssetsDir, "manifest.webmanifest"), STATIC_OPTIONS));
     app.use(`/robots.txt`, express.static(path.join(publicAssetsDir, "robots.txt"), STATIC_OPTIONS));
     app.use(`/icon.png`, express.static(path.join(publicAssetsDir, "icon.png"), STATIC_OPTIONS));
+    app.use(`/apple-touch-icon.png`, express.static(path.join(publicAssetsDir, "apple-touch-icon.png"), STATIC_OPTIONS));
 
     const {
         default: sessionParser,

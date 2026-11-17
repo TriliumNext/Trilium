@@ -335,3 +335,28 @@ html.theme-light .link-embed-favicon-light {
         height: 14px;
     }
 }
+
+/* ---------- Font color and background color ---------- */
+
+span.link-mention[style*="--tn-color"] .link-embed-mention {
+    color: inherit;
+}
+
+section.link-embed[style*="--tn-color"] :is(.link-embed-card-description, .link-embed-card-url) {
+    color: color-mix(in srgb, currentColor 75%, transparent);
+}
+
+span.link-mention[style*="--tn-background"] {
+    border-radius: 4px;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+}
+
+span.link-mention[style*="--tn-background"] .link-embed-mention,
+section.link-embed[style*="--tn-background"] .link-embed-card {
+    background: transparent;
+}
+
+section.link-embed[style*="--tn-background"] {
+    border-radius: 4px;
+}

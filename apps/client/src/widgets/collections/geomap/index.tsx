@@ -16,10 +16,20 @@ import { fileAccept } from "../../../services/utils";
 import { logError } from "../../../services/ws";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import { FormListItem } from "../../react/FormList";
-import { useCollectionTreeDrag, useColorScheme, useEffectiveReadOnly, useNoteBlob, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelByName, useNoteProperty, useNoteRelation, useSpacedUpdate, useTriliumEvent } from "../../react/hooks";
+import { useSpacedUpdate } from "../../react/hooks/dom";
+import { useTriliumEvent } from "../../react/hooks/events";
+import {
+    useNoteBlob, useNoteLabel, useNoteLabelBoolean, useNoteLabelByName, useNoteProperty,
+    useNoteRelation
+} from "../../react/hooks/note";
+import { useColorScheme } from "../../react/hooks/options";
+import { useEffectiveReadOnly, useNoteContext } from "../../react/hooks/note_context";
+import { useCollectionTreeDrag } from "../../react/hooks/drag";
 import NoItems from "../../react/NoItems";
 import { ViewModeProps } from "../interface";
-import { createNewNote, createNoteForPlace, createShapeNote, importGpxTrack, moveMarker } from "./api";
+import {
+    createNewNote, createNoteForPlace, createShapeNote, importGpxTrack, moveMarker
+} from "./api";
 import Buildings from "./Buildings";
 import ContextMenus from "./ContextMenus";
 import { pointPlace } from "./coordinates";
@@ -43,7 +53,9 @@ import { NOTE_ZOOM, type SearchResult } from "./results";
 import SearchBox from "./SearchBox";
 import { ShapeLayer, ShapeNames } from "./ShapeLayer";
 import type { GeoShape } from "./shapes";
-import { geoSpace, type ImageSize, imageSpace, type ImageSpace, MapSpaceContext, parseImageExtent } from "./space";
+import {
+    geoSpace, type ImageSize, imageSpace, type ImageSpace, MapSpaceContext, parseImageExtent
+} from "./space";
 import Tooltips from "./Tooltips";
 
 /**

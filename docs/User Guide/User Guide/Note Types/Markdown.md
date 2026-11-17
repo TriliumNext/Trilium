@@ -81,6 +81,15 @@ The following features are supported by Trilium's Markdown format and will show 
     ```
     
     *   These can also be quickly created using the `/footnote` command.
+*   <a class="reference-link" href="Text/Aside%20blocks.md">Aside blocks</a> set content apart in a gray box at the right, with the main text wrapping around it (for the other positions and colors, see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown/Supported%20syntax.md">Supported syntax</a>). Write the `<aside>` tags on lines of their own, with blank lines around the content, which is read as Markdown:
+    
+    ```
+    <aside>
+    
+    A **side note** at the right of the text.
+    
+    </aside>
+    ```
 *   Page breaks for <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Printing%20%26%20Exporting%20as%20PDF.md">Printing &amp; Exporting as PDF</a>:
     
     ```
@@ -166,6 +175,7 @@ Just like <a class="reference-link" href="Text.md">Text</a> notes, Markdown no
 *   Inserting a [Mermaid](Mermaid%20Diagrams.md) diagram (`/mermaid`), with one variant per sample template (e.g. `/mermaid:flowchart`).
 *   Inserting a collapsible block (`/collapsible`).
 *   Inserting [tabs](../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown/Supported%20syntax.md) (`/tabs`).
+*   Inserting an [aside block](Text/Aside%20blocks.md) (`/aside`), a gray box placed at the right with the text wrapping around it.
 *   Inserting a page break for printing (`/page-break`).
 *   Inserting a table (`/table`).
 *   Creating admonitions (e.g. `/tip`, `/note`, `/important`, `/caution`, `/warning`).

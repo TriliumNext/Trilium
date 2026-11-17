@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
+import type { NoteType } from "@triliumnext/commons";
+import { ATTACHMENT_ROLES } from "@triliumnext/commons/src/lib/attachment_roles.js";
 import {
-    ATTACHMENT_ROLES, CANVAS_ATTACHMENT_MIME, CANVAS_ATTACHMENT_TITLE, getDrawingPictureTitle,
-    NOTE_TYPE_IMAGE_ATTACHMENTS, type NoteType
-} from "@triliumnext/commons";
+    CANVAS_ATTACHMENT_MIME, CANVAS_ATTACHMENT_TITLE, getDrawingPictureTitle,
+    NOTE_TYPE_IMAGE_ATTACHMENTS
+} from "@triliumnext/commons/src/lib/notes.js";
 
 import { ATTACHMENT_ROLE_GROUPS, attachmentGroupForRole, partitionAttachmentsByGroup } from "./attachment_groups.js";
 

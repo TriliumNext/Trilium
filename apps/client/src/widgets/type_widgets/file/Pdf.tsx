@@ -9,7 +9,9 @@ import { copyReferenceWithToast } from "../../../services/clipboard_ext";
 import open from "../../../services/open";
 import options from "../../../services/options";
 import { useViewModeConfig } from "../../collections/NoteList";
-import { useBlobEditorSpacedUpdate, useEffectiveReadOnly, useTriliumEvent } from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useEffectiveReadOnly } from "../../react/hooks/note_context";
+import { useBlobEditorSpacedUpdate } from "../../react/hooks/editor";
 import PdfViewer, { getPdfUrl } from "./PdfViewer";
 
 /**

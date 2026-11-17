@@ -1,14 +1,16 @@
 import "../launch_bar/CalendarWidget.css";
 import "./DatePicker.css";
 
-import { dayjs, type Dayjs, getWeekStartDate } from "@triliumnext/commons";
+import type { Dayjs } from "@triliumnext/commons";
+import { getWeekStartDate } from "@triliumnext/commons/src/lib/week_utils.js";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 
+import { dayjs } from "../../services/dayjs";
 import { t } from "../../services/i18n";
 import Calendar from "../launch_bar/Calendar";
-import { AdjustDateButton, MONTHS } from "../launch_bar/CalendarWidget";
+import { AdjustDateButton, MONTHS } from "../launch_bar/CalendarDropdown";
 import Button from "./Button";
-import { useTriliumOptionInt } from "./hooks";
+import { useTriliumOptionInt } from "./hooks/options";
 import { isRightToLeft } from "./menu_context";
 
 export interface DatePickerProps {

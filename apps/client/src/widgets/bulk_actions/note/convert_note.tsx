@@ -1,4 +1,7 @@
-import { NOTE_CONVERSION_IDS, NoteConversionId, RISKY_NOTE_CONVERSION_IDS } from "@triliumnext/commons";
+import type { NoteConversionId } from "@triliumnext/commons";
+import {
+    NOTE_CONVERSION_IDS, RISKY_NOTE_CONVERSION_IDS
+} from "@triliumnext/commons/src/lib/bulk_actions.js";
 import { useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";

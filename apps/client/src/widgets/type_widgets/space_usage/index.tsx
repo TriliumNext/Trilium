@@ -6,7 +6,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks"
 import { t } from "../../../services/i18n";
 import { formatSize, isMobile } from "../../../services/utils";
 import ActionButton from "../../react/ActionButton";
-import { useElementSize, useStaticTooltip } from "../../react/hooks";
+import { useElementSize } from "../../react/hooks/dom";
+import { useStaticTooltip } from "../../react/hooks/tooltip";
 import SegmentedChoice from "../../react/SegmentedChoice";
 import { useFetch } from "../../react/use_fetch";
 import Browse from "./browse";

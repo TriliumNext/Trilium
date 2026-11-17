@@ -46,6 +46,10 @@ vi.mock("../components/app_context.js", () => ({
 vi.mock("./i18n.js", () => ({ t }));
 
 vi.mock("./block_reference.js", () => ({ revealHighlightedBlocks }));
+const contextMenuShow = vi.hoisted(() => ({ listeners: [] as (() => void)[] }));
+vi.mock("../menus/context_menu.js", () => ({
+    onContextMenuShow: (listener: () => void) => contextMenuShow.listeners.push(listener)
+}));
 
 // Imports AFTER vi.mock calls.
 import DeletedFNote from "../entities/deleted_fnote.js";
@@ -420,6 +424,27 @@ describe("mouseEnterHandler", () => {
         parseNavigationStateFromUrl.mockReturnValue({ notePath: "p", noteId: "x", viewScope: { viewMode: "source" } });
         await mouseEnterHandler.call($link[0], eventFor($link));
         expect(($.fn as any).tooltip).not.toHaveBeenCalled();
+    });
+
+    it("disposes the open preview when a context menu opens", async () => {
+        vi.useFakeTimers();
+        const $link = makeLink('<a href="#root/abc">x</a>');
+        parseNavigationStateFromUrl.mockReturnValue({ notePath: "root/abc", noteId: "abc", viewScope: { viewMode: "default" } });
+        froca.getNote = vi.fn(async () => fakeNote({ noteId: "abc", bestPath: "root/abc" })) as unknown as typeof froca.getNote;
+        hoverActive = true;
+
+        const promise = mouseEnterHandler.call($link[0], eventFor($link));
+        await vi.advanceTimersByTimeAsync(600);
+        await promise;
+        const tooltip = $.fn.tooltip as unknown as ReturnType<typeof vi.fn>;
+        expect(tooltip).toHaveBeenCalledWith("show");
+        expect(tooltip).not.toHaveBeenCalledWith("dispose");
+
+        expect(contextMenuShow.listeners).toHaveLength(1);
+        for (const listener of contextMenuShow.listeners) {
+            listener();
+        }
+        expect(tooltip).toHaveBeenCalledWith("dispose");
     });
 
     it("stays out of the way of a context menu, whether already up or invoked mid-flight", async () => {

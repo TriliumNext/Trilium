@@ -27,7 +27,7 @@ const ACCEPTED: Record<string, string[]> = {
     "apps/client/src/stylesheets/theme-next/shell.css": [
         "div.promoted-attribute-cell.promoted-attribute-label-boolean > div:first-of-type"
     ],
-    "apps/client/src/widgets/mobile_widgets/TabSwitcher.css": [
+    "apps/client/src/widgets/mobile_widgets/TabBarModal.css": [
         ".modal.tab-bar-modal .tabs .tab-card header:not(:first-of-type)"
     ],
     "apps/client/src/widgets/type_widgets/SqlConsole.css": [

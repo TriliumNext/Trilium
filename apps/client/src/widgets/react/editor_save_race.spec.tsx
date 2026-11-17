@@ -14,7 +14,7 @@
  * content holder standing in for CKEditor; note B's blob is a controllable deferred
  * standing in for a slow blob fetch (remote server / PWA).
  */
-import { deferred } from "@triliumnext/commons";
+import { deferred } from "@triliumnext/commons/src/lib/utils.js";
 import { render, type RefObject } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -28,7 +28,7 @@ import LoadResults from "../../services/load_results";
 import server from "../../services/server";
 import type SpacedUpdate from "../../services/spaced_update";
 import { buildNote } from "../../test/easy-froca";
-import { type SavedData, useEditorSpacedUpdate } from "./hooks";
+import { type SavedData, useEditorSpacedUpdate } from "./hooks/editor";
 import { noteSavedDataStore } from "./NoteStore";
 import { ParentComponent } from "./react_utils";
 

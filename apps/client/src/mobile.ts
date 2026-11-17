@@ -1,21 +1,11 @@
-import appContext from "./components/app_context.js";
-import bundleService from "./services/bundle.js";
-import { setupClipboardImageEmbed } from "./services/clipboard_image_embed.js";
-import glob from "./services/glob.js";
-import { preloadCommonNoteTypes } from "./widgets/note_types.js";
+import MobileLayout from "./layouts/MobileLayout.js";
+import { renderLayout } from "./layouts/render_layout.js";
+import { showStartupFailure } from "./services/splash.js";
 
-glob.setupGlobs();
+const root = await renderLayout(MobileLayout);
 
-await appContext.earlyInit();
-
-setupClipboardImageEmbed();
-
-const widgetBundles = await bundleService.getWidgetBundlesByParent();
-
-// A dynamic import is required for layouts since they initialize components which require translations.
-const MobileLayout = (await import("./layouts/mobile_layout.js")).default;
-
-appContext.setLayout(new MobileLayout(widgetBundles));
-
-/** Resolves once the layout is rendered and froca has the note tree; see desktop.ts. */
-export const ready = appContext.start().then(preloadCommonNoteTypes);
+// After the first render: the components that execute commands, the tabs, which wait for froca's
+// note tree in any case, and the handlers of links and pasted images.
+void import("./components/app_startup.js")
+    .then(({ startAppAroundLayout }) => startAppAroundLayout(root))
+    .catch(showStartupFailure);

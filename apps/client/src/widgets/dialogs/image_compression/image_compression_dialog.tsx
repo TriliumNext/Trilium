@@ -8,7 +8,7 @@ import { t } from "../../../services/i18n";
 import toast from "../../../services/toast";
 import Button from "../../react/Button";
 import { Card } from "../../react/Card";
-import { useTriliumOptionJson } from "../../react/hooks";
+import { useTriliumOptionJson } from "../../react/hooks/options";
 import Modal from "../../react/Modal";
 import {
     cancelImageCompression,
