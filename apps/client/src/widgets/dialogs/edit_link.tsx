@@ -14,6 +14,7 @@ import {
     type Dispatch, type StateUpdater, useEffect, useMemo, useRef, useState
 } from "preact/hooks";
 
+import appContext from "../../components/app_context";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import { detectEmbedType, fetchPageDetails, type PageDetails } from "../../services/link_embed";
@@ -161,7 +162,9 @@ export interface EditLinkOpts {
 export default function EditLinkDialog() {
     const [ opts, setOpts ] = useState<EditLinkOpts>();
     const [ shown, setShown ] = useState(false);
-    const hasSubmittedRef = useRef(false);
+    // The `applyLink()` of the render that submitted, so that a choice made while it waited for
+    // the server does not change the link.
+    const submittedLinkRef = useRef<(() => void) | null>(null);
     const form = useEditLinkForm(opts);
 
     useTriliumEvent("showEditLinkDialog", opts => {
@@ -177,7 +180,7 @@ export default function EditLinkDialog() {
         if (form.isCreatingReference || !form.validate()) return;
         if (form.needsReference && !await form.createReference()) return;
 
-        hasSubmittedRef.current = true;
+        submittedLinkRef.current = form.applyLink;
         // Insertion logic in onHidden because it needs focus.
         setShown(false);
     }
@@ -197,10 +200,9 @@ export default function EditLinkDialog() {
             onSubmit={() => void onSubmit()}
             onShown={form.onShown}
             onHidden={() => {
-                if (hasSubmittedRef.current) {
-                    hasSubmittedRef.current = false;
-                    form.applyLink();
-                }
+                const applyLink = submittedLinkRef.current;
+                submittedLinkRef.current = null;
+                applyLink?.();
 
                 form.reset();
                 setShown(false);
@@ -1121,6 +1123,9 @@ function createNoteHeading(
         },
         async createReference() {
             if (heading.blockId) return;
+            // An editor with unsaved changes skips the content the server writes, and its next
+            // save would drop the id.
+            await appContext.triggerEvent("saveNoteChanges", { noteId });
             const request: HeadingReferenceRequest = { index, text };
             const response = await server.postWithSilentErrors<HeadingReferenceResponse>(
                 `notes/${noteId}/references/heading`, request

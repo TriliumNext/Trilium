@@ -3,6 +3,7 @@ import { type RefObject, render } from "preact";
 import { act } from "preact/test-utils";
 import { beforeEach, describe, expect, it, type MockInstance, onTestFinished, vi } from "vitest";
 
+import appContext from "../../components/app_context";
 import Component from "../../components/component";
 import type { PageDetails } from "../../services/link_embed";
 import type { Suggestion } from "../../services/note_autocomplete";
@@ -1283,6 +1284,63 @@ describe("EditLinkDialog", () => {
         });
         expect(addLink).toHaveBeenCalledOnce();
         expect(showError).toHaveBeenCalledOnce();
+    });
+
+    it("has the editors of the note save before the heading gets its block id", async () => {
+        const note = buildNote({ title: "Target" });
+        const path = `root/${note.noteId}`;
+        noteReferences.set(note.noteId, {
+            headings: [ { level: 2, text: "Setup" } ], anchors: [], isWritable: true
+        });
+        const saved = deferred<void>();
+        const { triggerEvent } = appContext;
+        const trigger = vi.spyOn(appContext, "triggerEvent").mockImplementation(((name, data) => {
+            if (name === "saveNoteChanges") return saved.promise;
+            return triggerEvent.call(appContext, name, data);
+        }) as typeof appContext.triggerEvent);
+        onTestFinished(() => trigger.mockRestore());
+
+        await open();
+        await pickNote(path);
+        await checkNoteChoice("Setup");
+        await requestSubmit();
+        expect(trigger).toHaveBeenCalledWith("saveNoteChanges", { noteId: note.noteId });
+        expect(createHeadingReference).not.toHaveBeenCalled();
+
+        saved.resolve();
+        await settle();
+        await act(async () => {
+            container.querySelector(".modal")?.dispatchEvent(new Event("hidden.bs.modal"));
+        });
+        expect(createHeadingReference).toHaveBeenCalledOnce();
+        expect(addLink).toHaveBeenCalledExactlyOnceWith(`${path}?block=NewId`, null);
+    });
+
+    it("applies the heading submitted, though another is checked while it waits", async () => {
+        const note = buildNote({ title: "Target" });
+        const path = `root/${note.noteId}`;
+        noteReferences.set(note.noteId, {
+            headings: [ { level: 2, text: "Setup" }, { level: 2, text: "Usage" } ],
+            anchors: [],
+            isWritable: true
+        });
+
+        await open();
+        await pickNote(path);
+        await checkNoteChoice("Setup");
+        const created = deferred<HeadingReferenceResponse>();
+        createHeadingReference.mockReturnValueOnce(created.promise);
+        await requestSubmit();
+        await checkNoteChoice("Usage");
+        created.resolve({ blockId: "SetupId" });
+        await settle();
+        await act(async () => {
+            container.querySelector(".modal")?.dispatchEvent(new Event("hidden.bs.modal"));
+        });
+        expect(createHeadingReference).toHaveBeenCalledExactlyOnceWith(
+            `notes/${note.noteId}/references/heading`, { index: 0, text: "Setup" }
+        );
+        expect(addLink).toHaveBeenCalledExactlyOnceWith(`${path}?block=SetupId`, null);
     });
 
     it("lists the editor's headings and anchors when the edited note is picked", async () => {
