@@ -1,9 +1,7 @@
-import { isImageAttachmentRole } from "@triliumnext/commons/src/lib/attachment_roles.js";
-import { CANVAS_ATTACHMENT_MIME, isFullWidthNoteType } from "@triliumnext/commons/src/lib/notes.js";
+import { isFullWidthNoteType } from "@triliumnext/commons/src/lib/notes.js";
 
 import type { EventData } from "../components/app_context.js";
 import type NoteContext from "../components/note_context.js";
-import type FAttachment from "../entities/fattachment.js";
 import type FNote from "../entities/fnote.js";
 import attributeService from "../services/attributes.js";
 import froca from "../services/froca.js";
@@ -98,7 +96,7 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
             `view-mode-${this.noteContext?.viewScope?.viewMode ?? "default"}`,
             note.getColorClass()
         );
-        if (isFullWidthNote(note) || isFullWidthAttachment(this.getOpenedAttachment())) {
+        if (isFullWidthNote(note) || this.isOpenedAttachmentFullWidth()) {
             classes.push("full-content-width");
         }
         if (note.isOptions()) classes.push("options");
@@ -109,6 +107,27 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
         if (isContentRightToLeft(note.getLabelValue("language"))) classes.push("rtl");
 
         return classes;
+    }
+
+    /**
+     * Whether the attachment shown on its own in the split takes the full width. Answers `false`
+     * until `attachment_roles.js` has loaded, then refreshes the split: only the attachment view
+     * needs that module, so it stays out of the startup path.
+     */
+    private isOpenedAttachmentFullWidth() {
+        const attachment = this.getOpenedAttachment();
+        if (!attachment) {
+            return false;
+        }
+        if (!attachmentRoles) {
+            void loadAttachmentRoles().then(() => {
+                if (this.noteContext?.viewScope?.attachmentId === attachment.attachmentId) {
+                    this.refresh();
+                }
+            });
+            return false;
+        }
+        return attachmentRoles.isFullWidthAttachment(attachment);
     }
 
     /** The attachment last asked of froca, so one that does not exist is not asked for again. */
@@ -155,6 +174,15 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
             this.refresh();
         }
     }
+}
+
+let attachmentRoles: typeof import("@triliumnext/commons/src/lib/attachment_roles.js") | undefined;
+let attachmentRolesLoad: Promise<void> | undefined;
+
+function loadAttachmentRoles() {
+    attachmentRolesLoad ??= import("@triliumnext/commons/src/lib/attachment_roles.js")
+        .then((module) => { attachmentRoles = module; });
+    return attachmentRolesLoad;
 }
 
 /** Classes set on the split by `SplitNoteContainer`, based on the split's position among its siblings. */
@@ -269,22 +297,6 @@ export function isAlwaysFullWidthByType(note: FNote) {
     }
 
     return false;
-}
-
-/**
- * Whether an attachment shown on its own takes the full width, as a note of the matching type
- * would: a picture as an image note, a drawing as a canvas, anything else as a file note.
- * Exported as a pure function for unit testing.
- */
-export function isFullWidthAttachment(attachment: FAttachment | null | undefined) {
-    if (!attachment) {
-        return false;
-    }
-
-    const type = isImageAttachmentRole(attachment.role) ? "image"
-        : attachment.mime === CANVAS_ATTACHMENT_MIME ? "canvas"
-            : "file";
-    return isFullWidthNoteType(type, attachment.mime);
 }
 
 /**

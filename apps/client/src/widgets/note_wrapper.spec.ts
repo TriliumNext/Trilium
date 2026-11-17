@@ -8,7 +8,7 @@ import froca from "../services/froca";
 import LoadResults from "../services/load_results";
 import { buildNote } from "../test/easy-froca";
 import NoteWrapperWidget, {
-    hasBackgroundEffects, isAlwaysFullWidthByType, isFullWidthAttachment, isFullWidthNote, markVisibleSplits
+    hasBackgroundEffects, isAlwaysFullWidthByType, isFullWidthNote, markVisibleSplits
 } from "./note_wrapper";
 
 describe("NoteWrapperWidget", () => {
@@ -220,22 +220,6 @@ describe("isAlwaysFullWidthByType", () => {
     });
 });
 
-describe("isFullWidthAttachment", () => {
-    it("takes the full width for an attachment the matching note type would", () => {
-        const attachment = (role: string, mime: string) => ({ role, mime }) as FAttachment;
-        for (const mime of [ "application/pdf", "video/mp4", "audio/ogg",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ]) {
-            expect(isFullWidthAttachment(attachment("file", mime))).toBe(true);
-        }
-        expect(isFullWidthAttachment(attachment("image", "image/png"))).toBe(true);
-        expect(isFullWidthAttachment(attachment("file", "application/vnd.excalidraw+json"))).toBe(true);
-
-        expect(isFullWidthAttachment(attachment("file", "application/zip"))).toBe(false);
-        expect(isFullWidthAttachment(attachment("file", "text/plain"))).toBe(false);
-        expect(isFullWidthAttachment(null)).toBe(false);
-    });
-});
-
 describe("NoteWrapperWidget attachment width", () => {
     afterEach(() => {
         delete froca.attachments.pdfAttachment;
@@ -243,15 +227,16 @@ describe("NoteWrapperWidget attachment width", () => {
         vi.restoreAllMocks();
     });
 
-    it("widens the split for an attachment opened on its own, not for its note", () => {
+    it("widens the split for an attachment opened on its own, not for its note", async () => {
         const note = buildNote({ title: "Owner", type: "text" });
         froca.attachments.pdfAttachment = { attachmentId: "pdfAttachment", role: "file", mime: "application/pdf" } as FAttachment;
         froca.attachments.zipAttachment = { attachmentId: "zipAttachment", role: "file", mime: "application/zip" } as FAttachment;
         const widget = new NoteWrapperWidget();
         widget.render();
 
+        // The first attachment opened waits for `attachment_roles.js`, which loads on demand.
         showAttachment(widget, note, "pdfAttachment");
-        expect(widget.$widget.hasClass("full-content-width")).toBe(true);
+        await vi.waitFor(() => expect(widget.$widget.hasClass("full-content-width")).toBe(true));
         showAttachment(widget, note, "zipAttachment");
         expect(widget.$widget.hasClass("full-content-width")).toBe(false);
         showNote(widget, note);
@@ -276,12 +261,15 @@ describe("NoteWrapperWidget attachment width", () => {
 
     it("follows the open attachment when a new file replaces it, and ignores other attachments", async () => {
         const note = buildNote({ title: "Owner", type: "text" });
-        const attachment = { attachmentId: "zipAttachment", ownerId: note.noteId, role: "file", mime: "application/zip" } as FAttachment;
+        const attachment = {
+            attachmentId: "zipAttachment", ownerId: note.noteId, role: "file",
+            mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        } as FAttachment;
         froca.attachments.zipAttachment = attachment;
         const widget = new NoteWrapperWidget();
         widget.render();
         showAttachment(widget, note, "zipAttachment");
-        expect(widget.$widget.hasClass("full-content-width")).toBe(false);
+        await vi.waitFor(() => expect(widget.$widget.hasClass("full-content-width")).toBe(true));
 
         const reload = async (attachmentId: string) => {
             const loadResults = new LoadResults([]);
@@ -289,12 +277,13 @@ describe("NoteWrapperWidget attachment width", () => {
             await widget.entitiesReloadedEvent({ loadResults });
         };
 
-        attachment.mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        attachment.mime = "application/zip";
         const refresh = vi.spyOn(widget, "refresh");
         await reload("otherAttachment");
         expect(refresh).not.toHaveBeenCalled();
-        await reload("zipAttachment");
         expect(widget.$widget.hasClass("full-content-width")).toBe(true);
+        await reload("zipAttachment");
+        expect(widget.$widget.hasClass("full-content-width")).toBe(false);
     });
 });
 
