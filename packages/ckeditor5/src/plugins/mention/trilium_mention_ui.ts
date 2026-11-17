@@ -305,12 +305,15 @@ export default class TriliumMentionUI extends Plugin {
             return null;
         }
 
+        // While the mention is awaited, the node after the caret is whatever followed the marker.
+        if (!followUp.mention && focus.isEqual(followUp.start)) {
+            return { followUp, mention: null, query: "" };
+        }
+
         const mention = followUp.start.nodeAfter;
 
         if (!mention?.is("element") || !this.editor.model.schema.isObject(mention)) {
-            const isAwaited = !followUp.mention && focus.isEqual(followUp.start);
-
-            return isAwaited ? { followUp, mention: null, query: "" } : null;
+            return null;
         }
 
         const queryStart = this.editor.model.createPositionAfter(mention);

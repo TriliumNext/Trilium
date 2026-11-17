@@ -69,7 +69,10 @@ export default function LinkMentionList({
     const page: Page = isOnDestinations ? "destinations" : "notes";
     const slide = useSlide(page);
 
-    const notes = useNoteMentions({ ...mentions, onPickNote: linkNote });
+    // The notes keep the query they were picked for, so the filter of the second page looks up
+    // no notes.
+    const notesQuery = isOnDestinations && picked ? picked.query : query;
+    const notes = useNoteMentions({ ...mentions, query: notesQuery, onPickNote: linkNote });
     const destinations = useMemo(() => listDestinations(targets), [ targets ]);
     const source = useCallback(
         async (text: string) => filterDestinations(destinations, text), [ destinations ]

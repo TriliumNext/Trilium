@@ -315,6 +315,8 @@ describe("LinkMentionList", () => {
         expect(rowNames()).toStrictEqual([ "*Usage" ]);
         expect(await press("Enter")).toBe(true);
         expect(onPick).toHaveBeenCalledExactlyOnceWith(`${alphaPath}?block=U`);
+        // The text typed after the link looks up no notes.
+        expect(getNoteSuggestions.mock.calls.map(([ term ]) => term)).toStrictEqual([ "al" ]);
     });
 
     it("opens on the first match, also where a later one is named as the text", async () => {

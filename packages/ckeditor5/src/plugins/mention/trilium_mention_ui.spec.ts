@@ -455,29 +455,32 @@ describe("TriliumMentionUI", () => {
         });
 
         it("waits for a mention that is inserted later, and takes no pick meanwhile", async () => {
-            await createChipEditor({ isDeferred: true });
-            // The line break after the caret is an element, and no mention.
-            setModelData(editor.model, "<paragraph>x []<softBreak></softBreak>y</paragraph>");
-            type("@al");
-            const stage = notes.state;
-            notes.state?.commitAndFollowUp(alpha);
+            // An element after the caret, such as a line break, or a mention there already, is
+            // not the mention awaited.
+            for (const after of [ "<softBreak></softBreak>", "<chip name=\"@old\"></chip>" ]) {
+                await createChipEditor({ isDeferred: true });
+                setModelData(editor.model, `<paragraph>x []${after}y</paragraph>`);
+                type("@al");
+                const stage = notes.state;
+                notes.state?.commitAndFollowUp(alpha);
 
-            expect(text()).toBe("<paragraph>x <softBreak></softBreak>y</paragraph>");
-            expect(notes.state).toBe(stage);
-            expect(notes.hide).not.toHaveBeenCalled();
-            // The list stays where the marker was.
-            expect(stage?.caretRect().height).toBeGreaterThan(0);
-            notes.state?.commit(beta);
-            notes.state?.commitAndFollowUp(beta);
-            expect(text()).toBe("<paragraph>x <softBreak></softBreak>y</paragraph>");
+                expect(text()).toBe(`<paragraph>x ${after}y</paragraph>`);
+                expect(notes.state).toBe(stage);
+                expect(notes.hide).not.toHaveBeenCalled();
+                // The list stays where the marker was.
+                expect(stage?.caretRect().height).toBeGreaterThan(0);
+                notes.state?.commit(beta);
+                notes.state?.commitAndFollowUp(beta);
+                expect(text()).toBe(`<paragraph>x ${after}y</paragraph>`);
 
-            insertLater?.();
-            expect(text()).toBe(
-                "<paragraph>x <chip name=\"@alpha\"></chip><softBreak></softBreak>y</paragraph>"
-            );
-            expect(notes.state).toMatchObject({ query: "", followUpOf: alpha });
-            expect(isMarked(chipElements()[0])).toBe(true);
-            expect(notes.hide).not.toHaveBeenCalled();
+                insertLater?.();
+                expect(text()).toBe(`<paragraph>x <chip name="@alpha"></chip>${after}y</paragraph>`);
+                expect(notes.state).toMatchObject({ query: "", followUpOf: alpha });
+                expect(chipElements().map(isMarked)).toEqual(
+                    after.startsWith("<chip") ? [ true, false ] : [ true ]
+                );
+                expect(notes.hide).not.toHaveBeenCalled();
+            }
         });
 
         it("closes on a dismissal before the mention is in, which still arrives", async () => {
