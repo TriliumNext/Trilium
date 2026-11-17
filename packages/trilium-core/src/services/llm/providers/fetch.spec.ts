@@ -65,6 +65,7 @@ describe("fetchFailureReason", () => {
 
     it("falls back to the error itself when nothing more is known", () => {
         expect(fetchFailureReason(fetchFailed())).toBe("fetch failed");
+        expect(fetchFailureReason(fetchFailed(new AggregateError([], "")))).toBe("fetch failed");
         expect(fetchFailureReason(new TypeError("Failed to fetch"))).toBe("Failed to fetch");
         expect(fetchFailureReason("offline")).toBe("offline");
     });

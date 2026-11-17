@@ -194,6 +194,10 @@ describe("searchWeb overrides and sparse answers", () => {
 
         fetchMock.mockRejectedValueOnce("offline");
         expect(await run()).toMatchObject({ error: "Could not reach the search provider: offline" });
+
+        // `requestJson()` wraps a failure of `llmFetch()`, not one of `response.json()`.
+        fetchMock.mockResolvedValueOnce({ ok: true, json: () => Promise.reject("stream closed") });
+        expect(await run()).toMatchObject({ error: "stream closed" });
     });
 });
 

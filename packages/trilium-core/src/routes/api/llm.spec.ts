@@ -146,10 +146,15 @@ describe("testSearchProvider", () => {
 
     it("rejects a missing provider and reports a search failure as a validation error", async () => {
         await expect(testSearchProvider({ body: {} as never })).rejects.toThrow(/provider is required/);
+        await expect(testSearchProvider({} as never)).rejects.toThrow(/provider is required/);
 
         searchWeb.mockRejectedValueOnce(new Error("Could not reach the search provider: connect ECONNREFUSED 127.0.0.1:8888"));
         await expect(testSearchProvider({ body: { provider: "searxng", baseURL: "http://localhost:8888" } }))
             .rejects.toMatchObject({ name: "ValidationError", message: "Could not reach the search provider: connect ECONNREFUSED 127.0.0.1:8888" });
+
+        searchWeb.mockRejectedValueOnce("socket hang up");
+        await expect(testSearchProvider({ body: { provider: "searxng" } }))
+            .rejects.toMatchObject({ name: "ValidationError", message: "socket hang up" });
     });
 });
 
