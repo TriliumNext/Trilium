@@ -265,6 +265,7 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     // Answering a tool call is here: it reaches the turn by its stream id, whichever
     // transport streams it.
     asyncApiRoute(PST, "/api/llm-chat/provider-models", llmRoute.getProviderModels);
+    asyncApiRoute(PST, "/api/llm-chat/test-search-provider", llmRoute.testSearchProvider);
     apiRoute(PST, "/api/llm-chat/tool-approval", llmRoute.answerToolCall);
 
     apiRoute(GET, "/api/autocomplete", autocompleteApiRoute.getAutocomplete);

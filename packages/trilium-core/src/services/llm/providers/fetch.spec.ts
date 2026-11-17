@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { initRequest } from "../../request.js";
 import { fakeRequestProvider } from "../../../test/request_provider.js";
-import { llmFetch } from "./fetch.js";
+import { fetchFailureReason, llmFetch } from "./fetch.js";
 
 describe("llmFetch", () => {
     const fetchApi = vi.fn(async () => new Response("{}"));
@@ -45,5 +45,28 @@ describe("llmFetch", () => {
     it("refuses a Request, whose body it would have to consume to read", async () => {
         await expect(llmFetch(new Request("https://api.example.com/v1/models"))).rejects.toThrow(/does not accept a Request/);
         expect(fetchApi).not.toHaveBeenCalled();
+    });
+});
+
+describe("fetchFailureReason", () => {
+    const fetchFailed = (cause?: unknown) => new TypeError("fetch failed", { cause });
+
+    it("reads the network error behind undici's generic \"fetch failed\"", () => {
+        expect(fetchFailureReason(fetchFailed(new Error("connect ECONNREFUSED 192.168.1.10:8080"))))
+            .toBe("connect ECONNREFUSED 192.168.1.10:8080");
+        const bothFamilies = Object.assign(new AggregateError([
+            new Error("connect ECONNREFUSED ::1:11434"),
+            new Error("connect ECONNREFUSED 127.0.0.1:11434")
+        ], ""), { code: "ECONNREFUSED" });
+        expect(fetchFailureReason(fetchFailed(bothFamilies)))
+            .toBe("connect ECONNREFUSED ::1:11434; connect ECONNREFUSED 127.0.0.1:11434");
+        expect(fetchFailureReason(fetchFailed(Object.assign(new Error(""), { code: "ECONNRESET" })))).toBe("ECONNRESET");
+    });
+
+    it("falls back to the error itself when nothing more is known", () => {
+        expect(fetchFailureReason(fetchFailed())).toBe("fetch failed");
+        expect(fetchFailureReason(fetchFailed(new AggregateError([], "")))).toBe("fetch failed");
+        expect(fetchFailureReason(new TypeError("Failed to fetch"))).toBe("Failed to fetch");
+        expect(fetchFailureReason("offline")).toBe("offline");
     });
 });

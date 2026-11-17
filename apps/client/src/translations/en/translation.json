@@ -4514,7 +4514,16 @@
     "add_model_provider": "Add Model Provider",
     "no_model_providers_configured": "No model providers configured yet.",
     "provider_no_models": "No models selected, so it isn't offered in the chat.",
-    "search_provider_unavailable_standalone": "Unavailable in the browser version: this service refuses requests made from a web page, so it can only be used from the desktop or server version."
+    "search_provider_unavailable_standalone": "Unavailable in the browser version: this service refuses requests made from a web page, so it can only be used from the desktop or server version.",
+    "search_check_heading": "Test search",
+    "search_check_running": "Running a test search…",
+    "search_check_passed": "The search provider works. These are the first results of a test search:",
+    "search_check_no_results": "The search provider answered, but found nothing for a test search. It may have no search engines enabled.",
+    "search_check_failed": "The test search failed: {{error}}",
+    "search_check_failed_hint": "You can still add the provider, for example to set it up before its service is running.",
+    "add_provider_anyway": "Add anyway",
+    "save_anyway": "Save anyway",
+    "retry": "Retry"
   },
   "common": {
     "save": "Save",

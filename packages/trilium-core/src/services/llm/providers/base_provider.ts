@@ -9,7 +9,7 @@ import { type FilePart, generateText, type ImagePart, type LanguageModel, type M
 import { getLog } from "../../log.js";
 import { trimTrailingSlashes } from "../../utils/index.js";
 import { attachmentPlaceholder, resolveAttachmentPart } from "../attachment_content.js";
-import { llmFetch } from "./fetch.js";
+import { fetchFailureReason, llmFetch } from "./fetch.js";
 import { buildNoteHint } from "../note_hint.js";
 import { buildSystemPrompt as composeSystemPrompt } from "../system_prompt.js";
 import { TOOL_CALL_DECLINED_REASON } from "../tool_approval.js";
@@ -247,7 +247,12 @@ export abstract class BaseProvider implements LlmProvider {
      * API key (or base URL) is wrong rather than a generic HTTP error.
      */
     protected async fetchJson(url: string, headers: Record<string, string>): Promise<unknown> {
-        const response = await llmFetch(url, { headers, signal: AbortSignal.timeout(MODEL_LIST_TIMEOUT_MS) });
+        let response: Response;
+        try {
+            response = await llmFetch(url, { headers, signal: AbortSignal.timeout(MODEL_LIST_TIMEOUT_MS) });
+        } catch (e) {
+            throw new Error(`Could not reach ${url}: ${fetchFailureReason(e)}`);
+        }
         if (!response.ok) {
             if (response.status === 401 || response.status === 403) {
                 throw new Error(`Authentication failed (HTTP ${response.status}) — check the API key${this.baseURL ? " and base URL" : ""}.`);

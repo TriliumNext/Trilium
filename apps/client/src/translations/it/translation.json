@@ -3354,8 +3354,7 @@
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "Rimuovi dalla barra di avvio",
     "configure_launch_bar": "Configura la barra di avvio",
-    "launch_bar_orientation": "Orientamento della barra di avvio",
-    "will_reload_frontend": "(ricaricherà l'app)"
+    "launch_bar_orientation": "Orientamento della barra di avvio"
   },
   "link": {
     "failed_to_open": "Impossibile aprire il link '{{- href}}': {{- message}}"
@@ -3538,7 +3537,6 @@
       "markdown-import-from-clipboard": "Importazione Markdown dagli appunti",
       "math-editor-unavailable": "Editor matematico non disponibile",
       "math-equation": "equazione matematica",
-      "medium": "Media",
       "mermaid-diagram": "Diagramma Mermaid",
       "mermaid-diagram-0": "Diagramma Mermaid: %0",
       "missing-definition": "(definizione mancante)",
@@ -3622,7 +3620,6 @@
       "ascending": "Ascendente",
       "descending": "Discendente",
       "some-rows-were-sorted-together-because-merged-cells-tie-them-to-each-other": "Alcune righe sono state raggruppate perché le celle unite le collegano tra loro",
-      "tiny": "Minuscolo",
       "more-actions": "Altre azioni"
     },
     "task-state-dropped-title": "Stati di attività non validi",

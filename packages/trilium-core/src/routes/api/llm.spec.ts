@@ -21,6 +21,8 @@ const state = vi.hoisted(() => ({
     sent: [] as WebSocketMessage[]
 }));
 
+const searchWeb = vi.hoisted(() => vi.fn());
+
 // The route reaches the provider registry through a dynamic import, so that the
 // AI SDK stays out of the startup chunk; mocking the module id covers it either way.
 vi.mock("../../services/llm/index.js", () => ({
@@ -30,6 +32,8 @@ vi.mock("../../services/llm/index.js", () => ({
         return state.models;
     }
 }));
+
+vi.mock("../../services/llm/web_search.js", () => ({ searchWeb }));
 
 vi.mock("../../services/llm/chat.js", () => ({
     async *runChat(streamId: string, _messages: unknown, _config: unknown, signal?: AbortSignal) {
@@ -47,7 +51,7 @@ import { closeToolApprovals, openToolApprovals } from "../../services/llm/tool_a
 import { getLog } from "../../services/log.js";
 import ws from "../../services/ws.js";
 
-import { abortChatStream, answerToolCall, getProviderModels, startChatStream } from "./llm.js";
+import { abortChatStream, answerToolCall, getProviderModels, startChatStream, testSearchProvider } from "./llm.js";
 
 /**
  * Poll until the completion — which runs detached from the request that started
@@ -126,6 +130,31 @@ describe("getProviderModels", () => {
         state.throws = "socket hang up";
         await expect(getProviderModels({ body: { provider: "openai", apiKey: "k" } }))
             .rejects.toThrow("socket hang up");
+    });
+});
+
+describe("testSearchProvider", () => {
+    const result = (n: number) => ({ title: `Page ${n}`, url: `https://example.com/${n}`, snippet: "" });
+
+    it("runs the test query with the credentials in the body and returns the first three results", async () => {
+        searchWeb.mockResolvedValueOnce([ result(1), result(2), result(3), result(4) ]);
+        await expect(testSearchProvider({ body: { provider: "searxng", baseURL: "http://localhost:8888" } }))
+            .resolves.toEqual({ results: [ result(1), result(2), result(3) ] });
+        expect(searchWeb).toHaveBeenCalledWith(
+            { provider: "searxng", apiKey: "", baseURL: "http://localhost:8888" }, "Trilium Notes");
+    });
+
+    it("rejects a missing provider and reports a search failure as a validation error", async () => {
+        await expect(testSearchProvider({ body: {} as never })).rejects.toThrow(/provider is required/);
+        await expect(testSearchProvider({} as never)).rejects.toThrow(/provider is required/);
+
+        searchWeb.mockRejectedValueOnce(new Error("Could not reach the search provider: connect ECONNREFUSED 127.0.0.1:8888"));
+        await expect(testSearchProvider({ body: { provider: "searxng", baseURL: "http://localhost:8888" } }))
+            .rejects.toMatchObject({ name: "ValidationError", message: "Could not reach the search provider: connect ECONNREFUSED 127.0.0.1:8888" });
+
+        searchWeb.mockRejectedValueOnce("socket hang up");
+        await expect(testSearchProvider({ body: { provider: "searxng" } }))
+            .rejects.toMatchObject({ name: "ValidationError", message: "socket hang up" });
     });
 });
 

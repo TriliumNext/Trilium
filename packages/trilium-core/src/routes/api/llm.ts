@@ -1,6 +1,7 @@
 /**
  * The LLM endpoints' handlers. Where each is *registered* differs by runtime, so
- * only {@link getProviderModels} and {@link answerToolCall} are in the shared route table.
+ * only {@link getProviderModels}, {@link testSearchProvider} and {@link answerToolCall} are in the
+ * shared route table.
  *
  * Streaming has no shared form. The server and the desktop app answer
  * `/api/llm-chat/stream` with Server-Sent Events (that route lives in
@@ -21,7 +22,7 @@ import { getLog } from "../../services/log.js";
 import { safeExtractMessageAndStackFromError } from "../../services/utils/index.js";
 import ws from "../../services/ws.js";
 
-interface ProviderModelsRequest {
+interface ProviderCredentialsRequest {
     provider: string;
     apiKey?: string;
     baseURL?: string;
@@ -38,7 +39,7 @@ interface ChatStreamRequest {
  * model-selection screen while adding or editing a provider — the config need
  * not be saved yet, so credentials come in the request body rather than by id.
  */
-export async function getProviderModels(req: { body: ProviderModelsRequest }) {
+export async function getProviderModels(req: { body: ProviderCredentialsRequest }) {
     const { provider, apiKey, baseURL } = req.body;
     if (!provider) {
         throw new ValidationError("provider is required");
@@ -60,6 +61,32 @@ export async function getProviderModels(req: { body: ProviderModelsRequest }) {
         throw new ValidationError(error instanceof Error ? error.message : String(error));
     }
 }
+
+/**
+ * Run {@link SEARCH_TEST_QUERY} through a search provider described by raw credentials and return
+ * the first {@link SEARCH_TEST_RESULTS} results. Used by the check step of the search provider
+ * wizard, before the configuration is saved.
+ */
+export async function testSearchProvider(req: { body: ProviderCredentialsRequest }) {
+    const { provider, apiKey, baseURL } = req.body ?? {};
+    if (!provider) {
+        throw new ValidationError("provider is required");
+    }
+
+    // Imported here, as in `getProviderModels()`, to keep the AI SDK out of the startup path.
+    const { searchWeb } = await import("../../services/llm/web_search.js");
+
+    try {
+        const results = await searchWeb({ provider, apiKey: apiKey ?? "", baseURL }, SEARCH_TEST_QUERY);
+        return { results: results.slice(0, SEARCH_TEST_RESULTS) };
+    } catch (error) {
+        throw new ValidationError(error instanceof Error ? error.message : String(error));
+    }
+}
+
+/** The query the search provider check runs. */
+const SEARCH_TEST_QUERY = "Trilium Notes";
+const SEARCH_TEST_RESULTS = 3;
 
 /**
  * Start a chat completion whose chunks arrive as `llm-stream` messages rather
@@ -163,6 +190,7 @@ async function streamToClients(
 
 export default {
     getProviderModels,
+    testSearchProvider,
     startChatStream,
     answerToolCall,
     abortChatStream
