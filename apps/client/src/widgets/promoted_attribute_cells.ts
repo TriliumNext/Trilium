@@ -69,6 +69,11 @@ export function buildPromotedCells(note: FNote): Cell[] {
         const [ valueType, valueName ] = extractAttributeDefinitionTypeAndName(definitionAttr.name);
         const definition = definitionAttr.getDefinition();
         const held = ownedAttributes.filter((el) => el.name === valueName && el.type === valueType) as Attribute[];
+        // A value the note does not hold itself may still come from a parent or template, in which
+        // case that is the value it shows.
+        const effective = held.length || definition.multiplicity === "multi"
+            ? held
+            : note.getAttributes(valueType, valueName) as Attribute[];
         const blank: Attribute = {
             attributeId: "",
             type: valueType,
@@ -91,15 +96,16 @@ export function buildPromotedCells(note: FNote): Cell[] {
             continue;
         }
 
-        let valueAttrs = held.length ? held : [ blank ];
+        let valueAttrs = effective.length ? effective : [ blank ];
         if (definition.multiplicity === "single") {
             valueAttrs = valueAttrs.slice(0, 1);
         }
 
-        for (const valueAttr of valueAttrs) {
-            // if not owned, we'll force creation of a new attribute instead of updating the inherited one
+        for (let valueAttr of valueAttrs) {
+            // if not owned, we'll force creation of a new attribute instead of updating the inherited one;
+            // done on a copy so that the inherited attribute keeps its id
             if (valueAttr.noteId !== note.noteId) {
-                valueAttr.attributeId = "";
+                valueAttr = { ...valueAttr, attributeId: "" };
             }
 
             cells.push({ definitionAttr, definition, valueAttr, valueName, uniqueId: randomString() });

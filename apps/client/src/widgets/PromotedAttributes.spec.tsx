@@ -94,6 +94,25 @@ describe("buildPromotedCells", () => {
         expect(cells[1].valueAttr.value).toBe("open");
     });
 
+    it("shows the value a single-valued field inherits from a parent, without touching the inherited attribute", () => {
+        const parent = buildNote({
+            title: "Parent",
+            "#label:done(inheritable)": "promoted,single,boolean",
+            "#done(inheritable)": "true",
+            children: [ { title: "Child" } ]
+        });
+        const child = froca.notes[parent.children[0]];
+
+        const [ cell ] = buildPromotedCells(child);
+
+        expect(cell.valueName).toBe("done");
+        expect(cell.valueAttr.value).toBe("true");
+        // Edited on the child, it is written as a new attribute of its own...
+        expect(cell.valueAttr.attributeId).toBe("");
+        // ...and the parent's attribute keeps its id.
+        expect(parent.getOwnedAttributes("label", "done")[0].attributeId).not.toBe("");
+    });
+
     it("shows the values in the order the note holds them, whichever order they were loaded in", () => {
         const note = buildNote({ title: "Task", "#label:tags": "promoted,multi,text" });
         hold(note, "label", "tags", "second", 20);
