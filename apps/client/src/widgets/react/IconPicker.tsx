@@ -335,7 +335,9 @@ function useFilteredIcons(allIcons: IconWithName[] | undefined, search: string |
                 }
 
                 if (processedSearch) {
-                    if (!icon.terms?.some((t) => t.includes(processedSearch))) {
+                    // The query is lowercased, so the terms must be too: custom icon packs may
+                    // spell them with capitals ("Proxmox"), which would otherwise never match.
+                    if (!icon.terms?.some((t) => t.toLowerCase().includes(processedSearch))) {
                         return false;
                     }
                 }
