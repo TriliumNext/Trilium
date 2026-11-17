@@ -1,7 +1,7 @@
 import {
     _getModelData as getModelData, _setModelData as setModelData, type ClassicEditor
 } from "ckeditor5";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, onTestFinished } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import {
@@ -88,6 +88,25 @@ describe("CollapsibleHeadingsUI", () => {
         await expect.poll(() => arrow(beta).visibility).toBe("visible");
         // The empty alternative text of the glyph.
         expect(arrow(beta).content).toMatch(/ \/ ""$/);
+    });
+
+    it("takes a press right after the text with the plain heading style", async () => {
+        document.body.classList.add("heading-style-plain");
+        onTestFinished(() => document.body.classList.remove("heading-style-plain"));
+        const beta = getHeading("Beta");
+        const rect = beta.getBoundingClientRect();
+        const range = document.createRange();
+        range.selectNodeContents(beta);
+        const text = range.getBoundingClientRect();
+        const em = parseFloat(getComputedStyle(beta).fontSize);
+
+        await userEvent.click(locate("Beta"), { position: arrowOf(beta) });
+        expect(outline(editor)).toBe("intro, ▸Alpha, (a1), Beta, b1, Gamma");
+
+        await userEvent.click(locate("Beta"), { position: {
+            x: text.right - rect.left + 0.85 * em, y: text.top - rect.top + text.height / 2
+        } });
+        expect(outline(editor)).toBe("intro, ▸Alpha, (a1), ▸Beta, (b1), Gamma");
     });
 
     it("leaves the arrow alone while a button is held, as in a drag that selects text", () => {
