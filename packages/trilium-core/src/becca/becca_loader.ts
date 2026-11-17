@@ -446,12 +446,12 @@ function attributeDeleted(attributeId: string) {
         }
 
         note.ownedAttributes = note.ownedAttributes.filter((attr) => attr.attributeId !== attribute.attributeId);
+    }
 
-        const targetNote = attribute.targetNote;
+    const targetNote = attribute.targetNote;
 
-        if (targetNote) {
-            targetNote.targetRelations = targetNote.targetRelations.filter((rel) => rel.attributeId !== attribute.attributeId);
-        }
+    if (targetNote) {
+        targetNote.targetRelations = targetNote.targetRelations.filter((rel) => rel.attributeId !== attribute.attributeId);
     }
 
     delete becca.attributes[attribute.attributeId];
@@ -476,17 +476,21 @@ function attributeUpdated(attributeRow: BAttribute) {
     }
 }
 
-function noteReorderingUpdated(branchIdList: number[]) {
-    const parentNoteIds = new Set();
+function noteReorderingUpdated(branchIdList: Record<string, number> | number[]) {
+    const parentNoteIds = new Set<string>();
 
     for (const branchId in branchIdList) {
         const branch = becca.branches[branchId];
 
         if (branch) {
-            branch.notePosition = branchIdList[branchId];
+            branch.notePosition = (branchIdList as Record<string, number>)[branchId];
 
             parentNoteIds.add(branch.parentNoteId);
         }
+    }
+
+    for (const parentNoteId of parentNoteIds) {
+        becca.notes[parentNoteId]?.sortChildren();
     }
 }
 
@@ -512,8 +516,14 @@ function restoreAfterSavepointRollback(writes: SavepointWrite[]) {
 
     const sql = getSql();
     const toRestore = new Map<string, Set<string>>();
+    const reorderedParentNoteIds = new Set<string>();
 
     for (const { entityName, entityId } of writes) {
+        if (entityName === "note_reordering") {
+            reorderedParentNoteIds.add(entityId);
+            continue;
+        }
+
         if (!CACHED_ENTITY_NAME_SET.has(entityName)) {
             continue;
         }
@@ -526,7 +536,9 @@ function restoreAfterSavepointRollback(writes: SavepointWrite[]) {
         ids.add(entityId);
     }
 
-    // Notes first, so that a branch or attribute brought back finds the note it belongs to.
+    const toApply: Array<{ entityName: string; row: Record<string, unknown> }> = [];
+    const toRemoveByEntity = new Map<string, string[]>();
+
     for (const entityName of CACHED_ENTITY_NAMES) {
         const ids = toRestore.get(entityName);
         if (!ids || ids.size === 0) {
@@ -537,6 +549,7 @@ function restoreAfterSavepointRollback(writes: SavepointWrite[]) {
         const pk = EntityClass.primaryKeyName;
         const idList = Array.from(ids);
         const foundIds = new Set<string>();
+        const removeIds: string[] = [];
 
         for (let i = 0; i < idList.length; i += 500) {
             const chunk = idList.slice(i, i + 500);
@@ -551,18 +564,50 @@ function restoreAfterSavepointRollback(writes: SavepointWrite[]) {
                 foundIds.add(entityId);
 
                 if (!row.isDeleted) {
-                    applyEntityRow(entityName, row);
+                    toApply.push({ entityName, row });
                 } else {
-                    removeEntity(entityName, entityId);
+                    removeIds.push(entityId);
                 }
             }
         }
 
         for (const entityId of idList) {
             if (!foundIds.has(entityId)) {
-                removeEntity(entityName, entityId);
+                removeIds.push(entityId);
             }
         }
+
+        if (removeIds.length > 0) {
+            toRemoveByEntity.set(entityName, removeIds);
+        }
+    }
+
+    // Apply existing rows with notes first, so a restored branch or attribute finds the note it belongs to.
+    for (const { entityName, row } of toApply) {
+        applyEntityRow(entityName, row);
+    }
+
+    // Remove rolled-back creations/deletions in reverse order (attributes and branches before notes),
+    // so link and branch cleanup runs while the owner note still exists in becca.
+    for (let i = CACHED_ENTITY_NAMES.length - 1; i >= 0; i--) {
+        const entityName = CACHED_ENTITY_NAMES[i];
+        const removeIds = toRemoveByEntity.get(entityName);
+        if (!removeIds) {
+            continue;
+        }
+
+        for (const entityId of removeIds) {
+            removeEntity(entityName, entityId);
+        }
+    }
+
+    for (const parentNoteId of reorderedParentNoteIds) {
+        const branchPositions = sql.getMap<string, number>(
+            `SELECT branchId, notePosition FROM branches WHERE isDeleted = 0 AND parentNoteId = ?`,
+            [parentNoteId]
+        );
+        noteReorderingUpdated(branchPositions);
+        becca.notes[parentNoteId]?.sortChildren();
     }
 }
 

@@ -168,6 +168,8 @@ function sortNotes(
             return (hasA ? -1 : 1) * (group === "last" ? -1 : 1);
         }
 
+        sql.recordSavepointWrite("note_reordering", parentNoteId);
+
         notes.sort((a, b) => {
             for (const level of levels) {
                 const result = level.group
