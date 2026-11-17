@@ -3683,6 +3683,8 @@
     "emoji_completion_description": "Emojis can be easily inserted into text by typing `:`, followed by the name of an emoji.",
     "note_completion_enabled": "Note auto-completion",
     "note_completion_description": "Links to notes can be created by typing `@` followed by the title of a note.",
+    "note_completion_link_targets_enabled": "Suggest headings and anchors to link to",
+    "note_completion_link_targets_description": "After selecting a note, also suggest a heading or anchor as a destination within the target note.",
     "slash_commands_enabled": "Slash commands",
     "slash_commands_description": "Editing commands such as inserting line breaks or headings can be toggled by typing `/`.",
     "content_hints_enabled": "Content hints",

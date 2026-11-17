@@ -133,6 +133,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "textNoteCustomReplacements",
     "textNoteEmojiCompletionEnabled",
     "textNoteCompletionEnabled",
+    "textNoteCompletionLinkTargetsEnabled",
     "textNoteSlashCommandsEnabled",
     "mathFieldEnabled",
     "textNoteContentHintsEnabled",
