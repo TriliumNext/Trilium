@@ -11,6 +11,7 @@
     "@ai-sdk/anthropic": "4.0.104",
     "@ai-sdk/deepseek": "3.0.86",
     "@ai-sdk/google": "4.0.120",
+    "@ai-sdk/mistral": "4.0.87",
     "@ai-sdk/openai": "4.0.117",
     "@braintree/sanitize-url": "7.1.2",
     "@openrouter/ai-sdk-provider": "3.1.0",
