@@ -68,7 +68,8 @@
     }
 
     .edit-link-targets {
-        max-height: 240px;
+        --edit-link-targets-height: 240px;
+        max-height: var(--edit-link-targets-height);
         overflow-y: auto;
 
         .tn-card-choice {
@@ -89,6 +90,10 @@
                 outline-offset: -2px;
             }
         }
+    }
+
+    .edit-link-note-targets {
+        height: var(--edit-link-targets-height);
     }
 
     .edit-link-headings {

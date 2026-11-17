@@ -61,8 +61,6 @@
     "note": "Note",
     "search_note": "search for note by its name",
     "link_title": "Link title",
-    "anchor": "Anchor (optional)",
-    "anchor_none": "None (link to note)",
     "button_add_link": "Insert link",
     "button_edit_link": "Save link",
     "button_fix_link": "Fix link",
@@ -86,7 +84,11 @@
     "no_headings_or_anchors": "This note doesn't contain any headings or anchors.",
     "title_from_heading": "If not set, will always reflect the heading's text",
     "retrieving_from_page": "Retrieving from the web page...",
-    "title_from_attachment": "If not set, will always reflect the attachment's title"
+    "title_from_attachment": "If not set, will always reflect the attachment's title",
+    "top_of_note": "Top of the note",
+    "select_note_for_targets": "Select a note to show the headings and anchors you can link to.",
+    "inspecting_note": "Inspecting note structure",
+    "heading_reference_failed": "Unable to create reference to the given heading"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Edit branch prefix",

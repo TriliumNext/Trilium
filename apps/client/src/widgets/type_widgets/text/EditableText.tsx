@@ -28,6 +28,7 @@ import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import link, { parseNavigationStateFromUrl, type ViewScope } from "../../../services/link";
 import type LoadResults from "../../../services/load_results";
+import { getNoteIdFromUrl } from "../../../services/navigation_state";
 import note_create from "../../../services/note_create";
 import { consumeSearchTerms } from "../../../services/search_jump";
 import toast from "../../../services/toast";
@@ -646,6 +647,7 @@ export function getEditLinkOpts(
 
     const anchors = api.getAnchors();
     const headings = notePath ? getLinkHeadings(api, notePath) : undefined;
+    const noteId = getNoteIdFromUrl(notePath) ?? undefined;
     const currentLink = api.getCurrentLink();
     if (currentLink) {
         const currentHeading = notePath && headings
@@ -660,6 +662,7 @@ export function getEditLinkOpts(
             isMedia: currentLink.isMedia,
             anchors,
             headings,
+            noteId,
             ...(currentHeading ? { currentHeading } : parseLinkHref(currentLink.href, anchors)),
             async addLink(notePath, linkTitle, externalLink) {
                 await ready();
@@ -676,6 +679,7 @@ export function getEditLinkOpts(
         display,
         anchors,
         headings,
+        noteId,
         async addLink(notePath, linkTitle, externalLink) {
             await ready();
             api.addLink(notePath, linkTitle, externalLink);

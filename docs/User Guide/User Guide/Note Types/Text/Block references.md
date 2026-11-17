@@ -33,6 +33,15 @@ When the link title is not set, the link displays the text of the heading. If th
 
 The link is a block reference to the heading, so it keeps working when the heading is moved. To change the link, click it and press the <span class="tn-icon cke cke-pencil"></span> _Edit link_ button in its popup. For a link with a title of its own, placing the cursor inside it and pressing <kbd>Ctrl</kbd>+<kbd>K</kbd> works too. The dialog opens on _Heading / anchor_, with the heading checked. Emptying the _Link title_ there makes the link display the text of the heading again.
 
+### A heading of another note
+
+Since v0.108.0, a link can point at a heading of another note too:
+
+*   In the _Add link_ dialog, pick the note on the _Note_ page. Its headings and anchors are listed below the _Link title_, after _Top of the note_.
+*   Under _Headings_, click the desired heading to check it, then press <kbd>Enter</kbd> or _Insert link_. The link can be inserted before the list appears; it then links to the note itself.
+
+This link is a block reference too. Linking to the heading saves an invisible identifier in it, also when that note is read-only. If the heading cannot be referenced, for example because it was changed in the meantime, an error is shown and the dialog stays open.
+
 ## Following a reference
 
 Clicking a block reference opens the note, scrolls to the referenced blocks and flashes them. If a referenced block was deleted, an error message is shown instead, along with the blocks of the range that still exist.
