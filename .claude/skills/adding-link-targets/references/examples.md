@@ -22,9 +22,16 @@ change.
 | The view | Computes the same slugs to find the heading | The renderer reads `{#id}`, strips it and puts the id on the heading |
 
 With `bookmark`, `consumeBookmark()` finds the heading by `id` in a rendered preview if the
-renderer gives headings slug ids. With a new parameter, add it to `TARGET_PARAMS`, `ViewScope` and
-`VIEW_SCOPE_PARAMS`. With `block`, `loadReferenceLinkTitle()` and the block excerpt code read text
-note HTML and need a Markdown branch before `isTitleMirrored` holds for these links.
+renderer gives headings slug ids. With a new parameter, add it to `TARGET_PARAMS` and follow the
+steps of SKILL.md, "Navigation" (`ViewScope`, `VIEW_SCOPE_PARAMS`, `calculateHash()`,
+`useFollowLinksWithin()`). With `block`, `loadReferenceLinkTitle()`, `getReferenceLinkTitleSync()`
+and the block excerpt code read text note HTML and need a Markdown branch before
+`isTitleMirrored` holds for these links.
+
+With ids in the source, the same id can occur twice (a heading copied with its `{#id}`). Read it as
+`text.ts` does: the id counts on the first heading only, a later heading with it is listed without
+`params`, and `createReference` writes a new `{#id}` for it. The renderer must keep the first one
+too, or links land on the wrong heading.
 
 ### The provider
 

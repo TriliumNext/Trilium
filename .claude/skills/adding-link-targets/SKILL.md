@@ -10,8 +10,10 @@ description: >-
   `ReferenceKind`, `REFERENCE_KINDS`, `ReferenceParams`), the client model in
   `apps/client/src/services/link_targets.ts` (`LinkTarget`, `LINK_TARGET_KINDS`, `TARGET_PARAMS`,
   `getLinkTargets()`), the lists that show targets (`LinkTargetList`, `LinkMentionList`, the
-  dialog), and the navigation side (`ViewScope`, `VIEW_SCOPE_PARAMS`, the type widget that
-  scrolls to the target, reference link titles). Also load it before changing any of those files.
+  dialog), and the navigation side (`ViewScope`, `VIEW_SCOPE_PARAMS`, `calculateHash()`, the type
+  widget that scrolls to the target, `useSameNoteSwitch()`, `EmbeddedNotePane`'s link takeover,
+  reference link labels, link parameters on shared pages). Also load it before changing any of
+  those files.
 ---
 
 # Adding link targets
@@ -44,7 +46,11 @@ Markdown heading and a DOCX heading are both of kind `heading`.
 | Card list | `apps/client/src/widgets/react/LinkTargetList.tsx` | One card per kind, nesting by `level`; `useLinkDestinationKeys()` for a host that keeps the focus |
 | `@` list | `apps/client/src/widgets/react/LinkMentionList.tsx` | Second page of the note list: a menu header per kind, filtering by title |
 | Link dialog | `apps/client/src/widgets/dialogs/edit_link.tsx` | Note page (targets of the note picked) and Heading / anchor page (the editor's own document) |
-| Navigation | `apps/client/src/services/navigation_state.ts` | `ViewScope` fields and `VIEW_SCOPE_PARAMS`, which a link parameter must be part of |
+| Navigation | `apps/client/src/services/navigation_state.ts` | `ViewScope` fields and `VIEW_SCOPE_PARAMS`, which a link parameter must be part of; `calculateHash()` |
+| Landing | `apps/client/src/widgets/react/hooks/note_context.ts` | `useSameNoteSwitch()`, for a link to the note a widget already shows |
+| Note panes of views | `apps/client/src/widgets/EmbeddedNotePane.tsx` | `useFollowLinksWithin()`, which leaves links with a target parameter to normal navigation |
+| Link labels | `apps/client/src/services/link.ts` | `loadReferenceLinkTitle()` (the label on screen), `getReferenceLinkTitleSync()` (the text saved in the `<a>`) |
+| Shared pages | `packages/trilium-core/src/share/content_renderer.ts` | `handleAttachmentLink()` (link hrefs), `getLinkedHeadingText()` (labels) |
 
 ## How a target travels
 
@@ -122,15 +128,30 @@ Rules:
   kind, as `findTargets` lists them) and `request.title`, and returns `null` when nothing matches
   (409). Match like `findHeading()` in `text.ts`: the target at `index` while its title is still
   `title`, otherwise the only target of that kind with that title.
+- **A target that has a reference already gets it back.** The list the client shows can be older
+  than the content: another window or a sync can have given the target a reference since. Return
+  its `params` with the same `content`, as `createReference` in `text.ts` returns the id a heading
+  has, so repeated and concurrent POSTs write once.
 - **Return the same `content` when nothing changes**, so the note is not saved again. The registry
-  saves with `note.setContent()`: no revision, no `saveLinks()`.
+  saves with `note.setContent()`: no revision, no `saveLinks()`, and `dateModified` moves as for
+  any change of the content.
+- **A reference counts only where it first occurs**, since the view scrolls to the first match.
+  List a target whose reference an earlier one also carries without `params`, and let
+  `createReference` give it a new one in front of the old (`takenIds` in `text.ts`): the first of
+  two equal attributes wins in browsers, in CKEditor and in `node-html-parser`. Draw a new id
+  again while it occurs anywhere in the content.
 - **Change only the bytes you mean to.** `node-html-parser` rewrites every attribute of an element
   it modifies and corrupts backslashes in them; splice the stored string at `range` offsets, as
   `insertBlockId()` does.
 - **Never put a title in an error message**: 4xx messages reach the backend log, and the title can
   come from a protected note. Name the note id, the kind and the index.
 - **Large content**: test a cheap regular expression before parsing (`MAY_HOLD_REFERENCES` in
-  `text.ts`), and walk deep trees with an explicit stack, not recursion.
+  `text.ts`), and walk deep trees with an explicit stack, not recursion: a recursive walk
+  overflows on content nested 20,000 levels deep.
+- **No cache.** The text provider parses on every request, about 12 ms per 100 KiB of content
+  dense with headings.
+  If a parser costs enough to need a cache, key it by `blobId` and leave protected notes out, or
+  their decrypted titles stay in memory after the protected session ends.
 
 What the registry does for every provider:
 
@@ -194,9 +215,19 @@ The routes take a note. For PDF or DOCX attachments:
 
 ### `isTitleMirrored` and reference link titles
 
-A link without a text of its own is a reference link: its text follows the note title, or for a
-`?block=` link the text of the block (`loadReferenceLinkTitle()` in `services/link.ts`, and the
-Markdown chip in `resolveWikilinkChip()`, `type_widgets/markdown/editor_utils.ts`).
+A link without a text of its own is a reference link: its text follows the note title, and a
+parameter can add to it. Each surface that shows such a link labels it on its own:
+
+| Function | Where | Labels today |
+|---|---|---|
+| `loadReferenceLinkTitle()` | `services/link.ts`: the label on screen, in editors and read-only views | The note title, then a `<small>` with the anchor name (`bookmark`) or the excerpt of the blocks (`block`) |
+| `getReferenceLinkTitleSync()` | `services/link.ts`: the text saved inside the `<a>` in the note content | `Title - anchor`, `Title - excerpt` once the excerpt is cached |
+| `resolveWikilinkChip()` | `type_widgets/markdown/editor_utils.ts`: the chip of a Markdown Wikilink | `block` and `bookmark` |
+| `getLinkedHeadingText()` | core `share/content_renderer.ts`: shared pages | The heading text, for a `block` link to a heading of the same note |
+
+A parameter that should show in the label needs a branch in each. A link to blocks of the note it
+is in shows only the excerpt, without the note title: callers pass that note as `hostNoteId`.
+
 `isTitleMirrored: true` tells the dialog that a link to the kind shows the target's title: the
 title field's placeholder says so, and a selection without text gets the target's title. Set it to
 `true` only if those functions label the kind's parameter; otherwise the link shows the note
@@ -205,8 +236,10 @@ title, and the dialog must say that.
 ### The note being edited
 
 The server reads the saved content. The note open in an editor can have unsaved targets, and a
-reference the server writes would be lost on the editor's next save. So the editor supplies its
-own targets:
+reference the server writes would be lost: an editor with unsaved changes ignores the reload that
+the write triggers (`hasUnsavedChanges()` in `widgets/react/hooks/editor.ts`), and its next save
+writes content without the reference. Inserting the link makes the editor dirty at once, so this
+always happens for the note being edited. So the editor supplies its own targets:
 
 - The `@` list takes `getOwnTargets(notePath)` (CKEditor: `getOwnLinkTargets()` in
   `type_widgets/text/config.ts`). The Markdown completions (`createCompletionList()` in
@@ -219,22 +252,84 @@ own targets:
 - The Heading / anchor page of the dialog is for the editor's own document only. Its anchors link
   as `#name`, not through the note path.
 
+### Changing the lists
+
+A new kind needs none of this; it matters when the lists themselves change.
+
+- **Startup allowlist.** `NoteAutocomplete.tsx` and `FormAutocomplete.tsx` load at startup and are
+  on the client's startup allowlist, so they must gain no imports: `pnpm dev:check-startup` fails
+  in CI (`measure-startup-requests` skill). `LinkMentionList` composes the second page from their
+  exports instead.
+- **Held picks.** `useAutocomplete()` in `FormAutocomplete.tsx` keeps `pickedSinceRender` set
+  after a pick that `holdOnPick` holds while nothing renders, so the next Enter is not taken and
+  Tab closes the list. `LinkMentionList` therefore takes Enter and Tab itself on key repeat and
+  while the highlighted row cannot be picked (`canPick()`: a target only once the link is in the
+  text, the whole note at any time).
+- **The option.** `textNoteCompletionLinkTargetsEnabled` turns the second page off in both
+  editors: the text editor's config then passes no `getOwnLinkTargets`, and
+  `createNoteMentionList()` (`text/mention_list_view.tsx`) draws `NoteMentionList`; the Markdown
+  `createCompletionList()` checks the option itself. The link dialog does not read it.
+- **Links that match no target.** The dialog's selection is a `NotePart`: `{ target }`,
+  `{ params }` or `null`. A link being edited whose parameters match no listed target (a
+  paragraph, a range of blocks) is `{ params }` and keeps them until another target is picked.
+- **A failed reference.** `createReference()` posts through `postWithSilentErrors()`, so the
+  caller's toast (`add_link.heading_reference_failed`) is the only one. The dialog then stays open;
+  the `@` list (`getTargetLinkPath()`) leaves the link to the whole note. The dialog bumps
+  `generationRef` on reset and unmount, so a POST that answers after Escape applies nothing.
+
 ## Navigation: make the link land
 
 A link parameter does nothing until the note view reads it:
 
 1. Add the parameter to `ViewScope` and to `VIEW_SCOPE_PARAMS` in `navigation_state.ts`, or links
-   lose it with a "Unrecognized hash parameter" warning. Add it to `calculateHash()` only when it
-   must survive in the tab's URL; `bookmark` and `block` are consumed once and are not written.
-2. In the type widget, read it from `noteContext.viewScope` once the content is shown, scroll to
-   the target, then clear it, as `revealLinkTarget()` in `type_widgets/file/Pdf.tsx`,
-   `consumeBookmark()` in `services/bookmark_jump.ts` and `consumeBlockReference()` in
-   `services/block_reference.ts` do.
-3. Backlinks need nothing: `findInternalLinks()` and `findMarkdownInternalLinks()` in core's
+   lose it with a "Unrecognized hash parameter" warning. Add it to `calculateHash()` too, so it
+   survives the tab state, popups and detached windows until the widget consumes it: `block`,
+   `page` and `annotation` are written there, `bookmark` is not. Values go through
+   `encodeURIComponent()`; `block` uses `encodeBlockParameter()` to keep its colon readable.
+2. In the type widget, read it from `noteContext.viewScope`, scroll to the target, then clear it,
+   as `revealLinkTarget()` in `type_widgets/file/Pdf.tsx`, `EditableText.tsx` and
+   `ReadOnlyText.tsx` do (the text widgets through `consumeBookmark()` in
+   `services/bookmark_jump.ts` and `consumeBlockReference()` in `services/block_reference.ts`).
+   See "Landing on the target" below.
+3. Add the parameter to the check in `useFollowLinksWithin()` (`widgets/EmbeddedNotePane.tsx`).
+   The note pane of the geo map, calendar and other views takes over a plain link to a note the
+   view can show, and opens the note in the pane without its parameters. A link with
+   `attachmentId`, `bookmark` or `block` is left to normal navigation, so it lands in a note tab.
+   `page` and `annotation` are not in that check yet.
+4. Backlinks need nothing: `findInternalLinks()` and `findMarkdownInternalLinks()` in core's
    `services/notes.ts` take links with any query.
-4. Markdown keeps the query in Wikilinks (`toWikilink()` writes `[[noteId?page=3]]`), and its
+5. Markdown keeps the query in Wikilinks (`toWikilink()` writes `[[noteId?page=3]]`), and its
    chips label only `block` and `bookmark` (`resolveWikilinkChip()`).
-5. Shared pages handle only `?block=` (`showBlockReference`, `developing-share-pages` skill).
+6. Shared pages keep only `block`. `handleAttachmentLink()` in core's `share/content_renderer.ts`
+   rewrites a link in shared content to the share link of its note and carries `?block=` over;
+   every other parameter is dropped, so such a link opens the top of the shared page. The page
+   reads `?block=` with `showBlockReference()` (`developing-share-pages` skill). A parameter that
+   should work on shared pages needs both.
+
+### Landing on the target
+
+- **Wait for the content.** Return without clearing the parameter while the content is not
+  rendered, or a link opened in a new tab is used up against an empty container. `EditableText`
+  waits for the editor (`revealLinkTargetWhenReady()`: the editor initialized, then one animation
+  frame); `ReadOnlyText` skips the render without a blob; `Pdf.tsx` waits until the viewer is
+  shown and has listed its annotations.
+- **A link to the note that is already open** changes the view scope but not the content, so code
+  that runs when the content loads does not run again. Listen to `noteSwitched` for the same note
+  context and the same note: `useSameNoteSwitch()` in `widgets/react/hooks/note_context.ts`, or
+  `useTriliumEvent("noteSwitched", …)` as `Pdf.tsx` does.
+- **Check that the widget shows that note and is visible** before taking the parameter. A switch
+  from note A to note B can reach the widget before B's content has arrived; the search then runs
+  on A's content, reports a broken target and clears the parameter. And `NoteDetail` can keep two
+  widgets of one note mounted (`EditableText` and `ReadOnlyText`, once `#readOnly` has been
+  toggled): both get the event, and the hidden one must leave it. `EditableText` checks
+  `isVisible !== false && contentNoteIdRef.current === note.noteId`.
+- **Show the start of the target.** `scrollIntoView({ block: "center" })` hides the start of a
+  tall target. `scrollToBlocks()` in ckeditor5's `block_reference/block_reference_read_only.ts`
+  centers the target but keeps at least 15% of the viewport above it (`MIN_TOP_GAP`). Open what
+  hides the target first, as `expandAncestorDetails()` in `services/collapsible.ts` opens
+  collapsed blocks.
+- **Clearing is local.** `NoteContext.setNote()` keeps a copy of the view scope it is given, so a
+  caller that passes its own scope (an excerpt's _Open in new tab_) keeps its parameter.
 
 ## Testing
 
@@ -245,7 +340,9 @@ A link parameter does nothing until the note view reads it:
 | CSRF on the POST | `apps/server/src/routes/api/core_routes_http.spec.ts` | Only if a new route is added |
 | A new kind | `link_targets.spec.ts`, `LINK_TARGET_KINDS` case | The icon, the title key, `isTitleMirrored` |
 | The parameter | `link_targets.spec.ts`, `splitTargetParameters()` case | Read out of a link path |
-| The landing | The type widget's spec | The view scrolls to the target and clears the parameter |
+| The landing | The type widget's spec | The view scrolls to the target and clears the parameter; it waits for the content; a link to the open note lands, but not for another note context or while hidden (`ReadOnlyText.spec.tsx` has these cases) |
+| The pane check | A spec beside `EmbeddedNotePane.tsx` (none yet) | A link with the parameter is left to normal navigation |
+| The label | `link.spec.ts` | Both label functions, only if the parameter is labeled |
 
 Core specs run under both runners:
 
