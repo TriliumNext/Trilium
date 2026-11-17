@@ -43,8 +43,6 @@
     "note": "Notiță",
     "search_note": "căutați notița după nume",
     "button_add_link": "Adaugă legătură",
-    "anchor": "Ancoră (opțional)",
-    "anchor_none": "Niciuna (legătură către notiță)",
     "edit_link": "Editează legătura",
     "button_edit_link": "Salvează legătura"
   },

@@ -60,8 +60,6 @@
     "link_title": "Titolo del collegamento",
     "button_add_link": "Inserisci il link",
     "help_on_links": "Aiuto sui collegamenti",
-    "anchor": "Ancoraggio (facoltativo)",
-    "anchor_none": "Nessuna (link alla nota)",
     "edit_link": "Modifica link",
     "button_edit_link": "Link al salvataggio"
   },

@@ -60,8 +60,6 @@
     "help_on_links": "링크 관련 도움말",
     "link_title": "링크 제목",
     "button_add_link": "링크 삽입",
-    "anchor": "앵커(선택)",
-    "anchor_none": "없음(노트 전체 링크)",
     "edit_link": "링크 편집",
     "button_edit_link": "링크 저장",
     "fix_link": "링크 수정",

@@ -60,8 +60,6 @@
     "search_note": "依名稱搜尋筆記",
     "link_title": "連結標題",
     "button_add_link": "新增連結",
-    "anchor": "錨點（可選）",
-    "anchor_none": "無（連結至筆記）",
     "edit_link": "編輯連結",
     "button_edit_link": "儲存連結",
     "fix_link": "修復連結",

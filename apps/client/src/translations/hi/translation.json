@@ -68,9 +68,7 @@
     "help_on_links": "लिंक्स पर मदद।",
     "search_note": "नोट को नाम से खोजें",
     "link_title": "लिंक टाइटल",
-    "button_add_link": "लिंक जोड़ें",
-    "anchor": "एंकर (वैकल्पिक)",
-    "anchor_none": "कोई नहीं (नोट से लिंक)"
+    "button_add_link": "लिंक जोड़ें"
   },
   "bulk_actions": {
     "other": "अन्य",

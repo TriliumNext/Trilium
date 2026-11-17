@@ -60,8 +60,6 @@
     "button_add_link": "リンクを挿入",
     "help_on_links": "リンクに関するヘルプ",
     "search_note": "ノート名で検索",
-    "anchor": "アンカー（任意）",
-    "anchor_none": "なし（ノートへのリンク）",
     "edit_link": "リンクを編集",
     "button_edit_link": "リンクを保存",
     "fix_link": "リンクを修正",

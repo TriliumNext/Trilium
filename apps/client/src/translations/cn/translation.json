@@ -60,8 +60,6 @@
     "search_note": "按名称搜索笔记",
     "link_title": "链接标题",
     "button_add_link": "插入链接",
-    "anchor": "锚点（可选）",
-    "anchor_none": "无（笔记链接）",
     "edit_link": "编辑链接",
     "button_edit_link": "保存链接",
     "fix_link": "修复链接",
