@@ -1,11 +1,27 @@
 import type VanillaCodeMirror from "@triliumnext/codemirror";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import appContext from "../../../components/app_context.js";
 import type FNote from "../../../entities/fnote";
+import froca from "../../../services/froca.js";
 import { t } from "../../../services/i18n.js";
 import server from "../../../services/server.js";
 import toast from "../../../services/toast.js";
-import { insertText, replaceSelection, uploadImageAndInsert } from "./editor_utils.js";
+import type { EditLinkOpts } from "../../dialogs/edit_link.js";
+import {
+    insertText, replaceSelection, resolveWikilinkChip, showEditLinkDialog, toWikilink,
+    uploadImageAndInsert
+} from "./editor_utils.js";
+
+const { loadBlockReferenceLabel } = vi.hoisted(() => ({
+    loadBlockReferenceLabel: vi.fn(async (_note: FNote, block: string) => (
+        block === "h1" ? { text: "Install", isBroken: false, isHeading: true } : null
+    ))
+}));
+vi.mock("../../../services/block_excerpts.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("../../../services/block_excerpts.js")>(),
+    loadBlockReferenceLabel
+}));
 
 // A minimal CodeMirror view stand-in: the helpers only read the cursor head and
 // call dispatch(), so we capture the dispatched transaction to assert against it.
@@ -56,6 +72,73 @@ describe("replaceSelection", () => {
             changes: { from: 4, to: 9, insert: "new" },
             selection: { anchor: 7 }
         });
+    });
+});
+
+describe("toWikilink", () => {
+    it("links the note of a path, with the heading or anchor its parameters point at", () => {
+        expect(toWikilink("root/projects/abc123")).toBe("[[abc123]]");
+        expect(toWikilink("root/abc123?block=h1%2Fa:h2")).toBe("[[abc123?block=h1%2Fa:h2]]");
+        expect(toWikilink("abc123?bookmark=Set%20up")).toBe("[[abc123?bookmark=Set%20up]]");
+    });
+});
+
+describe("resolveWikilinkChip", () => {
+    it("draws a link as the note, followed by the heading or anchor it points at", async () => {
+        const guide = { noteId: "abc123", title: "Guide", getIcon: () => "bx bx-book" } as FNote;
+        vi.spyOn(froca, "getNoteFromCache").mockReturnValue(guide);
+        vi.spyOn(froca, "getNote").mockResolvedValue(guide);
+
+        expect(resolveWikilinkChip("abc123")).toEqual({ title: "Guide", icon: "bx bx-book" });
+        await expect(resolveWikilinkChip("abc123", "block=h1"))
+            .resolves.toEqual({ title: "Guide - Install", icon: "bx bx-book" });
+        expect(loadBlockReferenceLabel).toHaveBeenCalledWith(guide, "h1");
+        await expect(resolveWikilinkChip("abc123", "bookmark=Set%20up"))
+            .resolves.toEqual({ title: "Guide - Set up", icon: "bx bx-book" });
+        // A block that cannot be read leaves the title, and parameters naming neither change nothing.
+        await expect(resolveWikilinkChip("abc123", "block=gone"))
+            .resolves.toEqual({ title: "Guide", icon: "bx bx-book" });
+        expect(resolveWikilinkChip("abc123", "ntxId=x")).toEqual({ title: "Guide", icon: "bx bx-book" });
+
+        vi.spyOn(froca, "getNote").mockResolvedValue(null);
+        await expect(resolveWikilinkChip("gone", "block=h1")).resolves.toBeNull();
+    });
+});
+
+describe("showEditLinkDialog", () => {
+    /** Opens the dialog over `selected` in `doc`, and returns its options and the editor. */
+    function open(doc: string, selected = "") {
+        const from = doc.indexOf(selected);
+        const view = {
+            state: {
+                selection: { main: { from, to: from + selected.length } },
+                sliceDoc: (start: number, end: number) => doc.slice(start, end)
+            },
+            dispatch: vi.fn(),
+            focus: vi.fn()
+        } as unknown as VanillaCodeMirror;
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockResolvedValue(undefined);
+        showEditLinkDialog(view);
+        const opts = triggerCommand.mock.lastCall?.[1] as EditLinkOpts;
+        return { opts, view };
+    }
+
+    it("puts a reference link as a Wikilink that keeps the heading or anchor it points at", async () => {
+        const { opts, view } = open("See ");
+        expect(opts).toMatchObject({ text: "", hasSelection: false });
+        await opts.addLink("root/abc123?block=h1", null);
+        expect(view.dispatch).toHaveBeenCalledWith({
+            changes: { from: 0, to: 0, insert: "[[abc123?block=h1]]" },
+            selection: { anchor: 19 }
+        });
+        expect(view.focus).toHaveBeenCalledOnce();
+
+        // A link with a text of its own keeps the whole path, and a selection keeps its text.
+        const titled = open("See Setup", "Setup");
+        await titled.opts.addLink("root/abc123?bookmark=setup", "Setup guide");
+        expect(titled.view.dispatch).toHaveBeenCalledWith(expect.objectContaining({
+            changes: { from: 4, to: 9, insert: "[Setup](#root/abc123?bookmark=setup)" }
+        }));
     });
 });
 

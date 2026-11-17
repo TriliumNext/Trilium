@@ -7,7 +7,9 @@ import { isMarkdownMime } from "@triliumnext/commons/src/lib/notes.js";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
 import type FNote from "../../../entities/fnote";
+import options from "../../../services/options";
 import { getTaskStateDefinitions } from "../../../services/task_states";
+import LinkMentionList from "../../react/LinkMentionList";
 import {
     type CommandEntry, CommandMentionList, createHostedList, filterCommandEntries, NoteMentionList
 } from "../../react/NoteAutocomplete";
@@ -108,7 +110,8 @@ const noSnippets = (): CodeSnippet[] => [];
 /**
  * The `/` list or the `@` list, drawn as the text editor's: the first runs the command picked on
  * the typed `/command`, the second puts a link to the note picked or created in place of the typed
- * note. A note created goes under `getNotePath()`.
+ * note. A note created goes under `getNotePath()`. With `textNoteCompletionLinkTargetsEnabled`,
+ * a note picked is linked at once, and the list follows up with its headings and anchors.
  */
 function createCompletionList(
     commands: () => SlashCommand[],
@@ -117,16 +120,30 @@ function createCompletionList(
     return createHostedList<HostedCompletionState<CompletionMatch>>((state, list) => {
         const { kind, from, query } = state.match;
         if (kind === "note") {
-            return (
-                <NoteMentionList
-                    key={`note:${from}`}
-                    {...list}
-                    query={query}
-                    allowCreatingNotes
-                    parentNotePath={getNotePath()}
-                    onPick={(notePath) => state.commit(typeof notePath === "string"
+            const props = {
+                ...list,
+                query,
+                allowCreatingNotes: true,
+                parentNotePath: getNotePath(),
+                onPick: (notePath: string | Promise<string | undefined>) => state.commit(
+                    typeof notePath === "string"
                         ? linkToNote(notePath)
-                        : notePath.then((path) => path ? linkToNote(path) : undefined))}
+                        : notePath.then((path) => path ? linkToNote(path) : undefined)
+                )
+            };
+            if (!options.is("textNoteCompletionLinkTargetsEnabled")) {
+                return <NoteMentionList key={`note:${from}`} {...props} />;
+            }
+
+            const { followUp } = state;
+            return (
+                <LinkMentionList
+                    key={`note:${from}`}
+                    {...props}
+                    query={followUp?.query ?? query}
+                    linkedNotePath={followUp?.of}
+                    onLinkNote={(notePath) => state.commitAndFollowUp(linkToNote(notePath), notePath)}
+                    onKeepLink={state.dismiss}
                 />
             );
         }

@@ -1,14 +1,17 @@
 import type VanillaCodeMirror from "@triliumnext/codemirror";
+import type { NoteChip } from "@triliumnext/codemirror/src/extensions/trilium_note_chips";
 
 import appContext from "../../../components/app_context";
 import type FNote from "../../../entities/fnote";
+import { loadBlockReferenceLabel } from "../../../services/block_excerpts";
 import { formatCustomDateTime } from "../../../services/dayjs";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
+import { parseNavigationStateFromUrl } from "../../../services/navigation_state";
 import options from "../../../services/options";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
-import tree from "../../../services/tree";
+import { resolveNoteChip } from "../../search_field_editor";
 
 /** Inserts text at the given position (or cursor) and moves the cursor to the end of the inserted text. */
 export function insertText(view: VanillaCodeMirror, text: string, pos?: number) {
@@ -69,13 +72,42 @@ export function showEditLinkDialog(view: VanillaCodeMirror) {
                 const label = (from !== to) ? selectedText : linkTitle;
                 md = `[${label}](#${notePath})`;
             } else {
-                const noteId = tree.getNoteIdFromUrl(notePath);
-                md = `[[${noteId}]]`;
+                md = toWikilink(notePath);
             }
 
             replaceSelection(view, md, from, to);
             view.focus();
         }
+    });
+}
+
+/**
+ * The Wikilink to the note at `notePath`, which the preview renders as a reference link. It keeps
+ * the parameters of `notePath`, such as the `block` of a heading.
+ */
+export function toWikilink(notePath: string) {
+    const queryStart = notePath.indexOf("?");
+    const path = queryStart < 0 ? notePath : notePath.slice(0, queryStart);
+    const query = queryStart < 0 ? "" : notePath.slice(queryStart);
+    return `[[${path.split("/").pop()}${query}]]`;
+}
+
+/**
+ * The chip of a `[[noteId]]` link in the Markdown editor: the icon and title of the note, then the
+ * heading or anchor that `params`, the query of the link, point at.
+ */
+export function resolveWikilinkChip(
+    noteId: string, params?: string
+): NoteChip | Promise<NoteChip | null> | null {
+    const { viewScope } = parseNavigationStateFromUrl(`#root/${noteId}?${params ?? ""}`);
+    const block = viewScope?.block;
+    const bookmark = viewScope?.bookmark;
+    if (!block && !bookmark) return resolveNoteChip(noteId);
+
+    return froca.getNote(noteId, true).then(async (note) => {
+        if (!note) return null;
+        const label = bookmark ?? (block ? (await loadBlockReferenceLabel(note, block))?.text : null);
+        return { title: label ? `${note.title} - ${label}` : note.title, icon: note.getIcon() };
     });
 }
 
