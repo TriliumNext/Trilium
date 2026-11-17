@@ -33,6 +33,9 @@ and a type widget that scrolls to the target when a link opens the note.
 The kind sets how a target looks (icon, card or menu header), never where it comes from. A
 Markdown heading and a DOCX heading are both of kind `heading`.
 
+Block ids, `?block=` links, their labels and excerpts are a feature of their own, which the text
+note provider builds on: the `developing-block-references` skill.
+
 ## The pieces
 
 | Piece | File | Role |

@@ -777,6 +777,8 @@ touches; then `docs.mjs sync` and `check`.
 - **ckeditor5-plugin-development** / **ckeditor5-testing**: editor plugin conventions and specs.
 - **building-client-ui**: `OverlayControlGroup`, `ZoomControls` and the other overlay controls.
 - **developing-mermaid-highlighting**: the CodeMirror Mermaid language the source pane uses.
+- **developing-block-references**: excerpts (embeds with `data-block`), their badge and pencil,
+  and editing a range of blocks in place.
 - **developing-share-pages**: the share theme's own rendering of embeds and diagrams.
 - **patching-excalidraw**: changes inside Excalidraw, which the drawing canvas relies on.
 - **writing-documentation**: `docs.mjs` and the User Guide house style.

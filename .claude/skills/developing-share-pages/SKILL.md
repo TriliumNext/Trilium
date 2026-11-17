@@ -72,7 +72,8 @@ imports the model as `@triliumnext/share-theme/model/page`). The theme has no bu
    `scripts.js` then wires the expand buttons, search, ToC scroll tracking, theme switch, footer
    date, math, Mermaid, link previews and tabs. A `?block=` address loads the app's
    `block_reference_read_only.js` (and its CSS) on demand, which scrolls to the blocks and flashes
-   them as the app does; it searches `document.body`, so it does not rely on the theme's markup. `boot_script.ejs` runs inline in `<head>` before the
+   them as the app does; it searches `document.body`, so it does not rely on the theme's markup
+   (`developing-block-references` skill). `boot_script.ejs` runs inline in `<head>` before the
    first paint (theme class, collapsed panes, `window.glob`).
 
 The static export calls `renderNoteForExport()` with `isStatic: true`, which also expands embeds
