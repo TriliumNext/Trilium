@@ -12,7 +12,7 @@ import markdownExport from "../export/markdown.js";
 import request, { validateFetchableUrl } from "../request.js";
 import { decodeUtf8 } from "../utils/binary.js";
 import { trimTrailingSlashes } from "../utils/index.js";
-import { llmFetch } from "./providers/fetch.js";
+import { fetchFailureReason, llmFetch } from "./providers/fetch.js";
 
 /** A configured search provider, as stored in the `llmProviders` option. */
 export interface WebSearchSetup {
@@ -261,7 +261,12 @@ async function requestJson(
     describeFailure?: (status: number) => string | undefined
 ): Promise<unknown> {
     const timeout = AbortSignal.timeout(SEARCH_TIMEOUT_MS);
-    const response = await llmFetch(url, { ...init, signal: signal ? AbortSignal.any([ signal, timeout ]) : timeout });
+    let response: Response;
+    try {
+        response = await llmFetch(url, { ...init, signal: signal ? AbortSignal.any([ signal, timeout ]) : timeout });
+    } catch (e) {
+        throw new Error(`Could not reach the search provider: ${fetchFailureReason(e)}`);
+    }
     if (!response.ok) {
         const description = describeFailure?.(response.status);
         if (description) {

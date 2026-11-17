@@ -20,7 +20,7 @@ import { getLog } from "../../../services/log.js";
 
 import type { ModelInfo, ModelPricing } from "../types.js";
 import { BaseProvider, type RemoteModel } from "./base_provider.js";
-import { llmFetch } from "./fetch.js";
+import { fetchFailureReason, llmFetch } from "./fetch.js";
 
 /** Provider card ids that map to this implementation. */
 export type LocalProviderKind = "ollama" | "lmstudio" | "openai-compatible";
@@ -235,7 +235,7 @@ export class LocalProvider extends BaseProvider {
             // Unlike a status, a transport failure is a fact about the host, not
             // the path: the later probes go to that same host and would only
             // burn another timeout each to reach the same verdict.
-            throw new Error(`Could not reach ${url}: ${e instanceof Error ? e.message : String(e)}`);
+            throw new Error(`Could not reach ${url}: ${fetchFailureReason(e)}`);
         }
         if (!response.ok) {
             if (optional || response.status === 404 || response.status === 405) {
