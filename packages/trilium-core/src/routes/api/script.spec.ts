@@ -198,8 +198,11 @@ describe("Script API (core)", () => {
             }
 
             expect(parentNote.getChildNotes().map((n) => n.noteId)).toEqual([childBId, childAId]);
-            const branchB = becca.getBranchFromChildAndParent(childBId, parentNoteId)!;
-            const branchA = becca.getBranchFromChildAndParent(childAId, parentNoteId)!;
+            const branchB = becca.getBranchFromChildAndParent(childBId, parentNoteId);
+            const branchA = becca.getBranchFromChildAndParent(childAId, parentNoteId);
+            if (!branchB || !branchA) {
+                throw new Error("Expected both child branches to exist");
+            }
             expect(branchB.notePosition).toBeLessThan(branchA.notePosition);
         });
 
