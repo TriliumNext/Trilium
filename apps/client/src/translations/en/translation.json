@@ -85,10 +85,13 @@
     "title_from_heading": "If not set, will always reflect the heading's text",
     "retrieving_from_page": "Retrieving from the web page...",
     "title_from_attachment": "If not set, will always reflect the attachment's title",
-    "top_of_note": "Top of the note",
+    "top_of_note": "Link to the whole note",
     "select_note_for_targets": "Select a note to show the headings and anchors you can link to.",
     "inspecting_note": "Inspecting note structure",
-    "heading_reference_failed": "Unable to create reference to the given heading"
+    "heading_reference_failed": "Unable to create reference to the given heading",
+    "link_to_heading": "Link to a heading",
+    "link_to_anchor": "Link to an anchor",
+    "no_link_targets": "There are no headings and anchors available to link to."
   },
   "branch_prefix": {
     "edit_branch_prefix": "Edit branch prefix",

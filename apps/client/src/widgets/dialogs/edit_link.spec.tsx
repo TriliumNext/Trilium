@@ -1170,7 +1170,8 @@ describe("EditLinkDialog", () => {
         });
         await settle();
         expect(noteTargets()?.getAttribute("role")).toBeNull();
-        expect(headings()).toStrictEqual([ "add_link.headings", "add_link.target_anchor" ]);
+        expect(headings()).toStrictEqual([ "add_link.link_to_heading", "add_link.link_to_anchor" ]);
+        expect(noteTargets()?.querySelector(".no-items")).toBeNull();
         expect(noteTargets()?.firstElementChild?.matches(".edit-link-top")).toBe(true);
         expect(noteTargets()?.querySelector(".edit-link-top .bx-arrow-to-top")).not.toBeNull();
         // Sub-headings start collapsed, and the anchors are sorted.
@@ -1435,6 +1436,7 @@ describe("EditLinkDialog", () => {
         });
         await pickNote(`root/${second.noteId}`);
         expect(noteChoices()).toStrictEqual([ "*add_link.top_of_note", "Kept" ]);
+        expect(noteTargets()?.querySelector(".no-items")).toBeNull();
 
         vi.mocked(server.get).mockClear();
         const code = buildNote({ title: "Code", type: "code" });
@@ -1443,6 +1445,10 @@ describe("EditLinkDialog", () => {
         for (const other of [ code, secret ]) {
             await pickNote(`root/${other.noteId}`);
             expect(noteChoices()).toStrictEqual([ "*add_link.top_of_note" ]);
+            // A placeholder takes the place of the headings and anchors.
+            const placeholder = noteTargets()?.querySelector(".edit-link-top + .no-items");
+            expect(placeholder?.textContent).toBe("add_link.no_link_targets");
+            expect(placeholder?.querySelector(".bx-bookmark")).not.toBeNull();
         }
         expect(server.get).not.toHaveBeenCalled();
     });

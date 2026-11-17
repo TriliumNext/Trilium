@@ -37,7 +37,7 @@ To fix this, simply go that note and make any change (e.g. inserting a space), t
 
 1.  Create an anchor in the target note using the same process as described above.
 2.  In another note, press <kbd>Ctrl</kbd>+<kbd>L</kbd> to insert an internal link. Select the target note containing Anchors.
-3.  The headings and anchors of the target note are listed below the _Link title_. Under _Anchors_, click the desired anchor to check it.
+3.  The headings and anchors of the target note are listed below the _Link title_. Under _Link to an anchor_, click the desired anchor to check it.
 4.  Add the link normally.
 
 Clicking on a reference link pointing to an anchor will automatically scroll to the desired section.

@@ -93,7 +93,18 @@
     }
 
     .edit-link-note-targets {
+        display: flex;
+        flex-direction: column;
         height: var(--edit-link-targets-height);
+
+        > * {
+            flex-shrink: 0;
+        }
+
+        > .no-items {
+            flex-grow: 1;
+            height: auto;
+        }
     }
 
     .edit-link-headings {

@@ -705,6 +705,8 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             }}
             expandedHeadings={expandedHeadings}
             setExpandedHeadings={setExpandedHeadings}
+            headingsTitle={t("add_link.headings")}
+            anchorsTitle={t("add_link.target_anchor")}
         />
     </>) : (
         <NoItems icon="bx bx-bookmark" text={t("add_link.no_headings_or_anchors")} />
@@ -712,7 +714,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
 
     /**
      * Where in the note picked on the note page the link can point: a placeholder until a note is
-     * picked, a spinner while its headings and anchors load, then the top of the note and those.
+     * picked, a spinner while its headings and anchors load, then the whole note and those.
      */
     function renderNoteTargets() {
         if (!notePath) {
@@ -743,6 +745,11 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                 onCheckAnchor={(name) => setNotePart({ bookmark: name })}
                 expandedHeadings={expandedNoteHeadings}
                 setExpandedHeadings={setExpandedNoteHeadings}
+                headingsTitle={t("add_link.link_to_heading")}
+                anchorsTitle={t("add_link.link_to_anchor")}
+                placeholder={
+                    <NoItems icon="bx bx-bookmark" text={t("add_link.no_link_targets")} />
+                }
             >
                 <Card className="edit-link-top">
                     <ChoiceCardSection
@@ -935,6 +942,12 @@ interface LinkTargetListProps {
     /** The headings whose sub-headings are shown. */
     expandedHeadings: ReadonlySet<LinkHeading>;
     setExpandedHeadings: Dispatch<StateUpdater<ReadonlySet<LinkHeading>>>;
+    /** The heading of the card of the headings. */
+    headingsTitle: string;
+    /** The heading of the card of the anchors. */
+    anchorsTitle: string;
+    /** Shown in place of the headings and anchors when there are none. */
+    placeholder?: ComponentChildren;
 }
 
 /**
@@ -943,7 +956,8 @@ interface LinkTargetListProps {
  */
 function LinkTargetList({
     listRef, className, children, headingTree, anchors, checkedHeading, checkedAnchor,
-    onCheckHeading, onCheckAnchor, expandedHeadings, setExpandedHeadings
+    onCheckHeading, onCheckAnchor, expandedHeadings, setExpandedHeadings, headingsTitle,
+    anchorsTitle, placeholder
 }: LinkTargetListProps) {
     const fade = useScrollFade(listRef);
     const topHeadings = headingTree.get(null) ?? [];
@@ -987,14 +1001,16 @@ function LinkTargetList({
         >
             {children}
 
+            {topHeadings.length === 0 && anchors.length === 0 && placeholder}
+
             {topHeadings.length > 0 && (
-                <Card className="edit-link-headings" heading={t("add_link.headings")}>
+                <Card className="edit-link-headings" heading={headingsTitle}>
                     {topHeadings.map(renderHeading)}
                 </Card>
             )}
 
             {anchors.length > 0 && (
-                <Card className="edit-link-anchors" heading={t("add_link.target_anchor")}>
+                <Card className="edit-link-anchors" heading={anchorsTitle}>
                     {anchors.map((name) => (
                         <ChoiceCardSection
                             key={name}
