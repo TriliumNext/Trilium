@@ -396,7 +396,7 @@ export function rewriteMermaidDiagramsInContainer(container: HTMLElement) {
         const div = document.createElement("div");
         div.classList.add("rendered-mermaid-diagram");
         div.textContent = code.textContent;
-        // A code block keeps its block ID on `<code>`, a Mermaid embed on `<pre>`.
+        // The block ID is on the `<code>`, or on the `<pre>` in embeds of earlier versions.
         const blockId = mermaidBlock.getAttribute(BLOCK_ID_ATTRIBUTE)
             ?? code.getAttribute(BLOCK_ID_ATTRIBUTE);
         if (blockId) {

@@ -617,10 +617,6 @@ export default function EditableText({
     );
 }
 
-/**
- * The content of an editor of the blocks of a note that `block` points at, and the blocks it holds
- * now. An empty editor still holds a block, whose id keeps the place of the blocks in the note.
- */
 /** What the edit link dialog opens on, besides the editor. */
 interface EditLinkRequest extends Pick<EditLinkOpts, "target" | "display"> {
     /** The path of the note in the editor. Without it, the dialog lists no headings. */
@@ -749,6 +745,10 @@ export async function followLink(target: LinkUnderCursor | null) {
     }
 }
 
+/**
+ * The content of an editor of the blocks of a note that `block` points at, and the blocks it holds
+ * now. An empty editor still holds a block, whose id keeps the place of the blocks in the note.
+ */
 export function getBlockData(editor: CKTextEditor, block: string) {
     return {
         content: editor.getData({ trim: "none" }),

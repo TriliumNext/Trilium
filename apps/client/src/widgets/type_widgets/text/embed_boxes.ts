@@ -195,7 +195,7 @@ function prepareSourceEmbeds(container: HTMLElement, isNested: boolean) {
             }
         }
         figure.dataset.hideTitle = "true";
-        // Diagrams saved before the embed keep their block ID on the `<code>`.
+        // The block ID is on the `<code>`, or on the `<pre>` in embeds of earlier versions.
         const blockId = pre.dataset.triliumBlockId ?? code.dataset.triliumBlockId;
         if (blockId) {
             figure.dataset.triliumBlockId = blockId;

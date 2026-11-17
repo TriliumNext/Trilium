@@ -409,5 +409,5 @@ need both the server and the standalone runner; client specs run in happy-dom.
 - Strings live in the client catalogue under `block_reference.*`, `block_handle_menu.*`,
   `note_tooltip.jump-to-*` and `link_context_menu.convert_link_to_note_excerpt`; the editor's own
   under `text-editor.ck`; the server's under `content_renderer.*`.
-- `/api/notes/:noteId/blocks` is not in `apps/server/internal.openapi.yaml` yet; add it there when
-  the routes change.
+- `/api/notes/:noteId/blocks` is documented in `apps/server/internal.openapi.yaml`, which generates
+  the API Reference page of the User Guide. A change to the routes updates it, then `docs.mjs sync`.

@@ -530,6 +530,99 @@ paths:
         '404':
           description: Note not found
           
+  /api/notes/{noteId}/blocks:
+    get:
+      tags: [Notes]
+      summary: Get blocks of a text note
+      description: >-
+        The blocks of a text note that `block` points at, as their exact HTML source, so that an
+        excerpt can edit them apart from the rest of the note. The range must be a run of whole
+        sibling blocks. A run of list items comes inside a copy of its list, numbered as in the
+        note.
+      operationId: getNoteBlocks
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+        - name: block
+          in: query
+          required: true
+          schema:
+            type: string
+          description: >-
+            The block id of one block, or the ids of the first and the last block of a range
+            joined with `:`
+          example: eaJkN47U8kI4:2ZrHG8GH3TGW
+      responses:
+        '200':
+          description: The HTML of the blocks
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [content]
+                properties:
+                  content:
+                    type: string
+                    example: '<p data-trilium-block-id="eaJkN47U8kI4">First paragraph</p>'
+        '400':
+          description: >-
+            No `block` parameter, a note that is not a text note, or a protected note without a
+            protected session
+        '404':
+          description: >-
+            The note or a block of the range does not exist, or the range is not a run of whole
+            sibling blocks
+    put:
+      tags: [Notes]
+      summary: Replace blocks of a text note
+      description: >-
+        Replaces the blocks that `block` points at with `content` and saves the note as
+        `PUT /api/notes/{noteId}/data` does, with a revision when one is due. The rest of the note
+        keeps its bytes. Block ids in `content` that the note holds outside the range are removed.
+        For a run of list items, `content` is a list: when its tag and `class` match the original
+        list, its items replace the run and its other attributes apply to the whole list;
+        otherwise the original list is split around `content`. `block` is the range as the note
+        stores it before the change; once the blocks at its edges change, later requests use the
+        new range.
+      operationId: updateNoteBlocks
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+        - name: block
+          in: query
+          required: true
+          schema:
+            type: string
+          description: >-
+            The block id of one block, or the ids of the first and the last block of a range
+            joined with `:`
+          example: eaJkN47U8kI4:2ZrHG8GH3TGW
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+                  description: The HTML of the blocks
+                  example: '<p data-trilium-block-id="eaJkN47U8kI4">First paragraph</p>'
+                attachments:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Attachment'
+      responses:
+        '204':
+          description: Blocks replaced
+        '400':
+          description: >-
+            No `block` parameter, no `content`, a note that is not a text note, or a protected
+            note without a protected session
+        '404':
+          description: >-
+            The note or a block of the range does not exist, or the range is not a run of whole
+            sibling blocks
+
   /api/notes/{noteId}/references:
     get:
       tags: [Notes]

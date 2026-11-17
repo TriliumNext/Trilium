@@ -35,7 +35,7 @@ designed around without knowing. **Remove an entry in the change that fixes it.*
 | A read-only slice of a to-do item drops its checkbox; a slice of a captioned media or source embed drops its caption | `sliceToBlockRange()` |
 | Only text notes are sliced | An excerpt of a Markdown note renders the whole note |
 | `refreshIncludedNote()` passes no `onBlockChange` | Its excerpts edit but keep their old range |
-| The `/blocks` routes do not check `#readOnly` or a read-only database, and are missing from `internal.openapi.yaml` | The client enforces read-only |
+| The `/blocks` routes do not check `#readOnly` or a read-only database | The client enforces read-only |
 | No conflict detection within a range | Decided: the last writer wins, as for whole notes |
 | Zip HTML, static HTML and zip Markdown exports drop `?block=`; Markdown export drops ids on blocks written as Markdown; a zip round trip turns block links into whole-note links | Excerpts keep `data-block` |
 | Markdown import writes Wikilinks as `/id?…`, not `#root/…` | No backlink, no block navigation |
