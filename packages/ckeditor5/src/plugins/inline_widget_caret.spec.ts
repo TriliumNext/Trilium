@@ -4,6 +4,7 @@ import {
     Paragraph, type ViewElement
 } from "ckeditor5";
 import { describe, expect, it } from "vitest";
+import { userEvent } from "vitest/browser";
 
 import { createTestEditor, pressKey } from "../../test/editor-kit.js";
 import { TestChipPlugin } from "../../test/fixture-plugins.js";
@@ -179,6 +180,58 @@ describe("InlineWidgetCaret", () => {
         });
     });
 
+    // The paragraphs `x` and `y` around the tested lines tell a move to the next line apart from
+    // Chromium's jump to the start or the end of the note.
+    describe("real key presses", () => {
+        it("stops on each paragraph of a widget, down and up", async () => {
+            const editor = await createEditor();
+            setModelData(editor.model, "<paragraph>x</paragraph><paragraph>a[]</paragraph>" +
+                `<paragraph>${chip("short")}</paragraph><paragraph>${chip("short")}</paragraph>` +
+                "<paragraph>b</paragraph><paragraph>y</paragraph>");
+
+            expect(await pressKeys(editor, "ArrowDown", "ArrowDown", "ArrowDown"))
+                .toEqual([ [ 2, 1 ], [ 3, 1 ], [ 4, 1 ] ]);
+            expect(await pressKeys(editor, "ArrowUp", "ArrowUp", "ArrowUp"))
+                .toEqual([ [ 3, 1 ], [ 2, 1 ], [ 1, 1 ] ]);
+        });
+
+        it("enters a wrapped widget on its last line, and leaves it from its first", async () => {
+            const editor = await createEditor();
+            setModelData(editor.model, "<paragraph>x</paragraph><paragraph>a[]</paragraph>" +
+                `<paragraph>${chip(THREE_LINES)}</paragraph>` +
+                "<paragraph>b</paragraph><paragraph>y</paragraph>");
+            expectLines(editor, 0, 3);
+
+            expect(await pressKeys(editor, "ArrowDown", "ArrowDown", "ArrowUp", "ArrowUp"))
+                .toEqual([ [ 2, 1 ], [ 3, 1 ], [ 2, 1 ], [ 1, 0 ] ]);
+        });
+
+        it("goes on from the edge between two widgets to the line after it", async () => {
+            const editor = await createEditor();
+            setModelData(editor.model, "<paragraph>x</paragraph>" +
+                `<paragraph>[]${chip(TWO_LINES)}${chip("lorem ".repeat(4))}</paragraph>` +
+                "<paragraph>b</paragraph><paragraph>y</paragraph>");
+            expectLines(editor, 1, 2);
+
+            expect(await pressKeys(editor, "ArrowDown", "ArrowDown", "ArrowUp", "ArrowUp"))
+                .toEqual([ [ 1, 2 ], [ 2, 1 ], [ 1, 2 ], [ 0, 0 ] ]);
+        });
+
+        it("moves over the middle line of a widget, and on from the line after it", async () => {
+            const editor = await createEditor();
+            setModelData(editor.model, "<paragraph>x</paragraph>" +
+                `<paragraph>ab ${chip(THREE_LINES)}cd[]</paragraph><paragraph>y</paragraph>`);
+            expectLines(editor, 0, 3);
+            expect(await pressKeys(editor, "ArrowUp", "ArrowUp")).toEqual([ [ 1, 3 ], [ 0, 1 ] ]);
+
+            setModelData(editor.model, "<paragraph>x</paragraph>" +
+                `<paragraph>[]${chip(THREE_LINES)}</paragraph>` +
+                "<paragraph>b</paragraph><paragraph>y</paragraph>");
+            expect(await pressKeys(editor, "ArrowDown", "ArrowDown"))
+                .toEqual([ [ 1, 1 ], [ 2, 1 ] ]);
+        });
+    });
+
     describe("caret inside a widget", () => {
         it("goes after the widget, or before it from above its last line", async () => {
             const editor = await createEditor();
@@ -274,6 +327,16 @@ function describeDom(block: Element) {
 
 function getFocusPath(editor: ClassicEditor) {
     return editor.model.document.selection.focus?.path;
+}
+
+/** Presses each of `keys` in the browser, and returns the path of the focus after each press. */
+async function pressKeys(editor: ClassicEditor, ...keys: string[]) {
+    const paths = [];
+    for (const key of keys) {
+        await userEvent.keyboard(`{${key}}`);
+        paths.push(getFocusPath(editor));
+    }
+    return paths;
 }
 
 /** Checks that the chip at `index` wraps over `count` lines, as the spec expects. */

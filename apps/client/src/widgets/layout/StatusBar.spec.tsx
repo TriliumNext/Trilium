@@ -50,6 +50,10 @@ vi.mock("../attribute_widgets/AttributeEditor", async () => {
     };
 });
 
+// The Vim command line slot imports `vim_mode` without awaiting it, and that import graph can
+// still be loading once the environment is torn down.
+vi.mock("../type_widgets/text/vim_mode", () => ({ setCommandLineSlot: vi.fn() }));
+
 import appContext from "../../components/app_context";
 import type Component from "../../components/component";
 import options from "../../services/options";
