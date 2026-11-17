@@ -71,7 +71,7 @@ export class MistralProvider extends BaseProvider {
         if (!apiKey) {
             throw new Error("API key is required for Mistral provider");
         }
-        this.mistral = createMistral({ apiKey, baseURL: this.baseURL ?? OFFICIAL_BASE_URL, fetch: llmFetch });
+        this.mistral = createMistral({ apiKey, ...(baseURL && { baseURL }), fetch: llmFetch });
     }
 
     protected createModel(modelId: string) {
@@ -153,16 +153,16 @@ export class MistralProvider extends BaseProvider {
             return undefined;
         }
 
+        // For models that don't support "none" (Large 4, GLM), convert to "low"
+        if (config.reasoningEffort === "none" && !efforts.includes("none")) {
+            return { mistral: { reasoningEffort: "low" } };
+        }
+        
         // Find the effort level from config, falling back to model's default
         const effort = efforts.find(level => level === config.reasoningEffort)
-            ?? (efforts.includes("high") ? "high" : efforts[0]);
+            ?? (efforts.includes("high") ? "high" as LlmReasoningEffort : efforts[0]);
         
-        // For GLM models, "none" is not supported - they always reason
-        // For Mistral Small/Medium, "none" means no thinking chunk
-        // For Mistral Large 4, "none" is not valid - use "low" instead
-        const validEffort = !efforts.includes("none") && effort === "none" ? "low" : effort;
-        
-        return { mistral: { reasoningEffort: validEffort } };
+        return { mistral: { reasoningEffort: effort } };
     }
 
     /**
@@ -196,15 +196,15 @@ export function mistralModelName(id: string): string {
     // Handle GLM models
     if (id.startsWith("zai-glm-")) {
         const version = id.replace("zai-glm-", "");
-        return `GLM ${version.replace("-", " ").toUpperCase()}`;
+        return `GLM ${version.split("-").join(" ").toUpperCase()}`;
     }
     
     // Handle standard Mistral models
-    const match = /^mistral-(\w+)(?:-(\d+(?:\.\d+)*))?$/.exec(id);
+    const match = /^mistral-(\w+?)(?:-(\d+(?:[.-]\d+)*))?$/.exec(id);
     if (match) {
         const [, tier, version] = match;
         const tierName = tier.charAt(0).toUpperCase() + tier.slice(1);
-        const versionStr = version ? ` ${version.replace("-", ".")}` : "";
+        const versionStr = version ? ` ${version.replace(/-/g, ".")}` : "";
         return `Mistral ${tierName}${versionStr}`;
     }
     
