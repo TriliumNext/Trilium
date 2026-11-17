@@ -5,6 +5,7 @@ import {
     type BlockNode,
     encodeBlockParameter,
     formatBlockRange,
+    generateBlockId,
     getEditableBlockRun,
     getListItemNumber,
     isValidBlockId,
@@ -55,6 +56,17 @@ describe("isValidBlockId", () => {
         expect(isValidBlockId("")).toBe(false);
         expect(isValidBlockId(null)).toBe(false);
         expect(isValidBlockId(undefined)).toBe(false);
+    });
+});
+
+describe("generateBlockId", () => {
+    it("draws valid ids of 12 letters and digits, a new one on each call", () => {
+        const ids = new Set(Array.from({ length: 100 }, () => generateBlockId()));
+        expect(ids.size).toBe(100);
+        for (const id of ids) {
+            expect(id).toMatch(/^[A-Za-z0-9]{12}$/);
+            expect(isValidBlockId(id)).toBe(true);
+        }
     });
 });
 

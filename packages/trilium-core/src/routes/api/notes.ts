@@ -1,4 +1,7 @@
-import { type AttributeRow, type CreateChildrenResponse, type DeleteNotesPreview, isNoteType, type MetadataResponse } from "@triliumnext/commons";
+import {
+    type AttributeRow, type CreateChildrenResponse, type DeleteNotesPreview, generateBlockId,
+    type HeadingReferenceResponse, isNoteType, type MetadataResponse, type NoteReferencesResponse
+} from "@triliumnext/commons";
 import { t } from "i18next";
 
 import type { Request } from "../../http_interface";
@@ -6,11 +9,13 @@ import type { Request } from "../../http_interface";
 import blobService from "../../services/blob";
 import { getBlockRangeContent, replaceBlockRangeContent } from "../../services/block_ranges";
 import eraseService from "../../services/erase.js";
-import { NotFoundError, ValidationError } from "../../errors.js";
+import { ConflictError, NotFoundError, ValidationError } from "../../errors.js";
 import becca from "../../becca/becca.js";
 import type BBranch from "../../becca/entities/bbranch.js";
+import type BNote from "../../becca/entities/bnote.js";
 import { getLog } from "../../services/log.js";
 import noteFormatConversionService from "../../services/note_format_conversion.js";
+import { addHeadingReference, findNoteReferences } from "../../services/note_references";
 import noteService from "../../services/notes.js";
 import { getSql } from "../../services/sql/index";
 import TaskContext from "../../services/task_context.js";
@@ -133,23 +138,66 @@ function updateNoteBlocks(req: Request<{ noteId: string }>) {
     noteService.updateNoteData(req.params.noteId, newContent, attachments);
 }
 
+/** The headings and anchors of a text note, which a link can point at. */
+function getNoteReferences(req: Request<{ noteId: string }>) {
+    const note = becca.getNoteOrThrow(req.params.noteId);
+    return {
+        ...findNoteReferences(getTextContent(note)),
+        isWritable: note.isContentWritable()
+    } satisfies NoteReferencesResponse;
+}
+
+/**
+ * Gives a heading of a text note a block id, unless it has one, and returns the id. Read-only
+ * notes get it too: the id is invisible, and a link to the heading needs it.
+ */
+function createHeadingReference(req: Request<{ noteId: string }>) {
+    const { index, text } = req.body ?? {};
+    if (!Number.isSafeInteger(index) || index < 0 || typeof text !== "string" || !text) {
+        throw new ValidationError("Expected the 'index' and the 'text' of a heading.");
+    }
+
+    const note = becca.getNoteOrThrow(req.params.noteId);
+    if (!note.isContentWritable()) {
+        throw new ValidationError(`The content of note '${note.noteId}' cannot be changed.`);
+    }
+
+    const content = getTextContent(note);
+    const reference = addHeadingReference(content, { index, text }, generateBlockId);
+    // The message leaves the text out: it reaches the log, and it can come from a protected note.
+    if (!reference) {
+        throw new ConflictError(
+            `The headings of note '${note.noteId}' changed: heading ${index} was not found.`
+        );
+    }
+
+    // A plain save: the id is invisible, so it takes no revision, and it changes no link.
+    if (reference.content !== content) {
+        note.setContent(reference.content);
+    }
+    return { blockId: reference.blockId } satisfies HeadingReferenceResponse;
+}
+
 function getBlockRangeRequest(req: Request<{ noteId: string }>) {
     const { block } = req.query;
     if (typeof block !== "string") {
         throw new ValidationError("Missing the 'block' parameter.");
     }
 
-    const note = becca.getNoteOrThrow(req.params.noteId);
-    const content = note.type === "text" && note.isContentAvailable() ? note.getContent() : null;
-    if (typeof content !== "string") {
-        throw new ValidationError(`Note '${note.noteId}' has no text content to edit.`);
-    }
-
-    return { content, block };
+    return { content: getTextContent(becca.getNoteOrThrow(req.params.noteId)), block };
 }
 
 function getBlockRangeError(noteId: string, block: string) {
     return `Blocks '${block}' of note '${noteId}' do not exist or cannot be edited apart.`;
+}
+
+/** The HTML of `note`, which must be a text note whose content is available. */
+function getTextContent(note: BNote) {
+    const content = note.type === "text" && note.isContentAvailable() ? note.getContent() : null;
+    if (typeof content !== "string") {
+        throw new ValidationError(`Note '${note.noteId}' has no text content available.`);
+    }
+    return content;
 }
 
 function deleteNote(req: Request<{ noteId: string }>) {
@@ -460,6 +508,8 @@ export default {
     updateNoteData,
     getNoteBlocks,
     updateNoteBlocks,
+    getNoteReferences,
+    createHeadingReference,
     deleteNote,
     undeleteNote,
     createNote,

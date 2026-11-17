@@ -614,6 +614,141 @@ Core note operations
 
     No content.
 
+### List the headings and anchors of a text note
+
+`GET /api/notes/{noteId}/references` · `getNoteReferences`
+
+The headings that have text and the anchors of a text note, in document order: what a link can point at, a heading through `?block=` and its block id, an anchor through `?bookmark=`. The text of a heading is plain text, never HTML. A heading whose block id an earlier block of the note also has is listed without it, since a link reaches that block.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `noteId`  <br>_required_ | `string`  <br>12-character note ID |
+
+**Responses**
+
+=== "200: The headings and anchors of the note"
+
+    *   `application/json`: [`NoteReferences`](#schema-NoteReferences)
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `headings`  <br>_required_ | array of [`HeadingReference`](#schema-HeadingReference) |
+    | `anchors`  <br>_required_ | `array of string`  <br>The ids of the anchors, the `bookmark` link parameter |
+    | `isWritable`  <br>_required_ | `boolean`  <br>Whether a heading without a block id can be given one |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "headings": [
+            {
+                "level": 2,
+                "text": "Installation",
+                "blockId": "eaJkN47U8kI4"
+            }
+        ],
+        "anchors": [
+            "setup-done"
+        ],
+        "isWritable": true
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "400: Not a text note, or a protected note without a protected session"
+
+    No content.
+
+=== "404: Note not found"
+
+    No content.
+
+### Give a heading a block id
+
+`POST /api/notes/{noteId}/references/heading` · `createHeadingReference`
+
+Gives a heading of a text note a block id, unless it has one, and returns the id. The heading is the one at `index` in the `headings` of `GET /api/notes/{noteId}/references` while its text is still `text`, otherwise the only heading with that text. Read-only notes get the id too. The attribute is the only change to the content, and no revision is saved.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `noteId`  <br>_required_ | `string`  <br>12-character note ID |
+
+**Request body** (required)
+
+*   `application/json`: `object`
+
+<div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+<div class="trilium-multicolumn-column">
+
+| Property | Description |
+| --- | --- |
+| `index`  <br>_required_ | `integer`  <br>The position of the heading in `headings` |
+| `text`  <br>_required_ | `string`  <br>The text of the heading at that position |
+
+</div>
+<div class="trilium-multicolumn-column">
+
+```json
+{
+    "index": 0,
+    "text": "Installation"
+}
+```
+
+</div>
+</div>
+
+**Responses**
+
+=== "200: The block id of the heading"
+
+    *   `application/json`: `object`
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `blockId` | `string` |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "blockId": "eaJkN47U8kI4"
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "400: A malformed request, a note that is not a text note, a protected note without a protected session, or a note whose content cannot be changed, such as a help page"
+
+    No content.
+
+=== "404: Note not found"
+
+    No content.
+
+=== "409: No heading matches, because the headings changed since they were listed"
+
+    No content.
+
 ### Change note title
 
 `PUT /api/notes/{noteId}/title` · `updateNoteTitle`
@@ -7765,6 +7900,22 @@ Example: `2025-02-13 07:42:47.698Z`
 | `dateModified` | [`DateTime`](#schema-DateTime) |
 | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+
+### <a id="schema-HeadingReference"></a>`HeadingReference`
+
+| Property | Description |
+| --- | --- |
+| `level`  <br>_required_ | `integer` |
+| `text`  <br>_required_ | `string`  <br>The plain text of the heading |
+| `blockId` | `string`  <br>The block id of the heading; absent when it has none |
+
+### <a id="schema-NoteReferences"></a>`NoteReferences`
+
+| Property | Description |
+| --- | --- |
+| `headings`  <br>_required_ | array of [`HeadingReference`](#schema-HeadingReference) |
+| `anchors`  <br>_required_ | `array of string`  <br>The ids of the anchors, the `bookmark` link parameter |
+| `isWritable`  <br>_required_ | `boolean`  <br>Whether a heading without a block id can be given one |
 
 ### <a id="schema-CreateNoteRequest"></a>`CreateNoteRequest`
 

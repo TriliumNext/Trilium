@@ -530,6 +530,80 @@ paths:
         '404':
           description: Note not found
           
+  /api/notes/{noteId}/references:
+    get:
+      tags: [Notes]
+      summary: List the headings and anchors of a text note
+      description: >-
+        The headings that have text and the anchors of a text note, in document order: what a link
+        can point at, a heading through `?block=` and its block id, an anchor through
+        `?bookmark=`. The text of a heading is plain text, never HTML. A heading whose block id an
+        earlier block of the note also has is listed without it, since a link reaches that block.
+      operationId: getNoteReferences
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: The headings and anchors of the note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteReferences'
+        '400':
+          description: Not a text note, or a protected note without a protected session
+        '404':
+          description: Note not found
+
+  /api/notes/{noteId}/references/heading:
+    post:
+      tags: [Notes]
+      summary: Give a heading a block id
+      description: >-
+        Gives a heading of a text note a block id, unless it has one, and returns the id. The
+        heading is the one at `index` in the `headings` of `GET /api/notes/{noteId}/references`
+        while its text is still `text`, otherwise the only heading with that text. Read-only notes
+        get the id too. The attribute is the only change to the content, and no revision is saved.
+      operationId: createHeadingReference
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [index, text]
+              properties:
+                index:
+                  type: integer
+                  minimum: 0
+                  description: The position of the heading in `headings`
+                  example: 0
+                text:
+                  type: string
+                  minLength: 1
+                  description: The text of the heading at that position
+                  example: Installation
+      responses:
+        '200':
+          description: The block id of the heading
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  blockId:
+                    type: string
+                    example: eaJkN47U8kI4
+        '400':
+          description: >-
+            A malformed request, a note that is not a text note, a protected note without a
+            protected session, or a note whose content cannot be changed, such as a help page
+        '404':
+          description: Note not found
+        '409':
+          description: No heading matches, because the headings changed since they were listed
+
   /api/notes/{noteId}/title:
     put:
       tags: [Notes]
@@ -4957,6 +5031,42 @@ components:
         utcDateModified:
           $ref: '#/components/schemas/UtcDateTime'
           
+    HeadingReference:
+      type: object
+      required: [level, text]
+      properties:
+        level:
+          type: integer
+          minimum: 1
+          maximum: 6
+          example: 2
+        text:
+          type: string
+          description: The plain text of the heading
+          example: Installation
+        blockId:
+          type: string
+          description: The block id of the heading; absent when it has none
+          example: eaJkN47U8kI4
+
+    NoteReferences:
+      type: object
+      required: [headings, anchors, isWritable]
+      properties:
+        headings:
+          type: array
+          items:
+            $ref: '#/components/schemas/HeadingReference'
+        anchors:
+          type: array
+          items:
+            type: string
+            example: setup-done
+          description: The ids of the anchors, the `bookmark` link parameter
+        isWritable:
+          type: boolean
+          description: Whether a heading without a block id can be given one
+
     CreateNoteRequest:
       type: object
       required:

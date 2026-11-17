@@ -1,3 +1,4 @@
+import type { HeadingReferenceResponse, NoteReferencesResponse } from "@triliumnext/commons";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../../becca/becca";
@@ -215,6 +216,149 @@ describe("Notes API (core)", () => {
             expect((await api.put(url, { query: { block: "a:x" }, body: { content: "" } })).status)
                 .toBe(404);
             expect((await api.put(url, { query: { block: "a" }, body: {} })).status).toBe(400);
+        });
+    });
+
+    describe("heading and anchor references", () => {
+        const content = `<h2>Intro</h2><p><a id="start"></a>Text</p>`
+            + `<h3 data-trilium-block-id="kept1">Details</h3>`;
+
+        function addReference(noteId: string, body: unknown) {
+            return api.post<HeadingReferenceResponse>(
+                `/api/notes/${noteId}/references/heading`, { body }
+            );
+        }
+
+        function countRevisions(noteId: string) {
+            return getSql().getValue<number>(
+                "SELECT COUNT(*) FROM revisions WHERE noteId = ?", [ noteId ]
+            );
+        }
+
+        it("lists the headings and anchors of a text note", async () => {
+            const { noteId } = await createTextNote(api, { content });
+
+            const res = await api.get<NoteReferencesResponse>(`/api/notes/${noteId}/references`);
+            expect(res.status).toBe(200);
+            expect(res.body).toStrictEqual({
+                headings: [
+                    { level: 2, text: "Intro" },
+                    { level: 3, text: "Details", blockId: "kept1" }
+                ],
+                anchors: [ "start" ],
+                isWritable: true
+            });
+        });
+
+        it("gives a heading of a read-only note a block id once, without a revision", async () => {
+            const { noteId } = await createTextNote(api, { content });
+            const readOnly = await api.put(`/api/notes/${noteId}/set-attribute`, {
+                body: { type: "label", name: "readOnly", value: "" }
+            });
+            expect(readOnly.status).toBe(204);
+            const note = becca.getNoteOrThrow(noteId);
+            expect(note.hasLabel("readOnly")).toBe(true);
+
+            // A regular save of a note created before the revision interval takes a revision.
+            const control = becca.getNoteOrThrow((await createTextNote(api, { content })).noteId);
+            note.utcDateCreated = "2020-01-01 00:00:00.000Z";
+            control.utcDateCreated = note.utcDateCreated;
+            await api.put(`/api/notes/${control.noteId}/data`, {
+                body: { content: `${content}<p>Edit</p>` }
+            });
+            expect(countRevisions(control.noteId)).toBe(1);
+
+            const created = await addReference(noteId, { index: 0, text: "Intro" });
+            expect(created.status).toBe(200);
+            const { blockId } = created.body;
+            expect(blockId).toMatch(/^[A-Za-z0-9]{12}$/);
+            expect(note.getContent())
+                .toBe(content.replace("<h2>", `<h2 data-trilium-block-id="${blockId}">`));
+            expect(countRevisions(noteId)).toBe(0);
+
+            const { blobId } = note;
+            expect((await addReference(noteId, { index: 0, text: "Intro" })).body)
+                .toStrictEqual({ blockId });
+            expect((await addReference(noteId, { index: 1, text: "Details" })).body)
+                .toStrictEqual({ blockId: "kept1" });
+            expect(note.blobId).toBe(blobId);
+
+            const listed = await api.get<NoteReferencesResponse>(`/api/notes/${noteId}/references`);
+            expect(listed.body.headings[0]).toStrictEqual({ level: 2, text: "Intro", blockId });
+        });
+
+        it("answers 409 for a heading that changed, without writing it or naming it", async () => {
+            const { noteId } = await createTextNote(api, { content });
+            const { blobId } = becca.getNoteOrThrow(noteId);
+
+            const res = await addReference(noteId, { index: 0, text: "Secret plans" });
+            expect(res.status).toBe(409);
+            expect(JSON.stringify(res.body)).not.toContain("Secret");
+            expect(becca.getNoteOrThrow(noteId).blobId).toBe(blobId);
+        });
+
+        it("rejects malformed requests, and notes without text content to change", async () => {
+            const { noteId } = await createTextNote(api, { content });
+            const bodies = [
+                undefined, null, [ 0, "Intro" ], {}, { index: 0 }, { text: "Intro" },
+                { index: -1, text: "Intro" }, { index: 0.5, text: "Intro" },
+                { index: "0", text: "Intro" }, { index: 0, text: "" }, { index: 0, text: 1 }
+            ];
+            for (const body of bodies) {
+                expect((await addReference(noteId, body)).status).toBe(400);
+            }
+
+            const codeNote = await api.post<{ note: { noteId: string } }>(
+                "/api/notes/root/children?target=into",
+                { body: { title: "Code", type: "code", mime: "text/html", content } }
+            );
+            const codeNoteId = codeNote.body.note.noteId;
+            expect((await api.get(`/api/notes/${codeNoteId}/references`)).status).toBe(400);
+            expect((await addReference(codeNoteId, { index: 0, text: "Intro" })).status).toBe(400);
+            expect((await api.get("/api/notes/missingNote/references")).status).toBe(404);
+            expect((await addReference("missingNote", { index: 0, text: "Intro" })).status)
+                .toBe(404);
+
+            const note = becca.getNoteOrThrow(noteId);
+            note.isProtected = true;
+            try {
+                expect((await api.get(`/api/notes/${noteId}/references`)).status).toBe(400);
+                expect((await addReference(noteId, { index: 0, text: "Intro" })).status).toBe(400);
+            } finally {
+                note.isProtected = false;
+            }
+            expect(note.getContent()).toBe(content);
+        });
+
+        describe("of a read-only virtual note", () => {
+            beforeAll(() => {
+                registerVirtualNoteProvider({
+                    namespace: "_vref",
+                    parentNoteId: "_hidden",
+                    getSubtree: () => [ { id: "_vrefPage", title: "Page", type: "text" } ],
+                    getContent: () => "<h2>Shipped</h2>"
+                });
+                getContext().init(() => load());
+            });
+
+            afterAll(() => {
+                unregisterVirtualNoteProvider("_vref");
+                getContext().init(() => load());
+            });
+
+            it("lists its references and refuses to change them", async () => {
+                const res = await api.get<NoteReferencesResponse>(
+                    "/api/notes/_vrefPage/references"
+                );
+                expect(res.body).toStrictEqual({
+                    headings: [ { level: 2, text: "Shipped" } ],
+                    anchors: [],
+                    isWritable: false
+                });
+                expect((await addReference("_vrefPage", { index: 0, text: "Shipped" })).status)
+                    .toBe(400);
+                expect(becca.getNoteOrThrow("_vrefPage").getContent()).toBe("<h2>Shipped</h2>");
+            });
         });
     });
 

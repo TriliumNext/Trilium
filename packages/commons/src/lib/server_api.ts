@@ -325,6 +325,39 @@ export interface MetadataResponse {
     utcDateModified: string | undefined;
 }
 
+/** A heading of a text note, as `GET /api/notes/:noteId/references` lists it. */
+export interface HeadingReference {
+    /** 1 for `<h1>`, up to 6 for `<h6>`. */
+    level: number;
+    /** The plain text of the heading, never HTML. */
+    text: string;
+    /** The block id of the heading, if it has one. */
+    blockId?: string;
+}
+
+/** What a link can point at inside a text note. */
+export interface NoteReferencesResponse {
+    /** The headings that have text, in document order. */
+    headings: HeadingReference[];
+    /** The ids of the anchors, the `bookmark` link parameter, in document order. */
+    anchors: string[];
+    /** Whether a heading without a block id can be given one. */
+    isWritable: boolean;
+}
+
+/** Names a heading for `POST /api/notes/:noteId/references/heading`. */
+export interface HeadingReferenceRequest {
+    /** The position of the heading in `NoteReferencesResponse.headings`. */
+    index: number;
+    /** Its `text` there. */
+    text: string;
+}
+
+export interface HeadingReferenceResponse {
+    /** The block id of the heading. */
+    blockId: string;
+}
+
 export interface NoteSizeResponse {
     noteSize: number;
 }
