@@ -4436,7 +4436,7 @@
     "provider_group_local": "Local / self-hosted",
     "provider_group_local_description": "No API key, no usage cost. Your notes only reach the machine running the model.",
     "provider_group_custom": "Custom endpoint",
-    "provider_group_custom_description": "Any OpenAI-compatible API, local or hosted (Groq, Mistral, Together). Cost and privacy depend on where you point it.",
+    "provider_group_custom_description": "Any OpenAI-compatible API, local or hosted (Groq, Together). Cost and privacy depend on where you point it.",
     "provider_openai_compatible": "OpenAI-compatible",
     "provider_desc_openai_compatible": "Point Trilium at any endpoint that speaks the OpenAI API.",
     "api_key_optional_description": "Optional. Only needed if your endpoint is behind an authenticating proxy or gateway.",
