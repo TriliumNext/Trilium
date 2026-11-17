@@ -78,69 +78,75 @@
         "lmstudio"
       ]
     },
-    "tn-brand-notion": {
+    "tn-brand-mistral": {
       "glyph": "",
+      "terms": [
+        "mistral"
+      ]
+    },
+    "tn-brand-notion": {
+      "glyph": "",
       "terms": [
         "notion"
       ]
     },
     "tn-brand-obsidian": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "obsidian"
       ]
     },
     "tn-brand-ollama": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "ollama"
       ]
     },
     "tn-brand-onenote": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "onenote"
       ]
     },
     "tn-brand-openai": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "openai"
       ]
     },
     "tn-brand-openrouter": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "openrouter"
       ]
     },
     "tn-brand-perplexity": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "perplexity"
       ]
     },
     "tn-brand-searxng": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "searxng"
       ]
     },
     "tn-brand-serper": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "serper"
       ]
     },
     "tn-brand-tavily": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "tavily"
       ]
     }
   },
   "metrics": {
-    "ascent": 0.85,
-    "descent": 0.15
+    "ascent": 0.85025,
+    "descent": 0.14975
   }
 }
