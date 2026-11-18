@@ -545,7 +545,13 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                             .map((note) => note.branchId)
                             .filter((branchId) => branchId) as string[];
 
-                        if (data.hitMode === "before") {
+                        // The marker for "after" an expanded note sits above its first child, so the
+                        // drop goes there rather than to the note's next sibling.
+                        const firstChild = data.hitMode === "after" && node.isExpanded() ? node.children?.[0] : undefined;
+
+                        if (firstChild) {
+                            branchService.moveBeforeBranch(selectedBranchIds, firstChild.data.branchId);
+                        } else if (data.hitMode === "before") {
                             branchService.moveBeforeBranch(selectedBranchIds, node.data.branchId);
                         } else if (data.hitMode === "after") {
                             branchService.moveAfterBranch(selectedBranchIds, node.data.branchId);

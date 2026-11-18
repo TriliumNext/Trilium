@@ -5,6 +5,7 @@ import appContext from "../components/app_context.js";
 import type { EventData } from "../components/app_context.js";
 import type TabManager from "../components/tab_manager.js";
 import FBranch from "../entities/fbranch.js";
+import branchService from "../services/branches.js";
 import froca from "../services/froca.js";
 import hoistedNoteService from "../services/hoisted_note.js";
 import keyboardActionsService from "../services/keyboard_actions.js";
@@ -521,5 +522,34 @@ describe("drags onto the tree", () => {
         const editorTypes = [ "text/plain", "text/html", "application/ckeditor5-dragging-uid" ];
         expect(dnd.dragEnter(target, dragOf(...editorTypes))).toBe(false);
         expect(dnd.dragEnter(target, dragOf("text/plain", "text/html"))).toBe(true);
+    });
+
+    it("drops below an expanded note as its first child, not as its next sibling", async () => {
+        vi.spyOn(hoistedNoteService, "getHoistedNoteId").mockReturnValue("root");
+        const moveBefore = vi.spyOn(branchService, "moveBeforeBranch").mockResolvedValue(true);
+        const moveAfter = vi.spyOn(branchService, "moveAfterBranch").mockResolvedValue(true);
+        const dnd = await getDndHandlers();
+
+        const grandparent = { data: { noteId: "grandparent", noteType: "text" } };
+        const firstChild = { data: { noteId: "first", branchId: "parent_first", noteType: "text" } };
+        const parentNode = (expanded: boolean) => ({
+            data: { noteId: "parent", branchId: "grandparent_parent", noteType: "text" },
+            children: [ firstChild ],
+            isExpanded: () => expanded,
+            getParent: () => grandparent
+        });
+        const dropAfter = (node: unknown) => dnd.dragDrop(node, {
+            hitMode: "after",
+            dataTransfer: { files: [], getData: () => JSON.stringify([ { noteId: "moved", branchId: "x_moved" } ]) }
+        });
+
+        await dropAfter(parentNode(true));
+        expect(moveBefore).toHaveBeenCalledWith([ "x_moved" ], "parent_first");
+        expect(moveAfter).not.toHaveBeenCalled();
+
+        moveBefore.mockClear();
+        await dropAfter(parentNode(false));
+        expect(moveAfter).toHaveBeenCalledWith([ "x_moved" ], "grandparent_parent");
+        expect(moveBefore).not.toHaveBeenCalled();
     });
 });
