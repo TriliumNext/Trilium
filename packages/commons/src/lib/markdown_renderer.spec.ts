@@ -828,6 +828,14 @@ describe("demoteHeadings", () => {
         expect(demoteHeadings(content, "Title", verbatim))
             .toBe(`<h2 data-trilium-block-id="t">Title</h2><h3>A</h3>`);
     });
+
+    it("reads each unclosed <h1> only up to the next heading", () => {
+        for (const content of [ "<h1=".repeat(40_000), "<h1>a".repeat(40_000) ]) {
+            const start = performance.now();
+            expect(demoteHeadings(content, "Title", verbatim)).toBe(content);
+            expect(performance.now() - start).toBeLessThan(500);
+        }
+    });
 });
 
 describe("block markers", () => {

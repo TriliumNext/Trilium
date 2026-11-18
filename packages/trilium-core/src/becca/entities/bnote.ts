@@ -1728,15 +1728,15 @@ export function remapAttachmentReferences(content: string, attachmentIds: Map<st
 /**
  * `content` with each link to an attachment of `attachmentIds` turned into a download link of the
  * attachment that the map gives for it, which a revision can show without its note.
+ *
+ * Exported for testing.
  */
-function toAttachmentDownloadLinks(content: string, attachmentIds: Map<string, string>) {
-    return content.replace(
-        /href="[^"]*attachmentId=([a-zA-Z0-9_]+)[^"]*"/gi,
-        (match, attachmentId: string) => {
-            const newId = attachmentIds.get(attachmentId);
-            return newId ? `href="api/attachments/${newId}/download"` : match;
-        }
-    );
+export function toAttachmentDownloadLinks(content: string, attachmentIds: Map<string, string>) {
+    return content.replace(/href="([^"]*)"/gi, (match, href: string) => {
+        const attachmentId = /attachmentId=([a-zA-Z0-9_]+)/i.exec(href)?.[1];
+        const newId = attachmentId && attachmentIds.get(attachmentId);
+        return newId ? `href="api/attachments/${newId}/download"` : match;
+    });
 }
 
 /** The content of `row`, decoded when its `encoding` is `base64`. */

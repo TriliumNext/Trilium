@@ -1274,7 +1274,7 @@ describe("EditLinkDialog", () => {
         );
         expect(showError).toHaveBeenCalledExactlyOnceWith("add_link.listing_changed");
         expect(addLink).not.toHaveBeenCalled();
-        expect(noteChoices().map((choice) => choice.replace("*", "")))
+        expect(noteChoices().map((choice) => choice.replace(/^\*/, "")))
             .toStrictEqual([ "add_link.top_of_note", "Moved", "Status" ]);
     });
 

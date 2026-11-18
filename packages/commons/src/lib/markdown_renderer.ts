@@ -240,7 +240,7 @@ export function demoteHeadings(
     // If a content <h1> still remains, the hierarchy starts at level 1: shift every
     // heading down one level (clamping at <h6>) so nesting is preserved instead of
     // collapsing distinct <h1>/<h2> levels onto the same <h2>.
-    if (/<h1[^>]*>[\s\S]*?<\/h1>/i.test(content)) {
+    if (H1.test(content)) {
         content = shiftHeadingsDown(content, unescapeHtml);
     }
 
@@ -256,10 +256,8 @@ function stripDuplicateTitleHeading(
     title: string,
     unescapeHtml: EntityDecoder
 ): string {
-    // No `g` flag: only the very first <h1> is a title candidate. `[\s\S]*?` (not
-    // `[^<]*`) so headings with inline markup or attributes still match.
-    const firstHeading = /<h1([^>]*)>([\s\S]*?)<\/h1>/i;
-    return content.replace(firstHeading, (match, attributes: string, text: string) => {
+    // No `g` flag: only the very first <h1> is a title candidate.
+    return content.replace(H1, (match, attributes: string, text: string) => {
         const isTitle = unescapeHtml(text).trim() === title.trim();
         return isTitle && !attributes.includes(BLOCK_ID_ATTRIBUTE) ? "" : match;
     });
@@ -271,14 +269,20 @@ function stripDuplicateTitleHeading(
  */
 function shiftHeadingsDown(content: string, unescapeHtml: EntityDecoder): string {
     // Shift the sub-headings first so the <h1>→<h2> demotion below isn't re-shifted.
-    // `[\s\S]*?` matches headings containing inline markup; the captured attributes
-    // are carried over to the demoted <h2>.
+    // The captured attributes are carried over to the demoted <h2>.
     return content
         .replace(/<(\/?)h([2-5])\b([^>]*)>/gi, (_match, slash, level, rest) =>
             `<${slash}h${Number(level) + 1}${rest}>`)
-        .replace(/<h1([^>]*)>([\s\S]*?)<\/h1>/gi, (_match, attrs, text) =>
+        .replace(ALL_H1, (_match, attrs, text) =>
             `<h2${attrs}>${unescapeHtml(text)}</h2>`);
 }
+
+/**
+ * An `<h1>`, its attributes and its text, which can hold inline markup but no `<h…>` tag: a match
+ * from an `<h1>` that is never closed then ends at the next heading, not at the end of the content.
+ */
+const H1 = /<h1([^<>]*)>((?:[^<]|<[^h<])*?)<\/h1>/i;
+const ALL_H1 = new RegExp(H1.source, "gi");
 
 export function extractCodeBlocks(text: string): { processedText: string; placeholderMap: Map<string, string> } {
     const codeMap = new Map<string, string>();
