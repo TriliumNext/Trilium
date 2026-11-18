@@ -112,6 +112,15 @@ describe("extractCodeBlocks", () => {
         expect(processedText).not.toContain("```");
         expect([...placeholderMap.values()][0]).toBe(input);
     });
+
+    it("should shield a 4-backtick block containing a 3-backtick inner fence and $-delimited text", () => {
+        const input = "````markdown\nExample:\n\n```js\nfoo()\n```\n$x$\n````";
+        const { processedText, placeholderMap } = extractCodeBlocks(input);
+
+        expect(placeholderMap.size).toBe(1);
+        expect(processedText).not.toContain("$x$");
+        expect([...placeholderMap.values()][0]).toBe(input);
+    });
 });
 
 describe("renderToHtml", () => {

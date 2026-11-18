@@ -52,7 +52,6 @@ const fencedCodeBlockFilter: Rule = {
         // A fence closes on a line starting with at least as many fence characters, so the fence
         // has to be longer than any such run in the code, as Turndown's own rule does.
         const code = String(node.firstChild.textContent);
-        // Turndown fills in its default fence ("```") when none is configured.
         const fenceChar = String(options.fence).charAt(0);
         let fenceSize = 3;
         for (const [ run ] of code.matchAll(new RegExp(`^ {0,3}(?:\\${fenceChar}){3,}`, "gm"))) {
