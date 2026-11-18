@@ -61,8 +61,6 @@
     "help_on_links": "راهنمای پیوند‌ها",
     "search_note": "جست‌وجوی یادداشت با نام آن",
     "link_title": "عنوان پیوند",
-    "anchor": "لنگر (اختیاری)",
-    "anchor_none": "هیچ‌کدام (پیوند به یادداشت)",
     "button_add_link": "افزودن پیوند",
     "button_edit_link": "ذخیرهٔ پیوند",
     "button_fix_link": "اصلاح پیوند"

@@ -60,8 +60,6 @@
     "button_add_link": "リンクを挿入",
     "help_on_links": "リンクに関するヘルプ",
     "search_note": "ノート名で検索",
-    "anchor": "アンカー（任意）",
-    "anchor_none": "なし（ノートへのリンク）",
     "edit_link": "リンクを編集",
     "button_edit_link": "リンクを保存",
     "fix_link": "リンクを修正",
@@ -86,7 +84,14 @@
     "invalid_url": "有効な URL ではありません。",
     "script_link_not_allowed": "{{scheme}} で始まるリンクはコードを実行する可能性があるため、使用できません。",
     "retrieving_from_page": "web ページから取得中...",
-    "title_from_attachment": "設定されていない場合、常に添付ファイルのタイトルが表示されます"
+    "title_from_attachment": "設定されていない場合、常に添付ファイルのタイトルが表示されます",
+    "top_of_note": "ノート全体にリンク",
+    "select_note_for_targets": "リンク可能な見出しとアンカーを表示するには、ノートを選択してください。",
+    "inspecting_note": "ノート構造を確認しています",
+    "heading_reference_failed": "指定された見出しへのリンクを作成できませんでした",
+    "link_to_heading": "見出しにリンク",
+    "link_to_anchor": "アンカーにリンク",
+    "no_link_targets": "リンク可能な見出しやアンカーがありません。"
   },
   "branch_prefix": {
     "save": "保存",
@@ -2008,7 +2013,9 @@
     "link_title_retrieval_enabled": "テキストリンクのタイトルを自動的に取得",
     "link_title_retrieval_description": "リンクエディターで、テキストリンクのタイトルが空の場合、Web ページのタイトルを自動入力します。",
     "link_details_retrieval_enabled": "アイコンとテキスト のリンクやカードのタイトルと説明を自動的に取得",
-    "link_details_retrieval_description": "リンクエディターで、アイコンとテキスト のリンクまたはカードのタイトルや説明が空の場合、Web ページの情報を自動入力します。"
+    "link_details_retrieval_description": "リンクエディターで、アイコンとテキスト のリンクまたはカードのタイトルや説明が空の場合、Web ページの情報を自動入力します。",
+    "note_completion_link_targets_enabled": "リンク先の見出しとアンカーの候補",
+    "note_completion_link_targets_description": "ノートを選択した後、対象ノート内のリンク先として見出しやアンカーの候補を表示します。"
   },
   "table_context_menu": {
     "delete_row": "行を削除...",
@@ -3525,7 +3532,16 @@
     "add_model_provider": "モデルプロバイダーを追加",
     "no_model_providers_configured": "モデルプロバイダーはまだ設定されていません。",
     "provider_no_models": "モデルが選択されていないため、チャットでは利用できません。",
-    "search_provider_unavailable_standalone": "ブラウザ版では利用不可: このサービスは web ページからのリクエストを拒否するため、デスクトップ版またはサーバー版からのみ使用可能です。"
+    "search_provider_unavailable_standalone": "ブラウザ版では利用不可: このサービスは web ページからのリクエストを拒否するため、デスクトップ版またはサーバー版からのみ使用可能です。",
+    "search_check_heading": "テスト検索",
+    "search_check_running": "テスト検索を実行中…",
+    "search_check_passed": "検索プロバイダは正常に動作しています。テスト検索の最初の結果は以下の通りです:",
+    "search_check_no_results": "検索プロバイダから応答はありましたが、テスト検索の結果は見つかりませんでした。検索エンジンが有効になっていない可能性があります。",
+    "search_check_failed": "テスト検索に失敗しました: {{error}}",
+    "search_check_failed_hint": "サービスが起動していない場合でも、プロバイダーを追加して事前設定することもできます。",
+    "add_provider_anyway": "そのまま追加",
+    "save_anyway": "そのまま保存",
+    "retry": "再試行"
   },
   "ocr": {
     "extracted_text": "抽出されたテキスト（OCR）",

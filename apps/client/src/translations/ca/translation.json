@@ -6,8 +6,6 @@
     "help_on_links": "Ajuda sobre els links",
     "search_note": "Cerca una nota pel seu nom",
     "link_title": "Títol de l'enllaç",
-    "anchor": "Àncora (opcional)",
-    "anchor_none": "Cap (enllaç a la nota)",
     "button_add_link": "Afegeix un enllaç",
     "button_edit_link": "Guarda l'enllaç"
   },

@@ -60,8 +60,6 @@
     "search_note": "rechercher une note par son nom",
     "link_title": "Titre du lien",
     "button_add_link": "Ajouter un lien",
-    "anchor": "Ancre (optionnel)",
-    "anchor_none": "Aucune (lien vers la note)",
     "edit_link": "Modifier le lien",
     "button_edit_link": "Enregistrer le lien",
     "fix_link": "Corriger le lien",

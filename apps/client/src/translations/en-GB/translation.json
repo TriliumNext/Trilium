@@ -107,9 +107,7 @@
     "help_on_links": "Help on links",
     "note": "Note",
     "search_note": "search for note by its name",
-    "link_title": "Link title",
-    "anchor": "Anchor (optional)",
-    "anchor_none": "None (link to note)"
+    "link_title": "Link title"
   },
   "delete_notes": {
     "delete_clones_description_one": "Also delete {{count}} other clone. Can be undone in recent changes.",
