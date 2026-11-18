@@ -426,27 +426,38 @@ function findFencedCodeBlocks(text: string) {
  * line of text indented less than the content of the list item.
  */
 function findClosingFence(lines: Line[], opening: number, prefix: string, fence: string) {
-    const run = `${fence[0]}{${fence.length},}`;
-    const closingFence = new RegExp(`^${CLOSING_FENCE_PREFIX}${run}[ \\t]*\\r?$`);
-    const quoteMarkers = new RegExp(`^(?:[ \\t]*>){${prefix.split(">").length - 1}}`);
+    const quoteCount = prefix.split(">").length - 1;
     const afterQuotes = prefix.slice(prefix.lastIndexOf(">") + 1);
     const contentIndent = /\S/.test(afterQuotes) ? afterQuotes.length : 0;
 
     for (let index = opening + 1; index < lines.length; index++) {
         const { text } = lines[index];
-        const markers = quoteMarkers.exec(text);
-        if (!markers) {
+        const rest = stripQuoteMarkers(text, quoteCount);
+        if (rest === null) {
             return null;
         }
-        const rest = text.slice(markers[0].length);
         if (rest.trim() && rest.length - rest.trimStart().length < contentIndent) {
             return null;
         }
-        if (closingFence.test(text)) {
+        const run = CLOSING_FENCE.exec(text)?.[1];
+        if (run?.[0] === fence[0] && run.length >= fence.length) {
             return index;
         }
     }
     return null;
+}
+
+/** `line` after its first `count` quote markers, or `null` when it has fewer. */
+function stripQuoteMarkers(line: string, count: number) {
+    let rest = line;
+    for (let marker = 0; marker < count; marker++) {
+        const match = QUOTE_MARKER.exec(rest);
+        if (!match) {
+            return null;
+        }
+        rest = rest.slice(match[0].length);
+    }
+    return rest;
 }
 
 /** A line of a text, and where it starts and ends. */
@@ -471,8 +482,10 @@ function getLines(text: string) {
 const OPENING_FENCE_PREFIX = String.raw`(?:[ \t]*(?:>|[-*+](?=[ \t])|\d{1,9}[.)](?=[ \t])))*[ \t]*`;
 /** A line that opens a fence. The info string of a backtick fence holds no backtick. */
 const OPENING_FENCE = new RegExp(`^(${OPENING_FENCE_PREFIX})(\`{3,}(?=[^\`]*$)|~{3,})`);
-/** The prefixes in front of a closing fence: indentation and quote markers. */
-const CLOSING_FENCE_PREFIX = String.raw`[ \t]*(?:>[ \t]*)*`;
+/** A line that can close a fence: indentation, quote markers, then the run of the fence alone. */
+const CLOSING_FENCE = /^[ \t]*(?:>[ \t]*)*(`{3,}|~{3,})[ \t]*\r?$/;
+/** A quote marker at the start of a line, after its indentation. */
+const QUOTE_MARKER = /^[ \t]*>/;
 /** The indentation of a fence outside any container. */
 const TOP_LEVEL_INDENT = /^ {0,3}$/;
 

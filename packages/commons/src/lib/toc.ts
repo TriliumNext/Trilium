@@ -85,15 +85,16 @@ export function assignHeadingIds(
 ): string[] {
     const structure = readStructure(headings);
     const hashes = hashHeadings(headings, structure);
-    const hashCounts = new Map<string, number>();
+    const seenHashes = new Set<string>();
+    const sharedHashes = new Set<string>();
     for (const hash of hashes) {
-        hashCounts.set(hash, (hashCounts.get(hash) ?? 0) + 1);
+        (seenHashes.has(hash) ? sharedHashes : seenHashes).add(hash);
     }
 
     const suffix = isProtected ? `.${blobTag}.p` : `.${blobTag}`;
     const ordinals = new Map<string, number>();
     return hashes.map((hash, index) => {
-        if ((hashCounts.get(hash) ?? 0) > 1) {
+        if (sharedHashes.has(hash)) {
             const ordinal = (ordinals.get(hash) ?? 0) + 1;
             ordinals.set(hash, ordinal);
             return `${hash}.${ordinal}${suffix}`;
@@ -162,6 +163,8 @@ function readStructure(headings: TocOutlineItem[]): OutlineStructure {
     const ordinals: number[] = [];
     // The number of children of each title, by the index of their parent.
     const titleCounts = new Map<number, Map<string, number>>();
+    // The titles that siblings share, as `parent:title`.
+    const sharedTitles = new Set<string>();
     const open: number[] = [];
     for (const [ index, { title, level } ] of headings.entries()) {
         while (open.length > 0 && headings[open[open.length - 1]].level >= level) {
@@ -172,6 +175,9 @@ function readStructure(headings: TocOutlineItem[]): OutlineStructure {
         titleCounts.set(parent, counts);
         const ordinal = (counts.get(title) ?? 0) + 1;
         counts.set(title, ordinal);
+        if (ordinal > 1) {
+            sharedTitles.add(`${parent}:${title}`);
+        }
         parents.push(parent);
         ordinals.push(ordinal);
         open.push(index);
@@ -180,7 +186,7 @@ function readStructure(headings: TocOutlineItem[]): OutlineStructure {
     const isBoundByPath: boolean[] = [];
     for (const [ index, { title } ] of headings.entries()) {
         const parent = parents[index];
-        const isTitleShared = (titleCounts.get(parent)?.get(title) ?? 0) > 1;
+        const isTitleShared = sharedTitles.has(`${parent}:${title}`);
         isBoundByPath.push(isTitleShared || (parent !== -1 && isBoundByPath[parent]));
     }
     return { parents, ordinals, isBoundByPath };
