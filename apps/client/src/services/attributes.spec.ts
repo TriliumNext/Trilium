@@ -12,6 +12,7 @@ import server from "./server.js";
 // Spy on server methods to track calls
 server.put = vi.fn(async () => ({})) as typeof server.put;
 server.remove = vi.fn(async () => ({})) as typeof server.remove;
+server.post = vi.fn(async () => ({})) as typeof server.post;
 
 describe("Set boolean with inheritance", () => {
     beforeEach(() => {
@@ -687,48 +688,77 @@ describe("isAffecting", () => {
 describe("toggleDangerousAttribute", () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it("disables a label by prefixing it and removing the original", async () => {
+    it("disables a label by adding a prefixed copy before removing the original", async () => {
         const note = buildNote({ title: "N", "#run": "frontendStartup" });
-        const attrId = note.getOwnedLabel("run")!.attributeId;
+        const attr = note.getOwnedLabel("run");
+        if (!attr) throw new Error("missing #run");
         await attributeService.toggleDangerousAttribute(note, "label", "run", false);
-        expect(server.put).toHaveBeenCalledWith(`notes/${note.noteId}/set-attribute`, {
+        expect(server.post).toHaveBeenCalledWith(`notes/${note.noteId}/attributes`, {
             type: "label",
             name: "disabled:run",
             value: "frontendStartup",
-            isInheritable: false
-        }, undefined);
-        expect(server.remove).toHaveBeenCalledWith(`notes/${note.noteId}/attributes/${attrId}`);
-        // The renamed attribute must be PUT before the original is removed, to avoid a flicker
-        // where there would momentarily be no active content attribute.
-        const putMock = server.put as unknown as ReturnType<typeof vi.fn>;
-        const removeMock = server.remove as unknown as ReturnType<typeof vi.fn>;
-        expect(putMock.mock.invocationCallOrder[0]).toBeLessThan(removeMock.mock.invocationCallOrder[0]);
+            isInheritable: false,
+            position: attr.position
+        });
+        expect(server.remove).toHaveBeenCalledWith(`notes/${note.noteId}/attributes/${attr.attributeId}`);
+        expect(server.put).not.toHaveBeenCalled();
+        expectAddedBeforeRemoved();
     });
 
-    it("enables a disabled relation by stripping the prefix", async () => {
-        const note = buildNote({ title: "N", "~disabled:runOnInstance": "tgt" });
-        const attrId = note.getOwnedRelation("disabled:runOnInstance")!.attributeId;
-        await attributeService.toggleDangerousAttribute(note, "relation", "runOnInstance", true);
-        expect(server.put).toHaveBeenCalledWith(`notes/${note.noteId}/set-attribute`, {
+    it("keeps an inheritable relation inheritable and in place through disable and enable", async () => {
+        const note = buildNote({ title: "N", "#first": "", "~shareTemplate(inheritable)": "tpl" });
+        const attr = note.getOwnedRelation("shareTemplate");
+        if (!attr) throw new Error("missing ~shareTemplate");
+        expect(attr.position).toBe(1);
+        await attributeService.toggleDangerousAttribute(note, "relation", "shareTemplate", false);
+        expect(server.post).toHaveBeenCalledWith(`notes/${note.noteId}/attributes`, {
             type: "relation",
-            name: "runOnInstance",
-            value: "tgt",
-            isInheritable: false
+            name: "disabled:shareTemplate",
+            value: "tpl",
+            isInheritable: true,
+            position: 1
         });
-        expect(server.remove).toHaveBeenCalledWith(`notes/${note.noteId}/attributes/${attrId}`);
-        // The renamed attribute must be PUT before the original is removed, to avoid a flicker
-        // where there would momentarily be no active content attribute.
-        const putMock = server.put as unknown as ReturnType<typeof vi.fn>;
-        const removeMock = server.remove as unknown as ReturnType<typeof vi.fn>;
-        expect(putMock.mock.invocationCallOrder[0]).toBeLessThan(removeMock.mock.invocationCallOrder[0]);
+
+        const disabledNote = buildNote({ title: "N", "~disabled:shareTemplate(inheritable)": "tpl" });
+        const disabledAttr = disabledNote.getOwnedRelation("disabled:shareTemplate");
+        if (!disabledAttr) throw new Error("missing ~disabled:shareTemplate");
+        await attributeService.toggleDangerousAttribute(disabledNote, "relation", "shareTemplate", true);
+        expect(server.post).toHaveBeenCalledWith(`notes/${disabledNote.noteId}/attributes`, {
+            type: "relation",
+            name: "shareTemplate",
+            value: "tpl",
+            isInheritable: true,
+            position: 0
+        });
+        expect(server.remove).toHaveBeenCalledWith(`notes/${disabledNote.noteId}/attributes/${disabledAttr.attributeId}`);
+    });
+
+    it("keeps each value of a repeated attribute as an attribute of its own", async () => {
+        const note = buildNote({ title: "N", "#run": [ "frontendStartup", "backendStartup" ] });
+        await attributeService.toggleDangerousAttribute(note, "label", "run", false);
+        const postMock = server.post as unknown as ReturnType<typeof vi.fn>;
+        expect(postMock.mock.calls.map(([ url, body ]) => [ url, body.name, body.value ])).toEqual([
+            [ `notes/${note.noteId}/attributes`, "disabled:run", "frontendStartup" ],
+            [ `notes/${note.noteId}/attributes`, "disabled:run", "backendStartup" ]
+        ]);
+        expect(server.remove).toHaveBeenCalledTimes(2);
     });
 
     it("skips attributes whose name already matches the desired state", async () => {
         const note = buildNote({ title: "N", "#widget": "x" });
         await attributeService.toggleDangerousAttribute(note, "label", "widget", true);
+        expect(server.post).not.toHaveBeenCalled();
         expect(server.put).not.toHaveBeenCalled();
         expect(server.remove).not.toHaveBeenCalled();
     });
+
+    // The copy goes in before the original is removed, so the note never goes without the active
+    // content attribute in between.
+    function expectAddedBeforeRemoved() {
+        const postMock = server.post as unknown as ReturnType<typeof vi.fn>;
+        const removeMock = server.remove as unknown as ReturnType<typeof vi.fn>;
+        expect(postMock.mock.invocationCallOrder[0]).toBeLessThan(removeMock.mock.invocationCallOrder[0]);
+    }
 });
 
 describe("getNameWithoutDangerousPrefix", () => {
