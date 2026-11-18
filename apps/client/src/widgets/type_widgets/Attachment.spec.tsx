@@ -284,6 +284,61 @@ describe("AttachmentDetail", () => {
         getRenderedContent.mockResolvedValue({ $renderedContent: [] });
     });
 
+    it("opens a PDF at the place of a link followed while it renders", async () => {
+        const pdf = { ...role("file"), mime: "application/pdf" } as FAttachment;
+        vi.spyOn(froca, "getAttachment").mockResolvedValue(pdf);
+        const renders: ((showPdfTarget: () => void) => void)[] = [];
+        getRenderedContent.mockClear();
+        getRenderedContent.mockImplementation(() => new Promise<never>((resolve) => {
+            renders.push((showPdfTarget) => {
+                resolve({ $renderedContent: [], showPdfTarget } as never);
+            });
+        }));
+
+        const component = new Component();
+        const viewScope: Record<string, string | undefined> = {
+            viewMode: "attachments", attachmentId: pdf.attachmentId, page: "3"
+        };
+        const noteContext = { ntxId: "ntx1", viewScope };
+        const props = { note: { noteId: "note1" }, viewScope, noteContext } as unknown as
+            Parameters<typeof AttachmentDetail>[0];
+        renderInto(
+            <ParentComponent.Provider value={component}>
+                <AttachmentDetail {...props} />
+            </ParentComponent.Provider>
+        );
+        async function follow(page: string) {
+            viewScope.page = page;
+            const switched = { noteContext: { ntxId: "ntx1", note: { noteId: "note1" } } };
+            await act(async () => {
+                await component.handleEvent("noteSwitched", switched as never);
+            });
+        }
+        async function finishRender(showPdfTarget: () => void) {
+            await act(async () => {
+                renders.shift()?.(showPdfTarget);
+            });
+        }
+
+        await vi.waitFor(() => expect(renders).toHaveLength(1));
+        await follow("5");
+        const firstViewer = vi.fn();
+        await finishRender(firstViewer);
+        expect(firstViewer).toHaveBeenCalledExactlyOnceWith(
+            { page: 5, heading: undefined, annotation: undefined });
+
+        // A link followed while a replaced attachment renders again goes to the new viewer.
+        await reloadAttachment(component, pdf.attachmentId, "otherComponent");
+        expect(renders).toHaveLength(1);
+        await follow("7");
+        const secondViewer = vi.fn();
+        await finishRender(secondViewer);
+        expect(firstViewer).toHaveBeenCalledOnce();
+        expect(secondViewer).toHaveBeenCalledExactlyOnceWith(
+            { page: 7, heading: undefined, annotation: undefined });
+        getRenderedContent.mockImplementation(async () => ({ $renderedContent: [] }));
+    });
+
     it("shows a workbook opened on its own in the read-only spreadsheet, else its whole preview until it changes", async () => {
         const workbook = { ...role("file"), mime: XLSX_MIME } as FAttachment;
         vi.spyOn(froca, "getAttachment").mockResolvedValue(workbook);

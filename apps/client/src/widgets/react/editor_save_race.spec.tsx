@@ -14,6 +14,7 @@
  * content holder standing in for CKEditor; note B's blob is a controllable deferred
  * standing in for a slow blob fetch (remote server / PWA).
  */
+import type { SavedAttachmentRow } from "@triliumnext/commons";
 import { deferred } from "@triliumnext/commons/src/lib/utils.js";
 import { render, type RefObject } from "preact";
 import { act } from "preact/test-utils";
@@ -38,11 +39,14 @@ vi.stubGlobal("logInfo", vi.fn());
 
 let currentSpacedUpdate: SpacedUpdate<SavedData | undefined> | undefined;
 
-/** Stand-in for EditableText: `editor.content` plays the role of the live CKEditor document. */
+/**
+ * Stand-in for EditableText: `editor.content` plays the role of the live CKEditor document, and
+ * `editor.attachments` the drawings changed in it.
+ */
 function FakeEditor({ note, noteContext, editor, shownRef }: {
     note: FNote;
     noteContext: NoteContext | null;
-    editor: { content: string };
+    editor: FakeEditorState;
     shownRef?: RefObject<Element | null>;
 }) {
     currentSpacedUpdate = useEditorSpacedUpdate({
@@ -50,12 +54,23 @@ function FakeEditor({ note, noteContext, editor, shownRef }: {
         noteContext,
         noteType: "text",
         shownRef,
-        getData: () => ({ content: editor.content }),
+        getData: () => ({
+            content: editor.content,
+            ...(editor.attachments ? { attachments: editor.attachments } : {})
+        }),
         onContentChange(newContent) {
             editor.content = newContent;
+        },
+        discardChanges() {
+            editor.attachments = undefined;
         }
     });
     return null;
+}
+
+interface FakeEditorState {
+    content: string;
+    attachments?: SavedAttachmentRow[];
 }
 
 function getSpacedUpdate(): SpacedUpdate<SavedData | undefined> {
@@ -80,7 +95,7 @@ function setupEditorHarness({ withParent = false, withShownRef = false } = {}) {
     const pendingBlobB = deferred<FBlob>();
     noteB.getBlob = () => pendingBlobB;
 
-    const editor = { content: "" };
+    const editor: FakeEditorState = { content: "" };
     const puts: { url: string; content: string }[] = [];
     server.put = vi.fn(async (url: string, data: { content: string }) => {
         puts.push({ url, content: data.content });
@@ -403,6 +418,67 @@ describe("saving over a version that changed elsewhere", () => {
             expect.objectContaining({ content: "AAA mine", type: "text" }), parent?.componentId);
         expect(editor.content).toBe("AAA theirs");
         expect(getSpacedUpdate().isAllSavedAndTriggerUpdate()).toBe(true);
+    });
+
+    it("drops a save queued while it asks once the user loads the other version", async () => {
+        const harness = setupEditorHarness({ withParent: true });
+        cleanupContainer = harness.container;
+        const { noteA, editor, show } = harness;
+        await show(noteA);
+        const put = rejectWithVersionConflict();
+        server.get = vi.fn(async () => (
+            { blobId: "theirs", content: "AAA theirs" }
+        )) as typeof server.get;
+
+        editor.content = "AAA mine";
+        getSpacedUpdate().scheduleUpdate();
+        await vi.advanceTimersByTimeAsync(1500);
+        expect(getQuestion()).toBeDefined();
+        // Typed while it asks, then queued by the guard of the window.
+        editor.content = "AAA more";
+        getSpacedUpdate().scheduleUpdate();
+        expect(getSpacedUpdate().isAllSavedAndTriggerUpdate()).toBe(false);
+
+        getQuestion()?.buttons?.[1].onClick({ dismissToast: () => {} });
+        await vi.advanceTimersByTimeAsync(1500);
+        expect(server.post).toHaveBeenCalledExactlyOnceWith(`notes/${noteA.noteId}/revisions/draft`,
+            expect.objectContaining({ content: "AAA more" }), expect.anything());
+        expect(put).toHaveBeenCalledOnce();
+        expect(editor.content).toBe("AAA theirs");
+        expect(getSpacedUpdate().isAllSavedAndTriggerUpdate()).toBe(true);
+    });
+
+    it("drops the drawing changes it kept once the user loads the other version", async () => {
+        const harness = setupEditorHarness({ withParent: true });
+        cleanupContainer = harness.container;
+        const { noteA, editor, show } = harness;
+        await show(noteA);
+        rejectWithVersionConflict();
+        server.get = vi.fn(async () => (
+            { blobId: "theirs", content: "AAA theirs" }
+        )) as typeof server.get;
+        const drawing: SavedAttachmentRow = {
+            attachmentId: "drawing1", blobId: "drawing-blob", role: "file", title: "Canvas",
+            mime: "application/vnd.excalidraw+json", content: "{}"
+        };
+
+        editor.attachments = [ drawing ];
+        getSpacedUpdate().scheduleUpdate();
+        await vi.advanceTimersByTimeAsync(1500);
+        getQuestion()?.buttons?.[1].onClick({ dismissToast: () => {} });
+        await vi.advanceTimersByTimeAsync(20);
+        expect(server.post).toHaveBeenCalledExactlyOnceWith(`notes/${noteA.noteId}/revisions/draft`,
+            expect.objectContaining({ attachments: [ drawing ] }), expect.anything());
+
+        // The next edit saves the text alone.
+        const put = vi.fn(async () => ({ blobId: "mine" }));
+        server.put = put as typeof server.put;
+        editor.content = "AAA theirs, edited";
+        getSpacedUpdate().scheduleUpdate();
+        await vi.advanceTimersByTimeAsync(1500);
+        expect(put).toHaveBeenCalledExactlyOnceWith(`notes/${noteA.noteId}/data`,
+            expect.objectContaining({ content: "AAA theirs, edited", attachments: undefined }),
+            expect.anything(), { silentConflict: true });
     });
 
     it("keeps the changes as a revision once the editor shows another note", async () => {

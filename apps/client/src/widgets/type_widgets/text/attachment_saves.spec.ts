@@ -166,6 +166,16 @@ describe("AttachmentSaves", () => {
         saves.markSaved(second);
         expect(onSaved.mock.calls).toStrictEqual([ [ "second" ] ]);
     });
+
+    it("drops the changes that a revision keeps instead", () => {
+        const { saves } = setUp();
+        saves.scheduleSave(drawing, () => "discarded");
+
+        saves.discard();
+        expect(saves.getUnsavedContent("drawing1")).toBeUndefined();
+        expect(saves.collect()).toEqual([]);
+        expect(saves.canEdit(drawing)).toBe(true);
+    });
 });
 
 describe("useAttachmentEditor", () => {
@@ -433,6 +443,50 @@ describe("useNoteEditor", () => {
             expect.objectContaining({ content: "mine, more", type: "code" }),
             component.componentId);
         expect(editor?.getUnsavedContent("code1")).toBeUndefined();
+        await act(() => render(null, container));
+    });
+
+    it("drops a save queued while it asks once the other version loads", async () => {
+        component = new Component();
+        const container = document.createElement("div");
+        await act(() => {
+            render(h(ParentComponent.Provider, { value: component }, h(Probe, {})), container);
+        });
+        const note = {
+            noteId: "code1", type: "code", mime: "text/plain", blobId: "first", isProtected: false
+        } as FNote;
+        serverPut.mockRejectedValueOnce(JSON.stringify({
+            reason: "version", message: "", blobId: "theirs", type: "code", mime: "text/plain",
+            isVersioned: true
+        }) as never);
+        const get = vi.fn(async () => ({ blobId: "theirs", content: "theirs" }));
+        server.get = get as typeof server.get;
+        const kept = { revisionId: "r", isKept: true, isFragment: false };
+        serverPost.mockResolvedValueOnce(kept as never);
+        const showPersistent = vi.spyOn(toast, "showPersistent");
+        const trigger = vi.spyOn(appContext, "triggerEvent").mockResolvedValue(undefined);
+
+        editor?.scheduleSave(note, () => "mine");
+        void component.handleEvent("beforeNoteSwitch", { noteContext } as never);
+        await vi.waitFor(() => expect(showPersistent).toHaveBeenCalled());
+        // Typed while it asks, then queued by the guard of the window.
+        editor?.scheduleSave(note, () => "mine, more");
+        const guards = appContext.beforeUnloadListeners
+            .filter((listener): listener is () => boolean => typeof listener === "function");
+        expect(guards.map((guard) => guard())).toEqual([ false ]);
+
+        const question = showPersistent.mock.calls[0][0];
+        await act(async () => {
+            question.buttons?.[1].onClick({ dismissToast: () => {} });
+            await vi.waitFor(() => expect(trigger).toHaveBeenCalledWith(
+                "refreshEmbeddedNote", { noteId: "code1" }));
+        });
+        await act(async () => {
+            await editor?.saveNow?.("code1");
+        });
+        expect(serverPost).toHaveBeenCalledExactlyOnceWith("notes/code1/revisions/draft",
+            expect.objectContaining({ content: "mine, more" }), component.componentId);
+        expect(serverPut).toHaveBeenCalledOnce();
         await act(() => render(null, container));
     });
 

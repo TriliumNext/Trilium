@@ -32,7 +32,7 @@ export interface SavedData {
 
 export function useEditorSpacedUpdate({
     note, noteType, noteContext, getData, onContentChange, dataSaved, updateInterval, block,
-    shownRef, resolveConflict
+    shownRef, resolveConflict, discardChanges
 }: {
     /** The type of the notes that the editor writes, which its saves are based on. */
     noteType: NoteType;
@@ -56,6 +56,11 @@ export function useEditorSpacedUpdate({
      * sent again, based on `current`.
      */
     resolveConflict?: (current: CurrentVersion) => Promise<boolean> | boolean;
+    /**
+     * Drops the changes besides the content that `getData()` reports, such as the changes to
+     * attachments, once a revision keeps them and the editor loads the version that the user chose.
+     */
+    discardChanges?: () => void;
 }) {
     const parentComponent = useContext(ParentComponent);
     const blockRef = useRef(block ?? "");
@@ -77,8 +82,12 @@ export function useEditorSpacedUpdate({
         return getData();
     }, [ note, getData ]);
 
-    const callbacksRef = useRef({ prepare, onContentChange, resolveConflict, parentComponent });
-    callbacksRef.current = { prepare, onContentChange, resolveConflict, parentComponent };
+    const callbacksRef = useRef({
+        prepare, onContentChange, resolveConflict, discardChanges, parentComponent
+    });
+    callbacksRef.current = {
+        prepare, onContentChange, resolveConflict, discardChanges, parentComponent
+    };
     const [ saver ] = useState(() => new NoteSaver<SavedData>({
         get componentId() {
             return callbacksRef.current.parentComponent?.componentId;
@@ -90,24 +99,28 @@ export function useEditorSpacedUpdate({
             if (block === undefined) {
                 noteSavedDataStore.set(noteId, content);
             }
-            if (loadedNoteIdRef.current === noteId) {
-                void spacedUpdate.allowUpdateWithoutChange(
-                    () => callbacksRef.current.onContentChange(content)
-                );
-            }
+            loadChosenVersion(noteId, content);
         },
-        loadBlocks(noteId, content) {
-            if (loadedNoteIdRef.current === noteId) {
-                void spacedUpdate.allowUpdateWithoutChange(
-                    () => callbacksRef.current.onContentChange(content)
-                );
-            }
-        },
+        loadBlocks: loadChosenVersion,
         onPaused: () => spacedUpdate.onStateChanged("unsaved"),
         resolveConflict: (_noteId, current) => (
             callbacksRef.current.resolveConflict?.(current) ?? false
         )
     }));
+
+    /**
+     * Shows `content`, the version of the note `noteId` that the user chose, and drops the queued
+     * save of the changes that a revision keeps instead.
+     */
+    function loadChosenVersion(noteId: string, content: string) {
+        spacedUpdate.discard(noteId);
+        if (loadedNoteIdRef.current === noteId) {
+            callbacksRef.current.discardChanges?.();
+            void spacedUpdate.allowUpdateWithoutChange(
+                () => callbacksRef.current.onContentChange(content)
+            );
+        }
+    }
 
     const commit = useCallback(async (data: SavedData | undefined) => {
         // for read only notes, or if note is not yet available (e.g. lazy creation); a visitor of a

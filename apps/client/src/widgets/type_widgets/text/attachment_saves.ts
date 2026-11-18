@@ -144,9 +144,14 @@ export default class AttachmentSaves
     /** Sets the note whose attachments can change, and drops the changes to any other note. */
     setNoteId(noteId: string | undefined) {
         if (noteId !== this.noteId) {
-            this.pending.clear();
+            this.discard();
         }
         this.noteId = noteId;
+    }
+
+    /** Drops the changes that wait for a save. */
+    discard() {
+        this.pending.clear();
     }
 
     canEdit(attachment: FAttachment) {
@@ -390,6 +395,10 @@ export function useNoteEditor(noteContext: NoteContext | null | undefined): Note
             },
             loadVersion(noteId) {
                 saves.discard(noteId);
+                // A queued save can still hold the discarded change, so the next save collects
+                // the remaining changes again.
+                spacedUpdate.discard(null);
+                spacedUpdate.scheduleUpdate();
                 // The embeds render again once the save that asked has finished.
                 setTimeout(() => void appContext.triggerEvent("refreshEmbeddedNote", { noteId }));
             }

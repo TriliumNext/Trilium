@@ -276,6 +276,18 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
             : undefined;
     }
 
+    /**
+     * Opens the place in the PDF that a link names, or leaves it in the view scope for `refresh()`
+     * while the viewer renders.
+     */
+    function showLinkTarget() {
+        const showPdfTarget = showPdfTargetRef.current;
+        const target = showPdfTarget && takeLinkTarget();
+        if (target) {
+            showPdfTarget(target);
+        }
+    }
+
     /** Unmounts whatever the content renderer previously mounted here (a media player), so that replacing
      *  or discarding the content doesn't leak its Preact root — or leave its audio playing. */
     function disposeContent() {
@@ -293,11 +305,13 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
                 buildsPdfToc: !!isFullDetail,
                 trim: !isFullDetail
             };
+            showPdfTargetRef.current = null;
             content_renderer.getRenderedContent(attachment, renderOptions)
                 .then(({ $renderedContent, showPdfTarget }) => {
                     disposeContent();
                     showPdfTargetRef.current = showPdfTarget ?? null;
                     contentWrapper.current?.replaceChildren(...$renderedContent);
+                    showLinkTarget();
                 });
         }
 
@@ -321,12 +335,7 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
         }
     });
     // A link to the attachment the pane shows keeps its viewer, which opens the link's place.
-    useSameNoteSwitch(ownerNote, noteContext?.ntxId, () => {
-        const target = takeLinkTarget();
-        if (target) {
-            showPdfTargetRef.current?.(target);
-        }
-    });
+    useSameNoteSwitch(ownerNote, noteContext?.ntxId, showLinkTarget);
 
     // Electron right-click menu (copy image / reference) for the interactive image viewer.
     useEffect(() => {

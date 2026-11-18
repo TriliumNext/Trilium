@@ -170,7 +170,8 @@ export default function EditableText({
             contentRef.current = savedData.content;
             contentNoteIdRef.current = note?.noteId;
             attachmentSaves.markSaved(savedData.attachments);
-        }
+        },
+        discardChanges: () => attachmentSaves.discard()
     });
     const templates = useTemplates();
     const [ editorRebuildKey, setEditorRebuildKey ] = useState(0);
