@@ -121,6 +121,15 @@ describe("extractCodeBlocks", () => {
         expect(processedText).not.toContain("$x$");
         expect([...placeholderMap.values()][0]).toBe(input);
     });
+
+    it("should handle a long run of backticks without backtracking", () => {
+        const input = "`".repeat(50_000);
+        const start = performance.now();
+        const { placeholderMap } = extractCodeBlocks(input);
+
+        expect(placeholderMap.size).toBe(0);
+        expect(performance.now() - start).toBeLessThan(100);
+    });
 });
 
 describe("renderToHtml", () => {
