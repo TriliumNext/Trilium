@@ -155,22 +155,29 @@
     }
 
     .note-list-attributes {
-        flex-grow: 1;
-        margin-inline-start: 1em;
+        flex: 0 1 auto;
+        max-width: 45%;
+        margin-inline-start: auto;
+        padding-inline-start: 1em;
         text-align: right;
         font-size: .75em;
         opacity: .75;
+    }
+
+    body.mobile & .note-list-attributes {
+        max-width: 30%;
     }
 
     /* Stands in for .note-list-attributes when the caller supplies its own controls, so the item
        menu still sits at the far end of the row instead of collapsing next to the title. */
     .note-list-item-actions {
         display: flex;
-        flex-grow: 1;
+        flex: 0 0 auto;
+        margin-inline-start: auto;
+        padding-inline-start: 1em;
         justify-content: flex-end;
         align-items: center;
         gap: .5em;
-        margin-inline-start: 1em;
     }
 
     &.archived {
@@ -184,6 +191,11 @@
 .nested-note-list:not(.search-results) h5,
 .note-book-card:not(.search-results) h5,
 .dashboard-widget-header {
+    span.tn-icon + span {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
     span.tn-icon + span,
     .note-list-attributes {
         white-space: nowrap;
