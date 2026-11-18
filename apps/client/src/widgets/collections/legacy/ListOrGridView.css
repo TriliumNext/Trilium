@@ -162,6 +162,9 @@
         text-align: right;
         font-size: .75em;
         opacity: .75;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     body.mobile & .note-list-attributes {
@@ -188,16 +191,25 @@
     }
 }
 
-.nested-note-list:not(.search-results) h5,
-.note-book-card:not(.search-results) h5,
+.nested-note-list h5,
+.note-book-card h5,
 .dashboard-widget-header {
     span.tn-icon + span {
         flex: 1 1 auto;
         min-width: 0;
     }
 
-    span.tn-icon + span,
     .note-list-attributes {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+.nested-note-list:not(.search-results) h5,
+.note-book-card:not(.search-results) h5,
+.dashboard-widget-header {
+    span.tn-icon + span {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
