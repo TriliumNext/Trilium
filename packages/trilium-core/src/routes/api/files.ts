@@ -164,7 +164,8 @@ async function sendOfficePreview(req: Request, res: Response, entity: BNote | BA
     const variant = [ trim ? "trim" : "full", format?.name ].filter(Boolean).join("-");
     await sendConversion(req, res, source, variant, "text/html; charset=utf-8", async (content) => {
         const html = await convertOfficeToHtml(content, source.mime, { trim });
-        return markTocHeadings(format, html, { blobId: source.blobId, isProtected: source.isProtected, content });
+        const { blobId, isProtected } = source;
+        return markTocHeadings(format, html, { blobId, isProtected, content });
     });
 }
 
@@ -181,7 +182,8 @@ interface ConversionSource {
  * `BNote`, which a request can change while a conversion awaits.
  */
 function takeSnapshot(entity: BNote | BAttachment): ConversionSource {
-    return { entity, mime: entity.mime, blobId: String(entity.blobId), isProtected: !!entity.isProtected };
+    const { mime, blobId, isProtected } = entity;
+    return { entity, mime, blobId: String(blobId), isProtected: !!isProtected };
 }
 
 /**
@@ -190,8 +192,10 @@ function takeSnapshot(entity: BNote | BAttachment): ConversionSource {
  * parsed again. `variant` tells apart the conversions of one entity. The content is read in the
  * same synchronous step as `source`, so the body is the conversion of the blob that the ETag names.
  */
-async function sendConversion(req: Request, res: Response, source: ConversionSource, variant: string,
-    contentType: string, convert: (content: string | Uint8Array) => Promise<string>) {
+async function sendConversion(
+    req: Request, res: Response, source: ConversionSource, variant: string, contentType: string,
+    convert: (content: string | Uint8Array) => Promise<string>
+) {
     if (source.isProtected) {
         // Decrypted content must not reach the browser's disk cache.
         res.setHeader("Cache-Control", "no-store");

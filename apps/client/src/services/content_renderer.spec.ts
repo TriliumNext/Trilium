@@ -866,7 +866,7 @@ describe("getRenderedContent file rendering", () => {
         expect(openNoteExternally).toHaveBeenCalledWith(note.noteId, note.mime);
     });
 
-    it("opens a PDF attachment at each target in the same viewer, and lets it build its ToC cache", async () => {
+    it("opens a PDF attachment at each target in one viewer, and lets it build a cache", async () => {
         const att = buildAttachment({ role: "file", mime: "application/pdf" });
         const { showTarget } = await getRenderedContent(att, { buildsPdfToc: true });
         expect(pdfViewerComponent.mock.calls.at(-1)?.[0]).toMatchObject({
@@ -1004,7 +1004,8 @@ describe("getRenderedContent office rendering", () => {
         showTarget?.({ heading: "h1" });
 
         const body = $renderedContent.find(".office-preview-body")[0];
-        await vi.waitFor(() => expect(showDocumentTarget).toHaveBeenCalledExactlyOnceWith(body, { heading: "h1" }));
+        await vi.waitFor(() => expect(showDocumentTarget)
+            .toHaveBeenCalledExactlyOnceWith(body, { heading: "h1" }));
 
         renderOfficeToHtml.mockRejectedValueOnce(new Error("bad zip"));
         expect((await getRenderedContent(note)).showTarget).toBeUndefined();

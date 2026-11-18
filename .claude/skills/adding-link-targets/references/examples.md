@@ -110,16 +110,30 @@ ToC cache (SKILL.md, "ToC formats"). What it took, as a pattern for the next for
   the server spec, the viewer spec and a core spec of the `PUT` compare with them. Regenerate both
   with the script beside them after a change of the reader or of the ids.
 
-## DOCX headings and bookmarks
+## DOCX and ODT headings and bookmarks (built)
 
-- **Notes**: `type === "file"` with the Word MIME type, and attachments.
-- **Parser**: core converts office files for previews in `services/office_preview.ts` with
-  `officeparser`, loaded on demand and bundled in standalone through aliases. If its HTML keeps
-  the headings as `<h1>` to `<h6>`, the provider can convert and reuse the heading walk of
-  `text.ts`; check that first.
-- **Parameter**: the file cannot take ids, so the link names the heading by position or slug,
-  which a later edit of the file can move. Word bookmarks have names, which suit `bookmark`.
-- **The view**: the file preview must find the heading in its converted HTML and scroll to it.
+- **Notes**: `type === "file"` with the Word or OpenDocument text MIME type (`DOCX_MIME`,
+  `ODT_MIME`), and attachments of role `file`.
+- **Formats**: `docxTocFormat` and `odtTocFormat` in `services/toc/office.ts`, one factory with a
+  reader version each (`DOCX_TOC_READER`, `ODT_TOC_READER`), since `officeparser` reads the two
+  with parsers that change on their own. Bump the version of a format when an upgrade changes its
+  headings or bookmarks; the contract fixture of the format fails until then.
+- **Reader**: the headings are the `h1` to `h6` of the HTML that `convertOfficeToHtml()` writes
+  for the preview (`readPreviewHeadings()` in `services/toc/office_headings.ts`), with levels made
+  into depths, note marks left out and `<br>` read as a space. The cache and the marking of the
+  preview read the same HTML, so their ids agree by construction.
+- **Bookmarks**: the names from the document's main part, without those an editor makes (`_…`),
+  those that another source of ids in the preview gives (ODT `xml:id`, `text:id`, `table:name`,
+  `draw:name`, note ids `footnote-…`), and those that more than one element has as id. The
+  preview has no slug ids (`generateIds: false`), which could equal a bookmark's name. Stored in
+  the format's properties, listed as anchors with `?bookmark=`.
+- **Parameter**: `?heading=<id>` alone; a reflowed preview has no page. An id that no element has
+  opens the top of the preview.
+- **The view**: the preview route marks the start tags (`data-toc-heading`, `data-toc-bookmark`);
+  `OfficePreview` and the attachment view land with `showDocumentTarget()`.
+- **Contract**: `toc/fixtures/toc_contract.docx`, `toc_contract.odt` and their JSON, written by
+  `generate-office-toc-contract.mts`; `office.spec.ts` runs them through the real `officeparser`
+  under both runners.
 
 ## Spreadsheet sheets
 

@@ -23,7 +23,9 @@ import {
 import { partitionAttachmentsByGroup } from "../../services/attachment_groups";
 import { attachmentRoleLabel } from "../../services/attachment_role_names";
 import { takeDocumentTarget } from "../../services/bookmark_jump";
-import content_renderer, { type ContentLinkTarget, hasRenderedPreview } from "../../services/content_renderer";
+import content_renderer, {
+    type ContentLinkTarget, hasRenderedPreview
+} from "../../services/content_renderer";
 import froca from "../../services/froca";
 import image from "../../services/image";
 import { getAttachmentImageUrl } from "../../services/image_urls";
@@ -229,7 +231,16 @@ export function AttachmentDetail({ note, viewScope, noteContext }: TypeWidgetPro
 
             <div className="attachment-wrapper">
                 {attachment !== null ? (
-                    attachment && <AttachmentInfo key={attachment.attachmentId} attachment={attachment} isFullDetail ownerNote={note} noteContext={noteContext} viewScope={viewScope} />
+                    attachment && (
+                        <AttachmentInfo
+                            key={attachment.attachmentId}
+                            attachment={attachment}
+                            isFullDetail
+                            ownerNote={note}
+                            noteContext={noteContext}
+                            viewScope={viewScope}
+                        />
+                    )
                 ) : (
                     <strong>{t("attachment_detail.attachment_deleted")}</strong>
                 )}

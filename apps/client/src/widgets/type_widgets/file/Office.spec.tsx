@@ -118,7 +118,7 @@ describe("OfficePreview landing on a link", () => {
     const PREVIEW = "<h2 data-toc-heading=\"idA\">A</h2><h2 data-toc-heading=\"idB\">B</h2>"
         + "<p data-toc-bookmark=\"Intro\">Text</p>";
 
-    it("lands on a heading once the preview of the shown blob is in place, and clears it", async () => {
+    it("lands once the preview of the shown blob is in place, and clears the target", async () => {
         const view = await open({ heading: "idA" });
 
         expect(showAnchorElement).not.toHaveBeenCalled();
@@ -154,7 +154,7 @@ describe("OfficePreview landing on a link", () => {
         expect(view.viewScope.heading).toBeUndefined();
     });
 
-    it("lands a link to the open note on noteSwitched, a bookmark through the same path", async () => {
+    it("lands a link to the open note on noteSwitched, a bookmark the same way", async () => {
         const view = await open({});
         await view.resolvePreview();
 
@@ -166,7 +166,7 @@ describe("OfficePreview landing on a link", () => {
         expect(view.viewScope.bookmark).toBeUndefined();
     });
 
-    it("never takes the target of another note, or of a new blob, against the preview shown", async () => {
+    it("never takes the target of another note, or of a new blob, against the preview", async () => {
         const view = await open({});
         await view.resolvePreview();
 
@@ -179,7 +179,7 @@ describe("OfficePreview landing on a link", () => {
         expect(view.viewScope.heading).toBe("idA");
     });
 
-    it("scrolls to the top for an id that no element has, and moves nothing without a target", async () => {
+    it("scrolls to the top for an id no element has, and moves nothing without one", async () => {
         const view = await open({});
         await view.resolvePreview();
 
@@ -189,7 +189,8 @@ describe("OfficePreview landing on a link", () => {
 
         view.viewScope.heading = "missing";
         await view.switchTo(view.note);
-        await vi.waitFor(() => expect(scroller.scrollTo).toHaveBeenCalledExactlyOnceWith({ top: 0 }));
+        await vi.waitFor(() => expect(scroller.scrollTo)
+            .toHaveBeenCalledExactlyOnceWith({ top: 0 }));
         expect(showAnchorElement).not.toHaveBeenCalled();
         expect(view.viewScope.heading).toBeUndefined();
     });

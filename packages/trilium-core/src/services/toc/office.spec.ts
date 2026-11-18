@@ -23,37 +23,40 @@ describe.each([
     { name: "docx", format: docxTocFormat, mime: DOCX_MIME, reader: DOCX_TOC_READER },
     { name: "odt", format: odtTocFormat, mime: ODT_MIME, reader: ODT_TOC_READER }
 ])("the $name contract", ({ name, format, mime, reader }) => {
-    const bytes = new Uint8Array(fs.readFileSync(path.join(FIXTURES, `toc_contract.${name}`)));
-    const contract = JSON.parse(fs.readFileSync(path.join(FIXTURES, `toc_contract_${name}.json`), "utf-8"));
+    const bytes = readFixture(`toc_contract.${name}`);
+    const contract = JSON.parse(new TextDecoder().decode(readFixture(`toc_contract_${name}.json`)));
 
     it("reads the headings, levels, ids and bookmarks of the contract", async () => {
         const toc = await generate(format, bytes);
 
         expect(toc).toStrictEqual({
-            headings: contract.headings, isCut: false, properties: { reader, bookmarks: contract.bookmarks }
+            headings: contract.headings,
+            isCut: false,
+            properties: { reader, bookmarks: contract.bookmarks }
         });
-        expect(getHeadingIds(contract.headings, contract.blobId, false, false)).toStrictEqual(contract.ids);
+        expect(getHeadingIds(contract.headings, contract.blobId, false, false))
+            .toStrictEqual(contract.ids);
         expect(getHeadingIds(contract.headings, contract.protectedBlobId, true, false))
             .toStrictEqual(contract.protectedIds);
     });
 
-    it("marks the preview with the ids and bookmarks of the cache, in either form of protection", async () => {
+    it("marks the preview with the ids and bookmarks of the cache, protected or not", async () => {
         const html = await convertOfficeToHtml(bytes, mime);
 
         for (const [ blobId, isProtected, ids ] of [
             [ contract.blobId, false, contract.ids ],
             [ contract.protectedBlobId, true, contract.protectedIds ]
         ] as const) {
-            const marked = await format.markPreview?.(html, { blobId, isProtected, content: bytes }) ?? "";
-            expect([ ...marked.matchAll(/data-toc-heading="([^"]*)"/g) ].map(([ , id ]) => id))
-                .toStrictEqual(ids);
-            expect([ ...marked.matchAll(/data-toc-bookmark="([^"]*)"/g) ].map(([ , name ]) => name).sort())
+            const source = { blobId, isProtected, content: bytes };
+            const marked = await format.markPreview?.(html, source) ?? "";
+            expect(readMarks(marked, "data-toc-heading")).toStrictEqual(ids);
+            expect(readMarks(marked, "data-toc-bookmark").toSorted())
                 .toStrictEqual(contract.bookmarks.toSorted());
             expect(marked.replace(/ data-toc-(?:heading|bookmark)="[^"]*"/g, "")).toBe(html);
         }
     });
 
-    it("gives the headings of the preview no slug ids, so a bookmark named like one is found", async () => {
+    it("gives headings no slug ids, so that a bookmark named like one is found", async () => {
         const html = await convertOfficeToHtml(bytes, mime);
 
         expect(html).not.toContain("id=\"summary-1\"");
@@ -68,24 +71,27 @@ describe("the DOCX and ODT formats", () => {
         expect(docxTocFormat.isFor("file", ODT_MIME)).toBe(false);
         expect(docxTocFormat.isFor("code", DOCX_MIME)).toBe(false);
         expect(odtTocFormat.isFor("file", ODT_MIME)).toBe(true);
-        expect(odtTocFormat.isFor("file", "application/vnd.oasis.opendocument.text-template")).toBe(false);
+        expect(odtTocFormat.isFor("file", "application/vnd.oasis.opendocument.text-template"))
+            .toBe(false);
     });
 
     it("accept the properties of their own reader only, and link a heading to itself", () => {
         const cache = { version: 1, targetBlobHash: "abc", headings: [] };
         const current = { reader: DOCX_TOC_READER, bookmarks: [ "B" ] };
+        const isCurrent = (docx: unknown) => docxTocFormat.isCurrent({ ...cache, docx });
 
-        expect(docxTocFormat.isCurrent({ ...cache, docx: current })).toBe(true);
+        expect(isCurrent(current)).toBe(true);
         expect(docxTocFormat.isCurrent({ ...cache, odt: current })).toBe(false);
-        expect(docxTocFormat.isCurrent({ ...cache, docx: { ...current, reader: DOCX_TOC_READER + 1 } })).toBe(false);
-        expect(docxTocFormat.isCurrent({ ...cache, docx: { ...current, x: 1 } })).toBe(false);
+        expect(isCurrent({ ...current, reader: DOCX_TOC_READER + 1 })).toBe(false);
+        expect(isCurrent({ ...current, x: 1 })).toBe(false);
         // A cache of reader 1 has no bookmarks.
-        expect(docxTocFormat.isCurrent({ ...cache, docx: { reader: DOCX_TOC_READER } })).toBe(false);
-        expect(docxTocFormat.isCurrent({ ...cache, docx: { ...current, bookmarks: [ 1 ] } })).toBe(false);
+        expect(isCurrent({ reader: DOCX_TOC_READER })).toBe(false);
+        expect(isCurrent({ ...current, bookmarks: [ 1 ] })).toBe(false);
         expect(odtTocFormat.isCurrent({ ...cache, odt: null })).toBe(false);
         expect(docxTocFormat.getLinkParams({ id: "0k3x9aa1h7q2mz", title: "A", level: 1 }))
             .toStrictEqual({ heading: "0k3x9aa1h7q2mz" });
-        expect(docxTocFormat.parseHeadingFields({ title: "A", level: 1, page: 3 })).toStrictEqual({});
+        expect(docxTocFormat.parseHeadingFields({ title: "A", level: 1, page: 3 }))
+            .toStrictEqual({});
     });
 
     it("list their bookmarks as anchors, sorted by name", () => {
@@ -101,24 +107,24 @@ describe("the DOCX and ODT formats", () => {
 });
 
 describe("failures", () => {
-    it("remembers the errors whose code says that the bytes cannot be read, and the size refusal", async () => {
+    it("remember the codes that say the bytes cannot be read, and the size refusal", async () => {
         const errors = await Promise.all([
             new Uint8Array([ 1, 2, 3, 4 ]),
-            // Cut after its entries: a cut through them reads as "invalid zip data", without a code.
-            truncated(fs.readFileSync(path.join(FIXTURES, "toc_contract.docx")), 0.9)
-        ].map((bytes) => generate(docxTocFormat, bytes).then(() => null, (error: unknown) => error)));
+            // Cut after its entries: a cut through them is "invalid zip data", without a code.
+            truncated(readFixture("toc_contract.docx"), 0.9)
+        ].map((bytes) => failureOf(generate(docxTocFormat, bytes))));
+        const tooLarge = new ValidationError(`${OFFICE_PREVIEW_TOO_LARGE_MESSAGE} (1 bytes).`);
 
-        expect(errors.map(getOfficeIssueCode)).toStrictEqual([ "IMPROPER_BUFFERS", "ZIP_TRUNCATED" ]);
+        expect(errors.map(getOfficeIssueCode))
+            .toStrictEqual([ "IMPROPER_BUFFERS", "ZIP_TRUNCATED" ]);
         expect(errors.map(isOfficeInputFailure)).toStrictEqual([ true, true ]);
         expect(isOfficeInputFailure(issue("PASSWORD_REQUIRED"))).toBe(true);
-        expect(isOfficeInputFailure(new ValidationError(`${OFFICE_PREVIEW_TOO_LARGE_MESSAGE} (1 bytes).`)))
-            .toBe(true);
+        expect(isOfficeInputFailure(tooLarge)).toBe(true);
     });
 
-    it("reads again a failure without a code, one about the call or the run, and any other", async () => {
-        const truncatedOdt = await generate(odtTocFormat,
-            truncated(fs.readFileSync(path.join(FIXTURES, "toc_contract.odt")), 0.5))
-            .then(() => null, (error: unknown) => error);
+    it("read again a failure without a code, about the call or the run, or any other", async () => {
+        const truncatedOdt = await failureOf(
+            generate(odtTocFormat, truncated(readFixture("toc_contract.odt"), 0.5)));
 
         expect(truncatedOdt).toBeInstanceOf(Error);
         expect(String((truncatedOdt as Error).message)).toMatch(/^\[OfficeParser\]: /);
@@ -132,10 +138,12 @@ describe("failures", () => {
         }
     });
 
-    it("names the code for the log, else the name of the error, never its message", () => {
-        expect(docxTocFormat.describeFailure?.(issue("ZIP_TRUNCATED"))).toBe("ZIP_TRUNCATED");
-        expect(docxTocFormat.describeFailure?.(new Error("[OfficeParser]: Secret text"))).toBe("Error");
-        expect(docxTocFormat.describeFailure?.("Timeout")).toBe("Timeout");
+    it("name the code for the log, else the name of the error, never its message", () => {
+        const describeFailure = (error: unknown) => docxTocFormat.describeFailure?.(error);
+
+        expect(describeFailure(issue("ZIP_TRUNCATED"))).toBe("ZIP_TRUNCATED");
+        expect(describeFailure(new Error("[OfficeParser]: Secret text"))).toBe("Error");
+        expect(describeFailure("Timeout")).toBe("Timeout");
         expect(getOfficeIssueCode({ officeIssue: { code: 5 } })).toBeUndefined();
         expect(getOfficeIssueCode({ officeIssue: null })).toBeUndefined();
     });
@@ -146,6 +154,20 @@ async function generate(format: TocFormat, bytes: Uint8Array) {
         throw new Error(`The format '${format.name}' has no generator.`);
     }
     return format.generator(bytes);
+}
+
+/** What `read` rejects with, `null` when it resolves. */
+function failureOf(read: Promise<unknown>) {
+    return read.then(() => null, (error: unknown) => error);
+}
+
+function readFixture(fileName: string) {
+    return new Uint8Array(fs.readFileSync(path.join(FIXTURES, fileName)));
+}
+
+/** The values of the attribute `name` in `html`, in document order. */
+function readMarks(html: string, name: string) {
+    return Array.from(html.matchAll(new RegExp(`${name}="([^"]*)"`, "g")), ([ , value ]) => value);
 }
 
 /** The start of `bytes`, a `fraction` of them, as an interrupted upload leaves a file. */

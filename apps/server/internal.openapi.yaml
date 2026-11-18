@@ -747,10 +747,12 @@ paths:
         and its block id, an anchor through `?bookmark=`. A target without `params` needs a
         reference first, which `POST /api/notes/{noteId}/references` creates. Such a target is
         listed only when the note can take one. Titles are plain text, never HTML. A note whose
-        type has no targets lists none. The headings of a PDF file come from its ToC cache, which
-        the server builds when it is missing or stale; where the server cannot read PDFs
-        (standalone, mobile), the answer lists none and carries `pendingToc` until the viewer of
-        the file has built the cache.
+        type has no targets lists none. The headings of a PDF file, and the headings and bookmarks
+        of a Word (DOCX) or OpenDocument text (ODT) file, come from its ToC cache, which the
+        server builds when it is missing or stale. Where the server cannot read PDFs (standalone,
+        mobile), the answer for a PDF lists none and carries `pendingToc` until the viewer of the
+        file has built the cache. A DOCX or ODT file links a heading through `?heading=` and a
+        bookmark through `?bookmark=`.
       operationId: getNoteReferences
       parameters:
         - $ref: '#/components/parameters/noteId'
@@ -831,7 +833,7 @@ paths:
       summary: Read the ToC cache of a note
       description: >-
         The table of contents that the ToC cache of a note holds, such as the outline of a PDF
-        file, without building it or writing anything. `ready` is a cache of the note as it is,
+        file or the headings of a DOCX or ODT file, without building it or writing anything. `ready` is a cache of the note as it is,
         `stale` one of an earlier blob, `missing` a note without a cache that can be read, and
         `none` a note that has no table of contents. `pendingToc` tells that the viewer of the
         document builds the cache, since the server cannot read the format.
@@ -854,8 +856,9 @@ paths:
       summary: Save the table of contents that the viewer read
       description: >-
         Saves the table of contents that the viewer of a document read, where the server cannot
-        read the format itself. The server checks it, normalizes the titles and computes the ids
-        of the headings. A valid cache that exists already is kept.
+        read the format itself, which is PDF on standalone and mobile. The server checks it,
+        normalizes the titles and computes the ids of the headings. A valid cache that exists
+        already is kept.
       operationId: saveNoteToc
       parameters:
         - $ref: '#/components/parameters/noteId'
@@ -1937,7 +1940,7 @@ paths:
       summary: List the places inside an attachment that a link can point at
       description: >-
         The twin of `GET /api/notes/{noteId}/references` for an attachment, such as the headings
-        of a PDF file. The ToC cache of an attachment is kept on its note.
+        of a PDF, DOCX or ODT file. The ToC cache of an attachment is kept on its note.
       operationId: getAttachmentReferences
       parameters:
         - name: attachmentId
@@ -5586,7 +5589,12 @@ components:
         properties:
           type: object
           additionalProperties: true
-          description: 'The properties of the format, such as `{ "reader": 1 }`'
+          description: 'The properties of the format, such as `{ "reader": 2 }`'
+        isCut:
+          type: boolean
+          description: >-
+            Whether the viewer stopped reading at 20,000 headings, before another one. The ids of
+            every heading of a cut table of contents are bound to the blob.
         elapsedMs:
           type: number
           minimum: 0

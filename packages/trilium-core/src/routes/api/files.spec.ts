@@ -737,29 +737,36 @@ describe("Files API (core)", () => {
             vi.restoreAllMocks();
         });
 
-        it.each(documents)("marks the $name preview of a note and an attachment with the ids its references list", async ({ name, mime }) => {
+        it.each(documents)("marks the $name preview with the targets it lists", async (testCase) => {
+            const { name, mime } = testCase;
             const bytes = readFixture(name);
+            const contract = readContract(name);
             const note = createFileNote(bytes, mime);
             const attachment = cls.init(() => note.saveAttachment({
                 role: "file", mime, title: `attached.${name}`, content: bytes
             }));
 
-            for (const url of [ `/api/notes/${note.noteId}`, `/api/attachments/${attachment.attachmentId}` ]) {
+            for (const url of [
+                `/api/notes/${note.noteId}`, `/api/attachments/${attachment.attachmentId}`
+            ]) {
                 const preview = await api.get<string>(`${url}/office-preview`);
                 const references = await api.get<NoteReferencesResponse>(`${url}/references`);
-
-                const marked = [ ...preview.body.matchAll(/data-toc-heading="([^"]*)"/g) ].map(([ , id ]) => id);
                 const { targets } = references.body;
-                expect(marked).toHaveLength(readContract(name).headings.length);
+
+                const marked = readMarks(preview.body, "data-toc-heading");
+                expect(marked).toHaveLength(contract.headings.length);
                 expect(marked).toStrictEqual(targets.filter(({ kind }) => kind === "heading")
                     .map(({ params }) => params?.heading));
-                const bookmarks = [ ...preview.body.matchAll(/data-toc-bookmark="([^"]*)"/g) ].map(([ , bookmark ]) => bookmark);
-                const anchors = targets.filter(({ kind }) => kind === "anchor").map(({ params }) => params?.bookmark);
-                expect(anchors).toStrictEqual(readContract(name).bookmarks.toSorted((a, b) => a.localeCompare(b)));
-                expect(bookmarks.toSorted()).toStrictEqual(anchors.toSorted());
-                expect(targets.findIndex(({ kind }) => kind === "anchor")).toBe(marked.length);
+                // The anchors follow the headings, sorted by name.
+                const anchors = targets.slice(marked.length).map(({ kind, params }) =>
+                    kind === "anchor" ? params?.bookmark : kind);
+                expect(anchors)
+                    .toStrictEqual(contract.bookmarks.toSorted((a, b) => a.localeCompare(b)));
+                expect(readMarks(preview.body, "data-toc-bookmark").toSorted())
+                    .toStrictEqual(contract.bookmarks.toSorted());
                 expect(preview.headers.ETag).toContain(`-full-${name}-`);
-                expect((await api.get(`${url}/office-preview?trim=1`)).headers.ETag).toContain(`-trim-${name}-`);
+                const trimmed = await api.get(`${url}/office-preview?trim=1`);
+                expect(trimmed.headers.ETag).toContain(`-trim-${name}-`);
             }
         });
 
@@ -770,44 +777,48 @@ describe("Files API (core)", () => {
 
             const preview = await api.get<string>(`/api/notes/${note.noteId}/office-preview`);
 
-            const marked = [ ...preview.body.matchAll(/data-toc-heading="([^"]*)"/g) ].map(([ , id ]) => id);
-            expect(marked).toStrictEqual(readContract("docx").protectedIds);
+            expect(readMarks(preview.body, "data-toc-heading"))
+                .toStrictEqual(readContract("docx").protectedIds);
             expect(preview.headers.ETag).toBeUndefined();
         });
 
         it("leaves the preview of the other office formats unmarked", async () => {
-            const res = await api.post<{ note: { noteId: string } }>("/api/notes/root/children?target=into", {
-                body: { title: "document.rtf", type: "file", mime: "application/rtf", content: String.raw`{tf1ansi Hello}` }
-            });
+            const res = await api.post<{ note: { noteId: string } }>(
+                "/api/notes/root/children?target=into", { body: {
+                    title: "document.rtf", type: "file", mime: "application/rtf",
+                    content: String.raw`{\rtf1\ansi Hello}`
+                } });
+            const url = `/api/notes/${res.body.note.noteId}/office-preview`;
 
-            const preview = await api.get<string>(`/api/notes/${res.body.note.noteId}/office-preview`);
+            const preview = await api.get<string>(url);
 
             expect(preview.body).toContain("Hello");
             expect(preview.body).not.toContain("data-toc-heading");
             expect(preview.headers.ETag).toContain("-full-");
         });
 
-        it("sends the body of the format its ETag names, when the note changes during the conversion", async () => {
+        it("sends the body of the format its ETag names, though the note changes", async () => {
             const note = createFileNote(readFixture("docx"), DOCX_MIME);
             const url = `/api/notes/${note.noteId}/office-preview`;
+            const setType = (type: string, mime: string) =>
+                api.put(`/api/notes/${note.noteId}/type`, { body: { type, mime } });
             const release = holdConversion();
 
             const request = api.get<string>(url);
             await vi.waitFor(() => expect(OfficeConverter.convert).toHaveBeenCalled());
-            expect((await api.put(`/api/notes/${note.noteId}/type`, {
-                body: { type: "file", mime: "application/pdf" }
-            })).status).toBe(204);
+            expect((await setType("file", "application/pdf")).status).toBe(204);
             release();
             const held = await request;
 
             expect(held.headers.ETag).toContain("-full-docx-");
             expect(held.body).toContain("data-toc-heading");
-            await api.put(`/api/notes/${note.noteId}/type`, { body: { type: "file", mime: DOCX_MIME } });
-            expect((await api.get(url, { headers: { "if-none-match": held.headers.ETag } })).status).toBe(304);
+            const revalidate = { headers: { "if-none-match": held.headers.ETag } };
+            await setType("file", DOCX_MIME);
+            expect((await api.get(url, revalidate)).status).toBe(304);
 
             // Another type with the same MIME type and bytes has no ToC format.
-            await api.put(`/api/notes/${note.noteId}/type`, { body: { type: "image", mime: DOCX_MIME } });
-            const other = await api.get<string>(url, { headers: { "if-none-match": held.headers.ETag } });
+            await setType("image", DOCX_MIME);
+            const other = await api.get<string>(url, revalidate);
             expect(other.status).toBe(200);
             expect(other.body).not.toContain("data-toc-heading");
         });
@@ -820,9 +831,13 @@ function readFixture(name: string) {
 }
 
 function readContract(name: string) {
-    return JSON.parse(fs.readFileSync(path.join(FIXTURES, `toc_contract_${name}.json`), "utf-8")) as {
-        headings: unknown[]; protectedIds: string[]; bookmarks: string[];
-    };
+    const json = fs.readFileSync(path.join(FIXTURES, `toc_contract_${name}.json`), "utf-8");
+    return JSON.parse(json) as { headings: unknown[]; protectedIds: string[]; bookmarks: string[] };
+}
+
+/** The values of the attribute `name` in `html`, in document order. */
+function readMarks(html: string, name: string) {
+    return Array.from(html.matchAll(new RegExp(`${name}="([^"]*)"`, "g")), ([ , value ]) => value);
 }
 
 function createFileNote(content: Uint8Array, mime: string) {

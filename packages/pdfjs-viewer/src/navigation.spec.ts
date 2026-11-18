@@ -6,7 +6,9 @@
 import { createHash } from "node:crypto";
 
 import { readPdfOutline } from "@triliumnext/commons/src/lib/pdf_toc.js";
-import { assignHeadingIds, getBlobTag, MAX_TOC_HEADINGS } from "@triliumnext/commons/src/lib/toc.js";
+import {
+    assignHeadingIds, getBlobTag, MAX_TOC_HEADINGS
+} from "@triliumnext/commons/src/lib/toc.js";
 import { blobIdFromDigest, PROTECTED_BLOB_PREFIX } from "@triliumnext/commons/src/lib/utils.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -220,7 +222,7 @@ describe("headings", () => {
 });
 
 describe("an outline cut at MAX_TOC_HEADINGS", () => {
-    it("lands a heading of the cut outline on the same bytes, and gives an id of version 1 the page", async () => {
+    it("lands a heading of a cut outline, and an id of version 1 on its page", async () => {
         // "Summary" is the last entry kept, and one more follows it.
         const bytes = longOutlinePdf(MAX_TOC_HEADINGS + 1, MAX_TOC_HEADINGS - 1);
         viewer = await installViewerApp(bytes.slice());
@@ -237,7 +239,9 @@ describe("an outline cut at MAX_TOC_HEADINGS", () => {
         await vi.waitFor(() => expect(app.pdfViewer.currentPageNumber).toBe(3));
 
         viewer.sendFromParent({
-            type: "trilium-scroll-to-heading", headingId: oldIds[MAX_TOC_HEADINGS - 1], pageNumber: 2
+            type: "trilium-scroll-to-heading",
+            headingId: oldIds[MAX_TOC_HEADINGS - 1],
+            pageNumber: 2
         });
         await vi.waitFor(() => expect(app.pdfViewer.currentPageNumber).toBe(2));
     }, 60_000);

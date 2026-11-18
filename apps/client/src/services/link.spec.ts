@@ -1226,6 +1226,19 @@ describe("the labels of links to PDF headings", () => {
         get.mockRestore();
     });
 
+    it("shows the note title alone for a document heading before a list built a cache", async () => {
+        const docx = buildNote({ title: "Report" });
+        const get = answerToc({ status: "missing" },
+            { status: "ready", blobId: docx.blobId, headings });
+        const href = `#root/${docx.noteId}?heading=h2.Kp3vXq0aB7`;
+
+        expect((await label(href)).text()).toBe("Report");
+        expect(linkService.getReferenceLinkTitleSync(href)).toBe("Report");
+        expect((await label(href)).text()).toBe("ReportSummary");
+        expect(linkService.getReferenceLinkTitleSync(href)).toBe("Report - Summary");
+        get.mockRestore();
+    });
+
     it("shares one read between labels, and shows the page when the read fails", async () => {
         const pdf = buildNote({ title: "Paper" });
         const get = vi.spyOn(server, "get").mockRejectedValueOnce(new Error("offline"));

@@ -104,7 +104,8 @@ export function readPreviewBookmarks(html: string, names: string[]): PreviewBook
         if (element) {
             element.count++;
         } else {
-            elements.set(id, { tagOffset: match.index, tagNameEnd: match.index + 1 + match[1].length, count: 1 });
+            const tagNameEnd = match.index + 1 + match[1].length;
+            elements.set(id, { tagOffset: match.index, tagNameEnd, count: 1 });
         }
     }
 
@@ -132,11 +133,12 @@ export async function readBookmarkNames(content: Uint8Array | string, mime: stri
 
     let xml = "";
     try {
-        await getZipProvider().readZipFile(wrapStringOrBuffer(content), async ({ fileName }, readContent) => {
-            if (fileName === source.part) {
-                xml = decodeUtf8(await readContent());
-            }
-        });
+        await getZipProvider().readZipFile(wrapStringOrBuffer(content),
+            async ({ fileName }, readContent) => {
+                if (fileName === source.part) {
+                    xml = decodeUtf8(await readContent());
+                }
+            });
     } catch {
         return [];
     }
@@ -161,7 +163,9 @@ export async function readBookmarkNames(content: Uint8Array | string, mime: stri
  * other byte stays as it is.
  */
 export function markOfficePreview(
-    html: string, { blobId, isProtected }: Omit<TocPreviewSource, "content">, bookmarkNames: string[] = []
+    html: string,
+    { blobId, isProtected }: Omit<TocPreviewSource, "content">,
+    bookmarkNames: string[] = []
 ) {
     const { headings, isCut } = readPreviewHeadings(html);
     const ids = getHeadingIds(headings, blobId, isProtected, isCut);

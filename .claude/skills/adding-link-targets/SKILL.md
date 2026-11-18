@@ -207,15 +207,40 @@ gives parameters into a target of kind `heading`.
 - **A new format** is a `TocFormat` in the list of `toc/index.ts` (`isFor`, `isCurrent` for its
   own properties, `getLinkParams`, `parseHeadingFields`, `isPermanentFailure`), a generator where
   a parser exists, a viewer that builds where none does, and the navigation of its parameter.
+  Formats are chosen by `getTocFormatOf(entity)`: a note's `type`, an attachment's `role`
+  (`BAttachment.type` is never set), and the MIME type.
+- **A format that core parses on every platform** carries its generator, `TocFormat.generator`,
+  as the DOCX and ODT formats of `toc/office.ts` do; one that a platform registers under the
+  format's name takes precedence (`getGenerator()`), which is how specs fake it. Such a format
+  never answers `pendingToc`, and its `PUT` is refused. Its optional hooks:
+  `describeFailure()` names a failure in the log without its message, which can quote the file;
+  `markPreview()` writes the ids into the HTML preview that `routes/api/files.ts` serves
+  (`markTocHeadings()`); `getOtherTargets()` lists targets of other kinds after the headings,
+  such as the bookmarks of a document.
 - **Ids** come from `assignHeadingIds()` in commons `toc.ts`, a hash of the title path; the
-  server computes them, the viewer resolves them with `findHeading()`. Never trust an id that a
-  client sends.
+  server computes them (`getHeadingIds()`, shared by the cache and the marking of a preview), the
+  viewer resolves them with `findHeading()`. Never trust an id that a client sends. A reader that
+  stops at `MAX_TOC_HEADINGS` before another heading reports `isCut`, which binds every heading
+  to the blob: a free id could otherwise name a heading of the same title once the original moved
+  past the cut. Pass the flag to both functions, and bump the reader version when a change
+  alters ids.
+- **Failures** are remembered by format, document and blob, so a file whose MIME type changes on
+  the same blob is read by its new format. Only what `isPermanentFailure()` calls permanent is
+  remembered; anything else is read again at the next request.
+- **The save after a build** waits for `whenDatabaseFree()` and opens an execution context of its
+  own, so that on standalone it never lands inside an import's open transaction. Never call
+  `getToc()` inside an `asyncRoute` on standalone: the save would wait for its own caller.
 - **Where the server cannot read the format** (standalone, mobile), `GET .../toc` answers
   `pendingToc`; the viewer reads the outline and the digest of its bytes and the client saves it
   with `PUT .../toc` (`useTocBuild()` in `type_widgets/file/toc_build.ts`). The `PUT` is a plain
   `apiRoute`: no write may follow an `await` in an `asyncApiRoute` on standalone.
 - **Labels** read `GET .../toc`, which never builds, through `loadPdfReferenceLabel()` and the
-  heading memo of `services/link.ts` (`rememberHeadingTitles()`).
+  heading memo of `services/link.ts` (`rememberHeadingTitles()`). A link without a page falls
+  back to the note title alone.
+- **Landing in an office preview**: the server marks each heading's start tag with
+  `data-toc-heading` and each bookmark's element with `data-toc-bookmark`; the client compares
+  the attribute exactly (`showDocumentTarget()` in `services/bookmark_jump.ts`) and scrolls the
+  preview to its top when no element has it.
 
 ## Shared types: a new kind
 
@@ -346,7 +371,13 @@ A link parameter does nothing until the note view reads it:
   rendered, or a link opened in a new tab is used up against an empty container. `EditableText`
   waits for the editor (`revealLinkTargetWhenReady()`: the editor initialized, then one animation
   frame); `ReadOnlyText` skips the render without a blob; `Pdf.tsx` waits until the viewer is
-  shown and has listed its annotations.
+  shown and has listed its annotations; `OfficePreview` (`file/Office.tsx`) waits until the
+  preview of the blob that the note context shows is in place.
+- **Attachments** land through `AttachmentInfo` in `type_widgets/Attachment.tsx`: the view
+  scope holds the target until the content of the latest render is in place, renders carry a
+  generation so that a late one is disposed unseen, and the content renderer gives each kind of
+  content its `showTarget()` (`RenderedContent`). `AttachmentDetail` shows the lookup of the
+  latest navigation only, and keys `AttachmentInfo` by the attachment id.
 - **A link to the note that is already open** changes the view scope but not the content, so code
   that runs when the content loads does not run again. Listen to `noteSwitched` for the same note
   context and the same note: `useSameNoteSwitch()` in `widgets/react/hooks/note_context.ts`, or

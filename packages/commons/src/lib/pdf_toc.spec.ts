@@ -94,7 +94,8 @@ describe("readPdfOutline", () => {
     });
 
     it("reports no cut for an outline of exactly the limit, nested or not", async () => {
-        const flat = Array.from({ length: MAX_TOC_HEADINGS }, (_, index) => entry(`${index}`, null));
+        const flat = Array.from({ length: MAX_TOC_HEADINGS },
+            (_, index) => entry(`${index}`, null));
         const nested = [ entry("Parent", null, flat.slice(1)) ];
         // An entry past the limit is a cut, whatever its title.
         const past = [ ...flat, { title: undefined, dest: null } as unknown as PdfOutlineEntry ];

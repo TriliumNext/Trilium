@@ -102,5 +102,11 @@ export default function OfficePreview({ note, noteContext, isVisible }: {
         );
     }
 
-    return <div ref={bodyRef} class="ck-content office-preview-body selectable-text" dangerouslySetInnerHTML={{ __html: preview.html }} />;
+    return (
+        <div
+            ref={bodyRef}
+            class="ck-content office-preview-body selectable-text"
+            dangerouslySetInnerHTML={{ __html: preview.html }}
+        />
+    );
 }

@@ -75,8 +75,8 @@ export async function convertOfficeToHtml(content: string | Uint8Array, mime: st
             maxInlineImageBytes: Infinity,
             // Emit an embeddable fragment instead of a full standalone <html> document.
             htmlConfig: { standalone: false },
-            // A heading's slug can equal the name of a bookmark, which a link then misses. The
-            // ToC formats of these give headings ids of their own.
+            // A heading's slug id can equal a bookmark's name, so that a link to the bookmark
+            // lands on the heading. The ToC formats of these mark headings with ids of their own.
             generateIds: !NO_GENERATED_IDS.has(mime)
         }
     });

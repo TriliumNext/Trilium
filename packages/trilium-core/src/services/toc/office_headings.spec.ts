@@ -8,6 +8,7 @@ import {
 } from "./office_headings.js";
 
 const BLOB_ID = "Kp3vXq0aB7abcdefghij";
+const SOURCE = { blobId: BLOB_ID, isProtected: false };
 
 describe("readPreviewHeadings", () => {
     it("reads the headings in document order, with levels made into depths", () => {
@@ -22,7 +23,7 @@ describe("readPreviewHeadings", () => {
 
     it("skips an empty heading, so the heading after it nests under the one before it", () => {
         const html = "<h1>Chapter</h1><h2 class=\"empty-paragraph\"><br></h2><h3>Section</h3>"
-            + "<h2>   </h2><h2>Next</h2>";
+            + "<h2> \u{a0} </h2><h2>Next</h2>";
 
         expect(titlesAndLevels(html)).toStrictEqual([
             [ "Chapter", 1 ], [ "Section", 2 ], [ "Next", 2 ]
@@ -53,8 +54,8 @@ describe("readPreviewHeadings", () => {
     });
 
     it("takes no escaped markup for a tag, nor a tag that only starts like a heading", () => {
-        const html = "<p title=\"a &gt; b\">&lt;h2&gt;Not a heading&lt;/h2&gt;</p><header>Head</header>"
-            + "<hr><h2 title=\"x &gt; y\">Real</h2>";
+        const html = "<p title=\"a &gt; b\">&lt;h2&gt;Not a heading&lt;/h2&gt;</p>"
+            + "<header>Head</header><hr><h2 title=\"x &gt; y\">Real</h2>";
 
         const { headings } = readPreviewHeadings(html);
 
@@ -64,7 +65,7 @@ describe("readPreviewHeadings", () => {
     });
 
     it("keeps MAX_TOC_HEADINGS headings and tells whether a heading with a title follows", () => {
-        const exact = Array.from({ length: MAX_TOC_HEADINGS }, (_, index) => `<h2>H${index}</h2>`).join("");
+        const exact = repeatHeadings(MAX_TOC_HEADINGS);
 
         expect(readPreviewHeadings(exact).isCut).toBe(false);
         expect(readPreviewHeadings(`${exact}<h2><br></h2>`).isCut).toBe(false);
@@ -79,10 +80,11 @@ describe("readPreviewHeadings", () => {
 describe("readPreviewBookmarks", () => {
     it("finds each name on the one element whose id it is, in the order of the names", () => {
         const html = "<a id=\"Second\" name=\"Second\"></a><h2 id=\"First\">Heading</h2>"
-            + "<p id=\"Twice\">a</p><p id=\"Twice\">b</p><p id=\"a&amp;b &quot;c&quot;\">Escaped</p>"
-            + "<p data-id=\"Other\">Not an id</p>";
+            + "<p id=\"Twice\">a</p><p id=\"Twice\">b</p>"
+            + "<p id=\"a&amp;b &quot;c&quot;\">Escaped</p><p data-id=\"Other\">Not an id</p>";
+        const names = [ "First", "Second", "Twice", "a&b \"c\"", "Other", "Gone" ];
 
-        const bookmarks = readPreviewBookmarks(html, [ "First", "Second", "Twice", "a&b \"c\"", "Other", "Gone" ]);
+        const bookmarks = readPreviewBookmarks(html, names);
 
         expect(bookmarks.map(({ name }) => name)).toStrictEqual([ "First", "Second", "a&b \"c\"" ]);
         expect(bookmarks[0].tagOffset).toBe(html.indexOf("<h2"));
@@ -91,18 +93,18 @@ describe("readPreviewBookmarks", () => {
 });
 
 describe("readBookmarkNames", () => {
-    it("reads the bookmarks of a Word document that no editor made and no other id has", async () => {
-        const xml = "<w:body><w:bookmarkStart w:id=\"0\" w:name=\"Intro\"/><w:bookmarkStart w:id=\"1\" w:name=\"_Toc123\"/>"
-            + "<w:bookmarkStart w:id=\"2\" w:name=\"_GoBack\"/><w:bookmarkStart w:id=\"3\" w:name=\"footnote-1\"/>"
-            + "<w:bookmarkStart w:id=\"4\" w:name=\"A&amp;B\"/><w:bookmarkStart w:id=\"5\" w:name=\"Intro\"/>"
-            + "<w:hyperlink w:anchor=\"Linked\"/><w:bookmarkStart w:id=\"6\" w:name=\"Linked\"/></w:body>";
+    it("reads the Word bookmarks that no editor made and no other id has", async () => {
+        const names = [ "Intro", "_Toc123", "_GoBack", "footnote-1", "A&amp;B", "Intro" ];
+        const xml = `<w:body>${names.map(wordBookmark).join("")}`
+            + "<w:hyperlink w:anchor=\"Linked\"/>" + wordBookmark("Linked") + "</w:body>";
 
         expect(await readBookmarkNames(zip({ "word/document.xml": xml }), DOCX_MIME))
             .toStrictEqual([ "Intro", "A&B", "Linked" ]);
     });
 
     it("leaves out the ODT bookmarks whose name another source of ids gives", async () => {
-        const xml = "<office:text><text:bookmark text:name=\"Kept\"/><text:bookmark-start text:name=\"Range\"/>"
+        const xml = "<office:text><text:bookmark text:name=\"Kept\"/>"
+            + "<text:bookmark-start text:name=\"Range\"/>"
             + "<text:bookmark-start text:name=\"__RefHeading___Toc1_2\"/>"
             + "<text:tracked-changes><text:changed-region><text:deletion><text:p>"
             + "<text:bookmark text:name=\"id123\"/><text:bookmark text:name=\"Table1\"/>"
@@ -112,7 +114,8 @@ describe("readBookmarkNames", () => {
             + "<draw:frame draw:name=\"Frame1\"/><text:note text:id=\"note1\"/>"
             + "<text:bookmark-ref text:ref-name=\"Kept\"/></office:text>";
 
-        expect(await readBookmarkNames(zip({ "content.xml": xml }), ODT_MIME)).toStrictEqual([ "Kept", "Range" ]);
+        expect(await readBookmarkNames(zip({ "content.xml": xml }), ODT_MIME))
+            .toStrictEqual([ "Kept", "Range" ]);
     });
 
     it("reads no names from a file that is not a package, or that lacks the part", async () => {
@@ -123,45 +126,60 @@ describe("readBookmarkNames", () => {
 
 describe("markOfficePreview", () => {
     it("writes the id of each heading into its start tag, and changes no other byte", () => {
-        const html = "<p data-x=\"a\\b\">Intro</p><h1 id=\"one\">One</h1><h2 class=\"empty-paragraph\"><br></h2>"
-            + "<h2>Summary</h2><h2>Summary</h2><h3>Deep</h3>";
+        const html = "<p data-x=\"a\\b\">Intro</p><h1 id=\"one\">One</h1>"
+            + "<h2 class=\"empty-paragraph\"><br></h2><h2>Summary</h2><h2>Summary</h2>"
+            + "<h3>Deep</h3>";
         const ids = getHeadingIds(readPreviewHeadings(html).headings, BLOB_ID, false, false);
 
-        const marked = markOfficePreview(html, { blobId: BLOB_ID, isProtected: false });
+        const marked = markOfficePreview(html, SOURCE);
 
         expect(marked).toBe("<p data-x=\"a\\b\">Intro</p>"
-            + `<h1 data-toc-heading="${ids[0]}" id="one">One</h1><h2 class="empty-paragraph"><br></h2>`
-            + `<h2 data-toc-heading="${ids[1]}">Summary</h2><h2 data-toc-heading="${ids[2]}">Summary</h2>`
+            + `<h1 data-toc-heading="${ids[0]}" id="one">One</h1>`
+            + "<h2 class=\"empty-paragraph\"><br></h2>"
+            + `<h2 data-toc-heading="${ids[1]}">Summary</h2>`
+            + `<h2 data-toc-heading="${ids[2]}">Summary</h2>`
             + `<h3 data-toc-heading="${ids[3]}">Deep</h3>`);
         expect(ids[1]).toMatch(/\.Kp3vXq0aB7$/);
     });
 
     it("writes the ids of the protected blob, and binds every heading of a cut preview", () => {
-        const html = "<h1>One</h1>";
-        expect(markOfficePreview(html, { blobId: BLOB_ID, isProtected: true }))
-            .toBe(`<h1 data-toc-heading="${getHeadingIds([ { title: "One", level: 1 } ], BLOB_ID, true, false)[0]}">One</h1>`);
+        const [ protectedId ] = getHeadingIds([ { title: "One", level: 1 } ], BLOB_ID, true, false);
+        expect(markOfficePreview("<h1>One</h1>", { ...SOURCE, isProtected: true }))
+            .toBe(`<h1 data-toc-heading="${protectedId}">One</h1>`);
 
-        const headings = Array.from({ length: MAX_TOC_HEADINGS + 1 }, (_, index) => `<h2>H${index}</h2>`);
-        const marked = markOfficePreview(headings.join(""), { blobId: BLOB_ID, isProtected: false });
-        expect(marked.match(/data-toc-heading="[0-9a-z]{14}\.Kp3vXq0aB7"/g)).toHaveLength(MAX_TOC_HEADINGS);
+        const marked = markOfficePreview(repeatHeadings(MAX_TOC_HEADINGS + 1), SOURCE);
+        expect(marked.match(/data-toc-heading="[0-9a-z]{14}\.Kp3vXq0aB7"/g))
+            .toHaveLength(MAX_TOC_HEADINGS);
         expect(marked.endsWith(`<h2>H${MAX_TOC_HEADINGS}</h2>`)).toBe(true);
     });
 
     it("marks the element of each bookmark, a heading's start tag after its id", () => {
-        const html = "<a id=\"title\" name=\"title\"></a><h2 id=\"Appendix\">Appendix</h2><p id=\"x\">a</p>";
+        const html = "<a id=\"title\" name=\"title\"></a><h2 id=\"Appendix\">Appendix</h2>"
+            + "<p id=\"x\">a</p>";
         const [ id ] = getHeadingIds(readPreviewHeadings(html).headings, BLOB_ID, false, false);
 
-        const marked = markOfficePreview(html, { blobId: BLOB_ID, isProtected: false },
-            [ "Appendix", "title", "say \"hi\"" ]);
+        const marked = markOfficePreview(html, SOURCE, [ "Appendix", "title", "say \"hi\"" ]);
 
         expect(marked).toBe("<a data-toc-bookmark=\"title\" id=\"title\" name=\"title\"></a>"
-            + `<h2 data-toc-heading="${id}" data-toc-bookmark="Appendix" id="Appendix">Appendix</h2><p id="x">a</p>`);
+            + `<h2 data-toc-heading="${id}" data-toc-bookmark="Appendix" id="Appendix">`
+            + "Appendix</h2><p id=\"x\">a</p>");
     });
 });
 
 /** A ZIP of `files`, each of them text. */
 function zip(files: Record<string, string>) {
-    return zipSync(Object.fromEntries(Object.entries(files).map(([ path, text ]) => [ path, strToU8(text) ])));
+    const entries = Object.entries(files).map(([ path, text ]) => [ path, strToU8(text) ]);
+    return zipSync(Object.fromEntries(entries));
+}
+
+/** The start of the Word bookmark `name`. */
+function wordBookmark(name: string, index = 0) {
+    return `<w:bookmarkStart w:id="${index}" w:name="${name}"/>`;
+}
+
+/** `count` headings, `H0` to `H<count - 1>`. */
+function repeatHeadings(count: number) {
+    return Array.from({ length: count }, (_, index) => `<h2>H${index}</h2>`).join("");
 }
 
 function titlesAndLevels(html: string) {

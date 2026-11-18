@@ -1,9 +1,10 @@
 import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { consumeBookmark, revealElement, showDocumentTarget, takeDocumentTarget } from "./bookmark_jump.js";
+import {
+    consumeBookmark, revealElement, showDocumentTarget, takeDocumentTarget
+} from "./bookmark_jump.js";
 import type { ViewScope } from "./link.js";
-import { sanitizeNoteContentHtml } from "./sanitize_content.js";
 
 const { showAnchorElement, scroller } = vi.hoisted(() => ({
     showAnchorElement: vi.fn(),
@@ -137,10 +138,11 @@ describe("revealElement", () => {
 });
 
 describe("takeDocumentTarget", () => {
-    it("takes a heading and a bookmark out of the view scope, and leaves one without them alone", () => {
+    it("takes a heading and a bookmark out of the view scope, and leaves one without them", () => {
         const viewScope: ViewScope = { heading: "h1", bookmark: "Intro", attachmentId: "a1" };
         expect(takeDocumentTarget(viewScope)).toStrictEqual({ heading: "h1", bookmark: "Intro" });
-        expect(viewScope).toStrictEqual({ heading: undefined, bookmark: undefined, attachmentId: "a1" });
+        expect(viewScope)
+            .toStrictEqual({ heading: undefined, bookmark: undefined, attachmentId: "a1" });
 
         const empty: ViewScope = { page: "3" };
         expect(takeDocumentTarget(empty)).toBeUndefined();
@@ -155,8 +157,9 @@ describe("showDocumentTarget", () => {
         scroller.scrollTo.mockClear();
     });
 
-    it("shows the element whose marking equals the target exactly, a heading before a bookmark", async () => {
-        const container = buildContainer(`<h2 data-toc-heading="h1.x">Near</h2><h2 data-toc-heading="h1">One</h2>`
+    it("shows the element whose marking is the target, a heading before a bookmark", async () => {
+        const container = buildContainer("<h2 data-toc-heading=\"h1.x\">Near</h2>"
+            + "<h2 data-toc-heading=\"h1\">One</h2>"
             + `<p data-toc-bookmark='say "hi"]'>Quoted</p>`);
 
         await showDocumentTarget(container, { heading: "h1", bookmark: 'say "hi"]' });
@@ -168,9 +171,10 @@ describe("showDocumentTarget", () => {
     });
 
     it("finds a bookmark by its marking where the sanitizer removed its id", async () => {
-        const container = buildContainer(sanitizeNoteContentHtml(
-            "<p data-toc-bookmark=\"title\" id=\"title\">Named like a property of the document</p>"));
-        expect(container.querySelector("p")?.id).toBe("");
+        // What DOMPurify leaves of `<p data-toc-bookmark="title" id="title">` in a browser: the id
+        // names a property of `document`. happy-dom drops the whole element instead.
+        const container = buildContainer(
+            "<p data-toc-bookmark=\"title\">Named like a property of the document</p>");
 
         await showDocumentTarget(container, { bookmark: "title" });
 

@@ -89,7 +89,8 @@ describe("whenDatabaseFree", () => {
                 throw new Error("The import failed.");
             })));
         generator.resolve({
-            headings: [ { title: "Alpha", level: 1, page: 1 } ], properties: { reader: PDF_TOC_READER }
+            headings: [ { title: "Alpha", level: 1, page: 1 } ],
+            properties: { reader: PDF_TOC_READER }
         });
         await flush();
         expect(caches(note)).toHaveLength(0);

@@ -68,13 +68,15 @@ ls -l --time-style=+%H:%M packages/pdfjs-viewer/dist/web/custom.mjs
   that `ensureOutline()` reads once per document with commons' `readPdfOutline()`. A link names it
   by the id of the ToC cache, which `findHeading()` (commons `toc.ts`) resolves; a bound id (with
   a blob tag) costs one digest of the document, `getDocumentBlobId()` in `digest.ts`, shared and
-  kept per document and form (Web Crypto, else `@noble/hashes` in 4 MiB slices).
+  kept per document and form (Web Crypto, else `@noble/hashes` in 4 MiB slices). An outline cut
+  at `MAX_TOC_HEADINGS` (`readPdfOutline()` reports `isCut`) binds every heading to the blob, so
+  `findHeading()` takes the flag, and a free id made before `PDF_TOC_READER` 2 opens its page.
 - **The ToC build**: on platforms where the server cannot read PDFs, the client posts
   `trilium-build-toc` (`{ requestId, isProtected, data? }`) after each load and each save
   (`useTocBuild()` in `toc_build.ts`); `setupTocBuild()` answers `pdfjs-viewer-toc-build` with the
-  outline, the `blobId` of the bytes and the time, or `{ failed: true }`. Bytes of a save are
-  opened with their own loading task, which is destroyed whether the open succeeds or not. The
-  answer to the latest request only is saved with `PUT .../toc`.
+  outline, its `isCut`, the `blobId` of the bytes and the time, or `{ failed: true }`. Bytes of a
+  save are opened with their own loading task, which is destroyed whether the open succeeds or
+  not. The answer to the latest request only is saved with `PUT .../toc`.
 
 ## The viewer outlives the note it shows
 

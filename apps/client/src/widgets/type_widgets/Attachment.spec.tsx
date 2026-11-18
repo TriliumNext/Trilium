@@ -14,8 +14,11 @@ import { ParentComponent } from "../react/react_utils";
 const CANVAS_MIME = "application/vnd.excalidraw+json";
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-const { getRenderedContent, disposeInteractiveContent, drawingMounts, uploadFiles } = vi.hoisted(() => ({
-    getRenderedContent: vi.fn(async (..._args: unknown[]): Promise<unknown> => ({ $renderedContent: [] })),
+const {
+    getRenderedContent, disposeInteractiveContent, drawingMounts, uploadFiles
+} = vi.hoisted(() => ({
+    getRenderedContent: vi.fn(
+        async (..._args: unknown[]): Promise<unknown> => ({ $renderedContent: [] })),
     disposeInteractiveContent: vi.fn(),
     drawingMounts: vi.fn(),
     uploadFiles: vi.fn(async () => {})
@@ -257,11 +260,17 @@ describe("AttachmentDetail", () => {
         {
             name: "a Word document", mime: DOCX_MIME,
             first: { heading: "h1" }, second: { bookmark: "Appendix" },
-            firstTarget: { page: undefined, heading: "h1", annotation: undefined, bookmark: undefined },
-            secondTarget: { page: undefined, heading: undefined, annotation: undefined, bookmark: "Appendix" }
+            firstTarget: {
+                page: undefined, heading: "h1", annotation: undefined, bookmark: undefined
+            },
+            secondTarget: {
+                page: undefined, heading: undefined, annotation: undefined, bookmark: "Appendix"
+            }
         }
-    ])("the place in $name that a link names", ({ mime, first, second, firstTarget, secondTarget }) => {
-        it("is shown once the content is in place, and the place of each later link at once", async () => {
+    ])("the place in $name that a link names", ({ mime, first, second, ...targets }) => {
+        const { firstTarget, secondTarget } = targets;
+
+        it("is shown once the content is in place, and that of each later link at once", async () => {
             const { attachment, renders, follow, viewScope } = await openDetail(mime, first);
 
             expect(getRenderedContent).toHaveBeenCalledWith(attachment,
@@ -269,7 +278,8 @@ describe("AttachmentDetail", () => {
             expect(viewScope).toMatchObject(first);
             const content = await renders.finish(0);
             expect(content.showTarget).toHaveBeenCalledExactlyOnceWith(firstTarget);
-            expect(viewScope).toMatchObject({ page: undefined, heading: undefined, annotation: undefined });
+            expect(viewScope)
+                .toMatchObject({ page: undefined, heading: undefined, annotation: undefined });
 
             await follow(second);
             expect(content.showTarget).toHaveBeenLastCalledWith(secondTarget);
@@ -281,7 +291,7 @@ describe("AttachmentDetail", () => {
             expect(getRenderedContent).toHaveBeenCalledOnce();
         });
 
-        it("of the latest link is shown, once, when links follow while the content renders", async () => {
+        it("of the latest link is shown, once, when links follow during a render", async () => {
             const { attachment, renders, follow } = await openDetail(mime, first);
 
             await follow(second);
@@ -313,8 +323,9 @@ describe("AttachmentDetail", () => {
         });
     });
 
-    it("shows the attachment of the latest navigation, whichever lookup resolves last", async () => {
-        const [ older, newer ] = [ { ...role("file"), mime: DOCX_MIME }, { ...role("file"), mime: DOCX_MIME } ] as FAttachment[];
+    it("shows the attachment of the latest navigation, whichever lookup ends last", async () => {
+        const older = { ...role("file"), mime: DOCX_MIME } as FAttachment;
+        const newer = { ...role("file"), mime: DOCX_MIME } as FAttachment;
         const lookups = new Map<string, (attachment: FAttachment) => void>();
         vi.spyOn(froca, "getAttachment").mockImplementation((attachmentId) =>
             new Promise((resolve) => lookups.set(attachmentId, resolve)));
@@ -323,9 +334,12 @@ describe("AttachmentDetail", () => {
         const container = document.createElement("div");
         document.body.append(container);
         async function navigate(attachment: FAttachment, heading: string) {
-            noteContext.viewScope = { viewMode: "attachments", attachmentId: attachment.attachmentId, heading };
-            const props = { note: { noteId: "note1" }, viewScope: noteContext.viewScope, noteContext } as unknown as
-                Parameters<typeof AttachmentDetail>[0];
+            noteContext.viewScope = {
+                viewMode: "attachments", attachmentId: attachment.attachmentId, heading
+            };
+            const props = {
+                note: { noteId: "note1" }, viewScope: noteContext.viewScope, noteContext
+            } as unknown as Parameters<typeof AttachmentDetail>[0];
             await act(async () => {
                 render(
                     <ParentComponent.Provider value={renders.component}>
@@ -341,7 +355,8 @@ describe("AttachmentDetail", () => {
         const content = await renders.finish(0);
 
         expect(getRenderedContent).toHaveBeenCalledExactlyOnceWith(newer, expect.anything());
-        expect(content.showTarget).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ heading: "b" }));
+        expect(content.showTarget)
+            .toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ heading: "b" }));
         await act(async () => render(null, container));
         container.remove();
     });

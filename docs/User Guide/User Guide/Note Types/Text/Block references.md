@@ -43,7 +43,7 @@ Since v0.108.0, a link can point at a heading of another note too:
 
 This link is a block reference too. Linking to the heading saves an invisible identifier in it, also when that note is read-only. If the heading cannot be referenced, for example because it was changed in the meantime, an error is shown and no link is inserted. The dialog stays open. From the `@` menu, the link keeps pointing at the whole note.
 
-The headings of a PDF are listed the same way, and linking to one leaves the file as it is. See <a class="reference-link" href="../File/PDFs.md">PDFs</a>.
+The headings of a PDF, and those of a Word or OpenDocument Text document, are listed the same way, and linking to one leaves the file as it is. See <a class="reference-link" href="../File/PDFs.md">PDFs</a> and <a class="reference-link" href="../File/Office%20documents.md">Office documents</a>.
 
 ## Following a reference
 

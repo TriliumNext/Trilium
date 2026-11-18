@@ -892,7 +892,7 @@ Replaces the blocks that `block` points at with `content` and saves the note as 
 
 `GET /api/notes/{noteId}/references` · `getNoteReferences`
 
-The targets of a note, such as the headings and anchors of a text note, in the order that the link lists show them, the targets of each kind together. A link points at a target by adding its `params` to the path of the note: a heading of a text note through `?block=` and its block id, an anchor through `?bookmark=`. A target without `params` needs a reference first, which `POST /api/notes/{noteId}/references` creates. Such a target is listed only when the note can take one. Titles are plain text, never HTML. A note whose type has no targets lists none. The headings of a PDF file come from its ToC cache, which the server builds when it is missing or stale; where the server cannot read PDFs (standalone, mobile), the answer lists none and carries `pendingToc` until the viewer of the file has built the cache.
+The targets of a note, such as the headings and anchors of a text note, in the order that the link lists show them, the targets of each kind together. A link points at a target by adding its `params` to the path of the note: a heading of a text note through `?block=` and its block id, an anchor through `?bookmark=`. A target without `params` needs a reference first, which `POST /api/notes/{noteId}/references` creates. Such a target is listed only when the note can take one. Titles are plain text, never HTML. A note whose type has no targets lists none. The headings of a PDF file, and the headings and bookmarks of a Word (DOCX) or OpenDocument text (ODT) file, come from its ToC cache, which the server builds when it is missing or stale. Where the server cannot read PDFs (standalone, mobile), the answer for a PDF lists none and carries `pendingToc` until the viewer of the file has built the cache. A DOCX or ODT file links a heading through `?heading=` and a bookmark through `?bookmark=`.
 
 **Authorization**: `sessionAuth` or `tokenAuth`
 
@@ -1036,7 +1036,7 @@ Gives a target that `GET /api/notes/{noteId}/references` lists without `params` 
 
 `GET /api/notes/{noteId}/toc` · `getNoteToc`
 
-The table of contents that the ToC cache of a note holds, such as the outline of a PDF file, without building it or writing anything. `ready` is a cache of the note as it is, `stale` one of an earlier blob, `missing` a note without a cache that can be read, and `none` a note that has no table of contents. `pendingToc` tells that the viewer of the document builds the cache, since the server cannot read the format.
+The table of contents that the ToC cache of a note holds, such as the outline of a PDF file or the headings of a DOCX or ODT file, without building it or writing anything. `ready` is a cache of the note as it is, `stale` one of an earlier blob, `missing` a note without a cache that can be read, and `none` a note that has no table of contents. `pendingToc` tells that the viewer of the document builds the cache, since the server cannot read the format.
 
 **Authorization**: `sessionAuth` or `tokenAuth`
 
@@ -1097,7 +1097,7 @@ The table of contents that the ToC cache of a note holds, such as the outline of
 
 `PUT /api/notes/{noteId}/toc` · `saveNoteToc`
 
-Saves the table of contents that the viewer of a document read, where the server cannot read the format itself. The server checks it, normalizes the titles and computes the ids of the headings. A valid cache that exists already is kept.
+Saves the table of contents that the viewer of a document read, where the server cannot read the format itself, which is PDF on standalone and mobile. The server checks it, normalizes the titles and computes the ids of the headings. A valid cache that exists already is kept.
 
 **Authorization**: `sessionAuth` or `tokenAuth`
 
@@ -1118,7 +1118,8 @@ Saves the table of contents that the viewer of a document read, where the server
 | --- | --- |
 | `targetBlobHash`  <br>_required_ | `string`  <br>The `blobId` of the bytes that the viewer read, from their digest |
 | `headings`  <br>_required_ | `array of object`  <br>In document order, without ids: `title` (at most 500 characters), `level` (1 for the first heading, at most one more than the heading before), and the fields of the format |
-| `properties` | `object`  <br>The properties of the format, such as `{ "reader": 1 }` |
+| `properties` | `object`  <br>The properties of the format, such as `{ "reader": 2 }` |
+| `isCut` | `boolean`  <br>Whether the viewer stopped reading at 20,000 headings, before another one. The ids of every heading of a cut table of contents are bound to the blob. |
 | `elapsedMs`  <br>_required_ | `number`  <br>How long the viewer took, for the log |
 
 </div>
@@ -1131,6 +1132,7 @@ Saves the table of contents that the viewer of a document read, where the server
         {}
     ],
     "properties": {},
+    "isCut": true,
     "elapsedMs": 0
 }
 ```
@@ -3314,7 +3316,7 @@ File attachments
 
 `GET /api/attachments/{attachmentId}/references` · `getAttachmentReferences`
 
-The twin of `GET /api/notes/{noteId}/references` for an attachment, such as the headings of a PDF file. The ToC cache of an attachment is kept on its note.
+The twin of `GET /api/notes/{noteId}/references` for an attachment, such as the headings of a PDF, DOCX or ODT file. The ToC cache of an attachment is kept on its note.
 
 **Authorization**: `sessionAuth` or `tokenAuth`
 
@@ -3458,7 +3460,8 @@ The twin of `PUT /api/notes/{noteId}/toc` for an attachment.
 | --- | --- |
 | `targetBlobHash`  <br>_required_ | `string`  <br>The `blobId` of the bytes that the viewer read, from their digest |
 | `headings`  <br>_required_ | `array of object`  <br>In document order, without ids: `title` (at most 500 characters), `level` (1 for the first heading, at most one more than the heading before), and the fields of the format |
-| `properties` | `object`  <br>The properties of the format, such as `{ "reader": 1 }` |
+| `properties` | `object`  <br>The properties of the format, such as `{ "reader": 2 }` |
+| `isCut` | `boolean`  <br>Whether the viewer stopped reading at 20,000 headings, before another one. The ids of every heading of a cut table of contents are bound to the blob. |
 | `elapsedMs`  <br>_required_ | `number`  <br>How long the viewer took, for the log |
 
 </div>
@@ -3471,6 +3474,7 @@ The twin of `PUT /api/notes/{noteId}/toc` for an attachment.
         {}
     ],
     "properties": {},
+    "isCut": true,
     "elapsedMs": 0
 }
 ```
@@ -8741,7 +8745,8 @@ A heading of a table of contents, with the fields of its format, such as `page`
 | --- | --- |
 | `targetBlobHash`  <br>_required_ | `string`  <br>The `blobId` of the bytes that the viewer read, from their digest |
 | `headings`  <br>_required_ | `array of object`  <br>In document order, without ids: `title` (at most 500 characters), `level` (1 for the first heading, at most one more than the heading before), and the fields of the format |
-| `properties` | `object`  <br>The properties of the format, such as `{ "reader": 1 }` |
+| `properties` | `object`  <br>The properties of the format, such as `{ "reader": 2 }` |
+| `isCut` | `boolean`  <br>Whether the viewer stopped reading at 20,000 headings, before another one. The ids of every heading of a cut table of contents are bound to the blob. |
 | `elapsedMs`  <br>_required_ | `number`  <br>How long the viewer took, for the log |
 
 ### <a id="schema-NoteSaveBase"></a>`NoteSaveBase`

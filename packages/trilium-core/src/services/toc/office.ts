@@ -68,8 +68,9 @@ function createOfficeTocFormat(name: "docx" | "odt", mime: string, reader: numbe
         getOtherTargets(cache) {
             const bookmarks = readProperties(cache[name], reader)?.bookmarks ?? [];
             // Sorted when listed: a sort in the cache would depend on the locale of its builder.
-            return bookmarks.toSorted((a, b) => a.localeCompare(b)).map((bookmark): ReferenceTarget =>
-                ({ kind: "anchor", title: bookmark, params: { bookmark } }));
+            return bookmarks.toSorted((a, b) => a.localeCompare(b))
+                .map((bookmark): ReferenceTarget =>
+                    ({ kind: "anchor", title: bookmark, params: { bookmark } }));
         },
         parseHeadingFields: () => ({}),
         isPermanentFailure: isOfficeInputFailure,
@@ -91,7 +92,8 @@ function createOfficeTocFormat(name: "docx" | "odt", mime: string, reader: numbe
 async function readOfficeToc(
     content: Uint8Array | string, mime: string, reader: number
 ): Promise<GeneratedToc> {
-    const { readBookmarkNames, readPreviewBookmarks, readPreviewHeadings } = await import("./office_headings.js");
+    const { readBookmarkNames, readPreviewBookmarks, readPreviewHeadings } =
+        await import("./office_headings.js");
     const html = await convertOfficeToHtml(content, mime);
     const { headings, isCut } = readPreviewHeadings(html);
     const bookmarks = readPreviewBookmarks(html, await readBookmarkNames(content, mime));

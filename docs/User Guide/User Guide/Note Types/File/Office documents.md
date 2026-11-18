@@ -32,6 +32,22 @@ A File note holding an Excel workbook (`.xlsx`) opens in a read-only spreadsheet
 
 A workbook stored as an <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Attachments.md">attachment</a> opens the same way once the attachment is opened on its own. If the file cannot be read as a workbook, the simplified preview described above is shown instead.
 
+## Linking to a heading or a bookmark
+
+Since v0.108.0, a link can point at a heading of a Word (`.docx`) or OpenDocument Text (`.odt`) document, or at one of its bookmarks. To create one from a text or Markdown note:
+
+*   In the _Add link_ dialog, pick the document on the _Note_ page. Its headings are listed below the _Link title_, under _Link to a heading_, and its bookmarks under _Link to an anchor_. Check one, then press <kbd>Enter</kbd> or _Insert link_.
+*   Alternatively, type `@` and pick the document: the menu then lists the same headings and bookmarks.
+
+The link shows the title of the document followed by the title of the heading, and opens the preview at the heading or the bookmark. When it cannot be found, for example once a new version of the file renamed the heading, the link opens the top of the document. A heading whose title is repeated among the headings beside it is found only in the very same file, so once a new version of the file is uploaded, a link to it opens the top of the document.
+
+To link to a heading of a document stored as an attachment, edit a link to the attachment: the dialog lists the headings of the attachment.
+
+The headings are those of the preview. In a Word document, they are the paragraphs in Word's built-in heading styles and in the _Title_ style. Some localized versions of Word, such as the German and the French ones, name these styles differently, and their headings show as plain paragraphs, which no link can point at. Bookmarks that the editor creates on its own, such as those of a table of contents, are not listed.
+
+> [!NOTE]
+> Trilium keeps the headings of each document in an attachment of the note named `toc-cache.json`, read again whenever the file changes. Revisions, exports and copies of the note leave it out.
+
 ## Limitations
 
 *   The preview is read-only. To edit the document, download it or open it in an external application; the content of the note is not affected by the preview. Alternatively copy and paste it into a text note.

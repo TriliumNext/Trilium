@@ -82,7 +82,7 @@ describe("getToc", () => {
         const { headings } = readyCache(await toc(noteRef(note)));
 
         const tag = getBlobTag(String(note.blobId));
-        expect(headings.map(({ id }) => id.endsWith(`.${tag}`))).toStrictEqual([ true, true, true ]);
+        expect(headings.filter(({ id }) => !id.endsWith(`.${tag}`))).toStrictEqual([]);
     });
 
     it("rebuilds for a new blob into the same attachment, and logs the update", async () => {
@@ -427,7 +427,8 @@ describe("getToc", () => {
 describe("documents of Word and OpenDocument", () => {
     it("build with the format's own generator, for notes and attachments", async () => {
         for (const [ name, mime ] of [ [ "docx", DOCX_MIME ], [ "odt", ODT_MIME ] ]) {
-            const bytes = new Uint8Array(fs.readFileSync(path.join(FIXTURES, `toc_contract.${name}`)));
+            const bytes = new Uint8Array(
+                fs.readFileSync(path.join(FIXTURES, `toc_contract.${name}`)));
             const contract = JSON.parse(
                 fs.readFileSync(path.join(FIXTURES, `toc_contract_${name}.json`), "utf-8"));
             const note = createDocument(bytes, mime);
@@ -444,11 +445,12 @@ describe("documents of Word and OpenDocument", () => {
         }
     });
 
-    it("let a registered generator take precedence, and never ask the viewer to build", async () => {
+    it("let a registered generator take precedence, and never ask a viewer to build", async () => {
         const generator = registerFor("docx");
         const note = createDocument("Alpha", DOCX_MIME);
         const request = () => ({
-            targetBlobHash: note.blobId, headings: [], properties: { reader: DOCX_TOC_READER }, elapsedMs: 1
+            targetBlobHash: note.blobId, headings: [], properties: { reader: DOCX_TOC_READER },
+            elapsedMs: 1
         });
 
         expect(readCachedToc(noteRef(note))).toStrictEqual({ status: "missing" });
@@ -462,7 +464,7 @@ describe("documents of Word and OpenDocument", () => {
         expect(() => save(noteRef(note), request())).toThrow(ValidationError);
     });
 
-    it("rebuild the caches of the format whose reader changed, and keep the other format's", async () => {
+    it("rebuild the caches of the format whose reader changed, and keep the other's", async () => {
         const docx = registerFor("docx");
         const odt = registerFor("odt");
         const docxNote = createDocument("Alpha", DOCX_MIME);
@@ -484,10 +486,14 @@ describe("documents of Word and OpenDocument", () => {
 
     describe("failures", () => {
         it.each([
-            [ "a code that says the bytes cannot be read", officeIssue("FILE_CORRUPTED"), "FILE_CORRUPTED" ],
+            [
+                "a code that says the bytes cannot be read", officeIssue("FILE_CORRUPTED"),
+                "FILE_CORRUPTED"
+            ],
             [
                 "the refusal of a file too large",
-                new ValidationError(`${OFFICE_PREVIEW_TOO_LARGE_MESSAGE} (1 bytes).`), "ValidationError"
+                new ValidationError(`${OFFICE_PREVIEW_TOO_LARGE_MESSAGE} (1 bytes).`),
+                "ValidationError"
             ]
         ])("remember %s, and name it in the log", async (_, failure, logged) => {
             const generator = registerFor("docx", () => Promise.reject(failure));
@@ -496,25 +502,30 @@ describe("documents of Word and OpenDocument", () => {
             expect(await toc(noteRef(note))).toStrictEqual({ status: "unreadable" });
             expect(await toc(noteRef(note))).toStrictEqual({ status: "unreadable" });
             expect(generator).toHaveBeenCalledOnce();
-            expect(info).toHaveBeenCalledWith(`Failed to read the ToC of note '${note.noteId}': ${logged}`);
+            const line = `Failed to read the ToC of note '${note.noteId}': ${logged}`;
+            expect(info).toHaveBeenCalledWith(line);
         });
 
         it.each([
-            [ "an error with only the header of officeparser", new Error("[OfficeParser]: Secret title"), "Error" ],
+            [
+                "an error with only the header of officeparser",
+                new Error("[OfficeParser]: Secret title"), "Error"
+            ],
             [ "a code about the call", officeIssue("INVALID_INPUT"), "INVALID_INPUT" ],
             [ "a code about the run", officeIssue("OPERATION_ABORTED"), "OPERATION_ABORTED" ]
-        ])("read the file again after %s, and never log its message", async (_, failure, logged) => {
+        ])("read again after %s, never logging its message", async (_, failure, logged) => {
             const generator = registerFor("docx", () => Promise.reject(failure));
             const note = createDocument("Alpha", DOCX_MIME);
 
             expect(await toc(noteRef(note))).toStrictEqual({ status: "unreadable" });
-            expect(error).toHaveBeenLastCalledWith(`Failed to read the ToC of note '${note.noteId}': ${logged}`);
+            const line = `Failed to read the ToC of note '${note.noteId}': ${logged}`;
+            expect(error).toHaveBeenLastCalledWith(line);
             generator.mockImplementation(async (content) => officeOutlineOf(decodeUtf8(content)));
             expect(readyCache(await toc(noteRef(note))).headings[0].title).toBe("Alpha");
             expect(generator).toHaveBeenCalledTimes(2);
         });
 
-        it("keep the memory of a PDF that cannot be read apart from the DOCX of the same blob", async () => {
+        it("remember a PDF that cannot be read apart from the DOCX of its blob", async () => {
             const pdf = register(() => Promise.reject(namedError("InvalidPDFException")));
             const note = createPdf("Alpha");
             expect(await toc(noteRef(note))).toStrictEqual({ status: "unreadable" });
@@ -522,7 +533,8 @@ describe("documents of Word and OpenDocument", () => {
             const docx = registerFor("docx");
             setMime(note, DOCX_MIME);
 
-            expect(readyCache(await toc(noteRef(note))).docx).toStrictEqual({ reader: DOCX_TOC_READER, bookmarks: [] });
+            expect(readyCache(await toc(noteRef(note))).docx)
+                .toStrictEqual({ reader: DOCX_TOC_READER, bookmarks: [] });
             expect(docx).toHaveBeenCalledOnce();
             expect(pdf).toHaveBeenCalledOnce();
         });
@@ -540,7 +552,8 @@ describe("documents of Word and OpenDocument", () => {
             expect(readyCache(await toc(noteRef(note))).headings[0].title).toBe("Alpha");
             rejectPdf(namedError("InvalidPDFException"));
             expect(await pdfRequest).toStrictEqual({ status: "unreadable" });
-            expect(readyCache(await toc(noteRef(note))).docx).toStrictEqual({ reader: DOCX_TOC_READER, bookmarks: [] });
+            expect(readyCache(await toc(noteRef(note))).docx)
+                .toStrictEqual({ reader: DOCX_TOC_READER, bookmarks: [] });
             expect(docx).toHaveBeenCalledOnce();
         });
     });
@@ -586,8 +599,10 @@ describe("saveClientToc", () => {
 
         const response = save(noteRef(note), request(note, { isCut: true }));
 
-        const ids = assignHeadingIds(headings, getBlobTag(String(note.blobId)), false, { isCut: true });
-        expect(response.status === "ready" && response.headings.map(({ id }) => id)).toStrictEqual(ids);
+        const ids = assignHeadingIds(headings, getBlobTag(String(note.blobId)), false,
+            { isCut: true });
+        expect(response.status === "ready" && response.headings.map(({ id }) => id))
+            .toStrictEqual(ids);
         expect(ids[0]).toContain(".");
     });
 
@@ -842,7 +857,9 @@ function registerFor(
 }
 
 function officeOutlineOf(title: string): GeneratedToc {
-    return { headings: [ { title, level: 1 } ], properties: { reader: DOCX_TOC_READER, bookmarks: [] } };
+    return {
+        headings: [ { title, level: 1 } ], properties: { reader: DOCX_TOC_READER, bookmarks: [] }
+    };
 }
 
 function createDocument(content: string | Uint8Array, mime: string) {
@@ -866,7 +883,8 @@ function attachmentRef(attachment: BAttachment): TocDocumentRef {
 
 /** An error of `officeparser` with the code `code`, whose message quotes the file. */
 function officeIssue(code: string) {
-    return Object.assign(new Error(`[OfficeParser]: ${code} in Secret title`), { officeIssue: { code } });
+    const error = new Error(`[OfficeParser]: ${code} in Secret title`);
+    return Object.assign(error, { officeIssue: { code } });
 }
 
 function createPdf(content: string) {

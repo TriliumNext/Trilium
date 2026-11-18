@@ -19,7 +19,9 @@ import { assignHeadingIds, getBlobTag } from "../../../../../commons/src/lib/toc
 import { blobIdFromDigest, PROTECTED_BLOB_PREFIX } from "../../../../../commons/src/lib/utils.js";
 import { convertOfficeToHtml } from "../../office_preview.js";
 import { initZipProvider, type ZipProvider } from "../../zip_provider.js";
-import { readBookmarkNames, readPreviewBookmarks, readPreviewHeadings } from "../office_headings.js";
+import {
+    readBookmarkNames, readPreviewBookmarks, readPreviewHeadings
+} from "../office_headings.js";
 
 // The reader of bookmarks opens the archive through the zip provider, which the app sets up.
 initZipProvider({
@@ -89,7 +91,9 @@ function buildContractDocx() {
         + "xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"";
     const style = (id: string, name: string, outlineLevel?: number) =>
         `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/>`
-        + (outlineLevel === undefined ? "" : `<w:pPr><w:outlineLvl w:val="${outlineLevel}"/></w:pPr>`)
+        + (outlineLevel === undefined
+            ? ""
+            : `<w:pPr><w:outlineLvl w:val="${outlineLevel}"/></w:pPr>`)
         + "</w:style>";
     const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ${W}>`
         + style("Normal", "Normal")
@@ -119,7 +123,8 @@ function buildContractDocx() {
         paragraph("Heading2", ""),
         paragraph("Heading2", run("Notes")
             + "<w:r><w:footnoteReference w:id=\"1\"/></w:r>"
-            + "<w:r><w:tab/></w:r>" + run("with a tab") + "<w:r><w:br/></w:r>" + run("and a break")),
+            + "<w:r><w:tab/></w:r>" + run("with a tab")
+            + "<w:r><w:br/></w:r>" + run("and a break")),
         heading(6, "Level six"),
         heading(7, "Level seven"),
         "<w:tbl><w:tr><w:tc>" + heading(2, "In a table") + "</w:tc></w:tr></w:tbl>",
@@ -130,7 +135,8 @@ function buildContractDocx() {
         paragraph("Normal", bookmark(3, "summary", run("Named like a heading's slug"))),
         paragraph("Normal", bookmark(4, "title", run("Named like a property of the document"))),
         paragraph("Normal", bookmark(5, "footnote-1", run("Named like the footnote"))),
-        paragraph("Normal", "<w:hyperlink w:anchor=\"Linked\">" + run("A link to Linked") + "</w:hyperlink>"),
+        paragraph("Normal",
+            "<w:hyperlink w:anchor=\"Linked\">" + run("A link to Linked") + "</w:hyperlink>"),
         paragraph("Normal", bookmark(6, "Linked", run("Linked from above"))),
         paragraph("Normal", bookmark(7, "First", bookmark(8, "Second", run("Two bookmarks")))),
         paragraph("berschrift1", run("Lokalisierte Überschrift")),
@@ -142,7 +148,8 @@ function buildContractDocx() {
         `<Relationship Id="${id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/`
         + `relationships/${type}" Target="${target}"/>`;
     const override = (part: string, type: string) => `<Override PartName="/word/${part}" `
-        + `ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.${type}+xml"/>`;
+        + "ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml."
+        + `${type}+xml"/>`;
     return zip({
         "[Content_Types].xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
             + "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">"
@@ -204,7 +211,8 @@ function buildContractOdt() {
     const body = [
         "<text:tracked-changes><text:changed-region text:id=\"ct1\"><text:deletion>"
             + "<office:change-info><dc:creator>A</dc:creator></office:change-info>"
-            + "<text:p><text:bookmark text:name=\"id123\"/><text:bookmark text:name=\"Table1\"/>Deleted</text:p>"
+            + "<text:p><text:bookmark text:name=\"id123\"/>"
+            + "<text:bookmark text:name=\"Table1\"/>Deleted</text:p>"
             + "</text:deletion></text:changed-region></text:tracked-changes>",
         paragraph("Title", "Contract document<text:change text:change-id=\"ct1\"/>"),
         heading(1, "Chapter 1"),
@@ -221,10 +229,12 @@ function buildContractOdt() {
         heading(2, `Closing remarks${note("edn1", "endnote", "i")}`),
         heading(6, "Level six"),
         heading(7, "Level seven"),
-        "<table:table table:name=\"Table1\"><table:table-column/><table:table-row><table:table-cell>"
-            + heading(2, "In a table") + "</table:table-cell></table:table-row></table:table>",
+        "<table:table table:name=\"Table1\"><table:table-column/><table:table-row>"
+            + "<table:table-cell>" + heading(2, "In a table")
+            + "</table:table-cell></table:table-row></table:table>",
         heading(2, "<text:bookmark-start text:name=\"__RefHeading___Toc100_200\"/>"
-            + "Listed in the table of contents<text:bookmark-end text:name=\"__RefHeading___Toc100_200\"/>"),
+            + "Listed in the table of contents"
+            + "<text:bookmark-end text:name=\"__RefHeading___Toc100_200\"/>"),
         heading(2, "<text:bookmark text:name=\"Appendix\"/>Appendix"),
         "<text:list><text:list-item>" + heading(2, "In a list") + "</text:list-item></text:list>",
         "<text:section text:name=\"Section1\">"
@@ -237,13 +247,15 @@ function buildContractOdt() {
             + "text:is-hidden=\"true\"/>text"),
         paragraph("Heading_20_2", "A paragraph in a heading style"),
         paragraph("Standard", "<text:bookmark text:name=\"summary\"/>Named like a heading's slug"),
-        paragraph("Standard", "<text:bookmark text:name=\"title\"/>Named like a property of the document"),
-        paragraph("Standard", "<text:bookmark text:name=\"footnote-ftn1\"/>Named like the footnote"),
-        paragraph("Standard", "<text:bookmark-ref text:ref-name=\"Linked\" text:reference-format=\"text\">"
-            + "Linked</text:bookmark-ref>"),
+        paragraph("Standard",
+            "<text:bookmark text:name=\"title\"/>Named like a property of the document"),
+        paragraph("Standard",
+            "<text:bookmark text:name=\"footnote-ftn1\"/>Named like the footnote"),
+        paragraph("Standard", "<text:bookmark-ref text:ref-name=\"Linked\" "
+            + "text:reference-format=\"text\">Linked</text:bookmark-ref>"),
         paragraph("Standard", "<text:bookmark text:name=\"Linked\"/>Linked from above"),
-        paragraph("Standard", "<text:bookmark text:name=\"First\"/><text:bookmark text:name=\"Second\"/>"
-            + "Two bookmarks")
+        paragraph("Standard", "<text:bookmark text:name=\"First\"/>"
+            + "<text:bookmark text:name=\"Second\"/>Two bookmarks")
     ].join("");
 
     return zip({
@@ -251,12 +263,14 @@ function buildContractOdt() {
         "META-INF/manifest.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><manifest:manifest "
             + "xmlns:manifest=\"urn:oasis:names:tc:opendocument:xmlns:manifest:1.0\" "
             + "manifest:version=\"1.3\">"
-            + `<manifest:file-entry manifest:full-path="/" manifest:media-type="${ODT_MIME}"/>`
-            + "<manifest:file-entry manifest:full-path=\"content.xml\" manifest:media-type=\"text/xml\"/>"
-            + "<manifest:file-entry manifest:full-path=\"styles.xml\" manifest:media-type=\"text/xml\"/>"
+            + [ [ "/", ODT_MIME ], [ "content.xml", "text/xml" ], [ "styles.xml", "text/xml" ] ]
+                .map(([ part, type ]) => `<manifest:file-entry manifest:full-path="${part}" `
+                    + `manifest:media-type="${type}"/>`)
+                .join("")
             + "</manifest:manifest>",
         "styles.xml": styles,
         "content.xml": `<?xml version="1.0" encoding="UTF-8"?><office:document-content ${NS}>`
-            + `<office:body><office:text>${body}</office:text></office:body></office:document-content>`
+            + `<office:body><office:text>${body}</office:text></office:body>`
+            + "</office:document-content>"
     }, "mimetype");
 }
