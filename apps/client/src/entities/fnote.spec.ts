@@ -697,6 +697,29 @@ describe("FNote attributes & inheritance", () => {
             .filter((attr) => attr.name === "label:status")
             .map((attr) => attr.noteId)).toEqual([ "shadowParent" ]);
     });
+
+    it("getAttributeDefinitions orders by position, a note's own before its template's", () => {
+        const template = buildNote({
+            title: "Template",
+            "#label:size(inheritable)": "promoted,single,number",
+            "#label:color(inheritable)": "promoted,single,color"
+        });
+        const note = buildNote({
+            title: "Collection",
+            "~template": template.noteId,
+            "#label:status(inheritable)": "promoted,single,text",
+            "#label:due(inheritable)": "promoted,single,date",
+            "#label:owner(inheritable)": "promoted,single,text"
+        });
+        setPositions(template, { size: 20, color: 10 });
+        setPositions(note, { status: 30, due: 10, owner: 20 });
+        // Drop the own attributes `buildNote()` cached, so the note reads its template's too.
+        delete noteAttributeCache.attributes[note.noteId];
+
+        expect(note.getAttributeDefinitions().map((attr) => attr.name)).toEqual([
+            "label:due", "label:owner", "label:status", "label:color", "label:size"
+        ]);
+    });
 });
 
 describe("FNote paths & hierarchy", () => {
@@ -1432,4 +1455,14 @@ function makeRelationAttr(overrides: { attributeId: string; noteId: string; name
         position: 0,
         isInheritable: false
     });
+}
+
+/** Moves the note's `label:<name>` definitions to the given positions, as a reorder does. */
+function setPositions(note: FNote, positions: Record<string, number>) {
+    for (const attr of note.getOwnedAttributes()) {
+        const name = attr.name.replace(/^label:/, "");
+        if (attr.isDefinition() && name in positions) {
+            attr.position = positions[name];
+        }
+    }
 }

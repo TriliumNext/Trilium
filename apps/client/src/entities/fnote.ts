@@ -841,7 +841,7 @@ export default class FNote {
             definitions.push(attr);
         }
 
-        return definitions;
+        return sortByPositionWithinNote(definitions);
     }
 
     hasAncestor(ancestorNoteId: string, followTemplates = false, visitedNoteIds: Set<string> | null = null) {
@@ -1032,4 +1032,22 @@ export default class FNote {
     async getMetadata() {
         return await server.get<NoteMetaData>(`notes/${this.noteId}/metadata`);
     }
+}
+
+/**
+ * Sorts the definitions by `position` within each owning note and keeps the notes in the order
+ * `getAttributes()` reaches them, so a note's own definitions come before those it inherits.
+ * Froca holds a note's attributes in load order, not in `position` order.
+ */
+function sortByPositionWithinNote(definitions: FAttribute[]) {
+    const noteOrder = new Map<string, number>();
+    for (const definition of definitions) {
+        if (!noteOrder.has(definition.noteId)) {
+            noteOrder.set(definition.noteId, noteOrder.size);
+        }
+    }
+
+    const noteIndex = (attr: FAttribute) => noteOrder.get(attr.noteId) ?? 0;
+    return definitions.toSorted((a, b) =>
+        (noteIndex(a) - noteIndex(b)) || a.position - b.position);
 }
