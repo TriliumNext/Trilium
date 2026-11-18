@@ -3,9 +3,10 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import {
-    assignHeadingIds, DOCX_MIME, getBlobTag, MAX_TOC_HEADINGS, ODT_MIME,
+    assignHeadingIds, DOCX_MIME, EPUB_MIME_TYPES, getBlobTag, MAX_TOC_HEADINGS, ODT_MIME,
     OFFICE_PREVIEW_TOO_LARGE_MESSAGE, PDF_TOC_READER, type TocCache
 } from "@triliumnext/commons";
+import { OfficeConverter } from "officeparser";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import becca from "../../becca/becca.js";
@@ -23,7 +24,7 @@ import {
     findTocFormat, type GeneratedToc, getToc, readCachedToc, registerTocGenerator, saveClientToc,
     TOC_CACHE_ROLE, type TocDocumentRef, type TocGenerator, unregisterTocGenerator
 } from "./index.js";
-import { DOCX_TOC_READER, ODT_TOC_READER } from "./office.js";
+import { DOCX_TOC_READER, EPUB_TOC_READER, ODT_TOC_READER } from "./office.js";
 
 const PROPERTIES = { reader: PDF_TOC_READER };
 const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures");
@@ -39,7 +40,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    for (const format of [ "pdf", "docx", "odt" ]) {
+    for (const format of [ "pdf", "docx", "odt", "epub" ]) {
         unregisterTocGenerator(format);
     }
     protectedSessionService.resetDataKey();
@@ -792,11 +793,76 @@ describe("a cache in revisions and copies", () => {
     });
 });
 
+describe("EPUB e-books", () => {
+    const bytes = new Uint8Array(fs.readFileSync(path.join(FIXTURES, "toc_contract.epub")));
+    const contract = JSON.parse(
+        fs.readFileSync(path.join(FIXTURES, "toc_contract_epub.json"), "utf-8"));
+
+    it("build with the format's own generator, for notes and attachments of both types",
+        async () => {
+        for (const mime of EPUB_MIME_TYPES) {
+            const note = createDocument(bytes, mime);
+            const attachment = getContext().init(() => note.saveAttachment({
+                role: "file", mime, title: "attached.epub", content: bytes
+            }));
+
+            for (const ref of [ noteRef(note), attachmentRef(attachment) ]) {
+                const cache = readyCache(await toc(ref));
+                expect(cache.headings.map(({ id }) => id)).toStrictEqual(contract.ids);
+                const shown = (headings: unknown[]) =>
+                    (headings as { isShown?: false }[]).map(({ isShown }) => isShown);
+                expect(shown(cache.headings)).toStrictEqual(shown(contract.headings));
+                expect(cache.epub).toStrictEqual({ reader: EPUB_TOC_READER, bookmarks: [] });
+            }
+        }
+    });
+
+    it("store nothing after a pass that fails once, and build at the next request", async () => {
+        const note = createDocument(bytes, EPUB_MIME_TYPES[0]);
+        const convert = OfficeConverter.convert.bind(OfficeConverter);
+        vi.spyOn(OfficeConverter, "convert")
+            .mockImplementationOnce(() => Promise.reject(new RangeError("Out of memory")))
+            .mockImplementation(convert);
+
+        expect(await toc(noteRef(note))).toStrictEqual({ status: "unreadable" });
+        expect(note.getAttachmentsByRole(TOC_CACHE_ROLE)).toHaveLength(0);
+        // The log names the error, never its message, which can quote the file.
+        expect(error).toHaveBeenCalledWith(expect.stringMatching(/: RangeError$/));
+
+        expect(readyCache(await toc(noteRef(note))).headings).toHaveLength(contract.ids.length);
+    });
+
+    it("remember a book that the pass refuses, and never read it again for that blob", async () => {
+        const altered = new Uint8Array(bytes);
+        const view = new DataView(altered.buffer);
+        // The CRC-32 of the first chapter, in its central directory record.
+        for (let at = altered.length - 22; at >= 0; at--) {
+            if (view.getUint32(at, true) === 0x02014b50
+                && decodeUtf8(altered.subarray(at + 46, at + 46 + view.getUint16(at + 28, true)))
+                    === "OEBPS/ch1.xhtml") {
+                view.setUint32(at + 16, view.getUint32(at + 16, true) ^ 1, true);
+                break;
+            }
+        }
+        const note = createDocument(altered, EPUB_MIME_TYPES[0]);
+        const convert = vi.spyOn(OfficeConverter, "convert");
+
+        expect(await toc(noteRef(note))).toStrictEqual({ status: "unreadable" });
+        expect(info).toHaveBeenCalledWith(expect.stringMatching(/: CRC$/));
+        const conversions = convert.mock.calls.length;
+        expect(await toc(noteRef(note))).toStrictEqual({ status: "unreadable" });
+        expect(convert).toHaveBeenCalledTimes(conversions);
+    });
+});
+
 describe("findTocFormat", () => {
-    it("reads PDF, Word and OpenDocument text files only", () => {
+    it("reads PDF, Word and OpenDocument text files and EPUB e-books only", () => {
         expect(findTocFormat("file", "application/pdf")?.name).toBe("pdf");
         expect(findTocFormat("file", DOCX_MIME)?.name).toBe("docx");
         expect(findTocFormat("file", ODT_MIME)?.name).toBe("odt");
+        for (const mime of EPUB_MIME_TYPES) {
+            expect(findTocFormat("file", mime)?.name).toBe("epub");
+        }
         expect(findTocFormat("file", "application/rtf")).toBeUndefined();
         expect(findTocFormat("file", "application/zip")).toBeUndefined();
         expect(findTocFormat("text", "application/pdf")).toBeUndefined();

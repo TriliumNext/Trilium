@@ -3,7 +3,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import {
-    CANVAS_ATTACHMENT_MIME, DOCX_MIME, getDrawingPictureTitle, type NoteReferencesResponse, ODT_MIME
+    CANVAS_ATTACHMENT_MIME, DOCX_MIME, EPUB_MIME_TYPES, getDrawingPictureTitle,
+    type NoteReferencesResponse, ODT_MIME
 } from "@triliumnext/commons";
 import type { PersistedData } from "@triliumnext/commons/src/lib/spreadsheet/workbook_model";
 import ExcelJS from "exceljs";
@@ -824,6 +825,106 @@ describe("Files API (core)", () => {
         });
     });
 });
+
+describe("entries of EPUB previews", () => {
+    const bytes = readFixture("epub");
+    const contract = JSON.parse(fs.readFileSync(path.join(FIXTURES, "toc_contract_epub.json"),
+        "utf-8")) as { ids: string[]; protectedIds: string[]; headings: { isShown?: false }[] };
+
+    beforeAll(() => {
+        api = CoreApiTester.build();
+    });
+
+    afterEach(() => {
+        protectedSessionService.resetDataKey();
+        vi.restoreAllMocks();
+    });
+
+    it.each(EPUB_MIME_TYPES)("marks the %s preview with the entries it lists", async (mime) => {
+        const note = createFileNote(bytes, mime);
+        const attachment = cls.init(() => note.saveAttachment({
+            role: "file", mime, title: "attached.epub", content: bytes
+        }));
+
+        for (const url of [
+            `/api/notes/${note.noteId}`, `/api/attachments/${attachment.attachmentId}`
+        ]) {
+            const preview = await api.get<string>(`${url}/office-preview`);
+            const references = await api.get<NoteReferencesResponse>(`${url}/references`);
+            const headings = references.body.targets.filter(({ kind }) => kind === "heading")
+                .map(({ params }) => String(params?.heading));
+
+            expect(headings).toStrictEqual(contract.ids.filter((_, index) =>
+                contract.headings[index].isShown !== false));
+            expect(readMarks(preview.body, "data-toc-heading").flatMap((value) => value.split(" "))
+                .toSorted()).toStrictEqual(headings.toSorted());
+            expect(preview.headers.ETag).toContain("-full-epub-");
+            const trimmed = await api.get(`${url}/office-preview?trim=1`);
+            expect(trimmed.headers.ETag).toContain("-trim-epub-");
+        }
+    });
+
+    it("sends a preview whose pass failed uncached and unmarked, then marks the next one",
+        async () => {
+        const note = createFileNote(bytes, EPUB_MIME_TYPES[0]);
+        const url = `/api/notes/${note.noteId}/office-preview`;
+        const current = (await api.get<string>(url)).headers.ETag;
+        failMarkedConversions(2);
+
+        for (const headers of [
+            {}, { "if-none-match": "\"stale\"" }
+        ] as Record<string, string>[]) {
+            const failed = await api.get<string>(url, { headers });
+            expect(failed.status).toBe(200);
+            expect(failed.headers["Cache-Control"]).toBe("no-store");
+            expect(failed.headers.ETag).toBeUndefined();
+            expect(failed.body).toContain("Chapter 1");
+            expect(failed.body).not.toContain("data-toc-heading");
+        }
+
+        const marked = await api.get<string>(url);
+        expect(marked.headers.ETag).toBe(current);
+        expect(marked.body).toContain("data-toc-heading");
+        const convert = vi.spyOn(OfficeConverter, "convert").mockClear();
+        expect((await api.get(url, { headers: { "if-none-match": current } })).status).toBe(304);
+        expect(convert).not.toHaveBeenCalled();
+    });
+
+    it("marks a protected preview with the ids of its protected blob, without an ETag",
+        async () => {
+        const note = createFileNote(bytes, EPUB_MIME_TYPES[0]);
+        protectedSessionService.setDataKey(encodeUtf8("0123456789abcdef"));
+        expect((await api.put(`/api/notes/${note.noteId}/protect/1`)).status).toBe(204);
+
+        const preview = await api.get<string>(`/api/notes/${note.noteId}/office-preview`);
+
+        expect(readMarks(preview.body, "data-toc-heading").flatMap((value) => value.split(" "))
+            .toSorted()).toStrictEqual(contract.protectedIds.filter((_, index) =>
+            contract.headings[index].isShown !== false).toSorted());
+        expect(preview.headers.ETag).toBeUndefined();
+        expect(preview.headers["Cache-Control"]).toBe("no-store");
+    });
+});
+
+/**
+ * Makes the next `count` conversions of a marked archive fail as no input failure does, so that
+ * the ToC pass fails and the original bytes are converted.
+ */
+function failMarkedConversions(count: number) {
+    const convert = OfficeConverter.convert.bind(OfficeConverter);
+    let failures = count;
+    let isMarked = true;
+    vi.spyOn(OfficeConverter, "convert").mockImplementation(async (...args) => {
+        // The marked archive is converted first, then the original after a failure.
+        if (failures > 0 && isMarked) {
+            failures--;
+            isMarked = false;
+            throw new RangeError("Out of memory");
+        }
+        isMarked = true;
+        return convert(...args);
+    });
+}
 
 /** The contract document `toc_contract.<name>` of the ToC formats. */
 function readFixture(name: string) {

@@ -14,7 +14,8 @@ import { getLog } from "../log.js";
 import { whenDatabaseFree } from "../platform.js";
 import { getSql } from "../sql/index.js";
 import { decodeUtf8 } from "../utils/binary.js";
-import { docxTocFormat, odtTocFormat } from "./office.js";
+import type { TocPassOutcome } from "./epub.js";
+import { docxTocFormat, epubTocFormat, odtTocFormat } from "./office.js";
 import pdfTocFormat from "./pdf.js";
 
 /** Names a document whose table of contents is kept: a note, or an attachment of a note. */
@@ -69,6 +70,8 @@ export interface TocPreviewSource {
     isProtected: boolean;
     /** The content of the blob, which the preview was converted from. */
     content: string | Uint8Array;
+    /** What the ToC pass of an EPUB did, for the preview that is marked. */
+    tocPass?: TocPassOutcome;
 }
 
 /** What `getToc()` answers. `null`: the document has no table of contents format. */
@@ -85,7 +88,7 @@ export const TOC_CACHE_ROLE = "tocCache";
 /** How many documents that cannot be read are remembered, so that they are not read again. */
 const MAX_REMEMBERED_FAILURES = 1_000;
 
-const formats: TocFormat[] = [ pdfTocFormat, docxTocFormat, odtTocFormat ];
+const formats: TocFormat[] = [ pdfTocFormat, docxTocFormat, odtTocFormat, epubTocFormat ];
 const generators = new Map<string, TocGenerator>();
 /** The documents that can never be read, by format, document and blob. */
 const permanentFailures = new Set<string>();

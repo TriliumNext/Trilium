@@ -56,15 +56,17 @@ export function takeDocumentTarget(viewScope: ViewScope | null | undefined): Doc
 
 /**
  * Scrolls `container`, the preview of a document that the server marked, to the element whose
- * `data-toc-heading` is the target's heading, or else whose `data-toc-bookmark` is its bookmark,
- * and flashes it. When no element has it, scrolls the preview to its top, so that it never stays
- * where an earlier link left it.
+ * `data-toc-heading` holds the target's heading as one of its space-separated ids, or else whose
+ * `data-toc-bookmark` is its bookmark, and flashes it. When no element has it, scrolls the preview
+ * to its top, so that it never stays where an earlier link left it.
  */
 export async function showDocumentTarget(container: Element, { heading, bookmark }: DocumentTarget) {
     const { getScrollContainer, showAnchorElement } = await import(
         "@triliumnext/ckeditor5/src/plugins/block_reference/block_reference_read_only.js");
-    const element = (heading && findByAttribute(container, "data-toc-heading", heading))
-        || (bookmark && findByAttribute(container, "data-toc-bookmark", bookmark));
+    const element = (heading && findByAttribute(container, "data-toc-heading",
+        (value) => value.split(" ").includes(heading)))
+        || (bookmark && findByAttribute(container, "data-toc-bookmark",
+            (value) => value === bookmark));
     if (element) {
         showAnchorElement(element);
     } else {
@@ -83,9 +85,9 @@ export function revealElement(el: Element, boundary?: Element) {
     revealCollapsedHeadings(el);
 }
 
-/** The first element in `container` whose `name` attribute is `value`, compared exactly. */
-function findByAttribute(container: Element, name: string, value: string) {
+/** The first element in `container` whose `name` attribute `matches`. */
+function findByAttribute(container: Element, name: string, matches: (value: string) => boolean) {
     // Not a selector: a bookmark name can hold characters that a CSS selector does not allow.
     return Array.from(container.querySelectorAll(`[${name}]`))
-        .find((element) => element.getAttribute(name) === value);
+        .find((element) => matches(element.getAttribute(name) ?? ""));
 }

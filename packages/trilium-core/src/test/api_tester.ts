@@ -147,6 +147,7 @@ class MockResponse extends Writable {
     status(code: number) { this.statusCode = code; return this; }
     set(name: string, value: string) { this.headers[name] = value; return this; }
     setHeader(name: string, value: string) { this.headers[name] = value; return this; }
+    removeHeader(name: string) { delete this.headers[name]; }
     send(body: unknown) { this.used = true; this.hasSendBody = true; this.sendBody = body; return this; }
     sendStatus(code: number) { this.used = true; this.statusCode = code; return this; }
 
@@ -160,7 +161,9 @@ class MockResponse extends Writable {
     snapshot(): TestResponse {
         let body: unknown;
         if (this.chunks.length > 0) {
-            body = Buffer.concat(this.chunks);
+            // A client reads a text body as text, whether it was sent whole or written in chunks.
+            const bytes = Buffer.concat(this.chunks);
+            body = this.headers["Content-Type"]?.startsWith("text/") ? bytes.toString("utf8") : bytes;
         } else if (this.hasSendBody) {
             body = normalizeResponseBody(this.sendBody);
         }

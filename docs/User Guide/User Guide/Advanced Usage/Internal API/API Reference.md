@@ -892,7 +892,7 @@ Replaces the blocks that `block` points at with `content` and saves the note as 
 
 `GET /api/notes/{noteId}/references` · `getNoteReferences`
 
-The targets of a note, such as the headings and anchors of a text note, in the order that the link lists show them, the targets of each kind together. A link points at a target by adding its `params` to the path of the note: a heading of a text note through `?block=` and its block id, an anchor through `?bookmark=`. A target without `params` needs a reference first, which `POST /api/notes/{noteId}/references` creates. Such a target is listed only when the note can take one. Titles are plain text, never HTML. A note whose type has no targets lists none. The headings of a PDF file, and the headings and bookmarks of a Word (DOCX) or OpenDocument text (ODT) file, come from its ToC cache, which the server builds when it is missing or stale. Where the server cannot read PDFs (standalone, mobile), the answer for a PDF lists none and carries `pendingToc` until the viewer of the file has built the cache. A DOCX or ODT file links a heading through `?heading=` and a bookmark through `?bookmark=`.
+The targets of a note, such as the headings and anchors of a text note, in the order that the link lists show them, the targets of each kind together. A link points at a target by adding its `params` to the path of the note: a heading of a text note through `?block=` and its block id, an anchor through `?bookmark=`. A target without `params` needs a reference first, which `POST /api/notes/{noteId}/references` creates. Such a target is listed only when the note can take one. Titles are plain text, never HTML. A note whose type has no targets lists none. The headings of a PDF file, the headings and bookmarks of a Word (DOCX) or OpenDocument text (ODT) file, and the entries of an EPUB e-book's table of contents come from its ToC cache, which the server builds when it is missing or stale. Where the server cannot read PDFs (standalone, mobile), the answer for a PDF lists none and carries `pendingToc` until the viewer of the file has built the cache. A DOCX, ODT or EPUB file links a heading through `?heading=`, and a DOCX or ODT file a bookmark through `?bookmark=`. An entry of an EPUB's table of contents that its preview does not show is not listed.
 
 **Authorization**: `sessionAuth` or `tokenAuth`
 
@@ -1036,7 +1036,7 @@ Gives a target that `GET /api/notes/{noteId}/references` lists without `params` 
 
 `GET /api/notes/{noteId}/toc` · `getNoteToc`
 
-The table of contents that the ToC cache of a note holds, such as the outline of a PDF file or the headings of a DOCX or ODT file, without building it or writing anything. `ready` is a cache of the note as it is, `stale` one of an earlier blob, `missing` a note without a cache that can be read, and `none` a note that has no table of contents. `pendingToc` tells that the viewer of the document builds the cache, since the server cannot read the format.
+The table of contents that the ToC cache of a note holds, such as the outline of a PDF file, the headings of a DOCX or ODT file or the entries of an EPUB e-book's table of contents, without building it or writing anything. `ready` is a cache of the note as it is, `stale` one of an earlier blob, `missing` a note without a cache that can be read, and `none` a note that has no table of contents. `pendingToc` tells that the viewer of the document builds the cache, since the server cannot read the format.
 
 **Authorization**: `sessionAuth` or `tokenAuth`
 
@@ -3316,7 +3316,7 @@ File attachments
 
 `GET /api/attachments/{attachmentId}/references` · `getAttachmentReferences`
 
-The twin of `GET /api/notes/{noteId}/references` for an attachment, such as the headings of a PDF, DOCX or ODT file. The ToC cache of an attachment is kept on its note.
+The twin of `GET /api/notes/{noteId}/references` for an attachment, such as the headings of a PDF, DOCX or ODT file or the entries of an EPUB e-book's table of contents. The ToC cache of an attachment is kept on its note.
 
 **Authorization**: `sessionAuth` or `tokenAuth`
 

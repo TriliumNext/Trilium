@@ -1,12 +1,19 @@
 import "@triliumnext/commons/src/lib/spreadsheet/exceljs_augmentation.js";
 
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+import { EPUB_MIME_TYPES } from "@triliumnext/commons";
 import { toArrayBuffer } from "@triliumnext/commons/src/lib/spreadsheet/parse_from_xlsx.js";
 import ExcelJS from "exceljs";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
-import { describe, expect, it } from "vitest";
+import { OfficeConverter } from "officeparser";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ValidationError } from "../errors.js";
 import { convertOfficeToHtml, convertXlsxToWorkbook } from "./office_preview.js";
+import type { TocPassOutcome } from "./toc/epub.js";
 
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -60,6 +67,75 @@ describe("convertOfficeToHtml", () => {
         const loaded = new ExcelJS.Workbook();
         await loaded.xlsx.load(toArrayBuffer(zipSync(files)));
         expect(Object.keys(loaded.worksheets[0].dataValidations.model)).toEqual([ "A1:A65536" ]);
+    });
+});
+
+describe("convertOfficeToHtml for an EPUB", () => {
+    const book = new Uint8Array(fs.readFileSync(path.join(
+        path.dirname(fileURLToPath(import.meta.url)),
+        "toc/fixtures/toc_contract_ids.epub")));
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("converts the marked archive, without slug ids, and reports the pass", async () => {
+        for (const mime of EPUB_MIME_TYPES) {
+            const outcomes: TocPassOutcome[] = [];
+            const html = await convertOfficeToHtml(book, mime,
+                { onTocPass: (outcome) => outcomes.push(outcome) });
+
+            expect(outcomes.map(({ status }) => status)).toStrictEqual([ "marked" ]);
+            for (const number of [ 0, 1, 2, 3 ]) {
+                expect(html.split(`id="trilium_toc_${number}"`)).toHaveLength(2);
+            }
+            expect(html).not.toContain("id=\"heading-of-chapter-1\"");
+        }
+        const outcomes: TocPassOutcome[] = [];
+        await convertOfficeToHtml(buildDocx("Word"), DOCX_MIME,
+            { onTocPass: (outcome) => outcomes.push(outcome) });
+        expect(outcomes).toStrictEqual([]);
+    });
+
+    it("converts the original bytes after a failure of the marked archive's conversion",
+        async () => {
+        const failure = new RangeError("Out of memory");
+        const refusal = Object.assign(new Error("[OfficeParser]: corrupt"), {
+            officeIssue: { code: "FILE_CORRUPTED" }
+        });
+        for (const [ error, expected ] of [
+            [ failure, { status: "failed", error: failure } ],
+            [ refusal, { status: "refused", reason: "REWRITE" } ]
+        ] as const) {
+            const convert = OfficeConverter.convert.bind(OfficeConverter);
+            const spy = vi.spyOn(OfficeConverter, "convert")
+                .mockImplementationOnce(() => Promise.reject(error))
+                .mockImplementation(convert);
+            const outcomes: TocPassOutcome[] = [];
+
+            const html = await convertOfficeToHtml(book, EPUB_MIME_TYPES[0], {
+                onTocPass: (outcome) => {
+                    // Reported once, after the conversion of the body returned.
+                    expect(spy).toHaveBeenCalledTimes(2);
+                    outcomes.push(outcome);
+                }
+            });
+
+            expect(outcomes).toStrictEqual([ expected ]);
+            expect(html).toContain("CHAPTER I.");
+            expect(html).not.toContain("trilium_toc_");
+            vi.restoreAllMocks();
+        }
+    });
+
+    it("throws the failure of the original's conversion, and reports nothing", async () => {
+        const failure = new RangeError("Out of memory");
+        vi.spyOn(OfficeConverter, "convert").mockRejectedValue(failure);
+        const onTocPass = vi.fn();
+
+        await expect(convertOfficeToHtml(book, EPUB_MIME_TYPES[0], { onTocPass }))
+            .rejects.toBe(failure);
+        expect(onTocPass).not.toHaveBeenCalled();
     });
 });
 

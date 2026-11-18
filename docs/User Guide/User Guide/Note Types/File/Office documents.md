@@ -34,7 +34,7 @@ A workbook stored as an <a class="reference-link" href="../../Basic%20Concepts%2
 
 ## Linking to a heading or a bookmark
 
-Since v0.108.0, a link can point at a heading of a Word (`.docx`) or OpenDocument Text (`.odt`) document, or at one of its bookmarks. To create one from a text or Markdown note:
+Since v0.108.0, a link can point at a heading of a Word (`.docx`) or OpenDocument Text (`.odt`) document, at a chapter or section of an EPUB e-book, or at a bookmark of a Word or OpenDocument document. To create one from a text or Markdown note:
 
 *   In the _Add link_ dialog, pick the document on the _Note_ page. Its headings are listed below the _Link title_, under _Link to a heading_, and its bookmarks under _Link to an anchor_. Check one, then press <kbd>Enter</kbd> or _Insert link_.
 *   Alternatively, type `@` and pick the document: the menu then lists the same headings and bookmarks.
@@ -44,6 +44,8 @@ The link shows the title of the document followed by the title of the heading, a
 To link to a heading of a document stored as an attachment, edit a link to the attachment: the dialog lists the headings of the attachment.
 
 The headings are those of the preview. In a Word document, they are the paragraphs in Word's built-in heading styles and in the _Title_ style. Some localized versions of Word, such as the German and the French ones, name these styles differently, and their headings show as plain paragraphs, which no link can point at. Bookmarks that the editor creates on its own, such as those of a table of contents, are not listed.
+
+In an EPUB e-book, the headings are the entries of the book's own table of contents, as an e-book reader lists them. An entry whose part of the book cannot be shown, such as a chapter protected by DRM, is not listed.
 
 > [!NOTE]
 > Trilium keeps the headings of each document in an attachment of the note named `toc-cache.json`, read again whenever the file changes. Revisions, exports and copies of the note leave it out.

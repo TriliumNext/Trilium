@@ -1,3 +1,4 @@
+import { crc32 } from "@triliumnext/core/src/services/utils/zip_records.js";
 import type { ZipEntry, ZipSource } from "@triliumnext/core/src/services/zip_provider.js";
 import { strToU8, unzipSync, zipSync } from "fflate";
 import { describe, expect, it, vi } from "vitest";
@@ -394,7 +395,8 @@ describe("BrowserZipProvider entry formats", () => {
     it("rejects entry content that lies outside the file", async () => {
         const shortZip64Extra = makeZip64("big.txt", "sixty-four");
         const extraSizeField = 30 + 7 + 10 + 46 + 7 + 2;
-        new DataView(shortZip64Extra.buffer).setUint16(extraSizeField, 8, true);
+        // The extra field carries both sizes, but not the local header's offset.
+        new DataView(shortZip64Extra.buffer).setUint16(extraSizeField, 16, true);
         await expect(readAll(shortZip64Extra)).rejects.toThrow("Corrupt ZIP: an entry's local header is missing.");
 
         const truncated = patchCentralHeader(makeZip({ "a.txt": "x" }), (view, at) => view.setUint32(at + 20, 0xffff, true));
@@ -413,6 +415,19 @@ describe("BrowserZipProvider entry formats", () => {
         expect(await readNames(unsupported)).toEqual([ "a.txt" ]);
         await expect(readAll(unsupported)).rejects.toThrow("Unsupported ZIP compression method 12.");
         await expect(readAll(encrypted)).rejects.toThrow("Encrypted ZIP entries are not supported.");
+    });
+
+    it("rejects an entry whose length or checksum is not the declared one, never importing it cut",
+        async () => {
+        const understated = patchCentralHeader(makeZip({ "a.txt": "longer text" }),
+            (view, at) => view.setUint32(at + 24, 3, true));
+        const altered = patchCentralHeader(makeZip({ "a.txt": "x" }),
+            (view, at) => view.setUint32(at + 16, 1, true));
+
+        await expect(readAll(understated))
+            .rejects.toThrow("an entry's length is not the declared one");
+        await expect(readAll(altered))
+            .rejects.toThrow("an entry's checksum is not the declared one");
     });
 });
 
@@ -455,6 +470,7 @@ function makeZip64(name: string, content: string, commentLength = 0): Uint8Array
     const local = new DataView(new ArrayBuffer(30));
     local.setUint32(0, 0x04034b50, true);
     local.setUint16(4, 45, true);
+    local.setUint32(14, crc32(data), true);
     local.setUint32(18, SATURATED, true);
     local.setUint32(22, SATURATED, true);
     local.setUint16(26, nameBytes.length, true);
@@ -463,6 +479,7 @@ function makeZip64(name: string, content: string, commentLength = 0): Uint8Array
     central.setUint32(0, 0x02014b50, true);
     central.setUint16(4, 45, true);
     central.setUint16(6, 45, true);
+    central.setUint32(16, crc32(data), true);
     central.setUint32(20, SATURATED, true);
     central.setUint32(24, SATURATED, true);
     central.setUint16(28, nameBytes.length, true);

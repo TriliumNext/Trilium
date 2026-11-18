@@ -1,9 +1,11 @@
 import {
-    DOCX_MIME, ODT_MIME, OFFICE_PREVIEW_TOO_LARGE_MESSAGE, type ReferenceTarget
+    DOCX_MIME, EPUB_MIME_TYPES, ODT_MIME, OFFICE_PREVIEW_TOO_LARGE_MESSAGE, type ReferenceTarget,
+    type TocHeading
 } from "@triliumnext/commons";
 
 import { ValidationError } from "../../errors.js";
 import { convertOfficeToHtml } from "../office_preview.js";
+import type { TocPassRefusalReason } from "./epub.js";
 import type { GeneratedToc, TocFormat } from "./index.js";
 
 /**
@@ -13,6 +15,25 @@ import type { GeneratedToc, TocFormat } from "./index.js";
  */
 export const DOCX_TOC_READER = 2;
 export const ODT_TOC_READER = 2;
+/**
+ * The version of the reader of EPUB e-books, stored as `epub.reader` in a ToC cache. Bumped when
+ * the reading of a book's table of contents, the placing of its markers or an upgrade of
+ * `officeparser` changes the headings of a book or whether they are shown.
+ */
+export const EPUB_TOC_READER = 1;
+
+/** An entry of an EPUB's table of contents. One that the preview does not show has no link. */
+export interface EpubTocHeading extends TocHeading {
+    isShown?: false;
+}
+
+/** The ToC pass refused a book, for a `reason` that the same bytes always meet. */
+export class TocPassRefusal extends Error {
+    constructor(readonly reason: TocPassRefusalReason) {
+        super(`The ToC pass refused the book: ${reason}.`);
+        this.name = "TocPassRefusal";
+    }
+}
 
 /**
  * The codes of `officeparser` that say that the bytes cannot be read, with the limits that the
@@ -27,8 +48,39 @@ export const OFFICE_INPUT_FAILURES = new Set([
     "DOCUMENT_DECRYPTION_FAILED"
 ]);
 
-export const docxTocFormat = createOfficeTocFormat("docx", DOCX_MIME, DOCX_TOC_READER);
-export const odtTocFormat = createOfficeTocFormat("odt", ODT_MIME, ODT_TOC_READER);
+export const docxTocFormat = createOfficeTocFormat("docx", [ DOCX_MIME ], DOCX_TOC_READER);
+export const odtTocFormat = createOfficeTocFormat("odt", [ ODT_MIME ], ODT_TOC_READER);
+
+/**
+ * The entries of an EPUB's own table of contents, placed in the preview by the ToC pass of
+ * `convertOfficeToHtml()`. An entry links to itself through `heading` when the preview shows it.
+ */
+export const epubTocFormat: TocFormat<EpubTocHeading> = {
+    ...createOfficeTocFormat("epub", EPUB_MIME_TYPES, EPUB_TOC_READER),
+    getLinkParams: ({ id, isShown }) => (isShown === false ? undefined : { heading: id }),
+    parseHeadingFields: ({ isShown }) => {
+        if (isShown === undefined) {
+            return {};
+        }
+        return isShown === false ? { isShown } : null;
+    },
+    isPermanentFailure: (error) => isOfficeInputFailure(error) || error instanceof TocPassRefusal,
+    describeFailure: (error) => (error instanceof TocPassRefusal
+        ? error.reason
+        : describeOfficeFailure(error)),
+    async generator(content) {
+        const { readEpubToc } = await import("./epub.js");
+        return readEpubToc(content);
+    },
+    async markPreview(html, source) {
+        // A preview converted from the original bytes gets no mark, and loads nothing.
+        if (source.tocPass?.status !== "marked") {
+            return html;
+        }
+        const { markEpubPreview } = await import("./epub.js");
+        return markEpubPreview(html, source.tocPass.record, source);
+    }
+};
 
 /**
  * Whether `error` says that the document can never be read: an error of `officeparser` whose code
@@ -56,13 +108,17 @@ export function getOfficeIssueCode(error: unknown): string | undefined {
 }
 
 /**
- * The headings of the word processor's documents of `mime`, read from their preview, and their
- * bookmarks. A heading links to itself through `heading`, a bookmark through `bookmark`.
+ * The headings of the office documents of `mimes`, read from their preview, and their bookmarks.
+ * A heading links to itself through `heading`, a bookmark through `bookmark`. The generator and
+ * the marking read the first MIME type; every one of them converts to the same preview.
  */
-function createOfficeTocFormat(name: "docx" | "odt", mime: string, reader: number): TocFormat {
+function createOfficeTocFormat(
+    name: "docx" | "odt" | "epub", mimes: readonly string[], reader: number
+): TocFormat {
+    const [ mime ] = mimes;
     return {
         name,
-        isFor: (type, documentMime) => type === "file" && documentMime === mime,
+        isFor: (type, documentMime) => type === "file" && mimes.includes(documentMime),
         isCurrent: (cache) => !!readProperties(cache[name], reader),
         getLinkParams: ({ id }) => ({ heading: id }),
         getOtherTargets(cache) {
@@ -74,9 +130,7 @@ function createOfficeTocFormat(name: "docx" | "odt", mime: string, reader: numbe
         },
         parseHeadingFields: () => ({}),
         isPermanentFailure: isOfficeInputFailure,
-        // The message of an error of `officeparser` can quote the file.
-        describeFailure: (error) => getOfficeIssueCode(error)
-            ?? (error instanceof Error ? error.name : String(error)),
+        describeFailure: describeOfficeFailure,
         generator: (content) => readOfficeToc(content, mime, reader),
         async markPreview(html, source) {
             const { markOfficePreview, readBookmarkNames } = await import("./office_headings.js");
@@ -102,6 +156,14 @@ async function readOfficeToc(
         isCut,
         properties: { reader, bookmarks: bookmarks.map(({ name }) => name) }
     };
+}
+
+/**
+ * What the log names for a failure to read an office document: the code of an error of
+ * `officeparser`, else the error's name. The message can quote the file.
+ */
+function describeOfficeFailure(error: unknown) {
+    return getOfficeIssueCode(error) ?? (error instanceof Error ? error.name : String(error));
 }
 
 /** The properties of an office format in a cache, when they are exactly those of `reader`. */

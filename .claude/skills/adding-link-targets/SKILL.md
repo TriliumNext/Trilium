@@ -3,7 +3,8 @@ name: adding-link-targets
 description: >-
   Use when making the inside of a kind of content linkable, so that the link dialog's note page and
   the second page of the `@` list (text and Markdown editors) offer places in it: Markdown
-  headings, PDF pages or outline entries, DOCX headings or bookmarks, spreadsheet sheets, or the
+  headings, PDF pages or outline entries, DOCX headings or bookmarks, the entries of an EPUB's table
+  of contents, spreadsheet sheets, or the
   same for attachments. Covers the reference routes (`GET` and `POST
   /api/notes/:noteId/references`), the `ReferenceProvider` registry in
   `packages/trilium-core/src/services/references/`, the shared types (`ReferenceTarget`,
@@ -217,6 +218,14 @@ gives parameters into a target of kind `heading`.
   `markPreview()` writes the ids into the HTML preview that `routes/api/files.ts` serves
   (`markTocHeadings()`); `getOtherTargets()` lists targets of other kinds after the headings,
   such as the bookmarks of a document.
+- **A format whose headings are a table of contents that the document stores**, not read from its
+  preview, as the EPUB format's: the preview must still show where each heading is. The ToC pass
+  of `toc/epub.ts` runs inside `convertOfficeToHtml()`, places a marker at each entry's target and
+  hands the route its record through `onTocPass` (`TocPreviewSource.tocPass`), which the marking
+  reads instead of the document. The cache keeps the whole authored outline, so ids never depend on
+  what the preview shows; an entry the preview lacks is kept with a field of the format
+  (`isShown: false`) for which `getLinkParams()` answers nothing, and `toTargets()` lists a target
+  at the depth of its ancestors that are targets.
 - **Ids** come from `assignHeadingIds()` in commons `toc.ts`, a hash of the title path; the
   server computes them (`getHeadingIds()`, shared by the cache and the marking of a preview), the
   viewer resolves them with `findHeading()`. Never trust an id that a client sends. A reader that
@@ -238,9 +247,10 @@ gives parameters into a target of kind `heading`.
   heading memo of `services/link.ts` (`rememberHeadingTitles()`). A link without a page falls
   back to the note title alone.
 - **Landing in an office preview**: the server marks each heading's start tag with
-  `data-toc-heading` and each bookmark's element with `data-toc-bookmark`; the client compares
-  the attribute exactly (`showDocumentTarget()` in `services/bookmark_jump.ts`) and scrolls the
-  preview to its top when no element has it.
+  `data-toc-heading` and each bookmark's element with `data-toc-bookmark`; the client finds the
+  heading as one of the space-separated ids of `data-toc-heading` (several EPUB entries can land on
+  one element) and the bookmark exactly (`showDocumentTarget()` in `services/bookmark_jump.ts`),
+  and scrolls the preview to its top when no element has it.
 
 ## Shared types: a new kind
 
@@ -447,5 +457,5 @@ that registers a provider unregisters it in `afterAll` (`unregisterReferenceProv
 - **Sync replaces whole blobs**: a reference written here and an edit made elsewhere before sync
   can lose the reference.
 
-Worked sketches for Markdown headings, PDF pages, DOCX files and spreadsheets:
+Worked sketches for Markdown headings, PDF pages, DOCX files, EPUB books and spreadsheets:
 [references/examples.md](references/examples.md).

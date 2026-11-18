@@ -169,22 +169,28 @@ export function markOfficePreview(
 ) {
     const { headings, isCut } = readPreviewHeadings(html);
     const ids = getHeadingIds(headings, blobId, isProtected, isCut);
-    const insertions = [
+    // A heading's mark stays before the mark of its bookmark.
+    return spliceInsertions(html, [
         ...headings.map(({ tagOffset }, index) =>
             ({ at: tagOffset + TAG_NAME_END, text: ` data-toc-heading="${ids[index]}"` })),
         ...readPreviewBookmarks(html, bookmarkNames).map(({ name, tagNameEnd }) =>
             ({ at: tagNameEnd, text: ` data-toc-bookmark="${escapeHtml(name)}"` }))
-    ];
-    // Stable: a heading's mark stays before the mark of its bookmark.
-    insertions.sort((a, b) => a.at - b.at);
+    ]);
+}
 
+/**
+ * `text` with each insertion's text at its offset `at`. Insertions at one offset keep their order
+ * in `insertions`; every other character stays as it is.
+ */
+export function spliceInsertions(text: string, insertions: { at: number; text: string }[]) {
+    const sorted = insertions.toSorted((a, b) => a.at - b.at);
     const parts: string[] = [];
     let copied = 0;
-    for (const { at, text } of insertions) {
-        parts.push(html.slice(copied, at), text);
-        copied = at;
+    for (const insertion of sorted) {
+        parts.push(text.slice(copied, insertion.at), insertion.text);
+        copied = insertion.at;
     }
-    parts.push(html.slice(copied));
+    parts.push(text.slice(copied));
     return parts.join("");
 }
 

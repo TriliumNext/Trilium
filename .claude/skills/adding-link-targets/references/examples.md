@@ -135,6 +135,33 @@ ToC cache (SKILL.md, "ToC formats"). What it took, as a pattern for the next for
   `generate-office-toc-contract.mts`; `office.spec.ts` runs them through the real `officeparser`
   under both runners.
 
+## EPUB tables of contents (built)
+
+- **Notes**: `type === "file"` with either EPUB MIME type (`EPUB_MIME_TYPES`), and attachments of
+  role `file`.
+- **Format**: `epubTocFormat` in `services/toc/office.ts`, the office factory with its own
+  generator and marking (`EPUB_TOC_READER`). Bump it when the reading of a table of contents, the
+  placing of markers or an upgrade of `officeparser` changes the entries or which are shown.
+- **Reader**: the entries of the book's own table of contents, the EPUB 3 navigation's
+  `epub:type="toc"`, else the EPUB 2 NCX (`readBookToc()` in `services/toc/epub.ts`), not the
+  preview's headings: `officeparser` keeps nothing of where a chapter starts.
+- **The pass**: `convertOfficeToHtml()` runs `runTocPass()` before converting an EPUB. It inflates
+  only the text parts (128 MiB budget, declared sizes checked first, length and CRC-32 proved by
+  `readEntryContent()` of `services/utils/zip_records.ts`), places one empty anchor
+  `<a id="trilium_toc_<n>">` per destination by the kind of its target (before an outermost `<a>`,
+  in a table row's first cell, before an empty element, else after the start tag; the chapter's
+  `<body>` for a whole chapter), and rewrites the archive with `rewriteZip()`, copying every other
+  entry compressed. Its outcome (`marked`, `none`, `refused`, `failed`) reaches the route through
+  `onTocPass`; a `failed` preview is sent uncached, a `refused` book is a permanent failure.
+- **Landing**: `findLandings()` finds each marker in the preview, resolves the converter's empty
+  `<a id name>` to the element after it, and checks it against the book's own id when only the
+  target can give that id; an entry without a place of its own lands where the first entry of its
+  subtree does. Several entries on one element share its `data-toc-heading`.
+- **The preview has no slug ids**: EPUB is in `NO_GENERATED_IDS` of `office_preview.ts`.
+- **Contract**: `toc/fixtures/toc_contract.epub`, `toc_contract_ncx.epub`, `toc_contract_ids.epub`
+  and their JSON, written by `generate-office-toc-contract.mts`; `office.spec.ts` runs them through
+  the real pass and `officeparser` under both runners.
+
 ## Spreadsheet sheets
 
 - **Notes**: `type === "spreadsheet"`, whose content is the workbook JSON.
