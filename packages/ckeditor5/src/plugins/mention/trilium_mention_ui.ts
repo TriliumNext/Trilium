@@ -139,6 +139,15 @@ export default class TriliumMentionUI extends Plugin {
             callback: () => this._hide()
         });
 
+        // A press that cancels its `pointerdown`, such as one on a tab of the tab row, fires no
+        // `mousedown` for `clickOutsideHandler()`, but it still takes the focus from the editor.
+        this.listenTo(editor.ui.focusTracker, "change:isFocused", (evt, name, isFocused) => {
+            const element = this._open?.hostedList.element;
+            if (!isFocused && !element?.contains(document.activeElement)) {
+                this._hide();
+            }
+        });
+
         editor.conversion.for("editingDowncast").markerToHighlight({
             model: FOLLOW_UP_MARKER_NAME,
             view: { classes: "ck-mention-follow-up" }

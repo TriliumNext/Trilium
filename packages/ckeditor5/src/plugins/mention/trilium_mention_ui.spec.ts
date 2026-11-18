@@ -260,6 +260,27 @@ describe("TriliumMentionUI", () => {
         expect(labels.state).toBe(null);
     });
 
+    it("closes once the focus leaves the editor, and not when it moves into the list", async () => {
+        const inside = document.createElement("button");
+        const outside = document.createElement("button");
+        document.body.append(outside);
+
+        editor.editing.view.focus();
+        type("#al");
+        labels.element?.append(inside);
+        inside.focus();
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        expect(labels.state).not.toBe(null);
+
+        editor.editing.view.focus();
+        await vi.waitFor(() => expect(editor.ui.focusTracker.isFocused).toBe(true));
+        // A tab of the tab row cancels its `pointerdown`, so the press fires no `mousedown`
+        // and only moves the focus.
+        outside.focus();
+        await vi.waitFor(() => expect(labels.state).toBe(null));
+        outside.remove();
+    });
+
     it("points the editable at the entry the open list highlights, and at none once it closes", () => {
         const root = editor.editing.view.getDomRoot();
         type("#al");
