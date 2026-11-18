@@ -873,6 +873,14 @@ describe("getRenderedContent file rendering", () => {
         showPdfTarget?.({ page: 5 });
         expect(pdfViewerComponent.mock.calls.at(-1)?.[0]).toMatchObject({ target: { page: 5 } });
 
+        isProtectedSessionAvailable.mockReturnValue(true);
+        const secret = buildAttachment({
+            role: "file", mime: "application/pdf", isProtected: true
+        });
+        await getRenderedContent(secret, { buildsPdfToc: true });
+        expect(pdfViewerComponent.mock.calls.at(-1)?.[0].tocDocument)
+            .toStrictEqual({ tocUrl: `attachments/${secret.attachmentId}/toc`, isProtected: true });
+
         // A note builds its own cache in its own viewer, and other content has no PDF to open.
         const note = buildNote({ title: "P", type: "file" });
         note.mime = "application/pdf";

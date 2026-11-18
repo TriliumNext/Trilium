@@ -8,6 +8,7 @@ export interface FAttachmentRow {
     title: string;
     /** The blob of the content, which an edit of the attachment is based on. */
     blobId?: string;
+    isProtected?: boolean;
     dateModified: string;
     utcDateModified: string;
     utcDateScheduledForErasureSince: string;
@@ -26,7 +27,7 @@ class FAttachment {
     mime!: string;
     title!: string;
     blobId?: string;
-    isProtected!: boolean; // TODO: Is this used?
+    isProtected!: boolean;
     private dateModified!: string;
     utcDateModified!: string;
     utcDateScheduledForErasureSince!: string;
@@ -46,6 +47,7 @@ class FAttachment {
         this.mime = row.mime;
         this.title = row.title;
         this.blobId = row.blobId;
+        this.isProtected = !!row.isProtected;
         this.dateModified = row.dateModified;
         this.utcDateModified = row.utcDateModified;
         this.utcDateScheduledForErasureSince = row.utcDateScheduledForErasureSince;

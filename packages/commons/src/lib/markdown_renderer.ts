@@ -280,8 +280,9 @@ function shiftHeadingsDown(content: string, unescapeHtml: EntityDecoder): string
 /**
  * An `<h1>`, its attributes and its text, which can hold inline markup but no `<h…>` tag: a match
  * from an `<h1>` that is never closed then ends at the next heading, not at the end of the content.
+ * A quoted attribute value can hold `<` and `>`, and ends at the next heading too.
  */
-const H1 = /<h1([^<>]*)>((?:[^<]|<[^h<])*?)<\/h1>/i;
+const H1 = /<h1((?:[^<>"']|"(?:[^"<]|<(?!h))*"|'(?:[^'<]|<(?!h))*')*)>((?:[^<]|<[^h<])*?)<\/h1>/i;
 const ALL_H1 = new RegExp(H1.source, "gi");
 
 /**
@@ -393,9 +394,10 @@ function getPlaceholderPrefix(text: string, name: string) {
 /**
  * The fenced code blocks of `text`, from the start of the line of the opening fence to the end of
  * the closing fence. As in CommonMark, a fence is a run of three or more backticks or tildes, and
- * only a run of the same character at least as long closes it. A fence outside any container that
- * is never closed runs to the end of the text. The prefixes of quotes and list items are kept in
- * the block, so that they are restored with it (#10268).
+ * only a run of the same character at least as long closes it. A fence in a quote or a list item
+ * closes only inside it, and a fence outside any container that is never closed runs to the end of
+ * the text. The prefixes of quotes and list items are kept in the block, so that they are restored
+ * with it (#10268).
  */
 function findFencedCodeBlocks(text: string) {
     const lines = getLines(text);
@@ -406,13 +408,8 @@ function findFencedCodeBlocks(text: string) {
             continue;
         }
         const [ , prefix, fence ] = opening;
-        const run = `${fence[0]}{${fence.length},}`;
-        const closingFence = new RegExp(`^${CLOSING_FENCE_PREFIX}${run}[ \\t]*\\r?$`);
-        let closing = index + 1;
-        while (closing < lines.length && !closingFence.test(lines[closing].text)) {
-            closing++;
-        }
-        if (closing < lines.length) {
+        const closing = findClosingFence(lines, index, prefix, fence);
+        if (closing !== null) {
             blocks.push({ from: lines[index].start, to: lines[closing].end });
             index = closing;
         } else if (TOP_LEVEL_INDENT.test(prefix)) {
@@ -423,9 +420,45 @@ function findFencedCodeBlocks(text: string) {
     return blocks;
 }
 
+/**
+ * The index of the line that closes the fence `fence` of `lines[opening]`, or `null` when the
+ * quotes and the list item of its `prefix` end first: at a line with fewer quote markers, or at a
+ * line of text indented less than the content of the list item.
+ */
+function findClosingFence(lines: Line[], opening: number, prefix: string, fence: string) {
+    const run = `${fence[0]}{${fence.length},}`;
+    const closingFence = new RegExp(`^${CLOSING_FENCE_PREFIX}${run}[ \\t]*\\r?$`);
+    const quoteMarkers = new RegExp(`^(?:[ \\t]*>){${prefix.split(">").length - 1}}`);
+    const afterQuotes = prefix.slice(prefix.lastIndexOf(">") + 1);
+    const contentIndent = /\S/.test(afterQuotes) ? afterQuotes.length : 0;
+
+    for (let index = opening + 1; index < lines.length; index++) {
+        const { text } = lines[index];
+        const markers = quoteMarkers.exec(text);
+        if (!markers) {
+            return null;
+        }
+        const rest = text.slice(markers[0].length);
+        if (rest.trim() && rest.length - rest.trimStart().length < contentIndent) {
+            return null;
+        }
+        if (closingFence.test(text)) {
+            return index;
+        }
+    }
+    return null;
+}
+
+/** A line of a text, and where it starts and ends. */
+interface Line {
+    text: string;
+    start: number;
+    end: number;
+}
+
 /** The lines of `text`, and where each starts and ends. */
 function getLines(text: string) {
-    const lines: { text: string; start: number; end: number }[] = [];
+    const lines: Line[] = [];
     let start = 0;
     for (const line of text.split("\n")) {
         lines.push({ text: line, start, end: start + line.length });

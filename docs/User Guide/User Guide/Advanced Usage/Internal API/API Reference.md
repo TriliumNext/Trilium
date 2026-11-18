@@ -3943,7 +3943,7 @@ Note revision history
 
 `POST /api/notes/{noteId}/revisions/draft` · `saveDraftRevision`
 
-Keeps the changes that an editor could not save, after a conflict or a conversion of the note, as a revision in the format they were written in, with their attachment edits written into the copies of the attachments. A draft of an excerpt is put into the note as it is now; where its range no longer resolves, the revision holds the blocks alone, with the source `fragment`, and cannot be restored. A repeated request with the same `revisionId` makes one revision. A note that keeps no revisions keeps no draft.
+Keeps the changes that an editor could not save, after a conflict or a conversion of the note, as a revision in the format they were written in, with their attachment edits written into the copies of the attachments. A draft of an excerpt is put into `fragment.base.note`, the note as its editor read it, not as it is now. Without a `base`, or where that note no longer holds the blocks with the hash `fragment.base.hash`, the revision holds the blocks alone, with the source `fragment`, and cannot be restored. A repeated request with the same `revisionId` makes one revision. A note that keeps no revisions keeps no draft.
 
 **Authorization**: `sessionAuth` or `tokenAuth`
 
@@ -3969,6 +3969,9 @@ Keeps the changes that an editor could not save, after a conflict or a conversio
 | `fragment` | `object`  <br>The edited blocks of an excerpt, and the range they replace |
 | `fragment.content`  <br>_required_ | `string` |
 | `fragment.block`  <br>_required_ | `string` |
+| `fragment.base` | `object`  <br>The note that the blocks were read from |
+| `fragment.base.note`  <br>_required_ | `string`  <br>The content of the whole note, as the editor last read or saved it |
+| `fragment.base.hash`  <br>_required_ | `string`  <br>The hash of the blocks of the range in `note` |
 | `attachments` | array of [`SavedAttachmentRow`](#schema-SavedAttachmentRow) |
 
 </div>
@@ -3982,7 +3985,11 @@ Keeps the changes that an editor could not save, after a conflict or a conversio
     "content": "string",
     "fragment": {
         "content": "string",
-        "block": "string"
+        "block": "string",
+        "base": {
+            "note": "string",
+            "hash": "string"
+        }
     },
     "attachments": [
         {

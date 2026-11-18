@@ -131,6 +131,24 @@ describe("extractCodeBlocks", () => {
         expect(extractCodeBlocks("> ```\n> $a$\n\n$b$").placeholderMap.size).toBe(0);
     });
 
+    it("looks for the closing fence only in the list item or quote of the opening one", () => {
+        const block = "```\ncode\n```";
+        const containers = [
+            "- ```\n  $a$", "1. ```js\n   $a$", "> ```\n> $a$", "> - ```\n>   $a$"
+        ];
+        for (const container of containers) {
+            const source = `${container}\n$x$\n\n${block}`;
+            const { processedText, placeholderMap } = extractCodeBlocks(source);
+            expect([ ...placeholderMap.values() ], container).toStrictEqual([ block ]);
+            expect(processedText, container).toContain("\n$x$\n");
+        }
+
+        const samples = "- ```js\n  a\n".repeat(8_000);
+        const start = performance.now();
+        expect(extractCodeBlocks(samples).placeholderMap.size).toBe(0);
+        expect(performance.now() - start).toBeLessThan(500);
+    });
+
     it("never takes a placeholder that the text holds", () => {
         const input = "<!--CODE_BLOCK_0_1-->\n```\n$a$\n```";
         const { processedText, placeholderMap } = extractCodeBlocks(input);
@@ -858,6 +876,14 @@ describe("demoteHeadings", () => {
             .toBe(`<h2 id="top">Main</h2><h3>Sub</h3>`);
     });
 
+    it("reads quoted attribute values that hold < or >", () => {
+        for (const h1 of [ `<h1 title="a<b">Title</h1>`, `<h1 title='a>b'>Title</h1>` ]) {
+            expect(demoteHeadings(`${h1}<h2>A</h2>`, "Title", verbatim), h1).toBe("<h2>A</h2>");
+        }
+        expect(demoteHeadings(`<h1 title="a<b>c">Main</h1><h2>A</h2>`, "Title", verbatim))
+            .toBe(`<h2 title="a<b>c">Main</h2><h3>A</h3>`);
+    });
+
     it("applies the injected decoder to the demoted <h1> text and the title comparison only", () => {
         const upper = (s: string) => s.toUpperCase();
         // The decoder runs on the <h1> text but not on shifted sub-headings.
@@ -873,7 +899,8 @@ describe("demoteHeadings", () => {
     });
 
     it("reads each unclosed <h1> only up to the next heading", () => {
-        for (const content of [ "<h1=".repeat(40_000), "<h1>a".repeat(40_000) ]) {
+        const unclosed = [ "<h1=", "<h1>a", `<h1 title="a`, `<h1 title='a` ];
+        for (const content of unclosed.map((start) => start.repeat(40_000))) {
             const start = performance.now();
             expect(demoteHeadings(content, "Title", verbatim)).toBe(content);
             expect(performance.now() - start).toBeLessThan(500);
