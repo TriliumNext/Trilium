@@ -284,9 +284,9 @@ export function rewriteZip(
 
     const centralDirectory = bytes.slice(directory.offset, directory.offset + directory.size);
     const centralView = viewOf(centralDirectory);
-    for (const record of directory.records) {
+    for (const [ record, offset ] of newOffsets) {
         const at = record.centralOffset - directory.offset;
-        centralView.setUint32(at + 42, newOffsets.get(record) ?? 0, true);
+        centralView.setUint32(at + 42, offset, true);
         const entry = rewritten.get(record);
         if (entry) {
             writeEntryFields(centralView, at + 6, entry);

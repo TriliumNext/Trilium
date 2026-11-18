@@ -10,6 +10,54 @@ import {
 
 const MiB = 1024 * 1024;
 
+describe("readCentralDirectory", () => {
+    it("reads a ZIP64 archive, whose sizes and offsets are in 64-bit records", async () => {
+        const zip64 = makeZip64("big.txt", "sixty-four");
+        const directory = await readCentralDirectory(byteSourceOf(zip64));
+        const otherExtra = zipSync({
+            "a.txt": [ strToU8("x"), { extra: { 0x5455: new Uint8Array([ 1 ]) } } ]
+        });
+
+        expect([ directory.isZip64, directory.records[0].isZip64 ]).toStrictEqual([ true, true ]);
+        expect(await readTexts(zip64)).toStrictEqual({ "big.txt": "sixty-four" });
+        expect(await readTexts(makeZip64("big.txt", "sixty-four", 0xffff)))
+            .toStrictEqual({ "big.txt": "sixty-four" });
+        expect(await readTexts(otherExtra)).toStrictEqual({ "a.txt": "x" });
+    });
+
+    it("refuses a directory that is cut, lies past the file or ends in an unreadable record",
+        async () => {
+        const zip64 = makeZip64("big.txt", "sixty-four");
+        const zip64End = zip64.length - 22 - 20 - 56;
+        const noZip64End = zip64.slice();
+        viewOf(noZip64End).setUint32(zip64End, 0, true);
+        const zip64EndPastFile = zip64.slice();
+        viewOf(zip64EndPastFile).setBigUint64(zip64End + 56 + 8, BigInt(zip64.length - 8), true);
+        const twoEntries = () => zipSync({ "a.txt": strToU8("x"), "b.txt": strToU8("y") });
+        const pastFile = patchEnd(twoEntries(), (view, at) =>
+            view.setUint32(at + 16, 0x7fffffff, true));
+        const recordPastDirectory = patchCentral(twoEntries(), (view, at) =>
+            view.setUint16(at + 30, 0xffff, true));
+        // The second record, after the 46 bytes and the name of the first.
+        const stopsShort = patchCentral(twoEntries(), (view, at) =>
+            view.setUint32(at + 46 + "a.txt".length, 0, true));
+        const endsInPart = patchEnd(twoEntries(), (view, at) =>
+            view.setUint32(at + 12, view.getUint32(at + 12, true) + 2, true));
+        const read = (zip: Uint8Array) => readCentralDirectory(byteSourceOf(zip));
+
+        await expect(read(new Uint8Array(21))).rejects.toThrow("no end-of-central-directory");
+        await expect(read(new Uint8Array(64))).rejects.toThrow("no end-of-central-directory");
+        await expect(read(noZip64End)).rejects.toThrow("ZIP64 end-of-central-directory record");
+        await expect(read(zip64EndPastFile))
+            .rejects.toThrow("ZIP64 end-of-central-directory record");
+        await expect(read(pastFile)).rejects.toThrow("the central directory lies past the end");
+        await expect(read(recordPastDirectory)).rejects.toThrow("runs past the directory");
+        await expect(read(stopsShort)).rejects.toThrow("ends in an unreadable record");
+        await expect(read(endsInPart)).rejects.toThrow("ends in an unreadable record");
+        expect((await read(withDigitalSignature(twoEntries()))).records).toHaveLength(2);
+    });
+});
+
 describe("readEntryContent", () => {
     it("reads deflated and stored entries, and an empty one", async () => {
         const zip = zipSync({
@@ -37,10 +85,17 @@ describe("readEntryContent", () => {
         const notDeflate = patchCentral(zipSync({ "a.txt": [ reserved, { level: 0 } ] }),
             (view, at) => view.setUint16(at + 10, 8, true));
 
+        const encrypted = patchCentral(zipSync({ "a.txt": strToU8(text) }), (view, at) =>
+            view.setUint16(at + 8, view.getUint16(at + 8, true) | 1, true));
+        const method = patchCentral(zipSync({ "a.txt": strToU8(text) }), (view, at) =>
+            view.setUint16(at + 10, 12, true));
+
         expect(await readFailure(shorter)).toBe("LENGTH");
         expect(await readFailure(longer)).toBe("LENGTH");
         expect(await readFailure(altered)).toBe("CRC");
         expect(await readFailure(notDeflate)).toBe("DEFLATE");
+        expect(await readFailure(encrypted)).toBe("ENCRYPTED_ENTRY");
+        expect(await readFailure(method)).toBe("METHOD");
 
         // A stored entry whose sizes differ is refused before its data is read.
         const source = byteSourceOf(storedSizes);
@@ -48,6 +103,20 @@ describe("readEntryContent", () => {
         const read = vi.spyOn(source, "read");
         await expect(readEntryContent(source, record)).rejects.toMatchObject({ reason: "LENGTH" });
         expect(read).not.toHaveBeenCalled();
+    });
+
+    it("refuses an entry whose local header or data lies outside the file", async () => {
+        const offsetNotInExtra = makeZip64("big.txt", "sixty-four");
+        // The extra field has both sizes, but not the saturated offset of the local header.
+        viewOf(offsetNotInExtra).setUint16(30 + 7 + 10 + 46 + 7 + 2, 16, true);
+        const misplaced = patchCentral(zipSync({ "a.txt": strToU8("x") }), (view, at) =>
+            view.setUint32(at + 42, 1, true));
+        const cut = patchCentral(zipSync({ "a.txt": strToU8("x") }), (view, at) =>
+            view.setUint32(at + 20, 0xffff, true));
+
+        await expect(readTexts(offsetNotInExtra)).rejects.toThrow("local header is missing");
+        await expect(readTexts(misplaced)).rejects.toThrow("local header is missing");
+        await expect(readTexts(cut)).rejects.toThrow("data runs past the end of the file");
     });
 
     it("stops a bomb declared at 1 MiB once its output passes 1 MiB", async () => {
@@ -128,6 +197,25 @@ describe("rewriteZip", () => {
             .toBe("OUTPUT_TOO_LARGE");
         expect(rewriteZip(zip, directory, replacements, zip.byteLength + 1000).byteLength)
             .toBeGreaterThan(zip.byteLength + 100);
+
+        // The first local header is at offset 0; its sizes are at 18 and 22.
+        const saturated = (field: number) => {
+            const copy = zip.slice();
+            viewOf(copy).setUint32(field, 0xffffffff, true);
+            return copy;
+        };
+        expect(rewriteFailure(saturated(18), directory, new Map())).toBe("ZIP64");
+        expect(rewriteFailure(saturated(22), directory, new Map())).toBe("ZIP64");
+        const longer = { ...directory, records: directory.records.map((record, index) =>
+            (index === 0 ? { ...record, compressedSize: record.compressedSize + 1 } : record)) };
+        expect(() => rewriteZip(zip, longer, new Map(), MiB)).toThrow("two entries overlap");
+    });
+
+    it("rewrites an archive without entries as it is", async () => {
+        const empty = zipSync({});
+        const directory = await readCentralDirectory(byteSourceOf(empty));
+
+        expect(rewriteZip(empty, directory, new Map(), MiB)).toStrictEqual(empty);
     });
 });
 
@@ -189,20 +277,121 @@ function readSpan(zip: Uint8Array, directory: ZipDirectory, name: string) {
 
 /** The offset of the data of the first entry of `zip`, after its local header. */
 function readDataStart(zip: Uint8Array) {
-    const view = new DataView(zip.buffer, zip.byteOffset, zip.byteLength);
+    const view = viewOf(zip);
     return 30 + view.getUint16(26, true) + view.getUint16(28, true);
 }
 
 /** Applies `patch` to the first central directory header of `zip`, at the header's offset. */
 function patchCentral(zip: Uint8Array, patch: (view: DataView, offset: number) => void) {
-    const view = new DataView(zip.buffer, zip.byteOffset, zip.byteLength);
-    for (let i = zip.length - 22; i >= 0; i--) {
-        if (view.getUint32(i, true) === 0x06054b50) {
-            patch(view, view.getUint32(i + 16, true));
-            return zip;
+    const view = viewOf(zip);
+    patch(view, view.getUint32(findEnd(zip) + 16, true));
+    return zip;
+}
+
+/** Applies `patch` to the end-of-central-directory record of `zip`, at the record's offset. */
+function patchEnd(zip: Uint8Array, patch: (view: DataView, offset: number) => void) {
+    patch(viewOf(zip), findEnd(zip));
+    return zip;
+}
+
+/** The offset of the end-of-central-directory record of `zip`. */
+function findEnd(zip: Uint8Array) {
+    const view = viewOf(zip);
+    for (let at = zip.length - 22; at >= 0; at--) {
+        if (view.getUint32(at, true) === 0x06054b50) {
+            return at;
         }
     }
     throw new Error("No end of central directory.");
+}
+
+/** `zip` with an empty digital signature record at the end of its central directory. */
+function withDigitalSignature(zip: Uint8Array) {
+    const end = findEnd(zip);
+    const signed = new Uint8Array(zip.length + 6);
+    signed.set(zip.subarray(0, end));
+    signed.set(zip.subarray(end), end + 6);
+    const view = viewOf(signed);
+    view.setUint32(end, 0x05054b50, true);
+    view.setUint32(end + 6 + 12, view.getUint32(end + 6 + 12, true) + 6, true);
+    return signed;
+}
+
+function viewOf(bytes: Uint8Array) {
+    return new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+}
+
+/**
+ * A one-entry stored archive in ZIP64 form: every size and offset in the classic records is
+ * saturated, and the real values are in the entry's ZIP64 extra field and the ZIP64 end record.
+ * The archive comment is `commentLength` spaces.
+ */
+function makeZip64(name: string, content: string, commentLength = 0) {
+    const nameBytes = strToU8(name);
+    const data = strToU8(content);
+    const SATURATED = 0xffffffff;
+
+    const local = new DataView(new ArrayBuffer(30));
+    local.setUint32(0, 0x04034b50, true);
+    local.setUint16(4, 45, true);
+    local.setUint32(14, crc32(data), true);
+    local.setUint32(18, SATURATED, true);
+    local.setUint32(22, SATURATED, true);
+    local.setUint16(26, nameBytes.length, true);
+
+    const central = new DataView(new ArrayBuffer(46));
+    central.setUint32(0, 0x02014b50, true);
+    central.setUint16(4, 45, true);
+    central.setUint16(6, 45, true);
+    central.setUint32(16, crc32(data), true);
+    central.setUint32(20, SATURATED, true);
+    central.setUint32(24, SATURATED, true);
+    central.setUint16(28, nameBytes.length, true);
+    central.setUint16(30, 28, true);
+    central.setUint32(42, SATURATED, true);
+
+    const extra = new DataView(new ArrayBuffer(28));
+    extra.setUint16(0, 0x0001, true);
+    extra.setUint16(2, 24, true);
+    extra.setBigUint64(4, BigInt(data.length), true);
+    extra.setBigUint64(12, BigInt(data.length), true);
+    extra.setBigUint64(20, 0n, true);
+
+    const directoryOffset = 30 + nameBytes.length + data.length;
+    const directorySize = 46 + nameBytes.length + 28;
+
+    const zip64End = new DataView(new ArrayBuffer(56));
+    zip64End.setUint32(0, 0x06064b50, true);
+    zip64End.setBigUint64(4, 44n, true);
+    zip64End.setBigUint64(24, 1n, true);
+    zip64End.setBigUint64(32, 1n, true);
+    zip64End.setBigUint64(40, BigInt(directorySize), true);
+    zip64End.setBigUint64(48, BigInt(directoryOffset), true);
+
+    const locator = new DataView(new ArrayBuffer(20));
+    locator.setUint32(0, 0x07064b50, true);
+    locator.setBigUint64(8, BigInt(directoryOffset + directorySize), true);
+    locator.setUint32(16, 1, true);
+
+    const end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true);
+    end.setUint16(8, 0xffff, true);
+    end.setUint16(10, 0xffff, true);
+    end.setUint32(12, SATURATED, true);
+    end.setUint32(16, SATURATED, true);
+    end.setUint16(20, commentLength, true);
+
+    const comment = new Uint8Array(commentLength).fill(0x20);
+    const parts = [
+        local, nameBytes, data, central, nameBytes, extra, zip64End, locator, end, comment
+    ].map((part) => (part instanceof DataView ? new Uint8Array(part.buffer) : part));
+    const zip = new Uint8Array(parts.reduce((total, part) => total + part.length, 0));
+    let offset = 0;
+    for (const part of parts) {
+        zip.set(part, offset);
+        offset += part.length;
+    }
+    return zip;
 }
 
 /** An archive written by `fflate`'s streaming `Zip`, every entry with a data descriptor. */

@@ -62,6 +62,7 @@ describe("readPreviewHeadings", () => {
         expect(headings).toStrictEqual([
             { title: "Real", level: 1, tagOffset: html.indexOf("<h2 title") }
         ]);
+        expect(readPreviewHeadings("<h2>Never closed<h3 id=\"cut\"").headings).toStrictEqual([]);
     });
 
     it("keeps MAX_TOC_HEADINGS headings and tells whether a heading with a title follows", () => {
@@ -118,9 +119,13 @@ describe("readBookmarkNames", () => {
             .toStrictEqual([ "Kept", "Range" ]);
     });
 
-    it("reads no names from a file that is not a package, or that lacks the part", async () => {
+    it("reads no names from a file that is not a package, lacks the part or has another type",
+        async () => {
+        const xml = wordBookmark("Intro");
         expect(await readBookmarkNames(new Uint8Array([ 1, 2, 3 ]), DOCX_MIME)).toStrictEqual([]);
         expect(await readBookmarkNames(zip({ "styles.xml": "<x/>" }), ODT_MIME)).toStrictEqual([]);
+        expect(await readBookmarkNames(zip({ "word/document.xml": xml }), "application/pdf"))
+            .toStrictEqual([]);
     });
 });
 

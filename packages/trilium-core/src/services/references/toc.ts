@@ -44,7 +44,7 @@ export function toTargets(cache: TocCache, format: TocFormat): ReferenceTarget[]
     const ancestors: { level: number; isTarget: boolean }[] = [];
     let targetAncestors = 0;
     for (const heading of cache.headings) {
-        while (ancestors.length > 0 && (ancestors.at(-1)?.level ?? 0) >= heading.level) {
+        while ((ancestors.at(-1)?.level ?? -Infinity) >= heading.level) {
             targetAncestors -= ancestors.pop()?.isTarget ? 1 : 0;
         }
         const params = format.getLinkParams(heading);

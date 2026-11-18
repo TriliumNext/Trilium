@@ -80,6 +80,8 @@ const VOID_ELEMENTS = new Set([
 ]);
 /** The parts of a table whose marker goes into their first cell. */
 const TABLE_PARTS = new Set([ "tr", "thead", "tbody", "tfoot" ]);
+/** The namespace of `epub:type`. */
+const OPS_NAMESPACE = "http://www.idpf.org/2007/ops";
 /** The elements whose content is text up to their end tag. */
 const RAW_TEXT_ENDS: Record<string, RegExp> = {
     script: /<\/script[\s>]/gi,
@@ -301,8 +303,11 @@ export function findLandings(html: string, record: TocPassRecord): (number | und
     const subtreeEnds = new Array<number>(entries.length).fill(entries.length);
     const open: number[] = [];
     for (const [ index, { level } ] of entries.entries()) {
-        while (open.length > 0 && entries[open[open.length - 1]].level >= level) {
-            subtreeEnds[open.pop() ?? 0] = index;
+        let last = open.at(-1);
+        while (last !== undefined && entries[last].level >= level) {
+            subtreeEnds[last] = index;
+            open.pop();
+            last = open.at(-1);
         }
         open.push(index);
     }
@@ -406,20 +411,24 @@ async function placeMarkers(bytes: Uint8Array, budget: number): Promise<TocPassO
 
     const destinations: TocPassDestination[] = [];
     const destinationsByPlace = new Map<string, number>();
-    const insertions = new Map<string, { at: number; text: string }[]>();
+    const insertions = new Map<ZipRecord, { text: string; list: { at: number; text: string }[] }>();
     const entries = toc.entries.map(({ title, level, target }): TocPassEntry => {
-        if (!target || !records.has(target.path)) {
+        const record = target && records.get(target.path);
+        if (!target || !record) {
             return { title, level };
         }
         const key = `${target.path}#${target.fragment}`;
         let destination = destinationsByPlace.get(key);
         if (destination === undefined) {
-            destination = placeDestination(chapters.get(target.path), target.fragment, counts,
-                prefix, destinations, (at, text) => {
-                    const chapter = insertions.get(target.path) ?? [];
-                    chapter.push({ at, text });
-                    insertions.set(target.path, chapter);
-                });
+            const scan = chapters.get(target.path);
+            destination = scan
+                ? placeDestination(scan, target.fragment, counts, prefix, destinations,
+                    (at, text) => {
+                        const chapter = insertions.get(record) ?? { text: scan.text, list: [] };
+                        chapter.list.push({ at, text });
+                        insertions.set(record, chapter);
+                    })
+                : -1;
             destinationsByPlace.set(key, destination);
         }
         return { title, level, destination };
@@ -430,14 +439,8 @@ async function placeMarkers(bytes: Uint8Array, budget: number): Promise<TocPassO
     if (markerLength > book.remaining) {
         throw new TocPassRefusal("TEXT_TOO_LARGE");
     }
-    const replacements = new Map<ZipRecord, Uint8Array>();
-    for (const [ path, chapterInsertions ] of insertions) {
-        const scan = chapters.get(path);
-        const record = records.get(path);
-        if (scan && record) {
-            replacements.set(record, encodeUtf8(spliceInsertions(scan.text, chapterInsertions)));
-        }
-    }
+    const replacements = new Map(Array.from(insertions, ([ record, { text, list } ]) =>
+        [ record, encodeUtf8(spliceInsertions(text, list)) ]));
 
     const marked = replacements.size > 0
         ? rewriteZip(bytes, directory, replacements, MAX_OFFICE_PREVIEW_BYTES)
@@ -451,16 +454,12 @@ async function placeMarkers(bytes: Uint8Array, budget: number): Promise<TocPassO
 
 /**
  * Places the marker of the destination `fragment` of the chapter `scan`, and answers its index, or
- * `-1` when the place has none: a chapter that the pass cannot read, a part of a table without a
- * cell, or a chapter without `<body>`.
+ * `-1` when the place has none: a part of a table without a cell, or a chapter without `<body>`.
  */
 function placeDestination(
-    scan: ChapterScan | undefined, fragment: string, counts: Map<string, number>, prefix: string,
+    scan: ChapterScan, fragment: string, counts: Map<string, number>, prefix: string,
     destinations: TocPassDestination[], insert: (at: number, text: string) => void
 ) {
-    if (!scan) {
-        return -1;
-    }
     const target = fragment ? scan.byId.get(fragment) ?? scan.byName.get(fragment) : undefined;
     const at = target ? findMarkerOffset(target) : scan.bodyEnd;
     if (at === undefined) {
@@ -626,8 +625,10 @@ function decodeName(record: ZipRecord) {
 
 /** The entries of the `<nav>` typed `toc` of the navigation document `text` at `path`. */
 function readNavEntries(text: string, path: string): RawEntry[] | null {
-    const nav = findElements(parseXml(text, true), "nav")
-        .find((element) => splitTokens(element.attributes.get("epub:type")).includes("toc"));
+    const root = parseXml(text, true);
+    const typeNames = readTypeAttributeNames(root);
+    const nav = findElements(root, "nav").find((element) => typeNames.some((name) =>
+        splitTokens(element.attributes.get(name)).includes("toc")));
     const list = nav && findElement(nav, "ol");
     if (!list) {
         return nav ? [] : null;
@@ -635,8 +636,8 @@ function readNavEntries(text: string, path: string): RawEntry[] | null {
 
     const entries: RawEntry[] = [];
     const stack = childElements(list, "li").toReversed().map((item) => ({ item, depth: 1 }));
-    while (stack.length > 0) {
-        const { item, depth } = stack.pop() ?? { item: list, depth: 0 };
+    for (let next = stack.pop(); next; next = stack.pop()) {
+        const { item, depth } = next;
         const label = item.children.find((child): child is XmlElement =>
             isElement(child) && (child.name === "a" || child.name === "span"));
         const href = label?.name === "a" ? label.attributes.get("href") : undefined;
@@ -654,6 +655,22 @@ function readNavEntries(text: string, path: string): RawEntry[] | null {
     return entries;
 }
 
+/**
+ * The names of the `epub:type` attribute in `root`: with the prefix `epub`, which readers accept
+ * undeclared, and with each prefix that an `xmlns:` attribute binds to `OPS_NAMESPACE`.
+ */
+function readTypeAttributeNames(root: XmlElement) {
+    const names = [ "epub:type" ];
+    for (const element of findElements(root)) {
+        for (const [ name, value ] of element.attributes) {
+            if (name.startsWith("xmlns:") && value === OPS_NAMESPACE) {
+                names.push(`${name.slice("xmlns:".length)}:type`);
+            }
+        }
+    }
+    return names;
+}
+
 /** The entries of the `navMap` of the NCX `text` at `path`. */
 function readNcxEntries(text: string, path: string): RawEntry[] {
     const navMap = findElement(parseXml(text, false), "navmap");
@@ -664,8 +681,8 @@ function readNcxEntries(text: string, path: string): RawEntry[] {
     const entries: RawEntry[] = [];
     const stack = childElements(navMap, "navpoint").toReversed()
         .map((point) => ({ point, depth: 1 }));
-    while (stack.length > 0) {
-        const { point, depth } = stack.pop() ?? { point: navMap, depth: 0 };
+    for (let next = stack.pop(); next; next = stack.pop()) {
+        const { point, depth } = next;
         const label = childElements(point, "navlabel")[0];
         const labelText = label && childElements(label, "text")[0];
         const src = childElements(point, "content")[0]?.attributes.get("src");
@@ -690,7 +707,7 @@ function toOutline(raw: RawEntry[]): { entries: BookTocEntry[]; isCut: boolean }
     const ancestors: { depth: number; isKept: boolean }[] = [];
     let keptAncestors = 0;
     for (const { title, depth, target } of raw) {
-        while (ancestors.length > 0 && (ancestors.at(-1)?.depth ?? 0) >= depth) {
+        while ((ancestors.at(-1)?.depth ?? -Infinity) >= depth) {
             keptAncestors -= ancestors.pop()?.isKept ? 1 : 0;
         }
         const isKept = title !== "";
@@ -714,17 +731,16 @@ function toOutline(raw: RawEntry[]): { entries: BookTocEntry[]; isCut: boolean }
 function readLabel(label: XmlElement) {
     const parts: string[] = [];
     const stack: XmlNode[] = [ label ];
-    while (stack.length > 0) {
-        const node = stack.pop();
-        if (node === undefined) {
-            break;
-        }
+    for (let node = stack.pop(); node; node = stack.pop()) {
+        const formula = isElement(node) && node.name === "math"
+            ? node.attributes.get("alttext")
+            : undefined;
         if (!isElement(node)) {
             parts.push(node.text);
         } else if (node.name === "img") {
             parts.push(node.attributes.get("alt") ?? "");
-        } else if (node.name === "math" && node.attributes.has("alttext")) {
-            parts.push(node.attributes.get("alttext") ?? "");
+        } else if (formula !== undefined) {
+            parts.push(formula);
         } else if (node.name === "br") {
             parts.push(" ");
         } else {
@@ -739,11 +755,7 @@ function readLabel(label: XmlElement) {
 function readText(element: XmlElement) {
     const parts: string[] = [];
     const stack: XmlNode[] = [ element ];
-    while (stack.length > 0) {
-        const node = stack.pop();
-        if (node === undefined) {
-            break;
-        }
+    for (let node = stack.pop(); node; node = stack.pop()) {
         if (isElement(node)) {
             stack.push(...node.children.toReversed());
         } else {
@@ -836,14 +848,14 @@ function parseXml(text: string, isHtml: boolean): XmlElement {
     return root;
 }
 
-/** The descendants of `root` named `name`, in document order. */
-function findElements(root: XmlElement, name: string) {
+/** The descendants of `root` named `name`, or all of them, in document order. */
+function findElements(root: XmlElement, name?: string) {
     const found: XmlElement[] = [];
     const stack = [ ...root.children ].reverse();
     while (stack.length > 0) {
         const node = stack.pop();
         if (node && isElement(node)) {
-            if (node.name === name) {
+            if (name === undefined || node.name === name) {
                 found.push(node);
             }
             stack.push(...node.children.toReversed());

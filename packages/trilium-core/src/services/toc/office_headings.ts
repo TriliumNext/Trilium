@@ -1,7 +1,7 @@
 import {
     decodeHtmlEntities, DOCX_MIME, escapeHtml, MAX_TOC_HEADINGS, normalizeTocTitle, ODT_MIME
 } from "@triliumnext/commons";
-import { HTMLElement, type Node, parse, TextNode } from "node-html-parser";
+import { HTMLElement, type Node, parse } from "node-html-parser";
 
 import { decodeUtf8, wrapStringOrBuffer } from "../utils/binary.js";
 import { getZipProvider } from "../zip_provider.js";
@@ -201,16 +201,13 @@ export function spliceInsertions(text: string, insertions: { at: number; text: s
 function readTitle(innerHtml: string) {
     const parts: string[] = [];
     const stack: Node[] = [ parse(innerHtml) ];
-    while (stack.length > 0) {
-        const node = stack.pop();
-        if (node instanceof TextNode) {
+    for (let node = stack.pop(); node; node = stack.pop()) {
+        if (!(node instanceof HTMLElement)) {
             parts.push(node.text);
-        } else if (node instanceof HTMLElement) {
-            if (node.tagName === "BR") {
-                parts.push(" ");
-            } else if (!(node.tagName === "SUP" && node.hasAttribute("data-footnote-ref"))) {
-                stack.push(...node.childNodes.toReversed());
-            }
+        } else if (node.tagName === "BR") {
+            parts.push(" ");
+        } else if (!(node.tagName === "SUP" && node.hasAttribute("data-footnote-ref"))) {
+            stack.push(...node.childNodes.toReversed());
         }
     }
     return parts.join("");

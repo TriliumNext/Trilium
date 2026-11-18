@@ -65,6 +65,98 @@ describe("readBookToc", () => {
         expect(await readToc({}, {})).toBeNull();
     });
 
+    it("finds the navigation's list by the namespace of its type, whatever the prefix",
+        async () => {
+        const typed = (namespace: string) => readToc({
+            "OEBPS/nav.xhtml": "<html xmlns=\"http://www.w3.org/1999/xhtml\" "
+                + `xmlns:OPS="${namespace}"><body><nav OPS:type="toc"><ol>`
+                + "<li><a href=\"a.xhtml\">Declared</a></li></ol></nav></body></html>"
+        }, { navPath: "nav.xhtml" });
+
+        expect((await typed("http://www.idpf.org/2007/ops"))?.entries)
+            .toStrictEqual([ { title: "Declared", level: 1,
+                target: { path: "OEBPS/a.xhtml", fragment: "" } } ]);
+        expect(await typed("urn:other")).toBeNull();
+    });
+
+    it("finds a package without a usable container, and skips the parts it cannot use",
+        async () => {
+        const manifest = "<item id=\"nav\" href=\"gone.xhtml\" properties=\"nav\"/>"
+            + "<item href=\"no-id.xhtml\" media-type=\"application/xhtml+xml\"/>"
+            + "<item id=\"ncx\" href=\"toc.ncx\" media-type=\"application/x-dtbncx+xml\"/>"
+            + "<item id=\"c\" href=\"c.xhtml\" media-type=\"application/xhtml+xml\"/>"
+            + "<item id=\"img\" href=\"i.png\" media-type=\"image/png\"/>";
+        const spine = "<itemref/><itemref idref=\"img\"/><itemref idref=\"c\"/>";
+        const opf = packageDocument(manifest, " toc=\"ncx\"", spine);
+        const ncx = ncxDocument(navPoint("Chapter", "c.xhtml"));
+        const readFiles = (files: Record<string, string>) =>
+            readBookToc(Object.keys(files), (path) => Promise.resolve(files[path]));
+
+        const expected = {
+            entries: [ { title: "Chapter", level: 1, target: { path: "c.xhtml", fragment: "" } } ],
+            isCut: false,
+            chapters: [ "c.xhtml" ]
+        };
+        expect(await readFiles({ "book.opf": opf, "toc.ncx": ncx })).toStrictEqual(expected);
+        expect(await readFiles({ "META-INF/container.xml": CONTAINER, "book.opf": opf,
+            "toc.ncx": ncx })).toStrictEqual(expected);
+        expect(await readFiles({ "book.opf": opf })).toBeNull();
+    });
+
+    it("reads a navigation without a list, an NCX without a navMap, and unlabeled entries",
+        async () => {
+        const ncx = ncxDocument("<navPoint><content src=\"a.xhtml\"/>"
+            + `${navPoint("Child", "a.xhtml#c")}</navPoint>`
+            + "<navPoint><navLabel><text>No target</text></navLabel></navPoint>"
+            + "<navPoint><navLabel/></navPoint>");
+        const noList = xhtml("<nav epub:type=\"toc\"><h1>Contents</h1></nav>");
+
+        expect((await readToc({ "OEBPS/toc.ncx": ncx }, { ncxPath: "toc.ncx" }))?.entries)
+            .toStrictEqual([
+                { title: "Child", level: 1, target: { path: "OEBPS/a.xhtml", fragment: "c" } },
+                { title: "No target", level: 1 }
+            ]);
+        expect((await readToc({ "OEBPS/toc.ncx": "<ncx><head/></ncx>" }, { ncxPath: "toc.ncx" }))
+            ?.entries).toStrictEqual([]);
+        expect((await readToc({ "OEBPS/nav.xhtml": noList }, { navPath: "nav.xhtml" }))?.entries)
+            .toStrictEqual([]);
+    });
+
+    it("reads a navigation whatever quirks its markup has, up to where it ends", async () => {
+        const items = [
+            "<li><a href=#top>Same file</a></li>",
+            "<li><a href=\"./sub/../ch%201.xhtml\">Dot path</a></li>",
+            "<li><a href=\"ch.xhtml#%E0%A4%A\">Bad escape</a></li>",
+            "<li><a href=\"ch.xhtml#m\"><img src=\"x.png\"/>Area <math><mi>x</mi></math>"
+                + "<br/>two</a></li>",
+            "<li><a href=\"ch.xhtml#c\"><![CDATA[a < b]]> &amp; 1 < 2</a></li>",
+            "<li>No label<ol><li><a href=\"ch.xhtml#n\">Nested</a></li></ol></li>"
+        ].join("");
+        const nav = "<?xml version=\"1.0\"?><html xmlns=\"http://www.w3.org/1999/xhtml\" "
+            + "xmlns:epub=\"http://www.idpf.org/2007/ops\"><head>"
+            + "<script>if (a < b && c > d) {}</script></head><body></div>"
+            + "<nav / =\"x\" hidden epub:type=toc epub:type=\"landmarks\">"
+            + `<ol>${items}</ol></nav></body></html>`;
+        const target = (path: string, fragment: string) => ({ path: `OEBPS/${path}`, fragment });
+        const expected = [
+            { title: "Same file", level: 1, target: target("nav.xhtml", "top") },
+            { title: "Dot path", level: 1, target: target("ch 1.xhtml", "") },
+            { title: "Bad escape", level: 1, target: target("ch.xhtml", "%E0%A4%A") },
+            { title: "Area x two", level: 1, target: target("ch.xhtml", "m") },
+            { title: "a < b & 1 < 2", level: 1, target: target("ch.xhtml", "c") },
+            { title: "Nested", level: 1, target: target("ch.xhtml", "n") }
+        ];
+
+        const unclosed = [
+            "", "text after the document", "<!-- comment", "<![CDATA[ section", "<?instruction",
+            "<p title=\"value", "<p id=value", "<script>code"
+        ];
+        for (const tail of unclosed) {
+            const toc = await readToc({ "OEBPS/nav.xhtml": nav + tail }, { navPath: "nav.xhtml" });
+            expect(toc?.entries).toStrictEqual(expected);
+        }
+    });
+
     it("titles a label by its text, an image's alt, a formula's alttext, else its title",
         async () => {
         const toc = await readToc({
@@ -184,6 +276,50 @@ describe("runTocPass", () => {
         expect(await runTocPass(altered)).toStrictEqual({ status: "refused", reason: "CRC" });
         expect(await runTocPass(new Uint8Array(64)))
             .toStrictEqual({ status: "refused", reason: "DIRECTORY" });
+
+        const failure = new RangeError("Out of memory");
+        const failing = Object.assign(buildEpub({ "a.xhtml": "<p>A</p>" }, { nav }), {
+            subarray: () => {
+                throw failure;
+            }
+        });
+        await expect(runTocPass(failing)).rejects.toBe(failure);
+    });
+
+    it("reads the first entry of a name, and marks only the chapters it can read as text",
+        async () => {
+        const invalid = new Uint8Array([ ...strToU8(xhtml("<p id=\"i\">Invalid</p>")), 0xff ]);
+        const bytes = buildEpub({
+            "café.xhtml": "<table><tr id=\"head\"><th>Head</th></tr></table>",
+            "nul.xhtml": "<p id=\"n\">\0</p>",
+            "invalid.xhtml": invalid,
+            "a1.xhtml": "<p id=\"f\">First</p>",
+            "a2.xhtml": "<p id=\"s\">Second</p>"
+        }, { nav: navList([
+            [ "Head", "café.xhtml#head" ], [ "Nul", "nul.xhtml#n" ],
+            [ "Invalid", "invalid.xhtml#i" ], [ "First", "a1.xhtml#f" ],
+            [ "Second", "a2.xhtml#s" ], [ "Navigation", "nav.xhtml" ]
+        ]) });
+        // Renames the entry `a2.xhtml` to `a1.xhtml`, after the real one.
+        patchCentral(bytes, "OEBPS/a2.xhtml", (view, at) =>
+            view.setUint8(at + 46 + "OEBPS/a".length, "1".charCodeAt(0)));
+
+        const marked = readMarked(await runTocPass(bytes));
+
+        expect(marked.record.entries.map(({ title, destination }) => [ title, destination ]))
+            .toStrictEqual([
+                [ "Head", 0 ], [ "Nul", -1 ], [ "Invalid", -1 ], [ "First", 1 ],
+                [ "Second", undefined ], [ "Navigation", -1 ]
+            ]);
+        expect(marked.record.destinations).toStrictEqual([
+            { marker: "trilium_toc_0", bookId: "head" }, { marker: "trilium_toc_1", bookId: "f" }
+        ]);
+        expect(readChapter(marked.bytes, "café.xhtml"))
+            .toContain("<th><a id=\"trilium_toc_0\"></a>Head</th>");
+
+        const unplaced = buildEpub({ "a.xhtml": "<p>A</p>" },
+            { nav: navList([ [ "Navigation", "nav.xhtml" ] ]) });
+        expect(readMarked(await runTocPass(unplaced)).bytes).toBe(unplaced);
     });
 
     it("refuses a part declared past what remains of the budget, before inflating it", async () => {
@@ -520,15 +656,16 @@ function xhtml(body: string, bodyStart = "") {
 
 /**
  * An EPUB 3 of `chapters`, by file name in `OEBPS/`, in that order in the spine, with the
- * navigation `nav` (its `<li>` items) when given. `encrypted` lists the chapters that
- * `encryption.xml` names.
+ * navigation `nav` (its `<li>` items) when given. A text chapter is a body, and a byte chapter is
+ * the whole file. `encrypted` lists the chapters that `encryption.xml` names.
  */
-function buildEpub(chapters: Record<string, string>, { nav, encrypted = [] }: {
+function buildEpub(chapters: Record<string, string | Uint8Array>, { nav, encrypted = [] }: {
     nav?: string; encrypted?: string[];
 } = {}) {
     const files: Zippable = { mimetype: [ strToU8(EPUB_MIME), { level: 0, mtime: MTIME } ] };
-    const add = (path: string, text: string) => {
-        files[path] = [ strToU8(text), { mtime: MTIME } ];
+    const add = (path: string, content: string | Uint8Array) => {
+        const bytes = typeof content === "string" ? strToU8(content) : content;
+        files[path] = [ bytes, { mtime: MTIME } ];
     };
     add("META-INF/container.xml", CONTAINER);
     if (encrypted.length > 0) {
@@ -552,7 +689,7 @@ function buildEpub(chapters: Record<string, string>, { nav, encrypted = [] }: {
         add("OEBPS/nav.xhtml", nav === "" ? xhtml("<p>No navigation</p>") : navDocument(nav));
     }
     for (const [ name, body ] of Object.entries(chapters)) {
-        add(`OEBPS/${name}`, xhtml(body));
+        add(`OEBPS/${name}`, typeof body === "string" ? xhtml(body) : body);
     }
     return zipSync(files);
 }
