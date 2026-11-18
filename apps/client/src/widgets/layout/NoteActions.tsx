@@ -1,6 +1,8 @@
 import "./NoteActions.css";
 
-import { ConvertToAttachmentResponse, ToggleInParentResponse } from "@triliumnext/commons";
+import type {
+    ConvertNoteFormatResponse, ConvertToAttachmentResponse, ToggleInParentResponse
+} from "@triliumnext/commons";
 import { ComponentChildren, RefObject } from "preact";
 import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 
@@ -497,11 +499,19 @@ function ConvertNoteFormat({ note }: { note: FNote }) {
                     return;
                 }
 
-                await server.post(`notes/${note.noteId}/convert-format`);
+                const url = `notes/${note.noteId}/convert-format`;
+                const { lostBlockIds, movedBlockIds } =
+                    await server.post<ConvertNoteFormatResponse>(url);
                 await ws.waitForMaxKnownEntityChangeId();
                 toast.showMessage(isMarkdown
                     ? t("note_actions.convert_to_text_successful")
                     : t("note_actions.convert_to_markdown_successful"));
+                if (lostBlockIds.length || movedBlockIds.length) {
+                    toast.showMessage(t("note_actions.convert_block_references_changed", {
+                        lost: lostBlockIds.length,
+                        moved: movedBlockIds.length
+                    }));
+                }
             }}
         >{isMarkdown ? t("note_actions.convert_to_text") : t("note_actions.convert_to_markdown")}</FormListItem>
     );

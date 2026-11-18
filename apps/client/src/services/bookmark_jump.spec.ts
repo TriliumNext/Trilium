@@ -35,6 +35,19 @@ describe("consumeBookmark", () => {
         expect(viewScope.bookmark).toBeUndefined();
     });
 
+    it("scrolls to the anchor of the note's own content before one of an embed above it", () => {
+        const container = buildContainer(`<figure class="include-note" data-note-id="other">`
+            + `<p><a id="dup"></a>embedded</p></figure><p><a id="dup"></a>own</p>`);
+        const scrolled: Element[] = [];
+        scrollIntoView.mockImplementation(function (this: Element) {
+            scrolled.push(this);
+        });
+
+        consumeBookmark(container, { bookmark: "dup" });
+        expect(scrolled.map((anchor) => anchor.parentElement?.textContent)).toEqual([ "own" ]);
+        scrollIntoView.mockReset();
+    });
+
     it("shows the tab that holds the target", () => {
         const container = buildContainer(
             `<div class="trilium-tabs">` +

@@ -46,16 +46,48 @@ export function rewriteMarkdownContentLinks(
         }
     );
 
-    // Internal note links: [text](#root/.../noteId)
+    // Internal note links: [text](#root/.../noteId?block=…)
     content = content.replace(
-        /\[([^\]]*)\]\(#root[a-zA-Z0-9_\/]*\/([a-zA-Z0-9_]+)[^)]*\)/g,
-        (match, text, noteId) => {
+        /\[([^\]]*)\]\(#root[a-zA-Z0-9_\/]*\/([a-zA-Z0-9_]+)([^)]*)\)/g,
+        (match, text, noteId, suffix) => {
             const url = getNoteTargetUrl(noteId, noteMeta);
-            return url ? `[${text}](${url})` : match;
+            return url ? `[${text}](${url}${getArchivedLinkSuffix(suffix, "markdown")})` : match;
         }
     );
 
     return content;
+}
+
+/** Where an archived link is written: an HTML attribute, Markdown, or a page of the share theme. */
+export type ArchivedLinkContext = "attribute" | "markdown" | "share";
+
+/**
+ * The part of a link to a note that an archive keeps after the note's file: its `block` and
+ * `bookmark` parameters, read from `suffix`, the query and fragment that follow the note path.
+ * The values stay encoded as written. In `share`, a page of the share theme, the bookmark is a
+ * fragment, which the share theme reveals; elsewhere it stays in the query, which an import reads.
+ */
+export function getArchivedLinkSuffix(suffix: string, context: ArchivedLinkContext) {
+    const text = suffix.replaceAll("&amp;", "&");
+    const hashIndex = text.indexOf("#");
+    const query = hashIndex < 0 ? text : text.slice(0, hashIndex);
+    let bookmark = hashIndex < 0 ? "" : text.slice(hashIndex + 1);
+    let block = "";
+    for (const parameter of query.replace(/^\?/, "").split("&")) {
+        if (parameter.startsWith("block=")) {
+            block ||= parameter.slice("block=".length);
+        } else if (parameter.startsWith("bookmark=")) {
+            bookmark ||= parameter.slice("bookmark=".length);
+        }
+    }
+
+    if (context === "share") {
+        return (block ? `?block=${block}` : "") + (bookmark ? `#${bookmark}` : "");
+    }
+    const parameters = [ block && `block=${block}`, bookmark && `bookmark=${bookmark}` ]
+        .filter(Boolean);
+    const separator = context === "attribute" ? "&amp;" : "&";
+    return parameters.length ? `?${parameters.join(separator)}` : "";
 }
 
 function findAttachmentUrl(noteMeta: NoteMeta, attachmentId: string): string | undefined {

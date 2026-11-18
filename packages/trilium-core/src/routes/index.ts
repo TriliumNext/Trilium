@@ -146,6 +146,7 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
 
     apiRoute(GET, "/api/notes/:noteId/revisions", revisionsApiRoute.getRevisions);
     apiRoute(DEL, "/api/notes/:noteId/revisions", revisionsApiRoute.eraseAllRevisions);
+    apiRoute(PST, "/api/notes/:noteId/revisions/draft", revisionsApiRoute.saveDraftRevision);
     apiRoute(PST, "/api/revisions/erase-all-excess-revisions", revisionsApiRoute.eraseAllExcessRevisions);
     apiRoute(GET, "/api/revisions/:revisionId", revisionsApiRoute.getRevision);
     apiRoute(GET, "/api/revisions/:revisionId/blob", revisionsApiRoute.getRevisionBlob);

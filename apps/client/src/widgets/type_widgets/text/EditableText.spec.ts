@@ -111,6 +111,7 @@ const {
     followLink,
     getEditLinkOpts,
     getBlockData,
+    getNoteData,
     isCaretInFocus,
     notifyAttachmentChanges,
     onNotificationInfo,
@@ -429,6 +430,19 @@ describe("getBlockData", () => {
         expect(getData).toHaveBeenCalledWith({ trim: "none" });
         expect(getRange).toHaveBeenCalledWith({ startId: "a", endId: "b" });
         expect(getBlockData(editor, "a").block).toBeUndefined();
+    });
+});
+
+describe("getNoteData", () => {
+    it("keeps a note of one empty block with an id, and saves an empty note as nothing", () => {
+        const editor = (data: string) => ({ getData: vi.fn(() => data) }) as unknown as CKTextEditor;
+        const referenced = editor(`<p data-trilium-block-id="p">&nbsp;</p>`);
+
+        expect(getNoteData(referenced)).toBe(`<p data-trilium-block-id="p">&nbsp;</p>`);
+        expect(referenced.getData).toHaveBeenCalledWith({ trim: "none" });
+        const rule = `<hr data-trilium-block-id="r">`;
+        expect(getNoteData(editor(rule))).toBe(rule);
+        expect(getNoteData(editor("<p>&nbsp;</p>"))).toBe("");
     });
 });
 

@@ -1,13 +1,14 @@
-import type { NoteType } from "@triliumnext/commons";
+import type { NoteBlocksResponse, NoteType, SavedAttachmentRow } from "@triliumnext/commons";
 import type { RefObject } from "preact";
 import { useSyncExternalStore } from "preact/compat";
-import { useCallback, useContext, useEffect, useRef } from "preact/hooks";
+import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
 import type NoteContext from "../../../components/note_context";
 import type FBlob from "../../../entities/fblob";
 import type FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
+import { type CurrentVersion, NoteSaver, type SaveData } from "../../../services/note_save";
 import protected_session_holder from "../../../services/protected_session_holder";
 import server from "../../../services/server";
 import SpacedUpdate, { type StateCallback } from "../../../services/spaced_update";
@@ -21,22 +22,19 @@ export interface SavedData {
     content: string;
     /** The blocks that `content` holds, a `block` link parameter, for an editor of some blocks. */
     block?: string;
-    attachments?: {
-        /** The attachment to update. Without it, the attachment is matched by its title. */
-        attachmentId?: string;
-        role: string;
-        title: string;
-        mime: string;
-        content: string;
-        position?: number;
-        encoding?: "base64";
-    }[];
+    /**
+     * The changes to attachments. A row with an ID replaces that attachment, at the blob that it
+     * was read at; a row without one creates the attachment of its title, or replaces the one
+     * that the note has.
+     */
+    attachments?: SavedAttachmentRow[];
 }
 
 export function useEditorSpacedUpdate({
     note, noteType, noteContext, getData, onContentChange, dataSaved, updateInterval, block,
-    shownRef
+    shownRef, resolveConflict
 }: {
+    /** The type of the notes that the editor writes, which its saves are based on. */
     noteType: NoteType;
     note: FNote | null | undefined,
     noteContext: NoteContext | null | undefined,
@@ -52,10 +50,16 @@ export function useEditorSpacedUpdate({
     block?: string;
     /** The element of the editor. Content saved elsewhere loads into it once it is shown. */
     shownRef?: RefObject<Element | null>;
+    /**
+     * Tries to bring the unsaved changes onto `current`, the version that another writer saved,
+     * before the user is asked which version to keep. Returns whether it did; the save is then
+     * sent again, based on `current`.
+     */
+    resolveConflict?: (current: CurrentVersion) => Promise<boolean> | boolean;
 }) {
     const parentComponent = useContext(ParentComponent);
     const blockRef = useRef(block ?? "");
-    const blob = useNoteBlob(note, parentComponent?.componentId, {
+    const blob = useNoteBlob<NoteBlocksResponse | FBlob>(note, parentComponent?.componentId, {
         reportLoadStateTo: noteContext,
         load: block === undefined
             ? undefined
@@ -73,26 +77,59 @@ export function useEditorSpacedUpdate({
         return getData();
     }, [ note, getData ]);
 
+    const callbacksRef = useRef({ prepare, onContentChange, resolveConflict, parentComponent });
+    callbacksRef.current = { prepare, onContentChange, resolveConflict, parentComponent };
+    const [ saver ] = useState(() => new NoteSaver<SavedData>({
+        get componentId() {
+            return callbacksRef.current.parentComponent?.componentId;
+        },
+        getLatestData: (noteId) => (loadedNoteIdRef.current === noteId
+            ? callbacksRef.current.prepare()
+            : undefined),
+        loadVersion(noteId, { content }) {
+            if (block === undefined) {
+                noteSavedDataStore.set(noteId, content);
+            }
+            if (loadedNoteIdRef.current === noteId) {
+                void spacedUpdate.allowUpdateWithoutChange(
+                    () => callbacksRef.current.onContentChange(content)
+                );
+            }
+        },
+        loadBlocks(noteId, content) {
+            if (loadedNoteIdRef.current === noteId) {
+                void spacedUpdate.allowUpdateWithoutChange(
+                    () => callbacksRef.current.onContentChange(content)
+                );
+            }
+        },
+        onPaused: () => spacedUpdate.onStateChanged("unsaved"),
+        resolveConflict: (_noteId, current) => (
+            callbacksRef.current.resolveConflict?.(current) ?? false
+        )
+    }));
+
     const commit = useCallback(async (data: SavedData | undefined) => {
         // for read only notes, or if note is not yet available (e.g. lazy creation); a visitor of a
         // shared page cannot save
-        if (data === undefined || !note || note.type !== noteType || isShare) return;
+        if (data === undefined || !note || isShare) return;
         // A deleted note is gone from `froca`, and the server refuses its changes.
         if (!(note.noteId in froca.notes)) return;
 
         protected_session_holder.touchProtectedSessionIfNecessary(note);
 
         if (block === undefined) {
-            await server.put(`notes/${note.noteId}/data`, data, parentComponent?.componentId);
-            noteSavedDataStore.set(note.noteId, data.content);
+            const saved = await saver.saveNote(note, data);
+            if (!saved) return;
+            noteSavedDataStore.set(note.noteId, saved.content);
+            dataSaved?.(saved);
         } else {
-            const { block: savedBlock, ...blocks } = data;
-            const url = `notes/${note.noteId}/blocks?block=${encodeURIComponent(blockRef.current)}`;
-            await server.put(url, blocks, parentComponent?.componentId);
-            blockRef.current = savedBlock ?? blockRef.current;
+            const saved = await saver.saveBlocks(note, blockRef.current, data);
+            if (!saved) return;
+            blockRef.current = saved.block ?? blockRef.current;
+            dataSaved?.(saved);
         }
-        dataSaved?.(data);
-    }, [ note, dataSaved, noteType, parentComponent, block ]);
+    }, [ note, dataSaved, block, saver ]);
 
     const stateCallback = useCallback<StateCallback>((state) => {
         noteContext?.setContextData("saveState", {
@@ -126,12 +163,30 @@ export function useEditorSpacedUpdate({
         if (!blob || !note) return;
         // Changes not saved here yet stay when another editor saves the note, and replace it.
         if (loadedNoteIdRef.current === note.noteId && spacedUpdate.hasUnsavedChanges()) return;
-        if (block === undefined) {
+        if (block !== undefined) {
+            if ("hash" in blob) {
+                saver.setBlockBase(note.noteId, blob.hash, blob.note);
+            } else {
+                saver.setBlockBase(note.noteId, null);
+            }
+        } else {
             noteSavedDataStore.set(note.noteId, blob.content);
+            if ("blobId" in blob) {
+                saver.setBase({
+                    noteId: note.noteId, blobId: blob.blobId, content: blob.content,
+                    type: noteType, mime: note.mime
+                });
+            }
         }
         spacedUpdate.allowUpdateWithoutChange(() => onContentChange(blob.content));
         loadedNoteIdRef.current = note.noteId;
     }, [ blob ]);
+
+    // A question about a note that the editor no longer shows keeps its changes as a revision.
+    useEffect(() => {
+        saver.abandon(note?.noteId);
+    }, [ note?.noteId ]);
+    useEffect(() => () => saver.abandon(), [ saver ]);
 
     // React to update interval changes.
     useEffect(() => {
@@ -139,10 +194,12 @@ export function useEditorSpacedUpdate({
         spacedUpdate.setUpdateInterval(updateInterval);
     }, [ updateInterval ]);
 
-    useSaveBeforeLeaving(spacedUpdate, noteContext);
+    useSaveBeforeLeaving(spacedUpdate, noteContext, saver);
 
     useTriliumEvent("saveNoteChanges", async ({ noteId }) => {
-        if (noteId === note?.noteId) await spacedUpdate.updateNowIfNecessary();
+        if (noteId === note?.noteId && !saver.isPaused(noteId)) {
+            await spacedUpdate.updateNowIfNecessary();
+        }
     });
 
     return spacedUpdate;
@@ -150,19 +207,23 @@ export function useEditorSpacedUpdate({
 
 /**
  * Saves the pending changes of `spacedUpdate` before the note of `noteContext` switches, before
- * its tab closes and before the window closes.
+ * its tab closes and before the window closes. A switch does not wait for a save that waits for
+ * the user to choose a version, and the changes of such a save are kept as a revision when the tab
+ * closes.
  */
 export function useSaveBeforeLeaving<T>(
     spacedUpdate: SpacedUpdate<T>,
-    noteContext: NoteContext | null | undefined
+    noteContext: NoteContext | null | undefined,
+    saver?: Pick<NoteSaver<SaveData>, "abandon" | "isAsking">
 ) {
     useTriliumEvent("beforeNoteSwitch", async ({ noteContext: eventNoteContext }) => {
-        if (eventNoteContext.ntxId !== noteContext?.ntxId) return;
+        if (eventNoteContext.ntxId !== noteContext?.ntxId || saver?.isAsking()) return;
         await spacedUpdate.updateNowIfNecessary();
     });
 
     useTriliumEvent("beforeNoteContextRemove", async ({ ntxIds }) => {
         if (!noteContext?.ntxId || !ntxIds.includes(noteContext.ntxId)) return;
+        saver?.abandon();
         await spacedUpdate.updateNowIfNecessary();
     });
 
@@ -176,7 +237,7 @@ export function useSaveBeforeLeaving<T>(
 /** The blocks of `note` that `block` points at, or `null` when they cannot be read. */
 async function loadBlocks(note: FNote, block: string) {
     try {
-        return await server.getWithSilentNotFound<{ content: string }>(
+        return await server.getWithSilentNotFound<NoteBlocksResponse>(
             `notes/${note.noteId}/blocks?block=${encodeURIComponent(block)}`
         );
     } catch {

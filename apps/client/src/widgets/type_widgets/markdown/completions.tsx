@@ -31,7 +31,8 @@ import type { CompletionMatch, SlashCommand } from "../code/editor_completions";
 import { SLASH_COMMAND_REGEX } from "../code/snippets";
 import SAMPLE_DIAGRAMS from "../mermaid/sample_diagrams";
 import {
-    insertDateTime, showEditLinkDialog, showIncludeNoteDialog, toWikilink, uploadImageAndInsert
+    insertDateTime, insertWithMarker, showEditLinkDialog, showIncludeNoteDialog, takePendingMarker,
+    toWikilink, uploadImageAndInsert
 } from "./editor_utils";
 
 /** What the Markdown commands are built from, read again each time the list looks them up. */
@@ -39,6 +40,8 @@ export interface MarkdownCommandContext {
     editorView: VanillaCodeMirror;
     /** The note that images upload to, read when the image arrives. */
     getOwnerNote(): FNote | null;
+    /** The note whose content the editor holds, whose headings a link can point at. */
+    getEditedNote?(): FNote | null;
     /** The user's task states, one `/todo:<state>` each where it has a Markdown marker. */
     taskStates: TaskStateDef[];
 }
@@ -81,7 +84,7 @@ const WIKILINK_TYPED = /\[\[[^[\]]*$/;
  * word typed after the `/` as well, such as `todo:done`.
  */
 export function buildMarkdownCommands(
-    { editorView, getOwnerNote, taskStates }: MarkdownCommandContext
+    { editorView, getOwnerNote, getEditedNote, taskStates }: MarkdownCommandContext
 ): SlashCommand[] {
     /** Removes the typed command, then runs `action` on the editor. */
     const runAction = (action: (view: VanillaCodeMirror) => void): HostedCompletionApply =>
@@ -124,7 +127,12 @@ export function buildMarkdownCommands(
             description: t("markdown_slash_commands.link"),
             aliases: [ "internal link", "trilium link", "reference link" ],
             iconSvg: internalLinkIcon
-        }, runAction(showEditLinkDialog)),
+        }, runAction((view) => {
+            const note = getEditedNote?.();
+            showEditLinkDialog(view, note
+                ? { noteId: note.noteId, notePath: note.getBestNotePathString() }
+                : undefined);
+        })),
         command("math", {
             title: t("markdown_slash_commands.titles.math"),
             description: t("markdown_slash_commands.math"),
@@ -347,19 +355,22 @@ function command(name: string, entry: Omit<SlashCommand, "id" | "apply">, apply:
 /**
  * Puts the link to the note at `notePath` in place of the typed text. Where that text opens a
  * Wikilink and the caret is inside one already closed, the rest of the link up to its `]]` goes too.
+ * A heading of the note being edited gets the marker that its pick left, unless the pick was
+ * declined, which leaves the text as it is.
  */
 export function linkToNote(notePath: string): HostedCompletionApply {
     return (view, from, to) => {
+        const marker = takePendingMarker(view);
+        if (marker === null) return;
+
         const isOpenWikilink = /^\[\[[^[\]]*$/.test(view.state.sliceDoc(from, to));
         const rest = isOpenWikilink
             ? /^[^[\]\n]*\]\]/.exec(view.state.sliceDoc(to, view.state.doc.lineAt(to).to))
             : null;
         const link = toWikilink(notePath);
-        view.dispatch({
-            changes: { from, to: to + (rest?.[0].length ?? 0), insert: link },
-            selection: { anchor: from + link.length },
-            userEvent: "input.complete"
-        });
+        insertWithMarker(view, marker, {
+            from, to: to + (rest?.[0].length ?? 0), insert: link
+        }, "input.complete");
     };
 }
 

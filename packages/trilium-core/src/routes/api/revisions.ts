@@ -2,22 +2,34 @@ import {
     EditedNotesResponse,
     EraseExcessRevisionsOptions,
     EraseExcessRevisionsResponse,
+    isNoteType,
     RevisionItem,
-    RevisionPojo
+    RevisionPojo,
+    type SaveDraftRequest,
+    type SaveDraftResponse,
+    type SavedAttachmentRow
 } from "@triliumnext/commons";
+import { t } from "i18next";
+
 import type { Request, Response } from "../../http_interface";
 
 import becca from "../../becca/becca.js";
 import type BNote from "../../becca/entities/bnote.js";
+import { remapAttachmentReferences } from "../../becca/entities/bnote.js";
 import type BRevision from "../../becca/entities/brevision.js";
+import { ValidationError } from "../../errors.js";
 import blobService from "../../services/blob.js";
+import { getBlockRangeContent, replaceBlockRangeContent } from "../../services/block_ranges.js";
 import eraseService from "../../services/erase.js";
+import { saveLinks } from "../../services/notes.js";
 import { NotePojo } from "../../becca/becca-interface.js";
 import becca_service from "../../becca/becca_service.js";
 import * as cls from "../../services/context.js";
 import { getSql } from "../../services/sql/index.js";
 import * as binary_utils from "../../services/utils/binary.js";
-import { formatDownloadTitle, getContentDisposition } from "../../services/utils/index.js";
+import {
+    formatDownloadTitle, getContentDisposition, hashedBlobId
+} from "../../services/utils/index.js";
 import { extname } from "../../services/utils/path.js";
 
 interface NotePath {
@@ -175,36 +187,136 @@ function parseEraseExcessRevisionsOptions(body: unknown): EraseExcessRevisionsOp
 
 function restoreRevision(req: Request<{ revisionId: string }>) {
     const revision = becca.getRevision(req.params.revisionId);
-
-    if (revision) {
-        const note = revision.getNote();
-
-        getSql().transactional(() => {
-            note.saveRevision({ source: "restore" });
-
-            for (const oldNoteAttachment of note.getAttachments()) {
-                oldNoteAttachment.markAsDeleted();
-            }
-
-            let revisionContent = revision.getContent();
-
-            for (const revisionAttachment of revision.getAttachments()) {
-                const noteAttachment = revisionAttachment.copy();
-                noteAttachment.ownerId = note.noteId;
-                noteAttachment.setContent(revisionAttachment.getContent(), { forceSave: true });
-
-                // content is rewritten to point to the restored revision attachments
-                if (typeof revisionContent === "string") {
-                    revisionContent = revisionContent.replaceAll(`attachments/${revisionAttachment.attachmentId}`, `attachments/${noteAttachment.attachmentId}`);
-                }
-            }
-
-            note.title = revision.title;
-            note.mime = revision.mime;
-            note.type = revision.type;
-            note.setContent(revisionContent, { forceSave: true });
-        });
+    if (!revision) {
+        return;
     }
+    if (revision.source === "fragment") {
+        throw new ValidationError(`Revision '${revision.revisionId}' holds some blocks of its `
+            + "note and cannot be restored.");
+    }
+
+    const note = revision.getNote();
+
+    getSql().transactional(() => {
+        note.saveRevision({ source: "restore" });
+
+        for (const oldNoteAttachment of note.getAttachments()) {
+            oldNoteAttachment.markAsDeleted();
+        }
+
+        const attachmentIds = new Map<string, string>();
+        for (const revisionAttachment of revision.getAttachments()) {
+            const noteAttachment = revisionAttachment.copy();
+            noteAttachment.ownerId = note.noteId;
+            noteAttachment.setContent(revisionAttachment.getContent(), { forceSave: true });
+            if (revisionAttachment.attachmentId && noteAttachment.attachmentId) {
+                attachmentIds.set(revisionAttachment.attachmentId, noteAttachment.attachmentId);
+            }
+        }
+
+        note.title = revision.title;
+        note.mime = revision.mime;
+        note.type = revision.type;
+
+        let content = revision.getContent();
+        if (typeof content === "string") {
+            content = remapAttachmentReferences(content, attachmentIds);
+        }
+        // The links and relations follow the restored content, as after a save.
+        const linked = saveLinks(note, content);
+        note.setContent(linked.content, {
+            forceSave: true, forceFrontendReload: linked.forceFrontendReload
+        });
+    });
+}
+
+/**
+ * Keeps the changes that an editor could not save as a revision of the note, in the format that
+ * they were written in. A repeated request with the same `revisionId` makes one revision.
+ */
+function saveDraftRevision(req: Request<{ noteId: string }>) {
+    const note = becca.getNoteOrThrow(req.params.noteId);
+    const draft = parseDraftRequest(req.body);
+    if (!note.isContentAvailable()) {
+        throw new ValidationError(`Note '${note.noteId}' has no content available.`);
+    }
+
+    const { revisionId } = draft;
+    const existing = becca.getRevision(revisionId);
+    if (existing) {
+        if (existing.noteId !== note.noteId) {
+            throw new ValidationError(`Revision '${revisionId}' belongs to another note.`);
+        }
+        return {
+            revisionId, isKept: true, isFragment: existing.source === "fragment"
+        } satisfies SaveDraftResponse;
+    }
+    if (!note.isVersioned()) {
+        return { revisionId, isKept: false, isFragment: false } satisfies SaveDraftResponse;
+    }
+
+    const { content, isFragment } = getDraftContent(draft);
+    note.saveRevision({
+        revisionId,
+        source: isFragment ? "fragment" : "draft",
+        description: isFragment
+            ? t("revisions.fragment_description")
+            : t("revisions.draft_description"),
+        draft: { content, type: draft.type, mime: draft.mime, attachments: draft.attachments }
+    });
+
+    // `saveRevision()` erases the snapshots beyond the limit of the note at once.
+    return {
+        revisionId, isKept: !!becca.getRevision(revisionId), isFragment
+    } satisfies SaveDraftResponse;
+}
+
+/**
+ * The content of the revision of `draft`. The edited blocks of an excerpt go into the note that
+ * they were read from, as a whole-note draft holds the note that its editor read. Without that
+ * note, or where it does not hold the blocks as they were read, they are the whole revision.
+ */
+function getDraftContent(draft: SaveDraftRequest) {
+    if (!draft.fragment) {
+        return { content: draft.content ?? "", isFragment: false };
+    }
+
+    const { content: fragment, block, base } = draft.fragment;
+    const read = base ? getBlockRangeContent(base.note, block) : null;
+    const content = base && read !== null && hashedBlobId(read) === base.hash
+        ? replaceBlockRangeContent(base.note, block, fragment)
+        : null;
+    return content === null
+        ? { content: fragment, isFragment: true }
+        : { content, isFragment: false };
+}
+
+function parseDraftRequest(body: unknown): SaveDraftRequest {
+    const draft = (body ?? {}) as Partial<SaveDraftRequest>;
+    const { revisionId, type, mime, content, fragment } = draft;
+    const hasContent = typeof content === "string";
+    const hasFragment = typeof fragment?.content === "string" && typeof fragment.block === "string"
+        && (fragment.base === undefined || (typeof fragment.base?.note === "string"
+            && typeof fragment.base.hash === "string"));
+    if (typeof revisionId !== "string" || !REVISION_ID.test(revisionId)
+        || typeof type !== "string" || !isNoteType(type) || typeof mime !== "string"
+        || hasContent === hasFragment) {
+        throw new ValidationError("Expected a 'revisionId', a 'type', a 'mime', "
+            + "and either the 'content' or the 'fragment' of a draft.");
+    }
+    if (draft.attachments !== undefined && !isAttachmentRowList(draft.attachments)) {
+        throw new ValidationError("Expected 'attachments' to be a list of attachments.");
+    }
+    return draft as SaveDraftRequest;
+}
+
+/** The ID of a revision that a client draws, of the characters of the IDs of entities. */
+const REVISION_ID = /^[a-zA-Z0-9_]{1,32}$/;
+
+function isAttachmentRowList(rows: unknown): rows is SavedAttachmentRow[] {
+    return Array.isArray(rows) && rows.every((row: Partial<SavedAttachmentRow> | null) =>
+        typeof row?.title === "string" && typeof row.role === "string"
+        && typeof row.mime === "string" && typeof row.content === "string");
 }
 
 function getEditedNotesOnDate(req: Request) {
@@ -278,5 +390,6 @@ export default {
     eraseAllExcessRevisions,
     eraseRevision,
     restoreRevision,
+    saveDraftRevision,
     updateRevisionDescription
 };

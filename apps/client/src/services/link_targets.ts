@@ -1,12 +1,13 @@
 import type {
-    CreateReferenceRequest, CreateReferenceResponse, NoteReferencesResponse, ReferenceKind,
-    ReferenceParams, ReferenceTarget
+    CreateReferenceRequest, CreateReferenceResponse, NoteReferencesResponse,
+    ReferenceConflictResponse, ReferenceKind, ReferenceParams, ReferenceTarget
 } from "@triliumnext/commons";
 import { encodeBlockParameter } from "@triliumnext/commons/src/lib/block_reference.js";
 
 import appContext from "../components/app_context";
 import froca from "./froca";
 import { t } from "./i18n";
+import { parseConflict } from "./note_save";
 import server from "./server";
 
 /** A place inside a note that a link can point at, such as a heading or an anchor. */
@@ -56,6 +57,12 @@ export const LINK_TARGET_KINDS: Record<ReferenceKind, LinkTargetKind> = {
 const TARGET_PARAMS = [ "block", "bookmark" ];
 
 /**
+ * What `LinkTarget.createReference()` rejects with when the note changed since its targets were
+ * listed: the target picked is then not known for sure, and the targets have to be listed again.
+ */
+export class StaleListingError extends Error {}
+
+/**
  * The targets of the note `noteId` that the server reads, which link to it at `notePath`. A note
  * that is protected outside a protected session has none.
  */
@@ -64,14 +71,16 @@ export async function getLinkTargets(noteId: string, notePath: string): Promise<
         const note = await froca.getNote(noteId);
         if (!note?.isContentAvailable()) return [];
 
-        const { targets } = await server.get<NoteReferencesResponse>(
+        // Saved first, so that the save before a reference leaves the listing as it is.
+        await appContext.triggerEvent("saveNoteChanges", { noteId });
+        const { targets, blobId } = await server.get<NoteReferencesResponse>(
             `notes/${noteId}/references`, undefined, false, { silentBadRequest: true }
         );
         const counts = new Map<ReferenceKind, number>();
         return targets.map((target) => {
             const index = counts.get(target.kind) ?? 0;
             counts.set(target.kind, index + 1);
-            return createNoteTarget(noteId, notePath, target, index);
+            return createNoteTarget(noteId, notePath, target, index, blobId);
         });
     } catch (e) {
         console.error(`Failed to read the link targets of note '${noteId}':`, e);
@@ -80,12 +89,13 @@ export async function getLinkTargets(noteId: string, notePath: string): Promise<
 }
 
 /**
- * The `index`-th target of its kind that the server lists for note `noteId`, which links to it in
- * the note at `notePath`, and which the server gives a reference when it has none.
+ * The `index`-th target of its kind that the server lists for note `noteId` from its blob
+ * `blobId`, which links to it in the note at `notePath`, and which the server gives a reference
+ * when it has none.
  */
 function createNoteTarget(
     noteId: string, notePath: string, { kind, title, level, params }: ReferenceTarget,
-    index: number
+    index: number, blobId: string | undefined
 ): LinkTarget {
     const target: LinkTarget = {
         kind,
@@ -98,11 +108,18 @@ function createNoteTarget(
             // An editor with unsaved changes skips the content the server writes, and its next
             // save would drop the reference.
             await appContext.triggerEvent("saveNoteChanges", { noteId });
-            const request: CreateReferenceRequest = { kind, index, title };
-            const response = await server.postWithSilentErrors<CreateReferenceResponse>(
-                `notes/${noteId}/references`, request
-            );
-            target.params = response.params;
+            const request: CreateReferenceRequest = { kind, index, title, blobId };
+            try {
+                const response = await server.postWithSilentErrors<CreateReferenceResponse>(
+                    `notes/${noteId}/references`, request
+                );
+                target.params = response.params;
+            } catch (e) {
+                if (parseConflict<ReferenceConflictResponse>(e)?.reason === "listing") {
+                    throw new StaleListingError(`The targets of note '${noteId}' changed.`);
+                }
+                throw e;
+            }
         }
     };
     return target;

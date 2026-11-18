@@ -1,4 +1,6 @@
-import { resolveBlockReference } from "@triliumnext/commons/src/lib/block_reference.js";
+import {
+    findOwnElementById, resolveBlockReference
+} from "@triliumnext/commons/src/lib/block_reference.js";
 
 import "../../theme/block_reference.css";
 import { revealCollapsedHeadings } from "../collapsible_headings/collapsible_headings_read_only.js";
@@ -44,12 +46,14 @@ export function showBlocks(first: Element, last: Element) {
 
 /**
  * Scrolls to the element whose `id` is `name` in `container`, such as an anchor, and flashes the
- * block that holds it, as {@link showBlockReference} does. Returns `false` when it is missing.
+ * block that holds it, as {@link showBlockReference} does. One in the content of the note of
+ * `container` comes before one in the content of a note that it embeds. Returns `false` when it is
+ * missing.
  */
 export function showAnchor(container: Element, name: string) {
     // Exact comparison: an anchor name can hold characters that a CSS selector does not allow.
-    const anchor = Array.from(container.querySelectorAll("[id]"))
-        .find((element) => element.id === name);
+    const anchor = findOwnElementById<Element>(container, name)
+        ?? Array.from(container.querySelectorAll("[id]")).find((element) => element.id === name);
     if (anchor) {
         showAnchorElement(anchor);
     }

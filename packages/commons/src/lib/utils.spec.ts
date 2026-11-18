@@ -1,4 +1,7 @@
-import { deferred, escapeHtml, fnv1a, formatLogMessage, Mutex } from "./utils.js";
+import {
+    decodeHtmlEntities, deferred, escapeHtml, fnv1a, formatLogMessage, hasOnlyDecodableReferences,
+    Mutex
+} from "./utils.js";
 import { describe, expect, it } from "vitest";
 
 describe("#deferred", () => {
@@ -110,6 +113,21 @@ describe("#escapeHtml", () => {
             .toBe("&lt;a href=&quot;x&quot;&gt;Tom &amp; &#39;Jerry&#39; &amp;amp;&lt;/a&gt;");
         expect(escapeHtml("plain text = 1/2")).toBe("plain text = 1/2");
         expect(escapeHtml("")).toBe("");
+    });
+});
+
+describe("#decodeHtmlEntities", () => {
+    it("decodes references and basic entities, and keeps those that name no character", () => {
+        expect(decodeHtmlEntities("&amp;&lt;&gt;&quot;&apos;&nbsp;&#65;&#x42;&#X43;&#128512;"))
+            .toBe("&<>\"'\u{a0}ABC\u{1F600}");
+        expect(decodeHtmlEntities("&#x110000; &#xD800; &#0; &#99999999999; &unknown;"))
+            .toBe("&#x110000; &#xD800; &#0; &#99999999999; &unknown;");
+    });
+
+    it("tells whether every numeric reference names a character", () => {
+        expect(hasOnlyDecodableReferences("a&#65;&amp;&unknown;")).toBe(true);
+        expect(hasOnlyDecodableReferences("a&#x110000;")).toBe(false);
+        expect(hasOnlyDecodableReferences("&#xDFFF;")).toBe(false);
     });
 });
 

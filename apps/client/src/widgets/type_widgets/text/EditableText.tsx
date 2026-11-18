@@ -141,13 +141,7 @@ export default function EditableText({
                 return { ...getBlockData(editor, block), ...savedAttachments };
             }
 
-            const content = editor.getData() ?? "";
-            // if content is only tags/whitespace (typically <p>&nbsp;</p>), then just make it empty,
-            // this is important when setting a new note to code
-            return {
-                content: utils.isHtmlEmpty(content) ? "" : content,
-                ...savedAttachments
-            };
+            return { content: getNoteData(editor), ...savedAttachments };
         },
         onContentChange(newContent) {
             attachmentSaves.setNoteId(note?.noteId);
@@ -754,6 +748,16 @@ export function getBlockData(editor: CKTextEditor, block: string) {
         content: editor.getData({ trim: "none" }),
         block: getEditorBlocks(editor, block)
     };
+}
+
+/**
+ * The content of the whole note in `editor`, or `""` when it holds only empty blocks without ids,
+ * which matters when the note becomes a code note. Read untrimmed: CKEditor drops a sole empty
+ * paragraph, which is content when it has a block id.
+ */
+export function getNoteData(editor: CKTextEditor) {
+    const content = editor.getData({ trim: "none" });
+    return utils.isHtmlEmpty(content) ? "" : content;
 }
 
 /**

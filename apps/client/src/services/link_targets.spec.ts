@@ -6,7 +6,7 @@ import { buildNote } from "../test/easy-froca";
 import {
     addParameters, createAnchorTargets, createEditorHeadings, findTarget, getLinkTargets,
     getParentTargets, getTargetAncestors, LINK_TARGET_KINDS, type LinkTarget, nestTargets,
-    splitTargetParameters
+    splitTargetParameters, StaleListingError
 } from "./link_targets";
 import server from "./server";
 
@@ -72,6 +72,27 @@ describe("getLinkTargets", () => {
         expect(post).toHaveBeenLastCalledWith(
             `notes/${note.noteId}/references`, { kind: "heading", index: 2, title: "Usage" }
         );
+    });
+
+    it("saves the note before listing, and refuses a pick from a stale listing", async () => {
+        const note = buildNote({ title: "Stale" });
+        const get = answerReferences({
+            targets: [ { kind: "heading", title: "Status", level: 2 } ], blobId: "listed"
+        });
+        const trigger = vi.spyOn(appContext, "triggerEvent").mockResolvedValue(undefined);
+        const [ status ] = await getLinkTargets(note.noteId, `root/${note.noteId}`);
+        expect(trigger).toHaveBeenCalledExactlyOnceWith("saveNoteChanges", { noteId: note.noteId });
+        expect(trigger.mock.invocationCallOrder[0]).toBeLessThan(get.mock.invocationCallOrder[0]);
+
+        const post = vi.spyOn(server, "postWithSilentErrors")
+            .mockRejectedValueOnce(JSON.stringify({ reason: "listing", message: "Changed" }));
+        await expect(status.createReference?.()).rejects.toBeInstanceOf(StaleListingError);
+        expect(post).toHaveBeenCalledExactlyOnceWith(`notes/${note.noteId}/references`,
+            { kind: "heading", index: 0, title: "Status", blobId: "listed" });
+        expect(status.params).toBeUndefined();
+
+        post.mockRejectedValueOnce(JSON.stringify({ message: "Not found" }));
+        await expect(status.createReference?.()).rejects.not.toBeInstanceOf(StaleListingError);
     });
 
     it("has nothing for a note that the server cannot read, or when the server fails", async () => {

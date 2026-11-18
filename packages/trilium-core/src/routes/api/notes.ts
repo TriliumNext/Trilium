@@ -1,7 +1,10 @@
 import {
-    type AttributeRow, type CreateChildrenResponse, type CreateReferenceRequest,
-    type CreateReferenceResponse, type DeleteNotesPreview, isNoteType, type MetadataResponse,
-    type NoteReferencesResponse, REFERENCE_KINDS, type ReferenceKind
+    type AttributeRow, type BlocksConflictResponse, type CreateChildrenResponse,
+    type CreateReferenceRequest, type CreateReferenceResponse, type DeleteNotesPreview, isNoteType,
+    type MetadataResponse, type NoteBlocksResponse, type NoteSaveBase, REFERENCE_KINDS,
+    type ReferenceKind, type SaveConflictResponse, type SavedAttachmentBase,
+    type SaveNoteBlocksRequest, type SaveNoteBlocksResponse, type SaveNoteDataRequest,
+    type SaveNoteDataResponse
 } from "@triliumnext/commons";
 import { t } from "i18next";
 
@@ -10,7 +13,7 @@ import type { Request } from "../../http_interface";
 import blobService from "../../services/blob";
 import { getBlockRangeContent, replaceBlockRangeContent } from "../../services/block_ranges";
 import eraseService from "../../services/erase.js";
-import { NotFoundError, ValidationError } from "../../errors.js";
+import { DetailedConflictError, NotFoundError, ValidationError } from "../../errors.js";
 import becca from "../../becca/becca.js";
 import type BBranch from "../../becca/entities/bbranch.js";
 import type BNote from "../../becca/entities/bnote.js";
@@ -21,7 +24,7 @@ import { createReference, findReferenceTargets } from "../../services/references
 import { getSql } from "../../services/sql/index";
 import TaskContext from "../../services/task_context.js";
 import treeService from "../../services/tree.js";
-import { randomString } from "../../services/utils/index";
+import { hashedBlobId, randomString } from "../../services/utils/index";
 
 function getNote(req: Request<{ noteId: string }>) {
     return becca.getNoteOrThrow(req.params.noteId);
@@ -105,60 +108,187 @@ function createNote(req: Request) {
     } satisfies CreateChildrenResponse;
 }
 
+/**
+ * Saves the content of a note. With a `base`, the save is refused with 409 when the note has
+ * another format or version, and the answer is what the next save is based on. Without it, the
+ * save is unconditional, with an empty answer.
+ */
 function updateNoteData(req: Request<{ noteId: string }>) {
-    const { content, attachments } = req.body;
+    const { content, attachments, base, keepOther } = req.body as SaveNoteDataRequest;
     const { noteId } = req.params;
+    if (base === undefined) {
+        refuseKeepingWithoutBase(keepOther);
+        noteService.updateNoteData(noteId, content, attachments);
+        return;
+    }
+    if (!isSaveBase(base)) {
+        throw new ValidationError("Expected the 'blobId', the 'type' and the 'mime' of the base.");
+    }
 
-    return noteService.updateNoteData(noteId, content, attachments);
+    const precondition = { base, isKeepingOther: keepOther === true };
+    return answerConflict(() =>
+        noteService.updateNoteData(noteId, content, attachments, precondition));
 }
 
 /** The blocks of a text note that the `block` query parameter points at, to edit apart. */
 function getNoteBlocks(req: Request<{ noteId: string }>) {
-    const { content, block } = getBlockRangeRequest(req);
+    const { note, block } = getBlockRangeRequest(req);
+    const content = getTextContent(note);
     const blocks = getBlockRangeContent(content, block);
     if (blocks === null) {
-        throw new NotFoundError(getBlockRangeError(req.params.noteId, block));
+        throw new NotFoundError(getBlockRangeError(note.noteId, block));
     }
 
-    return { content: blocks };
+    return {
+        content: blocks, hash: hashedBlobId(blocks), note: content
+    } satisfies NoteBlocksResponse;
 }
 
-/** Replaces the blocks of a text note that the `block` query parameter points at. */
+/**
+ * Replaces the blocks of a text note that the `block` query parameter points at. With a `base`,
+ * the save is refused with 409 when the blocks changed since they were read, or can no longer be
+ * saved apart; a change elsewhere in the note goes through.
+ */
 function updateNoteBlocks(req: Request<{ noteId: string }>) {
-    const { content, block } = getBlockRangeRequest(req);
-    const { content: blocks, attachments } = req.body;
+    const { note, block } = getBlockRangeRequest(req);
+    const { content: blocks, attachments, base, keepOther, block: savedBlock } =
+        req.body as SaveNoteBlocksRequest;
     if (typeof blocks !== "string") {
         throw new ValidationError("Missing the content of the blocks.");
     }
 
-    const newContent = replaceBlockRangeContent(content, block, blocks);
-    if (newContent === null) {
-        throw new NotFoundError(getBlockRangeError(req.params.noteId, block));
+    if (base === undefined) {
+        refuseKeepingWithoutBase(keepOther);
+        const newContent = replaceBlockRangeContent(getTextContent(note), block, blocks);
+        if (newContent === null) {
+            throw new NotFoundError(getBlockRangeError(note.noteId, block));
+        }
+        noteService.updateNoteData(note.noteId, newContent, attachments);
+        return;
+    }
+    if (typeof base?.hash !== "string") {
+        throw new ValidationError("Expected the 'hash' of the base.");
     }
 
-    noteService.updateNoteData(req.params.noteId, newContent, attachments);
+    return answerConflict(() => saveBlocksOnBase(note, block, {
+        blocks, attachments, hash: base.hash, isKeepingOther: keepOther === true, savedBlock
+    }));
+}
+
+/**
+ * Saves `blocks` in place of the blocks of `note` that `block` points at, when those are still as
+ * `hash` names them. Throws a {@link DetailedConflictError} otherwise.
+ */
+function saveBlocksOnBase(note: BNote, block: string, save: {
+    blocks: string;
+    attachments: SaveNoteBlocksRequest["attachments"];
+    hash: string;
+    isKeepingOther: boolean;
+    savedBlock: unknown;
+}) {
+    const gone = (reason: "format" | "range") => {
+        const message = getBlockRangeError(note.noteId, block);
+        return new DetailedConflictError<BlocksConflictResponse>(message, { reason, message });
+    };
+    if (note.type !== "text") {
+        throw gone("format");
+    }
+    const content = getTextContent(note);
+    const current = getBlockRangeContent(content, block);
+    const newContent = current === null
+        ? null
+        : replaceBlockRangeContent(content, block, save.blocks);
+    if (current === null || newContent === null) {
+        throw gone("range");
+    }
+
+    const rows = save.attachments ?? [];
+    const changed = (message: string, attachments: SavedAttachmentBase[]) =>
+        new DetailedConflictError<BlocksConflictResponse>(message, {
+            reason: "version", message, hash: hashedBlobId(current), attachments,
+            isVersioned: note.isVersioned()
+        });
+    if (hashedBlobId(current) !== save.hash) {
+        const message =
+            `Blocks '${block}' of note '${note.noteId}' have changed since they were read.`;
+        throw changed(message, noteService.getNamedAttachments(note, rows));
+    }
+
+    // A change outside the blocks goes through: the precondition is the note as it is now, which
+    // still checks the attachment rows.
+    const precondition = {
+        base: { blobId: note.blobId ?? "", type: note.type, mime: note.mime },
+        isKeepingOther: save.isKeepingOther
+    };
+    let saved: SaveNoteDataResponse;
+    try {
+        saved = noteService.updateNoteData(note.noteId, newContent, rows, precondition);
+    } catch (e) {
+        if (e instanceof DetailedConflictError) {
+            const { message, attachments = [] } = e.details as SaveConflictResponse;
+            throw changed(message, attachments);
+        }
+        throw e;
+    }
+    const savedNote = saved.content ?? newContent;
+    const savedBlocks = getBlockRangeContent(
+        savedNote, typeof save.savedBlock === "string" ? save.savedBlock : block
+    );
+    return {
+        hash: savedBlocks === null ? null : hashedBlobId(savedBlocks),
+        note: savedNote,
+        attachments: saved.attachments
+    } satisfies SaveNoteBlocksResponse;
+}
+
+/** Refuses `keepOther` in a save without a base: it would save over a version it never saw. */
+function refuseKeepingWithoutBase(keepOther: unknown) {
+    if (keepOther !== undefined && keepOther !== false) {
+        throw new ValidationError("A save that keeps its version needs the base it is based on.");
+    }
 }
 
 /** The places inside a note that a link can point at, such as its headings and anchors. */
 async function getNoteReferences(req: Request<{ noteId: string }>) {
     const note = becca.getNoteOrThrow(req.params.noteId);
-    return { targets: await findReferenceTargets(note) } satisfies NoteReferencesResponse;
+    return await findReferenceTargets(note);
 }
 
 /** Gives a target of a note a reference, unless it has one, and returns its link parameters. */
 function createNoteReference(req: Request<{ noteId: string }>) {
     const request = parseReferenceRequest(req.body);
     const note = becca.getNoteOrThrow(req.params.noteId);
-    return { params: createReference(note, request) } satisfies CreateReferenceResponse;
+    return answerConflict(() => (
+        { params: createReference(note, request) } satisfies CreateReferenceResponse
+    ));
 }
 
 function parseReferenceRequest(body: unknown): CreateReferenceRequest {
-    const { kind, index, title } = (body ?? {}) as Record<string, unknown>;
+    const { kind, index, title, blobId } = (body ?? {}) as Record<string, unknown>;
     if (!isReferenceKind(kind) || typeof index !== "number" || !Number.isSafeInteger(index)
-        || index < 0 || typeof title !== "string" || !title) {
+        || index < 0 || typeof title !== "string" || !title
+        || (blobId !== undefined && typeof blobId !== "string")) {
         throw new ValidationError("Expected the 'kind', the 'index' and the 'title' of a target.");
     }
-    return { kind, index, title };
+    return { kind, index, title, blobId };
+}
+
+/** The result of `fn`, or the answer of 409 with the details of a {@link DetailedConflictError}. */
+function answerConflict<T>(fn: () => T): T | [number, object] {
+    try {
+        return fn();
+    } catch (e) {
+        if (e instanceof DetailedConflictError) {
+            return [ 409, e.details ];
+        }
+        throw e;
+    }
+}
+
+function isSaveBase(base: unknown): base is NoteSaveBase {
+    const { blobId, type, mime } = (base ?? {}) as Record<string, unknown>;
+    return typeof blobId === "string" && typeof type === "string" && isNoteType(type)
+        && typeof mime === "string";
 }
 
 function isReferenceKind(value: unknown): value is ReferenceKind {
@@ -171,7 +301,7 @@ function getBlockRangeRequest(req: Request<{ noteId: string }>) {
         throw new ValidationError("Missing the 'block' parameter.");
     }
 
-    return { content: getTextContent(becca.getNoteOrThrow(req.params.noteId)), block };
+    return { note: becca.getNoteOrThrow(req.params.noteId), block };
 }
 
 function getBlockRangeError(noteId: string, block: string) {

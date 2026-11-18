@@ -27,6 +27,7 @@ import froca from "../../services/froca";
 import LoadResults from "../../services/load_results";
 import server from "../../services/server";
 import type SpacedUpdate from "../../services/spaced_update";
+import toast from "../../services/toast";
 import { buildNote } from "../../test/easy-froca";
 import { type SavedData, useEditorSpacedUpdate } from "./hooks/editor";
 import { noteSavedDataStore } from "./NoteStore";
@@ -332,6 +333,126 @@ describe("note switch save race (#9614)", () => {
     });
 });
 
+describe("saving over a version that changed elsewhere", () => {
+    let cleanupContainer: HTMLElement | undefined;
+    let showPersistent: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        currentSpacedUpdate = undefined;
+        showPersistent = vi.spyOn(toast, "showPersistent").mockImplementation(() => {});
+        vi.spyOn(toast, "closePersistent").mockImplementation(() => {});
+        server.post = vi.fn(async () => (
+            { revisionId: "kept", isKept: true, isFragment: false }
+        )) as typeof server.post;
+    });
+
+    afterEach(() => {
+        if (cleanupContainer) {
+            render(null, cleanupContainer);
+            cleanupContainer.remove();
+            cleanupContainer = undefined;
+        }
+        vi.restoreAllMocks();
+        vi.useRealTimers();
+    });
+
+    function rejectWithVersionConflict() {
+        const put = vi.fn(async () => {
+            throw JSON.stringify({
+                reason: "version", message: "", blobId: "theirs", type: "text", mime: "text/html",
+                isVersioned: true
+            });
+        });
+        server.put = put as typeof server.put;
+        return put;
+    }
+
+    function getQuestion() {
+        return showPersistent.mock.calls.map(([ options ]) => options)
+            .find((options) => options.id.startsWith("save-conflict-"));
+    }
+
+    it("pauses the save until the user loads the other version, and the window asks", async () => {
+        const harness = setupEditorHarness({ withParent: true });
+        cleanupContainer = harness.container;
+        const { noteA, editor, parent, show } = harness;
+        await show(noteA);
+        const { blobId } = await noteA.getBlob() ?? { blobId: "" };
+        const put = rejectWithVersionConflict();
+        const get = vi.fn(async () => ({ blobId: "theirs", content: "AAA theirs" }));
+        server.get = get as typeof server.get;
+
+        editor.content = "AAA mine";
+        getSpacedUpdate().scheduleUpdate();
+        await vi.advanceTimersByTimeAsync(1500);
+        expect(put).toHaveBeenCalledExactlyOnceWith(`notes/${noteA.noteId}/data`,
+            expect.objectContaining({
+                content: "AAA mine", base: { blobId, type: "text", mime: "text/html" }
+            }), parent?.componentId, { silentConflict: true });
+        expect(getQuestion()).toBeDefined();
+
+        // A conflict is not retried, and stays unsaved for the guard of the window.
+        await vi.advanceTimersByTimeAsync(60_000);
+        expect(put).toHaveBeenCalledOnce();
+        expect(getSpacedUpdate().isAllSavedAndTriggerUpdate()).toBe(false);
+
+        getQuestion()?.buttons?.[1].onClick({ dismissToast: () => {} });
+        await vi.advanceTimersByTimeAsync(20);
+        expect(server.post).toHaveBeenCalledExactlyOnceWith(`notes/${noteA.noteId}/revisions/draft`,
+            expect.objectContaining({ content: "AAA mine", type: "text" }), parent?.componentId);
+        expect(editor.content).toBe("AAA theirs");
+        expect(getSpacedUpdate().isAllSavedAndTriggerUpdate()).toBe(true);
+    });
+
+    it("keeps the changes as a revision once the editor shows another note", async () => {
+        const harness = setupEditorHarness({ withParent: true });
+        cleanupContainer = harness.container;
+        const { noteA, noteB, editor, show } = harness;
+        await show(noteA);
+        rejectWithVersionConflict();
+
+        editor.content = "AAA mine";
+        getSpacedUpdate().scheduleUpdate();
+        await vi.advanceTimersByTimeAsync(1500);
+        expect(getQuestion()).toBeDefined();
+        expect(server.post).not.toHaveBeenCalled();
+
+        await show(noteB);
+        expect(server.post).toHaveBeenCalledExactlyOnceWith(`notes/${noteA.noteId}/revisions/draft`,
+            expect.objectContaining({ content: "AAA mine" }), expect.anything());
+    });
+
+    it("keeps a queued save as a revision when the type of the note changed under it", async () => {
+        const harness = setupEditorHarness({ withParent: true });
+        cleanupContainer = harness.container;
+        const { noteA, editor, show, putsTo } = harness;
+        await show(noteA);
+        const post = vi.fn()
+            .mockRejectedValueOnce(new Error("offline"))
+            .mockResolvedValue({ revisionId: "kept", isKept: true, isFragment: false });
+        server.post = post as typeof server.post;
+
+        editor.content = "AAA edited";
+        getSpacedUpdate().scheduleUpdate();
+        // The note is converted elsewhere, and the conversion reaches the client first.
+        noteA.type = "code";
+        noteA.mime = "text/x-markdown";
+        await vi.advanceTimersByTimeAsync(1500);
+        expect(putsTo(noteA)).toEqual([]);
+        expect(post).toHaveBeenCalledOnce();
+        // The draft leaves the queue only once the server has kept it.
+        expect(getSpacedUpdate().hasUnsavedChanges()).toBe(true);
+
+        await vi.advanceTimersByTimeAsync(5000);
+        expect(post).toHaveBeenCalledTimes(2);
+        expect(post).toHaveBeenLastCalledWith(`notes/${noteA.noteId}/revisions/draft`,
+            expect.objectContaining({ content: "AAA edited", type: "text", mime: "text/html" }),
+            expect.anything());
+        expect(getSpacedUpdate().hasUnsavedChanges()).toBe(false);
+    });
+});
+
 describe("editing some blocks of a note", () => {
     beforeEach(() => {
         vi.useFakeTimers();
@@ -346,21 +467,22 @@ describe("editing some blocks of a note", () => {
     it("reads and replaces the blocks, then the blocks that the last save held", async () => {
         const note = buildNote({ title: "Blocks", type: "text", content: "<p>Whole</p>" });
         const read = vi.spyOn(server, "getWithSilentNotFound")
-            .mockImplementation(async (url: string) => ({ content: `<p>${url}</p>` }));
-        const put = vi.spyOn(server, "put").mockResolvedValue({});
+            .mockImplementation(async (url: string) => ({ content: `<p>${url}</p>`, hash: url }));
+        const put = vi.spyOn(server, "put").mockResolvedValue({ hash: "saved", attachments: [] });
         const { editor, parent, cleanup } = await showBlockEditor(note, "a:b");
         const url = `notes/${note.noteId}/blocks`;
 
         expect(editor.content).toBe(`<p>${url}?block=a%3Ab</p>`);
         expect(noteSavedDataStore.get(note.noteId)).toBeUndefined();
 
+        // Each save is based on the hash of the blocks as read, and names the blocks it leaves.
         editor.content = "<p>Edited</p>";
         editor.block = "a:n";
         getSpacedUpdate().scheduleUpdate();
         await vi.advanceTimersByTimeAsync(1500);
-        expect(put).toHaveBeenLastCalledWith(
-            `${url}?block=a%3Ab`, { content: "<p>Edited</p>" }, parent.componentId
-        );
+        expect(put).toHaveBeenLastCalledWith(`${url}?block=a%3Ab`, {
+            content: "<p>Edited</p>", base: { hash: `${url}?block=a%3Ab` }, block: "a:n"
+        }, parent.componentId, { silentConflict: true });
         expect(noteSavedDataStore.get(note.noteId)).toBeUndefined();
 
         const loadResults = new LoadResults([]);
@@ -376,9 +498,9 @@ describe("editing some blocks of a note", () => {
         editor.block = undefined;
         getSpacedUpdate().scheduleUpdate();
         await vi.advanceTimersByTimeAsync(1500);
-        expect(put).toHaveBeenLastCalledWith(
-            `${url}?block=a%3An`, { content: "<p>Edited again</p>" }, parent.componentId
-        );
+        expect(put).toHaveBeenLastCalledWith(`${url}?block=a%3An`, {
+            content: "<p>Edited again</p>", base: { hash: `${url}?block=a%3An` }
+        }, parent.componentId, { silentConflict: true });
         cleanup();
     });
 

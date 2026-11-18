@@ -1,4 +1,6 @@
-import { resolveBlockReference } from "@triliumnext/commons/src/lib/block_reference.js";
+import {
+    getContentScopes, resolveBlockReference
+} from "@triliumnext/commons/src/lib/block_reference.js";
 import { ALLOWED_PROTOCOLS } from "@triliumnext/commons/src/lib/shared_constants.js";
 
 import appContext from "../components/app_context.js";
@@ -365,14 +367,24 @@ export interface BlockJump {
 function getBlockJump(
     $link: JQuery<HTMLElement>, noteId: string | null, block: string
 ): BlockJump | null {
-    const content = $link.closest(".ck-content")[0];
+    // The content of the note in the split, around the embeds that the link can be in.
+    const page = $link.parents(".ck-content").last()[0];
     const ntxId = $link.closest("[data-ntx-id]").attr("data-ntx-id");
-    if (!content || !ntxId || appContext.tabManager.getNoteContextById(ntxId).noteId !== noteId) {
+    if (!page || !ntxId || !noteId) {
+        return null;
+    }
+
+    // The innermost scope that shows the note: the embed that holds the link, one around it, or
+    // the note of the split.
+    const pageNoteId = appContext.tabManager.getNoteContextById(ntxId).noteId;
+    const scope = getContentScopes<Element>($link[0], page)
+        .find((candidate) => (candidate.noteId ?? pageNoteId) === noteId);
+    if (!scope) {
         return null;
     }
 
     // A broken range is left to the note context, which also shows the error.
-    const { start, end } = resolveBlockReference<Element>(content, block);
+    const { start, end } = resolveBlockReference<Element>(scope.root, block);
     if (!start || !end) {
         return null;
     }
@@ -380,7 +392,7 @@ function getBlockJump(
     return {
         isHeading: start === end && /^H[1-6]$/.test(start.tagName),
         show: () => void loadBlockJump()
-            .then(({ showBlockReference }) => showBlockReference(content, block))
+            .then(({ showBlockReference }) => showBlockReference(scope.root, block))
     };
 }
 

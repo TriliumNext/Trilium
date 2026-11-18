@@ -2,6 +2,7 @@ import {
     revealCollapsedHeadings
 } from "@triliumnext/ckeditor5/src/plugins/collapsible_headings/collapsible_headings_read_only.js";
 import { revealTab } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
+import { findOwnElementById } from "@triliumnext/commons/src/lib/block_reference.js";
 
 import { expandAncestorDetails } from "./collapsible.js";
 import type { ViewScope } from "./link.js";
@@ -21,9 +22,11 @@ export function consumeBookmark(container: ParentNode | null | undefined, viewSc
     }
 
     // Exact id comparison rather than an interpolated attribute selector, because bookmark names
-    // are user text and can contain quotes or brackets that break CSS selector parsing.
+    // are user text and can contain quotes or brackets that break CSS selector parsing. One in the
+    // content of the note comes before one in the content of a note that it embeds.
     const bookmark = viewScope.bookmark;
-    const el = [...container.querySelectorAll("[id]")].find((candidate) => candidate.id === bookmark);
+    const el = findOwnElementById<Element>(container, bookmark)
+        ?? [...container.querySelectorAll("[id]")].find((candidate) => candidate.id === bookmark);
     if (el) {
         revealElement(el);
         el.scrollIntoView({ behavior: "smooth", block: "center" });

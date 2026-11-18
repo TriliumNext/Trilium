@@ -6,32 +6,37 @@ import VanillaCodeMirror from "@triliumnext/codemirror";
 import {
     findWikilinkNoteIds, triliumNoteChips
 } from "@triliumnext/codemirror/src/extensions/trilium_note_chips";
+import { stripBlockMarkers } from "@triliumnext/commons/src/lib/block_reference";
 import {
     CustomMarkdownRenderer, renderToHtml
 } from "@triliumnext/commons/src/lib/markdown_renderer";
 import {
-    createLiteralTildeExtension, createTabsExtensions
+    createBlockMarkerExtensions, createLiteralTildeExtension, createTabsExtensions
 } from "@triliumnext/commons/src/lib/marked_extensions";
 import DOMPurify from "dompurify";
 import { Marked, type Token, type Tokens } from "marked";
-import { createContext } from "preact";
-import { useCallback, useContext, useEffect, useMemo, useState } from "preact/hooks";
+import { createContext, type RefObject } from "preact";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
 import NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
+import { consumeBlockReference } from "../../../services/block_reference";
+import { consumeBookmark } from "../../../services/bookmark_jump";
 import keyboard_actions from "../../../services/keyboard_actions";
 import note_create from "../../../services/note_create";
 import { removeIndividualBinding } from "../../../services/shortcuts";
 import { isDesktop } from "../../../services/utils";
 import { useTriliumEvent } from "../../react/hooks/events";
 import { useLegacyImperativeHandlers } from "../../react/hooks/legacy";
+import { useSameNoteSwitch } from "../../react/hooks/note_context";
 import {
     extractHighlightsFromStaticHtml, type RawHighlight
 } from "../../sidebar/highlights_extract";
 import SplitEditor from "../helpers/SplitEditor";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText";
 import { TypeWidgetProps } from "../type_widget";
+import { revealInSource, useBlockMarkers } from "./block_markers";
 import {
     insertDateTime, insertText, replaceSelection, resolveWikilinkChip, showEditLinkDialog,
     showIncludeNoteDialog, uploadImageAndInsert
@@ -41,7 +46,11 @@ const marked = new Marked({ breaks: true, gfm: true });
 // Headings in the outline are rendered by this instance rather than by `renderToHtml`, so it needs
 // the same single-tilde handling to stay consistent with the preview body. `renderWithSourceLines`
 // pairs its top-level tokens with the rendered blocks, so it also needs every block extension.
-marked.use({ extensions: [createLiteralTildeExtension(), ...createTabsExtensions()] });
+marked.use({
+    extensions: [
+        ...createBlockMarkerExtensions(), createLiteralTildeExtension(), ...createTabsExtensions()
+    ]
+});
 
 /**
  * The default {@link CustomMarkdownRenderer} falls back to
@@ -56,7 +65,7 @@ class MarkdownPreviewRenderer extends CustomMarkdownRenderer {
     override code(token: Tokens.Code): string {
         const html = super.code(token);
         if (token.lang) return html;
-        return html.replace('<code class="language-text-x-trilium-auto">', `<code class="language-text-plain">`);
+        return html.replace(`class="language-text-x-trilium-auto"`, `class="language-text-plain"`);
     }
 }
 
@@ -92,6 +101,19 @@ export default function Markdown(props: TypeWidgetProps) {
     const [ editorView, setEditorView ] = useState<VanillaCodeMirror | null>(null);
     const [ previewEl, setPreviewEl ] = useState<HTMLDivElement | null>(null);
     const { html, headings, highlights } = useMemo(() => renderWithSourceLines(content), [ content ]);
+    // The note whose content `content` is: an editor reused for another note keeps the content
+    // of the previous one until the new one loads.
+    const contentNoteIdRef = useRef<string | undefined>(undefined);
+    const onContentChanged = useCallback((text: string) => {
+        contentNoteIdRef.current = props.note.noteId;
+        setContent(text);
+    }, [ props.note.noteId ]);
+    const recordHooks = useBlockMarkers(editorView, {
+        getNote: () => props.note,
+        getNotePath: () => props.noteContext?.notePath,
+        getPreview: () => previewEl
+    });
+    useRevealLinkTarget(props, editorView, previewEl, html, contentNoteIdRef);
 
     // Bind text-detail shortcuts (e.g. Ctrl+L for the edit link dialog) to CodeMirror's contentDOM,
     // since the outer `dom` only receives events after CodeMirror has already handled them.
@@ -113,7 +135,10 @@ export default function Markdown(props: TypeWidgetProps) {
     usePublishToc(props.noteContext, editorView, previewEl, headings, props.note);
     usePublishHighlights(props.noteContext, editorView, previewEl, highlights, props.note);
     useImageDrop(props.note, editorView);
-    useTextCommands(editorView);
+    useTextCommands(editorView, () => ({
+        noteId: props.note.noteId,
+        notePath: props.noteContext?.notePath ?? props.note.getBestNotePathString()
+    }));
     useNoteLinkChips(editorView);
     useMarkdownKeymap(editorView);
 
@@ -128,7 +153,10 @@ export default function Markdown(props: TypeWidgetProps) {
                 noteType="code"
                 {...props}
                 editorRef={setEditorView}
-                onContentChanged={setContent}
+                onContentChanged={onContentChanged}
+                onDataTaken={recordHooks.onDataTaken}
+                dataSaved={recordHooks.dataSaved}
+                resolveConflict={recordHooks.resolveConflict}
                 previewContent={<MarkdownPreview ntxId={props.ntxId} />}
                 forceOrientation={isDesktop() ? "horizontal" : "vertical"}
                 allowKeyboardSuggestions
@@ -149,6 +177,49 @@ function MarkdownPreview({ ntxId }: { ntxId: TypeWidgetProps["ntxId"] }) {
         />
     );
 }
+
+//#region Link targets
+/**
+ * Scrolls to the blocks or the anchor that a link to the note points at, once the editor or the
+ * preview holds the content of the note: in the source, highlighting its lines; in the preview,
+ * flashing the blocks; in a split, the source scrolls first, and the preview reveals the target a
+ * frame later, once it has followed.
+ */
+function useRevealLinkTarget(
+    { note, noteContext, ntxId, isVisible }: TypeWidgetProps,
+    editorView: VanillaCodeMirror | null,
+    previewEl: HTMLDivElement | null,
+    html: string,
+    contentNoteIdRef: RefObject<string | undefined>
+) {
+    const reveal = useCallback(() => {
+        const viewScope = noteContext?.viewScope;
+        if (!viewScope || (!viewScope.block && !viewScope.bookmark)
+            || contentNoteIdRef.current !== note.noteId) {
+            return;
+        }
+
+        const isPreviewShown = !!previewEl?.clientHeight;
+        if (editorView?.scrollDOM.clientHeight) {
+            revealInSource(editorView, viewScope, {
+                isFlashed: !isPreviewShown, isConsumed: !isPreviewShown
+            });
+        }
+        if (previewEl && isPreviewShown) {
+            requestAnimationFrame(() => {
+                consumeBookmark(previewEl, viewScope);
+                consumeBlockReference(previewEl, viewScope);
+            });
+        }
+    }, [ editorView, previewEl, noteContext, note.noteId, contentNoteIdRef ]);
+
+    useEffect(reveal, [ html, reveal ]);
+    // A hidden widget leaves the link target to the one on display.
+    useSameNoteSwitch(note, ntxId, () => {
+        if (isVisible !== false) reveal();
+    });
+}
+//#endregion
 
 //#region Table of contents
 /**
@@ -388,10 +459,13 @@ export function findActiveBlock(blocks: ArrayLike<HTMLElement>, activeLine: numb
  * - Add Link (Ctrl+L): opens the edit link dialog, inserts markdown link syntax
  * - Insert Date/Time (Alt+T): inserts a formatted date/time string
  */
-function useTextCommands(editorView: VanillaCodeMirror | null) {
+function useTextCommands(
+    editorView: VanillaCodeMirror | null,
+    getOwnNote: () => { noteId: string; notePath: string }
+) {
     useLegacyImperativeHandlers({
         addLinkToTextCommand() {
-            if (editorView) showEditLinkDialog(editorView);
+            if (editorView) showEditLinkDialog(editorView, getOwnNote());
         },
 
         insertDateTimeToTextCommand() {
@@ -412,7 +486,7 @@ function useTextCommands(editorView: VanillaCodeMirror | null) {
 
             // Extract first heading as title, if present.
             const headingMatch = selectedText.match(/^(#{1,6})\s+(.+)$/m);
-            const title = headingMatch ? headingMatch[2].trim() : null;
+            const title = headingMatch ? stripBlockMarkers(headingMatch[2]).trim() : null;
             const content = headingMatch
                 ? selectedText.replace(headingMatch[0], "").trim()
                 : selectedText;
@@ -619,7 +693,7 @@ function useImageDrop(note: FNote, editorView: VanillaCodeMirror | null) {
 //#endregion
 
 /** Token types the parser emits but which don't produce top-level block HTML. */
-const NON_RENDERED_TOKENS = new Set([ "space", "def" ]);
+const NON_RENDERED_TOKENS = new Set([ "space", "def", "blockMarkerLine" ]);
 
 /**
  * Render markdown and tag each top-level block with its 1-indexed source line,
@@ -640,7 +714,7 @@ export function renderWithSourceLines(src: string): { html: string; headings: Ma
         line += countNewlines(token.raw);
         if (token.type === "heading") {
             const rawText = token.text ?? "";
-            const inlineHtml = DOMPurify.sanitize(marked.parseInline(rawText) as string);
+            const inlineHtml = DOMPurify.sanitize(marked.parseInline(rawText) as string).trim();
             headings.push({
                 id: `md-heading-${headingIdx++}`,
                 level: (token as { depth: number }).depth,

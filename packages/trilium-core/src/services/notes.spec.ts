@@ -528,6 +528,36 @@ describe("notes service (real DB)", () => {
                 .toEqual([ heading.note.noteId, whole.note.noteId ].sort());
         });
 
+        it("relates a Markdown note to the notes its embeds show, read as the note renders", () => {
+            const targets = Array.from({ length: 4 }, (_, index) =>
+                createNote("root", { title: `spec-md-embed-target-${index}` }).note.noteId);
+            const fenced = createNote("root", { title: "spec-md-embed-fenced" }).note.noteId;
+            const commented = createNote("root", { title: "spec-md-embed-commented" }).note.noteId;
+            const source = createNote("root", {
+                title: "spec-md-embed-source", type: "code", mime: "text/x-markdown", content: ""
+            });
+            const relations = () => source.note.getRelations()
+                .filter((relation) => relation.name === "includeNoteLink")
+                .map((relation) => relation.value)
+                .sort();
+
+            const content = [
+                `<figure class="include-note" data-note-id="${targets[0]}" data-block="a:b"></figure>`,
+                `<figure data-note-id="${targets[1]}" class="include-note"></figure>`,
+                `<figure class="include&#45;note" data-note-id="${targets[2]}"></figure>`,
+                `<div class="include-note" DATA-NOTE-ID="${targets[3]}"></div>`,
+                "```",
+                `<figure class="include-note" data-note-id="${fenced}"></figure>`,
+                "```",
+                `<!-- <figure class="include-note" data-note-id="${commented}"></figure> -->`
+            ].join("\n\n");
+            getContext().init(() => saveLinks(source.note, content));
+            expect(relations()).toEqual([ ...targets ].sort());
+
+            getContext().init(() => saveLinks(source.note, "No embeds left."));
+            expect(relations()).toEqual([]);
+        });
+
         it("removes link relations that are no longer present in the content", () => {
             const target = createNote("root", { title: "spec-unused-target" });
             const source = createNote("root", { title: "spec-unused-source" });

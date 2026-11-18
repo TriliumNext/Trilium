@@ -7,7 +7,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 
 import { t } from "../../services/i18n";
 import {
-    getLinkTargets, getTargetAncestors, LINK_TARGET_KINDS, type LinkTarget
+    getLinkTargets, getTargetAncestors, LINK_TARGET_KINDS, type LinkTarget, StaleListingError
 } from "../../services/link_targets";
 import { getNoteIdFromUrl } from "../../services/navigation_state";
 import toast from "../../services/toast";
@@ -379,6 +379,10 @@ function getTargetLinkPath(target: LinkTarget): string | Promise<string | undefi
     if (!target.createReference || target.params) return target.createLinkPath();
 
     return target.createReference().then(() => target.createLinkPath(), (e: unknown) => {
+        if (e instanceof StaleListingError) {
+            toast.showError(t("add_link.listing_changed"));
+            return undefined;
+        }
         console.error("Failed to create a reference to the target:", e);
         toast.showError(t("add_link.heading_reference_failed"));
         return undefined;

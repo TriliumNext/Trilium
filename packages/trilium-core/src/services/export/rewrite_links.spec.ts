@@ -125,6 +125,16 @@ describe("rewriteMarkdownContentLinks", () => {
             expect(rewriteMarkdownContentLinks(content, noteMeta, nullNoteUrl))
                 .toBe(content);
         });
+
+        it("keeps the blocks and the bookmark that the link points at", () => {
+            const content = "[a](#root/abc123/def456?block=x:y)"
+                + " [b](#root/def456?viewMode=source&bookmark=Set%20up&block=z)"
+                + " [c](#root/def456?ntxId=1)";
+            const getNoteTargetUrl = (noteId: string) => noteId === "def456" ? "Other.md" : null;
+
+            expect(rewriteMarkdownContentLinks(content, buildNoteMeta([]), getNoteTargetUrl)).toBe(
+                "[a](Other.md?block=x:y) [b](Other.md?block=z&bookmark=Set%20up) [c](Other.md)");
+        });
     });
 
     describe("attachment download links", () => {

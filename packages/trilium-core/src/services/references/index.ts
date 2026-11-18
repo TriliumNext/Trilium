@@ -1,9 +1,11 @@
 import type {
-    CreateReferenceRequest, ReferenceParams, ReferenceTarget
+    CreateReferenceRequest, NoteReferencesResponse, ReferenceConflictResponse, ReferenceParams,
+    ReferenceTarget
 } from "@triliumnext/commons";
 
 import type BNote from "../../becca/entities/bnote.js";
-import { ConflictError, ValidationError } from "../../errors.js";
+import { ConflictError, DetailedConflictError, ValidationError } from "../../errors.js";
+import markdownReferences from "./markdown.js";
 import textReferences from "./text.js";
 
 /**
@@ -32,7 +34,7 @@ export interface CreatedReference {
 }
 
 /** The first provider whose `isFor()` accepts a note reads it. */
-let providers: ReferenceProvider[] = [ textReferences ];
+let providers: ReferenceProvider[] = [ textReferences, markdownReferences ];
 
 /** Adds a provider that an app brings, such as one built on a parser that needs Node. */
 export function registerReferenceProvider(provider: ReferenceProvider) {
@@ -44,25 +46,30 @@ export function unregisterReferenceProvider(provider: ReferenceProvider) {
 }
 
 /**
- * The targets of `note`, none when no provider reads it. A target without `params` is left out
- * when its provider cannot create references, or when the content of `note` cannot be saved.
+ * The targets of `note`, none when no provider reads it, and the blob that they were read from. A
+ * target without `params` is left out when its provider cannot create references, or when the
+ * content of `note` cannot be saved.
  */
-export async function findReferenceTargets(note: BNote): Promise<ReferenceTarget[]> {
+export async function findReferenceTargets(note: BNote): Promise<NoteReferencesResponse> {
     const provider = getProvider(note);
     if (!provider) {
-        return [];
+        return { targets: [] };
     }
 
+    // The blob is read together with the content, before the provider can wait.
+    const { blobId } = note;
     const targets = await provider.findTargets(getContent(note));
     if (provider.createReference && note.isContentWritable()) {
-        return targets;
+        return { targets, blobId };
     }
-    return targets.filter((target) => target.params);
+    return { targets: targets.filter((target) => target.params), blobId };
 }
 
 /**
  * Gives the target of `note` that `request` names a reference, unless it has one, and returns the
- * link parameters of the target. Read-only notes get it too: a reference is invisible.
+ * link parameters of the target. Read-only notes get it too: a reference is invisible. A request
+ * picked from a listing of another blob is refused: neither the index nor the title shows which
+ * target was picked.
  */
 export function createReference(note: BNote, request: CreateReferenceRequest) {
     const provider = getProvider(note);
@@ -71,6 +78,12 @@ export function createReference(note: BNote, request: CreateReferenceRequest) {
     }
     if (!note.isContentWritable()) {
         throw new ValidationError(`The content of note '${note.noteId}' cannot be changed.`);
+    }
+    if (request.blobId !== undefined && request.blobId !== note.blobId) {
+        const message = `The targets of note '${note.noteId}' changed since they were listed.`;
+        throw new DetailedConflictError<ReferenceConflictResponse>(message, {
+            reason: "listing", message
+        });
     }
 
     const content = getContent(note);

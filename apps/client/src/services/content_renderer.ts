@@ -4,7 +4,9 @@ import type { BoxSize, TextRepresentationResponse } from "@triliumnext/commons";
 import {
     attachmentIcon, isImageAttachmentRole
 } from "@triliumnext/commons/src/lib/attachment_roles.js";
-import { getEditableBlockRun } from "@triliumnext/commons/src/lib/block_reference.js";
+import {
+    getEditableBlockRun, sliceToBlockReference
+} from "@triliumnext/commons/src/lib/block_reference.js";
 import { hasCompactContent } from "@triliumnext/commons/src/lib/content_embeds.js";
 import { isAcceptedImageMime } from "@triliumnext/commons/src/lib/image_mimes.js";
 import { getMimeTypeFromFileName } from "@triliumnext/commons/src/lib/mime_type.js";
@@ -187,6 +189,16 @@ export interface NoteEditor {
     getSaveState(noteId: string): SaveState | undefined;
     /** Calls `listener` when the save state of a note changes, until the returned call. */
     subscribeSaveState(listener: () => void): () => void;
+    /**
+     * Takes the blob `blobId`, which holds `content`, as the version of the note `noteId` that the
+     * content shows: the next change to the note is based on it.
+     */
+    setLoadedVersion?(noteId: string, blobId: string, content: string): void;
+    /**
+     * Saves the changes to the note `noteId` now. Resolves to its content as saved, or `undefined`
+     * while changes wait.
+     */
+    saveNow?(noteId: string): Promise<string | undefined>;
 }
 
 
@@ -404,7 +416,8 @@ function isEditableBlockRange(content: string, block: string) {
  * the user sees in the Markdown note type's preview pane.
  */
 async function renderMarkdown(note: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>, options: RenderOptions) {
-    if (options.hasDisplayModes) {
+    // An excerpt of Markdown is never edited in place, so it shows only its blocks.
+    if (options.hasDisplayModes && options.block === undefined) {
         await renderMarkdownEmbed(note, $renderedContent, options);
         return;
     }
@@ -412,7 +425,7 @@ async function renderMarkdown(note: FNote | FAttachment, $renderedContent: JQuer
     const blob = await note.getBlob();
     const source = blob?.content ?? "";
 
-    if (!source.trim()) {
+    if (!source.trim() && options.block === undefined) {
         if (note instanceof FNote && !options.noChildrenList) {
             await renderChildrenList($renderedContent, note, options.includeArchivedNotes ?? false);
         }
@@ -424,7 +437,19 @@ async function renderMarkdown(note: FNote | FAttachment, $renderedContent: JQuer
         sanitize: (dirty) => DOMPurify.sanitize(dirty),
         wikiLink: { formatHref: (id) => `#root/${id}` }
     });
-    $renderedContent.append($('<div class="ck-content">').html(html));
+    const $content = $('<div class="ck-content">').html(html);
+    // Sliced before the embeds render, which hold the blocks of other notes.
+    if (options.block !== undefined && !sliceToBlockReference($content[0], options.block)) {
+        $renderedContent.append($("<p>")
+            .addClass("block-reference-broken")
+            .text(t("block_reference.broken")));
+        return;
+    }
+    if (options.highlightBlock) {
+        const { highlightBlockReference } = await import("./block_reference.js");
+        highlightBlockReference($content[0], options.highlightBlock);
+    }
+    $renderedContent.append($content);
     await postProcessRichContent(note, $renderedContent, options);
 }
 
@@ -597,6 +622,10 @@ export interface ContentEditor {
     subscribeSaveState?(listener: () => void): () => void;
     /** The undo history that the content shares with the text note that shows it. */
     history?: ContentHistory;
+    /** As {@link NoteEditor.setLoadedVersion}, for content that shows a note. */
+    setLoadedVersion?(blobId: string, content: string): void;
+    /** As {@link NoteEditor.saveNow}, for content that shows a note. */
+    saveNow?(): Promise<string | undefined>;
 }
 
 /** `editor`, saving the changes to `attachment`. */
@@ -639,7 +668,10 @@ function getContentEditor(
         subscribeSaveState: (listener) => editor.subscribeSaveState(listener),
         history: options.histories?.get(entity.noteId, (text) => {
             editor.scheduleSave(entity, () => text);
-        })
+        }),
+        setLoadedVersion: (blobId, content) =>
+            editor.setLoadedVersion?.(entity.noteId, blobId, content),
+        saveNow: async () => await editor.saveNow?.(entity.noteId)
     } : undefined;
 }
 

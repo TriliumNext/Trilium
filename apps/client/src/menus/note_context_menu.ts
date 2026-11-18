@@ -86,6 +86,7 @@ export async function buildNoteContextMenuItems(
     const hasCellSelection = tableSections !== null && await hasTableCellSelection(target.element);
     const blockReferenceItems = target.isEditable
         ? await buildBlockReferenceMenuItems(target.element, host.paste)
+            ?? await buildMarkdownReferenceMenuItems(target.element, host.paste)
         : null;
     const codeEditorItems = target.isEditable
         ? await buildCodeEditorContextMenuItems(target.element)
@@ -267,6 +268,23 @@ export async function getSelectedHtmlForMarkdown(): Promise<string> {
     const div = document.createElement("div");
     div.appendChild(range.cloneContents());
     return div.innerHTML;
+}
+
+/**
+ * The block reference rows of the editor of a Markdown note that holds `element`. The module that
+ * builds them loads only for a click in a code editor.
+ */
+async function buildMarkdownReferenceMenuItems(
+    element: Element | null | undefined,
+    clipboard: ContextMenuHost["paste"]
+) {
+    if (!element?.closest(".cm-editor")) {
+        return null;
+    }
+    const { buildMarkdownReferenceMenuItems: build } = await import(
+        "../widgets/type_widgets/markdown/block_reference_menu.js"
+    );
+    return build(element, clipboard);
 }
 
 /** Shows the menu for `target` at (`x`, `y`) in the page, as `browser_context_menu.ts` asks. */

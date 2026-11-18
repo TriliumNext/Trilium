@@ -3,7 +3,7 @@ import { CONTENT_RENDERER_GROUPS } from "@triliumnext/commons/src/lib/notes.js";
 import { h, render, VNode } from "preact";
 import { useLayoutEffect } from "preact/hooks";
 import { act } from "preact/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 // --- Mock heavy / side-effecting collaborators BEFORE importing the SUT. ---
 // content_renderer_text: renderText / postProcessRichContent / renderChildrenList
@@ -349,6 +349,36 @@ describe("getRenderedContent dispatch", () => {
         const opts = renderToHtml.mock.calls[0][2] as any;
         expect(opts.wikiLink.formatHref("abc")).toBe("#root/abc");
         expect(opts.sanitize("<b>x</b>")).toBe("<b>x</b>");
+    });
+
+    it("renders only the blocks of a Markdown excerpt, or says it is broken", async () => {
+        const blocks = `<p data-trilium-block-id="a">A</p><p data-trilium-block-id="b">B</p>`
+            + `<p data-trilium-block-id="c">C</p>`;
+        renderToHtml.mockImplementation((source: string) => (source ? blocks : ""));
+        onTestFinished(() => {
+            renderToHtml.mockImplementation((...args: unknown[]) => `<p>${String(args[0])}</p>`);
+        });
+        const note = buildNote({ title: "Doc", type: "code", content: "source" });
+        note.mime = "text/x-markdown";
+
+        const { $renderedContent } = await getRenderedContent(note, {
+            block: "b:c", hasDisplayModes: true, highlightBlock: "c"
+        });
+        const ids = $renderedContent.find("[data-trilium-block-id]").toArray()
+            .map((element) => element.getAttribute("data-trilium-block-id"));
+        expect(ids).toEqual([ "b", "c" ]);
+        expect(markdownEmbedComponent).not.toHaveBeenCalled();
+        expect($renderedContent.find(".block-reference-highlight").length).toBe(1);
+
+        const broken = await getRenderedContent(note, { block: "a:gone" });
+        expect(broken.$renderedContent.find(".block-reference-broken").length).toBe(1);
+        expect(broken.$renderedContent.find(".ck-content").length).toBe(0);
+
+        const empty = buildNote({ title: "Empty", type: "code", content: "" });
+        empty.mime = "text/x-markdown";
+        const emptyExcerpt = await getRenderedContent(empty, { block: "a" });
+        expect(emptyExcerpt.$renderedContent.find(".block-reference-broken").length).toBe(1);
+        expect(renderChildrenList).not.toHaveBeenCalled();
     });
 
     it("treats a markdown note with a null blob as empty", async () => {

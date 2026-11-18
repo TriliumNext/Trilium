@@ -2,6 +2,7 @@ import { h, render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import appContext from "../../../components/app_context";
 import Component from "../../../components/component";
 import type NoteContext from "../../../components/note_context";
 import type FAttachment from "../../../entities/fattachment";
@@ -9,6 +10,9 @@ import type FNote from "../../../entities/fnote";
 import {
     type AttachmentEditor, bindAttachmentEditor, type NoteEditor
 } from "../../../services/content_renderer";
+import { recordReplacedBlob } from "../../../services/note_save";
+import server from "../../../services/server";
+import toast from "../../../services/toast";
 import { ParentComponent } from "../../react/react_utils";
 import AttachmentSaves, {
     InlineSourceSaves, NoteSaves, useAttachmentEditor, useNoteEditor
@@ -71,6 +75,21 @@ describe("AttachmentSaves", () => {
             mime: "application/vnd.excalidraw+json",
             title: "Canvas.excalidraw",
             content: "second"
+        } ]);
+    });
+
+    it("keeps the blob that the attachment had at the first change that is not saved", () => {
+        const { saves } = setUp();
+
+        saves.scheduleSave({ ...drawing, blobId: "read" } as FAttachment, () => "first");
+        saves.scheduleSave({ ...drawing, blobId: "newer" } as FAttachment, () => "second");
+        expect(saves.collect()).toStrictEqual([ {
+            attachmentId: "drawing1",
+            role: "file",
+            mime: "application/vnd.excalidraw+json",
+            title: "Canvas.excalidraw",
+            content: "second",
+            blobId: "read"
         } ]);
     });
 
@@ -371,6 +390,90 @@ describe("useNoteEditor", () => {
         expect(serverPut).toHaveBeenCalledTimes(2);
         expect(serverPut).toHaveBeenLastCalledWith(
             "notes/code1/data", { content: "second" }, component.componentId);
+    });
+
+    it("bases a note on its blob at its first change, and loads another version", async () => {
+        component = new Component();
+        const container = document.createElement("div");
+        await act(() => {
+            render(h(ParentComponent.Provider, { value: component }, h(Probe, {})), container);
+        });
+        const note = {
+            noteId: "code1", type: "code", mime: "text/plain", blobId: "first", isProtected: false
+        } as FNote;
+        serverPut.mockRejectedValueOnce(JSON.stringify({
+            reason: "version", message: "", blobId: "theirs", type: "code", mime: "text/plain",
+            isVersioned: true
+        }) as never);
+        const get = vi.fn(async () => ({ blobId: "theirs", content: "theirs" }));
+        server.get = get as typeof server.get;
+        const kept = { revisionId: "r", isKept: true, isFragment: false };
+        serverPost.mockResolvedValueOnce(kept as never);
+        const showPersistent = vi.spyOn(toast, "showPersistent");
+        const trigger = vi.spyOn(appContext, "triggerEvent").mockResolvedValue(undefined);
+
+        editor?.scheduleSave(note, () => "mine");
+        editor?.scheduleSave({ ...note, blobId: "later" } as FNote, () => "mine, more");
+        void component.handleEvent("beforeNoteSwitch", { noteContext } as never);
+        await vi.waitFor(() => expect(showPersistent).toHaveBeenCalled());
+        expect(serverPut).toHaveBeenCalledExactlyOnceWith("notes/code1/data", {
+            content: "mine, more", attachments: undefined,
+            base: { blobId: "first", type: "code", mime: "text/plain" }, keepOther: undefined
+        }, component.componentId, { silentConflict: true });
+
+        const question = showPersistent.mock.calls[0][0];
+        await act(async () => {
+            question.buttons?.[1].onClick({ dismissToast: () => {} });
+            await vi.waitFor(() => expect(trigger).toHaveBeenCalledWith(
+                "refreshEmbeddedNote", { noteId: "code1" }));
+        });
+        expect(serverPost).toHaveBeenCalledExactlyOnceWith("notes/code1/revisions/draft",
+            expect.objectContaining({ content: "mine, more", type: "code" }),
+            component.componentId);
+        expect(editor?.getUnsavedContent("code1")).toBeUndefined();
+        await act(() => render(null, container));
+    });
+
+    it("bases a note on the version that its embed shows, or that it saved last", async () => {
+        component = new Component();
+        const container = document.createElement("div");
+        await act(() => {
+            render(h(ParentComponent.Provider, { value: component }, h(Probe, {})), container);
+        });
+        const note = {
+            noteId: "code1", type: "code", mime: "text/plain", blobId: "newer", isProtected: false
+        } as FNote;
+        const savedBase = () => (serverPut.mock.lastCall as unknown[] | undefined)?.[1];
+        const saveNow = async () => {
+            let saved: string | undefined;
+            await act(async () => {
+                saved = await editor?.saveNow?.("code1");
+            });
+            return saved;
+        };
+
+        // Another split of this window saved over the version that the embed still shows.
+        recordReplacedBlob("code1", "shown", "newer");
+        editor?.setLoadedVersion?.("code1", "shown", "shown content");
+        serverPut.mockResolvedValueOnce({ blobId: "mine1", attachments: [] } as never);
+        editor?.scheduleSave(note, () => "mine");
+        expect(await saveNow()).toBe("mine");
+        expect(savedBase()).toMatchObject({ base: { blobId: "shown" } });
+
+        // A change before the embed loads its own save is based on that save.
+        serverPut.mockResolvedValueOnce({ blobId: "mine2", attachments: [] } as never);
+        editor?.scheduleSave(note, () => "mine, more");
+        expect(await saveNow()).toBe("mine, more");
+        expect(savedBase()).toMatchObject({ base: { blobId: "mine1" } });
+
+        // A version that the embed loads is the base of the next change.
+        editor?.setLoadedVersion?.("code1", "loaded", "loaded content");
+        expect(await saveNow()).toBe("loaded content");
+        serverPut.mockRejectedValueOnce("offline" as never);
+        editor?.scheduleSave(note, () => "again");
+        expect(await saveNow()).toBeUndefined();
+        expect(savedBase()).toMatchObject({ base: { blobId: "loaded" } });
+        await act(() => render(null, container));
     });
 
     it("drops the change to a note deleted before it saves", async () => {

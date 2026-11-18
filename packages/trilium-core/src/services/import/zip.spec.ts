@@ -1355,6 +1355,152 @@ describe("link and image rewriting on import", () => {
         expect(content).toContain(included?.noteId ?? "MISSING");
     });
 
+    it("maps the embeds and note paths of the archive's notes, and nothing else", async () => {
+        const note = (noteId: string, title: string, attributes: object[] = []) => ({
+            noteId, title, type: "text", mime: "text/html", format: "html",
+            dataFileName: `${title}.html`, attachments: [], attributes
+        });
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [
+                note("embedHost001", "Embed Host", [
+                    { type: "relation", name: "includeNoteLink", value: "embedTarget1" },
+                    { type: "relation", name: "includeNoteLink", value: "outsideNote1" }
+                ]),
+                note("embedTarget1", "Embed Target")
+            ]
+        };
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "Embed Host.html": `<p data-trilium-block-id="embedTarget1">embedTarget1 in prose</p>`
+                + `<section class="include-note" data-note-id="embedTarget1"></section>`
+                + `<section class="include-note" data-note-id="outsideNote1"></section>`
+                + `<figure class="include-note" data-attachment-id="outsideAtt01"></figure>`
+                + `<p><a href="#root/embedHost001/embedTarget1?block=b">link</a>`
+                + `<a href="#section">anchor</a></p>`,
+            "Embed Target.html": "<p>target</p>"
+        });
+
+        const { rootNote } = await testImportBuffer(zipBuffer, "import-embed-ids");
+        const host = rootNote.getChildNotes().find((n) => n.title === "Embed Host");
+        const target = rootNote.getChildNotes().find((n) => n.title === "Embed Target");
+        const content = host?.getContent().toString() ?? "";
+
+        expect(content)
+            .toContain(`<p data-trilium-block-id="embedTarget1">embedTarget1 in prose</p>`);
+        expect(content).toContain(`data-note-id="${target?.noteId}"`);
+        expect(content).toContain(`data-note-id="outsideNote1"`);
+        expect(content).toContain(`data-attachment-id="outsideAtt01"`);
+        expect(content).toContain(`href="#root/${host?.noteId}/${target?.noteId}?block=b"`);
+        expect(content).toContain(`href="#section"`);
+
+        // An archive without metadata names no note of its own.
+        const embed = `<section class="include-note" data-note-id="embedTarget1"></section>`;
+        const plain = await testImportBuffer(await createZipBuffer({ "Plain Embed.html": embed }),
+            "import-plain-embed");
+        expect(plain.importedNote.getContent().toString()).toContain(`data-note-id="embedTarget1"`);
+    });
+
+    it("carries the blocks and the bookmark of a link over to the imported note", async () => {
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(linkedMetaFile()),
+            "Link Host.html": `<a href="Link Host/Sibling.html?block=a:b">range</a>`
+                + `<a href="Link%20Host/Sibling.html?viewMode=source&amp;bookmark=Set%20up">`
+                + `mark</a><a href="Link Host/Sibling.html#section">fragment</a>`,
+            "Link Host_photo.png": Buffer.from("fake png"),
+            "Link Host/Sibling.html": "<p>sibling</p>"
+        });
+
+        const { importedNote } = await testImportBuffer(zipBuffer, "import-link-query");
+        const content = importedNote.getContent().toString();
+        const sibling = importedNote.getChildNotes().find((n) => n.title === "Sibling");
+
+        expect(content).toContain(`href="#root/${sibling?.noteId}?block=a:b"`);
+        expect(content).toContain(`href="#root/${sibling?.noteId}?bookmark=Set%20up"`);
+        expect(content).toContain(`href="#root/${sibling?.noteId}?bookmark=section"`);
+    });
+
+    it("maps the Wikilinks, links and embeds of a Markdown note, not its examples", async () => {
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [{
+                noteId: "wikiHost0001",
+                title: "Wiki Host",
+                type: "code",
+                mime: "text/x-markdown",
+                dataFileName: "Wiki Host.md",
+                dirFileName: "Wiki Host",
+                attributes: [],
+                attachments: [{
+                    attachmentId: "wikiDrawing1",
+                    title: "drawing.excalidraw",
+                    role: "file",
+                    mime: "application/vnd.excalidraw+json",
+                    position: 10,
+                    dataFileName: "Wiki Host_drawing.excalidraw"
+                }],
+                children: [{
+                    noteId: "wikiTarget01",
+                    title: "Wiki Target",
+                    type: "code",
+                    mime: "text/x-markdown",
+                    dataFileName: "Wiki Target.md",
+                    attributes: [],
+                    attachments: []
+                }]
+            }]
+        };
+        const example = "[[wikiTarget01]] <figure data-note-id=\"wikiTarget01\"></figure>";
+        const body = [
+            "See [[wikiTarget01?block=x1:y2]], [[outsideNote1]] and "
+                + "[link](Wiki Host/Wiki Target.md?block=z).",
+            `<a class="reference-link" href="#root/wikiHost0001/wikiTarget01?block=h">ref</a>`,
+            `<figure class="include-note" data-note-id="wikiTarget01" data-block="p"></figure>`,
+            `<figure class="include-note" data-note-id="outsideNote1"></figure>`,
+            `<figure class="include-note" data-attachment-id="wikiDrawing1"></figure>`,
+            `<figure class="include-note" data-note-id='wikiTarget01' data-block="q"></figure>`,
+            `<figure class="include-note" data-note-id=wikiTarget01 data-block="r"></figure>`,
+            `<figure class="include-note" DATA-NOTE-ID = "wikiTarget01" data-block="s"></figure>`,
+            `<a class="reference-link" href='#root/wikiHost0001/wikiTarget01?block=t'>ref</a>`,
+            "```",
+            example,
+            "```",
+            `Inline \`${example}\` code.`,
+            `<!-- ${example} -->`,
+            "TriliumIdCandidate0TriliumIdCandidate is text."
+        ].join("\n\n");
+
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "Wiki Host.md": body,
+            "Wiki Host_drawing.excalidraw": "{}",
+            "Wiki Host/Wiki Target.md": "target"
+        });
+
+        const { importedNote } = await testImportBuffer(zipBuffer, "import-md-note-ids");
+        const content = importedNote.getContent().toString();
+        const target = importedNote.getChildNotes()[0];
+        const drawing = importedNote.getAttachments()
+            .find((attachment) => attachment.title === "drawing.excalidraw");
+
+        expect(content).toContain(`See [[${target.noteId}?block=x1:y2]], [[outsideNote1]] and `
+            + `[link](#root/${target.noteId}?block=z).`);
+        expect(content).toContain(`href="#root/${importedNote.noteId}/${target.noteId}?block=h"`);
+        expect(content).toContain(`data-note-id="${target.noteId}" data-block="p"`);
+        expect(content).toContain(`data-note-id="outsideNote1"`);
+        expect(content).toContain(`data-attachment-id="${drawing?.attachmentId}"`);
+        expect(drawing?.attachmentId).not.toBe("wikiDrawing1");
+        // Every spelling of an attribute that renders as one is mapped.
+        expect(content).toContain(`data-note-id='${target.noteId}' data-block="q"`);
+        expect(content).toContain(`data-note-id=${target.noteId} data-block="r"`);
+        expect(content).toContain(`DATA-NOTE-ID = "${target.noteId}" data-block="s"`);
+        expect(content).toContain(`href='#root/${importedNote.noteId}/${target.noteId}?block=t'`);
+        expect(content.split(example)).toHaveLength(4);
+        expect(content).toContain("TriliumIdCandidate0TriliumIdCandidate is text.");
+    });
+
     it("resolves a root-relative image path against the archive's single top-level folder", async () => {
         // Every entry sits under one top-level folder, so that folder is the archive root and a
         // "/"-prefixed src is resolved against it rather than against the entry's own directory.

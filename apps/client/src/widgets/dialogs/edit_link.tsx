@@ -12,7 +12,7 @@ import { t } from "../../services/i18n";
 import { detectEmbedType, fetchPageDetails, type PageDetails } from "../../services/link_embed";
 import {
     addParameters, createAnchorTargets, findTarget, getLinkTargets, getParentTargets,
-    LINK_TARGET_KINDS, type LinkTarget, nestTargets, splitTargetParameters
+    LINK_TARGET_KINDS, type LinkTarget, nestTargets, splitTargetParameters, StaleListingError
 } from "../../services/link_targets";
 import type { Suggestion } from "../../services/note_autocomplete";
 import options from "../../services/options";
@@ -435,10 +435,24 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             await noteTarget?.createReference?.();
             return generation === generationRef.current;
         } catch (e) {
-            console.error("Failed to create a reference to the target:", e);
-            if (generation === generationRef.current) {
-                toast.showError(t("add_link.heading_reference_failed"));
+            if (generation !== generationRef.current) {
+                return false;
             }
+            if (e instanceof StaleListingError) {
+                // The note changed since the listing: it is listed again for a new pick.
+                toast.showError(t("add_link.listing_changed"));
+                const noteId = tree.getNoteIdFromUrl(notePath);
+                if (notePath && noteId) {
+                    const { path } = splitTargetParameters(notePath);
+                    const targets = await getLinkTargets(noteId, path);
+                    if (generation === generationRef.current) {
+                        showNoteTargets(targets);
+                    }
+                }
+                return false;
+            }
+            console.error("Failed to create a reference to the target:", e);
+            toast.showError(t("add_link.heading_reference_failed"));
             return false;
         } finally {
             setIsCreatingReference(false);

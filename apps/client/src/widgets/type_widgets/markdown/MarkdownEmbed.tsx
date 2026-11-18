@@ -4,7 +4,7 @@ import type VanillaCodeMirror from "@triliumnext/codemirror";
 import moveVerticalIcon from "boxicons/svg/regular/bx-move-vertical.svg?raw";
 import clsx from "clsx";
 import type { RefObject } from "preact";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import type { CommandNames } from "../../../components/app_context";
 import type FAttachment from "../../../entities/fattachment";
@@ -20,6 +20,7 @@ import { resolveDisplayMode } from "../helpers/split_editor_mode";
 import { SplitLayout, useMountedPanes } from "../helpers/SplitEditor";
 import { registerContentEmbedTools, useContentEmbedDisplayMode } from "../text/content_embed_tools";
 import { EmbedPreview, useEditableEmbed, useEmbedPreview } from "../text/editable_embed";
+import { useBlockMarkers } from "./block_markers";
 import {
     renderWithSourceLines, useMarkdownKeymap, useNoteLinkChips, useSyncedHighlight,
     useSyncedScrolling
@@ -68,9 +69,19 @@ export default function MarkdownEmbed({
 
     const shownView = isSourceShown ? view : null;
     const previewElement = shownPreview instanceof HTMLDivElement ? shownPreview : null;
+    const previewRef = useRef(previewElement);
+    previewRef.current = previewElement;
     useSyncedScrolling(shownView, previewElement);
     useSyncedHighlight(shownView, previewElement, renderedContent);
     useNoteLinkChips(shownView);
+    useBlockMarkers(shownView, useMemo(() => (note && editor
+        ? {
+            getNote: () => note,
+            getNotePath: () => note.getBestNotePathString(),
+            getPreview: () => previewRef.current,
+            save: async () => await editor.saveNow?.()
+        }
+        : undefined), [ note, editor ]));
     useMarkdownKeymap(isEditing ? shownView : null);
 
     return (

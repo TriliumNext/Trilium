@@ -96,8 +96,11 @@ async function postWithTimeout<T>(url: string, timeoutMs: number, data?: unknown
     return await call<T>("POST", url, componentId, { data, timeoutMs, ...silence });
 }
 
-async function put<T>(url: string, data?: unknown, componentId?: string) {
-    return await call<T>("PUT", url, componentId, { data });
+/** @param silence suppresses the error toast for a 409, for a caller that handles the conflict. */
+async function put<T>(
+    url: string, data?: unknown, componentId?: string, silence?: Pick<CallOptions, "silentConflict">
+) {
+    return await call<T>("PUT", url, componentId, { data, ...silence });
 }
 
 async function patch<T>(url: string, data: unknown, componentId?: string) {

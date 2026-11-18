@@ -6,6 +6,8 @@ import {
 } from "./block_excerpts.js";
 
 vi.mock("./i18n.js", () => ({ t: (key: string) => key }));
+// happy-dom's DOM makes DOMPurify drop headings, which a browser keeps.
+vi.mock("dompurify", () => ({ default: { sanitize: (html: string) => html, addHook: () => {} } }));
 
 const CONTENT = "<p data-trilium-block-id=\"a\">First   block\n text</p>"
     + "<ul><li><p data-trilium-block-id=\"b\">Second</p></li></ul>"
@@ -59,6 +61,21 @@ describe("loadBlockReferenceLabel", () => {
 
         expect(await loadBlockReferenceLabel(code, "a")).toBeNull();
         expect(await loadBlockReferenceLabel(locked, "a")).toBeNull();
+    });
+
+    it("labels the blocks of a Markdown note, read from the note as it renders", async () => {
+        const note = buildNote({
+            title: "Markdown",
+            type: "code",
+            mime: "text/x-markdown",
+            content: `## Setup <a data-trilium-block-id="h"></a>\n\n`
+                + "`<a data-trilium-block-id=\"x\"></a>` is a marker"
+        });
+
+        expect(await loadBlockReferenceLabel(note, "h"))
+            .toEqual({ text: "Setup", isBroken: false, isHeading: true });
+        expect(await loadBlockReferenceLabel(note, "x"))
+            .toEqual({ text: "block_reference.broken", isBroken: true, isHeading: false });
     });
 
     it("tries again after the content failed to load", async () => {

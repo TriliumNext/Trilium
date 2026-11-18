@@ -760,7 +760,9 @@ function getLinkHtml({ href }: ClipboardBlockReference) {
 }
 
 /** The HTML of an embed of the referenced blocks. */
-function getExcerptHtml({ noteId, block }: ClipboardBlockReference) {
+export function getExcerptHtml(
+    { noteId, block }: Pick<ClipboardBlockReference, "noteId" | "block">
+) {
     const embed = document.createElement("figure");
     embed.className = "include-note";
     embed.dataset.noteId = noteId;

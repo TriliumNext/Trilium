@@ -824,6 +824,45 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             expect(dataFile).toContain(`href="#root/${outside.noteId}"`);
         });
 
+        it("keeps the blocks and the bookmark that a link points at, in every format", async () => {
+            const { note: parent } = createNote("root", { title: "QueryParent", content: "" });
+            const { note: target } = createNote(parent.noteId, {
+                title: "QueryTarget", content: "<p>t</p>"
+            });
+            createNote(parent.noteId, {
+                title: "QuerySource",
+                content: `<p><a href="#root/${parent.noteId}/${target.noteId}?block=a:b">range</a>`
+                    + `<a href="#root/${target.noteId}?bookmark=Set%20up">mark</a>`
+                    + `<a href="#root/${target.noteId}?viewMode=source&amp;block=c">other</a></p>`
+            });
+            createNote(parent.noteId, {
+                title: "QueryMarkdown",
+                type: "code",
+                mime: "text/x-markdown",
+                content: `[range](#root/${target.noteId}?block=a:b)`
+                    + ` [mark](#root/${target.noteId}?bookmark=x)`
+            });
+
+            const readEntry = async (format: ExportFormat, fileName: string) => {
+                const { entries } = await exportSubtree(parent.getParentBranches()[0], format);
+                const entryName = Object.keys(entries).find((name) => name.endsWith(fileName));
+                return entries[entryName ?? ""].toString("utf-8");
+            };
+
+            const html = await readEntry("html", "QuerySource.html");
+            expect(html).toContain(`href="QueryTarget.html?block=a:b"`);
+            expect(html).toContain(`href="QueryTarget.html?bookmark=Set%20up"`);
+            expect(html).toContain(`href="QueryTarget.html?block=c"`);
+            expect(await readEntry("markdown", "QuerySource.md"))
+                .toContain("[range](QueryTarget.md?block=a:b)");
+            expect(await readEntry("html", "QueryMarkdown.md")).toContain(
+                "[range](QueryTarget.html?block=a:b) [mark](QueryTarget.html?bookmark=x)");
+            // A shared page reads `block` from its address and reveals the bookmark as a fragment.
+            const shared = await readEntry("share", "QuerySource.html");
+            expect(shared).toContain(`href="QueryTarget.html?block=a:b"`);
+            expect(shared).toContain(`href="QueryTarget.html#Set%20up"`);
+        });
+
         it("rewrites attachment links to the exported file and leaves unknown ids alone", async () => {
             const { note } = createNote("root", { title: "AttLinker", content: "" });
             const attachment = getContext().init(() =>

@@ -21,7 +21,9 @@ import { AttachmentMeta, AttributeMeta, ExportFormat, NoteMeta, NoteMetaFile } f
 import { ValidationError } from "../../errors";
 import { extname } from "../utils/path";
 import { truncateUtf8Bytes } from "../utils/binary";
-import { rewriteMarkdownContentLinks, isMarkdownCodeNote } from "./rewrite_links.js";
+import {
+    getArchivedLinkSuffix, isMarkdownCodeNote, rewriteMarkdownContentLinks
+} from "./rewrite_links.js";
 import { stripListItemIds } from "./strip_list_item_ids.js";
 import { getVirtualNoteAssets, referenceAssetsAsAttachments, type VirtualNoteAsset } from "../virtual_notes.js";
 
@@ -356,10 +358,12 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             return url ? `href="${url}"` : match;
         });
 
-        content = content.replace(/href="[^"]*#root[a-zA-Z0-9_\/]*\/([a-zA-Z0-9_]+)[^"]*"/g, (match, targetNoteId) => {
+        const noteLink = /href="[^"]*#root[a-zA-Z0-9_\/]*\/([a-zA-Z0-9_]+)([^"]*)"/g;
+        content = content.replace(noteLink, (match, targetNoteId, suffix) => {
             const url = getNoteTargetUrl(targetNoteId, noteMeta);
+            const context = format === "share" ? "share" : "attribute";
 
-            return url ? `href="${url}"` : match;
+            return url ? `href="${url}${getArchivedLinkSuffix(suffix, context)}"` : match;
         });
 
         if (format === "share") {

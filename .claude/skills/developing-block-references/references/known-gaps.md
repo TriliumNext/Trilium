@@ -13,9 +13,7 @@ designed around without knowing. **Remove an entry in the change that fixes it.*
 | Markdown Wikilink chips ignore `isBroken` and read "Title - Broken reference" | `resolveWikilinkChip()` in `markdown/editor_utils.ts` |
 | A malformed `%` escape in a link throws `URIError` out of `parseNavigationStateFromUrl()`; only the paste path catches it | `goToLinkExt()`, `loadReferenceLinkTitle()` in `link.ts` |
 | _Copy public link_ reports success when the clipboard write fails: `copyText()` does not await `writeText()` | `services/clipboard_ext.ts` |
-| On shared pages, an excerpt whose slice has no text and no media (an empty paragraph, an `<hr>`) renders the whole note: the `isEmpty` path of `renderText()` never replaces `result.content` | core `share/content_renderer.ts` |
 | After `api.refreshIncludedNote()`, an embed of a whole note inside an excerpt of that note becomes a link: the refresh adds both `noteId` and `noteId:block` to the seen keys, the first render only the second | `refreshEmbeddedNote()` in `text/utils.ts` |
-| On shared pages, the credentials placeholder, an embed shown as a link and an attachment link drop the embed's own block id, so links to that block find nothing | core `share/content_renderer.ts` |
 | A Compact excerpt shows no badge and no pencil (`CompactContentEmbed` takes no `isExcerpt`), though its wrapper has the `excerpt` class | `ContentEmbed.tsx`, `text/utils.ts` |
 | An excerpt of a note that is not a text note renders the whole note, yet shows the badge, a disabled pencil and no fullscreen: `isExcerpt` comes from `block` alone | `text/utils.ts`, `content_renderer.ts` |
 | Replacing an image with a drawing, and a link preview that changes shape, happen in two changes, so the block loses its id | `image_to_drawing.ts`, `link_embed/link_embed_commands.ts` |
@@ -33,13 +31,13 @@ designed around without knowing. **Remove an entry in the change that fixes it.*
 | Only runs of whole siblings are editable in place | Part of a list or a quote stays read-only |
 | An excerpt of one code block or source embed is not editable in place | The id is on `<code>`, and `<pre>` is not a run container |
 | A read-only slice of a to-do item drops its checkbox; a slice of a captioned media or source embed drops its caption | `sliceToBlockRange()` |
-| Only text notes are sliced | An excerpt of a Markdown note renders the whole note |
+| Only text notes are sliced in the app | An excerpt of a Markdown note renders the whole note; shared pages and the static export slice it |
 | `refreshIncludedNote()` passes no `onBlockChange` | Its excerpts edit but keep their old range |
 | The `/blocks` routes do not check `#readOnly` or a read-only database | The client enforces read-only |
 | No conflict detection within a range | Decided: the last writer wins, as for whole notes |
-| Zip HTML, static HTML and zip Markdown exports drop `?block=`; Markdown export drops ids on blocks written as Markdown; a zip round trip turns block links into whole-note links | Excerpts keep `data-block` |
+| Markdown export drops ids on blocks written as Markdown | Excerpts keep `data-block` |
 | Markdown import writes Wikilinks as `/id?…`, not `#root/…` | No backlink, no block navigation |
-| Shared pages show no message for a broken range, and label links to other notes with the note title only | |
+| Shared pages show no message for a broken range, and label a link to a block of another note with the note title, unless the block is a heading | |
 | A public link copied with a sync server finds the block only after the next sync | `showLinkedBlocks()` ignores a failed lookup |
 | Excerpts in the static export resolve notes through `shaca`, which the export path does not load: excerpts of notes outside the shared tree can show "not available" | Seen in the code, not reproduced |
 

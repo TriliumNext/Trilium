@@ -1248,6 +1248,36 @@ describe("EditLinkDialog", () => {
         expect(createHeadingReference).toHaveBeenCalledOnce();
     });
 
+    it("lists the note again when a heading was picked from a listing of another blob", async () => {
+        const showError = vi.spyOn(toast, "showError").mockImplementation(() => {});
+        onTestFinished(() => showError.mockRestore());
+        const note = buildNote({ title: "Target" });
+        const path = `root/${note.noteId}`;
+        noteReferences.set(note.noteId, {
+            targets: [ headingTarget("Status", 2) ], blobId: "listed"
+        });
+
+        await open();
+        await pickNote(path);
+        await checkNoteChoice("Status");
+        noteReferences.set(note.noteId, {
+            targets: [ headingTarget("Moved", 2), headingTarget("Status", 2) ], blobId: "now"
+        });
+        createHeadingReference.mockRejectedValueOnce(
+            JSON.stringify({ reason: "listing", message: "Changed" }));
+        await requestSubmit();
+        await settle();
+
+        expect(createHeadingReference).toHaveBeenCalledExactlyOnceWith(
+            `notes/${note.noteId}/references`,
+            { kind: "heading", index: 0, title: "Status", blobId: "listed" }
+        );
+        expect(showError).toHaveBeenCalledExactlyOnceWith("add_link.listing_changed");
+        expect(addLink).not.toHaveBeenCalled();
+        expect(noteChoices().map((choice) => choice.replace("*", "")))
+            .toStrictEqual([ "add_link.top_of_note", "Moved", "Status" ]);
+    });
+
     it("stays open with a toast when the heading's block id cannot be created", async () => {
         const showError = vi.spyOn(toast, "showError").mockImplementation(() => {});
         const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -1332,17 +1362,23 @@ describe("EditLinkDialog", () => {
         });
         const saved = deferred<void>();
         const { triggerEvent } = appContext;
+        let saveCount = 0;
         const trigger = vi.spyOn(appContext, "triggerEvent").mockImplementation(((name, data) => {
-            if (name === "saveNoteChanges") return saved.promise;
+            // The editors save before the listing, and again before the reference.
+            if (name === "saveNoteChanges") {
+                return ++saveCount === 1 ? Promise.resolve() : saved.promise;
+            }
             return triggerEvent.call(appContext, name, data);
         }) as typeof appContext.triggerEvent);
         onTestFinished(() => trigger.mockRestore());
 
         await open();
         await pickNote(path);
+        expect(trigger).toHaveBeenCalledWith("saveNoteChanges", { noteId: note.noteId });
+        expect(saveCount).toBe(1);
         await checkNoteChoice("Setup");
         await requestSubmit();
-        expect(trigger).toHaveBeenCalledWith("saveNoteChanges", { noteId: note.noteId });
+        expect(saveCount).toBe(2);
         expect(createHeadingReference).not.toHaveBeenCalled();
 
         saved.resolve();

@@ -242,6 +242,7 @@ describe("buildMarkdownCommands", () => {
     afterEach(() => editor.destroy());
 
     let currentNote: FNote | null = { noteId: "first" } as FNote;
+    let editedNote: FNote | null = null;
 
     const todo = (name: string, markdownSymbol: string): TaskStateDef => ({ name, title: name, markdownSymbol, isCompleted: false, icon: `bx bx-${name}` });
 
@@ -249,6 +250,7 @@ describe("buildMarkdownCommands", () => {
         return buildMarkdownCommands({
             editorView: editor,
             getOwnerNote: () => currentNote,
+            getEditedNote: () => editedNote,
             taskStates
         });
     }
@@ -363,8 +365,16 @@ describe("buildMarkdownCommands", () => {
         expect(run("link", "See /link")).toBe("See ");
         expect(run("include", "/include")).toBe("");
         const { insertDateTime, showEditLinkDialog, showIncludeNoteDialog } = editorUtils;
-        for (const action of [ insertDateTime, showEditLinkDialog, showIncludeNoteDialog ]) {
+        for (const action of [ insertDateTime, showIncludeNoteDialog ]) {
             expect(action).toHaveBeenCalledExactlyOnceWith(editor);
         }
+        expect(showEditLinkDialog).toHaveBeenCalledExactlyOnceWith(editor, undefined);
+
+        // The dialog lists the headings of the note being edited.
+        editedNote = { noteId: "edited", getBestNotePathString: () => "root/edited" } as FNote;
+        run("link", "/link");
+        expect(showEditLinkDialog)
+            .toHaveBeenLastCalledWith(editor, { noteId: "edited", notePath: "root/edited" });
+        editedNote = null;
     });
 });

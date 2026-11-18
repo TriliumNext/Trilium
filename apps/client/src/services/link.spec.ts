@@ -846,6 +846,32 @@ describe("goToLinkExt", () => {
         split.remove();
     });
 
+    it("jumps in the embed that shows the note of a link, else in the note of the split", async () => {
+        const split = $("<div data-ntx-id='ntx1'><div class='ck-content'>"
+            + "<h2 data-trilium-block-id='intro'>Host intro</h2>"
+            + "<figure class='include-note' data-note-id='embeddedNote'><div class='ck-content'>"
+            + "<h2 data-trilium-block-id='intro'>Embedded intro</h2></div>"
+            + "<figcaption><a class='in-caption'></a></figcaption></figure>"
+            + "</div></div>").appendTo(document.body);
+        const page = split.children()[0];
+        const embed = split.find("figure")[0];
+        const inEmbed = $("<a>").appendTo(split.find("figure > .ck-content"));
+        const inPage = $("<a>").appendTo(page);
+        const inCaption = split.find(".in-caption");
+
+        const embedJump = linkService.getBlockJump(inEmbed, "embeddedNote", "intro");
+        expect(embedJump?.isHeading).toBe(true);
+        embedJump?.show();
+        await vi.waitFor(() => expect(showBlockReference).toHaveBeenLastCalledWith(embed, "intro"));
+        // A link in the embed to the note around it jumps in that note, past the embed.
+        linkService.getBlockJump(inEmbed, "abcdefghijkl", "intro")?.show();
+        await vi.waitFor(() => expect(showBlockReference).toHaveBeenLastCalledWith(page, "intro"));
+        // The caption and the rest of the page do not show the embedded note.
+        expect(linkService.getBlockJump(inCaption, "embeddedNote", "intro")).toBeNull();
+        expect(linkService.getBlockJump(inPage, "embeddedNote", "intro")).toBeNull();
+        split.remove();
+    });
+
     it("leaves a jump of the link toolbar's preview button to the editor", () => {
         const $preview = $("<a class='ck-link-toolbar__preview' target='_blank'>");
         const handled = leftClick({ isDefaultPrevented: () => true });

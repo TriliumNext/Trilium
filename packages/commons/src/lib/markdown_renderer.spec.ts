@@ -822,4 +822,165 @@ describe("demoteHeadings", () => {
         // The decoder is also used when comparing the first <h1> against the title.
         expect(demoteHeadings("<h1>a</h1>", "A", upper)).toBe("");
     });
+
+    it("keeps an <h1> with a block id, to demote it with the rest", () => {
+        const content = `<h1 data-trilium-block-id="t">Title</h1><h2>A</h2>`;
+        expect(demoteHeadings(content, "Title", verbatim))
+            .toBe(`<h2 data-trilium-block-id="t">Title</h2><h3>A</h3>`);
+    });
+});
+
+describe("block markers", () => {
+    const marker = (id: string) => `<a data-trilium-block-id="${id}"></a>`;
+    const preview = (content: string) => render(content, "", { demoteH1: false });
+
+    it("puts the id of an inline marker on the block that holds it, as the editor saves it", () => {
+        expect(preview(`A paragraph ${marker("p")}`))
+            .toBe(`<p data-trilium-block-id="p">A paragraph</p>`);
+        expect(preview(`## Heading ${marker("h")}`))
+            .toBe(`<h2 data-trilium-block-id="h">Heading</h2>`);
+        expect(preview(`&nbsp;${marker("e")}`)).toBe(`<p data-trilium-block-id="e">&nbsp;</p>`);
+        expect(preview(`- parent ${marker("par")}\n    - child`)).toBe(
+            `<ul><li><p data-trilium-block-id="par">parent</p><ul><li>child</li></ul></li></ul>`);
+        expect(preview(`1. one\n2. two${marker("i2")}`))
+            .toBe(`<ol><li>one</li><li><p data-trilium-block-id="i2">two</p></li></ol>`);
+        const table = preview(`| A${marker("t")} | B |\n| --- | --- |\n| 1 | 2 |`);
+        expect(table).toMatch(/^<figure class="table" data-trilium-block-id="t"><table>/);
+        expect(table).toMatch(/<th>A<\/th>/);
+        expect(preview(`${marker("f")}$$x^2$$`))
+            .toBe(`<p data-trilium-block-id="f"><span class="math-tex">\\[x^2\\]</span></p>`);
+        expect(preview(`*emphasis ${marker("em")}* and [link ${marker("l2")}](https://x)`)).toBe(
+            `<p data-trilium-block-id="em"><em>emphasis </em> and `
+            + `<a href="https://x">link </a></p>`);
+    });
+
+    it("writes the id of a to-do item on a paragraph after a label of its own", () => {
+        expect(preview(`- [ ] open\n- [x] done ${marker("d")}`)).toBe(
+            `<ul class="todo-list"><li><label class="todo-list__label">`
+            + `<input type="checkbox" disabled="disabled">`
+            + `<span class="todo-list__label__description">open</span></label></li>`
+            + `<li><label class="todo-list__label todo-list__label_without-description">`
+            + `<input type="checkbox" checked="checked" disabled="disabled"></label>`
+            + `<p data-trilium-block-id="d">done</p></li></ul>`);
+    });
+
+    it("marks the next block of the same container with a marker alone on its line", () => {
+        expect(preview(`${marker("c")}\n\n\`\`\`js\ncode();\n\`\`\``)).toBe(
+            `<pre><code class="language-text-javascript" data-trilium-block-id="c">`
+            + `code();</code></pre>`);
+        expect(preview(`${marker("q")}\n\n> quoted\n> line${marker("ql")}`)).toBe(
+            `<blockquote data-trilium-block-id="q">`
+            + `<p data-trilium-block-id="ql">quoted\nline</p></blockquote>`);
+        expect(preview(`${marker("r")}\n\n---`)).toBe(`<hr data-trilium-block-id="r">\n`);
+        expect(preview(`${marker("l")}\n\n- first\n- second`))
+            .toBe(`<ul><li><p data-trilium-block-id="l">first</p></li><li>second</li></ul>`);
+        expect(preview(`> quote\n>\n> ${marker("in")}\n> after`))
+            .toBe(`<blockquote><p>quote</p><p data-trilium-block-id="in">after</p></blockquote>`);
+        expect(preview(`${marker("tabs")}\n\n=== "One${marker("t1")}"\n\n    Body`)).toBe(
+            `<div class="trilium-tabs" data-trilium-block-id="tabs"><section class="trilium-tab" `
+            + `data-trilium-block-id="t1"><p class="trilium-tab-title">One</p>`
+            + `<div class="trilium-tab-panel"><p>Body</p></div></section></div>`);
+    });
+
+    it("cuts a paragraph before a marker line, which marks the block after it", () => {
+        expect(preview(`Text\n${marker("next")}\n## Heading`))
+            .toBe(`<p>Text</p><h2 data-trilium-block-id="next">Heading</h2>`);
+        // A marker that only follows other text on its line is inline.
+        expect(preview(`&nbsp;${marker("x")}\n\nafter`))
+            .toBe(`<p data-trilium-block-id="x">&nbsp;</p><p>after</p>`);
+    });
+
+    it("takes the first valid marker line of several, and none before an empty item", () => {
+        expect(preview(`${marker("a:b")}\n${marker("one")}\n${marker("two")}\n## Heading`))
+            .toBe(`<h2 data-trilium-block-id="one">Heading</h2>`);
+        expect(preview(`${marker("empty")}\n-\n- second`)).not.toContain("data-trilium-block-id");
+    });
+
+    it("uses up the id of a marker line before raw HTML and before an empty fence", () => {
+        expect(preview(`${marker("raw")}\n<div>raw</div>\n\nafter`))
+            .toBe("<div>raw</div><p>after</p>");
+        expect(preview(`${marker("fence")}\n\n\`\`\`\n\`\`\`\n\nafter`)).toBe("<p>after</p>");
+    });
+
+    it("keeps the first marker of a block and drops the rest", () => {
+        expect(preview(`${marker("line")}\n## Heading ${marker("inline")}`))
+            .toBe(`<h2 data-trilium-block-id="line">Heading</h2>`);
+        expect(preview(`Two ${marker("a")} markers ${marker("b")}`))
+            .toBe(`<p data-trilium-block-id="a">Two  markers</p>`);
+        expect(preview(`| A${marker("first")} | B${marker("second")} |\n| --- | --- |`))
+            .toContain(`data-trilium-block-id="first"`);
+    });
+
+    it("reads the self-closed form, an opening tag alone and single quotes", () => {
+        expect(preview(`<a data-trilium-block-id='s' />\n## Heading`))
+            .toBe(`<h2 data-trilium-block-id="s">Heading</h2>`);
+        expect(preview(`Open <a data-trilium-block-id="o"> tag https://example.com`)).toBe(
+            `<p data-trilium-block-id="o">Open  tag `
+            + `<a href="https://example.com">https://example.com</a></p>`);
+        expect(preview(`<A DATA-TRILIUM-BLOCK-ID="u"></A> upper`))
+            .toBe(`<p data-trilium-block-id="u"> upper</p>`);
+    });
+
+    it("decodes an id, validates it once decoded and escapes it for the attribute", () => {
+        expect(preview(`Quote ${marker("a&#34;b")}`))
+            .toBe(`<p data-trilium-block-id="a&quot;b">Quote</p>`);
+        expect(preview(`Amp ${marker("a&#38;b")}`))
+            .toBe(`<p data-trilium-block-id="a&amp;b">Amp</p>`);
+        expect(preview(`Astral ${marker("&#128512;")}`))
+            .toBe(`<p data-trilium-block-id="\u{1F600}">Astral</p>`);
+        expect(preview(`Colon ${marker("a&#58;b")} rest`)).toBe("<p>Colon  rest</p>");
+        expect(preview(`Range ${marker("a:b")} rest`)).toBe("<p>Range  rest</p>");
+        expect(preview(`Huge ${marker("&#x110000;")} rest`)).toBe("<p>Huge  rest</p>");
+        expect(preview(`Empty ${marker("")} rest`)).toBe("<p>Empty  rest</p>");
+        // An invalid marker does not stop a later one.
+        expect(preview(`${marker("a:b")} ${marker("ok")} text`))
+            .toBe(`<p data-trilium-block-id="ok">  text</p>`);
+    });
+
+    it("leaves code alone and removes the markers that no block took", () => {
+        expect(preview(`\`${marker("x")}\``))
+            .toBe(`<p><code>&lt;a data-trilium-block-id=&quot;x&quot;&gt;&lt;/a&gt;</code></p>`);
+        const split = `<a\n  data-trilium-block-id="split"\n></a>`;
+        expect(preview(`<div>\n${marker("in")} raw\n${split}</div>`)).toBe("<div>\n raw\n</div>");
+        const details = `<details data-trilium-block-id="d">\n<summary>More</summary>`;
+        expect(preview(`${details}\n\nInside ${marker("i")}\n\n</details>`))
+            .toBe(`${details}<p data-trilium-block-id="i">Inside</p></details>`);
+    });
+
+    it("keeps the callout of an admonition whose first paragraph has an id", () => {
+        expect(preview(`> [!NOTE]\n> Body${marker("b")}`))
+            .toBe(`<aside class="admonition note"><p data-trilium-block-id="b">Body</p></aside>`);
+        expect(preview(`${marker("a")}\n\n> [!TIP]\n> Body`))
+            .toBe(`<aside class="admonition tip" data-trilium-block-id="a"><p>Body</p></aside>`);
+        expect(render(`> [!NOTE] Title ${marker("t")}\n>\n> Body`, "", { obsidian: true })).toBe(
+            `<aside class="admonition note"><p data-trilium-block-id="t"><strong>Title</strong></p>`
+            + `<p>Body</p></aside>`);
+        expect(preview(`> [!NOTE] ${marker("gone")}\n>\n> Body`))
+            .toBe(`<aside class="admonition note"><p>Body</p></aside>`);
+    });
+
+    it("takes the marker out of the raw text of an <h1>, which stays when it has an id", () => {
+        expect(render(`# My note ${marker("t")}\n\nbody`, "My note"))
+            .toBe(`<h2 data-trilium-block-id="t">My note</h2><p>body</p>`);
+        expect(preview(`# Title ${marker("t")}`)).toBe(`<h1 data-trilium-block-id="t">Title</h1>`);
+    });
+
+    it("renders a note whose first heading holds a reference to no character", () => {
+        expect(render("# &#x110000; &#xD800; &#0;\n\nbody", "Title"))
+            .toBe("<h2>&#x110000; &#xD800; &#0;</h2><p>body</p>");
+    });
+
+    it("drops a marker after the last cell of a row, as marked drops the cell", () => {
+        const table = preview(`| A | B |\n| --- | --- |\n| 1 | 2 | ${marker("x")}`);
+        expect(table).toContain(`<figure class="table">`);
+        expect(table).not.toContain("data-trilium-block-id");
+    });
+
+    it("renders footnotes in a note that starts with a marker line, as after a tabs block", () => {
+        const footnotes = "\n\nText[^1]\n\n[^1]: Note";
+        const marked = preview(`${marker("line")}\n## Heading ${marker("inline")}${footnotes}`);
+        expect(marked).toContain(`<h2 data-trilium-block-id="line">Heading</h2>`);
+        expect(marked).toContain("data-footnotes");
+        expect(preview(`=== "Tab"\n\n    Body${footnotes}`)).toContain("data-footnotes");
+    });
 });

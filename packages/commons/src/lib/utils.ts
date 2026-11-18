@@ -102,3 +102,45 @@ export function escapeHtml(value: string): string {
         .replaceAll("\"", "&quot;")
         .replaceAll("'", "&#39;");
 }
+
+/**
+ * Decodes the numeric character references and the basic named entities in `value`. A reference
+ * that names no character, such as one above U+10FFFF or a surrogate, stays as text.
+ */
+export function decodeHtmlEntities(value: string): string {
+    return value.replace(ENTITY, (match, entity: string) => decodeEntity(entity) ?? match);
+}
+
+/** Whether every numeric character reference in `value` names a character. */
+export function hasOnlyDecodableReferences(value: string) {
+    for (const [ , entity ] of value.matchAll(ENTITY)) {
+        if (entity.startsWith("#") && decodeEntity(entity) === null) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/** The character of `entity`, a reference without its `&` and `;`, or `null`. */
+function decodeEntity(entity: string) {
+    if (!entity.startsWith("#")) {
+        return NAMED_ENTITIES[entity] ?? null;
+    }
+
+    const isHex = entity[1] === "x" || entity[1] === "X";
+    const codePoint = Number.parseInt(entity.slice(isHex ? 2 : 1), isHex ? 16 : 10);
+    const isCharacter = codePoint > 0 && codePoint <= 0x10ffff
+        && (codePoint < 0xd800 || codePoint > 0xdfff);
+    return isCharacter ? String.fromCodePoint(codePoint) : null;
+}
+
+const ENTITY = /&(#\d+|#[xX][0-9a-fA-F]+|\w+);/g;
+
+const NAMED_ENTITIES: Record<string, string> = {
+    amp: "&",
+    lt: "<",
+    gt: ">",
+    quot: "\"",
+    apos: "'",
+    nbsp: "\u{a0}"
+};

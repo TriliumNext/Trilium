@@ -14,9 +14,12 @@ import {
 } from "./editor_utils.js";
 
 const { loadBlockReferenceLabel } = vi.hoisted(() => ({
-    loadBlockReferenceLabel: vi.fn(async (_note: FNote, block: string) => (
-        block === "h1" ? { text: "Install", isBroken: false, isHeading: true } : null
-    ))
+    loadBlockReferenceLabel: vi.fn(async (_note: FNote, block: string) => {
+        if (block === "broken") {
+            return { text: "Broken reference", isBroken: true, isHeading: false };
+        }
+        return block === "h1" ? { text: "Install", isBroken: false, isHeading: true } : null;
+    })
 }));
 vi.mock("../../../services/block_excerpts.js", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../../services/block_excerpts.js")>(),
@@ -97,6 +100,9 @@ describe("resolveWikilinkChip", () => {
             .resolves.toEqual({ title: "Guide - Set up", icon: "bx bx-book" });
         // A block that cannot be read leaves the title, and parameters naming neither change nothing.
         await expect(resolveWikilinkChip("abc123", "block=gone"))
+            .resolves.toEqual({ title: "Guide", icon: "bx bx-book" });
+        // So does a broken reference, as in the text of a reference link.
+        await expect(resolveWikilinkChip("abc123", "block=broken"))
             .resolves.toEqual({ title: "Guide", icon: "bx bx-book" });
         expect(resolveWikilinkChip("abc123", "ntxId=x")).toEqual({ title: "Guide", icon: "bx bx-book" });
 
