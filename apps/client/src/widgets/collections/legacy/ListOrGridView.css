@@ -65,10 +65,16 @@
 /* Search result view */
 .nested-note-list.search-results .nested-note-list-item,
 .note-list-container.search-results .note-book-card .note-book-header {
+    span.tn-icon + span {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
     span.tn-icon + span > span {
         display: flex;
         flex-direction: column-reverse;
         align-items: flex-start;
+        max-width: 100%;
     }
 
     small {
