@@ -96,10 +96,8 @@ export function buildPromotedCells(note: FNote): Cell[] {
             continue;
         }
 
-        let valueAttrs = effective.length ? effective : [ blank ];
-        if (definition.multiplicity === "single") {
-            valueAttrs = valueAttrs.slice(0, 1);
-        }
+        // A definition that omits the multiplicity is single-valued as well.
+        const valueAttrs = (effective.length ? effective : [ blank ]).slice(0, 1);
 
         for (let valueAttr of valueAttrs) {
             // if not owned, we'll force creation of a new attribute instead of updating the inherited one;
