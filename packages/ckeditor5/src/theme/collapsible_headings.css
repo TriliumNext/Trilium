@@ -11,6 +11,8 @@
     --_arrow-size: 1.1em;
     --_arrow-gap: 0.3em;
     --_arrow-rotation: 90deg;
+    /* `isOnHeadingArrow()` reads it. */
+    --_arrow-placement: end;
 
     position: relative;
     padding-inline-end: calc(var(--_arrow-size) + var(--_arrow-gap));
@@ -93,6 +95,26 @@
             color: var(--text-editor-heading-arrow-hover-color);
             background-color: var(--text-editor-heading-arrow-hover-background);
             opacity: 1;
+        }
+    }
+}
+
+body:is(.heading-style-plain, .heading-style-markdown)
+    .ck-content .trilium-section-heading:not(.trilium-heading-blank-end) {
+    --_arrow-placement: text;
+
+    /* With no offsets, an inline arrow takes its static position: right after the text. */
+    &::after {
+        display: inline-flex;
+        inset-inline-end: auto;
+        top: auto;
+        margin-block-start: 0.5lh;
+        margin-inline-start: var(--_arrow-gap);
+    }
+
+    @supports not (top: 1lh) {
+        &::after {
+            margin-block-start: 0.65em;
         }
     }
 }

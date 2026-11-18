@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
     ATTACHMENT_ROLES, attachmentIcon, attachmentRoleTraits, IMAGE_ATTACHMENT_ROLES,
     isDeduplicatedAttachmentRole, isDerivedAttachmentRole, isEmbeddedAttachmentRole,
-    isImageAttachmentRole
+    isFullWidthAttachment, isImageAttachmentRole
 } from "./attachment_roles.js";
 import { getNoteIcon } from "./notes.js";
 
@@ -50,6 +50,20 @@ describe("isEmbeddedAttachmentRole", () => {
         expect(isEmbeddedAttachmentRole("somethingAScriptInvented")).toBe(false);
         expect(isEmbeddedAttachmentRole(undefined)).toBe(false);
         expect(isEmbeddedAttachmentRole(null)).toBe(false);
+    });
+});
+
+describe("isFullWidthAttachment", () => {
+    it("takes the full width for an attachment the matching note type would", () => {
+        for (const mime of [ "application/pdf", "video/mp4", "audio/ogg",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ]) {
+            expect(isFullWidthAttachment({ role: "file", mime })).toBe(true);
+        }
+        expect(isFullWidthAttachment({ role: "image", mime: "image/png" })).toBe(true);
+        expect(isFullWidthAttachment({ role: "file", mime: "application/vnd.excalidraw+json" })).toBe(true);
+
+        expect(isFullWidthAttachment({ role: "file", mime: "application/zip" })).toBe(false);
+        expect(isFullWidthAttachment({ role: "file", mime: "text/plain" })).toBe(false);
     });
 });
 

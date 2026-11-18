@@ -61,8 +61,6 @@
     "note": "Note",
     "search_note": "Søg efter en note ud fra dens navn",
     "link_title": "Link titel",
-    "anchor": "Anker (valgfrit)",
-    "anchor_none": "Ingen (link til note)",
     "button_add_link": "Tilføj link",
     "button_edit_link": "Gem link",
     "button_fix_link": "Ret link",

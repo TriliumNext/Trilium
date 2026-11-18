@@ -60,8 +60,6 @@
     "search_note": "buscar nota por su nombre",
     "link_title": "Título del enlace",
     "button_add_link": "Insertar enlace",
-    "anchor": "Ancla (opcional)",
-    "anchor_none": "Ninguna (enlace a la nota)",
     "edit_link": "Editar enlace",
     "button_edit_link": "Guardar enlace",
     "fix_link": "Corregir enlace",

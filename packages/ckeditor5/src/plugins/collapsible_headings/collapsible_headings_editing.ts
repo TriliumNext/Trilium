@@ -1,5 +1,6 @@
 import {
-    Command, type DowncastConversionApi, type Editor, Enter, type EnterCommand, type ModelElement,
+    Command, type DowncastConversionApi, type DowncastInsertEvent, type DowncastRemoveEvent,
+    type Editor, Enter, type EnterCommand, type ModelDocumentFragment, type ModelElement,
     type ModelItem, type ModelPosition, type ModelRange, Plugin, priorities, type ViewElement
 } from "ckeditor5";
 
@@ -128,6 +129,14 @@ export default class CollapsibleHeadingsEditing extends Plugin {
             };
             dispatcher.on("insert", markSectionHeading, { priority: "low" });
             dispatcher.on("attribute:listItemId", markSectionHeading, { priority: "low" });
+
+            dispatcher.on<DowncastInsertEvent>("insert", (_evt, { item }, conversionApi) => {
+                const isHeading = item.is("element") && isHeadingName(item.name);
+                markBlankEnd(isHeading ? item : item.parent, conversionApi);
+            }, { priority: "low" });
+            dispatcher.on<DowncastRemoveEvent>("remove", (_evt, { position }, conversionApi) => {
+                markBlankEnd(position.parent, conversionApi);
+            }, { priority: "low" });
         });
     }
 
@@ -212,4 +221,27 @@ function isSelectionIn(editor: Editor, blocks: ModelElement[]) {
     const blockSet = new Set<unknown>(blocks);
     return nodes.some((node) => node?.getAncestors({ includeSelf: true })
         .some((ancestor) => blockSet.has(ancestor)));
+}
+
+/**
+ * Marks `element`, when it is a heading, as blank at its end while it is empty or ends with a soft
+ * break. The arrow cannot follow its text there, as it would land on the line below.
+ */
+function markBlankEnd(
+    element: ModelElement | ModelDocumentFragment | null, conversionApi: DowncastConversionApi
+) {
+    if (!element?.is("element") || !isHeadingName(element.name)) {
+        return;
+    }
+    const viewElement = conversionApi.mapper.toViewElement(element);
+    const lastChild = element.getChild(element.childCount - 1);
+    const isBlankEnd = !lastChild || lastChild.is("element", "softBreak");
+    if (!viewElement || viewElement.hasClass(CLASSES.blankEnd) === isBlankEnd) {
+        return;
+    }
+    if (isBlankEnd) {
+        conversionApi.writer.addClass(CLASSES.blankEnd, viewElement);
+    } else {
+        conversionApi.writer.removeClass(CLASSES.blankEnd, viewElement);
+    }
 }

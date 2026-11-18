@@ -247,6 +247,26 @@ describe("SingleNoteRenderer", () => {
         // Printing preserves full embed nesting via expandNestedEmbeds.
         expect(h.getRenderedContent).toHaveBeenCalledWith(note, { noChildrenList: true, expandNestedEmbeds: true, mediaEnvironment: "native", parentComponent: expect.any(Component) });
     });
+
+    it("reports nothing once it is unmounted, whether the render then succeeds or fails", async () => {
+        const settle: { resolve: () => void; reject: () => void }[] = [];
+        h.getRenderedContent.mockImplementation(() => new Promise((resolve, reject) => settle.push({
+            resolve: () => resolve({ $renderedContent: [] }),
+            reject: () => reject(new Error("render failed"))
+        })));
+        const onReady = vi.fn();
+        for (const id of [ "unmounted-ok", "unmounted-failed" ]) {
+            const note = buildNote({ id, title: id, type: "image" });
+            const container = renderInto(<SingleNoteRenderer note={note} onReady={onReady} onProgressChanged={() => {}} />);
+            render(null, container);
+        }
+        await vi.waitFor(() => expect(settle).toHaveLength(2));
+
+        settle[0]?.resolve();
+        settle[1]?.reject();
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        expect(onReady).not.toHaveBeenCalled();
+    });
 });
 
 describe("loadCustomCss", () => {

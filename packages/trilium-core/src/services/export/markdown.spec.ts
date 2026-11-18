@@ -48,6 +48,20 @@ describe("Markdown export", () => {
         }
     });
 
+    it("uses a longer fence for code that contains a fence", () => {
+        expect(markdownExportService.toMarkdown(
+            `<pre><code class="language-text-x-markdown">Example:\n\n\`\`\`js\nfoo()\n\`\`\`</code></pre>`
+        )).toBe("````markdown\nExample:\n\n```js\nfoo()\n```\n````");
+
+        expect(markdownExportService.toMarkdown(
+            `<pre><code>  \`\`\`\`\nx</code></pre>`
+        )).toBe("`````\n  ````\nx\n`````");
+
+        // a run of backticks that doesn't start a line can't close the fence
+        expect(markdownExportService.toMarkdown(`<pre><code>a \`\`\` b</code></pre>`))
+            .toBe("```\na ``` b\n```");
+    });
+
     it("names an unknown language after the last part of its tag", () => {
         expect(markdownExportService.toMarkdown(`<pre><code class="language-text-x-madeup">x</code></pre>`))
             .toBe("```madeup\nx\n```");

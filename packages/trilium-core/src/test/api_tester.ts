@@ -39,7 +39,7 @@ interface ApiRequest {
     params: Record<string, string>;
     query: Record<string, string | undefined>;
     body: unknown;
-    headers: Record<string, string>;
+    headers: Record<string, string | string[]>;
     method: string;
     file?: unknown;
     originalUrl: string;
@@ -65,7 +65,8 @@ export interface TestResponse<T = unknown> {
 export interface RequestOptions {
     body?: unknown;
     query?: Record<string, string | number | boolean | undefined>;
-    headers?: Record<string, string>;
+    /** A header sent more than once is an array, as Node delivers it. */
+    headers?: Record<string, string | string[]>;
     /**
      * A fake uploaded file, mirroring the `req.file` that the Express multipart
      * middleware would populate. Lets handlers that read `req.file` (image
@@ -290,7 +291,7 @@ export class CoreApiTester {
             const headers = opts.headers ?? {};
             const lowerHeaders: Record<string, string> = {};
             for (const [ key, value ] of Object.entries(headers)) {
-                lowerHeaders[key.toLowerCase()] = value;
+                lowerHeaders[key.toLowerCase()] = Array.isArray(value) ? value.join(", ") : value;
             }
 
             const req: ApiRequest = {

@@ -6,10 +6,12 @@ import { Request, Response } from "../../http_interface";
 import becca from "../../becca/becca";
 import type BAttachment from "../../becca/entities/battachment";
 import type BNote from "../../becca/entities/bnote";
+import appInfo from "../../services/app_info.js";
 import noteService from "../../services/notes.js";
-import { convertOfficeToHtml } from "../../services/office_preview.js";
+import { convertOfficeToHtml, convertXlsxToWorkbook } from "../../services/office_preview.js";
 import { getPlatform } from "../../services/platform.js";
 import protected_session from "../../services/protected_session";
+import { isDev } from "../../services/utils/index.js";
 import { downloadData, downloadNoteInt } from "../helpers";
 import { serveContentWithRanges } from "../partial_content";
 
@@ -119,17 +121,92 @@ function updateAttachment(req: Request<{ attachmentId: string }>) {
  *
  * `?trim=1` answers with the corner of a workbook instead of the whole of it, for a caller
  * showing a card rather than the document.
+ *
+ * A preview carries an ETag the server knows before converting anything, so a browser that
+ * already holds it gets a 304 without the document being parsed again.
  */
-async function getNoteOfficePreview(req: Request<{ noteId: string }>) {
-    const note = becca.getNoteOrThrow(req.params.noteId);
-
-    return await convertOfficeToHtml(note.getContent(), note.mime, { trim: isTrimmed(req) });
+async function getNoteOfficePreview(req: Request<{ noteId: string }>, res: Response) {
+    await sendOfficePreview(req, res, becca.getNoteOrThrow(req.params.noteId));
 }
 
-async function getAttachmentOfficePreview(req: Request<{ attachmentId: string }>) {
-    const attachment = becca.getAttachmentOrThrow(req.params.attachmentId);
+async function getAttachmentOfficePreview(req: Request<{ attachmentId: string }>, res: Response) {
+    await sendOfficePreview(req, res, becca.getAttachmentOrThrow(req.params.attachmentId));
+}
 
-    return await convertOfficeToHtml(attachment.getContent(), attachment.mime, { trim: isTrimmed(req) });
+/**
+ * Parses an XLSX file note into the workbook JSON a spreadsheet note stores, which the client
+ * shows in a read-only spreadsheet. Answers 400 for anything that is not a workbook.
+ */
+async function getNoteSpreadsheetWorkbook(req: Request<{ noteId: string }>, res: Response) {
+    await sendWorkbook(req, res, becca.getNoteOrThrow(req.params.noteId));
+}
+
+async function getAttachmentSpreadsheetWorkbook(req: Request<{ attachmentId: string }>, res: Response) {
+    await sendWorkbook(req, res, becca.getAttachmentOrThrow(req.params.attachmentId));
+}
+
+async function sendWorkbook(req: Request, res: Response, entity: BNote | BAttachment) {
+    await sendConversion(req, res, entity, "workbook", "application/json; charset=utf-8",
+        () => convertXlsxToWorkbook(entity.getContent(), entity.mime));
+}
+
+async function sendOfficePreview(req: Request, res: Response, entity: BNote | BAttachment) {
+    const trim = isTrimmed(req);
+    await sendConversion(req, res, entity, trim ? "trim" : "full", "text/html; charset=utf-8",
+        () => convertOfficeToHtml(entity.getContent(), entity.mime, { trim }));
+}
+
+/**
+ * Sends what `convert` makes of the entity's content, under an ETag the server knows before
+ * converting anything, so a browser that already holds it gets a 304 without the document being
+ * parsed again. `variant` tells apart the conversions of one entity.
+ */
+async function sendConversion(req: Request, res: Response, entity: BNote | BAttachment, variant: string,
+    contentType: string, convert: () => Promise<string>) {
+    if (entity.isProtected) {
+        // Decrypted content must not reach the browser's disk cache.
+        res.setHeader("Cache-Control", "no-store");
+    } else {
+        const etag = getConversionEtag(entity, variant);
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("ETag", etag);
+        if (matchesEtag(req.headers["if-none-match"], etag)) {
+            res.status(304).send();
+            return;
+        }
+    }
+
+    const body = await convert();
+    res.setHeader("Content-Type", contentType);
+    res.send(body);
+}
+
+/**
+ * Changes whenever the conversion could: with the content (`blobId` is its hash), the MIME type
+ * that picks the converter, the variant, and the code that converts.
+ */
+function getConversionEtag(entity: BNote | BAttachment, variant: string) {
+    const mime = encodeURIComponent(entity.mime);
+    return `"${entity.blobId}-${mime}-${variant}-${getConverterToken()}"`;
+}
+
+/**
+ * Identifies the code that converts. A build carries its version and the commit it was built
+ * from, which outlive a restart. A dev checkout's build info is a placeholder that stays the same
+ * as the converter changes, so it uses the time the server started instead.
+ */
+function getConverterToken() {
+    return isDev() ? DEV_SERVER_START : `${appInfo.appVersion}-${appInfo.buildRevision}`;
+}
+
+const DEV_SERVER_START = Date.now().toString(36);
+
+/** Whether an `If-None-Match` header names `etag`, compared weakly as RFC 9110 requires for it. */
+function matchesEtag(header: string | string[] | undefined, etag: string) {
+    const values = (Array.isArray(header) ? header.join(",") : header ?? "")
+        .split(",")
+        .map((value) => value.trim().replace(/^W\//, ""));
+    return values.includes(etag) || values.includes("*");
 }
 
 /**
@@ -182,4 +259,6 @@ export default {
     downloadAttachment,
     getNoteOfficePreview,
     getAttachmentOfficePreview,
+    getNoteSpreadsheetWorkbook,
+    getAttachmentSpreadsheetWorkbook,
 }

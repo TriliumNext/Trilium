@@ -4,7 +4,7 @@
 
 import { isFontMimeType } from "./font_mimes.js";
 import { MIME_TYPES_DICT, type MimeTypeDefinition } from "./mime_type.js";
-import { isOfficeMimeType } from "./office.js";
+import { isOfficeMimeType, XLSX_MIME } from "./office.js";
 import { NoteType } from "./rows.js";
 
 export const NOTE_TYPE_ICONS = {
@@ -332,7 +332,8 @@ export function isFullWidthNoteType(type: string, mime: string) {
     }
 
     return type === "file"
-        && (mime === "application/pdf" || mime.startsWith("video/") || mime.startsWith("audio/"));
+        && (mime === "application/pdf" || mime.startsWith("video/") || mime.startsWith("audio/")
+            || mime === XLSX_MIME);
 }
 
 /** Whether a `code` note of `mime` holds Markdown, which renders as text rather than as code. */

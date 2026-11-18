@@ -11,9 +11,9 @@ import { CLASSES } from "./constants.js";
 import { hasSection } from "./heading_sections.js";
 
 /**
- * The arrow at the end of a heading that has blocks under it. It shows while the pointer is over
- * the heading or the caret is in it, and always while the heading is collapsed. A press on it
- * toggles the heading.
+ * The arrow of a heading that has blocks under it, right after its text or, with the underline
+ * heading style, at its end. It shows while the pointer is over the heading or the caret is in it,
+ * and always while the heading is collapsed. A press on it toggles the heading.
  */
 export default class CollapsibleHeadingsUI extends Plugin {
 
@@ -80,7 +80,8 @@ export default class CollapsibleHeadingsUI extends Plugin {
         }
 
         const domHeading = editing.view.domConverter.mapViewToDom(view) as HTMLElement;
-        return { view, model, isOnArrow: isOnHeadingArrow(domHeading, data.domEvent.clientX) };
+        const { clientX, clientY } = data.domEvent;
+        return { view, model, isOnArrow: isOnHeadingArrow(domHeading, clientX, clientY) };
     }
 
     private setHovered(heading: ViewElement | null, isOnArrow: boolean) {

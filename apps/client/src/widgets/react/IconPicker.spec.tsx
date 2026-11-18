@@ -114,6 +114,27 @@ describe("IconPicker", () => {
         iconRegistryMock.sources = [];
     });
 
+    it("finds an icon whose terms are written with capitals, whatever the case of the search", async () => {
+        glob.iconPacks = [ { prefix: "sh", name: "selfh.st", icon: "sh sh-proxmox" } ];
+        iconRegistryMock.sources = [ {
+            prefix: "sh", name: "selfh.st", icon: "sh sh-proxmox",
+            icons: [ { id: "sh sh-proxmox", terms: [ "Proxmox" ] }, { id: "sh sh-plex", terms: [ "Plex" ] } ]
+        } ];
+
+        const picker = renderInto(<IconPicker columnCount={1} onSelect={() => {}} />);
+        await vi.waitFor(() => expect(picker.querySelector(".icon-grid-stub")?.getAttribute("data-rows")).toBe("2"));
+
+        for (const query of [ "proxmox", "PROX" ]) {
+            const input = picker.querySelector<HTMLInputElement>("input[name=icon-search]");
+            await act(() => {
+                if (input) input.value = query;
+                input?.dispatchEvent(new Event("input", { bubbles: true }));
+            });
+            await vi.waitFor(() => expect(picker.querySelector(".icon-grid-stub")?.getAttribute("data-rows")).toBe("1"));
+        }
+        iconRegistryMock.sources = [];
+    });
+
 
     it("draws the compact grid smaller than the one a note's icon is picked from", () => {
         glob.iconPacks = [];

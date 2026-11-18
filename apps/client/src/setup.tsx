@@ -979,10 +979,8 @@ async function onExistingDataKept() {
 }
 
 function onSetupFinished() {
-    if (isElectron()) {
-        // On Electron we need to use the setup route because it handles the closing of the setup window and opening the main app window.
-        location.href = "setup";
-    } else {
+    // On Electron the main process replaces the setup window with the main window on `DB_INITIALIZED`.
+    if (!isElectron()) {
         location.reload();
     }
 }

@@ -11,6 +11,7 @@ import { renderInto } from "../../test/render";
 import { ParentComponent } from "../react/react_utils";
 
 const CANVAS_MIME = "application/vnd.excalidraw+json";
+const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 const { getRenderedContent, drawingMounts, uploadFiles } = vi.hoisted(() => ({
     getRenderedContent: vi.fn(async () => ({ $renderedContent: [] })),
     drawingMounts: vi.fn(),
@@ -34,6 +35,13 @@ vi.mock("../../services/content_renderer", () => ({
         disposeInteractiveContent: () => {}
     },
     hasRenderedPreview: (attachment: FAttachment) => attachment.mime === CANVAS_MIME
+}));
+const spreadsheetErrors = vi.hoisted(() => [] as (() => void)[]);
+vi.mock("./spreadsheet/Spreadsheet", () => ({
+    SpreadsheetFile: ({ onError }: { onError: () => void }) => {
+        spreadsheetErrors.push(onError);
+        return <div className="spreadsheet-file-stub" />;
+    }
 }));
 // Counts the mounts of the drawing editor, which loads a change saved elsewhere in place.
 vi.mock("./canvas/CanvasDrawing", () => ({
@@ -102,6 +110,15 @@ describe("AttachmentList", () => {
         await vi.waitFor(() => expect(container.querySelector(".file-preview-content")).not.toBeNull());
         expect(container.querySelectorAll(".file-preview-content")).toHaveLength(1);
         expect(drawingBlob).not.toHaveBeenCalled();
+    });
+
+    it("previews only the corner of a workbook in the list", async () => {
+        getRenderedContent.mockClear();
+        const workbook = { ...role("file"), mime: XLSX_MIME } as FAttachment;
+        await mount([ workbook ]);
+
+        await vi.waitFor(() => expect(getRenderedContent).toHaveBeenCalledOnce());
+        expect(getRenderedContent).toHaveBeenCalledWith(workbook, expect.objectContaining({ trim: true }));
     });
 
     it("files a transcript with the app's own, shown as its conversation", async () => {
@@ -243,7 +260,8 @@ describe("AttachmentDetail", () => {
 
         await vi.waitFor(() => expect(getRenderedContent).toHaveBeenCalledOnce());
         expect(getRenderedContent).toHaveBeenCalledWith(pdf, {
-            pdfToolbar: true, pdfTarget: { page: 3, heading: "h1", annotation: undefined }, buildsPdfToc: true
+            pdfToolbar: true, pdfTarget: { page: 3, heading: "h1", annotation: undefined },
+            buildsPdfToc: true, trim: false
         });
         expect(viewScope).toMatchObject({ page: undefined, heading: undefined, annotation: undefined });
 
@@ -264,6 +282,37 @@ describe("AttachmentDetail", () => {
         expect(showPdfTarget).toHaveBeenCalledOnce();
         expect(getRenderedContent).toHaveBeenCalledOnce();
         getRenderedContent.mockResolvedValue({ $renderedContent: [] });
+    });
+
+    it("shows a workbook opened on its own in the read-only spreadsheet, else its whole preview until it changes", async () => {
+        const workbook = { ...role("file"), mime: XLSX_MIME } as FAttachment;
+        vi.spyOn(froca, "getAttachment").mockResolvedValue(workbook);
+        getRenderedContent.mockClear();
+
+        const props = {
+            note: { noteId: "note1" },
+            viewScope: { viewMode: "attachments", attachmentId: workbook.attachmentId }
+        } as unknown as Parameters<typeof AttachmentDetail>[0];
+        const parent = new Component();
+        const container = renderInto(
+            <ParentComponent.Provider value={parent}>
+                <AttachmentDetail {...props} />
+            </ParentComponent.Provider>
+        );
+
+        await vi.waitFor(() => expect(container.querySelector(".attachment-spreadsheet .spreadsheet-file-stub")).not.toBeNull());
+        expect(getRenderedContent).not.toHaveBeenCalled();
+
+        // A file that is no workbook falls back to the whole HTML preview.
+        await act(async () => spreadsheetErrors.at(-1)?.());
+        await vi.waitFor(() => expect(getRenderedContent).toHaveBeenCalledOnce());
+        expect(getRenderedContent).toHaveBeenCalledWith(workbook, expect.objectContaining({ trim: false }));
+        expect(container.querySelector(".spreadsheet-file-stub")).toBeNull();
+
+        // A replaced file gets the spreadsheet again.
+        workbook.utcDateModified = "2026-02-01 00:00:00Z";
+        await reloadAttachment(parent, workbook.attachmentId, "elsewhere");
+        await vi.waitFor(() => expect(container.querySelector(".attachment-spreadsheet .spreadsheet-file-stub")).not.toBeNull());
     });
 });
 

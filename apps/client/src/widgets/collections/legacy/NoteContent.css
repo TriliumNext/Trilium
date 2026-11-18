@@ -15,3 +15,12 @@
         max-height: 100%;
         object-fit: contain;
     }
+
+    .office-preview-body:has(.spreadsheet-table) {
+        padding: 0;
+
+        .spreadsheet-table {
+            margin-top: 0;
+        }
+    }
+}

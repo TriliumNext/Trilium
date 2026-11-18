@@ -1,4 +1,5 @@
 import ExcelJS from "exceljs";
+import JSZip from "jszip";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -782,6 +783,23 @@ describe("parseXlsxToWorkbook data validation", () => {
         return parsed[workbook.sheetOrder[sheetIndex]] ?? null;
     }
 
+    /**
+     * Writes a sheet with one list validation, then rewrites its `sqref` to `sqref`: the exceljs
+     * writer emits a single cell, while Excel writes the space-separated ranges a template carries.
+     */
+    async function withSqref(sqref: string, build: (ws: ExcelJS.Worksheet) => void): Promise<ArrayBuffer> {
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet("S");
+        build(ws);
+        ws.getCell("B2").dataValidation = { type: "list", formulae: [ '"a,b"' ] };
+        const zip = await JSZip.loadAsync(await wb.xlsx.writeBuffer());
+        const sheetPath = "xl/worksheets/sheet1.xml";
+        const xml = await zip.file(sheetPath)?.async("string");
+        if (!xml?.includes('sqref="B2"')) throw new Error("validation fixture missing");
+        zip.file(sheetPath, xml.replace('sqref="B2"', `sqref="${sqref}"`));
+        return zip.generateAsync({ type: "arraybuffer" });
+    }
+
     it("imports an inline dropdown list, coalescing the cell range and JSON-encoding the options", async () => {
         // Mirrors the real file: a single sqref rectangle that exceljs expands to individual cells.
         const wb = new ExcelJS.Workbook();
@@ -884,6 +902,33 @@ describe("parseXlsxToWorkbook data validation", () => {
         expect(rule?.type).toBe("custom");
         expect(rule?.formula1).toBe("=B2>0");
         expect(rule?.operator).toBeUndefined();
+    });
+
+    it("keeps a validation range as one range instead of one entry per cell (#11228)", async () => {
+        // Import templates put a dropdown on whole columns down to row 65538; exceljs used to expand
+        // every such range into one model entry per cell, millions of them for a 39 KB file.
+        const buffer = await withSqref("A3:A65538 C3:D65538", (ws) => {
+            ws.getCell("A1").value = "header";
+        });
+
+        const wb = new ExcelJS.Workbook();
+        await wb.xlsx.load(buffer);
+        expect(Object.keys(wb.worksheets[0].dataValidations.model)).toEqual([ "A3:A65538", "C3:D65538" ]);
+
+        const { workbook } = await parseXlsxToWorkbook(buffer);
+        expect(validationsOf(workbook)?.[0]?.ranges).toEqual([
+            { startRow: 2, endRow: 65537, startColumn: 0, endColumn: 0 },
+            { startRow: 2, endRow: 65537, startColumn: 2, endColumn: 3 }
+        ]);
+    });
+
+    it("skips the empty token a padded sqref leaves, and coalesces its single cells", async () => {
+        const buffer = await withSqref(" A1 A2 B1 B2", () => {});
+
+        const { workbook } = await parseXlsxToWorkbook(buffer);
+        expect(validationsOf(workbook)?.[0]?.ranges).toEqual([
+            { startRow: 0, endRow: 1, startColumn: 0, endColumn: 1 }
+        ]);
     });
 
     it("drops a list validation that carries no options", async () => {

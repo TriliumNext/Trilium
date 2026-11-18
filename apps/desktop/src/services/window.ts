@@ -1,4 +1,4 @@
-import { app_info, cls, events, getLog, isNextBasedTheme, isSetupRequested, keyboard_actions as keyboardActionsService, options as optionService, sql_init, utils as coreUtils } from "@triliumnext/core";
+import { app_info, becca_loader, cls, events, getLog, isNextBasedTheme, isSetupRequested, keyboard_actions as keyboardActionsService, options as optionService, sql_init, utils as coreUtils } from "@triliumnext/core";
 import { RESOURCE_DIR } from "@triliumnext/server/src/services/resource_dir.js";
 import { supportsBackgroundMaterial } from "@triliumnext/server/src/services/utils.js";
 import { type BrowserWindow, type BrowserWindowConstructorOptions, default as electron, type Session, type WebContents } from "electron";
@@ -797,6 +797,9 @@ export function setupWindowing() {
     events.subscribe(events.DB_INITIALIZED, async () => {
         if (!setupWindow) return;
         try {
+            // `createMainWindow()` reads options that `initStartupOptions()` creates during the
+            // becca load, which a database created for sync reaches only after this event.
+            await becca_loader.beccaLoaded;
             await createMainWindow();
             closeSetupWindow();
         } catch (err) {

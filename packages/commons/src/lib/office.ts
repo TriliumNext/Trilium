@@ -1,3 +1,6 @@
+/** The MIME type of an Excel workbook (`.xlsx`, Office Open XML). */
+export const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
 /**
  * Office document formats that officeparser can process — used both for OCR text
  * extraction (server) and for the inline HTML preview of file notes/attachments.

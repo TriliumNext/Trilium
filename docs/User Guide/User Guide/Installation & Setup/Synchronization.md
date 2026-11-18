@@ -42,6 +42,13 @@ Once synchronization is complete, you will be automatically redirected to the Tr
 
 This method allows two desktop instances to synchronize between each other without requiring a <a class="reference-link" href="Server%20Installation.md">Server Installation</a>.
 
+Every desktop app contains a built-in server. In this setup, the new desktop instance uses that server to act as the sync server for the existing one, so it must be running and reachable over the network whenever the other instance synchronizes. Both devices must be on the same network.
+
+1.  **New desktop**: On the first start, in the setup screen, choose _Connect a desktop app_. The page lists the _Addresses for this device_ and waits for a connection.
+2.  **Network access**: If the page says the device can't be reached by other devices, select _Allow network access & restart_. Trilium restarts, after which you choose _Connect a desktop app_ again.
+3.  **Existing desktop**: Open <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Sync_, set the _Server address_ to one of the addresses shown on the new desktop (for example `http://192.168.0.10:37840`), then select _Test now_.
+4.  **Initial sync**: The new desktop shows the progress of the sync and opens the knowledge base once it is complete. From then on, the existing desktop keeps synchronizing with the new one.
+
 > [!WARNING]
 > Since v0.104.0, LAN access needs to be enabled to allow this sync to function. See <a class="reference-link" href="Desktop%20Installation/Network%20Access.md">Network Access</a> for information on how to do so.
 

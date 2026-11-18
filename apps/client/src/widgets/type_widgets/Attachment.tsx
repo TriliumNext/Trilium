@@ -5,6 +5,7 @@ import {
     attachmentIcon, isImageAttachmentRole
 } from "@triliumnext/commons/src/lib/attachment_roles.js";
 import { CANVAS_ATTACHMENT_MIME } from "@triliumnext/commons/src/lib/notes.js";
+import { XLSX_MIME } from "@triliumnext/commons/src/lib/office.js";
 import { t } from "i18next";
 import { Fragment } from "preact";
 import { lazy, Suspense } from "preact/compat";
@@ -56,6 +57,8 @@ import { TypeWidgetProps } from "./type_widget";
 
 const CanvasDrawingDetail = lazy(() =>
     import("./canvas/CanvasDrawing").then((module) => module.CanvasDrawingDetail));
+const SpreadsheetFile = lazy(() =>
+    import("./spreadsheet/Spreadsheet").then((module) => ({ default: module.SpreadsheetFile })));
 
 /**
  * Displays the full list of attachments of a note and allows the user to interact with them.
@@ -254,7 +257,13 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
         && attachment.mime === CANVAS_ATTACHMENT_MIME
         && (!attachment.isProtected || protected_session_holder.isProtectedSessionAvailable());
     const isTranscript = attachment.role === "transcript";
-    const rendersItself = isZoomableImage || isPlayableMedia || isEditableDrawing || isTranscript;
+    // A workbook gets the read-only spreadsheet, and its whole HTML preview if it cannot be read as
+    // one, until its content changes.
+    const [ workbookFailedFor, setWorkbookFailedFor ] = useState<string>();
+    const workbookKey = `${attachment.attachmentId}-${modified}`;
+    const isWorkbook = !!isFullDetail && attachment.mime === XLSX_MIME
+        && workbookFailedFor !== workbookKey;
+    const rendersItself = isZoomableImage || isPlayableMedia || isEditableDrawing || isTranscript || isWorkbook;
     const imageSrc = getAttachmentImageUrl(attachment.attachmentId, attachment.title, modified);
     /** Opens the PDF that the content renderer showed at another place. */
     const showPdfTargetRef = useRef<((target: PdfLinkTarget) => void) | null>(null);
@@ -276,12 +285,13 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
 
     function refresh() {
         if (!rendersItself) {
-            // The full-detail view has a pane to itself, so it gets the pdf.js toolbar; a list-view preview
-            // stays bare.
+            // The full-detail view has a pane to itself, so it gets the pdf.js toolbar and the whole
+            // document; a list-view preview stays bare and shows only the corner of a workbook.
             const renderOptions = {
                 pdfToolbar: !!isFullDetail,
                 pdfTarget: takeLinkTarget(),
-                buildsPdfToc: !!isFullDetail
+                buildsPdfToc: !!isFullDetail,
+                trim: !isFullDetail
             };
             content_renderer.getRenderedContent(attachment, renderOptions)
                 .then(({ $renderedContent, showPdfTarget }) => {
@@ -399,6 +409,17 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
                                 attachment={attachment}
                                 note={ownerNote}
                                 noteContext={noteContext}
+                            />
+                        </Suspense>
+                    </div>
+                ) : isWorkbook ? (
+                    <div key="spreadsheet" className="attachment-content-wrapper attachment-spreadsheet">
+                        <Suspense fallback={null}>
+                            <SpreadsheetFile
+                                key={workbookKey}
+                                entity={attachment}
+                                noteContext={noteContext}
+                                onError={() => setWorkbookFailedFor(workbookKey)}
                             />
                         </Suspense>
                     </div>

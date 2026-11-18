@@ -23,6 +23,11 @@ interface NoteTypeMapping {
     /** The class name to assign to the note type wrapper */
     className: string;
     isFullHeight?: boolean;
+    /**
+     * Whether the widget draws the content after it has loaded and calls `onContentShown` once it
+     * is drawn. The note list below the note waits for that call instead of the content's load.
+     */
+    reportsContentShown?: boolean;
 }
 
 export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
@@ -119,7 +124,8 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
     editableText: {
         view: () => import("./type_widgets/text/EditableText"),
         className: "note-detail-editable-text",
-        printable: true
+        printable: true,
+        reportsContentShown: true
     },
     render: {
         view: () => import("./type_widgets/Render"),

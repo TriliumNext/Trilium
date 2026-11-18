@@ -1,4 +1,7 @@
 %define _binary_payload w<%= compressionLevel %>.xzdio
+# Electron's prebuilt binaries have the same build ID in every app on the same Electron version,
+# so a /usr/lib/.build-id link would conflict with other Electron apps' RPMs.
+%define _build_id_links none
 
 %if "%{_host_cpu}" != "%{_target_cpu}"
 %global __strip /bin/true

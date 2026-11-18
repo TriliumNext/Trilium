@@ -60,8 +60,6 @@
     "search_note": "cari catatan berdasarkan namanya",
     "link_title": "Judul tautan",
     "button_add_link": "Tambahkan tautan",
-    "anchor": "Anchor (opsional)",
-    "anchor_none": "Tidak ada (tautan ke catatan)",
     "edit_link": "Edit tautan",
     "button_edit_link": "Simpan tautan"
   },

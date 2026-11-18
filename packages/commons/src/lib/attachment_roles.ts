@@ -1,4 +1,4 @@
-import { getMimeIcon } from "./notes.js";
+import { CANVAS_ATTACHMENT_MIME, getMimeIcon, isFullWidthNoteType } from "./notes.js";
 
 /**
  * What the app knows about an attachment of a given role.
@@ -169,6 +169,17 @@ export function isDerivedAttachmentRole(role: string | undefined | null): boolea
  */
 export function attachmentIcon(role: string | undefined | null, mime: string | undefined | null): string {
     return attachmentRoleTraits(role)?.icon ?? getMimeIcon(mime);
+}
+
+/**
+ * Whether an attachment shown on its own takes the full width, as a note of the matching type would:
+ * a picture as an image note, a drawing as a canvas, anything else as a file note.
+ */
+export function isFullWidthAttachment({ role, mime }: { role: string; mime: string }): boolean {
+    const type = isImageAttachmentRole(role) ? "image"
+        : mime === CANVAS_ATTACHMENT_MIME ? "canvas"
+            : "file";
+    return isFullWidthNoteType(type, mime);
 }
 
 /**

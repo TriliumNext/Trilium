@@ -156,6 +156,24 @@ describe("extractCodeBlocks", () => {
         expect([ ...placeholderMap.keys() ]).toStrictEqual([ "<!--CODE_BLOCK_1_0-->" ]);
         expect(processedText).toBe("<!--CODE_BLOCK_0_1-->\n<!--CODE_BLOCK_1_0-->");
     });
+
+    it("should shield a 4-backtick block containing a 3-backtick inner fence and $-delimited text", () => {
+        const input = "````markdown\nExample:\n\n```js\nfoo()\n```\n$x$\n````";
+        const { processedText, placeholderMap } = extractCodeBlocks(input);
+
+        expect(placeholderMap.size).toBe(1);
+        expect(processedText).not.toContain("$x$");
+        expect([...placeholderMap.values()][0]).toBe(input);
+    });
+
+    it("should handle a long run of backticks without backtracking", () => {
+        const input = "`".repeat(50_000);
+        const start = performance.now();
+        const { placeholderMap } = extractCodeBlocks(input);
+
+        expect([ ...placeholderMap.values() ]).toStrictEqual([ input ]);
+        expect(performance.now() - start).toBeLessThan(100);
+    });
 });
 
 describe("renderToHtml", () => {

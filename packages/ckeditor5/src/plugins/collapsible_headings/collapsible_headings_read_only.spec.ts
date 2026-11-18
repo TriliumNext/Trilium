@@ -238,14 +238,69 @@ describe("isOnHeadingArrow", () => {
         heading.textContent = "Title";
         document.body.prepend(heading);
         const rect = heading.getBoundingClientRect();
+        const y = rect.top + 5;
 
-        expect(isOnHeadingArrow(heading, rect.right - 10)).toBe(true);
-        expect(isOnHeadingArrow(heading, rect.left + 10)).toBe(false);
+        expect(isOnHeadingArrow(heading, rect.right - 10, y)).toBe(true);
+        expect(isOnHeadingArrow(heading, rect.left + 10, y)).toBe(false);
 
         heading.dir = "rtl";
-        expect(isOnHeadingArrow(heading, rect.left + 10)).toBe(true);
-        expect(isOnHeadingArrow(heading, rect.right - 10)).toBe(false);
+        expect(isOnHeadingArrow(heading, rect.left + 10, y)).toBe(true);
+        expect(isOnHeadingArrow(heading, rect.right - 10, y)).toBe(false);
         heading.remove();
+    });
+
+    it("finds the arrow right after the text with the heading styles without an underline", () => {
+        const container = document.createElement("div");
+        container.className = "ck-content";
+        container.style.setProperty("width", "400px");
+        container.innerHTML = "<h2>Title<br>Second line</h2><p>a1</p><h2>Blank<br></h2><p>b1</p>";
+        document.body.prepend(container);
+        const dispose = applyCollapsedHeadings(container);
+        onTestFinished(() => {
+            dispose();
+            container.remove();
+            document.body.classList.remove("heading-style-plain", "heading-style-markdown",
+                "heading-style-underline");
+        });
+        const [ heading, blank ] = [ ...container.querySelectorAll("h2") ];
+        const em = parseFloat(getComputedStyle(heading).fontSize);
+        const isOnArrow = (element: Element, point: { x: number, y: number }) =>
+            isOnHeadingArrow(element, point.x, point.y);
+
+        /** The middle of the arrow after the second line, and a point above it, on the first. */
+        function getPoints() {
+            const range = document.createRange();
+            range.selectNodeContents(heading.lastChild as Text);
+            const text = range.getBoundingClientRect();
+            const offset = 0.3 * em + 0.55 * em;
+            const x = heading.dir === "rtl" ? text.left - offset : text.right + offset;
+            const y = text.top + text.height / 2;
+            return { arrow: { x, y }, above: { x, y: y - text.height } };
+        }
+        const endOf = (element: Element) => {
+            const rect = element.getBoundingClientRect();
+            return { x: rect.right - 6, y: rect.top + 6 };
+        };
+
+        for (const style of [ "plain", "markdown" ]) {
+            document.body.classList.add(`heading-style-${style}`);
+            expect(isOnArrow(heading, getPoints().arrow), style).toBe(true);
+            expect(isOnArrow(heading, getPoints().above), style).toBe(false);
+            expect(isOnArrow(heading, endOf(heading)), style).toBe(false);
+            // A heading that ends with a line break keeps the arrow at its end.
+            expect([ ...blank.classList ]).toContain("trilium-heading-blank-end");
+            expect(isOnArrow(blank, endOf(blank)), style).toBe(true);
+            document.body.classList.remove(`heading-style-${style}`);
+        }
+
+        document.body.classList.add("heading-style-plain");
+        heading.dir = "rtl";
+        expect(isOnArrow(heading, getPoints().arrow)).toBe(true);
+        heading.dir = "";
+
+        document.body.classList.replace("heading-style-plain", "heading-style-underline");
+        expect(isOnArrow(heading, getPoints().arrow)).toBe(false);
+        expect(isOnArrow(heading, endOf(heading))).toBe(true);
     });
 });
 
