@@ -877,7 +877,7 @@ describe("initializeCore dbConfig callbacks + getDemoArchive", () => {
             onTransactionCommit: () => Promise<void>;
             onTransactionRollback: () => Promise<void>;
         };
-        const getDemoArchive = config.getDemoArchive as () => Promise<Buffer>;
+        const getDemoArchive = config.getDemoArchive as (locale?: string) => Promise<Buffer>;
 
         await dbConfig.onTransactionCommit();
         expect(h.sendTransactionEntityChangesToAllClients).toHaveBeenCalled();

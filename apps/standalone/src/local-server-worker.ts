@@ -336,9 +336,18 @@ async function initialize(): Promise<void> {
                 backup: new StandaloneBackupService(coreModule!.options),
                 translations: translationProvider,
                 schema: schemaModule.default,
-                getDemoArchive: async () => {
-                    const response = await fetch("/server-assets/db/demo.zip");
-                    if (!response.ok) return null;
+                getDemoArchive: async (locale?: string) => {
+                    const suffix = locale ? `-${locale}` : "";
+                    const response = await fetch(`/server-assets/db/demo${suffix}.zip`);
+                    if (!response.ok) {
+                        if (locale) {
+                            // No demo translated into this locale; fall back to the English demo.
+                            const fallback = await fetch("/server-assets/db/demo.zip");
+                            if (!fallback.ok) return null;
+                            return new Uint8Array(await fallback.arrayBuffer());
+                        }
+                        return null;
+                    }
                     return new Uint8Array(await response.arrayBuffer());
                 },
                 inAppHelp: inAppHelpProvider,

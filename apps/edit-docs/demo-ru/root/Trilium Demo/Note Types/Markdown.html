@@ -1,0 +1,249 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<link href="../../../style.css" rel="stylesheet"/>
+<base target="_parent"/>
+<title data-trilium-title="">Markdown</title>
+</head>
+<body>
+<div class="content">
+<h1 data-trilium-h1="">Markdown</h1>
+<div class="ck-content">
+<p>Демонстрация всех возможностей Markdown, поддерживаемых в заметках Trilium этого типа.</p>
+<h2>1. Основное форматирование (стандартный Markdown)</h2>
+<p><strong>Полужирный текст</strong>, <em>Курсивный текст</em>, <del>Зачёркнутый текст</del> и <code spellcheck="false">inline code</code>.</p>
+<blockquote>
+<p>Простая цитата, демонстрирующая стандартный синтаксис Markdown.</p>
+</blockquote>
+<h2>2. Markdown в стиле GitHub (GFM)</h2>
+<h3>Таблицы</h3>
+<figure class="table">
+<table>
+<thead>
+<tr>
+<th>Возможность</th>
+<th>Поддерживается</th>
+<th>Примечания</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Стандартный Markdown</td>
+<td>✅</td>
+<td>Полная поддержка</td>
+</tr>
+<tr>
+<td>Таблицы GFM</td>
+<td>✅</td>
+<td>Как эта таблица</td>
+</tr>
+<tr>
+<td>Математические формулы</td>
+<td>✅</td>
+<td>С помощью KaTeX</td>
+</tr>
+<tr>
+<td>Диаграммы Mermaid</td>
+<td>✅</td>
+<td>Через блоки ```mermaid</td>
+</tr>
+<tr>
+<td>Блоки предупреждений</td>
+<td>✅</td>
+<td>В стиле GitHub</td>
+</tr>
+</tbody>
+</table>
+</figure>
+<h3>Списки задач</h3>
+<ul class="todo-list">
+<li>
+<label class="todo-list__label">
+<input checked="checked" disabled="disabled" type="checkbox"/><span class="todo-list__label__description">Создайте заметку Markdown в Trilium</span>
+</label>
+</li>
+<li>
+<label class="todo-list__label">
+<input checked="checked" disabled="disabled" type="checkbox"/><span class="todo-list__label__description">Добавьте подсветку синтаксиса</span>
+</label>
+</li>
+<li>
+<label class="todo-list__label">
+<input disabled="disabled" type="checkbox"/><span class="todo-list__label__description">Преобразуйте текстовую заметку</span>
+</label>
+</li>
+<li>
+<label class="todo-list__label">
+<input disabled="disabled" type="checkbox"/><span class="todo-list__label__description">Экспортируйте и импортируйте заметку повторно</span>
+</label>
+</li>
+</ul>
+<h2>3. Блоки кода с подсветкой синтаксиса</h2>
+<blockquote>
+<p><strong>Примечание:</strong> Чтобы подсветка синтаксиса работала, необходимо указать язык программирования.</p>
+</blockquote>
+<p>Пример без подсветки синтаксиса:</p>
+<pre><code class="language-text-x-trilium-auto">function greet(name) {
+
+  return `Hello, ${name}!`;
+
+}
+
+console.log(greet("Trilium"));</code></pre>
+<p>JavaScript с подсветкой синтаксиса:</p>
+<pre><code class="language-application-javascript-env-backend">// JavaScript example
+
+function greet(name) {
+
+  return `Hello, ${name}!`;
+
+}
+
+console.log(greet("Trilium"));</code></pre>
+<p>Пример на Python:</p>
+<pre><code class="language-text-x-python">def factorial(n):
+
+    return 1 if n &lt;= 1 else n * factorial(n - 1)
+
+
+
+print(factorial(10))</code></pre>
+<p>Пример на SQL:</p>
+<pre><code class="language-text-x-trilium-auto">SELECT title, dateCreated
+
+FROM notes
+
+WHERE type = 'markdown'
+
+ORDER BY dateCreated DESC;</code></pre>
+<hr/>
+<h2>4. Цитаты и блоки предупреждений</h2>
+<blockquote>
+<p>Стандартная цитата Markdown. Она может занимать несколько строк.</p>
+</blockquote>
+<aside class="admonition note">
+<p>Это <strong>примечание</strong> — блок нейтральной информации, полезный для дополнительных пояснений.</p>
+</aside>
+<aside class="admonition tip">
+<p>Это <strong>совет</strong> — блок с полезными советами и дополнительными рекомендациями.</p>
+</aside>
+<aside class="admonition important">
+<p>Это <strong>важно</strong> — блок для сведений, которые пользователь не должен пропустить.</p>
+</aside>
+<aside class="admonition warning">
+<p>Это <strong>предупреждение</strong> — блок, указывающий на возможные проблемы.</p>
+</aside>
+<aside class="admonition caution">
+<p>Это <strong>осторожно</strong> — блок для описания действий, которые могут привести к потере данных или необратимым изменениям.</p>
+</aside>
+<hr/>
+<h2>5. Математические формулы</h2>
+<p>Формула в строке: <span class="math-tex">\(E = mc^2\)</span>
+</p>
+<p>Отдельная формула:</p>
+<span class="math-tex">\[\int_{-\infty}^{\infty} e^{-x^2} \, dx = \sqrt{\pi}\]</span>
+<span class="math-tex">\[\Gamma(n) = (n-1)! \quad \forall n \in \mathbb{N}\]</span>
+<hr/>
+<h2>6. Диаграммы Mermaid</h2>
+<pre spellcheck="false"><code class="language-mermaid">graph TD
+
+    A[Start] --&gt; B{Is it a Markdown note?}
+
+    B -- Yes --&gt; C[Render preview]
+
+    B -- No --&gt; D[Use Text note]
+
+    C --&gt; E[Enjoy split view!]</code></pre>
+<pre spellcheck="false"><code class="language-mermaid">sequenceDiagram
+
+    participant User
+
+    participant Trilium
+
+    User-&gt;&gt;Trilium: Opens Markdown note
+
+    Trilium-&gt;&gt;User: Shows split view (source + preview)
+
+    User-&gt;&gt;Trilium: Edits source
+
+    Trilium-&gt;&gt;User: Syncs scroll &amp; highlights block</code></pre>
+<h2>7. Внутренние ссылки (ссылки на заметки) — формат Wikilinks</h2>
+<p>Ссылка на заметку по её Note ID в формате, похожем на Wikilinks:</p>
+<p><a class="reference-link" href="#root/Upd4ck33FwwH">[отсутствующая заметка]</a>
+</p>
+<p>Либо используйте синтаксис HTML для более точного управления:</p>
+<p><a href="#root">Внутренняя ссылка через HTML</a>
+</p>
+<h2>8. Вставка заметки (синтаксис HTML)</h2>
+<p>Вставленные заметки с использованием синтаксиса HTML.</p>
+<section class="include-note" data-box-size="expandable" data-note-id="root"> </section>
+<h2>9. Вложенная подсветка синтаксиса (код внутри блоков кода)</h2>
+<p>Панель исходного кода Trilium поддерживает вложенную подсветку синтаксиса. Например, можно подсвечивать HTML внутри блока кода Markdown:</p>
+<pre><code class="language-text-html">&lt;!DOCTYPE html&gt;
+
+&lt;html lang="en"&gt;
+
+&lt;head&gt;
+
+  &lt;meta charset="UTF-8"&gt;
+
+  &lt;title&gt;Trilium&lt;/title&gt;
+
+&lt;/head&gt;
+
+&lt;body&gt;
+
+  &lt;h1&gt;Hello from HTML inside Markdown!&lt;/h1&gt;
+
+&lt;/body&gt;
+
+&lt;/html&gt;</code></pre>
+<h2>10. Списки</h2>
+<h3>Маркированный список</h3>
+<ul>
+<li>
+            Первый пункт
+            <ul>
+<li>Вложенный пункт A</li>
+<li>
+                Вложенный пункт B
+                <ul>
+<li>Пункт следующего уровня вложенности</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Второй пункт</li>
+<li>Третий пункт</li>
+</ul>
+<h3>Нумерованный список</h3>
+<ol>
+<li>Первый шаг</li>
+<li>
+            Второй шаг
+            <ol>
+<li>Подшаг A</li>
+<li>Подшаг B</li>
+</ol>
+</li>
+<li>Третий шаг</li>
+</ol>
+<h2>11. Горизонтальные линии и прочее</h2>
+<p>Горизонтальная линия:</p>
+<hr/>
+<p>Верхний индекс: X^2^
+            <br/>Нижний индекс: H<del>2</del>O
+            <br/>Ссылка на сноску<a href="#footnote-1"><sup>1</sup></a>
+</p>
+<section>
+<h2>Сноски</h2>
+<ol>
+<li>Здесь находится текст сноски. <a href="#footnote-ref-1">↩</a>
+</li>
+</ol>
+</section>
+</div>
+</div>
+</body>
+</html>

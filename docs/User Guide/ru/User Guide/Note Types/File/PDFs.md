@@ -1,0 +1,102 @@
+# PDFs
+<figure class="image image_resized" style="width:74.34%;"><img style="aspect-ratio:1360/698;" src="PDFs_image.png" width="1360" height="698"></figure>
+
+PDFs file can be uploaded in Trilium, where they will be displayed without the need to download them first.
+
+Since v0.102.0, PDFs will be rendered using Trilium's built-in PDF viewer, which is a customization of [Mozilla's PDF.js viewer](https://mozilla.github.io/pdf.js/) (also built-in in the Mozilla Firefox browser). Versions prior to that render PDFs using the browser's default PDF viewer.
+
+## Features
+
+*   The last page viewed and scroll position is maintained in between restarts or note navigations.
+*   Annotations (text, highlights) as well as comments. These are saved automatically.
+*   Forms can be filled.
+*   Can be printed or downloaded.
+*   Can be saved as a [template](../../Advanced%20Usage/Templates.md) and the content of the PDF will be copied over to the new note. This is especially useful in combination with annotations or filled forms.
+*   Integrates with the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a> by displaying the list of pages with thumbnails, table of contents and a listing of the annotations.
+*   Basic support for signatures (the hand-drawn ones, not proper digital signatures), similar to annotations. Signatures are stored and can be reused across multiple documents (up to 5).
+
+## Storing last position and settings
+
+For every PDF, Trilium will remember the following information:
+
+*   The current page.
+*   The scroll position, within the current page.
+*   The rotation of the page.
+
+This makes it useful when reading large documents since the position is remembered automatically. This happens in the background, however it's recorded only a few seconds after stopping any scroll actions.
+
+> [!TIP]
+> Technically, the information about the scroll position and rotation is stored in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Attachments.md">Attachments</a> section, in a dedicated attachment called `pdfHistory.json`.
+
+## Annotations
+
+Since v0.102.0 it's possible to annotate PDFs. To do so, look for the annotation buttons on the right side of the PDF toolbar (<img src="1_PDFs_image.png" width="120" height="32">).
+
+Since v0.103.0:
+
+*   Annotations are disabled if the note is marked as <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">Read-Only Notes</a>.
+*   Comments can also be added, which is similar to highlights but also attach a text.
+*   The <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a> also displays a list of annotations (highlights, comments).
+
+### Supported annotations
+
+The following annotation methods are supported:
+
+*   **Highlight**  
+    Allows highlighting text with one of the predefined colors.
+    *   The thickness is also adjustable.
+    *   It's also possible to highlight the blank space, turning the feature more into a thicker pen.
+*   **Text**  
+    Allows adding arbitrary text, with a custom color and size.
+*   **Pen**  
+    Allows free drawing on the document, with variable color, thickness and opacity.
+*   **Image**  
+    Allows inserting images from outside Trilium directly into the document.
+
+### Editing existing annotations
+
+Although annotations are stored in the PDF itself, they can be edited. To edit an annotation, press one of the annotation buttons from the previous section to enter edit mode and click on an existing annotation. This will reveal a toolbar with options to customize the annotation (e.g. to change a color), as well as the possibility to remove it.
+
+### How are annotations stored
+
+Annotations are stored directly in the PDF. When modifications are made, Trilium will replace the PDF with the new one.
+
+Since modifications are automatically saved, there's no need to manually save the document after making modifications to the annotations.
+
+The benefit of “baked-in annotations” is that they are also accessible if downloading (for external use outside Trilium) or sharing the note.
+
+The downside is that the entire PDF needs to be sent back to the server, which can slow down performance for larger documents. If you encounter any issues from this system, feel free to [report it](../../Troubleshooting/Reporting%20issues.md).
+
+## Linking to a page or an annotation
+
+A link can open a PDF at a given page, or at one of its annotations. To create one:
+
+*   To link to a page, right-click the page in the _Pages_ section of the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a> and select _Copy reference_.
+*   To link to an annotation, right-click it in the _Annotations_ section of the sidebar and select _Copy reference_.
+
+Pasted into a text note, the reference becomes one of the <a class="reference-link" href="../Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a>, showing the title of the PDF followed by the page (_Page 5_), or by _Annotation on page 5_ for a reference to an annotation. Clicking it opens the PDF and scrolls to the page or to the annotation.
+
+A reference to an annotation also carries its page, so a link to an annotation that was deleted still opens the right page.
+
+> [!NOTE]
+> An annotation drawn since the PDF was opened does not have a permanent identifier until the PDF is opened again, so a reference copied for it points at its page only.
+
+## Filling out forms
+
+Similar to annotations, forms are also supported by Trilium since v0.102.0. If the document has fields that can be filled-in, they will be indicated with a colored background.
+
+Simply type text in the forms and they will be automatically saved.
+
+## Sidebar navigation
+
+See the dedicated section on PDFs in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar/Outline%20tab.md">Outline tab</a>.
+
+## Share functionality
+
+PDFs can also be shared using the <a class="reference-link" href="../../Advanced%20Usage/Sharing.md">Sharing</a> feature. This will also use Trilium's customized PDF viewer.
+
+If you are using a reverse proxy on your server with strict access limitations for the share functionality, make sure that `[host].com/pdfjs` directory is accessible. Note that this directory is outside the `/share` route as it's common with the rest of the application.
+
+## OCR
+
+PDFs are eligible for <a class="reference-link" href="../../Advanced%20Usage/Text%20Extraction%20(OCR).md">Text Extraction (OCR)</a>, which means that their text can be used in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Search.md">Search</a>.

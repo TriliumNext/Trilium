@@ -1,0 +1,10 @@
+erDiagram
+          CUSTOMER }|..|{ DELIVERY-ADDRESS : имеет
+          CUSTOMER ||--o{ ORDER : размещает
+          CUSTOMER ||--o{ INVOICE : "несёт ответственность за"
+          DELIVERY-ADDRESS ||--o{ ORDER : получает
+          INVOICE ||--|{ ORDER : охватывает
+          ORDER ||--|{ ORDER-ITEM : включает
+          PRODUCT-CATEGORY ||--|{ PRODUCT : содержит
+          PRODUCT ||--o{ ORDER-ITEM : "заказывается в"
+            

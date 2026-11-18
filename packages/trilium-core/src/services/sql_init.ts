@@ -19,13 +19,21 @@ import { isSetupRequested, leaveSetupMode } from "./setup_mode";
 export const dbReady = deferred<void>();
 
 let schema: string;
-let getDemoArchive: (() => Promise<Uint8Array | null>) | null = null;
+/**
+ * Resolves the demo archive to import at first start. Receives the display language chosen
+ * during setup so a localized demo (`demo-<locale>.zip`) can be preferred over the default
+ * English `demo.zip`; implementations fall back to the default archive when no localized
+ * variant exists for the locale.
+ */
+export type DemoArchiveProvider = (locale?: string) => Promise<Uint8Array | null>;
+
+let getDemoArchive: DemoArchiveProvider | null = null;
 
 export function initSchema(schemaStr: string) {
     schema = schemaStr;
 }
 
-export function initDemoArchive(fn: () => Promise<Uint8Array | null>) {
+export function initDemoArchive(fn: DemoArchiveProvider) {
     getDemoArchive = fn;
 }
 
@@ -203,7 +211,7 @@ async function createInitialDatabase(skipDemoDb?: boolean, locale?: string) {
     // Import demo content.
     if (!skipDemoDb && getDemoArchive) {
         log.info("Importing demo content...");
-        const demoFile = await getDemoArchive();
+        const demoFile = await getDemoArchive(locale);
         if (demoFile) {
             const { default: zipImportService } = await import("./import/zip.js");
             const dummyTaskContext = new TaskContext("no-progress-reporting", "importNotes", null);

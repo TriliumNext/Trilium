@@ -13,28 +13,31 @@ import { isDev } from "./services/utils.js";
  */
 export default class NodejsInAppHelpProvider extends InAppHelpProvider {
 
-    /** The guide only changes with the application, so both files are read once per process. */
-    private helpMeta: HiddenSubtreeItem[] | null = null;
-    private helpContent: HelpBundle | null = null;
-
     /**
-     * The tree is asked for on every becca load, of which there are several in a session — a
-     * restore, an import, a consistency check — so it is worth not re-reading a fifth of a
-     * megabyte each time. Callers only read it: the injection builds notes from the items rather
-     * than writing to them.
+     * The guide only changes with the application, so both files are read once per process and
+     * locale. Localized variants (`help_meta.<locale>.json` / `help_content.<locale>.json`,
+     * e.g. the Russian `.ru` pair built from `docs/User Guide/ru`) are preferred for the active
+     * display language; languages without a translation transparently use the default English
+     * files. Callers only read the returned values: the injection builds notes from the items
+     * rather than writing to them.
      */
-    getHelpHiddenSubtreeData(): HiddenSubtreeItem[] {
-        if (!this.helpMeta) {
-            this.helpMeta = readHelpFile<HiddenSubtreeItem[]>("help_meta.json") ?? [];
+    private helpMeta = new Map<string, HiddenSubtreeItem[]>();
+    private helpContent = new Map<string, HelpBundle>();
+
+    getHelpHiddenSubtreeData(locale?: string): HiddenSubtreeItem[] {
+        const key = locale ?? "en";
+        if (!this.helpMeta.has(key)) {
+            this.helpMeta.set(key, readHelpFile<HiddenSubtreeItem[]>(localizedHelpFile("help_meta", key)) ?? []);
         }
-        return this.helpMeta;
+        return this.helpMeta.get(key)!;
     }
 
-    getHelpContent(): HelpBundle {
-        if (!this.helpContent) {
-            this.helpContent = readHelpFile<HelpBundle>("help_content.json") ?? {};
+    getHelpContent(locale?: string): HelpBundle {
+        const key = locale ?? "en";
+        if (!this.helpContent.has(key)) {
+            this.helpContent.set(key, readHelpFile<HelpBundle>(localizedHelpFile("help_content", key)) ?? {});
         }
-        return this.helpContent;
+        return this.helpContent.get(key)!;
     }
 
     getHelpAssetBase(): string {
@@ -65,6 +68,19 @@ export function getHelpAssetDir() {
         return path.join(RESOURCE_DIR, "..", "..", "..", "..", "docs", "User Guide");
     }
     return path.join(RESOURCE_DIR, "help");
+}
+
+/**
+ * The per-language variant of a help artifact: `help_meta.<locale>.json` when a translation exists
+ * for the locale, else the default English `help_meta.json`. Existence is checked on disk because
+ * the set of translated languages only grows with the shipped assets.
+ */
+function localizedHelpFile(baseName: string, locale: string): string {
+    const localized = `${baseName}.${locale}.json`;
+    if (locale !== "en" && fs.existsSync(path.join(RESOURCE_DIR, "help", localized))) {
+        return localized;
+    }
+    return `${baseName}.json`;
 }
 
 function readHelpFile<T>(fileName: string): T | null {

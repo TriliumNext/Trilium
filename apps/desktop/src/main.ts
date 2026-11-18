@@ -8,6 +8,7 @@ import ServerLogService from "@triliumnext/server/src/log_provider.js";
 import config from "@triliumnext/server/src/services/config.js";
 import { recoverInterruptedRestore } from "@triliumnext/server/src/services/database_restore.js";
 import dataDirs from "@triliumnext/server/src/services/data_dir.js";
+import { readDemoArchive } from "@triliumnext/server/src/services/demo_archive.js";
 import port from "@triliumnext/server/src/services/port.js";
 import { consumeSetupMarker, setupPlatform } from "@triliumnext/server/src/services/setup_marker.js";
 import { RESOURCE_DIR } from "@triliumnext/server/src/services/resource_dir.js";
@@ -277,10 +278,10 @@ export async function main() {
         schema: loadCoreSchema(),
         platform: new DesktopPlatformProvider(),
         translations: (await import("@triliumnext/server/src/services/i18n.js")).initializeTranslations,
-        // demo.zip is a server-owned asset; src/assets is copied to dist/assets
-        // by the build script, so the same RESOURCE_DIR-relative path works in
-        // both source and bundled-production modes.
-        getDemoArchive: async () => fs.readFileSync(path.join(RESOURCE_DIR, "db", "demo.zip")),
+        // Localized demo archives (demo-<locale>.zip, e.g. demo-ru.zip) live next to the default
+        // English demo.zip; src/assets is copied to dist/assets by the build script, so the same
+        // RESOURCE_DIR-relative lookup works in both source and bundled production modes.
+        getDemoArchive: async (locale?: string) => readDemoArchive(RESOURCE_DIR, locale),
         inAppHelp: new NodejsInAppHelpProvider(),
         log: new ServerLogService(),
         // Only the desktop lets the user pick where backups go; the server uses TRILIUM_BACKUP_DIR.

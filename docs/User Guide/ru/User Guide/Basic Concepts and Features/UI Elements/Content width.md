@@ -1,0 +1,30 @@
+# Content width
+Some note types (such as <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> and saved search) intentionally limit the width of the content.
+
+This might appear surprising at first, but the idea is to make text fit well on wider screens without appearing distorted. This is especially the case if the document contains <a class="reference-link" href="../../Note%20Types/Text/Images.md">Images</a>, tables or other width-dependent elements.
+
+## Configuring the content width and alignment
+
+The content width is expressed in pixels and can be changed from <a class="reference-link" href="Options.md">Options</a> → _Appearance_ → _Content Width_ and adjusting the _Max content width_ section.
+
+To effectively disable the content width limitation, simply set the width to a value larger than your screen size (e.g. 9999).
+
+By default, the content is aligned to the left, but it can be centered horizontally by checking _Keep content centered_ from the same section as the content width.
+
+## Adjusting at note level
+
+For notes with large elements such as <a class="reference-link" href="../../Note%20Types/Text/Tables.md">Tables</a>, it sometimes makes sense to avoid the content width without affecting other notes. To do so:
+
+*   Go to <a class="reference-link" href="Note%20menu.md">Note menu</a> and toggle _Full width_.
+*   Or manually apply the `fullContentWidth` [label](../../Advanced%20Usage/Attributes/Labels.md) to the note.
+
+Since v0.107.0, a single table can also be made wider than the content width, in which case it scrolls sideways. See <a class="reference-link" href="../../Note%20Types/Text/Tables.md">Tables</a>.
+
+> [!NOTE]
+> Some [note types](../../Note%20Types.md) are full width by default, such as the <a class="reference-link" href="../../Note%20Types/Canvas.md">Canvas</a>. In that case the _Full width_ toggle will not be displayed and the label will have no effect.
+> 
+> An [attachment](../Notes/Attachments.md) opened on its own follows the same rule as a note of its kind: a picture, a drawing, a PDF, a video, an audio file or an Excel workbook takes the full width, whatever the width of the note it belongs to.
+
+## Shared notes
+
+On a [shared page](../../Advanced%20Usage/Sharing.md), a text note is shown at a fixed reading width, whatever the width configured in Options, and the navigation tree, the content and the table of contents are kept together in a column centered on a wide screen. A note with `fullContentWidth`, or of a type that is full width in the application, uses the whole width of the window there, with the navigation tree and the table of contents at its edges.

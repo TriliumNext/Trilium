@@ -1,0 +1,10 @@
+stateDiagram-v2
+[*] --> Still
+Still : Покой
+Still --> [*]
+Still --> Moving
+Moving : Движение
+Moving --> Still
+Moving --> Crash
+Crash : Авария
+Crash --> [*]

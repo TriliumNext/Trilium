@@ -1,0 +1,101 @@
+# File
+The _File_ note type can be used to attach various external files such as images, videos or PDF documents.
+
+## Uploading a file
+
+Since these files come from an external source, it is not possible to create a _File_ note type directly:
+
+*   Drag a file into the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>.
+*   Right click a note and select _Import into note_ and point it to one of the supported files.
+
+## Supported file types
+
+### PDFs
+
+PDFs can be uploaded to Trilium and they will display a live preview with full support for various features such as table of contents, annotations, as well as remembering the last page read. For more information, see the dedicated <a class="reference-link" href="File/PDFs.md">PDFs</a> page.
+
+## Office documents
+
+Trilium offers previews for Office documents such as Word (`.docx`), Excel (`.xlsx`) and PowerPoint (`.pptx`). For more information, see the dedicated <a class="reference-link" href="File/Office%20documents.md">Office documents</a>.
+
+### Images
+
+<figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:879/766;" src="2_File_image.png" width="879" height="766"></figure>
+
+Interaction:
+
+*   An [image reference](Text/Images/Image%20references.md) can be copied by pressing the <span class="tn-icon bx bx-copy"></span> icon from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> area, which allows pasting it in a <a class="reference-link" href="Text.md">Text</a> note.
+
+### Videos
+
+See <a class="reference-link" href="File/Audio%20%26%20Video.md">Audio &amp; Video</a>.
+
+### Audio
+
+<figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:850/243;" src="1_File_image.png" width="850" height="243"></figure>
+
+Adding a supported audio file will reveal a basic audio player that can be used to play it.
+
+Interactions:
+
+*   The audio can be played/paused using the dedicated button.
+*   Dragging the mouse across, or clicking the progress bar will seek through the song.
+*   The volume can be set.
+*   The playback speed can be adjusted via the contextual menu next to the volume.
+
+### Text files
+
+<figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:926/347;" src="File_image.png" width="926" height="347"></figure>
+
+Files that are identified as containing text will show a preview of their content. One common use case for this type of file is to embed text files whose content is not necessarily of interest to the user, such as third-party libraries or generated content, that can then be downloaded if needed.
+
+Note that generally text files will be [imported](../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md) as either <a class="reference-link" href="Text.md">Text</a> or <a class="reference-link" href="Code.md">Code</a> notes. To bypass this behavior and create a _File_ note type, use the _Import into note_ feature and uncheck _Import HTML, Markdown and TXT as text notes_, as well as _Import recognized code files as code notes_. 
+
+Since one of the use cases for having files instead of notes is to display large files, the content preview is limited to a relatively small amount of characters. To view the full file, consider opening it in an external application.
+
+### GPS tracks
+
+Trilium displays information about GPS tracks in `.gpx` format, such as the distance, duration, elevation profile, tracks, markers.
+
+When a `.gpx` note is dropped in a <a class="reference-link" href="../Collections/Geo%20Map.md">Geo Map</a>, the track itself will also be displayed on the map.
+
+<figure class="image"><img style="aspect-ratio:1500/807;" src="4_File_image.png" width="1500" height="807"></figure>
+
+### Fonts
+
+Supported font formats will show an interactive preview of the font:
+
+*   A field to type in a custom text.
+*   A slider to change the font size of the preview.
+*   A preview of the text at the given size.
+*   A sampling of various font sizes for this font.
+*   The Latin alphabet.
+
+Additionally, enabling _In font picker_ will make the font available in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Appearance_ font selection. See <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Themes/Personalizing%20the%20font.md">Personalizing the font</a> for more information.
+
+### Unknown file types
+
+<figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:532/240;" src="3_File_image.png" width="532" height="240"></figure>
+
+If the file could not be identified as any of the supported file types from above, it will be treated as an unknown file. In this case, all the default interactions will be available such as downloading or opening the file externally, but there will be no preview of the content.
+
+## Interaction
+
+*   Regardless of the file type, a series of buttons will be displayed in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> area.
+    *   <span class="tn-icon bx bx-download"></span> (Download), which will download the file for local use.
+    *   <span class="tn-icon bx bx-link-external"></span> (Open), will will open the file with the system-default application.
+    *   <span class="tn-icon bx bx-folder-open"></span> (Upload new revision) to replace the file with a new one.
+*   It is **not** possible to change the note type of a _File_ note.
+*   Convert into an [attachment](../Basic%20Concepts%20and%20Features/Notes/Attachments.md) from the [note menu](../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md).
+
+## Relation with other notes
+
+*   Files are also displayed in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Note List</a> based on their type:
+    
+    <img class="image_resized" style="aspect-ratio:853/315;width:50%;" src="5_File_image.png" width="853" height="315">
+*   Non-image files can be embedded into text notes as read-only widgets via the <a class="reference-link" href="Text/Include%20Note.md">Include Note</a> functionality.
+*   Image files can be embedded into text notes like normal images via <a class="reference-link" href="Text/Images/Image%20references.md">Image references</a>.
+
+## File size limit
+
+An individual file cannot be bigger than 374 MiB. For more information see _Maximum import size_ in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md">Import &amp; Export</a>.

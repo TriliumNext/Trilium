@@ -1,5 +1,5 @@
 import type { HelpBundle, HiddenSubtreeItem } from "@triliumnext/commons";
-import { t } from "i18next";
+import i18next, { t } from "i18next";
 import mimeTypes from "mime-types";
 
 import {
@@ -20,13 +20,19 @@ import {
  * user.
  */
 export abstract class InAppHelpProvider {
-    abstract getHelpHiddenSubtreeData(): HiddenSubtreeItem[];
+    /**
+     * The help tree. Implementations that ship localized guides return the tree for the given
+     * display language (the `locale` option), falling back to the default language's tree when
+     * no translation exists for it.
+     */
+    abstract getHelpHiddenSubtreeData(locale?: string): HiddenSubtreeItem[];
 
     /**
      * Rendered content of the help pages, keyed by note ID. Called on every page read, so
-     * implementations that load it from disk should cache it.
+     * implementations that load it from disk should cache it. Localized guides keyed by the
+     * `locale` option; falls back to the default language's bundle.
      */
-    abstract getHelpContent(): HelpBundle;
+    abstract getHelpContent(locale?: string): HelpBundle;
 
     /**
      * Where this platform serves the guide's images and attachments from, substituted into the
@@ -67,6 +73,7 @@ export function initInAppHelp(p: InAppHelpProvider) {
         namespace: HELP_SUBTREE_NAMESPACE,
         parentNoteId: "_hidden",
         getSubtree(): VirtualSubtreeItem[] {
+            const locale = currentHelpLocale();
             return [
                 {
                     id: HELP_SUBTREE_NAMESPACE,
@@ -76,25 +83,34 @@ export function initInAppHelp(p: InAppHelpProvider) {
                     isExpanded: true,
                     // HiddenSubtreeItem is structurally a VirtualSubtreeItem (its enforce*
                     // fields are simply ignored here).
-                    children: getHelpHiddenSubtreeData()
+                    children: getHelpHiddenSubtreeData(locale)
                 }
             ];
         },
         getContent(noteId: string) {
-            const page = p.getHelpContent()[noteId];
+            const page = p.getHelpContent(currentHelpLocale())[noteId];
             return page?.replaceAll(HELP_ASSET_TOKEN, p.getHelpAssetBase());
         },
-        getAssets: (noteId) => getHelpPageAssets(p, noteId)
+        getAssets: (noteId) => getHelpPageAssets(p, noteId, currentHelpLocale())
     });
 }
 
 export function getHelpHiddenSubtreeData(): HiddenSubtreeItem[] {
-    return provider?.getHelpHiddenSubtreeData() ?? [];
+    return provider?.getHelpHiddenSubtreeData(currentHelpLocale()) ?? [];
+}
+
+/**
+ * The display language the help should be served in: the active i18next language, which the
+ * application keeps in sync with the `locale` option (including runtime switches). Read on every
+ * access rather than cached, so a provider holding one bundle per language can pick the right one.
+ */
+function currentHelpLocale(): string {
+    return i18next.language || "en";
 }
 
 /** The images and attachments one help page references, in the order they first appear. */
-function getHelpPageAssets(p: InAppHelpProvider, noteId: string): VirtualNoteAsset[] {
-    const page = p.getHelpContent()[noteId] ?? "";
+function getHelpPageAssets(p: InAppHelpProvider, noteId: string, locale?: string): VirtualNoteAsset[] {
+    const page = p.getHelpContent(locale)[noteId] ?? "";
     const prefix = `${HELP_ASSET_TOKEN}/`;
     const encodedPaths = new Set<string>();
     for (const [ , url ] of page.matchAll(/(?:src|href)="([^"]*)"/g)) {

@@ -34,10 +34,27 @@ export interface NoteMapping {
     helpMeta?: string;
     /** Where to write the rendered content of that tree. Relative to the configuration file. */
     helpContent?: string;
+    /**
+     * Localized variants of this guide: a markdown export directory per language, from which the
+     * per-language in-app help artifacts (`help_meta.<locale>.json`, `help_content.<locale>.json`)
+     * are built. Paths relative to the configuration file. The notes must carry the same IDs as
+     * this mapping's export, so a localized page replaces the default language's page for the
+     * users on that locale.
+     */
+    helpLocales?: Record<string, HelpLocaleMapping>;
     /** Pages whose Markdown is generated from an OpenAPI document before every import. */
     openApiPages?: OpenApiPage[];
     /** Pages whose Markdown is generated from TypeScript declarations before every import. */
     typeDocPages?: TypeDocPage[];
+}
+
+export interface HelpLocaleMapping {
+    /** The localized markdown export directory. Relative to the configuration file. */
+    path: string;
+    /** Where to write the localized help tree. Relative to the configuration file. */
+    helpMeta: string;
+    /** Where to write the localized rendered content. Relative to the configuration file. */
+    helpContent: string;
 }
 
 export interface OpenApiPage {
@@ -89,6 +106,13 @@ export async function loadConfig(configPath?: string): Promise<Config> {
             path: path.resolve(configDir, mapping.path),
             helpMeta: mapping.helpMeta ? path.resolve(configDir, mapping.helpMeta) : undefined,
             helpContent: mapping.helpContent ? path.resolve(configDir, mapping.helpContent) : undefined,
+            helpLocales: mapping.helpLocales ? Object.fromEntries(
+                Object.entries(mapping.helpLocales).map(([ locale, localeMapping ]) => [ locale, {
+                    path: path.resolve(configDir, localeMapping.path),
+                    helpMeta: path.resolve(configDir, localeMapping.helpMeta),
+                    helpContent: path.resolve(configDir, localeMapping.helpContent)
+                } ])
+            ) : undefined,
             openApiPages: mapping.openApiPages?.map((page) => ({ ...page, spec: path.resolve(configDir, page.spec) })),
             typeDocPages: mapping.typeDocPages?.map((page) => ({
                 ...page,
@@ -282,6 +306,25 @@ export async function exportData(mapping: NoteMapping, baseUrl: string) {
     }
 
     await cleanUpMeta(outputPath, mapping, baseUrl);
+
+    // Localized help: each locale's export directory yields its own pair of help artifacts.
+    if (mapping.helpLocales) {
+        for (const [ locale, localeMapping ] of Object.entries(mapping.helpLocales)) {
+            console.log(`Building in-app help for locale '${locale}'...`);
+            await writeHelpArtifacts(localeMapping.path, localeMapping.helpMeta, localeMapping.helpContent, baseUrl);
+        }
+        await writeHelpLocalesIndex(mapping);
+    }
+}
+
+/** The languages with an in-app help bundle, default English included. */
+async function writeHelpLocalesIndex(mapping: NoteMapping) {
+    const locales = [ "en", ...Object.keys(mapping.helpLocales ?? {}) ];
+    const target = mapping.helpContent
+        ? path.join(path.dirname(mapping.helpContent), "help_locales.json");
+    if (target) {
+        await writeArtifact(target, JSON.stringify(locales, null, 4));
+    }
 }
 
 /**
@@ -310,20 +353,29 @@ async function cleanUpMeta(outputPath: string, mapping: NoteMapping, baseUrl: st
         return;
     }
 
+    await writeHelpArtifacts(outputPath, mapping.helpMeta, mapping.helpContent, baseUrl);
+}
+
+/**
+ * Derives the in-app help tree and its rendered content from a markdown export directory
+ * (the freshly exported User Guide, or one of its localized variants).
+ */
+async function writeHelpArtifacts(exportDir: string, helpMetaPath?: string, helpContentPath?: string, baseUrl?: string) {
+    const meta = JSON.parse(await fs.readFile(path.join(exportDir, "!!!meta.json"), "utf-8")) as NoteMetaFile;
     const { meta: helpMeta, sources } = buildHelpMeta(meta, baseUrl);
 
-    if (mapping.helpMeta) {
-        await writeArtifact(mapping.helpMeta, serializeHelpMeta(helpMeta));
+    if (helpMetaPath) {
+        await writeArtifact(helpMetaPath, serializeHelpMeta(helpMeta));
     }
 
-    if (mapping.helpContent) {
+    if (helpContentPath) {
         const { markdownImportService } = await import("@triliumnext/core");
         const bundle = buildHelpBundle(
             helpMeta,
             sources,
             (source) => {
                 try {
-                    return readFileSync(path.join(outputPath, source), "utf-8");
+                    return readFileSync(path.join(exportDir, source), "utf-8");
                 } catch {
                     return null;
                 }
@@ -332,7 +384,7 @@ async function cleanUpMeta(outputPath: string, mapping: NoteMapping, baseUrl: st
         );
 
         // One page per line: the bundle is a flat map from note ID to HTML.
-        await writeArtifact(mapping.helpContent, JSON.stringify(bundle, null, 4));
+        await writeArtifact(helpContentPath, JSON.stringify(bundle, null, 4));
     }
 }
 
