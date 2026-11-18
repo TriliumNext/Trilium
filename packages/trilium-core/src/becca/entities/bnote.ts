@@ -1410,9 +1410,8 @@ class BNote extends AbstractBeccaEntity<BNote> {
             } else {
                 copy.setContent(noteAttachment.getContent(), { forceSave: true });
             }
-            if (noteAttachment.attachmentId && copy.attachmentId) {
-                attachmentIds.set(noteAttachment.attachmentId, copy.attachmentId);
-            }
+            // Both are saved, so both have an ID.
+            attachmentIds.set(noteAttachment.attachmentId as string, copy.attachmentId as string);
         }
 
         // An attachment of a draft that the note does not have: a new one, or one deleted since.
@@ -1422,8 +1421,8 @@ class BNote extends AbstractBeccaEntity<BNote> {
                 const { isProtected } = this;
                 const copy = new BAttachment({ ownerId, role, mime, title, position, isProtected });
                 copy.setContent(decodeAttachmentRow(edit), { forceSave: true });
-                if (edit.attachmentId && copy.attachmentId) {
-                    attachmentIds.set(edit.attachmentId, copy.attachmentId);
+                if (edit.attachmentId) {
+                    attachmentIds.set(edit.attachmentId, copy.attachmentId as string);
                 }
             }
         }
@@ -1742,9 +1741,7 @@ function toAttachmentDownloadLinks(content: string, attachmentIds: Map<string, s
 
 /** The content of `row`, decoded when its `encoding` is `base64`. */
 export function decodeAttachmentRow(row: Pick<SavedAttachmentRow, "content" | "encoding">) {
-    return row.encoding === "base64" && typeof row.content === "string"
-        ? decodeBase64(row.content)
-        : row.content;
+    return row.encoding === "base64" ? decodeBase64(row.content) : row.content;
 }
 
 export default BNote;

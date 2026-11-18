@@ -67,8 +67,11 @@ interface PendingDraft {
     cause: DraftCause;
     /** The changes that the draft holds, to tell changes made since from a repeated save. */
     data: SaveData;
-    /** Shows the version that the user chose, once the draft is kept. */
-    load?: () => Promise<void>;
+    /**
+     * Shows the version that the user chose, once the draft is kept. Runs `keepNewerChanges`
+     * right before the editor shows it.
+     */
+    load?: (keepNewerChanges: () => Promise<void>) => Promise<void>;
 }
 
 /** What the saves of the blocks of an excerpt are based on. */
@@ -207,7 +210,8 @@ export class NoteSaver<T extends SaveData> {
 
                 const draft = this.createDraft(base, saved, "conflict");
                 if (decision === "load") {
-                    draft.load = () => this.loadCurrentVersion(note);
+                    draft.load = (keepNewerChanges) =>
+                        this.loadCurrentVersion(note, keepNewerChanges);
                 }
                 await this.keepDraft(noteId, draft);
                 return undefined;
@@ -277,7 +281,8 @@ export class NoteSaver<T extends SaveData> {
 
                 const draft = this.createFragmentDraft(noteId, block, saved, "conflict");
                 if (decision === "load") {
-                    draft.load = () => this.loadCurrentBlocks(note, block);
+                    draft.load = (keepNewerChanges) =>
+                        this.loadCurrentBlocks(note, block, keepNewerChanges);
                 }
                 await this.keepDraft(noteId, draft);
                 return undefined;
@@ -334,7 +339,23 @@ export class NoteSaver<T extends SaveData> {
         this.drafts.delete(noteId);
         showDraftToast(noteId, answer.isKept, draft.cause);
         if (!isFollowed) {
-            await draft.load?.();
+            await draft.load?.(() => this.keepChangesSince(noteId, draft));
+        }
+    }
+
+    /**
+     * Keeps the changes that the editor holds since `draft` as drafts of their own, until it holds
+     * none that are not kept.
+     */
+    private async keepChangesSince(noteId: string, draft: PendingDraft) {
+        let kept = draft;
+        for (;;) {
+            const latest = await this.editor.getLatestData(noteId);
+            if (!latest || isSameData(latest, kept.data)) {
+                return;
+            }
+            kept = withData(kept, latest);
+            await this.keepDraft(noteId, kept, true);
         }
     }
 
@@ -394,16 +415,20 @@ export class NoteSaver<T extends SaveData> {
         return await this.editor.resolveConflict(noteId, current) ? current : null;
     }
 
-    private async loadCurrentVersion(note: FNote) {
+    private async loadCurrentVersion(note: FNote, keepNewerChanges: () => Promise<void>) {
         const current = await readCurrentVersion(note.noteId);
+        await keepNewerChanges();
         this.setBase({ noteId: note.noteId, ...current, type: note.type, mime: note.mime });
         await this.editor.loadVersion(note.noteId, current);
     }
 
-    private async loadCurrentBlocks(note: FNote, block: string) {
+    private async loadCurrentBlocks(
+        note: FNote, block: string, keepNewerChanges: () => Promise<void>
+    ) {
         const { content, hash, note: whole } = await server.get<NoteBlocksResponse>(
             `notes/${note.noteId}/blocks?block=${encodeURIComponent(block)}`
         );
+        await keepNewerChanges();
         this.setBlockBase(note.noteId, hash, whole);
         await this.editor.loadBlocks?.(note.noteId, content);
     }

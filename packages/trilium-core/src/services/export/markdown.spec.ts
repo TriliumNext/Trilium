@@ -856,6 +856,13 @@ describe("Markdown export", () => {
             ].join("\n\n"));
         });
 
+        it("writes a marker line above a bare pre, and none for another container", () => {
+            expect(exportMarkers(`<pre data-trilium-block-id="p">raw</pre>`
+                + `<div data-trilium-block-id="d"><p>In a div</p></div>`
+                + `<section data-trilium-block-id="s"><p>In a section</p></section>`))
+                .toBe([ marker("p"), "```\nraw\n```", "In a div", "In a section" ].join("\n\n"));
+        });
+
         it("writes no marker line above a block that the export drops as empty", () => {
             expect(exportMarkers(`<pre><code data-trilium-block-id="c"></code></pre>`
                 + `<blockquote data-trilium-block-id="q"><p>&nbsp;</p></blockquote><p>next</p>`))

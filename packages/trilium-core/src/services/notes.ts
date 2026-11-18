@@ -1364,13 +1364,12 @@ function updateNoteData(
                 attachment = existing;
             }
 
-            if (attachment.attachmentId && attachment.blobId) {
-                savedAttachments.push({
-                    attachmentId: attachment.attachmentId,
-                    title: attachment.title,
-                    blobId: attachment.blobId
-                });
-            }
+            // The attachment is saved, so it has an ID and a blob.
+            savedAttachments.push({
+                attachmentId: attachment.attachmentId as string,
+                title: attachment.title,
+                blobId: attachment.blobId as string
+            });
         }
     }
 
@@ -1379,7 +1378,7 @@ function updateNoteData(
     note.setContent(newContent, { forceFrontendReload });
 
     return {
-        blobId: note.blobId ?? "",
+        blobId: note.blobId as string,
         attachments: savedAttachments,
         content: newContent !== content && typeof newContent === "string" ? newContent : undefined
     };
@@ -1444,7 +1443,7 @@ function createSaveConflict(
     return new DetailedConflictError<SaveConflictResponse>(message, {
         reason,
         message,
-        blobId: note.blobId ?? "",
+        blobId: note.blobId as string,
         type: note.type,
         mime: note.mime,
         isVersioned: note.isVersioned(),

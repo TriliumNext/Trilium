@@ -1,4 +1,5 @@
 import {
+    type DraftFragment,
     EditedNotesResponse,
     EraseExcessRevisionsOptions,
     EraseExcessRevisionsResponse,
@@ -209,9 +210,10 @@ function restoreRevision(req: Request<{ revisionId: string }>) {
             const noteAttachment = revisionAttachment.copy();
             noteAttachment.ownerId = note.noteId;
             noteAttachment.setContent(revisionAttachment.getContent(), { forceSave: true });
-            if (revisionAttachment.attachmentId && noteAttachment.attachmentId) {
-                attachmentIds.set(revisionAttachment.attachmentId, noteAttachment.attachmentId);
-            }
+            // Both are saved, so both have an ID.
+            attachmentIds.set(
+                revisionAttachment.attachmentId as string, noteAttachment.attachmentId as string
+            );
         }
 
         note.title = revision.title;
@@ -276,9 +278,9 @@ function saveDraftRevision(req: Request<{ noteId: string }>) {
  * they were read from, as a whole-note draft holds the note that its editor read. Without that
  * note, or where it does not hold the blocks as they were read, they are the whole revision.
  */
-function getDraftContent(draft: SaveDraftRequest) {
+function getDraftContent(draft: ParsedDraft) {
     if (!draft.fragment) {
-        return { content: draft.content ?? "", isFragment: false };
+        return { content: draft.content, isFragment: false };
     }
 
     const { content: fragment, block, base } = draft.fragment;
@@ -291,7 +293,12 @@ function getDraftContent(draft: SaveDraftRequest) {
         : { content, isFragment: false };
 }
 
-function parseDraftRequest(body: unknown): SaveDraftRequest {
+/** A draft that {@link parseDraftRequest} accepts: one with either its content or its fragment. */
+type ParsedDraft = SaveDraftRequest & (
+    { content: string; fragment?: undefined } | { content?: undefined; fragment: DraftFragment }
+);
+
+function parseDraftRequest(body: unknown): ParsedDraft {
     const draft = (body ?? {}) as Partial<SaveDraftRequest>;
     const { revisionId, type, mime, content, fragment } = draft;
     const hasContent = typeof content === "string";
@@ -307,7 +314,7 @@ function parseDraftRequest(body: unknown): SaveDraftRequest {
     if (draft.attachments !== undefined && !isAttachmentRowList(draft.attachments)) {
         throw new ValidationError("Expected 'attachments' to be a list of attachments.");
     }
-    return draft as SaveDraftRequest;
+    return draft as ParsedDraft;
 }
 
 /** The ID of a revision that a client draws, of the characters of the IDs of entities. */

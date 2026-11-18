@@ -7,7 +7,7 @@ import becca from "../../becca/becca";
 import BNote from "../../becca/entities/bnote";
 import * as cls from "../../services/context";
 import { getSql } from "../../services/sql/index";
-import { unwrapStringOrBuffer } from "../../services/utils/binary";
+import { decodeUtf8, encodeBase64, unwrapStringOrBuffer } from "../../services/utils/binary";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
 
@@ -722,6 +722,16 @@ describe("Revisions API (core)", () => {
             expect((await saveDraft(noteId, { revisionId: "a b", content: "x" })).status).toBe(400);
             expect((await saveDraft(noteId, { revisionId: "draftBoth", content: "x",
                 fragment: { content: "x", block: "a" } })).status).toBe(400);
+            expect((await api.post(`/api/notes/${noteId}/revisions/draft`)).status).toBe(400);
+            expect((await saveDraft(noteId, { revisionId: "draftRows", content: "x",
+                attachments: [ { title: "x" } as never ] })).status).toBe(400);
+
+            const unavailable = vi.spyOn(becca.getNoteOrThrow(noteId), "isContentAvailable")
+                .mockReturnValue(false);
+            expect((await saveDraft(noteId, { revisionId: "draftLocked", content: "x" })).status)
+                .toBe(400);
+            unavailable.mockRestore();
+            expect(revisionExists("draftLocked")).toBe(false);
         });
 
         it("keeps no draft of a note that keeps no revisions, and says so", async () => {
@@ -770,6 +780,40 @@ describe("Revisions API (core)", () => {
             expect(restored.getContent()).toBe("drawn in the draft");
             expect(note.getContent()).toBe(`<p>Draft</p><figure class="include-note" `
                 + `data-attachment-id="${restored.attachmentId}"></figure>`);
+        });
+
+        it("adds the new attachments of a draft, and links its preview to the copies", async () => {
+            const { noteId } = await createTextNote(api, { content: "<p>Host</p>" });
+            const note = becca.getNoteOrThrow(noteId);
+            const title = "drawing.excalidraw";
+            await api.post(`/api/notes/${noteId}/attachments`, {
+                body: { role: "file", mime: "application/json", title, content: "saved" }
+            });
+            const [ drawing ] = note.getAttachments();
+            const link = (attachmentId: string) =>
+                `<a href="#root/${noteId}?viewMode=attachments&amp;attachmentId=${attachmentId}">`
+                + "x</a>";
+
+            await saveDraft(noteId, {
+                revisionId: "draftNewRows1",
+                content: `<p>${link(drawing.attachmentId as string)}${link("elsewhere1")}</p>`,
+                attachments: [
+                    { role: "file", mime: "application/json", title, content: "by title" },
+                    {
+                        role: "image", mime: "image/png", title: "new.png",
+                        content: encodeBase64("png bytes"), encoding: "base64"
+                    }
+                ]
+            });
+            const copies = new Map(becca.getRevisionOrThrow("draftNewRows1").getAttachments()
+                .map((copy) => [ copy.title, copy ]));
+            expect(copies.get(title)?.getContent()).toBe("by title");
+            expect(decodeUtf8(copies.get("new.png")?.getContent() ?? "")).toBe("png bytes");
+            expect(becca.getRevisionOrThrow("draftNewRows1").getContent()).toBe("<p><a href="
+                + `"api/attachments/${copies.get(title)?.attachmentId}/download">x</a>`
+                + `${link("elsewhere1")}</p>`);
+            expect(note.getAttachments().map((attachment) => attachment.getContent()))
+                .toStrictEqual([ "saved" ]);
         });
 
         it("keeps the drawing of a draft that another writer deleted meanwhile", async () => {

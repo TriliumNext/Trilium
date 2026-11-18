@@ -1,7 +1,9 @@
 import { history, undoDepth } from "@codemirror/commands";
 import { markdown } from "@codemirror/lang-markdown";
 import { ensureSyntaxTree } from "@codemirror/language";
-import { ChangeSet, EditorSelection, EditorState, Text, Transaction } from "@codemirror/state";
+import {
+    ChangeSet, EditorSelection, EditorState, type Extension, Text, Transaction
+} from "@codemirror/state";
 import { EditorView, runScopeHandlers } from "@codemirror/view";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -139,6 +141,21 @@ describe("blockMarkers", () => {
 
             const notAlone = build(`x ${marker("a")}`, {}, `x ${marker("a")}`.length);
             expect(press(notAlone, "Enter")).toBe(false);
+        });
+
+        it("leaves Backspace, Delete and Enter beside a marker alone when read-only", () => {
+            const doc = `One\n${marker("a")}\nTwo`;
+            const lineEnd = doc.indexOf("\nTwo");
+            const pressReadOnly = (key: string, caret: number) => {
+                const editor = build(doc, {}, caret, [ EditorState.readOnly.of(true) ]);
+                return [ press(editor, key), editor.state.doc.toString() ];
+            };
+
+            expect([
+                pressReadOnly("Backspace", lineEnd),
+                pressReadOnly("Delete", "One\n".length),
+                pressReadOnly("Enter", lineEnd)
+            ]).toStrictEqual([ [ false, doc ], [ false, doc ], [ false, doc ] ]);
         });
     });
 
@@ -336,13 +353,17 @@ function createState(doc: string) {
     return state;
 }
 
-function build(doc: string, options: BlockMarkerOptions = {}, caret = 0) {
+function build(
+    doc: string, options: BlockMarkerOptions = {}, caret = 0, extensions: Extension[] = []
+) {
     view?.destroy();
     const parent = document.createElement("div");
     document.body.appendChild(parent);
     view = new EditorView({
         parent,
-        state: EditorState.create({ doc, extensions: [ markdown(), blockMarkers(options) ] })
+        state: EditorState.create({
+            doc, extensions: [ markdown(), blockMarkers(options), ...extensions ]
+        })
     });
     ensureSyntaxTree(view.state, doc.length);
     view.dispatch({ selection: EditorSelection.cursor(caret) });

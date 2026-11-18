@@ -83,6 +83,8 @@ describe("AttachmentSaves", () => {
 
         saves.scheduleSave({ ...drawing, blobId: "read" } as FAttachment, () => "first");
         saves.scheduleSave({ ...drawing, blobId: "newer" } as FAttachment, () => "second");
+        // Another split of this window saved its own drawing over the same blob.
+        recordReplacedBlob("drawing1", "read", "theirs");
         expect(saves.collect()).toStrictEqual([ {
             attachmentId: "drawing1",
             role: "file",

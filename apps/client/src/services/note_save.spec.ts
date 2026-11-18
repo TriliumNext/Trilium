@@ -138,6 +138,36 @@ describe("NoteSaver", () => {
             expect.objectContaining({ message: "note_save.draft_kept" }));
     });
 
+    it("keeps what is typed while the draft is kept and the other version loads", async () => {
+        const note = buildNote({ title: "Typed during the requests" });
+        const { saver, editor } = createSaver(note);
+        const type = (content: string) => editor.getLatestData.mockReturnValue({ content });
+        const kept = { revisionId: "kept", isKept: true, isFragment: false };
+        rejectWithConflict({ reason: "version" });
+        post.mockImplementationOnce(async () => {
+            type("<p>mine, 2</p>");
+            return kept;
+        }).mockImplementationOnce(async () => {
+            type("<p>mine, 4</p>");
+            return kept;
+        });
+        get.mockImplementationOnce(async () => {
+            type("<p>mine, 3</p>");
+            return { blobId: "theirs", content: "<p>theirs</p>" };
+        });
+
+        const saving = saver.saveNote(note, { content: "<p>mine</p>" });
+        await answer(1);
+        expect(await saving).toBeUndefined();
+        expect(post.mock.calls.map(([ , request ]) => request.content))
+            .toStrictEqual([ "<p>mine</p>", "<p>mine, 3</p>", "<p>mine, 4</p>" ]);
+        expect(new Set(post.mock.calls.map(([ , request ]) => request.revisionId)).size).toBe(3);
+        expect(editor.loadVersion).toHaveBeenCalledExactlyOnceWith(
+            note.noteId, { blobId: "theirs", content: "<p>theirs</p>" });
+        expect(editor.loadVersion.mock.invocationCallOrder[0])
+            .toBeGreaterThan(post.mock.invocationCallOrder[2]);
+    });
+
     it("keeps the draft once the editor goes away, with one revision ID on a retry", async () => {
         const note = buildNote({ title: "Abandoned" });
         const { saver } = createSaver(note);
@@ -235,6 +265,11 @@ describe("NoteSaver", () => {
             .toStrictEqual([ { ...row, attachmentId: "att1", blobId: "ab2" } ]);
         expect(getAttachments).toHaveBeenCalledOnce();
         expect(getLatestBlob("att1", "ab1")).toBe("ab2");
+
+        // A row read before a save of this saver, such as a drawing changed during it, follows it.
+        const readBefore = { ...row, attachmentId: "att1", blobId: "ab1" };
+        await saver.saveNote(note, { content: "<p>x</p>", attachments: [ readBefore ] });
+        expect(put.mock.calls[2][1].attachments).toStrictEqual([ { ...readBefore, blobId: "ab2" } ]);
     });
 
     it("saves blocks on the hash they were read at, and keeps a draft as a fragment", async () => {

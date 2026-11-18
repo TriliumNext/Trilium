@@ -217,7 +217,7 @@ function saveBlocksOnBase(note: BNote, block: string, save: {
     // A change outside the blocks goes through: the precondition is the note as it is now, which
     // still checks the attachment rows.
     const precondition = {
-        base: { blobId: note.blobId ?? "", type: note.type, mime: note.mime },
+        base: { blobId: note.blobId as string, type: note.type, mime: note.mime },
         isKeepingOther: save.isKeepingOther
     };
     let saved: SaveNoteDataResponse;

@@ -257,7 +257,7 @@ const READ_DELAY = 300;
 //#region Keys
 /** Backspace right after a marker deletes what is in front of it, past adjacent markers. */
 function deleteBeforeMarker(view: EditorView) {
-    const head = getSingleCursor(view.state);
+    const head = getEditableCaret(view.state);
     let marker = head === null ? null : findMarkerAt(view.state, head, "to");
     if (head === null || !marker) {
         return false;
@@ -284,7 +284,7 @@ function deleteBeforeMarker(view: EditorView) {
 
 /** Delete right before a marker deletes what is after it, past adjacent markers. */
 function deleteAfterMarker(view: EditorView) {
-    const head = getSingleCursor(view.state);
+    const head = getEditableCaret(view.state);
     let marker = head === null ? null : findMarkerAt(view.state, head, "from");
     if (head === null || !marker) {
         return false;
@@ -311,7 +311,7 @@ function deleteAfterMarker(view: EditorView) {
 
 /** Enter at the end of a marker line opens the line above it: the marker stays with its block. */
 function openLineAboveMarkerLine(view: EditorView) {
-    const head = getSingleCursor(view.state);
+    const head = getEditableCaret(view.state);
     const line = head === null ? null : view.state.doc.lineAt(head);
     if (!line || head !== line.to || !isMarkerLine(view.state, line.from, line.to)) {
         return false;
@@ -324,9 +324,12 @@ function openLineAboveMarkerLine(view: EditorView) {
     return true;
 }
 
-function getSingleCursor(state: EditorState) {
+/** The caret of `state`, or `null` when it is read-only or has a selection or several carets. */
+function getEditableCaret(state: EditorState) {
     const { main } = state.selection;
-    return state.selection.ranges.length === 1 && main.empty ? main.head : null;
+    return !state.readOnly && state.selection.ranges.length === 1 && main.empty
+        ? main.head
+        : null;
 }
 
 /** The marker whose `edge` is at `position`, or `null`. */

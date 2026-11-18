@@ -217,7 +217,7 @@ function placeMarkerInText(block: ParsedElement, id: string) {
     } else if (/^\s*<span class="math-tex"/.test(inner)) {
         block.set_content(marker + inner);
     } else {
-        const end = /(?:\s|&nbsp;|<br\s*\/?>)*$/.exec(inner)?.index ?? inner.length;
+        const end = inner.search(/(?:\s|&nbsp;|<br\s*\/?>)*$/);
         block.set_content(inner.slice(0, end) + marker + inner.slice(end));
     }
 }

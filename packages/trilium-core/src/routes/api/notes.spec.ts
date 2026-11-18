@@ -224,10 +224,12 @@ describe("Notes API (core)", () => {
             expect(rewritten.body.content).toBe(`<p><a href="#root/${noteId}">Self</a></p>`);
             expect(rewritten.body.content).toBe(note.getContent());
 
-            const malformed = await save(noteId, {
-                content: "<p>x</p>", base: { blobId: 1 } as never
-            });
-            expect(malformed.status).toBe(400);
+            for (const malformedBase of [ { blobId: 1 }, null ]) {
+                const malformed = await save(noteId, {
+                    content: "<p>x</p>", base: malformedBase as never
+                });
+                expect(malformed.status).toBe(400);
+            }
         });
 
         it("refuses a base of another format, but not another language of code", async () => {
@@ -359,6 +361,14 @@ describe("Notes API (core)", () => {
             expect(unconditional.status).toBe(204);
             expect(note.getAttachments().map((other) => other.getContent()))
                 .toStrictEqual([ "one" ]);
+
+            // A conflict names only the attachments that the note has.
+            const unknown = await save(noteId, {
+                content: "<p>Host</p>", base: { ...getBase(noteId), blobId: "stale" },
+                attachments: [ { ...row, title: "new.txt" }, { ...row, attachmentId: "gone1" } ]
+            });
+            expect(unknown.status).toBe(409);
+            expect(unknown.body.attachments).toStrictEqual([]);
         });
     });
 
@@ -529,6 +539,51 @@ describe("Notes API (core)", () => {
             expect((await api.put(url, { query: { block: "a:x" }, body: { content: "" } })).status)
                 .toBe(404);
             expect((await api.put(url, { query: { block: "a" }, body: {} })).status).toBe(400);
+            for (const base of [ {}, null ]) {
+                const malformed = await api.put(url, {
+                    query: { block: "a" }, body: { content: "", base }
+                });
+                expect(malformed.status).toBe(400);
+            }
+        });
+
+        it("answers the hash of the blocks a save names, or none once they are gone", async () => {
+            const { noteId } = await createTextNote(api, { content: blocks });
+            const url = `/api/notes/${noteId}/blocks`;
+            const read = await api.get<NoteBlocksResponse>(url, { query: { block: "a:b" } });
+
+            // The editor joined the two paragraphs, so the blocks after the save are "a" alone.
+            const joined = await api.put<SaveNoteBlocksResponse>(url, {
+                query: { block: "a:b" },
+                body: {
+                    content: `<p data-trilium-block-id="a">AB</p>`,
+                    base: { hash: read.body.hash }, block: "a"
+                }
+            });
+            const after = await api.get<NoteBlocksResponse>(url, { query: { block: "a" } });
+            expect(joined.body.hash).toBe(after.body.hash);
+
+            const gone = await api.put<SaveNoteBlocksResponse>(url, {
+                query: { block: "a" },
+                body: { content: "<p>No id</p>", base: { hash: after.body.hash } }
+            });
+            expect(gone.body).toMatchObject({ hash: null, note: "<p>No id</p>" });
+        });
+
+        it("fails a save of blocks that fails for a reason other than a conflict", async () => {
+            const { noteId } = await createTextNote(api, { content: blocks });
+            const url = `/api/notes/${noteId}/blocks`;
+            const read = await api.get<NoteBlocksResponse>(url, { query: { block: "a" } });
+            const failing = vi.spyOn(noteService, "updateNoteData").mockImplementation(() => {
+                throw new Error("Disk full");
+            });
+
+            const failed = await api.put(url, {
+                query: { block: "a" }, body: { content: blocks, base: { hash: read.body.hash } }
+            });
+            failing.mockRestore();
+            expect(failed.status).toBe(500);
+            expect(becca.getNoteOrThrow(noteId).getContent()).toBe(blocks);
         });
     });
 

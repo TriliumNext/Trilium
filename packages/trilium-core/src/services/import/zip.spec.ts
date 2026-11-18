@@ -1448,7 +1448,14 @@ describe("link and image rewriting on import", () => {
                     mime: "text/x-markdown",
                     dataFileName: "Wiki Target.md",
                     attributes: [],
-                    attachments: []
+                    // Listed without an ID, which nothing can map.
+                    attachments: [{
+                        title: "unlisted.txt",
+                        role: "file",
+                        mime: "text/plain",
+                        position: 10,
+                        dataFileName: "Wiki Target_unlisted.txt"
+                    }]
                 }]
             }]
         };
@@ -1469,6 +1476,7 @@ describe("link and image rewriting on import", () => {
             "```",
             `Inline \`${example}\` code.`,
             `<!-- ${example} -->`,
+            `<span title="[[wikiTarget01]]">A Wikilink in an attribute is text.</span>`,
             "TriliumIdCandidate0TriliumIdCandidate is text."
         ].join("\n\n");
 
@@ -1498,6 +1506,7 @@ describe("link and image rewriting on import", () => {
         expect(content).toContain(`DATA-NOTE-ID = "${target.noteId}" data-block="s"`);
         expect(content).toContain(`href='#root/${importedNote.noteId}/${target.noteId}?block=t'`);
         expect(content.split(example)).toHaveLength(4);
+        expect(content).toContain(`<span title="[[wikiTarget01]]">`);
         expect(content).toContain("TriliumIdCandidate0TriliumIdCandidate is text.");
     });
 

@@ -113,8 +113,7 @@ abstract class PendingSaves<T, I extends object> {
         const items: I[] = [];
         for (const [ id, save ] of this.pending) {
             const content = readContent(save);
-            const readAt = save.readAt && getLatestBlob(id, save.readAt);
-            const item = toItem(id, save.entity, content, readAt);
+            const item = toItem(id, save.entity, content, save.readAt);
             this.sentRevisions.set(item, {
                 id, revision: save.revision, content, onSaved: save.onSaved
             });

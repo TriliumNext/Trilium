@@ -5,6 +5,7 @@ import { parse as parseHtml } from "node-html-parser";
 import { describe, expect, it, vi } from "vitest";
 
 import { getContext } from "./context.js";
+import { getLog } from "./log.js";
 import { convertNoteByConversionId, convertNoteContent, convertNoteFormat } from "./note_format_conversion.js";
 import noteService from "./notes.js";
 
@@ -226,6 +227,21 @@ describe("note format conversion (real DB)", () => {
         expect(markdownDescription).toBeTruthy();
         expect(textDescription).toBeTruthy();
         expect(textDescription).not.toBe(markdownDescription);
+    });
+
+    it("logs the block references that a bulk conversion loses", () => {
+        const note = getContext().init(() => noteService.createNewNote({
+            parentNoteId: "root", title: "convert-spec-lost", type: "text",
+            content: `<p data-trilium-block-id="kept">Kept</p>`
+                + `<pre><code class="language-text-plain" data-trilium-block-id="lost"></code></pre>`
+        }).note);
+        const info = vi.spyOn(getLog(), "info");
+
+        expect(getContext().init(() => convertNoteByConversionId(note, "htmlToMarkdown")))
+            .toBe(true);
+        expect(info).toHaveBeenCalledWith(
+            `Converting note '${note.noteId}' lost 1 and moved 0 block references.`);
+        info.mockRestore();
     });
 
     it("rejects a note of another type, unavailable content and binary content", () => {
