@@ -28,6 +28,11 @@ export interface PlatformProvider {
      * `second-instance` event. Optional; absent = always fatal.
      */
     shouldIgnoreStartupError?(error: NodeJS.ErrnoException): boolean;
+    /**
+     * Runs `fn` once no asynchronous transaction holds the database connection, and returns what it
+     * returns. Absent where no transaction stays open across an `await`; see `whenDatabaseFree()`.
+     */
+    whenDatabaseFree?<T>(fn: () => T): T | Promise<T>;
 }
 
 let platformProvider: PlatformProvider | null = null;
@@ -39,4 +44,14 @@ export function initPlatform(provider: PlatformProvider) {
 export function getPlatform(): PlatformProvider {
     if (!platformProvider) throw new Error("Platform provider not initialized");
     return platformProvider;
+}
+
+/**
+ * Runs `fn`, a write that resumes after an `await`, once no asynchronous transaction holds the
+ * database connection, so that the write is not folded into that transaction. `fn` opens its own
+ * execution context. Never call it inside such a transaction: it would wait for its own caller.
+ */
+export async function whenDatabaseFree<T>(fn: () => T): Promise<T> {
+    const platform = getPlatform();
+    return platform.whenDatabaseFree ? await platform.whenDatabaseFree(fn) : fn();
 }

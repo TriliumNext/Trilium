@@ -1,5 +1,5 @@
 import {
-    PDF_TOC_READER, type PdfOutlineHeading, readPdfOutline, toPdfTocHeadings
+    PDF_TOC_READER, type PdfOutline, type PdfOutlineHeading, readPdfOutline, toPdfTocHeadings
 } from "@triliumnext/commons/src/lib/pdf_toc.js";
 import { MAX_TOC_DEPTH } from "@triliumnext/commons/src/lib/toc.js";
 import type { PDFDocumentProxy } from "pdfjs-dist";
@@ -8,7 +8,7 @@ import { digestBlobId, getDocumentBlobId } from "./digest";
 import { whenDocumentLoaded } from "./navigation";
 
 /** The outline of the loaded document, read once. */
-let outline: { pdf: object; headings: Promise<PdfOutlineHeading[]> } | null = null;
+let outline: { pdf: object; read: Promise<PdfOutline> } | null = null;
 /** The headings that have a page, by page and position on it, for the active heading. */
 let headingPositions: Array<{ key: string; pageIndex: number; y: number }> = [];
 
@@ -16,11 +16,11 @@ let headingPositions: Array<{ key: string; pageIndex: number; y: number }> = [];
  * The outline of `pdf` as the generators read it, with the levels of the file, each heading's
  * own destination and the page it inherits. Read once per document.
  */
-export function ensureOutline(pdf: PDFDocumentProxy): Promise<PdfOutlineHeading[]> {
+export function ensureOutline(pdf: PDFDocumentProxy): Promise<PdfOutline> {
     if (outline?.pdf !== pdf) {
-        outline = { pdf, headings: readPdfOutline(pdf) };
+        outline = { pdf, read: readPdfOutline(pdf) };
     }
-    return outline.headings;
+    return outline.read;
 }
 
 /**
@@ -31,7 +31,7 @@ export async function extractAndSendToc() {
     const app = window.PDFViewerApplication;
     let headings: PdfOutlineHeading[] = [];
     try {
-        headings = await ensureOutline(app.pdfDocument);
+        ({ headings } = await ensureOutline(app.pdfDocument));
     } catch {
         // Sent as a document without an outline.
     }
@@ -168,10 +168,10 @@ async function answerBuild(requestId: number, isProtected: boolean, data: Uint8A
 async function buildLoadedToc(isProtected: boolean) {
     const { pdfDocument } = await whenDocumentLoaded();
     const started = performance.now();
-    const [ headings, blobId ] = await Promise.all([
+    const [ read, blobId ] = await Promise.all([
         ensureOutline(pdfDocument), getDocumentBlobId(pdfDocument, isProtected)
     ]);
-    return toBuild(headings, blobId, started);
+    return toBuild(read, blobId, started);
 }
 
 /**
@@ -190,10 +190,11 @@ async function buildSavedToc(data: Uint8Array, isProtected: boolean) {
     }
 }
 
-function toBuild(headings: PdfOutlineHeading[], blobId: string, started: number) {
+function toBuild({ headings, isCut }: PdfOutline, blobId: string, started: number) {
     return {
         blobId,
         headings: toPdfTocHeadings(headings),
+        isCut,
         properties: { reader: PDF_TOC_READER },
         elapsedMs: performance.now() - started
     };

@@ -6,12 +6,12 @@
 import { createHash } from "node:crypto";
 
 import { readPdfOutline } from "@triliumnext/commons/src/lib/pdf_toc.js";
-import { assignHeadingIds, getBlobTag } from "@triliumnext/commons/src/lib/toc.js";
+import { assignHeadingIds, getBlobTag, MAX_TOC_HEADINGS } from "@triliumnext/commons/src/lib/toc.js";
 import { blobIdFromDigest, PROTECTED_BLOB_PREFIX } from "@triliumnext/commons/src/lib/utils.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { setupNavigation, trackDocument } from "./navigation";
-import { allFeaturesPdf, buildPdf } from "./test/fixture_pdf";
+import { allFeaturesPdf, buildPdf, longOutlinePdf } from "./test/fixture_pdf";
 import { type InstalledViewer, installViewerApp, uninstallViewerApp } from "./test/viewer_app";
 
 /** Both pages of the all-features fixture are US Letter, 792 points tall, stacked 1000 px apart. */
@@ -217,6 +217,30 @@ describe("headings", () => {
         await vi.waitFor(() => expect(app.pdfViewer.currentPageNumber).toBe(2));
         expect(viewer.scrollPageIntoView).toHaveBeenCalledOnce();
     });
+});
+
+describe("an outline cut at MAX_TOC_HEADINGS", () => {
+    it("lands a heading of the cut outline on the same bytes, and gives an id of version 1 the page", async () => {
+        // "Summary" is the last entry kept, and one more follows it.
+        const bytes = longOutlinePdf(MAX_TOC_HEADINGS + 1, MAX_TOC_HEADINGS - 1);
+        viewer = await installViewerApp(bytes.slice());
+        const app = startTracking();
+        loadDocument();
+        const ids = await idsOf(bytes);
+        const oldIds = await idsOf(bytes, false, { isCutIgnored: true });
+        expect(ids[MAX_TOC_HEADINGS - 1]).toMatch(/.[0-9A-Za-z]{10}$/);
+        expect(oldIds[MAX_TOC_HEADINGS - 1]).toMatch(/^[0-9a-z]{14}$/);
+
+        viewer.sendFromParent({
+            type: "trilium-scroll-to-heading", headingId: ids[MAX_TOC_HEADINGS - 1], pageNumber: 1
+        });
+        await vi.waitFor(() => expect(app.pdfViewer.currentPageNumber).toBe(3));
+
+        viewer.sendFromParent({
+            type: "trilium-scroll-to-heading", headingId: oldIds[MAX_TOC_HEADINGS - 1], pageNumber: 2
+        });
+        await vi.waitFor(() => expect(app.pdfViewer.currentPageNumber).toBe(2));
+    }, 60_000);
 });
 
 describe("headings bound to the bytes", () => {
@@ -452,17 +476,21 @@ function loadDocument() {
     viewer.eventBus.dispatch("documentinit", { source: null });
 }
 
-/** The saved ids of the outline of `bytes`, as the server computes them for its blob. */
-async function idsOf(bytes: Uint8Array, isProtected = false) {
+/**
+ * The saved ids of the outline of `bytes`, as the server computes them for its blob. With
+ * `isCutIgnored`, the ids of a cut outline as the reader of version 1 gave them.
+ */
+async function idsOf(bytes: Uint8Array, isProtected = false, { isCutIgnored = false } = {}) {
     const { getDocument } = await import("pdfjs-dist/legacy/build/pdf.mjs");
     const task = getDocument({ data: bytes.slice() });
-    const outline = await readPdfOutline(await task.promise);
+    const { headings: outline, isCut } = await readPdfOutline(await task.promise);
     await task.destroy();
     const content = isProtected
         ? Buffer.concat([ Buffer.from(PROTECTED_BLOB_PREFIX), bytes ])
         : Buffer.from(bytes);
     const blobId = blobIdFromDigest(new Uint8Array(createHash("sha512").update(content).digest()));
-    return assignHeadingIds(outline, getBlobTag(blobId), isProtected);
+    return assignHeadingIds(outline, getBlobTag(blobId), isProtected,
+        { isCut: isCut && !isCutIgnored });
 }
 
 /**

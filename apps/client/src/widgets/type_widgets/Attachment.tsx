@@ -22,7 +22,8 @@ import {
 } from "../../services/attachment_actions";
 import { partitionAttachmentsByGroup } from "../../services/attachment_groups";
 import { attachmentRoleLabel } from "../../services/attachment_role_names";
-import content_renderer, { hasRenderedPreview } from "../../services/content_renderer";
+import { takeDocumentTarget } from "../../services/bookmark_jump";
+import content_renderer, { type ContentLinkTarget, hasRenderedPreview } from "../../services/content_renderer";
 import froca from "../../services/froca";
 import image from "../../services/image";
 import { getAttachmentImageUrl } from "../../services/image_urls";
@@ -51,7 +52,6 @@ import { ParentComponent, refToJQuerySelector } from "../react/react_utils";
 import SiblingNavigator from "../react/SiblingNavigator";
 import { TextPreview } from "./File";
 import MediaPreview from "./file/MediaPreview";
-import type { PdfLinkTarget } from "./file/PdfViewer";
 import TranscriptView from "./transcript/TranscriptView";
 import { TypeWidgetProps } from "./type_widget";
 
@@ -195,9 +195,19 @@ function AttachmentListHeader({ noteId }: { noteId: string }) {
 export function AttachmentDetail({ note, viewScope, noteContext }: TypeWidgetProps) {
     const [ attachment, setAttachment ] = useState<FAttachment | null | undefined>(undefined);
 
+    // Only the lookup of the latest navigation is shown, whichever lookup resolves last.
     useEffect(() => {
-        if (!viewScope?.attachmentId) return;
-        froca.getAttachment(viewScope.attachmentId).then(setAttachment);
+        const attachmentId = viewScope?.attachmentId;
+        if (!attachmentId) return;
+        let isLatest = true;
+        froca.getAttachment(attachmentId).then((found) => {
+            if (isLatest && viewScope.attachmentId === attachmentId) {
+                setAttachment(found);
+            }
+        });
+        return () => {
+            isLatest = false;
+        };
     }, [ viewScope ]);
 
     return (
@@ -219,7 +229,7 @@ export function AttachmentDetail({ note, viewScope, noteContext }: TypeWidgetPro
 
             <div className="attachment-wrapper">
                 {attachment !== null ? (
-                    attachment && <AttachmentInfo attachment={attachment} isFullDetail ownerNote={note} noteContext={noteContext} viewScope={viewScope} />
+                    attachment && <AttachmentInfo key={attachment.attachmentId} attachment={attachment} isFullDetail ownerNote={note} noteContext={noteContext} viewScope={viewScope} />
                 ) : (
                     <strong>{t("attachment_detail.attachment_deleted")}</strong>
                 )}
@@ -265,26 +275,31 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
         && workbookFailedFor !== workbookKey;
     const rendersItself = isZoomableImage || isPlayableMedia || isEditableDrawing || isTranscript || isWorkbook;
     const imageSrc = getAttachmentImageUrl(attachment.attachmentId, attachment.title, modified);
-    /** Opens the PDF that the content renderer showed at another place. */
-    const showPdfTargetRef = useRef<((target: PdfLinkTarget) => void) | null>(null);
+    /** Shows the content of the latest render at the place that a link names. */
+    const showTargetRef = useRef<((target: ContentLinkTarget) => void) | null>(null);
+    /** Counts the renders of `refresh()`: only the content of the latest one is shown. */
+    const renderGenerationRef = useRef(0);
+    /** Whether a render has started whose content is not in place yet. */
+    const isRenderingRef = useRef(false);
 
-    /** The place in the PDF that a link opened the attachment at, taken once from the view scope. */
+    /** The place that a link opened the attachment at, taken once from the view scope. */
     function takeLinkTarget() {
         const scope = noteContext?.viewScope;
         return isFullDetail && scope?.attachmentId === attachment.attachmentId
-            ? takePdfTarget(scope)
+            ? takeContentTarget(scope)
             : undefined;
     }
 
     /**
-     * Opens the place in the PDF that a link names, or leaves it in the view scope for `refresh()`
-     * while the viewer renders.
+     * Shows the place that the latest link names, once the content of the latest render is in
+     * place. Until then the view scope holds it, and the render that completes shows it.
      */
     function showLinkTarget() {
-        const showPdfTarget = showPdfTargetRef.current;
-        const target = showPdfTarget && takeLinkTarget();
+        const showTarget = showTargetRef.current;
+        if (!showTarget || isRenderingRef.current) return;
+        const target = takeLinkTarget();
         if (target) {
-            showPdfTarget(target);
+            showTarget(target);
         }
     }
 
@@ -301,16 +316,21 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
             // document; a list-view preview stays bare and shows only the corner of a workbook.
             const renderOptions = {
                 pdfToolbar: !!isFullDetail,
-                pdfTarget: takeLinkTarget(),
                 buildsPdfToc: !!isFullDetail,
                 trim: !isFullDetail
             };
-            showPdfTargetRef.current = null;
+            const generation = ++renderGenerationRef.current;
+            isRenderingRef.current = true;
             content_renderer.getRenderedContent(attachment, renderOptions)
-                .then(({ $renderedContent, showPdfTarget }) => {
+                .then(({ $renderedContent, showTarget }) => {
+                    if (generation !== renderGenerationRef.current) {
+                        content_renderer.disposeInteractiveContent($renderedContent);
+                        return;
+                    }
                     disposeContent();
-                    showPdfTargetRef.current = showPdfTarget ?? null;
                     contentWrapper.current?.replaceChildren(...$renderedContent);
+                    showTargetRef.current = showTarget ?? null;
+                    isRenderingRef.current = false;
                     showLinkTarget();
                 });
         }
@@ -326,7 +346,13 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
 
     useEffect(() => {
         refresh();
-        return disposeContent;
+        return () => {
+            // A render that resolves after this is disposed unseen.
+            renderGenerationRef.current++;
+            isRenderingRef.current = false;
+            showTargetRef.current = null;
+            disposeContent();
+        };
     }, [ attachment, rendersItself ]);
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         const isThis = (row: AttachmentRow) => row.attachmentId === attachment.attachmentId;
@@ -546,13 +572,17 @@ function AttachmentActions({ attachment, copyAttachmentReferenceToClipboard }: {
  * The place in a PDF that `viewScope` names, taken out of it so that a link opens it once: the
  * heading or the annotation, and the page.
  */
-function takePdfTarget(viewScope: ViewScope): PdfLinkTarget | undefined {
-    const { page, heading, annotation } = viewScope;
-    if (!page && !heading) return undefined;
+/**
+ * Takes the place that a link names out of `viewScope`: a page, heading or annotation of a PDF, or
+ * a heading or bookmark of a document's preview. Leaves a view scope without one as it is.
+ */
+function takeContentTarget(viewScope: ViewScope): ContentLinkTarget | undefined {
+    const { page, annotation } = viewScope;
+    const document = takeDocumentTarget(viewScope);
+    if (!page && !document) return undefined;
 
     viewScope.page = undefined;
-    viewScope.heading = undefined;
     viewScope.annotation = undefined;
     const pageNumber = Number.parseInt(page ?? "", 10);
-    return { page: pageNumber >= 1 ? pageNumber : undefined, heading, annotation };
+    return { page: pageNumber >= 1 ? pageNumber : undefined, annotation, ...document };
 }

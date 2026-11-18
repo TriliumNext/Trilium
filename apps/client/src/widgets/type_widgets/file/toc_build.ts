@@ -63,10 +63,10 @@ export function useTocBuild(
         if (answer.failed) return;
 
         const { tocUrl } = documentRef.current;
-        const { blobId, headings, properties, elapsedMs } = answer;
+        const { blobId, headings, isCut, properties, elapsedMs } = answer;
         try {
             const saved = await server.put<CachedTocResponse>(tocUrl, {
-                targetBlobHash: blobId, headings, properties, elapsedMs
+                targetBlobHash: blobId, headings, properties, isCut, elapsedMs
             } satisfies ClientTocRequest, undefined, { silentConflict: true });
             if (saved.status === "ready") {
                 rememberHeadingTitles(tocUrl, saved.blobId, saved.headings);

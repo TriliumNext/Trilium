@@ -21,7 +21,7 @@ describe("readPdfOutline", () => {
             entry("Text target", [ "page", { name: "Fit" } ])
         ], { "chapter-2": [ ref(1), { name: "XYZ" }, 0, 0, null ] });
 
-        expect(await readPdfOutline(pdf)).toStrictEqual([
+        expect((await readPdfOutline(pdf)).headings).toStrictEqual([
             { title: "Chapter 1", level: 1, page: 1, dest: xyz },
             { title: "Section <b>1.1</b> & more", level: 2, page: 1, dest: [ ref(0), { name: "Fit" } ] },
             { title: "Named", level: 1, page: 2, dest: [ ref(1), { name: "XYZ" }, 0, 0, null ] },
@@ -37,14 +37,15 @@ describe("readPdfOutline", () => {
     });
 
     it("reads a document without an outline, and entries without a title or children", async () => {
-        expect(await readPdfOutline(fakePdf(null))).toStrictEqual([]);
+        expect(await readPdfOutline(fakePdf(null))).toStrictEqual({ headings: [], isCut: false });
 
         const odd = { title: undefined, dest: null } as unknown as PdfOutlineEntry;
-        expect(await readPdfOutline(fakePdf([ odd ]))).toStrictEqual([ { title: "", level: 1 } ]);
+        expect((await readPdfOutline(fakePdf([ odd ]))).headings)
+            .toStrictEqual([ { title: "", level: 1 } ]);
     });
 
     it("gives a heading without a page the page of the first heading below it that has one", async () => {
-        const headings = await readPdfOutline(fakePdf([
+        const { headings } = await readPdfOutline(fakePdf([
             entry("Part I", null, [
                 entry("Intro", null, [ entry("Scope", null), entry("Aims", [ ref(4) ]) ]),
                 entry("Methods", [ ref(6) ])
@@ -73,22 +74,34 @@ describe("readPdfOutline", () => {
             deepest = entry(`Level ${level}`, [ ref(0) ], [ deepest ]);
         }
 
-        const headings = await readPdfOutline(fakePdf([ deepest ]));
+        const { headings } = await readPdfOutline(fakePdf([ deepest ]));
 
         expect(headings).toHaveLength(33);
         expect(headings[31]).toMatchObject({ title: "Level 32", level: 32, inheritedPage: 4 });
         expect(headings[32]).toMatchObject({ title: "Level 33", level: 33, page: 4 });
     });
 
-    it("keeps at most the limit of headings, and normalizes titles", async () => {
+    it("keeps at most the limit of headings, reports the cut, and normalizes titles", async () => {
         const entries = Array.from({ length: MAX_TOC_HEADINGS + 5 }, (_, index) =>
             entry(`${index}\u0008${"x".repeat(600)}`, null));
 
-        const headings = await readPdfOutline(fakePdf(entries));
+        const { headings, isCut } = await readPdfOutline(fakePdf(entries));
 
+        expect(isCut).toBe(true);
         expect(headings).toHaveLength(MAX_TOC_HEADINGS);
         expect(headings[0].title).toBe(`0${"x".repeat(499)}`);
         expect(headings.at(-1)?.title.startsWith(`${MAX_TOC_HEADINGS - 1}x`)).toBe(true);
+    });
+
+    it("reports no cut for an outline of exactly the limit, nested or not", async () => {
+        const flat = Array.from({ length: MAX_TOC_HEADINGS }, (_, index) => entry(`${index}`, null));
+        const nested = [ entry("Parent", null, flat.slice(1)) ];
+        // An entry past the limit is a cut, whatever its title.
+        const past = [ ...flat, { title: undefined, dest: null } as unknown as PdfOutlineEntry ];
+
+        expect((await readPdfOutline(fakePdf(flat))).isCut).toBe(false);
+        expect((await readPdfOutline(fakePdf(nested))).isCut).toBe(false);
+        expect((await readPdfOutline(fakePdf(past))).isCut).toBe(true);
     });
 });
 

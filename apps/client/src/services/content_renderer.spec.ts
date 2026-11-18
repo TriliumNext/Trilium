@@ -76,6 +76,12 @@ vi.mock("./office_renderer.js", async (importOriginal) => ({
     renderOfficeToHtml: (...a: any[]) => renderOfficeToHtml(...a)
 }));
 
+const showDocumentTarget = vi.fn();
+vi.mock("./bookmark_jump.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./bookmark_jump.js")>(),
+    showDocumentTarget
+}));
+
 const mermaidRender = vi.fn(async (..._args: any[]) => ({ svg: "<g/>" }));
 vi.mock("mermaid", () => ({
     default: {
@@ -860,17 +866,18 @@ describe("getRenderedContent file rendering", () => {
         expect(openNoteExternally).toHaveBeenCalledWith(note.noteId, note.mime);
     });
 
-    it("opens a PDF attachment at a target, again in the same viewer, and lets it build its ToC cache", async () => {
+    it("opens a PDF attachment at each target in the same viewer, and lets it build its ToC cache", async () => {
         const att = buildAttachment({ role: "file", mime: "application/pdf" });
-        const { showPdfTarget } = await getRenderedContent(att, {
-            pdfTarget: { page: 3, heading: "h1" }, buildsPdfToc: true
-        });
+        const { showTarget } = await getRenderedContent(att, { buildsPdfToc: true });
         expect(pdfViewerComponent.mock.calls.at(-1)?.[0]).toMatchObject({
-            target: { page: 3, heading: "h1" },
             tocDocument: { tocUrl: `attachments/${att.attachmentId}/toc`, isProtected: false }
         });
+        expect(pdfViewerComponent.mock.calls.at(-1)?.[0].target).toBeUndefined();
 
-        showPdfTarget?.({ page: 5 });
+        showTarget?.({ page: 3, heading: "h1", bookmark: "Intro" });
+        expect(pdfViewerComponent.mock.calls.at(-1)?.[0].target)
+            .toStrictEqual({ page: 3, heading: "h1", annotation: undefined });
+        showTarget?.({ page: 5 });
         expect(pdfViewerComponent.mock.calls.at(-1)?.[0]).toMatchObject({ target: { page: 5 } });
 
         isProtectedSessionAvailable.mockReturnValue(true);
@@ -886,7 +893,7 @@ describe("getRenderedContent file rendering", () => {
         note.mime = "application/pdf";
         await getRenderedContent(note, { buildsPdfToc: true });
         expect(pdfViewerComponent.mock.calls.at(-1)?.[0].tocDocument).toBeUndefined();
-        expect((await getRenderedContent(buildNote({ title: "T" }))).showPdfTarget).toBeUndefined();
+        expect((await getRenderedContent(buildNote({ title: "T" }))).showTarget).toBeUndefined();
     });
 
     it("does not render file when tooltip option is set", async () => {
@@ -987,6 +994,20 @@ describe("getRenderedContent office rendering", () => {
         // the file remains downloadable / openable
         expect($renderedContent.find(".file-download").length).toBe(1);
         expect($renderedContent.find(".file-open").length).toBe(1);
+    });
+
+    it("shows the preview at the place that a link names, once converted", async () => {
+        const note = buildNote({ title: "Doc", type: "file" });
+        note.mime = DOCX;
+        const { $renderedContent, showTarget } = await getRenderedContent(note);
+
+        showTarget?.({ heading: "h1" });
+
+        const body = $renderedContent.find(".office-preview-body")[0];
+        await vi.waitFor(() => expect(showDocumentTarget).toHaveBeenCalledExactlyOnceWith(body, { heading: "h1" }));
+
+        renderOfficeToHtml.mockRejectedValueOnce(new Error("bad zip"));
+        expect((await getRenderedContent(note)).showTarget).toBeUndefined();
     });
 
     it("attaches a spreadsheet's stylesheet inside the preview body, as an element", async () => {

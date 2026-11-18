@@ -1,6 +1,7 @@
+import { render } from "preact";
 import { useEffect } from "preact/hooks";
 import { act } from "preact/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import Component from "../../components/component";
 import FAttachment from "../../entities/fattachment";
@@ -12,8 +13,10 @@ import { ParentComponent } from "../react/react_utils";
 
 const CANVAS_MIME = "application/vnd.excalidraw+json";
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-const { getRenderedContent, drawingMounts, uploadFiles } = vi.hoisted(() => ({
-    getRenderedContent: vi.fn(async () => ({ $renderedContent: [] })),
+const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+const { getRenderedContent, disposeInteractiveContent, drawingMounts, uploadFiles } = vi.hoisted(() => ({
+    getRenderedContent: vi.fn(async (..._args: unknown[]): Promise<unknown> => ({ $renderedContent: [] })),
+    disposeInteractiveContent: vi.fn(),
     drawingMounts: vi.fn(),
     uploadFiles: vi.fn(async () => {})
 }));
@@ -32,7 +35,7 @@ vi.mock("i18next", () => {
 vi.mock("../../services/content_renderer", () => ({
     default: {
         getRenderedContent,
-        disposeInteractiveContent: () => {}
+        disposeInteractiveContent
     },
     hasRenderedPreview: (attachment: FAttachment) => attachment.mime === CANVAS_MIME
 }));
@@ -209,6 +212,12 @@ describe("AttachmentList", () => {
 });
 
 describe("AttachmentDetail", () => {
+    afterEach(() => {
+        getRenderedContent.mockReset();
+        getRenderedContent.mockImplementation(async () => ({ $renderedContent: [] }));
+        disposeInteractiveContent.mockClear();
+    });
+
     it("edits a canvas drawing in an editor that stays mounted through every save", async () => {
         const drawing = { ...role("file"), mime: CANVAS_MIME } as FAttachment;
         vi.spyOn(froca, "getAttachment").mockResolvedValue(drawing);
@@ -238,105 +247,103 @@ describe("AttachmentDetail", () => {
         expect(getRenderedContent).not.toHaveBeenCalled();
     });
 
-    it("opens a PDF at the place a link names, and at the place of each later link to it", async () => {
-        const pdf = { ...role("file"), mime: "application/pdf" } as FAttachment;
-        vi.spyOn(froca, "getAttachment").mockResolvedValue(pdf);
-        const showPdfTarget = vi.fn();
-        getRenderedContent.mockClear();
-        getRenderedContent.mockResolvedValue({ $renderedContent: [], showPdfTarget } as never);
-
-        const component = new Component();
-        const viewScope: Record<string, string | undefined> = {
-            viewMode: "attachments", attachmentId: pdf.attachmentId, page: "3", heading: "h1"
-        };
-        const noteContext = { ntxId: "ntx1", viewScope };
-        const props = { note: { noteId: "note1" }, viewScope, noteContext } as unknown as
-            Parameters<typeof AttachmentDetail>[0];
-        renderInto(
-            <ParentComponent.Provider value={component}>
-                <AttachmentDetail {...props} />
-            </ParentComponent.Provider>
-        );
-
-        await vi.waitFor(() => expect(getRenderedContent).toHaveBeenCalledOnce());
-        expect(getRenderedContent).toHaveBeenCalledWith(pdf, {
-            pdfToolbar: true, pdfTarget: { page: 3, heading: "h1", annotation: undefined },
-            buildsPdfToc: true, trim: false
-        });
-        expect(viewScope).toMatchObject({ page: undefined, heading: undefined, annotation: undefined });
-
-        // A second link to the same attachment keeps the viewer, which opens the new place.
-        async function follow(scope: Record<string, string | undefined>) {
-            Object.assign(viewScope, scope);
-            await act(async () => {
-                await component.handleEvent("noteSwitched", { noteContext: { ntxId: "ntx1", note: { noteId: "note1" } } } as never);
-            });
+    describe.each([
+        {
+            name: "a PDF", mime: "application/pdf",
+            first: { page: "3", heading: "h1" }, second: { page: "5", annotation: "12R" },
+            firstTarget: { page: 3, heading: "h1", annotation: undefined, bookmark: undefined },
+            secondTarget: { page: 5, heading: undefined, annotation: "12R", bookmark: undefined }
+        },
+        {
+            name: "a Word document", mime: DOCX_MIME,
+            first: { heading: "h1" }, second: { bookmark: "Appendix" },
+            firstTarget: { page: undefined, heading: "h1", annotation: undefined, bookmark: undefined },
+            secondTarget: { page: undefined, heading: undefined, annotation: undefined, bookmark: "Appendix" }
         }
-        await vi.waitFor(() => expect(getRenderedContent).toHaveBeenCalledOnce());
-        await follow({ page: "5", annotation: "12R" });
-        expect(showPdfTarget).toHaveBeenCalledExactlyOnceWith({ page: 5, heading: undefined, annotation: "12R" });
+    ])("the place in $name that a link names", ({ mime, first, second, firstTarget, secondTarget }) => {
+        it("is shown once the content is in place, and the place of each later link at once", async () => {
+            const { attachment, renders, follow, viewScope } = await openDetail(mime, first);
 
-        // A link without a place, or to another attachment, opens nothing.
-        await follow({});
-        await follow({ attachmentId: "other", page: "2" });
-        expect(showPdfTarget).toHaveBeenCalledOnce();
-        expect(getRenderedContent).toHaveBeenCalledOnce();
-        getRenderedContent.mockResolvedValue({ $renderedContent: [] });
+            expect(getRenderedContent).toHaveBeenCalledWith(attachment,
+                { pdfToolbar: true, buildsPdfToc: true, trim: false });
+            expect(viewScope).toMatchObject(first);
+            const content = await renders.finish(0);
+            expect(content.showTarget).toHaveBeenCalledExactlyOnceWith(firstTarget);
+            expect(viewScope).toMatchObject({ page: undefined, heading: undefined, annotation: undefined });
+
+            await follow(second);
+            expect(content.showTarget).toHaveBeenLastCalledWith(secondTarget);
+
+            // A link without a place, or to another attachment, moves nothing.
+            await follow({});
+            await follow({ attachmentId: "other", heading: "h2" });
+            expect(content.showTarget).toHaveBeenCalledTimes(2);
+            expect(getRenderedContent).toHaveBeenCalledOnce();
+        });
+
+        it("of the latest link is shown, once, when links follow while the content renders", async () => {
+            const { attachment, renders, follow } = await openDetail(mime, first);
+
+            await follow(second);
+            const content = await renders.finish(0);
+            expect(content.showTarget).toHaveBeenCalledExactlyOnceWith(secondTarget);
+
+            // During a render after a change of the content, the link goes to the new content.
+            await reloadAttachment(renders.component, attachment.attachmentId, "otherComponent");
+            await follow(first);
+            expect(content.showTarget).toHaveBeenCalledOnce();
+            const changed = await renders.finish(1);
+            expect(changed.showTarget).toHaveBeenCalledExactlyOnceWith(firstTarget);
+            expect(content.showTarget).toHaveBeenCalledOnce();
+        });
+
+        it("comes from the latest render when two resolve out of order", async () => {
+            const { attachment, renders, follow, container } = await openDetail(mime, {});
+            await reloadAttachment(renders.component, attachment.attachmentId, "otherComponent");
+            await follow(first);
+
+            const latest = await renders.finish(1);
+            const superseded = await renders.finish(0);
+
+            expect(container.contains(latest.element)).toBe(true);
+            expect(container.contains(superseded.element)).toBe(false);
+            expect(disposeInteractiveContent).toHaveBeenCalledWith([ superseded.element ]);
+            expect(superseded.showTarget).not.toHaveBeenCalled();
+            expect(latest.showTarget).toHaveBeenCalledExactlyOnceWith(firstTarget);
+        });
     });
 
-    it("opens a PDF at the place of a link followed while it renders", async () => {
-        const pdf = { ...role("file"), mime: "application/pdf" } as FAttachment;
-        vi.spyOn(froca, "getAttachment").mockResolvedValue(pdf);
-        const renders: ((showPdfTarget: () => void) => void)[] = [];
-        getRenderedContent.mockClear();
-        getRenderedContent.mockImplementation(() => new Promise<never>((resolve) => {
-            renders.push((showPdfTarget) => {
-                resolve({ $renderedContent: [], showPdfTarget } as never);
-            });
-        }));
-
-        const component = new Component();
-        const viewScope: Record<string, string | undefined> = {
-            viewMode: "attachments", attachmentId: pdf.attachmentId, page: "3"
-        };
-        const noteContext = { ntxId: "ntx1", viewScope };
-        const props = { note: { noteId: "note1" }, viewScope, noteContext } as unknown as
-            Parameters<typeof AttachmentDetail>[0];
-        renderInto(
-            <ParentComponent.Provider value={component}>
-                <AttachmentDetail {...props} />
-            </ParentComponent.Provider>
-        );
-        async function follow(page: string) {
-            viewScope.page = page;
-            const switched = { noteContext: { ntxId: "ntx1", note: { noteId: "note1" } } };
+    it("shows the attachment of the latest navigation, whichever lookup resolves last", async () => {
+        const [ older, newer ] = [ { ...role("file"), mime: DOCX_MIME }, { ...role("file"), mime: DOCX_MIME } ] as FAttachment[];
+        const lookups = new Map<string, (attachment: FAttachment) => void>();
+        vi.spyOn(froca, "getAttachment").mockImplementation((attachmentId) =>
+            new Promise((resolve) => lookups.set(attachmentId, resolve)));
+        const renders = holdRenders();
+        const noteContext = { ntxId: "ntx1", viewScope: {} as Record<string, string | undefined> };
+        const container = document.createElement("div");
+        document.body.append(container);
+        async function navigate(attachment: FAttachment, heading: string) {
+            noteContext.viewScope = { viewMode: "attachments", attachmentId: attachment.attachmentId, heading };
+            const props = { note: { noteId: "note1" }, viewScope: noteContext.viewScope, noteContext } as unknown as
+                Parameters<typeof AttachmentDetail>[0];
             await act(async () => {
-                await component.handleEvent("noteSwitched", switched as never);
-            });
-        }
-        async function finishRender(showPdfTarget: () => void) {
-            await act(async () => {
-                renders.shift()?.(showPdfTarget);
+                render(
+                    <ParentComponent.Provider value={renders.component}>
+                        <AttachmentDetail {...props} />
+                    </ParentComponent.Provider>, container);
             });
         }
 
-        await vi.waitFor(() => expect(renders).toHaveLength(1));
-        await follow("5");
-        const firstViewer = vi.fn();
-        await finishRender(firstViewer);
-        expect(firstViewer).toHaveBeenCalledExactlyOnceWith(
-            { page: 5, heading: undefined, annotation: undefined });
+        await navigate(older, "a");
+        await navigate(newer, "b");
+        await act(async () => lookups.get(newer.attachmentId)?.(newer));
+        await act(async () => lookups.get(older.attachmentId)?.(older));
+        const content = await renders.finish(0);
 
-        // A link followed while a replaced attachment renders again goes to the new viewer.
-        await reloadAttachment(component, pdf.attachmentId, "otherComponent");
-        expect(renders).toHaveLength(1);
-        await follow("7");
-        const secondViewer = vi.fn();
-        await finishRender(secondViewer);
-        expect(firstViewer).toHaveBeenCalledOnce();
-        expect(secondViewer).toHaveBeenCalledExactlyOnceWith(
-            { page: 7, heading: undefined, annotation: undefined });
-        getRenderedContent.mockImplementation(async () => ({ $renderedContent: [] }));
+        expect(getRenderedContent).toHaveBeenCalledExactlyOnceWith(newer, expect.anything());
+        expect(content.showTarget).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ heading: "b" }));
+        await act(async () => render(null, container));
+        container.remove();
     });
 
     it("shows a workbook opened on its own in the read-only spreadsheet, else its whole preview until it changes", async () => {
@@ -370,6 +377,58 @@ describe("AttachmentDetail", () => {
         await vi.waitFor(() => expect(container.querySelector(".attachment-spreadsheet .spreadsheet-file-stub")).not.toBeNull());
     });
 });
+
+/**
+ * Opens the full detail of a file attachment of `mime` from a link whose view scope holds `scope`.
+ * Its renders wait until `renders.finish()`.
+ */
+async function openDetail(mime: string, scope: Record<string, string | undefined>) {
+    const attachment = { ...role("file"), mime } as FAttachment;
+    vi.spyOn(froca, "getAttachment").mockResolvedValue(attachment);
+    const renders = holdRenders();
+    const viewScope: Record<string, string | undefined> = {
+        viewMode: "attachments", attachmentId: attachment.attachmentId, ...scope
+    };
+    const noteContext = { ntxId: "ntx1", viewScope };
+    const props = { note: { noteId: "note1" }, viewScope, noteContext } as unknown as
+        Parameters<typeof AttachmentDetail>[0];
+    const container = renderInto(
+        <ParentComponent.Provider value={renders.component}>
+            <AttachmentDetail {...props} />
+        </ParentComponent.Provider>
+    );
+    await vi.waitFor(() => expect(getRenderedContent).toHaveBeenCalledOnce());
+
+    /** Follows a link to the attachment the pane shows, with `changes` to the view scope. */
+    async function follow(changes: Record<string, string | undefined>) {
+        for (const key of [ "page", "heading", "annotation", "bookmark" ]) {
+            viewScope[key] = undefined;
+        }
+        Object.assign(viewScope, changes);
+        await act(async () => {
+            await renders.component.handleEvent("noteSwitched",
+                { noteContext: { ntxId: "ntx1", note: { noteId: "note1" } } } as never);
+        });
+    }
+    return { attachment, renders, follow, viewScope, container };
+}
+
+/** Holds each call of `getRenderedContent()` until `finish()` gives it content. */
+function holdRenders() {
+    const pending: ((content: unknown) => void)[] = [];
+    getRenderedContent.mockReset();
+    getRenderedContent.mockImplementation(() => new Promise((resolve) => pending.push(resolve)));
+    return {
+        component: new Component(),
+        /** Completes the render that started `index`-th, with an element and a `showTarget()`. */
+        async finish(index: number) {
+            const element = document.createElement("div");
+            const showTarget = vi.fn();
+            await act(async () => pending[index]?.({ $renderedContent: [ element ], showTarget }));
+            return { element, showTarget };
+        }
+    };
+}
 
 /** Reports a saved change to an attachment, as the server does after a save from `componentId`. */
 async function reloadAttachment(component: Component, attachmentId: string, componentId: string) {

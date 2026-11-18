@@ -95,13 +95,14 @@ async function resolveHeading(
     app: ViewerApp, { headingId, headingKey, pageNumber }: Record<string, unknown>
 ): Promise<Target | null> {
     const pdf = app.pdfDocument;
-    const outline = await ensureOutline(pdf).catch(() => []);
+    const { headings: outline, isCut } = await ensureOutline(pdf)
+        .catch(() => ({ headings: [], isCut: false }));
     let index = -1;
     if (typeof headingKey === "string") {
         index = parseHeadingKey(headingKey);
     } else if (typeof headingId === "string") {
         index = await findHeading(headingId, outline, async (blobTag, isProtected) =>
-            getBlobTag(await getDocumentBlobId(pdf, isProtected)) === blobTag);
+            getBlobTag(await getDocumentBlobId(pdf, isProtected)) === blobTag, { isCut });
     }
 
     const heading = index >= 0 ? outline[index] : undefined;

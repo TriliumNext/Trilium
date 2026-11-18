@@ -10,12 +10,13 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { PDF_TOC_READER } from "@triliumnext/commons/src/lib/pdf_toc.js";
+import { MAX_TOC_HEADINGS } from "@triliumnext/commons/src/lib/toc.js";
 import { blobIdFromDigest } from "@triliumnext/commons/src/lib/utils.js";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { trackDocument } from "./navigation";
-import { allFeaturesPdf, barePdf, buildPdf } from "./test/fixture_pdf";
+import { allFeaturesPdf, barePdf, buildPdf, longOutlinePdf } from "./test/fixture_pdf";
 import { type InstalledViewer, installViewerApp, uninstallViewerApp } from "./test/viewer_app";
 import { extractAndSendToc, setupActiveHeadingTracking, setupTocBuild } from "./toc";
 
@@ -212,10 +213,22 @@ describe("the build of the ToC cache", () => {
             requestId: 7,
             blobId: contract.blobId,
             headings: contract.headings,
+            isCut: false,
             properties: { reader: PDF_TOC_READER },
             elapsedMs: expect.any(Number)
         });
     });
+
+    it("reports an outline cut at MAX_TOC_HEADINGS", async () => {
+        await install(longOutlinePdf(MAX_TOC_HEADINGS + 1, 0));
+        loadDocument();
+
+        viewer.sendFromParent({ type: "trilium-build-toc", requestId: 1, isProtected: false });
+
+        const answer = await answerOf(1);
+        expect(answer).toMatchObject({ isCut: true });
+        expect(answer.headings).toHaveLength(MAX_TOC_HEADINGS);
+    }, 60_000);
 
     it("names the bytes in the form of the document's protection, with Web Crypto and with the bundled hash", async () => {
         for (const isWebCryptoAvailable of [ true, false ]) {

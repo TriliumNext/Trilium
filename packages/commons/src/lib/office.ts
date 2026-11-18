@@ -1,5 +1,9 @@
 /** The MIME type of an Excel workbook (`.xlsx`, Office Open XML). */
 export const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+/** The MIME type of a Word document (`.docx`, Office Open XML). */
+export const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+/** The MIME type of an OpenDocument text document (`.odt`). */
+export const ODT_MIME = "application/vnd.oasis.opendocument.text";
 
 /**
  * Office document formats that officeparser can process — used both for OCR text

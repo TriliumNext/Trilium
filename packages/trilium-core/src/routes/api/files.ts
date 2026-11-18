@@ -11,6 +11,7 @@ import noteService from "../../services/notes.js";
 import { convertOfficeToHtml, convertXlsxToWorkbook } from "../../services/office_preview.js";
 import { getPlatform } from "../../services/platform.js";
 import protected_session from "../../services/protected_session";
+import { getTocFormatOf, markTocHeadings } from "../../services/toc/index.js";
 import { isDev } from "../../services/utils/index.js";
 import { downloadData, downloadNoteInt } from "../helpers";
 import { serveContentWithRanges } from "../partial_content";
@@ -146,28 +147,56 @@ async function getAttachmentSpreadsheetWorkbook(req: Request<{ attachmentId: str
 }
 
 async function sendWorkbook(req: Request, res: Response, entity: BNote | BAttachment) {
-    await sendConversion(req, res, entity, "workbook", "application/json; charset=utf-8",
-        () => convertXlsxToWorkbook(entity.getContent(), entity.mime));
-}
-
-async function sendOfficePreview(req: Request, res: Response, entity: BNote | BAttachment) {
-    const trim = isTrimmed(req);
-    await sendConversion(req, res, entity, trim ? "trim" : "full", "text/html; charset=utf-8",
-        () => convertOfficeToHtml(entity.getContent(), entity.mime, { trim }));
+    const source = takeSnapshot(entity);
+    await sendConversion(req, res, source, "workbook", "application/json; charset=utf-8",
+        (content) => convertXlsxToWorkbook(content, source.mime));
 }
 
 /**
- * Sends what `convert` makes of the entity's content, under an ETag the server knows before
- * converting anything, so a browser that already holds it gets a 304 without the document being
- * parsed again. `variant` tells apart the conversions of one entity.
+ * Sends the preview of an office document, with the ids of its headings written in when its ToC
+ * format reads them. The format depends on the note's type or the attachment's role as well as on
+ * the MIME type, so the variant names it.
  */
-async function sendConversion(req: Request, res: Response, entity: BNote | BAttachment, variant: string,
-    contentType: string, convert: () => Promise<string>) {
-    if (entity.isProtected) {
+async function sendOfficePreview(req: Request, res: Response, entity: BNote | BAttachment) {
+    const trim = isTrimmed(req);
+    const source = takeSnapshot(entity);
+    const format = getTocFormatOf(entity);
+    const variant = [ trim ? "trim" : "full", format?.name ].filter(Boolean).join("-");
+    await sendConversion(req, res, source, variant, "text/html; charset=utf-8", async (content) => {
+        const html = await convertOfficeToHtml(content, source.mime, { trim });
+        return markTocHeadings(format, html, { blobId: source.blobId, isProtected: source.isProtected, content });
+    });
+}
+
+/** What a conversion reads of a note or attachment, read in one synchronous step. */
+interface ConversionSource {
+    entity: BNote | BAttachment;
+    mime: string;
+    blobId: string;
+    isProtected: boolean;
+}
+
+/**
+ * The parts of `entity` that a conversion depends on, as they are now. A note is becca's one
+ * `BNote`, which a request can change while a conversion awaits.
+ */
+function takeSnapshot(entity: BNote | BAttachment): ConversionSource {
+    return { entity, mime: entity.mime, blobId: String(entity.blobId), isProtected: !!entity.isProtected };
+}
+
+/**
+ * Sends what `convert` makes of the content of `source`, under an ETag the server knows before
+ * converting anything, so a browser that already holds it gets a 304 without the document being
+ * parsed again. `variant` tells apart the conversions of one entity. The content is read in the
+ * same synchronous step as `source`, so the body is the conversion of the blob that the ETag names.
+ */
+async function sendConversion(req: Request, res: Response, source: ConversionSource, variant: string,
+    contentType: string, convert: (content: string | Uint8Array) => Promise<string>) {
+    if (source.isProtected) {
         // Decrypted content must not reach the browser's disk cache.
         res.setHeader("Cache-Control", "no-store");
     } else {
-        const etag = getConversionEtag(entity, variant);
+        const etag = getConversionEtag(source, variant);
         res.setHeader("Cache-Control", "no-cache");
         res.setHeader("ETag", etag);
         if (matchesEtag(req.headers["if-none-match"], etag)) {
@@ -176,7 +205,7 @@ async function sendConversion(req: Request, res: Response, entity: BNote | BAtta
         }
     }
 
-    const body = await convert();
+    const body = await convert(source.entity.getContent());
     res.setHeader("Content-Type", contentType);
     res.send(body);
 }
@@ -185,9 +214,8 @@ async function sendConversion(req: Request, res: Response, entity: BNote | BAtta
  * Changes whenever the conversion could: with the content (`blobId` is its hash), the MIME type
  * that picks the converter, the variant, and the code that converts.
  */
-function getConversionEtag(entity: BNote | BAttachment, variant: string) {
-    const mime = encodeURIComponent(entity.mime);
-    return `"${entity.blobId}-${mime}-${variant}-${getConverterToken()}"`;
+function getConversionEtag({ blobId, mime }: ConversionSource, variant: string) {
+    return `"${blobId}-${encodeURIComponent(mime)}-${variant}-${getConverterToken()}"`;
 }
 
 /**

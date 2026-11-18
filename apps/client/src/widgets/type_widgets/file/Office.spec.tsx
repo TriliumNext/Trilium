@@ -1,11 +1,26 @@
 import { render } from "preact";
+import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import Component from "../../../components/component";
+import type NoteContext from "../../../components/note_context";
+import type FNote from "../../../entities/fnote";
+import { ParentComponent } from "../../react/react_utils";
+
 const renderOfficeToHtml = vi.fn<(entityType: string, entityId: string) => Promise<{ css: string; html: string }>>();
+const { showAnchorElement, scroller } = vi.hoisted(() => ({
+    showAnchorElement: vi.fn(),
+    scroller: { scrollTo: vi.fn() }
+}));
 
 vi.mock("../../../services/office_renderer", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../../services/office_renderer")>(),
     renderOfficeToHtml: (...args: [string, string]) => renderOfficeToHtml(...args)
+}));
+// The landing scrolls with these; happy-dom lays nothing out.
+vi.mock("@triliumnext/ckeditor5/src/plugins/block_reference/block_reference_read_only.js", () => ({
+    showAnchorElement,
+    getScrollContainer: () => scroller
 }));
 
 const { default: OfficePreview } = await import("./Office");
@@ -97,4 +112,133 @@ describe("OfficePreview", () => {
         await Promise.resolve();
         expect(container.innerHTML).toBe("");
     });
+});
+
+describe("OfficePreview landing on a link", () => {
+    const PREVIEW = "<h2 data-toc-heading=\"idA\">A</h2><h2 data-toc-heading=\"idB\">B</h2>"
+        + "<p data-toc-bookmark=\"Intro\">Text</p>";
+
+    it("lands on a heading once the preview of the shown blob is in place, and clears it", async () => {
+        const view = await open({ heading: "idA" });
+
+        expect(showAnchorElement).not.toHaveBeenCalled();
+        expect(view.viewScope.heading).toBe("idA");
+
+        await view.resolvePreview();
+        await vi.waitFor(() => expect(showAnchorElement).toHaveBeenCalledOnce());
+        expect(showAnchorElement.mock.calls[0][0].textContent).toBe("A");
+        expect(view.viewScope.heading).toBeUndefined();
+    });
+
+    it("lands on the latest link that arrives while the preview loads", async () => {
+        const view = await open({ heading: "idA" });
+        view.viewScope.heading = "idB";
+        await view.switchTo(view.note);
+
+        await view.resolvePreview();
+
+        await vi.waitFor(() => expect(showAnchorElement).toHaveBeenCalledOnce());
+        expect(showAnchorElement.mock.calls[0][0].textContent).toBe("B");
+    });
+
+    it("leaves the target while hidden, and lands once shown", async () => {
+        const view = await open({ heading: "idA" }, false);
+        await view.resolvePreview();
+        await settle();
+        expect(showAnchorElement).not.toHaveBeenCalled();
+        expect(view.viewScope.heading).toBe("idA");
+
+        await view.rerender(true);
+
+        await vi.waitFor(() => expect(showAnchorElement).toHaveBeenCalledOnce());
+        expect(view.viewScope.heading).toBeUndefined();
+    });
+
+    it("lands a link to the open note on noteSwitched, a bookmark through the same path", async () => {
+        const view = await open({});
+        await view.resolvePreview();
+
+        view.viewScope.bookmark = "Intro";
+        await view.switchTo(view.note);
+
+        await vi.waitFor(() => expect(showAnchorElement).toHaveBeenCalledOnce());
+        expect(showAnchorElement.mock.calls[0][0].tagName).toBe("P");
+        expect(view.viewScope.bookmark).toBeUndefined();
+    });
+
+    it("never takes the target of another note, or of a new blob, against the preview shown", async () => {
+        const view = await open({});
+        await view.resolvePreview();
+
+        view.viewScope.heading = "idA";
+        await view.switchTo({ noteId: "note2", blobId: "blob2" } as FNote);
+        await view.switchTo({ noteId: "note1", blobId: "blob9" } as FNote);
+        await settle();
+
+        expect(showAnchorElement).not.toHaveBeenCalled();
+        expect(view.viewScope.heading).toBe("idA");
+    });
+
+    it("scrolls to the top for an id that no element has, and moves nothing without a target", async () => {
+        const view = await open({});
+        await view.resolvePreview();
+
+        await view.switchTo(view.note);
+        await settle();
+        expect(scroller.scrollTo).not.toHaveBeenCalled();
+
+        view.viewScope.heading = "missing";
+        await view.switchTo(view.note);
+        await vi.waitFor(() => expect(scroller.scrollTo).toHaveBeenCalledExactlyOnceWith({ top: 0 }));
+        expect(showAnchorElement).not.toHaveBeenCalled();
+        expect(view.viewScope.heading).toBeUndefined();
+    });
+
+    /**
+     * Shows the preview of a DOCX note whose view scope holds `scope`, as `File.tsx` does. The
+     * fetch of the preview waits for `resolvePreview()`.
+     */
+    async function open(scope: Record<string, string>, isVisible = true) {
+        const note = { noteId: "note1", blobId: "blob1" } as FNote;
+        const viewScope: Record<string, string | undefined> = { ...scope };
+        const noteContext = { ntxId: "ntx1", note, viewScope } as unknown as NoteContext;
+        let resolve: (preview: { css: string; html: string }) => void = () => {};
+        renderOfficeToHtml.mockReturnValue(new Promise((done) => {
+            resolve = done;
+        }));
+        const component = new Component();
+
+        function draw(visible: boolean) {
+            render(
+                <ParentComponent.Provider value={component}>
+                    <OfficePreview note={note} noteContext={noteContext} isVisible={visible} />
+                </ParentComponent.Provider>, container);
+        }
+        await act(async () => draw(isVisible));
+
+        return {
+            note,
+            viewScope,
+            async resolvePreview() {
+                await act(async () => resolve({ css: "", html: PREVIEW }));
+            },
+            async rerender(visible: boolean) {
+                await act(async () => draw(visible));
+            },
+            /** Navigates the pane to `shown`, keeping the view scope, as a link does. */
+            async switchTo(shown: FNote) {
+                (noteContext as { note: FNote }).note = shown;
+                await act(async () => {
+                    await component.handleEvent("noteSwitched", { noteContext } as never);
+                });
+            }
+        };
+    }
+
+    /** Lets the lazy import of the landing and its scroll run. */
+    async function settle() {
+        await act(async () => {
+            await new Promise((done) => setTimeout(done, 20));
+        });
+    }
 });

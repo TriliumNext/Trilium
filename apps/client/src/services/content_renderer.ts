@@ -24,6 +24,7 @@ import imageContextMenuService from "../menus/image_context_menu.js";
 import { t } from "../services/i18n.js";
 import { type MediaEnvironment, showsFileActions } from "../widgets/type_widgets/file/media_environment.js";
 import type { PdfLinkTarget } from "../widgets/type_widgets/file/PdfViewer.js";
+import type { DocumentTarget } from "./bookmark_jump.js";
 import type { LlmChatContent, StoredMessage } from "../widgets/type_widgets/llm_chat/llm_chat_types.js";
 import type {
     ContentHistory, default as EmbedHistories
@@ -131,8 +132,6 @@ export interface RenderOptions {
      * the attachment full-detail view opts in. The viewer remains read-only either way.
      */
     pdfToolbar?: boolean;
-    /** The place that a PDF opens at, such as the heading that a link names. */
-    pdfTarget?: PdfLinkTarget;
     /**
      * Lets the viewer of a PDF attachment build its ToC cache where the server cannot read PDFs,
      * as the viewer of a PDF note does.
@@ -238,12 +237,18 @@ const PREVIEWED_TYPES = new Set([
  */
 const SELF_UPDATING_TYPES = new Set([ "canvasDrawing", "code", "markdown" ]);
 
+/** A place inside rendered content that a link names: in a PDF, or in the preview of a document. */
+export interface ContentLinkTarget extends PdfLinkTarget, DocumentTarget {}
+
 /** What {@link getRenderedContent} renders. */
 export interface RenderedContent {
     $renderedContent: JQuery<HTMLElement>;
     type: string;
-    /** Opens the PDF that was rendered at another place, in the same viewer. */
-    showPdfTarget?: (target: PdfLinkTarget) => void;
+    /**
+     * Shows the rendered PDF or office preview at the place that a link names, once the content is
+     * in the document. Absent for content without such places.
+     */
+    showTarget?: (target: ContentLinkTarget) => void;
 }
 
 export async function getRenderedContent(
@@ -354,7 +359,7 @@ export async function getRenderedContent(
     return {
         $renderedContent,
         type,
-        showPdfTarget: pdfTargets.get($renderedContent[0])
+        showTarget: contentTargets.get($renderedContent[0])
     };
 }
 
@@ -861,14 +866,14 @@ async function renderFile(entity: FNote | FAttachment, type: string, $renderedCo
             tocUrl: `attachments/${entity.attachmentId}/toc`, isProtected: !!entity.isProtected
         } : undefined;
         const props = {
-            pdfUrl: url, editable: false, toolbar: options.pdfToolbar ?? false,
-            target: options.pdfTarget, tocDocument
+            pdfUrl: url, editable: false, toolbar: options.pdfToolbar ?? false, tocDocument
         };
         const viewer = $viewer.get(0)!;
         render(h(PdfViewer, props), viewer);
-        // Rendering the same viewer again keeps its frame, whose address does not change.
-        pdfTargets.set($renderedContent[0],
-            (target) => render(h(PdfViewer, { ...props, target }), viewer));
+        // Rendering the same viewer again keeps its frame, whose address does not change. The
+        // viewer holds a target given before its document loads.
+        contentTargets.set($renderedContent[0], ({ page, heading, annotation }) =>
+            render(h(PdfViewer, { ...props, target: { page, heading, annotation } }), viewer));
 
         $content.append($viewer);
 
@@ -924,6 +929,9 @@ async function renderOffice(entity: FNote | FAttachment, $renderedContent: JQuer
         // fills one runs to megabytes the browser would parse and lay out to display none of.
         const { css, html } = await renderOfficeToHtml(entityType, entityId, { trim: options.trim });
         $body.html(html);
+        const body = $body[0];
+        contentTargets.set($renderedContent[0], (target) => void import("./bookmark_jump.js")
+            .then(({ showDocumentTarget }) => showDocumentTarget(body, target)));
         if (css) {
             // Built as an element with its text set, never parsed as markup, so a cell's styling
             // cannot escape the rule it belongs to. It sits inside the preview body, so the
@@ -1187,8 +1195,8 @@ export function addContentDisposer(element: HTMLElement, dispose: () => void) {
 const DISPOSER_ATTR = "data-content-disposer";
 
 const contentDisposers = new WeakMap<Element, (() => void)[]>();
-/** Opens the PDF of rendered content at another place, by the rendered content. */
-const pdfTargets = new WeakMap<Element, (target: PdfLinkTarget) => void>();
+/** Shows rendered content at the place that a link names, by the rendered content. */
+const contentTargets = new WeakMap<Element, (target: ContentLinkTarget) => void>();
 
 /**
  * Mounts a collection — a book or a saved search — as the live {@link EmbeddedNoteList}, the same

@@ -16,8 +16,10 @@ export async function readPdfToc(content: Uint8Array | string): Promise<Generate
         : new Uint8Array(content);
     const pdf = await getDocumentProxy(bytes);
     try {
-        const outline = await readPdfOutline(pdf);
-        return { headings: toPdfTocHeadings(outline), properties: { reader: PDF_TOC_READER } };
+        const { headings, isCut } = await readPdfOutline(pdf);
+        return {
+            headings: toPdfTocHeadings(headings), isCut, properties: { reader: PDF_TOC_READER }
+        };
     } finally {
         await pdf.loadingTask.destroy();
     }

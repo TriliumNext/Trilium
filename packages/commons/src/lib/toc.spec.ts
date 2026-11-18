@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
     assignHeadingIds, findHeading, getBlobTag, getTocCacheTitle, hashHeadingSource, headingSource,
-    MAX_TOC_TITLE_LENGTH, normalizeTocTitle, type TocOutlineItem
+    MAX_TOC_HEADINGS, MAX_TOC_TITLE_LENGTH, normalizeTocTitle, type TocOutlineItem
 } from "./toc.js";
 import { blobIdFromDigest, fnv1aUpdate, PROTECTED_BLOB_PREFIX } from "./utils.js";
 
@@ -309,6 +309,42 @@ describe("findHeading", () => {
         }
         expect(isOwnTag).not.toHaveBeenCalled();
         expect(await findHeading("0k3x9aa1h7q2mz", headings, isOwnTag)).toBe(-1);
+    });
+});
+
+describe("a table of contents cut at MAX_TOC_HEADINGS", () => {
+    const filler = Array.from({ length: MAX_TOC_HEADINGS - 1 },
+        (_, index) => ({ title: `Section ${index}`, level: 1 }));
+    // A unique "Summary" is the last heading kept, and a heading with a title follows it.
+    const kept = [ ...filler, { title: "Summary", level: 1 } ];
+    // A "Summary" inserted near the top pushes the first one past the cut.
+    const inserted = [
+        ...filler.slice(0, 100), { title: "Summary", level: 1 }, ...filler.slice(100)
+    ];
+
+    it("binds every heading it keeps", () => {
+        const ids = assignHeadingIds(kept, TAG, false, { isCut: true });
+
+        expect(ids.filter((id) => !id.endsWith(`.${TAG}`))).toStrictEqual([]);
+        expect(assignHeadingIds(kept, TAG, false)[MAX_TOC_HEADINGS - 1]).toMatch(/^[0-9a-z]{14}$/);
+    });
+
+    it("never lets an inserted heading take the id of a heading past the cut", async () => {
+        const id = assignHeadingIds(kept, TAG, false, { isCut: true })[MAX_TOC_HEADINGS - 1];
+
+        expect(await findHeading(id, inserted, ownTags(OTHER_TAG), { isCut: true })).toBe(-1);
+        expect(await findHeading(id, kept, ownTags(TAG), { isCut: true }))
+            .toBe(MAX_TOC_HEADINGS - 1);
+    });
+
+    it("finds no heading for a free id, which a whole table of contents gave", async () => {
+        const freeId = assignHeadingIds(kept, TAG, false)[MAX_TOC_HEADINGS - 1];
+        const isOwnTag = vi.fn(async () => true);
+
+        // The free id names the inserted heading once the first one is past the cut.
+        expect(await findHeading(freeId, inserted, isOwnTag)).toBe(100);
+        expect(await findHeading(freeId, kept, isOwnTag, { isCut: true })).toBe(-1);
+        expect(isOwnTag).not.toHaveBeenCalled();
     });
 });
 

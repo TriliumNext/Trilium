@@ -114,7 +114,7 @@ function scrollToBlocks(first: Element, last: Element) {
 }
 
 /** The nearest ancestor of `element` that scrolls vertically, else the document's scroller. */
-function getScrollContainer(element: Element) {
+export function getScrollContainer(element: Element) {
     for (let parent = element.parentElement; parent; parent = parent.parentElement) {
         const { overflowY } = getComputedStyle(parent);
         if ([ "auto", "scroll" ].includes(overflowY) && parent.scrollHeight > parent.clientHeight) {

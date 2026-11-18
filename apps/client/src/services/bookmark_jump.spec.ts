@@ -1,8 +1,19 @@
 import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { consumeBookmark, revealElement } from "./bookmark_jump.js";
+import { consumeBookmark, revealElement, showDocumentTarget, takeDocumentTarget } from "./bookmark_jump.js";
 import type { ViewScope } from "./link.js";
+import { sanitizeNoteContentHtml } from "./sanitize_content.js";
+
+const { showAnchorElement, scroller } = vi.hoisted(() => ({
+    showAnchorElement: vi.fn(),
+    scroller: { scrollTo: vi.fn() }
+}));
+// happy-dom lays nothing out, so the scroll itself is not observable.
+vi.mock("@triliumnext/ckeditor5/src/plugins/block_reference/block_reference_read_only.js", () => ({
+    showAnchorElement,
+    getScrollContainer: () => scroller
+}));
 
 function buildContainer(html: string) {
     const container = document.createElement("div");
@@ -122,5 +133,56 @@ describe("revealElement", () => {
 
         expect(container.querySelector("details")?.open).toBe(true);
         expect(container.querySelector(".trilium-tab-title--active")?.textContent).toBe("B");
+    });
+});
+
+describe("takeDocumentTarget", () => {
+    it("takes a heading and a bookmark out of the view scope, and leaves one without them alone", () => {
+        const viewScope: ViewScope = { heading: "h1", bookmark: "Intro", attachmentId: "a1" };
+        expect(takeDocumentTarget(viewScope)).toStrictEqual({ heading: "h1", bookmark: "Intro" });
+        expect(viewScope).toStrictEqual({ heading: undefined, bookmark: undefined, attachmentId: "a1" });
+
+        const empty: ViewScope = { page: "3" };
+        expect(takeDocumentTarget(empty)).toBeUndefined();
+        expect(empty).toStrictEqual({ page: "3" });
+        expect(takeDocumentTarget(undefined)).toBeUndefined();
+    });
+});
+
+describe("showDocumentTarget", () => {
+    beforeEach(() => {
+        showAnchorElement.mockClear();
+        scroller.scrollTo.mockClear();
+    });
+
+    it("shows the element whose marking equals the target exactly, a heading before a bookmark", async () => {
+        const container = buildContainer(`<h2 data-toc-heading="h1.x">Near</h2><h2 data-toc-heading="h1">One</h2>`
+            + `<p data-toc-bookmark='say "hi"]'>Quoted</p>`);
+
+        await showDocumentTarget(container, { heading: "h1", bookmark: 'say "hi"]' });
+        expect(showAnchorElement).toHaveBeenLastCalledWith(container.querySelectorAll("h2")[1]);
+
+        await showDocumentTarget(container, { bookmark: 'say "hi"]' });
+        expect(showAnchorElement).toHaveBeenLastCalledWith(container.querySelector("p"));
+        expect(scroller.scrollTo).not.toHaveBeenCalled();
+    });
+
+    it("finds a bookmark by its marking where the sanitizer removed its id", async () => {
+        const container = buildContainer(sanitizeNoteContentHtml(
+            "<p data-toc-bookmark=\"title\" id=\"title\">Named like a property of the document</p>"));
+        expect(container.querySelector("p")?.id).toBe("");
+
+        await showDocumentTarget(container, { bookmark: "title" });
+
+        expect(showAnchorElement).toHaveBeenCalledExactlyOnceWith(container.querySelector("p"));
+    });
+
+    it("scrolls the preview to its top when no element has the target", async () => {
+        const container = buildContainer(`<h2 data-toc-heading="h1">One</h2>`);
+
+        await showDocumentTarget(container, { heading: "gone", bookmark: "gone" });
+
+        expect(showAnchorElement).not.toHaveBeenCalled();
+        expect(scroller.scrollTo).toHaveBeenCalledExactlyOnceWith({ top: 0 });
     });
 });

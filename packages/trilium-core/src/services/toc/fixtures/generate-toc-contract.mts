@@ -21,7 +21,7 @@ writeFileSync(join(fixturesDir, "toc_contract.pdf"), bytes);
 
 const { getDocumentProxy } = await import("unpdf");
 const pdf = await getDocumentProxy(new Uint8Array(bytes));
-const headings = toPdfTocHeadings(await readPdfOutline(pdf));
+const headings = toPdfTocHeadings((await readPdfOutline(pdf)).headings);
 await pdf.loadingTask.destroy();
 
 const blobId = digest(bytes);

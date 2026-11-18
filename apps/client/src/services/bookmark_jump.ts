@@ -34,6 +34,44 @@ export function consumeBookmark(container: ParentNode | null | undefined, viewSc
     viewScope.bookmark = undefined;
 }
 
+/** A place in the preview of a document that a link names, by a `heading` or a `bookmark`. */
+export interface DocumentTarget {
+    heading?: string;
+    bookmark?: string;
+}
+
+/**
+ * Takes the `heading` and `bookmark` link parameters out of `viewScope`, or returns `undefined`
+ * and leaves it as it is when it holds neither.
+ */
+export function takeDocumentTarget(viewScope: ViewScope | null | undefined): DocumentTarget | undefined {
+    const { heading, bookmark } = viewScope ?? {};
+    if (!viewScope || (!heading && !bookmark)) {
+        return undefined;
+    }
+    viewScope.heading = undefined;
+    viewScope.bookmark = undefined;
+    return { heading, bookmark };
+}
+
+/**
+ * Scrolls `container`, the preview of a document that the server marked, to the element whose
+ * `data-toc-heading` is the target's heading, or else whose `data-toc-bookmark` is its bookmark,
+ * and flashes it. When no element has it, scrolls the preview to its top, so that it never stays
+ * where an earlier link left it.
+ */
+export async function showDocumentTarget(container: Element, { heading, bookmark }: DocumentTarget) {
+    const { getScrollContainer, showAnchorElement } = await import(
+        "@triliumnext/ckeditor5/src/plugins/block_reference/block_reference_read_only.js");
+    const element = (heading && findByAttribute(container, "data-toc-heading", heading))
+        || (bookmark && findByAttribute(container, "data-toc-bookmark", bookmark));
+    if (element) {
+        showAnchorElement(element);
+    } else {
+        getScrollContainer(container).scrollTo({ top: 0 });
+    }
+}
+
 /**
  * Shows `el` wherever it is hidden: opens the `<details>` inside `boundary`, shows the tabs that
  * enclose it and the sections of the collapsed headings that hide it. A text editor around
@@ -43,4 +81,11 @@ export function revealElement(el: Element, boundary?: Element) {
     expandAncestorDetails(el, boundary);
     revealTab(el);
     revealCollapsedHeadings(el);
+}
+
+/** The first element in `container` whose `name` attribute is `value`, compared exactly. */
+function findByAttribute(container: Element, name: string, value: string) {
+    // Not a selector: a bookmark name can hold characters that a CSS selector does not allow.
+    return Array.from(container.querySelectorAll(`[${name}]`))
+        .find((element) => element.getAttribute(name) === value);
 }

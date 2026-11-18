@@ -33,8 +33,8 @@ export function toTocRef(source: ReferenceSource): TocDocumentRef {
 }
 
 /**
- * The headings of `cache` that a link can point at, as targets. Levels past `MAX_TOC_DEPTH` are
- * shown at that depth.
+ * The headings of `cache` that a link can point at, as targets, then the other targets of its
+ * format. Levels past `MAX_TOC_DEPTH` are shown at that depth.
  */
 export function toTargets(cache: TocCache, format: TocFormat): ReferenceTarget[] {
     const targets: ReferenceTarget[] = [];
@@ -45,5 +45,6 @@ export function toTargets(cache: TocCache, format: TocFormat): ReferenceTarget[]
             targets.push({ kind: "heading", title: heading.title, level, params });
         }
     }
+    targets.push(...format.getOtherTargets?.(cache) ?? []);
     return targets;
 }

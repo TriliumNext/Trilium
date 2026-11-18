@@ -1,5 +1,7 @@
 import {
+    DOCX_MIME,
     isOfficeMimeType,
+    ODT_MIME,
     OFFICE_FILE_TYPE_HINTS,
     OFFICE_PREVIEW_TOO_LARGE_MESSAGE,
     XLSX_MIME
@@ -15,6 +17,8 @@ import { getZipProvider } from "./zip_provider.js";
  * preview and let the client fall back to download / open.
  */
 const MAX_OFFICE_PREVIEW_BYTES = 20 * 1024 * 1024;
+/** The formats whose preview gives headings no slug ids. */
+const NO_GENERATED_IDS = new Set([ DOCX_MIME, ODT_MIME ]);
 
 export interface OfficePreviewOptions {
     /** Renders the corner of the first sheet only, for a preview shown in a card or a list. */
@@ -70,7 +74,10 @@ export async function convertOfficeToHtml(content: string | Uint8Array, mime: st
             // which resolves against the note's URL and 404s.
             maxInlineImageBytes: Infinity,
             // Emit an embeddable fragment instead of a full standalone <html> document.
-            htmlConfig: { standalone: false }
+            htmlConfig: { standalone: false },
+            // A heading's slug can equal the name of a bookmark, which a link then misses. The
+            // ToC formats of these give headings ids of their own.
+            generateIds: !NO_GENERATED_IDS.has(mime)
         }
     });
 

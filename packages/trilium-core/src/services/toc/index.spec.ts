@@ -1,5 +1,10 @@
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
 import {
-    assignHeadingIds, getBlobTag, MAX_TOC_HEADINGS, PDF_TOC_READER, type TocCache
+    assignHeadingIds, DOCX_MIME, getBlobTag, MAX_TOC_HEADINGS, ODT_MIME,
+    OFFICE_PREVIEW_TOO_LARGE_MESSAGE, PDF_TOC_READER, type TocCache
 } from "@triliumnext/commons";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -18,8 +23,10 @@ import {
     findTocFormat, type GeneratedToc, getToc, readCachedToc, registerTocGenerator, saveClientToc,
     TOC_CACHE_ROLE, type TocDocumentRef, type TocGenerator, unregisterTocGenerator
 } from "./index.js";
+import { DOCX_TOC_READER, ODT_TOC_READER } from "./office.js";
 
 const PROPERTIES = { reader: PDF_TOC_READER };
+const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures");
 const PROTECTED_KEY = encodeUtf8("0123456789abcdef");
 
 let counter = 0;
@@ -32,7 +39,9 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    unregisterTocGenerator("pdf");
+    for (const format of [ "pdf", "docx", "odt" ]) {
+        unregisterTocGenerator(format);
+    }
     protectedSessionService.resetDataKey();
     vi.restoreAllMocks();
 });
@@ -64,6 +73,16 @@ describe("getToc", () => {
         const second = await toc(noteRef(note));
         expect(readyCache(second)).toStrictEqual(cache);
         expect(generator).toHaveBeenCalledTimes(1);
+    });
+
+    it("binds every heading of a table of contents that the generator cut", async () => {
+        register(async () => ({ ...outlineOf("Alpha"), isCut: true }));
+        const note = createPdf("Alpha");
+
+        const { headings } = readyCache(await toc(noteRef(note)));
+
+        const tag = getBlobTag(String(note.blobId));
+        expect(headings.map(({ id }) => id.endsWith(`.${tag}`))).toStrictEqual([ true, true, true ]);
     });
 
     it("rebuilds for a new blob into the same attachment, and logs the update", async () => {
@@ -405,6 +424,128 @@ describe("getToc", () => {
     });
 });
 
+describe("documents of Word and OpenDocument", () => {
+    it("build with the format's own generator, for notes and attachments", async () => {
+        for (const [ name, mime ] of [ [ "docx", DOCX_MIME ], [ "odt", ODT_MIME ] ]) {
+            const bytes = new Uint8Array(fs.readFileSync(path.join(FIXTURES, `toc_contract.${name}`)));
+            const contract = JSON.parse(
+                fs.readFileSync(path.join(FIXTURES, `toc_contract_${name}.json`), "utf-8"));
+            const note = createDocument(bytes, mime);
+            const attachment = getContext().init(() => note.saveAttachment({
+                role: "file", mime, title: `attached.${name}`, content: bytes
+            }));
+
+            for (const ref of [ noteRef(note), attachmentRef(attachment) ]) {
+                const cache = readyCache(await toc(ref));
+                expect(cache.headings.map(({ id }) => id)).toStrictEqual(contract.ids);
+                const reader = name === "docx" ? DOCX_TOC_READER : ODT_TOC_READER;
+                expect(cache[name]).toStrictEqual({ reader, bookmarks: contract.bookmarks });
+            }
+        }
+    });
+
+    it("let a registered generator take precedence, and never ask the viewer to build", async () => {
+        const generator = registerFor("docx");
+        const note = createDocument("Alpha", DOCX_MIME);
+        const request = () => ({
+            targetBlobHash: note.blobId, headings: [], properties: { reader: DOCX_TOC_READER }, elapsedMs: 1
+        });
+
+        expect(readCachedToc(noteRef(note))).toStrictEqual({ status: "missing" });
+        expect(() => save(noteRef(note), request())).toThrow(ValidationError);
+        expect(readyCache(await toc(noteRef(note))).headings[0].title).toBe("Alpha");
+        expect(generator).toHaveBeenCalledOnce();
+
+        unregisterTocGenerator("docx");
+        setContent(note, "Beta");
+        expect(readCachedToc(noteRef(note))).not.toHaveProperty("pendingToc");
+        expect(() => save(noteRef(note), request())).toThrow(ValidationError);
+    });
+
+    it("rebuild the caches of the format whose reader changed, and keep the other format's", async () => {
+        const docx = registerFor("docx");
+        const odt = registerFor("odt");
+        const docxNote = createDocument("Alpha", DOCX_MIME);
+        const odtNote = createDocument("Alpha", ODT_MIME);
+        addCache(docxNote, "toc-cache.json", {
+            version: 1, targetBlobHash: String(docxNote.blobId), headings: [],
+            docx: { reader: DOCX_TOC_READER - 1 }
+        });
+        addCache(odtNote, "toc-cache.json", {
+            version: 1, targetBlobHash: String(odtNote.blobId), headings: [],
+            odt: { reader: ODT_TOC_READER, bookmarks: [] }
+        });
+
+        expect(readyCache(await toc(noteRef(docxNote))).headings).toHaveLength(1);
+        expect(readyCache(await toc(noteRef(odtNote))).headings).toHaveLength(0);
+        expect(docx).toHaveBeenCalledOnce();
+        expect(odt).not.toHaveBeenCalled();
+    });
+
+    describe("failures", () => {
+        it.each([
+            [ "a code that says the bytes cannot be read", officeIssue("FILE_CORRUPTED"), "FILE_CORRUPTED" ],
+            [
+                "the refusal of a file too large",
+                new ValidationError(`${OFFICE_PREVIEW_TOO_LARGE_MESSAGE} (1 bytes).`), "ValidationError"
+            ]
+        ])("remember %s, and name it in the log", async (_, failure, logged) => {
+            const generator = registerFor("docx", () => Promise.reject(failure));
+            const note = createDocument("Alpha", DOCX_MIME);
+
+            expect(await toc(noteRef(note))).toStrictEqual({ status: "unreadable" });
+            expect(await toc(noteRef(note))).toStrictEqual({ status: "unreadable" });
+            expect(generator).toHaveBeenCalledOnce();
+            expect(info).toHaveBeenCalledWith(`Failed to read the ToC of note '${note.noteId}': ${logged}`);
+        });
+
+        it.each([
+            [ "an error with only the header of officeparser", new Error("[OfficeParser]: Secret title"), "Error" ],
+            [ "a code about the call", officeIssue("INVALID_INPUT"), "INVALID_INPUT" ],
+            [ "a code about the run", officeIssue("OPERATION_ABORTED"), "OPERATION_ABORTED" ]
+        ])("read the file again after %s, and never log its message", async (_, failure, logged) => {
+            const generator = registerFor("docx", () => Promise.reject(failure));
+            const note = createDocument("Alpha", DOCX_MIME);
+
+            expect(await toc(noteRef(note))).toStrictEqual({ status: "unreadable" });
+            expect(error).toHaveBeenLastCalledWith(`Failed to read the ToC of note '${note.noteId}': ${logged}`);
+            generator.mockImplementation(async (content) => officeOutlineOf(decodeUtf8(content)));
+            expect(readyCache(await toc(noteRef(note))).headings[0].title).toBe("Alpha");
+            expect(generator).toHaveBeenCalledTimes(2);
+        });
+
+        it("keep the memory of a PDF that cannot be read apart from the DOCX of the same blob", async () => {
+            const pdf = register(() => Promise.reject(namedError("InvalidPDFException")));
+            const note = createPdf("Alpha");
+            expect(await toc(noteRef(note))).toStrictEqual({ status: "unreadable" });
+
+            const docx = registerFor("docx");
+            setMime(note, DOCX_MIME);
+
+            expect(readyCache(await toc(noteRef(note))).docx).toStrictEqual({ reader: DOCX_TOC_READER, bookmarks: [] });
+            expect(docx).toHaveBeenCalledOnce();
+            expect(pdf).toHaveBeenCalledOnce();
+        });
+
+        it("run a build of their own while a PDF build of the same blob is held", async () => {
+            let rejectPdf: (error: unknown) => void = () => {};
+            register(() => new Promise((_, reject) => {
+                rejectPdf = reject;
+            }));
+            const note = createPdf("Alpha");
+            const pdfRequest = toc(noteRef(note));
+            const docx = registerFor("docx");
+            setMime(note, DOCX_MIME);
+
+            expect(readyCache(await toc(noteRef(note))).headings[0].title).toBe("Alpha");
+            rejectPdf(namedError("InvalidPDFException"));
+            expect(await pdfRequest).toStrictEqual({ status: "unreadable" });
+            expect(readyCache(await toc(noteRef(note))).docx).toStrictEqual({ reader: DOCX_TOC_READER, bookmarks: [] });
+            expect(docx).toHaveBeenCalledOnce();
+        });
+    });
+});
+
 describe("saveClientToc", () => {
     const headings = [
         { title: "Chapter 1", level: 1, page: 1, id: "sentByTheClient" },
@@ -438,6 +579,16 @@ describe("saveClientToc", () => {
         });
         expect(info).toHaveBeenCalledWith(
             `Created ToC cache for note '${note.noteId}'. Found 3 headings in 42 ms.`);
+    });
+
+    it("binds every heading of a table of contents that the viewer cut", () => {
+        const note = createPdf("Alpha");
+
+        const response = save(noteRef(note), request(note, { isCut: true }));
+
+        const ids = assignHeadingIds(headings, getBlobTag(String(note.blobId)), false, { isCut: true });
+        expect(response.status === "ready" && response.headings.map(({ id }) => id)).toStrictEqual(ids);
+        expect(ids[0]).toContain(".");
     });
 
     it("normalizes the titles again", () => {
@@ -492,6 +643,7 @@ describe("saveClientToc", () => {
         const invalid: unknown[] = [
             null, [], {}, request(note, { targetBlobHash: 5 }), request(note, { headings: {} }),
             request(note, { properties: [] }), request(note, { elapsedMs: "5" }),
+            request(note, { isCut: "yes" }),
             request(note, { elapsedMs: Number.POSITIVE_INFINITY }), request(note, { elapsedMs: -1 }),
             request(note, { headings: Array.from({ length: MAX_TOC_HEADINGS + 1 }, () => ({ title: "x", level: 1 })) }),
             request(note, { headings: [ "Chapter 1" ] }),
@@ -626,8 +778,11 @@ describe("a cache in revisions and copies", () => {
 });
 
 describe("findTocFormat", () => {
-    it("reads PDF files only", () => {
+    it("reads PDF, Word and OpenDocument text files only", () => {
         expect(findTocFormat("file", "application/pdf")?.name).toBe("pdf");
+        expect(findTocFormat("file", DOCX_MIME)?.name).toBe("docx");
+        expect(findTocFormat("file", ODT_MIME)?.name).toBe("odt");
+        expect(findTocFormat("file", "application/rtf")).toBeUndefined();
         expect(findTocFormat("file", "application/zip")).toBeUndefined();
         expect(findTocFormat("text", "application/pdf")).toBeUndefined();
     });
@@ -674,6 +829,44 @@ function outlineOf(title: string): GeneratedToc {
         ],
         properties: PROPERTIES
     };
+}
+
+/** Registers a generator of `format` that reads one heading, its content, from the content. */
+function registerFor(
+    format: string,
+    generator: TocGenerator = async (content) => officeOutlineOf(decodeUtf8(content))
+) {
+    const mock = vi.fn(generator);
+    registerTocGenerator(format, mock);
+    return mock;
+}
+
+function officeOutlineOf(title: string): GeneratedToc {
+    return { headings: [ { title, level: 1 } ], properties: { reader: DOCX_TOC_READER, bookmarks: [] } };
+}
+
+function createDocument(content: string | Uint8Array, mime: string) {
+    counter++;
+    return getContext().init(() => noteService.createNewNote({
+        parentNoteId: "root", title: `toc-spec-${counter}`, type: "file", mime, content
+    })).note;
+}
+
+/** Changes the MIME type of `note` in place, keeping its blob, as `PUT .../type` does. */
+function setMime(note: BNote, mime: string) {
+    getContext().init(() => {
+        note.mime = mime;
+        note.save();
+    });
+}
+
+function attachmentRef(attachment: BAttachment): TocDocumentRef {
+    return { kind: "attachment", attachmentId: String(attachment.attachmentId) };
+}
+
+/** An error of `officeparser` with the code `code`, whose message quotes the file. */
+function officeIssue(code: string) {
+    return Object.assign(new Error(`[OfficeParser]: ${code} in Secret title`), { officeIssue: { code } });
 }
 
 function createPdf(content: string) {

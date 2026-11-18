@@ -392,6 +392,8 @@ export interface ClientTocRequest {
     headings: Record<string, unknown>[];
     /** The properties of the format, such as `{ reader: 1 }`. */
     properties?: Record<string, unknown>;
+    /** Whether the viewer stopped reading at `MAX_TOC_HEADINGS`, before another entry. */
+    isCut?: boolean;
     /** How long the viewer took to read the outline and digest the bytes, for the log. */
     elapsedMs: number;
 }

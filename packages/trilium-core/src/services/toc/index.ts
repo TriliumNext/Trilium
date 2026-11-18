@@ -1,17 +1,20 @@
 import {
     assignHeadingIds, type CachedTocResponse, getBlobTag, getTocCacheTitle, MAX_TOC_HEADINGS,
     MAX_TOC_TITLE_LENGTH, normalizeTocTitle, type PendingToc, type ReferenceParams,
-    TOC_CACHE_TITLE, TOC_CACHE_VERSION, type TocCache, type TocConflictResponse,
-    type TocHeading
+    type ReferenceTarget, TOC_CACHE_TITLE, TOC_CACHE_VERSION, type TocCache,
+    type TocConflictResponse, type TocHeading, type TocOutlineItem
 } from "@triliumnext/commons";
 
 import becca from "../../becca/becca.js";
 import BAttachment from "../../becca/entities/battachment.js";
 import type BNote from "../../becca/entities/bnote.js";
 import { ConflictError, DetailedConflictError, ValidationError } from "../../errors.js";
+import { getContext } from "../context.js";
 import { getLog } from "../log.js";
+import { whenDatabaseFree } from "../platform.js";
 import { getSql } from "../sql/index.js";
 import { decodeUtf8 } from "../utils/binary.js";
+import { docxTocFormat, odtTocFormat } from "./office.js";
 import pdfTocFormat from "./pdf.js";
 
 /** Names a document whose table of contents is kept: a note, or an attachment of a note. */
@@ -32,6 +35,20 @@ export interface TocFormat<H extends TocHeading = TocHeading> {
     parseHeadingFields(raw: Record<string, unknown>): Omit<H, keyof TocHeading> | null;
     /** Whether `error` means that the file can never be read, so it is not read again. */
     isPermanentFailure(error: unknown): boolean;
+    /**
+     * What the log line names for an `error` of the generator, in place of its name and message:
+     * never text that the file holds.
+     */
+    describeFailure?(error: unknown): string;
+    /**
+     * Reads the documents of the format on every platform, for a format that core can parse. A
+     * generator that the platform registers under the format's name takes precedence.
+     */
+    generator?: TocGenerator;
+    /** `html`, the preview of a document of the format, with the ids of its headings written in. */
+    markPreview?(html: string, source: TocPreviewSource): Promise<string>;
+    /** The targets of `cache` other than its headings, which the lists show after them. */
+    getOtherTargets?(cache: TocCache<H>): ReferenceTarget[];
 }
 
 /** Reads the table of contents of a document. Runs outside a transaction and must not write. */
@@ -42,6 +59,16 @@ export interface GeneratedToc {
     /** In document order: `title`, `level` and the fields of the format. */
     headings: Record<string, unknown>[];
     properties?: Record<string, unknown>;
+    /** Whether the reader stopped at `MAX_TOC_HEADINGS` before another heading with a title. */
+    isCut?: boolean;
+}
+
+/** The document whose preview a format marks: the blob that was converted, and its protection. */
+export interface TocPreviewSource {
+    blobId: string;
+    isProtected: boolean;
+    /** The content of the blob, which the preview was converted from. */
+    content: string | Uint8Array;
 }
 
 /** What `getToc()` answers. `null`: the document has no table of contents format. */
@@ -58,11 +85,11 @@ export const TOC_CACHE_ROLE = "tocCache";
 /** How many documents that cannot be read are remembered, so that they are not read again. */
 const MAX_REMEMBERED_FAILURES = 1_000;
 
-const formats: TocFormat[] = [ pdfTocFormat ];
+const formats: TocFormat[] = [ pdfTocFormat, docxTocFormat, odtTocFormat ];
 const generators = new Map<string, TocGenerator>();
-/** The documents that can never be read, by document and blob. */
+/** The documents that can never be read, by format, document and blob. */
 const permanentFailures = new Set<string>();
-/** The builds that run, by document and blob. */
+/** The builds that run, by format, document and blob. */
 const builds = new Map<string, Promise<TocResult | typeof STALE>>();
 /** What a build answers when its document changed before it could save. */
 const STALE = Symbol("stale");
@@ -81,10 +108,37 @@ export function findTocFormat(type: string, mime: string) {
     return formats.find((format) => format.isFor(type, mime));
 }
 
+/** The format of the note or attachment `entity`, if it has a table of contents. */
+export function getTocFormatOf(entity: BNote | BAttachment) {
+    // An attachment of the role `file` reads like a note of the type `file`.
+    const type = entity instanceof BAttachment ? entity.role : entity.type;
+    return findTocFormat(type, entity.mime);
+}
+
+/**
+ * The ids of `outline`, headings with normalized titles in document order, read from the blob
+ * `blobId`. The cache and the marking of a preview compute them alike.
+ */
+export function getHeadingIds(
+    outline: TocOutlineItem[], blobId: string, isProtected: boolean, isCut: boolean
+) {
+    return assignHeadingIds(outline, getBlobTag(blobId), isProtected, { isCut });
+}
+
+/** `html`, the preview of a document of `format`, with the ids of its headings when it has any. */
+export async function markTocHeadings(
+    format: TocFormat | undefined, html: string, source: TocPreviewSource
+) {
+    return format?.markPreview ? await format.markPreview(html, source) : html;
+}
+
 /**
  * The table of contents of the document `ref`: from its cache when the cache is valid, else read
  * and saved. Throws `NotFoundError` when the document is gone, `ValidationError` when its content
  * is not available, and `ConflictError` when it changed during two builds in a row.
+ *
+ * Never call it inside a transaction that stays open across an `await`, such as an `asyncRoute`
+ * on standalone: the save of a build waits for that transaction to end.
  */
 export async function getToc(ref: TocDocumentRef): Promise<TocResult> {
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -106,12 +160,12 @@ export function saveClientToc(ref: TocDocumentRef, request: unknown): CachedTocR
         throw new ValidationError(`The ${describe(ref)} has no table of contents.`);
     }
     requireContent(document);
-    if (generators.has(document.format.name)) {
+    if (getGenerator(document.format)) {
         throw new ValidationError(
             `The server reads the table of contents of the ${describe(ref)}.`);
     }
 
-    const { targetBlobHash, headings, properties, elapsedMs } = parseClientRequest(request);
+    const { targetBlobHash, headings, properties, isCut, elapsedMs } = parseClientRequest(request);
     if (targetBlobHash !== document.entity.blobId) {
         const message = `The ${describe(ref)} changed since its table of contents was read.`;
         throw new DetailedConflictError<TocConflictResponse>(message, {
@@ -124,7 +178,7 @@ export function saveClientToc(ref: TocDocumentRef, request: unknown): CachedTocR
         return toReadyResponse(valid.cache);
     }
 
-    const cache = assembleCache(document, targetBlobHash, headings, properties);
+    const cache = assembleCache(document, targetBlobHash, headings, properties, isCut);
     if (!cache) {
         throw new ValidationError(`The table of contents of the ${describe(ref)} is not valid.`);
     }
@@ -145,7 +199,7 @@ export function readCachedToc(ref: TocDocumentRef): CachedTocResponse {
         return toReadyResponse(valid.cache);
     }
 
-    const pending: { pendingToc?: PendingToc } = generators.has(document.format.name)
+    const pending: { pendingToc?: PendingToc } = getGenerator(document.format)
         ? {}
         : { pendingToc: { format: document.format.name } };
     const stale = findNewestCache(attachments, document.format);
@@ -185,13 +239,14 @@ async function readOrBuild(ref: TocDocumentRef): Promise<TocResult | typeof STAL
         return { status: "ready", cache: valid.cache, format };
     }
 
-    const generator = generators.get(format.name);
+    const generator = getGenerator(format);
     if (!generator) {
         return { status: "client", format };
     }
 
+    // A blob keeps its id when only the MIME type changes, so the format is part of the key.
     const blobId = String(entity.blobId);
-    const key = `${describe(ref)}:${blobId}`;
+    const key = `${format.name}:${describe(ref)}:${blobId}`;
     if (permanentFailures.has(key)) {
         return { status: "unreadable" };
     }
@@ -217,32 +272,44 @@ async function runBuild(
         return handleFailure(ref, format, key, error);
     }
     const elapsedMs = performance.now() - started;
-    const cache = assembleCache(document, blobId, generated.headings, generated.properties);
+    const cache = assembleCache(
+        document, blobId, generated.headings, generated.properties, !!generated.isCut);
     if (!cache) {
-        const error = new Error(
-            `The generator of '${format.name}' read an invalid table of contents.`);
-        return handleFailure(ref, format, key, error);
+        getLog().error(`Failed to read the ToC of ${describe(ref)}: `
+            + `The generator of '${format.name}' read an invalid table of contents.`);
+        return { status: "unreadable" };
     }
 
-    const isSaved = getSql().transactional(() => {
-        const live = resolveLiveDocument(ref);
-        if (!live || live.entity.blobId !== blobId || live.format !== format
-            || !live.entity.isContentAvailable()) {
-            return false;
-        }
-        // Another request can have saved a cache for this blob since this one looked.
-        const current = findCacheAttachment(live);
-        if (!current.valid) {
-            saveCache(live, cache, current.attachments[0], elapsedMs);
-        }
-        return true;
-    });
+    // On standalone an import can hold the connection by now; a save inside it would be rolled
+    // back with it, and its entity changes would never reach the clients.
+    const isSaved = await whenDatabaseFree(() => getContext().init(() =>
+        getSql().transactional(() => saveBuild(ref, format, blobId, cache, elapsedMs))));
     return isSaved ? { status: "ready", cache, format } : STALE;
 }
 
 /**
- * Logs a failed read. A failure that `format` calls permanent is remembered for the document and
- * blob in `key`; any other one is read again at the next request.
+ * Saves `cache`, read from the blob `blobId`, unless the document `ref` changed meanwhile, and
+ * tells whether the cache is still the document's.
+ */
+function saveBuild(
+    ref: TocDocumentRef, format: TocFormat, blobId: string, cache: TocCache, elapsedMs: number
+) {
+    const live = resolveLiveDocument(ref);
+    if (!live || live.entity.blobId !== blobId || live.format !== format
+        || !live.entity.isContentAvailable()) {
+        return false;
+    }
+    // Another request can have saved a cache for this blob since this one looked.
+    const current = findCacheAttachment(live);
+    if (!current.valid) {
+        saveCache(live, cache, current.attachments[0], elapsedMs);
+    }
+    return true;
+}
+
+/**
+ * Logs a failed read. A failure that `format` calls permanent is remembered for the format,
+ * document and blob in `key`; any other one is read again at the next request.
  */
 function handleFailure(ref: TocDocumentRef, format: TocFormat, key: string, error: unknown) {
     const name = error instanceof Error ? error.name : String(error);
@@ -252,26 +319,32 @@ function handleFailure(ref: TocDocumentRef, format: TocFormat, key: string, erro
             permanentFailures.delete(oldest);
         }
         permanentFailures.add(key);
-        getLog().info(`Failed to read the ToC of ${describe(ref)}: ${name}`);
+        const description = format.describeFailure?.(error) ?? name;
+        getLog().info(`Failed to read the ToC of ${describe(ref)}: ${description}`);
     } else {
         const message = error instanceof Error ? `: ${error.message}` : "";
-        getLog().error(`Failed to read the ToC of ${describe(ref)}: ${name}${message}`);
+        const description = format.describeFailure?.(error) ?? `${name}${message}`;
+        getLog().error(`Failed to read the ToC of ${describe(ref)}: ${description}`);
     }
     return { status: "unreadable" } as const;
+}
+
+/** The generator that reads `format` on this platform: a registered one, else its own. */
+function getGenerator(format: TocFormat) {
+    return generators.get(format.name) ?? format.generator;
 }
 
 /** The document of `ref` with its format, or `null` when it has none. Throws when it is gone. */
 function resolveDocument(ref: TocDocumentRef): TocDocument | null {
     if (ref.kind === "note") {
         const note = becca.getNoteOrThrow(ref.noteId);
-        const format = findTocFormat(note.type, note.mime);
+        const format = getTocFormatOf(note);
         const owner = note.isVirtual ? null : note;
         return format ? { ref, entity: note, format, owner, cacheTitle: getTocCacheTitle() } : null;
     }
 
     const attachment = becca.getAttachmentOrThrow(ref.attachmentId);
-    // An attachment of the role `file` reads like a note of the type `file`.
-    const format = findTocFormat(attachment.role, attachment.mime);
+    const format = getTocFormatOf(attachment);
     const note = becca.getNote(attachment.ownerId);
     const owner = note && !note.isVirtual ? note : null;
     const cacheTitle = getTocCacheTitle(ref.attachmentId);
@@ -351,10 +424,12 @@ function isCache(value: unknown): value is TocCache {
 
 /**
  * The cache of `headings` and `properties` read from the blob `blobId` of `document`, with the ids
- * of the headings, or `null` when they are not a table of contents of its format.
+ * of the headings, or `null` when they are not a table of contents of its format. `isCut` tells
+ * that the reader stopped at `MAX_TOC_HEADINGS`.
  */
 function assembleCache(
-    { entity, format }: TocDocument, blobId: string, headings: unknown, properties: unknown
+    { entity, format }: TocDocument, blobId: string, headings: unknown, properties: unknown,
+    isCut: boolean
 ): TocCache | null {
     if (!Array.isArray(headings) || headings.length > MAX_TOC_HEADINGS
         || (properties !== undefined && !isRecord(properties))) {
@@ -376,7 +451,7 @@ function assembleCache(
         outline.push({ title: normalizeTocTitle(heading.title), level: heading.level, fields });
     }
 
-    const ids = assignHeadingIds(outline, getBlobTag(blobId), !!entity.isProtected);
+    const ids = getHeadingIds(outline, blobId, !!entity.isProtected, isCut);
     const cache: TocCache = {
         version: TOC_CACHE_VERSION,
         targetBlobHash: blobId,
@@ -434,14 +509,16 @@ function sweep(owner: BNote, title: string, keptAttachmentId: string | undefined
 }
 
 function parseClientRequest(request: unknown) {
-    const { targetBlobHash, headings, properties, elapsedMs } = isRecord(request) ? request : {};
+    const { targetBlobHash, headings, properties, isCut, elapsedMs } =
+        isRecord(request) ? request : {};
     if (typeof targetBlobHash !== "string" || !Array.isArray(headings)
         || (properties !== undefined && !isRecord(properties))
+        || (isCut !== undefined && typeof isCut !== "boolean")
         || typeof elapsedMs !== "number" || !Number.isFinite(elapsedMs) || elapsedMs < 0) {
         throw new ValidationError("Expected the 'targetBlobHash', the 'headings' and the "
             + "'elapsedMs' of a table of contents.");
     }
-    return { targetBlobHash, headings, properties, elapsedMs };
+    return { targetBlobHash, headings, properties, isCut: isCut === true, elapsedMs };
 }
 
 function toReadyResponse(cache: TocCache): CachedTocResponse {

@@ -25,6 +25,12 @@ export interface TocOutlineItem {
     level: number;
 }
 
+/** How the headings that ids are computed for were read. */
+export interface TocReadOptions {
+    /** Whether the reader stopped at `MAX_TOC_HEADINGS` before another heading with a title. */
+    isCut?: boolean;
+}
+
 export const TOC_CACHE_VERSION = 1;
 /** The title of the ToC cache of a note. The cache of an attachment adds the attachment id. */
 export const TOC_CACHE_TITLE = "toc-cache.json";
@@ -79,9 +85,12 @@ export function normalizeTocTitle(title: string) {
  * A heading is free when no heading on its path shares its title with a sibling and no other
  * heading has its hash: its id is the hash of its source. Any other heading is bound to the blob:
  * its id adds the blob tag, after an ordinal among the headings of the same hash if it has one.
+ * In a table of contents that `isCut`, every heading is bound, since the headings past the cut
+ * can share a title with it.
  */
 export function assignHeadingIds(
-    headings: TocOutlineItem[], blobTag: string, isProtected: boolean
+    headings: TocOutlineItem[], blobTag: string, isProtected: boolean,
+    { isCut = false }: TocReadOptions = {}
 ): string[] {
     const structure = readStructure(headings);
     const hashes = hashHeadings(headings, structure);
@@ -99,7 +108,7 @@ export function assignHeadingIds(
             ordinals.set(hash, ordinal);
             return `${hash}.${ordinal}${suffix}`;
         }
-        return structure.isBoundByPath[index] ? `${hash}${suffix}` : hash;
+        return structure.isBoundByPath[index] || isCut ? `${hash}${suffix}` : hash;
     });
 }
 
@@ -107,12 +116,13 @@ export function assignHeadingIds(
  * The index of the heading that `id` names in `headings`, a flat list in document order, or `-1`
  * when it names none for sure. For a bound id, `isOwnTag` tells whether its blob tag, hashed as
  * protected or not, belongs to the bytes that `headings` were read from; a rejection counts as
- * `false`.
+ * `false`. `options` tell how `headings` were read, as for `assignHeadingIds()`.
  */
 export async function findHeading(
     id: string,
     headings: TocOutlineItem[],
-    isOwnTag: (blobTag: string, isProtected: boolean) => Promise<boolean>
+    isOwnTag: (blobTag: string, isProtected: boolean) => Promise<boolean>,
+    options: TocReadOptions = {}
 ): Promise<number> {
     const match = HEADING_ID.exec(id);
     if (!match) {
@@ -120,11 +130,14 @@ export async function findHeading(
     }
 
     const [ , blobTag, protectedSuffix ] = match;
+    if (blobTag === undefined && options.isCut) {
+        return -1;
+    }
     const isProtected = protectedSuffix !== undefined;
     if (blobTag !== undefined && !await isOwnTag(blobTag, isProtected).catch(() => false)) {
         return -1;
     }
-    return assignHeadingIds(headings, blobTag ?? "", isProtected).indexOf(id);
+    return assignHeadingIds(headings, blobTag ?? "", isProtected, options).indexOf(id);
 }
 
 /**

@@ -102,6 +102,8 @@ type PdfViewerTocBuildMessage = WithContext & {
     /** The `blobId` of the bytes that the outline was read from. */
     blobId: string;
     headings: Record<string, unknown>[];
+    /** Whether the viewer stopped reading at `MAX_TOC_HEADINGS`, before another entry. */
+    isCut?: boolean;
     properties: Record<string, unknown>;
     elapsedMs: number;
 });
