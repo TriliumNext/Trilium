@@ -8,18 +8,19 @@ export type ShareScope = "public" | "local" | "preview" | "export-only";
 /**
  * Builds the browser-openable URL for a shared note.
  *
- * Precedence: an explicitly configured sync server wins; otherwise the desktop
- * renderer uses the server-injected loopback origin (`glob.httpBaseUrl`) because it
- * loads from `trilium-app://`, where location-based derivation would yield an unusable
- * `trilium-app://app/share/...` link (#10589); everywhere else we derive from the page
- * origin (which is correct for the server build and for a browser hitting the desktop).
+ * Precedence: on the desktop, standalone and mobile apps a configured sync server wins, since
+ * it is the instance others can reach. A server serves the shared page itself, so its page
+ * origin wins there and `syncServerHost` (another instance, often on a private network) is
+ * ignored. Without a sync server, the desktop renderer uses the server-injected loopback origin
+ * (`glob.httpBaseUrl`) because it loads from `trilium-app://` (#10589); everywhere else the
+ * link derives from the page origin.
  */
 export function buildShareLink(shareId: string, syncServerHost: string | null | undefined): string {
     // A shareId is either a noteId or a free-form shareAlias, so it can hold spaces, quotes and
     // path separators. Encoding keeps it a single segment the /share/:shareId route decodes back.
     const encodedShareId = encodeURIComponent(shareId);
 
-    if (syncServerHost) {
+    if (syncServerHost && (isElectron() || window.glob.isStandalone || isMobileApp())) {
         return appendSharePath(syncServerHost, encodedShareId);
     }
 
