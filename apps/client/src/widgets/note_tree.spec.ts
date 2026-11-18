@@ -364,18 +364,31 @@ describe("NoteTreeWidget", () => {
 describe("the drop marker's distance from the row boundary", () => {
     const shift = () => document.body.style.getPropertyValue("--tree-drop-marker-shift");
 
-    /** A row of `rowHeight` around a title of `titleHeight`, which is all the measurement reads. */
-    function nodeWithRow(rowHeight: number, titleHeight: number) {
+    const indent = () => document.body.style.getPropertyValue("--tree-drop-marker-indent");
+
+    /** A row of `rowHeight` around a title of `titleHeight` starting at `titleLeft`. */
+    function nodeWithRow(rowHeight: number, titleHeight: number, titleLeft = 0, children: Fancytree.FancytreeNode[] = [], expanded = false) {
         const row = document.createElement("span");
         const title = document.createElement("span");
         title.className = "fancytree-title";
         row.appendChild(title);
 
         vi.spyOn(row, "getBoundingClientRect").mockReturnValue({ height: rowHeight } as DOMRect);
-        vi.spyOn(title, "getBoundingClientRect").mockReturnValue({ height: titleHeight } as DOMRect);
+        vi.spyOn(title, "getBoundingClientRect").mockReturnValue({ height: titleHeight, left: titleLeft } as DOMRect);
 
-        return { span: row } as Fancytree.FancytreeNode;
+        return { span: row, children, isExpanded: () => expanded } as unknown as Fancytree.FancytreeNode;
     }
+
+    it("lines up the marker below an expanded note with its first child", () => {
+        const child = nodeWithRow(34, 18, 44);
+
+        // The drop lands before the first child, so the line starts where that child's title does.
+        publishDropMarkerShift(nodeWithRow(34, 18, 24, [ child ], true));
+        expect(indent()).toBe("20px");
+
+        publishDropMarkerShift(nodeWithRow(34, 18, 24, [ child ], false));
+        expect(indent()).toBe("0px");
+    });
 
     it("is half the room the row leaves around its title", () => {
         // dnd5 anchors on the title's edge, which is that far from the boundary the note lands on.
