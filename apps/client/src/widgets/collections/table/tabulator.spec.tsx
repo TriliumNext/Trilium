@@ -11,8 +11,9 @@ vi.mock("tabulator-tables", () => ({
     Tabulator: class {
         static registerModule() {}
         on(event: string, callback: Function) {
-            if (!eventHandlers.has(event)) eventHandlers.set(event, []);
-            eventHandlers.get(event)!.push(callback);
+            const handlers = eventHandlers.get(event) ?? [];
+            handlers.push(callback);
+            eventHandlers.set(event, handlers);
             if (event === "tableBuilt") callback();
         }
         off(event: string, callback: Function) {
