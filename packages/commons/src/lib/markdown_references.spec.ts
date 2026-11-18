@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, onTestFinished, vi } from "vitest";
 
 import {
     type BlockIndexHost, type IndexedBlock, indexMarkdownBlocks
@@ -285,5 +285,15 @@ describe("addMarkdownHeadingReference", () => {
             .toBeNull();
         expect(addMarkdownHeadingReference("## A", { index: 0, title: "A" }, createId, idlessHost))
             .toBeNull();
+    });
+
+    it("gives a heading an id in a note with a formula in a code block", () => {
+        let now = 0;
+        const clock = vi.spyOn(Date, "now").mockImplementation(() => now++);
+        onTestFinished(() => clock.mockRestore());
+        const source = [ "## A", "", "````md", "```js", "a", "```", "$$x$$", "````" ].join("\n");
+
+        expect(addMarkdownHeadingReference(source, { index: 0, title: "A" }, createId, host))
+            .toEqual({ content: source.replace("## A", `## A ${NEW}`), params: { block: "new" } });
     });
 });

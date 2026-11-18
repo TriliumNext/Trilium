@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { CustomMarkdownRenderer, demoteHeadings, extractCodeBlocks, renderToHtml } from "./markdown_renderer.js";
 import { HIGHLIGHT_STYLE } from "./marked_extensions.js";
@@ -111,6 +111,32 @@ describe("extractCodeBlocks", () => {
         expect(placeholderMap.size).toBe(1);
         expect(processedText).not.toContain("```");
         expect([...placeholderMap.values()][0]).toBe(input);
+    });
+
+    it("follows the fence rules of CommonMark", () => {
+        const blocks = [
+            [ "````md", "```js", "a", "```", "$$x$$", "````" ].join("\n"),
+            [ "~~~", "$a$", "```", "~~~~" ].join("\n"),
+            [ "- ```js", "  $a$", "  ```" ].join("\n")
+        ];
+        for (const block of blocks) {
+            const { processedText, placeholderMap } = extractCodeBlocks(`${block}\n\n$b$`);
+            expect([ ...placeholderMap.values() ], block).toStrictEqual([ block ]);
+            expect(processedText, block).toMatch(/^<!--CODE_BLOCK_[^>]+-->\n\n\$b\$$/);
+        }
+
+        const unclosed = "```\n$a$\n\n$b$";
+        expect([ ...extractCodeBlocks(unclosed).placeholderMap.values() ])
+            .toStrictEqual([ unclosed ]);
+        expect(extractCodeBlocks("> ```\n> $a$\n\n$b$").placeholderMap.size).toBe(0);
+    });
+
+    it("never takes a placeholder that the text holds", () => {
+        const input = "<!--CODE_BLOCK_0_1-->\n```\n$a$\n```";
+        const { processedText, placeholderMap } = extractCodeBlocks(input);
+
+        expect([ ...placeholderMap.keys() ]).toStrictEqual([ "<!--CODE_BLOCK_1_0-->" ]);
+        expect(processedText).toBe("<!--CODE_BLOCK_0_1-->\n<!--CODE_BLOCK_1_0-->");
     });
 });
 
@@ -628,6 +654,23 @@ describe("renderToHtml", () => {
             expect(html).not.toContain("FORMULA");
             expect(html).toContain("<blockquote>");
         });
+
+        it("keeps the dollars of a code block with a longer fence or a tilde fence", () => {
+            const html = render([
+                "````md", "```js", "a", "```", "$$x$$", "````", "", "~~~", "$a$", "~~~", "", "$b$"
+            ].join("\n"));
+            expect(html).toContain(">```js\na\n```\n$$x$$</code></pre>");
+            expect(html).toContain(">$a$</code></pre>");
+            expect(html).toContain('<span class="math-tex">\\(b\\)</span>');
+            expect(html).not.toContain("FORMULA");
+        });
+
+        it("renders the same source the same way every time", () => {
+            useTickingClock();
+            // Indented code is not shielded, so the placeholder of its formula is rendered.
+            const source = "$a$\n\n    $b$";
+            expect(render(source)).toBe(render(source));
+        });
     });
 
     describe("wiki links and transclusions", () => {
@@ -992,3 +1035,10 @@ describe("block markers", () => {
         expect(preview(`=== "Tab"\n\n    Body${footnotes}`)).toContain("data-footnotes");
     });
 });
+
+/** Makes each `Date.now()` of the test answer a later time than the one before. */
+function useTickingClock() {
+    let now = 0;
+    const spy = vi.spyOn(Date, "now").mockImplementation(() => now++);
+    onTestFinished(() => spy.mockRestore());
+}

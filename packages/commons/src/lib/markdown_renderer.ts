@@ -284,29 +284,32 @@ function shiftHeadingsDown(content: string, unescapeHtml: EntityDecoder): string
 const H1 = /<h1([^<>]*)>((?:[^<]|<[^h<])*?)<\/h1>/i;
 const ALL_H1 = new RegExp(H1.source, "gi");
 
+/**
+ * Replaces the fenced code blocks and the code spans of `text` with placeholders, so that formula
+ * extraction leaves their dollars alone. `placeholderMap` holds the text of each.
+ */
 export function extractCodeBlocks(text: string): { processedText: string; placeholderMap: Map<string, string> } {
     const codeMap = new Map<string, string>();
     let id = 0;
-    const timestamp = Date.now();
+    const blockPrefix = getPlaceholderPrefix(text, "CODE_BLOCK");
+    const inlinePrefix = getPlaceholderPrefix(text, "INLINE_CODE");
 
-    // `(?:>[ \t]*)*` allows blockquote prefixes on the fence lines so that fenced
-    // code blocks nested in a blockquote (`> ``` `) are still shielded. Otherwise their
-    // contents leak into formula extraction, which mangles `$…$` runs like `${VAR}` (#10268).
-    // The whole match is restored verbatim before marked parses, so the prefixes are
-    // preserved and the blockquote still renders correctly.
-    text = text
-        .replace(/^[ \t]*(?:>[ \t]*)*```[^\n]*\n[\s\S]*?^[ \t]*(?:>[ \t]*)*```[ \t]*$/gm, (m) => {
-            const key = `<!--CODE_BLOCK_${timestamp}_${id++}-->`;
-            codeMap.set(key, m);
-            return key;
-        })
+    let withoutBlocks = "";
+    let position = 0;
+    for (const { from, to } of findFencedCodeBlocks(text)) {
+        const key = `${blockPrefix}${id++}-->`;
+        codeMap.set(key, text.slice(from, to));
+        withoutBlocks += text.slice(position, from) + key;
+        position = to;
+    }
+    const processedText = (withoutBlocks + text.slice(position))
         .replace(/`[^`\n]+`/g, (m) => {
-            const key = `<!--INLINE_CODE_${timestamp}_${id++}-->`;
+            const key = `${inlinePrefix}${id++}-->`;
             codeMap.set(key, m);
             return key;
         });
 
-    return { processedText: text, placeholderMap: codeMap };
+    return { processedText, placeholderMap: codeMap };
 }
 
 /**
@@ -319,7 +322,8 @@ function extractFormulas(text: string) {
     const formulaMap = new Map<string, string>();
     const sourceMap = new Map<string, string>();
     let id = 0;
-    const timestamp = Date.now();
+    const blockPrefix = getPlaceholderPrefix(text, "FORMULA_BLOCK");
+    const inlinePrefix = getPlaceholderPrefix(text, "FORMULA_INLINE");
 
     // Delimiters must be lone `$` (inline) / `$$` (block) runs — i.e. not adjacent to
     // another `$` — and the body may not contain a `$`. This mirrors GitHub: mismatched
@@ -332,13 +336,13 @@ function extractFormulas(text: string) {
     const inlineFormula = /(?<![\\$])\$(?![\s$])([^$\n]*?[^\s$])\$(?![$\d])/g;
     let processedText = noCodeText
         .replace(blockFormula, (match, formula: string) => {
-            const key = `<!--FORMULA_BLOCK_${timestamp}_${id++}-->`;
+            const key = `${blockPrefix}${id++}-->`;
             formulaMap.set(key, `<span class="math-tex">\\[${escapeMathFormula(formula)}\\]</span>`);
             sourceMap.set(key, restoreFromMap(match, codeMap));
             return key;
         })
         .replace(inlineFormula, (match, formula: string) => {
-            const key = `<!--FORMULA_INLINE_${timestamp}_${id++}-->`;
+            const key = `${inlinePrefix}${id++}-->`;
             formulaMap.set(key, `<span class="math-tex">\\(${escapeMathFormula(formula)}\\)</span>`);
             sourceMap.set(key, restoreFromMap(match, codeMap));
             return key;
@@ -373,6 +377,71 @@ function restoreFromMap(text: string, map: Map<string, string>): string {
     /* v8 ignore next -- defensive: every regex match is a map key, so the ?? fallback is unreachable */
     return text.replace(new RegExp(pattern, "g"), (match) => map.get(match) ?? match);
 }
+
+/**
+ * The start of the placeholders named `name` in `text`: the first that `text` does not hold. The
+ * same text gets the same placeholders, so two renders of a note can be compared.
+ */
+function getPlaceholderPrefix(text: string, name: string) {
+    let salt = 0;
+    while (text.includes(`<!--${name}_${salt}_`)) {
+        salt++;
+    }
+    return `<!--${name}_${salt}_`;
+}
+
+/**
+ * The fenced code blocks of `text`, from the start of the line of the opening fence to the end of
+ * the closing fence. As in CommonMark, a fence is a run of three or more backticks or tildes, and
+ * only a run of the same character at least as long closes it. A fence outside any container that
+ * is never closed runs to the end of the text. The prefixes of quotes and list items are kept in
+ * the block, so that they are restored with it (#10268).
+ */
+function findFencedCodeBlocks(text: string) {
+    const lines = getLines(text);
+    const blocks: { from: number; to: number }[] = [];
+    for (let index = 0; index < lines.length; index++) {
+        const opening = OPENING_FENCE.exec(lines[index].text);
+        if (!opening) {
+            continue;
+        }
+        const [ , prefix, fence ] = opening;
+        const run = `${fence[0]}{${fence.length},}`;
+        const closingFence = new RegExp(`^${CLOSING_FENCE_PREFIX}${run}[ \\t]*\\r?$`);
+        let closing = index + 1;
+        while (closing < lines.length && !closingFence.test(lines[closing].text)) {
+            closing++;
+        }
+        if (closing < lines.length) {
+            blocks.push({ from: lines[index].start, to: lines[closing].end });
+            index = closing;
+        } else if (TOP_LEVEL_INDENT.test(prefix)) {
+            blocks.push({ from: lines[index].start, to: text.length });
+            break;
+        }
+    }
+    return blocks;
+}
+
+/** The lines of `text`, and where each starts and ends. */
+function getLines(text: string) {
+    const lines: { text: string; start: number; end: number }[] = [];
+    let start = 0;
+    for (const line of text.split("\n")) {
+        lines.push({ text: line, start, end: start + line.length });
+        start += line.length + 1;
+    }
+    return lines;
+}
+
+/** The prefixes of the quotes and list items that hold an opening fence. */
+const OPENING_FENCE_PREFIX = String.raw`(?:[ \t]*(?:>|[-*+](?=[ \t])|\d{1,9}[.)](?=[ \t])))*[ \t]*`;
+/** A line that opens a fence. The info string of a backtick fence holds no backtick. */
+const OPENING_FENCE = new RegExp(`^(${OPENING_FENCE_PREFIX})(\`{3,}(?=[^\`]*$)|~{3,})`);
+/** The prefixes in front of a closing fence: indentation and quote markers. */
+const CLOSING_FENCE_PREFIX = String.raw`[ \t]*(?:>[ \t]*)*`;
+/** The indentation of a fence outside any container. */
+const TOP_LEVEL_INDENT = /^ {0,3}$/;
 
 /** Drops the checkbox marked's lexer unshifts among a loose task item's inline tokens. */
 function dropCheckboxes(tokens: Token[] | undefined): Token[] {
