@@ -1,5 +1,5 @@
 # Block references
-Block references are [links](Links.md) to a block of a text note, such as a paragraph, a heading, a list item or a table, or to a range of consecutive blocks. A block reference can be pasted in another note as a link, or turned into an <a class="reference-link" href="Include%20Note.md">Include Note</a> that shows only the referenced blocks.
+A block reference [links](Links.md) to a block in a text or Markdown note, such as a paragraph, a heading, a list item or a table, or to a range of consecutive blocks. A block reference can be pasted in another note as a link, or turned into an <a class="reference-link" href="Include%20Note.md">Include Note</a> that shows only the referenced blocks. For Markdown notes, see _Reference anchors_ in <a class="reference-link" href="../Markdown.md">Markdown</a>.
 
 ## Copying a reference
 
@@ -61,5 +61,5 @@ If a referenced block was deleted, the include shows _Broken reference_.
 
 *   References can be copied only from a note being edited, and not in the mobile layout.
 *   An include of a range that covers only part of a list or a quote, such as from its second item to a paragraph after it, cannot be edited in place. Neither can an include of a single code block or diagram.
+*   To edit an excerpt from a Markdown note, open the source note. The excerpt itself is read only.
 *   Deleting a block, or merging it into the block above with <kbd>Backspace</kbd>, breaks the references to it.
-*   When a subtree is [exported](../../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md), links to blocks lead to the whole note. Exporting to Markdown also removes the invisible identifiers of most blocks, so references to them break when the note is imported again.

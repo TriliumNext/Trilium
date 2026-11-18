@@ -513,6 +513,8 @@ Core note operations
 
 `PUT /api/notes/{noteId}/data` · `updateNoteContent`
 
+Saves the content of a note. A save with `base` names the version that the content is based on: it is refused with 409, and saves nothing, when the note has another format (type, or Markdown and other code) or another blob, or when an attachment row does not hold. In such a save, a row with `attachmentId` replaces that attachment only while it is at `blobId`, and a row without one creates an attachment of its title, refused when the note has one. The answer is what the next save is based on. A save without `base` is unconditional, and answers 204.
+
 **Authorization**: `sessionAuth` or `tokenAuth`
 
 **Path parameters**
@@ -531,7 +533,9 @@ Core note operations
 | Property | Description |
 | --- | --- |
 | `content`  <br>_required_ | `string` |
-| `attachments` | array of [`Attachment`](#schema-Attachment) |
+| `attachments` | array of [`SavedAttachmentRow`](#schema-SavedAttachmentRow) |
+| `base` | [`NoteSaveBase`](#schema-NoteSaveBase)  <br>What a save of the content of a note is based on |
+| `keepOther` | `boolean`  <br>Saves over the version that `base` names, which another writer saved, after the note keeps that version as a revision |
 
 </div>
 <div class="trilium-multicolumn-column">
@@ -542,15 +546,21 @@ Core note operations
     "attachments": [
         {
             "attachmentId": "string",
-            "ownerId": "string",
-            "role": "image",
-            "mime": "string",
-            "title": "string",
             "blobId": "string",
-            "dateModified": "2025-02-14 08:19:59.203+0100",
-            "utcDateModified": "2025-02-13 07:42:47.698Z"
+            "role": "string",
+            "title": "string",
+            "mime": "string",
+            "content": "string",
+            "position": 0,
+            "encoding": "base64"
         }
-    ]
+    ],
+    "base": {
+        "blobId": "string",
+        "type": "string",
+        "mime": "string"
+    },
+    "keepOther": true
 }
 ```
 
@@ -559,13 +569,83 @@ Core note operations
 
 **Responses**
 
-=== "204: Content updated"
+=== "200: Content updated, by a save with `base`"
+
+    *   `application/json`: `object`
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `blobId`  <br>_required_ | `string` |
+    | `attachments`  <br>_required_ | array of [`SavedAttachmentBase`](#schema-SavedAttachmentBase)  <br>The attachments that the save created or replaced |
+    | `content` | `string`  <br>The content as stored, when the server changed what was sent |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "blobId": "string",
+        "attachments": [
+            {
+                "attachmentId": "string",
+                "title": "string",
+                "blobId": "string"
+            }
+        ],
+        "content": "string"
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "204: Content updated, by a save without `base`"
+
+    No content.
+
+=== "400: A malformed `base`"
 
     No content.
 
 === "404: Note not found"
 
     No content.
+
+=== "409: The note has another format or version than the save is based on"
+
+    *   `application/json`: `object`
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `reason`  <br>_required_ | `string`  <br>One of `format`, `version`. |
+    | `message`  <br>_required_ | `string` |
+    | `blobId`  <br>_required_ | `string`  <br>The blob of the note now, which a save that keeps its version names |
+    | `type`  <br>_required_ | `string` |
+    | `mime`  <br>_required_ | `string` |
+    | `isVersioned`  <br>_required_ | `boolean`  <br>Whether the note keeps revisions |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "reason": "format",
+        "message": "string",
+        "blobId": "string",
+        "type": "string",
+        "mime": "string",
+        "isVersioned": true
+    }
+    ```
+
+    </div>
+    </div>
 
 ### Get note timestamps
 
@@ -646,13 +726,15 @@ The blocks of a text note that `block` points at, as their exact HTML source, so
     | Property | Description |
     | --- | --- |
     | `content`  <br>_required_ | `string` |
+    | `hash`  <br>_required_ | `string`  <br>The hash of `content`, which a save of the blocks is based on |
 
     </div>
     <div class="trilium-multicolumn-column">
 
     ```json
     {
-        "content": "<p data-trilium-block-id=\"eaJkN47U8kI4\">First paragraph</p>"
+        "content": "<p data-trilium-block-id=\"eaJkN47U8kI4\">First paragraph</p>",
+        "hash": "string"
     }
     ```
 
@@ -697,7 +779,11 @@ Replaces the blocks that `block` points at with `content` and saves the note as 
 | Property | Description |
 | --- | --- |
 | `content`  <br>_required_ | `string`  <br>The HTML of the blocks |
-| `attachments` | array of [`Attachment`](#schema-Attachment) |
+| `attachments` | array of [`SavedAttachmentRow`](#schema-SavedAttachmentRow) |
+| `base` | `object`  <br>The `hash` of the blocks as read. The save is refused with 409 when the blocks have changed since; a change elsewhere in the note goes through. |
+| `base.hash`  <br>_required_ | `string` |
+| `keepOther` | `boolean`  <br>Saves over the blocks that `base` names, after the note keeps its version as a revision |
+| `block` | `string`  <br>The range of the blocks after the save, when it differs from `block` |
 
 </div>
 <div class="trilium-multicolumn-column">
@@ -708,15 +794,20 @@ Replaces the blocks that `block` points at with `content` and saves the note as 
     "attachments": [
         {
             "attachmentId": "string",
-            "ownerId": "string",
-            "role": "image",
-            "mime": "string",
-            "title": "string",
             "blobId": "string",
-            "dateModified": "2025-02-14 08:19:59.203+0100",
-            "utcDateModified": "2025-02-13 07:42:47.698Z"
+            "role": "string",
+            "title": "string",
+            "mime": "string",
+            "content": "string",
+            "position": 0,
+            "encoding": "base64"
         }
-    ]
+    ],
+    "base": {
+        "hash": "string"
+    },
+    "keepOther": true,
+    "block": "string"
 }
 ```
 
@@ -725,17 +816,77 @@ Replaces the blocks that `block` points at with `content` and saves the note as 
 
 **Responses**
 
-=== "204: Blocks replaced"
+=== "200: Blocks replaced, by a save with `base`"
+
+    *   `application/json`: `object`
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `hash`  <br>_required_ | `string \| null`  <br>The hash of the blocks as saved, `null` when they cannot be read apart |
+    | `attachments`  <br>_required_ | array of [`SavedAttachmentBase`](#schema-SavedAttachmentBase) |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "hash": "string",
+        "attachments": [
+            {
+                "attachmentId": "string",
+                "title": "string",
+                "blobId": "string"
+            }
+        ]
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "204: Blocks replaced, by a save without `base`"
 
     No content.
 
-=== "400: No `block` parameter, no `content`, a note that is not a text note, or a protected note without a protected session"
+=== "400: No `block` parameter, no `content`, a malformed `base`, a note that is not a text note, or a protected note without a protected session"
 
     No content.
 
 === "404: The note or a block of the range does not exist, or the range is not a run of whole sibling blocks"
 
     No content.
+
+=== "409: The blocks changed since they were read"
+
+    *   `application/json`: `object`
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `reason`  <br>_required_ | `string`  <br>One of `version`. |
+    | `message`  <br>_required_ | `string` |
+    | `hash`  <br>_required_ | `string`  <br>The hash of the blocks now |
+    | `isVersioned`  <br>_required_ | `boolean` |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "reason": "version",
+        "message": "string",
+        "hash": "string",
+        "isVersioned": true
+    }
+    ```
+
+    </div>
+    </div>
 
 ### List the places inside a note that a link can point at
 
@@ -763,6 +914,7 @@ The targets of a note, such as the headings and anchors of a text note, in the o
     | Property | Description |
     | --- | --- |
     | `targets`  <br>_required_ | array of [`ReferenceTarget`](#schema-ReferenceTarget) |
+    | `blobId` | `string`  <br>The blob of the note that the targets were read from |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -778,7 +930,8 @@ The targets of a note, such as the headings and anchors of a text note, in the o
                     "block": "eaJkN47U8kI4"
                 }
             }
-        ]
+        ],
+        "blobId": "string"
     }
     ```
 
@@ -797,7 +950,7 @@ The targets of a note, such as the headings and anchors of a text note, in the o
 
 `POST /api/notes/{noteId}/references` · `createNoteReference`
 
-Gives a target that `GET /api/notes/{noteId}/references` lists without `params` a reference, unless it has one, and returns the link parameters that point at it. The target is the one at `index` among the targets of its `kind` while its title is still `title`, otherwise the only target of that kind with that title. For a heading of a text note, the reference is a block id. Read-only notes get the reference too. It is the only change to the content, and no revision is saved.
+Gives a target that `GET /api/notes/{noteId}/references` lists without `params` a reference, unless it has one, and returns the link parameters that point at it. The target is the one at `index` among the targets of its `kind` while its title is still `title`, otherwise the only target of that kind with that title. A request that names the `blobId` of its listing is refused with 409, reason `listing`, when the note has another blob: the targets are then listed again. For a heading of a text note, the reference is a block id. Read-only notes get the reference too. It is the only change to the content, and no revision is saved.
 
 **Authorization**: `sessionAuth` or `tokenAuth`
 
@@ -819,6 +972,7 @@ Gives a target that `GET /api/notes/{noteId}/references` lists without `params` 
 | `kind`  <br>_required_ | [`ReferenceKind`](#schema-ReferenceKind)  <br>The kind of a target, which sets how the link lists show it. One of `heading`, `anchor`. |
 | `index`  <br>_required_ | `integer`  <br>The position of the target among the targets of its kind |
 | `title`  <br>_required_ | `string`  <br>The title of the target at that position |
+| `blobId` | `string`  <br>The `blobId` of the listing that the target was picked from |
 
 </div>
 <div class="trilium-multicolumn-column">
@@ -827,7 +981,8 @@ Gives a target that `GET /api/notes/{noteId}/references` lists without `params` 
 {
     "kind": "heading",
     "index": 0,
-    "title": "Installation"
+    "title": "Installation",
+    "blobId": "string"
 }
 ```
 
@@ -869,7 +1024,7 @@ Gives a target that `GET /api/notes/{noteId}/references` lists without `params` 
 
     No content.
 
-=== "409: No target matches, because the targets changed since they were listed"
+=== "409: No target matches, because the targets changed since they were listed, or the listing was read from another blob (reason `listing`)"
 
     No content.
 
@@ -3404,6 +3559,106 @@ Note revision history
 
     No content.
 
+### Keep unsaved changes as a revision
+
+`POST /api/notes/{noteId}/revisions/draft` · `saveDraftRevision`
+
+Keeps the changes that an editor could not save, after a conflict or a conversion of the note, as a revision in the format they were written in, with their attachment edits written into the copies of the attachments. A draft of an excerpt is put into the note as it is now; where its range no longer resolves, the revision holds the blocks alone, with the source `fragment`, and cannot be restored. A repeated request with the same `revisionId` makes one revision. A note that keeps no revisions keeps no draft.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `noteId`  <br>_required_ | `string`  <br>12-character note ID |
+
+**Request body** (required)
+
+*   `application/json`: `object`
+
+<div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+<div class="trilium-multicolumn-column">
+
+| Property | Description |
+| --- | --- |
+| `revisionId`  <br>_required_ | `string`  <br>Drawn by the client once for each draft |
+| `type`  <br>_required_ | `string` |
+| `mime`  <br>_required_ | `string` |
+| `content` | `string`  <br>The content of the whole note; or `fragment` |
+| `fragment` | `object`  <br>The edited blocks of an excerpt, and the range they replace |
+| `fragment.content`  <br>_required_ | `string` |
+| `fragment.block`  <br>_required_ | `string` |
+| `attachments` | array of [`SavedAttachmentRow`](#schema-SavedAttachmentRow) |
+
+</div>
+<div class="trilium-multicolumn-column">
+
+```json
+{
+    "revisionId": "string",
+    "type": "string",
+    "mime": "string",
+    "content": "string",
+    "fragment": {
+        "content": "string",
+        "block": "string"
+    },
+    "attachments": [
+        {
+            "attachmentId": "string",
+            "blobId": "string",
+            "role": "string",
+            "title": "string",
+            "mime": "string",
+            "content": "string",
+            "position": 0,
+            "encoding": "base64"
+        }
+    ]
+}
+```
+
+</div>
+</div>
+
+**Responses**
+
+=== "200: The revision of the draft"
+
+    *   `application/json`: `object`
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `revisionId`  <br>_required_ | `string` |
+    | `isKept`  <br>_required_ | `boolean`  <br>Whether the note keeps the revision |
+    | `isFragment`  <br>_required_ | `boolean`  <br>Whether the revision holds the blocks alone |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "revisionId": "string",
+        "isKept": true,
+        "isFragment": true
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "400: A malformed draft, a revision ID of another note, or a note whose content is not available"
+
+    No content.
+
+=== "404: Note not found"
+
+    No content.
+
 ### Get revision details
 
 `GET /api/revisions/{revisionId}` · `getRevision`
@@ -3501,6 +3756,8 @@ Note revision history
 
 `POST /api/revisions/{revisionId}/restore` · `restoreRevision`
 
+Restores the revision as the content of its note, with its attachments, and the links and relations of that content.
+
 **Authorization**: `sessionAuth` or `tokenAuth`
 
 **Path parameters**
@@ -3551,6 +3808,10 @@ Note revision history
 
     </div>
     </div>
+
+=== "400: A revision of the source `fragment`, which holds blocks of the note alone"
+
+    No content.
 
 ### Download revision
 
@@ -8057,6 +8318,42 @@ Example: `[object Object]`
 | Property | Description |
 | --- | --- |
 | `targets`  <br>_required_ | array of [`ReferenceTarget`](#schema-ReferenceTarget) |
+| `blobId` | `string`  <br>The blob of the note that the targets were read from |
+
+### <a id="schema-NoteSaveBase"></a>`NoteSaveBase`
+
+What a save of the content of a note is based on
+
+| Property | Description |
+| --- | --- |
+| `blobId`  <br>_required_ | `string` |
+| `type`  <br>_required_ | `string` |
+| `mime`  <br>_required_ | `string` |
+
+### <a id="schema-SavedAttachmentRow"></a>`SavedAttachmentRow`
+
+An attachment that a save writes. With `attachmentId` it replaces that attachment, in a save with a base only while it is at `blobId`; without it, it creates one of its title.
+
+| Property | Description |
+| --- | --- |
+| `attachmentId` | `string` |
+| `blobId` | `string`  <br>The blob that the attachment was read at |
+| `role`  <br>_required_ | `string` |
+| `title`  <br>_required_ | `string` |
+| `mime`  <br>_required_ | `string` |
+| `content`  <br>_required_ | `string` |
+| `position` | `integer` |
+| `encoding` | `string`  <br>One of `base64`. |
+
+### <a id="schema-SavedAttachmentBase"></a>`SavedAttachmentBase`
+
+An attachment as a save left it
+
+| Property | Description |
+| --- | --- |
+| `attachmentId`  <br>_required_ | `string` |
+| `title`  <br>_required_ | `string` |
+| `blobId`  <br>_required_ | `string` |
 
 ### <a id="schema-CreateNoteRequest"></a>`CreateNoteRequest`
 

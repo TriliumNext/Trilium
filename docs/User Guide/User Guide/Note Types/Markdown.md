@@ -116,7 +116,7 @@ Multiple types of links are supported:
     ```
     [[B9oMG6rFvvfq]]
     ```
-*   Since v0.108.0, [reference link](Text/Links/Internal%20\(reference\)%20links.md) to a [heading](Text/Block%20references.md) or an [anchor](Text/Anchors.md) of a <a class="reference-link" href="Text.md">Text</a> note, which shows the note's title followed by the heading or the anchor. The _Add link_ dialog and the `@` list write the link with its target after the note ID:
+*   Since v0.108.0, you can [link](Text/Links/Internal%20\(reference\)%20links.md) to a [heading](Text/Block%20references.md) or [anchor](Text/Anchors.md) in a text or Markdown note. The _Add link_ dialog and the `@` list write the link with its target after the note ID:
     
     ```
     [[B9oMG6rFvvfq?block=a1b2c3d4]]
@@ -134,6 +134,29 @@ To create a link, either:
 *   Use the _Add link_ dialog by pressing <kbd>Ctrl</kbd>+<kbd>L</kbd> or typing the `/link` command.
 
 <a class="reference-link" href="Text/Link%20Previews.md">Link Previews</a> are also rendered, but there is no mechanism to insert them automatically as of now, they have to be copied from a <a class="reference-link" href="Text.md">Text</a> note instead.
+
+### Reference anchors
+
+Since v0.108.0, you can link to or excerpt a block in a Markdown note, such as a heading or paragraph. Trilium marks the block with a reference anchor. In the editor, it appears as a small chip with an anchor icon (<span class="tn-icon bx bx-anchor"></span>). The chip is hidden in the preview.
+
+The anchor keeps links and excerpts working when you move the block or change its text. If you remove the anchor, every link and excerpt that points to it breaks.
+
+Trilium adds an anchor when you link to a heading from the _Add link_ dialog or the `@` list. It also adds anchors to referenced blocks when you convert a text note to Markdown.
+
+To copy a reference, select text in the block and open the context menu. Under _Copy_, choose _Copy reference to this block_. If your selection spans several blocks, choose _Copy reference to these blocks_. If the block already has a chip, you can click it and choose _Copy reference_. See <a class="reference-link" href="Text/Block%20references.md">Block references</a> for how to paste the reference as a link or excerpt.
+
+A reference to several blocks uses two anchors. One marks the first block and the other marks the last. The reference includes both blocks and everything between them.
+
+#### Editing around anchors
+
+*   Pressing <kbd>Backspace</kbd> or <kbd>Delete</kbd> next to a chip skips the chip and deletes the adjacent text.
+*   If you split a line with <kbd>Enter</kbd>, the anchor stays on the first line.
+*   A chip on its own line marks the block below it, such as a code block. Keep the chip and block together. If you press <kbd>Enter</kbd> at the end of the chip's line, the editor inserts a new line above the chip.
+*   When you cut and paste text, its anchor moves with it. When you copy and paste it within the same note, references still point to the original because the copy has no anchor.
+*   A dimmed chip has no effect. For example, if a block has two anchors, only the first one counts.
+*   To remove an anchor, click its chip and choose _Remove reference_.
+
+The _Add link_ dialog lists the [anchors you name yourself](Text/Anchors.md). Reference anchors stay hidden from that list.
 
 ### Keyboard shortcuts
 
@@ -206,7 +229,7 @@ Since v0.108.0, the note is linked as soon as it is picked. A ¶ then follows th
 *   To keep the link to the whole note, press <kbd>Enter</kbd> on _Link to the whole note_, or press <kbd>Esc</kbd>. Pressing <kbd>Backspace</kbd> or typing a space right after the ¶ does the same.
 *   The ¶ is not part of the note. Text typed after it stays, unless a heading or an anchor is picked.
 
-Only <a class="reference-link" href="Text.md">Text</a> notes have headings and anchors to link to. A note created from the list is linked without this step. To skip it for every note, turn off _Suggest headings and anchors to link to_ under _Note auto-completion_ in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ → _Features_.
+You can link to headings and anchors in text and Markdown notes. A note created from the list is linked without this step. To skip it for every note, turn off _Suggest headings and anchors to link to_ under _Note auto-completion_ in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ → _Features_.
 
 Like slash commands, `@` and `[[` do nothing inside code blocks and inline code.
 
