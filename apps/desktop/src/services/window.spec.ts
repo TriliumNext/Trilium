@@ -16,6 +16,9 @@ const state = vi.hoisted(() => ({
     appVersion: "1.0.0",
     options: {} as Record<string, string>,
     optionBools: {} as Record<string, boolean>,
+    /** Whether `initStartupOptions()` has run; option reads throw until it has, as they do in core. */
+    startupOptionsCreated: true,
+    beccaLoaded: Promise.resolve() as Promise<void>,
     keyboardActions: [] as unknown[],
     log: { info: vi.fn(), error: vi.fn() },
     // captured IPC handlers
@@ -261,8 +264,14 @@ vi.mock("@triliumnext/core", async (importOriginal) => {
         options: {
             ...actual.options,
             getOption: (name: string) => state.options[name] ?? "",
-            getOptionBool: (name: string) => state.optionBools[name] ?? false
+            getOptionBool: (name: string) => {
+                if (!state.startupOptionsCreated) {
+                    throw new Error(`Option '${name}' doesn't exist`);
+                }
+                return state.optionBools[name] ?? false;
+            }
         },
+        becca_loader: { ...actual.becca_loader, get beccaLoaded() { return state.beccaLoaded; } },
         sql_init: { ...actual.sql_init, dbReady: Promise.resolve() },
         isSetupRequested: () => state.isSetupRequested,
         isNextBasedTheme: (theme: string) => [ "next", "next-light", "next-dark", "custom-on-next" ].includes(theme),
@@ -324,6 +333,8 @@ beforeEach(() => {
     state.appVersion = "1.0.0";
     state.options = { spellCheckLanguageCode: "en-US, de , " };
     state.optionBools = {};
+    state.startupOptionsCreated = true;
+    state.beccaLoaded = Promise.resolve();
     state.keyboardActions = [];
     state.windows = [];
     state.fromWebContentsResult = undefined;
@@ -1346,6 +1357,33 @@ describe("window service", () => {
             const cb = state.eventSubs.get("DB_INITIALIZED");
             if (!cb) throw new Error("no DB_INITIALIZED subscriber");
             await cb();
+            expect(setupWin.close).toHaveBeenCalled();
+        });
+
+        it("waits for the startup options before creating the main window", async () => {
+            await windowService.createSetupWindow();
+            const setupWin = state.windows[state.windows.length - 1];
+            const cb = state.eventSubs.get("DB_INITIALIZED");
+            if (!cb) throw new Error("no DB_INITIALIZED subscriber");
+
+            // A database created for sync has no `spellCheckEnabled` row until the becca load runs
+            // `initStartupOptions()`, which happens after `DB_INITIALIZED` is emitted.
+            state.startupOptionsCreated = false;
+            let finishBeccaLoad = () => {};
+            state.beccaLoaded = new Promise<void>((resolve) => {
+                finishBeccaLoad = () => {
+                    state.startupOptionsCreated = true;
+                    resolve();
+                };
+            });
+
+            const swap = cb();
+            await Promise.resolve();
+            expect(setupWin.close).not.toHaveBeenCalled();
+
+            finishBeccaLoad();
+            await swap;
+            expect(state.log.error).not.toHaveBeenCalled();
             expect(setupWin.close).toHaveBeenCalled();
         });
 
