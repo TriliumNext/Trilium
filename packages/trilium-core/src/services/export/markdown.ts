@@ -49,7 +49,17 @@ const fencedCodeBlockFilter: Rule = {
         const className = node.firstChild.getAttribute("class") || "";
         const language = rewriteLanguageTag((className.match(/language-(\S+)/) || [null, ""])[1]);
 
-        return `\n\n${options.fence}${language}\n${node.firstChild.textContent}\n${options.fence}\n\n`;
+        // A fence closes on a line starting with at least as many fence characters, so the fence
+        // has to be longer than any such run in the code, as Turndown's own rule does.
+        const code = node.firstChild.textContent ?? "";
+        const fenceChar = options.fence?.charAt(0) || "`";
+        let fenceSize = 3;
+        for (const [ run ] of code.matchAll(new RegExp(`^ {0,3}(?:\\${fenceChar}){3,}`, "gm"))) {
+            fenceSize = Math.max(fenceSize, run.trimStart().length + 1);
+        }
+        const fence = fenceChar.repeat(fenceSize);
+
+        return `\n\n${fence}${language}\n${code}\n${fence}\n\n`;
     }
 };
 
