@@ -108,6 +108,8 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     apiRoute(PUT, "/api/notes/:noteId/data", notesApiRoute.updateNoteData);
     apiRoute(GET, "/api/notes/:noteId/blocks", notesApiRoute.getNoteBlocks);
     apiRoute(PUT, "/api/notes/:noteId/blocks", notesApiRoute.updateNoteBlocks);
+    asyncApiRoute(GET, "/api/notes/:noteId/references", notesApiRoute.getNoteReferences);
+    apiRoute(PST, "/api/notes/:noteId/references", notesApiRoute.createNoteReference);
     apiRoute(DEL, "/api/notes/:noteId", notesApiRoute.deleteNote);
     apiRoute(PUT, "/api/notes/:noteId/undelete", notesApiRoute.undeleteNote);
     apiRoute(PST, "/api/notes/:noteId/revision", notesApiRoute.forceSaveRevision);
@@ -263,6 +265,7 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     // Answering a tool call is here: it reaches the turn by its stream id, whichever
     // transport streams it.
     asyncApiRoute(PST, "/api/llm-chat/provider-models", llmRoute.getProviderModels);
+    asyncApiRoute(PST, "/api/llm-chat/test-search-provider", llmRoute.testSearchProvider);
     apiRoute(PST, "/api/llm-chat/tool-approval", llmRoute.answerToolCall);
 
     apiRoute(GET, "/api/autocomplete", autocompleteApiRoute.getAutocomplete);

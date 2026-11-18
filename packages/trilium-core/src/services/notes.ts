@@ -943,8 +943,8 @@ function findMarkdownInternalLinks(content: string, foundLinks: FoundLink[]) {
         });
     }
 
-    // [[noteId]] wiki-links
-    const wikiLinkRe = /\[\[([a-zA-Z0-9_]+)\]\]/g;
+    // [[noteId]] or [[noteId?query]] wiki-links
+    const wikiLinkRe = /\[\[([a-zA-Z0-9_]+)(?:\?[^[\]]*)?\]\]/g;
 
     while ((match = wikiLinkRe.exec(content))) {
         foundLinks.push({

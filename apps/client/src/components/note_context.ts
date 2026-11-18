@@ -190,7 +190,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
     /** @returns the note context that ended up showing the note: usually `this`, or a new tab when a pinned tab redirected the navigation. `undefined` if nothing was navigated. */
     async setNote(inputNotePath: string | undefined, opts: SetNoteOpts = {}): Promise<NoteContext | undefined> {
         opts.triggerSwitchEvent = opts.triggerSwitchEvent !== undefined ? opts.triggerSwitchEvent : true;
-        // Readers like `revealBlockReference()` change the scope, so the context keeps a copy.
+        // Readers like `consumeBlockReference()` change the scope, so the context keeps a copy.
         const viewScope: ViewScope = {
             ...opts.viewScope,
             viewMode: opts.viewScope?.viewMode || "default"

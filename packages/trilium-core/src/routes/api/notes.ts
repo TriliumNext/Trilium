@@ -1,4 +1,8 @@
-import { type AttributeRow, type CreateChildrenResponse, type DeleteNotesPreview, isNoteType, type MetadataResponse } from "@triliumnext/commons";
+import {
+    type AttributeRow, type CreateChildrenResponse, type CreateReferenceRequest,
+    type CreateReferenceResponse, type DeleteNotesPreview, isNoteType, type MetadataResponse,
+    type NoteReferencesResponse, REFERENCE_KINDS, type ReferenceKind
+} from "@triliumnext/commons";
 import { t } from "i18next";
 
 import type { Request } from "../../http_interface";
@@ -9,9 +13,11 @@ import eraseService from "../../services/erase.js";
 import { NotFoundError, ValidationError } from "../../errors.js";
 import becca from "../../becca/becca.js";
 import type BBranch from "../../becca/entities/bbranch.js";
+import type BNote from "../../becca/entities/bnote.js";
 import { getLog } from "../../services/log.js";
 import noteFormatConversionService from "../../services/note_format_conversion.js";
 import noteService from "../../services/notes.js";
+import { createReference, findReferenceTargets } from "../../services/references/index.js";
 import { getSql } from "../../services/sql/index";
 import TaskContext from "../../services/task_context.js";
 import treeService from "../../services/tree.js";
@@ -133,23 +139,52 @@ function updateNoteBlocks(req: Request<{ noteId: string }>) {
     noteService.updateNoteData(req.params.noteId, newContent, attachments);
 }
 
+/** The places inside a note that a link can point at, such as its headings and anchors. */
+async function getNoteReferences(req: Request<{ noteId: string }>) {
+    const note = becca.getNoteOrThrow(req.params.noteId);
+    return { targets: await findReferenceTargets(note) } satisfies NoteReferencesResponse;
+}
+
+/** Gives a target of a note a reference, unless it has one, and returns its link parameters. */
+function createNoteReference(req: Request<{ noteId: string }>) {
+    const request = parseReferenceRequest(req.body);
+    const note = becca.getNoteOrThrow(req.params.noteId);
+    return { params: createReference(note, request) } satisfies CreateReferenceResponse;
+}
+
+function parseReferenceRequest(body: unknown): CreateReferenceRequest {
+    const { kind, index, title } = (body ?? {}) as Record<string, unknown>;
+    if (!isReferenceKind(kind) || typeof index !== "number" || !Number.isSafeInteger(index)
+        || index < 0 || typeof title !== "string" || !title) {
+        throw new ValidationError("Expected the 'kind', the 'index' and the 'title' of a target.");
+    }
+    return { kind, index, title };
+}
+
+function isReferenceKind(value: unknown): value is ReferenceKind {
+    return REFERENCE_KINDS.some((kind) => kind === value);
+}
+
 function getBlockRangeRequest(req: Request<{ noteId: string }>) {
     const { block } = req.query;
     if (typeof block !== "string") {
         throw new ValidationError("Missing the 'block' parameter.");
     }
 
-    const note = becca.getNoteOrThrow(req.params.noteId);
-    const content = note.type === "text" && note.isContentAvailable() ? note.getContent() : null;
-    if (typeof content !== "string") {
-        throw new ValidationError(`Note '${note.noteId}' has no text content to edit.`);
-    }
-
-    return { content, block };
+    return { content: getTextContent(becca.getNoteOrThrow(req.params.noteId)), block };
 }
 
 function getBlockRangeError(noteId: string, block: string) {
     return `Blocks '${block}' of note '${noteId}' do not exist or cannot be edited apart.`;
+}
+
+/** The HTML of `note`, which must be a text note whose content is available. */
+function getTextContent(note: BNote) {
+    const content = note.type === "text" && note.isContentAvailable() ? note.getContent() : null;
+    if (typeof content !== "string") {
+        throw new ValidationError(`Note '${note.noteId}' has no text content available.`);
+    }
+    return content;
 }
 
 function deleteNote(req: Request<{ noteId: string }>) {
@@ -460,6 +495,8 @@ export default {
     updateNoteData,
     getNoteBlocks,
     updateNoteBlocks,
+    getNoteReferences,
+    createNoteReference,
     deleteNote,
     undeleteNote,
     createNote,

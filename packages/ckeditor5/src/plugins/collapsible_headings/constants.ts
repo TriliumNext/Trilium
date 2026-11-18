@@ -13,6 +13,11 @@ export const CLASSES = {
     selected: "trilium-heading-selected",
     /** A section heading whose arrow is under the pointer. */
     arrowHovered: "trilium-heading-arrow-hovered",
+    /**
+     * A heading whose last line has no text, because it is empty or ends with a line break. Its
+     * arrow stays at its end.
+     */
+    blankEnd: "trilium-heading-blank-end",
     /** A collapsed heading in content shown outside an editor. */
     collapsed: "trilium-heading-collapsed",
     /** A block hidden by a collapsed heading in content shown outside an editor. */

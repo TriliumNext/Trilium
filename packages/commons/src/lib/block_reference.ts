@@ -38,6 +38,14 @@ export function isValidBlockId(id: string | null | undefined): id is string {
     return !!id && !id.includes(":");
 }
 
+/** A new random block id, of letters and digits. */
+export function generateBlockId() {
+    const bytes = crypto.getRandomValues(new Uint8Array(BLOCK_ID_LENGTH));
+    const characters = Array.from(bytes, (byte) =>
+        BLOCK_ID_CHARACTERS[byte % BLOCK_ID_CHARACTERS.length]);
+    return characters.join("");
+}
+
 /** Parses the value of the `block` link parameter, `id` or `startId:endId`. */
 export function parseBlockRange(value: string | null | undefined): BlockRange | null {
     const ids = value?.split(":") ?? [];
@@ -160,6 +168,9 @@ export function getListItemNumber(list: BlockNode, index: number) {
     const first = Number.isNaN(start) ? (isReversed ? itemCount : 1) : start;
     return isReversed ? first - index : first + index;
 }
+
+const BLOCK_ID_LENGTH = 12;
+const BLOCK_ID_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
 const RUN_CONTAINERS = new Set([
     "ASIDE", "BLOCKQUOTE", "DETAILS", "DIV", "LI", "OL", "SECTION", "UL"

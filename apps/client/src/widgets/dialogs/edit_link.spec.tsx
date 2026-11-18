@@ -1,19 +1,25 @@
-import type { RefObject } from "preact";
+import type {
+    CreateReferenceResponse, NoteReferencesResponse, ReferenceTarget
+} from "@triliumnext/commons";
+import { type RefObject, render } from "preact";
 import { act } from "preact/test-utils";
-import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
+import { beforeEach, describe, expect, it, type MockInstance, onTestFinished, vi } from "vitest";
 
+import appContext from "../../components/app_context";
 import Component from "../../components/component";
 import type { PageDetails } from "../../services/link_embed";
+import type { LinkTarget } from "../../services/link_targets";
 import type { Suggestion } from "../../services/note_autocomplete";
 import options from "../../services/options";
+import server from "../../services/server";
+import toast from "../../services/toast";
 import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import Modal from "../react/Modal";
 import type { NoteAutocompleteHandle } from "../react/NoteAutocomplete";
 import { ParentComponent } from "../react/react_utils";
 import EditLinkDialog, {
-    EditLinkBalloon, type EditLinkOpts, getShownDisplay, getWebLinkError, type LinkHeading,
-    normalizeWebLink
+    EditLinkBalloon, type EditLinkOpts, getShownDisplay, getWebLinkError, normalizeWebLink
 } from "./edit_link";
 
 const autocomplete = vi.hoisted(() => ({
@@ -57,11 +63,37 @@ vi.mock("../react/NoteAutocomplete", () => ({
     }
 }));
 
+/** What `GET notes/:noteId/references` answers, by note id. A note not listed has nothing. */
+const noteReferences = new Map<string, NoteReferencesResponse | Promise<NoteReferencesResponse>>();
+const { get: serverGet } = server;
+let createHeadingReference: MockInstance<typeof server.postWithSilentErrors>;
+
 beforeEach(() => {
     fetchPageDetails.mockReset();
     options.set("textNoteLinkTitleRetrievalEnabled", "false");
     options.set("textNoteLinkDetailsRetrievalEnabled", "false");
+
+    noteReferences.clear();
+    vi.spyOn(server, "get").mockImplementation((async (url: string) => {
+        const noteId = /^notes\/(\w+)\/references$/.exec(url)?.[1];
+        if (!noteId) return serverGet(url);
+        return noteReferences.get(noteId) ?? { targets: [] };
+    }) as typeof server.get);
+    createHeadingReference = vi.spyOn(server, "postWithSilentErrors")
+        .mockResolvedValue({ params: { block: "NewId" } } satisfies CreateReferenceResponse);
 });
+
+/** A heading as the server lists it, with the block id `block` when it has one. */
+function headingTarget(title: string, level: number, block?: string): ReferenceTarget {
+    return block
+        ? { kind: "heading", title, level, params: { block } }
+        : { kind: "heading", title, level };
+}
+
+/** An anchor as the server lists it. */
+function anchorTarget(name: string): ReferenceTarget {
+    return { kind: "anchor", title: name, params: { bookmark: name } };
+}
 
 describe("normalizeWebLink", () => {
     it("adds https:// to an address without a scheme, and keeps any other scheme", () => {
@@ -173,7 +205,9 @@ describe("EditLinkDialog", () => {
     }
 
     function anchorRows() {
-        return [ ...container.querySelectorAll<HTMLElement>(".edit-link-anchors .tn-card-choice") ];
+        return [ ...container.querySelectorAll<HTMLElement>(
+            ".link-target-anchor .tn-card-choice"
+        ) ];
     }
 
     function checkedAnchor() {
@@ -181,7 +215,9 @@ describe("EditLinkDialog", () => {
     }
 
     function headingRows() {
-        return [ ...container.querySelectorAll<HTMLElement>(".edit-link-headings .tn-card-choice") ];
+        return [ ...container.querySelectorAll<HTMLElement>(
+            ".link-target-heading .tn-card-choice"
+        ) ];
     }
 
     function checkedHeading() {
@@ -192,6 +228,48 @@ describe("EditLinkDialog", () => {
         const expander = headingRows()[index]?.querySelector<HTMLElement>(".tn-card-choice-expander");
         if (!expander) throw new Error(`The heading ${index} has no expander.`);
         await act(async () => expander.click());
+    }
+
+    function button() {
+        return container.querySelector<HTMLButtonElement>(".modal-footer button");
+    }
+
+    /** The box of the note page that lists where in the note picked the link can point. */
+    function noteTargets() {
+        return container.querySelector<HTMLElement>(".edit-link-note-targets");
+    }
+
+    function noteRows() {
+        return [ ...noteTargets()?.querySelectorAll<HTMLElement>(".tn-card-choice") ?? [] ];
+    }
+
+    /** The choices of the note page, by their text, the checked one marked with a `*`. */
+    function noteChoices() {
+        return noteRows().map((row) => {
+            const mark = row.getAttribute("aria-checked") === "true" ? "*" : "";
+            return `${mark}${row.textContent}`;
+        });
+    }
+
+    async function checkNoteChoice(text: string) {
+        const row = noteRows().find((choice) => choice.textContent === text);
+        if (!row) throw new Error(`The note page lists no '${text}'.`);
+        await act(async () => row.click());
+    }
+
+    /** Picks the note at `notePath` on the note page, and waits for its headings and anchors. */
+    async function pickNote(notePath: string) {
+        await act(async () => autocomplete.onChange?.({ notePath }));
+        await settle();
+    }
+
+    /** Submits the form without the dialog hiding, as when the link is refused. */
+    async function requestSubmit() {
+        await act(async () => {
+            container.querySelector("form")
+                ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+        });
+        await settle();
     }
 
     function displays() {
@@ -215,6 +293,27 @@ describe("EditLinkDialog", () => {
             form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
             modal.dispatchEvent(new Event("hidden.bs.modal"));
         });
+    }
+
+    /** Submits a link to a heading the server gives a block id first, then hides the dialog. */
+    async function submitWithReference() {
+        await requestSubmit();
+        await act(async () => {
+            container.querySelector(".modal")?.dispatchEvent(new Event("hidden.bs.modal"));
+        });
+    }
+
+    /**
+     * Opens the dialog once Bootstrap has run out the transitions of the last one on its timers,
+     * whose late `hidden.bs.modal` would otherwise close the dialog just opened.
+     */
+    async function reopen(opts: Partial<EditLinkOpts> = {}) {
+        await waitForTransitions();
+        await open(opts);
+    }
+
+    function waitForTransitions() {
+        return act(() => new Promise((resolve) => setTimeout(resolve, 50)));
     }
 
     it("inserts a typed web link, titled by its URL unless given a text", async () => {
@@ -291,7 +390,7 @@ describe("EditLinkDialog", () => {
         expect(addLink).toHaveBeenLastCalledWith(path, "some words");
 
         await open({ text: "", hasSelection: true });
-        await act(async () => autocomplete.onChange?.({ notePath: path }));
+        await pickNote(path);
         await submit();
         expect(addLink).toHaveBeenLastCalledWith(path, "Target");
     });
@@ -342,12 +441,14 @@ describe("EditLinkDialog", () => {
     });
 
     it("edits a link with its own text, keeping that text and its anchor", async () => {
-        const note = buildNote({ title: "Target", "#internalBookmark": "part" });
+        const note = buildNote({ title: "Target" });
+        noteReferences.set(note.noteId, { targets: [ anchorTarget("part") ] });
         const edited = {
             currentLink: { notePath: `root/${note.noteId}` }, currentTitle: "See there"
         };
         await open({ ...edited, currentBookmark: "part" });
-        await vi.waitFor(() => expect(container.querySelector("select")?.value).toBe("part"));
+        await settle();
+        expect(noteChoices()).toStrictEqual([ "add_link.top_of_note", "*part" ]);
         expect(field("text")?.value).toBe("See there");
         await submit();
         expect(addLink).toHaveBeenLastCalledWith(`root/${note.noteId}?bookmark=part`, "See there");
@@ -375,20 +476,25 @@ describe("EditLinkDialog", () => {
     });
 
     it("edits only the title of an attachment link, mirroring the attachment's title", async () => {
-        const note = buildNote({ title: "Owner", "#internalBookmark": "part" });
+        const note = buildNote({ title: "Owner" });
         await open({ currentLink: { notePath: `root/${note.noteId}` } });
-        await vi.waitFor(() => expect(container.querySelector("select")).not.toBeNull());
+        await settle();
+        expect(noteChoices()).toStrictEqual([ "*add_link.top_of_note" ]);
         await submit();
+        vi.mocked(server.get).mockClear();
 
         const path = `root/${note.noteId}?viewMode=attachments&attachmentId=abc123`;
-        await open({ currentLink: { notePath: path }, currentTitle: "The file", anchors: [ "x" ] });
+        await reopen({
+            currentLink: { notePath: path }, currentTitle: "The file", anchors: [ "x" ]
+        });
         await act(async () => {
             container.querySelector(".modal")?.dispatchEvent(new Event("shown.bs.modal"));
             await new Promise((resolve) => setTimeout(resolve));
         });
         expect(choice()).toStrictEqual([]);
         expect(container.querySelector(".note-autocomplete")).toBeNull();
-        expect(container.querySelector("select")).toBeNull();
+        expect(noteTargets()).toBeNull();
+        expect(server.get).not.toHaveBeenCalled();
         expect(field("text")?.value).toBe("The file");
         expect(field("text")?.placeholder).toBe("add_link.title_from_attachment");
         expect(document.activeElement).toBe(field("text"));
@@ -396,7 +502,7 @@ describe("EditLinkDialog", () => {
         await submit();
         expect(addLink).toHaveBeenLastCalledWith(path, "Report");
 
-        await open({ currentLink: { notePath: path }, currentTitle: "The file" });
+        await reopen({ currentLink: { notePath: path }, currentTitle: "The file" });
         await type(field("text"), "");
         await submit();
         expect(addLink).toHaveBeenLastCalledWith(path, null);
@@ -421,7 +527,6 @@ describe("EditLinkDialog", () => {
     });
 
     it("enables its button only once the side shown has a note, an address or an anchor", async () => {
-        const button = () => container.querySelector<HTMLButtonElement>(".modal-footer button");
         await open({ anchors: [ "intro" ] });
         expect(button()?.disabled).toBe(true);
         const note = buildNote({ title: "Note" });
@@ -444,7 +549,8 @@ describe("EditLinkDialog", () => {
     });
 
     it("keeps the state of each page while another is shown, and applies the page shown", async () => {
-        const note = buildNote({ title: "Target", "#internalBookmark": "part" });
+        const note = buildNote({ title: "Target" });
+        noteReferences.set(note.noteId, { targets: [ anchorTarget("part") ] });
         const path = `root/${note.noteId}`;
         const noteField = () => container.querySelector<HTMLInputElement>(".note-autocomplete");
 
@@ -460,16 +566,8 @@ describe("EditLinkDialog", () => {
         );
 
         await open({ anchors: [ "intro" ] });
-        await act(async () => autocomplete.onChange?.({ notePath: path }));
-        const bookmark = await vi.waitFor(() => {
-            const select = container.querySelector("select");
-            if (!select) throw new Error("The note page offers no anchor.");
-            return select;
-        });
-        await act(async () => {
-            bookmark.value = "part";
-            bookmark.dispatchEvent(new Event("change", { bubbles: true }));
-        });
+        await pickNote(path);
+        await checkNoteChoice("part");
         await type(field("text"), "Note text");
 
         await act(async () => choice()[0]?.click());
@@ -486,6 +584,7 @@ describe("EditLinkDialog", () => {
         await act(async () => choice()[1]?.click());
         expect([ noteField()?.value, noteField()?.dataset.notePath, field("text")?.value ])
             .toStrictEqual([ "Target", path, "Note text" ]);
+        expect(noteChoices()).toStrictEqual([ "add_link.top_of_note", "*part" ]);
         await act(async () => choice()[0]?.click());
         expect([ field("url")?.value, field("text")?.value ])
             .toStrictEqual([ "exa mple.com", "Web text" ]);
@@ -883,7 +982,7 @@ describe("EditLinkDialog", () => {
         expect(headings()).toStrictEqual([ "add_link.target_anchor" ]);
         const titleCard = field("text")?.closest(".tn-card");
         expect(titleCard?.nextElementSibling?.matches(".edit-link-targets")).toBe(true);
-        expect(titleCard?.nextElementSibling?.firstElementChild?.matches(".edit-link-anchors"))
+        expect(titleCard?.nextElementSibling?.firstElementChild?.matches(".link-target-anchor"))
             .toBe(true);
         expect(anchorRows().map((row) => row.textContent)).toStrictEqual([ "intro", "outro" ]);
         expect(anchorRows().every((row) => row.querySelector(".tn-card-choice-icon.bx-bookmark")))
@@ -943,7 +1042,7 @@ describe("EditLinkDialog", () => {
         await act(async () => choice()[2]?.click());
         expect(headings()).toStrictEqual([ "add_link.headings", "add_link.target_anchor" ]);
         expect(container.querySelector(".edit-link-targets")?.firstElementChild
-            ?.matches(".edit-link-headings")).toBe(true);
+            ?.matches(".link-target-heading")).toBe(true);
         // Sub-headings start collapsed.
         expect(headingRows().map((row) => row.textContent)).toStrictEqual([ "Intro", "Usage" ]);
         await toggleHeading(0);
@@ -1056,6 +1155,329 @@ describe("EditLinkDialog", () => {
         await vi.waitFor(() => {
             expect(container.querySelector(".edit-link-targets")?.scrollTop).toBe(300);
         });
+    });
+
+    it("lists where in the note picked a link can point, from the top of the note", async () => {
+        const note = buildNote({ title: "Target" });
+        const path = `root/${note.noteId}`;
+        const references = deferred<NoteReferencesResponse>();
+        noteReferences.set(note.noteId, references.promise);
+
+        await open();
+        expect(field("text")?.closest(".tn-card")?.nextElementSibling).toBe(noteTargets());
+        expect(noteTargets()?.querySelector(".no-items .bx-bookmark")).not.toBeNull();
+        expect(noteTargets()?.textContent).toBe("add_link.select_note_for_targets");
+        expect(server.get).not.toHaveBeenCalled();
+
+        await pickNote(path);
+        expect(server.get).toHaveBeenCalledExactlyOnceWith(
+            `notes/${note.noteId}/references`, undefined, false, { silentBadRequest: true }
+        );
+        expect(noteTargets()?.getAttribute("role")).toBe("status");
+        expect(noteTargets()?.querySelector(".no-items .bx-loader.bx-spin")).not.toBeNull();
+        expect(noteTargets()?.textContent).toBe("add_link.inspecting_note");
+        expect(button()?.disabled).toBe(false);
+
+        references.resolve({
+            targets: [
+                headingTarget("Setup", 2), headingTarget("Linux", 3, "L"),
+                headingTarget("Usage", 2), anchorTarget("alpha"), anchorTarget("zeta")
+            ]
+        });
+        await settle();
+        expect(noteTargets()?.getAttribute("role")).toBeNull();
+        expect(headings()).toStrictEqual([ "add_link.link_to_heading", "add_link.link_to_anchor" ]);
+        expect(noteTargets()?.querySelector(".no-items")).toBeNull();
+        expect(noteTargets()?.firstElementChild?.matches(".link-target-whole-note")).toBe(true);
+        expect(noteTargets()?.querySelector(".link-target-whole-note .bx-arrow-to-top"))
+            .not.toBeNull();
+        // Sub-headings start collapsed.
+        expect(noteChoices())
+            .toStrictEqual([ "*add_link.top_of_note", "Setup", "Usage", "alpha", "zeta" ]);
+        const expander = noteRows()[1]?.querySelector<HTMLElement>(".tn-card-choice-expander");
+        await act(async () => expander?.click());
+        expect(noteChoices()).toContain("Linux");
+
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(path, null);
+        expect(createHeadingReference).not.toHaveBeenCalled();
+    });
+
+    it("links a heading or an anchor of the note picked, giving a heading a block id", async () => {
+        const note = buildNote({ title: "Target" });
+        const path = `root/${note.noteId}`;
+        noteReferences.set(note.noteId, {
+            targets: [
+                headingTarget("Setup", 2), headingTarget("Usage", 2, "U"), anchorTarget("a b")
+            ]
+        });
+
+        await open();
+        await pickNote(path);
+        await checkNoteChoice("Usage");
+        expect(noteChoices()).toStrictEqual([ "add_link.top_of_note", "Setup", "*Usage", "a b" ]);
+        expect(field("text")?.placeholder).toBe("add_link.title_from_heading");
+        await submit();
+        expect(createHeadingReference).not.toHaveBeenCalled();
+        expect(addLink).toHaveBeenLastCalledWith(`${path}?block=U`, null);
+
+        await reopen();
+        await pickNote(path);
+        await checkNoteChoice("Setup");
+        await submitWithReference();
+        expect(createHeadingReference).toHaveBeenCalledExactlyOnceWith(
+            `notes/${note.noteId}/references`,
+            { kind: "heading", index: 0, title: "Setup" }
+        );
+        expect(addLink).toHaveBeenLastCalledWith(`${path}?block=NewId`, null);
+
+        await reopen();
+        await pickNote(path);
+        await checkNoteChoice("a b");
+        expect(field("text")?.placeholder).toBe("add_link.title_from_note");
+        await type(field("text"), "See there");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(`${path}?bookmark=a%20b`, "See there");
+
+        // A selection without text of its own takes the heading's.
+        await reopen({ text: "", hasSelection: true });
+        await pickNote(path);
+        await checkNoteChoice("Usage");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(`${path}?block=U`, "Usage");
+        expect(createHeadingReference).toHaveBeenCalledOnce();
+    });
+
+    it("stays open with a toast when the heading's block id cannot be created", async () => {
+        const showError = vi.spyOn(toast, "showError").mockImplementation(() => {});
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+        onTestFinished(() => {
+            showError.mockRestore();
+            consoleError.mockRestore();
+        });
+        const note = buildNote({ title: "Target" });
+        const path = `root/${note.noteId}`;
+        noteReferences.set(note.noteId, {
+            targets: [ headingTarget("Setup", 2) ]
+        });
+
+        await open();
+        await pickNote(path);
+        await checkNoteChoice("Setup");
+        const created = deferred<CreateReferenceResponse>();
+        createHeadingReference.mockReturnValueOnce(created.promise);
+        await requestSubmit();
+        expect(button()?.disabled).toBe(true);
+        // Another submit while the server works sends nothing more.
+        await requestSubmit();
+        expect(createHeadingReference).toHaveBeenCalledOnce();
+
+        created.reject("{\"message\":\"The headings changed\"}");
+        await settle();
+        expect(showError).toHaveBeenCalledExactlyOnceWith("add_link.heading_reference_failed");
+        expect(addLink).not.toHaveBeenCalled();
+        expect(noteChoices()).toStrictEqual([ "add_link.top_of_note", "*Setup" ]);
+        expect(button()?.disabled).toBe(false);
+
+        await submitWithReference();
+        expect(createHeadingReference).toHaveBeenCalledTimes(2);
+        expect(addLink).toHaveBeenCalledExactlyOnceWith(`${path}?block=NewId`, null);
+
+        // A dialog closed while the server works applies nothing, then or when it next closes.
+        const late = deferred<CreateReferenceResponse>();
+        createHeadingReference.mockReturnValueOnce(late.promise);
+        await reopen();
+        await pickNote(path);
+        await checkNoteChoice("Setup");
+        await requestSubmit();
+        await act(async () => {
+            container.querySelector(".modal")?.dispatchEvent(new Event("hidden.bs.modal"));
+        });
+        await waitForTransitions();
+        late.resolve({ params: { block: "Late" } });
+        await settle();
+        await open();
+        await pickNote(path);
+        await act(async () => {
+            container.querySelector(".modal")?.dispatchEvent(new Event("hidden.bs.modal"));
+        });
+        expect(addLink).toHaveBeenCalledOnce();
+        expect(showError).toHaveBeenCalledOnce();
+
+        // Nor does one whose server answers while it fades out.
+        const fading = deferred<CreateReferenceResponse>();
+        createHeadingReference.mockReturnValueOnce(fading.promise);
+        await reopen();
+        await pickNote(path);
+        await checkNoteChoice("Setup");
+        await requestSubmit();
+        const modal = container.querySelector(".modal");
+        await act(async () => {
+            modal?.dispatchEvent(new Event("hide.bs.modal"));
+        });
+        fading.resolve({ params: { block: "Fading" } });
+        await settle();
+        await act(async () => {
+            modal?.dispatchEvent(new Event("hidden.bs.modal"));
+        });
+        expect(createHeadingReference).toHaveBeenCalledTimes(4);
+        expect(addLink).toHaveBeenCalledOnce();
+    });
+
+    it("has the editors of the note save before the heading gets its block id", async () => {
+        const note = buildNote({ title: "Target" });
+        const path = `root/${note.noteId}`;
+        noteReferences.set(note.noteId, {
+            targets: [ headingTarget("Setup", 2) ]
+        });
+        const saved = deferred<void>();
+        const { triggerEvent } = appContext;
+        const trigger = vi.spyOn(appContext, "triggerEvent").mockImplementation(((name, data) => {
+            if (name === "saveNoteChanges") return saved.promise;
+            return triggerEvent.call(appContext, name, data);
+        }) as typeof appContext.triggerEvent);
+        onTestFinished(() => trigger.mockRestore());
+
+        await open();
+        await pickNote(path);
+        await checkNoteChoice("Setup");
+        await requestSubmit();
+        expect(trigger).toHaveBeenCalledWith("saveNoteChanges", { noteId: note.noteId });
+        expect(createHeadingReference).not.toHaveBeenCalled();
+
+        saved.resolve();
+        await settle();
+        await act(async () => {
+            container.querySelector(".modal")?.dispatchEvent(new Event("hidden.bs.modal"));
+        });
+        expect(createHeadingReference).toHaveBeenCalledOnce();
+        expect(addLink).toHaveBeenCalledExactlyOnceWith(`${path}?block=NewId`, null);
+    });
+
+    it("applies the heading submitted, though another is checked while it waits", async () => {
+        const note = buildNote({ title: "Target" });
+        const path = `root/${note.noteId}`;
+        noteReferences.set(note.noteId, {
+            targets: [ headingTarget("Setup", 2), headingTarget("Usage", 2) ]
+        });
+
+        await open();
+        await pickNote(path);
+        await checkNoteChoice("Setup");
+        const created = deferred<CreateReferenceResponse>();
+        createHeadingReference.mockReturnValueOnce(created.promise);
+        await requestSubmit();
+        await checkNoteChoice("Usage");
+        created.resolve({ params: { block: "SetupId" } });
+        await settle();
+        await act(async () => {
+            container.querySelector(".modal")?.dispatchEvent(new Event("hidden.bs.modal"));
+        });
+        expect(createHeadingReference).toHaveBeenCalledExactlyOnceWith(
+            `notes/${note.noteId}/references`,
+            { kind: "heading", index: 0, title: "Setup" }
+        );
+        expect(addLink).toHaveBeenCalledExactlyOnceWith(`${path}?block=SetupId`, null);
+    });
+
+    it("lists the editor's headings and anchors when the edited note is picked", async () => {
+        const note = buildNote({ title: "Here" });
+        const intro = createHeading("Intro", 2);
+        await open({ noteId: note.noteId, headings: [ intro ], anchors: [ "top" ] });
+        await pickNote(`root/${note.noteId}`);
+        expect(server.get).not.toHaveBeenCalled();
+        expect(noteChoices()).toStrictEqual([ "*add_link.top_of_note", "Intro", "top" ]);
+
+        await checkNoteChoice("Intro");
+        await submit();
+        expect(createHeadingReference).not.toHaveBeenCalled();
+        expect(intro.createLinkPath).toHaveBeenCalledOnce();
+        expect(addLink).toHaveBeenLastCalledWith("root/note?block=Intro", null);
+    });
+
+    it("opens an edited link on its heading or anchor, keeping a target not listed", async () => {
+        const note = buildNote({ title: "Target" });
+        const path = `root/${note.noteId}`;
+        noteReferences.set(note.noteId, new Promise(() => {}));
+        // Saved before the list arrives, the link keeps its heading.
+        await open({ currentLink: { notePath: `${path}?block=L` } });
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(`${path}?block=L`, null);
+
+        noteReferences.set(note.noteId, {
+            targets: [
+                headingTarget("Setup", 2), headingTarget("Linux", 3, "L"),
+                headingTarget("Usage", 2), anchorTarget("part")
+            ]
+        });
+        // The headings above the heading of the link are expanded.
+        await reopen({ currentLink: { notePath: `${path}?block=L` } });
+        await settle();
+        expect(noteChoices())
+            .toStrictEqual([ "add_link.top_of_note", "Setup", "*Linux", "Usage", "part" ]);
+        expect(field("text")?.placeholder).toBe("add_link.title_from_heading");
+        await checkNoteChoice("add_link.top_of_note");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(path, null);
+
+        await reopen({ currentLink: { notePath: path }, currentBookmark: "part" });
+        await settle();
+        expect(noteChoices()).toContain("*part");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(`${path}?bookmark=part`, null);
+
+        // A link to a block that is not a heading, or to a range of blocks, checks nothing.
+        for (const block of [ "P", "L:P" ]) {
+            await reopen({ currentLink: { notePath: `${path}?block=${block}` } });
+            await settle();
+            expect(noteChoices().filter((choice) => choice.startsWith("*"))).toStrictEqual([]);
+            await submit();
+            expect(addLink).toHaveBeenLastCalledWith(`${path}?block=${block}`, null);
+        }
+        expect(createHeadingReference).not.toHaveBeenCalled();
+    });
+
+    it("reads the list again for another note, asking nothing of a protected note", async () => {
+        const first = buildNote({ title: "First" });
+        const second = buildNote({ title: "Second" });
+        const firstReferences = deferred<NoteReferencesResponse>();
+        noteReferences.set(first.noteId, firstReferences.promise);
+        noteReferences.set(second.noteId, {
+            targets: [ headingTarget("Second heading", 2) ]
+        });
+
+        await open();
+        await pickNote(`root/${first.noteId}`);
+        await pickNote(`root/${second.noteId}`);
+        await checkNoteChoice("Second heading");
+        // The list of the first note, arriving late, does not replace it.
+        firstReferences.resolve({
+            targets: [ headingTarget("First heading", 2) ]
+        });
+        await settle();
+        expect(noteChoices()).toStrictEqual([ "add_link.top_of_note", "*Second heading" ]);
+
+        await act(async () => autocomplete.onChange?.({ notePath: `root/${first.noteId}` }));
+        expect(noteTargets()?.textContent).toBe("add_link.inspecting_note");
+        await settle();
+        expect(noteChoices()).toStrictEqual([ "*add_link.top_of_note", "First heading" ]);
+
+        // The server lists nothing for a note type without targets.
+        vi.mocked(server.get).mockClear();
+        const code = buildNote({ title: "Code", type: "code" });
+        const secret = buildNote({ title: "Secret" });
+        secret.isProtected = true;
+        for (const other of [ code, secret ]) {
+            await pickNote(`root/${other.noteId}`);
+            expect(noteChoices()).toStrictEqual([ "*add_link.top_of_note" ]);
+            // A placeholder takes the place of the headings and anchors.
+            const placeholder = noteTargets()?.querySelector(".link-target-whole-note + .no-items");
+            expect(placeholder?.textContent).toBe("add_link.no_link_targets");
+            expect(placeholder?.querySelector(".bx-bookmark")).not.toBeNull();
+        }
+        expect(server.get).toHaveBeenCalledExactlyOnceWith(
+            `notes/${code.noteId}/references`, undefined, false, { silentBadRequest: true }
+        );
     });
 });
 
@@ -1202,11 +1624,57 @@ describe("EditLinkBalloon", () => {
         await submit(form);
         expect(onClose).toHaveBeenCalledOnce();
 
-        const row = form.querySelector<HTMLElement>(".edit-link-anchors .tn-card-choice");
+        const row = form.querySelector<HTMLElement>(".link-target-anchor .tn-card-choice");
         await act(async () => row?.click());
         await submit(form);
         expect(onClose).toHaveBeenCalledTimes(2);
         expect(addLink).toHaveBeenLastCalledWith("#intro", "intro", true);
+    });
+
+    it("creates a heading's block id before closing, and applies nothing once closed", async () => {
+        const note = buildNote({ title: "Target" });
+        const path = `root/${note.noteId}`;
+        noteReferences.set(note.noteId, {
+            targets: [ headingTarget("Setup", 2) ]
+        });
+
+        async function showOnHeading() {
+            const form = await show({ currentLink: { notePath: path } });
+            await settle();
+            const rows = form.querySelectorAll<HTMLElement>(
+                ".edit-link-note-targets .tn-card-choice"
+            );
+            const row = [ ...rows ].find((choice) => choice.textContent === "Setup");
+            if (!row) throw new Error("The note page lists no heading.");
+            await act(async () => row.click());
+            return form;
+        }
+
+        const form = await showOnHeading();
+        const created = deferred<CreateReferenceResponse>();
+        createHeadingReference.mockReturnValueOnce(created.promise);
+        await submit(form);
+        expect(onClose).not.toHaveBeenCalled();
+        expect(form.querySelector<HTMLButtonElement>(".edit-link-actions button")?.disabled)
+            .toBe(true);
+        await submit(form);
+        expect(createHeadingReference).toHaveBeenCalledOnce();
+        created.resolve({ params: { block: "NewId" } });
+        await settle();
+        expect(onClose).toHaveBeenCalledOnce();
+        expect(addLink).toHaveBeenCalledExactlyOnceWith(`${path}?block=NewId`, null);
+
+        const closed = await showOnHeading();
+        const late = deferred<CreateReferenceResponse>();
+        createHeadingReference.mockReturnValueOnce(late.promise);
+        await submit(closed);
+        const container = closed.parentElement;
+        if (!container) throw new Error("The balloon is not rendered.");
+        await act(async () => render(null, container));
+        late.resolve({ params: { block: "Late" } });
+        await settle();
+        expect(onClose).toHaveBeenCalledOnce();
+        expect(addLink).toHaveBeenCalledOnce();
     });
 
     it("applies a card on Enter in its description, but not mid-composition", async () => {
@@ -1236,10 +1704,11 @@ describe("EditLinkBalloon", () => {
 
 function createHeading(title: string, level: number) {
     return {
+        kind: "heading",
         title,
         level,
         createLinkPath: vi.fn(() => `root/note?block=${title}`)
-    } satisfies LinkHeading;
+    } satisfies LinkTarget;
 }
 
 async function type(input: HTMLInputElement | HTMLTextAreaElement | null, value: string) {
@@ -1272,11 +1741,15 @@ function nextFrame() {
     });
 }
 
-/** A promise, with the function that resolves it. */
+/** A promise, with the functions that settle it. */
 function deferred<T>() {
     let resolve: (value: T) => void = () => {};
-    const promise = new Promise<T>((done) => { resolve = done; });
-    return { promise, resolve };
+    let reject: (reason: unknown) => void = () => {};
+    const promise = new Promise<T>((done, fail) => {
+        resolve = done;
+        reject = fail;
+    });
+    return { promise, resolve, reject };
 }
 
 /** Waits a task, so that what a pending promise renders is in the DOM. */

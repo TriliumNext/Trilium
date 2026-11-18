@@ -614,6 +614,265 @@ Core note operations
 
     No content.
 
+### Get blocks of a text note
+
+`GET /api/notes/{noteId}/blocks` · `getNoteBlocks`
+
+The blocks of a text note that `block` points at, as their exact HTML source, so that an excerpt can edit them apart from the rest of the note. The range must be a run of whole sibling blocks. A run of list items comes inside a copy of its list, numbered as in the note.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `noteId`  <br>_required_ | `string`  <br>12-character note ID |
+
+**Query parameters**
+
+| Name | Description |
+| --- | --- |
+| `block`  <br>_required_ | `string`  <br>The block id of one block, or the ids of the first and the last block of a range joined with `:` |
+
+**Responses**
+
+=== "200: The HTML of the blocks"
+
+    *   `application/json`: `object`
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `content`  <br>_required_ | `string` |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "content": "<p data-trilium-block-id=\"eaJkN47U8kI4\">First paragraph</p>"
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "400: No `block` parameter, a note that is not a text note, or a protected note without a protected session"
+
+    No content.
+
+=== "404: The note or a block of the range does not exist, or the range is not a run of whole sibling blocks"
+
+    No content.
+
+### Replace blocks of a text note
+
+`PUT /api/notes/{noteId}/blocks` · `updateNoteBlocks`
+
+Replaces the blocks that `block` points at with `content` and saves the note as `PUT /api/notes/{noteId}/data` does, with a revision when one is due. The rest of the note keeps its bytes. Block ids in `content` that the note holds outside the range are removed. For a run of list items, `content` is a list: when its tag and `class` match the original list, its items replace the run and its other attributes apply to the whole list; otherwise the original list is split around `content`. `block` is the range as the note stores it before the change; once the blocks at its edges change, later requests use the new range.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `noteId`  <br>_required_ | `string`  <br>12-character note ID |
+
+**Query parameters**
+
+| Name | Description |
+| --- | --- |
+| `block`  <br>_required_ | `string`  <br>The block id of one block, or the ids of the first and the last block of a range joined with `:` |
+
+**Request body** (required)
+
+*   `application/json`: `object`
+
+<div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+<div class="trilium-multicolumn-column">
+
+| Property | Description |
+| --- | --- |
+| `content`  <br>_required_ | `string`  <br>The HTML of the blocks |
+| `attachments` | array of [`Attachment`](#schema-Attachment) |
+
+</div>
+<div class="trilium-multicolumn-column">
+
+```json
+{
+    "content": "<p data-trilium-block-id=\"eaJkN47U8kI4\">First paragraph</p>",
+    "attachments": [
+        {
+            "attachmentId": "string",
+            "ownerId": "string",
+            "role": "image",
+            "mime": "string",
+            "title": "string",
+            "blobId": "string",
+            "dateModified": "2025-02-14 08:19:59.203+0100",
+            "utcDateModified": "2025-02-13 07:42:47.698Z"
+        }
+    ]
+}
+```
+
+</div>
+</div>
+
+**Responses**
+
+=== "204: Blocks replaced"
+
+    No content.
+
+=== "400: No `block` parameter, no `content`, a note that is not a text note, or a protected note without a protected session"
+
+    No content.
+
+=== "404: The note or a block of the range does not exist, or the range is not a run of whole sibling blocks"
+
+    No content.
+
+### List the places inside a note that a link can point at
+
+`GET /api/notes/{noteId}/references` · `getNoteReferences`
+
+The targets of a note, such as the headings and anchors of a text note, in the order that the link lists show them, the targets of each kind together. A link points at a target by adding its `params` to the path of the note: a heading of a text note through `?block=` and its block id, an anchor through `?bookmark=`. A target without `params` needs a reference first, which `POST /api/notes/{noteId}/references` creates. Such a target is listed only when the note can take one. Titles are plain text, never HTML. A note whose type has no targets lists none.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `noteId`  <br>_required_ | `string`  <br>12-character note ID |
+
+**Responses**
+
+=== "200: The targets of the note"
+
+    *   `application/json`: [`NoteReferences`](#schema-NoteReferences)
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `targets`  <br>_required_ | array of [`ReferenceTarget`](#schema-ReferenceTarget) |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "targets": [
+            {
+                "kind": "heading",
+                "title": "Installation",
+                "level": 2,
+                "params": {
+                    "block": "eaJkN47U8kI4"
+                }
+            }
+        ]
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "400: A protected note without a protected session"
+
+    No content.
+
+=== "404: Note not found"
+
+    No content.
+
+### Give a target a reference
+
+`POST /api/notes/{noteId}/references` · `createNoteReference`
+
+Gives a target that `GET /api/notes/{noteId}/references` lists without `params` a reference, unless it has one, and returns the link parameters that point at it. The target is the one at `index` among the targets of its `kind` while its title is still `title`, otherwise the only target of that kind with that title. For a heading of a text note, the reference is a block id. Read-only notes get the reference too. It is the only change to the content, and no revision is saved.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `noteId`  <br>_required_ | `string`  <br>12-character note ID |
+
+**Request body** (required)
+
+*   `application/json`: `object`
+
+<div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+<div class="trilium-multicolumn-column">
+
+| Property | Description |
+| --- | --- |
+| `kind`  <br>_required_ | [`ReferenceKind`](#schema-ReferenceKind)  <br>The kind of a target, which sets how the link lists show it. One of `heading`, `anchor`. |
+| `index`  <br>_required_ | `integer`  <br>The position of the target among the targets of its kind |
+| `title`  <br>_required_ | `string`  <br>The title of the target at that position |
+
+</div>
+<div class="trilium-multicolumn-column">
+
+```json
+{
+    "kind": "heading",
+    "index": 0,
+    "title": "Installation"
+}
+```
+
+</div>
+</div>
+
+**Responses**
+
+=== "200: The link parameters of the target"
+
+    *   `application/json`: `object`
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `params`  <br>_required_ | [`ReferenceParams`](#schema-ReferenceParams)  <br>The parameters of a link that point at a target, not encoded |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "params": {
+            "block": "eaJkN47U8kI4"
+        }
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "400: A malformed request, a note whose targets take no reference, a protected note without a protected session, or a note whose content cannot be changed, such as a help page"
+
+    No content.
+
+=== "404: Note not found"
+
+    No content.
+
+=== "409: No target matches, because the targets changed since they were listed"
+
+    No content.
+
 ### Change note title
 
 `PUT /api/notes/{noteId}/title` · `updateNoteTitle`
@@ -7765,6 +8024,39 @@ Example: `2025-02-13 07:42:47.698Z`
 | `dateModified` | [`DateTime`](#schema-DateTime) |
 | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+
+### <a id="schema-ReferenceKind"></a>`ReferenceKind`
+
+The kind of a target, which sets how the link lists show it
+
+Type: `string`
+
+One of `heading`, `anchor`.
+
+Example: `heading`
+
+### <a id="schema-ReferenceParams"></a>`ReferenceParams`
+
+The parameters of a link that point at a target, not encoded
+
+Type: `object`
+
+Example: `[object Object]`
+
+### <a id="schema-ReferenceTarget"></a>`ReferenceTarget`
+
+| Property | Description |
+| --- | --- |
+| `kind`  <br>_required_ | [`ReferenceKind`](#schema-ReferenceKind)  <br>The kind of a target, which sets how the link lists show it. One of `heading`, `anchor`. |
+| `title`  <br>_required_ | `string`  <br>The plain text that the lists show |
+| `level` | `integer`  <br>For a kind that nests, the depth of the target, such as 2 for an `<h2>` |
+| `params` | [`ReferenceParams`](#schema-ReferenceParams)  <br>The link parameters that point at the target; absent while it needs a reference |
+
+### <a id="schema-NoteReferences"></a>`NoteReferences`
+
+| Property | Description |
+| --- | --- |
+| `targets`  <br>_required_ | array of [`ReferenceTarget`](#schema-ReferenceTarget) |
 
 ### <a id="schema-CreateNoteRequest"></a>`CreateNoteRequest`
 

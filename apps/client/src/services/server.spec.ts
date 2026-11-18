@@ -228,6 +228,19 @@ describe("ajax error handling", () => {
         expect(toastMock.showError).not.toHaveBeenCalled();
     });
 
+    it("stays silent on 409 from postWithSilentErrors, still rejecting with the body", async () => {
+        const responseText = JSON.stringify({ message: "The headings changed" });
+        (window as any).$.ajax = (opts: AjaxOptions) => {
+            opts.error({ status: 409, responseText });
+        };
+        await expect(server.postWithSilentErrors("url", {})).rejects.toBe(responseText);
+        expect(toastMock.showErrorTitleAndMessage).not.toHaveBeenCalled();
+        expect((window as any).logError).not.toHaveBeenCalled();
+
+        await expect(server.post("url", {})).rejects.toBe(responseText);
+        expect(toastMock.showErrorTitleAndMessage).toHaveBeenCalledOnce();
+    });
+
     it("reports validation errors (400) and still rejects when reportError throws", async () => {
         (window as any).$.ajax = (opts: AjaxOptions) => {
             opts.error({ status: 400, responseText: JSON.stringify({ message: "Bad input" }) });
@@ -499,7 +512,11 @@ describe("localFetch transport", () => {
         answerWith("The OneNote connection was lost.", { status: 401 });
         await expect(server.getWithSilentUnauthorized("url")).rejects.toBe("The OneNote connection was lost.");
 
+        answerWith("The headings changed", { status: 409 });
+        await expect(server.postWithSilentErrors("url", {})).rejects.toBe("The headings changed");
+
         expect(toastMock.showError).not.toHaveBeenCalled();
+        expect(toastMock.showErrorTitleAndMessage).not.toHaveBeenCalled();
         expect((window as any).logError).not.toHaveBeenCalled();
     });
 

@@ -321,6 +321,14 @@ describe("fetchRemoteModels / fetchJson (base defaults and errors)", () => {
             .rejects.toThrow(/check the API key and base URL\./);
     });
 
+    it("fetchJson names the endpoint and the network error when it cannot connect", async () => {
+        vi.stubGlobal("fetch", vi.fn(async () => {
+            throw new TypeError("fetch failed", { cause: new Error("connect ECONNREFUSED 10.0.0.2:443") });
+        }));
+        await expect(new TestProvider().callFetchJson("https://api.example/models", {}))
+            .rejects.toThrow("Could not reach https://api.example/models: connect ECONNREFUSED 10.0.0.2:443");
+    });
+
     it("fetchJson returns the parsed JSON on success", async () => {
         vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => ({ data: [1, 2] }) })));
         await expect(new TestProvider().callFetchJson("https://api.example/models", {}))

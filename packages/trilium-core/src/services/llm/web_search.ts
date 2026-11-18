@@ -4,6 +4,7 @@
  * built-in search, with a `read_web_page` tool to read what it finds.
  */
 
+import type { LlmWebSearchResult } from "@triliumnext/commons";
 import { tool } from "ai";
 import { parse as parseHtml } from "node-html-parser";
 import { z } from "zod";
@@ -12,7 +13,7 @@ import markdownExport from "../export/markdown.js";
 import request, { validateFetchableUrl } from "../request.js";
 import { decodeUtf8 } from "../utils/binary.js";
 import { trimTrailingSlashes } from "../utils/index.js";
-import { llmFetch } from "./providers/fetch.js";
+import { fetchFailureReason, llmFetch } from "./providers/fetch.js";
 
 /** A configured search provider, as stored in the `llmProviders` option. */
 export interface WebSearchSetup {
@@ -21,12 +22,6 @@ export interface WebSearchSetup {
     name?: string;
     apiKey: string;
     baseURL?: string;
-}
-
-export interface WebSearchSource {
-    title: string;
-    url: string;
-    snippet: string;
 }
 
 const MAX_RESULTS = 8;
@@ -84,7 +79,7 @@ class SearchSetupError extends Error {}
  * A switch over literal cases, as `createProviderInstance()` is, because the provider type is
  * user-controlled.
  */
-export async function searchWeb(setup: WebSearchSetup, query: string, signal?: AbortSignal): Promise<WebSearchSource[]> {
+export async function searchWeb(setup: WebSearchSetup, query: string, signal?: AbortSignal): Promise<LlmWebSearchResult[]> {
     switch (setup.provider) {
         case "brave": {
             const base = setup.baseURL ?? "https://api.search.brave.com/res/v1";
@@ -261,7 +256,12 @@ async function requestJson(
     describeFailure?: (status: number) => string | undefined
 ): Promise<unknown> {
     const timeout = AbortSignal.timeout(SEARCH_TIMEOUT_MS);
-    const response = await llmFetch(url, { ...init, signal: signal ? AbortSignal.any([ signal, timeout ]) : timeout });
+    let response: Response;
+    try {
+        response = await llmFetch(url, { ...init, signal: signal ? AbortSignal.any([ signal, timeout ]) : timeout });
+    } catch (e) {
+        throw new Error(`Could not reach the search provider: ${fetchFailureReason(e)}`);
+    }
     if (!response.ok) {
         const description = describeFailure?.(response.status);
         if (description) {
@@ -311,8 +311,8 @@ function describeDeepSeekFailure(status: number): string | undefined {
 }
 
 /** The results that carry a web URL, read from `urlField`, with the excerpt read from `snippetField`. */
-function toSources(results: unknown[] | undefined, snippetField: string, urlField = "url"): WebSearchSource[] {
-    const sources: WebSearchSource[] = [];
+function toSources(results: unknown[] | undefined, snippetField: string, urlField = "url"): LlmWebSearchResult[] {
+    const sources: LlmWebSearchResult[] = [];
     for (const result of results ?? []) {
         const { title, [urlField]: url, [snippetField]: snippet } = (result ?? {}) as Record<string, unknown>;
         if (typeof url === "string" && /^https?:\/\//i.test(url)) {

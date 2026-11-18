@@ -13,6 +13,7 @@ import "./theme/content_colors.css";
 import "./theme/code_block_toolbar.css";
 import "./theme/format_painter.css";
 import "./theme/resizable_widgets.css";
+import "./theme/mention.css";
 import "mathlive/fonts.css";
 import "mathlive/static.css";
 import "./theme/math_form.css";

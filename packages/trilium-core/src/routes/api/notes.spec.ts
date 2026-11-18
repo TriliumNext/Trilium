@@ -1,3 +1,4 @@
+import type { CreateReferenceResponse, NoteReferencesResponse } from "@triliumnext/commons";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../../becca/becca";
@@ -5,6 +6,9 @@ import { load } from "../../becca/becca_loader";
 import { getContext } from "../../services/context";
 import eraseService from "../../services/erase";
 import noteService from "../../services/notes";
+import {
+    type ReferenceProvider, registerReferenceProvider, unregisterReferenceProvider
+} from "../../services/references/index";
 import { getSql } from "../../services/sql/index";
 import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../../services/virtual_notes";
 import ws from "../../services/ws";
@@ -215,6 +219,193 @@ describe("Notes API (core)", () => {
             expect((await api.put(url, { query: { block: "a:x" }, body: { content: "" } })).status)
                 .toBe(404);
             expect((await api.put(url, { query: { block: "a" }, body: {} })).status).toBe(400);
+        });
+    });
+
+    describe("references", () => {
+        const content = `<h2>Intro</h2><p><a id="start"></a>Text</p>`
+            + `<h3 data-trilium-block-id="kept1">Details</h3>`;
+
+        function addReference(noteId: string, body: unknown) {
+            return api.post<CreateReferenceResponse>(`/api/notes/${noteId}/references`, { body });
+        }
+
+        function listReferences(noteId: string) {
+            return api.get<NoteReferencesResponse>(`/api/notes/${noteId}/references`);
+        }
+
+        /** The request for a reference to the heading at `index` with the text `title`. */
+        function heading(index: number, title: string) {
+            return { kind: "heading", index, title };
+        }
+
+        function countRevisions(noteId: string) {
+            return getSql().getValue<number>(
+                "SELECT COUNT(*) FROM revisions WHERE noteId = ?", [ noteId ]
+            );
+        }
+
+        async function createNoteOfType(type: string, mime: string) {
+            const res = await api.post<{ note: { noteId: string } }>(
+                "/api/notes/root/children?target=into",
+                { body: { title: "Other", type, mime, content } }
+            );
+            return res.body.note.noteId;
+        }
+
+        it("lists the headings and anchors of a text note", async () => {
+            const { noteId } = await createTextNote(api, { content });
+
+            const res = await listReferences(noteId);
+            expect(res.status).toBe(200);
+            expect(res.body).toStrictEqual({
+                targets: [
+                    { kind: "heading", title: "Intro", level: 2 },
+                    { kind: "heading", title: "Details", level: 3, params: { block: "kept1" } },
+                    { kind: "anchor", title: "start", params: { bookmark: "start" } }
+                ]
+            });
+        });
+
+        it("gives a heading of a read-only note a block id once, without a revision", async () => {
+            const { noteId } = await createTextNote(api, { content });
+            const readOnly = await api.put(`/api/notes/${noteId}/set-attribute`, {
+                body: { type: "label", name: "readOnly", value: "" }
+            });
+            expect(readOnly.status).toBe(204);
+            const note = becca.getNoteOrThrow(noteId);
+            expect(note.hasLabel("readOnly")).toBe(true);
+
+            // A regular save of a note created before the revision interval takes a revision.
+            const control = becca.getNoteOrThrow((await createTextNote(api, { content })).noteId);
+            note.utcDateCreated = "2020-01-01 00:00:00.000Z";
+            control.utcDateCreated = note.utcDateCreated;
+            await api.put(`/api/notes/${control.noteId}/data`, {
+                body: { content: `${content}<p>Edit</p>` }
+            });
+            expect(countRevisions(control.noteId)).toBe(1);
+
+            const created = await addReference(noteId, heading(0, "Intro"));
+            expect(created.status).toBe(200);
+            const blockId = created.body.params.block;
+            expect(blockId).toMatch(/^[A-Za-z0-9]{12}$/);
+            expect(note.getContent())
+                .toBe(content.replace("<h2>", `<h2 data-trilium-block-id="${blockId}">`));
+            expect(countRevisions(noteId)).toBe(0);
+
+            const { blobId } = note;
+            expect((await addReference(noteId, heading(0, "Intro"))).body)
+                .toStrictEqual({ params: { block: blockId } });
+            expect((await addReference(noteId, heading(1, "Details"))).body)
+                .toStrictEqual({ params: { block: "kept1" } });
+            expect(note.blobId).toBe(blobId);
+
+            const listed = await listReferences(noteId);
+            expect(listed.body.targets[0]).toStrictEqual(
+                { kind: "heading", title: "Intro", level: 2, params: { block: blockId } }
+            );
+        });
+
+        it("answers 409 for a target that changed, without writing it or naming it", async () => {
+            const { noteId } = await createTextNote(api, { content });
+            const { blobId } = becca.getNoteOrThrow(noteId);
+
+            const res = await addReference(noteId, heading(0, "Secret plans"));
+            expect(res.status).toBe(409);
+            expect(JSON.stringify(res.body)).not.toContain("Secret");
+            // An anchor has its reference, its name, so no anchor needs one.
+            const anchor = await addReference(noteId, { kind: "anchor", index: 0, title: "start" });
+            expect(anchor.status).toBe(409);
+            expect(becca.getNoteOrThrow(noteId).blobId).toBe(blobId);
+        });
+
+        it("rejects malformed requests, and notes without content to read", async () => {
+            const { noteId } = await createTextNote(api, { content });
+            const bodies = [
+                undefined, null, [ "heading", 0, "Intro" ], {}, { index: 0, title: "Intro" },
+                { kind: "heading", title: "Intro" }, { kind: "heading", index: 0 },
+                { kind: "paragraph", index: 0, title: "Intro" }, heading(-1, "Intro"),
+                heading(0.5, "Intro"), { kind: "heading", index: "0", title: "Intro" },
+                heading(0, ""), { kind: "heading", index: 0, title: 1 }
+            ];
+            for (const body of bodies) {
+                expect((await addReference(noteId, body)).status).toBe(400);
+            }
+
+            // A note that no provider reads has no targets, and none to give a reference.
+            const codeNoteId = await createNoteOfType("code", "text/html");
+            expect((await listReferences(codeNoteId)).body).toStrictEqual({ targets: [] });
+            expect((await addReference(codeNoteId, heading(0, "Intro"))).status).toBe(400);
+            expect((await listReferences("missingNote")).status).toBe(404);
+            expect((await addReference("missingNote", heading(0, "Intro"))).status).toBe(404);
+
+            const note = becca.getNoteOrThrow(noteId);
+            note.isProtected = true;
+            try {
+                expect((await listReferences(noteId)).status).toBe(400);
+                expect((await addReference(noteId, heading(0, "Intro"))).status).toBe(400);
+            } finally {
+                note.isProtected = false;
+            }
+            expect(note.getContent()).toBe(content);
+        });
+
+        describe("of a read-only virtual note", () => {
+            const pageContent = `<h2>Shipped</h2><h2 data-trilium-block-id="kept">Kept</h2>`
+                + `<p><a id="top"></a></p>`;
+
+            beforeAll(() => {
+                registerVirtualNoteProvider({
+                    namespace: "_vref",
+                    parentNoteId: "_hidden",
+                    getSubtree: () => [ { id: "_vrefPage", title: "Page", type: "text" } ],
+                    getContent: () => pageContent
+                });
+                getContext().init(() => load());
+            });
+
+            afterAll(() => {
+                unregisterVirtualNoteProvider("_vref");
+                getContext().init(() => load());
+            });
+
+            it("lists only the targets that have a reference, and refuses to add one", async () => {
+                expect((await listReferences("_vrefPage")).body).toStrictEqual({
+                    targets: [
+                        { kind: "heading", title: "Kept", level: 2, params: { block: "kept" } },
+                        { kind: "anchor", title: "top", params: { bookmark: "top" } }
+                    ]
+                });
+                expect((await addReference("_vrefPage", heading(0, "Shipped"))).status).toBe(400);
+                expect(becca.getNoteOrThrow("_vrefPage").getContent()).toBe(pageContent);
+            });
+        });
+
+        describe("of a note that a registered provider reads", () => {
+            const provider: ReferenceProvider = {
+                isFor: (type, mime) => type === "code" && mime === "text/x-test-references",
+                // Asynchronous, as a provider that loads its parser on demand is.
+                findTargets: async (read) => [
+                    { kind: "heading", title: "Unlinked", level: 1 },
+                    // The text of the first heading of the content: `<h2>Intro</h2>`.
+                    {
+                        kind: "heading", title: String(read).slice(4, 9), level: 1,
+                        params: { block: "b" }
+                    }
+                ]
+            };
+
+            beforeAll(() => registerReferenceProvider(provider));
+            afterAll(() => unregisterReferenceProvider(provider));
+
+            it("lists only linked targets of a provider that creates no references", async () => {
+                const noteId = await createNoteOfType("code", "text/x-test-references");
+
+                expect((await listReferences(noteId)).body.targets).toStrictEqual([
+                    { kind: "heading", title: "Intro", level: 1, params: { block: "b" } }
+                ]);
+                expect((await addReference(noteId, heading(0, "Unlinked"))).status).toBe(400);
+            });
         });
     });
 

@@ -190,4 +190,21 @@ describe("ModelSelection", () => {
         const empty = await renderSelection({ query: { provider: "ollama" }, selected: [], onChange: vi.fn(), troubleshooting });
         expect(empty.textContent).toContain("check the server");
     });
+
+    it("lists the models again on Retry, after a failure as after an empty listing", async () => {
+        fetchProviderModelsMock.mockRejectedValueOnce(new Error("ECONNREFUSED")).mockResolvedValueOnce([]).mockResolvedValueOnce(MODELS);
+        const el = await renderSelection({ query: { provider: "ollama" }, selected: [], onChange: vi.fn() });
+        expect(el.textContent).toContain("ECONNREFUSED");
+
+        const retry = buttonByLabel(el, "llm.retry");
+        expect(retry).toBeDefined();
+        await act(async () => retry?.click());
+        await act(async () => {});
+        expect(el.textContent).toContain("llm.models_none_available");
+
+        await act(async () => buttonByLabel(el, "llm.retry")?.click());
+        await act(async () => {});
+        expect(fetchProviderModelsMock).toHaveBeenCalledTimes(3);
+        expect(el.querySelectorAll(".checkbox-stub")).toHaveLength(MODELS.length);
+    });
 });

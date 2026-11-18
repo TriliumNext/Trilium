@@ -1,0 +1,48 @@
+:where(:root) {
+    --link-target-icon-color: var(--menu-item-icon-color);
+    --link-target-checked-background-color: var(--low-profile-button-active-background-color);
+    --link-target-checked-color: var(--low-profile-button-active-color);
+
+    --link-target-list-height: 240px;
+}
+
+.link-target-list {
+    overflow-y: auto;
+
+    .tn-card {
+        margin-bottom: 1rem;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    .tn-card-choice {
+        .tn-icon {
+            color: var(--link-target-icon-color);
+        }
+
+        &:focus-visible {
+            outline-offset: -2px;
+        }
+    }
+
+    .tn-card-body .tn-card-section.tn-card-choice[aria-checked="true"] {
+        background-color: var(--link-target-checked-background-color);
+        color: var(--link-target-checked-color);
+
+        .tn-icon {
+            color: inherit;
+        }
+    }
+}
+
+.link-target-group {
+    --card-nested-section-indent: 24px;
+
+    .tn-card-choice-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}

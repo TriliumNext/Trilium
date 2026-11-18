@@ -2855,8 +2855,7 @@
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "Aus der Startleiste entfernen",
     "configure_launch_bar": "Startleiste konfigurieren",
-    "launch_bar_orientation": "Ausrichtung der Startleiste",
-    "will_reload_frontend": "(App wird neu geladen)"
+    "launch_bar_orientation": "Ausrichtung der Startleiste"
   },
   "link": {
     "failed_to_open": "Link '{{- href}}' konnte nicht geöffnet werden: {{- message}}"

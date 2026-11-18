@@ -13,9 +13,7 @@ import {
     type LinkUnderCursor,
     SnippetDefinition
 } from "@triliumnext/ckeditor5";
-import {
-    encodeBlockParameter, formatBlockRange, parseBlockRange
-} from "@triliumnext/commons/src/lib/block_reference.js";
+import { formatBlockRange, parseBlockRange } from "@triliumnext/commons/src/lib/block_reference.js";
 import { deferred } from "@triliumnext/commons/src/lib/utils.js";
 import { createPortal } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
@@ -27,13 +25,17 @@ import dialog from "../../../services/dialog";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import link, { parseNavigationStateFromUrl, type ViewScope } from "../../../services/link";
+import {
+    createEditorHeadings, findTarget, type LinkTarget, splitTargetParameters
+} from "../../../services/link_targets";
 import type LoadResults from "../../../services/load_results";
+import { getNoteIdFromUrl } from "../../../services/navigation_state";
 import note_create from "../../../services/note_create";
 import { consumeSearchTerms } from "../../../services/search_jump";
 import toast from "../../../services/toast";
 import utils, { isMobile } from "../../../services/utils";
 import { ContentEmbedBalloon, type ContentEmbedOpts } from "../../dialogs/content_embed";
-import { EditLinkBalloon, type EditLinkOpts, type LinkHeading } from "../../dialogs/edit_link";
+import { EditLinkBalloon, type EditLinkOpts } from "../../dialogs/edit_link";
 import { useTriliumEvent } from "../../react/hooks/events";
 import { useNoteLabel } from "../../react/hooks/note";
 import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
@@ -613,10 +615,6 @@ export default function EditableText({
     );
 }
 
-/**
- * The content of an editor of the blocks of a note that `block` points at, and the blocks it holds
- * now. An empty editor still holds a block, whose id keeps the place of the blocks in the note.
- */
 /** What the edit link dialog opens on, besides the editor. */
 interface EditLinkRequest extends Pick<EditLinkOpts, "target" | "display"> {
     /** The path of the note in the editor. Without it, the dialog lists no headings. */
@@ -644,6 +642,7 @@ export function getEditLinkOpts(
 
     const anchors = api.getAnchors();
     const headings = notePath ? getLinkHeadings(api, notePath) : undefined;
+    const noteId = getNoteIdFromUrl(notePath) ?? undefined;
     const currentLink = api.getCurrentLink();
     if (currentLink) {
         const currentHeading = notePath && headings
@@ -658,6 +657,7 @@ export function getEditLinkOpts(
             isMedia: currentLink.isMedia,
             anchors,
             headings,
+            noteId,
             ...(currentHeading ? { currentHeading } : parseLinkHref(currentLink.href, anchors)),
             async addLink(notePath, linkTitle, externalLink) {
                 await ready();
@@ -674,6 +674,7 @@ export function getEditLinkOpts(
         display,
         anchors,
         headings,
+        noteId,
         async addLink(notePath, linkTitle, externalLink) {
             await ready();
             api.addLink(notePath, linkTitle, externalLink);
@@ -683,27 +684,20 @@ export function getEditLinkOpts(
 }
 
 /** The headings of the editor, which link to their blocks in the note at `notePath`. */
-function getLinkHeadings(api: CKEditorApi, notePath: string): LinkHeading[] {
-    return api.getHeadings().map((heading) => ({
-        title: heading.text,
-        level: heading.level,
-        blockId: heading.blockId,
-        createLinkPath() {
-            const blockId = api.assignBlockId(heading);
-            return blockId ? `${notePath}?block=${encodeBlockParameter(blockId)}` : notePath;
-        }
-    }));
+function getLinkHeadings(api: CKEditorApi, notePath: string): LinkTarget[] {
+    return createEditorHeadings(
+        api.getHeadings(), notePath, (heading) => api.assignBlockId(heading)
+    );
 }
 
 /** The heading of `headings` whose block `href` links to, in the note at `notePath`. */
-function findLinkedHeading(href: string, headings: LinkHeading[], notePath: string) {
+function findLinkedHeading(href: string, headings: LinkTarget[], notePath: string) {
     if (!href.startsWith("#")) return undefined;
 
-    const [ path, query = "" ] = href.slice(1).split("?", 2);
-    const blockId = new URLSearchParams(query).get("block");
+    const [ path ] = href.slice(1).split("?", 1);
     const isSameNote = path.split("/").at(-1) === notePath.split("/").at(-1);
-    return blockId && isSameNote
-        ? headings.find((heading) => heading.blockId === blockId)
+    return isSameNote
+        ? findTarget(headings, splitTargetParameters(href.slice(1)).params)
         : undefined;
 }
 
@@ -749,6 +743,10 @@ export async function followLink(target: LinkUnderCursor | null) {
     }
 }
 
+/**
+ * The content of an editor of the blocks of a note that `block` points at, and the blocks it holds
+ * now. An empty editor still holds a block, whose id keeps the place of the blocks in the note.
+ */
 export function getBlockData(editor: CKTextEditor, block: string) {
     return {
         content: editor.getData({ trim: "none" }),

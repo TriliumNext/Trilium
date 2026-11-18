@@ -4,7 +4,9 @@ import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type FNote from "../../../entities/fnote";
+import type { LinkTarget } from "../../../services/link_targets";
 import type { NoteSuggestionOptions, Suggestion } from "../../../services/note_autocomplete";
+import options from "../../../services/options";
 import { type CompletionTarget, useEditorCompletions } from "./editor_completions";
 import type { CodeSnippet } from "./snippets";
 
@@ -21,6 +23,13 @@ vi.mock("../../../services/note_autocomplete", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../../services/note_autocomplete")>(),
     getNoteSuggestions,
     createNoteFromSuggestion
+}));
+const { getLinkTargets } = vi.hoisted(() => ({
+    getLinkTargets: vi.fn<(noteId: string, notePath: string) => Promise<LinkTarget[]>>()
+}));
+vi.mock("../../../services/link_targets", async (importOriginal) => ({
+    ...await importOriginal<typeof import("../../../services/link_targets")>(),
+    getLinkTargets
 }));
 
 const { snippets, useCodeSnippets } = vi.hoisted(() => {
@@ -74,6 +83,7 @@ describe("useEditorCompletions", () => {
         container.remove();
         for (const editor of editors) editor.destroy();
         editors.length = 0;
+        options.set("textNoteCompletionLinkTargetsEnabled", "false");
     });
 
     /** Mounts the hook against `view`, and returns what it gives `codeCompletions()`. */
@@ -242,6 +252,71 @@ describe("useEditorCompletions", () => {
         await settle();
         press(editor, "Enter");
         await vi.waitFor(() => expect(textOf(editor)).toBe("see [[new2]] x"));
+    });
+
+    it("follows a note picked after an @ with its headings and anchors when enabled, and links the one picked", async () => {
+        options.set("textNoteCompletionLinkTargetsEnabled", "true");
+        getNoteSuggestions.mockResolvedValue([ ALPHA ]);
+        getLinkTargets.mockResolvedValue([
+            {
+                kind: "heading", title: "Install", level: 2, params: { block: "h1" },
+                createLinkPath: () => "root/projects/abc123?block=h1"
+            },
+            {
+                kind: "anchor", title: "setup", params: { bookmark: "setup" },
+                createLinkPath: () => "root/projects/abc123?bookmark=setup"
+            }
+        ]);
+        const editor = buildEditor();
+        mount(editor, MARKDOWN, {
+            note: { noteId: "n1" } as FNote, getNotePath: () => "root/parent"
+        });
+        const typeOn = (text: string) => {
+            const end = editor.state.doc.length;
+            editor.dispatch({ changes: { from: end, insert: text }, selection: { anchor: end + text.length } });
+        };
+        // The notes page stays mounted while it slides out.
+        const destinations = () => [
+            ...document.querySelectorAll(".link-mention-destinations [role=option]")
+        ].map((row) => row.textContent);
+
+        // Linked at once, then the headings and anchors of the note are listed.
+        type(editor, "see @Al");
+        await vi.waitFor(() => expect(rows()).toHaveLength(1));
+        press(editor, "Enter");
+        await vi.waitFor(() => expect(textOf(editor)).toBe("see [[abc123]]"));
+        expect(getLinkTargets).toHaveBeenCalledWith("abc123", "root/projects/abc123");
+        await vi.waitFor(() => expect(destinations()).toEqual([
+            expect.stringContaining("add_link.top_of_note"),
+            expect.stringContaining("Install"),
+            expect.stringContaining("setup")
+        ]));
+
+        // The text typed after the link filters them, and a pick points the link at it.
+        typeOn("Ins");
+        await vi.waitFor(() => expect(destinations()).toEqual(onlyRow("Install")));
+        press(editor, "Enter");
+        await vi.waitFor(() => expect(textOf(editor)).toBe("see [[abc123?block=h1]]"));
+        await vi.waitFor(() => expect(rows()).toEqual([]));
+
+        typeOn(" @Al");
+        await vi.waitFor(() => expect(rows()).toHaveLength(1));
+        press(editor, "Enter");
+        await vi.waitFor(() => expect(destinations()).toHaveLength(3));
+        typeOn("set");
+        await vi.waitFor(() => expect(destinations()).toEqual(onlyRow("setup")));
+        press(editor, "Enter");
+        await vi.waitFor(() => expect(textOf(editor))
+            .toBe("see [[abc123?block=h1]] [[abc123?bookmark=setup]]"));
+
+        // The whole note keeps the link as it is, and closes the list.
+        typeOn(" @Al");
+        await vi.waitFor(() => expect(rows()).toHaveLength(1));
+        press(editor, "Enter");
+        await vi.waitFor(() => expect(destinations()).toHaveLength(3));
+        press(editor, "Enter");
+        await vi.waitFor(() => expect(rows()).toEqual([]));
+        expect(textOf(editor)).toBe("see [[abc123?block=h1]] [[abc123?bookmark=setup]] [[abc123]]");
     });
 
     it("creates notes under the best path of the owner note without a path given", async () => {

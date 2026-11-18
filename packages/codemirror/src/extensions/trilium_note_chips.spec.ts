@@ -162,6 +162,24 @@ describe("triliumNoteChips over Markdown's note links", () => {
         expect(view.state.doc.toString()).toContain("[[abc123]]");
     });
 
+    it("draws a link to a part of a note as one chip, resolved with the link's parameters", () => {
+        const resolve = vi.fn<NoteChipResolver>((noteId, params) => ({
+            title: params ? `Tolkien - ${params}` : "Tolkien", icon: "bx bx-user"
+        }));
+        const doc = "See [[abc123?block=h1%3Ab]] and [[abc123]], not [[abc123?a]b]].";
+        const parent = build(doc, resolve, [ markdown() ], WIKILINKS);
+        const view = editorFor(parent);
+        ensureSyntaxTree(view.state, doc.length);
+        view.dispatch({ selection: EditorSelection.cursor(0) });
+
+        const chips = [ ...parent.querySelectorAll(".cm-note-chip") ];
+        expect(chips.map((chip) => chip.getAttribute("title")))
+            .toEqual([ "abc123?block=h1%3Ab", "abc123" ]);
+        expect(chips.map((chip) => chip.textContent)).toEqual([ "Tolkien - block=h1%3Ab", "Tolkien" ]);
+        expect(resolve).toHaveBeenCalledWith("abc123", "block=h1%3Ab");
+        expect(resolve).toHaveBeenCalledWith("abc123", undefined);
+    });
+
     it("shows the link's text while the selection touches it, and lets the caret into it", () => {
         const { parent, view } = buildMarkdown("See [[abc123]] here", 0);
         expect(parent.querySelector(".cm-note-chip")).not.toBe(null);

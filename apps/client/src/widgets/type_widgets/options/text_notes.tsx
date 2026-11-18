@@ -152,6 +152,8 @@ function EditorFeatures() {
     const [mathFieldEnabled, setMathFieldEnabled] = useTriliumOptionBool("mathFieldEnabled");
     const [emojiCompletionEnabled, setEmojiCompletionEnabled] = useTriliumOptionBool("textNoteEmojiCompletionEnabled");
     const [noteCompletionEnabled, setNoteCompletionEnabled] = useTriliumOptionBool("textNoteCompletionEnabled");
+    const [linkTargetCompletionEnabled, setLinkTargetCompletionEnabled] =
+        useTriliumOptionBool("textNoteCompletionLinkTargetsEnabled");
     const [slashCommandsEnabled, setSlashCommandsEnabled] = useTriliumOptionBool("textNoteSlashCommandsEnabled");
     const [contentHintsEnabled, setContentHintsEnabled] = useTriliumOptionBool("textNoteContentHintsEnabled");
     const [autoLinkPreviewsEnabled, setAutoLinkPreviewsEnabled] = useTriliumOptionBool("textNoteAutoLinkPreviewsEnabled");
@@ -228,6 +230,19 @@ function EditorFeatures() {
                 name="note-completion-enabled"
                 label={t("editorfeatures.note_completion_enabled")}
                 description={t("editorfeatures.note_completion_description")}
+                subSectionsVisible={noteCompletionEnabled}
+                subSections={
+                    <OptionCardSection
+                        name="note-completion-link-targets-enabled"
+                        label={t("editorfeatures.note_completion_link_targets_enabled")}
+                        description={t("editorfeatures.note_completion_link_targets_description")}
+                    >
+                        <FormToggle
+                            currentValue={linkTargetCompletionEnabled}
+                            onChange={setLinkTargetCompletionEnabled}
+                        />
+                    </OptionCardSection>
+                }
             >
                 <FormToggle currentValue={noteCompletionEnabled} onChange={setNoteCompletionEnabled} />
             </OptionCardSection>

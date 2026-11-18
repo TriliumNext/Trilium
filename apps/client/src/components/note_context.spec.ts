@@ -108,7 +108,7 @@ describe("NoteContext view scope", () => {
         });
         expect(noteContext.viewScope).toEqual({ block: "a", viewMode: "default" });
 
-        // What `revealBlockReference()` does once it has scrolled to the block.
+        // What `consumeBlockReference()` does once it has scrolled to the block.
         if (noteContext.viewScope) noteContext.viewScope.block = undefined;
         expect(viewScope).toEqual({ block: "a" });
     });

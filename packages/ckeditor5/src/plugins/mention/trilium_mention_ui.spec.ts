@@ -1,12 +1,18 @@
 import {
     type ClassicEditor,
+    type Editor,
     Essentials,
     _getModelData as getModelData,
     keyCodes,
     MentionEditing,
     type MentionFeedObjectItem,
+    type ModelElement,
+    ModelLivePosition,
     Paragraph,
-    _setModelData as setModelData
+    Plugin,
+    _setModelData as setModelData,
+    toWidget,
+    Widget
 } from "ckeditor5";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
@@ -363,6 +369,267 @@ describe("TriliumMentionUI", () => {
         });
     });
 
+    describe("following up on a mention", () => {
+        const alpha = { id: "@alpha", text: "@alpha" };
+        const beta = { id: "@beta", text: "@beta" };
+        /** Inserts the mention of the last commit, in an editor whose feed inserts it later. */
+        let insertLater: (() => void) | undefined;
+
+        /** An editor whose `@` feed commits a mention as a chip, at once unless `isDeferred`. */
+        async function createChipEditor({ isDeferred = false, canCommit }: ChipFeed = {}) {
+            insertLater = undefined;
+            await createEditor({
+                "@": {
+                    canCommit,
+                    commit: (host, item) => {
+                        const insert = createChipInsertion(host, item.id);
+                        if (isDeferred) {
+                            insertLater = insert;
+                        } else {
+                            insert();
+                        }
+                    }
+                }
+            }, [ Essentials, Paragraph, MentionEditing, TriliumMentionUI, Chips ]);
+            setModelData(editor.model, "<paragraph>x []</paragraph>");
+        }
+
+        /** Commits `alpha` from the `@` list of a new editor, and follows up on its chip. */
+        async function followUpOnAlpha() {
+            await createChipEditor();
+            type("@al");
+            notes.state?.commitAndFollowUp(alpha);
+        }
+
+        function chips(): ModelElement[] {
+            const paragraph = editor.model.document.getRoot()?.getChild(0);
+            if (!paragraph?.is("element")) {
+                return [];
+            }
+            return [ ...paragraph.getChildren() ].filter((node) => node.is("element", "chip"));
+        }
+
+        function chipElements() {
+            const root = editor.editing.view.getDomRoot();
+            return [ ...root?.querySelectorAll<HTMLElement>(".chip") ?? [] ];
+        }
+
+        const isMarked = (element: HTMLElement | undefined) =>
+            element?.classList.contains("ck-mention-follow-up");
+        const isFollowingUp = () => editor.model.markers.has("mentionFollowUp");
+
+        it("keeps the list open on the mention it commits, for the text typed after", async () => {
+            await createChipEditor();
+            type("@al");
+            notes.state?.commitAndFollowUp(alpha);
+
+            expect(text()).toBe("<paragraph>x <chip name=\"@alpha\"></chip></paragraph>");
+            expect(notes.hide).not.toHaveBeenCalled();
+            expect(notes.state).toMatchObject({ query: "", followUpOf: alpha });
+            expect(isFollowingUp()).toBe(true);
+            // The editing view marks the mention, and the list is placed against it.
+            const [ chip ] = chipElements();
+            expect(isMarked(chip)).toBe(true);
+            const chipRect = chip.getBoundingClientRect();
+            const listRect = notes.state?.caretRect();
+            expect(chipRect.width).toBeGreaterThan(0);
+            expect([ listRect?.left, listRect?.top, listRect?.width ])
+                .toEqual([ chipRect.left, chipRect.top, chipRect.width ]);
+
+            type("in");
+            expect(notes.state).toMatchObject({ query: "in", followUpOf: alpha });
+            // A marker or a space in that text is part of the query.
+            type(" #x");
+            expect(notes.state?.query).toBe("in #x");
+            expect(labels.show).not.toHaveBeenCalled();
+            expect(notes.hide).not.toHaveBeenCalled();
+            // The mark is no part of the data.
+            expect(editor.getData()).toContain("<span class=\"chip\">");
+
+            // A commit replaces the mention and the text typed after it.
+            notes.state?.commit(beta);
+            expect(text()).toBe("<paragraph>x <chip name=\"@beta\"></chip></paragraph>");
+            expect(notes.state).toBe(null);
+            expect(isFollowingUp()).toBe(false);
+            expect(isMarked(chipElements()[0])).toBe(false);
+        });
+
+        it("waits for a mention that is inserted later, and takes no pick meanwhile", async () => {
+            // An element after the caret, such as a line break, or a mention there already, is
+            // not the mention awaited.
+            for (const after of [ "<softBreak></softBreak>", "<chip name=\"@old\"></chip>" ]) {
+                await createChipEditor({ isDeferred: true });
+                setModelData(editor.model, `<paragraph>x []${after}y</paragraph>`);
+                type("@al");
+                const stage = notes.state;
+                notes.state?.commitAndFollowUp(alpha);
+
+                expect(text()).toBe(`<paragraph>x ${after}y</paragraph>`);
+                expect(notes.state).toBe(stage);
+                expect(notes.hide).not.toHaveBeenCalled();
+                // The list stays where the marker was.
+                expect(stage?.caretRect().height).toBeGreaterThan(0);
+                notes.state?.commit(beta);
+                notes.state?.commitAndFollowUp(beta);
+                expect(text()).toBe(`<paragraph>x ${after}y</paragraph>`);
+
+                insertLater?.();
+                expect(text()).toBe(`<paragraph>x <chip name="@alpha"></chip>${after}y</paragraph>`);
+                expect(notes.state).toMatchObject({ query: "", followUpOf: alpha });
+                expect(chipElements().map(isMarked)).toEqual(
+                    after.startsWith("<chip") ? [ true, false ] : [ true ]
+                );
+                expect(notes.hide).not.toHaveBeenCalled();
+            }
+        });
+
+        it("closes on a dismissal before the mention is in, which still arrives", async () => {
+            await createChipEditor({ isDeferred: true });
+            type("@al");
+            notes.state?.commitAndFollowUp(alpha);
+            notes.state?.dismiss();
+            expect(notes.state).toBe(null);
+
+            insertLater?.();
+            expect(text()).toBe("<paragraph>x <chip name=\"@alpha\"></chip></paragraph>");
+            expect(notes.state).toBe(null);
+            expect(isFollowingUp()).toBe(false);
+        });
+
+        it("ends on a space right after the mention, a caret move or its removal", async () => {
+            await followUpOnAlpha();
+            type(" ");
+            expect(notes.state).toBe(null);
+            expect(isFollowingUp()).toBe(false);
+            expect(isMarked(chipElements()[0])).toBe(false);
+            expect(text()).toBe("<paragraph>x <chip name=\"@alpha\"></chip> </paragraph>");
+            // The text typed on is no query.
+            type("in");
+            expect(notes.state).toBe(null);
+
+            // Inside the text typed after the mention, then before the mention.
+            for (const offset of [ 4, 1 ]) {
+                await followUpOnAlpha();
+                type("in");
+                moveCaretTo(offset);
+                expect(notes.state).toBe(null);
+                expect(isFollowingUp()).toBe(false);
+            }
+
+            await followUpOnAlpha();
+            editor.model.change((writer) => writer.remove(chips()[0]));
+            expect(notes.state).toBe(null);
+            expect(isFollowingUp()).toBe(false);
+        });
+
+        it("ends on Backspace right after the mention, which stays", async () => {
+            await followUpOnAlpha();
+            notes.handleKeyDown.mockClear();
+            expect(press(keyCodes.backspace).consumed).toBe(true);
+            expect(notes.handleKeyDown).not.toHaveBeenCalled();
+            expect(notes.state).toBe(null);
+            expect(isFollowingUp()).toBe(false);
+            expect(chips()).toHaveLength(1);
+
+            // After text typed there, the key goes to the list as any other.
+            await followUpOnAlpha();
+            type("i");
+            notes.handleKeyDown.mockReturnValue(false);
+            const backspace = press(keyCodes.backspace);
+            expect(backspace.consumed).toBe(false);
+            expect(notes.handleKeyDown).toHaveBeenCalledExactlyOnceWith(backspace.domEvent);
+            expect(notes.state).not.toBe(null);
+        });
+
+        it("closes on Escape or a dismissal, which holds back no marker typed later", async () => {
+            await createChipEditor();
+            // The text before the mention reads as a query of `@` at any caret in it.
+            setModelData(editor.model, "<paragraph>@a []</paragraph>");
+            type("@al");
+            notes.state?.commitAndFollowUp(alpha);
+            expect(press(keyCodes.esc).consumed).toBe(true);
+            expect(notes.state).toBe(null);
+            expect(isFollowingUp()).toBe(false);
+            expect(chips()).toHaveLength(1);
+
+            // A marker typed where the mention starts opens its list.
+            moveCaretTo(3);
+            type("@");
+            expect(notes.state).toMatchObject({ query: "", followUpOf: null });
+
+            await followUpOnAlpha();
+            const followUp = notes.state;
+            followUp?.dismiss();
+            expect(notes.state).toBe(null);
+            expect(isFollowingUp()).toBe(false);
+            expect(chips()).toHaveLength(1);
+
+            // A list that has closed dismisses no other list.
+            type(" #al");
+            followUp?.dismiss();
+            expect(labels.state?.query).toBe("al");
+        });
+
+        it("opens the list of a marker typed while the mention is awaited", async () => {
+            await createChipEditor({ isDeferred: true });
+            type("@al");
+            notes.state?.commitAndFollowUp(alpha);
+            type("@be");
+            expect(notes.state).toMatchObject({ query: "be", followUpOf: null });
+
+            insertLater?.();
+            expect(text()).toBe("<paragraph>x <chip name=\"@alpha\"></chip>@be</paragraph>");
+            expect(notes.state).toMatchObject({ query: "be", followUpOf: null });
+            expect(isFollowingUp()).toBe(false);
+        });
+
+        it("closes for an item that cannot be committed or a mention that is text", async () => {
+            await createChipEditor({ canCommit: () => false });
+            type("@al");
+            notes.state?.commitAndFollowUp(alpha);
+            expect(notes.state).toBe(null);
+            expect(text()).toBe("<paragraph>x @al</paragraph>");
+
+            // The `mention` command inserts the mention as text.
+            await createEditor();
+            type("@al");
+            notes.state?.commitAndFollowUp(alpha);
+            expect(text()).toContain(">@alpha</$text>");
+            expect(notes.state).toBe(null);
+        });
+
+        it("follows up on the mention that replaces the one it followed up on", async () => {
+            await followUpOnAlpha();
+            type("in");
+            notes.state?.commitAndFollowUp(beta);
+
+            expect(text()).toBe("<paragraph>x <chip name=\"@beta\"></chip></paragraph>");
+            expect(notes.state).toMatchObject({ query: "", followUpOf: beta });
+            expect(chipElements().map(isMarked)).toEqual([ true ]);
+        });
+
+        it("places the list at the caret once the mention was undone away", async () => {
+            await followUpOnAlpha();
+            const caretRect = notes.state?.caretRect;
+            editor.execute("undo");
+
+            expect(chips()).toHaveLength(0);
+            expect(caretRect?.().height).toBeGreaterThan(0);
+        });
+
+        it("ends once the editor is read-only, and with the editor", async () => {
+            await followUpOnAlpha();
+            editor.enableReadOnlyMode("test");
+            expect(notes.state).toBe(null);
+            expect(isFollowingUp()).toBe(false);
+            editor.disableReadOnlyMode("test");
+
+            await followUpOnAlpha();
+            await editor.destroy();
+            expect(notes.destroy).toHaveBeenCalledOnce();
+        });
+    });
+
     it("places the list at the caret once the marked text was undone away", () => {
         // The undos are invisible to the text watcher, so the list stays open on a marker whose range
         // has meanwhile been moved to the graveyard.
@@ -389,3 +656,66 @@ describe("TriliumMentionUI", () => {
         expect(notes.destroy).toHaveBeenCalled();
     });
 });
+
+/** How the `@` feed of a chip editor commits: at once, or later for `isDeferred`. */
+type ChipFeed = Pick<MentionHostedFeed, "canCommit"> & { isDeferred?: boolean };
+
+/** An inline object named `chip`, which a feed's `commit` inserts as its mention. */
+class Chips extends Plugin {
+    static get requires() {
+        return [ Widget ] as const;
+    }
+
+    init() {
+        const { conversion, model } = this.editor;
+
+        model.schema.register("chip", {
+            inheritAllFrom: "$inlineObject",
+            allowAttributes: [ "name" ]
+        });
+        conversion.for("dataDowncast").elementToElement({
+            model: "chip",
+            view: { name: "span", classes: "chip" }
+        });
+        conversion.for("editingDowncast").elementToElement({
+            model: "chip",
+            view: (chip, { writer }) => {
+                const name = writer.createUIElement("span", {}, function (domDocument) {
+                    const element = this.toDomElement(domDocument);
+                    element.textContent = String(chip.getAttribute("name"));
+                    return element;
+                });
+                // Padded, so the chip is wider than the text in it.
+                const attributes = { class: "chip", style: "padding: 0 7px" };
+                const view = writer.createContainerElement("span", attributes, [ name ]);
+                return toWidget(view, writer);
+            }
+        });
+    }
+}
+
+/**
+ * Returns a function that inserts a chip named `name` where the caret is now, and moves the
+ * caret after it only if the caret is still there, as the `referenceLink` command does once the
+ * title of its note is loaded.
+ */
+function createChipInsertion(editor: Editor, name: string) {
+    const model = editor.model;
+    const caret = model.document.selection.getFirstPosition();
+    if (!caret) {
+        throw new Error("The selection has no position.");
+    }
+    const position = ModelLivePosition.fromPosition(caret, "toPrevious");
+
+    return () => {
+        const isCaretThere = !!model.document.selection.getFirstPosition()?.isEqual(position);
+        model.change((writer) => {
+            const chip = writer.createElement("chip", { name });
+            model.insertContent(chip, position);
+            if (isCaretThere) {
+                writer.setSelection(chip, "after");
+            }
+        });
+        position.detach();
+    };
+}

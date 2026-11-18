@@ -10,7 +10,7 @@ import type FNote from "../../../entities/fnote";
 import mime_types from "../../../services/mime_types.js";
 import {
     buildCodeFenceOptions, buildMarkdownCommands, buildTaskItemInsert, codeFenceCompletionSource,
-    isClosingFence, markdownCompletionAt, parseCodeFencePrefix
+    isClosingFence, linkToNote, markdownCompletionAt, parseCodeFencePrefix
 } from "./completions";
 
 const editorUtils = vi.hoisted(() => ({
@@ -206,6 +206,26 @@ describe("markdownCompletionAt", () => {
         expect(at("/table ")).toBeNull();
         expect(at("```js\nconst a = 1 /")).toBeNull();
         expect(at("text `a /` b", 9)).toBeNull();
+    });
+});
+
+describe("linkToNote", () => {
+    /** Links the note at `notePath` in place of `doc` from `from` to `to`, and returns the text and the caret. */
+    function link(notePath: string, doc: string, from: number, to: number) {
+        const editor = new VanillaCodeMirror({ parent: document.createElement("div") });
+        editor.dispatch({ changes: { from: 0, insert: doc } });
+        linkToNote(notePath)(editor, from, to);
+        const result = [ editor.state.doc.toString(), editor.state.selection.main.head ];
+        editor.destroy();
+        return result;
+    }
+
+    it("links the note with its heading or anchor, and takes the rest of a Wikilink only while one is typed", () => {
+        expect(link("root/abc", "see @Al x", 4, 7)).toEqual([ "see [[abc]] x", 11 ]);
+        expect(link("root/abc", "see [[Al]] x", 4, 8)).toEqual([ "see [[abc]] x", 11 ]);
+        // A link to a heading replaces the link and the text typed after it, and leaves a later `]]`.
+        expect(link("root/abc?block=h1", "see [[abc]]In x]]", 4, 13))
+            .toEqual([ "see [[abc?block=h1]] x]]", 20 ]);
     });
 });
 

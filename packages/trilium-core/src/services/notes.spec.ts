@@ -513,6 +513,21 @@ describe("notes service (real DB)", () => {
             expect(relations.map((r) => r.value)).toEqual([ target.note.noteId ]);
         });
 
+        it("creates internal-link relations for the Wikilinks of a Markdown note, parameters included", () => {
+            const heading = createNote("root", { title: "spec-md-heading-target" });
+            const whole = createNote("root", { title: "spec-md-whole-target" });
+            const source = createNote("root", {
+                title: "spec-md-source", type: "code", mime: "text/markdown", content: ""
+            });
+
+            const content = `See [[${heading.note.noteId}?block=a1%3Ab]] and [[${whole.note.noteId}]].`;
+            getContext().init(() => saveLinks(source.note, content));
+
+            const relations = source.note.getRelations().filter((r) => r.name === "internalLink");
+            expect(relations.map((r) => r.value).sort())
+                .toEqual([ heading.note.noteId, whole.note.noteId ].sort());
+        });
+
         it("removes link relations that are no longer present in the content", () => {
             const target = createNote("root", { title: "spec-unused-target" });
             const source = createNote("root", { title: "spec-unused-source" });

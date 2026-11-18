@@ -518,6 +518,10 @@ type EventMappings = {
     beforeNoteSwitch: {
         noteContext: NoteContext;
     };
+    /** Makes every editor of the note `noteId` in this window save its pending changes now. */
+    saveNoteChanges: {
+        noteId: string;
+    };
     beforeNoteContextRemove: {
         ntxIds: string[];
     };

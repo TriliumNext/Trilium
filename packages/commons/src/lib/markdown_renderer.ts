@@ -300,7 +300,7 @@ export function extractCodeBlocks(text: string): { processedText: string; placeh
     // The whole match is restored verbatim before marked parses, so the prefixes are
     // preserved and the blockquote still renders correctly.
     text = text
-        .replace(/^[ \t]*(?:>[ \t]*)*```[^\n]*\n[\s\S]*?^[ \t]*(?:>[ \t]*)*```[ \t]*$/gm, (m) => {
+        .replace(/^[ \t]*(?:>[ \t]*)*(```+)(?!`)[^\n]*\n[\s\S]*?^[ \t]*(?:>[ \t]*)*\1[ \t]*$/gm, (m) => {
             const key = `<!--CODE_BLOCK_${timestamp}_${id++}-->`;
             codeMap.set(key, m);
             return key;

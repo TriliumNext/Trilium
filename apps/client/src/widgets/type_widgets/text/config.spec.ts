@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 
 import linkContextMenu from "../../../menus/link_context_menu.js";
 import imageService from "../../../services/image.js";
 import linkService from "../../../services/link.js";
+import type { LinkTarget } from "../../../services/link_targets.js";
 import {
     detectCodeLanguage, ensureMimeTypesForHighlighting
 } from "../../../services/syntax_highlight.js";
@@ -119,6 +120,22 @@ vi.mock("../../../services/dialog.js", () => ({
     })
 }));
 vi.mock("@triliumnext/highlightjs", () => ({ default: { name: "hljs-stub" } }));
+// The editor functions that the `@` list reads the headings and anchors of its own note with.
+const editorTargets = vi.hoisted(() => ({
+    getHeadings: vi.fn(),
+    getAnchorNames: vi.fn(),
+    assignBlockId: vi.fn()
+}));
+vi.mock("@triliumnext/ckeditor5", async (importOriginal) => ({
+    ...await importOriginal<typeof import("@triliumnext/ckeditor5")>(),
+    ...editorTargets
+}));
+const { createNoteMentionList } = vi.hoisted(() => ({ createNoteMentionList: vi.fn() }));
+vi.mock("./mention_list_view.js", async (importOriginal) => {
+    const original = await importOriginal<typeof import("./mention_list_view.js")>();
+    createNoteMentionList.mockImplementation(original.createNoteMentionList);
+    return { ...original, createNoteMentionList };
+});
 vi.mock("../../../services/math.js", () => ({ default: { name: "katex-stub" } }));
 vi.mock("../../../services/content_renderer.js", () => ({
     getUploadBoxDefaults: vi.fn((mime: string) => ({
@@ -179,7 +196,10 @@ interface DynamicConfig {
     syntaxHighlighting: { loadHighlightJs(mimeType: string): Promise<{ default: unknown }> };
     mention?: {
         feeds: unknown[];
-        hostedFeeds?: { marker: string; minimumCharacters?: number; allowSpaces?: boolean; list(): unknown }[];
+        hostedFeeds?: {
+            marker: string; minimumCharacters?: number; allowSpaces?: boolean;
+            list(editor?: unknown): unknown;
+        }[];
     };
 }
 
@@ -1008,6 +1028,46 @@ describe("CK config - mention feed", () => {
         const hosted = config.mention?.hostedFeeds?.[0];
         expect(hosted).toMatchObject({ marker: "@", minimumCharacters: 0, allowSpaces: true });
         expect(hosted?.list()).toEqual(expect.objectContaining({ show: expect.any(Function), handleKeyDown: expect.any(Function) }));
+    });
+
+    it("has the @ list read the headings and anchors of its own note from the editor", async () => {
+        // With `textNoteCompletionLinkTargetsEnabled` off too: the list reads it as it draws.
+        optionsState.map["textNoteCompletionEnabled"] = "true";
+        let noteId: string | undefined = "noteAbc";
+        const config = await buildDynamicConfig({ getNoteId: () => noteId });
+        const editor = { model: { name: "model" } };
+        config.mention?.hostedFeeds?.[0]?.list(editor);
+        const getOwnLinkTargets: (notePath: string) => LinkTarget[] | undefined =
+            createNoteMentionList.mock.lastCall?.[0].getOwnLinkTargets;
+
+        // The server reads the headings and anchors of any other note.
+        expect(getOwnLinkTargets("root/other")).toBeUndefined();
+        expect(editorTargets.getHeadings).not.toHaveBeenCalled();
+
+        const heading = { element: { name: "heading2" }, level: 2, text: "Intro" };
+        editorTargets.getHeadings.mockReturnValue([ heading ]);
+        editorTargets.getAnchorNames.mockReturnValue([ "top" ]);
+        editorTargets.assignBlockId.mockReturnValue("a b");
+        const targets = getOwnLinkTargets("root/parent/noteAbc");
+        expect(editorTargets.getHeadings).toHaveBeenCalledExactlyOnceWith(editor);
+        expect(editorTargets.getAnchorNames).toHaveBeenCalledExactlyOnceWith(editor);
+        expect(targets).toMatchObject([
+            { kind: "heading", title: "Intro", level: 2 },
+            { kind: "anchor", title: "top", params: { bookmark: "top" } }
+        ]);
+        expect(targets?.[1]?.createLinkPath()).toBe("root/parent/noteAbc?bookmark=top");
+        // The editor gives the heading its block id, so the server is never asked for one.
+        expect(targets?.[0]?.createReference).toBeUndefined();
+        expect(editorTargets.assignBlockId).not.toHaveBeenCalled();
+        expect(targets?.[0]?.createLinkPath()).toBe("root/parent/noteAbc?block=a%20b");
+        expect(editorTargets.assignBlockId)
+            .toHaveBeenCalledExactlyOnceWith(editor.model, heading.element);
+
+        // The editor is reused for the next note, so the note is read on each call.
+        noteId = "next";
+        expect(getOwnLinkTargets("root/parent/noteAbc")).toBeUndefined();
+        noteId = undefined;
+        expect(getOwnLinkTargets("root/parent/noteAbc")).toBeUndefined();
     });
 });
 

@@ -4,8 +4,14 @@ import type { ComponentChildren } from "preact";
 
 import contextMenu from "../../../menus/context_menu";
 import { buildInsertMenuItems, keepEditorFocused } from "../../../menus/text_editor_context_menu";
+import type { LinkTarget } from "../../../services/link_targets";
+import options from "../../../services/options";
 import { AutocompleteList } from "../../react/FormAutocomplete";
-import { type CommandEntry, CommandMentionList, createHostedList, NoteMentionList } from "../../react/NoteAutocomplete";
+import LinkMentionList from "../../react/LinkMentionList";
+import {
+    type CommandEntry, CommandMentionList, createHostedList, NoteMentionList,
+    type NoteMentionListProps
+} from "../../react/NoteAutocomplete";
 import { type ChildNoteParent, createChildNote, openChildNote } from "./child_note";
 
 /** The editor a list for a plugin's marker is created for. */
@@ -16,8 +22,47 @@ type HostEditor = Parameters<NonNullable<SlashCommandConfig["list"]>>[0];
  * `mention.hostedFeeds`, and mentions the note picked as a reference link.
  */
 export function createNoteMentionList({
-    allowCreatingNotes, preselect, getParentNotePath, getChildNoteParent
-}: {
+    allowCreatingNotes, preselect, getParentNotePath, getChildNoteParent, getOwnLinkTargets
+}: NoteMentionListOptions = {}): MentionHostedList {
+    return createHostedList<MentionHostedListState>((state, list) => {
+        const childNoteParent = getChildNoteParent?.();
+        const props: NoteMentionListProps = {
+            ...list,
+            query: state.query,
+            allowCreatingNotes,
+            parentNotePath: getParentNotePath?.(),
+            preselect,
+            onPick: (notePath) => state.commit(typeof notePath === "string"
+                ? toMention(notePath)
+                : notePath.then(toMentionIfCreated)),
+            onPickChildNote: childNoteParent && ((title) => {
+                const mention = createChildNote(childNoteParent, title)
+                    .then(toMentionIfCreated);
+                state.commit(mention);
+                // Runs after the commit inserts the link, which focuses the editor.
+                void mention.then((created) => created && openChildNote(
+                    created.notePath, childNoteParent.ntxId, { selectTitle: false }
+                ));
+            })
+        };
+
+        if (!getOwnLinkTargets || !options.is("textNoteCompletionLinkTargetsEnabled")) {
+            return <NoteMentionList {...props} />;
+        }
+
+        return (
+            <LinkMentionList
+                {...props}
+                linkedNotePath={getMentionedNotePath(state.followUpOf)}
+                onLinkNote={(notePath) => state.commitAndFollowUp(toMention(notePath))}
+                onKeepLink={state.dismiss}
+                getOwnTargets={getOwnLinkTargets}
+            />
+        );
+    });
+}
+
+interface NoteMentionListOptions {
     allowCreatingNotes?: boolean;
     preselect?: boolean;
     /**
@@ -30,32 +75,15 @@ export function createNoteMentionList({
      * creates the note without asking for its type, and opens it in Quick edit once linked.
      */
     getChildNoteParent?(): ChildNoteParent | undefined;
-} = {}): MentionHostedList {
-    return createHostedList<MentionHostedListState>((state, list) => {
-        const childNoteParent = getChildNoteParent?.();
-
-        return (
-            <NoteMentionList
-                {...list}
-                query={state.query}
-                allowCreatingNotes={allowCreatingNotes}
-                parentNotePath={getParentNotePath?.()}
-                preselect={preselect}
-                onPick={(notePath) => state.commit(typeof notePath === "string"
-                    ? toMention(notePath)
-                    : notePath.then(toMentionIfCreated))}
-                onPickChildNote={childNoteParent && ((title) => {
-                    const mention = createChildNote(childNoteParent, title)
-                        .then(toMentionIfCreated);
-                    state.commit(mention);
-                    // Runs after the commit inserts the link, which focuses the editor.
-                    void mention.then((created) => created && openChildNote(
-                        created.notePath, childNoteParent.ntxId, { selectTitle: false }
-                    ));
-                })}
-            />
-        );
-    });
+    /**
+     * When given, and while `textNoteCompletionLinkTargetsEnabled` is on, a note picked from the
+     * list is linked at once and the list follows up on the link with a second page, which lists
+     * the targets of the note, such as its headings and anchors, for the text typed after the
+     * link. A pick there points the link at the target. It returns the targets of the note at
+     * `notePath` from the editor, when the editor is open on that note. The server reads those of
+     * any other note.
+     */
+    getOwnLinkTargets?(notePath: string): LinkTarget[] | undefined;
 }
 
 /**
@@ -188,4 +216,11 @@ function toMention(notePath: string) {
 
 function toMentionIfCreated(notePath: string | undefined) {
     return notePath ? toMention(notePath) : undefined;
+}
+
+/** The path of the note that `toMention()` made `mention` for, or `undefined` for other items. */
+function getMentionedNotePath(mention: MentionFeedObjectItem | null) {
+    return mention && "notePath" in mention && typeof mention.notePath === "string"
+        ? mention.notePath
+        : undefined;
 }

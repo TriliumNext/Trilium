@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
 import TriliumMentionUI from "./mention/trilium_mention_ui.js";
+import type { MentionHostedList, MentionHostedListState } from "./mention/types.js";
 import MentionCustomization from "./mention_customization.js";
 import ReferenceLink from "./referencelink.js";
 
@@ -106,5 +107,60 @@ describe("MentionCustomization", () => {
         expect(data).toContain("noteWithRange");
         // The first three characters ("foo") were replaced by the range insertion.
         expect(data).toContain("bar");
+    });
+
+    it("lets a list follow up on the link to a note, which its next mention replaces", async () => {
+        const shown: { state: MentionHostedListState | null } = { state: null };
+        const list: MentionHostedList = {
+            show: (state) => { shown.state = state; },
+            hide: () => { shown.state = null; },
+            handleKeyDown: () => false,
+            element: document.createElement("div")
+        };
+        const hosted = await createTestEditor([
+            Essentials, Paragraph, MentionEditing, TriliumMentionUI, ReferenceLink,
+            MentionCustomization
+        ], {
+            referenceLink: { getTitle: async () => "Some title", getTitleSync: () => "Some title" },
+            mention: {
+                feeds: [],
+                hostedFeeds: [ { marker: "@", allowSpaces: true, list: () => list } ]
+            }
+        });
+        const { model } = hosted;
+        const type = (text: string) => model.change((writer) => {
+            const caret = model.document.selection.getFirstPosition();
+            model.insertContent(writer.createText(text), caret);
+        });
+        const linkTo = (href: string) =>
+            `see <reference href="${href}" storedTitle="Some title"></reference>`;
+        /** The paragraph's content, and whether the editing view marks each link in it. */
+        const content = () => {
+            const links = hosted.editing.view.getDomRoot()?.querySelectorAll("a.reference-link");
+            return {
+                model: getModelData(model, { withoutSelection: true })
+                    .replace(/^<paragraph>|<\/paragraph>$/g, ""),
+                marked: [ ...links ?? [] ]
+                    .map((link) => link.classList.contains("ck-mention-follow-up"))
+            };
+        };
+        // The `referenceLink` command inserts the link once the title of its note is loaded.
+        const titleLoaded = () => new Promise((resolve) => setTimeout(resolve));
+        setModelData(model, "<paragraph>see []</paragraph>");
+
+        type("@al");
+        shown.state?.commitAndFollowUp({ id: "@noteAbc", notePath: "noteAbc" });
+        expect(content()).toEqual({ model: "see ", marked: [] });
+        expect(shown.state?.followUpOf).toBe(null);
+        await titleLoaded();
+        expect(content()).toEqual({ model: linkTo("#noteAbc"), marked: [ true ] });
+        expect(shown.state).toMatchObject({ query: "", followUpOf: { notePath: "noteAbc" } });
+
+        type("in");
+        expect(shown.state?.query).toBe("in");
+        shown.state?.commit({ id: "@noteAbc?block=b1", notePath: "noteAbc?block=b1" });
+        expect(shown.state).toBe(null);
+        await titleLoaded();
+        expect(content()).toEqual({ model: linkTo("#noteAbc?block=b1"), marked: [ false ] });
     });
 });
