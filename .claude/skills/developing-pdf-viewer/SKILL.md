@@ -76,7 +76,8 @@ ls -l --time-style=+%H:%M packages/pdfjs-viewer/dist/web/custom.mjs
   (`useTocBuild()` in `toc_build.ts`); `setupTocBuild()` answers `pdfjs-viewer-toc-build` with the
   outline, its `isCut`, the `blobId` of the bytes and the time, or `{ failed: true }`. Bytes of a
   save are opened with their own loading task, which is destroyed whether the open succeeds or
-  not. The answer to the latest request only is saved with `PUT .../toc`.
+  not. The answer to the latest request only is saved with `PUT .../toc`. The cache, its ids and
+  the formats beside PDF: the `working-with-toc-cache` skill.
 
 ## The viewer outlives the note it shows
 

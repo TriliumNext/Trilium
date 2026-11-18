@@ -197,6 +197,9 @@ link being edited names.
 
 ## ToC formats
 
+When to use a cache, how to wire a new format, heading ids and their renderers in full: the
+`working-with-toc-cache` skill. A summary:
+
 A document with a table of contents that is costly to read, such as the outline of a PDF, keeps
 its headings in a ToC cache: an attachment of role `tocCache` (trait `derived`, so revisions,
 exports and copies leave it out), titled `toc-cache.json` on a note and
