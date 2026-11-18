@@ -84,7 +84,14 @@
     "invalid_url": "这不是有效的 URL。",
     "script_link_not_allowed": "以 {{scheme}} 开头的链接可以执行代码，因此不允许使用。",
     "retrieving_from_page": "正在从网页获取…",
-    "title_from_attachment": "若未设置，将始终跟随附件的标题"
+    "title_from_attachment": "若未设置，将始终跟随附件的标题",
+    "top_of_note": "链接到整篇笔记",
+    "select_note_for_targets": "选择一篇笔记，即可看到可链接到的标题和锚点。",
+    "inspecting_note": "正在检查笔记结构",
+    "heading_reference_failed": "无法创建指向该标题的引用",
+    "link_to_heading": "链接到标题",
+    "link_to_anchor": "链接到锚点",
+    "no_link_targets": "没有可链接到的标题或锚点。"
   },
   "branch_prefix": {
     "edit_branch_prefix": "编辑分支前缀",
@@ -2321,7 +2328,8 @@
     "display_as": "显示为",
     "delete": "删除块",
     "edit": "编辑…",
-    "include_size_default": "默认"
+    "include_size_default": "默认",
+    "tab_width": "制表符宽度"
   },
   "electron_integration": {
     "desktop-application": "桌面应用程序",
@@ -2572,7 +2580,9 @@
     "link_title_retrieval_enabled": "自动获取文本链接的标题",
     "link_title_retrieval_description": "在链接编辑器中，用网页标题填充文本链接中为空的标题。",
     "link_details_retrieval_enabled": "自动获取图标与文字链接和卡片的标题与描述",
-    "link_details_retrieval_description": "在链接编辑器中，用网页的标题和描述填充图标与文字链接或卡片中为空的标题或描述。"
+    "link_details_retrieval_description": "在链接编辑器中，用网页的标题和描述填充图标与文字链接或卡片中为空的标题或描述。",
+    "note_completion_link_targets_enabled": "建议可链接到的标题和锚点",
+    "note_completion_link_targets_description": "选择一篇笔记后，还会建议目标笔记中的标题或锚点作为链接目标。"
   },
   "table_view": {
     "new-row": "新增行",
@@ -3556,7 +3566,16 @@
     "add_model_provider": "添加模型提供商",
     "no_model_providers_configured": "尚未配置模型提供商。",
     "provider_no_models": "未选择任何模型，因此不会出现在对话中。",
-    "search_provider_unavailable_standalone": "在浏览器版中不可用：该服务拒绝来自网页的请求，因此只能从桌面版或服务器版使用。"
+    "search_provider_unavailable_standalone": "在浏览器版中不可用：该服务拒绝来自网页的请求，因此只能从桌面版或服务器版使用。",
+    "search_check_heading": "测试搜索",
+    "search_check_running": "正在运行测试搜索…",
+    "search_check_passed": "搜索提供商工作正常。以下是测试搜索的前几条结果：",
+    "search_check_no_results": "搜索提供商已响应，但测试搜索没有找到任何结果。它可能没有启用任何搜索引擎。",
+    "search_check_failed": "测试搜索失败：{{error}}",
+    "search_check_failed_hint": "你仍可以添加该提供商，例如在其服务尚未运行前先行配置。",
+    "add_provider_anyway": "仍然添加",
+    "save_anyway": "仍然保存",
+    "retry": "重试"
   },
   "revisions": {
     "note_revisions": "笔记修订",
