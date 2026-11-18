@@ -50,6 +50,8 @@ export interface InstalledViewer {
     viewerEl: HTMLElement;
     /** Records `container.scrollTo` calls, since happy-dom does not scroll. */
     scrollRequests: Mock;
+    /** Records `pdfViewer.scrollPageIntoView()` calls, which turn to the page they name. */
+    scrollPageIntoView: Mock;
 }
 
 /**
@@ -87,6 +89,13 @@ export async function installViewerApp(data: Uint8Array, pageGeometry: Record<nu
 
     const pdfLinkService = { goToDestination: vi.fn() };
     const messages: any[] = [];
+    const scrollPageIntoView = vi.fn(({ pageNumber }: { pageNumber: number }) => {
+        if (window.PDFViewerApplication) {
+            window.PDFViewerApplication.pdfViewer.currentPageNumber = pageNumber;
+        }
+    });
+    // The library that viewer.html loads, which the build of a saved document opens it with.
+    window.pdfjsLib = { getDocument: (src) => getDocument(src) } as Window["pdfjsLib"];
 
     // Each `setup*()` registers its own anonymous window listener, which it never removes
     // (the real viewer lives for the document's lifetime, so it has no reason to). Across a
@@ -110,6 +119,8 @@ export async function installViewerApp(data: Uint8Array, pageGeometry: Record<nu
         pdfViewer: {
             container,
             currentPageNumber: 1,
+            pagesPromise: Promise.resolve(),
+            scrollPageIntoView,
             update: vi.fn(),
             optionalContentConfigPromise,
             getPageView: (pageIndex: number) => {
@@ -142,7 +153,8 @@ export async function installViewerApp(data: Uint8Array, pageGeometry: Record<nu
             container.scrollTop = scrollTop;
         },
         viewerEl,
-        scrollRequests
+        scrollRequests,
+        scrollPageIntoView
     };
 }
 

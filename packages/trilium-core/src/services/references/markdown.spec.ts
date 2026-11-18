@@ -4,7 +4,13 @@ import {
 import { describe, expect, it } from "vitest";
 
 import { serverBlockHost } from "../import/markdown";
+import type { ReferenceSource } from "./index";
 import markdownReferences from "./markdown";
+
+/** A note of `content`, as a provider reads it. */
+function source(content: string | Uint8Array) {
+    return { isContentAvailable: () => true, getContent: () => content } as unknown as ReferenceSource;
+}
 
 const marker = (id: string) => `<a data-trilium-block-id="${id}"></a>`;
 
@@ -16,12 +22,12 @@ describe("markdownReferences", () => {
         expect(markdownReferences.isFor("code", "text/markdown")).toBe(true);
         expect(markdownReferences.isFor("code", "text/html")).toBe(false);
         expect(markdownReferences.isFor("text", "text/x-markdown")).toBe(false);
-        expect(markdownReferences.findTargets(content)).toStrictEqual([
+        expect(markdownReferences.findTargets(source(content))).toStrictEqual([
             { kind: "heading", title: "Intro", level: 1 },
             { kind: "heading", title: "Kept", level: 2, params: { block: "kept" } },
             { kind: "anchor", title: "top", params: { bookmark: "top" } }
         ]);
-        expect(markdownReferences.findTargets(new Uint8Array([ 35, 32, 65 ]))).toStrictEqual([]);
+        expect(markdownReferences.findTargets(source(new Uint8Array([ 35, 32, 65 ])))).toStrictEqual([]);
 
         const created = markdownReferences.createReference?.(
             content, { kind: "heading", index: 0, title: "Intro" }

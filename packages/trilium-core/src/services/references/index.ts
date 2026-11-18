@@ -1,12 +1,26 @@
 import type {
-    CreateReferenceRequest, NoteReferencesResponse, ReferenceConflictResponse, ReferenceParams,
-    ReferenceTarget
+    CreateReferenceRequest, NoteReferencesResponse, PendingToc, ReferenceConflictResponse,
+    ReferenceParams, ReferenceTarget
 } from "@triliumnext/commons";
 
+import BAttachment from "../../becca/entities/battachment.js";
 import type BNote from "../../becca/entities/bnote.js";
 import { ConflictError, DetailedConflictError, ValidationError } from "../../errors.js";
 import markdownReferences from "./markdown.js";
 import textReferences from "./text.js";
+import tocReferences from "./toc.js";
+
+/** What a provider reads targets from: a note, or an attachment of a note. */
+export type ReferenceSource = BNote | BAttachment;
+
+/** What a provider found, with what the listing reports besides the targets. */
+export interface FoundTargets {
+    targets: ReferenceTarget[];
+    /** The blob that the targets were read from, when it is not the one the source had first. */
+    blobId?: string;
+    /** Set when the targets come from a table of contents that the viewer has yet to build. */
+    pendingToc?: PendingToc;
+}
 
 /**
  * Lists the places inside the content of one kind of note that a link can point at, and gives a
@@ -15,8 +29,10 @@ import textReferences from "./text.js";
 export interface ReferenceProvider {
     /** Whether the provider reads the content of notes of `type` and `mime`. */
     isFor(type: string, mime: string): boolean;
-    /** The targets in `content`, in the order that the lists show them. */
-    findTargets(content: string | Uint8Array): ReferenceTarget[] | Promise<ReferenceTarget[]>;
+    /** The targets of `source`, in the order that the lists show them. */
+    findTargets(
+        source: ReferenceSource
+    ): ReferenceTarget[] | FoundTargets | Promise<ReferenceTarget[] | FoundTargets>;
     /**
      * `content` with a reference to the target that `request` names, and the link parameters of
      * the target, or `null` when no target matches. Needed only when `findTargets()` lists targets
@@ -33,36 +49,43 @@ export interface CreatedReference {
     params: ReferenceParams;
 }
 
-/** The first provider whose `isFor()` accepts a note reads it. */
-let providers: ReferenceProvider[] = [ textReferences, markdownReferences ];
+/** The providers that apps bring, after the built-in ones. */
+let registeredProviders: ReferenceProvider[] = [];
 
 /** Adds a provider that an app brings, such as one built on a parser that needs Node. */
 export function registerReferenceProvider(provider: ReferenceProvider) {
-    providers = [ ...providers, provider ];
+    registeredProviders = [ ...registeredProviders, provider ];
 }
 
 export function unregisterReferenceProvider(provider: ReferenceProvider) {
-    providers = providers.filter((other) => other !== provider);
+    registeredProviders = registeredProviders.filter((other) => other !== provider);
 }
 
 /**
- * The targets of `note`, none when no provider reads it, and the blob that they were read from. A
- * target without `params` is left out when its provider cannot create references, or when the
- * content of `note` cannot be saved.
+ * The targets of `source`, none when no provider reads it, and the blob that they were read
+ * from. A target without `params` is left out when its provider cannot create references, or
+ * when the content of `source` cannot be saved.
  */
-export async function findReferenceTargets(note: BNote): Promise<NoteReferencesResponse> {
-    const provider = getProvider(note);
+export async function findReferenceTargets(
+    source: ReferenceSource
+): Promise<NoteReferencesResponse> {
+    const provider = getProvider(source);
     if (!provider) {
         return { targets: [] };
     }
 
     // The blob is read together with the content, before the provider can wait.
-    const { blobId } = note;
-    const targets = await provider.findTargets(getContent(note));
-    if (provider.createReference && note.isContentWritable()) {
-        return { targets, blobId };
-    }
-    return { targets: targets.filter((target) => target.params), blobId };
+    const { blobId } = source;
+    const found = await provider.findTargets(source);
+    const { targets, pendingToc, blobId: readBlobId = blobId } = Array.isArray(found)
+        ? { targets: found }
+        : found;
+    const isWritable = provider.createReference && isContentWritable(source);
+    return {
+        targets: isWritable ? targets : targets.filter((target) => target.params),
+        blobId: readBlobId,
+        ...(pendingToc ? { pendingToc } : {})
+    };
 }
 
 /**
@@ -86,7 +109,7 @@ export function createReference(note: BNote, request: CreateReferenceRequest) {
         });
     }
 
-    const content = getContent(note);
+    const content = readContent(note);
     const created = provider.createReference(content, request);
     // The message leaves the title out: it reaches the log, and it can come from a protected note.
     if (!created) {
@@ -101,13 +124,28 @@ export function createReference(note: BNote, request: CreateReferenceRequest) {
     return created.params;
 }
 
-function getProvider(note: BNote) {
-    return providers.find((provider) => provider.isFor(note.type, note.mime));
+/**
+ * The content of `source`, for a provider that reads it. Throws `ValidationError` for a protected
+ * source outside a protected session.
+ */
+export function readContent(source: ReferenceSource): string | Uint8Array {
+    if (!source.isContentAvailable()) {
+        const name = source instanceof BAttachment
+            ? `Attachment '${source.attachmentId}'`
+            : `Note '${source.noteId}'`;
+        throw new ValidationError(`${name} has no content available.`);
+    }
+    return source.getContent();
 }
 
-function getContent(note: BNote) {
-    if (!note.isContentAvailable()) {
-        throw new ValidationError(`Note '${note.noteId}' has no content available.`);
-    }
-    return note.getContent();
+/** The first provider whose `isFor()` accepts the source reads it. */
+function getProvider(source: ReferenceSource) {
+    // An attachment of the role `file` reads like a note of the type `file`.
+    const type = source instanceof BAttachment ? source.role : source.type;
+    return [ textReferences, markdownReferences, tocReferences, ...registeredProviders ]
+        .find((provider) => provider.isFor(type, source.mime));
+}
+
+function isContentWritable(source: ReferenceSource) {
+    return !(source instanceof BAttachment) && source.isContentWritable();
 }

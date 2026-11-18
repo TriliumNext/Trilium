@@ -41,6 +41,11 @@ export interface AttachmentRoleTraits {
      */
     embedded: boolean;
     /**
+     * Whether the content is rebuilt from the note when it is missing, so revisions, exports and
+     * copies of the note leave the attachment out.
+     */
+    derived: boolean;
+    /**
      * What a copy of this becomes when a person carries it into a note themselves.
      *
      * A role says who made the attachment and why, so a copy made by hand has a new answer: the
@@ -78,9 +83,9 @@ export interface AttachmentRoleTraits {
  */
 export const ATTACHMENT_ROLES = {
     /** A picture the user placed in the note. */
-    image: { picture: true, deduplicated: false, embedded: true, copiedAs: "image", icon: null },
+    image: { picture: true, deduplicated: false, embedded: true, derived: false, copiedAs: "image", icon: null },
     /** A file the user attached to the note. */
-    file: { picture: false, deduplicated: false, embedded: true, copiedAs: "file", icon: null },
+    file: { picture: false, deduplicated: false, embedded: true, derived: false, copiedAs: "file", icon: null },
     /**
      * A link preview's two pictures, kept apart from `image` so they can be told from one the user
      * chose. Both arrive already sized by the server (a 16x16 icon, a 256px thumbnail), so the
@@ -89,16 +94,21 @@ export const ATTACHMENT_ROLES = {
      * what eventually takes them with it. Carried into a note by hand, though, they are pictures like
      * any other — the preview they belonged to stayed behind.
      */
-    favicon: { picture: true, deduplicated: true, embedded: true, copiedAs: "image", icon: "bx bx-globe" },
-    coverImage: { picture: true, deduplicated: true, embedded: true, copiedAs: "image", icon: "bx bx-image-alt" },
+    favicon: { picture: true, deduplicated: true, embedded: true, derived: false, copiedAs: "image", icon: "bx bx-globe" },
+    coverImage: { picture: true, deduplicated: true, embedded: true, derived: false, copiedAs: "image", icon: "bx bx-image-alt" },
     /** How a collection remembers the way it is being looked at, and a PDF where the reader had got to. */
-    viewConfig: { picture: false, deduplicated: false, embedded: false, copiedAs: "file", icon: "bx bx-cog" },
+    viewConfig: { picture: false, deduplicated: false, embedded: false, derived: false, copiedAs: "file", icon: "bx bx-cog" },
     /** Shapes saved into an Excalidraw canvas's library. */
-    canvasLibraryItem: { picture: false, deduplicated: false, embedded: false, copiedAs: "file", icon: "bx bx-shape-square" },
+    canvasLibraryItem: { picture: false, deduplicated: false, embedded: false, derived: false, copiedAs: "file", icon: "bx bx-shape-square" },
     /** The file an import was read from, kept so an import that went wrong can be looked at again. */
-    importSource: { picture: false, deduplicated: false, embedded: false, copiedAs: "file", icon: "bx bx-import" },
+    importSource: { picture: false, deduplicated: false, embedded: false, derived: false, copiedAs: "file", icon: "bx bx-import" },
     /** A meeting recording's transcript, which the recording rewrites as it transcribes. */
-    transcript: { picture: false, deduplicated: false, embedded: false, copiedAs: "file", icon: "bx bx-microphone" }
+    transcript: { picture: false, deduplicated: false, embedded: false, derived: false, copiedAs: "file", icon: "bx bx-microphone" },
+    /** The table of contents read from a document, rebuilt when the document changes. */
+    tocCache: {
+        picture: false, deduplicated: false, embedded: false, derived: true, copiedAs: "file",
+        icon: "bx bx-list-ul"
+    }
 } as const satisfies Record<string, AttachmentRoleTraits>;
 
 /** A role the app itself creates. Arbitrary strings reach the same fields — see {@link ATTACHMENT_ROLES}. */
@@ -140,6 +150,11 @@ export function isDeduplicatedAttachmentRole(role: string | undefined | null): b
 /** @see AttachmentRoleTraits.embedded */
 export function isEmbeddedAttachmentRole(role: string | undefined | null): boolean {
     return attachmentRoleTraits(role)?.embedded ?? false;
+}
+
+/** @see AttachmentRoleTraits.derived */
+export function isDerivedAttachmentRole(role: string | undefined | null): boolean {
+    return attachmentRoleTraits(role)?.derived ?? false;
 }
 
 /**

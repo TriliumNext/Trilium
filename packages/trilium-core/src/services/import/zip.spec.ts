@@ -1421,6 +1421,84 @@ describe("link and image rewriting on import", () => {
         expect(content).toContain(`href="#root/${sibling?.noteId}?bookmark=section"`);
     });
 
+    it("keeps the targets of links to a PDF and to its attachment in another folder", async () => {
+        const folder = (noteId: string, title: string, children: object[]) => ({
+            noteId, title, type: "text", mime: "text/html", format: "html",
+            dataFileName: `${title}.html`, dirFileName: title, attributes: [], attachments: [],
+            children
+        });
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [
+                folder("pdfSources01", "PDF Sources", [{
+                    noteId: "pdfTextSrc01", title: "Text source", type: "text", mime: "text/html",
+                    format: "html", dataFileName: "Text source.html", attributes: [],
+                    attachments: [{
+                        attachmentId: "pdfOwnNotes1", title: "notes.pdf", role: "file",
+                        mime: "application/pdf", position: 10,
+                        dataFileName: "Text source_notes.pdf"
+                    }]
+                }, {
+                    noteId: "pdfMdSource1", title: "Markdown source", type: "code",
+                    mime: "text/x-markdown", dataFileName: "Markdown source.md", attributes: [],
+                    attachments: []
+                }]),
+                folder("pdfDocs00001", "PDF Documents", [{
+                    noteId: "pdfManual001", title: "Manual", type: "file", mime: "application/pdf",
+                    dataFileName: "Manual.pdf", attributes: [],
+                    attachments: [{
+                        attachmentId: "pdfAppendix1", title: "appendix.pdf", role: "file",
+                        mime: "application/pdf", position: 10, dataFileName: "Manual_appendix.pdf"
+                    }]
+                }])
+            ]
+        };
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "PDF Sources.html": "<p>sources</p>",
+            "PDF Sources/Text source.html":
+                `<p><a href="../PDF%20Documents/Manual.pdf?page=3&amp;heading=h1">manual</a> `
+                + `<a class="reference-link" href="../PDF Documents/Manual_appendix.pdf`
+                + `?heading=h2&amp;page=4">appendix</a> <a class="reference-link"`
+                + ` href="Text%20source_notes.pdf?page=2">notes</a></p>`,
+            "PDF Sources/Text source_notes.pdf": Buffer.from("%PDF-1.7 notes"),
+            "PDF Sources/Markdown source.md":
+                "[manual](../PDF%20Documents/Manual.pdf?page=3&heading=h1)"
+                + " [appendix](../PDF%20Documents/Manual_appendix.pdf?heading=h2&page=4)"
+                + " [[pdfManual001?page=3&heading=h1]]",
+            "PDF Documents.html": "<p>documents</p>",
+            "PDF Documents/Manual.pdf": Buffer.from("%PDF-1.7 manual"),
+            "PDF Documents/Manual_appendix.pdf": Buffer.from("%PDF-1.7 appendix")
+        });
+
+        const { importedNote: sources, rootNote } =
+            await testImportBuffer(zipBuffer, "import-pdf-targets");
+        const manual = rootNote.getChildNotes().find((n) => n.title === "PDF Documents")
+            ?.getChildNotes()[0];
+        const appendix = manual?.getAttachments()[0];
+        const childByTitle = (title: string) =>
+            sources.getChildNotes().find((n) => n.title === title);
+        const text = childByTitle("Text source");
+        const ownedId = (title: string) => text?.getAttachments()
+            .find((attachment) => attachment.title === title)?.attachmentId;
+
+        expect(appendix?.attachmentId).not.toBe("pdfAppendix1");
+        expect(text?.getContent())
+            .toContain(`href="#root/${manual?.noteId}?page=3&amp;heading=h1"`);
+        expect(text?.getContent()).toContain(`href="#root/${text?.noteId}?viewMode=attachments`
+            + `&attachmentId=${ownedId("notes.pdf")}&amp;page=2"`);
+        // The link scan of the import copies another note's attachment into a text note and points
+        // the link at the copy.
+        expect(text?.getContent()).toContain(`href="#root/${text?.noteId}?viewMode=attachments`
+            + `&amp;attachmentId=${ownedId("appendix.pdf")}&amp;page=4&amp;heading=h2"`);
+        expect(childByTitle("Markdown source")?.getContent()).toBe(
+            `[manual](#root/${manual?.noteId}?page=3&heading=h1)`
+            + ` [appendix](#root/${manual?.noteId}?viewMode=attachments`
+            + `&attachmentId=${appendix?.attachmentId}&page=4&heading=h2)`
+            + ` [[${manual?.noteId}?page=3&heading=h1]]`);
+    });
+
     it("maps the Wikilinks, links and embeds of a Markdown note, not its examples", async () => {
         const metaFile = {
             formatVersion: 2,

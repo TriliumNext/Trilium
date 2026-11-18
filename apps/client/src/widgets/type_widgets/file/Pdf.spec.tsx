@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
 import options from "../../../services/options";
+import server from "../../../services/server";
 
 // The component's own job is the message protocol with the viewer iframe: what it publishes into
 // the note context and what it relays. The hooks around it — the spaced-update save, the
@@ -14,7 +15,9 @@ const spacedUpdate = vi.hoisted(() => ({ resetUpdateTimer: vi.fn(), scheduleUpda
 const readOnly = vi.hoisted(() => ({ current: false }));
 const historyStore = vi.hoisted(() => vi.fn());
 /** What the component last handed the save hook: its data getter and content-change reaction. */
-const saveOptions = vi.hoisted(() => ({ current: null as null | { getData(): unknown; onContentChange(blob: unknown): void } }));
+const saveOptions = vi.hoisted(() => ({ current: null as null | {
+    getData(): unknown; onContentChange(blob: unknown): void; dataSaved(blob: Blob): void;
+} }));
 /** The Trilium event handlers the component registered, by event name. */
 const eventHandlers = vi.hoisted(() => new Map<string, (data: any) => unknown>());
 vi.mock("../../react/hooks/events", async (importOriginal) => ({
@@ -70,6 +73,8 @@ let contextData: Record<string, unknown>;
 beforeEach(() => {
     readOnly.current = false;
     contextData = {};
+    // The component reads the ToC route after every load of the viewer.
+    vi.spyOn(server, "get").mockResolvedValue({ status: "none" });
     noteContext = {
         ntxId: "ntx-1",
         note: NOTE,
@@ -143,19 +148,23 @@ describe("PdfPreview", () => {
         const posted = recordPostsToViewer();
 
         fromThisViewer({ type: "pdfjs-viewer-toc", data: [
-            { title: "Chapter", level: 0, id: "h1", dest: null, items: [ { title: "Section", level: 1, id: "h2", dest: null, items: [] } ] }
+            { id: "outline-0", title: "Chapter <img src=x onerror=alert(1)>", level: 1 },
+            { id: "outline-1", title: "Section & more", level: 2 }
         ] });
-        // The outline is flattened into the heading list the table of contents renders, levels
-        // starting at 1 as headings do.
+        // The titles of a PDF are plain text, and the table of contents renders HTML.
         expect(contextData.toc).toMatchObject({
-            headings: [ { id: "h1", text: "Chapter", level: 1 }, { id: "h2", text: "Section", level: 2 } ],
+            headings: [
+                { id: "outline-0", text: "Chapter &lt;img src=x onerror=alert(1)&gt;", level: 1 },
+                { id: "outline-1", text: "Section &amp; more", level: 2 }
+            ],
             activeHeadingId: null
         });
-        (contextData.toc as any).scrollToHeading({ id: "h2" });
-        expect(posted).toHaveBeenLastCalledWith({ type: "trilium-scroll-to-heading", headingId: "h2" }, window.location.origin);
+        (contextData.toc as any).scrollToHeading({ id: "outline-1" });
+        expect(posted).toHaveBeenLastCalledWith(
+            { type: "trilium-scroll-to-heading", headingKey: "outline-1" }, window.location.origin);
 
-        fromThisViewer({ type: "pdfjs-viewer-active-heading", headingId: "h2" });
-        expect(contextData.toc).toMatchObject({ activeHeadingId: "h2" });
+        fromThisViewer({ type: "pdfjs-viewer-active-heading", headingId: "outline-1" });
+        expect(contextData.toc).toMatchObject({ activeHeadingId: "outline-1" });
 
         fromThisViewer({ type: "pdfjs-viewer-page-info", totalPages: 12, currentPage: 3 });
         expect(contextData.pdfPages).toMatchObject({ totalPages: 12, currentPage: 3 });
@@ -191,7 +200,7 @@ describe("PdfPreview", () => {
         fromThisViewer({ type: "pdfjs-viewer-annotations", annotations: [] });
         expect(posted).toHaveBeenCalledExactlyOnceWith(
             { type: "trilium-scroll-to-annotation", annotationId: "12R", pageNumber: 5 }, window.location.origin);
-        expect(noteContext.viewScope).toEqual({ page: undefined, annotation: undefined });
+        expect(noteContext.viewScope).toEqual({ page: undefined, annotation: undefined, heading: undefined });
 
         // The list is sent again on every edit; the link is not followed again.
         fromThisViewer({ type: "pdfjs-viewer-annotations", annotations: [] });
@@ -209,6 +218,30 @@ describe("PdfPreview", () => {
         eventHandlers.get("noteSwitched")?.({ noteContext: { ntxId: "ntx-1", note: NOTE } });
         expect(posted).toHaveBeenCalledExactlyOnceWith(
             { type: "trilium-scroll-to-annotation", annotationId: undefined, pageNumber: 3 }, window.location.origin);
+    });
+
+    it("scrolls to the heading a link names, with the page the viewer falls back to", () => {
+        const posted = recordPostsToViewer();
+        fromThisViewer({ type: "pdfjs-viewer-annotations", annotations: [] });
+
+        noteContext.viewScope = { page: "12", heading: "0k3x9aa1h7q2mz" };
+        eventHandlers.get("noteSwitched")?.({ noteContext: { ntxId: "ntx-1", note: NOTE } });
+        expect(posted).toHaveBeenLastCalledWith({
+            type: "trilium-scroll-to-heading", headingId: "0k3x9aa1h7q2mz", pageNumber: 12
+        }, window.location.origin);
+        expect(noteContext.viewScope).toEqual({ page: undefined, annotation: undefined, heading: undefined });
+
+        // A heading without a page, as a hand-written link can have it.
+        noteContext.viewScope = { heading: "0k3x9aa1h7q2mz", page: "x" };
+        eventHandlers.get("noteSwitched")?.({ noteContext: { ntxId: "ntx-1", note: NOTE } });
+        expect(posted).toHaveBeenLastCalledWith({
+            type: "trilium-scroll-to-heading", headingId: "0k3x9aa1h7q2mz", pageNumber: undefined
+        }, window.location.origin);
+
+        // A page that is not one leads nowhere.
+        noteContext.viewScope = { page: "0" };
+        eventHandlers.get("noteSwitched")?.({ noteContext: { ntxId: "ntx-1", note: NOTE } });
+        expect(posted).toHaveBeenCalledTimes(2);
     });
 
     it("publishes its data again when the pane returns to it, and follows a link from there", () => {
@@ -421,3 +454,184 @@ describe("PdfPreview", () => {
         expect(save).toHaveBeenCalledWith("pdfSignatures", "{\"sig\":1}");
     });
 });
+
+describe("the build of the table of contents", () => {
+    const PENDING = { status: "missing", pendingToc: { format: "pdf" } };
+    const HEADINGS = [ { title: "Chapter 1", level: 1, page: 1 } ];
+
+    let get: ReturnType<typeof vi.spyOn>;
+    let put: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+        get = vi.spyOn(server, "get").mockResolvedValue(PENDING);
+        put = vi.spyOn(server, "put").mockImplementation(async (_url, body: any) => ({
+            status: "ready", blobId: body.targetBlobHash,
+            headings: [ { id: "id1", title: "Chapter 1", level: 1, page: 1 } ]
+        }));
+    });
+
+    function loadViewer() {
+        (container.querySelector("iframe") as HTMLIFrameElement).dispatchEvent(new Event("load"));
+    }
+
+    /** The build requests the component posted to the viewer, oldest first. */
+    function buildRequests(posted: ReturnType<typeof recordPostsToViewer>) {
+        return posted.mock.calls.map(([ message ]) => message as any)
+            .filter((message) => message.type === "trilium-build-toc");
+    }
+
+    function answer(requestId: number, blobId = "blobA") {
+        fromThisViewer({
+            type: "pdfjs-viewer-toc-build", requestId, blobId, headings: HEADINGS,
+            properties: { reader: 1 }, elapsedMs: 12
+        });
+    }
+
+    /** The bytes of a save, as the viewer sends them. */
+    async function saveBytes(bytes: number[]) {
+        const pending = saveOptions.current?.getData() as Promise<Blob>;
+        fromThisViewer({ type: "pdfjs-viewer-blob", data: new Uint8Array(bytes) });
+        return await pending;
+    }
+
+    it("asks the viewer to build after a load where the server cannot read the PDF, and saves its answer", async () => {
+        const posted = recordPostsToViewer();
+
+        loadViewer();
+
+        await vi.waitFor(() => expect(buildRequests(posted)).toHaveLength(1));
+        expect(get).toHaveBeenCalledWith("notes/note-1/toc", undefined, false,
+            { silentBadRequest: true, silentNotFound: true });
+        expect(buildRequests(posted)[0]).toEqual({
+            type: "trilium-build-toc", requestId: 1, isProtected: false, data: undefined
+        });
+
+        answer(1);
+        await vi.waitFor(() => expect(put).toHaveBeenCalledOnce());
+        expect(put).toHaveBeenCalledWith("notes/note-1/toc", {
+            targetBlobHash: "blobA", headings: HEADINGS, properties: { reader: 1 }, elapsedMs: 12
+        }, undefined, { silentConflict: true });
+
+        // An answer comes once; a second one saves nothing.
+        answer(1);
+        await settle();
+        expect(put).toHaveBeenCalledOnce();
+    });
+
+    it("asks nothing where the cache is valid, or where the server reads the PDF itself", async () => {
+        const posted = recordPostsToViewer();
+        get.mockResolvedValueOnce({ status: "ready", blobId: "blobA", headings: [] })
+            .mockResolvedValueOnce({ status: "missing" })
+            .mockRejectedValueOnce(new Error("Protected"));
+
+        loadViewer();
+        loadViewer();
+        loadViewer();
+        await settle();
+
+        expect(get).toHaveBeenCalledTimes(3);
+        expect(buildRequests(posted)).toHaveLength(0);
+    });
+
+    it("builds the PDF a reload brings, and drops the late answer for the one before", async () => {
+        const posted = recordPostsToViewer();
+        loadViewer();
+        await vi.waitFor(() => expect(buildRequests(posted)).toHaveLength(1));
+
+        // The file was replaced and the viewer reloaded before it answered.
+        loadViewer();
+        await vi.waitFor(() => expect(buildRequests(posted)).toHaveLength(2));
+        answer(1, "blobA");
+        answer(2, "blobB");
+
+        await vi.waitFor(() => expect(put).toHaveBeenCalledOnce());
+        expect(put.mock.calls[0][1]).toMatchObject({ targetBlobHash: "blobB" });
+    });
+
+    it("builds the bytes of the last of several saves, which go to the viewer with the request", async () => {
+        const posted = recordPostsToViewer();
+        loadViewer();
+        await vi.waitFor(() => expect(buildRequests(posted)).toHaveLength(1));
+
+        const first = await saveBytes([ 1 ]);
+        const second = await saveBytes([ 2 ]);
+        saveOptions.current?.dataSaved(first);
+        saveOptions.current?.dataSaved(second);
+        await vi.waitFor(() => expect(get).toHaveBeenCalledTimes(3));
+        await settle();
+        // The check of the first save is dropped: a newer request exists when its answer comes.
+        const [ , secondSave ] = buildRequests(posted);
+        expect(buildRequests(posted)).toHaveLength(2);
+        expect(secondSave.requestId).toBe(3);
+        expect([ ...secondSave.data ]).toEqual([ 2 ]);
+        // The bytes are handed over, not copied.
+        expect((posted.mock.calls.at(-1) as unknown[] | undefined)?.[2]).toEqual([ secondSave.data.buffer ]);
+
+        answer(1, "loaded");
+        answer(3, "second");
+        await vi.waitFor(() => expect(put).toHaveBeenCalledOnce());
+        expect(put.mock.calls[0][1]).toMatchObject({ targetBlobHash: "second" });
+    });
+
+    it("starts nothing for a save that completes after the viewer loaded another document", async () => {
+        const posted = recordPostsToViewer();
+        get.mockResolvedValueOnce({ status: "ready", blobId: "old", headings: [] });
+        loadViewer();
+        const saved = await saveBytes([ 1 ]);
+
+        loadViewer();
+        await vi.waitFor(() => expect(buildRequests(posted)).toHaveLength(1));
+        saveOptions.current?.dataSaved(saved);
+        answer(2, "replacement");
+
+        await vi.waitFor(() => expect(put).toHaveBeenCalledOnce());
+        expect(put.mock.calls[0][1]).toMatchObject({ targetBlobHash: "replacement" });
+        expect(get).toHaveBeenCalledTimes(2);
+    });
+
+    it("saves nothing for a failed build, nor for an answer after its time ran out", async () => {
+        const posted = recordPostsToViewer();
+        loadViewer();
+        await vi.waitFor(() => expect(buildRequests(posted)).toHaveLength(1));
+        fromThisViewer({ type: "pdfjs-viewer-toc-build", requestId: 1, failed: true });
+        await settle();
+        expect(put).not.toHaveBeenCalled();
+
+        vi.useFakeTimers();
+        try {
+            loadViewer();
+            await vi.waitFor(() => expect(buildRequests(posted)).toHaveLength(2));
+            await vi.advanceTimersByTimeAsync(60_000);
+            answer(2);
+            await vi.advanceTimersByTimeAsync(10);
+            expect(put).not.toHaveBeenCalled();
+        } finally {
+            vi.useRealTimers();
+        }
+
+        // A request whose answer never came does not hold back the next.
+        loadViewer();
+        await vi.waitFor(() => expect(buildRequests(posted)).toHaveLength(3));
+        answer(3);
+        await vi.waitFor(() => expect(put).toHaveBeenCalledOnce());
+    });
+
+    it("does not retry a table of contents that the server refuses", async () => {
+        const posted = recordPostsToViewer();
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        put.mockRejectedValue(new Error("409"));
+        loadViewer();
+        await vi.waitFor(() => expect(buildRequests(posted)).toHaveLength(1));
+
+        answer(1);
+
+        await vi.waitFor(() => expect(warn).toHaveBeenCalledOnce());
+        expect(put).toHaveBeenCalledOnce();
+        expect(buildRequests(posted)).toHaveLength(1);
+    });
+});
+
+/** Lets the requests in flight finish. */
+function settle() {
+    return new Promise((resolve) => setTimeout(resolve, 20));
+}

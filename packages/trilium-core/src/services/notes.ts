@@ -1,4 +1,4 @@
-import { type AttachmentRow, attachmentRoleTraits, type AttributeRow, type BranchRow, CANVAS_ATTACHMENT_MIME, CONTENT_EMBED_KIND_ATTRIBUTE, dayjs, getDrawingPictureTitle, isEmbeddedAttachmentRole, isImageAttachmentRole, type NoteRow, NOTE_TYPE_IMAGE_ATTACHMENTS, type NoteType, parseMindMapNoteLink } from "@triliumnext/commons";
+import { type AttachmentRow, attachmentRoleTraits, type AttributeRow, type BranchRow, CANVAS_ATTACHMENT_MIME, CONTENT_EMBED_KIND_ATTRIBUTE, dayjs, getDrawingPictureTitle, isDerivedAttachmentRole, isEmbeddedAttachmentRole, isImageAttachmentRole, type NoteRow, NOTE_TYPE_IMAGE_ATTACHMENTS, type NoteType, parseMindMapNoteLink } from "@triliumnext/commons";
 import {
     getContentFormat, isNoteEmbed, type NoteSaveBase, type SaveConflictReason,
     type SaveConflictResponse, type SavedAttachmentBase, type SavedAttachmentRow,
@@ -20,6 +20,7 @@ import blobService from "./blob.js";
 import * as cls from "./context.js";
 import entityChangesService from "./entity_changes.js";
 import eventService from "./events.js";
+import { getLinkTargetParameters } from "./export/rewrite_links.js";
 import imageService from "./image.js";
 import { downloadImages, storeLinkPreviewPictures } from "./image_download.js";
 import noteTypesService from "./note_types.js";
@@ -151,8 +152,8 @@ function copyChildAttributes(parentNote: BNote, childNote: BNote, isTypeDefaulte
 
 function copyAttachments(origNote: BNote, newNote: BNote) {
     for (const attachment of origNote.getAttachments()) {
-        if (isImageAttachmentRole(attachment.role)) {
-            // Handled separately, see `checkImageAttachments`.
+        // Pictures are handled by `checkImageAttachments`, derived attachments are rebuilt.
+        if (isImageAttachmentRole(attachment.role) || isDerivedAttachmentRole(attachment.role)) {
             continue;
         }
 
@@ -711,11 +712,15 @@ export function checkImageAttachments(note: BNote, content: string) {
         // at the foreign attachment made them resolve to another note's picture until a later save
         // happened to fix one more, each one announcing itself with a toast.
         content = replaceAll(content, `api/attachments/${unknownAttachment.attachmentId}/image`, `api/attachments/${localAttachment.attachmentId}/image`);
-        // replace reference links
-        content = content.replace(
-            new RegExp(`href="[^"]+attachmentId=${unknownAttachment.attachmentId}[^"]*"`, "g"),
-            `href="#root/${localAttachment.ownerId}?viewMode=attachments&amp;attachmentId=${localAttachment.attachmentId}"`
-        );
+        // Replace reference links, keeping the `LINK_TARGET_PARAMS` of each, such as a PDF page.
+        const localHref = `#root/${localAttachment.ownerId}?viewMode=attachments`
+            + `&amp;attachmentId=${localAttachment.attachmentId}`;
+        const referenceLink = new RegExp(
+            `href="([^"]+attachmentId=${unknownAttachment.attachmentId}[^"]*)"`, "g");
+        content = content.replace(referenceLink, (_match, href: string) => {
+            const query = href.replace(/^[^?]*/, "");
+            return `href="${localHref}${getLinkTargetParameters(query, "attribute")}"`;
+        });
         // replace embeds
         content = replaceAll(
             content,

@@ -3,10 +3,12 @@ import type {
     ReferenceConflictResponse, ReferenceKind, ReferenceParams, ReferenceTarget
 } from "@triliumnext/commons";
 import { encodeBlockParameter } from "@triliumnext/commons/src/lib/block_reference.js";
+import { LINK_TARGET_PARAMS } from "@triliumnext/commons/src/lib/server_api.js";
 
 import appContext from "../components/app_context";
 import froca from "./froca";
 import { t } from "./i18n";
+import { rememberHeadingTitles } from "./link";
 import { parseConflict } from "./note_save";
 import server from "./server";
 
@@ -53,8 +55,15 @@ export const LINK_TARGET_KINDS: Record<ReferenceKind, LinkTargetKind> = {
     }
 };
 
-/** The link parameters that point inside a note, which the targets of a note use. */
-const TARGET_PARAMS = [ "block", "bookmark" ];
+/** The targets of a note or an attachment that the server lists. */
+export interface LinkTargetListing {
+    targets: LinkTarget[];
+    /**
+     * Whether the document has a table of contents that its viewer builds the first time it opens
+     * the document, so that its headings are listed only then.
+     */
+    isTocPending: boolean;
+}
 
 /**
  * What `LinkTarget.createReference()` rejects with when the note changed since its targets were
@@ -66,25 +75,77 @@ export class StaleListingError extends Error {}
  * The targets of the note `noteId` that the server reads, which link to it at `notePath`. A note
  * that is protected outside a protected session has none.
  */
-export async function getLinkTargets(noteId: string, notePath: string): Promise<LinkTarget[]> {
+export async function getLinkTargets(noteId: string, notePath: string): Promise<LinkTargetListing> {
     try {
         const note = await froca.getNote(noteId);
-        if (!note?.isContentAvailable()) return [];
+        if (!note?.isContentAvailable()) return noTargets();
 
         // Saved first, so that the save before a reference leaves the listing as it is.
         await appContext.triggerEvent("saveNoteChanges", { noteId });
-        const { targets, blobId } = await server.get<NoteReferencesResponse>(
+        const { targets, blobId, pendingToc } = await server.get<NoteReferencesResponse>(
             `notes/${noteId}/references`, undefined, false, { silentBadRequest: true }
         );
+        rememberLinkedHeadings(`notes/${noteId}/toc`, blobId, targets);
         const counts = new Map<ReferenceKind, number>();
-        return targets.map((target) => {
+        const noteTargets = targets.map((target) => {
             const index = counts.get(target.kind) ?? 0;
             counts.set(target.kind, index + 1);
             return createNoteTarget(noteId, notePath, target, index, blobId);
         });
+        return { targets: noteTargets, isTocPending: !!pendingToc };
     } catch (e) {
         console.error(`Failed to read the link targets of note '${noteId}':`, e);
-        return [];
+        return noTargets();
+    }
+}
+
+/**
+ * The targets of the attachment `attachmentId` of the note `noteId`, such as the headings of a
+ * PDF, which link to it at `linkPath`. An attachment that is protected outside a protected
+ * session has none.
+ */
+export async function getAttachmentLinkTargets(
+    noteId: string, attachmentId: string, linkPath: string
+): Promise<LinkTargetListing> {
+    try {
+        const note = await froca.getNote(noteId);
+        if (!note?.isContentAvailable()) return noTargets();
+
+        const { targets, blobId, pendingToc } = await server.get<NoteReferencesResponse>(
+            `attachments/${attachmentId}/references`, undefined, false,
+            { silentBadRequest: true, silentNotFound: true }
+        );
+        rememberLinkedHeadings(`attachments/${attachmentId}/toc`, blobId, targets);
+        const attachmentTargets = targets.map(({ kind, title, level, params }): LinkTarget => ({
+            kind, title, level, params, createLinkPath: () => addParameters(linkPath, params)
+        }));
+        return { targets: attachmentTargets, isTocPending: !!pendingToc };
+    } catch (e) {
+        console.error(`Failed to read the link targets of attachment '${attachmentId}':`, e);
+        return noTargets();
+    }
+}
+
+/**
+ * What the lists show for a note without targets: that its viewer lists its headings once it has
+ * opened it, when `isTocPending`.
+ */
+export function getNoTargetsText(isTocPending: boolean) {
+    return isTocPending ? t("add_link.open_file_for_targets") : t("add_link.no_link_targets");
+}
+
+function noTargets(): LinkTargetListing {
+    return { targets: [], isTocPending: false };
+}
+
+/** Remembers the titles of the headings that `targets` link to, for the labels of such links. */
+function rememberLinkedHeadings(
+    tocUrl: string, blobId: string | undefined, targets: ReferenceTarget[]
+) {
+    const headings = targets.flatMap(({ title, params }) =>
+        params?.heading ? [ { id: params.heading, title } ] : []);
+    if (blobId && headings.length > 0) {
+        rememberHeadingTitles(tocUrl, blobId, headings);
     }
 }
 
@@ -235,7 +296,7 @@ export function splitTargetParameters(notePath: string) {
     const [ path, query = "" ] = notePath.split("?", 2);
     const params = new URLSearchParams(query);
     const targetParams: ReferenceParams = {};
-    for (const name of TARGET_PARAMS) {
+    for (const name of LINK_TARGET_PARAMS) {
         const value = params.get(name);
         if (value !== null) {
             targetParams[name] = value;

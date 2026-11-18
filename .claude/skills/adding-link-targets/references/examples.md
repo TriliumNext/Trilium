@@ -90,23 +90,25 @@ export function findMarkdownTargets(content: string): ReferenceTarget[] {
   `noteContext.viewScope` and scrolls the source or the preview to the heading.
 - The chip of a Wikilink (`resolveWikilinkChip()`) labels `block` and `bookmark` only.
 
-## PDF pages and outline entries
+## PDF outline entries (built)
 
-- **Notes**: `type === "file"` with `mime === "application/pdf"`; PDF attachments once the routes
-  take attachments (SKILL.md, "Attachments").
-- **Kinds**: a new `page` kind for pages (flat, no `level`), and `heading` for the outline
-  (bookmarks), whose entries nest by `level`.
-- **Parameters**: `page` exists already. `Pdf.tsx` reads `viewScope.page` and `annotation` in
-  `revealLinkTarget()`, and the PDF sidebar copies `?page=7` and `?page=5&annotation=12R` links.
-  An outline entry links to its page; an annotation target carries both parameters.
-- **Titles**: the page label when the PDF has page labels, else the number, worded with the
-  server's `t()` (`server.json`) if a word is needed. Outline titles as plain text.
-- **Parser**: core cannot parse PDFs in standalone (`pdfjs-dist` is stubbed there). The server has
-  `unpdf` (the OCR processor imports it on demand), so the provider lives in `apps/server`,
-  registered with `registerReferenceProvider()` at startup, and imports `unpdf` inside
-  `findTargets`. No `createReference`.
-- **Strings**: reword `add_link.select_note_for_targets` and `add_link.no_link_targets`, which name
-  headings and anchors. Load the `developing-pdf-viewer` skill for the viewer side.
+The outline entries of PDF notes and attachments are link targets of kind `heading`, through the
+ToC cache (SKILL.md, "ToC formats"). What it took, as a pattern for the next format:
+
+- **Format**: `toc/pdf.ts` in core: `type === "file"` with `mime === "application/pdf"`, its own
+  properties `{ "reader": PDF_TOC_READER }`, a `page` field per heading, and
+  `getLinkParams()` giving `?page=<n>&heading=<id>`. The page lets a viewer that cannot find the
+  heading open the right page.
+- **Reader**: one reader for every platform, `readPdfOutline()` in commons `pdf_toc.ts`, over the
+  part of a pdf.js document it needs (`PdfOutlineSource`). Titles go through `normalizeTocTitle()`,
+  levels stay those of the file, and a heading without a destination inherits the page of the
+  first heading below it.
+- **Generators**: the server's in `apps/server/src/services/toc/pdf.ts` (`unpdf`, imported on the
+  first read); on standalone and mobile the PDF viewer builds (`trilium-build-toc`, see the
+  `developing-pdf-viewer` skill).
+- **Contract**: `toc/fixtures/toc_contract.pdf` and its JSON are what every reader must agree on;
+  the server spec, the viewer spec and a core spec of the `PUT` compare with them. Regenerate both
+  with the script beside them after a change of the reader or of the ids.
 
 ## DOCX headings and bookmarks
 

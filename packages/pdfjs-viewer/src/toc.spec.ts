@@ -1,14 +1,27 @@
 // @vitest-environment happy-dom
 /**
- * Drives the table-of-contents extraction against a real `PDFDocumentProxy`, so the outline
- * shapes, destination arrays and page-index lookups all come from pdf.js rather than a fake.
- * See {@link ./test/fixture_pdf} for why.
+ * Drives the outline of the sidebar and the build of the ToC cache against a real
+ * `PDFDocumentProxy`, so the outline shapes, destination arrays and page-index lookups all come
+ * from pdf.js rather than a fake. See {@link ./test/fixture_pdf} for why.
  */
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { PDF_TOC_READER } from "@triliumnext/commons/src/lib/pdf_toc.js";
+import { blobIdFromDigest } from "@triliumnext/commons/src/lib/utils.js";
+import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { trackDocument } from "./navigation";
 import { allFeaturesPdf, barePdf, buildPdf } from "./test/fixture_pdf";
-import { InstalledViewer, installViewerApp, uninstallViewerApp } from "./test/viewer_app";
-import { extractAndSendToc, setupActiveHeadingTracking, setupScrollToHeading } from "./toc";
+import { type InstalledViewer, installViewerApp, uninstallViewerApp } from "./test/viewer_app";
+import { extractAndSendToc, setupActiveHeadingTracking, setupTocBuild } from "./toc";
+
+const TEST_DIR = join(dirname(fileURLToPath(import.meta.url)), "test");
+const FIXTURES = join(dirname(fileURLToPath(import.meta.url)),
+    "../../trilium-core/src/services/toc/fixtures");
 
 /** Page boxes for the two-page fixture: 800px pages stacked with a 10px gap. */
 const PAGE_GEOMETRY = {
@@ -16,45 +29,38 @@ const PAGE_GEOMETRY = {
     1: { offsetTop: 810, clientHeight: 800 }
 };
 
-describe("outline extraction", () => {
+describe("the outline of the sidebar", () => {
     let viewer: InstalledViewer;
 
     afterEach(() => uninstallViewerApp());
 
-    it("converts a nested pdf.js outline into the tree the sidebar renders", async () => {
+    it("sends the headings in document order, each with its key in this viewer", async () => {
         viewer = await installViewerApp(allFeaturesPdf());
 
         await extractAndSendToc();
 
-        // Ids are positional and stable, and the child is nested under its parent rather than
-        // flattened — the sidebar relies on both for expand/collapse and scroll targeting.
         expect(viewer.lastMessageOfType("pdfjs-viewer-toc")).toEqual({
             type: "pdfjs-viewer-toc",
             data: [
-                {
-                    title: "Chapter 1",
-                    level: 0,
-                    id: "pdf-outline-0",
-                    dest: expect.any(Array),
-                    items: [
-                        {
-                            title: "Section 1.1",
-                            level: 1,
-                            id: "pdf-outline-0-0",
-                            dest: expect.any(Array),
-                            items: []
-                        }
-                    ]
-                },
-                {
-                    title: "Chapter 2",
-                    level: 0,
-                    id: "pdf-outline-1",
-                    dest: expect.any(Array),
-                    items: []
-                }
+                { id: "outline-0", title: "Chapter 1", level: 1 },
+                { id: "outline-1", title: "Section 1.1", level: 2 },
+                { id: "outline-2", title: "Chapter 2", level: 1 }
             ]
         });
+    });
+
+    it("shows a heading deeper than 32 levels at level 32", async () => {
+        viewer = await installViewerApp(barePdf());
+        let deepest = { title: "Level 34", dest: null, items: [] as unknown[] };
+        for (let level = 33; level >= 1; level--) {
+            deepest = { title: `Level ${level}`, dest: null, items: [ deepest ] };
+        }
+        vi.spyOn(viewer.pdfDocument, "getOutline").mockResolvedValue([ deepest ] as any);
+
+        await extractAndSendToc();
+
+        const levels = viewer.lastMessageOfType("pdfjs-viewer-toc").data.map(({ level }: { level: number }) => level);
+        expect(levels.slice(30)).toEqual([ 31, 32, 32, 32 ]);
     });
 
     it("reports a null table of contents for a document without an outline", async () => {
@@ -64,10 +70,7 @@ describe("outline extraction", () => {
 
         // The sidebar distinguishes "no outline" from "not extracted yet", so the message
         // still has to be sent — with a null payload.
-        expect(viewer.lastMessageOfType("pdfjs-viewer-toc")).toEqual({
-            type: "pdfjs-viewer-toc",
-            data: null
-        });
+        expect(viewer.lastMessageOfType("pdfjs-viewer-toc")).toEqual({ type: "pdfjs-viewer-toc", data: null });
     });
 
     it("falls back to a null table of contents when extraction throws", async () => {
@@ -76,47 +79,7 @@ describe("outline extraction", () => {
 
         await extractAndSendToc();
 
-        expect(viewer.lastMessageOfType("pdfjs-viewer-toc")).toEqual({
-            type: "pdfjs-viewer-toc",
-            data: null
-        });
-    });
-});
-
-describe("scroll to heading", () => {
-    let viewer: InstalledViewer;
-
-    beforeEach(async () => {
-        viewer = await installViewerApp(allFeaturesPdf());
-        // Populates the module-level outline map the listener reads. The listener is
-        // registered after install so the harness can strip it again on teardown.
-        await extractAndSendToc();
-        setupScrollToHeading();
-    });
-
-    afterEach(() => uninstallViewerApp());
-
-    it("navigates to the destination of the requested heading", async () => {
-        viewer.sendFromParent({ type: "trilium-scroll-to-heading", headingId: "pdf-outline-0-0" });
-        await vi.waitFor(() => expect(viewer.pdfLinkService.goToDestination).toHaveBeenCalled());
-
-        // The nested heading targets page 1 at y=600 in the fixture; pdf.js hands back the
-        // explicit destination array, which is what goToDestination consumes.
-        const [ dest ] = viewer.pdfLinkService.goToDestination.mock.calls[0];
-        expect(dest[3]).toBe(600);
-        expect(await viewer.pdfDocument.getPageIndex(dest[0])).toBe(0);
-    });
-
-    it("ignores unknown heading ids and foreign-origin messages", async () => {
-        viewer.sendFromParent({ type: "trilium-scroll-to-heading", headingId: "nope" });
-        window.dispatchEvent(new MessageEvent("message", {
-            data: { type: "trilium-scroll-to-heading", headingId: "pdf-outline-0" },
-            origin: "https://evil.example"
-        }));
-
-        // Give both messages a chance to be mishandled before asserting the negative.
-        await new Promise((resolve) => setTimeout(resolve, 10));
-        expect(viewer.pdfLinkService.goToDestination).not.toHaveBeenCalled();
+        expect(viewer.lastMessageOfType("pdfjs-viewer-toc")).toEqual({ type: "pdfjs-viewer-toc", data: null });
     });
 });
 
@@ -130,9 +93,9 @@ describe("active heading tracking", () => {
         uninstallViewerApp();
     });
 
-    /** Installs the fixture and starts tracking, with the outline map already built. */
-    async function startTracking() {
-        viewer = await installViewerApp(allFeaturesPdf(), PAGE_GEOMETRY);
+    /** Installs the fixture and starts tracking, with the outline already read. */
+    async function startTracking(data = allFeaturesPdf(), geometry: Record<number, typeof PAGE_GEOMETRY[0]> = PAGE_GEOMETRY) {
+        viewer = await installViewerApp(data, geometry);
         await extractAndSendToc();
         setupActiveHeadingTracking();
         return viewer;
@@ -143,17 +106,17 @@ describe("active heading tracking", () => {
 
         // Headings sit at screen y=50 (Chapter 1), y=200 (Section 1.1) and y=910 (Chapter 2),
         // derived from the PDF's bottom-up coordinates against the page boxes above.
-        expect(viewer.lastMessageOfType("pdfjs-viewer-active-heading")?.headingId).toBe("pdf-outline-0");
+        expect(viewer.lastMessageOfType("pdfjs-viewer-active-heading")?.headingId).toBe("outline-0");
 
         viewer.scrollTo(200);
         viewer.eventBus.dispatch("pagechanging", { source: null, pageNumber: 1 });
         await vi.advanceTimersByTimeAsync(100);
-        expect(viewer.lastMessageOfType("pdfjs-viewer-active-heading")?.headingId).toBe("pdf-outline-0-0");
+        expect(viewer.lastMessageOfType("pdfjs-viewer-active-heading")?.headingId).toBe("outline-1");
 
         viewer.scrollTo(900);
         viewer.eventBus.dispatch("pagechanging", { source: null, pageNumber: 2 });
         await vi.advanceTimersByTimeAsync(100);
-        expect(viewer.lastMessageOfType("pdfjs-viewer-active-heading")?.headingId).toBe("pdf-outline-1");
+        expect(viewer.lastMessageOfType("pdfjs-viewer-active-heading")?.headingId).toBe("outline-2");
     });
 
     it("debounces bursts of scrolling into a single update", async () => {
@@ -169,7 +132,7 @@ describe("active heading tracking", () => {
 
         const sent = viewer.messagesOfType("pdfjs-viewer-active-heading").slice(before);
         expect(sent).toHaveLength(1);
-        expect(sent[0].headingId).toBe("pdf-outline-1");
+        expect(sent[0].headingId).toBe("outline-2");
     });
 
     it("stays silent while the active heading has not changed", async () => {
@@ -181,8 +144,171 @@ describe("active heading tracking", () => {
 
         expect(viewer.messagesOfType("pdfjs-viewer-active-heading")).toHaveLength(before);
     });
+
+    it("places a destination without a y coordinate at the bottom of its page, and skips headings without one", async () => {
+        await startTracking(mixedDestinationsPdf(), { 0: { offsetTop: 0, clientHeight: 800 } });
+
+        // "Named" sits at screen y=300 and "Fit", taken as y=0, at the bottom of the page, y=800.
+        viewer.scrollTo(800);
+        viewer.eventBus.dispatch("pagechanging", { source: null, pageNumber: 1 });
+        await vi.advanceTimersByTimeAsync(100);
+        expect(viewer.lastMessageOfType("pdfjs-viewer-active-heading")?.headingId).toBe("outline-2");
+
+        viewer.scrollTo(300);
+        viewer.eventBus.dispatch("pagechanging", { source: null, pageNumber: 1 });
+        await vi.advanceTimersByTimeAsync(100);
+        expect(viewer.lastMessageOfType("pdfjs-viewer-active-heading")?.headingId).toBe("outline-0");
+    });
+
+    it("does nothing for a document without an outline", async () => {
+        await startTracking(barePdf());
+
+        viewer.eventBus.dispatch("pagechanging", { source: null, pageNumber: 1 });
+        await vi.advanceTimersByTimeAsync(100);
+
+        expect(viewer.messagesOfType("pdfjs-viewer-active-heading")).toHaveLength(0);
+    });
 });
 
+describe("the build of the ToC cache", () => {
+    const contractPdf = new Uint8Array(readFileSync(join(FIXTURES, "toc_contract.pdf")));
+    const contract = JSON.parse(readFileSync(join(FIXTURES, "toc_contract.json"), "utf-8"));
+    let viewer: InstalledViewer;
+
+    afterEach(() => {
+        uninstallViewerApp();
+        vi.unstubAllGlobals();
+    });
+
+    /** Installs `data` with the listener for builds, before the document has loaded. */
+    async function install(data: Uint8Array) {
+        viewer = await installViewerApp(data.slice());
+        const app = window.PDFViewerApplication;
+        if (!app) throw new Error("The viewer is not installed.");
+        trackDocument(app);
+        setupTocBuild();
+    }
+
+    function loadDocument() {
+        viewer.eventBus.dispatch("documentloaded", { source: null });
+    }
+
+    async function answerOf(requestId: number) {
+        await vi.waitFor(() => expect(viewer.messagesOfType("pdfjs-viewer-toc-build")
+            .find((message) => message.requestId === requestId)).toBeDefined());
+        return viewer.messagesOfType("pdfjs-viewer-toc-build").find((message) => message.requestId === requestId);
+    }
+
+    it("answers a request posted before the document loads with what the server reads from it", async () => {
+        await install(contractPdf);
+        viewer.sendFromParent({ type: "trilium-build-toc", requestId: 7, isProtected: false });
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        expect(viewer.messagesOfType("pdfjs-viewer-toc-build")).toHaveLength(0);
+
+        loadDocument();
+
+        expect(await answerOf(7)).toEqual({
+            type: "pdfjs-viewer-toc-build",
+            requestId: 7,
+            blobId: contract.blobId,
+            headings: contract.headings,
+            properties: { reader: PDF_TOC_READER },
+            elapsedMs: expect.any(Number)
+        });
+    });
+
+    it("names the bytes in the form of the document's protection, with Web Crypto and with the bundled hash", async () => {
+        for (const isWebCryptoAvailable of [ true, false ]) {
+            if (!isWebCryptoAvailable) {
+                vi.stubGlobal("crypto", {});
+            }
+            await install(contractPdf);
+            loadDocument();
+
+            viewer.sendFromParent({ type: "trilium-build-toc", requestId: 1, isProtected: true });
+            viewer.sendFromParent({ type: "trilium-build-toc", requestId: 2, isProtected: false });
+
+            expect((await answerOf(1)).blobId).toBe(contract.protectedBlobId);
+            expect((await answerOf(2)).blobId).toBe(contract.blobId);
+            uninstallViewerApp();
+        }
+    });
+
+    it("reads the bytes of a save on their own, and destroys their loading task", async () => {
+        await install(contractPdf);
+        loadDocument();
+        const tasks = recordLoadingTasks();
+        const saved = allFeaturesPdf();
+        const blobId = blobIdFromDigest(new Uint8Array(createHash("sha512").update(saved).digest()));
+
+        viewer.sendFromParent({ type: "trilium-build-toc", requestId: 3, isProtected: false, data: saved });
+
+        expect(await answerOf(3)).toMatchObject({
+            blobId,
+            headings: [
+                { title: "Chapter 1", level: 1, page: 1 },
+                { title: "Section 1.1", level: 2, page: 1 },
+                { title: "Chapter 2", level: 1, page: 2 }
+            ]
+        });
+        expect(tasks).toHaveLength(1);
+        expect(tasks[0].destroy).toHaveBeenCalledOnce();
+    });
+
+    it("fails for saved bytes that need a password, and destroys the rejected task", async () => {
+        await install(contractPdf);
+        loadDocument();
+        const tasks = recordLoadingTasks();
+        const locked = new Uint8Array(readFileSync(join(TEST_DIR, "encrypted_user_password.pdf")));
+        const ownerOnly = new Uint8Array(readFileSync(join(TEST_DIR, "encrypted_owner_password.pdf")));
+
+        viewer.sendFromParent({ type: "trilium-build-toc", requestId: 4, isProtected: false, data: locked });
+        viewer.sendFromParent({ type: "trilium-build-toc", requestId: 5, isProtected: false, data: ownerOnly });
+
+        expect(await answerOf(4)).toEqual({ type: "pdfjs-viewer-toc-build", requestId: 4, failed: true });
+        // A file with an owner password only opens without one.
+        expect((await answerOf(5)).headings.map(({ title }: { title: string }) => title))
+            .toEqual([ "Chapter 1", "Section 1.1", "Chapter 2" ]);
+        expect(tasks).toHaveLength(2);
+        expect(tasks[0].destroy).toHaveBeenCalledOnce();
+        expect(tasks[1].destroy).toHaveBeenCalledOnce();
+    });
+
+    it("fails when the outline of the loaded document cannot be read", async () => {
+        await install(contractPdf);
+        vi.spyOn(viewer.pdfDocument, "getOutline").mockRejectedValue(new Error("The worker stopped."));
+        loadDocument();
+
+        viewer.sendFromParent({ type: "trilium-build-toc", requestId: 6, isProtected: false });
+
+        expect(await answerOf(6)).toEqual({ type: "pdfjs-viewer-toc-build", requestId: 6, failed: true });
+    });
+
+    it("ignores a request from another origin", async () => {
+        await install(contractPdf);
+        loadDocument();
+
+        window.dispatchEvent(new MessageEvent("message", {
+            data: { type: "trilium-build-toc", requestId: 8, isProtected: false },
+            origin: "https://evil.example"
+        }));
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        expect(viewer.messagesOfType("pdfjs-viewer-toc-build")).toHaveLength(0);
+    });
+
+    /** The loading tasks the build opens bytes with, each with a spy on `destroy()`. */
+    function recordLoadingTasks() {
+        const tasks: ReturnType<typeof getDocument>[] = [];
+        vi.spyOn(window.pdfjsLib, "getDocument").mockImplementation((src) => {
+            const task = getDocument(src);
+            vi.spyOn(task, "destroy");
+            tasks.push(task);
+            return task;
+        });
+        return tasks;
+    }
+});
 
 /**
  * Outline entries in the other shapes pdf.js reports: a named destination, one that names
@@ -202,80 +328,3 @@ function mixedDestinationsPdf() {
         "<< /Title (Link) /Parent 4 0 R /A << /S /URI /URI (https://example.com) >> /Prev 7 0 R >>"
     ]);
 }
-
-describe("outlines with named or partial destinations", () => {
-    let viewer: InstalledViewer;
-
-    afterEach(() => {
-        vi.useRealTimers();
-        uninstallViewerApp();
-    });
-
-    it("resolves named destinations and skips the entries that lead nowhere", async () => {
-        viewer = await installViewerApp(mixedDestinationsPdf());
-        await extractAndSendToc();
-        setupScrollToHeading();
-
-        expect(viewer.lastMessageOfType("pdfjs-viewer-toc").data.map((item: any) => item.title))
-            .toEqual([ "Named", "Missing", "Fit", "Link" ]);
-
-        viewer.sendFromParent({ type: "trilium-scroll-to-heading", headingId: "pdf-outline-1" });
-        viewer.sendFromParent({ type: "trilium-scroll-to-heading", headingId: "pdf-outline-3" });
-        viewer.sendFromParent({ type: "trilium-scroll-to-heading", headingId: "pdf-outline-0" });
-        await vi.waitFor(() => expect(viewer.pdfLinkService.goToDestination).toHaveBeenCalled());
-
-        // Only "Named" leads anywhere: "Missing" resolves to nothing and "Link" has no destination.
-        await new Promise((resolve) => setTimeout(resolve, 10));
-        expect(viewer.pdfLinkService.goToDestination).toHaveBeenCalledOnce();
-        const [ dest ] = viewer.pdfLinkService.goToDestination.mock.calls[0];
-        expect(dest[3]).toBe(500);
-    });
-
-    it("places a destination without a y coordinate at the bottom of its page", async () => {
-        vi.useFakeTimers();
-        viewer = await installViewerApp(mixedDestinationsPdf(), { 0: { offsetTop: 0, clientHeight: 800 } });
-        await extractAndSendToc();
-        setupActiveHeadingTracking();
-
-        // "Named" sits at screen y=300 and "Fit", taken as y=0, at the bottom of the page, y=800.
-        viewer.scrollTo(800);
-        viewer.eventBus.dispatch("pagechanging", { source: null, pageNumber: 1 });
-        await vi.advanceTimersByTimeAsync(100);
-        expect(viewer.lastMessageOfType("pdfjs-viewer-active-heading")?.headingId).toBe("pdf-outline-2");
-
-        viewer.scrollTo(300);
-        viewer.eventBus.dispatch("pagechanging", { source: null, pageNumber: 1 });
-        await vi.advanceTimersByTimeAsync(100);
-        expect(viewer.lastMessageOfType("pdfjs-viewer-active-heading")?.headingId).toBe("pdf-outline-0");
-    });
-
-    it("logs a destination pdf.js fails to resolve", async () => {
-        viewer = await installViewerApp(mixedDestinationsPdf());
-        await extractAndSendToc();
-        setupScrollToHeading();
-        const error = vi.spyOn(console, "error").mockImplementation(() => {});
-        vi.spyOn(viewer.pdfDocument, "getDestination").mockRejectedValue(new Error("boom"));
-
-        viewer.sendFromParent({ type: "trilium-scroll-to-heading", headingId: "pdf-outline-0" });
-        await vi.waitFor(() => expect(error).toHaveBeenCalled());
-
-        expect(viewer.pdfLinkService.goToDestination).not.toHaveBeenCalled();
-    });
-});
-
-describe("before the outline is extracted", () => {
-    afterEach(() => uninstallViewerApp());
-
-    it("ignores a request to scroll to a heading", async () => {
-        // A fresh module, so no earlier test has left an outline behind.
-        vi.resetModules();
-        const toc = await import("./toc");
-        const viewer = await installViewerApp(allFeaturesPdf());
-        toc.setupScrollToHeading();
-
-        viewer.sendFromParent({ type: "trilium-scroll-to-heading", headingId: "pdf-outline-0" });
-        await new Promise((resolve) => setTimeout(resolve, 10));
-
-        expect(viewer.pdfLinkService.goToDestination).not.toHaveBeenCalled();
-    });
-});

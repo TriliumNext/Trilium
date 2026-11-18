@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { ATTACHMENT_ROLES, attachmentIcon, attachmentRoleTraits, IMAGE_ATTACHMENT_ROLES, isDeduplicatedAttachmentRole, isEmbeddedAttachmentRole, isImageAttachmentRole } from "./attachment_roles.js";
+import {
+    ATTACHMENT_ROLES, attachmentIcon, attachmentRoleTraits, IMAGE_ATTACHMENT_ROLES,
+    isDeduplicatedAttachmentRole, isDerivedAttachmentRole, isEmbeddedAttachmentRole,
+    isImageAttachmentRole
+} from "./attachment_roles.js";
 import { getNoteIcon } from "./notes.js";
 
 describe("isImageAttachmentRole", () => {
@@ -68,7 +72,9 @@ describe("attachmentRoleTraits", () => {
         // The types already refuse a role that arrives without one; this says the same at runtime,
         // for the shape the table is actually read with.
         for (const [ role, traits ] of Object.entries(ATTACHMENT_ROLES)) {
-            expect(Object.keys(traits).sort(), role).toStrictEqual([ "copiedAs", "deduplicated", "embedded", "icon", "picture" ]);
+            expect(Object.keys(traits).sort(), role).toStrictEqual([
+                "copiedAs", "deduplicated", "derived", "embedded", "icon", "picture"
+            ]);
         }
     });
 
@@ -77,7 +83,18 @@ describe("attachmentRoleTraits", () => {
             expect(isImageAttachmentRole(role), role).toBe(traits.picture);
             expect(isDeduplicatedAttachmentRole(role), role).toBe(traits.deduplicated);
             expect(isEmbeddedAttachmentRole(role), role).toBe(traits.embedded);
+            expect(isDerivedAttachmentRole(role), role).toBe(traits.derived);
         }
+    });
+});
+
+describe("isDerivedAttachmentRole", () => {
+    it("covers the table of contents cache only, which is rebuilt from its document", () => {
+        expect(isDerivedAttachmentRole("tocCache")).toBe(true);
+        for (const role of [ "image", "file", "viewConfig", "transcript", "somethingAScriptInvented" ]) {
+            expect(isDerivedAttachmentRole(role), role).toBe(false);
+        }
+        expect(isDerivedAttachmentRole(undefined)).toBe(false);
     });
 });
 

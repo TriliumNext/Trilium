@@ -2,6 +2,7 @@ import type { ReferenceTarget } from "@triliumnext/commons";
 import { parse } from "node-html-parser";
 import { describe, expect, it, vi } from "vitest";
 
+import type { ReferenceSource } from "./index";
 import textReferences, { addHeadingReference, findTextTargets, insertBlockId } from "./text";
 
 /** A heading as `findTextTargets()` lists it. */
@@ -16,6 +17,11 @@ function anchor(name: string): ReferenceTarget {
     return { kind: "anchor", title: name, params: { bookmark: name } };
 }
 
+/** A note of `content`, as a provider reads it. */
+function source(content: string | Uint8Array) {
+    return { isContentAvailable: () => true, getContent: () => content } as unknown as ReferenceSource;
+}
+
 function findHeadings(content: string) {
     return findTextTargets(content).filter((target) => target.kind === "heading");
 }
@@ -26,10 +32,10 @@ describe("textReferences", () => {
 
         expect(textReferences.isFor("text", "text/html")).toBe(true);
         expect(textReferences.isFor("code", "text/html")).toBe(false);
-        expect(textReferences.findTargets(content)).toStrictEqual([
+        expect(textReferences.findTargets(source(content))).toStrictEqual([
             heading("Intro", 2), anchor("top")
         ]);
-        expect(textReferences.findTargets(new Uint8Array([ 60, 104, 50, 62 ]))).toStrictEqual([]);
+        expect(textReferences.findTargets(source(new Uint8Array([ 60, 104, 50, 62 ])))).toStrictEqual([]);
 
         const created = textReferences.createReference?.(
             content, { kind: "heading", index: 0, title: "Intro" }

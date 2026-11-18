@@ -21,6 +21,14 @@ const { loadBlockReferenceLabel } = vi.hoisted(() => ({
         return block === "h1" ? { text: "Install", isBroken: false, isHeading: true } : null;
     })
 }));
+const { loadPdfReferenceLabel } = vi.hoisted(() => ({
+    loadPdfReferenceLabel: vi.fn(async (_note: FNote, { heading }: { heading?: string }) =>
+        (heading ? "Methods" : null))
+}));
+vi.mock("../../../services/link.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("../../../services/link.js")>(),
+    loadPdfReferenceLabel
+}));
 vi.mock("../../../services/block_excerpts.js", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../../services/block_excerpts.js")>(),
     loadBlockReferenceLabel
@@ -105,6 +113,10 @@ describe("resolveWikilinkChip", () => {
         await expect(resolveWikilinkChip("abc123", "block=broken"))
             .resolves.toEqual({ title: "Guide", icon: "bx bx-book" });
         expect(resolveWikilinkChip("abc123", "ntxId=x")).toEqual({ title: "Guide", icon: "bx bx-book" });
+        // A link into a PDF names its heading, else its page.
+        await expect(resolveWikilinkChip("abc123", "page=3&heading=h9"))
+            .resolves.toEqual({ title: "Guide - Methods", icon: "bx bx-book" });
+        expect(loadPdfReferenceLabel).toHaveBeenLastCalledWith(guide, expect.objectContaining({ page: "3", heading: "h9" }));
 
         vi.spyOn(froca, "getNote").mockResolvedValue(null);
         await expect(resolveWikilinkChip("gone", "block=h1")).resolves.toBeNull();

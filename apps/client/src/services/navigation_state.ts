@@ -70,6 +70,12 @@ export interface ViewScope {
      * annotation still leaves the reader on the right page.
      */
     annotation?: string;
+    /**
+     * The id of a heading of the document's table of contents that a reference points at, such
+     * as an outline entry of a PDF. A reference to a heading has its {@link page} too, which the
+     * viewer opens when it cannot find the heading.
+     */
+    heading?: string;
 }
 
 /**
@@ -93,7 +99,7 @@ const MAX_SPLIT_PANES_IN_HASH = 8;
 
 /** Hash parameters that belong to a pane's view scope rather than to the window as a whole. */
 const VIEW_SCOPE_PARAMS = ["viewMode", "attachmentId", "bookmark", "block", "column",
-    "columnTitle", "columnIcon", "columnColor", "card", "page", "annotation"];
+    "columnTitle", "columnIcon", "columnColor", "card", "page", "annotation", "heading"];
 
 export function calculateHash(
     { notePath, ntxId, hoistedNoteId, viewScope = {}, splits, activeSplit }: NoteCommandData
@@ -112,6 +118,7 @@ export function calculateHash(
         viewScope.card ? { card: viewScope.card } : null,
         viewScope.page ? { page: viewScope.page } : null,
         viewScope.annotation ? { annotation: viewScope.annotation } : null,
+        viewScope.heading ? { heading: viewScope.heading } : null,
         viewScope.searchTerms?.length
             ? { searchTerms: viewScope.searchTerms.map(encodeURIComponent).join(",") }
             : null,

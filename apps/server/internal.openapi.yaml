@@ -747,7 +747,10 @@ paths:
         and its block id, an anchor through `?bookmark=`. A target without `params` needs a
         reference first, which `POST /api/notes/{noteId}/references` creates. Such a target is
         listed only when the note can take one. Titles are plain text, never HTML. A note whose
-        type has no targets lists none.
+        type has no targets lists none. The headings of a PDF file come from its ToC cache, which
+        the server builds when it is missing or stale; where the server cannot read PDFs
+        (standalone, mobile), the answer lists none and carries `pendingToc` until the viewer of
+        the file has built the cache.
       operationId: getNoteReferences
       parameters:
         - $ref: '#/components/parameters/noteId'
@@ -821,6 +824,62 @@ paths:
           description: >-
             No target matches, because the targets changed since they were listed, or the listing
             was read from another blob (reason `listing`)
+
+  /api/notes/{noteId}/toc:
+    get:
+      tags: [Notes]
+      summary: Read the ToC cache of a note
+      description: >-
+        The table of contents that the ToC cache of a note holds, such as the outline of a PDF
+        file, without building it or writing anything. `ready` is a cache of the note as it is,
+        `stale` one of an earlier blob, `missing` a note without a cache that can be read, and
+        `none` a note that has no table of contents. `pendingToc` tells that the viewer of the
+        document builds the cache, since the server cannot read the format.
+      operationId: getNoteToc
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: The cached table of contents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CachedToc'
+        '400':
+          description: A protected note without a protected session
+        '404':
+          description: Note not found
+    put:
+      tags: [Notes]
+      summary: Save the table of contents that the viewer read
+      description: >-
+        Saves the table of contents that the viewer of a document read, where the server cannot
+        read the format itself. The server checks it, normalizes the titles and computes the ids
+        of the headings. A valid cache that exists already is kept.
+      operationId: saveNoteToc
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientToc'
+      responses:
+        '200':
+          description: The saved cache
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CachedToc'
+        '400':
+          description: >-
+            A malformed table of contents, a note without a table of contents format, a protected
+            note without a protected session, or a server that reads the format itself
+        '404':
+          description: Note not found
+        '409':
+          description: The note has another blob than the one the viewer read (reason `changed`)
 
   /api/notes/{noteId}/title:
     put:
@@ -1872,6 +1931,86 @@ paths:
                 type: string
                 format: binary
                 
+  /api/attachments/{attachmentId}/references:
+    get:
+      tags: [Attachments]
+      summary: List the places inside an attachment that a link can point at
+      description: >-
+        The twin of `GET /api/notes/{noteId}/references` for an attachment, such as the headings
+        of a PDF file. The ToC cache of an attachment is kept on its note.
+      operationId: getAttachmentReferences
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The targets of the attachment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteReferences'
+        '400':
+          description: A protected attachment without a protected session
+        '404':
+          description: Attachment not found
+
+  /api/attachments/{attachmentId}/toc:
+    get:
+      tags: [Attachments]
+      summary: Read the ToC cache of an attachment
+      description: The twin of `GET /api/notes/{noteId}/toc` for an attachment.
+      operationId: getAttachmentToc
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The cached table of contents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CachedToc'
+        '400':
+          description: A protected attachment without a protected session
+        '404':
+          description: Attachment not found
+    put:
+      tags: [Attachments]
+      summary: Save the table of contents that the viewer of an attachment read
+      description: The twin of `PUT /api/notes/{noteId}/toc` for an attachment.
+      operationId: saveAttachmentToc
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientToc'
+      responses:
+        '200':
+          description: The saved cache
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CachedToc'
+        '400':
+          description: A malformed table of contents, or one the server does not take
+        '404':
+          description: Attachment not found
+        '409':
+          description: The attachment has another blob than the one the viewer read (reason `changed`)
+
   /api/attachments/{attachmentId}/rename:
     put:
       tags: [Attachments]
@@ -5367,6 +5506,78 @@ components:
         blobId:
           type: string
           description: The blob of the note that the targets were read from
+        pendingToc:
+          $ref: '#/components/schemas/PendingToc'
+
+    PendingToc:
+      type: object
+      required: [format]
+      description: A table of contents that the viewer of the document builds
+      properties:
+        format:
+          type: string
+          example: pdf
+
+    TocHeading:
+      type: object
+      required: [id, title, level]
+      description: A heading of a table of contents, with the fields of its format, such as `page`
+      additionalProperties: true
+      properties:
+        id:
+          type: string
+          description: Names the heading in its document, for the `heading` link parameter
+          example: 0k3x9aa1h7q2mz
+        title:
+          type: string
+          description: Plain text, never HTML
+          example: Installation
+        level:
+          type: integer
+          minimum: 1
+          example: 1
+
+    CachedToc:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ready, stale, missing, none]
+        blobId:
+          type: string
+          description: For `ready` and `stale`, the blob that the headings were read from
+        headings:
+          type: array
+          items:
+            $ref: '#/components/schemas/TocHeading'
+        pendingToc:
+          $ref: '#/components/schemas/PendingToc'
+
+    ClientToc:
+      type: object
+      required: [targetBlobHash, headings, elapsedMs]
+      properties:
+        targetBlobHash:
+          type: string
+          description: The `blobId` of the bytes that the viewer read, from their digest
+        headings:
+          type: array
+          maxItems: 20000
+          description: >-
+            In document order, without ids: `title` (at most 500 characters), `level` (1 for the
+            first heading, at most one more than the heading before), and the fields of the format
+          items:
+            type: object
+            additionalProperties: true
+        properties:
+          type: object
+          additionalProperties: true
+          description: 'The properties of the format, such as `{ "reader": 1 }`'
+        elapsedMs:
+          type: number
+          minimum: 0
+          description: How long the viewer took, for the log
 
     NoteSaveBase:
       type: object

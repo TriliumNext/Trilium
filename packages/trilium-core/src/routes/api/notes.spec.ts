@@ -11,7 +11,7 @@ import { getContext } from "../../services/context";
 import eraseService from "../../services/erase";
 import noteService from "../../services/notes";
 import {
-    type ReferenceProvider, registerReferenceProvider, unregisterReferenceProvider
+    readContent, type ReferenceProvider, registerReferenceProvider, unregisterReferenceProvider
 } from "../../services/references/index";
 import { getSql } from "../../services/sql/index";
 import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../../services/virtual_notes";
@@ -808,11 +808,11 @@ describe("Notes API (core)", () => {
             const provider: ReferenceProvider = {
                 isFor: (type, mime) => type === "code" && mime === "text/x-test-references",
                 // Asynchronous, as a provider that loads its parser on demand is.
-                findTargets: async (read) => [
+                findTargets: async (source) => [
                     { kind: "heading", title: "Unlinked", level: 1 },
                     // The text of the first heading of the content: `<h2>Intro</h2>`.
                     {
-                        kind: "heading", title: String(read).slice(4, 9), level: 1,
+                        kind: "heading", title: String(readContent(source)).slice(4, 9), level: 1,
                         params: { block: "b" }
                     }
                 ]

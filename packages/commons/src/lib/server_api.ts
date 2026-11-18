@@ -1,6 +1,7 @@
 import type { Locale } from "./i18n.js";
 import { AttachmentRow, AttributeRow, BranchRow, NoteRow, NoteType, OptionRow, RevisionSource } from "./rows.js";
 import type { SetupTargetScreen } from "./setup_marker.js";
+import type { TocHeading } from "./toc.js";
 
 type Response = {
     success: true,
@@ -339,6 +340,18 @@ export type ReferenceKind = (typeof REFERENCE_KINDS)[number];
  */
 export type ReferenceParams = Record<string, string>;
 
+/**
+ * Every parameter of a link that points inside a note or an attachment, in the order that links
+ * write them. Archives keep them, and the link dialog replaces them together.
+ */
+export const LINK_TARGET_PARAMS = [ "block", "bookmark", "page", "annotation", "heading" ] as const;
+
+/** A table of contents that the viewer of a document builds, since the server cannot read it. */
+export interface PendingToc {
+    /** The name of the format, such as `pdf`. */
+    format: string;
+}
+
 /** A place inside a note that a link can point at. */
 export interface ReferenceTarget {
     kind: ReferenceKind;
@@ -356,6 +369,37 @@ export interface NoteReferencesResponse {
     targets: ReferenceTarget[];
     /** The blob of the note that the targets were read from. */
     blobId?: string;
+    /** Set when the targets come from a table of contents that the viewer has yet to build. */
+    pendingToc?: PendingToc;
+}
+
+/** The answer of `GET /api/notes/:noteId/toc`, which reads the ToC cache and never builds it. */
+export type CachedTocResponse =
+    /** A cache of the document as it is. `blobId` is its `targetBlobHash`. */
+    | { status: "ready"; blobId: string; headings: TocHeading[] }
+    /** A cache of an earlier blob of the document. */
+    | { status: "stale"; blobId: string; headings: TocHeading[]; pendingToc?: PendingToc }
+    /** A document with a table of contents format, and no cache to read. */
+    | { status: "missing"; pendingToc?: PendingToc }
+    /** A document without a table of contents format. */
+    | { status: "none" };
+
+/** A table of contents that a viewer read, for `PUT /api/notes/:noteId/toc`. */
+export interface ClientTocRequest {
+    /** The `blobId` of the bytes that the viewer read, from their digest. */
+    targetBlobHash: string;
+    /** In document order: `title`, `level` and the fields of the format. Without ids. */
+    headings: Record<string, unknown>[];
+    /** The properties of the format, such as `{ reader: 1 }`. */
+    properties?: Record<string, unknown>;
+    /** How long the viewer took to read the outline and digest the bytes, for the log. */
+    elapsedMs: number;
+}
+
+/** The answer of 409 for a table of contents of a blob that the document no longer has. */
+export interface TocConflictResponse {
+    reason: "changed";
+    message: string;
 }
 
 /** Names a target without `params` for `POST /api/notes/:noteId/references`. */

@@ -7,7 +7,8 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 
 import { t } from "../../services/i18n";
 import {
-    getLinkTargets, getTargetAncestors, LINK_TARGET_KINDS, type LinkTarget, StaleListingError
+    getLinkTargets, getNoTargetsText, getTargetAncestors, LINK_TARGET_KINDS, type LinkTarget,
+    StaleListingError
 } from "../../services/link_targets";
 import { getNoteIdFromUrl } from "../../services/navigation_state";
 import toast from "../../services/toast";
@@ -54,6 +55,8 @@ export default function LinkMentionList({
     const [ picked, setPicked ] = useState<{ notePath: string; query: string } | null>(null);
     // The targets of that note, `null` while the server reads them.
     const [ targets, setTargets ] = useState<LinkTarget[] | null>(null);
+    // Whether the viewer of that note lists its headings once it has opened it.
+    const [ isTocPending, setIsTocPending ] = useState(false);
     // Counts the notes picked, so the targets of an earlier one are dropped.
     const pickCountRef = useRef(0);
     // The width of the popup and the height of its pages when the note was picked.
@@ -102,6 +105,7 @@ export default function LinkMentionList({
         const noteId = getNoteIdFromUrl(notePath);
         setPicked({ notePath, query });
         setTargets(ownTargets ?? null);
+        setIsTocPending(false);
         setFrame({
             width: popupRef.current?.getBoundingClientRect().width ?? 0,
             height: pagesRef.current?.getBoundingClientRect().height ?? 0
@@ -109,8 +113,10 @@ export default function LinkMentionList({
         onLinkNote(notePath);
 
         if (!ownTargets && noteId) {
-            void getLinkTargets(noteId, notePath).then((loaded) => {
-                if (pickCount === pickCountRef.current) setTargets(loaded);
+            void getLinkTargets(noteId, notePath).then((listing) => {
+                if (pickCount !== pickCountRef.current) return;
+                setTargets(listing.targets);
+                setIsTocPending(listing.isTocPending);
             });
         }
     }
@@ -206,6 +212,7 @@ export default function LinkMentionList({
                             filter={filter}
                             isLoading={!targets}
                             hasTargets={destinations.length > 0}
+                            isTocPending={isTocPending}
                         />
                     </div>
                 )}
@@ -233,13 +240,15 @@ const WHOLE_NOTE: Destination = { target: null, index: -1, parents: [] };
  * header, each indented under the targets it nests under. With a `filter`, it lists only the
  * targets whose title contains it, each with the targets that it nests under.
  */
-function LinkDestinationMenu({ autocomplete, filter, isLoading, hasTargets }: {
+function LinkDestinationMenu({ autocomplete, filter, isLoading, hasTargets, isTocPending }: {
     autocomplete: ReturnType<typeof useAutocomplete<Destination>>;
     filter: string;
     /** Whether the targets of the note are still to be read. */
     isLoading: boolean;
     /** Whether the note has targets, whatever `filter` leaves of them. */
     hasTargets: boolean;
+    /** Whether the viewer of the note lists its headings once it has opened it. */
+    isTocPending: boolean;
 }) {
     const { items } = autocomplete;
     const isFiltered = !!filter.trim();
@@ -279,7 +288,9 @@ function LinkDestinationMenu({ autocomplete, filter, isLoading, hasTargets }: {
             {!isLoading && isEmpty && (
                 <LinkDestinationStatus
                     icon="bx bx-info-circle"
-                    text={isFiltered ? t("quick-search.no-results") : t("add_link.no_link_targets")}
+                    text={isFiltered
+                        ? t("quick-search.no-results")
+                        : getNoTargetsText(isTocPending)}
                 />
             )}
         </menu>

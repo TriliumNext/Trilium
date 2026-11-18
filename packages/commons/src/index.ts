@@ -37,6 +37,8 @@ export * from "./lib/week_utils.js";
 export * from "./lib/board_columns.js";
 export * from "./lib/block_reference.js";
 export * from "./lib/block_keys.js";
+export * from "./lib/toc.js";
+export * from "./lib/pdf_toc.js";
 export * from "./lib/content_embeds.js";
 export * from "./lib/builtin_attributes.js";
 export { default as BUILTIN_ATTRIBUTES } from "./lib/builtin_attributes.js";

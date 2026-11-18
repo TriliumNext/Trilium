@@ -1,3 +1,4 @@
+import type { CachedTocResponse } from "@triliumnext/commons";
 import {
     getContentScopes, resolveBlockReference
 } from "@triliumnext/commons/src/lib/block_reference.js";
@@ -5,6 +6,7 @@ import { ALLOWED_PROTOCOLS } from "@triliumnext/commons/src/lib/shared_constants
 
 import appContext from "../components/app_context.js";
 import { openInCurrentNoteContext } from "../components/note_context.js";
+import type FNote from "../entities/fnote.js";
 import {
     getBlockReferenceLabel, getCachedBlockReferenceLabel, loadBlockReferenceLabel
 } from "./block_excerpts.js";
@@ -15,6 +17,7 @@ import { getNoteImageUrl } from "./image_urls.js";
 import {
     calculateExtraWindowUrl, calculateHash, parseNavigationStateFromUrl, type ViewMode, type ViewScope
 } from "./navigation_state.js";
+import server from "./server.js";
 import { showError } from "./toast.js";
 import treeService from "./tree.js";
 import utils, { isShare } from "./utils.js";
@@ -22,6 +25,13 @@ import utils, { isShare } from "./utils.js";
 /** The icon a column reference uses when the link carries no `columnIcon`. */
 const DEFAULT_COLUMN_REFERENCE_ICON = "bx bx-columns";
 const MISSING_NOTE_TITLE = "[missing note]";
+/** How many documents the heading titles are kept for. */
+const MAX_CACHED_TOCS = 20;
+
+/** The heading titles of each document by heading id, by its ToC route, with their blob. */
+const headingTitles = new Map<string, { blobId: string; titles: Map<string, string> }>();
+/** The reads of a ToC cache in flight, by ToC route and blob. */
+const tocReads = new Map<string, Promise<CachedTocResponse | null>>();
 
 function getNotePathFromUrl(url: string) {
     const notePathMatch = /#(root[A-Za-z0-9_/]*)$/.exec(url);
@@ -520,7 +530,15 @@ async function loadReferenceLinkTitle(
         }
     }
 
-    if (viewScope?.page) {
+    const headingTitle = viewScope?.heading
+        ? await loadLinkedHeadingTitle(note, viewScope, viewScope.heading)
+        : null;
+    if (headingTitle) {
+        $el.append($("<small>").append(
+            $("<span>").addClass("bx bx-heading"),
+            document.createTextNode(headingTitle)
+        ));
+    } else if (viewScope?.page) {
         $el.append($("<small>").append(
             $("<span>").addClass(viewScope.annotation ? "bx bx-comment-detail" : "bx bx-file"),
             document.createTextNode(getPdfReferenceLabel(viewScope.page, viewScope.annotation))
@@ -616,6 +634,13 @@ function getReferenceLinkTitleSync(
         return `${note.title} - ${blockLabel.text}`;
     }
 
+    const headingTitle = viewScope?.heading
+        ? getCachedHeadingTitle(`notes/${note.noteId}/toc`, note.blobId, viewScope.heading)
+        : null;
+    if (headingTitle) {
+        return `${note.title} - ${headingTitle}`;
+    }
+
     if (viewScope?.page) {
         return `${note.title} - ${getPdfReferenceLabel(viewScope.page, viewScope.annotation)}`;
     }
@@ -626,6 +651,94 @@ function getReferenceLinkTitleSync(
 /** What a reference to a PDF says after the title: the page, or the annotation on it. */
 function getPdfReferenceLabel(pageNumber: string, annotation: string | undefined) {
     return t(annotation ? "pdf.annotation_reference" : "pdf.page_reference", { pageNumber });
+}
+
+/**
+ * The label after the note title of a link to a place in a PDF: the title of its heading, else its
+ * page or its annotation, else nothing.
+ */
+export async function loadPdfReferenceLabel(note: FNote, viewScope: ViewScope) {
+    const headingTitle = viewScope.heading
+        ? await loadLinkedHeadingTitle(note, viewScope, viewScope.heading)
+        : null;
+    if (headingTitle) {
+        return headingTitle;
+    }
+    return viewScope.page ? getPdfReferenceLabel(viewScope.page, viewScope.annotation) : null;
+}
+
+/**
+ * Remembers the titles of the headings that the ToC cache of a document lists for its blob
+ * `blobId`, so that the labels of links to them need no request. `tocUrl` is the ToC route of the
+ * document, such as `notes/abc/toc`.
+ */
+export function rememberHeadingTitles(
+    tocUrl: string, blobId: string, headings: { id: string; title: string }[]
+) {
+    headingTitles.delete(tocUrl);
+    if (headingTitles.size >= MAX_CACHED_TOCS) {
+        const [ oldest ] = headingTitles.keys();
+        headingTitles.delete(oldest);
+    }
+    const titles = new Map(headings.map(({ id, title }) => [ id, title ]));
+    headingTitles.set(tocUrl, { blobId, titles });
+}
+
+/** The title of the heading `headingId` that is remembered for the blob `blobId`, if any. */
+function getCachedHeadingTitle(tocUrl: string, blobId: string | undefined, headingId: string) {
+    const cached = headingTitles.get(tocUrl);
+    return cached && cached.blobId === blobId ? cached.titles.get(headingId) ?? null : null;
+}
+
+/**
+ * The title of the heading `headingId` of `note`, or of its attachment that `viewScope` names.
+ * `null` when the heading is not found.
+ */
+async function loadLinkedHeadingTitle(note: FNote, viewScope: ViewScope, headingId: string) {
+    if (viewScope.viewMode === "attachments" && viewScope.attachmentId) {
+        const attachment = await froca.getAttachmentOfNote(note.noteId, viewScope.attachmentId);
+        const tocUrl = `attachments/${viewScope.attachmentId}/toc`;
+        return attachment ? loadHeadingTitle(tocUrl, attachment.blobId, headingId) : null;
+    }
+    return loadHeadingTitle(`notes/${note.noteId}/toc`, note.blobId, headingId);
+}
+
+/**
+ * The title of the heading `headingId` of the document whose ToC route is `tocUrl` and whose blob
+ * is `blobId`, read from its ToC cache. The read never builds the cache. Only a cache of the
+ * current blob is remembered; a stale one gives the title once.
+ */
+async function loadHeadingTitle(tocUrl: string, blobId: string | undefined, headingId: string) {
+    const cached = headingTitles.get(tocUrl);
+    if (cached && cached.blobId === blobId) {
+        return cached.titles.get(headingId) ?? null;
+    }
+
+    const response = await readToc(tocUrl, blobId);
+    if (response?.status === "ready") {
+        rememberHeadingTitles(tocUrl, response.blobId, response.headings);
+    }
+    if (response?.status === "ready" || response?.status === "stale") {
+        return response.headings.find(({ id }) => id === headingId)?.title ?? null;
+    }
+    return null;
+}
+
+/** The ToC cache at `tocUrl`, read once for the labels of a blob that wait for it together. */
+function readToc(tocUrl: string, blobId: string | undefined) {
+    const key = `${tocUrl}:${blobId}`;
+    const pending = tocReads.get(key);
+    if (pending) {
+        return pending;
+    }
+
+    const read = server.get<CachedTocResponse>(tocUrl, undefined, false, {
+        silentBadRequest: true, silentNotFound: true
+    })
+        .catch(() => null)
+        .finally(() => tocReads.delete(key));
+    tocReads.set(key, read);
+    return read;
 }
 
 /**

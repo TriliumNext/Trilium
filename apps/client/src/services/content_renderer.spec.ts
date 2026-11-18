@@ -860,6 +860,27 @@ describe("getRenderedContent file rendering", () => {
         expect(openNoteExternally).toHaveBeenCalledWith(note.noteId, note.mime);
     });
 
+    it("opens a PDF attachment at a target, again in the same viewer, and lets it build its ToC cache", async () => {
+        const att = buildAttachment({ role: "file", mime: "application/pdf" });
+        const { showPdfTarget } = await getRenderedContent(att, {
+            pdfTarget: { page: 3, heading: "h1" }, buildsPdfToc: true
+        });
+        expect(pdfViewerComponent.mock.calls.at(-1)?.[0]).toMatchObject({
+            target: { page: 3, heading: "h1" },
+            tocDocument: { tocUrl: `attachments/${att.attachmentId}/toc`, isProtected: false }
+        });
+
+        showPdfTarget?.({ page: 5 });
+        expect(pdfViewerComponent.mock.calls.at(-1)?.[0]).toMatchObject({ target: { page: 5 } });
+
+        // A note builds its own cache in its own viewer, and other content has no PDF to open.
+        const note = buildNote({ title: "P", type: "file" });
+        note.mime = "application/pdf";
+        await getRenderedContent(note, { buildsPdfToc: true });
+        expect(pdfViewerComponent.mock.calls.at(-1)?.[0].tocDocument).toBeUndefined();
+        expect((await getRenderedContent(buildNote({ title: "T" }))).showPdfTarget).toBeUndefined();
+    });
+
     it("does not render file when tooltip option is set", async () => {
         const note = buildNote({ title: "PT", type: "file" });
         note.mime = "application/pdf";

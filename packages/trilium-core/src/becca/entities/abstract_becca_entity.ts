@@ -1,3 +1,5 @@
+import { PROTECTED_BLOB_PREFIX } from "@triliumnext/commons/src/lib/utils.js";
+
 import { ValidationError } from "../../errors.js";
 import eventService from "../../services/events";
 
@@ -238,11 +240,10 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
     private getUnencryptedContentForHashCalculation(unencryptedContent: Uint8Array | string) {
         if (this.isProtected) {
             // a "random" prefix makes sure that the calculated hash/blobId is different for a decrypted/encrypted content
-            const encryptedPrefixSuffix = "t$[nvQg7q)&_ENCRYPTED_?M:Bf&j3jr_";
             if (typeof unencryptedContent === "string") {
-                return `${encryptedPrefixSuffix}${unencryptedContent}`;
+                return `${PROTECTED_BLOB_PREFIX}${unencryptedContent}`;
             } else {
-                return concat2(encodeUtf8(encryptedPrefixSuffix), unencryptedContent)
+                return concat2(encodeUtf8(PROTECTED_BLOB_PREFIX), unencryptedContent)
             }
         }
         return unencryptedContent;

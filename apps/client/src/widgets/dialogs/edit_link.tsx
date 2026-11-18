@@ -11,8 +11,9 @@ import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { t } from "../../services/i18n";
 import { detectEmbedType, fetchPageDetails, type PageDetails } from "../../services/link_embed";
 import {
-    addParameters, createAnchorTargets, findTarget, getLinkTargets, getParentTargets,
-    LINK_TARGET_KINDS, type LinkTarget, nestTargets, splitTargetParameters, StaleListingError
+    addParameters, createAnchorTargets, findTarget, getAttachmentLinkTargets, getLinkTargets,
+    getNoTargetsText, getParentTargets, LINK_TARGET_KINDS, type LinkTarget, nestTargets,
+    splitTargetParameters, StaleListingError
 } from "../../services/link_targets";
 import type { Suggestion } from "../../services/note_autocomplete";
 import options from "../../services/options";
@@ -238,6 +239,8 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const [ suggestion, setSuggestion ] = useState<Suggestion | null>(null);
     // The targets of that note, `null` while they load.
     const [ noteTargets, setNoteTargets ] = useState<LinkTarget[] | null>(null);
+    // Whether the viewer of the note picked lists its headings once it has opened it.
+    const [ isTocPending, setIsTocPending ] = useState(false);
     const [ notePart, setNotePart ] = useState<NotePart>(null);
     const [ expandedNoteTargets, setExpandedNoteTargets ] = useState<ReadonlySet<LinkTarget>>(
         new Set()
@@ -373,12 +376,13 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     }, [ target, opts ]);
 
     const notePath = suggestion?.notePath;
-    // The note page lists where in the note a link can point, except for a caller that picks only
-    // the note, and for an attachment link, whose target stays.
-    const showsNoteTargets = !opts?.targetOnly && !isAttachmentLink;
+    // The note page lists where in the note or the attachment a link can point, except for a
+    // caller that picks only the note.
+    const showsNoteTargets = !opts?.targetOnly;
 
     useEffect(() => {
         setNoteTargets(null);
+        setIsTocPending(false);
         const noteId = tree.getNoteIdFromUrl(notePath);
         if (!notePath || !noteId) return;
 
@@ -388,13 +392,19 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         });
 
         const { path } = splitTargetParameters(notePath);
-        if (showsNoteTargets && noteId === opts?.noteId) {
+        const attachmentId = getAttachmentId(notePath);
+        if (showsNoteTargets && noteId === opts?.noteId && !attachmentId) {
             showNoteTargets([
                 ...(opts.headings ?? []), ...createAnchorTargets(opts.anchors ?? [], path)
             ]);
         } else if (showsNoteTargets) {
-            void getLinkTargets(noteId, path).then((targets) => {
-                if (!cancelled) showNoteTargets(targets);
+            const listing = attachmentId
+                ? getAttachmentLinkTargets(noteId, attachmentId, path)
+                : getLinkTargets(noteId, path);
+            void listing.then(({ targets, isTocPending }) => {
+                if (cancelled) return;
+                showNoteTargets(targets);
+                setIsTocPending(isTocPending);
             });
         }
 
@@ -444,7 +454,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                 const noteId = tree.getNoteIdFromUrl(notePath);
                 if (notePath && noteId) {
                     const { path } = splitTargetParameters(notePath);
-                    const targets = await getLinkTargets(noteId, path);
+                    const { targets } = await getLinkTargets(noteId, path);
                     if (generation === generationRef.current) {
                         showNoteTargets(targets);
                     }
@@ -733,7 +743,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                 expandedTargets={expandedNoteTargets}
                 setExpandedTargets={setExpandedNoteTargets}
                 placeholder={
-                    <NoItems icon="bx bx-bookmark" text={t("add_link.no_link_targets")} />
+                    <NoItems icon="bx bx-bookmark" text={getNoTargetsText(isTocPending)} />
                 }
             />
         );
@@ -993,8 +1003,13 @@ function hasPlayer(url: string | undefined) {
 
 /** Whether `notePath` links to an attachment of the note, through its `attachmentId` parameter. */
 function isAttachmentPath(notePath: string | undefined) {
+    return !!getAttachmentId(notePath);
+}
+
+/** The attachment that the link at `notePath` names, if it names one. */
+function getAttachmentId(notePath: string | undefined) {
     const query = notePath?.split("?", 2)[1];
-    return !!query && new URLSearchParams(query).has("attachmentId");
+    return query ? new URLSearchParams(query).get("attachmentId") : null;
 }
 
 /** Whether `text` is a whole URL with a scheme, the way the note search tells URLs apart. */

@@ -75,9 +75,9 @@ beforeEach(() => {
 
     noteReferences.clear();
     vi.spyOn(server, "get").mockImplementation((async (url: string) => {
-        const noteId = /^notes\/(\w+)\/references$/.exec(url)?.[1];
-        if (!noteId) return serverGet(url);
-        return noteReferences.get(noteId) ?? { targets: [] };
+        const id = /^(?:notes|attachments)\/(\w+)\/references$/.exec(url)?.[1];
+        if (!id) return serverGet(url);
+        return noteReferences.get(id) ?? { targets: [] };
     }) as typeof server.get);
     createHeadingReference = vi.spyOn(server, "postWithSilentErrors")
         .mockResolvedValue({ params: { block: "NewId" } } satisfies CreateReferenceResponse);
@@ -475,7 +475,7 @@ describe("EditLinkDialog", () => {
         expect(addLink).toHaveBeenLastCalledWith("https://example.com", "Example", true);
     });
 
-    it("edits only the title of an attachment link, mirroring the attachment's title", async () => {
+    it("edits the title of an attachment link, and lists the headings of the attachment", async () => {
         const note = buildNote({ title: "Owner" });
         await open({ currentLink: { notePath: `root/${note.noteId}` } });
         await settle();
@@ -484,8 +484,12 @@ describe("EditLinkDialog", () => {
         vi.mocked(server.get).mockClear();
 
         const path = `root/${note.noteId}?viewMode=attachments&attachmentId=abc123`;
+        noteReferences.set("abc123", { targets: [
+            { kind: "heading", title: "Appendix", level: 1, params: { page: "9", heading: "h1" } }
+        ] });
         await reopen({
-            currentLink: { notePath: path }, currentTitle: "The file", anchors: [ "x" ]
+            currentLink: { notePath: path }, currentTitle: "The file", anchors: [ "x" ],
+            noteId: note.noteId
         });
         await act(async () => {
             container.querySelector(".modal")?.dispatchEvent(new Event("shown.bs.modal"));
@@ -493,8 +497,11 @@ describe("EditLinkDialog", () => {
         });
         expect(choice()).toStrictEqual([]);
         expect(container.querySelector(".note-autocomplete")).toBeNull();
-        expect(noteTargets()).toBeNull();
-        expect(server.get).not.toHaveBeenCalled();
+        await settle();
+        // The targets of the attachment, never those of the document being edited.
+        expect(noteChoices()).toStrictEqual([ "*add_link.top_of_note", "Appendix" ]);
+        expect(server.get).toHaveBeenCalledExactlyOnceWith("attachments/abc123/references",
+            undefined, false, { silentBadRequest: true, silentNotFound: true });
         expect(field("text")?.value).toBe("The file");
         expect(field("text")?.placeholder).toBe("add_link.title_from_attachment");
         expect(document.activeElement).toBe(field("text"));
@@ -506,6 +513,13 @@ describe("EditLinkDialog", () => {
         await type(field("text"), "");
         await submit();
         expect(addLink).toHaveBeenLastCalledWith(path, null);
+
+        // A heading of the attachment adds its parameters after those of the attachment.
+        await reopen({ currentLink: { notePath: path }, currentTitle: "The file" });
+        await settle();
+        await checkNoteChoice("Appendix");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(`${path}&page=9&heading=h1`, "The file");
     });
 
     it("moves a URL typed or pasted on the note side over to the web link side", async () => {

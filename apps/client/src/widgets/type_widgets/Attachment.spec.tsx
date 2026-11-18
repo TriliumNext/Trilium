@@ -220,6 +220,51 @@ describe("AttachmentDetail", () => {
         expect(drawingMounts).toHaveBeenCalledOnce();
         expect(getRenderedContent).not.toHaveBeenCalled();
     });
+
+    it("opens a PDF at the place a link names, and at the place of each later link to it", async () => {
+        const pdf = { ...role("file"), mime: "application/pdf" } as FAttachment;
+        vi.spyOn(froca, "getAttachment").mockResolvedValue(pdf);
+        const showPdfTarget = vi.fn();
+        getRenderedContent.mockClear();
+        getRenderedContent.mockResolvedValue({ $renderedContent: [], showPdfTarget } as never);
+
+        const component = new Component();
+        const viewScope: Record<string, string | undefined> = {
+            viewMode: "attachments", attachmentId: pdf.attachmentId, page: "3", heading: "h1"
+        };
+        const noteContext = { ntxId: "ntx1", viewScope };
+        const props = { note: { noteId: "note1" }, viewScope, noteContext } as unknown as
+            Parameters<typeof AttachmentDetail>[0];
+        renderInto(
+            <ParentComponent.Provider value={component}>
+                <AttachmentDetail {...props} />
+            </ParentComponent.Provider>
+        );
+
+        await vi.waitFor(() => expect(getRenderedContent).toHaveBeenCalledOnce());
+        expect(getRenderedContent).toHaveBeenCalledWith(pdf, {
+            pdfToolbar: true, pdfTarget: { page: 3, heading: "h1", annotation: undefined }, buildsPdfToc: true
+        });
+        expect(viewScope).toMatchObject({ page: undefined, heading: undefined, annotation: undefined });
+
+        // A second link to the same attachment keeps the viewer, which opens the new place.
+        async function follow(scope: Record<string, string | undefined>) {
+            Object.assign(viewScope, scope);
+            await act(async () => {
+                await component.handleEvent("noteSwitched", { noteContext: { ntxId: "ntx1", note: { noteId: "note1" } } } as never);
+            });
+        }
+        await vi.waitFor(() => expect(getRenderedContent).toHaveBeenCalledOnce());
+        await follow({ page: "5", annotation: "12R" });
+        expect(showPdfTarget).toHaveBeenCalledExactlyOnceWith({ page: 5, heading: undefined, annotation: "12R" });
+
+        // A link without a place, or to another attachment, opens nothing.
+        await follow({});
+        await follow({ attachmentId: "other", page: "2" });
+        expect(showPdfTarget).toHaveBeenCalledOnce();
+        expect(getRenderedContent).toHaveBeenCalledOnce();
+        getRenderedContent.mockResolvedValue({ $renderedContent: [] });
+    });
 });
 
 /** Reports a saved change to an attachment, as the server does after a save from `componentId`. */

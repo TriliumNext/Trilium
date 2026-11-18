@@ -2,9 +2,11 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 
 import { render } from "preact";
-import { afterEach, describe, expect, it } from "vitest";
+import { act } from "preact/test-utils";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import PdfViewer, { getFontFaceCss, getPdfUrl } from "./PdfViewer";
+import server from "../../../services/server";
+import PdfViewer, { getFontFaceCss, getPdfUrl, type PdfLinkTarget, type PdfTocDocument } from "./PdfViewer";
 
 describe("PdfViewer", () => {
     function viewerUrl(props: { noteId?: string; ntxId?: string | null }) {
@@ -28,6 +30,93 @@ describe("PdfViewer", () => {
 
     it("hides pdf.js' own sidebar, since the right panel lists the document's contents", () => {
         expect(viewerUrl({}).get("sidebar")).toBe("0");
+    });
+});
+
+describe("PdfViewer for a document of its own", () => {
+    let container: HTMLDivElement;
+
+    afterEach(() => {
+        act(() => render(null, container));
+        container.remove();
+        vi.restoreAllMocks();
+    });
+
+    /** Renders a viewer, again with the same frame when called again. */
+    function show(target?: PdfLinkTarget, tocDocument?: PdfTocDocument) {
+        act(() => render(
+            <PdfViewer pdfUrl="/api/attachments/att1/open" target={target} tocDocument={tocDocument} />,
+            container));
+        const iframe = container.querySelector("iframe") as HTMLIFrameElement;
+        if (!Object.hasOwn(iframe, "contentWindow")) {
+            const frameWindow = Object.assign(new EventTarget(), { postMessage: vi.fn() });
+            Object.defineProperty(iframe, "contentWindow", { value: frameWindow });
+        }
+        return { iframe, posted: vi.mocked((iframe.contentWindow as Window).postMessage) };
+    }
+
+    function load(iframe: HTMLIFrameElement) {
+        act(() => { iframe.dispatchEvent(new Event("load")); });
+    }
+
+    it("opens at the target it is given, once the frame has loaded, and at each later target once", () => {
+        container = document.createElement("div");
+        document.body.append(container);
+        const heading = { page: 3, heading: "0k3x9aa1h7q2mz" };
+        const { iframe, posted } = show(heading);
+        expect(posted).not.toHaveBeenCalled();
+
+        load(iframe);
+        expect(posted).toHaveBeenCalledExactlyOnceWith(
+            { type: "trilium-scroll-to-heading", headingId: "0k3x9aa1h7q2mz", pageNumber: 3 }, window.location.origin);
+
+        // The same target is not posted again, a reload of the frame included.
+        show(heading);
+        load(iframe);
+        expect(posted).toHaveBeenCalledOnce();
+
+        show({ page: 5, annotation: "12R" });
+        expect(posted).toHaveBeenLastCalledWith(
+            { type: "trilium-scroll-to-annotation", annotationId: "12R", pageNumber: 5 }, window.location.origin);
+        show(undefined);
+        expect(posted).toHaveBeenCalledTimes(2);
+    });
+
+    it("builds the ToC cache of its document, and saves only the answers of its own frame", async () => {
+        container = document.createElement("div");
+        document.body.append(container);
+        vi.spyOn(server, "get").mockResolvedValue({ status: "missing", pendingToc: { format: "pdf" } });
+        const put = vi.spyOn(server, "put").mockResolvedValue({ status: "ready", blobId: "b", headings: [] });
+        const { iframe, posted } = show(undefined, { tocUrl: "attachments/att1/toc", isProtected: true });
+
+        load(iframe);
+        await vi.waitFor(() => expect(posted).toHaveBeenCalledWith({
+            type: "trilium-build-toc", requestId: 1, isProtected: true, data: undefined
+        }, window.location.origin, []));
+
+        const answer = { type: "pdfjs-viewer-toc-build", requestId: 1, blobId: "b", headings: [], properties: {}, elapsedMs: 1 };
+        window.dispatchEvent(new MessageEvent("message", { data: answer }));
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        expect(put).not.toHaveBeenCalled();
+
+        window.dispatchEvent(new MessageEvent("message", {
+            data: answer, source: iframe.contentWindow as unknown as MessageEventSource
+        }));
+        await vi.waitFor(() => expect(put).toHaveBeenCalledWith("attachments/att1/toc", {
+            targetBlobHash: "b", headings: [], properties: {}, elapsedMs: 1
+        }, undefined, { silentConflict: true }));
+    });
+
+    it("builds nothing without a document to build for", async () => {
+        container = document.createElement("div");
+        document.body.append(container);
+        const get = vi.spyOn(server, "get");
+        const { iframe } = show();
+
+        load(iframe);
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        expect(get).not.toHaveBeenCalled();
     });
 });
 

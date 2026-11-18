@@ -2,7 +2,7 @@ import type {
     AttachmentRow, AttributeType, CloneResponse, EraseExcessRevisionsOptions, NoteRow, NoteType,
     RevisionRow, RevisionSource, SavedAttachmentRow
 } from "@triliumnext/commons";
-import { dayjs, getNoteIcon, isMarkdownMime } from "@triliumnext/commons";
+import { dayjs, getNoteIcon, isDerivedAttachmentRole, isMarkdownMime } from "@triliumnext/commons";
 
 import cloningService from "../../services/cloning.js";
 import dateUtils from "../../services/utils/date.js";
@@ -1399,6 +1399,9 @@ class BNote extends AbstractBeccaEntity<BNote> {
         const attachmentIds = new Map<string, string>();
         const usedEdits = new Set<SavedAttachmentRow>();
         for (const noteAttachment of this.getAttachments()) {
+            if (isDerivedAttachmentRole(noteAttachment.role)) {
+                continue;
+            }
             const edit = edits.find((row) => row.attachmentId
                 ? row.attachmentId === noteAttachment.attachmentId
                 : row.title === noteAttachment.title);

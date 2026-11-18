@@ -14,6 +14,7 @@ import blobService from "../../services/blob";
 import { getBlockRangeContent, replaceBlockRangeContent } from "../../services/block_ranges";
 import eraseService from "../../services/erase.js";
 import { DetailedConflictError, NotFoundError, ValidationError } from "../../errors.js";
+import { answerConflict } from "../helpers.js";
 import becca from "../../becca/becca.js";
 import type BBranch from "../../becca/entities/bbranch.js";
 import type BNote from "../../becca/entities/bnote.js";
@@ -271,18 +272,6 @@ function parseReferenceRequest(body: unknown): CreateReferenceRequest {
         throw new ValidationError("Expected the 'kind', the 'index' and the 'title' of a target.");
     }
     return { kind, index, title, blobId };
-}
-
-/** The result of `fn`, or the answer of 409 with the details of a {@link DetailedConflictError}. */
-function answerConflict<T>(fn: () => T): T | [number, object] {
-    try {
-        return fn();
-    } catch (e) {
-        if (e instanceof DetailedConflictError) {
-            return [ 409, e.details ];
-        }
-        throw e;
-    }
 }
 
 function isSaveBase(base: unknown): base is NoteSaveBase {

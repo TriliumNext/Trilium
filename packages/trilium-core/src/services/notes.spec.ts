@@ -1157,6 +1157,28 @@ describe("notes service edge cases (real DB)", () => {
             expect(copy.role).toBe("customRole");
             expect(note.getAttachments().map((attachment) => attachment.attachmentId)).toStrictEqual([ copy.attachmentId ]);
         });
+
+        it("keeps the place in a foreign attachment that a link to its copy points at", () => {
+            const href = (noteId: string, attachmentId: string | undefined) =>
+                `#root/${noteId}?viewMode=attachments&amp;attachmentId=${attachmentId}`;
+            const owner = createNote("root").note;
+            const pdf = getContext().init(() => owner.saveAttachment({
+                role: "file", mime: "application/pdf", title: "manual.pdf", content: "%PDF-1.7"
+            }));
+            const { note } = createNote("root");
+            const foreign = href(owner.noteId, pdf.attachmentId);
+
+            const content = "<p><a class=\"reference-link\""
+                + ` href="${foreign}&amp;heading=h1&amp;ntxId=x&amp;page=3">manual.pdf</a>`
+                + `<a href="${foreign}">manual</a></p>`;
+            getContext().init(() => noteService.updateNoteData(note.noteId, content));
+
+            const [ copy ] = note.getAttachments();
+            const local = href(note.noteId, copy.attachmentId);
+            expect(note.getContent()).toBe("<p><a class=\"reference-link\""
+                + ` href="${local}&amp;page=3&amp;heading=h1">manual.pdf</a>`
+                + `<a href="${local}">manual</a></p>`);
+        });
     });
 
     describe("updateNoteData attachments", () => {

@@ -51,12 +51,14 @@ interface Window {
     TRILIUM_NTX_ID: string | null | undefined;
 }
 
+/** A heading of the outline of a PDF, as the viewer sends it to the sidebar. */
 interface PdfOutlineItem {
-    title: string;
-    level: number;
-    dest: unknown;
+    /** The key of the heading in this viewer, `outline-<n>`, never saved. */
     id: string;
-    items: PdfOutlineItem[];
+    /** Plain text. */
+    title: string;
+    /** From 1, shown at most at `MAX_TOC_DEPTH`. */
+    level: number;
 }
 
 interface WithContext {
@@ -86,8 +88,23 @@ interface PdfSaveSignaturesMessage extends WithContext {
 
 interface PdfViewerTocMessage extends WithContext {
     type: "pdfjs-viewer-toc";
-    data: PdfOutlineItem[];
+    /** In document order, `null` for a document without an outline. */
+    data: PdfOutlineItem[] | null;
 }
+
+/** The answer to `trilium-build-toc`: the table of contents that the viewer read, or a failure. */
+type PdfViewerTocBuildMessage = WithContext & {
+    type: "pdfjs-viewer-toc-build";
+    /** The `requestId` of the request. */
+    requestId: number;
+} & ({ failed: true } | {
+    failed?: undefined;
+    /** The `blobId` of the bytes that the outline was read from. */
+    blobId: string;
+    headings: Record<string, unknown>[];
+    properties: Record<string, unknown>;
+    elapsedMs: number;
+});
 
 interface PdfViewerActiveHeadingMessage extends WithContext {
     type: "pdfjs-viewer-active-heading";
@@ -166,4 +183,5 @@ type PdfMessageEvent = MessageEvent<
     | PdfViewerLayersMessage
     | PdfViewerAnnotationsMessage
     | PdfDocumentBlobResultMessage
+    | PdfViewerTocBuildMessage
 >;

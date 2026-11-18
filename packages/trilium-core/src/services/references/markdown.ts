@@ -4,7 +4,7 @@ import {
 } from "@triliumnext/commons/src/lib/markdown_references.js";
 
 import { serverBlockHost } from "../import/markdown.js";
-import type { ReferenceProvider } from "./index.js";
+import { type ReferenceProvider, readContent } from "./index.js";
 
 /**
  * The headings and anchors of Markdown notes, read from the note as it renders. A heading links
@@ -12,9 +12,10 @@ import type { ReferenceProvider } from "./index.js";
  */
 const markdownReferences: ReferenceProvider = {
     isFor: (type, mime) => type === "code" && isMarkdownMime(mime),
-    findTargets: (content) => typeof content === "string"
-        ? findMarkdownTargets(content, serverBlockHost)
-        : [],
+    findTargets(source) {
+        const content = readContent(source);
+        return typeof content === "string" ? findMarkdownTargets(content, serverBlockHost) : [];
+    },
     createReference(content, request) {
         if (typeof content !== "string" || request.kind !== "heading") {
             return null;

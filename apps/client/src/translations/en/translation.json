@@ -92,6 +92,7 @@
     "link_to_heading": "Link to a heading",
     "link_to_anchor": "Link to an anchor",
     "no_link_targets": "There are no headings and anchors available to link to.",
+    "open_file_for_targets": "Open the file to list its headings.",
     "listing_changed": "The note changed while its headings were listed. Pick the heading again."
   },
   "branch_prefix": {
@@ -2575,7 +2576,8 @@
     "viewConfig": "View settings",
     "canvasLibraryItem": "Canvas library",
     "importSource": "Import source",
-    "transcript": "Meeting transcript"
+    "transcript": "Meeting transcript",
+    "tocCache": "Table of contents cache"
   },
   "bookmark_switch": {
     "bookmark": "Bookmark"

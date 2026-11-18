@@ -1309,6 +1309,9 @@ importers:
 
   packages/pdfjs-viewer:
     dependencies:
+      '@noble/hashes':
+        specifier: 2.4.0
+        version: 2.4.0
       '@triliumnext/commons':
         specifier: workspace:*
         version: link:../commons

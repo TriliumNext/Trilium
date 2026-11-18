@@ -80,14 +80,39 @@ export class Mutex {
  * `crypto.subtle` exists only in a secure context.
  */
 export function fnv1a(value: string): number {
-    let hash = 0x811c9dc5;
+    return fnv1aUpdate(FNV1A_OFFSET_BASIS, value);
+}
 
+/** The state that {@link fnv1a} starts from. */
+export const FNV1A_OFFSET_BASIS = 0x811c9dc5;
+
+/**
+ * Continues an FNV-1a hash from `hash`, a state that {@link fnv1a} or this function returned, with
+ * `value`. `fnv1aUpdate(fnv1a(a), b)` equals `fnv1a(a + b)`.
+ */
+export function fnv1aUpdate(hash: number, value: string): number {
     for (let i = 0; i < value.length; i++) {
         hash ^= value.charCodeAt(i);
         hash = Math.imul(hash, 0x01000193);
     }
 
     return hash >>> 0;
+}
+
+/**
+ * Goes in front of the content of a protected entity before its `blobId` is computed, so that its
+ * encrypted and its decrypted content never share a blob row.
+ */
+export const PROTECTED_BLOB_PREFIX = "t$[nvQg7q)&_ENCRYPTED_?M:Bf&j3jr_";
+
+/** The `blobId` of content whose SHA-512 digest is `digest`. */
+export function blobIdFromDigest(digest: Uint8Array): string {
+    // The first 15 bytes give the first 20 characters of the base 64 of the whole digest.
+    let binary = "";
+    for (const byte of digest.subarray(0, 15)) {
+        binary += String.fromCharCode(byte);
+    }
+    return btoa(binary).replaceAll("+", "X").replaceAll("/", "Y");
 }
 
 /**

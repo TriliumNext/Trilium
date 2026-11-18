@@ -3,10 +3,12 @@ import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import appContext from "../components/app_context";
 import { buildNote } from "../test/easy-froca";
+import linkService from "./link";
 import {
-    addParameters, createAnchorTargets, createEditorHeadings, findTarget, getLinkTargets,
-    getParentTargets, getTargetAncestors, LINK_TARGET_KINDS, type LinkTarget, nestTargets,
-    splitTargetParameters, StaleListingError
+    addParameters, createAnchorTargets, createEditorHeadings, findTarget,
+    getAttachmentLinkTargets, getLinkTargets, getNoTargetsText, getParentTargets,
+    getTargetAncestors, LINK_TARGET_KINDS, type LinkTarget, nestTargets, splitTargetParameters,
+    StaleListingError
 } from "./link_targets";
 import server from "./server";
 
@@ -37,10 +39,11 @@ describe("getLinkTargets", () => {
             ]
         });
 
-        const targets = await getLinkTargets(note.noteId, path);
+        const { targets, isTocPending } = await getLinkTargets(note.noteId, path);
         expect(get).toHaveBeenCalledExactlyOnceWith(
             `notes/${note.noteId}/references`, undefined, false, { silentBadRequest: true }
         );
+        expect(isTocPending).toBe(false);
         expect(targets).toMatchObject([
             { kind: "heading", title: "Setup", level: 2, params: undefined },
             { kind: "heading", title: "Linux", level: 3, params: { block: "a b" } },
@@ -80,7 +83,7 @@ describe("getLinkTargets", () => {
             targets: [ { kind: "heading", title: "Status", level: 2 } ], blobId: "listed"
         });
         const trigger = vi.spyOn(appContext, "triggerEvent").mockResolvedValue(undefined);
-        const [ status ] = await getLinkTargets(note.noteId, `root/${note.noteId}`);
+        const { targets: [ status ] } = await getLinkTargets(note.noteId, `root/${note.noteId}`);
         expect(trigger).toHaveBeenCalledExactlyOnceWith("saveNoteChanges", { noteId: note.noteId });
         expect(trigger.mock.invocationCallOrder[0]).toBeLessThan(get.mock.invocationCallOrder[0]);
 
@@ -99,15 +102,74 @@ describe("getLinkTargets", () => {
         const get = vi.spyOn(server, "get");
         const secret = buildNote({ title: "Secret" });
         secret.isProtected = true;
-        expect(await getLinkTargets(secret.noteId, `root/${secret.noteId}`)).toStrictEqual([]);
+        const none = { targets: [], isTocPending: false };
+        expect(await getLinkTargets(secret.noteId, `root/${secret.noteId}`)).toStrictEqual(none);
+        expect(await getAttachmentLinkTargets(secret.noteId, "att", `root/${secret.noteId}`))
+            .toStrictEqual(none);
         expect(get).not.toHaveBeenCalled();
 
         const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
         onTestFinished(() => consoleError.mockRestore());
         get.mockRejectedValue(new Error("offline"));
         const text = buildNote({ title: "Text" });
-        expect(await getLinkTargets(text.noteId, `root/${text.noteId}`)).toStrictEqual([]);
-        expect(consoleError).toHaveBeenCalledOnce();
+        expect(await getLinkTargets(text.noteId, `root/${text.noteId}`)).toStrictEqual(none);
+        expect(await getAttachmentLinkTargets(text.noteId, "att", `root/${text.noteId}`))
+            .toStrictEqual(none);
+        expect(consoleError).toHaveBeenCalledTimes(2);
+    });
+
+    it("reports a table of contents that the viewer has yet to build, and never builds it", async () => {
+        const note = buildNote({ title: "Paper.pdf" });
+        const get = answerReferences({ targets: [], blobId: "blob", pendingToc: { format: "pdf" } });
+        vi.spyOn(appContext, "triggerEvent").mockResolvedValue(undefined);
+
+        expect(await getLinkTargets(note.noteId, `root/${note.noteId}`))
+            .toStrictEqual({ targets: [], isTocPending: true });
+        expect(get).toHaveBeenCalledOnce();
+        expect(getNoTargetsText(true)).toBe("add_link.open_file_for_targets");
+        expect(getNoTargetsText(false)).toBe("add_link.no_link_targets");
+    });
+
+    it("remembers the titles of the headings it lists, for the labels of links to them", async () => {
+        const note = buildNote({ title: "Paper.pdf" });
+        note.blobId = "blob1";
+        const path = `root/${note.noteId}`;
+        answerReferences({
+            targets: [
+                { kind: "heading", title: "Methods", level: 1, params: { page: "3", heading: "abc" } },
+                { kind: "anchor", title: "top", params: { bookmark: "top" } }
+            ],
+            blobId: "blob1"
+        });
+        vi.spyOn(appContext, "triggerEvent").mockResolvedValue(undefined);
+
+        const { targets: [ methods ] } = await getLinkTargets(note.noteId, path);
+
+        expect(methods.createLinkPath()).toBe(`${path}?page=3&heading=abc`);
+        expect(linkService.getReferenceLinkTitleSync(`#${path}?page=3&heading=abc`))
+            .toBe("Paper.pdf - Methods");
+    });
+
+    it("lists the targets of an attachment, which link after its parameters", async () => {
+        const note = buildNote({ title: "Owner" });
+        const linkPath = `root/${note.noteId}?viewMode=attachments&attachmentId=att1`;
+        const get = answerReferences({
+            targets: [ { kind: "heading", title: "Appendix", level: 1, params: { page: "9", heading: "h1" } } ],
+            blobId: "attBlob"
+        });
+
+        const { targets: [ appendix ], isTocPending } =
+            await getAttachmentLinkTargets(note.noteId, "att1", linkPath);
+
+        expect(get).toHaveBeenCalledExactlyOnceWith("attachments/att1/references", undefined, false,
+            { silentBadRequest: true, silentNotFound: true });
+        expect(isTocPending).toBe(false);
+        expect(appendix).toMatchObject({ kind: "heading", title: "Appendix", level: 1 });
+        expect(appendix.createReference).toBeUndefined();
+        expect(appendix.createLinkPath()).toBe(`${linkPath}&page=9&heading=h1`);
+
+        answerReferences({ targets: [], pendingToc: { format: "pdf" } });
+        expect((await getAttachmentLinkTargets(note.noteId, "att1", linkPath)).isTocPending).toBe(true);
     });
 });
 

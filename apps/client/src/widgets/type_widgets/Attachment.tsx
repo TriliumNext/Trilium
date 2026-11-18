@@ -40,6 +40,7 @@ import { FormDropdownDivider, FormListItem } from "../react/FormList";
 import HelpButton from "../react/HelpButton";
 import { useTriliumEvent } from "../react/hooks/events";
 import { useAttachments } from "../react/hooks/note";
+import { useSameNoteSwitch } from "../react/hooks/note_context";
 import { useFileDrop } from "../react/hooks/drag";
 import Icon from "../react/Icon";
 import ImageViewer from "../react/ImageViewer";
@@ -49,6 +50,7 @@ import { ParentComponent, refToJQuerySelector } from "../react/react_utils";
 import SiblingNavigator from "../react/SiblingNavigator";
 import { TextPreview } from "./File";
 import MediaPreview from "./file/MediaPreview";
+import type { PdfLinkTarget } from "./file/PdfViewer";
 import TranscriptView from "./transcript/TranscriptView";
 import { TypeWidgetProps } from "./type_widget";
 
@@ -254,6 +256,16 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
     const isTranscript = attachment.role === "transcript";
     const rendersItself = isZoomableImage || isPlayableMedia || isEditableDrawing || isTranscript;
     const imageSrc = getAttachmentImageUrl(attachment.attachmentId, attachment.title, modified);
+    /** Opens the PDF that the content renderer showed at another place. */
+    const showPdfTargetRef = useRef<((target: PdfLinkTarget) => void) | null>(null);
+
+    /** The place in the PDF that a link opened the attachment at, taken once from the view scope. */
+    function takeLinkTarget() {
+        const scope = noteContext?.viewScope;
+        return isFullDetail && scope?.attachmentId === attachment.attachmentId
+            ? takePdfTarget(scope)
+            : undefined;
+    }
 
     /** Unmounts whatever the content renderer previously mounted here (a media player), so that replacing
      *  or discarding the content doesn't leak its Preact root — or leave its audio playing. */
@@ -266,9 +278,15 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
         if (!rendersItself) {
             // The full-detail view has a pane to itself, so it gets the pdf.js toolbar; a list-view preview
             // stays bare.
-            content_renderer.getRenderedContent(attachment, { pdfToolbar: !!isFullDetail })
-                .then(({ $renderedContent }) => {
+            const renderOptions = {
+                pdfToolbar: !!isFullDetail,
+                pdfTarget: takeLinkTarget(),
+                buildsPdfToc: !!isFullDetail
+            };
+            content_renderer.getRenderedContent(attachment, renderOptions)
+                .then(({ $renderedContent, showPdfTarget }) => {
                     disposeContent();
+                    showPdfTargetRef.current = showPdfTarget ?? null;
                     contentWrapper.current?.replaceChildren(...$renderedContent);
                 });
         }
@@ -290,6 +308,13 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
         const isThis = (row: AttachmentRow) => row.attachmentId === attachment.attachmentId;
         if (loadResults.getAttachmentRows().some(isThis)) {
             refresh();
+        }
+    });
+    // A link to the attachment the pane shows keeps its viewer, which opens the link's place.
+    useSameNoteSwitch(ownerNote, noteContext?.ntxId, () => {
+        const target = takeLinkTarget();
+        if (target) {
+            showPdfTargetRef.current?.(target);
         }
     });
 
@@ -485,4 +510,19 @@ function AttachmentActions({ attachment, copyAttachmentReferenceToClipboard }: {
             </Dropdown>
         </div>
     );
+}
+
+/**
+ * The place in a PDF that `viewScope` names, taken out of it so that a link opens it once: the
+ * heading or the annotation, and the page.
+ */
+function takePdfTarget(viewScope: ViewScope): PdfLinkTarget | undefined {
+    const { page, heading, annotation } = viewScope;
+    if (!page && !heading) return undefined;
+
+    viewScope.page = undefined;
+    viewScope.heading = undefined;
+    viewScope.annotation = undefined;
+    const pageNumber = Number.parseInt(page ?? "", 10);
+    return { page: pageNumber >= 1 ? pageNumber : undefined, heading, annotation };
 }

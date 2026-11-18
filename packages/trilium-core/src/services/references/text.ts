@@ -4,7 +4,7 @@ import {
 } from "@triliumnext/commons";
 import { HTMLElement, type Node, parse, TextNode } from "node-html-parser";
 
-import type { ReferenceProvider } from "./index.js";
+import { type ReferenceProvider, readContent } from "./index.js";
 
 /**
  * The headings and anchors of text notes. A heading links through `?block=` once it has a block
@@ -12,7 +12,10 @@ import type { ReferenceProvider } from "./index.js";
  */
 const textReferences: ReferenceProvider = {
     isFor: (type) => type === "text",
-    findTargets: (content) => typeof content === "string" ? findTextTargets(content) : [],
+    findTargets(source) {
+        const content = readContent(source);
+        return typeof content === "string" ? findTextTargets(content) : [];
+    },
     createReference(content, request) {
         if (typeof content !== "string" || request.kind !== "heading") {
             return null;

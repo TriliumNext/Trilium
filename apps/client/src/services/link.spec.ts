@@ -64,6 +64,8 @@ vi.mock("./i18n.js", () => ({
     t: (key: string) => key
 }));
 
+import type { CachedTocResponse } from "@triliumnext/commons";
+
 import { buildNote } from "../test/easy-froca";
 import froca from "./froca.js";
 import treeService from "./tree.js";
@@ -71,9 +73,12 @@ import linkService, {
     calculateExtraWindowUrl,
     calculateHash,
     goToLinkExt,
+    loadPdfReferenceLabel,
     parseNavigationStateFromUrl,
+    rememberHeadingTitles,
     setupLinkHandlers
 } from "./link.js";
+import server from "./server.js";
 import utils from "./utils.js";
 
 beforeEach(() => {
@@ -166,6 +171,9 @@ describe("parseNavigationStateFromUrl", () => {
         const page = parseNavigationStateFromUrl("#root/aaaaaaaaaaaa?page=5");
         expect((page as any).viewScope).toMatchObject({ page: "5" });
 
+        const heading = parseNavigationStateFromUrl("#root/aaaaaaaaaaaa?page=5&heading=0k3x9aa1h7q2mz.Kp3vXq0aB7.p");
+        expect((heading as any).viewScope).toMatchObject({ page: "5", heading: "0k3x9aa1h7q2mz.Kp3vXq0aB7.p" });
+
         const annotation = parseNavigationStateFromUrl("#root/aaaaaaaaaaaa?page=5&annotation=12R");
         expect((annotation as any).viewScope).toMatchObject({ page: "5", annotation: "12R" });
     });
@@ -252,6 +260,8 @@ describe("calculateHash", () => {
     });
 
     it("writes a PDF reference back into the hash it was read from", () => {
+        expect(calculateHash({ notePath: "root/abc", viewScope: { page: "5", heading: "h.1" } } as any))
+            .toBe("#root/abc?page=5&heading=h.1");
         const hash = calculateHash({
             notePath: "root/abc",
             viewScope: { page: "5", annotation: "12R" }
@@ -1141,6 +1151,129 @@ describe("getReferenceLinkTitle / getReferenceLinkTitleSync", () => {
 
         expect(unknownTitle).toBe("[missing note]");
         expect(storedTitle).toBe("Stored");
+    });
+});
+
+describe("the labels of links to PDF headings", () => {
+    const headings = [ { id: "h1", title: "Methods", level: 1 }, { id: "h2.Kp3vXq0aB7", title: "Summary", level: 1 } ];
+
+    function answerToc(...responses: CachedTocResponse[]) {
+        const get = vi.spyOn(server, "get");
+        for (const response of responses) {
+            get.mockResolvedValueOnce(response);
+        }
+        return get;
+    }
+
+    async function label(href: string) {
+        const $el = $("<span>");
+        await linkService.loadReferenceLinkTitle($el, href);
+        return $el;
+    }
+
+    it("shows the heading title from the ToC cache, and remembers a cache of the current blob", async () => {
+        const pdf = buildNote({ title: "Paper" });
+        pdf.blobId = "blobA";
+        const get = answerToc({ status: "ready", blobId: "blobA", headings });
+        const href = `#root/${pdf.noteId}?page=3&heading=h2.Kp3vXq0aB7`;
+
+        const $first = await label(href);
+        const $second = await label(href);
+
+        expect($first.text()).toBe("PaperSummary");
+        expect($first.find("small span").hasClass("bx-heading")).toBe(true);
+        expect($second.text()).toBe("PaperSummary");
+        expect(get).toHaveBeenCalledExactlyOnceWith(`notes/${pdf.noteId}/toc`, undefined, false,
+            { silentBadRequest: true, silentNotFound: true });
+        expect(linkService.getReferenceLinkTitleSync(href)).toBe("Paper - Summary");
+        get.mockRestore();
+    });
+
+    it("shows the page while no cache names the heading, and asks again for the next label", async () => {
+        const pdf = buildNote({ title: "Paper" });
+        const get = answerToc({ status: "missing", pendingToc: { format: "pdf" } },
+            { status: "ready", blobId: pdf.blobId, headings });
+        const href = `#root/${pdf.noteId}?page=12&heading=h1`;
+
+        expect((await label(href)).text()).toBe("Paperpdf.page_reference");
+        expect(linkService.getReferenceLinkTitleSync(href)).toBe("Paper - pdf.page_reference");
+        expect((await label(href)).text()).toBe("PaperMethods");
+        expect(get).toHaveBeenCalledTimes(2);
+        get.mockRestore();
+    });
+
+    it("shows the title from a stale cache without remembering it", async () => {
+        const pdf = buildNote({ title: "Paper" });
+        const get = answerToc({ status: "stale", blobId: "older", headings },
+            { status: "stale", blobId: "older", headings });
+        const href = `#root/${pdf.noteId}?page=12&heading=h1`;
+
+        expect((await label(href)).text()).toBe("PaperMethods");
+        expect((await label(href)).text()).toBe("PaperMethods");
+        expect(get).toHaveBeenCalledTimes(2);
+        expect(linkService.getReferenceLinkTitleSync(href)).toBe("Paper - pdf.page_reference");
+        get.mockRestore();
+    });
+
+    it("shows the page for an id the cache does not hold, such as one made under the other protection", async () => {
+        const pdf = buildNote({ title: "Paper" });
+        rememberHeadingTitles(`notes/${pdf.noteId}/toc`, pdf.blobId, headings);
+        const get = vi.spyOn(server, "get");
+
+        expect((await label(`#root/${pdf.noteId}?page=4&heading=h2.Kp3vXq0aB7.p`)).text())
+            .toBe("Paperpdf.page_reference");
+        expect(get).not.toHaveBeenCalled();
+        get.mockRestore();
+    });
+
+    it("shares one read between labels, and shows the page when the read fails", async () => {
+        const pdf = buildNote({ title: "Paper" });
+        const get = vi.spyOn(server, "get").mockRejectedValueOnce(new Error("offline"));
+        const href = `#root/${pdf.noteId}?page=2&heading=h1`;
+
+        const labels = await Promise.all([ label(href), label(href) ]);
+
+        expect(labels.map(($el) => $el.text())).toStrictEqual([ "Paperpdf.page_reference", "Paperpdf.page_reference" ]);
+        expect(get).toHaveBeenCalledOnce();
+        get.mockRestore();
+    });
+
+    it("reads the ToC cache of an attachment for a link to its heading", async () => {
+        const owner = buildNote({ title: "Owner" });
+        vi.spyOn(froca, "getAttachmentOfNote").mockImplementation(async (_noteId, attachmentId) =>
+            (attachmentId === "att1" ? { attachmentId: "att1", blobId: "attBlob", title: "Book.pdf" } : null) as any);
+        const get = answerToc({ status: "ready", blobId: "attBlob", headings });
+
+        const $el = await label(`#root/${owner.noteId}?viewMode=attachments&attachmentId=att1&page=3&heading=h1`);
+        const $missing = await label(`#root/${owner.noteId}?viewMode=attachments&attachmentId=gone&page=3&heading=h1`);
+
+        expect($el.text()).toContain("Methods");
+        expect(get).toHaveBeenCalledExactlyOnceWith("attachments/att1/toc", undefined, false,
+            { silentBadRequest: true, silentNotFound: true });
+        expect($missing.find("small").text()).toBe("pdf.page_reference");
+        vi.restoreAllMocks();
+    });
+
+    it("gives the label that the Markdown chips show", async () => {
+        const pdf = buildNote({ title: "Paper" });
+        rememberHeadingTitles(`notes/${pdf.noteId}/toc`, pdf.blobId, headings);
+
+        expect(await loadPdfReferenceLabel(pdf, { heading: "h1", page: "3" })).toBe("Methods");
+        expect(await loadPdfReferenceLabel(pdf, { page: "3", annotation: "12R" })).toBe("pdf.annotation_reference");
+        expect(await loadPdfReferenceLabel(pdf, {})).toBeNull();
+    });
+
+    it("keeps the titles of the last documents it read", () => {
+        const pdfs = Array.from({ length: 21 }, (_, index) => buildNote({ title: `Paper ${index}` }));
+        for (const pdf of pdfs) {
+            rememberHeadingTitles(`notes/${pdf.noteId}/toc`, pdf.blobId, headings);
+        }
+        rememberHeadingTitles(`notes/${pdfs[20].noteId}/toc`, pdfs[20].blobId, headings);
+
+        expect(linkService.getReferenceLinkTitleSync(`#root/${pdfs[0].noteId}?page=1&heading=h1`))
+            .toBe("Paper 0 - pdf.page_reference");
+        expect(linkService.getReferenceLinkTitleSync(`#root/${pdfs[1].noteId}?page=1&heading=h1`))
+            .toBe("Paper 1 - Methods");
     });
 });
 
