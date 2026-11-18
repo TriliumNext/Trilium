@@ -50,4 +50,4 @@ body.mobile .modal.tree-popup-editor-dialog .modal-sidebar {
 }
 
 /* The header note title (icon + editable title) reuses the quick-edit TitleRow styling — see the
-   shared `.popup-editor-dialog, .tree-popup-editor-dialog` rules in PopupEditor.css. */
+   shared `.popup-editor-dialog, .tree-popup-editor-dialog` rules in TitleRow.css. */
