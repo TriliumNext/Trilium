@@ -96,7 +96,9 @@ The only purpose of the attribute definition is to set up a template. If the att
     </tbody>
 </table>
 
-So there's one attribute for value and one for definition. But notice how an definition attribute can be made [Inheritable](Attribute%20Inheritance.md), meaning that it's also applied to all descendant notes. In this case, the definition used for the whole sub-tree while "value" attributes are for each not individually.
+So there's one attribute for value and one for definition. But notice how a definition attribute can be made [Inheritable](Attribute%20Inheritance.md), meaning that it's also applied to all descendant notes. In this case, the definition is used for the whole sub-tree, while the "value" attributes are set for each note individually.
+
+A value can be inherited as well. If a note has no value of its own, a field that holds a single value shows the one the note inherits (from an inheritable attribute on a parent note, or from <a class="reference-link" href="../Templates.md">Templates</a>). Changing the field creates a value on the note itself, which takes precedence over the inherited one; the parent's or the template's value stays as it is. To return to the inherited value, delete the note's own attribute in the _Owned attributes_ section.
 
 ## Using system attributes
 
