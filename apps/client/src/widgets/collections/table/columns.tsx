@@ -284,10 +284,12 @@ export function restoreExistingData(newDefs: ColumnDefinition[], oldDefs: Column
     const newColumns = newDefs
         .filter(item => !existingFields.has(item.field!));
 
+    if (position === undefined) {
+        return insertAfterPredecessors(newDefs, existingColumns, newColumns);
+    }
+
     // Clamp position to a valid range
-    const insertPos = position !== undefined
-        ? Math.min(Math.max(position, 0), existingColumns.length)
-        : existingColumns.length;
+    const insertPos = Math.min(Math.max(position, 0), existingColumns.length);
 
     // 3. Insert new columns at the specified position
     return [
@@ -295,6 +297,31 @@ export function restoreExistingData(newDefs: ColumnDefinition[], oldDefs: Column
         ...newColumns,
         ...existingColumns.slice(insertPos)
     ];
+}
+
+/**
+ * Places each column the stored layout lacks, such as one whose definition was renamed, right after
+ * the nearest column that precedes it in `newDefs` and is already placed, so it follows the order of
+ * the attribute definitions. A column with no such predecessor goes first.
+ */
+function insertAfterPredecessors(
+    newDefs: ColumnDefinition[],
+    existingColumns: ColumnDefinition[],
+    newColumns: ColumnDefinition[]
+) {
+    const result = [ ...existingColumns ];
+    for (const column of newColumns) {
+        let insertAt = 0;
+        for (let i = newDefs.indexOf(column) - 1; i >= 0; i--) {
+            const predecessorIndex = result.indexOf(newDefs[i]);
+            if (predecessorIndex >= 0) {
+                insertAt = predecessorIndex + 1;
+                break;
+            }
+        }
+        result.splice(insertAt, 0, column);
+    }
+    return result;
 }
 
 function calculateIndexColumnWidth(rowNumberHint: number, movableRows: boolean): number {

@@ -119,6 +119,30 @@ describe("restoreExistingData", () => {
         expect(restored.length).toBe(3);
     });
 
+    it("places a renamed or added column after the one its definition follows", () => {
+        const newDefs: ColumnDefinition[] = [
+            { title: "#" },
+            { field: "title", title: "Title" },
+            { field: "labels.a", title: "a" },
+            { field: "labels.renamed", title: "renamed" },
+            { field: "labels.added", title: "added" },
+            { field: "labels.b", title: "b" },
+            { field: "labels.c", title: "c" }
+        ];
+        const oldDefs: ColumnDefinition[] = [
+            { title: "#" },
+            { field: "labels.b", title: "b" },
+            { field: "title", title: "Title" },
+            { field: "labels.a", title: "a" },
+            { field: "labels.original", title: "original" },
+            { field: "labels.c", title: "c" }
+        ];
+        const restored = restoreExistingData(newDefs, oldDefs);
+        expect(restored.map((def) => def.field ?? def.title)).toEqual([
+            "#", "labels.b", "title", "labels.a", "labels.renamed", "labels.added", "labels.c"
+        ]);
+    });
+
     it("doesn't alter the existing order", () => {
         const newDefs: ColumnDefinition[] = [
             { title: "#", headerSort: false, hozAlign: "center", resizable: false, frozen: true, rowHandle: false },
