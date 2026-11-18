@@ -163,9 +163,11 @@ export function SingleNoteRenderer({ note, onReady }: RendererProps) {
             await document.fonts.ready;
         }
 
-        load().then(() => requestAnimationFrame(() => onReady({
-            type: "single-note"
-        }))).catch((error: unknown) => {
+        let cancelled = false;
+        load().then(() => requestAnimationFrame(() => {
+            if (!cancelled) onReady({ type: "single-note" });
+        })).catch((error: unknown) => {
+            if (cancelled) return;
             console.error("[print] Rendering the note failed:", error);
             onReady({
                 type: "error",
@@ -173,6 +175,9 @@ export function SingleNoteRenderer({ note, onReady }: RendererProps) {
                 stack: error instanceof Error ? error.stack : undefined
             });
         });
+        return () => {
+            cancelled = true;
+        };
     }, [ note ]);
 
     return <>

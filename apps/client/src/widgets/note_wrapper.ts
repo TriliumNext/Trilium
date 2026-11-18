@@ -4,6 +4,7 @@ import type { EventData } from "../components/app_context.js";
 import type NoteContext from "../components/note_context.js";
 import type FNote from "../entities/fnote.js";
 import attributeService from "../services/attributes.js";
+import froca from "../services/froca.js";
 import utils from "../services/utils.js";
 import { isContentRightToLeft } from "../utils/formatters.js";
 import type BasicWidget from "./basic_widget.js";
@@ -95,7 +96,9 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
             `view-mode-${this.noteContext?.viewScope?.viewMode ?? "default"}`,
             note.getColorClass()
         );
-        if (isFullWidthNote(note)) classes.push("full-content-width");
+        if (isFullWidthNote(note) || this.isOpenedAttachmentFullWidth()) {
+            classes.push("full-content-width");
+        }
         if (note.isOptions()) classes.push("options");
         if (hasBackgroundEffects(note)) classes.push("bgfx");
         if (note.isProtected) classes.push("protected");
@@ -106,12 +109,63 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
         return classes;
     }
 
+    /**
+     * Whether the attachment shown on its own in the split takes the full width. Answers `false`
+     * until `attachment_roles.js` has loaded, then refreshes the split: only the attachment view
+     * needs that module, so it stays out of the startup path.
+     */
+    private isOpenedAttachmentFullWidth() {
+        const attachment = this.getOpenedAttachment();
+        if (!attachment) {
+            return false;
+        }
+        if (!attachmentRoles) {
+            void loadAttachmentRoles().then(() => {
+                if (this.noteContext?.viewScope?.attachmentId === attachment.attachmentId) {
+                    this.refresh();
+                }
+            });
+            return false;
+        }
+        return attachmentRoles.isFullWidthAttachment(attachment);
+    }
+
+    /** The attachment last asked of froca, so one that does not exist is not asked for again. */
+    private requestedAttachmentId?: string;
+
+    /**
+     * The attachment shown on its own in the split, if froca holds it. One it does not hold yet is
+     * loaded, and the split refreshes once it arrives.
+     */
+    private getOpenedAttachment() {
+        const viewScope = this.noteContext?.viewScope;
+        const attachmentId = viewScope?.viewMode === "attachments" ? viewScope.attachmentId : undefined;
+        if (!attachmentId) {
+            return null;
+        }
+
+        const attachment = froca.attachments[attachmentId];
+        if (!attachment && this.requestedAttachmentId !== attachmentId) {
+            this.requestedAttachmentId = attachmentId;
+            void froca.getAttachment(attachmentId, true).then((loaded) => {
+                if (loaded && this.noteContext?.viewScope?.attachmentId === attachmentId) {
+                    this.refresh();
+                }
+            });
+        }
+        return attachment ?? null;
+    }
+
     async entitiesReloadedEvent({ loadResults }: EventData<"entitiesReloaded">) {
         // listening on changes of note.type and CSS class
         const LABELS_CAUSING_REFRESH = ["cssClass", "language", "viewType", "color", "fullContentWidth"];
         const noteId = this.noteContext?.noteId;
+        const viewScope = this.noteContext?.viewScope;
+        const attachmentId = viewScope?.viewMode === "attachments" ? viewScope.attachmentId : undefined;
         if (
             loadResults.isNoteReloaded(noteId) ||
+            // Uploading a new file into the open attachment can change its MIME type, and so its width.
+            (attachmentId && loadResults.getAttachmentRows().some((row) => row.attachmentId === attachmentId)) ||
             // The direction of a note carrying no `#language` comes from this option, so a change to it
             // has to repaint the `rtl` class the same way a change to the label would.
             loadResults.isOptionReloaded("defaultContentLanguage") ||
@@ -120,6 +174,15 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
             this.refresh();
         }
     }
+}
+
+let attachmentRoles: typeof import("@triliumnext/commons/src/lib/attachment_roles.js") | undefined;
+let attachmentRolesLoad: Promise<void> | undefined;
+
+function loadAttachmentRoles() {
+    attachmentRolesLoad ??= import("@triliumnext/commons/src/lib/attachment_roles.js")
+        .then((module) => { attachmentRoles = module; });
+    return attachmentRolesLoad;
 }
 
 /** Classes set on the split by `SplitNoteContainer`, based on the split's position among its siblings. */
