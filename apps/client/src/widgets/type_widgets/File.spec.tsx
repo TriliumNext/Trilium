@@ -1,4 +1,6 @@
+import { XLSX_MIME } from "@triliumnext/commons";
 import { render } from "preact";
+import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const applySingleBlockSyntaxHighlight = vi.fn(async (_codeBlock: unknown, _normalizedMimeType: string) => {});
@@ -16,13 +18,22 @@ vi.mock("../react/ActionButton", () => ({ default: () => <button class="code-blo
 
 // Stub the sibling previews (and the blob hook they feed on) so their service imports stay out of
 // the module graph; the markers let FileTypeWidget's mime routing be asserted without rendering them.
-vi.mock("../react/hooks", () => ({ useNoteBlob: vi.fn(() => null) }));
+vi.mock("../react/hooks/note", () => ({
+    useNoteBlob: vi.fn(() => null)
+}));
 vi.mock("./file/MediaPreview", () => ({ default: () => <div class="media-preview-stub" /> }));
 vi.mock("./file/FontPreview", () => ({ default: () => <div class="font-preview-stub" /> }));
 vi.mock("./file/Office", () => ({ default: () => <div class="office-preview-stub" /> }));
 vi.mock("./file/Pdf", () => ({ default: () => <div class="pdf-preview-stub" /> }));
+const spreadsheetProps = vi.hoisted(() => [] as { onError: () => void; isVisible?: boolean }[]);
+vi.mock("./spreadsheet/Spreadsheet", () => ({
+    SpreadsheetFile: (props: { onError: () => void; isVisible?: boolean }) => {
+        spreadsheetProps.push(props);
+        return <div class="spreadsheet-file-stub" />;
+    }
+}));
 
-const { useNoteBlob } = await import("../react/hooks");
+const { useNoteBlob } = await import("../react/hooks/note");
 const { default: FileTypeWidget, TextPreview } = await import("./File");
 
 let container: HTMLDivElement;
@@ -43,7 +54,7 @@ afterEach(() => {
 
 describe("FileTypeWidget", () => {
     const mount = (mime: string, noteContext?: unknown) => {
-        const props = { note: { mime }, noteContext } as unknown as Parameters<typeof FileTypeWidget>[0];
+        const props = { note: { noteId: "note1", mime }, noteContext } as unknown as Parameters<typeof FileTypeWidget>[0];
         render(<FileTypeWidget {...props} />, container);
     };
 
@@ -89,6 +100,46 @@ describe("FileTypeWidget", () => {
         expect(container.querySelector(".office-preview-stub")).not.toBeNull();
         // The preview is server-rendered — fetching the blob would download the file twice.
         expect(vi.mocked(useNoteBlob).mock.calls[0][0]).toBeNull();
+    });
+
+    it("shows an XLSX workbook in the read-only spreadsheet, and the HTML preview if it is none", async () => {
+        vi.mocked(useNoteBlob).mockReturnValue(null);
+
+        mount("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        await vi.waitFor(() => expect(container.querySelector(".spreadsheet-file-stub")).not.toBeNull());
+        expect(container.querySelector(".office-preview-stub")).toBeNull();
+        expect(vi.mocked(useNoteBlob).mock.calls[0][0]).toBeNull();
+
+        await act(async () => spreadsheetProps.at(-1)?.onError());
+        expect(container.querySelector(".office-preview-stub")).not.toBeNull();
+        expect(container.querySelector(".spreadsheet-file-stub")).toBeNull();
+    });
+
+    it("tells the spreadsheet whether it shows", async () => {
+        vi.mocked(useNoteBlob).mockReturnValue(null);
+        for (const isVisible of [ false, true ]) {
+            await showWorkbook("blob1", isVisible);
+            await vi.waitFor(() => expect(spreadsheetProps.at(-1)?.isVisible).toBe(isVisible));
+        }
+    });
+
+    it("tries the spreadsheet again once the failed workbook's content changes", async () => {
+        vi.mocked(useNoteBlob).mockReturnValue(null);
+        await showWorkbook("blob1");
+        await vi.waitFor(() => expect(container.querySelector(".spreadsheet-file-stub")).not.toBeNull());
+
+        await act(async () => spreadsheetProps.at(-1)?.onError());
+        expect(container.querySelector(".spreadsheet-file-stub")).toBeNull();
+        await showWorkbook("blob1");
+        expect(container.querySelector(".spreadsheet-file-stub")).toBeNull();
+
+        await showWorkbook("blob2");
+        expect(container.querySelector(".spreadsheet-file-stub")).not.toBeNull();
+    });
+
+    const showWorkbook = (blobId: string, isVisible = true) => act(async () => {
+        const props = { note: { noteId: "note1", mime: XLSX_MIME, blobId }, isVisible } as unknown as Parameters<typeof FileTypeWidget>[0];
+        render(<FileTypeWidget {...props} />, container);
     });
 
     it("prefers OfficePreview over the text branch for RTF, whose blob content is a string", () => {

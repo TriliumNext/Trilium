@@ -204,6 +204,25 @@ stylesheet is `src/theme/aside.css`.
   `isAside()` in the Markdown export, the import's `normalizeToEditorMarkup()`, and
   `aside:not(.admonition)` in `aside.css`.
 - **Nesting** is allowed by the schema and undone by the post-fixer (above).
+- **A place for the caret.** The aside hides the "Insert paragraph" buttons, and a click beside a
+  floated widget selects it. So the post-fixer appends an empty paragraph to a parent whose
+  children are all asides (`addParagraphAfterAsides()`). Specs of other behavior put a paragraph
+  beside a lone aside, or their expectations gain that empty one.
+- **Blocks beside a wrapped widget.** Only lines of text avoid a float; the box of a block extends
+  under it, with its border, background, markers and `::after` controls. `aside.css` makes
+  headings and code blocks formatting contexts (`display: flow-root`), and lists too after a box
+  wrapped at the side of their markers. `tables.css` sizes a table with `width: stretch`, the width
+  the float leaves free, where `100%` is the width of the parent. Firefox 160 has no `stretch`
+  and its `-moz-available` is the parent's width, so under `@supports not (width: stretch)` the
+  figure of a table after a wrapped box is a flex column with no width. The browser specs run in
+  Chromium and never reach that rule: check it in Firefox. In read-only text and shared pages,
+  `applyTableScroll` gives a table `--table-width`, which `table_scroll.css` applies with
+  `!important`, so that file caps it at `max-width: stretch` (in Firefox, `width: auto` after a
+  wrapped box) with a 200px floor that sends it below a narrower gap. A new block with a box of
+  its own needs the same, unless it already is a formatting context (`overflow: hidden`, flex,
+  grid).
+  An embed box is a flex container that clears (`.include-note { clear: both }` in the client's
+  `style.css`), so it goes below a wrapped box; the extended code block lifts the `clear` there.
 - **Placing, resizing and the selected look** come from the shared parts below; the aside only
   registers with them.
 - **A color dropdown from CKEditor's own.** `AsideColorUI` extends `FontColorUIBase`, so the
@@ -251,6 +270,20 @@ A block widget that the user places in the text, resizes or types in reuses thes
     rules tie with the anchor rules on specificity and must stay after them.
   - Specs stub `Element.prototype.setPointerCapture`, and emulate a touch screen with CDP
     `Emulation.setTouchEmulationEnabled` to check the edge grips.
+- **`ColoredWidgets`** (`plugins/colored_widgets.ts`) lets CKEditor's `fontColor` and
+  `fontBackgroundColor` commands color a selected widget, block or inline, as they color text.
+  Call `register(modelName)` from `init()`, after the schema: it allows both attributes on the
+  element, saves each as the element's own inline style with its `--tn-*` variable
+  (`color`/`--tn-color`, `background-color`/`--tn-background`, at `highest` priority, so the text
+  color converters never wrap the widget in a `<span>`), reads them back before General HTML
+  Support keeps the styles, and gives the commands the selected widget's color (a selection reads
+  the colors of an inline object, not of a block). The shared adaptive rules adapt the color on
+  the element; the widget's stylesheet decides which inner parts show it, typically `color:
+  inherit` on text that sets its own color and a transparent background on an inner box. A feature
+  that replaces a widget or text with another calls `copyColors(writer, source, target)`, which
+  copies only what the target's schema allows. Link previews (`linkMention`, `linkEmbed`) are the
+  first users. Unlike the aside's own `backgroundColor`, the color comes from the text color
+  commands and the text roles of the shared stylesheet.
 - **`NestedLimitSelection`** (`plugins/nested_limit_selection.ts`) widens a selection that leaves
   a nested editable only as far as the innermost limit that holds both ends, where CKEditor would
   select the whole outer widget. The aside and the column layout require it.
@@ -456,3 +489,6 @@ The saved HTML on the backend (`packages/trilium-core/src/services`, `packages/c
   their own around the Markdown of its blocks, as a column of the column layout does.
 - **Block references** (`sliceToBlockReference()` in `packages/commons/src/lib/block_reference.ts`):
   decide what an excerpt keeps of the widget. An aside that is the only block loses its position.
+  Whether the widget can hold a block id, where the id is saved, how a link reveals it and what an
+  excerpt editor does with it: the `developing-block-references` skill,
+  `references/checklists.md`, "A new block, widget or container".

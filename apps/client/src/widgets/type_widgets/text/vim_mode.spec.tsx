@@ -44,13 +44,17 @@ vi.mock("../../../services/options", () => ({
 }));
 vi.mock("../../../services/toast", () => ({ default: { showPersistent: mocks.showPersistent } }));
 vi.mock("../../../services/utils", () => ({ isMobile: () => mocks.isMobile }));
-vi.mock("../../react/hooks", () => ({
-    useContextualShortcutHints: (hints: () => unknown[]) => {
-        mocks.shortcutHints = hints;
-    },
-    useNoteLabel: vi.fn(),
+vi.mock("../../react/hooks/note", () => ({
+    useNoteLabel: vi.fn()
+}));
+vi.mock("../../react/hooks/options", () => ({
     useTriliumOption: (name: string) => [ mocks.stored[name] ?? "" ],
     useTriliumOptionBool: (name: string) => [ mocks.stored[name] === true ]
+}));
+vi.mock("../../react/hooks/shortcuts", () => ({
+    useContextualShortcutHints: (hints: () => unknown[]) => {
+        mocks.shortcutHints = hints;
+    }
 }));
 vi.mock("../../shortcut_hints/shortcut_hints_panel", () => ({
     closeShortcutHints: mocks.closeShortcutHints
@@ -65,7 +69,8 @@ vi.mock("./editable_embed", () => ({
 }));
 
 import {
-    buildVimConfig, isVimModeWanted, setCommandLineSlot, showVimModeNotice, useVimMode
+    buildVimConfig, HostVimModeContext, isVimModeWanted, setCommandLineSlot, showVimModeNotice,
+    useVimMode
 } from "./vim_mode";
 
 type FakeEditor = ReturnType<typeof createEditor>["editor"];
@@ -116,6 +121,22 @@ describe("useVimMode", () => {
 
         show(editor, createNote("c", "false"));
         expect(vim.setEnabled).toHaveBeenLastCalledWith(false, "normal");
+    });
+
+    it("follows the text note around an included note, over its label and the option", () => {
+        const { editor, vim } = createEditor();
+        const showIncluded = (note: FNote, hostVimMode: boolean) => act(() => render(
+            <HostVimModeContext.Provider value={hostVimMode}>
+                <Harness editor={editor} note={note} />
+            </HostVimModeContext.Provider>,
+            container
+        ));
+        showIncluded(createNote("a", "true"), false);
+        expect(vim.setEnabled).toHaveBeenLastCalledWith(false, "normal");
+
+        mocks.stored.textNoteVimModeEnabled = false;
+        showIncluded(createNote("a", "false"), true);
+        expect(vim.setEnabled).toHaveBeenLastCalledWith(true, "normal");
     });
 
     it("runs the startup commands again when they change", () => {

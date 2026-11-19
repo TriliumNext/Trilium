@@ -44,7 +44,8 @@ Editor modules are in `packages/ckeditor5/src/plugins/vim/`.
 
 | What | File | Identifiers |
 | --- | --- | --- |
-| Plugin, session, key routing, Escape, command line, status | `vim.ts` | `TriliumVim` (`status`, `setEnabled()`, `refreshStartupCommands()`, `refreshHints()`, `getKeyReference()`), `VimSession`, `VimHost`, `VimConfig`, `VimStatus`, `getLinkUnderCursor()` |
+| Plugin, the types of its config and status | `vim.ts` | `TriliumVim` (`status`, `setEnabled()`, `refreshStartupCommands()`, `refreshHints()`, `getKeyReference()`), `VimHost`, `VimConfig`, `VimStatus`, `getLinkUnderCursor()`, the marker names |
+| Session, key routing, Escape, command line, status | `vim_session.ts` | `VimSession`. `setEnabled()` imports it with the engine, so an editor without Vim mode loads only `vim.ts`; keep every other module of the folder out of the static imports of `vim.ts` (`vim_shell.spec.ts` fails otherwise) |
 | Engine loading, startup commands | `vim_engine.ts` | `loadVimEngine()`, `getLoadedVimEngine()`, `runStartupCommands()` |
 | The editor that the engine drives | `vim_adapter.ts` | `VimAdapter`, `VimAdapterHost`, `VimPosition`, `getActiveAdapter()` |
 | The note as lines | `vim_lines.ts` | `LineIndex`, `LineVisibility`, `OBJECT_CHARACTER`, `toCharacterEdge()` |
@@ -241,7 +242,9 @@ else: other browsers distort the numbers.
 Each of these reads as a bug and is by design. Change one only with the User Guide.
 
 - `dd` on a title clears it, and on the only line of a cell, column, tab panel or aside leaves an
-  empty line. `dd` on a heading removes the heading line, not its section.
+  empty line. So does `dd` on the last line outside the asides of a note or a container: the
+  post-fixer of the aside puts an empty paragraph there. `dd` on a heading removes the heading
+  line, not its section.
 - A put next to a title lands at the start of the content under it, and around a closed
   collapsible block.
 - `yy` and `y{motion}` leave the cursor where it was. A count that passes the edge of the note

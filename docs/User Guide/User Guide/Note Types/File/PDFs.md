@@ -67,6 +67,20 @@ The benefit of “baked-in annotations” is that they are also accessible if do
 
 The downside is that the entire PDF needs to be sent back to the server, which can slow down performance for larger documents. If you encounter any issues from this system, feel free to [report it](../../Troubleshooting/Reporting%20issues.md).
 
+## Linking to a heading
+
+Since v0.108.0, a link can point at a heading of a PDF: an entry of the outline that the file defines, the same headings the table of contents of the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a> lists. To create one from a text or Markdown note:
+
+*   In the _Add link_ dialog, pick the PDF on the _Note_ page. Its headings are listed below the _Link title_, under _Link to a heading_. Check one, then press <kbd>Enter</kbd> or _Insert link_.
+*   Alternatively, type `@` and pick the PDF: the menu then lists the same headings.
+
+The link shows the title of the PDF followed by the title of the heading, and opens the PDF at the heading. It also carries the page of the heading, which the PDF opens at when the heading cannot be found, for example once the outline of the file has changed. A heading whose title is repeated among the headings beside it is found only in the very same file, so once the PDF is saved again, for example with new annotations, a link to it opens its page.
+
+To link to a heading of a PDF attachment, edit a link to the attachment: the dialog lists the headings of the attachment.
+
+> [!NOTE]
+> Trilium keeps the headings of each PDF in an attachment of the note named `toc-cache.json`, read again whenever the file changes. Revisions, exports and copies of the note leave it out. On the standalone (browser) and mobile versions, the headings of a PDF are listed only once the PDF has been opened, since it is the PDF viewer that reads them there.
+
 ## Linking to a page or an annotation
 
 A link can open a PDF at a given page, or at one of its annotations. To create one:

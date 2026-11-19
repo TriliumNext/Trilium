@@ -38,6 +38,19 @@ export class ConflictError extends HttpError {
 
 }
 
+/** A 409 whose answer holds `details`, such as the reason, so that the client can recover. */
+export class DetailedConflictError<T extends { reason: string }> extends ConflictError {
+
+    readonly details: T;
+
+    constructor(message: string, details: T) {
+        super(message);
+        this.name = "DetailedConflictError";
+        this.details = details;
+    }
+
+}
+
 /**
  * What the request names is gone for good, so asking again will not bring it back.
  *

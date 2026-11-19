@@ -10,7 +10,10 @@ import "./index.css";
 
 import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import clsx from "clsx";
-import { Calendar as FullCalendar, DateClickInfo, DateSelectInfo, EventChangeInfo, EventClickInfo, EventDisplayInfo, EventSourceFuncInfo, LocaleInput, MountInfo, PluginInput } from "fullcalendar";
+import {
+    Calendar as FullCalendar, DateClickInfo, DateSelectInfo, EventChangeInfo, EventClickInfo,
+    EventDisplayInfo, EventSourceFuncInfo, LocaleInput, MountInfo, PluginInput
+} from "fullcalendar";
 import { createPortal, RefObject } from "preact";
 import { lazy, Suspense } from "preact/compat";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
@@ -24,14 +27,21 @@ import { type NoteTypeOption } from "../../../services/note_types";
 import note_tooltip from "../../../services/note_tooltip";
 import { isMobile } from "../../../services/utils";
 import CollectionProperties from "../../note_bars/CollectionProperties";
-import { DEFAULT_SLOT_DURATION, DEFAULT_SLOT_LABEL_INTERVAL } from "../../note_bars/collection-properties-config";
+import {
+    DEFAULT_SLOT_DURATION, DEFAULT_SLOT_LABEL_INTERVAL
+} from "../../note_bars/collection-properties-config";
 import ActionButton from "../../react/ActionButton";
 import Button, { ButtonGroup } from "../../react/Button";
 import CollapseOnOverflow from "../../react/CollapseOnOverflow";
 import Dropdown from "../../react/Dropdown";
 import { FLOATING_LAYER_SELECTOR } from "../../react/floating_layers";
 import { FormListItem } from "../../react/FormList";
-import { useEffectiveReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteTypeOptions, useSpacedUpdate, useTriliumEvent, useTriliumOption, useTriliumOptionInt } from "../../react/hooks";
+import { useSpacedUpdate } from "../../react/hooks/dom";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useNoteLabel, useNoteLabelBoolean } from "../../react/hooks/note";
+import { useTriliumOption, useTriliumOptionInt } from "../../react/hooks/options";
+import { useEffectiveReadOnly, useNoteContext } from "../../react/hooks/note_context";
+import { useNoteTypeOptions } from "../../react/hooks/note_types";
 import { ParentComponent } from "../../react/react_utils";
 import { offeredTemplateIds, useTemplateChoice } from "../../react/TemplateDropdown";
 import { ViewModeProps } from "../interface";
@@ -40,8 +50,13 @@ import { type CalendarViewData, changeEvent, DEFAULT_EVENT_TEMPLATES, newEvent }
 import Calendar from "./calendar";
 import { openCalendarContextMenu } from "./context_menu";
 import { CalendarSelection, EventDraft } from "./selection";
-import { buildEvents, buildEventsForCalendar, buildOccurrenceTitle, routineEventDisplay } from "./event_builder";
-import { formatDateToLocalISO, formatTimeToLocalISO, isAttributeChangeAffecting, isBranchChangeAffecting, isValidDuration, parseDurationSeconds, parseStartEndDateFromEvent, parseStartEndTimeFromEvent } from "./utils";
+import {
+    buildEvents, buildEventsForCalendar, buildOccurrenceTitle, routineEventDisplay
+} from "./event_builder";
+import {
+    formatDateToLocalISO, formatTimeToLocalISO, isAttributeChangeAffecting, isBranchChangeAffecting,
+    isValidDuration, parseDurationSeconds, parseStartEndDateFromEvent, parseStartEndTimeFromEvent
+} from "./utils";
 
 const CALENDAR_VIEWS = [
     {

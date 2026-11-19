@@ -4,11 +4,15 @@ import type {
 import {
     flashBlocks, getBlockBoxes, getBlockRangeElements, showBlockReference
 } from "@triliumnext/ckeditor5/src/plugins/block_reference/block_reference_read_only.js";
+import type { BlockRange } from "@triliumnext/commons";
 import {
-    type BlockRange, CANVAS_ATTACHMENT_MIME, encodeBlockParameter, EXCERPT_BOX_SIZE,
-    formatBlockRange, MERMAID_ATTACHMENT_MIME, parseBlockRange, resolveBlockRange,
+    encodeBlockParameter, formatBlockRange, parseBlockRange, resolveBlockRange,
     resolveBlockReference
-} from "@triliumnext/commons";
+} from "@triliumnext/commons/src/lib/block_reference.js";
+import { EXCERPT_BOX_SIZE } from "@triliumnext/commons/src/lib/content_embeds.js";
+import {
+    CANVAS_ATTACHMENT_MIME, MERMAID_ATTACHMENT_MIME
+} from "@triliumnext/commons/src/lib/notes.js";
 
 import type { CommandNames } from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
@@ -22,7 +26,7 @@ import {
 } from "../menus/text_editor_context_menu.js";
 import { getBlockExcerpt } from "./block_excerpts.js";
 import { copyHtml, copyHtmlWithToast, copyTextWithToast } from "./clipboard_ext.js";
-import { revealElement } from "./collapsible.js";
+import { revealElement } from "./bookmark_jump.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import { byBlockType } from "./in_app_help.js";
@@ -291,39 +295,36 @@ export async function copyTabReference(
  */
 export function copyBlockShareLink(editor: CKTextEditor, shareLink: string) {
     const target = editor.execute("assignBlockReference");
-    if (!target || !flashBlockRange(editor, target)) {
+    if (!target || !flashBlockRange(editor.editing.view.getDomRoot(), target)) {
         return;
     }
 
     copyTextWithToast(`${shareLink}?block=${encodeBlockParameter(formatBlockRange(target))}`);
 }
 
-/** Flashes the blocks of `target` and copies a reference link to them. */
-async function copyReference(
-    editor: CKTextEditor,
-    target: BlockRange | null | undefined,
+/**
+ * Copies a reference link to the blocks `target` of the note at `notePath`, its text the title
+ * of the note and an excerpt of `blocks`, the elements of the first and the last block.
+ */
+export async function copyReferenceLink(
     notePath: string,
-    noteTitle: string
+    noteTitle: string,
+    target: BlockRange,
+    blocks: { start: Element; end: Element }
 ) {
-    const blocks = target && flashBlockRange(editor, target);
-    if (!target || !blocks) {
-        return;
-    }
-
     const href = calculateHash({ notePath, viewScope: { block: formatBlockRange(target) } });
-    const $link = $("<a>")
-        .addClass("reference-link")
-        .attr("href", href)
-        .text(`${noteTitle} - ${getBlockExcerpt(blocks.start, blocks.end)}`);
-    await copyHtmlWithToast($link[0].outerHTML, href);
+    const link = document.createElement("a");
+    link.className = "reference-link";
+    link.setAttribute("href", href);
+    link.textContent = `${noteTitle} - ${getBlockExcerpt(blocks.start, blocks.end)}`;
+    await copyHtmlWithToast(link.outerHTML, href);
 }
 
 /**
- * Flashes the blocks of `target` in `editor`. Returns the first and the last block, or `null` when
+ * Flashes the blocks of `target` in `root`. Returns the first and the last block, or `null` when
  * one of them is not found.
  */
-function flashBlockRange(editor: CKTextEditor, target: BlockRange) {
-    const root = editor.editing.view.getDomRoot();
+export function flashBlockRange(root: HTMLElement | null | undefined, target: BlockRange) {
     const { start, end } = root
         ? resolveBlockRange<HTMLElement>(root, target)
         : { start: null, end: null };
@@ -333,6 +334,19 @@ function flashBlockRange(editor: CKTextEditor, target: BlockRange) {
 
     flashBlocks(getBlockRangeElements(start, end));
     return { start, end };
+}
+
+/** Flashes the blocks of `target` and copies a reference link to them. */
+async function copyReference(
+    editor: CKTextEditor,
+    target: BlockRange | null | undefined,
+    notePath: string,
+    noteTitle: string
+) {
+    const blocks = target && flashBlockRange(editor.editing.view.getDomRoot(), target);
+    if (target && blocks) {
+        await copyReferenceLink(notePath, noteTitle, target, blocks);
+    }
 }
 
 /**
@@ -716,17 +730,14 @@ function getPasteMenuItems(
 }
 
 /**
- * Reads the clipboard and pastes the HTML that `toHtml` makes of the block reference on it, at
- * the selection the menu was opened on. The selection is pinned before the read, which can wait
- * on a permission prompt. Pastes nothing for a reference to a note that `froca` cannot find, as
- * one copied from another Trilium instance.
+ * Reads the clipboard and passes the block reference on it to `paste`. Passes nothing, and shows a
+ * toast, when the clipboard holds no reference, or one to a note that `froca` cannot find, as one
+ * copied from another Trilium instance.
  */
-async function pasteBlockReference(
-    editor: CKTextEditor,
+export async function pasteClipboardReference(
     clipboard: ClipboardAccess,
-    toHtml: (reference: ClipboardBlockReference) => string
+    paste: (reference: ClipboardBlockReference) => void
 ) {
-    const target = editor.capturePasteTarget();
     try {
         const reference = getClipboardBlockReference(await clipboard.read());
         if (!reference) {
@@ -739,9 +750,27 @@ async function pasteBlockReference(
             return;
         }
 
-        target.paste(toHtml(reference), reference.href);
+        paste(reference);
     } catch (error) {
         console.warn("Failed to paste a block reference:", error);
+    }
+}
+
+/**
+ * Pastes the HTML that `toHtml` makes of the block reference on the clipboard, as
+ * {@link pasteClipboardReference} reads it, at the selection the menu was opened on. The selection
+ * is pinned before the read, which can wait on a permission prompt.
+ */
+async function pasteBlockReference(
+    editor: CKTextEditor,
+    clipboard: ClipboardAccess,
+    toHtml: (reference: ClipboardBlockReference) => string
+) {
+    const target = editor.capturePasteTarget();
+    try {
+        await pasteClipboardReference(clipboard, (reference) => {
+            target.paste(toHtml(reference), reference.href);
+        });
     } finally {
         target.release();
     }
@@ -756,7 +785,9 @@ function getLinkHtml({ href }: ClipboardBlockReference) {
 }
 
 /** The HTML of an embed of the referenced blocks. */
-function getExcerptHtml({ noteId, block }: ClipboardBlockReference) {
+export function getExcerptHtml(
+    { noteId, block }: Pick<ClipboardBlockReference, "noteId" | "block">
+) {
     const embed = document.createElement("figure");
     embed.className = "include-note";
     embed.dataset.noteId = noteId;

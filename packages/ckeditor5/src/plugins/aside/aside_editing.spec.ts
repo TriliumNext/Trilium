@@ -64,17 +64,17 @@ describe("AsideEditing", () => {
     describe("conversion", () => {
         it("loads an aside with its position and width, and saves its blocks in it", () => {
             const data = "<aside style=\"--aside-width:18em;\" data-position=\"wrap-right\">" +
-                "<p>One</p><p>Two</p></aside>";
+                "<p>One</p><p>Two</p></aside><p>Text</p>";
             editor.setData(data);
 
             expect(model()).toBe(aside(paragraph("One") + paragraph("Two"),
-                " customWidth=\"18em\" position=\"wrap-right\""));
+                " customWidth=\"18em\" position=\"wrap-right\"") + paragraph("Text"));
             expect(editor.getData()).toBe(data);
         });
 
         it("loads the background color of an aside, and saves it as its style", () => {
             const data = "<aside style=\"background-color:#e64d4d;\" " +
-                "data-position=\"wrap-right\"><p>A</p></aside><aside><p>B</p></aside>";
+                "data-position=\"wrap-right\"><p>A</p></aside><aside><p>B</p></aside><p>Text</p>";
             // Whether a later converter, such as General HTML Support, can still take the style.
             const consumableColors: (boolean | null)[] = [];
             editor.data.upcastDispatcher.on<UpcastElementEvent>("element:aside",
@@ -85,7 +85,7 @@ describe("AsideEditing", () => {
             editor.setData(data);
 
             expect(model()).toBe(aside(paragraph("A"), ` backgroundColor="#e64d4d"${WRAPPED}`) +
-                aside(paragraph("B")));
+                aside(paragraph("B")) + paragraph("Text"));
             expect(editor.getData()).toBe(data);
             expect(consumableColors).toEqual([ false, null ]);
         });
@@ -93,13 +93,13 @@ describe("AsideEditing", () => {
         it("loads an aside without a position in the flow, with text, nothing or classes", () => {
             editor.setData(
                 "<aside>Text</aside><aside></aside>" +
-                "<aside class=\"sidebar\" data-position=\"top\"><p>A</p></aside>"
+                "<aside class=\"sidebar\" data-position=\"top\"><p>A</p></aside><p>After</p>"
             );
 
-            expect(model()).toBe(
-                aside(paragraph("Text")) + aside(paragraph("")) + aside(paragraph("A")));
-            expect(editor.getData()).toBe(
-                "<aside><p>Text</p></aside><aside><p>&nbsp;</p></aside><aside><p>A</p></aside>");
+            expect(model()).toBe(aside(paragraph("Text")) + aside(paragraph("")) +
+                aside(paragraph("A")) + paragraph("After"));
+            expect(editor.getData()).toBe("<aside><p>Text</p></aside><aside><p>&nbsp;</p></aside>" +
+                "<aside><p>A</p></aside><p>After</p>");
         });
 
         it("leaves the text of an aside where no block can go, such as a caption", async () => {
@@ -284,19 +284,20 @@ describe("AsideEditing", () => {
         });
 
         it("keeps the content of an aside from becoming empty", () => {
-            setModelData(editor.model, aside(paragraph("A") + paragraph("B")));
+            setModelData(editor.model, aside(paragraph("A") + paragraph("B")) + paragraph("Text"));
             const content = (getRoot().getChild(0) as ModelElement).getChild(0) as ModelElement;
 
             editor.model.change((writer) => writer.remove(writer.createRangeIn(content)));
 
-            expect(model()).toBe(aside(paragraph("")));
+            expect(model()).toBe(aside(paragraph("")) + paragraph("Text"));
         });
 
         it("replaces an aside inside another with its blocks, also where a paste puts one", () => {
-            editor.setData("<aside><p>A</p><aside data-position=\"left\"><p>B</p></aside></aside>");
-            expect(model()).toBe(aside(paragraph("A") + paragraph("B")));
+            editor.setData("<aside><p>A</p><aside data-position=\"left\"><p>B</p></aside></aside>" +
+                "<p>Text</p>");
+            expect(model()).toBe(aside(paragraph("A") + paragraph("B")) + paragraph("Text"));
 
-            setModelData(editor.model, aside(paragraph("Target[]"), WRAPPED));
+            setModelData(editor.model, aside(paragraph("Target[]"), WRAPPED) + paragraph("Text"));
             const pasted = editor.data.parse(
                 "<aside><p>Pasted</p></aside>" +
                 `<div class="trilium-multicolumn-layout">${COLUMN}<aside><p>In a column</p>` +
@@ -312,7 +313,38 @@ describe("AsideEditing", () => {
                     `<multicolumnColumn>${paragraph("Second")}</multicolumnColumn>` +
                 "</multicolumnLayout>",
                 WRAPPED
-            ));
+            ) + paragraph("Text"));
+        });
+
+        it("adds an empty block to a parent that holds only asides, where the caret can go", () => {
+            const cell = (blocks: string) =>
+                `<table><tableRow><tableCell>${blocks}</tableCell></tableRow></table>`;
+
+            editor.setData("<aside data-position=\"wrap-right\"><p>A</p></aside>");
+            expect(model()).toBe(aside(paragraph("A"), WRAPPED) + paragraph(""));
+
+            // The root holds a table too; the cell holds only an aside.
+            setModelData(editor.model, aside(paragraph("A")) + aside(paragraph("B"), WRAPPED) +
+                cell(aside(paragraph("C"))));
+            expect(model()).toBe(aside(paragraph("A")) + aside(paragraph("B"), WRAPPED) +
+                cell(aside(paragraph("C")) + paragraph("")));
+
+            setModelData(editor.model, aside(paragraph("A")) + aside(paragraph("B")));
+            expect(model()).toBe(aside(paragraph("A")) + aside(paragraph("B")) + paragraph(""));
+
+            // The block comes back once the last one beside the asides is removed.
+            setModelData(editor.model, aside(paragraph("A"), WRAPPED) + paragraph("Text"));
+            editor.model.change((writer) => writer.remove(getRoot().getChild(1) as ModelElement));
+            expect(model()).toBe(aside(paragraph("A"), WRAPPED) + paragraph(""));
+
+            const withOtherContent = paragraph("Text") + aside(paragraph("A"), WRAPPED);
+            setModelData(editor.model, withOtherContent);
+            expect(model()).toBe(withOtherContent);
+
+            // A block that loses its text gets nothing.
+            editor.model.change((writer) =>
+                writer.remove(writer.createRangeIn(getRoot().getChild(0) as ModelElement)));
+            expect(model()).toBe(paragraph("") + aside(paragraph("A"), WRAPPED));
         });
     });
 });

@@ -69,6 +69,8 @@ declare global {
         electronApi?: ElectronApi;
         /** Present only in the standalone build, where the stack runs in this browser. */
         standaloneApi?: StandaloneApi;
+        /** The `/bootstrap` request that `index.html` starts before any module has loaded. */
+        bootstrapRequest?: Promise<Response>;
 
         /**
          * Chromium's Local Font Access API, absent from the DOM typings. Defined only in a secure

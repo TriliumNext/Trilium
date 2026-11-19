@@ -4,13 +4,15 @@ import "./TemplateField.css";
 import { hostedCompletion, type HostedCompletionState } from "@triliumnext/codemirror/src/extensions/hosted_completion";
 import { triliumTemplate } from "@triliumnext/codemirror/src/extensions/trilium_template";
 import { createFieldEditor, type FieldEditor } from "@triliumnext/codemirror/src/field_editor";
-import { dayjs, evaluateTemplate, type TemplateVariables, type TemplateVariableTypes } from "@triliumnext/commons";
+import type { TemplateVariables, TemplateVariableTypes } from "@triliumnext/commons";
+import { evaluateTemplate } from "@triliumnext/commons/src/lib/safe_template.js";
 import clsx from "clsx";
 import { createContext } from "preact";
 import { useContext, useEffect, useRef, useState } from "preact/hooks";
 
 import type FNote from "../../entities/fnote";
 import type { NoteMetaData } from "../../entities/fnote";
+import { dayjs } from "../../services/dayjs";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import { CommandMentionList, createHostedList, filterCommandEntries } from "../react/NoteAutocomplete";

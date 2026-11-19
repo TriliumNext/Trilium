@@ -4,7 +4,8 @@ import { useContext, useEffect, useState } from "preact/hooks";
 
 import contextMenu, { MenuItem } from "../../menus/context_menu";
 import ActionButton from "../react/ActionButton";
-import { useSyncedRef, useTriliumOptionJson } from "../react/hooks";
+import { useSyncedRef } from "../react/hooks/dom";
+import { useTriliumOptionJson } from "../react/hooks/options";
 import { ParentComponent } from "../react/react_utils";
 
 /**

@@ -20,7 +20,7 @@ A link in an [included note](../Include%20Note.md) that is not _Editable_ opens 
 
 Internal links can be created at the current position in a text note by:
 
-1.  Pressing <kbd>Ctrl</kbd> + <kbd>L</kbd> or the <span class="tn-icon cke cke-trilium"></span> button underneath the <span class="tn-icon cke cke-plus"></span> menu in the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a>, or by choosing _Link to a note (internal link)_ in the <a class="reference-link" href="../Slash%20Commands.md">Slash Commands</a>. On desktop, the _Add link_ dialog opens in a popup next to the cursor.
+1.  Pressing <kbd>Ctrl</kbd> + <kbd>L</kbd>, or by choosing _Link to a note (internal link)_ in the <a class="reference-link" href="../Slash%20Commands.md">Slash Commands</a>. The <span class="tn-icon cke cke-link"></span> button in the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a> opens the same dialog on _Web page_; select _Note_ at its top to link to a note. On desktop, the _Add link_ dialog opens in a popup next to the cursor.
 2.  Searching for the title of the desired note to link. It's also possible to create new notes from this dialog by typing a non-existing note title and selecting either _Create note_, which places it in the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Notes/Note%20Inbox.md">Note Inbox</a> (today's day note, or the top level, when no inbox is set), or _Create child note_, which places it under the note being edited.
 
 There are two link types, depending on the _Link title_ field of the dialog:
@@ -32,14 +32,21 @@ There are two link types, depending on the _Link title_ field of the dialog:
 2.  When a link title is typed, the link shows that text instead.
     1.  This will create a traditional hyperlink, where the text of the link can be different from the note title.
 
-Since v0.107.0, to change a link, click it and press the <span class="tn-icon cke cke-pencil"></span> _Edit link_ button in its popup. For a link with a title of its own, placing the cursor inside it and pressing <kbd>Ctrl</kbd> + <kbd>L</kbd> or the <span class="tn-icon cke cke-trilium"></span> button works too. The _Edit link_ dialog opens on the linked note, with its anchor and, for a link with a title of its own, the link's text; _Save link_ changes the whole link. Emptying the _Link title_ there turns the link into one that displays the title of the note, and typing one gives it a title of its own. For a link to an attachment, the dialog shows only the _Link title_, and emptying it makes the link display the title of the attachment.
+Since v0.107.0, to change a link, click it and press the <span class="tn-icon cke cke-pencil"></span> _Edit link_ button in its popup. For a link with a title of its own, placing the cursor inside it and pressing <kbd>Ctrl</kbd> + <kbd>L</kbd> works too. The _Edit link_ dialog opens on the linked note, with its anchor and, for a link with a title of its own, the link's text; _Save link_ changes the whole link. Emptying the _Link title_ there turns the link into one that displays the title of the note, and typing one gives it a title of its own. For a link to an attachment, the dialog shows only the _Link title_, and emptying it makes the link display the title of the attachment.
 
 ## In-place linking
 
 You can also insert internal links “inline” by using the `@` symbol:
 
 1.  Type `@` in a text note, which will open the note search menu.
-2.  Search for the desired note's title by typing a few characters. Use <kbd>Up</kbd> and <kbd>Down</kbd> to select the correct note, and press <kbd>Enter</kbd> or <kbd>Tab</kbd> to create the link. It's also possible to create new notes with this method by typing a non-existing note title and selecting _Create note_, as described above, or _Create child note_. _Create child note_ creates the note under the note being edited without asking for its type, inserts the link and opens the new note in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a>, which offers the note types to turn it into while it is still empty.
+2.  Search for the desired note's title by typing a few characters. Use <kbd>Up</kbd> and <kbd>Down</kbd> to select the correct note, and press <kbd>Enter</kbd> or <kbd>Tab</kbd> to pick it. It's also possible to create new notes with this method by typing a non-existing note title and selecting _Create note_, as described above, or _Create child note_. _Create child note_ creates the note under the note being edited without asking for its type, inserts the link and opens the new note in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a>, which offers the note types to turn it into while it is still empty.
+3.  Since v0.108.0, the note is linked as soon as it is picked. A ¶ then follows the link, and the menu lists where in the note the link can point: _Link to the whole note_, its headings and its anchors.
+    
+    *   To point the link at a heading or an anchor, type part of its name after the ¶ and press <kbd>Enter</kbd> or <kbd>Tab</kbd>, which takes the first match. <kbd>Up</kbd> and <kbd>Down</kbd> select another entry.
+    *   To keep the link to the whole note, press <kbd>Enter</kbd> on _Link to the whole note_, or press <kbd>Esc</kbd>. Pressing <kbd>Backspace</kbd> or typing a space right after the ¶ does the same, to go on writing.
+    *   The ¶ is not part of the note: it disappears with the menu. Text typed after it stays in the note, unless a heading or an anchor is picked.
+    
+    A note created from the menu is linked without this step. To skip it for every note, turn off _Suggest headings and anchors to link to_ under _Note auto-completion_ in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ → _Features_. See [Linking to a heading](../Block%20references.md) and <a class="reference-link" href="../Anchors.md">Anchors</a>.
 
 To create an empty child note and link to it before naming it, use _New child note_, described in <a class="reference-link" href="../Insert%20buttons.md">Insert buttons</a>.
 

@@ -2943,6 +2943,33 @@
                         },
                         {
                             "isClone": false,
+                            "noteId": "EkzGQJhQgZsP",
+                            "notePath": [
+                                "jdjRLhLV3TtI",
+                                "HMrVxa1lJBKv",
+                                "EkzGQJhQgZsP"
+                            ],
+                            "title": "Markdown references",
+                            "notePosition": 20,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/html",
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "iconClass",
+                                    "value": "bx bx-anchor",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "Markdown references.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
                             "noteId": "Gntibtjmzi7e",
                             "notePath": [
                                 "jdjRLhLV3TtI",
@@ -2950,7 +2977,7 @@
                                 "Gntibtjmzi7e"
                             ],
                             "title": "Trilium Backup Container (.tnbackup) file format",
-                            "notePosition": 20,
+                            "notePosition": 30,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",

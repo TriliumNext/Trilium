@@ -1,4 +1,5 @@
-import { customFontFamily, customFontNoteId, type UserFont } from "@triliumnext/commons";
+import type { UserFont } from "@triliumnext/commons";
+import { customFontFamily, customFontNoteId } from "@triliumnext/commons/src/lib/custom_fonts.js";
 
 import froca from "./froca.js";
 import type LoadResults from "./load_results.js";
@@ -27,7 +28,7 @@ const loadingFonts = new Map<string, string>();
 
 /**
  * Registers the user's own fonts that the font options name, so the families the fonts stylesheet
- * declares (see `getFontCss`) resolve to the files those notes hold. Fonts no longer named by any
+ * declares (see `buildFontCss()`) resolve to the files those notes hold. Fonts no longer named by any
  * option are unregistered.
  *
  * Lives here rather than beside the stylesheet in `font.ts` because that module is loaded by

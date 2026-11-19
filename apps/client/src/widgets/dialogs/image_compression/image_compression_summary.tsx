@@ -1,15 +1,13 @@
 import "./image_compression_summary.css";
 
-import {
-    IMAGE_COMPRESSIBLE_FORMATS,
-    type ImageCompressibleFormat,
-    type ImageInfoResponse,
-    type ImageInventoryResponse
+import type {
+    ImageCompressibleFormat, ImageInfoResponse, ImageInventoryResponse
 } from "@triliumnext/commons";
+import { IMAGE_COMPRESSIBLE_FORMATS } from "@triliumnext/commons/src/lib/server_api.js";
 
 import { t } from "../../../services/i18n";
 import { formatSize } from "../../../services/utils";
-import { useDebouncedValue } from "../../react/hooks";
+import { useDebouncedValue } from "../../react/hooks/dom";
 import { useFetch } from "../../react/use_fetch";
 import { type ImageCompressionTarget, isSingleImage } from "./image_compression_operation";
 import type { ImageCompressionToolOptions } from "./image_compression_options";

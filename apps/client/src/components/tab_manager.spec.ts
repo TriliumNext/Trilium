@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import server from "../services/server.js";
 import { buildNote } from "../test/easy-froca.js";
 import appContext from "./app_context.js";
 import NoteContext from "./note_context.js";
@@ -91,6 +92,40 @@ describe("TabManager tab placement", () => {
     });
 });
 
+describe("recent notes", () => {
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+    });
+
+    it("adds the note of an activated tab, and of a background tab only once switched to", async () => {
+        vi.useFakeTimers();
+        buildNote({
+            id: "root", title: "root", children: [
+                { id: "background", title: "Background" }, { id: "activated", title: "Activated" }
+            ]
+        });
+        const post = vi.spyOn(server, "post").mockResolvedValue(undefined);
+        const tm = new TabManager();
+        appContext.tabManager = tm;
+
+        const recentNotes = () => post.mock.calls
+            .filter(([ url ]) => url === "recent-notes").map(([ , data ]) => data);
+
+        const background = await tm.openContextWithNote("root/background");
+        await tm.openContextWithNote("root/activated", { activate: true });
+        await vi.advanceTimersByTimeAsync(5000);
+        expect(recentNotes()).toEqual([ { noteId: "activated", notePath: "root/activated" } ]);
+
+        await tm.activateNoteContext(background.ntxId);
+        await vi.advanceTimersByTimeAsync(5000);
+        expect(recentNotes()).toEqual([
+            { noteId: "activated", notePath: "root/activated" },
+            { noteId: "background", notePath: "root/background" }
+        ]);
+    });
+});
+
 describe("moving a tab with splits into a window of its own", () => {
     it("captures every pane of the tab, in order, and which one is focused", async () => {
         const tm = new TabManager();
@@ -142,10 +177,11 @@ describe("handing a tab over to a window of its own", () => {
         split.notePath = "root/bbbbbbbbbbbb";
         const triggerCommand = vi.spyOn(tm, "triggerCommand").mockReturnValue(undefined);
 
-        await tm.moveTabToNewWindowCommand({ ntxId: main.ntxId ?? "" });
+        await tm.moveTabToNewWindowCommand({ ntxId: main.ntxId ?? "", windowPosition: { x: 40, y: 60 } });
 
         expect(triggerCommand).toHaveBeenCalledWith("openInWindow", expect.objectContaining({
             notePath: "root/aaaaaaaaaaaa",
+            windowPosition: { x: 40, y: 60 },
             splits: [ expect.objectContaining({ notePath: "root/bbbbbbbbbbbb" }) ]
         }));
         // the tab left with its split, leaving the neighbouring tab behind

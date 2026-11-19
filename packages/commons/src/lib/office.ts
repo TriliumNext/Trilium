@@ -1,3 +1,12 @@
+/** The MIME type of an Excel workbook (`.xlsx`, Office Open XML). */
+export const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+/** The MIME type of a Word document (`.docx`, Office Open XML). */
+export const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+/** The MIME type of an OpenDocument text document (`.odt`). */
+export const ODT_MIME = "application/vnd.oasis.opendocument.text";
+/** The MIME types of an EPUB e-book: the registered one, then the one that older tools write. */
+export const EPUB_MIME_TYPES = [ "application/epub+zip", "application/x-epub+zip" ] as const;
+
 /**
  * Office document formats that officeparser can process — used both for OCR text
  * extraction (server) and for the inline HTML preview of file notes/attachments.

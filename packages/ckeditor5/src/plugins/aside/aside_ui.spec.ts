@@ -62,7 +62,7 @@ describe("AsideUI", () => {
     }
 
     it("inserts an aside from its button and returns the focus to the text", () => {
-        setModelData(editor.model, paragraph("[]"));
+        setModelData(editor.model, paragraph("[]") + paragraph("Text"));
         const button = createButton("aside");
         expect([ button.label, button.icon, button.tooltip, button.isEnabled ])
             .toEqual([ "Aside", asideIcon, true, true ]);
@@ -70,8 +70,8 @@ describe("AsideUI", () => {
 
         button.fire("execute");
 
-        expect(getModelData(editor.model))
-            .toBe(aside(paragraph("[]"), ` backgroundColor="#555555"${WRAPPED}`));
+        expect(getModelData(editor.model)).toBe(
+            aside(paragraph("[]"), ` backgroundColor="#555555"${WRAPPED}`) + paragraph("Text"));
         expect(focus).toHaveBeenCalled();
         expect(button.isEnabled).toBe(false);
     });
@@ -111,7 +111,9 @@ describe("AsideUI", () => {
                 editor = await createTestEditor([ Essentials, Paragraph, Aside ], {
                     asideColor: { colors: [ "#e64d4d", "#4d99e6" ] }
                 });
-                setModelData(editor.model, aside(paragraph("A[]"), ` backgroundColor="#555555"`));
+                const text = paragraph("Text");
+                setModelData(editor.model,
+                    aside(paragraph("A[]"), ` backgroundColor="#555555"`) + text);
                 const focus = vi.spyOn(editor.editing.view, "focus");
                 const { fragment, tiles } = openColorDropdown();
                 expect(tiles.map(({ color, isOn }) => [ color, isOn ]))
@@ -119,11 +121,11 @@ describe("AsideUI", () => {
 
                 tiles[1]?.fire("execute");
                 expect(getModelData(editor.model))
-                    .toBe(aside(paragraph("A[]"), ` backgroundColor="#4d99e6"`));
+                    .toBe(aside(paragraph("A[]"), ` backgroundColor="#4d99e6"`) + text);
                 expect(focus).toHaveBeenCalled();
 
                 fragment.removeColorButtonView.fire("execute");
-                expect(getModelData(editor.model)).toBe(aside(paragraph("A[]"), ""));
+                expect(getModelData(editor.model)).toBe(aside(paragraph("A[]"), "") + text);
             });
     });
 
@@ -140,7 +142,7 @@ describe("AsideUI", () => {
     });
 
     it("places the aside from its position dropdown", () => {
-        setModelData(editor.model, `[${aside(paragraph("A"))}]`);
+        setModelData(editor.model, `[${aside(paragraph("A"))}]${paragraph("Text")}`);
         const dropdown = editor.ui.componentFactory.create("asidePosition") as DropdownView;
         dropdown.render();
 
@@ -151,7 +153,8 @@ describe("AsideUI", () => {
         ]);
 
         pickListRow(dropdown, "Break text", "Align left");
-        expect(getModelData(editor.model)).toBe(`[${aside(paragraph("A"), " position=\"left\"")}]`);
+        expect(getModelData(editor.model))
+            .toBe(`[${aside(paragraph("A"), " position=\"left\"")}]${paragraph("Text")}`);
     });
 
     describe("toolbar", () => {

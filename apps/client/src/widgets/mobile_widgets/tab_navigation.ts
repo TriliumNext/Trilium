@@ -1,4 +1,7 @@
+import { useEffect, useState } from "preact/hooks";
+
 import type { Screen } from "../../components/mobile_screen_switcher.js";
+import type FNote from "../../entities/fnote.js";
 import froca from "../../services/froca.js";
 
 /**
@@ -125,4 +128,55 @@ function buildStackForActiveNote(activeNotePath: string | null | undefined, hois
         stack.push(clamped.slice(0, i + 1).join("/"));
     }
     return stack;
+}
+
+/** A child of a navigator column: its note and the branch that places it there. */
+export interface NavigatorChild {
+    note: FNote;
+    branchId: string;
+}
+
+export function useNavigatorChildren(
+    parentNote: FNote | null | undefined,
+    hideArchived: boolean,
+    isLoaded: boolean,
+    isParentSubtreeHidden: boolean,
+    spotlightedNoteId: string | undefined
+): NavigatorChild[] {
+    const [children, setChildren] = useState<NavigatorChild[]>([]);
+    // Re-run when the parent's child list mutates in place (e.g., a new branch is added by
+    // froca_updater). The join captures the current ordered noteIds so a real change in the
+    // children set produces a new dep value.
+    const childrenKey = parentNote?.children?.join(",");
+
+    useEffect(() => {
+        if (!parentNote || !isLoaded || (isParentSubtreeHidden && !spotlightedNoteId)) {
+            setChildren([]);
+            return;
+        }
+        let cancelled = false;
+        // A parent with `#subtreeHidden` lists only the child on the active note's path.
+        const branches = parentNote.getChildBranches()
+            .filter((b): b is NonNullable<typeof b> => !!b)
+            .filter((b) => !isParentSubtreeHidden || b.noteId === spotlightedNoteId);
+        // Use the async loader so notes that aren't yet in cache (e.g., freshly created via "+")
+        // are pulled in. `processNoteChange` only updates notes already in froca, so without this
+        // newly-created child notes would be silently skipped.
+        froca.getNotes(branches.map((b) => b.noteId), true).then((notes) => {
+            if (cancelled) return;
+            const noteMap = new Map(notes.map((n) => [n.noteId, n]));
+            const result: NavigatorChild[] = [];
+            for (const branch of branches) {
+                const note = noteMap.get(branch.noteId);
+                if (!note) continue;
+                if (note.noteId === "_hidden") continue;
+                if (hideArchived && note.isArchived) continue;
+                result.push({ note, branchId: branch.branchId });
+            }
+            setChildren(result);
+        });
+        return () => { cancelled = true; };
+    }, [parentNote, childrenKey, hideArchived, isLoaded, isParentSubtreeHidden, spotlightedNoteId]);
+
+    return children;
 }

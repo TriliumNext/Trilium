@@ -27,6 +27,7 @@ import noteAttributeCache from "../../../services/note_attribute_cache";
 import searchService from "../../../services/search";
 import { buildNote } from "../../../test/easy-froca";
 import { highlightedTexts } from "../../../test/highlights";
+import { preloadDropdownPopups } from "../../react/Dropdown";
 import { ParentComponent } from "../../react/react_utils";
 import BoardView, { BoardViewData, loadBoardEditing } from ".";
 import { getNoteTypeOptions, type NoteTypeOption } from "../../../services/note_types";
@@ -34,7 +35,9 @@ import { collectShortcutHints } from "../../../services/shortcut_hints";
 import BoardApi, { getPendingWrites } from "./api";
 import { RAIL_EXIT_MS } from "../../react/OverlayRail";
 import { DEFAULT_COLUMN_ICON } from "./columns";
-import { TREE_CLIPBOARD_TYPE } from "../../react/hooks";
+import { TREE_CLIPBOARD_TYPE } from "../../react/hooks/drag";
+
+beforeAll(() => preloadDropdownPopups());
 
 // Stands in for the server: by the time the bulk action resolves, the notes carry the new value,
 // which is what makes the old column empty rather than merely renamed.
@@ -85,7 +88,7 @@ const NOTE_TYPE_OPTIONS = [
     id, title, icon, group: "type" as const, options: { type, mime }
 })) as NoteTypeOption[];
 
-vi.mock("../../react/IconPicker", () => ({
+vi.mock("../../react/IconPickerButton", () => ({
     IconPickerButton: ({ className, icon, onSelect, onOpened, onClosed }: {
         className?: string, icon: string, onSelect: (picked: string) => void,
         onOpened?: () => void, onClosed?: () => void

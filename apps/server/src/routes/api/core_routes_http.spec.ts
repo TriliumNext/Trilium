@@ -38,6 +38,21 @@ describe("Core routes over Express", () => {
         expect(res.body.title).toBe("Via Express");
     });
 
+    // The route writes into read-only notes too, so a request from another site must not reach it.
+    it("gives a heading a block id only with a CSRF token", async () => {
+        const { noteId } = await createTextNote(ctx, { content: "<h2>Heading</h2>" });
+        const url = `/api/notes/${noteId}/references`;
+        const body = { kind: "heading", index: 0, title: "Heading" };
+
+        await ctx.agent.post(url).send(body).expect(403);
+        const list = await ctx.agent.get(url).expect(200);
+        expect(list.body.targets)
+            .toStrictEqual([ { kind: "heading", title: "Heading", level: 2 } ]);
+
+        const res = await ctx.agent.post(url).set("x-csrf-token", ctx.csrfToken).send(body).expect(200);
+        expect(res.body.params.block).toMatch(/^[A-Za-z0-9]{12}$/);
+    });
+
     // The upload routes are the only core ones behind multer, so this is where that middleware —
     // and the CSRF token a multipart PUT has to carry — is actually exercised.
     it("takes a multipart upload on a core route", async () => {

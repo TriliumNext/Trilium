@@ -457,5 +457,3 @@ self.addEventListener("fetch", (event) => {
     // Default
     event.respondWith(fetch(event.request));
 });
-
-export {};

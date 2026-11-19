@@ -56,11 +56,15 @@ vi.mock("../type_widgets/llm_chat/ChatReadOnlyNotice.js", () => ({ default: () =
 vi.mock("../type_widgets/llm_chat/ChatInputBar.js", () => ({
     default: ({ onSubmit }: { onSubmit: (e: Event) => void }) => <form className="chat-input" onSubmit={onSubmit} />
 }));
-vi.mock("../react/hooks.js", () => ({
-    useActiveNoteContext: () => ({ noteId: null, note: null }),
+vi.mock("../react/hooks/note.js", () => ({
     useNote: () => null,
     useNoteProperty: () => chatTitle,
-    useNoteLabelBoolean: () => [ false ],
+    useNoteLabelBoolean: () => [ false ]
+}));
+vi.mock("../react/hooks/tree.js", () => ({
+    useActiveNoteContext: () => ({ noteId: null, note: null })
+}));
+vi.mock("../react/hooks/editor.js", () => ({
     useSpacedUpdate: () => ({ scheduleUpdate: vi.fn(), updateNowIfNecessary: async () => undefined })
 }));
 vi.mock("../react/ActionButton.js", () => ({

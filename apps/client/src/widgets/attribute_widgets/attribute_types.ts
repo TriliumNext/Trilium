@@ -1,4 +1,4 @@
-import { promotedAttributeDefinitionParser } from "@triliumnext/commons";
+import promotedAttributeDefinitionParser from "@triliumnext/commons/src/lib/promoted_attribute_definition_parser.js";
 
 import { isDefinitionName } from "../../entities/fattribute";
 import type { PromotedAttribute } from "../collections/promoted_attributes";

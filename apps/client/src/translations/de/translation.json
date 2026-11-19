@@ -60,8 +60,6 @@
     "search_note": "Suche nach einer Notiz anhand ihres Namens",
     "link_title": "Linktitel",
     "button_add_link": "Link hinzufügen",
-    "anchor": "Anker (optional)",
-    "anchor_none": "Keine (Link zur Notiz)",
     "edit_link": "Link bearbeiten",
     "button_edit_link": "Link speichern"
   },
@@ -2855,8 +2853,7 @@
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "Aus der Startleiste entfernen",
     "configure_launch_bar": "Startleiste konfigurieren",
-    "launch_bar_orientation": "Ausrichtung der Startleiste",
-    "will_reload_frontend": "(App wird neu geladen)"
+    "launch_bar_orientation": "Ausrichtung der Startleiste"
   },
   "link": {
     "failed_to_open": "Link '{{- href}}' konnte nicht geöffnet werden: {{- message}}"

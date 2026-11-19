@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 
 import image_context_menu from "../../menus/image_context_menu";
 import { createImageSrcUrl } from "../../services/utils";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import ImageViewer from "../react/ImageViewer";
 import { refToJQuerySelector } from "../react/react_utils";
 import SiblingNavigator from "../react/SiblingNavigator";

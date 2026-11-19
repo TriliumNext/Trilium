@@ -10,7 +10,7 @@ beforeAll(enableMouseEventProperties);
 const mocks = vi.hoisted(() => ({
     size: { width: 400, height: 300 } as { width: number, height: number } | undefined
 }));
-vi.mock("../hooks", () => ({
+vi.mock("../hooks/dom", () => ({
     useElementSize: () => mocks.size
 }));
 

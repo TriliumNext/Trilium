@@ -29,8 +29,8 @@ vi.mock("../../../services/options", () => ({
     default: { is: () => mocks.encryptionStored }
 }));
 
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useTriliumOptionBool: (name: string) => [
         mocks.stored[name] === true,
         async (value: boolean) => void mocks.saved.push([ name, value ])

@@ -267,6 +267,10 @@ describe("LocalProvider", () => {
             fetchMock.mockRejectedValue("offline");
             await expect(new LocalProvider("ollama").listModels())
                 .rejects.toThrow("Could not reach http://localhost:11434/api/tags: offline");
+
+            fetchMock.mockRejectedValue(new TypeError("fetch failed", { cause: new Error("connect ECONNREFUSED 127.0.0.1:11434") }));
+            await expect(new LocalProvider("ollama").listModels())
+                .rejects.toThrow("Could not reach http://localhost:11434/api/tags: connect ECONNREFUSED 127.0.0.1:11434");
         });
 
         it("sends the key on the probe when the endpoint is behind a gateway", async () => {

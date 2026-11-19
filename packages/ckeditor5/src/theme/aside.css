@@ -102,6 +102,20 @@
     }
 }
 
+.ck-content :is(h1, h2, h3, h4, h5, h6) {
+    display: flow-root;
+    min-width: min-content;
+}
+
+.ck-content pre {
+    display: flow-root;
+}
+
+.ck-content [data-position="wrap-left"] ~ :is(ul, ol):dir(ltr),
+.ck-content [data-position="wrap-right"] ~ :is(ul, ol):dir(rtl) {
+    display: flow-root;
+}
+
 body.mobile .ck-content aside:not(.admonition) {
     float: none;
     clear: both;

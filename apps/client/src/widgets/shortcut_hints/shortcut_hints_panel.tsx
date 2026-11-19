@@ -9,7 +9,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preac
 import { t } from "../../services/i18n.js";
 import keyboard_actions from "../../services/keyboard_actions.js";
 import type { ShortcutHint, ShortcutHintSection } from "../../services/shortcut_hints.js";
-import { useTriliumEvent } from "../react/hooks.js";
+import { useTriliumEvent } from "../react/hooks/events.js";
 import { placeFloating } from "../react/Popup.js";
 import { renderShortcutKbds } from "../react/shortcut_kbd.js";
 

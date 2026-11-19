@@ -3,8 +3,12 @@ import { h, render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import appContext from "../../../components/app_context";
 import type FNote from "../../../entities/fnote";
+import type { LinkTarget, LinkTargetListing } from "../../../services/link_targets";
 import type { NoteSuggestionOptions, Suggestion } from "../../../services/note_autocomplete";
+import options from "../../../services/options";
+import { type OwnLinkTargetReader, registerOwnLinkTargets } from "../markdown/editor_utils";
 import { type CompletionTarget, useEditorCompletions } from "./editor_completions";
 import type { CodeSnippet } from "./snippets";
 
@@ -21,6 +25,13 @@ vi.mock("../../../services/note_autocomplete", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../../services/note_autocomplete")>(),
     getNoteSuggestions,
     createNoteFromSuggestion
+}));
+const { getLinkTargets } = vi.hoisted(() => ({
+    getLinkTargets: vi.fn<(noteId: string, notePath: string) => Promise<LinkTargetListing>>()
+}));
+vi.mock("../../../services/link_targets", async (importOriginal) => ({
+    ...await importOriginal<typeof import("../../../services/link_targets")>(),
+    getLinkTargets
 }));
 
 const { snippets, useCodeSnippets } = vi.hoisted(() => {
@@ -74,6 +85,7 @@ describe("useEditorCompletions", () => {
         container.remove();
         for (const editor of editors) editor.destroy();
         editors.length = 0;
+        options.set("textNoteCompletionLinkTargetsEnabled", "false");
     });
 
     /** Mounts the hook against `view`, and returns what it gives `codeCompletions()`. */
@@ -116,6 +128,10 @@ describe("useEditorCompletions", () => {
     );
     const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
     const textOf = (editor: VanillaCodeMirror) => editor.state.doc.toString();
+    // The notes page stays mounted while it slides out.
+    const destinations = () => [
+        ...document.querySelectorAll(".link-mention-destinations [role=option]")
+    ].map((row) => row.textContent);
 
     it("registers the list and the fence languages only for Markdown, and withdraws both", () => {
         const setNamedExtension = vi.fn();
@@ -242,6 +258,137 @@ describe("useEditorCompletions", () => {
         await settle();
         press(editor, "Enter");
         await vi.waitFor(() => expect(textOf(editor)).toBe("see [[new2]] x"));
+    });
+
+    it("follows a note picked after an @ with its headings and anchors when enabled, and links the one picked", async () => {
+        options.set("textNoteCompletionLinkTargetsEnabled", "true");
+        getNoteSuggestions.mockResolvedValue([ ALPHA ]);
+        getLinkTargets.mockResolvedValue({ targets: [
+            {
+                kind: "heading", title: "Install", level: 2, params: { block: "h1" },
+                createLinkPath: () => "root/projects/abc123?block=h1"
+            },
+            {
+                kind: "anchor", title: "setup", params: { bookmark: "setup" },
+                createLinkPath: () => "root/projects/abc123?bookmark=setup"
+            }
+        ], isTocPending: false });
+        const editor = buildEditor();
+        mount(editor, MARKDOWN, {
+            note: { noteId: "n1" } as FNote, getNotePath: () => "root/parent"
+        });
+        const typeOn = (text: string) => {
+            const end = editor.state.doc.length;
+            editor.dispatch({ changes: { from: end, insert: text }, selection: { anchor: end + text.length } });
+        };
+
+        // Linked at once, then the headings and anchors of the note are listed.
+        type(editor, "see @Al");
+        await vi.waitFor(() => expect(rows()).toHaveLength(1));
+        press(editor, "Enter");
+        await vi.waitFor(() => expect(textOf(editor)).toBe("see [[abc123]]"));
+        expect(getLinkTargets).toHaveBeenCalledWith("abc123", "root/projects/abc123");
+        await vi.waitFor(() => expect(destinations()).toEqual([
+            expect.stringContaining("add_link.top_of_note"),
+            expect.stringContaining("Install"),
+            expect.stringContaining("setup")
+        ]));
+
+        // The text typed after the link filters them, and a pick points the link at it.
+        typeOn("Ins");
+        await vi.waitFor(() => expect(destinations()).toEqual(onlyRow("Install")));
+        press(editor, "Enter");
+        await vi.waitFor(() => expect(textOf(editor)).toBe("see [[abc123?block=h1]]"));
+        await vi.waitFor(() => expect(rows()).toEqual([]));
+
+        typeOn(" @Al");
+        await vi.waitFor(() => expect(rows()).toHaveLength(1));
+        press(editor, "Enter");
+        await vi.waitFor(() => expect(destinations()).toHaveLength(3));
+        typeOn("set");
+        await vi.waitFor(() => expect(destinations()).toEqual(onlyRow("setup")));
+        press(editor, "Enter");
+        await vi.waitFor(() => expect(textOf(editor))
+            .toBe("see [[abc123?block=h1]] [[abc123?bookmark=setup]]"));
+
+        // The whole note keeps the link as it is, and closes the list.
+        typeOn(" @Al");
+        await vi.waitFor(() => expect(rows()).toHaveLength(1));
+        press(editor, "Enter");
+        await vi.waitFor(() => expect(destinations()).toHaveLength(3));
+        press(editor, "Enter");
+        await vi.waitFor(() => expect(rows()).toEqual([]));
+        expect(textOf(editor)).toBe("see [[abc123?block=h1]] [[abc123?bookmark=setup]] [[abc123]]");
+    });
+
+    it("takes the targets of the note being edited from its editor, not the server", async () => {
+        options.set("textNoteCompletionLinkTargetsEnabled", "true");
+        getNoteSuggestions.mockResolvedValue([ ALPHA ]);
+        getLinkTargets.mockClear();
+        const ownHeading: LinkTarget = {
+            kind: "heading", title: "Own heading", level: 2, params: { block: "o1" },
+            createLinkPath: () => "root/projects/abc123?block=o1"
+        };
+        const read = vi.fn<OwnLinkTargetReader["read"]>(() => ({
+            headings: [ ownHeading ], anchors: [ "top" ], getRange: () => null
+        }));
+        const editor = buildEditor();
+        registerOwnLinkTargets(editor, { read, takePendingMarker: () => undefined });
+        mount(editor, MARKDOWN, {
+            note: { noteId: "abc123" } as FNote, getNotePath: () => "root/parent"
+        });
+
+        type(editor, "see @Al");
+        await vi.waitFor(() => expect(rows()).toHaveLength(1));
+        press(editor, "Enter");
+        await vi.waitFor(() => expect(destinations()).toEqual([
+            expect.stringContaining("add_link.top_of_note"),
+            expect.stringContaining("Own heading"),
+            expect.stringContaining("top")
+        ]));
+        expect(read).toHaveBeenCalledExactlyOnceWith("root/projects/abc123");
+        expect(getLinkTargets).not.toHaveBeenCalled();
+
+        press(editor, "ArrowDown");
+        await settle();
+        press(editor, "Enter");
+        await vi.waitFor(() => expect(textOf(editor)).toBe("see [[abc123?block=o1]]"));
+    });
+
+    it("opens the link dialog from /link on the targets of the note being edited", async () => {
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockResolvedValue(undefined);
+        const read = vi.fn<OwnLinkTargetReader["read"]>(() => ({
+            headings: [], anchors: [ "top" ], getRange: () => null
+        }));
+        const editor = buildEditor();
+        registerOwnLinkTargets(editor, { read, takePendingMarker: () => undefined });
+        const note = { noteId: "n1", getBestNotePathString: () => "root/n1" } as unknown as FNote;
+        mount(editor, MARKDOWN, { note });
+
+        type(editor, "/link");
+        await vi.waitFor(() => expect(rowTexts()).toEqual(onlyRow("titles.link")));
+        press(editor, "Enter");
+
+        await vi.waitFor(() => expect(triggerCommand).toHaveBeenCalledExactlyOnceWith(
+            "showEditLinkDialog", expect.objectContaining({ noteId: "n1", anchors: [ "top" ] })
+        ));
+        expect(read).toHaveBeenCalledExactlyOnceWith("root/n1", { from: 0, to: 0 });
+        expect(textOf(editor)).toBe("");
+
+        // Content that is no note opens the dialog without the targets of a note.
+        triggerCommand.mockClear();
+        read.mockClear();
+        act(() => render(null, container));
+        mount(editor, MARKDOWN, { note: null });
+        type(editor, "/link");
+        await vi.waitFor(() => expect(rowTexts()).toEqual(onlyRow("titles.link")));
+        press(editor, "Enter");
+        await vi.waitFor(() => expect(triggerCommand).toHaveBeenCalledExactlyOnceWith(
+            "showEditLinkDialog", expect.objectContaining({ hasSelection: false })
+        ));
+        expect(triggerCommand.mock.calls[0]?.[1]).not.toHaveProperty("noteId");
+        expect(read).not.toHaveBeenCalled();
+        triggerCommand.mockRestore();
     });
 
     it("creates notes under the best path of the owner note without a path given", async () => {

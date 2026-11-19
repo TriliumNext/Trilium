@@ -6,6 +6,7 @@ import EventEmitter from "events";
 import type { Application, Response as ExpressResponse } from "express";
 import { createResponse, type MockResponse } from "node-mocks-http";
 
+import { holdFirstPaint, isFirstPaintGateUrl } from "./services/first_paint_gate.js";
 import { isTriliumAppShellUrl, TRILIUM_APP_ORIGIN, TRILIUM_APP_SCHEME } from "./services/trilium_app_origin.js";
 
 /**
@@ -65,6 +66,12 @@ export function setupTriliumAppProtocol(app: Application | Promise<Application>)
             if (!isDispatchOriginAllowed(origin)) {
                 console.error(`[trilium-app] blocked ${request.method} ${request.url} from origin '${origin}'`);
                 return new Response("Forbidden", { status: 403 });
+            }
+            // `installFrameOriginGuard()` has already held it for as long as the first paint waits.
+            // Not cached, as a page served from the cache would skip that hold: a window opened with
+            // `window.open()` shares its opener's renderer process, which has the script already.
+            if (isFirstPaintGateUrl(request.url)) {
+                return new Response("", { headers: { "content-type": "text/javascript", "cache-control": "no-store" } });
             }
             try {
                 return await dispatch(await app, request);
@@ -134,6 +141,10 @@ function installFrameOriginGuard() {
         const allowed = isRequestorChainTrusted(details.resourceType, frameUrls);
         if (!allowed) {
             console.error(`[trilium-app] blocked ${details.method} ${details.url} from frame chain [${frameUrls.join(" ← ")}]`);
+        } else if (isFirstPaintGateUrl(details.url)) {
+            // The one listener `webRequest` allows per session, so the first-paint gate holds here.
+            holdFirstPaint(details.webContentsId, () => callback({ cancel: false }));
+            return;
         }
         callback({ cancel: !allowed });
     });

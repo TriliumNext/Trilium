@@ -2,7 +2,7 @@ import { ComponentChildren } from "preact";
 import { Dispatch, StateUpdater, useEffect, useState } from "preact/hooks";
 import FNote from "../../entities/fnote";
 import froca from "../../services/froca";
-import { useNoteLabelInt } from "../react/hooks";
+import { useNoteLabelInt } from "../react/hooks/note";
 import { t } from "../../services/i18n";
 import ActionButton from "../react/ActionButton";
 import Button from "../react/Button";

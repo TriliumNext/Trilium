@@ -60,8 +60,6 @@
     "search_note": "zoek notitie op naam",
     "link_title": "Link titel",
     "button_add_link": "Link toevoegen",
-    "anchor": "Anker (optioneel)",
-    "anchor_none": "Geen (koppeling naar notitie)",
     "edit_link": "Wijzig link",
     "button_edit_link": "Link opslaan"
   },

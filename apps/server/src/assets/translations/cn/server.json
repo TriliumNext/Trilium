@@ -608,5 +608,12 @@
   "open_custom": {
     "choose_application": "选择用于打开该文件的应用程序。",
     "applications_filter": "应用程序"
+  },
+  "open-executable-dialog": {
+    "open": "打开",
+    "cancel": "取消",
+    "title": "打开程序",
+    "message": "打开“{{- name}}”？",
+    "detail": "{{- path}}\n\n此文件可在你的计算机上运行程序。仅当你自己创建了此链接并信任该文件时，才打开它。"
   }
 }

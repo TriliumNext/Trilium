@@ -1,17 +1,18 @@
 import "./template_properties.css";
 
-import { dayjs, evaluateTemplate } from "@triliumnext/commons";
+import { evaluateTemplate } from "@triliumnext/commons/src/lib/safe_template.js";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import type FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
+import { dayjs } from "../../services/dayjs";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import ws from "../../services/ws";
 import TemplateField, { noteTemplateVariables } from "../bulk_actions/TemplateField";
 import { CollectionPropertiesDialog } from "../note_bars/CollectionProperties";
 import { Card, OptionCardSection } from "../react/Card";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import NoteAutocomplete from "../react/NoteAutocomplete";
 
 /** What the server's `getNewNoteTitle()` passes to `evaluateTemplate()` for a title template. */

@@ -1,11 +1,11 @@
 import type { FieldEditor } from "@triliumnext/codemirror/src/field_editor";
 import clsx from "clsx";
 import type { RefObject } from "preact";
-import { useEffect, useRef } from "preact/hooks";
+import { useEffect, useLayoutEffect, useRef } from "preact/hooks";
 
 import { t } from "../../services/i18n";
 import type { ShortcutHintDefinition } from "../../services/shortcut_hints";
-import { useContextualShortcutHints } from "../react/hooks";
+import { useContextualShortcutHints } from "../react/hooks/shortcuts";
 import { createSearchFieldEditor, SEARCH_FIELD_EDITOR_CLASS } from "../search_field_editor";
 
 interface SearchStringEditorProps {
@@ -92,7 +92,8 @@ export default function SearchStringEditor({ currentValue, noteId, placeholder, 
         ...(extraShortcutHints ?? [])
     ]);
 
-    useEffect(() => {
+    // Before the paint, so the field is never drawn empty, a line shorter than the editor.
+    useLayoutEffect(() => {
         if (!parentRef.current) {
             return;
         }

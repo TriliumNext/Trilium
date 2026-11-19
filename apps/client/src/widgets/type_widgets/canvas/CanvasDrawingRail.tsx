@@ -4,7 +4,7 @@ import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import type { RefObject } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
-import { useFocusWithin, useIsOnScreen, useLingeringTrue } from "../../react/hooks";
+import { useFocusWithin, useIsOnScreen, useLingeringTrue } from "../../react/hooks/dom";
 import { OverlayControlButton } from "../../react/OverlayControlGroup";
 import OverlayRail, { RAIL_EXIT_MS } from "../../react/OverlayRail";
 import { type Translate, useExcalidrawTranslation } from "./CanvasEmbedTools";

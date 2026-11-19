@@ -14,9 +14,14 @@ import {
     FormDropdownDivider, FormDropdownSubmenu, FormListCustomItem, FormListHeader, FormListItem,
     FormListToggleableItem, MenuList
 } from "./FormList";
-import { useStaticTooltipWithKeyboardShortcut, useUniqueName } from "./hooks";
+import { useUniqueName } from "./hooks/dom";
+import { useStaticTooltipWithKeyboardShortcut } from "./hooks/shortcuts";
 import Icon, { SvgIcon } from "./Icon";
-import { type ActiveRow, isRightToLeft, MenuContext, type MenuContextValue, type MenuFilter, MenuFilterContext, MenuLevelContext, type OpenSubmenu, pointerMoved, type RowEntry, shouldDropStart } from "./menu_context";
+import {
+    type ActiveRow, isRightToLeft, MenuContext, type MenuContextValue, type MenuFilter,
+    MenuFilterContext, MenuLevelContext, type OpenSubmenu, pointerMoved, type RowEntry,
+    shouldDropStart
+} from "./menu_context";
 import Popup, { type PopupProps } from "./Popup";
 
 /**

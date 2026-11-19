@@ -1,9 +1,10 @@
 import interceptPersistence from "./persistence";
-import { extractAndSendToc, setupScrollToHeading, setupActiveHeadingTracking } from "./toc";
+import { extractAndSendToc, setupActiveHeadingTracking, setupTocBuild } from "./toc";
 import { setupPdfPages } from "./pages";
 import { setupPdfAttachments } from "./attachments";
 import { setupPdfLayers } from "./layers";
-import { setupPdfAnnotations, setupAnnotationLiveUpdates, trackInitialView } from "./annotations";
+import { setupPdfAnnotations, setupAnnotationLiveUpdates } from "./annotations";
+import { setupNavigation, trackDocument } from "./navigation";
 import { commitPendingAnnotationEdits, isAnnotationEditingActive, setAnnotationEditorUIManager, suppressViewerUnloadPrompt } from "./editing";
 
 export async function main() {
@@ -19,6 +20,10 @@ export async function main() {
     }
 
     applyMinPixelRatio(urlParams);
+
+    // Before the first await: the parent posts these as soon as the frame has loaded.
+    setupNavigation();
+    setupTocBuild();
 
     const hideToolbar = urlParams.get("toolbar") === "0";
     document.body.classList.toggle("read-only-document", !isEditable);
@@ -45,7 +50,7 @@ export async function main() {
     const app = window.PDFViewerApplication;
 
     manageParentCommands();
-    trackInitialView(app);
+    trackDocument(app);
 
     // Needed to commit in-progress annotation edits before saving; pdf.js recreates the
     // manager for each loaded document.
@@ -60,8 +65,7 @@ export async function main() {
     if (isEditable) {
         app.eventBus.on("documentloaded", () => {
             manageSave();
-            extractAndSendToc();
-            setupScrollToHeading();
+            void extractAndSendToc();
             setupActiveHeadingTracking();
             setupPdfPages();
             setupPdfAttachments();

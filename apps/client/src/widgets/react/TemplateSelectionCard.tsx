@@ -1,6 +1,6 @@
 import "./TemplateSelectionCard.css";
 
-import { buildTemplateId } from "@triliumnext/commons";
+import { buildTemplateId } from "@triliumnext/commons/src/lib/note_type_ids.js";
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
 import type FNote from "../../entities/fnote";
@@ -12,7 +12,7 @@ import {
 } from "../../services/note_types";
 import { type PickerItem, type PickerItemGroup } from "../dialogs/item_picker";
 import ActionButton from "./ActionButton";
-import { useNoteTypeOptions } from "./hooks";
+import { useNoteTypeOptions } from "./hooks/note_types";
 import Icon from "./Icon";
 import { type SortableItem, SortableCard } from "./SortableCard";
 import {

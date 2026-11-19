@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { ATTACHMENT_ROLES, attachmentIcon, attachmentRoleTraits, IMAGE_ATTACHMENT_ROLES, isDeduplicatedAttachmentRole, isEmbeddedAttachmentRole, isImageAttachmentRole } from "./attachment_roles.js";
+import {
+    ATTACHMENT_ROLES, attachmentIcon, attachmentRoleTraits, IMAGE_ATTACHMENT_ROLES,
+    isDeduplicatedAttachmentRole, isDerivedAttachmentRole, isEmbeddedAttachmentRole,
+    isFullWidthAttachment, isImageAttachmentRole
+} from "./attachment_roles.js";
 import { getNoteIcon } from "./notes.js";
 
 describe("isImageAttachmentRole", () => {
@@ -49,6 +53,20 @@ describe("isEmbeddedAttachmentRole", () => {
     });
 });
 
+describe("isFullWidthAttachment", () => {
+    it("takes the full width for an attachment the matching note type would", () => {
+        for (const mime of [ "application/pdf", "video/mp4", "audio/ogg",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ]) {
+            expect(isFullWidthAttachment({ role: "file", mime })).toBe(true);
+        }
+        expect(isFullWidthAttachment({ role: "image", mime: "image/png" })).toBe(true);
+        expect(isFullWidthAttachment({ role: "file", mime: "application/vnd.excalidraw+json" })).toBe(true);
+
+        expect(isFullWidthAttachment({ role: "file", mime: "application/zip" })).toBe(false);
+        expect(isFullWidthAttachment({ role: "file", mime: "text/plain" })).toBe(false);
+    });
+});
+
 describe("attachmentRoleTraits", () => {
     it("answers nothing for a role it does not recognise", () => {
         // A script's own role, or one from a newer version reached over sync.
@@ -68,7 +86,9 @@ describe("attachmentRoleTraits", () => {
         // The types already refuse a role that arrives without one; this says the same at runtime,
         // for the shape the table is actually read with.
         for (const [ role, traits ] of Object.entries(ATTACHMENT_ROLES)) {
-            expect(Object.keys(traits).sort(), role).toStrictEqual([ "copiedAs", "deduplicated", "embedded", "icon", "picture" ]);
+            expect(Object.keys(traits).sort(), role).toStrictEqual([
+                "copiedAs", "deduplicated", "derived", "embedded", "icon", "picture"
+            ]);
         }
     });
 
@@ -77,7 +97,18 @@ describe("attachmentRoleTraits", () => {
             expect(isImageAttachmentRole(role), role).toBe(traits.picture);
             expect(isDeduplicatedAttachmentRole(role), role).toBe(traits.deduplicated);
             expect(isEmbeddedAttachmentRole(role), role).toBe(traits.embedded);
+            expect(isDerivedAttachmentRole(role), role).toBe(traits.derived);
         }
+    });
+});
+
+describe("isDerivedAttachmentRole", () => {
+    it("covers the table of contents cache only, which is rebuilt from its document", () => {
+        expect(isDerivedAttachmentRole("tocCache")).toBe(true);
+        for (const role of [ "image", "file", "viewConfig", "transcript", "somethingAScriptInvented" ]) {
+            expect(isDerivedAttachmentRole(role), role).toBe(false);
+        }
+        expect(isDerivedAttachmentRole(undefined)).toBe(false);
     });
 });
 

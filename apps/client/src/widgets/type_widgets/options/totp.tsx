@@ -1,6 +1,8 @@
 import "./totp.css";
 
-import { TOTPEnableResponse, TOTPGenerate, TOTPRecoveryKeysResponse, TOTPStatus, TOTPVerifyResponse } from "@triliumnext/commons";
+import {
+    TOTPEnableResponse, TOTPGenerate, TOTPRecoveryKeysResponse, TOTPStatus, TOTPVerifyResponse
+} from "@triliumnext/commons";
 import { ComponentChildren, createPortal, RefObject } from "preact";
 import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 import qrcode from "qrcode-generator";
@@ -18,7 +20,7 @@ import FormCheckbox from "../../react/FormCheckbox";
 import FormGroup from "../../react/FormGroup";
 import FormText from "../../react/FormText";
 import FormTextBox from "../../react/FormTextBox";
-import { useStaticTooltip } from "../../react/hooks";
+import { useStaticTooltip } from "../../react/hooks/tooltip";
 import Modal from "../../react/Modal";
 import { RawHtmlBlock } from "../../react/RawHtml";
 import MfaStatusBadge from "./components/MfaStatusBadge";

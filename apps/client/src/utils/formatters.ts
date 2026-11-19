@@ -1,6 +1,6 @@
 import {
     isRightToLeftLanguage, normalizeLocale, resolveContentLanguage as resolveLanguage
-} from "@triliumnext/commons";
+} from "@triliumnext/commons/src/lib/i18n.js";
 
 import { t } from "../services/i18n";
 import options from "../services/options";

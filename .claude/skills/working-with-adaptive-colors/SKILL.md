@@ -31,6 +31,8 @@ every color in every note at once, and the note keeps the color the user chose.
 | The rules and the limits | `packages/ckeditor5/src/theme/adaptive_colors.css` | 20 `--adaptive-*` limits, private `--_adaptive-*` light ranges, five rules |
 | App dark switch, dropdown tile face | `apps/client/src/stylesheets/adaptive-colors.css` (imported by `style.css`) | `body.dark-theme`, `.ck-color-grid__tile:is([style*="--tn-color"], [style*="--tn-background"])`, `.ck-balloon-panel.aside-toolbar .ck-color-grid__tile` |
 | Aside background color | `packages/ckeditor5/src/plugins/aside/` | `COLOR_ATTRIBUTE`, `DEFAULT_COLOR`, `AsideColorCommand`, `AsideColorUI` (on `FontColorUIBase`) |
+| Widgets colored by the text color commands | `packages/ckeditor5/src/plugins/colored_widgets.ts` | `ColoredWidgets#register()`, `copyColors()`; link previews register in `LinkEmbedEditing` |
+| Link preview colors | `apps/client/src/widgets/type_widgets/text/LinkEmbed.css`, `packages/share-theme/src/content/link_embed.css` | "Font color and background color" sections |
 | Share dark switch | `packages/share-theme/src/content/adaptive_colors.css` (imported by `index.ts`) | `html.theme-dark`, the share-only `--adaptive-table-border-dark-min-lightness` |
 | Loading in the app and in print | `apps/client/src/index.ts`, `apps/client/src/print.css` | `import`/`@import` of the shared file |
 | Dark class | `apps/client/src/services/theme.ts`, `packages/share-theme/src/page/theme_switch.ts` | `updateColorSchemeClasses()` from `--theme-style`; `theme-dark` |
@@ -75,6 +77,12 @@ All in `AdaptiveColors`:
   `AsideEditing` also sets `--custom-color-hue` and the `with-hue` class from the color's HSL hue
   (`getHue()` through CKEditor's `_convertColor`; none for a gray, `transparent` or no color), so
   the Next themes tint the selection inside the aside as in a colored note. Nothing of it is saved.
+- **Widgets.** `ColoredWidgets` (its own plugin, not part of `AdaptiveColors`) lets `fontColor`
+  and `fontBackgroundColor` sit on a registered widget, link previews so far. It writes the
+  property and the variable together as the widget element's inline style, at `"highest"`
+  priority, ahead of `convertTextColor()`, which would otherwise wrap the widget in a span. The
+  element adapts through the generic `text` and `background` rules; the widget's stylesheet makes
+  its inner parts show the color (`color: inherit`, a transparent inner background).
 - **Loading.** `dropVariablesOnLoad()` consumes the three variables on every element at `"highest"`
   priority, so General HTML Support cannot keep a stale one. CKEditor's own converter reads the
   color back, and the next save writes the variable again. A note saved before the variables existed
@@ -140,6 +148,7 @@ color: lch(from var(--tn-color)
 | Surface | Result |
 | --- | --- |
 | Text notes, editable and read-only; share pages | Adapted |
+| Link previews (Icon & text, Card) colored with the text color commands | Adapted, by the generic rules on `span.link-mention` / `section.link-embed`; an Embed takes no colors |
 | Print and PDF export | Light shades |
 | HTML zip export (`apps/server/src/services/export/zip/factory.ts`), other apps | The color as picked; the variable is inert |
 | Markdown export | A plain palette-yellow (or old `hsl(60, 75%, 60%)`) highlight becomes `==…==`, ignoring `--tn-*`; other colors stay inline HTML with their variable |

@@ -1,15 +1,23 @@
 import type { CKTextEditor, ModelText } from "@triliumnext/ckeditor5";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
-import { revealElement } from "../../services/collapsible";
+import { revealElement } from "../../services/bookmark_jump";
 import { t } from "../../services/i18n";
 import { randomString } from "../../services/utils";
 import Dropdown from "../react/Dropdown";
 import { FormListToggleableItem } from "../react/FormList";
-import { useActiveNoteContext, useContentElement, useGetContextData, useIsNoteReadOnly, useMathRendering, useNoteProperty, useTextEditor, useTriliumOptionJson } from "../react/hooks";
+import { useNoteProperty } from "../react/hooks/note";
+import { useTriliumOptionJson } from "../react/hooks/options";
+import { useContentElement, useIsNoteReadOnly, useTextEditor } from "../react/hooks/note_context";
+import { useActiveNoteContext, useGetContextData } from "../react/hooks/tree";
+import { useMathRendering } from "../react/hooks/content";
 import RawHtml from "../react/RawHtml";
-import { HIGHLIGHT_FORMATS, HighlightFormat } from "../type_widgets/options/highlights_list_options";
-import { extractHighlightsFromStaticHtml, htmlForRun, type DomHighlight, type RawHighlight } from "./highlights_extract";
+import {
+    HIGHLIGHT_FORMATS, HighlightFormat
+} from "../type_widgets/options/highlights_list_options";
+import {
+    extractHighlightsFromStaticHtml, htmlForRun, type DomHighlight, type RawHighlight
+} from "./highlights_extract";
 import RightPanelWidget from "./RightPanelWidget";
 import SidebarHelp from "./SidebarHelp";
 

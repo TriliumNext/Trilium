@@ -25,8 +25,8 @@ vi.mock("@triliumnext/highlightjs", () => ({
     highlight: () => ({ value: "" })
 }));
 
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useColorScheme: () => mocks.colorScheme,
     useTriliumOption: (name: string) => [
         String(mocks.stored[name] ?? ""),
@@ -130,6 +130,22 @@ describe("the editor features", () => {
             [ "textNoteLinkDetailsRetrievalEnabled", true ],
             [ "textNoteStickyTableHeadersEnabled", true ]
         ]));
+    });
+
+    it("offers heading and anchor suggestions under note auto-completion while it is on", () => {
+        open();
+        expect(optionLabels()).toContain("editorfeatures.note_completion_enabled");
+        expect(toggle("note-completion-link-targets-enabled")).toBeNull();
+
+        mocks.stored = { ...mocks.stored, textNoteCompletionEnabled: true };
+        open();
+        const labels = optionLabels();
+        expect(labels[labels.indexOf("editorfeatures.note_completion_enabled") + 1])
+            .toBe("editorfeatures.note_completion_link_targets_enabled");
+        const linkTargets = toggle("note-completion-link-targets-enabled");
+        expect(linkTargets).not.toBeNull();
+        act(() => linkTargets?.click());
+        expect(mocks.saved).toEqual([ [ "textNoteCompletionLinkTargetsEnabled", true ] ]);
     });
 });
 

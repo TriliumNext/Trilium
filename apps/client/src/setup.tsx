@@ -1,6 +1,12 @@
 import "./setup.css";
 
-import { LOCALES, MOBILE_SYNC_MAX_BLOB_CONTENT_SIZE, NetworkAddressesResponse, SetupSyncFromServerResponse, type SetupTargetScreen } from "@triliumnext/commons";
+import type {
+    NetworkAddressesResponse, SetupSyncFromServerResponse, SetupTargetScreen
+} from "@triliumnext/commons";
+import { LOCALES } from "@triliumnext/commons/src/lib/i18n.js";
+import {
+    MOBILE_SYNC_MAX_BLOB_CONTENT_SIZE
+} from "@triliumnext/commons/src/lib/shared_constants.js";
 import clsx from "clsx";
 import { render } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
@@ -973,10 +979,8 @@ async function onExistingDataKept() {
 }
 
 function onSetupFinished() {
-    if (isElectron()) {
-        // On Electron we need to use the setup route because it handles the closing of the setup window and opening the main app window.
-        location.href = "setup";
-    } else {
+    // On Electron the main process replaces the setup window with the main window on `DB_INITIALIZED`.
+    if (!isElectron()) {
         location.reload();
     }
 }

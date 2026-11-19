@@ -1,6 +1,8 @@
 import "./NodeMemo.css";
 
-import { AttributeEditor, type CKTextEditor, type EditorConfig, MEMO_PLUGINS } from "@triliumnext/ckeditor5";
+import {
+    AttributeEditor, type CKTextEditor, type EditorConfig, MEMO_PLUGINS
+} from "@triliumnext/ckeditor5";
 import type { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import type { NodeObj, Topic } from "mind-elixir";
 import { useEffect, useLayoutEffect, useRef } from "preact/hooks";
@@ -9,7 +11,7 @@ import { t } from "../../../services/i18n";
 import link from "../../../services/link";
 import { escapeHtml } from "../../../services/utils";
 import CKEditor, { type CKEditorApi } from "../../react/CKEditor";
-import { useTriliumOption } from "../../react/hooks";
+import { useTriliumOption } from "../../react/hooks/options";
 
 /**
  * The memo a node carries: text kept about it, which the map itself never shows.

@@ -11,7 +11,10 @@ import { useEffect, useImperativeHandle, useRef, useState } from "preact/hooks";
 
 import froca from "../../../services/froca";
 import { isMobile } from "../../../services/utils";
-import { useKeyboardShortcuts, useNoteContext, useSyncedRef, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useSyncedRef } from "../../react/hooks/dom";
+import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
+import { useNoteContext } from "../../react/hooks/note_context";
+import { useKeyboardShortcuts } from "../../react/hooks/shortcuts";
 import { InsertMediaBalloon } from "../../dialogs/insert_media";
 import { openHelpPageFor } from "../../react/HelpButton";
 import IconPicker from "../../react/IconPicker";

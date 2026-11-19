@@ -1,18 +1,33 @@
-import { MULTICOLUMN_LAYOUT_CLASS } from "@triliumnext/commons";
+import { MULTICOLUMN_LAYOUT_CLASS, type WikiLinkOptions } from "@triliumnext/commons";
+import type { BlockIndexHost } from "@triliumnext/commons/src/lib/markdown_block_index.js";
 import { renderToHtml as renderToHtmlShared } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { HTMLElement, Node, NodeType, parse as parseHtml } from "node-html-parser";
 
 import { sanitizeHtml } from "../sanitizer.js";
 import { getTaskStates } from "../task_states.js";
 
-function renderToHtml(content: string, title: string, opts?: { obsidian?: boolean }): string {
+function renderToHtml(
+    content: string,
+    title: string,
+    opts?: { obsidian?: boolean; wikiLink?: WikiLinkOptions }
+): string {
     const html = renderToHtmlShared(content, title, {
         sanitize: sanitizeHtml,
         taskStates: getTaskStates(),
-        obsidian: opts?.obsidian
+        obsidian: opts?.obsidian,
+        wikiLink: opts?.wikiLink
     });
     return normalizeToEditorMarkup(html);
 }
+
+/**
+ * How the server reads rendered Markdown, as the share renderer does: core's sanitizer, and a
+ * parser that reads the content of `<pre>` as elements, where a code block holds its block id.
+ */
+export const serverBlockHost: BlockIndexHost = {
+    sanitize: sanitizeHtml,
+    parse: (html) => parseHtml(html, { blockTextElements: {} })
+};
 
 export default {
     renderToHtml

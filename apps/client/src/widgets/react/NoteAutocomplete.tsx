@@ -2,7 +2,7 @@ import "./Menu.css";
 import "./NoteAutocomplete.css";
 
 import type { ReferenceElement } from "@floating-ui/dom";
-import { NOTE_TYPE_ICONS } from "@triliumnext/commons";
+import { NOTE_TYPE_ICONS } from "@triliumnext/commons/src/lib/notes.js";
 import clsx from "clsx";
 import {
     type ComponentChildren, createPortal, type CSSProperties, type RefObject, render, type VNode
@@ -12,7 +12,10 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import appContext from "../../components/app_context";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
-import { createSearchScheduler, createNoteFromSuggestion, getCommandSuggestions, getNoteSuggestions, type Options, recentNoteGroup, type RecentNoteGroup, type Suggestion } from "../../services/note_autocomplete";
+import {
+    createSearchScheduler, createNoteFromSuggestion, getCommandSuggestions, getNoteSuggestions,
+    type Options, recentNoteGroup, type RecentNoteGroup, type Suggestion
+} from "../../services/note_autocomplete";
 import { escapeHtml, isMobile } from "../../services/utils";
 import { ShortcutHintOverlayButton } from "../shortcut_hints/shortcut_hint_button";
 import { AttributeSnippetBadges } from "./Badge";
@@ -20,7 +23,8 @@ import Button from "./Button";
 import { type AutocompleteListHandle, useAutocomplete, useForwardedKeys } from "./FormAutocomplete";
 import { FormDropdownDivider, FormListHeader } from "./FormList";
 import FormToggle from "./FormToggle";
-import { useContextualShortcutHints, useSyncedRef } from "./hooks";
+import { useSyncedRef } from "./hooks/dom";
+import { useContextualShortcutHints } from "./hooks/shortcuts";
 import Icon from "./Icon";
 import OverlayControlGroup from "./OverlayControlGroup";
 import Popup, { type PopupProps } from "./Popup";
@@ -495,11 +499,20 @@ export default function NoteAutocomplete({
  * canceled.
  */
 export function NoteMentionList({
-    query, anchor, allowCreatingNotes, parentNotePath, preselect = true, onPick, onPickChildNote,
-    handleRef, elementRef, onActiveDescendant
-}: {
+    anchor, handleRef, elementRef, onActiveDescendant, ...mentions
+}: NoteMentionListProps) {
+    const autocomplete = useNoteMentions(mentions);
+    useForwardedKeys(autocomplete, handleRef, onActiveDescendant);
+
+    return autocomplete.isShown && (
+        <NoteSuggestionPopup anchor={anchor} elementRef={elementRef} className="note-mention-menu">
+            <NoteSuggestionMenu autocomplete={autocomplete} className="tn-menu-scroll" />
+        </NoteSuggestionPopup>
+    );
+}
+
+export interface NoteMentionsOptions {
     query: string;
-    anchor: PopupProps["anchor"];
     allowCreatingNotes?: boolean;
     /** The note the host edits, which a child note is created under. */
     parentNotePath?: string | null;
@@ -511,11 +524,28 @@ export function NoteMentionList({
      * for a host that creates the note itself.
      */
     onPickChildNote?(title: string): void;
+    /**
+     * Takes the pick of a note that exists in place of `onPick`, for a host that shows a page
+     * about the note in the place of the list. The list then stays as it is.
+     */
+    onPickNote?(notePath: string): void;
+}
+
+export interface NoteMentionListProps extends Omit<NoteMentionsOptions, "onPickNote"> {
+    anchor: PopupProps["anchor"];
     handleRef: RefObject<AutocompleteListHandle | null>;
     elementRef?: PopupProps["elementRef"];
     /** Called with the id of the highlighted entry's element, or `null` while none is highlighted. */
     onActiveDescendant?(id: string | null): void;
-}) {
+}
+
+/**
+ * The autocomplete of a {@link NoteMentionList}, which lists the notes for `query` from its first
+ * render on, for a host that draws the popup itself.
+ */
+export function useNoteMentions({
+    query, allowCreatingNotes, parentNotePath, preselect = true, onPick, onPickChildNote, onPickNote
+}: NoteMentionsOptions) {
     // The focus stays where the query is typed, so there is no field to return it to.
     const inputRef = useRef<HTMLInputElement>(null);
     const source = useCallback((term: string) =>
@@ -531,9 +561,10 @@ export function NoteMentionList({
             } else if (rowGroup(suggestion) === "create") {
                 onPick(createNoteFromSuggestion(suggestion, parentNotePath));
             } else if (suggestion.notePath) {
-                onPick(suggestion.notePath);
+                (onPickNote ?? onPick)(suggestion.notePath);
             }
         },
+        holdOnPick: (suggestion) => !!onPickNote && isExistingNote(suggestion),
         inputRef,
         autoActivate: preselect,
         textOf: suggestionText,
@@ -543,13 +574,7 @@ export function NoteMentionList({
 
     // The host shows the list by mounting it and closes it by unmounting it.
     useEffect(() => autocomplete.open(), []);
-    useForwardedKeys(autocomplete, handleRef, onActiveDescendant);
-
-    return autocomplete.isShown && (
-        <NoteSuggestionPopup anchor={anchor} elementRef={elementRef} className="note-mention-menu">
-            <NoteSuggestionMenu autocomplete={autocomplete} className="tn-menu-scroll" />
-        </NoteSuggestionPopup>
-    );
+    return autocomplete;
 }
 
 /** An entry of a {@link CommandMentionList}, drawn as the command palette draws a command. */
@@ -724,12 +749,12 @@ function commandTitle(entry: CommandEntry) {
 }
 
 /** Runs a lookup at once, for a source that answers from memory. */
-function lookUpNow(lookUp: () => Promise<void>) {
+export function lookUpNow(lookUp: () => Promise<void>) {
     void lookUp();
 }
 
 /** The popup the suggestions are listed in, below `anchor` where there is room. */
-function NoteSuggestionPopup({ className, ...props }: PopupProps) {
+export function NoteSuggestionPopup({ className, ...props }: PopupProps) {
     return (
         <Popup
             placement="bottom-start"
@@ -773,7 +798,7 @@ function SearchFooterShortcutHints({ allowFullSearch }: { allowFullSearch: boole
  * in the popup or in a host's container. With `searchingFor`, the query of a search in progress, it
  * shows a row saying so in place of the suggestions.
  */
-function NoteSuggestionMenu({ autocomplete, searchingFor, className }: {
+export function NoteSuggestionMenu({ autocomplete, searchingFor, className }: {
     autocomplete: ReturnType<typeof useAutocomplete<Suggestion>>;
     searchingFor?: string;
     className: string;
@@ -816,7 +841,7 @@ function NoteSuggestionMenu({ autocomplete, searchingFor, className }: {
 }
 
 /** The menu row of the entry at `index`, which the pointer highlights and a click picks. */
-function SuggestionOption<T>({ autocomplete, index, children }: {
+export function SuggestionOption<T>({ autocomplete, index, children }: {
     autocomplete: ReturnType<typeof useAutocomplete<T>>;
     index: number;
     children: ComponentChildren;
@@ -875,7 +900,7 @@ function NoteSuggestionMenuItemContent({ suggestion }: { suggestion: Suggestion 
 }
 
 /** A row's content: the icon, the title line, what goes under it, and the keys at the end. */
-function SuggestionRowContent({ icon, header, details, trailing }: {
+export function SuggestionRowContent({ icon, header, details, trailing }: {
     icon: ComponentChildren;
     header: ComponentChildren;
     details?: ComponentChildren;
@@ -907,6 +932,11 @@ function rowGroup(suggestion: Suggestion) {
         default:
             return "note";
     }
+}
+
+/** Whether picking the row links to a note that exists, rather than creating one first. */
+function isExistingNote(suggestion: Suggestion) {
+    return !!suggestion.notePath && rowGroup(suggestion) !== "create";
 }
 
 /**

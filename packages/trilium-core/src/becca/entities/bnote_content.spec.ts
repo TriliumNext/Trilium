@@ -15,6 +15,7 @@ import Module from "module";
 import { encodeUtf8, unwrapStringOrBuffer } from "../../services/utils/binary.js";
 import { buildNote } from "../../test/becca_easy_mocking.js";
 import type BNote from "./bnote.js";
+import { toAttachmentDownloadLinks } from "./bnote.js";
 
 // executeScript() does a lazy `require("../../services/script.js")` to avoid a
 // circular import. That bare-`.js` require is resolvable only in the bundled
@@ -724,5 +725,20 @@ describe("BNote content / misc getters", () => {
             const note = createNote();
             expect(note.shareId).toBe(note.noteId);
         });
+    });
+});
+
+describe("toAttachmentDownloadLinks", () => {
+    it("links to the copies of the attachments, reading each link once", () => {
+        const ids = new Map([ [ "att1", "copy1" ] ]);
+        const link = (attachmentId: string) =>
+            `<a href="#root/n?viewMode=attachments&amp;attachmentId=${attachmentId}">x</a>`;
+        expect(toAttachmentDownloadLinks(`${link("att1")}${link("other")}`, ids))
+            .toBe(`<a href="api/attachments/copy1/download">x</a>${link("other")}`);
+
+        const unclosed = `href="attachmentId=${"0".repeat(100_000)}`;
+        const start = performance.now();
+        expect(toAttachmentDownloadLinks(unclosed, ids)).toBe(unclosed);
+        expect(performance.now() - start).toBeLessThan(500);
     });
 });

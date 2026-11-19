@@ -22,6 +22,8 @@ Since v0.107.0, a single table can also be made wider than the content width, in
 
 > [!NOTE]
 > Some [note types](../../Note%20Types.md) are full width by default, such as the <a class="reference-link" href="../../Note%20Types/Canvas.md">Canvas</a>. In that case the _Full width_ toggle will not be displayed and the label will have no effect.
+> 
+> An [attachment](../Notes/Attachments.md) opened on its own follows the same rule as a note of its kind: a picture, a drawing, a PDF, a video, an audio file or an Excel workbook takes the full width, whatever the width of the note it belongs to.
 
 ## Shared notes
 

@@ -91,6 +91,8 @@ When a provider is configured in <a class="reference-link" href="Basic%20Concep
 
 The models are retrieved dynamically from the provider, only when the model selection list is visible. To alter the list of models, simply press the Edit button in the model selection box.
 
+If the models can't be retrieved, the list shows why (for example a refused connection or a wrong API key). To try again after fixing the cause (such as starting a local server), press _Retry_.
+
 Pricing information is displayed for known models. The pricing information (price per million tokens) is embedded in the application (using a subset of LiteLLM's data) and is updated with new versions of Trilium. Local providers are considered free, whereas custom endpoint providers don't offer any pricing information.
 
 ## Features
@@ -104,6 +106,8 @@ Where the search comes from is chosen in the _Web search_ submenu of the <span c
 *   _Disabled_ turns web search off for this chat.
 *   _Use the model's built-in search_, the default, lets the model search with its provider's own search. Anthropic, OpenAI, Google Gemini and DeepSeek models have one, as do Claude Code, Google Antigravity and OpenAI Codex. OpenRouter, Ollama, LM Studio and custom endpoints don't, so this choice is disabled for their models. DeepSeek's search is billed per search on your DeepSeek account and works only with DeepSeek's own endpoint, not with a custom base URL.
 *   A search provider (Brave Search, Tavily, Exa, Serper, Perplexity or SearXNG) searches through that service instead, whichever model is answering. Search providers are added in the _Search Providers_ section of the AI settings, which _Manage search providers_ at the bottom of the submenu opens. The browser version can't use Brave Search, Exa or Perplexity, whose services refuse requests made from a web page, so they're shown disabled there.
+
+After the connection details, adding a search provider runs a test search and shows its first results, or the reason it failed (for example a refused connection or a wrong API key). _Retry_ runs the test again; _Add anyway_ adds the provider despite the failure, which helps when its service isn't running yet. Editing a search provider runs the test again only when its API key or address changed.
 
 To use SearXNG, enable its JSON output by adding `json` to the search formats in the instance's `settings.yml`. SearXNG turns JSON off by default, and without it every search fails.
 

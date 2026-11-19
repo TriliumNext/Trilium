@@ -1,7 +1,7 @@
 import "../attribute_widgets/attribute_kind.css";
 import "./AttributeList.css";
 
-import { promotedAttributeDefinitionParser } from "@triliumnext/commons";
+import promotedAttributeDefinitionParser from "@triliumnext/commons/src/lib/promoted_attribute_definition_parser.js";
 import clsx from "clsx";
 import { ComponentChildren, createPortal, HTMLAttributes } from "preact";
 import { useContext, useEffect, useRef, useState } from "preact/hooks";
@@ -9,7 +9,10 @@ import { useContext, useEffect, useRef, useState } from "preact/hooks";
 import FAttribute from "../../entities/fattribute";
 import FNote from "../../entities/fnote";
 import contextMenu, { MenuItem } from "../../menus/context_menu";
-import { copyAttributesToClipboard, getHeldAttributes, holdAttributes, mergePastedAttributes, readAttributes, writeAttributes } from "../../services/attribute_clipboard";
+import {
+    copyAttributesToClipboard, getHeldAttributes, holdAttributes, mergePastedAttributes,
+    readAttributes, writeAttributes
+} from "../../services/attribute_clipboard";
 import type { Attribute } from "../../services/attribute_parser";
 import attributes, { isBuiltinAttribute } from "../../services/attributes";
 import dialog from "../../services/dialog";
@@ -19,7 +22,9 @@ import type { SidebarSectionId } from "../../services/in_app_help";
 import server from "../../services/server";
 import toast from "../../services/toast";
 import { getErrorMessage, isMobile } from "../../services/utils";
-import { AttributeDetail, AttributeDetailOpts, AttributeForm, AttrType, DEFINITION_TYPES, getAttrType } from "../attribute_widgets/attribute_detail";
+import {
+    AttributeDetail, AttributeDetailOpts, AttributeForm, AttrType, DEFINITION_TYPES, getAttrType
+} from "../attribute_widgets/attribute_detail";
 import { attributeKindIcon, RELATION_DEFINITION_TYPE } from "../attribute_widgets/attribute_types";
 import { ColorChip, renderLabelValue } from "../attribute_widgets/label_value_display";
 import ActionButton from "../react/ActionButton";
@@ -27,9 +32,12 @@ import SimpleBadge from "../react/Badge";
 import Dropdown from "../react/Dropdown";
 import FormCheckbox from "../react/FormCheckbox";
 import { FormDropdownDivider, FormListHeader, FormListItem } from "../react/FormList";
-import { useActiveNoteContext, useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useActiveNoteContext } from "../react/hooks/tree";
 import Icon from "../react/Icon";
-import { DetailPane, MasterPane, useMasterDetail, useMasterDetailPage } from "../react/master_detail";
+import {
+    DetailPane, MasterPane, useMasterDetail, useMasterDetailPage
+} from "../react/master_detail";
 import NoItems from "../react/NoItems";
 import NoteLink from "../react/NoteLink";
 import { ParentComponent } from "../react/react_utils";

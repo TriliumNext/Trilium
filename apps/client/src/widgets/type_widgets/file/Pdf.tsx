@@ -1,3 +1,4 @@
+import { escapeHtml } from "@triliumnext/commons/src/lib/utils.js";
 import { useEffect, useRef } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
@@ -6,11 +7,16 @@ import type { NoteContextDataMap } from "../../../components/note_context";
 import FBlob from "../../../entities/fblob";
 import FNote from "../../../entities/fnote";
 import { copyReferenceWithToast } from "../../../services/clipboard_ext";
+import { getTocUrl } from "../../../services/link";
+import { takeLinkTarget } from "../../../services/link_targets";
 import open from "../../../services/open";
 import options from "../../../services/options";
 import { useViewModeConfig } from "../../collections/NoteList";
-import { useBlobEditorSpacedUpdate, useEffectiveReadOnly, useTriliumEvent } from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useEffectiveReadOnly, useLinkTargetLanding } from "../../react/hooks/note_context";
+import { useBlobEditorSpacedUpdate } from "../../react/hooks/editor";
 import PdfViewer, { getPdfUrl } from "./PdfViewer";
+import { useTocBuild } from "./toc_build";
 
 /**
  * How long annotating is left to settle before a save. Longer than the second an editor of text
@@ -46,6 +52,11 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
      * not send its data again on the way back.
      */
     const publishedRef = useRef(new Map<PdfContextDataKey, unknown>());
+    /** How many times the iframe has loaded a viewer. */
+    const loadCountRef = useRef(0);
+    /** The load count when the viewer was asked for the bytes of each save. */
+    const saveLoadsRef = useRef(new WeakMap<Blob, number>());
+    const tocBuild = useTocBuild(iframeRef, getTocUrl("notes", note.noteId), !!note.isProtected);
 
     function publish<K extends PdfContextDataKey>(key: K, value: NoteContextDataMap[K]) {
         publishedRef.current.set(key, value);
@@ -68,24 +79,24 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
     }
 
     /**
-     * Scrolls to the page or annotation a link opened the note at, once the viewer is shown and has
-     * listed its annotations, which it does once it can scroll to one.
+     * Scrolls to the heading, page or annotation a link opened the note at, once the viewer is
+     * shown and has listed its annotations, which it does once it can scroll to one.
      */
     function revealLinkTarget() {
-        const viewScope = noteContext.viewScope;
-        if (!isShown() || !publishedRef.current.has("pdfAnnotations") || !viewScope?.page) return;
+        if (!isShown() || !publishedRef.current.has("pdfAnnotations")) return;
+        const target = takeLinkTarget(noteContext.viewScope, [ "page", "annotation", "heading" ]);
+        if (!target) return;
 
-        const pageNumber = Number.parseInt(viewScope.page, 10);
-        const annotationId = viewScope.annotation;
-        viewScope.page = undefined;
-        viewScope.annotation = undefined;
-        if (!(pageNumber >= 1)) return;
+        const { page, annotation: annotationId, heading: headingId } = target;
+        if (headingId) {
+            postToViewer({ type: "trilium-scroll-to-heading", headingId, pageNumber: page });
+        } else if (page) {
+            postToViewer({ type: "trilium-scroll-to-annotation", annotationId, pageNumber: page });
+        }
+    }
 
-        iframeRef.current?.contentWindow?.postMessage({
-            type: "trilium-scroll-to-annotation",
-            annotationId,
-            pageNumber
-        }, window.location.origin);
+    function postToViewer(message: object) {
+        iframeRef.current?.contentWindow?.postMessage(message, window.location.origin);
     }
 
     const spacedUpdate = useBlobEditorSpacedUpdate({
@@ -101,10 +112,12 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
                     reject(new Error("Timeout while waiting for blob response"));
                 }, 10_000);
 
+                const loadCount = loadCountRef.current;
                 const onMessageReceived = (event: PdfMessageEvent) => {
                     if (event.data.type !== "pdfjs-viewer-blob") return;
                     if (event.data.noteId !== note.noteId || event.data.ntxId !== noteContext.ntxId) return;
                     const blob = new Blob([event.data.data as Uint8Array<ArrayBuffer>], { type: note.mime });
+                    saveLoadsRef.current.set(blob, loadCount);
 
                     clearTimeout(timeout);
                     window.removeEventListener("message", onMessageReceived);
@@ -122,6 +135,12 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
                 publishedRef.current.clear();
                 iframeRef.current.contentWindow.location.reload();
             }
+        },
+        dataSaved(savedData) {
+            // A save that completes after the viewer loaded another document starts nothing.
+            if (saveLoadsRef.current.get(savedData) !== loadCountRef.current) return;
+            void savedData.arrayBuffer()
+                .then((buffer) => tocBuild.requestBuild(new Uint8Array(buffer)));
         },
         replaceWithoutRevision: true
     });
@@ -150,6 +169,10 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
                 options.save("pdfSignatures", event.data.data);
             }
 
+            if (event.data.type === "pdfjs-viewer-toc-build") {
+                void tocBuild.saveBuild(event.data);
+            }
+
             if (event.data.type === "pdfjs-viewer-toc") {
                 if (event.data.data) {
                     // Convert PDF outline to HeadingContext format
@@ -158,10 +181,9 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
                         headings,
                         activeHeadingId: null,
                         scrollToHeading: (heading) => {
-                            iframeRef.current?.contentWindow?.postMessage({
-                                type: "trilium-scroll-to-heading",
-                                headingId: heading.id
-                            }, window.location.origin);
+                            postToViewer({
+                                type: "trilium-scroll-to-heading", headingKey: heading.id
+                            });
                         }
                     });
                 } else {
@@ -291,7 +313,6 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
         for (const key of publishedRef.current.keys()) {
             republish(key);
         }
-        revealLinkTarget();
     }, [ isVisible ]);
 
     function republish<K extends PdfContextDataKey>(key: K) {
@@ -301,12 +322,7 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
         }
     }
 
-    // A link to the PDF this pane already shows changes no content, so nothing else re-reads it.
-    useTriliumEvent("noteSwitched", ({ noteContext: switchedContext }) => {
-        if (switchedContext.ntxId !== noteContext.ntxId) return;
-        if (switchedContext.note?.noteId !== note.noteId) return;
-        revealLinkTarget();
-    });
+    useLinkTargetLanding({ note, ntxId: noteContext.ntxId, isVisible }, revealLinkTarget);
 
     useTriliumEvent("customDownload", async ({ ntxId }) => {
         if (ntxId !== noteContext.ntxId) return;
@@ -340,6 +356,8 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
             tabIndex={300}
             pdfUrl={getPdfUrl(`notes/${note.noteId}/open`)}
             onLoad={() => {
+                loadCountRef.current++;
+                void tocBuild.requestBuild();
                 const win = iframeRef.current?.contentWindow;
                 if (win) {
                     win.TRILIUM_VIEW_HISTORY_STORE = historyConfig.config;
@@ -363,7 +381,7 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
  * The link that opens a PDF note at `pageNumber`, and at the annotation `annotationId` on it when
  * the document already stores that annotation.
  */
-export function pdfReference(notePath: string, pageNumber: number, annotationId?: string) {
+function pdfReference(notePath: string, pageNumber: number, annotationId?: string) {
     let reference = `#${notePath}?page=${pageNumber}`;
     if (annotationId && STORED_ANNOTATION_ID.test(annotationId)) {
         reference += `&annotation=${encodeURIComponent(annotationId)}`;
@@ -373,29 +391,16 @@ export function pdfReference(notePath: string, pageNumber: number, annotationId?
 
 interface PdfHeading {
     level: number;
+    /** HTML, as the sidebar renders the headings of every note type. */
     text: string;
+    /** The key of the heading in the viewer. */
     id: string;
     element: null;
 }
 
+/** The headings of the sidebar. The titles of a PDF are plain text, so they are escaped. */
 function convertPdfOutlineToHeadings(outline: PdfOutlineItem[]): PdfHeading[] {
-    const headings: PdfHeading[] = [];
-
-    function flatten(items: PdfOutlineItem[]) {
-        for (const item of items) {
-            headings.push({
-                level: item.level + 1,
-                text: item.title,
-                id: item.id,
-                element: null // PDFs don't have DOM elements
-            });
-
-            if (item.items && item.items.length > 0) {
-                flatten(item.items);
-            }
-        }
-    }
-
-    flatten(outline);
-    return headings;
+    return outline.map(({ id, title, level }) => ({
+        id, level, text: escapeHtml(title), element: null
+    }));
 }

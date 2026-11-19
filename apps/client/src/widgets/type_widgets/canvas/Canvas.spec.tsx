@@ -17,8 +17,8 @@ vi.mock("@excalidraw/excalidraw", () => ({
         );
     }
 }));
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...await importOriginal<typeof import("../../react/hooks")>(),
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useTriliumOption: () => [ "en" ],
     useTriliumOptionBool: (name: keyof typeof options) => [ options[name] ]
 }));

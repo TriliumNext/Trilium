@@ -1,4 +1,5 @@
-import { AttributeRow, buildNoteTypeId } from "@triliumnext/commons";
+import type { AttributeRow } from "@triliumnext/commons";
+import { buildNoteTypeId } from "@triliumnext/commons/src/lib/note_type_ids.js";
 
 import FNote from "../../../entities/fnote";
 import { setAttribute } from "../../../services/attributes";

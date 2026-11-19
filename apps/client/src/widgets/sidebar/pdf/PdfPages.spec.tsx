@@ -32,10 +32,13 @@ vi.mock("react-window", () => ({
 vi.mock("../../../services/i18n", () => ({
     t: (key: string, options?: Record<string, unknown>) => `${key}(${JSON.stringify(options ?? {})})`
 }));
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
+vi.mock("../../react/hooks/note", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/note")>()),
+    useNoteProperty: (_note: FNote, property: string) => (shown.note as any)?.[property]
+}));
+vi.mock("../../react/hooks/tree", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/tree")>()),
     useActiveNoteContext: () => ({ note: shown.note, noteContext: shown.noteContext }),
-    useNoteProperty: (_note: FNote, property: string) => (shown.note as any)?.[property],
     useGetContextData: () => shown.pages
 }));
 

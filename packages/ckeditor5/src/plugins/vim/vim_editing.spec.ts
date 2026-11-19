@@ -89,8 +89,9 @@ describe("Vim mode line editing", () => {
             const editor = await createVimEditor(aside(paragraphs("[]a", "b")) + paragraphs("z"));
             press(editor, "2dd");
             expect(getContent(editor)).toBe(aside(paragraphs("")) + paragraphs("z"));
+            // The only line outside the aside goes too, so an empty one takes its place.
             press(editor, "ujdj");
-            expect(getContent(editor)).toBe(aside(paragraphs("a")));
+            expect(getContent(editor)).toBe(aside(paragraphs("a")) + paragraphs(""));
 
             setVimData(editor, paragraphs("[]x") + aside(paragraphs("a")) + paragraphs("z"));
             press(editor, "dj");

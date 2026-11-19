@@ -8,7 +8,7 @@ import { t } from "../../services/i18n";
 import { formatShortcut, joinShortcut } from "../../services/keyboard_shortcut_display";
 import type { ActionButtonProps } from "./ActionButton";
 import Dropdown, { DropdownPanel, type DropdownProps } from "./Dropdown";
-import { useStaticTooltip } from "./hooks";
+import { useStaticTooltip } from "./hooks/tooltip";
 
 /**
  * Where a group stands over what it is put on: which edge of it, and where along that edge. A group

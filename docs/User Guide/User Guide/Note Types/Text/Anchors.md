@@ -37,10 +37,14 @@ To fix this, simply go that note and make any change (e.g. inserting a space), t
 
 1.  Create an anchor in the target note using the same process as described above.
 2.  In another note, press <kbd>Ctrl</kbd>+<kbd>L</kbd> to insert an internal link. Select the target note containing Anchors.
-3.  If the target note contains Anchors, a section will appear underneath the note selector with the list of Anchors.
+3.  The headings and anchors of the target note are listed below the _Link title_. Under _Link to an anchor_, click the desired anchor to check it.
 4.  Add the link normally.
 
 Clicking on a reference link pointing to an anchor will automatically scroll to the desired section.
+
+### Linking to anchors through the `@` menu
+
+Since v0.108.0, type `@` in the text and pick the target note. Then type part of the anchor's name and press <kbd>Enter</kbd>, or select the anchor under _Link to an anchor_. See [In-place linking](Links/Internal%20\(reference\)%20links.md).
 
 ### Linking to anchors through the bookmark toolbar
 

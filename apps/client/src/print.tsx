@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preac
 import Component from "./components/component";
 import FNote from "./entities/fnote";
 import content_renderer from "./services/content_renderer";
+import { createFontStylesheet } from "./services/font";
 import froca from "./services/froca";
 import { waitForPendingRenders } from "./services/pending_renders";
 import { isElectron } from "./services/utils";
@@ -43,11 +44,8 @@ export async function main() {
         document.head.appendChild(style);
     }
 
-    // Load the user's font preferences so that --detail-font-family is available.
-    const fontLink = document.createElement("link");
-    fontLink.rel = "stylesheet";
-    fontLink.href = "api/fonts";
-    document.head.appendChild(fontLink);
+    // The font options declare `--detail-font-family`, which the printed content is drawn in.
+    document.head.appendChild(createFontStylesheet(window.glob.fontCss ?? ""));
 
     const note = await froca.getNote(noteId);
     console.debug("[print] Note loaded:", noteId, note?.type);
@@ -165,9 +163,11 @@ export function SingleNoteRenderer({ note, onReady }: RendererProps) {
             await document.fonts.ready;
         }
 
-        load().then(() => requestAnimationFrame(() => onReady({
-            type: "single-note"
-        }))).catch((error: unknown) => {
+        let cancelled = false;
+        load().then(() => requestAnimationFrame(() => {
+            if (!cancelled) onReady({ type: "single-note" });
+        })).catch((error: unknown) => {
+            if (cancelled) return;
             console.error("[print] Rendering the note failed:", error);
             onReady({
                 type: "error",
@@ -175,6 +175,9 @@ export function SingleNoteRenderer({ note, onReady }: RendererProps) {
                 stack: error instanceof Error ? error.stack : undefined
             });
         });
+        return () => {
+            cancelled = true;
+        };
     }, [ note ]);
 
     return <>

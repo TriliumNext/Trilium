@@ -8,22 +8,27 @@ import Component from "../../components/component";
 import NoteContext from "../../components/note_context";
 import FNote from "../../entities/fnote";
 import { t } from "../../services/i18n";
-import { copyImageReferenceToClipboard } from "../../services/image";
 import { getHelpUrlForNote } from "../../services/in_app_help";
-import { downloadFileNote, openNoteExternally } from "../../services/open";
 import server from "../../services/server";
 import toast from "../../services/toast";
 import tree from "../../services/tree";
 import { clearBrowserCache, createImageSrcUrl, isMobile } from "../../services/utils";
 import { ViewTypeOptions } from "../collections/interface";
-import { showImageCompressionDialog } from "../dialogs/image_compression/image_compression_dialog";
 import ActionButton, { ActionButtonProps } from "../react/ActionButton";
 import { ButtonGroup } from "../react/Button";
-import { FormFileUploadActionButton, FormFileUploadFormListItem, FormFileUploadProps } from "../react/FormFileUpload";
+import {
+    FormFileUploadActionButton, FormFileUploadFormListItem, FormFileUploadProps
+} from "../react/FormFileUpload";
 import { FormListItem } from "../react/FormList";
 import { openHelpPageFor } from "../react/HelpButton";
-import { useEffectiveReadOnly, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useTriliumEvent, useTriliumEvents, useTriliumOption } from "../react/hooks";
-import { DISPLAY_MODE_OPTIONS, isSplitEditorForcedReadOnly, resolveDisplayMode } from "../type_widgets/helpers/split_editor_mode";
+import { useTriliumEvent, useTriliumEvents } from "../react/hooks/events";
+import { useNoteLabel, useNoteLabelBoolean, useNoteProperty } from "../react/hooks/note";
+import { useTriliumOption } from "../react/hooks/options";
+import { useEffectiveReadOnly } from "../react/hooks/note_context";
+import {
+    DISPLAY_MODE_OPTIONS, isSplitEditorForcedReadOnly, resolveDisplayMode
+} from "../type_widgets/helpers/split_editor_mode";
+import { WithLazyModule } from "../react/LazyComponent";
 import { ParentComponent } from "../react/react_utils";
 
 interface NoteActionsCustomProps {
@@ -174,7 +179,7 @@ function OpenExternallyButton({ note, noteMime }: NoteActionsCustomInnerProps) {
             icon="bx bx-link-external"
             text={t("file_properties.open")}
             disabled={note.isProtected}
-            onClick={() => openNoteExternally(note.noteId, noteMime)}
+            onClick={() => void import("../../services/open").then(({ openNoteExternally }) => openNoteExternally(note.noteId, noteMime))}
         />
     );
 }
@@ -200,18 +205,38 @@ function DownloadFileButton({ note, parentComponent, ntxId }: NoteActionsCustomI
             icon="bx bx-download"
             text={t("file_properties.download")}
             disabled={!note.isContentAvailable()}
-            onClick={() => downloadFileNote(note, parentComponent, ntxId)}
+            onClick={() => void import("../../services/open").then(({ downloadFileNote }) => downloadFileNote(note, parentComponent, ntxId))}
         />
     );
 }
 
 //#region Floating buttons
+const loadImageService = () => import("../../services/image");
+
+/**
+ * Copies a reference to the note's image. The image service loads as the button shows, so that the
+ * copy runs within the click, which the clipboard requires.
+ */
 function CopyReferenceToClipboardButton({ note, noteType, isDefaultViewMode }: NoteActionsCustomInnerProps) {
-    const hiddenImageCopyRef = useRef<HTMLDivElement>(null);
     const isEnabled = ["mermaid", "canvas", "mindMap", "image"].includes(noteType)
         && note.isContentAvailable() && isDefaultViewMode;
 
     return isEnabled && (
+        <WithLazyModule load={loadImageService}>
+            {({ copyImageReferenceToClipboard }) => (
+                <CopyReferenceButton note={note} copyImageReferenceToClipboard={copyImageReferenceToClipboard} />
+            )}
+        </WithLazyModule>
+    );
+}
+
+function CopyReferenceButton({ note, copyImageReferenceToClipboard }: {
+    note: FNote;
+    copyImageReferenceToClipboard: ($imageWrapper: JQuery<HTMLElement>) => void;
+}) {
+    const hiddenImageCopyRef = useRef<HTMLDivElement>(null);
+
+    return (
         <>
             <NoteAction
                 text={t("image_properties.copy_reference_to_clipboard")}
@@ -378,4 +403,12 @@ function NoteActionWithFileUpload({ text, ...props }: Pick<ActionButtonProps, "t
         ? <FormFileUploadFormListItem {...props}>{text}</FormFileUploadFormListItem>
         : <FormFileUploadActionButton text={text} {...props} />
     );
+}
+
+type ImageCompressionDialog = typeof import("../dialogs/image_compression/image_compression_dialog");
+
+/** Opens the image compression dialog, whose module loads on the first use. */
+export function showImageCompressionDialog(...args: Parameters<ImageCompressionDialog["showImageCompressionDialog"]>) {
+    return import("../dialogs/image_compression/image_compression_dialog")
+        .then(({ showImageCompressionDialog }) => showImageCompressionDialog(...args));
 }

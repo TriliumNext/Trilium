@@ -17,7 +17,8 @@ export function formatDistance(meters: number, system: MeasurementSystem): strin
     if (system === "imperial") {
         return t("gpx_preview.unit_mi", { value: round(meters / METERS_PER_MILE) });
     }
-    if (meters < 1000) {
+    // Decide by the rounded metres, so 999.6 m reads 1 km rather than 1,000 m.
+    if (Math.round(meters) < 1000) {
         return t("gpx_preview.unit_m", { value: Math.round(meters).toLocaleString() });
     }
     return t("gpx_preview.unit_km", { value: round(meters / 1000) });

@@ -15,6 +15,7 @@ import Uploadfileplugin from "./plugins/file_upload/uploadfileplugin.js";
 import FindInLinkWidgets from "./plugins/find_in_link_widgets.js";
 import TriliumFormatPainter from "./plugins/format_painter/format_painter.js";
 import ContentEmbed from "./plugins/content_embed/content_embed.js";
+import InlineWidgetCaret from "./plugins/inline_widget_caret.js";
 import InternalLinkPlugin from "./plugins/internallink.js";
 import LinkEmbed from "./plugins/link_embed/link_embed.js";
 import TriliumSlashCommands from "./plugins/mention/slash_commands.js";
@@ -76,6 +77,7 @@ describe("plugin lists", () => {
     it("CORE_PLUGINS includes the Trilium-specific core plugins", () => {
         expect(CORE_PLUGINS).toContain(MentionCustomization);
         expect(CORE_PLUGINS).toContain(ReferenceLink);
+        expect(CORE_PLUGINS).toContain(InlineWidgetCaret);
     });
 
     it("COMMON_PLUGINS includes the in-tree Trilium feature plugins", () => {

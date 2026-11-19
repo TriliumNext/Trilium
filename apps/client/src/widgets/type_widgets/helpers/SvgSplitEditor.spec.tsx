@@ -65,8 +65,8 @@ vi.mock("./SplitEditor", () => ({
 }));
 
 // The bootstrap tooltip the control buttons wear needs real layout, which happy-dom hasn't.
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<object>()),
+vi.mock("../../react/hooks/tooltip", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/tooltip")>()),
     useStaticTooltip: () => {}
 }));
 

@@ -14,12 +14,12 @@ const state = vi.hoisted(() => ({
 
 vi.mock("electron", () => ({
     app: { getPath: () => state.userData },
-    screen: { getAllDisplays: () => state.displays }
+    screen: { getAllDisplays: () => state.displays, getDisplayMatching: () => state.displays[0] }
 }));
 
 vi.mock("@triliumnext/core", () => ({ getLog: () => ({ error: state.logError }) }));
 
-const { createWindowStateKeeper } = await import("./window_state.js");
+const { createWindowStateKeeper, keepInsideWorkArea } = await import("./window_state.js");
 
 const DEFAULTS = { defaultWidth: 1200, defaultHeight: 800 };
 let tempDir = "";
@@ -187,5 +187,31 @@ describe("createWindowStateKeeper", () => {
         win.fire("close");
         expect(() => win.fire("closed")).not.toThrow();
         expect(state.logError).toHaveBeenCalledWith(expect.stringContaining("Could not save the window state"));
+    });
+});
+
+describe("keepInsideWorkArea", () => {
+    function windowAt(x: number, y: number, width = 1000, height = 800) {
+        return { getBounds: () => ({ x, y, width, height }), setPosition: vi.fn() };
+    }
+
+    it("moves a window that runs past an edge of the work area back inside it", () => {
+        state.displays = [ { workArea: { x: 1920, y: 0, width: 1920, height: 1040 } } ];
+
+        const pastBottomRight = windowAt(3500, 900);
+        keepInsideWorkArea(pastBottomRight as never);
+        expect(pastBottomRight.setPosition).toHaveBeenCalledWith(2840, 240);
+
+        const pastTopLeft = windowAt(1800, -50);
+        keepInsideWorkArea(pastTopLeft as never);
+        expect(pastTopLeft.setPosition).toHaveBeenCalledWith(1920, 0);
+
+        const larger = windowAt(2000, 100, 2500, 1200);
+        keepInsideWorkArea(larger as never);
+        expect(larger.setPosition).toHaveBeenCalledWith(1920, 0);
+
+        const inside = windowAt(2200, 100);
+        keepInsideWorkArea(inside as never);
+        expect(inside.setPosition).not.toHaveBeenCalled();
     });
 });

@@ -79,7 +79,7 @@ describe("aside commands", () => {
             editor.execute("insertAside");
 
             expect(getModelData(editor.model, { withoutSelection: true }))
-                .toBe(aside(paragraph("A") + paragraph("B")));
+                .toBe(aside(paragraph("A") + paragraph("B")) + paragraph(""));
         });
 
         it("is disabled in an aside, on one and where no block can go", () => {
@@ -105,6 +105,16 @@ describe("aside commands", () => {
             editor.execute("undo");
 
             expect(editor.getData()).toBe(before);
+        });
+
+        it("leaves an empty block beside the aside of an empty document, in one undo step", () => {
+            setModelData(editor.model, paragraph("[]"));
+
+            editor.execute("insertAside");
+            expect(getModelData(editor.model)).toBe(aside(paragraph("[]")) + paragraph(""));
+
+            editor.execute("undo");
+            expect(getModelData(editor.model)).toBe(paragraph("[]"));
         });
     });
 
@@ -138,15 +148,16 @@ describe("aside commands", () => {
     });
 
     it("sets the position of an aside in one undo step", () => {
-        setModelData(editor.model, `[${aside(paragraph("A"), WRAPPED)}]`);
+        setModelData(editor.model, `[${aside(paragraph("A"), WRAPPED)}]${paragraph("Text")}`);
         const command = editor.commands.get("asidePosition");
         expect([ command?.isEnabled, command?.value ]).toEqual([ true, "wrap-right" ]);
 
         editor.execute("asidePosition", { value: "center" });
-        expect(editor.getData()).toBe("<aside><p>A</p></aside>");
+        expect(editor.getData()).toBe("<aside><p>A</p></aside><p>Text</p>");
 
         editor.execute("undo");
-        expect(editor.getData()).toBe("<aside data-position=\"wrap-right\"><p>A</p></aside>");
+        expect(editor.getData())
+            .toBe("<aside data-position=\"wrap-right\"><p>A</p></aside><p>Text</p>");
     });
 
     describe("asideColor", () => {
@@ -159,24 +170,25 @@ describe("aside commands", () => {
         }
 
         it("sets and removes the color of the aside, from inside it or with it selected", () => {
-            setModelData(editor.model, aside(paragraph("A[]")));
+            const text = paragraph("Text");
+            setModelData(editor.model, aside(paragraph("A[]")) + text);
             const command = getCommand();
             expect([ command.isEnabled, command.value ]).toEqual([ true, "#555555" ]);
 
             editor.execute("asideColor", { value: "#e64d4d" });
             expect(getModelData(editor.model))
-                .toBe(aside(paragraph("A[]"), ` backgroundColor="#e64d4d"${WRAPPED}`));
+                .toBe(aside(paragraph("A[]"), ` backgroundColor="#e64d4d"${WRAPPED}`) + text);
             expect(command.value).toBe("#e64d4d");
 
             // The Remove color button of the dropdown.
             editor.execute("asideColor", { value: null });
-            expect(getModelData(editor.model)).toBe(aside(paragraph("A[]"), WRAPPED));
+            expect(getModelData(editor.model)).toBe(aside(paragraph("A[]"), WRAPPED) + text);
             expect(command.value).toBeUndefined();
 
-            setModelData(editor.model, `[${aside(paragraph("A"), WRAPPED)}]`);
+            setModelData(editor.model, `[${aside(paragraph("A"), WRAPPED)}]${text}`);
             editor.execute("asideColor", { value: "#4d99e6" });
             expect(getModelData(editor.model, { withoutSelection: true }))
-                .toBe(aside(paragraph("A"), ` backgroundColor="#4d99e6"${WRAPPED}`));
+                .toBe(aside(paragraph("A"), ` backgroundColor="#4d99e6"${WRAPPED}`) + text);
         });
 
         it("is disabled outside an aside", () => {

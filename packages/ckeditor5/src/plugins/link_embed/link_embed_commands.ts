@@ -6,6 +6,7 @@ import {
     type ModelTextProxy, type ModelWriter
 } from 'ckeditor5';
 
+import { copyColors } from "../colored_widgets.js";
 import { getCaption, getCaptionedEmbed, isContentEmbed } from '../content_embed/content_embed.js';
 import {
     createChangedMediaEmbed, createMediaEmbed, isMediaEmbed
@@ -212,6 +213,7 @@ export class ChangeLinkDisplayCommand extends Command {
                 const text = isHttpUrl(url)
                     ? writer.createText(title || url, { linkHref: url })
                     : writer.createText(url);
+                copyColors(writer, selected, text);
                 keepCaptionText(writer, selected);
                 model.insertContent(text, writer.createRangeOn(selected));
             });
@@ -354,17 +356,13 @@ async function replaceLinkWithPreview(
         const currentRange = liveRange.toRange();
 
         model.change(writer => {
-            let linkStillThere = false;
-            for (const { item } of currentRange.getWalker()) {
-                if (item.is('$textProxy') && item.getAttribute('linkHref') === href) {
-                    linkStillThere = true;
-                    break;
-                }
-            }
-            if (!linkStillThere) return;
+            const link = Array.from(currentRange.getItems()).find((item) =>
+                item.is("$textProxy") && item.getAttribute("linkHref") === href);
+            if (!link) return;
 
             const element = createLinkPreview(writer, mode,
                 getPreviewAttributes(editor, mode, href, metadata, title, description));
+            copyColors(writer, link, element);
 
             model.insertContent(element, currentRange);
             // The widget toolbar, with its Display dropdown, takes over from the link balloon.
@@ -442,6 +440,7 @@ function rebuildLinkWidget(
         }
     } else {
         replacement = createLinkPreview(writer, mode, attrs);
+        copyColors(writer, element, replacement);
         keepCaptionText(writer, element);
     }
     editor.model.insertContent(replacement, writer.createRangeOn(element));

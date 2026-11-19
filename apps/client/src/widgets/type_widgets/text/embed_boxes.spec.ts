@@ -1,4 +1,4 @@
-import { getNoteEmbedHref } from "@triliumnext/commons";
+import { getNoteEmbedHref } from "@triliumnext/commons/src/lib/content_embeds.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("./utils", () => ({

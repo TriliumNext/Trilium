@@ -1,11 +1,7 @@
-import {
-    isToolErrorResult,
-    type LlmCitation,
-    type LlmErrorDetails,
-    type LlmPermissionMode,
-    type LlmReasoningEffort,
-    type LlmUsage
+import type {
+    LlmCitation, LlmErrorDetails, LlmPermissionMode, LlmReasoningEffort, LlmUsage
 } from "@triliumnext/commons";
+import { isToolErrorResult } from "@triliumnext/commons/src/lib/llm_api.js";
 
 export type MessageType = "message" | "error" | "thinking";
 

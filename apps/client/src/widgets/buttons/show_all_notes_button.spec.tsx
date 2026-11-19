@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
 const activeContext = vi.hoisted(() => ({ hoistedNoteId: "root" as string | undefined }));
-vi.mock("../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../react/hooks")>()),
+vi.mock("../react/hooks/tree", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/tree")>()),
     useActiveNoteContext: () => ({ hoistedNoteId: activeContext.hoistedNoteId })
 }));
 

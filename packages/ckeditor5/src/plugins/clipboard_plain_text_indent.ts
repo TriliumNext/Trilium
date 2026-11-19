@@ -1,6 +1,12 @@
 import { ClipboardPipeline, Plugin, plainTextToHtml, UpcastWriter, viewToPlainText } from "ckeditor5";
 import type { Editor, EditingView, ViewDocumentClipboardInputEvent, ViewDocumentClipboardOutputEvent, ViewDocumentFragment, ViewElement, ViewNode } from "ckeditor5";
 
+/**
+ * The custom property of a view element that holds the element's text in the `text/plain`
+ * clipboard flavor. `viewToIndentedPlainText()` writes that text instead of the element.
+ */
+export const CLIPBOARD_PLAIN_TEXT_PROPERTY = "clipboard:plainText";
+
 /** The blocks that `IndentBlock` indents with a margin. */
 const INDENTABLE_BLOCKS = new Set(["p", "h1", "h2", "h3", "h4", "h5", "h6"]);
 
@@ -76,12 +82,14 @@ export function indentedPlainTextToHtml(editor: Editor, text: string): string | 
 
 /**
  * Serializes `fragment` as `viewToPlainText()` does, prefixing each line of an indented block with
- * one tab per level. The fragment is unchanged afterwards.
+ * one tab per level, and writing an element that carries {@link CLIPBOARD_PLAIN_TEXT_PROPERTY} as
+ * that text. The fragment is unchanged afterwards.
  */
 export function viewToIndentedPlainText(editor: Editor, fragment: ViewDocumentFragment): string {
     const view = editor.editing.view;
     const writer = new UpcastWriter(view.document);
     const offset = indentOffset(editor);
+    const restores = replaceWithPlainText(view, writer, fragment);
 
     const insertions: { parent: ViewElement; index: number; tabs: string }[] = [];
     for (const { item } of view.createRangeIn(fragment)) {
@@ -118,7 +126,48 @@ export function viewToIndentedPlainText(editor: Editor, fragment: ViewDocumentFr
         for (const text of inserted) {
             writer.remove(text);
         }
+        for (const restore of restores.reverse()) {
+            restore();
+        }
     }
+}
+
+/**
+ * Writes the text of each element in `fragment` that carries {@link CLIPBOARD_PLAIN_TEXT_PROPERTY}
+ * in place of its content, and returns the functions that undo it. A block element keeps its
+ * element, so that `viewToPlainText()` still separates it from its siblings. An inline element
+ * becomes a `span`, which `viewToPlainText()` separates from nothing.
+ */
+function replaceWithPlainText(
+    view: EditingView, writer: UpcastWriter, fragment: ViewDocumentFragment
+) {
+    const restores: (() => void)[] = [];
+    for (const item of Array.from(view.createRangeIn(fragment).getItems())) {
+        if (!item.is("element")) {
+            continue;
+        }
+
+        const plainText = item.getCustomProperty(CLIPBOARD_PLAIN_TEXT_PROPERTY);
+        if (typeof plainText !== "string") {
+            continue;
+        }
+
+        const text = writer.createText(plainText);
+        if (view.domConverter.blockElements.includes(item.name)) {
+            const children = writer.removeChildren(0, item.childCount, item);
+            writer.appendChild(text, item);
+            restores.push(() => {
+                writer.remove(text);
+                writer.appendChild(children, item);
+            });
+        } else {
+            const replacement = writer.createElement("span", null, text);
+            writer.replace(item, replacement);
+            restores.push(() => writer.replace(replacement, item));
+        }
+    }
+
+    return restores;
 }
 
 /** The width of one indent level, from the `indentBlock` config `IndentBlock` defaults to `40px`. */

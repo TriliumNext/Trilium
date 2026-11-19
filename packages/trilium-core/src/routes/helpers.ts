@@ -1,4 +1,5 @@
 import { isSvgMime } from "@triliumnext/commons";
+import { DetailedConflictError } from "../errors";
 import { Response } from "../http_interface";
 import becca from "../becca/becca";
 import BNote from "../becca/entities/bnote";
@@ -7,6 +8,18 @@ import protected_session from "../services/protected_session";
 import BAttachment from "../becca/entities/battachment";
 import { unwrapStringOrBuffer } from "../services/utils/binary";
 import { getContentDisposition, getInlineContentHeaders, sanitizeSvg, SVG_CONTENT_SECURITY_POLICY } from "../services/utils/index";
+
+/** The result of `fn`, or the answer of 409 with the details of a {@link DetailedConflictError}. */
+export function answerConflict<T>(fn: () => T): T | [number, object] {
+    try {
+        return fn();
+    } catch (e) {
+        if (e instanceof DetailedConflictError) {
+            return [ 409, e.details ];
+        }
+        throw e;
+    }
+}
 
 export function downloadNoteInt(noteId: string, res: Response, contentDisposition = true) {
     const note = becca.getNote(noteId);

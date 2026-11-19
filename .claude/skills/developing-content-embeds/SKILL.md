@@ -96,7 +96,32 @@ adds `ck-widget_selected` after `Widget` marks the selection and takes it away o
   its history. It is converted only for languages in
   `contentEmbed.inlineLanguages`, which `buildConfig()` in `text/config.ts` derives from
   `SOURCE_EMBED_TYPES` (`services/source_embeds.ts`); a code block of another language stays a
-  code block.
+  code block, unless it is an extended code block (below). The block ID is saved on the `<code>`,
+  where a code block of CKEditor keeps it and where `BlockReferenceEditing` reads it; one that an
+  earlier version saved on the `<pre>` is read too.
+- **Extended code blocks** (`extended_code_block.ts`, `isExtendedCodeBlock()`) are inline sources
+  of a language that is no diagram, shown in the code editor (`InlineCodeEmbed`). A `<pre>` with
+  the `extended-code-block` class is one. While the experimental feature `extendedCodeBlocks` is
+  on, the host sets `contentEmbed.isCodeBlockExtended`, and they replace the code blocks of
+  CKEditor: every `<pre><code>` loads as one, also in read-only content
+  (`prepareSourceEmbeds()`), and one at its defaults (Full, editable) is saved as the bare
+  `<pre><code class="language-…">` that CKEditor saves, without the class, so the note reads
+  the same with the feature off. The plugin stops the `execute` event of the `codeBlock` command
+  and turns the selected text blocks into blocks instead, so the button, the Markdown fence
+  autoformat, the slash command and Vim all make one; the command of CKEditor still runs for a
+  `codeBlock` element, which loads where the schema allows no embed. A block takes the list
+  attributes (`$listItem`), so it stays in its list item, and no other embed does. In the
+  editor, a block saved as `MIME_TYPE_AUTO`, or in no language of `MIME_TYPES_DICT`, takes the
+  language of `contentEmbed.detectLanguage()` (highlight.js, `detectCodeLanguage()`), written
+  outside the undo stack; a read-only box detects the language of a `MIME_TYPE_AUTO` block each
+  time. Only an editor whose host has content embed handlers gets the replacement: the chat
+  input and the mind map memo keep their code blocks. Where a text note renders without embed
+  boxes (tooltips, collection previews, text notes on a canvas or a slide),
+  `renderCodeBlockPreviews()` (`content_renderer_text.ts`) fills the `<pre>` and `<code>` of each
+  block with the static HTML of `renderCodeNotePreview()`, CodeMirror's highlighter in the code
+  note theme, and marks the `<pre>` `code-block-preview`; `formatCodeBlocks()` skips
+  `code.code-preview-content`. Print, Markdown notes and content that changes as it is typed
+  keep highlight.js.
 - **Media** (`media_embed.ts`, `ContentEmbedMedia`) is the _Embed_ display mode of a link
   preview that plays something (`getLinkPreviewPlayer()` in commons): a YouTube video
   (`embedType` `youtube`), or the video or audio file at its URL (`video`, `audio`). It keeps the
@@ -256,7 +281,7 @@ A change to a storage form reaches every reader, most of them outside the client
    `contentEmbedDisplayMode`, `contentEmbedPosition`, `setContentEmbedCodeView`,
    `convertLinkToEmbed`, `convertEmbedToLink`, `deleteContentEmbed`), the box-size rules and
    observables such as `isSelectedEmbedInline` and `selectedEmbedTools`. `inline_source.ts` adds
-   `insertInlineEmbed` and `extended_code_block.ts` `insertExtendedCodeBlock`.
+   `insertInlineEmbed`; `extended_code_block.ts` adds no command and redirects `codeBlock`.
    `deleteContentEmbed` serves any kind: `getDeleteAndConvertGroup()` in
    `apps/client/src/menus/link_context_menu.ts` ends the ⋮ menu of a note, an attachment, a video
    and an extended code block with it as _Delete block_, with a neutral icon, so it reads apart
@@ -278,7 +303,8 @@ A change to a storage form reaches every reader, most of them outside the client
    `buildConfig()` through a getter, and `bindContentEmbedHandlers()` in `text/config.ts` forwards
    each one **by name**: a member missing there is never called, and nothing fails.
    `buildConfig()` sets the rest itself: `pickNote()`, `inlineLanguages`,
-   `renderInlinePreview()`, `sanitizeHtml()` and `captureVideoThumbnail()`. The plugin never
+   `isCodeBlockExtended`, `detectLanguage()`, `renderInlinePreview()`, `sanitizeHtml()` and
+   `captureVideoThumbnail()`. The plugin never
    imports client code.
 3. **Box** (`text/utils.ts`). `loadEmbeddedNote()` and `loadEmbeddedAttachment()` render the
    content with `content_renderer`; `loadInlineEmbed()` loads the source type's component and
@@ -296,7 +322,10 @@ A change to a storage form reaches every reader, most of them outside the client
 ## The content component contract
 
 A content component receives the content and an optional `ContentEditor`
-(`canEdit()`, `getUnsavedContent()`, `scheduleSave()`, `release()`; no editor = read-only). Source
+(`canEdit()`, `getUnsavedContent()`, `scheduleSave()`, `release()`; no editor = read-only). Content
+that records its changes since its base passes `ChangeRecordHooks` (`services/note_save.ts`) as the
+third argument of `scheduleSave()`, as `MarkdownEmbed` does with those of `useBlockMarkers()`, and
+the saves of the note bring its changes onto another writer's version before asking. Source
 embeds receive `SourceEmbedProps` (`content`, `editor`) whichever storage the source has:
 `InlineSourceEmbed` and `AttachmentSourceEmbed` in `text/SourceEmbed.tsx` adapt the two.
 
@@ -456,7 +485,7 @@ without one is skipped, and nothing reports it.
   match, and _Replace all_ skips it.
 - **Ctrl+F inside the content** does not reach the binding that opens the find bar, as the embed
   keeps its keys from the window. Content that takes the focus calls `useFindShortcut(rootRef)`
-  (`react/hooks.tsx`), as `CanvasDrawing` does.
+  (`react/hooks/shortcuts.ts`), as `CanvasDrawing` does.
 
 ## Caret navigation
 
@@ -515,7 +544,7 @@ any other block. An editor takes part by opting in; without it, the caret steps 
   (`text/utils.ts`) lets the host skip its redraw on a save that changes only the content. A
   rename, a deletion or a static kind (image, PDF) still redraws.
 - **Hidden views** (a background tab, a collapsed box) apply changes once shown, through
-  `useWhenShown(ref)` (`react/hooks.tsx`). Only the last waiting callback runs, so check a request
+  `useWhenShown(ref)` (`react/hooks/dom.ts`). Only the last waiting callback runs, so check a request
   ID before queuing, not after.
 - **Pace the saves** of content that changes continuously: `postponeSave()` on the
   `ContentEditor` holds the scheduled save while input goes on.
@@ -580,7 +609,8 @@ An included text note is edited in place by a real `EditableText` (`TextEmbed.ts
    `editable`, `focusEmbed`).
 3. Persistence through the `ContentEditor` (`useAttachmentEditor()` in `text/attachment_saves.ts`
    and `bindAttachmentEditor()` in `services/content_renderer.ts` batch and retry the saves, and
-   flush them before leaving). If other
+   flush them before leaving). Each row saves through `NoteSaver.saveAttachment()` with the blob
+   it was read at, so a save over another writer's change asks the user, as a note does. If other
    places need a picture without loading the editor (share pages, previews), save one as an image
    attachment beside the content, as `persistence.ts` does under `getDrawingPictureTitle()`.
 4. An attachment detail view reusing the same editor (`CanvasDrawingDetail` in `Attachment.tsx`).
@@ -623,8 +653,8 @@ in-place drawings replaced the code blocks the boxes need.
   `postProcessRichContent()` draws its own diagrams before `renderContentEmbeds()`, and printing
   adds no pass of its own. `trim` keeps the `<style>` inside each SVG.
 - **Keep the block ID.** A read-only view that swaps the saved element for a box copies
-  `data-trilium-block-id` onto it (on the `<pre>`, or the `<code>` of older diagrams), or links to
-  the block stop resolving.
+  `data-trilium-block-id` onto it (on the `<code>`, or the `<pre>` of blocks saved before), or
+  links to the block stop resolving.
 
 - **Content renders detached.** `loadInlineEmbed()` renders into a detached `div` before the box
   mounts it, so a hook that looks up `.closest(".include-note")` once finds nothing. Use the
@@ -727,8 +757,7 @@ A user-facing change is documented in the same change. Where each part lives, un
 `docs/User Guide/User Guide/`:
 - `Note Types/Text/Include Note.md`: the box (sizes, resizing, positioning, caption, title),
   missing content, share pages, editing in place, included Markdown, drawing canvases.
-- `Note Types/Text/Insert buttons.md`: _Extended code block_, _Drawing canvas_, _Mermaid diagram_,
-  _Audio/video embed_.
+- `Note Types/Text/Insert buttons.md`: _Drawing canvas_, _Mermaid diagram_, _Audio/video embed_.
 - `Note Types/Text/Link Previews.md`: _Audio and video_.
 - `Basic Concepts and Features/Notes/Attachments.md`: _Embedding an attachment_, drawing pictures.
 - `Note Types/Text/Developer-specific formatting/Code blocks.md`: extended code blocks.
@@ -752,6 +781,8 @@ touches; then `docs.mjs sync` and `check`.
 - **ckeditor5-plugin-development** / **ckeditor5-testing**: editor plugin conventions and specs.
 - **building-client-ui**: `OverlayControlGroup`, `ZoomControls` and the other overlay controls.
 - **developing-mermaid-highlighting**: the CodeMirror Mermaid language the source pane uses.
+- **developing-block-references**: excerpts (embeds with `data-block`), their badge and pencil,
+  and editing a range of blocks in place.
 - **developing-share-pages**: the share theme's own rendering of embeds and diagrams.
 - **patching-excalidraw**: changes inside Excalidraw, which the drawing canvas relies on.
 - **writing-documentation**: `docs.mjs` and the User Guide house style.

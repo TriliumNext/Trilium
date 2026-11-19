@@ -1,4 +1,7 @@
-import { dayjs, filterAttributeName, isValidAttributeName } from "@triliumnext/commons";
+import {
+    filterAttributeName, isValidAttributeName
+} from "@triliumnext/commons/src/lib/attribute_names.js";
+import { BLOCK_ID_ATTRIBUTE } from "@triliumnext/commons/src/lib/block_reference.js";
 import type { ViteHotContext } from "vite/types/hot.js";
 
 import FNote from "../entities/fnote";
@@ -135,15 +138,17 @@ function formatDateISO(date: Date) {
     return `${date.getFullYear()}-${padNum(date.getMonth() + 1)}-${padNum(date.getDate())}`;
 }
 
-export function formatDateTime(date: Date, userSuppliedFormat?: string): string {
-    if (userSuppliedFormat?.trim()) {
-        return dayjs(date).format(userSuppliedFormat);
-    }
+export function formatDateTime(date: Date): string {
     return `${formatDate(date)} ${formatTime(date)}`;
 }
 
+/** The local time as `YYYY-MM-DD HH:mm:ss.SSS+hhmm`, which the server reads from a request header. */
 function localNowDateTime() {
-    return dayjs().format("YYYY-MM-DD HH:mm:ss.SSSZZ");
+    const date = new Date();
+    const offset = -date.getTimezoneOffset();
+    const zone = `${offset < 0 ? "-" : "+"}${padNum(Math.floor(Math.abs(offset) / 60))}${padNum(Math.abs(offset) % 60)}`;
+    const milliseconds = String(date.getMilliseconds()).padStart(3, "0");
+    return `${formatDateISO(date)} ${formatTimeWithSeconds(date)}.${milliseconds}${zone}`;
 }
 
 function now() {
@@ -245,6 +250,16 @@ const entityMap: Record<string, string> = {
 
 export function escapeHtml(str: string) {
     return str.replace(/[&<>"'`=\/]/g, (s) => entityMap[s]);
+}
+
+/**
+ * A name the user wrote, as a menu title.
+ *
+ * A menu reads a title as markup, so the name is escaped into the text it is meant to be, and boxed
+ * so that `style.css` clips a long one rather than letting it widen the menu.
+ */
+export function menuName(name: string) {
+    return `<span class="tn-menu-name">${escapeHtml(name)}</span>`;
 }
 
 export function escapeQuotes(value: string) {
@@ -417,6 +432,8 @@ export function isHtmlEmpty(html: string) {
         !html.includes("<section") &&
         !html.includes("include-note") &&
         !html.includes("link-mention") &&
+        // A block with an id is content: references point at it.
+        !html.includes(BLOCK_ID_ATTRIBUTE) &&
         // the line below will actually attempt to load images so better to check for images first
         $("<div>").html(html).text().trim().length === 0
     );

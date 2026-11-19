@@ -1,5 +1,6 @@
 import { once } from "node:events";
 
+import type { WebContents } from "electron";
 import express from "express";
 import multer from "multer";
 import { describe, expect, it, vi } from "vitest";
@@ -21,6 +22,7 @@ vi.mock("electron", () => ({
 
 const { dispatch, isDispatchOriginAllowed, isRequestorChainTrusted, registerTriliumAppScheme, setupTriliumAppProtocol } = await import("./protocol.js");
 const { isInternalElectronRequest } = await import("@triliumnext/server/src/services/electron_request.js");
+const { armFirstPaintGate, releaseFirstPaint } = await import("./services/first_paint_gate.js");
 
 function buildTestApp() {
     const app = express();
@@ -728,6 +730,24 @@ describe("trilium-app protocol dispatcher", () => {
             expect(await response.text()).toBe("written");
         });
 
+        it("answers the first-paint gate script itself, without the Express app", async () => {
+            let appInvoked = false;
+            const app = express();
+            app.use((_req, res) => {
+                appInvoked = true;
+                res.send("from express");
+            });
+            const handler = await installHandler(app);
+
+            const response = await handler({ ...fakeRequest("GET"), url: "trilium-app://app/startup-gate.js" } as Request);
+            expect(response.status).toBe(200);
+            expect(response.headers.get("content-type")).toBe("text/javascript");
+            // A window that shares its opener's renderer process must request it again.
+            expect(response.headers.get("cache-control")).toBe("no-store");
+            expect(await response.text()).toBe("");
+            expect(appInvoked).toBe(false);
+        });
+
         it("dispatches Origin-less GETs (top-level navigation path)", async () => {
             const app = express();
             app.get("/probe", (_req, res) => res.send("page"));
@@ -750,6 +770,7 @@ describe("trilium-app protocol dispatcher", () => {
                 url: string;
                 resourceType: string;
                 frame?: { url: string; parent: unknown } | null;
+                webContentsId?: number;
             },
             callback: (response: { cancel: boolean }) => void
         ) => void;
@@ -831,6 +852,27 @@ describe("trilium-app protocol dispatcher", () => {
             const { listener } = await installGuard();
             expect(decide(listener, "xhr", null)).toBe(true);
             expect(decide(listener, "xhr", undefined)).toBe(true);
+        });
+
+        it("holds the first-paint gate script of an armed window until its renderer releases it", async () => {
+            const { listener } = await installGuard();
+            armFirstPaintGate({ id: 41, once: vi.fn() } as unknown as WebContents);
+            const request = (webContentsId: number, frame = frameChain("trilium-app://app/")) => {
+                const callback = vi.fn();
+                const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+                listener({ method: "GET", url: "trilium-app://app/startup-gate.js", resourceType: "script", frame, webContentsId }, callback);
+                errorSpy.mockRestore();
+                return callback;
+            };
+
+            const held = request(41);
+            expect(held).not.toHaveBeenCalled();
+            releaseFirstPaint(41);
+            expect(held).toHaveBeenCalledWith({ cancel: false });
+
+            // Any other window goes straight through, and a foreign frame is still refused.
+            expect(request(42)).toHaveBeenCalledWith({ cancel: false });
+            expect(request(42, frameChain("http://evil.example/", "trilium-app://app/"))).toHaveBeenCalledWith({ cancel: true });
         });
 
         it("denies when reading the frame chain throws (disposed frame)", async () => {

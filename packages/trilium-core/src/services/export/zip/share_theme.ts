@@ -1,5 +1,6 @@
 import {
-    getContentRendererGroup, getNoteContentType, getShareThemeGroupFiles, type ShareThemeManifest
+    getContentRendererGroup, getNoteContentType, getShareThemeGroupFiles, isMarkdownMime,
+    type ShareThemeManifest
 } from "@triliumnext/commons";
 import ejs from "ejs";
 import { t } from "i18next";
@@ -93,13 +94,15 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
                     return match;
                 });
 
-                // Rewrite note links
-                content = content.replace(/href="[^"]*\.\/([a-zA-Z0-9_\/]{12})[^"]*"/g, (match, id) => {
+                // Rewrite note links, keeping the blocks and the bookmark that
+                // `renderNoteForExport()` wrote after each.
+                const noteLink = /href="[^"]*\.\/([a-zA-Z0-9_\/]{12})([^"]*)"/g;
+                content = content.replace(noteLink, (match, id, suffix) => {
                     if (match.includes("/assets/")) return match;
                     if (id === this.rootMeta?.noteId) {
-                        return `href="${basePath}"`;
+                        return `href="${basePath}${suffix}"`;
                     }
-                    return `href="#root/${id}"`;
+                    return `href="#root/${id}${suffix}"`;
                 });
                 content = this.rewriteFn(content, noteMeta);
             }
@@ -319,7 +322,7 @@ export function hasMermaidDiagrams(note: BNote) {
             return String(subtreeNote.getContent()).includes("language-mermaid");
         }
 
-        return subtreeNote.type === "code" && subtreeNote.mime === "text/x-markdown"
+        return subtreeNote.type === "code" && isMarkdownMime(subtreeNote.mime)
             && MARKDOWN_MERMAID_FENCE.test(String(subtreeNote.getContent()));
     });
 }

@@ -1,4 +1,6 @@
-import { tidyFilesystemFriendlyName, toFilesystemFriendlyName } from "@triliumnext/commons";
+import {
+    tidyFilesystemFriendlyName, toFilesystemFriendlyName
+} from "@triliumnext/commons/src/lib/filesystem_name.js";
 import type { RefObject } from "preact";
 import { useLayoutEffect, useRef } from "preact/hooks";
 

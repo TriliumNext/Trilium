@@ -12,7 +12,7 @@
 		"i18next": "27.1.1",
 		"preact": "11.2.0",
 		"preact-iso": "2.12.2",
-		"preact-render-to-string": "6.8.2",
+		"preact-render-to-string": "6.8.3",
 		"react-i18next": "18.0.1"
 	},
 	"devDependencies": {
@@ -21,7 +21,7 @@
 		"eslint-config-preact": "2.0.0",
 		"typescript": "6.0.3",
 		"user-agent-data-types": "0.4.3",
-		"vite": "8.3.7",
+		"vite": "8.3.8",
 		"vitest": "5.1.0"
 	},
 	"eslintConfig": {

@@ -53,6 +53,7 @@
     "test:parallel": "pnpm --filter=!server --filter=!ckeditor5 --parallel test",
     "test:sequential": "pnpm --filter=server --filter=ckeditor5 --sequential test",
     "typecheck": "tsx scripts/filter-tsc-output.mts",
+    "dev:check-startup": "node .claude/skills/measure-startup-requests/check-startup.mjs --fixture",
     "dev:format-check": "eslint -c eslint.format.config.mjs .",
     "dev:format-fix": "eslint -c eslint.format.config.mjs . --fix",
     "dev:linter-check": "cross-env NODE_OPTIONS=--max_old_space_size=4096 eslint .",
@@ -89,7 +90,7 @@
     "tsx": "4.23.15",
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.2",
-    "vite": "8.3.7",
+    "vite": "8.3.8",
     "vitest": "5.1.0"
   },
   "license": "AGPL-3.0-or-later",
@@ -106,5 +107,5 @@
     "url": "https://github.com/TriliumNext/Trilium/issues"
   },
   "homepage": "https://triliumnotes.org",
-  "packageManager": "pnpm@12.18.0"
+  "packageManager": "pnpm@12.20.0"
 }

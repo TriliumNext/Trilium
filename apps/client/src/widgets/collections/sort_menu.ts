@@ -1,6 +1,6 @@
 import type { MenuItem } from "../../menus/context_menu";
-import { menuName } from "../../menus/context_menu_utils";
 import { t } from "../../services/i18n";
+import { menuName } from "../../services/utils";
 import { promotedAttributeIcon } from "../attribute_widgets/attribute_types";
 import type { PromotedAttribute } from "./promoted_attributes";
 import {

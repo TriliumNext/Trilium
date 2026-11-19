@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
     CALENDAR_EVENT_ICON, CANVAS_ATTACHMENT_MIME, GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE,
-    getAttachedFileMime, getContentRendererGroup, getDrawingPictureTitle,
+    getAttachedFileMime, getContentFormat, getContentRendererGroup, getDrawingPictureTitle,
     getImageAttachmentTitle, getMimeIcon, getNoteContentType, getNoteIcon, isFullWidthNoteType,
     MAP_POSITION_ATTRIBUTE, MAP_SHAPE_ATTRIBUTE, MEETING_RECORDING_ICON, MEETING_RECORDING_LABEL,
     MERMAID_ATTACHMENT_MIME, NOTE_TYPE_ICONS, NOTE_TYPE_IMAGE_ATTACHMENTS, parseMindMapNoteLink,
@@ -372,17 +372,30 @@ describe("getMimeIcon", () => {
 });
 
 describe("isFullWidthNoteType", () => {
-    it("takes the full width for canvas-like types and for PDF, video and audio files", () => {
+    it("takes the full width for canvas-like types and for PDF, video, audio and workbook files", () => {
         for (const type of [ "code", "image", "mermaid", "book", "canvas", "webView", "mindMap", "spreadsheet" ]) {
             expect(isFullWidthNoteType(type, "")).toBe(true);
         }
         expect(isFullWidthNoteType("file", "application/pdf")).toBe(true);
         expect(isFullWidthNoteType("file", "video/mp4")).toBe(true);
         expect(isFullWidthNoteType("file", "audio/ogg")).toBe(true);
+        expect(isFullWidthNoteType("file", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")).toBe(true);
 
         expect(isFullWidthNoteType("text", "text/html")).toBe(false);
         expect(isFullWidthNoteType("file", "application/zip")).toBe(false);
+        expect(isFullWidthNoteType("file", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")).toBe(false);
         expect(isFullWidthNoteType("search", "")).toBe(false);
+    });
+});
+
+describe("getContentFormat", () => {
+    it("tells Markdown apart from other code, and ignores the language of code", () => {
+        expect(getContentFormat("text", "text/html")).toBe("text");
+        expect(getContentFormat("code", "text/x-markdown")).toBe("markdown");
+        expect(getContentFormat("code", "text/x-gfm")).toBe("markdown");
+        expect(getContentFormat("code", "text/plain")).toBe("code");
+        expect(getContentFormat("code", "application/javascript;env=frontend")).toBe("code");
+        expect(getContentFormat("canvas", "application/json")).toBe("canvas");
     });
 });
 

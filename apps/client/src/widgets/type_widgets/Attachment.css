@@ -56,8 +56,7 @@
     flex-grow: 1;
     flex-basis: 300px;
     /* Overrides the height:100% the widget carries for the full-detail page, where it is the pane. */
-    height: auto;
-    max-height: 300px;
+    height: 300px;
     min-width: 0;
 
     body.mobile & {
@@ -151,6 +150,18 @@
        not here. */
     .attachment-content-wrapper .rendered-content:has(> img) {
         padding: 0;
+    }
+
+    .attachment-content-wrapper .rendered-content:has(> .office-preview) {
+        padding: 0;
+    }
+
+    .attachment-content-wrapper .office-preview-body:has(.spreadsheet-table) {
+        padding: 0;
+
+        .spreadsheet-table {
+            margin-top: 0;
+        }
     }
 
     .attachment-content-wrapper img,
@@ -351,6 +362,10 @@ body[dir=rtl] .attachment-icon-marker {
 }
 
 .attachment-detail-wrapper.full-detail .attachment-content-wrapper {
+    height: 100%;
+}
+
+.attachment-content-wrapper.attachment-spreadsheet > .spreadsheet {
     height: 100%;
 }
 

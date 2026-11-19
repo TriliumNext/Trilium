@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const fetchMock = vi.hoisted(() => vi.fn());
-vi.mock("./providers/fetch.js", () => ({ llmFetch: fetchMock }));
+vi.mock("./providers/fetch.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./providers/fetch.js")>(),
+    llmFetch: fetchMock
+}));
 
 const fetchResourceMock = vi.hoisted(() => vi.fn());
 vi.mock("../request.js", async (importOriginal) => {
@@ -190,7 +193,11 @@ describe("searchWeb overrides and sparse answers", () => {
         expect(await run()).toMatchObject({ searchProvider: { type: "tavily", name: "tavily" } });
 
         fetchMock.mockRejectedValueOnce("offline");
-        expect(await run()).toMatchObject({ error: "offline" });
+        expect(await run()).toMatchObject({ error: "Could not reach the search provider: offline" });
+
+        // `requestJson()` wraps a failure of `llmFetch()`, not one of `response.json()`.
+        fetchMock.mockResolvedValueOnce({ ok: true, json: () => Promise.reject("stream closed") });
+        expect(await run()).toMatchObject({ error: "stream closed" });
     });
 });
 
@@ -233,6 +240,15 @@ describe("createWebSearchTool", () => {
         const transient = await failure({ provider: "brave", apiKey: "bk" }, 500);
         expect(transient).toEqual({ error: expect.stringContaining("HTTP 500"), instruction: readPage });
         expect(transient).not.toEqual(expect.objectContaining({ instruction: expect.stringContaining("tell the user") }));
+    });
+
+    it("names the network error when the search provider cannot be reached", async () => {
+        fetchMock.mockRejectedValueOnce(new TypeError("fetch failed", { cause: new Error("connect EHOSTUNREACH 192.168.1.10:8080") }));
+        expect(await run(createWebSearchTool({ provider: "searxng", apiKey: "", baseURL: "http://192.168.1.10:8080" }), "q"))
+            .toEqual({
+                error: "Could not reach the search provider: connect EHOSTUNREACH 192.168.1.10:8080",
+                instruction: expect.stringContaining("read_web_page")
+            });
     });
 
     it("cancels the search request when the turn is stopped", async () => {

@@ -4,12 +4,15 @@ import { renderInto } from "../../test/render";
 
 const { triggerCommand } = vi.hoisted(() => ({ triggerCommand: vi.fn() }));
 
-vi.mock("../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../react/hooks")>()),
+vi.mock("../react/hooks/note_context", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/note_context")>()),
     useNoteContext: () => ({
         noteContext: { isMainContext: () => true },
         parentComponent: { triggerCommand }
-    }),
+    })
+}));
+vi.mock("../react/hooks/tooltip", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/tooltip")>()),
     useStaticTooltip: vi.fn()
 }));
 

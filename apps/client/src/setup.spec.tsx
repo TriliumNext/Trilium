@@ -336,6 +336,28 @@ describe("SyncInProgress", () => {
         expect(setState).not.toHaveBeenCalled();
     });
 
+    it("finishes by reloading in a browser and leaves the window to the main process on Electron", async () => {
+        const reload = vi.spyOn(window.location, "reload").mockImplementation(() => {});
+        const hrefBefore = window.location.href;
+        stats = { ...stats, initialized: true };
+
+        const browser = renderInto(<SyncInProgress device="desktop" setState={vi.fn()} />);
+        await flushEffects();
+        expect(reload).toHaveBeenCalledTimes(1);
+        render(null, browser);
+
+        reload.mockClear();
+        Object.assign(window, { electronApi: {} });
+        try {
+            renderInto(<SyncInProgress device="desktop" setState={vi.fn()} />);
+            await flushEffects();
+            expect(reload).not.toHaveBeenCalled();
+            expect(window.location.href).toBe(hrefBefore);
+        } finally {
+            Reflect.deleteProperty(window, "electronApi");
+        }
+    });
+
     it("is wired for both flows in renderState", async () => {
         for (const state of ["syncFromServerInProgress", "syncFromDesktopInProgress"] as const) {
             const c = renderInto(renderState(state, vi.fn()));

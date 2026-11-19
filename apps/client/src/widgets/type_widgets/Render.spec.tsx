@@ -5,10 +5,16 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const renderNote = vi.hoisted(() => vi.fn());
 
 vi.mock("../../services/render", () => ({ default: { render: renderNote } }));
-vi.mock("../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../react/hooks")>()),
-    useNoteRelation: (_note: unknown, name: string) => name === "renderNote" ? [ {} ] : [],
-    useTriliumEvent: () => {},
+vi.mock("../react/hooks/events", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/events")>()),
+    useTriliumEvent: () => {}
+}));
+vi.mock("../react/hooks/note", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/note")>()),
+    useNoteRelation: (_note: unknown, name: string) => name === "renderNote" ? [ {} ] : []
+}));
+vi.mock("../react/hooks/note_context", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/note_context")>()),
     useEffectiveReadOnly: () => false
 }));
 

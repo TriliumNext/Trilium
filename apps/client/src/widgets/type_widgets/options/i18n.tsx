@@ -6,7 +6,7 @@ import { isElectron } from "../../../services/utils";
 import { Card, OptionCardSection } from "../../react/Card";
 import FormSelect from "../../react/FormSelect";
 import HelpButton from "../../react/HelpButton";
-import { useTriliumOption } from "../../react/hooks";
+import { useTriliumOption } from "../../react/hooks/options";
 import { LocaleSelector } from "./components/LocaleSelector";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 import RelatedSettings from "./components/RelatedSettings";

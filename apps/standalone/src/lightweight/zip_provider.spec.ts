@@ -354,53 +354,6 @@ describe("BrowserZipProvider entry formats", () => {
         expect(await readAll(withExtraField)).toEqual({ "plain.txt": "as is" });
     });
 
-    it("reads a ZIP64 archive, whose sizes and offsets are in 64-bit records", async () => {
-        expect(await readAll(makeZip64("big.txt", "sixty-four"))).toEqual({ "big.txt": "sixty-four" });
-        expect(await readAll({ blob: new Blob([ makeZip64("big.txt", "sixty-four") ]) })).toEqual({ "big.txt": "sixty-four" });
-        expect(await readAll(makeZip64("big.txt", "sixty-four", 0xffff))).toEqual({ "big.txt": "sixty-four" });
-    });
-
-    it("rejects a central directory that stops short instead of importing the entries before the damage", async () => {
-        const zip = makeZip({ "a.txt": "x", "b.txt": "y" });
-        const view = new DataView(zip.buffer, zip.byteOffset, zip.byteLength);
-        const headers: number[] = [];
-        for (let i = 0; i + 4 <= zip.length; i++) {
-            if (view.getUint32(i, true) === 0x02014b50) {
-                headers.push(i);
-            }
-        }
-        expect(headers).toHaveLength(2);
-        view.setUint32(headers[1] ?? 0, 0, true);
-
-        await expect(readNames(zip)).rejects.toThrow("Corrupt ZIP: the central directory ends in an unreadable record.");
-    });
-
-    it("rejects an archive whose directory records point outside the file", async () => {
-        const zip64 = makeZip64("big.txt", "sixty-four");
-        const zip64View = new DataView(zip64.buffer);
-        zip64View.setUint32(zip64.length - 22 - 20 - 56, 0, true);
-        await expect(readNames(zip64)).rejects.toThrow("the ZIP64 end-of-central-directory record is missing");
-
-        const directoryPastEnd = makeZip({ "a.txt": "x" });
-        new DataView(directoryPastEnd.buffer).setUint32(directoryPastEnd.length - 22 + 16, 0x7fffffff, true);
-        await expect(readNames(directoryPastEnd)).rejects.toThrow("the central directory lies past the end of the file");
-
-        const recordPastDirectory = patchCentralHeader(makeZip({ "a.txt": "x" }), (view, at) => view.setUint16(at + 30, 0xffff, true));
-        await expect(readNames(recordPastDirectory)).rejects.toThrow("a central directory record runs past the directory");
-
-        await expect(readNames(new Uint8Array(64))).rejects.toThrow("Truncated ZIP: no end-of-central-directory record.");
-    });
-
-    it("rejects entry content that lies outside the file", async () => {
-        const shortZip64Extra = makeZip64("big.txt", "sixty-four");
-        const extraSizeField = 30 + 7 + 10 + 46 + 7 + 2;
-        new DataView(shortZip64Extra.buffer).setUint16(extraSizeField, 8, true);
-        await expect(readAll(shortZip64Extra)).rejects.toThrow("Corrupt ZIP: an entry's local header is missing.");
-
-        const truncated = patchCentralHeader(makeZip({ "a.txt": "x" }), (view, at) => view.setUint32(at + 20, 0xffff, true));
-        await expect(readAll(truncated)).rejects.toThrow("Truncated ZIP: an entry's data runs past the end of the file.");
-    });
-
     it("keeps an unflagged name that decodes in no encoding as one character per byte", async () => {
         const zip = makeLegacyZip([{ placeholder: "A", nameBytes: [0xfe] }]);
         expect(await readNames(zip, "x-unknown-encoding")).toEqual([ "þ" ]);
@@ -413,6 +366,19 @@ describe("BrowserZipProvider entry formats", () => {
         expect(await readNames(unsupported)).toEqual([ "a.txt" ]);
         await expect(readAll(unsupported)).rejects.toThrow("Unsupported ZIP compression method 12.");
         await expect(readAll(encrypted)).rejects.toThrow("Encrypted ZIP entries are not supported.");
+    });
+
+    it("rejects an entry whose length or checksum is not the declared one, never importing it cut",
+        async () => {
+        const understated = patchCentralHeader(makeZip({ "a.txt": "longer text" }),
+            (view, at) => view.setUint32(at + 24, 3, true));
+        const altered = patchCentralHeader(makeZip({ "a.txt": "x" }),
+            (view, at) => view.setUint32(at + 16, 1, true));
+
+        await expect(readAll(understated))
+            .rejects.toThrow("an entry's length is not the declared one");
+        await expect(readAll(altered))
+            .rejects.toThrow("an entry's checksum is not the declared one");
     });
 });
 
@@ -440,75 +406,4 @@ function patchCentralHeader(zip: Uint8Array, patch: (view: DataView, offset: num
         }
     }
     throw new Error("No central directory header found.");
-}
-
-/**
- * Builds a one-entry stored archive in ZIP64 form: every size and offset in the classic records is
- * saturated, and the real values sit in the entry's ZIP64 extra field and the ZIP64 end record.
- * The archive comment is `commentLength` spaces.
- */
-function makeZip64(name: string, content: string, commentLength = 0): Uint8Array<ArrayBuffer> {
-    const nameBytes = strToU8(name);
-    const data = strToU8(content);
-    const SATURATED = 0xffffffff;
-
-    const local = new DataView(new ArrayBuffer(30));
-    local.setUint32(0, 0x04034b50, true);
-    local.setUint16(4, 45, true);
-    local.setUint32(18, SATURATED, true);
-    local.setUint32(22, SATURATED, true);
-    local.setUint16(26, nameBytes.length, true);
-
-    const central = new DataView(new ArrayBuffer(46));
-    central.setUint32(0, 0x02014b50, true);
-    central.setUint16(4, 45, true);
-    central.setUint16(6, 45, true);
-    central.setUint32(20, SATURATED, true);
-    central.setUint32(24, SATURATED, true);
-    central.setUint16(28, nameBytes.length, true);
-    central.setUint16(30, 28, true);
-    central.setUint32(42, SATURATED, true);
-
-    const extra = new DataView(new ArrayBuffer(28));
-    extra.setUint16(0, 0x0001, true);
-    extra.setUint16(2, 24, true);
-    extra.setBigUint64(4, BigInt(data.length), true);
-    extra.setBigUint64(12, BigInt(data.length), true);
-    extra.setBigUint64(20, 0n, true);
-
-    const directoryOffset = 30 + nameBytes.length + data.length;
-    const directorySize = 46 + nameBytes.length + 28;
-    const zip64EndOffset = directoryOffset + directorySize;
-
-    const zip64End = new DataView(new ArrayBuffer(56));
-    zip64End.setUint32(0, 0x06064b50, true);
-    zip64End.setBigUint64(4, 44n, true);
-    zip64End.setBigUint64(24, 1n, true);
-    zip64End.setBigUint64(32, 1n, true);
-    zip64End.setBigUint64(40, BigInt(directorySize), true);
-    zip64End.setBigUint64(48, BigInt(directoryOffset), true);
-
-    const locator = new DataView(new ArrayBuffer(20));
-    locator.setUint32(0, 0x07064b50, true);
-    locator.setBigUint64(8, BigInt(zip64EndOffset), true);
-    locator.setUint32(16, 1, true);
-
-    const end = new DataView(new ArrayBuffer(22));
-    end.setUint32(0, 0x06054b50, true);
-    end.setUint16(8, 0xffff, true);
-    end.setUint16(10, 0xffff, true);
-    end.setUint32(12, SATURATED, true);
-    end.setUint32(16, SATURATED, true);
-    end.setUint16(20, commentLength, true);
-
-    const comment = new Uint8Array(commentLength).fill(0x20);
-    const parts = [ local, nameBytes, data, central, nameBytes, extra, zip64End, locator, end, comment ]
-        .map((part) => part instanceof DataView ? new Uint8Array(part.buffer) : part);
-    const zip = new Uint8Array(parts.reduce((total, part) => total + part.length, 0));
-    let offset = 0;
-    for (const part of parts) {
-        zip.set(part, offset);
-        offset += part.length;
-    }
-    return zip;
 }

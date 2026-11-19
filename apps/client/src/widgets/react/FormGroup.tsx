@@ -1,6 +1,6 @@
 import { cloneElement, ComponentChildren, CSSProperties, RefObject, VNode } from "preact";
 
-import { useUniqueName } from "./hooks";
+import { useUniqueName } from "./hooks/dom";
 
 interface FormGroupProps {
     name: string;

@@ -9,7 +9,8 @@ import {
     Dispatch, StateUpdater, useCallback, useEffect, useMemo, useRef, useState
 } from "preact/hooks";
 
-import { type HighlightedTokenInfo, normalizeBoardGroupBy } from "@triliumnext/commons";
+import type { HighlightedTokenInfo } from "@triliumnext/commons";
+import { normalizeBoardGroupBy } from "@triliumnext/commons/src/lib/board_columns.js";
 
 import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
@@ -32,11 +33,16 @@ import {
 import type { SortContext } from "../sorting";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import { FormListItem } from "../../react/FormList";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useLingeringTrue, useTrackedElement } from "../../react/hooks/dom";
 import {
-    useContextualShortcutHints, useEffectiveReadOnly, useLingeringTrue, useNoteContext, useNoteLabel,
-    useNoteLabelBoolean, useNoteLabelInt, useNoteLabelWithDefault, useNoteTypeOptions,
-    useSetContextData, useTrackedElement, useTriliumEvent
-} from "../../react/hooks";
+    useNoteLabel, useNoteLabelBoolean, useNoteLabelInt, useNoteLabelWithDefault
+} from "../../react/hooks/note";
+import {
+    useEffectiveReadOnly, useNoteContext, useSetContextData
+} from "../../react/hooks/note_context";
+import { useContextualShortcutHints } from "../../react/hooks/shortcuts";
+import { useNoteTypeOptions } from "../../react/hooks/note_types";
 import OverlayControlGroup, { OverlayControlButton } from "../../react/OverlayControlGroup";
 import { RAIL_EXIT_MS, RailStand, RailStandContext } from "../../react/OverlayRail";
 import { type TemplateChoiceConfig, useTemplateChoice } from "../../react/TemplateDropdown";

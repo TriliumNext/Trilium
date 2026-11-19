@@ -1,6 +1,6 @@
 import "./NodePanel.css";
 
-import { parseMindMapNoteLink } from "@triliumnext/commons";
+import { parseMindMapNoteLink } from "@triliumnext/commons/src/lib/notes.js";
 import type { default as MindElixirInstance, NodeObj, TagObj } from "mind-elixir";
 import { useEffect, useRef, useState } from "preact/hooks";
 
@@ -12,13 +12,17 @@ import ActionButton from "../../react/ActionButton";
 import Button from "../../react/Button";
 import ColorPicker, { DEFAULT_COLOR_PALETTE } from "../../react/ColorPicker";
 import { FormFileUploadActionButton } from "../../react/FormFileUpload";
-import { useNote, useNoteIcon, useNoteTitle } from "../../react/hooks";
+import { useNote, useNoteIcon } from "../../react/hooks/note";
+import { useNoteTitle } from "../../react/hooks/tree";
 import Icon from "../../react/Icon";
-import { IconPickerButton } from "../../react/IconPicker";
+import { IconPickerButton } from "../../react/IconPickerButton";
 import OverlayPanel, { OverlayPanelBody, OverlayPanelSection, OverlayPanelTitle } from "../../react/OverlayPanel";
 import SegmentedChoice from "../../react/SegmentedChoice";
 import TabStrip, { type TabStripTabDefinition } from "../../react/TabStrip";
-import { fitNodeImage, getNodeImageShape, nearestNodeImageWidth, NODE_IMAGE_SHAPES, NODE_IMAGE_WIDTHS, type NodeImage as NodeImageData, type NodeImageShape, shapeNodeImage, uploadNodeImage } from "./images";
+import {
+    fitNodeImage, getNodeImageShape, nearestNodeImageWidth, NODE_IMAGE_SHAPES, NODE_IMAGE_WIDTHS,
+    type NodeImage as NodeImageData, type NodeImageShape, shapeNodeImage, uploadNodeImage
+} from "./images";
 import { describeExternalLink, linkFromSuggestion, suggestionFromLink } from "./links";
 import NodeMemo, { getNodeMemo } from "./NodeMemo";
 

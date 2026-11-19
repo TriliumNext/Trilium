@@ -1,12 +1,11 @@
 import "./ContextualHelp.css";
 
-import { Tooltip } from "bootstrap";
 import { createPortal, type RefObject } from "preact";
 import { useMemo, useRef, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
 import { isMobile } from "../../services/utils";
-import { useStaticTooltip } from "./hooks";
+import { getTooltipInstance, useStaticTooltip } from "./hooks/tooltip";
 import Modal from "./Modal";
 
 interface ContextualHelpProps {
@@ -151,7 +150,7 @@ function toggleTooltip(iconRef: RefObject<HTMLSpanElement | null>) {
     const element = iconRef.current;
 
     if (element) {
-        Tooltip.getInstance(element)?.toggle();
+        getTooltipInstance(element)?.toggle();
     }
 }
 
@@ -169,6 +168,6 @@ function dismissTooltip(iconRef: RefObject<HTMLSpanElement | null>) {
         return false;
     }
 
-    Tooltip.getInstance(element)?.hide();
+    getTooltipInstance(element)?.hide();
     return true;
 }

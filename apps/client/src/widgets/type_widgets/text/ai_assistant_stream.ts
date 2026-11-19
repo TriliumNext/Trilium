@@ -1,5 +1,6 @@
 import type { AiCompletionRequest, AiCompletionUsage, AiConversationTurn, AiQuickAction, AiQuickActionGroup, AiStreamFunction } from "@triliumnext/ckeditor5";
-import { getEnglishName, type LlmMessage, type LlmUsage, type Locale, type ToMarkdownResponse } from "@triliumnext/commons";
+import type { LlmMessage, LlmUsage, Locale, ToMarkdownResponse } from "@triliumnext/commons";
+import { getEnglishName } from "@triliumnext/commons/src/lib/i18n.js";
 
 import appContext from "../../../components/app_context.js";
 import { getAvailableLocales, t } from "../../../services/i18n.js";

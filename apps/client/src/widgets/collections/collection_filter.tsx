@@ -10,7 +10,9 @@ import { t } from "../../services/i18n";
 import type LoadResults from "../../services/load_results";
 import searchService from "../../services/search";
 import ActionButton from "../react/ActionButton";
-import { useNoteContext, useNoteLabelBoolean, useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useNoteLabelBoolean } from "../react/hooks/note";
+import { useNoteContext } from "../react/hooks/note_context";
 import SearchStringEditor from "../search/SearchStringEditor";
 
 /** How long to wait after a change before re-running the active filter. */

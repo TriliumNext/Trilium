@@ -1,3 +1,8 @@
+import type {
+    BlocksConflictResponse, CreateReferenceResponse, NoteBlocksResponse, NoteReferencesResponse,
+    NoteSaveBase, SaveConflictResponse, SavedAttachmentRow, SaveNoteBlocksResponse,
+    SaveNoteDataRequest, SaveNoteDataResponse
+} from "@triliumnext/commons";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../../becca/becca";
@@ -5,6 +10,9 @@ import { load } from "../../becca/becca_loader";
 import { getContext } from "../../services/context";
 import eraseService from "../../services/erase";
 import noteService from "../../services/notes";
+import {
+    readContent, type ReferenceProvider, registerReferenceProvider, unregisterReferenceProvider
+} from "../../services/references/index";
 import { getSql } from "../../services/sql/index";
 import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../../services/virtual_notes";
 import ws from "../../services/ws";
@@ -16,6 +24,10 @@ import { CoreApiTester } from "../../test/api_tester";
  * so this spec runs under both the node and standalone (WASM) suites.
  */
 let api: CoreApiTester;
+
+function countNoteRevisions(noteId: string) {
+    return getSql().getValue<number>("SELECT COUNT(*) FROM revisions WHERE noteId = ?", [ noteId ]);
+}
 
 function noteIsDeleted(noteId: string): number | null {
     const row = getSql().getRowOrNull<{ isDeleted: number }>(
@@ -175,6 +187,191 @@ describe("Notes API (core)", () => {
         });
     });
 
+    describe("saving with a base", () => {
+        /** The base of the note `noteId` as it is now. */
+        function getBase(noteId: string): NoteSaveBase {
+            const note = becca.getNoteOrThrow(noteId);
+            return { blobId: note.blobId ?? "", type: note.type, mime: note.mime };
+        }
+
+        function save(noteId: string, body: SaveNoteDataRequest) {
+            return api.put<SaveNoteDataResponse & SaveConflictResponse>(
+                `/api/notes/${noteId}/data`, { body }
+            );
+        }
+
+        it("saves on its base and answers the next one, and refuses a stale base", async () => {
+            const { noteId } = await createTextNote(api, { content: "<p>One</p>" });
+            const note = becca.getNoteOrThrow(noteId);
+            const base = getBase(noteId);
+
+            const saved = await save(noteId, { content: "<p>Two</p>", base });
+            expect(saved.status).toBe(200);
+            expect(saved.body).toStrictEqual({ blobId: note.blobId, attachments: [] });
+            expect(note.getContent()).toBe("<p>Two</p>");
+
+            const refused = await save(noteId, { content: "<p>Three</p>", base });
+            expect(refused.status).toBe(409);
+            expect(refused.body).toMatchObject({
+                reason: "version", blobId: note.blobId, type: "text", mime: "text/html",
+                isVersioned: true
+            });
+            expect(note.getContent()).toBe("<p>Two</p>");
+
+            // The answer is the content as stored when the server changed what was sent.
+            const linked = `<p><a href="https://example.com/#root/${noteId}">Self</a></p>`;
+            const rewritten = await save(noteId, { content: linked, base: getBase(noteId) });
+            expect(rewritten.body.content).toBe(`<p><a href="#root/${noteId}">Self</a></p>`);
+            expect(rewritten.body.content).toBe(note.getContent());
+
+            for (const malformedBase of [ { blobId: 1 }, null ]) {
+                const malformed = await save(noteId, {
+                    content: "<p>x</p>", base: malformedBase as never
+                });
+                expect(malformed.status).toBe(400);
+            }
+        });
+
+        it("refuses a base of another format, but not another language of code", async () => {
+            const { noteId } = await createTextNote(api, { content: "<p>Text</p>" });
+            const textBase = getBase(noteId);
+            const note = becca.getNoteOrThrow(noteId);
+            getContext().init(() => {
+                note.type = "code";
+                note.mime = "text/x-markdown";
+                note.save();
+            });
+
+            const refused = await save(noteId, { content: "<p>Edited</p>", base: textBase });
+            expect(refused.status).toBe(409);
+            expect(refused.body).toMatchObject({ reason: "format", type: "code" });
+            expect(note.getContent()).toBe("<p>Text</p>");
+
+            const markdownBase = getBase(noteId);
+            getContext().init(() => {
+                note.mime = "text/plain";
+                note.save();
+            });
+            expect((await save(noteId, { content: "Edited", base: markdownBase })).body)
+                .toMatchObject({ reason: "format" });
+            const codeBase = getBase(noteId);
+            getContext().init(() => {
+                note.mime = "application/javascript;env=frontend";
+                note.save();
+            });
+            expect((await save(noteId, { content: "Edited", base: codeBase })).status).toBe(200);
+        });
+
+        it("keeps the other version as a revision, on the blob that a conflict named", async () => {
+            const { noteId } = await createTextNote(api, { content: "<p>Mine</p>" });
+            const note = becca.getNoteOrThrow(noteId);
+            const base = getBase(noteId);
+            await save(noteId, { content: "<p>Theirs</p>", base });
+
+            const conflict = (await save(noteId, { content: "<p>Mine, edited</p>", base })).body;
+            const revisions = countNoteRevisions(noteId);
+            await save(noteId, { content: "<p>A third</p>", base: getBase(noteId) });
+            const stale = await save(noteId, {
+                content: "<p>Mine, edited</p>",
+                base: { ...base, blobId: conflict.blobId },
+                keepOther: true
+            });
+            expect(stale.status).toBe(409);
+            expect(countNoteRevisions(noteId)).toBe(revisions);
+
+            const kept = await save(noteId, {
+                content: "<p>Mine, edited</p>", base: getBase(noteId), keepOther: true
+            });
+            expect(kept.status).toBe(200);
+            expect(note.getContent()).toBe("<p>Mine, edited</p>");
+            expect(countNoteRevisions(noteId)).toBe(revisions + 1);
+            expect(note.getRevisions().map((revision) => revision.getContent()))
+                .toContain("<p>A third</p>");
+
+            // A note that keeps no revisions says so, and the version it replaces is not kept.
+            getContext().init(() => note.setLabel("disableVersioning"));
+            const unversioned = await save(noteId, { content: "<p>x</p>", base });
+            expect(unversioned.body.isVersioned).toBe(false);
+            await save(noteId, {
+                content: "<p>Mine again</p>", base: getBase(noteId), keepOther: true
+            });
+            expect(countNoteRevisions(noteId)).toBe(revisions + 1);
+        });
+
+        it("checks the attachment rows of a save with a base", async () => {
+            const { noteId } = await createTextNote(api, { content: "<p>Host</p>" });
+            const note = becca.getNoteOrThrow(noteId);
+            const row = { role: "file", mime: "text/plain", title: "notes.txt", content: "one" };
+            const saveRows = (rows: SavedAttachmentRow[]) => save(noteId, {
+                content: "<p>Host</p>", base: getBase(noteId), attachments: rows
+            });
+            const readAttachment = (attachmentId = "") =>
+                becca.getAttachmentOrThrow(attachmentId).getContent();
+
+            // Two writers saw no attachment of the title: the second one is refused.
+            const created = await saveRows([ row ]);
+            expect(created.status).toBe(200);
+            const [ { attachmentId, blobId: readAt } ] = note.getAttachments();
+            expect(created.body.attachments).toStrictEqual([
+                { attachmentId, title: "notes.txt", blobId: readAt }
+            ]);
+            const second = await saveRows([ { ...row, content: "two" } ]);
+            expect(second.status).toBe(409);
+            // The conflict names the attachment of the title, as it is now.
+            expect(second.body.attachments).toStrictEqual([
+                { attachmentId, title: "notes.txt", blobId: readAt }
+            ]);
+
+            // A row replaces an attachment at the blob that it read, and is refused on another one.
+            const replaced = await saveRows([
+                { ...row, content: "three", attachmentId, blobId: readAt }
+            ]);
+            expect(replaced.status).toBe(200);
+            expect(readAttachment(attachmentId)).toBe("three");
+            const stale = await saveRows([
+                { ...row, content: "four", attachmentId, blobId: readAt }
+            ]);
+            expect(stale.status).toBe(409);
+            expect(readAttachment(attachmentId)).toBe("three");
+
+            // Keeping this version replaces the attachment at the blob that the conflict named,
+            // and is refused once a third writer replaced it since.
+            const named = becca.getAttachmentOrThrow(attachmentId ?? "").blobId;
+            expect(stale.body.attachments).toStrictEqual([
+                { attachmentId, title: "notes.txt", blobId: named }
+            ]);
+            const keep = (blobId?: string) => save(noteId, {
+                content: "<p>Host</p>", base: getBase(noteId), keepOther: true,
+                attachments: [ { ...row, content: "four", attachmentId, blobId } ]
+            });
+            expect((await keep(readAt)).status).toBe(409);
+            expect(readAttachment(attachmentId)).toBe("three");
+            expect((await keep(named)).status).toBe(200);
+            expect(readAttachment(attachmentId)).toBe("four");
+
+            // Keeping a version needs the base that it keeps it over.
+            const keepWithoutBase = await save(noteId, { content: "<p>x</p>", keepOther: true });
+            expect(keepWithoutBase.status).toBe(400);
+            expect(note.getContent()).toBe("<p>Host</p>");
+
+            // A save without a base replaces the attachment of the title, as before.
+            const unconditional = await save(noteId, {
+                content: "<p>Host</p>", attachments: [ row ]
+            });
+            expect(unconditional.status).toBe(204);
+            expect(note.getAttachments().map((other) => other.getContent()))
+                .toStrictEqual([ "one" ]);
+
+            // A conflict names only the attachments that the note has.
+            const unknown = await save(noteId, {
+                content: "<p>Host</p>", base: { ...getBase(noteId), blobId: "stale" },
+                attachments: [ { ...row, title: "new.txt" }, { ...row, attachmentId: "gone1" } ]
+            });
+            expect(unknown.status).toBe(409);
+            expect(unknown.body.attachments).toStrictEqual([]);
+        });
+    });
+
     describe("editing blocks", () => {
         const blocks = `<p data-trilium-block-id="a">A</p><p data-trilium-block-id="b">B</p>`;
 
@@ -183,11 +380,12 @@ describe("Notes API (core)", () => {
                 content: `<p>Before</p>${blocks}<p>After</p>`
             });
 
-            const read = await api.get<{ content: string }>(`/api/notes/${noteId}/blocks`, {
+            const read = await api.get<NoteBlocksResponse>(`/api/notes/${noteId}/blocks`, {
                 query: { block: "a:b" }
             });
             expect(read.status).toBe(200);
             expect(read.body.content).toBe(blocks);
+            expect(read.body.note).toBe(becca.getNoteOrThrow(noteId).getContent());
 
             const update = await api.put(`/api/notes/${noteId}/blocks`, {
                 query: { block: "a:b" },
@@ -198,6 +396,132 @@ describe("Notes API (core)", () => {
             const blob = await api.get<{ content: string }>(`/api/notes/${noteId}/blob`);
             expect(blob.body.content)
                 .toBe(`<p>Before</p><p data-trilium-block-id="a">New</p><p>After</p>`);
+        });
+
+        it("refuses a save of blocks changed since they were read, but not of others", async () => {
+            const excerpt = `<p data-trilium-block-id="a">a</p><h2>Middle</h2>`
+                + `<p data-trilium-block-id="z">z</p>`;
+            const { noteId } = await createTextNote(api, { content: `<p>Outside</p>${excerpt}` });
+            const note = becca.getNoteOrThrow(noteId);
+            const url = `/api/notes/${noteId}/blocks`;
+            const read = await api.get<NoteBlocksResponse>(url, { query: { block: "a:z" } });
+            const edited = excerpt.replace(">a<", ">a, edited<");
+
+            // Another window gives the heading in the range an id.
+            const referencesUrl = `/api/notes/${noteId}/references`;
+            const listed = await api.get<NoteReferencesResponse>(referencesUrl);
+            const reference = await api.post<CreateReferenceResponse>(referencesUrl, {
+                body: { kind: "heading", index: 0, title: "Middle", blobId: listed.body.blobId }
+            });
+            const withId = String(note.getContent());
+            const refused = await api.put<BlocksConflictResponse>(url, {
+                query: { block: "a:z" }, body: { content: edited, base: { hash: read.body.hash } }
+            });
+            expect(refused.status).toBe(409);
+            expect(refused.body).toMatchObject({ reason: "version", isVersioned: true });
+            expect(note.getContent()).toBe(withId);
+            expect(withId).toContain(reference.body.params.block);
+
+            // A change outside the blocks leaves them as they were read.
+            const again = await api.get<NoteBlocksResponse>(url, { query: { block: "a:z" } });
+            getContext().init(() => note.setContent(withId.replace("Outside", "Outside, edited")));
+            const saved = await api.put<SaveNoteBlocksResponse>(url, {
+                query: { block: "a:z" },
+                body: {
+                    content: again.body.content.replace(">a<", ">a, edited<"),
+                    base: { hash: again.body.hash }
+                }
+            });
+            expect(saved.status).toBe(200);
+            expect(note.getContent()).toContain("Outside, edited");
+            expect(note.getContent()).toContain("a, edited");
+            expect(note.getContent()).toContain(reference.body.params.block);
+            const after = await api.get<NoteBlocksResponse>(url, { query: { block: "a:z" } });
+            expect(saved.body).toStrictEqual({
+                hash: after.body.hash, note: note.getContent(), attachments: []
+            });
+
+            // Keeping this version saves over the blocks of the conflict, after a revision.
+            const revisions = countNoteRevisions(noteId);
+            const kept = await api.put<SaveNoteBlocksResponse>(url, {
+                query: { block: "a:z" },
+                body: { content: excerpt, base: { hash: after.body.hash }, keepOther: true }
+            });
+            expect(kept.status).toBe(200);
+            expect(countNoteRevisions(noteId)).toBe(revisions + 1);
+            expect(note.getContent()).toBe(`<p>Outside, edited</p>${excerpt}`);
+        });
+
+        it("answers a conflict over an attachment with the hash of the blocks", async () => {
+            const { noteId } = await createTextNote(api, { content: blocks });
+            const note = becca.getNoteOrThrow(noteId);
+            const url = `/api/notes/${noteId}/blocks`;
+            const row = { role: "file", mime: "text/plain", title: "drawing.txt", content: "one" };
+            await api.put(`/api/notes/${noteId}/data`, {
+                body: { content: blocks, attachments: [ row ] }
+            });
+            const [ { attachmentId = "", blobId: readAt } ] = note.getAttachments();
+            const read = await api.get<NoteBlocksResponse>(url, { query: { block: "a:b" } });
+            const drawing = () => becca.getAttachmentOrThrow(attachmentId);
+            const replaceDrawing = (content: string) => getContext().init(() =>
+                drawing().setContent(content, { forceSave: true }));
+            const saveBlocks = (body: Record<string, unknown>) => api.put<BlocksConflictResponse>(
+                url, {
+                    query: { block: "a:b" },
+                    body: { content: blocks.replace(">A<", ">Mine<"), ...body }
+                });
+            const editedRow = (blobId?: string) =>
+                [ { ...row, content: "mine", attachmentId, blobId } ];
+
+            // Another writer replaces the drawing that the excerpt edited.
+            replaceDrawing("theirs");
+            const conflict = await saveBlocks({
+                base: { hash: read.body.hash }, attachments: editedRow(readAt)
+            });
+            expect(conflict.status).toBe(409);
+            const named = drawing().blobId;
+            expect(conflict.body).toStrictEqual({
+                reason: "version", message: expect.any(String), hash: read.body.hash,
+                attachments: [ { attachmentId, title: "drawing.txt", blobId: named } ],
+                isVersioned: true
+            });
+
+            // A third writer replaces it again before the user keeps this version.
+            replaceDrawing("a third");
+            const kept = await saveBlocks({
+                base: { hash: read.body.hash }, keepOther: true, attachments: editedRow(named)
+            });
+            expect(kept.status).toBe(409);
+            expect(drawing().getContent()).toBe("a third");
+            expect(note.getContent()).toBe(blocks);
+            // Keeping a version needs the base that it keeps it over.
+            expect((await saveBlocks({ keepOther: true })).status).toBe(400);
+            expect(note.getContent()).toBe(blocks);
+        });
+
+        it("says why a save of gone blocks, or of a converted note, is refused", async () => {
+            const { noteId } = await createTextNote(api, { content: `${blocks}<p>After</p>` });
+            const note = becca.getNoteOrThrow(noteId);
+            const url = `/api/notes/${noteId}/blocks`;
+            const read = await api.get<NoteBlocksResponse>(url, { query: { block: "a:b" } });
+            const saveBlocks = (base?: { hash: string }) => api.put<BlocksConflictResponse>(url, {
+                query: { block: "a:b" }, body: { content: blocks, base }
+            });
+
+            const withoutB = `<p data-trilium-block-id="a">A</p><p>After</p>`;
+            getContext().init(() => note.setContent(withoutB));
+            expect((await saveBlocks({ hash: read.body.hash })).body)
+                .toStrictEqual({ reason: "range", message: expect.any(String) });
+            expect((await saveBlocks()).status).toBe(404);
+
+            getContext().init(() => {
+                note.type = "code";
+                note.mime = "text/x-markdown";
+                note.save();
+            });
+            expect((await saveBlocks({ hash: read.body.hash })).body)
+                .toStrictEqual({ reason: "format", message: expect.any(String) });
+            expect((await saveBlocks()).status).toBe(400);
         });
 
         it("rejects missing blocks and malformed requests", async () => {
@@ -215,6 +539,296 @@ describe("Notes API (core)", () => {
             expect((await api.put(url, { query: { block: "a:x" }, body: { content: "" } })).status)
                 .toBe(404);
             expect((await api.put(url, { query: { block: "a" }, body: {} })).status).toBe(400);
+            for (const base of [ {}, null ]) {
+                const malformed = await api.put(url, {
+                    query: { block: "a" }, body: { content: "", base }
+                });
+                expect(malformed.status).toBe(400);
+            }
+        });
+
+        it("answers the hash of the blocks a save names, or none once they are gone", async () => {
+            const { noteId } = await createTextNote(api, { content: blocks });
+            const url = `/api/notes/${noteId}/blocks`;
+            const read = await api.get<NoteBlocksResponse>(url, { query: { block: "a:b" } });
+
+            // The editor joined the two paragraphs, so the blocks after the save are "a" alone.
+            const joined = await api.put<SaveNoteBlocksResponse>(url, {
+                query: { block: "a:b" },
+                body: {
+                    content: `<p data-trilium-block-id="a">AB</p>`,
+                    base: { hash: read.body.hash }, block: "a"
+                }
+            });
+            const after = await api.get<NoteBlocksResponse>(url, { query: { block: "a" } });
+            expect(joined.body.hash).toBe(after.body.hash);
+
+            const gone = await api.put<SaveNoteBlocksResponse>(url, {
+                query: { block: "a" },
+                body: { content: "<p>No id</p>", base: { hash: after.body.hash } }
+            });
+            expect(gone.body).toMatchObject({ hash: null, note: "<p>No id</p>" });
+        });
+
+        it("fails a save of blocks that fails for a reason other than a conflict", async () => {
+            const { noteId } = await createTextNote(api, { content: blocks });
+            const url = `/api/notes/${noteId}/blocks`;
+            const read = await api.get<NoteBlocksResponse>(url, { query: { block: "a" } });
+            const failing = vi.spyOn(noteService, "updateNoteData").mockImplementation(() => {
+                throw new Error("Disk full");
+            });
+
+            const failed = await api.put(url, {
+                query: { block: "a" }, body: { content: blocks, base: { hash: read.body.hash } }
+            });
+            failing.mockRestore();
+            expect(failed.status).toBe(500);
+            expect(becca.getNoteOrThrow(noteId).getContent()).toBe(blocks);
+        });
+    });
+
+    describe("references", () => {
+        const content = `<h2>Intro</h2><p><a id="start"></a>Text</p>`
+            + `<h3 data-trilium-block-id="kept1">Details</h3>`;
+
+        function addReference(noteId: string, body: unknown) {
+            return api.post<CreateReferenceResponse>(`/api/notes/${noteId}/references`, { body });
+        }
+
+        function listReferences(noteId: string) {
+            return api.get<NoteReferencesResponse>(`/api/notes/${noteId}/references`);
+        }
+
+        /** The request for a reference to the heading at `index` with the text `title`. */
+        function heading(index: number, title: string) {
+            return { kind: "heading", index, title };
+        }
+
+        function countRevisions(noteId: string) {
+            return getSql().getValue<number>(
+                "SELECT COUNT(*) FROM revisions WHERE noteId = ?", [ noteId ]
+            );
+        }
+
+        async function createNoteOfType(type: string, mime: string) {
+            const res = await api.post<{ note: { noteId: string } }>(
+                "/api/notes/root/children?target=into",
+                { body: { title: "Other", type, mime, content } }
+            );
+            return res.body.note.noteId;
+        }
+
+        it("lists the headings and anchors of a text note", async () => {
+            const { noteId } = await createTextNote(api, { content });
+
+            const res = await listReferences(noteId);
+            expect(res.status).toBe(200);
+            expect(res.body).toStrictEqual({
+                targets: [
+                    { kind: "heading", title: "Intro", level: 2 },
+                    { kind: "heading", title: "Details", level: 3, params: { block: "kept1" } },
+                    { kind: "anchor", title: "start", params: { bookmark: "start" } }
+                ],
+                blobId: becca.getNoteOrThrow(noteId).blobId
+            });
+        });
+
+        it("refuses a pick from a listing of another blob, and takes one of the same", async () => {
+            const listedContent = "<h2>Status</h2><p>budget</p>";
+            const { noteId } = await createTextNote(api, { content: listedContent });
+            const note = becca.getNoteOrThrow(noteId);
+            const { blobId } = (await listReferences(noteId)).body;
+
+            // The heading is deleted and written again elsewhere with the same title, which is
+            // unique in the listing and unique now.
+            const moved = "<p>budget</p><h2>Status</h2><p>hiring plan</p>";
+            getContext().init(() => note.setContent(moved));
+            const refused = await addReference(noteId, { ...heading(0, "Status"), blobId });
+            expect(refused.status).toBe(409);
+            expect(refused.body).toMatchObject({ reason: "listing" });
+            expect(note.getContent()).toBe(moved);
+
+            const listed = await listReferences(noteId);
+            const taken = await addReference(noteId, {
+                ...heading(0, "Status"), blobId: listed.body.blobId
+            });
+            expect(taken.status).toBe(200);
+            expect(note.getContent())
+                .toContain(`<h2 data-trilium-block-id="${taken.body.params.block}">`);
+        });
+
+        it("gives a heading of a read-only note a block id once, without a revision", async () => {
+            const { noteId } = await createTextNote(api, { content });
+            const readOnly = await api.put(`/api/notes/${noteId}/set-attribute`, {
+                body: { type: "label", name: "readOnly", value: "" }
+            });
+            expect(readOnly.status).toBe(204);
+            const note = becca.getNoteOrThrow(noteId);
+            expect(note.hasLabel("readOnly")).toBe(true);
+
+            // A regular save of a note created before the revision interval takes a revision.
+            const control = becca.getNoteOrThrow((await createTextNote(api, { content })).noteId);
+            note.utcDateCreated = "2020-01-01 00:00:00.000Z";
+            control.utcDateCreated = note.utcDateCreated;
+            await api.put(`/api/notes/${control.noteId}/data`, {
+                body: { content: `${content}<p>Edit</p>` }
+            });
+            expect(countRevisions(control.noteId)).toBe(1);
+
+            const created = await addReference(noteId, heading(0, "Intro"));
+            expect(created.status).toBe(200);
+            const blockId = created.body.params.block;
+            expect(blockId).toMatch(/^[A-Za-z0-9]{12}$/);
+            expect(note.getContent())
+                .toBe(content.replace("<h2>", `<h2 data-trilium-block-id="${blockId}">`));
+            expect(countRevisions(noteId)).toBe(0);
+
+            const { blobId } = note;
+            expect((await addReference(noteId, heading(0, "Intro"))).body)
+                .toStrictEqual({ params: { block: blockId } });
+            expect((await addReference(noteId, heading(1, "Details"))).body)
+                .toStrictEqual({ params: { block: "kept1" } });
+            expect(note.blobId).toBe(blobId);
+
+            const listed = await listReferences(noteId);
+            expect(listed.body.targets[0]).toStrictEqual(
+                { kind: "heading", title: "Intro", level: 2, params: { block: blockId } }
+            );
+        });
+
+        it("gives a heading of a Markdown note a marker, without a revision", async () => {
+            const markdown = "## Intro\n\nText <a id=\"start\"></a>\n\n"
+                + "## Details <a data-trilium-block-id=\"kept1\"></a>";
+            const res = await api.post<{ note: { noteId: string } }>(
+                "/api/notes/root/children?target=into",
+                { body: { title: "Markdown", type: "code", mime: "text/x-markdown", content: "" } }
+            );
+            const note = becca.getNoteOrThrow(res.body.note.noteId);
+            getContext().init(() => note.setContent(markdown));
+
+            const listed = await listReferences(note.noteId);
+            expect(listed.body).toStrictEqual({
+                targets: [
+                    { kind: "heading", title: "Intro", level: 2 },
+                    { kind: "heading", title: "Details", level: 2, params: { block: "kept1" } },
+                    { kind: "anchor", title: "start", params: { bookmark: "start" } }
+                ],
+                blobId: note.blobId
+            });
+
+            const created = await addReference(note.noteId, {
+                ...heading(0, "Intro"), blobId: listed.body.blobId
+            });
+            expect(created.status).toBe(200);
+            const blockId = created.body.params.block;
+            expect(note.getContent()).toBe(markdown.replace(
+                "## Intro", `## Intro <a data-trilium-block-id="${blockId}"></a>`
+            ));
+            expect(countRevisions(note.noteId)).toBe(0);
+            expect((await addReference(note.noteId, heading(5, "Gone"))).status).toBe(409);
+        });
+
+        it("answers 409 for a target that changed, without writing it or naming it", async () => {
+            const { noteId } = await createTextNote(api, { content });
+            const { blobId } = becca.getNoteOrThrow(noteId);
+
+            const res = await addReference(noteId, heading(0, "Secret plans"));
+            expect(res.status).toBe(409);
+            expect(JSON.stringify(res.body)).not.toContain("Secret");
+            // An anchor has its reference, its name, so no anchor needs one.
+            const anchor = await addReference(noteId, { kind: "anchor", index: 0, title: "start" });
+            expect(anchor.status).toBe(409);
+            expect(becca.getNoteOrThrow(noteId).blobId).toBe(blobId);
+        });
+
+        it("rejects malformed requests, and notes without content to read", async () => {
+            const { noteId } = await createTextNote(api, { content });
+            const bodies = [
+                undefined, null, [ "heading", 0, "Intro" ], {}, { index: 0, title: "Intro" },
+                { kind: "heading", title: "Intro" }, { kind: "heading", index: 0 },
+                { kind: "paragraph", index: 0, title: "Intro" }, heading(-1, "Intro"),
+                heading(0.5, "Intro"), { kind: "heading", index: "0", title: "Intro" },
+                heading(0, ""), { kind: "heading", index: 0, title: 1 },
+                { ...heading(0, "Intro"), blobId: 1 }
+            ];
+            for (const body of bodies) {
+                expect((await addReference(noteId, body)).status).toBe(400);
+            }
+
+            // A note that no provider reads has no targets, and none to give a reference.
+            const codeNoteId = await createNoteOfType("code", "text/html");
+            expect((await listReferences(codeNoteId)).body).toStrictEqual({ targets: [] });
+            expect((await addReference(codeNoteId, heading(0, "Intro"))).status).toBe(400);
+            expect((await listReferences("missingNote")).status).toBe(404);
+            expect((await addReference("missingNote", heading(0, "Intro"))).status).toBe(404);
+
+            const note = becca.getNoteOrThrow(noteId);
+            note.isProtected = true;
+            try {
+                expect((await listReferences(noteId)).status).toBe(400);
+                expect((await addReference(noteId, heading(0, "Intro"))).status).toBe(400);
+            } finally {
+                note.isProtected = false;
+            }
+            expect(note.getContent()).toBe(content);
+        });
+
+        describe("of a read-only virtual note", () => {
+            const pageContent = `<h2>Shipped</h2><h2 data-trilium-block-id="kept">Kept</h2>`
+                + `<p><a id="top"></a></p>`;
+
+            beforeAll(() => {
+                registerVirtualNoteProvider({
+                    namespace: "_vref",
+                    parentNoteId: "_hidden",
+                    getSubtree: () => [ { id: "_vrefPage", title: "Page", type: "text" } ],
+                    getContent: () => pageContent
+                });
+                getContext().init(() => load());
+            });
+
+            afterAll(() => {
+                unregisterVirtualNoteProvider("_vref");
+                getContext().init(() => load());
+            });
+
+            it("lists only the targets that have a reference, and refuses to add one", async () => {
+                expect((await listReferences("_vrefPage")).body).toStrictEqual({
+                    targets: [
+                        { kind: "heading", title: "Kept", level: 2, params: { block: "kept" } },
+                        { kind: "anchor", title: "top", params: { bookmark: "top" } }
+                    ]
+                });
+                expect((await addReference("_vrefPage", heading(0, "Shipped"))).status).toBe(400);
+                expect(becca.getNoteOrThrow("_vrefPage").getContent()).toBe(pageContent);
+            });
+        });
+
+        describe("of a note that a registered provider reads", () => {
+            const provider: ReferenceProvider = {
+                isFor: (type, mime) => type === "code" && mime === "text/x-test-references",
+                // Asynchronous, as a provider that loads its parser on demand is.
+                findTargets: async (source) => [
+                    { kind: "heading", title: "Unlinked", level: 1 },
+                    // The text of the first heading of the content: `<h2>Intro</h2>`.
+                    {
+                        kind: "heading", title: String(readContent(source)).slice(4, 9), level: 1,
+                        params: { block: "b" }
+                    }
+                ]
+            };
+
+            beforeAll(() => registerReferenceProvider(provider));
+            afterAll(() => unregisterReferenceProvider(provider));
+
+            it("lists only linked targets of a provider that creates no references", async () => {
+                const noteId = await createNoteOfType("code", "text/x-test-references");
+
+                expect((await listReferences(noteId)).body.targets).toStrictEqual([
+                    { kind: "heading", title: "Intro", level: 1, params: { block: "b" } }
+                ]);
+                expect((await addReference(noteId, heading(0, "Unlinked"))).status).toBe(400);
+            });
         });
     });
 

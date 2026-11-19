@@ -1,15 +1,11 @@
-import { MetadataResponse, NoteSizeResponse, SubtreeSizeResponse } from "@triliumnext/commons";
+import type { MetadataResponse, NoteSizeResponse, SubtreeSizeResponse } from "@triliumnext/commons";
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
-import FNote from "../../entities/fnote";
+import type FNote from "../../entities/fnote";
 import debounce from "../../services/debounce";
 import froca from "../../services/froca";
-import { t } from "../../services/i18n";
 import server from "../../services/server";
-import { formatSize } from "../../services/utils";
-import { useTriliumEvent } from "../react/hooks";
-import LinkButton from "../react/LinkButton";
-import LoadingSpinner from "../react/LoadingSpinner";
+import { useTriliumEvent } from "../react/hooks/events";
 
 export function useNoteMetadata(note: FNote | null | undefined, debounceTime = 10_000) {
     const [ isLoading, setIsLoading ] = useState(false);
@@ -58,24 +54,4 @@ export function useNoteMetadata(note: FNote | null | undefined, debounceTime = 1
     });
 
     return { isLoading, metadata, noteSizeResponse, subtreeSizeResponse, requestSizeInfo  };
-}
-
-export function NoteSizeWidget({ isLoading, noteSizeResponse, subtreeSizeResponse, requestSizeInfo }: Omit<ReturnType<typeof useNoteMetadata>, "metadata">) {
-    return <>
-        {!isLoading && !noteSizeResponse && !subtreeSizeResponse && (
-            <LinkButton
-                text={t("note_info_widget.calculate")}
-                onClick={requestSizeInfo}
-            />
-        )}
-
-        <span className="note-sizes-wrapper selectable-text">
-            <span className="note-size">{formatSize(noteSizeResponse?.noteSize)}</span>
-            {" "}
-            {subtreeSizeResponse && subtreeSizeResponse.subTreeNoteCount > 1 &&
-                <span className="subtree-size">{t("note_info_widget.subtree_size", { size: formatSize(subtreeSizeResponse.subTreeSize), count: subtreeSizeResponse.subTreeNoteCount })}</span>
-            }
-            {isLoading && <LoadingSpinner />}
-        </span>
-    </>;
 }

@@ -1,5 +1,7 @@
 import type { CKTextEditor, EditorConfig, ModelElement } from "@triliumnext/ckeditor5";
-import { CANVAS_ATTACHMENT_MIME, MERMAID_ATTACHMENT_MIME } from "@triliumnext/commons";
+import {
+    CANVAS_ATTACHMENT_MIME, MERMAID_ATTACHMENT_MIME
+} from "@triliumnext/commons/src/lib/notes.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CommandNames } from "../components/app_context.js";

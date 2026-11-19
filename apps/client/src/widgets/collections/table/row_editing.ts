@@ -4,13 +4,15 @@ import { EventCallBackMethods, RowComponent, Tabulator } from "tabulator-tables"
 
 import { CommandListenerData } from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
-import { setAttribute, setLabel, setLabelValues, setRelationValues } from "../../../services/attributes";
+import {
+    setAttribute, setLabel, setLabelValues, setRelationValues
+} from "../../../services/attributes";
 import branches from "../../../services/branches";
 import froca from "../../../services/froca";
 import note_create, { CreateNoteOpts } from "../../../services/note_create";
 import server from "../../../services/server";
 import AttributeDetailWidget from "../../attribute_widgets/attribute_detail";
-import { useLegacyImperativeHandlers } from "../../react/hooks";
+import { useLegacyImperativeHandlers } from "../../react/hooks/legacy";
 import { ParentComponent } from "../../react/react_utils";
 
 export default function useRowTableEditing(api: RefObject<Tabulator | null>, attributeDetailWidget: AttributeDetailWidget, parentNote: FNote): Partial<EventCallBackMethods> {

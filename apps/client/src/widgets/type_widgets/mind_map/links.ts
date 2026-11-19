@@ -1,4 +1,5 @@
-import { ALLOWED_PROTOCOLS, parseMindMapNoteLink } from "@triliumnext/commons";
+import { parseMindMapNoteLink } from "@triliumnext/commons/src/lib/notes.js";
+import { ALLOWED_PROTOCOLS } from "@triliumnext/commons/src/lib/shared_constants.js";
 
 import type { Suggestion } from "../../../services/note_autocomplete";
 import { normalizeExternalUrl } from "../../../utils/url";

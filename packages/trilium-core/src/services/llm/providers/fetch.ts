@@ -28,6 +28,40 @@ export const llmFetch: typeof globalThis.fetch = async (input, init) =>
     await getRequestProvider().fetchApi(urlOf(input), init ?? {}, { allowPrivateNetwork: true });
 
 /**
+ * Why a call to {@link llmFetch} failed to get an answer. On the server, undici rejects every
+ * transport failure with a `TypeError` of "fetch failed" and keeps the reason, such as
+ * `connect ECONNREFUSED 192.168.1.10:8080`, in its `cause`; an error without one is described by
+ * its own message.
+ */
+export function fetchFailureReason(error: unknown): string {
+    if (!(error instanceof Error)) {
+        return String(error);
+    }
+    return describeCause(error.cause) ?? error.message;
+}
+
+/**
+ * The message of a network error. Node rejects a connection attempted on several addresses (IPv6
+ * and IPv4 for `localhost`) with an `AggregateError` without a message, so its errors are listed.
+ */
+function describeCause(cause: unknown): string | undefined {
+    if (!(cause instanceof Error)) {
+        return undefined;
+    }
+    if (cause.message) {
+        return cause.message;
+    }
+    if (cause instanceof AggregateError) {
+        const reasons = cause.errors.map(describeCause).filter((reason) => reason !== undefined);
+        if (reasons.length) {
+            return reasons.join("; ");
+        }
+    }
+    const { code } = cause as { code?: unknown };
+    return typeof code === "string" ? code : undefined;
+}
+
+/**
  * The address out of whatever `fetch` was handed.
  *
  * A `Request` is refused rather than unpacked: its body is a stream that reading here would

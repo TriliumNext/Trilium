@@ -1,9 +1,9 @@
-import { Tooltip } from "bootstrap";
 import { ComponentChildren, CSSProperties } from "preact";
 import { useCallback, useEffect, useMemo, useRef } from "preact/hooks";
 
 import { escapeQuotes } from "../../services/utils";
-import { useUniqueName } from "./hooks";
+import { useUniqueName } from "./hooks/dom";
+import { attachTooltip } from "./hooks/tooltip";
 
 interface FormCheckboxProps {
     name?: string;
@@ -39,12 +39,10 @@ export default function FormCheckbox({ name, disabled, label, currentValue, inde
     useEffect(() => {
         if (!hint || !labelRef.current) return;
 
-        const tooltipInstance = Tooltip.getOrCreateInstance(labelRef.current, {
+        return attachTooltip(labelRef.current, {
             html: true,
             customClass: "tooltip-top"
         });
-
-        return () => tooltipInstance?.dispose();
     }, [hint]);
 
     const labelStyle = useMemo(() =>

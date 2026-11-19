@@ -1,4 +1,5 @@
-import { isProviderOfKind, type LlmAttachmentKind, type LlmModelInfo, type LlmProviderKind } from "@triliumnext/commons";
+import type { LlmAttachmentKind, LlmModelInfo, LlmProviderKind } from "@triliumnext/commons";
+import { isProviderOfKind } from "@triliumnext/commons/src/lib/llm_api.js";
 
 import { formatModelCost } from "./llm_model_cost.js";
 import options from "./options.js";

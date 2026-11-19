@@ -1,4 +1,4 @@
-import { imageExtensionForMime } from "@triliumnext/commons";
+import { imageExtensionForMime } from "@triliumnext/commons/src/lib/image_mimes.js";
 
 import server from "./server.js";
 

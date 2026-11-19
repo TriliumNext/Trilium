@@ -1,7 +1,7 @@
 ---
 name: developing-pdf-viewer
 description: >-
-  Use when changing Trilium's built-in PDF viewer — anything under `packages/pdfjs-viewer` (the code injected into Mozilla's PDF.js viewer: `bootstrap.ts`, `annotations.ts`, `pages.ts`, `toc.ts`, `layers.ts`, `attachments.ts`, `persistence.ts`, `editing.ts`), the client side that talks to it (`apps/client/src/widgets/type_widgets/file/Pdf.tsx`, `PdfViewer.tsx`, the sidebar panels in `widgets/sidebar/pdf/`), the postMessage protocol between them, PDF links (`?page=` / `?annotation=`), or a bug where the viewer "does not pick up" a change. Covers the mandatory rebuild after every viewer change, the message protocol, the hidden-but-mounted viewer, the pdf.js timing traps, and how to test at each level.
+  Use when changing Trilium's built-in PDF viewer — anything under `packages/pdfjs-viewer` (the code injected into Mozilla's PDF.js viewer: `bootstrap.ts`, `navigation.ts`, `annotations.ts`, `pages.ts`, `toc.ts`, `digest.ts`, `layers.ts`, `attachments.ts`, `persistence.ts`, `editing.ts`), the client side that talks to it (`apps/client/src/widgets/type_widgets/file/Pdf.tsx`, `PdfViewer.tsx`, `toc_build.ts`, the sidebar panels in `widgets/sidebar/pdf/`), the postMessage protocol between them, PDF links (`?page=` / `?annotation=` / `?heading=`), the build of the ToC cache by the viewer, or a bug where the viewer "does not pick up" a change. Covers the mandatory rebuild after every viewer change, the message protocol, the hidden-but-mounted viewer, the pdf.js timing traps, and how to test at each level.
 ---
 
 # Developing the PDF viewer
@@ -57,6 +57,27 @@ ls -l --time-style=+%H:%M packages/pdfjs-viewer/dist/web/custom.mjs
 - Most setup runs on pdf.js `documentloaded` and only when the note is editable (`bootstrap.ts`);
   `setupPdfAnnotations()` runs for read-only PDFs too. The first `pdfjs-viewer-annotations`
   message is the client's signal that the viewer can scroll.
+- **Every request that moves the view goes through one listener**, `setupNavigation()` in
+  `navigation.ts`, registered before the first `await` of `main()`, for every viewer:
+  `trilium-scroll-to-heading` (`{ headingId, pageNumber }` from a link, `{ headingKey }` from the
+  sidebar) and `trilium-scroll-to-annotation` (`{ annotationId?, pageNumber }`). A request waits
+  for the document and its initial view; only the latest one moves the view, synchronously, with
+  `scrollPageIntoView()` or the rectangle of an annotation, then `update()`. A page past the end
+  opens the last page. The embedded viewer has no `pdfHistory`.
+- **Headings**: the sidebar names a heading by its key `outline-<n>`, its position in the outline
+  that `ensureOutline()` reads once per document with commons' `readPdfOutline()`. A link names it
+  by the id of the ToC cache, which `findHeading()` (commons `toc.ts`) resolves; a bound id (with
+  a blob tag) costs one digest of the document, `getDocumentBlobId()` in `digest.ts`, shared and
+  kept per document and form (Web Crypto, else `@noble/hashes` in 4 MiB slices). An outline cut
+  at `MAX_TOC_HEADINGS` (`readPdfOutline()` reports `isCut`) binds every heading to the blob, so
+  `findHeading()` takes the flag, and a free id made before `PDF_TOC_READER` 2 opens its page.
+- **The ToC build**: on platforms where the server cannot read PDFs, the client posts
+  `trilium-build-toc` (`{ requestId, isProtected, data? }`) after each load and each save
+  (`useTocBuild()` in `toc_build.ts`); `setupTocBuild()` answers `pdfjs-viewer-toc-build` with the
+  outline, its `isCut`, the `blobId` of the bytes and the time, or `{ failed: true }`. Bytes of a
+  save are opened with their own loading task, which is destroyed whether the open succeeds or
+  not. The answer to the latest request only is saved with `PUT .../toc`. The cache, its ids and
+  the formats beside PDF: the `working-with-toc-cache` skill.
 
 ## The viewer outlives the note it shows
 
@@ -74,8 +95,8 @@ consequences:
 ## pdf.js timing traps
 
 - **The initial view undoes an early scroll.** pdf.js restores the last-read position at
-  `documentinit` and, for pages of unequal size, again after `pagesPromise`. `trackInitialView()`
-  in `annotations.ts` makes `scrollToAnnotation()` wait for both.
+  `documentinit` and, for pages of unequal size, again after `pagesPromise`. `trackDocument()` in
+  `navigation.ts` makes every request wait for both.
 - **A resize scrolls back to the recorded position.** `onResize()` reapplies an `auto`,
   `page-fit` or `page-width` zoom and `#setScaleUpdatePages()` scrolls to `_location`, which pdf.js
   records in `pdfViewer.update()` on the next frame's scroll event. A viewer shown again resizes,

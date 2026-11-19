@@ -186,6 +186,160 @@ describe("hostedCompletion", () => {
         expect(view?.state.doc.toString()).toBe("Another note @y");
     });
 
+    it("follows up on what a commit inserted, for the text typed after it, until a commit or a space", async () => {
+        const { list, shown } = build();
+
+        type("see @Al");
+        await vi.waitFor(() => expect(shown()?.match.query).toBe("Al"));
+        const noteMatch = shown()?.match;
+        shown()?.commitAndFollowUp("[[a1]]", "root/a1");
+        expect(editor?.state.doc.toString()).toBe("see [[a1]]");
+        await vi.waitFor(() => expect(shown()?.followUp).toEqual({ of: "root/a1", query: "" }));
+        expect(shown()?.match).toBe(noteMatch);
+        expect(list.hide).not.toHaveBeenCalled();
+
+        // A mark follows the inserted text, before the text typed after it.
+        type("In st");
+        await vi.waitFor(() => expect(shown()?.followUp?.query).toBe("In st"));
+        expect(textAround(followUpMark())).toEqual([ "see [[a1]]", "In st" ]);
+
+        // A commit replaces the inserted text and the text typed after it, and ends the follow-up.
+        shown()?.commit("[[a1?block=b]]");
+        expect(editor?.state.doc.toString()).toBe("see [[a1?block=b]]");
+        expect(list.hide).toHaveBeenCalledOnce();
+        expect(followUpMark()).toBeNull();
+        const shownCount = list.show.mock.calls.length;
+        type("x");
+        await settle();
+        expect(list.show).toHaveBeenCalledTimes(shownCount);
+
+        // A space right after the inserted text ends the follow-up, and the text stays.
+        type(" @Be");
+        await vi.waitFor(() => expect(shown()?.match.query).toBe("Be"));
+        shown()?.commitAndFollowUp("[[b2]]", "b2");
+        await vi.waitFor(() => expect(shown()?.followUp?.of).toBe("b2"));
+        type(" ");
+        expect(list.hide).toHaveBeenCalledTimes(2);
+        expect(editor?.state.doc.toString()).toBe("see [[a1?block=b]]x [[b2]] ");
+
+        // A new match after it is completed as any other.
+        type("@C");
+        await vi.waitFor(() => expect(shown()?.match.query).toBe("C"));
+        expect(shown()?.followUp).toBeNull();
+    });
+
+    it("ends a follow-up on Backspace right after the inserted text, on a dismissal, and as the text or the caret leaves", async () => {
+        const { list, shown, setElement } = build({ doc: "x" });
+        setElement(document.createElement("div"));
+        const followUp = async (query: string, text: string) => {
+            type(` @${query}`);
+            await vi.waitFor(() => expect(shown()?.match.query).toBe(query));
+            shown()?.commitAndFollowUp(text, text);
+            await vi.waitFor(() => expect(shown()?.followUp?.of).toBe(text));
+            return list.show.mock.calls.length;
+        };
+
+        // Backspace there closes the list and deletes nothing.
+        let shownCount = await followUp("a", "[[a]]");
+        expect(followUpMark()).not.toBeNull();
+        expect(press("Backspace")).toBe(true);
+        expect(editor?.state.doc.toString()).toBe("x [[a]]");
+        expect(list.hide).toHaveBeenCalledOnce();
+        expect(followUpMark()).toBeNull();
+        type("y");
+        await settle();
+        expect(list.show).toHaveBeenCalledTimes(shownCount);
+
+        // Past the text typed after it, Backspace goes to the list, then to the field.
+        await followUp("b", "[[b]]");
+        type("q");
+        await vi.waitFor(() => expect(shown()?.followUp?.query).toBe("q"));
+        press("Backspace");
+        expect(list.handleKeyDown).toHaveBeenLastCalledWith(expect.objectContaining({ key: "Backspace" }));
+        expect(editor?.state.doc.toString()).toBe("x [[a]]y [[b]]");
+
+        // Escape or `dismiss()` end it for good.
+        shownCount = await followUp("c", "[[c]]");
+        expect(press("Escape")).toBe(true);
+        expect(followUpMark()).toBeNull();
+        type("z");
+        await settle();
+        expect(list.show).toHaveBeenCalledTimes(shownCount);
+        shownCount = await followUp("d", "[[d]]");
+        shown()?.dismiss();
+        expect(followUpMark()).toBeNull();
+        type("z");
+        await settle();
+        expect(list.show).toHaveBeenCalledTimes(shownCount);
+
+        // A caret moved before the inserted text, or an edit inside it, ends it too.
+        shownCount = await followUp("e", "[[e]]");
+        const end = editor?.state.doc.length ?? 0;
+        editor?.dispatch({ selection: EditorSelection.cursor(end - 2) });
+        editor?.dispatch({ selection: EditorSelection.cursor(end) });
+        await settle();
+        expect(list.show).toHaveBeenCalledTimes(shownCount);
+        shownCount = await followUp("f", "[[f]]");
+        const link = (editor?.state.doc.length ?? 0) - 3;
+        editor?.dispatch({ changes: { from: link, insert: "g" } });
+        await settle();
+        expect(list.show).toHaveBeenCalledTimes(shownCount);
+        expect(editor?.state.doc.toString()).toBe("x [[a]]y [[b]] [[c]]z [[d]]z [[e]] [[gf]]");
+
+        // Text that was already after the inserted text is no part of the query: a caret moved
+        // into it ends the follow-up, and a late commit leaves that text in place.
+        editor?.dispatch({
+            changes: { from: 0, to: editor.state.doc.length, insert: "word" },
+            selection: EditorSelection.cursor(0)
+        });
+        type("@h");
+        await vi.waitFor(() => expect(shown()?.match.query).toBe("h"));
+        shown()?.commitAndFollowUp("[[h]]", "h");
+        await vi.waitFor(() => expect(shown()?.followUp?.of).toBe("h"));
+        type("q");
+        await vi.waitFor(() => expect(shown()?.followUp?.query).toBe("q"));
+        shownCount = list.show.mock.calls.length;
+        const hiddenCount = list.hide.mock.calls.length;
+        editor?.dispatch({ selection: EditorSelection.cursor(7) });
+        await settle();
+        expect(list.show).toHaveBeenCalledTimes(shownCount);
+        expect(list.hide).toHaveBeenCalledTimes(hiddenCount + 1);
+        expect(followUpMark()).toBeNull();
+        shown()?.commit("[[h?block=b]]");
+        expect(editor?.state.doc.toString()).toBe("[[h]]qword");
+    });
+
+    it("follows up on what a function commits, up to where it leaves the caret", async () => {
+        const { shown } = build({ doc: "]]" });
+        editor?.dispatch({ selection: EditorSelection.cursor(0) });
+
+        type("@Al");
+        await vi.waitFor(() => expect(shown()?.match.query).toBe("Al"));
+        shown()?.commitAndFollowUp((view, from, to) => view.dispatch({
+            changes: { from, to: to + 2, insert: "[[a1]]" },
+            selection: { anchor: from + 6 }
+        }), "a1");
+        await vi.waitFor(() => expect(shown()?.followUp?.of).toBe("a1"));
+        type("He");
+        await vi.waitFor(() => expect(shown()?.followUp?.query).toBe("He"));
+
+        // A commit of the follow-up runs on the inserted text and the text typed after it.
+        const ranges: number[][] = [];
+        shown()?.commit((_view, from, to) => ranges.push([ from, to ]));
+        expect(ranges).toEqual([ [ 0, 8 ] ]);
+
+        // A function that inserts nothing leaves nothing to follow up on.
+        editor?.dispatch({ changes: { from: 0, to: editor.state.doc.length } });
+        type("@B");
+        await vi.waitFor(() => expect(shown()?.match.query).toBe("B"));
+        const before = shown();
+        shown()?.commitAndFollowUp(() => {}, "b");
+        type("c");
+        await vi.waitFor(() => expect(shown()).not.toBe(before));
+        expect(shown()?.followUp).toBeNull();
+        expect(shown()?.match.query).toBe("Bc");
+    });
+
     it("forwards the keys to the open list, which takes them from the field", async () => {
         const onArrowDown = vi.fn(() => true);
         const { list, shown } = build({ onArrowDown });
@@ -233,6 +387,15 @@ describe("hostedCompletion", () => {
         type(" @");
         await vi.waitFor(() => expect(list.show).toHaveBeenCalledTimes(2));
         expect(shown()?.match.query).toBe("");
+
+        // A dismissal from the list of an earlier match leaves the list of the open one alone.
+        const earlier = shown();
+        type(" @");
+        await vi.waitFor(() => expect(shown()).not.toBe(earlier));
+        earlier?.dismiss();
+        expect(list.hide).toHaveBeenCalledOnce();
+        shown()?.dismiss();
+        expect(list.hide).toHaveBeenCalledTimes(2);
     });
 
     it("asks for an explicit match on Ctrl-Space or Alt-`, until the list closes", async () => {
@@ -403,6 +566,24 @@ function type(text: string) {
     if (!view) throw new Error("expected an editor");
     const from = view.state.selection.main.head;
     view.dispatch({ changes: { from, insert: text }, selection: EditorSelection.cursor(from + text.length) });
+}
+
+/** The mark drawn after the text that the list follows up on. */
+function followUpMark() {
+    return editor?.contentDOM.querySelector(".cm-completion-follow-up") ?? null;
+}
+
+/** The text of the line before `node` and after it. */
+function textAround(node: Element | null) {
+    let before = "";
+    for (let sibling = node?.previousSibling; sibling; sibling = sibling.previousSibling) {
+        before = (sibling.textContent ?? "") + before;
+    }
+    let after = "";
+    for (let sibling = node?.nextSibling; sibling; sibling = sibling.nextSibling) {
+        after += sibling.textContent ?? "";
+    }
+    return [ before, after ];
 }
 
 /** Waits out the measure pass the list is shown in, so a list that was not shown is known not to be. */

@@ -8,7 +8,7 @@ import {
 } from "../../note_bars/CollectionProperties";
 import { bookPropertiesConfig } from "../../note_bars/collection-properties-config";
 import { Card } from "../../react/Card";
-import { useNoteLabel } from "../../react/hooks";
+import { useNoteLabel } from "../../react/hooks/note";
 import { ViewPropertySection } from "../../react/NotePropertyMenu";
 import PromotedAttributesCard from "../../react/PromotedAttributesCard";
 import TemplateSelectionCard from "../../react/TemplateSelectionCard";

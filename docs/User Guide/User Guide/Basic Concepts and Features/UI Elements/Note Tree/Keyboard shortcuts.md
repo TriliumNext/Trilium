@@ -3,7 +3,7 @@ The <a class="reference-link" href="../Note%20Tree.md">Note Tree</a> comes wit
 
 ## Navigation within the tree
 
-*   <kbd><span>↑</span></kbd> and <kbd><span>↑</span></kbd> to navigate between notes.
+*   <kbd><span>↑</span></kbd> and <kbd><span>↓</span></kbd> to navigate between notes.
 *   <kbd><span>←</span></kbd> to collapse a note with children, or <kbd><span>→</span></kbd> to expand it.
 *   <kbd><span>←</span></kbd> on a note with no children to navigate to its parent.
 

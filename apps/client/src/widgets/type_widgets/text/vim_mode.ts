@@ -1,5 +1,6 @@
 import type { CKTextEditor, TriliumVim, VimConfig, VimHost } from "@triliumnext/ckeditor5";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { createContext } from "preact";
+import { useContext, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext, { type CommandNames } from "../../../components/app_context";
 import type NoteContext from "../../../components/note_context";
@@ -9,9 +10,9 @@ import { t } from "../../../services/i18n";
 import options from "../../../services/options";
 import toast from "../../../services/toast";
 import { isMobile } from "../../../services/utils";
-import {
-    useContextualShortcutHints, useNoteLabel, useTriliumOption, useTriliumOptionBool
-} from "../../react/hooks";
+import { useNoteLabel } from "../../react/hooks/note";
+import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
+import { useContextualShortcutHints } from "../../react/hooks/shortcuts";
 import { closeShortcutHints } from "../../shortcut_hints/shortcut_hints_panel";
 import { findTextEditorAround } from "./editable_embed";
 import { getVimHintSection } from "./vim_key_reference";
@@ -25,6 +26,12 @@ interface VimConfigOptions {
 
 /** The element of the status bar that shows the command line, set by the status bar. */
 let commandLineSlot: HTMLElement | null = null;
+
+/**
+ * Whether the text note around the editor of an included note is in Vim mode, which that editor
+ * follows over its own label and the option. `undefined` outside a text note.
+ */
+export const HostVimModeContext = createContext<boolean | undefined>(undefined);
 
 /**
  * The configuration of the Vim mode of a text editor, `config.vim`. It reads the options on each
@@ -81,14 +88,16 @@ export function isVimModeWanted(label: string | null | undefined, isOptionOn: bo
 }
 
 /**
- * Turns the Vim mode of `editor` on or off as the option and the label of `note` say, and publishes
- * in `noteContext` the Vim mode that the status bar shows while `isVisible`. A hidden type widget,
- * such as the editable one of a note shown read-only, leaves the status bar to the displayed one.
+ * Turns the Vim mode of `editor` on or off as the option and the label of `note` say, or as the
+ * `HostVimModeContext` says, and publishes in `noteContext` the Vim mode that the status bar shows
+ * while `isVisible`. A hidden type widget, such as the editable one of a note shown read-only,
+ * leaves the status bar to the displayed one.
  */
 export function useVimMode(
     editor: CKTextEditor | undefined, note: FNote | null | undefined,
     noteContext: NoteContext | null | undefined, isVisible = true
 ) {
+    const hostVimMode = useContext(HostVimModeContext);
     const [ isOptionOn ] = useTriliumOptionBool("textNoteVimModeEnabled");
     const [ startupCommands ] = useTriliumOption("textNoteVimStartupCommands");
     const [ areHintsEnabled ] = useTriliumOptionBool("vimModeHintsEnabled");
@@ -96,7 +105,7 @@ export function useVimMode(
     // Re-renders when the label changes. The value is read from the note because, for one render
     // after a note switch, the hook still holds the label of the previous note.
     useNoteLabel(note, "vimMode");
-    const isWanted = isVimModeWanted(note?.getLabelValue("vimMode"), isOptionOn);
+    const isWanted = hostVimMode ?? isVimModeWanted(note?.getLabelValue("vimMode"), isOptionOn);
     const noteId = note?.noteId;
     const previousRef = useRef<{ editor?: CKTextEditor; noteId?: string; isOptionOn: boolean }>({
         isOptionOn

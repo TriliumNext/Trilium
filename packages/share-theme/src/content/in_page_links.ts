@@ -1,4 +1,6 @@
-import { resolveBlockReference } from "@triliumnext/commons/src/lib/block_reference.js";
+import {
+    findOwnElementById, getContentScopes, resolveBlockReference
+} from "@triliumnext/commons/src/lib/block_reference.js";
 
 /**
  * Makes a link to blocks of the page, or to an element of it by `id` such as an anchor, scroll to
@@ -39,8 +41,8 @@ function getInPageTarget(link: HTMLAnchorElement): ((jump: BlockJump) => unknown
 
     // Checked first: a fragment link keeps the parameters of the page, `block` included.
     if (url.hash) {
-        const name = decodeFragment(url.hash);
-        return document.getElementById(name) ? (jump) => jump.showAnchor(document.body, name) : null;
+        const anchor = findAnchor(link, decodeFragment(url.hash));
+        return anchor ? (jump) => jump.showAnchorElement(anchor) : null;
     }
 
     const block = url.searchParams.get("block");
@@ -51,6 +53,20 @@ function getInPageTarget(link: HTMLAnchorElement): ((jump: BlockJump) => unknown
     // A broken range loads the page, which shows the block found.
     const { start, end } = resolveBlockReference(document.body, block);
     return start && end ? (jump) => jump.showBlockReference(document.body, block) : null;
+}
+
+/**
+ * The element named `name` for `link`: in the content of the innermost note around the link that
+ * has one, as an included note or the page, else anywhere on the page.
+ */
+function findAnchor(link: Element, name: string) {
+    for (const { root } of getContentScopes<Element>(link, document.body)) {
+        const anchor = findOwnElementById<Element>(root, name);
+        if (anchor) {
+            return anchor;
+        }
+    }
+    return document.getElementById(name);
 }
 
 /** The `id` that the fragment `hash` names, decoded as the browser does. */

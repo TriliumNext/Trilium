@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import setupInPageLinks from "./in_page_links.js";
 
 const mocks = vi.hoisted(() => ({
-    showAnchor: vi.fn(),
+    showAnchorElement: vi.fn(),
     showBlockReference: vi.fn()
 }));
 vi.mock("@triliumnext/ckeditor5/src/plugins/block_reference/block_reference_read_only.js", () => mocks);
@@ -48,21 +48,42 @@ describe("setupInPageLinks", () => {
 
         // A fragment link keeps `block` from the address, and goes to its anchor all the same.
         expect(click("#top")).toBe(true);
-        await vi.waitFor(() => expect(mocks.showAnchor)
-            .toHaveBeenLastCalledWith(document.body, "top"));
+        await vi.waitFor(() => expect(mocks.showAnchorElement)
+            .toHaveBeenLastCalledWith(document.getElementById("top")));
         expect(location.href).toBe("http://localhost:3000/share/page?block=h#top");
         const entries = history.length;
-        mocks.showAnchor.mockClear();
+        mocks.showAnchorElement.mockClear();
         expect(click("#top")).toBe(true);
-        await vi.waitFor(() => expect(mocks.showAnchor).toHaveBeenCalledOnce());
+        await vi.waitFor(() => expect(mocks.showAnchorElement).toHaveBeenCalledOnce());
         expect(history.length).toBe(entries);
 
         expect(click("#caf%C3%A9")).toBe(true);
-        await vi.waitFor(() => expect(mocks.showAnchor)
-            .toHaveBeenLastCalledWith(document.body, "café"));
+        await vi.waitFor(() => expect(mocks.showAnchorElement)
+            .toHaveBeenLastCalledWith(document.getElementById("café")));
         expect(click("#%E0%A4%A")).toBe(true);
-        await vi.waitFor(() => expect(mocks.showAnchor)
-            .toHaveBeenLastCalledWith(document.body, "%E0%A4%A"));
+        await vi.waitFor(() => expect(mocks.showAnchorElement)
+            .toHaveBeenLastCalledWith(document.getElementById("%E0%A4%A")));
+    });
+
+    it("prefers the anchor of the note that holds the link to one of another note", async () => {
+        document.body.innerHTML = "<div id=\"content\">"
+            + "<figure class=\"include-note\" data-note-id=\"other\">"
+            + "<p><a id=\"Set up\"></a>embedded <a class=\"inner\" href=\"#Set%20up\">x</a></p>"
+            + "<p><a id=\"only-embedded\"></a></p></figure>"
+            + "<p><a id=\"Set up\"></a>own</p></div>";
+        setupInPageLinks();
+        const [ embedded, own ] = document.querySelectorAll("[id='Set up']");
+
+        expect(click("#Set%20up")).toBe(true);
+        await vi.waitFor(() => expect(mocks.showAnchorElement).toHaveBeenLastCalledWith(own));
+        document.querySelector<HTMLElement>("a.inner")?.dispatchEvent(
+            new MouseEvent("click", { bubbles: true, cancelable: true }));
+        await vi.waitFor(() => expect(mocks.showAnchorElement)
+            .toHaveBeenLastCalledWith(embedded));
+        // An anchor that only an embed has is found there.
+        expect(click("#only-embedded")).toBe(true);
+        await vi.waitFor(() => expect(mocks.showAnchorElement)
+            .toHaveBeenLastCalledWith(document.getElementById("only-embedded")));
     });
 
     it("leaves other links, modified clicks and missing targets to the browser", () => {

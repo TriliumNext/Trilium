@@ -4,11 +4,13 @@ import type FNote from "../../../entities/fnote";
 import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
-import { CollectionPropertiesDialog, IncludedNotesCard } from "../../note_bars/CollectionProperties";
+import {
+    CollectionPropertiesDialog, IncludedNotesCard
+} from "../../note_bars/CollectionProperties";
 import { Card, CardSection, OptionCardSection } from "../../react/Card";
 import FormSelect from "../../react/FormSelect";
 import FormToggle from "../../react/FormToggle";
-import { useNoteLabelBoolean, useNoteLabelWithDefault } from "../../react/hooks";
+import { useNoteLabelBoolean, useNoteLabelWithDefault } from "../../react/hooks/note";
 import PromotedAttributesCard from "../../react/PromotedAttributesCard";
 import TemplateSelectionCard from "../../react/TemplateSelectionCard";
 import type { PromotedAttribute } from "../promoted_attributes";

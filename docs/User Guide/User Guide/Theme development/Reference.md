@@ -131,19 +131,11 @@ See [Native title bar buttons by eliandoran · Pull Request #702 · TriliumNext/
     }
     ```
 
-### Background/transparency effects on Windows (Mica)
+### Background/transparency effects (Mica and vibrancy)
 
-Windows 11 offers a special background/transparency effect called Mica, which can be enabled by themes by setting the `--background-material` variable at `body` level:
+When background effects are enabled in the desktop application, Trilium draws a translucent backdrop behind the window: Mica on Windows 11 (its `tabbed` variant in the horizontal layout) and vibrancy on macOS. Trilium chooses the backdrop itself and applies it only to the Next themes and to custom themes based on them through `#appThemeBase` (see <a class="reference-link" href="Customize%20the%20Next%20theme.md">Customize the Next theme</a>). Other themes get no backdrop.
 
-```css
-body.electron.platform-win32 {
-	--background-material: tabbed; 
-}
-```
-
-The value can be either `tabbed` (especially useful for the horizontal layout) or `mica` (ideal for the vertical layout).
-
-Do note that the Mica effect is applied at `body` level and the theme needs to make the entire hierarchy (semi-)transparent in order for it to be visible. Use the TrilumNext theme as an inspiration.
+The backdrop is visible only where the theme leaves the page (semi-)transparent. Use the Next theme as an inspiration.
 
 ## Note icons, tab workspace accent color
 

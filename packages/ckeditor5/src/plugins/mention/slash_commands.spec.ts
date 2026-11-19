@@ -28,9 +28,6 @@ import InsertDateTimePlugin, { COMMAND_NAME as INSERT_DATE_TIME_COMMAND, DATE_TI
 import { COMMAND_NAME as INTERNAL_LINK_COMMAND } from "../internallink.js";
 import { COMMAND_NAME as MARKDOWN_IMPORT_COMMAND } from "../markdownimport.js";
 import MathUI from "../math/math_ui.js";
-import {
-    INSERT_EXTENDED_CODE_BLOCK_COMMAND
-} from "../content_embed/extended_code_block.js";
 import { INSERT_INLINE_EMBED_COMMAND } from "../content_embed/inline_source.js";
 import { BUTTON_ICON_SIZE, createLayoutFigure } from "../multicolumn/multicolumn_ui.js";
 import TriliumSnippets from "../snippets/snippets.js";
@@ -775,8 +772,7 @@ describe("buildTriliumSlashCommands", () => {
         [ "bulletedList", "Bulleted list", "bulletedList" ],
         [ "numberedList", "Numbered list", "numberedList" ],
         [ "todoList", "To-do list", "todoList" ],
-        [ "mermaid", "Mermaid diagram", INSERT_INLINE_EMBED_COMMAND ],
-        [ "extended-code-block", "Extended code block", INSERT_EXTENDED_CODE_BLOCK_COMMAND ]
+        [ "mermaid", "Mermaid diagram", INSERT_INLINE_EMBED_COMMAND ]
     ])("defines %s, running its command with an icon and a description", (id, title, commandName) => {
         const entry = definition(id);
 
@@ -831,16 +827,6 @@ describe("buildTriliumSlashCommands", () => {
             quiet: true,
             focusEmbed: true
         });
-        expect(focus).toHaveBeenCalled();
-    });
-
-    it("inserts an extended code block as its button does, and returns the focus", () => {
-        const execute = vi.spyOn(editor, "execute").mockReturnValue(undefined);
-        const focus = vi.spyOn(editor.editing.view, "focus");
-
-        definition("extended-code-block").execute?.(editor);
-
-        expect(execute).toHaveBeenCalledExactlyOnceWith(INSERT_EXTENDED_CODE_BLOCK_COMMAND);
         expect(focus).toHaveBeenCalled();
     });
 

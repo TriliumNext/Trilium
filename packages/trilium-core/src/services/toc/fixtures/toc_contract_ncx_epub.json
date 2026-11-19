@@ -1,0 +1,41 @@
+{
+    "blobId": "oM8eWXg1J7Wdf9GPqtjs",
+    "protectedBlobId": "egdEyDN3tfauoutJT6Hi",
+    "headings": [
+        {
+            "title": "Chapter One",
+            "level": 1
+        },
+        {
+            "title": "First section",
+            "level": 2
+        },
+        {
+            "title": "Chapter Two",
+            "level": 1
+        },
+        {
+            "title": "A span",
+            "level": 2
+        },
+        {
+            "title": "Chapter Three",
+            "level": 1
+        }
+    ],
+    "isCut": false,
+    "ids": [
+        "1ksvmh31vi479z",
+        "1qr9ube0a47joq",
+        "0wlqnzl08uz7cx",
+        "0hlpdeg1evab2g",
+        "1ec6lf300pcmtb"
+    ],
+    "protectedIds": [
+        "1ksvmh31vi479z",
+        "1qr9ube0a47joq",
+        "0wlqnzl08uz7cx",
+        "0hlpdeg1evab2g",
+        "1ec6lf300pcmtb"
+    ]
+}

@@ -18,9 +18,10 @@ import katexStylesheet from "../../../services/katex.scss?inline";
 import options from "../../../services/options";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import { SplitButton } from "../../react/Button";
-import {
-    useEffectiveReadOnly, useNoteContext, useNoteLabelWithDefault, useTriliumEvent, useTriliumOptionBool
-} from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useNoteLabelWithDefault } from "../../react/hooks/note";
+import { useTriliumOptionBool } from "../../react/hooks/options";
+import { useEffectiveReadOnly, useNoteContext } from "../../react/hooks/note_context";
 import NoItems from "../../react/NoItems";
 import ShadowDom from "../../react/ShadowDom";
 import { ViewModeMedia, ViewModeProps } from "../interface";

@@ -5,6 +5,7 @@ import hoistedNoteService from "./hoisted_note.js";
 import appContext from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
 import { t } from "./i18n.js";
+import { getNoteIdAndParentIdFromUrl, getNoteIdFromUrl } from "./navigation_state.js";
 
 export const NOTE_PATH_TITLE_SEPARATOR = " › ";
 
@@ -129,17 +130,6 @@ function getParentProtectedStatus(node: Fancytree.FancytreeNode) {
     return hoistedNoteService.isHoistedNode(node) ? false : node.getParent().data.isProtected;
 }
 
-function getNoteIdFromUrl(urlOrNotePath: string | null | undefined) {
-    if (!urlOrNotePath) {
-        return null;
-    }
-
-    const [notePath] = urlOrNotePath.split("?");
-    const segments = notePath.split("/");
-
-    return segments[segments.length - 1];
-}
-
 async function getBranchIdFromUrl(urlOrNotePath: string) {
     const { noteId, parentNoteId } = getNoteIdAndParentIdFromUrl(urlOrNotePath);
     if (!parentNoteId) {
@@ -147,39 +137,6 @@ async function getBranchIdFromUrl(urlOrNotePath: string) {
     }
 
     return await froca.getBranchId(parentNoteId, noteId);
-}
-
-function getNoteIdAndParentIdFromUrl(urlOrNotePath: string) {
-    if (!urlOrNotePath) {
-        return {};
-    }
-
-    const [notePath] = urlOrNotePath.split("?");
-
-    if (notePath === "root") {
-        return {
-            noteId: "root",
-            parentNoteId: "none"
-        };
-    }
-
-    let parentNoteId = "root";
-    let noteId = "";
-
-    if (notePath) {
-        const segments = notePath.split("/");
-
-        noteId = segments[segments.length - 1];
-
-        if (segments.length > 1) {
-            parentNoteId = segments[segments.length - 2];
-        }
-    }
-
-    return {
-        parentNoteId,
-        noteId
-    };
 }
 
 function getNotePath(node: Fancytree.FancytreeNode) {

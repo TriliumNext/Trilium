@@ -9,7 +9,7 @@ export default class MarkdownExportProvider extends ZipExportProvider {
     prepareContent(title: string, content: string | Uint8Array, noteMeta: NoteMeta): string | Uint8Array {
         if (noteMeta.format === "markdown" && typeof content === "string") {
             content = this.rewriteFn(content, noteMeta);
-            content = mdService.toMarkdown(content);
+            content = mdService.toMarkdown(content, { blockIds: "markers" });
 
             if (content.trim().length > 0 && !content.startsWith("# ")) {
                 content = `\

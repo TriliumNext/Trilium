@@ -1,6 +1,7 @@
 import type { ColumnDefinition } from "tabulator-tables";
 import FNote from "../../../entities/fnote";
-import { useNoteLabelBoolean, useNoteLabelInt, useTriliumEvent } from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useNoteLabelBoolean, useNoteLabelInt } from "../../react/hooks/note";
 import { ParentComponent } from "../../react/react_utils";
 import { useContext, useEffect, useRef, useState } from "preact/hooks";
 import getAttributeDefinitionInformation, { buildRowDefinitions, TableData } from "./rows";

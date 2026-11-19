@@ -2,7 +2,7 @@ import type { ElectronApi, ElectronContextMenuParams } from "@triliumnext/common
 
 import zoomService from "../components/zoom.js";
 import contextMenu from "./context_menu.js";
-import { buildNoteContextMenuItems, type ContextMenuHost } from "./note_context_menu.js";
+import type { ContextMenuHost } from "./note_context_menu.js";
 
 /**
  * Replaces the browser's menu with Trilium's throughout the Electron window.
@@ -20,6 +20,7 @@ function setupContextMenu() {
         // the element under the pointer. Dividing by the zoom factor converts them to CSS pixels.
         const zoomLevel = zoomService.getCurrentZoom();
 
+        const { buildNoteContextMenuItems } = await import("./note_context_menu.js");
         const items = await buildNoteContextMenuItems({
             linkURL: params.linkURL,
             linkText: params.linkText,

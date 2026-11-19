@@ -1,4 +1,4 @@
-import { Tooltip } from "bootstrap";
+import type { Tooltip } from "bootstrap";
 import { HTMLAttributes } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
@@ -6,14 +6,14 @@ import { CommandNames } from "../../components/app_context";
 import keyboard_actions from "../../services/keyboard_actions";
 import { formatShortcut, joinShortcut } from "../../services/keyboard_shortcut_display";
 import { isMobile } from "../../services/utils";
-import { useStaticTooltip } from "./hooks";
+import { getTooltipInstance, useStaticTooltip } from "./hooks/tooltip";
 import { useCommandTrigger } from "./react_utils";
 
 export interface ActionButtonProps extends Pick<
     HTMLAttributes<HTMLButtonElement>,
     "onClick" | "onAuxClick" | "onContextMenu" | "onBlur" | "style" | "aria-expanded"
     | "aria-pressed" | "onClickCapture" | "onPointerDown" | "onPointerMove" | "onPointerUp"
-    | "onPointerLeave" | "onPointerCancel"
+    | "onPointerLeave" | "onPointerCancel" | "onPointerEnter" | "onFocus"
 > {
     text: string;
     titlePosition?: "top" | "right" | "bottom" | "left";
@@ -73,7 +73,7 @@ export default function ActionButton({ text, icon, className, triggerCommand, sh
 
     useEffect(() => {
         if (buttonRef.current) {
-            Tooltip.getInstance(buttonRef.current)?.setContent({ ".tooltip-inner": title ?? "" });
+            getTooltipInstance(buttonRef.current)?.setContent({ ".tooltip-inner": title ?? "" });
         }
     }, [title]);
 

@@ -490,6 +490,14 @@ paths:
     put:
       tags: [Notes]
       summary: Update note content
+      description: >-
+        Saves the content of a note. A save with `base` names the version that the content is
+        based on: it is refused with 409, and saves nothing, when the note has another format
+        (type, or Markdown and other code) or another blob, or when an attachment row does not
+        hold. In such a save, a row with `attachmentId` replaces that attachment only while it is
+        at `blobId`, and a row without one creates an attachment of its title, refused when the
+        note has one. The answer is what the next save is based on. A save without `base` is
+        unconditional, and answers 204.
       operationId: updateNoteContent
       parameters:
         - $ref: '#/components/parameters/noteId'
@@ -506,13 +514,46 @@ paths:
                 attachments:
                   type: array
                   items:
-                    $ref: '#/components/schemas/Attachment'
+                    $ref: '#/components/schemas/SavedAttachmentRow'
+                base:
+                  $ref: '#/components/schemas/NoteSaveBase'
+                keepOther:
+                  type: boolean
+                  description: >-
+                    Saves over the version that `base` names, which another writer saved, after
+                    the note keeps that version as a revision
       responses:
+        '200':
+          description: Content updated, by a save with `base`
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [blobId, attachments]
+                properties:
+                  blobId:
+                    type: string
+                  attachments:
+                    type: array
+                    description: The attachments that the save created or replaced
+                    items:
+                      $ref: '#/components/schemas/SavedAttachmentBase'
+                  content:
+                    type: string
+                    description: The content as stored, when the server changed what was sent
         '204':
-          description: Content updated
+          description: Content updated, by a save without `base`
+        '400':
+          description: A malformed `base`, or `keepOther` without `base`
         '404':
           description: Note not found
-          
+        '409':
+          description: The note has another format or version than the save is based on
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaveConflict'
+
   /api/notes/{noteId}/metadata:
     get:
       tags: [Notes]
@@ -530,6 +571,308 @@ paths:
         '404':
           description: Note not found
           
+  /api/notes/{noteId}/blocks:
+    get:
+      tags: [Notes]
+      summary: Get blocks of a text note
+      description: >-
+        The blocks of a text note that `block` points at, as their exact HTML source, so that an
+        excerpt can edit them apart from the rest of the note. The range must be a run of whole
+        sibling blocks. A run of list items comes inside a copy of its list, numbered as in the
+        note.
+      operationId: getNoteBlocks
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+        - name: block
+          in: query
+          required: true
+          schema:
+            type: string
+          description: >-
+            The block id of one block, or the ids of the first and the last block of a range
+            joined with `:`
+          example: eaJkN47U8kI4:2ZrHG8GH3TGW
+      responses:
+        '200':
+          description: The HTML of the blocks
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [content, hash, note]
+                properties:
+                  content:
+                    type: string
+                    example: '<p data-trilium-block-id="eaJkN47U8kI4">First paragraph</p>'
+                  hash:
+                    type: string
+                    description: The hash of `content`, which a save of the blocks is based on
+                  note:
+                    type: string
+                    description: >-
+                      The whole note that `content` was read from, which a draft of the blocks
+                      goes into
+        '400':
+          description: >-
+            No `block` parameter, a note that is not a text note, or a protected note without a
+            protected session
+        '404':
+          description: >-
+            The note or a block of the range does not exist, or the range is not a run of whole
+            sibling blocks
+    put:
+      tags: [Notes]
+      summary: Replace blocks of a text note
+      description: >-
+        Replaces the blocks that `block` points at with `content` and saves the note as
+        `PUT /api/notes/{noteId}/data` does, with a revision when one is due. The rest of the note
+        keeps its bytes. Block ids in `content` that the note holds outside the range are removed.
+        For a run of list items, `content` is a list: when its tag and `class` match the original
+        list, its items replace the run and its other attributes apply to the whole list;
+        otherwise the original list is split around `content`. `block` is the range as the note
+        stores it before the change; once the blocks at its edges change, later requests use the
+        new range.
+      operationId: updateNoteBlocks
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+        - name: block
+          in: query
+          required: true
+          schema:
+            type: string
+          description: >-
+            The block id of one block, or the ids of the first and the last block of a range
+            joined with `:`
+          example: eaJkN47U8kI4:2ZrHG8GH3TGW
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+                  description: The HTML of the blocks
+                  example: '<p data-trilium-block-id="eaJkN47U8kI4">First paragraph</p>'
+                attachments:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/SavedAttachmentRow'
+                base:
+                  type: object
+                  required: [hash]
+                  description: >-
+                    The `hash` of the blocks as read. The save is refused with 409 when the blocks
+                    have changed since; a change elsewhere in the note goes through.
+                  properties:
+                    hash:
+                      type: string
+                keepOther:
+                  type: boolean
+                  description: >-
+                    Saves over the blocks that `base` names, after the note keeps its version as a
+                    revision
+                block:
+                  type: string
+                  description: The range of the blocks after the save, when it differs from `block`
+      responses:
+        '200':
+          description: Blocks replaced, by a save with `base`
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [hash, note, attachments]
+                properties:
+                  hash:
+                    type: string
+                    nullable: true
+                    description: >-
+                      The hash of the blocks as saved, `null` when they cannot be read apart
+                  note:
+                    type: string
+                    description: >-
+                      The whole note as the save left it, which a draft of the blocks goes into
+                  attachments:
+                    type: array
+                    description: The attachments that the save created or replaced
+                    items:
+                      $ref: '#/components/schemas/SavedAttachmentBase'
+        '204':
+          description: Blocks replaced, by a save without `base`
+        '409':
+          description: >-
+            The blocks, or an attachment that the save replaces, changed since they were read
+            (`version`), or the blocks can no longer be saved apart (`format`, `range`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/BlocksVersionConflict'
+                  - $ref: '#/components/schemas/BlocksGoneConflict'
+        '400':
+          description: >-
+            No `block` parameter, no `content`, a malformed `base`, `keepOther` without `base`, a
+            note that is not a text note in a save without `base`, or a protected note without a
+            protected session
+        '404':
+          description: >-
+            The note or a block of the range does not exist, or the range is not a run of whole
+            sibling blocks
+
+  /api/notes/{noteId}/references:
+    get:
+      tags: [Notes]
+      summary: List the places inside a note that a link can point at
+      description: >-
+        The targets of a note, such as the headings and anchors of a text note, in the order that
+        the link lists show them, the targets of each kind together. A link points at a target by
+        adding its `params` to the path of the note: a heading of a text note through `?block=`
+        and its block id, an anchor through `?bookmark=`. A target without `params` needs a
+        reference first, which `POST /api/notes/{noteId}/references` creates. Such a target is
+        listed only when the note can take one. Titles are plain text, never HTML. A note whose
+        type has no targets lists none. The headings of a PDF file, the headings and bookmarks
+        of a Word (DOCX) or OpenDocument text (ODT) file, and the entries of an EPUB e-book's
+        table of contents come from its ToC cache, which the server builds when it is missing or
+        stale. Where the server cannot read PDFs (standalone, mobile), the answer for a PDF lists
+        none and carries `pendingToc` until the viewer of the file has built the cache. A DOCX,
+        ODT or EPUB file links a heading through `?heading=`, and a DOCX or ODT file a bookmark
+        through `?bookmark=`. An entry of an EPUB's table of contents that its preview does not
+        show is not listed.
+      operationId: getNoteReferences
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: The targets of the note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteReferences'
+        '400':
+          description: A protected note without a protected session
+        '404':
+          description: Note not found
+    post:
+      tags: [Notes]
+      summary: Give a target a reference
+      description: >-
+        Gives a target that `GET /api/notes/{noteId}/references` lists without `params` a
+        reference, unless it has one, and returns the link parameters that point at it. The
+        target is the one at `index` among the targets of its `kind` while its title is still
+        `title`, otherwise the only target of that kind with that title. A request that names the
+        `blobId` of its listing is refused with 409, reason `listing`, when the note has another
+        blob: the targets are then listed again. For a heading of a text note, the reference is a
+        block id. Read-only notes get the reference too. It is the only change to the content, and
+        no revision is saved.
+      operationId: createNoteReference
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [kind, index, title]
+              properties:
+                kind:
+                  $ref: '#/components/schemas/ReferenceKind'
+                index:
+                  type: integer
+                  minimum: 0
+                  description: The position of the target among the targets of its kind
+                  example: 0
+                title:
+                  type: string
+                  minLength: 1
+                  description: The title of the target at that position
+                  example: Installation
+                blobId:
+                  type: string
+                  description: The `blobId` of the listing that the target was picked from
+      responses:
+        '200':
+          description: The link parameters of the target
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [params]
+                properties:
+                  params:
+                    $ref: '#/components/schemas/ReferenceParams'
+        '400':
+          description: >-
+            A malformed request, a note whose targets take no reference, a protected note without
+            a protected session, or a note whose content cannot be changed, such as a help page
+        '404':
+          description: Note not found
+        '409':
+          description: >-
+            No target matches, because the targets changed since they were listed, or the listing
+            was read from another blob (reason `listing`)
+
+  /api/notes/{noteId}/toc:
+    get:
+      tags: [Notes]
+      summary: Read the ToC cache of a note
+      description: >-
+        The table of contents that the ToC cache of a note holds, such as the outline of a PDF
+        file, the headings of a DOCX or ODT file or the entries of an EPUB e-book's table of
+        contents, without building it or writing anything. `ready` is a cache of the note as it is,
+        `stale` one of an earlier blob, `missing` a note without a cache that can be read, and
+        `none` a note that has no table of contents. `pendingToc` tells that the viewer of the
+        document builds the cache, since the server cannot read the format.
+      operationId: getNoteToc
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: The cached table of contents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CachedToc'
+        '400':
+          description: A protected note without a protected session
+        '404':
+          description: Note not found
+    put:
+      tags: [Notes]
+      summary: Save the table of contents that the viewer read
+      description: >-
+        Saves the table of contents that the viewer of a document read, where the server cannot
+        read the format itself, which is PDF on standalone and mobile. The server checks it,
+        normalizes the titles and computes the ids of the headings. A valid cache that exists
+        already is kept.
+      operationId: saveNoteToc
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientToc'
+      responses:
+        '200':
+          description: The saved cache
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CachedToc'
+        '400':
+          description: >-
+            A malformed table of contents, a note without a table of contents format, a protected
+            note without a protected session, or a server that reads the format itself
+        '404':
+          description: Note not found
+        '409':
+          description: The note has another blob than the one the viewer read (reason `changed`)
+
   /api/notes/{noteId}/title:
     put:
       tags: [Notes]
@@ -1469,11 +1812,18 @@ paths:
     post:
       tags: [Attachments]
       summary: Save attachment
+      description: >-
+        Saves an attachment of the note, replacing the one that `matchBy` finds or creating one. A
+        save with `blobId` names the blob that the replaced attachment was read at: it is refused
+        with 409, and saves nothing, when that attachment has another blob now. The answer is what
+        the next save is based on. A save without `blobId` is unconditional, and answers 204.
       operationId: saveAttachment
       parameters:
         - $ref: '#/components/parameters/noteId'
         - name: matchBy
           in: query
+          description: >-
+            How the attachment to replace is found: by `attachmentId` (the default) or by `title`
           schema:
             type: string
             enum: [attachmentId, title]
@@ -1482,15 +1832,49 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Attachment'
+              type: object
+              required: [role, mime, title]
+              properties:
+                attachmentId:
+                  type: string
+                role:
+                  type: string
+                mime:
+                  type: string
+                title:
+                  type: string
+                content:
+                  type: string
+                blobId:
+                  type: string
+                  description: The blob that the replaced attachment was read at
+                keepOther:
+                  type: boolean
+                  description: >-
+                    Saves over the attachment that another writer saved, after the note keeps its
+                    version as a revision
       responses:
-        '201':
-          description: Attachment saved
+        '200':
+          description: Attachment saved, by a save with `blobId`
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Attachment'
-                
+                $ref: '#/components/schemas/SavedAttachmentBase'
+        '204':
+          description: Attachment saved, by a save without `blobId`
+        '400':
+          description: A `blobId` that is not a string, or `keepOther` without `blobId`
+        '404':
+          description: Note not found
+        '409':
+          description: >-
+            The replaced attachment has another blob than the save is based on. `attachments`
+            holds that attachment as it is now.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaveConflict'
+
   /api/notes/{noteId}/attachments/upload:
     post:
       tags: [Attachments]
@@ -1580,6 +1964,87 @@ paths:
                 type: string
                 format: binary
                 
+  /api/attachments/{attachmentId}/references:
+    get:
+      tags: [Attachments]
+      summary: List the places inside an attachment that a link can point at
+      description: >-
+        The twin of `GET /api/notes/{noteId}/references` for an attachment, such as the headings
+        of a PDF, DOCX or ODT file or the entries of an EPUB e-book's table of contents. The ToC
+        cache of an attachment is kept on its note.
+      operationId: getAttachmentReferences
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The targets of the attachment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteReferences'
+        '400':
+          description: A protected attachment without a protected session
+        '404':
+          description: Attachment not found
+
+  /api/attachments/{attachmentId}/toc:
+    get:
+      tags: [Attachments]
+      summary: Read the ToC cache of an attachment
+      description: The twin of `GET /api/notes/{noteId}/toc` for an attachment.
+      operationId: getAttachmentToc
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The cached table of contents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CachedToc'
+        '400':
+          description: A protected attachment without a protected session
+        '404':
+          description: Attachment not found
+    put:
+      tags: [Attachments]
+      summary: Save the table of contents that the viewer of an attachment read
+      description: The twin of `PUT /api/notes/{noteId}/toc` for an attachment.
+      operationId: saveAttachmentToc
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientToc'
+      responses:
+        '200':
+          description: The saved cache
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CachedToc'
+        '400':
+          description: A malformed table of contents, or one the server does not take
+        '404':
+          description: Attachment not found
+        '409':
+          description: The attachment has another blob than the one the viewer read (reason `changed`)
+
   /api/attachments/{attachmentId}/rename:
     put:
       tags: [Attachments]
@@ -1843,7 +2308,89 @@ paths:
       responses:
         '204':
           description: Revisions erased
-          
+
+  /api/notes/{noteId}/revisions/draft:
+    post:
+      tags: [Revisions]
+      summary: Keep unsaved changes as a revision
+      description: >-
+        Keeps the changes that an editor could not save, after a conflict or a conversion of the
+        note, as a revision in the format they were written in, with their attachment edits written
+        into the copies of the attachments. A draft of an excerpt is put into `fragment.base.note`,
+        the note as its editor read it, not as it is now. Without a `base`, or where that note no
+        longer holds the blocks with the hash `fragment.base.hash`, the revision holds the blocks
+        alone, with the source `fragment`, and cannot be restored. A repeated request with the same
+        `revisionId` makes one revision. A note that keeps no revisions keeps no draft.
+      operationId: saveDraftRevision
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revisionId, type, mime]
+              properties:
+                revisionId:
+                  type: string
+                  description: Drawn by the client once for each draft
+                type:
+                  type: string
+                mime:
+                  type: string
+                content:
+                  type: string
+                  description: The content of the whole note; or `fragment`
+                fragment:
+                  type: object
+                  required: [content, block]
+                  description: The edited blocks of an excerpt, and the range they replace
+                  properties:
+                    content:
+                      type: string
+                    block:
+                      type: string
+                    base:
+                      type: object
+                      required: [note, hash]
+                      description: The note that the blocks were read from
+                      properties:
+                        note:
+                          type: string
+                          description: >-
+                            The content of the whole note, as the editor last read or saved it
+                        hash:
+                          type: string
+                          description: The hash of the blocks of the range in `note`
+                attachments:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/SavedAttachmentRow'
+      responses:
+        '200':
+          description: The revision of the draft
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [revisionId, isKept, isFragment]
+                properties:
+                  revisionId:
+                    type: string
+                  isKept:
+                    type: boolean
+                    description: Whether the note keeps the revision
+                  isFragment:
+                    type: boolean
+                    description: Whether the revision holds the blocks alone
+        '400':
+          description: >-
+            A malformed draft, a revision ID of another note, or a note whose content is not
+            available
+        '404':
+          description: Note not found
+
   /api/revisions/{revisionId}:
     get:
       tags: [Revisions]
@@ -1918,14 +2465,15 @@ paths:
           required: true
           schema:
             type: string
+      description: >-
+        Restores the revision as the content of its note, with its attachments, and the links and
+        relations of that content.
       responses:
-        '200':
-          description: Revision restored
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Note'
-                
+        '204':
+          description: Revision restored, or there is no revision of that ID
+        '400':
+          description: A revision of the source `fragment`, which holds blocks of the note alone
+
   /api/revisions/{revisionId}/download:
     get:
       tags: [Revisions]
@@ -4587,6 +5135,73 @@ paths:
         '400':
           description: Missing or non-positive limit
 
+  /api/icon-packs.css:
+    get:
+      tags: [Utilities]
+      summary: Get the glyph of every icon
+      description: >-
+        A stylesheet with the `::before` rule that places the character of each icon of each icon
+        pack. The bootstrap data carries the fonts of the packs and links this stylesheet with a
+        `v` parameter derived from its content, so the response can be cached for good. Served
+        without a session, like the bootstrap data that names it on the login screen.
+      operationId: getIconPackGlyphCss
+      security: []
+      parameters:
+        - name: v
+          in: query
+          required: false
+          description: The content version the bootstrap data names; any value returns the current stylesheet
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The glyph rules of the icon packs
+          content:
+            text/css:
+              schema:
+                type: string
+
+  /api/other/icon-registry:
+    get:
+      tags: [Utilities]
+      summary: Get every icon of each icon pack
+      description: >-
+        Lists the icons that the icon picker searches. The bootstrap data names only the icon packs,
+        since the full list runs to over a megabyte with many packs installed.
+      operationId: getIconRegistry
+      responses:
+        '200':
+          description: The icons of each icon pack
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sources:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        prefix:
+                          type: string
+                        name:
+                          type: string
+                        icon:
+                          type: string
+                          description: An icon class that identifies the pack
+                        icons:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                description: The icon's classes, such as `bx bx-star`
+                              terms:
+                                type: array
+                                items:
+                                  type: string
+
   /api/other/icon-usage:
     get:
       tags: [Utilities]
@@ -4890,6 +5505,243 @@ components:
         utcDateModified:
           $ref: '#/components/schemas/UtcDateTime'
           
+    ReferenceKind:
+      type: string
+      enum: [heading, anchor]
+      description: The kind of a target, which sets how the link lists show it
+      example: heading
+
+    ReferenceParams:
+      type: object
+      additionalProperties:
+        type: string
+      description: The parameters of a link that point at a target, not encoded
+      example:
+        block: eaJkN47U8kI4
+
+    ReferenceTarget:
+      type: object
+      required: [kind, title]
+      properties:
+        kind:
+          $ref: '#/components/schemas/ReferenceKind'
+        title:
+          type: string
+          description: The plain text that the lists show
+          example: Installation
+        level:
+          type: integer
+          minimum: 1
+          description: For a kind that nests, the depth of the target, such as 2 for an `<h2>`
+          example: 2
+        params:
+          $ref: '#/components/schemas/ReferenceParams'
+          description: The link parameters that point at the target; absent while it needs a reference
+
+    NoteReferences:
+      type: object
+      required: [targets]
+      properties:
+        targets:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferenceTarget'
+        blobId:
+          type: string
+          description: The blob of the note that the targets were read from
+        pendingToc:
+          $ref: '#/components/schemas/PendingToc'
+
+    PendingToc:
+      type: object
+      required: [format]
+      description: A table of contents that the viewer of the document builds
+      properties:
+        format:
+          type: string
+          example: pdf
+
+    TocHeading:
+      type: object
+      required: [id, title, level]
+      description: A heading of a table of contents, with the fields of its format, such as `page`
+      additionalProperties: true
+      properties:
+        id:
+          type: string
+          description: Names the heading in its document, for the `heading` link parameter
+          example: 0k3x9aa1h7q2mz
+        title:
+          type: string
+          description: Plain text, never HTML
+          example: Installation
+        level:
+          type: integer
+          minimum: 1
+          example: 1
+
+    CachedToc:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ready, stale, missing, none]
+        blobId:
+          type: string
+          description: For `ready` and `stale`, the blob that the headings were read from
+        headings:
+          type: array
+          items:
+            $ref: '#/components/schemas/TocHeading'
+        pendingToc:
+          $ref: '#/components/schemas/PendingToc'
+
+    ClientToc:
+      type: object
+      required: [targetBlobHash, headings, elapsedMs]
+      properties:
+        targetBlobHash:
+          type: string
+          description: The `blobId` of the bytes that the viewer read, from their digest
+        headings:
+          type: array
+          maxItems: 20000
+          description: >-
+            In document order, without ids: `title` (at most 500 characters), `level` (1 for the
+            first heading, at most one more than the heading before), and the fields of the format
+          items:
+            type: object
+            additionalProperties: true
+        properties:
+          type: object
+          additionalProperties: true
+          description: 'The properties of the format, such as `{ "reader": 2 }`'
+        isCut:
+          type: boolean
+          description: >-
+            Whether the viewer stopped reading at 20,000 headings, before another one. The ids of
+            every heading of a cut table of contents are bound to the blob.
+        elapsedMs:
+          type: number
+          minimum: 0
+          description: How long the viewer took, for the log
+
+    NoteSaveBase:
+      type: object
+      required: [blobId, type, mime]
+      description: What a save of the content of a note is based on
+      properties:
+        blobId:
+          type: string
+        type:
+          type: string
+        mime:
+          type: string
+
+    SavedAttachmentRow:
+      type: object
+      required: [role, title, mime, content]
+      description: >-
+        An attachment that a save writes. With `attachmentId` it replaces that attachment, in a
+        save with a base only while it is at `blobId`; without it, it creates one of its title.
+      properties:
+        attachmentId:
+          type: string
+        blobId:
+          type: string
+          description: The blob that the attachment was read at
+        role:
+          type: string
+        title:
+          type: string
+        mime:
+          type: string
+        content:
+          type: string
+        position:
+          type: integer
+        encoding:
+          type: string
+          enum: [base64]
+
+    SavedAttachmentBase:
+      type: object
+      required: [attachmentId, title, blobId]
+      description: An attachment as a save left it
+      properties:
+        attachmentId:
+          type: string
+        title:
+          type: string
+        blobId:
+          type: string
+
+    SaveConflict:
+      type: object
+      required: [reason, message, blobId, type, mime, isVersioned, attachments]
+      description: >-
+        Why a save of a note or an attachment was refused: the note now has another format, after
+        a conversion, or another version than the one the save is based on
+      properties:
+        reason:
+          type: string
+          enum: [format, version]
+        message:
+          type: string
+        blobId:
+          type: string
+          description: The blob of the note now, which a save that keeps its version names
+        type:
+          type: string
+        mime:
+          type: string
+        isVersioned:
+          type: boolean
+          description: Whether the note keeps revisions
+        attachments:
+          type: array
+          description: >-
+            The attachments that the save names, by ID or by title, as the note has them now. A
+            save that keeps its version replaces them at these blobs.
+          items:
+            $ref: '#/components/schemas/SavedAttachmentBase'
+
+    BlocksVersionConflict:
+      type: object
+      required: [reason, message, hash, attachments, isVersioned]
+      description: The blocks, or an attachment that the save replaces, changed since they were read
+      properties:
+        reason:
+          type: string
+          enum: [version]
+        message:
+          type: string
+        hash:
+          type: string
+          description: The hash of the blocks now, which a save that keeps its version names
+        attachments:
+          type: array
+          description: As `attachments` of `SaveConflict`
+          items:
+            $ref: '#/components/schemas/SavedAttachmentBase'
+        isVersioned:
+          type: boolean
+          description: Whether the note keeps revisions
+
+    BlocksGoneConflict:
+      type: object
+      required: [reason, message]
+      description: >-
+        The blocks can no longer be saved apart: the note was converted (`format`), or the `block`
+        parameter no longer points at blocks that can be edited apart (`range`)
+      properties:
+        reason:
+          type: string
+          enum: [format, range]
+        message:
+          type: string
+
     CreateNoteRequest:
       type: object
       required:

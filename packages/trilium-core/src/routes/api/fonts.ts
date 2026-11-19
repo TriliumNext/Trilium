@@ -1,94 +1,16 @@
-import { customFontFamily, customFontNoteId, MONOSPACE_FONT_FAMILY, SYSTEM_MONOSPACE_FONT_STACK, SYSTEM_SANS_SERIF_FONT_STACK, type OptionMap } from "@triliumnext/commons";
+import { buildFontCss } from "@triliumnext/commons";
 import type { Request, Response } from "../../http_interface";
 
 import optionService from "../../services/options.js";
 import sqlInit from "../../services/sql_init.js";
 
+/**
+ * The stylesheet of the user's font options. The client reads it from `/bootstrap` instead; this
+ * route serves stylesheets and scripts that still link to it.
+ */
 function getFontCss(req: Request, res: Response) {
     res.setHeader("Content-Type", "text/css");
-
-    if (!sqlInit.isDbInitialized() || !optionService.getOptionBool("overrideThemeFonts")) {
-        res.send("");
-
-        return;
-    }
-
-    const optionsMap = optionService.getOptionMap();
-
-    // `html:root` outranks the themes' `:root` and `html`, and `--main-font-size` must reach `<html>`.
-    let style = "html:root {";
-    style += getFontFamily(optionsMap);
-    style += getFontSize(optionsMap);
-    style += "}";
-
-    res.send(style);
-}
-
-function getFontFamily({ mainFontFamily, treeFontFamily, detailFontFamily, monospaceFontFamily }: OptionMap) {
-    let style = "";
-
-    // System override
-    if (mainFontFamily === "system") {
-        mainFontFamily = SYSTEM_SANS_SERIF_FONT_STACK;
-    }
-
-    if (treeFontFamily === "system") {
-        treeFontFamily = SYSTEM_SANS_SERIF_FONT_STACK;
-    }
-
-    if (detailFontFamily === "system") {
-        detailFontFamily = SYSTEM_SANS_SERIF_FONT_STACK;
-    }
-
-    if (monospaceFontFamily === "system") {
-        monospaceFontFamily = SYSTEM_MONOSPACE_FONT_STACK;
-    }
-
-    // Apply the font override if not using theme fonts.
-    if (mainFontFamily !== "theme") {
-        style += `--main-font-family: ${resolveFamily(mainFontFamily)};`;
-    }
-
-    if (treeFontFamily !== "theme") {
-        style += `--tree-font-family: ${resolveFamily(treeFontFamily)};`;
-    }
-
-    if (detailFontFamily !== "theme") {
-        style += `--detail-font-family: ${resolveFamily(detailFontFamily)};`;
-    }
-
-    if (monospaceFontFamily !== "theme") {
-        style += `--monospace-font-family: ${resolveFamily(monospaceFontFamily)};`;
-    }
-
-    return style;
-}
-
-/**
- * The family a font option names. One of the user's own fonts names the note holding it, and is
- * drawn under the family the client registers that note's file as; anything else already names a
- * family the browser resolves for itself.
- *
- * A reference the client would not register — one naming no note Trilium could have minted — is
- * left as it stands rather than built into a declaration.
- */
-function resolveFamily(optionValue: string) {
-    if (optionValue === "monospace") {
-        return MONOSPACE_FONT_FAMILY;
-    }
-
-    const noteId = customFontNoteId(optionValue);
-    return noteId ? `"${customFontFamily(noteId)}"` : optionValue;
-}
-
-function getFontSize(optionsMap: OptionMap) {
-    let style = "";
-    style += `--main-font-size: ${optionsMap.mainFontSize}%;`;
-    style += `--tree-font-size: ${optionsMap.treeFontSize}%;`;
-    style += `--detail-font-size: ${optionsMap.detailFontSize}%;`;
-    style += `--monospace-font-size: ${optionsMap.monospaceFontSize}%;`;
-
-    return style;
+    res.send(sqlInit.isDbInitialized() ? buildFontCss(optionService.getOptionMap()) : "");
 }
 
 export default {

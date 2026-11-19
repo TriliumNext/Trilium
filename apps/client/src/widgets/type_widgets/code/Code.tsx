@@ -9,9 +9,19 @@ import { CommandListenerData } from "../../../components/app_context";
 import type NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
+import type { CurrentVersion } from "../../../services/note_save";
 import { consumeSearchTerms } from "../../../services/search_jump";
 import utils from "../../../services/utils";
-import { useColorScheme, useEditorSpacedUpdate, useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteBlob, useNoteLabel, useNoteLabelInt, useNoteLabelOptionalBool, useNoteProperty, useSearchTermsConsumer, useSyncedRef, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useSyncedRef } from "../../react/hooks/dom";
+import {
+    useNoteBlob, useNoteLabel, useNoteLabelInt, useNoteLabelOptionalBool, useNoteProperty
+} from "../../react/hooks/note";
+import { useColorScheme, useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
+import { useEditorSpacedUpdate } from "../../react/hooks/editor";
+import { useKeyboardShortcuts } from "../../react/hooks/shortcuts";
+import { useLegacyImperativeHandlers } from "../../react/hooks/legacy";
+import { useSearchTermsConsumer } from "../../react/hooks/note_context";
 import { refToJQuerySelector } from "../../react/react_utils";
 import { CODE_THEME_DEFAULT_PREFIX as DEFAULT_PREFIX } from "../constants";
 import { TypeWidgetProps } from "../type_widget";
@@ -29,6 +39,13 @@ export interface EditableCodeProps extends TypeWidgetProps {
     onContentChanged?: (content: string) => void;
     /** Invoked after the content of the note has been uploaded to the server, using a spaced update. */
     dataSaved?: () => void;
+    /** Invoked each time the content is read for a save, before it is sent. */
+    onDataTaken?: () => void;
+    /**
+     * Tries to bring the unsaved changes onto `current`, the version that another writer saved,
+     * before the user is asked which version to keep, as `useEditorSpacedUpdate()` describes.
+     */
+    resolveConflict?: (current: CurrentVersion) => Promise<boolean> | boolean;
     placeholder?: string;
     /** Optional external ref to the underlying CodeMirror `EditorView`. Populated once the editor has initialized. */
     editorRef?: Ref<VanillaCodeMirror>;
@@ -106,8 +123,8 @@ function formatViewSource(note: FNote, content: string) {
 
 export function EditableCode({
     note, ntxId, noteContext, isVisible, debounceUpdate, parentComponent, updateInterval,
-    noteType = "code", onContentChanged, dataSaved, placeholder, editorRef: externalEditorRef,
-    ...editorProps
+    noteType = "code", onContentChanged, dataSaved, onDataTaken, resolveConflict, placeholder,
+    editorRef: externalEditorRef, ...editorProps
 }: EditableCodeProps) {
     const editorRef = useRef<VanillaCodeMirror>(null);
     const containerRef = useRef<HTMLPreElement>(null);
@@ -129,7 +146,11 @@ export function EditableCode({
         note,
         noteType,
         noteContext,
-        getData: () => ({ content: editorRef.current?.getText() ?? "" }),
+        getData: () => {
+            const content = editorRef.current?.getText() ?? "";
+            onDataTaken?.();
+            return { content };
+        },
         onContentChange: (content) => {
             const codeEditor = editorRef.current;
             if (!codeEditor) return;
@@ -145,7 +166,8 @@ export function EditableCode({
             consumeSearchTerms(noteContext, ntxId);
         },
         dataSaved,
-        updateInterval
+        updateInterval,
+        resolveConflict
     });
 
     useSearchTermsConsumer(note, noteContext, ntxId);

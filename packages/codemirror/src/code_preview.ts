@@ -1,6 +1,7 @@
 import { ensureSyntaxTree, type Language } from "@codemirror/language";
 import { EditorState } from "@codemirror/state";
 import { highlightCode, type Highlighter, tagHighlighter } from "@lezer/highlight";
+import { getSyntaxHighlightEnd } from "@triliumnext/commons/src/lib/mime_type.js";
 
 import { getThemeById } from "./color_themes.js";
 import { type PreviewTheme, type PreviewThemeSlot, readPreviewTheme } from "./preview_theme.js";
@@ -14,7 +15,10 @@ export {
 export interface CodePreviewOptions {
     /** The themes of the preview. Every token gets a class per theme. */
     themes: readonly PreviewThemeSlot[];
-    /** The language that highlights the code, or `null` to show it plain. */
+    /**
+     * The language that highlights the head of the code that `getSyntaxHighlightEnd()` allows, or
+     * `null` to show it plain.
+     */
     language: Language | null;
     isWrapped: boolean;
     /** Whether to number the lines. Defaults to true. */
@@ -93,10 +97,14 @@ export function getLoadedPreviewLanguage(mime: string) {
     return loadedLanguages.get(mime);
 }
 
-/** Highlights `text` line by line, or returns `null` if the parser runs out of time. */
+/**
+ * Splits `text` into lines and highlights the head of it that `getSyntaxHighlightEnd()` allows,
+ * leaving the rest plain, or returns `null` if the parser runs out of time.
+ */
 function highlightLines(text: string, language: Language, slots: readonly PreviewThemeSlot[]) {
+    const end = getSyntaxHighlightEnd(text);
     const state = EditorState.create({ doc: text, extensions: language });
-    const tree = ensureSyntaxTree(state, state.doc.length, PARSE_TIMEOUT);
+    const tree = ensureSyntaxTree(state, end, PARSE_TIMEOUT);
     if (!tree) return null;
 
     const lines: string[] = [];
@@ -107,8 +115,13 @@ function highlightLines(text: string, language: Language, slots: readonly Previe
     }, () => {
         lines.push(line);
         line = "";
-    });
-    lines.push(line);
+    }, 0, end);
+
+    const [ restOfLine = "", ...plainLines ] = text.slice(end).split("\n");
+    lines.push(line + escapeHtml(restOfLine));
+    for (const plainLine of plainLines) {
+        lines.push(escapeHtml(plainLine));
+    }
     return lines;
 }
 

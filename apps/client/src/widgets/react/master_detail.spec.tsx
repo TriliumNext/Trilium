@@ -15,8 +15,8 @@ vi.mock("../../services/utils", async (importActual) => {
     return { ...actual, default: { ...actual.default, isMobile: mocks.isMobile } };
 });
 
-vi.mock("./hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("./hooks")>()),
+vi.mock("./hooks/dom", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./hooks/dom")>()),
     useWindowSize: () => ({ windowWidth: mocks.windowWidth, windowHeight: 800 })
 }));
 
@@ -42,7 +42,6 @@ vi.mock("./ActionButton", () => ({
 
 import {
     DetailPane,
-    MasterDetailHeader,
     MasterDetailModal,
     MasterPane,
     type MobileMasterDetail,
@@ -50,6 +49,7 @@ import {
     useMasterDetailPage,
     useMobileMasterDetail
 } from "./master_detail";
+import MasterDetailHeader from "./MasterDetailHeader";
 
 let container: HTMLDivElement;
 /** The flow's API, as the host component last saw it. */

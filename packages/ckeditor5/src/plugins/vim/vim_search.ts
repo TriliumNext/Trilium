@@ -1,12 +1,10 @@
 import type { Editor, ModelPosition, ModelRange } from "ckeditor5";
 
+import { SEARCH_MARKER } from "./vim.js";
 import { type LineIndex, type LinePosition, toCharacterEdge } from "./vim_lines.js";
 
 /** The most matches that show highlighted at once. */
 const MAX_HIGHLIGHTS = 1000;
-
-/** The group of the markers that highlight the matches of a search. */
-export const SEARCH_MARKER = "vimSearch";
 
 /** A match in the lines of a `LineIndex`. */
 interface LineMatch {

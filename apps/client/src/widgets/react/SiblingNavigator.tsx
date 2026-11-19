@@ -9,9 +9,12 @@ import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import type { ViewScope } from "../../services/link";
 import type LoadResults from "../../services/load_results";
-import { useTriliumEvent } from "./hooks";
+import { useTriliumEvent } from "./hooks/events";
 import OverlayControlGroup, { OverlayControlButton } from "./OverlayControlGroup";
-import { codeToSiblingDirection, getParentFromNotePath, getSiblingNavigation, isInteractiveTarget, isTextEntryTarget, sameRoleAttachments } from "./sibling_navigation";
+import {
+    codeToSiblingDirection, getParentFromNotePath, getSiblingNavigation, isInteractiveTarget,
+    isTextEntryTarget, sameRoleAttachments
+} from "./sibling_navigation";
 
 const NO_KEYS: readonly string[] = [];
 

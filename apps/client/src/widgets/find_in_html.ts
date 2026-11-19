@@ -1,4 +1,4 @@
-import { revealElement } from "../services/collapsible.js";
+import { revealElement } from "../services/bookmark_jump.js";
 import {
     addHighlights, findRegExpRanges, findTermRanges, removeHighlights, scrollRangeIntoView
 } from "../services/highlight_matches.js";

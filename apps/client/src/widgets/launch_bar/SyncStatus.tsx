@@ -8,7 +8,8 @@ import { t } from "../../services/i18n";
 import sync from "../../services/sync";
 import { escapeQuotes } from "../../services/utils";
 import ws, { subscribeToMessages, unsubscribeToMessage } from "../../services/ws";
-import { useStaticTooltip, useTriliumOption, useTriliumOptionBool } from "../react/hooks";
+import { useTriliumOption, useTriliumOptionBool } from "../react/hooks/options";
+import { useStaticTooltip } from "../react/hooks/tooltip";
 import { launcherContextMenuHandler, LauncherNoteProps } from "./launch_bar_widgets";
 
 type SyncState = "unknown" | "in-progress"

@@ -1,6 +1,6 @@
 ---
 name: writing-documentation
-description: Use whenever a change is user-facing — a new feature, a moved or removed button, a label, a shortcut, an option, a default, a note type, a collection view, an import format — or when asked to write, fix, restructure or audit Trilium's documentation ("document this", "update the User Guide", "add a page for X", "is X documented?", "which page describes X?", "the docs still say…", "rename/move this page", "add a screenshot", "which icon do I use?"). Covers the docs trees (`docs/User Guide`, `docs/Developer Guide`, `docs/Release Notes`) and the generated in-app help, `!!!meta.json` (noteId, shareAlias, iconClass, attachments), the User Guide house style (register, templates, reference pills, `<kbd>`, admonitions, figures, `bx`/`cke`/`tn-brand` icon spans), and `docs.mjs` (find/show/scaffold pages, register images, rename/move/delete, map a diff to affected pages, audit, regenerate the in-app help). A user-facing change is not finished until the User Guide describes it, in the same commit.
+description: Use whenever a change is user-facing — a new feature, a moved or removed button, a label, a shortcut, an option, a default, a note type, a collection view, an import format — or when asked to write, fix, restructure or audit Trilium's documentation ("document this", "update the User Guide", "add a page for X", "is X documented?", "which page describes X?", "the docs still say…", "rename/move this page", "add a screenshot", "which icon do I use?"), and when writing a changelog entry or a release highlight in `.changelog/`. Covers the docs trees (`docs/User Guide`, `docs/Developer Guide`, `docs/Release Notes`) and the generated in-app help, `!!!meta.json` (noteId, shareAlias, iconClass, attachments), the User Guide house style (register, templates, reference pills, `<kbd>`, admonitions, figures, `bx`/`cke`/`tn-brand` icon spans), and `docs.mjs` (find/show/scaffold pages, register images, rename/move/delete, map a diff to affected pages, audit, regenerate the in-app help). A user-facing change is not finished until the User Guide describes it, in the same commit.
 ---
 
 # Writing Trilium's documentation
@@ -55,7 +55,9 @@ switches on) surfaces panels the change never mentioned — grep the gate's read
 Do **not** write release notes on a branch: the maintainer generates `docs/Release Notes/Release
 Notes/v<x>.md` at release time (`pnpm chore:release-notes`). What a change contributes is a
 changelog entry in `.changelog/` (`pnpm changelog:new <slug>`, format in `.changelog/README.md`),
-written as the user sees the change, plus the issue keyword in the commit subject. The one
+written as the user sees the change, plus the issue keyword in the commit subject. Read
+[references/changelog-entries.md](references/changelog-entries.md) before writing one: the register,
+which numbers belong in it, and what goes in an entry of its own. The one
 per-version page a feature branch does touch is a `Scripting/Breaking changes/v<next>.0 <title>`
 page for a scripting API break.
 

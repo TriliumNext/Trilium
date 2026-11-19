@@ -1,7 +1,11 @@
+import type { AttachmentRow } from "@triliumnext/commons";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type NoteContext from "../components/note_context";
+import type FAttachment from "../entities/fattachment";
 import type FNote from "../entities/fnote";
+import froca from "../services/froca";
+import LoadResults from "../services/load_results";
 import { buildNote } from "../test/easy-froca";
 import NoteWrapperWidget, {
     hasBackgroundEffects, isAlwaysFullWidthByType, isFullWidthNote, markVisibleSplits
@@ -216,6 +220,73 @@ describe("isAlwaysFullWidthByType", () => {
     });
 });
 
+describe("NoteWrapperWidget attachment width", () => {
+    afterEach(() => {
+        delete froca.attachments.pdfAttachment;
+        delete froca.attachments.zipAttachment;
+        vi.restoreAllMocks();
+    });
+
+    it("widens the split for an attachment opened on its own, not for its note", async () => {
+        const note = buildNote({ title: "Owner", type: "text" });
+        froca.attachments.pdfAttachment = { attachmentId: "pdfAttachment", role: "file", mime: "application/pdf" } as FAttachment;
+        froca.attachments.zipAttachment = { attachmentId: "zipAttachment", role: "file", mime: "application/zip" } as FAttachment;
+        const widget = new NoteWrapperWidget();
+        widget.render();
+
+        // The first attachment opened waits for `attachment_roles.js`, which loads on demand.
+        showAttachment(widget, note, "pdfAttachment");
+        await vi.waitFor(() => expect(widget.$widget.hasClass("full-content-width")).toBe(true));
+        showAttachment(widget, note, "zipAttachment");
+        expect(widget.$widget.hasClass("full-content-width")).toBe(false);
+        showNote(widget, note);
+        expect(widget.$widget.hasClass("full-content-width")).toBe(false);
+    });
+
+    it("widens the split once an attachment it does not hold yet has loaded", async () => {
+        const note = buildNote({ title: "Owner", type: "text" });
+        vi.spyOn(froca, "getAttachment").mockImplementation(async (attachmentId) => {
+            const loaded = { attachmentId, role: "file", mime: "application/pdf" } as FAttachment;
+            froca.attachments[attachmentId] = loaded;
+            return loaded;
+        });
+        const widget = new NoteWrapperWidget();
+        widget.render();
+
+        showAttachment(widget, note, "pdfAttachment");
+        expect(widget.$widget.hasClass("full-content-width")).toBe(false);
+        await vi.waitFor(() => expect(widget.$widget.hasClass("full-content-width")).toBe(true));
+        expect(froca.getAttachment).toHaveBeenCalledOnce();
+    });
+
+    it("follows the open attachment when a new file replaces it, and ignores other attachments", async () => {
+        const note = buildNote({ title: "Owner", type: "text" });
+        const attachment = {
+            attachmentId: "zipAttachment", ownerId: note.noteId, role: "file",
+            mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        } as FAttachment;
+        froca.attachments.zipAttachment = attachment;
+        const widget = new NoteWrapperWidget();
+        widget.render();
+        showAttachment(widget, note, "zipAttachment");
+        await vi.waitFor(() => expect(widget.$widget.hasClass("full-content-width")).toBe(true));
+
+        const reload = async (attachmentId: string) => {
+            const loadResults = new LoadResults([]);
+            loadResults.addAttachmentRow({ attachmentId, ownerId: note.noteId, role: "file", mime: attachment.mime, title: "" } as AttachmentRow);
+            await widget.entitiesReloadedEvent({ loadResults });
+        };
+
+        attachment.mime = "application/zip";
+        const refresh = vi.spyOn(widget, "refresh");
+        await reload("otherAttachment");
+        expect(refresh).not.toHaveBeenCalled();
+        expect(widget.$widget.hasClass("full-content-width")).toBe(true);
+        await reload("zipAttachment");
+        expect(widget.$widget.hasClass("full-content-width")).toBe(false);
+    });
+});
+
 describe("isFullWidthNote", () => {
     it("opts a regular text note into full width via the fullContentWidth label", () => {
         expect(isFullWidthNote(buildNote({ title: "Plain", type: "text" }))).toBe(false);
@@ -257,6 +328,11 @@ describe("isFullWidthNote", () => {
         expect(isFullWidthNote(buildNote({ title: "Calendar", type: "search", "#viewType": "calendar" }))).toBe(true);
     });
 });
+
+function showAttachment(widget: NoteWrapperWidget, note: FNote, attachmentId: string) {
+    const noteContext = { note, viewScope: { viewMode: "attachments", attachmentId } } as unknown as NoteContext;
+    widget.setNoteContextEvent({ noteContext });
+}
 
 function showNote(widget: NoteWrapperWidget, note: FNote) {
     const noteContext = { note, viewScope: { viewMode: "default" } } as unknown as NoteContext;
