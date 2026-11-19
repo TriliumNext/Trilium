@@ -71,6 +71,22 @@ describe("renderCodePreview", () => {
         expect(render(language).querySelectorAll(".code-preview-line span").length)
             .toBeGreaterThan(0);
     });
+
+    it("highlights a long line up to 50,000 characters and shows the rest of it plain", async () => {
+        const code = "let a = 1; ".repeat(6_000);
+        const pre = parse(renderCodePreview(code, {
+            themes: await loadSlots(), language: await loadPreviewLanguage("text/javascript"),
+            isWrapped: false
+        }));
+
+        const line = pre.querySelector(".code-preview-line");
+        expect(pre.querySelectorAll(".code-preview-line").length).toBe(1);
+        expect(line?.textContent).toBe(code);
+        // The 4,546th `1` starts at character 50,003, past the head.
+        const numbers = [ ...line?.querySelectorAll("span") ?? [] ]
+            .filter((span) => span.textContent === "1");
+        expect(numbers.length).toBe(4_545);
+    });
 });
 
 describe("loadPreviewTheme", () => {

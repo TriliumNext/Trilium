@@ -99,13 +99,16 @@ describe("renderCodeNotePreview", () => {
         expect(await isNumbered(true)).toBe(true);
     });
 
-    it("shows code too long to highlight plain, still numbered", async () => {
+    it("highlights the first 500 lines of longer code and shows the rest plain, numbered", async () => {
         const { renderCodeNotePreview } = await freshModule({});
         const long = Array.from({ length: 600 }, () => "let a = 1;").join("\n");
         const pre = await renderCodeNotePreview(long, "text/javascript");
 
-        expect(pre.querySelectorAll(".code-preview-line").length).toBe(600);
-        expect(pre.querySelectorAll(".code-preview-line span").length).toBe(0);
+        const lines = [ ...pre.querySelectorAll(".code-preview-line") ];
+        expect(lines.length).toBe(600);
+        expect(lines.map((line) => line.textContent)).toEqual(Array(600).fill("let a = 1;"));
+        expect(lines.findIndex((line) => !line.querySelector("span"))).toBe(500);
+        expect(lines.slice(500).every((line) => !line.querySelector("span"))).toBe(true);
         expect(pre.getAttribute("style")).toBe("--code-preview-digits: 3");
     });
 

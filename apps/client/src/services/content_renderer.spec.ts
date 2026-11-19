@@ -1537,6 +1537,14 @@ describe("getRenderingType detection", () => {
         expect((await getRenderedContent(zip)).type).toBe("file");
     });
 
+    it("renders the JSON of a view config and of a ToC cache as code", async () => {
+        for (const role of [ "viewConfig", "tocCache" ]) {
+            const att = buildAttachment({ role, mime: "application/json" });
+            att.getBlob = (async () => ({ content: "{}" })) as any;
+            expect((await getRenderedContent(att)).type).toBe("code");
+        }
+    });
+
     it("returns the raw role of an attachment with no branch, drawn as an icon", async () => {
         const att = buildAttachment({ role: "unknownRole" });
         const { type, $renderedContent } = await getRenderedContent(att);
