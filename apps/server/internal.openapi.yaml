@@ -544,7 +544,7 @@ paths:
         '204':
           description: Content updated, by a save without `base`
         '400':
-          description: A malformed `base`
+          description: A malformed `base`, or `keepOther` without `base`
         '404':
           description: Note not found
         '409':
@@ -552,24 +552,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required: [reason, message, blobId, type, mime, isVersioned]
-                properties:
-                  reason:
-                    type: string
-                    enum: [format, version]
-                  message:
-                    type: string
-                  blobId:
-                    type: string
-                    description: The blob of the note now, which a save that keeps its version names
-                  type:
-                    type: string
-                  mime:
-                    type: string
-                  isVersioned:
-                    type: boolean
-                    description: Whether the note keeps revisions
+                $ref: '#/components/schemas/SaveConflict'
 
   /api/notes/{noteId}/metadata:
     get:
@@ -616,7 +599,7 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [content, hash]
+                required: [content, hash, note]
                 properties:
                   content:
                     type: string
@@ -624,6 +607,11 @@ paths:
                   hash:
                     type: string
                     description: The hash of `content`, which a save of the blocks is based on
+                  note:
+                    type: string
+                    description: >-
+                      The whole note that `content` was read from, which a draft of the blocks
+                      goes into
         '400':
           description: >-
             No `block` parameter, a note that is not a text note, or a protected note without a
@@ -696,41 +684,39 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [hash, attachments]
+                required: [hash, note, attachments]
                 properties:
                   hash:
                     type: string
                     nullable: true
                     description: >-
                       The hash of the blocks as saved, `null` when they cannot be read apart
+                  note:
+                    type: string
+                    description: >-
+                      The whole note as the save left it, which a draft of the blocks goes into
                   attachments:
                     type: array
+                    description: The attachments that the save created or replaced
                     items:
                       $ref: '#/components/schemas/SavedAttachmentBase'
         '204':
           description: Blocks replaced, by a save without `base`
         '409':
-          description: The blocks changed since they were read
+          description: >-
+            The blocks, or an attachment that the save replaces, changed since they were read
+            (`version`), or the blocks can no longer be saved apart (`format`, `range`)
           content:
             application/json:
               schema:
-                type: object
-                required: [reason, message, hash, isVersioned]
-                properties:
-                  reason:
-                    type: string
-                    enum: [version]
-                  message:
-                    type: string
-                  hash:
-                    type: string
-                    description: The hash of the blocks now
-                  isVersioned:
-                    type: boolean
+                oneOf:
+                  - $ref: '#/components/schemas/BlocksVersionConflict'
+                  - $ref: '#/components/schemas/BlocksGoneConflict'
         '400':
           description: >-
-            No `block` parameter, no `content`, a malformed `base`, a note that is not a text
-            note, or a protected note without a protected session
+            No `block` parameter, no `content`, a malformed `base`, `keepOther` without `base`, a
+            note that is not a text note in a save without `base`, or a protected note without a
+            protected session
         '404':
           description: >-
             The note or a block of the range does not exist, or the range is not a run of whole
@@ -1826,11 +1812,18 @@ paths:
     post:
       tags: [Attachments]
       summary: Save attachment
+      description: >-
+        Saves an attachment of the note, replacing the one that `matchBy` finds or creating one. A
+        save with `blobId` names the blob that the replaced attachment was read at: it is refused
+        with 409, and saves nothing, when that attachment has another blob now. The answer is what
+        the next save is based on. A save without `blobId` is unconditional, and answers 204.
       operationId: saveAttachment
       parameters:
         - $ref: '#/components/parameters/noteId'
         - name: matchBy
           in: query
+          description: >-
+            How the attachment to replace is found: by `attachmentId` (the default) or by `title`
           schema:
             type: string
             enum: [attachmentId, title]
@@ -1839,15 +1832,49 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Attachment'
+              type: object
+              required: [role, mime, title]
+              properties:
+                attachmentId:
+                  type: string
+                role:
+                  type: string
+                mime:
+                  type: string
+                title:
+                  type: string
+                content:
+                  type: string
+                blobId:
+                  type: string
+                  description: The blob that the replaced attachment was read at
+                keepOther:
+                  type: boolean
+                  description: >-
+                    Saves over the attachment that another writer saved, after the note keeps its
+                    version as a revision
       responses:
-        '201':
-          description: Attachment saved
+        '200':
+          description: Attachment saved, by a save with `blobId`
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Attachment'
-                
+                $ref: '#/components/schemas/SavedAttachmentBase'
+        '204':
+          description: Attachment saved, by a save without `blobId`
+        '400':
+          description: A `blobId` that is not a string, or `keepOther` without `blobId`
+        '404':
+          description: Note not found
+        '409':
+          description: >-
+            The replaced attachment has another blob than the save is based on. `attachments`
+            holds that attachment as it is now.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaveConflict'
+
   /api/notes/{noteId}/attachments/upload:
     post:
       tags: [Attachments]
@@ -2442,12 +2469,8 @@ paths:
         Restores the revision as the content of its note, with its attachments, and the links and
         relations of that content.
       responses:
-        '200':
-          description: Revision restored
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Note'
+        '204':
+          description: Revision restored, or there is no revision of that ID
         '400':
           description: A revision of the source `fragment`, which holds blocks of the note alone
 
@@ -5652,6 +5675,71 @@ components:
         title:
           type: string
         blobId:
+          type: string
+
+    SaveConflict:
+      type: object
+      required: [reason, message, blobId, type, mime, isVersioned, attachments]
+      description: >-
+        Why a save of a note or an attachment was refused: the note now has another format, after
+        a conversion, or another version than the one the save is based on
+      properties:
+        reason:
+          type: string
+          enum: [format, version]
+        message:
+          type: string
+        blobId:
+          type: string
+          description: The blob of the note now, which a save that keeps its version names
+        type:
+          type: string
+        mime:
+          type: string
+        isVersioned:
+          type: boolean
+          description: Whether the note keeps revisions
+        attachments:
+          type: array
+          description: >-
+            The attachments that the save names, by ID or by title, as the note has them now. A
+            save that keeps its version replaces them at these blobs.
+          items:
+            $ref: '#/components/schemas/SavedAttachmentBase'
+
+    BlocksVersionConflict:
+      type: object
+      required: [reason, message, hash, attachments, isVersioned]
+      description: The blocks, or an attachment that the save replaces, changed since they were read
+      properties:
+        reason:
+          type: string
+          enum: [version]
+        message:
+          type: string
+        hash:
+          type: string
+          description: The hash of the blocks now, which a save that keeps its version names
+        attachments:
+          type: array
+          description: As `attachments` of `SaveConflict`
+          items:
+            $ref: '#/components/schemas/SavedAttachmentBase'
+        isVersioned:
+          type: boolean
+          description: Whether the note keeps revisions
+
+    BlocksGoneConflict:
+      type: object
+      required: [reason, message]
+      description: >-
+        The blocks can no longer be saved apart: the note was converted (`format`), or the `block`
+        parameter no longer points at blocks that can be edited apart (`range`)
+      properties:
+        reason:
+          type: string
+          enum: [format, range]
+        message:
           type: string
 
     CreateNoteRequest:

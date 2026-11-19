@@ -606,7 +606,7 @@ Saves the content of a note. A save with `base` names the version that the conte
 
     No content.
 
-=== "400: A malformed `base`"
+=== "400: A malformed `base`, or `keepOther` without `base`"
 
     No content.
 
@@ -616,7 +616,7 @@ Saves the content of a note. A save with `base` names the version that the conte
 
 === "409: The note has another format or version than the save is based on"
 
-    *   `application/json`: `object`
+    *   `application/json`: [`SaveConflict`](#schema-SaveConflict)
 
     <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
     <div class="trilium-multicolumn-column">
@@ -629,6 +629,7 @@ Saves the content of a note. A save with `base` names the version that the conte
     | `type`  <br>_required_ | `string` |
     | `mime`  <br>_required_ | `string` |
     | `isVersioned`  <br>_required_ | `boolean`  <br>Whether the note keeps revisions |
+    | `attachments`  <br>_required_ | array of [`SavedAttachmentBase`](#schema-SavedAttachmentBase)  <br>The attachments that the save names, by ID or by title, as the note has them now. A save that keeps its version replaces them at these blobs. |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -640,7 +641,14 @@ Saves the content of a note. A save with `base` names the version that the conte
         "blobId": "string",
         "type": "string",
         "mime": "string",
-        "isVersioned": true
+        "isVersioned": true,
+        "attachments": [
+            {
+                "attachmentId": "string",
+                "title": "string",
+                "blobId": "string"
+            }
+        ]
     }
     ```
 
@@ -727,6 +735,7 @@ The blocks of a text note that `block` points at, as their exact HTML source, so
     | --- | --- |
     | `content`  <br>_required_ | `string` |
     | `hash`  <br>_required_ | `string`  <br>The hash of `content`, which a save of the blocks is based on |
+    | `note`  <br>_required_ | `string`  <br>The whole note that `content` was read from, which a draft of the blocks goes into |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -734,7 +743,8 @@ The blocks of a text note that `block` points at, as their exact HTML source, so
     ```json
     {
         "content": "<p data-trilium-block-id=\"eaJkN47U8kI4\">First paragraph</p>",
-        "hash": "string"
+        "hash": "string",
+        "note": "string"
     }
     ```
 
@@ -826,7 +836,8 @@ Replaces the blocks that `block` points at with `content` and saves the note as 
     | Property | Description |
     | --- | --- |
     | `hash`  <br>_required_ | `string \| null`  <br>The hash of the blocks as saved, `null` when they cannot be read apart |
-    | `attachments`  <br>_required_ | array of [`SavedAttachmentBase`](#schema-SavedAttachmentBase) |
+    | `note`  <br>_required_ | `string`  <br>The whole note as the save left it, which a draft of the blocks goes into |
+    | `attachments`  <br>_required_ | array of [`SavedAttachmentBase`](#schema-SavedAttachmentBase)  <br>The attachments that the save created or replaced |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -834,6 +845,7 @@ Replaces the blocks that `block` points at with `content` and saves the note as 
     ```json
     {
         "hash": "string",
+        "note": "string",
         "attachments": [
             {
                 "attachmentId": "string",
@@ -851,7 +863,7 @@ Replaces the blocks that `block` points at with `content` and saves the note as 
 
     No content.
 
-=== "400: No `block` parameter, no `content`, a malformed `base`, a note that is not a text note, or a protected note without a protected session"
+=== "400: No `block` parameter, no `content`, a malformed `base`, `keepOther` without `base`, a note that is not a text note in a save without `base`, or a protected note without a protected session"
 
     No content.
 
@@ -859,34 +871,25 @@ Replaces the blocks that `block` points at with `content` and saves the note as 
 
     No content.
 
-=== "409: The blocks changed since they were read"
+=== "409: The blocks, or an attachment that the save replaces, changed since they were read (`version`), or the blocks can no longer be saved apart (`format`, `range`)"
 
-    *   `application/json`: `object`
-
-    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
-    <div class="trilium-multicolumn-column">
-
-    | Property | Description |
-    | --- | --- |
-    | `reason`  <br>_required_ | `string`  <br>One of `version`. |
-    | `message`  <br>_required_ | `string` |
-    | `hash`  <br>_required_ | `string`  <br>The hash of the blocks now |
-    | `isVersioned`  <br>_required_ | `boolean` |
-
-    </div>
-    <div class="trilium-multicolumn-column">
+    *   `application/json`: [`BlocksVersionConflict`](#schema-BlocksVersionConflict) | [`BlocksGoneConflict`](#schema-BlocksGoneConflict)
 
     ```json
     {
         "reason": "version",
         "message": "string",
         "hash": "string",
+        "attachments": [
+            {
+                "attachmentId": "string",
+                "title": "string",
+                "blobId": "string"
+            }
+        ],
         "isVersioned": true
     }
     ```
-
-    </div>
-    </div>
 
 ### List the places inside a note that a link can point at
 
@@ -3064,6 +3067,8 @@ File attachments
 
 `POST /api/notes/{noteId}/attachments` · `saveAttachment`
 
+Saves an attachment of the note, replacing the one that `matchBy` finds or creating one. A save with `blobId` names the blob that the replaced attachment was read at: it is refused with 409, and saves nothing, when that attachment has another blob now. The answer is what the next save is based on. A save without `blobId` is unconditional, and answers 204.
+
 **Authorization**: `sessionAuth` or `tokenAuth`
 
 **Path parameters**
@@ -3076,25 +3081,24 @@ File attachments
 
 | Name | Description |
 | --- | --- |
-| `matchBy` | `string`  <br>One of `attachmentId`, `title`. |
+| `matchBy` | `string`  <br>How the attachment to replace is found: by `attachmentId` (the default) or by `title`. One of `attachmentId`, `title`. |
 
 **Request body** (required)
 
-*   `application/json`: [`Attachment`](#schema-Attachment)
+*   `application/json`: `object`
 
 <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
 <div class="trilium-multicolumn-column">
 
 | Property | Description |
 | --- | --- |
-| `attachmentId`  <br>_required_ | `string` |
-| `ownerId`  <br>_required_ | `string` |
-| `role`  <br>_required_ | `string`  <br>One of `image`, `file`. |
+| `attachmentId` | `string` |
+| `role`  <br>_required_ | `string` |
 | `mime`  <br>_required_ | `string` |
 | `title`  <br>_required_ | `string` |
-| `blobId` | `string` |
-| `dateModified` | [`DateTime`](#schema-DateTime) |
-| `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+| `content` | `string` |
+| `blobId` | `string`  <br>The blob that the replaced attachment was read at |
+| `keepOther` | `boolean`  <br>Saves over the attachment that another writer saved, after the note keeps its version as a revision |
 
 </div>
 <div class="trilium-multicolumn-column">
@@ -3102,13 +3106,12 @@ File attachments
 ```json
 {
     "attachmentId": "string",
-    "ownerId": "string",
-    "role": "image",
+    "role": "string",
     "mime": "string",
     "title": "string",
+    "content": "string",
     "blobId": "string",
-    "dateModified": "2025-02-14 08:19:59.203+0100",
-    "utcDateModified": "2025-02-13 07:42:47.698Z"
+    "keepOther": true
 }
 ```
 
@@ -3117,9 +3120,9 @@ File attachments
 
 **Responses**
 
-=== "201: Attachment saved"
+=== "200: Attachment saved, by a save with `blobId`"
 
-    *   `application/json`: [`Attachment`](#schema-Attachment)
+    *   `application/json`: [`SavedAttachmentBase`](#schema-SavedAttachmentBase)
 
     <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
     <div class="trilium-multicolumn-column">
@@ -3127,13 +3130,8 @@ File attachments
     | Property | Description |
     | --- | --- |
     | `attachmentId`  <br>_required_ | `string` |
-    | `ownerId`  <br>_required_ | `string` |
-    | `role`  <br>_required_ | `string`  <br>One of `image`, `file`. |
-    | `mime`  <br>_required_ | `string` |
     | `title`  <br>_required_ | `string` |
-    | `blobId` | `string` |
-    | `dateModified` | [`DateTime`](#schema-DateTime) |
-    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `blobId`  <br>_required_ | `string` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -3141,13 +3139,61 @@ File attachments
     ```json
     {
         "attachmentId": "string",
-        "ownerId": "string",
-        "role": "image",
-        "mime": "string",
         "title": "string",
+        "blobId": "string"
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "204: Attachment saved, by a save without `blobId`"
+
+    No content.
+
+=== "400: A `blobId` that is not a string, or `keepOther` without `blobId`"
+
+    No content.
+
+=== "404: Note not found"
+
+    No content.
+
+=== "409: The replaced attachment has another blob than the save is based on. `attachments` holds that attachment as it is now."
+
+    *   `application/json`: [`SaveConflict`](#schema-SaveConflict)
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `reason`  <br>_required_ | `string`  <br>One of `format`, `version`. |
+    | `message`  <br>_required_ | `string` |
+    | `blobId`  <br>_required_ | `string`  <br>The blob of the note now, which a save that keeps its version names |
+    | `type`  <br>_required_ | `string` |
+    | `mime`  <br>_required_ | `string` |
+    | `isVersioned`  <br>_required_ | `boolean`  <br>Whether the note keeps revisions |
+    | `attachments`  <br>_required_ | array of [`SavedAttachmentBase`](#schema-SavedAttachmentBase)  <br>The attachments that the save names, by ID or by title, as the note has them now. A save that keeps its version replaces them at these blobs. |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "reason": "format",
+        "message": "string",
         "blobId": "string",
-        "dateModified": "2025-02-14 08:19:59.203+0100",
-        "utcDateModified": "2025-02-13 07:42:47.698Z"
+        "type": "string",
+        "mime": "string",
+        "isVersioned": true,
+        "attachments": [
+            {
+                "attachmentId": "string",
+                "title": "string",
+                "blobId": "string"
+            }
+        ]
     }
     ```
 
@@ -4159,46 +4205,9 @@ Restores the revision as the content of its note, with its attachments, and the 
 
 **Responses**
 
-=== "200: Revision restored"
+=== "204: Revision restored, or there is no revision of that ID"
 
-    *   `application/json`: [`Note`](#schema-Note)
-
-    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
-    <div class="trilium-multicolumn-column">
-
-    | Property | Description |
-    | --- | --- |
-    | `noteId`  <br>_required_ | `string`  <br>12-character note ID |
-    | `title`  <br>_required_ | `string`  <br>Note title |
-    | `type`  <br>_required_ | [`NoteType`](#schema-NoteType)  <br>One of `text`, `code`, `render`, `file`, `image`, `search`, `relationMap`, `book`, `noteMap`, `mermaid`, `canvas`, `webView`, `launcher`, `doc`, `contentWidget`, `mindMap`, `geoMap`. |
-    | `mime`  <br>_required_ | `string`  <br>MIME type |
-    | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
-    | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | [`DateTime`](#schema-DateTime) |
-    | `dateModified` | [`DateTime`](#schema-DateTime) |
-    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
-    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
-
-    </div>
-    <div class="trilium-multicolumn-column">
-
-    ```json
-    {
-        "noteId": "ur11rSfHkzeV",
-        "title": "string",
-        "type": "text",
-        "mime": "text/html",
-        "isProtected": true,
-        "blobId": "string",
-        "dateCreated": "2025-02-14 08:19:59.203+0100",
-        "dateModified": "2025-02-14 08:19:59.203+0100",
-        "utcDateCreated": "2025-02-13 07:42:47.698Z",
-        "utcDateModified": "2025-02-13 07:42:47.698Z"
-    }
-    ```
-
-    </div>
-    </div>
+    No content.
 
 === "400: A revision of the source `fragment`, which holds blocks of the note alone"
 
@@ -8783,6 +8792,41 @@ An attachment as a save left it
 | `attachmentId`  <br>_required_ | `string` |
 | `title`  <br>_required_ | `string` |
 | `blobId`  <br>_required_ | `string` |
+
+### <a id="schema-SaveConflict"></a>`SaveConflict`
+
+Why a save of a note or an attachment was refused: the note now has another format, after a conversion, or another version than the one the save is based on
+
+| Property | Description |
+| --- | --- |
+| `reason`  <br>_required_ | `string`  <br>One of `format`, `version`. |
+| `message`  <br>_required_ | `string` |
+| `blobId`  <br>_required_ | `string`  <br>The blob of the note now, which a save that keeps its version names |
+| `type`  <br>_required_ | `string` |
+| `mime`  <br>_required_ | `string` |
+| `isVersioned`  <br>_required_ | `boolean`  <br>Whether the note keeps revisions |
+| `attachments`  <br>_required_ | array of [`SavedAttachmentBase`](#schema-SavedAttachmentBase)  <br>The attachments that the save names, by ID or by title, as the note has them now. A save that keeps its version replaces them at these blobs. |
+
+### <a id="schema-BlocksVersionConflict"></a>`BlocksVersionConflict`
+
+The blocks, or an attachment that the save replaces, changed since they were read
+
+| Property | Description |
+| --- | --- |
+| `reason`  <br>_required_ | `string`  <br>One of `version`. |
+| `message`  <br>_required_ | `string` |
+| `hash`  <br>_required_ | `string`  <br>The hash of the blocks now, which a save that keeps its version names |
+| `attachments`  <br>_required_ | array of [`SavedAttachmentBase`](#schema-SavedAttachmentBase)  <br>As `attachments` of `SaveConflict` |
+| `isVersioned`  <br>_required_ | `boolean`  <br>Whether the note keeps revisions |
+
+### <a id="schema-BlocksGoneConflict"></a>`BlocksGoneConflict`
+
+The blocks can no longer be saved apart: the note was converted (`format`), or the `block` parameter no longer points at blocks that can be edited apart (`range`)
+
+| Property | Description |
+| --- | --- |
+| `reason`  <br>_required_ | `string`  <br>One of `format`, `range`. |
+| `message`  <br>_required_ | `string` |
 
 ### <a id="schema-CreateNoteRequest"></a>`CreateNoteRequest`
 
