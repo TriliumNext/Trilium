@@ -337,6 +337,7 @@
     "resources-title": "Downloaded resources"
   },
   "notes": {
+    "root-note": "root",
     "new-note": "New note",
     "duplicate-note-suffix": "(dup)",
     "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}",

@@ -330,6 +330,7 @@
     "llm_chat_prefix": "Чат:"
   },
   "notes": {
+    "root-note": "Главная",
     "duplicate-note-suffix": "(дубликат)",
     "new-note": "Новая заметка",
     "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}",

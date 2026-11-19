@@ -13,6 +13,18 @@ if (!fs.existsSync(DB_INIT_DIR)) {
     process.exit(1);
 }
 
+/** Reads `demo-<locale>.zip` from `<resourceDir>/db`, falling back to `demo.zip`. */
+export function readDemoArchive(resourceDir: string, locale?: string): Buffer {
+    const dbDir = path.join(resourceDir, "db");
+    if (locale) {
+        const localizedPath = path.join(dbDir, `demo-${locale}.zip`);
+        if (fs.existsSync(localizedPath)) {
+            return fs.readFileSync(localizedPath);
+        }
+    }
+    return fs.readFileSync(path.join(dbDir, "demo.zip"));
+}
+
 export default {
     RESOURCE_DIR,
     DB_INIT_DIR,

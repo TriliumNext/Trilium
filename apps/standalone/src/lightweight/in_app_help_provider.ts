@@ -1,5 +1,6 @@
 import type { HelpBundle, HiddenSubtreeItem } from "@triliumnext/commons";
 import { InAppHelpProvider } from "@triliumnext/core";
+import i18next from "i18next";
 
 import helpMeta from "../../../server/src/assets/help/help_meta.json";
 
@@ -21,6 +22,8 @@ export default class StandaloneInAppHelpProvider extends InAppHelpProvider {
     private defaultMeta = helpMeta as HiddenSubtreeItem[];
     private metaByLocale = new Map<string, HiddenSubtreeItem[]>();
     private contentByLocale = new Map<string, HelpBundle>();
+    private availableLocales = new Set<string>([ "en" ]);
+    private pendingLoads = new Map<string, Promise<void>>();
 
     getHelpHiddenSubtreeData(locale?: string): HiddenSubtreeItem[] {
         if (locale) {
@@ -57,17 +60,36 @@ export default class StandaloneInAppHelpProvider extends InAppHelpProvider {
     }
 
     /**
-     * Loads the page content of every shipped language. Failing costs the pages their bodies while
-     * the tree, the titles and the navigation keep working, so it is logged rather than allowed to
-     * fail startup.
+     * Loads the English fallback and the active display language; other shipped languages are
+     * fetched lazily via {@link ensureLocale} when the user switches language.
      */
-    async load(): Promise<void> {
+    async load(preferredLocale = i18next.language || "en"): Promise<void> {
         try {
             const locales = await this.loadLocales();
-            await Promise.all(locales.map((locale) => this.loadLocale(locale)));
+            this.availableLocales = new Set(locales.length ? locales : [ "en" ]);
+            const toLoad = [ "en" ];
+            if (preferredLocale !== "en" && this.availableLocales.has(preferredLocale)) {
+                toLoad.push(preferredLocale);
+            }
+            await Promise.all(toLoad.map((locale) => this.ensureLocale(locale)));
         } catch (e) {
             console.warn("[Worker] In-app help content could not be loaded:", e);
         }
+    }
+
+    async ensureLocale(locale: string): Promise<void> {
+        if (!this.availableLocales.has(locale) || this.contentByLocale.has(locale)) {
+            return;
+        }
+        const existing = this.pendingLoads.get(locale);
+        if (existing) {
+            return existing;
+        }
+        const task = this.loadLocale(locale).finally(() => {
+            this.pendingLoads.delete(locale);
+        });
+        this.pendingLoads.set(locale, task);
+        return task;
     }
 
     /** The languages the shipped assets carry a translation for (`help_locales.json`). */

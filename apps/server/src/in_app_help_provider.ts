@@ -13,31 +13,30 @@ import { isDev } from "./services/utils.js";
  */
 export default class NodejsInAppHelpProvider extends InAppHelpProvider {
 
-    /**
-     * The guide only changes with the application, so both files are read once per process and
-     * locale. Localized variants (`help_meta.<locale>.json` / `help_content.<locale>.json`,
-     * e.g. the Russian `.ru` pair built from `docs/User Guide/ru`) are preferred for the active
-     * display language; languages without a translation transparently use the default English
-     * files. Callers only read the returned values: the injection builds notes from the items
-     * rather than writing to them.
-     */
+    // Cached per locale; localized help_<meta|content>.<locale>.json falls back to English.
     private helpMeta = new Map<string, HiddenSubtreeItem[]>();
     private helpContent = new Map<string, HelpBundle>();
 
     getHelpHiddenSubtreeData(locale?: string): HiddenSubtreeItem[] {
         const key = locale ?? "en";
-        if (!this.helpMeta.has(key)) {
-            this.helpMeta.set(key, readHelpFile<HiddenSubtreeItem[]>(localizedHelpFile("help_meta", key)) ?? []);
+        const cached = this.helpMeta.get(key);
+        if (cached) {
+            return cached;
         }
-        return this.helpMeta.get(key)!;
+        const loaded = readHelpFile<HiddenSubtreeItem[]>(localizedHelpFile("help_meta", key)) ?? [];
+        this.helpMeta.set(key, loaded);
+        return loaded;
     }
 
     getHelpContent(locale?: string): HelpBundle {
         const key = locale ?? "en";
-        if (!this.helpContent.has(key)) {
-            this.helpContent.set(key, readHelpFile<HelpBundle>(localizedHelpFile("help_content", key)) ?? {});
+        const cached = this.helpContent.get(key);
+        if (cached) {
+            return cached;
         }
-        return this.helpContent.get(key)!;
+        const loaded = readHelpFile<HelpBundle>(localizedHelpFile("help_content", key)) ?? {};
+        this.helpContent.set(key, loaded);
+        return loaded;
     }
 
     getHelpAssetBase(): string {

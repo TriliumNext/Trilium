@@ -47,6 +47,9 @@ export abstract class InAppHelpProvider {
      * pages reference it (percent-decoded). Resolves to `null` when the file cannot be read.
      */
     abstract getHelpAsset(assetPath: string): Promise<Uint8Array | null>;
+
+    /** Ensures localized bundles for `locale` are loaded when fetched lazily (no-op for sync providers). */
+    async ensureLocale(_locale: string): Promise<void> {}
 }
 
 /**
@@ -83,7 +86,7 @@ export function initInAppHelp(p: InAppHelpProvider) {
                     isExpanded: true,
                     // HiddenSubtreeItem is structurally a VirtualSubtreeItem (its enforce*
                     // fields are simply ignored here).
-                    children: getHelpHiddenSubtreeData(locale)
+                    children: p.getHelpHiddenSubtreeData(locale)
                 }
             ];
         },
@@ -93,6 +96,10 @@ export function initInAppHelp(p: InAppHelpProvider) {
         },
         getAssets: (noteId) => getHelpPageAssets(p, noteId, currentHelpLocale())
     });
+}
+
+export async function ensureHelpLocale(locale: string): Promise<void> {
+    await provider?.ensureLocale(locale);
 }
 
 export function getHelpHiddenSubtreeData(): HiddenSubtreeItem[] {

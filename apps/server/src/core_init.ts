@@ -8,7 +8,6 @@ import fs from "fs";
 import path from "path";
 
 import ServerBackupService from "./backup_provider.js";
-import { readDemoArchive } from "./services/demo_archive.js";
 import AsyncLocalStorageExecutionContext from "./cls_provider.js";
 import { loadCoreSchema } from "./core_assets.js";
 import NodejsCryptoProvider from "./crypto_provider.js";
@@ -17,7 +16,7 @@ import ServerLogService from "./log_provider.js";
 import ServerPlatformProvider from "./platform_provider.js";
 import dataDirs from "./services/data_dir.js";
 import NodeRequestProvider from "./services/request.js";
-import { RESOURCE_DIR } from "./services/resource_dir.js";
+import { readDemoArchive, RESOURCE_DIR } from "./services/resource_dir.js";
 import { consumeSetupMarker, setupPlatform } from "./services/setup_marker.js";
 import WebSocketMessagingProvider from "./services/ws_messaging_provider.js";
 import BetterSqlite3Provider from "./sql_provider.js";

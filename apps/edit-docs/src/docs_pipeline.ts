@@ -18,8 +18,8 @@ import path from "path";
 import { deferred } from "../../../packages/commons/src/index.js";
 import { buildHelpBundle } from "./help_bundle_generator.js";
 import { buildHelpMeta, serializeHelpMeta, stripAppVersion } from "./help_meta_generator.js";
-import { openApiToMarkdown, type OpenApiSpec } from "./openapi_markdown.js";
-import { runTypeDoc, typeDocToDeclarations, type TypeDocMarkdownOptions, typeDocToMarkdown } from "./typedoc_markdown.js";
+import { type OpenApiSpec,openApiToMarkdown } from "./openapi_markdown.js";
+import { runTypeDoc, type TypeDocMarkdownOptions, typeDocToDeclarations, typeDocToMarkdown } from "./typedoc_markdown.js";
 
 export interface NoteMapping {
     rootNoteId: string;
@@ -248,12 +248,12 @@ async function writeGeneratedPages(mapping: NoteMapping) {
 
 /** The skill reference of a TypeDoc page: its declarations under a heading `readSkill()` appends. */
 function renderSkillReference(project: Awaited<ReturnType<typeof runTypeDoc>>, page: TypeDocPage) {
-    return [
+    return `${[
         `<!-- Generated from ${path.basename(page.entryPoint)} by \`pnpm edit-docs:sync-docs\`. Do not edit. -->`,
         "## API reference",
         "Every member of `api` and of the objects it returns, as TypeScript declarations, each under the first sentence of its description.",
         `\`\`\`ts\n${typeDocToDeclarations(project, page)}\n\`\`\``
-    ].join("\n\n") + "\n";
+    ].join("\n\n")  }\n`;
 }
 
 /**
@@ -287,13 +287,36 @@ function findDataFile(
     return undefined;
 }
 
+/** Clears `outputPath` before re-export while preserving nested localized help directories. */
+async function cleanExportDir(outputPath: string, preserveDirs: string[]) {
+    const resolvedOut = path.resolve(outputPath);
+    const preserved = preserveDirs.map((d) => path.resolve(d)).filter((d) => d.startsWith(resolvedOut + path.sep));
+    if (preserved.length === 0) {
+        await fs.rm(outputPath, { recursive: true, force: true });
+        return;
+    }
+    let entries: string[];
+    try {
+        entries = await fs.readdir(resolvedOut);
+    } catch {
+        return;
+    }
+    for (const entry of entries) {
+        const full = path.join(resolvedOut, entry);
+        const keep = preserved.some((p) => p === full || p.startsWith(full + path.sep));
+        if (!keep) {
+            await fs.rm(full, { recursive: true, force: true });
+        }
+    }
+}
+
 export async function exportData(mapping: NoteMapping, baseUrl: string) {
     const { path: outputPath, ignoredFiles: ignoredFileNames } = mapping;
     const ignoredFiles = ignoredFileNames ? new Set(ignoredFileNames) : undefined;
     const zipFilePath = "output.zip";
 
     try {
-        await fs.rm(outputPath, { recursive: true, force: true });
+        await cleanExportDir(outputPath, Object.values(mapping.helpLocales ?? {}).map((l) => l.path));
         await fs.mkdir(outputPath, { recursive: true });
 
         // First export as zip.
@@ -318,7 +341,7 @@ export async function exportData(mapping: NoteMapping, baseUrl: string) {
 }
 
 /** The languages with an in-app help bundle, default English included. */
-export async function writeHelpLocalesIndex(mapping: NoteMapping) {
+async function writeHelpLocalesIndex(mapping: NoteMapping) {
     const locales = [ "en", ...Object.keys(mapping.helpLocales ?? {}) ];
     const target = mapping.helpContent
         ? path.join(path.dirname(mapping.helpContent), "help_locales.json")
@@ -361,7 +384,7 @@ async function cleanUpMeta(outputPath: string, mapping: NoteMapping, baseUrl: st
  * Derives the in-app help tree and its rendered content from a markdown export directory
  * (the freshly exported User Guide, or one of its localized variants).
  */
-export async function writeHelpArtifacts(exportDir: string, helpMetaPath?: string, helpContentPath?: string, baseUrl?: string) {
+async function writeHelpArtifacts(exportDir: string, helpMetaPath?: string, helpContentPath?: string, baseUrl?: string) {
     const meta = JSON.parse(await fs.readFile(path.join(exportDir, "!!!meta.json"), "utf-8")) as NoteMetaFile;
     const { meta: helpMeta, sources } = buildHelpMeta(meta, baseUrl);
 

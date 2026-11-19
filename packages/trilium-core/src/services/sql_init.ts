@@ -153,6 +153,9 @@ async function createInitialDatabase(skipDemoDb?: boolean, locale?: string) {
     const { initDocumentOptions, initNewDocumentOptions, initNotSyncedOptions, initStartupOptions } = await import("./options_init.js");
     const { load: loadBecca } = await import("../becca/becca_loader.js");
 
+    // Switch i18next before creating the root note and hidden subtree so initial titles use `locale`.
+    await applySetupLanguage(locale);
+
     const sql = getSql();
     const log = getLog();
     sql.transactional(() => {
@@ -167,7 +170,7 @@ async function createInitialDatabase(skipDemoDb?: boolean, locale?: string) {
 
         rootNote = new BNote({
             noteId: "root",
-            title: i18next.language?.toLowerCase().startsWith("ru") ? "Главная" : "root",
+            title: i18next.t("notes.root-note", { defaultValue: "root" }),
             type: "text",
             mime: "text/html"
         }).save();
@@ -194,12 +197,6 @@ async function createInitialDatabase(skipDemoDb?: boolean, locale?: string) {
         }
         passwordService.resetPassword();
     });
-
-    // Persisting the `locale` option above only records the choice in the DB; it does not switch the
-    // active i18next language. Switch it now, before `checkHiddenSubtree` builds the built-in titles,
-    // otherwise every system note (Options, Launch Bar, templates, Help) is created in English regardless
-    // of the language selected during setup.
-    await applySetupLanguage(locale);
 
     // Check hidden subtree.
     // This ensures the existence of system templates, for the demo content.
