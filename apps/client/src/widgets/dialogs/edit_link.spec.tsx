@@ -1292,6 +1292,41 @@ describe("EditLinkDialog", () => {
             .toStrictEqual([ "add_link.top_of_note", "Moved", "Status" ]);
     });
 
+    it("keeps the note page for a listing that arrives once the dialog closes", async () => {
+        const showError = vi.spyOn(toast, "showError").mockImplementation(() => {});
+        onTestFinished(() => showError.mockRestore());
+        const note = buildNote({ title: "Target" });
+        const referencesUrl = `notes/${note.noteId}/references`;
+        noteReferences.set(note.noteId, {
+            targets: [ headingTarget("Status", 2) ], blobId: "listed"
+        });
+
+        await open();
+        await pickNote(`root/${note.noteId}`);
+        await checkNoteChoice("Status");
+        const relisted = deferred<NoteReferencesResponse>();
+        noteReferences.set(note.noteId, relisted.promise);
+        createHeadingReference.mockRejectedValueOnce(
+            JSON.stringify({ reason: "listing", message: "Changed" }));
+        await requestSubmit();
+        expect(showError).toHaveBeenCalledExactlyOnceWith("add_link.listing_changed");
+        expect(vi.mocked(server.get).mock.calls.filter(([ url ]) => url === referencesUrl))
+            .toHaveLength(2);
+
+        const modal = container.querySelector(".modal");
+        expect(modal).not.toBeNull();
+        await act(async () => {
+            modal?.dispatchEvent(new Event("hide.bs.modal"));
+        });
+        relisted.resolve({
+            targets: [ headingTarget("Moved", 2), headingTarget("Status", 2) ], blobId: "now"
+        });
+        await settle();
+
+        expect(noteChoices()).toStrictEqual([ "add_link.top_of_note", "*Status" ]);
+        expect(addLink).not.toHaveBeenCalled();
+    });
+
     it("stays open with a toast when the heading's block id cannot be created", async () => {
         const showError = vi.spyOn(toast, "showError").mockImplementation(() => {});
         const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -1700,6 +1735,12 @@ describe("EditLinkBalloon", () => {
             return form;
         }
 
+        async function close(form: HTMLFormElement) {
+            const container = form.parentElement;
+            if (!container) throw new Error("The balloon is not rendered.");
+            await act(async () => render(null, container));
+        }
+
         const form = await showOnHeading();
         const created = deferred<CreateReferenceResponse>();
         createHeadingReference.mockReturnValueOnce(created.promise);
@@ -1718,12 +1759,29 @@ describe("EditLinkBalloon", () => {
         const late = deferred<CreateReferenceResponse>();
         createHeadingReference.mockReturnValueOnce(late.promise);
         await submit(closed);
-        const container = closed.parentElement;
-        if (!container) throw new Error("The balloon is not rendered.");
-        await act(async () => render(null, container));
+        await close(closed);
         late.resolve({ params: { block: "Late" } });
         await settle();
         expect(onClose).toHaveBeenCalledOnce();
+        expect(addLink).toHaveBeenCalledOnce();
+
+        // A server that fails once the balloon is closed shows no error.
+        const showError = vi.spyOn(toast, "showError").mockImplementation(() => {});
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+        onTestFinished(() => {
+            showError.mockRestore();
+            consoleError.mockRestore();
+        });
+        const failing = await showOnHeading();
+        const failed = deferred<CreateReferenceResponse>();
+        createHeadingReference.mockReturnValueOnce(failed.promise);
+        await submit(failing);
+        await close(failing);
+        failed.reject("{\"message\":\"Gone\"}");
+        await settle();
+        expect(createHeadingReference).toHaveBeenCalledTimes(3);
+        expect(showError).not.toHaveBeenCalled();
+        expect(consoleError).not.toHaveBeenCalled();
         expect(addLink).toHaveBeenCalledOnce();
     });
 

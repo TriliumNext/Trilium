@@ -47,6 +47,7 @@ export function useTocBuild(
         state.awaiting = requestId;
         window.clearTimeout(state.timer);
         state.timer = window.setTimeout(() => {
+            /* v8 ignore next -- every other write of `awaiting` clears this timer */
             if (state.awaiting === requestId) state.awaiting = null;
         }, TOC_BUILD_TIMEOUT);
         iframeRef.current?.contentWindow?.postMessage({

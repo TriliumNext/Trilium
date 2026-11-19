@@ -393,6 +393,7 @@ export function useAttachmentEditor(
     const noteContextRef = useRef(noteContext);
     noteContextRef.current = noteContext;
     const saver = useNoteSaver<SaveData>({
+        /* v8 ignore next -- saveAttachment() reads the rows with getLatestAttachment() */
         getLatestData: () => undefined,
         getLatestAttachment: (_noteId, attachmentId) => saves.getLatestRow(attachmentId),
         loadVersion(noteId) {

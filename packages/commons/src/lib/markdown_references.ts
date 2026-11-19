@@ -201,9 +201,7 @@ export function insertHtmlBlock(
     if (block) {
         const prefix = getContinuationPrefix(getLine(source, block.from).text);
         const blank = prefix.trimEnd();
-        const nextLine = block.to < source.length
-            ? getLine(source, block.to + (source.startsWith("\r\n", block.to) ? 2 : 1))
-            : null;
+        const nextLine = getLineAfter(source, block.to);
         const blankAfter = nextLine && !isBlankLine(nextLine.text) ? `${lineEnding}${blank}` : "";
         change = {
             from: block.to,
@@ -211,9 +209,16 @@ export function insertHtmlBlock(
             insert: `${lineEnding}${blank}${lineEnding}${prefix}${html}${blankAfter}`
         };
     } else {
-        const blankAfter = source && !isBlankLine(getLine(source, 0).text)
-            ? `${lineEnding}${lineEnding}`
-            : "";
+        // The element goes on the first line, so text on that line or right below it needs a
+        // blank line between them.
+        const firstLine = getLine(source, 0);
+        const nextLine = getLineAfter(source, firstLine.text.length);
+        let blankAfter = "";
+        if (!isBlankLine(firstLine.text)) {
+            blankAfter = `${lineEnding}${lineEnding}`;
+        } else if (nextLine && !isBlankLine(nextLine.text)) {
+            blankAfter = lineEnding;
+        }
         change = { from: 0, to: 0, insert: `${html}${blankAfter}` };
     }
 
@@ -408,6 +413,13 @@ function getLine(source: string, offset: number): SourceLine {
         end++;
     }
     return { start, text: source.slice(start, end) };
+}
+
+/** The line after the line break at `offset`, or `null` when `offset` is the end of `source`. */
+function getLineAfter(source: string, offset: number) {
+    return offset < source.length
+        ? getLine(source, offset + (source.startsWith("\r\n", offset) ? 2 : 1))
+        : null;
 }
 
 /** The offset of the end of the line before the one that starts at `lineStart`. */

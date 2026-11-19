@@ -10,8 +10,8 @@ import server from "../../../services/server.js";
 import toast from "../../../services/toast.js";
 import type { EditLinkOpts } from "../../dialogs/edit_link.js";
 import {
-    insertText, replaceSelection, resolveWikilinkChip, showEditLinkDialog, toWikilink,
-    uploadImageAndInsert
+    insertText, type OwnLinkTargetReader, registerOwnLinkTargets, replaceSelection,
+    resolveWikilinkChip, showEditLinkDialog, toWikilink, uploadImageAndInsert
 } from "./editor_utils.js";
 
 const { loadBlockReferenceLabel } = vi.hoisted(() => ({
@@ -121,8 +121,11 @@ describe("resolveWikilinkChip", () => {
 });
 
 describe("showEditLinkDialog", () => {
-    /** Opens the dialog over `selected` in `doc`, and returns its options and the editor. */
-    function open(doc: string, selected = "") {
+    /**
+     * Opens the dialog over `selected` in `doc`, and returns its options and the editor. With
+     * `reader`, the dialog lists the targets of note `n` that it reads.
+     */
+    function open(doc: string, selected = "", reader?: OwnLinkTargetReader) {
         const from = doc.indexOf(selected);
         const view = {
             state: {
@@ -133,7 +136,10 @@ describe("showEditLinkDialog", () => {
             focus: vi.fn()
         } as unknown as VanillaCodeMirror;
         const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockResolvedValue(undefined);
-        showEditLinkDialog(view);
+        if (reader) {
+            registerOwnLinkTargets(view, reader);
+        }
+        showEditLinkDialog(view, reader && { noteId: "n", notePath: "root/n" });
         const opts = triggerCommand.mock.lastCall?.[1] as EditLinkOpts;
         return { opts, view };
     }
@@ -154,6 +160,22 @@ describe("showEditLinkDialog", () => {
         expect(titled.view.dispatch).toHaveBeenCalledWith(expect.objectContaining({
             changes: { from: 4, to: 9, insert: "[Setup](#root/abc123?bookmark=setup)" }
         }));
+    });
+
+    it("inserts nothing for a heading of the note whose pick was declined", async () => {
+        const reader = {
+            read: vi.fn(() => ({ headings: [], anchors: [ "top" ], getRange: () => null })),
+            takePendingMarker: vi.fn(() => null)
+        };
+        const { opts, view } = open("See ", "", reader);
+        expect(reader.read).toHaveBeenCalledWith("root/n", { from: 0, to: 0 });
+        expect(opts).toMatchObject({ noteId: "n", anchors: [ "top" ] });
+
+        await opts.addLink("root/n?block=h1", null);
+        expect(reader.takePendingMarker).toHaveBeenCalledOnce();
+        expect(view.dispatch).not.toHaveBeenCalled();
+        expect(view.focus).not.toHaveBeenCalled();
+        expect(showErrorMock).not.toHaveBeenCalled();
     });
 });
 

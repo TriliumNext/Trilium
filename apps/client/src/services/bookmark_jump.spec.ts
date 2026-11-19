@@ -58,6 +58,22 @@ describe("consumeBookmark", () => {
         scrollIntoView.mockReset();
     });
 
+    it("scrolls to the anchor of an embed when the note's own content has none", () => {
+        const container = buildContainer(`<p><a id="own"></a>own</p>`
+            + `<figure class="include-note" data-note-id="other">`
+            + `<p><a id="only"></a>embedded</p></figure>`);
+        const scrolled: Element[] = [];
+        scrollIntoView.mockImplementation(function (this: Element) {
+            scrolled.push(this);
+        });
+        const viewScope: ViewScope = { bookmark: "only" };
+
+        consumeBookmark(container, viewScope);
+        expect(scrolled.map((anchor) => anchor.parentElement?.textContent)).toEqual([ "embedded" ]);
+        expect(viewScope.bookmark).toBeUndefined();
+        scrollIntoView.mockReset();
+    });
+
     it("shows the tab that holds the target", () => {
         const container = buildContainer(
             `<div class="trilium-tabs">` +

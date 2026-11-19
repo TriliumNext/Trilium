@@ -332,6 +332,7 @@ export class NoteSaver<T extends SaveData> {
             : undefined);
         return await this.sendUntilSaved(note, row, {
             send: async (saved, isKeepingOther) => {
+                /* v8 ignore next -- getAttachmentRows() returns an array for a non-empty one */
                 const [ sent ] = await this.getAttachmentRows(note, [ saved ]) ?? [ saved ];
                 const answer = await server.post<SavedAttachmentBase | undefined>(
                     `notes/${noteId}/attachments`,

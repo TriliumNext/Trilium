@@ -1,10 +1,14 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import Component from "../../components/component";
 import FNote from "../../entities/fnote";
+import dialog from "../../services/dialog";
 import froca from "../../services/froca";
+import server from "../../services/server";
+import toast from "../../services/toast";
+import ws from "../../services/ws";
 import NoteContext from "../../components/note_context";
 import Dropdown from "../react/Dropdown";
 import { NoteContextContext, ParentComponent } from "../react/react_utils";
@@ -21,7 +25,8 @@ vi.mock("../../services/utils", async (importOriginal) => ({
 vi.mock("../react/modal_focustrap", () => ({ suspendModalFocusTraps: () => () => {} }));
 
 // The rows are read by their keys.
-vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
+const translate = vi.hoisted(() => vi.fn((key: string) => key));
+vi.mock("../../services/i18n", () => ({ t: translate }));
 
 // The tiles look up their shortcuts for their tooltips; a spec loads no keyboard actions.
 vi.mock("../../services/keyboard_actions", async (importOriginal) => {
@@ -429,5 +434,58 @@ describe("NoteContextMenu", () => {
         await act(async () => { await parent.handleEvent("noteSwitched", { noteContext, notePath: noteContext.notePath }); });
         await toggleMenu();
         expect(hasNoteTypeRow()).toBe(true);
+    });
+
+    it("says how many block references a change of format lost or moved, if any", async () => {
+        const note = buildNote({ title: "Text", type: "text", content: "<p>Hi</p>" });
+        const noteContext = new NoteContext("ntx-convert");
+        noteContext.noteId = note.noteId;
+        noteContext.viewScope = { viewMode: "default" };
+        onTestFinished(() => {
+            vi.restoreAllMocks();
+        });
+        vi.spyOn(dialog, "confirm").mockResolvedValue(true);
+        vi.spyOn(ws, "waitForMaxKnownEntityChangeId").mockResolvedValue(undefined);
+        const post = vi.spyOn(server, "post");
+        const showMessage = vi.spyOn(toast, "showMessage").mockImplementation(() => {});
+        const findRow = (icon: string) => vi.waitFor(() => {
+            const row = document.querySelector<HTMLElement>(
+                `.tn-popup li.dropdown-item:has(.${icon})`);
+            expect(row).toBeTruthy();
+            return row;
+        });
+
+        /** Converts the note on a server that reports these block ids, and returns the toasts. */
+        async function convert(lostBlockIds: string[], movedBlockIds: string[]) {
+            post.mockResolvedValueOnce({ lostBlockIds, movedBlockIds });
+            showMessage.mockClear();
+            render((
+                <ParentComponent.Provider value={new Component()}>
+                    <NoteContextContext.Provider value={noteContext}>
+                        <NoteContextMenu note={note} noteContext={noteContext} />
+                    </NoteContextContext.Provider>
+                </ParentComponent.Provider>
+            ), host);
+            host.querySelector<HTMLButtonElement>("button")?.click();
+            const advanced = await findRow("bx-wrench");
+            await act(async () => {
+                advanced?.dispatchEvent(new PointerEvent("pointerenter"));
+            });
+            const convertRow = await findRow("bxl-markdown");
+            await act(async () => convertRow?.click());
+            await vi.waitFor(() => expect(showMessage).toHaveBeenCalled());
+            render(null, host);
+            return showMessage.mock.calls.map(([ message ]) => message);
+        }
+
+        expect(await convert([ "b1" ], [ "b2", "b3" ])).toEqual([
+            "note_actions.convert_to_markdown_successful",
+            "note_actions.convert_block_references_changed"
+        ]);
+        expect(post).toHaveBeenCalledWith(`notes/${note.noteId}/convert-format`);
+        expect(translate).toHaveBeenCalledWith(
+            "note_actions.convert_block_references_changed", { lost: 1, moved: 2 });
+        expect(await convert([], [ "b2" ])).toHaveLength(2);
+        expect(await convert([], [])).toEqual([ "note_actions.convert_to_markdown_successful" ]);
     });
 });

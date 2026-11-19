@@ -18,6 +18,7 @@ import { ParentComponent } from "../../react/react_utils";
 import {
     enterContentEmbed, getContentEmbedTools, getEmbedFindTarget
 } from "../text/content_embed_tools";
+import { getMarkdownReferenceSource } from "./editor_block_references";
 import MarkdownEmbed from "./MarkdownEmbed";
 
 vi.mock("../../../services/i18n", async (importOriginal) => ({
@@ -114,6 +115,24 @@ describe("MarkdownEmbed", () => {
         const marker = `<a data-trilium-block-id="x"></a>`;
         expect(hooks?.resolveConflict({ blobId: "b", content: `Alpha ${marker}` })).toBe(true);
         expect(view.state.doc.toString()).toBe(`Alpha and Omega ${marker}`);
+    });
+
+    it("gives its note, path, preview and save to the menus of block references", async () => {
+        const note = buildMarkdownNote("Alpha");
+        vi.spyOn(note, "getBestNotePathString").mockReturnValue("root/docs/readme");
+        const saved = `Alpha <a data-trilium-block-id="a"></a>`;
+        const saveNow = vi.fn(async () => saved);
+        const preview = buildPreview("Alpha");
+        const { figure } = await mount(note, buildEditor({ saveNow }), {
+            isEditable: true, preview
+        });
+
+        const source = getMarkdownReferenceSource(await findView(figure));
+        expect(source?.getNote()).toBe(note);
+        expect(source?.getNotePath()).toBe("root/docs/readme");
+        expect(source?.getPreview()).toBe(preview);
+        expect(await source?.save?.()).toBe(saved);
+        expect(saveNow).toHaveBeenCalledOnce();
     });
 
     it("edits in split view while Editable is on, and previews the edits", async () => {

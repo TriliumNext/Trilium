@@ -272,10 +272,21 @@ describe("NoteSaver", () => {
             keepOther: undefined
         }), "editor", PUT_OPTIONS);
 
+        // An editor that holds no data for the note any more sends the data of the save again.
+        editor.getLatestData.mockReturnValue(undefined);
+        rejectWithConflict({ reason: "version" });
+        get.mockResolvedValueOnce({ blobId: "read2", content: "<p>theirs</p>" });
+        put.mockResolvedValueOnce({ blobId: "b4", attachments: [] });
+        expect(await saver.saveNote(note, { content: "<p>mine</p>" }))
+            .toStrictEqual({ content: "<p>mine</p>" });
+        expect(put).toHaveBeenLastCalledWith(`notes/${note.noteId}/data`, expect.objectContaining({
+            content: "<p>mine</p>", base: { blobId: "read2", type: "text", mime: "text/html" }
+        }), "editor", PUT_OPTIONS);
+
         // An editor that cannot bring its changes over leaves the choice to the user.
         resolveConflict.mockResolvedValueOnce(false);
         rejectWithConflict({ reason: "version" });
-        get.mockResolvedValueOnce({ blobId: "read2", content: "<p>theirs</p>" });
+        get.mockResolvedValueOnce({ blobId: "read3", content: "<p>theirs</p>" });
         void saver.saveNote(note, { content: "<p>mine</p>" });
         await vi.waitFor(() => expect(getQuestion()).toBeDefined());
         saver.abandon();
@@ -427,6 +438,109 @@ describe("NoteSaver", () => {
         expect(await saver.saveNote(note, { content: "<p>again</p>" })).toBeUndefined();
         expect(post).toHaveBeenCalledTimes(5);
     });
+
+    it("keeps a draft of blocks that did not reach the server, and the changes since", async () => {
+        const note = buildNote({ title: "Excerpt typed on" });
+        const editor = createEditor();
+        const saver = new NoteSaver<SaveData & { block?: string }>(editor);
+        saver.setBlockBase(note.noteId, "h0", "<p>note0</p>");
+        put.mockRejectedValueOnce(JSON.stringify({ reason: "range", message: "Gone" }));
+        post.mockRejectedValueOnce("offline");
+        await expect(saver.saveBlocks(note, "a", { content: "<p>x</p>" })).rejects.toBe("offline");
+        expect(saver.isPaused(note.noteId)).toBe(true);
+
+        editor.getLatestData.mockReturnValue({ content: "<p>x, and more</p>" });
+        expect(await saver.saveBlocks(note, "a", { content: "<p>x</p>" })).toBeUndefined();
+        expect(put).toHaveBeenCalledOnce();
+        const drafts = post.mock.calls.map(([ , request ]) => request);
+        expect(drafts.map(({ fragment }) => fragment.content))
+            .toStrictEqual([ "<p>x</p>", "<p>x</p>", "<p>x, and more</p>" ]);
+        expect(drafts[1].revisionId).toBe(drafts[0].revisionId);
+        expect(drafts[2]).toStrictEqual({
+            revisionId: expect.any(String), type: "text", mime: "text/html",
+            fragment: {
+                content: "<p>x, and more</p>", block: "a",
+                base: { note: "<p>note0</p>", hash: "h0" }
+            },
+            attachments: undefined
+        });
+        expect(drafts[2].revisionId).not.toBe(drafts[0].revisionId);
+        expect(saver.isPaused(note.noteId)).toBe(false);
+    });
+
+    it("keeps the draft of a new attachment that failed to reach the server", async () => {
+        const note = buildNote({ title: "New attachment" });
+        const { saver, editor } = createSaver(note);
+        note.getAttachments = vi.fn(async () => []);
+        // A newer row of each attachment that the editor can name by its ID.
+        editor.getLatestAttachment.mockImplementation((_noteId, attachmentId) => ({
+            attachmentId, role: "file", mime: "text/plain", title: "new.txt", content: "newer"
+        }));
+        const row = { role: "file", mime: "text/plain", title: "new.txt", content: "mine" };
+        post.mockRejectedValueOnce(JSON.stringify({
+            reason: "version", message: "", blobId: "noteBlob", type: "text", mime: "text/html",
+            isVersioned: true
+        })).mockRejectedValueOnce("offline");
+        get.mockResolvedValue({ blobId: "noteBlob", content: "<p>note</p>" });
+
+        const saving = saver.saveAttachment(note, row);
+        await answer(1);
+        await expect(saving).rejects.toBe("offline");
+        // Without an attachment of its title, the row creates one.
+        expect(post.mock.calls[0][1]).toStrictEqual(row);
+
+        expect(await saver.saveAttachment(note, row)).toBeUndefined();
+        const drafts = post.mock.calls.slice(1).map(([ , request ]) => request);
+        expect(drafts).toHaveLength(2);
+        expect(drafts[0]).toMatchObject({ content: "<p>note</p>", attachments: [ row ] });
+        expect(drafts[1]).toBe(drafts[0]);
+        expect(editor.loadVersion).toHaveBeenCalledExactlyOnceWith(
+            note.noteId, { blobId: "noteBlob", content: "<p>note</p>" });
+        expect(saver.isPaused(note.noteId)).toBe(false);
+    });
+
+    it("saves blocks without a hash unconditionally, and drafts them without a base", async () => {
+        const note = buildNote({ title: "Excerpt without a hash" });
+        const saver = new NoteSaver<SaveData & { block?: string }>(createEditor());
+        const url = `notes/${note.noteId}/blocks?block=a`;
+
+        note.type = "code";
+        expect(await saver.saveBlocks(note, "a", { content: "<p>x</p>" })).toBeUndefined();
+        expect(post).toHaveBeenLastCalledWith(`notes/${note.noteId}/revisions/draft`,
+            expect.objectContaining({
+                fragment: { content: "<p>x</p>", block: "a", base: undefined }
+            }), "editor");
+
+        // A save answered without a hash leaves the next save without a base as well.
+        note.type = "text";
+        await saver.saveBlocks(note, "a", { content: "<p>y</p>" });
+        await saver.saveBlocks(note, "a", { content: "<p>z</p>" });
+        expect(put.mock.calls.map(([ sentUrl, { content, base } ]) => [ sentUrl, content, base ]))
+            .toStrictEqual([ [ url, "<p>y</p>", undefined ], [ url, "<p>z</p>", undefined ] ]);
+    });
+
+    it("tells the user when the server discards a draft", async () => {
+        const note = buildNote({ title: "Discarded" });
+        const { saver } = createSaver(note);
+        const discarded = { revisionId: "r", isKept: false, isFragment: false };
+        rejectWithConflict({ reason: "version" });
+        post.mockResolvedValueOnce(discarded);
+        const saving = saver.saveNote(note, { content: "<p>mine</p>" });
+        await vi.waitFor(() => expect(saver.isAsking()).toBe(true));
+        saver.abandon();
+        expect(await saving).toBeUndefined();
+        expect(showPersistent).toHaveBeenLastCalledWith(expect.objectContaining({
+            icon: "bx bx-error-circle", message: "note_save.draft_discarded"
+        }));
+
+        const blocks = new NoteSaver<SaveData & { block?: string }>(createEditor());
+        put.mockRejectedValueOnce(JSON.stringify({ reason: "range", message: "Gone" }));
+        post.mockResolvedValueOnce({ ...discarded, isFragment: true });
+        expect(await blocks.saveBlocks(note, "a", { content: "<p>x</p>" })).toBeUndefined();
+        expect(showPersistent).toHaveBeenLastCalledWith(expect.objectContaining({
+            icon: "bx bx-error-circle", message: "note_save.draft_discarded_blocks_gone"
+        }));
+    });
 });
 
 describe("the blobs that a save replaced", () => {
@@ -438,6 +552,15 @@ describe("the blobs that a save replaced", () => {
         expect(getLatestBlob("chain", "a")).toBe("a");
         expect(getLatestBlob("chain", "b")).toBe("a");
         expect(getLatestBlob("other", "a")).toBe("a");
+    });
+
+    it("keeps the latest 1,000 replacements", () => {
+        for (let index = 0; index <= 1000; index++) {
+            recordReplacedBlob("many", `old${index}`, `new${index}`);
+        }
+        expect(getLatestBlob("many", "old0")).toBe("old0");
+        expect(getLatestBlob("many", "old1")).toBe("new1");
+        expect(getLatestBlob("many", "old1000")).toBe("new1000");
     });
 });
 

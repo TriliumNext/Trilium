@@ -1,4 +1,5 @@
 import { findHeading, getBlobTag } from "@triliumnext/commons/src/lib/toc.js";
+import { deferred } from "@triliumnext/commons/src/lib/utils.js";
 
 import { getDocumentBlobId } from "./digest";
 import { ensureOutline } from "./toc";
@@ -14,7 +15,7 @@ interface Target {
     rect?: number[] | null;
 }
 
-let documentLoaded = createDeferred<ViewerApp>();
+let documentLoaded = deferred<ViewerApp>();
 let isDocumentLoaded = false;
 /**
  * Settles once pdf.js has applied the initial view of the document, which restores the last-read
@@ -49,7 +50,7 @@ export function setupNavigation() {
  */
 export function trackDocument(app: ViewerApp) {
     if (isDocumentLoaded) {
-        documentLoaded = createDeferred();
+        documentLoaded = deferred();
         isDocumentLoaded = false;
     }
     const loaded = documentLoaded;
@@ -67,7 +68,7 @@ export function trackDocument(app: ViewerApp) {
 
 /** Settles with the viewer application once it has loaded its document. */
 export function whenDocumentLoaded(): Promise<ViewerApp> {
-    return documentLoaded.promise;
+    return documentLoaded;
 }
 
 /**
@@ -76,7 +77,7 @@ export function whenDocumentLoaded(): Promise<ViewerApp> {
  */
 async function navigate(resolveTarget: (app: ViewerApp) => Promise<Target | null>) {
     const request = ++latestRequest;
-    const app = await documentLoaded.promise;
+    const app = await documentLoaded;
     const [ , target ] = await Promise.all([
         initialViewApplied, resolveTarget(app).catch(() => null)
     ]);
@@ -200,17 +201,8 @@ function parseHeadingKey(key: string) {
 }
 
 /** Whether `dest` is an explicit destination that `scrollPageIntoView()` can read. */
-function isExplicitDestination(dest: unknown): dest is unknown[] {
-    if (!Array.isArray(dest)) return false;
-    const [ , mode ] = dest;
+function isExplicitDestination(dest: unknown[] | undefined): dest is unknown[] {
+    const mode = dest?.[1];
     return typeof mode === "object" && mode !== null
         && typeof (mode as { name?: unknown }).name === "string";
-}
-
-function createDeferred<T>() {
-    let resolve: (value: T) => void = () => {};
-    const promise = new Promise<T>((onResolve) => {
-        resolve = onResolve;
-    });
-    return { promise, resolve };
 }

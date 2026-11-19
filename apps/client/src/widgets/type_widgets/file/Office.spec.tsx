@@ -112,6 +112,24 @@ describe("OfficePreview", () => {
         await Promise.resolve();
         expect(container.innerHTML).toBe("");
     });
+
+    it("discards the conversion of a replaced blob that resolves late", async () => {
+        const conversions: ((preview: { css: string; html: string }) => void)[] = [];
+        renderOfficeToHtml.mockImplementation(() => new Promise((resolve) => {
+            conversions.push(resolve);
+        }));
+
+        await act(async () => mount("note1", "blobA"));
+        await act(async () => mount("note1", "blobB"));
+        expect(conversions).toHaveLength(2);
+
+        await act(async () => conversions[0]?.({ css: "", html: "<p class=\"v1\">v1</p>" }));
+        expect(container.querySelector(".v1")).toBeNull();
+        expect(container.querySelector(".office-preview-loading")).not.toBeNull();
+
+        await act(async () => conversions[1]?.({ css: "", html: "<p class=\"v2\">v2</p>" }));
+        expect(container.querySelector(".v2")).not.toBeNull();
+    });
 });
 
 describe("OfficePreview landing on a link", () => {

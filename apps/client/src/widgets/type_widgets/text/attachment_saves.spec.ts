@@ -178,6 +178,20 @@ describe("AttachmentSaves", () => {
         expect(saves.collect()).toEqual([]);
         expect(saves.canEdit(drawing)).toBe(true);
     });
+
+    it("drops the changes and tells its listeners once another version loads", () => {
+        const { saves } = setUp();
+        const listener = vi.fn();
+        const unsubscribed = vi.fn();
+        saves.subscribeVersionLoaded(listener);
+        saves.subscribeVersionLoaded(unsubscribed)();
+        saves.scheduleSave(drawing, () => "mine");
+
+        saves.loadOtherVersion();
+        expect(saves.getUnsavedContent("drawing1")).toBeUndefined();
+        expect(listener).toHaveBeenCalledOnce();
+        expect(unsubscribed).not.toHaveBeenCalled();
+    });
 });
 
 describe("useAttachmentEditor", () => {
@@ -400,6 +414,19 @@ describe("NoteSaves", () => {
         expect(saves.getUnsavedContent("code2")).toBeUndefined();
     });
 
+    it("takes a change for a save, and tells the editor that records it", () => {
+        const saves = new NoteSaves(vi.fn(), "host");
+        const hooks = {
+            onDataTaken: vi.fn(), dataSaved: vi.fn(), resolveConflict: vi.fn(() => false)
+        };
+        saves.scheduleSave(buildCodeNote("code1"), () => "typed", undefined, hooks);
+
+        expect(saves.takeUnsavedContent("code1")).toBe("typed");
+        expect(hooks.onDataTaken).toHaveBeenCalledOnce();
+        expect(saves.takeUnsavedContent("code2")).toBeUndefined();
+        expect(hooks.onDataTaken).toHaveBeenCalledOnce();
+    });
+
     it("keeps a change made while a retry of an earlier save runs", () => {
         const saves = new NoteSaves(vi.fn(), "host");
         const note = buildCodeNote("code1");
@@ -556,6 +583,13 @@ describe("useNoteEditor", () => {
         const guards = appContext.beforeUnloadListeners
             .filter((listener): listener is () => boolean => typeof listener === "function");
         expect(guards.map((guard) => guard())).toEqual([ false ]);
+        // A save that waits for the user is neither sent again nor waited for.
+        let saved: string | undefined = "waiting";
+        void editor?.saveNow?.("code1").then((content) => {
+            saved = content;
+        });
+        await vi.waitFor(() => expect(saved).toBeUndefined());
+        expect(serverPut).toHaveBeenCalledOnce();
 
         const question = showPersistent.mock.calls[0][0];
         await act(async () => {
@@ -687,6 +721,30 @@ describe("useNoteEditor", () => {
         expect(serverPut).not.toHaveBeenCalled();
         expect(editor?.getUnsavedContent("code1")).toBeUndefined();
         expect(editor?.getSaveState("code1")).toBe("saved");
+        await act(() => render(null, container));
+    });
+
+    it("edits the notes that its embeds show, except the note of its context", async () => {
+        component = new Component();
+        const container = document.createElement("div");
+        let hostEditor: NoteEditor | undefined;
+        function HostProbe({ context }: { context: NoteContext | null }) {
+            hostEditor = useNoteEditor(context);
+            return null;
+        }
+        const show = (context: NoteContext | null) => act(() => {
+            render(h(ParentComponent.Provider, { value: component }, h(HostProbe, { context })),
+                container);
+        });
+        const host = { noteId: "host1", isContentAvailable: () => true } as FNote;
+        const embedded = { noteId: "code1", isContentAvailable: () => true } as FNote;
+
+        await show({ ...noteContext, noteId: "host1" } as NoteContext);
+        expect(hostEditor?.canEdit(host)).toBe(false);
+        expect(hostEditor?.canEdit(embedded)).toBe(true);
+
+        await show(null);
+        expect(hostEditor?.canEdit(host)).toBe(true);
         await act(() => render(null, container));
     });
 });

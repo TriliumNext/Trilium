@@ -212,6 +212,8 @@ describe("insertHtmlBlock", () => {
         expect(insert("a\n\n\nb", 2)).toBe(`a\n\n${figure}\n\n\nb`);
         expect(insert("", 1)).toBe(figure);
         expect(insert("\n\nText", 1)).toBe(`${figure}\n\nText`);
+        expect(insert("\nText", 1)).toBe(`${figure}\n\nText`);
+        expect(insert(" \r\n## Head", 1)).toBe(`${figure}\r\n \r\n## Head`);
         expect(insert("<div>\nraw\n</div>", 1)).toBe(`${figure}\n\n<div>\nraw\n</div>`);
     });
 

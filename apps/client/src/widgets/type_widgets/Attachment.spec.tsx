@@ -361,6 +361,31 @@ describe("AttachmentDetail", () => {
         container.remove();
     });
 
+    it("looks nothing up while the view scope names no attachment", async () => {
+        const getAttachment = vi.spyOn(froca, "getAttachment").mockResolvedValue(null);
+        const component = new Component();
+        const container = document.createElement("div");
+        document.body.append(container);
+        async function show(viewScope: Record<string, string>) {
+            const props = { note: { noteId: "note1" }, viewScope } as unknown as
+                Parameters<typeof AttachmentDetail>[0];
+            await act(async () => {
+                render(
+                    <ParentComponent.Provider value={component}>
+                        <AttachmentDetail {...props} />
+                    </ParentComponent.Provider>, container);
+            });
+        }
+
+        await show({ viewMode: "attachments" });
+        expect(getAttachment).not.toHaveBeenCalled();
+
+        await show({ viewMode: "attachments", attachmentId: "att1" });
+        expect(getAttachment).toHaveBeenCalledExactlyOnceWith("att1");
+        await act(async () => render(null, container));
+        container.remove();
+    });
+
     it("shows a workbook opened on its own in the read-only spreadsheet, else its whole preview until it changes", async () => {
         const workbook = { ...role("file"), mime: XLSX_MIME } as FAttachment;
         vi.spyOn(froca, "getAttachment").mockResolvedValue(workbook);

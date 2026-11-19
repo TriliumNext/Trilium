@@ -61,6 +61,11 @@ vi.mock("../../../services/open", () => ({
 }));
 const copyReferenceWithToast = vi.hoisted(() => vi.fn());
 vi.mock("../../../services/clipboard_ext", () => ({ copyReferenceWithToast }));
+const rememberHeadingTitles = vi.hoisted(() => vi.fn());
+vi.mock("../../../services/link", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../../services/link")>()),
+    rememberHeadingTitles
+}));
 
 const { default: PdfPreview } = await import("./Pdf");
 
@@ -516,6 +521,24 @@ describe("the build of the table of contents", () => {
         answer(1);
         await settle();
         expect(put).toHaveBeenCalledOnce();
+    });
+
+    it("remembers the heading titles of a ready cache, and none of a stale one", async () => {
+        const posted = recordPostsToViewer();
+        loadViewer();
+        await vi.waitFor(() => expect(buildRequests(posted)).toHaveLength(1));
+        answer(1);
+        await vi.waitFor(() => expect(rememberHeadingTitles).toHaveBeenCalledOnce());
+        expect(rememberHeadingTitles).toHaveBeenCalledWith("notes/note-1/toc", "blobA",
+            [ { id: "id1", title: "Chapter 1", level: 1, page: 1 } ]);
+
+        put.mockResolvedValueOnce({ status: "stale", blobId: "blobOld", headings: [] });
+        loadViewer();
+        await vi.waitFor(() => expect(buildRequests(posted)).toHaveLength(2));
+        answer(2, "blobB");
+        await vi.waitFor(() => expect(put).toHaveBeenCalledTimes(2));
+        await settle();
+        expect(rememberHeadingTitles).toHaveBeenCalledOnce();
     });
 
     it("asks nothing where the cache is valid, or where the server reads the PDF itself", async () => {

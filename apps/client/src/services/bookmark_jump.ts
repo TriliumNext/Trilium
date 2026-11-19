@@ -77,6 +77,7 @@ export function revealElement(el: Element, boundary?: Element) {
 /** The first element in `container` whose `name` attribute `matches`. */
 function findByAttribute(container: Element, name: string, matches: (value: string) => boolean) {
     // Not a selector: a bookmark name can hold characters that a CSS selector does not allow.
+    /* v8 ignore next -- the selector matches only elements that have the attribute */
     return Array.from(container.querySelectorAll(`[${name}]`))
         .find((element) => matches(element.getAttribute(name) ?? ""));
 }

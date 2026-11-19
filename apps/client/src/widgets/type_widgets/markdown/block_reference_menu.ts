@@ -37,16 +37,16 @@ export async function buildMarkdownReferenceMenuItems(
         ? indexMarkdownBlocks(view.state.doc.toString(), PREVIEW_BLOCK_HOST)
         : null;
     const selected = index && getSelectedBlocks(view, index);
-    const paste = (title: string, uiIcon: string, isExcerpt: boolean): MenuItem<CommandNames> => ({
+    const paste = (
+        access: ClipboardAccess, title: string, uiIcon: string, isExcerpt: boolean
+    ): MenuItem<CommandNames> => ({
         title,
         uiIcon,
-        enabled: clipboard?.enabled,
+        enabled: access.enabled,
         handler: () => {
-            if (clipboard) {
-                void pasteClipboardReference(clipboard, (reference) => {
-                    insertReference(view, reference, isExcerpt);
-                });
-            }
+            void pasteClipboardReference(access, (reference) => {
+                insertReference(view, reference, isExcerpt);
+            });
         }
     });
     return {
@@ -58,8 +58,8 @@ export async function buildMarkdownReferenceMenuItems(
         copyTab: null,
         paste: clipboard
             ? [
-                paste(t("block_reference.paste_as_link"), "bx bx-link", false),
-                paste(t("block_reference.paste_as_excerpt"), "bx bx-window-alt", true)
+                paste(clipboard, t("block_reference.paste_as_link"), "bx bx-link", false),
+                paste(clipboard, t("block_reference.paste_as_excerpt"), "bx bx-window-alt", true)
             ]
             : []
     };

@@ -518,6 +518,7 @@ async function loadReferenceLinkTitle(
     // A column reference renders as "<board>: <column>", the column in a `<small>` below.
     $el.text(viewScope?.columnTitle ? `${title}:` : title);
 
+    /* v8 ignore next -- parseNavigationStateFromUrl() gives a view scope with every note ID */
     const targetLabel = viewScope ? await loadLinkTargetLabel(note, viewScope) : null;
     if (targetLabel) {
         $el.append($("<small>")
@@ -606,6 +607,7 @@ function getReferenceLinkTitleSync(
         return `${note.title}: ${viewScope.columnTitle}`;
     }
 
+    /* v8 ignore next -- parseNavigationStateFromUrl() gives a view scope with every note ID */
     const targetLabel = viewScope ? getCachedLinkTargetLabel(note, viewScope) : null;
     // A broken reference names the note alone.
     return targetLabel && !targetLabel.isBroken

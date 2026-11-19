@@ -1227,6 +1227,18 @@ describe("the labels of links to PDF headings", () => {
         get.mockRestore();
     });
 
+    it("shows the page for a heading that the ToC cache it reads does not list", async () => {
+        const pdf = buildNote({ title: "Paper" });
+        const get = answerToc({ status: "ready", blobId: pdf.blobId, headings });
+
+        const $small = (await label(`#root/${pdf.noteId}?page=4&heading=gone`)).find("small");
+
+        expect([ $small.length, $small.text() ]).toStrictEqual([ 1, "pdf.page_reference" ]);
+        expect($small.find("span").hasClass("bx-file")).toBe(true);
+        expect(get).toHaveBeenCalledOnce();
+        get.mockRestore();
+    });
+
     it("shows the note title alone for a document heading before a list built a cache", async () => {
         const docx = buildNote({ title: "Report" });
         const get = answerToc({ status: "missing" },

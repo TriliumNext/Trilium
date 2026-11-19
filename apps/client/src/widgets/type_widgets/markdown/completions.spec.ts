@@ -12,6 +12,7 @@ import {
     buildCodeFenceOptions, buildMarkdownCommands, buildTaskItemInsert, codeFenceCompletionSource,
     isClosingFence, linkToNote, markdownCompletionAt, parseCodeFencePrefix
 } from "./completions";
+import { type OwnLinkTargetReader, registerOwnLinkTargets } from "./editor_utils";
 
 const editorUtils = vi.hoisted(() => ({
     uploadImageAndInsert: vi.fn(),
@@ -210,10 +211,18 @@ describe("markdownCompletionAt", () => {
 });
 
 describe("linkToNote", () => {
-    /** Links the note at `notePath` in place of `doc` from `from` to `to`, and returns the text and the caret. */
-    function link(notePath: string, doc: string, from: number, to: number) {
+    /**
+     * Links the note at `notePath` in place of `doc` from `from` to `to`, with the targets of the
+     * document that `reader` lists, and returns the text and the caret.
+     */
+    function link(
+        notePath: string, doc: string, from: number, to: number, reader?: OwnLinkTargetReader
+    ) {
         const editor = new VanillaCodeMirror({ parent: document.createElement("div") });
         editor.dispatch({ changes: { from: 0, insert: doc } });
+        if (reader) {
+            registerOwnLinkTargets(editor, reader);
+        }
         linkToNote(notePath)(editor, from, to);
         const result = [ editor.state.doc.toString(), editor.state.selection.main.head ];
         editor.destroy();
@@ -226,6 +235,17 @@ describe("linkToNote", () => {
         // A link to a heading replaces the link and the text typed after it, and leaves a later `]]`.
         expect(link("root/abc?block=h1", "see [[abc]]In x]]", 4, 13))
             .toEqual([ "see [[abc?block=h1]] x]]", 20 ]);
+    });
+
+    it("leaves the typed text when the pick of a heading of the note was declined", () => {
+        const takePendingMarker = vi.fn(() => null);
+        const reader: OwnLinkTargetReader = {
+            read: () => ({ headings: [], anchors: [], getRange: () => null }),
+            takePendingMarker
+        };
+
+        expect(link("root/abc?block=h1", "see @In x", 4, 7, reader)[0]).toBe("see @In x");
+        expect(takePendingMarker).toHaveBeenCalledOnce();
     });
 });
 

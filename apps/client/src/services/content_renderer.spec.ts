@@ -455,7 +455,9 @@ describe("getRenderedContent editable code", () => {
             postponeSave: vi.fn(),
             release: vi.fn(),
             getSaveState: vi.fn((): SaveState | undefined => "saving"),
-            subscribeSaveState: vi.fn(() => () => {})
+            subscribeSaveState: vi.fn(() => () => {}),
+            setLoadedVersion: vi.fn(),
+            saveNow: vi.fn(async (): Promise<string | undefined> => "saved")
         };
     }
 
@@ -530,6 +532,9 @@ describe("getRenderedContent editable code", () => {
         props.editor.subscribeSaveState(listener);
         expect(noteEditor.getSaveState).toHaveBeenCalledWith(note.noteId);
         expect(noteEditor.subscribeSaveState).toHaveBeenCalledWith(listener);
+        props.editor.setLoadedVersion("loadedBlob", "loaded");
+        expect(noteEditor.setLoadedVersion)
+            .toHaveBeenCalledExactlyOnceWith(note.noteId, "loadedBlob", "loaded");
     });
 
     it("mounts MarkdownEmbed for a Markdown note in an embed, saved by `noteEditor`", async () => {
@@ -557,6 +562,8 @@ describe("getRenderedContent editable code", () => {
         const hooks = { onDataTaken: vi.fn(), dataSaved: vi.fn(), resolveConflict: vi.fn() };
         props.editor.scheduleSave(getContent, undefined, hooks);
         expect(noteEditor.scheduleSave).toHaveBeenCalledWith(note, getContent, undefined, hooks);
+        expect(await props.editor.saveNow()).toBe("saved");
+        expect(noteEditor.saveNow).toHaveBeenCalledExactlyOnceWith(note.noteId);
 
         // Other Markdown renders the same way, and none shows the children of the note.
         expect((await props.renderPreview("edited")).innerHTML).toBe("<p>edited</p>");

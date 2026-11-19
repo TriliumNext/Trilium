@@ -78,6 +78,15 @@ describe("loadBlockReferenceLabel", () => {
             .toEqual({ text: "block_reference.broken", isBroken: true, isHeading: false });
     });
 
+    it("labels the blocks of a note without a blob as broken", async () => {
+        const note = buildNote({ title: "Source", content: CONTENT });
+        vi.spyOn(note, "getBlob").mockResolvedValueOnce(null);
+        const broken = { text: "block_reference.broken", isBroken: true, isHeading: false };
+
+        expect(await loadBlockReferenceLabel(note, "a")).toEqual(broken);
+        expect(getCachedBlockReferenceLabel(note, "a")).toEqual(broken);
+    });
+
     it("tries again after the content failed to load", async () => {
         const note = buildNote({ title: "Source", content: CONTENT });
         const getBlob = vi.spyOn(note, "getBlob").mockRejectedValueOnce(new Error("offline"));

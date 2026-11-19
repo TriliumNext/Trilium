@@ -452,6 +452,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                 // The note changed since the listing: it is listed again for a new pick.
                 toast.showError(t("add_link.listing_changed"));
                 const noteId = tree.getNoteIdFromUrl(notePath);
+                /* v8 ignore else -- only a listing for this note path gives a target a reference */
                 if (notePath && noteId) {
                     const { path } = splitTargetParameters(notePath);
                     const { targets } = await getLinkTargets(noteId, path);

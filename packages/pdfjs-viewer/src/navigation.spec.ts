@@ -163,6 +163,31 @@ describe("headings", () => {
         expect(app.pdfViewer.update).toHaveBeenCalledTimes(2);
     });
 
+    it("turns to the link's page for a request that names no heading", async () => {
+        viewer = await installViewerApp(outlinePdf());
+        const app = startTracking();
+        loadDocument();
+
+        viewer.sendFromParent({ type: "trilium-scroll-to-heading", pageNumber: 3 });
+
+        await vi.waitFor(() => expect(app.pdfViewer.currentPageNumber).toBe(3));
+        expect(viewer.scrollPageIntoView).not.toHaveBeenCalled();
+    });
+
+    it("turns to the link's page when the outline cannot be read", async () => {
+        viewer = await installViewerApp(outlinePdf());
+        const app = startTracking();
+        loadDocument();
+        vi.spyOn(viewer.pdfDocument, "getOutline").mockRejectedValue(new Error("Bad outline"));
+
+        viewer.sendFromParent({
+            type: "trilium-scroll-to-heading", headingKey: "outline-0", pageNumber: 3
+        });
+
+        await vi.waitFor(() => expect(app.pdfViewer.currentPageNumber).toBe(3));
+        expect(viewer.scrollPageIntoView).not.toHaveBeenCalled();
+    });
+
     it("opens the last page for a page past the end, from a link to a longer version", async () => {
         const error = vi.spyOn(console, "error");
         viewer = await installViewerApp(outlinePdf());

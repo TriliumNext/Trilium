@@ -1,6 +1,10 @@
 import VanillaCodeMirror from "@triliumnext/codemirror";
 import { getChangeRecord } from "@triliumnext/codemirror/src/extensions/block_markers";
+import { generateBlockId } from "@triliumnext/commons/src/lib/block_reference.js";
 import { indexMarkdownBlocks } from "@triliumnext/commons/src/lib/markdown_block_index.js";
+import {
+    insertHtmlBlock, placeMarkerOnBlock
+} from "@triliumnext/commons/src/lib/markdown_references.js";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,6 +14,7 @@ import type FNote from "../../../entities/fnote";
 import contextMenu, { type MenuItem } from "../../../menus/context_menu";
 import { copyHtmlWithToast } from "../../../services/clipboard_ext";
 import froca from "../../../services/froca";
+import { t } from "../../../services/i18n";
 import type { ChangeRecordHooks } from "../../../services/note_save";
 import toast from "../../../services/toast";
 import { buildNote } from "../../../test/easy-froca";
@@ -28,9 +33,24 @@ import {
 vi.mock("dompurify", () => ({ default: { sanitize: (html: string) => html, addHook: () => {} } }));
 vi.mock("../../../services/i18n", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../../services/i18n")>(),
-    t: (key: string) => key
+    t: vi.fn((key: string) => key)
 }));
 vi.mock("../../../services/clipboard_ext", () => ({ copyHtmlWithToast: vi.fn() }));
+vi.mock("@triliumnext/commons/src/lib/block_reference.js", async (importOriginal) => {
+    const original =
+        await importOriginal<typeof import("@triliumnext/commons/src/lib/block_reference.js")>();
+    return { ...original, generateBlockId: vi.fn(original.generateBlockId) };
+});
+vi.mock("@triliumnext/commons/src/lib/markdown_references.js", async (importOriginal) => {
+    const original = await importOriginal<
+        typeof import("@triliumnext/commons/src/lib/markdown_references.js")
+    >();
+    return {
+        ...original,
+        insertHtmlBlock: vi.fn(original.insertHtmlBlock),
+        placeMarkerOnBlock: vi.fn(original.placeMarkerOnBlock)
+    };
+});
 
 const marker = (id: string) => `<a data-trilium-block-id="${id}"></a>`;
 const ID = /[A-Za-z0-9]{12}/;
@@ -49,6 +69,10 @@ afterEach(() => {
     editor = undefined;
     vi.restoreAllMocks();
     vi.mocked(copyHtmlWithToast).mockClear();
+    vi.mocked(t).mockClear();
+    vi.mocked(generateBlockId).mockReset();
+    vi.mocked(insertHtmlBlock).mockReset();
+    vi.mocked(placeMarkerOnBlock).mockReset();
 });
 
 describe("useBlockMarkers", () => {
@@ -75,6 +99,17 @@ describe("useBlockMarkers", () => {
         expect(getOwnLinkTargets(view, "root/n")).toBeUndefined();
         expect(getMarkdownReferenceSource(view)).toBeUndefined();
         expect(view.dom.querySelectorAll(".cm-block-marker")).toHaveLength(0);
+    });
+
+    it("shows no id in the title of a marker whose id is not valid", async () => {
+        const view = await createEditor(`Text ${marker("a:b")}`);
+        mount(view);
+
+        // Until the markers are read, every marker counts as effective.
+        expect(view.dom.querySelector(".cm-block-marker")?.getAttribute("title")).toBe("");
+        await vi.waitFor(() =>
+            expect(view.dom.querySelector(".cm-block-marker.inert")).not.toBeNull());
+        expect(t).toHaveBeenCalledWith("block_reference.inert_marker", { id: "" });
     });
 
     it("gives a heading picked from the list an id for its link, wherever it is", async () => {
@@ -140,6 +175,24 @@ describe("useBlockMarkers", () => {
         expect(takePendingMarker(view)).toBeNull();
     });
 
+    it("declines a heading that is no longer one, or for which no id can be drawn", async () => {
+        const view = await createEditor("## Setup\n\n## Other");
+        mount(view);
+        const [ setup, other ] = getOwnLinkTargets(view, "root/n") ?? [];
+
+        // Text typed before `##` keeps the listed text, and makes the line a paragraph.
+        view.dispatch({ changes: { from: 0, insert: "x" } });
+        expect(setup.createLinkPath()).toBe("root/n");
+        expect(toast.showError).toHaveBeenLastCalledWith("add_link.listing_changed");
+        expect(takePendingMarker(view)).toBeNull();
+
+        // Every id drawn is already in the note.
+        vi.mocked(generateBlockId).mockReturnValue("Other");
+        expect(other.createLinkPath()).toBe("root/n");
+        expect(toast.showError).toHaveBeenLastCalledWith("add_link.heading_reference_failed");
+        expect(takePendingMarker(view)).toBeNull();
+    });
+
     it("lists the headings of the note in the link dialog, links one with its marker", async () => {
         const view = await createEditor("## Setup\n\nSee <a id=\"top\"></a>");
         mount(view);
@@ -167,6 +220,19 @@ describe("useBlockMarkers", () => {
         await later.addLink("root/other", null);
         expect(view.state.doc.toString()).toBe(doc);
         expect(toast.showError).toHaveBeenLastCalledWith("add_link.listing_changed");
+    });
+
+    it("keeps text typed at either end of the selected text outside the link", async () => {
+        const view = await createEditor("## Setup\n\nSee here");
+        mount(view);
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockResolvedValue(undefined);
+        view.dispatch({ selection: { anchor: 10, head: 13 } });
+        showEditLinkDialog(view, { noteId: "n", notePath: "root/n" });
+        const opts = triggerCommand.mock.lastCall?.[1] as EditLinkOpts;
+
+        view.dispatch({ changes: [ { from: 10, insert: "Now " }, { from: 13, insert: "!" } ] });
+        await opts.addLink("root/other", null);
+        expect(view.state.doc.toString()).toBe("## Setup\n\nNow [[other]]! here");
     });
 
     it("takes over an id that another writer gave a block that continues here", async () => {
@@ -212,6 +278,39 @@ describe("useBlockMarkers", () => {
             expect(hooks.resolveConflict({ blobId: "b", content: current }), current).toBe(false);
             expect(view.state.doc.toString()).toBe(doc);
         }
+    });
+
+    it("takes over a version that gives the blocks the ids they already have", async () => {
+        const view = await createEditor("## Alpha\n\nOmega");
+        const { hooks } = mount(view, createSource());
+        view.dispatch({ changes: { from: 8, insert: ` ${marker("x")}` } });
+        hooks.onDataTaken();
+        view.dispatch({ changes: { from: view.state.doc.length, insert: "!" } });
+
+        const current = `## Alpha ${marker("x")}\n\nOmega`;
+        expect(hooks.resolveConflict({ blobId: "b", content: current })).toBe(true);
+        expect(view.state.doc.toString()).toBe(`## Alpha ${marker("x")}\n\nOmega!`);
+        expect(getChangeRecord(view.state).base.toString()).toBe(current);
+    });
+
+    it("takes nothing over when a placed marker leaves its id without a block", async () => {
+        const view = await createEditor("## Alpha\n\nOmega");
+        const { hooks } = mount(view, createSource());
+        view.dispatch({ changes: { from: view.state.doc.length, insert: "!" } });
+        // A placement whose edit gives the id to no block.
+        vi.mocked(placeMarkerOnBlock)
+            .mockReturnValueOnce({ id: "x", change: { from: 0, to: 0, insert: "" } });
+
+        const current = `## Alpha ${marker("x")}\n\nOmega`;
+        expect(hooks.resolveConflict({ blobId: "b", content: current })).toBe(false);
+        expect(view.state.doc.toString()).toBe("## Alpha\n\nOmega!");
+    });
+
+    it("records nothing for a save taken while there is no editor", () => {
+        const { hooks } = mount(null, createSource());
+
+        hooks.onDataTaken();
+        expect(hooks.resolveConflict({ blobId: "b", content: "Text" })).toBe(false);
     });
 });
 
@@ -294,6 +393,35 @@ describe("copyMarkdownReference", () => {
         expect(bare.state.doc.toString()).toBe("Text");
     });
 
+    it("copies nothing for a range whose end comes before its start", async () => {
+        const view = await createEditor("First\n\nSecond");
+        mount(view, createSource());
+        saveOnRequest(view);
+        const [ first, second ] = indexMarkdownBlocks(view.state.doc.toString(), PREVIEW_BLOCK_HOST)
+            .blocks;
+
+        await copyMarkdownReference(view, second, first);
+        expect(toast.showError).toHaveBeenCalledWith("block_reference.copy_failed");
+        expect(view.state.doc.toString()).toBe("First\n\nSecond");
+        expect(copyHtmlWithToast).not.toHaveBeenCalled();
+    });
+
+    it("draws another id for the end of a range when a draw repeats the start's", async () => {
+        const view = await createEditor("First\n\nSecond");
+        mount(view, createSource());
+        saveOnRequest(view);
+        vi.mocked(generateBlockId).mockReturnValueOnce("same")
+            .mockReturnValueOnce("same")
+            .mockReturnValueOnce("other");
+        const [ first, second ] = indexMarkdownBlocks(view.state.doc.toString(), PREVIEW_BLOCK_HOST)
+            .blocks;
+
+        await copyMarkdownReference(view, first, second);
+        expect(view.state.doc.toString())
+            .toBe(`First ${marker("same")}\n\nSecond ${marker("other")}`);
+        expect(vi.mocked(copyHtmlWithToast).mock.lastCall?.[1]).toBe("#root/n?block=same:other");
+    });
+
     it("saves through the source of an embedded editor, and links to its note", async () => {
         const view = await createEditor("First\n\nSecond");
         const note = { noteId: "embedded", title: "Embedded" } as FNote;
@@ -303,8 +431,7 @@ describe("copyMarkdownReference", () => {
             getNote: () => note, getNotePath: () => "root/embedded", getPreview: () => null, save
         });
         const triggerEvent = vi.spyOn(appContext, "triggerEvent");
-        const [ first, second ] = indexMarkdownBlocks(view.state.doc.toString(), PREVIEW_BLOCK_HOST)
-            .blocks;
+        const [ first ] = indexMarkdownBlocks(view.state.doc.toString(), PREVIEW_BLOCK_HOST).blocks;
 
         await copyMarkdownReference(view, first, first);
         const id = /data-trilium-block-id="(\w+)"/.exec(view.state.doc.toString())?.[1];
@@ -314,7 +441,10 @@ describe("copyMarkdownReference", () => {
 
         // A save that leaves the changes waiting copies nothing.
         isSaved = false;
+        const [ , second ] = indexMarkdownBlocks(view.state.doc.toString(), PREVIEW_BLOCK_HOST)
+            .blocks;
         await copyMarkdownReference(view, second, second);
+        expect(save).toHaveBeenCalledTimes(2);
         expect(toast.showError).toHaveBeenCalledWith("block_reference.copy_failed");
         expect(copyHtmlWithToast).toHaveBeenCalledOnce();
     });
@@ -349,6 +479,11 @@ describe("revealInSource", () => {
         revealInSource(view, { block: "a:b:c" }, { isFlashed: true, isConsumed: true });
         revealInSource(view, { bookmark: "gone" }, { isFlashed: true, isConsumed: true });
         expect(toast.showError).toHaveBeenCalledTimes(2);
+
+        // A link with neither parameter moves to nothing.
+        revealInSource(view, {}, { isFlashed: true, isConsumed: true });
+        expect(flashed()).toEqual([ "B" ]);
+        expect(toast.showError).toHaveBeenCalledTimes(2);
     });
 });
 
@@ -380,6 +515,23 @@ describe("the menu of a marker", () => {
         view.dispatch({ changes: { from: view.state.doc.length, insert: `\n${marker("c")}` } });
         openMenu(0)[1].handler?.();
         expect(view.state.doc.toString()).toBe("## Heading\n\nText");
+    });
+
+    it("copies nothing for a marker that moved after its menu opened", async () => {
+        const view = await createEditor(`Text ${marker("b")}`);
+        mount(view, createSource());
+        saveOnRequest(view);
+        const show = vi.spyOn(contextMenu, "show").mockResolvedValue(undefined);
+        const chip = view.dom.querySelector(".cm-block-marker");
+        expect(chip).not.toBeNull();
+        chip?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+        const [ copy ] = (show.mock.lastCall?.[0].items ?? []) as { handler?: () => void }[];
+        expect(copy.handler).toBeDefined();
+
+        view.dispatch({ changes: { from: 0, insert: "New " } });
+        copy.handler?.();
+        expect(appContext.triggerEvent).not.toHaveBeenCalled();
+        expect(view.state.doc.toString()).toBe(`New Text ${marker("b")}`);
     });
 });
 
@@ -439,6 +591,46 @@ describe("buildMarkdownReferenceMenuItems", () => {
         other.destroy();
         expect(await buildMarkdownReferenceMenuItems(document.body)).toBeNull();
     });
+
+    it("copies the selected blocks, and has no paste rows without a clipboard", async () => {
+        const view = await createEditor("First\n\nSecond");
+        mount(view, createSource());
+        saveOnRequest(view);
+        view.dispatch({ selection: { anchor: 0, head: view.state.doc.length } });
+
+        const items = await buildMarkdownReferenceMenuItems(view.contentDOM);
+        expect(items?.paste).toEqual([]);
+        const copy = asCommand(items?.copy);
+        expect(copy?.handler).toBeDefined();
+        copy?.handler?.();
+        await vi.waitFor(() => expect(copyHtmlWithToast).toHaveBeenCalled());
+        const ids = [ ...view.state.doc.toString().matchAll(/data-trilium-block-id="(\w+)"/g) ]
+            .map((match) => match[1]);
+        expect(ids).toHaveLength(2);
+        expect(vi.mocked(copyHtmlWithToast).mock.lastCall?.[1])
+            .toBe(`#root/n?block=${ids.join(":")}`);
+    });
+
+    it("pastes no excerpt that cannot be a block of its own, and says so", async () => {
+        buildNote({ id: "abcd", title: "Source" });
+        vi.spyOn(froca, "getNote")
+            .mockImplementation(async (noteId) => froca.notes[noteId] ?? null);
+        const view = await createEditor("Para");
+        mount(view, createSource());
+        vi.mocked(insertHtmlBlock).mockReturnValueOnce(null);
+        const clipboard = {
+            enabled: true, read: async () => ({ html: "", text: "#root/abcd?block=x" })
+        };
+
+        const items = await buildMarkdownReferenceMenuItems(view.contentDOM, clipboard);
+        const asExcerpt = asCommand(items?.paste[1]);
+        expect(asExcerpt?.handler).toBeDefined();
+        asExcerpt?.handler?.();
+        await vi.waitFor(() => expect(toast.showError)
+            .toHaveBeenCalledWith("block_reference.paste_failed"));
+        expect(insertHtmlBlock).toHaveBeenCalledOnce();
+        expect(view.state.doc.toString()).toBe("Para");
+    });
 });
 
 async function createEditor(doc: string) {
@@ -472,7 +664,7 @@ function saveOnRequest(view: VanillaCodeMirror, preview?: HTMLElement) {
 }
 
 function Probe({ view, source, hooksRef }: {
-    view: VanillaCodeMirror;
+    view: VanillaCodeMirror | null;
     source?: MarkdownReferenceSource;
     hooksRef: { current?: ChangeRecordHooks };
 }) {
@@ -480,7 +672,7 @@ function Probe({ view, source, hooksRef }: {
     return null;
 }
 
-function mount(view: VanillaCodeMirror, source?: MarkdownReferenceSource) {
+function mount(view: VanillaCodeMirror | null, source?: MarkdownReferenceSource) {
     const container = document.createElement("div");
     const hooksRef: { current?: ChangeRecordHooks } = {};
     act(() => render(<Probe view={view} source={source} hooksRef={hooksRef} />, container));

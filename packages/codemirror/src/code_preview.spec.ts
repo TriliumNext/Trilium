@@ -87,6 +87,21 @@ describe("renderCodePreview", () => {
             .filter((span) => span.textContent === "1");
         expect(numbers.length).toBe(4_545);
     });
+
+    it("highlights the first 500 lines and shows the lines after them plain", async () => {
+        const code = Array.from({ length: 600 }, (_, index) => `x < "<i>${index}"`).join("\n");
+        const pre = parse(renderCodePreview(code, {
+            themes: await loadSlots(), language: await loadPreviewLanguage("text/javascript"),
+            isWrapped: false
+        }));
+
+        const lines = [ ...pre.querySelectorAll(".code-preview-line") ];
+        expect(lines.length).toBe(600);
+        expect(pre.textContent).toBe(code);
+        expect(pre.getAttribute("style")).toBe("--code-preview-digits: 3");
+        expect(lines[499].querySelector("span")).not.toBeNull();
+        expect(lines.slice(500).filter((line) => line.children.length > 0)).toEqual([]);
+    });
 });
 
 describe("loadPreviewTheme", () => {

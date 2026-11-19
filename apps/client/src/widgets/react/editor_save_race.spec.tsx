@@ -26,11 +26,12 @@ import FBlob from "../../entities/fblob";
 import type FNote from "../../entities/fnote";
 import froca from "../../services/froca";
 import LoadResults from "../../services/load_results";
+import type { NoteSaver, SaveData } from "../../services/note_save";
 import server from "../../services/server";
 import type SpacedUpdate from "../../services/spaced_update";
 import toast from "../../services/toast";
 import { buildNote } from "../../test/easy-froca";
-import { type SavedData, useEditorSpacedUpdate } from "./hooks/editor";
+import { type SavedData, useEditorSpacedUpdate, useNoteSaver } from "./hooks/editor";
 import { noteSavedDataStore } from "./NoteStore";
 import { ParentComponent } from "./react_utils";
 
@@ -527,6 +528,73 @@ describe("saving over a version that changed elsewhere", () => {
             expect.anything());
         expect(getSpacedUpdate().hasUnsavedChanges()).toBe(false);
     });
+
+    it("leaves a save that waits for the user alone, until its tab closes", async () => {
+        const harness = setupEditorHarness({ withParent: true });
+        cleanupContainer = harness.container;
+        const { noteA, editor, parent, noteContext, show } = harness;
+        if (!parent || !noteContext) throw new Error("Harness misconfigured");
+        await show(noteA);
+        const put = rejectWithVersionConflict();
+
+        editor.content = "AAA mine";
+        getSpacedUpdate().scheduleUpdate();
+        await vi.advanceTimersByTimeAsync(1500);
+        expect(getQuestion()).toBeDefined();
+
+        // Neither a save of the note nor a switch of the tab waits for the answer.
+        const settled: string[] = [];
+        void Promise.resolve(parent.handleEvent("saveNoteChanges", { noteId: noteA.noteId }))
+            .then(() => settled.push("saveNoteChanges"));
+        void Promise.resolve(parent.handleEvent("beforeNoteSwitch", { noteContext }))
+            .then(() => settled.push("beforeNoteSwitch"));
+        await vi.advanceTimersByTimeAsync(20);
+        expect([ ...settled ].sort()).toEqual([ "beforeNoteSwitch", "saveNoteChanges" ]);
+        expect(put).toHaveBeenCalledOnce();
+        expect(server.post).not.toHaveBeenCalled();
+
+        const { ntxId } = noteContext;
+        if (!ntxId) throw new Error("Harness misconfigured");
+        void parent.handleEvent("beforeNoteContextRemove", { ntxIds: [ ntxId ] });
+        await vi.advanceTimersByTimeAsync(20);
+        expect(server.post).toHaveBeenCalledExactlyOnceWith(`notes/${noteA.noteId}/revisions/draft`,
+            expect.objectContaining({ content: "AAA mine" }), parent.componentId);
+        expect(getSpacedUpdate().isAllSavedAndTriggerUpdate()).toBe(true);
+    });
+
+    it("keeps the draft of a note it left, and loads nothing into the note it shows", async () => {
+        const harness = setupEditorHarness({ withParent: true });
+        cleanupContainer = harness.container;
+        const { noteA, noteB, pendingBlobB, blobB, editor, show } = harness;
+        await show(noteA);
+        rejectWithVersionConflict();
+        server.get = vi.fn(async () => (
+            { blobId: "theirs", content: "AAA theirs" }
+        )) as typeof server.get;
+        const post = vi.fn()
+            .mockRejectedValueOnce(new Error("offline"))
+            .mockResolvedValue({ revisionId: "kept", isKept: true, isFragment: false });
+        server.post = post as typeof server.post;
+
+        editor.content = "AAA mine";
+        getSpacedUpdate().scheduleUpdate();
+        await vi.advanceTimersByTimeAsync(1500);
+        getQuestion()?.buttons?.[1].onClick({ dismissToast: () => {} });
+        await vi.advanceTimersByTimeAsync(20);
+        expect(post).toHaveBeenCalledOnce();
+
+        // The editor shows note B before the draft of note A is sent again.
+        pendingBlobB.resolve(blobB);
+        await show(noteB);
+        expect(editor.content).toBe("BBB");
+        await vi.advanceTimersByTimeAsync(5000);
+
+        expect(post).toHaveBeenCalledTimes(2);
+        expect(post.mock.calls[1]).toStrictEqual(post.mock.calls[0]);
+        expect(editor.content).toBe("BBB");
+        expect(noteSavedDataStore.get(noteA.noteId)).toBe("AAA theirs");
+        expect(getSpacedUpdate().isAllSavedAndTriggerUpdate()).toBe(true);
+    });
 });
 
 describe("editing some blocks of a note", () => {
@@ -592,6 +660,88 @@ describe("editing some blocks of a note", () => {
         expect(put).not.toHaveBeenCalled();
         cleanup();
     });
+
+    it("keeps the blocks as a revision, and loads the other version of them", async () => {
+        const note = buildNote({ title: "Changed blocks", type: "text", content: "<p>Whole</p>" });
+        vi.spyOn(server, "getWithSilentNotFound")
+            .mockResolvedValue({ content: "<p>Mine</p>", hash: "h0", note: "<p>Whole</p>" });
+        const put = vi.spyOn(server, "put").mockRejectedValue(JSON.stringify(
+            { reason: "version", hash: "h1", isVersioned: true, attachments: [] }));
+        const get = vi.spyOn(server, "get")
+            .mockResolvedValue({ content: "<p>Theirs</p>", hash: "h1", note: "<p>Theirs</p>" });
+        const post = vi.spyOn(server, "post")
+            .mockResolvedValue({ revisionId: "kept", isKept: true, isFragment: true });
+        const showPersistent = vi.spyOn(toast, "showPersistent").mockImplementation(() => {});
+        vi.spyOn(toast, "closePersistent").mockImplementation(() => {});
+        const dataSaved = vi.fn();
+        const { editor, parent, cleanup } = await showBlockEditor(note, "a:b", dataSaved);
+
+        editor.content = "<p>Edited</p>";
+        getSpacedUpdate().scheduleUpdate();
+        await vi.advanceTimersByTimeAsync(1500);
+        const question = showPersistent.mock.calls.map(([ options ]) => options)
+            .find((options) => options.id.startsWith("save-conflict-"));
+        question?.buttons?.[1].onClick({ dismissToast: () => {} });
+        await vi.advanceTimersByTimeAsync(20);
+
+        expect(put).toHaveBeenCalledOnce();
+        expect(post).toHaveBeenCalledExactlyOnceWith(`notes/${note.noteId}/revisions/draft`,
+            expect.objectContaining({ fragment: {
+                content: "<p>Edited</p>", block: "a:b", base: { note: "<p>Whole</p>", hash: "h0" }
+            } }), parent.componentId);
+        expect(get).toHaveBeenCalledExactlyOnceWith(`notes/${note.noteId}/blocks?block=a%3Ab`);
+        expect(editor.content).toBe("<p>Theirs</p>");
+        expect(dataSaved).not.toHaveBeenCalled();
+        cleanup();
+    });
+});
+
+describe("useNoteSaver", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("asks the user when its editor cannot bring changes onto the other version", async () => {
+        const note = buildNote({ title: "Not rebased", type: "text", content: "<p>0</p>" });
+        const put = vi.spyOn(server, "put").mockRejectedValueOnce(JSON.stringify({
+            reason: "version", message: "", blobId: "theirs", type: "text", mime: "text/html",
+            isVersioned: true
+        })).mockResolvedValue({ blobId: "mine", attachments: [] });
+        const get = vi.spyOn(server, "get")
+            .mockResolvedValue({ blobId: "theirs", content: "<p>theirs</p>" });
+        const showPersistent = vi.spyOn(toast, "showPersistent").mockImplementation(() => {});
+        vi.spyOn(toast, "closePersistent").mockImplementation(() => {});
+        let saver: NoteSaver<SaveData> | undefined;
+        function Probe() {
+            saver = useNoteSaver<SaveData>({
+                getLatestData: () => undefined, loadVersion: vi.fn()
+            });
+            return null;
+        }
+        const parent = new Component();
+        const container = document.createElement("div");
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={parent}><Probe /></ParentComponent.Provider>,
+                container
+            );
+        });
+        saver?.setBase({ noteId: note.noteId, blobId: "b0", type: "text", mime: "text/html" });
+
+        const saving = saver?.saveNote(note, { content: "<p>mine</p>" });
+        await vi.waitFor(() => expect(saver?.isAsking()).toBe(true));
+        expect(get).toHaveBeenCalledExactlyOnceWith(`notes/${note.noteId}/blob`);
+        expect(put).toHaveBeenCalledOnce();
+
+        const question = showPersistent.mock.calls.map(([ options ]) => options)
+            .find((options) => options.id.startsWith("save-conflict-"));
+        question?.buttons?.[0].onClick({ dismissToast: () => {} });
+        expect(await saving).toStrictEqual({ content: "<p>mine</p>" });
+        expect(put).toHaveBeenLastCalledWith(`notes/${note.noteId}/data`, expect.objectContaining({
+            base: { blobId: "theirs", type: "text", mime: "text/html" }, keepOther: true
+        }), parent.componentId, { silentConflict: true });
+        await act(() => render(null, container));
+    });
 });
 
 /** Reports a save of `note` by `componentId`, which reads back as `content` when it is given. */
@@ -616,7 +766,9 @@ async function reportSave(
 }
 
 /** Renders an editor of the blocks of `note` that `block` points at. */
-async function showBlockEditor(note: FNote, block: string) {
+async function showBlockEditor(
+    note: FNote, block: string, dataSaved?: (savedData: SavedData) => void
+) {
     const editor: { content: string; block: string | undefined } = { content: "", block };
     const parent = new Component();
     const container = document.createElement("div");
@@ -631,7 +783,8 @@ async function showBlockEditor(note: FNote, block: string) {
             getData: () => ({ content: editor.content, block: editor.block }),
             onContentChange(newContent) {
                 editor.content = newContent;
-            }
+            },
+            dataSaved
         });
         return null;
     }
