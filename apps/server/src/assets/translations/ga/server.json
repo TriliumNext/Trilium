@@ -627,5 +627,9 @@
     "detail": "{{- path}}\n\nIs féidir leis an gcomhad seo clár a rith ar do ríomhaire. Ná hoscail é ach amháin má chruthaigh tú an nasc seo tú féin agus má tá muinín agat as an gcomhad.",
     "cancel": "Cealaigh",
     "open": "Oscailte"
+  },
+  "revisions": {
+    "draft_description": "Athruithe nár sábháladh",
+    "fragment_description": "Athruithe nár sábháladh ar shliocht"
   }
 }
