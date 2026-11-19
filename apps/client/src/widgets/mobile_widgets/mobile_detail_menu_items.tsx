@@ -10,13 +10,13 @@ import { getLocaleName, useLanguageSwitcher } from "../layout/language_switcher"
 import { CommandItem } from "../layout/NoteActions";
 import NoteActionsCustom from "../layout/NoteActionsCustom";
 import { codeLanguageItems, useMimeTypes } from "../layout/NoteTypeSwitcher";
-import { useAttributeCount } from "../layout/StatusBar";
+import { useAttributeCount, useUserAttachmentCount } from "../layout/StatusBar";
 import { NoteInfoContent, SimilarNotesList } from "../layout/StatusBarPanels";
 import { type DropdownHandle, DropdownMenuItemRows } from "../react/Dropdown";
 import {
     FormDropdownDivider, FormDropdownSubmenu, FormListCustomItem, FormListItem
 } from "../react/FormList";
-import { useAttachments, useBacklinkCount, useNoteProperty, useSortedNotePaths } from "../react/hooks/note";
+import { useBacklinkCount, useNoteProperty, useSortedNotePaths } from "../react/hooks/note";
 import Modal from "../react/Modal";
 import { BacklinksWidget } from "../sidebar/Backlinks";
 import { NotePathsWidget } from "../sidebar/NotePaths";
@@ -147,7 +147,7 @@ export function DetailMenuModals({ note, notePath, hoistedNoteId, shown, hide }:
 
 /** The cells that open the attachments and the attributes, counted as in the status bar. */
 function AttachmentsAndAttributes({ note, disabled }: { note: FNote, disabled: boolean }) {
-    const attachmentCount = useAttachments(note).length;
+    const attachmentCount = useUserAttachmentCount(note);
     const attributeCount = useAttributeCount(note);
 
     return (
