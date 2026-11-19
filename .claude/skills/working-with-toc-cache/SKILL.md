@@ -120,6 +120,31 @@ exists already, and otherwise assembles and saves it exactly as a server build d
 
 ## Heading identifiers
 
+### What an id must survive
+
+An id ties an entry of the cache to one heading of the content, and every later reader (a link, a
+label, a marked preview, a viewer) finds the heading again by it. The tie must hold, wherever the
+content allows, when the content changes and when its headings are reordered: a link to "Results"
+still lands on "Results" after a paragraph is added above it, a section is deleted or two chapters
+swap places. So an id names a heading by what it is, not by where it sits. Prefer, in this order:
+
+1. **A stable name the content gives the heading**: a bookmark, an anchor or element `id`, a named
+   destination. It survives edits, reordering and a new title. Only names the author keeps count:
+   names an editor rewrites on save (Word's `_Toc…` and `_Ref…` bookmarks) are positions in
+   disguise, which is why `readBookmarkNames()` drops names that start with `_`.
+2. **A hash of the heading itself**: the free cache id, from its title path. It survives edits
+   elsewhere and a reorder of its siblings, and changes only when the heading or an ancestor is
+   retitled or moved under another parent.
+3. **A position** (the nth heading, the nth of several equal titles, an offset) only when nothing
+   else tells two headings apart. Bind it to the blob, as the bound cache id does, so that in
+   another version it resolves to nothing instead of to whichever heading sits there now.
+
+The same rule holds for resolving an id. A renderer reads its own copy of the content, computes or
+reads the identifiers there and compares them with the link's; it never takes the nth heading of
+its reading for the nth entry of the cache, or of a reading of another version. Pairing by index
+within one reading is fine: `markOfficePreview()` pairs `headings[index]` with `ids[index]` because
+both come from the same `readPreviewHeadings()` list.
+
 ### The cache id
 
 Every heading of a cache has an `id` from `assignHeadingIds()`. Ids depend only on the titles and
@@ -181,7 +206,8 @@ needs `LINK_TARGET_PARAMS`, `ViewScope`, `VIEW_SCOPE_PARAMS`, `calculateHash()` 
 
 The routes, the reference provider, the lists and the labels need no change. A new format is:
 
-1. **Decide** where the structure is read and how its headings are identified (above). If the
+1. **Decide** where the structure is read and how its headings are identified, in the order of
+   "What an id must survive": a stable name first, a position last and bound to the blob. If the
    structure is the document's own table of contents and not something read from its preview, see
    the EPUB format: the cache keeps the whole authored outline, and the preview is marked from a
    record of where each entry landed.
@@ -368,6 +394,9 @@ viewer.
 - **Do not call `getToc()` inside a transaction that stays open across an `await`** (an
   `asyncRoute` on standalone): the save waits for `whenDatabaseFree()`, which waits for its own
   caller. The `PUT` routes are plain `apiRoute`s for the same reason.
+- **Never match a cached heading to the content by its index.** A cache built from one version and
+  a reading of another agree on titles long after they disagree on positions; an index tie sends a
+  link to whichever heading moved into the slot. Compare ids, or names the content carries.
 - **A heading field is not part of the id.** Fixing a page number needs no reader bump; changing
   which entries are kept, their titles or their nesting does.
 - **Reader drift is silent without the contract fixture.** The server and the viewer use the same
