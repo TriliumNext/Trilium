@@ -5,6 +5,9 @@
 //                       both lockfiles and the installed copy agree
 //   open [--force]      scratch git repo for the patched version: the release's files staged as
 //                       the base, the patch applied in the working tree
+//   add <path...>       takes release files that the patch does not change yet (a
+//                       `dist/*/chunk-*.js`) into the scratch repo of `open` or `rebase`, keeping
+//                       its edits
 //   changes [file...]   what the patch changes, as word-level snippets; readable for the minified
 //                       prod bundle too. [--context n] characters around each change (default 60),
 //                       [--version v] reads the scratch repo of another version
@@ -33,7 +36,7 @@ import {
     writeFileSync
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, dirname, join, relative, resolve, sep } from "node:path";
+import { basename, dirname, join, posix, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
 
@@ -70,7 +73,7 @@ for (let i = 0; i < rest.length; i++) {
 const ROOT = resolve(flags.root ?? join(dirname(fileURLToPath(import.meta.url)), "../../.."));
 const WORK_DIR = resolve(flags.dir ?? join(tmpdir(), "trilium-excalidraw-patch"));
 
-const commands = { check, open, changes, save, rebase };
+const commands = { check, open, add, changes, save, rebase };
 if (!commands[command]) {
     const usage = readFileSync(new URL(import.meta.url), "utf8").split("\n").slice(1);
     const end = usage.findIndex((line) => !line.startsWith("//"));
@@ -157,6 +160,36 @@ async function open() {
     console.log(`\nEdit the files under ${repo}, then run \`save\`.`);
 }
 
+async function add() {
+    const version = readActiveVersion();
+    const repo = repoDir(version);
+    const state = readState(repo);
+    const paths = [
+        ...new Set(positional.map((path) => posix.normalize(path.replaceAll("\\", "/"))))
+    ];
+    if (!paths.length) fail("Name release files that the scratch repo does not hold yet.");
+    const held = paths.filter((path) => state.files.includes(path) || existsSync(join(repo, path)));
+    if (held.length) {
+        fail(`The scratch repo already holds ${held.join(", ")}: \`add\` would replace its edits.`);
+    }
+    const release = await fetchRelease(version);
+    const missing = paths.filter((path) => !existsSync(join(release, path)));
+    if (missing.length) fail(`${version} has no ${missing.join(", ")}.`);
+    for (const path of paths) {
+        mkdirSync(dirname(join(repo, path)), { recursive: true });
+        copyFileSync(join(release, path), join(repo, path));
+    }
+    git(repo, [ "add", "--", ...paths ]);
+    // A separate index adds the files to the base tree, leaving out the staged edits.
+    const env = { GIT_INDEX_FILE: join(repo, ".git", "trilium-base-index") };
+    git(repo, [ "read-tree", state.baseTree ], { env });
+    git(repo, [ "add", "--", ...paths ], { env });
+    const baseTree = git(repo, [ "write-tree" ], { env }).stdout.trim();
+    rmSync(env.GIT_INDEX_FILE);
+    writeState(repo, { ...state, baseTree, files: [ ...state.files, ...paths ] });
+    console.log(`Added ${paths.join(", ")} of ${version} to ${repo}.`);
+}
+
 function changes() {
     const repo = repoDir(flags.version ?? readActiveVersion());
     const state = readState(repo);
@@ -223,14 +256,16 @@ async function rebase() {
     const newRelease = await fetchRelease(target);
     const oldRelease = await fetchRelease(version);
     const [ oldTree, baseTree ] = initRepo(repo, paths, [ oldRelease, newRelease ]);
-    writeState(repo, { version: target, from: version, baseTree, oldTree, files: paths });
+    const files = paths.filter((path) => existsSync(join(newRelease, path)));
+    writeState(repo, { version: target, from: version, baseTree, oldTree, files });
     setActiveVersion(target);
 
     console.log(`Carrying the ${version} patch onto ${target} in ${repo}\n`);
     const handWork = [];
     for (const path of paths) {
         if (!existsSync(join(newRelease, path))) {
-            console.log(`  GONE      ${path}: not in ${target}; find where the code moved`);
+            console.log(`  GONE      ${path}: not in ${target}; find where the code moved and`
+                + " `add` that file");
             handWork.push(path);
             continue;
         }
@@ -573,9 +608,9 @@ function renderWordHunk(segments, context) {
 
 // --- Helpers ----------------------------------------------------------------------------------
 
-function git(repo, args, { encoding = "utf8", isFailureAllowed = false } = {}) {
+function git(repo, args, { encoding = "utf8", isFailureAllowed = false, env } = {}) {
     const result = spawnSync("git", [ "-C", repo, "-c", "core.autocrlf=false", ...args ], {
-        encoding, maxBuffer: 1 << 28
+        encoding, maxBuffer: 1 << 28, env: env && { ...process.env, ...env }
     });
     if (result.error) throw result.error;
     if (result.status !== 0 && !isFailureAllowed) {
