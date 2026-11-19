@@ -91,7 +91,9 @@
     "heading_reference_failed": "指定された見出しへのリンクを作成できませんでした",
     "link_to_heading": "見出しにリンク",
     "link_to_anchor": "アンカーにリンク",
-    "no_link_targets": "リンク可能な見出しやアンカーがありません。"
+    "no_link_targets": "リンク可能な見出しやアンカーがありません。",
+    "open_file_for_targets": "見出しを一覧表示するにはファイルを開いてください。",
+    "listing_changed": "見出しの一覧表示中にノートが変更されました。見出しを再度選択してください。"
   },
   "branch_prefix": {
     "save": "保存",
@@ -660,7 +662,8 @@
     "note_attributes_title": "ノートの属性",
     "search_in_note_short": "検索",
     "note_attachments_short": "添付ファイル",
-    "note_settings": "ノート設定"
+    "note_settings": "ノート設定",
+    "convert_block_references_changed": "このノートのブロックへの無効になった参照: 消失 {{lost}} 件、別のブロックを参照 {{moved}} 件。変換前に保存された変更履歴には、元の状態のノートが保持されています。"
   },
   "command_palette": {
     "export_note_title": "ノートをエクスポート",
@@ -3694,7 +3697,11 @@
     "source_description_restore": "以前の変更履歴を復元する前に保存しました",
     "source_description_unknown": "ソースが利用できません",
     "diff_identical": "今回の改訂内容は、現在のノートの内容と同一です。",
-    "back": "戻る"
+    "back": "戻る",
+    "source_description_draft": "未保存の変更。他の場所でノートが変更された後に保持されました",
+    "source_description_fragment": "ブロックが既に存在しない抜粋に対する、未保存の変更",
+    "fragment_not_restorable": "この変更履歴には、現在のノートから削除された一部のブロックのみが保持されています。復元はできませんが、コピーすることは可能です。",
+    "copy_button": "コピー"
   },
   "revisions_snapshot": {
     "title": "ノートの変更履歴"
@@ -4837,7 +4844,8 @@
     "viewConfig": "表示設定",
     "canvasLibraryItem": "キャンバスライブラリ",
     "importSource": "インポート元",
-    "transcript": "ミーティングの文字起こし"
+    "transcript": "ミーティングの文字起こし",
+    "tocCache": "目次のキャッシュ"
   },
   "color-picker": {
     "clear-color": "色を消去",
@@ -5106,7 +5114,11 @@
     "edit_excerpt": "抜粋を編集",
     "copy_tab": "このタブへのリンクをコピー",
     "copy_share_link": "公開リンクをコピー",
-    "copy_reference": "ブロックへのリンクをコピー"
+    "copy_reference": "ブロックへのリンクをコピー",
+    "inert_marker": "参照 {{id}} がどのブロックにも対応していません",
+    "remove_reference": "参照を削除",
+    "copy_failed": "参照を作成できませんでした。",
+    "paste_failed": "ここに参照を貼り付けることはできません。"
   },
   "record_meeting": {
     "note_title": "ミーティング {{date}}",
@@ -5389,5 +5401,18 @@
     "menu_help": "ヘルプ",
     "menu_note_description": "このノートのみに適用されます。",
     "menu_note_description_subtree": "このノートと配下のノートに適用されます。"
+  },
+  "note_save": {
+    "conflict_title": "他の場所で変更されました",
+    "conflict_message": "編集中にノートが他の場所で変更されました。残すバージョンを選択してください。もう一方のバージョンは、変更履歴として保存されます。",
+    "conflict_message_unversioned": "編集中にノートが他の場所で変更されました。残すバージョンを選択してください。このノートは変更履歴を保持しない設定のため、もう一方のバージョンは破棄されます。",
+    "keep_this_version": "このバージョンを保持",
+    "load_other_version": "別のバージョンを読み込む",
+    "draft_kept": "未保存の変更は、ノートの変更履歴として保持されました。",
+    "draft_discarded": "このノートは変更履歴を保持しない設定のため、未保存の変更は破棄されました。",
+    "draft_kept_after_conversion": "編集中にノートが変換されました。未保存の変更は変更履歴として保持されました。",
+    "draft_discarded_after_conversion": "編集中にノートが変換されました。このノートは変更履歴を保持しない設定のため、未保存の変更は破棄されました。",
+    "draft_kept_blocks_gone": "編集していたブロックが別の場所で変更されたため、ここでは編集できなくなりました。未保存の変更は変更履歴として保持されました。",
+    "draft_discarded_blocks_gone": "編集していたブロックが別の場所で変更されたため、ここでは編集できなくなりました。このノートは変更履歴を保持しない設定のため、未保存の変更は破棄されました。"
   }
 }
