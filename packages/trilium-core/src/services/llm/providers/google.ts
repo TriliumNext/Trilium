@@ -99,11 +99,15 @@ export class GoogleProvider extends BaseProvider {
         const modelId = config.model || this.defaultModel;
         const coreMessages = this.buildMessages(chatMessages, modelId, config.attachmentKinds);
 
+        // Thinking tokens count toward maxOutputTokens, so leave room for the answer.
+        const thinkingBudget = config.thinkingBudget || 10000;
+        const maxTokens = Math.max(config.maxTokens || 8096, thinkingBudget + 4000);
+
         const streamOptions: Parameters<typeof streamText>[0] = {
             model: this.createModel(modelId),
             system: this.buildSystemMessage(systemPrompt),
             messages: coreMessages,
-            maxOutputTokens: config.maxTokens || 8096,
+            maxOutputTokens: maxTokens,
             // Reject any system message smuggled into `messages` (prompt injection guard).
             allowSystemInMessages: false,
             telemetry: TELEMETRY_OFF,
@@ -111,7 +115,7 @@ export class GoogleProvider extends BaseProvider {
             providerOptions: {
                 google: {
                     thinkingConfig: {
-                        thinkingBudget: config.thinkingBudget || 10000
+                        thinkingBudget
                     }
                 }
             }

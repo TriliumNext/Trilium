@@ -140,6 +140,8 @@ describe("GoogleProvider message building", () => {
         expect(opts.system).toContain("BASE PROMPT");
         // Extended thinking forwards Gemini's thinkingConfig.
         expect(opts.providerOptions.google.thinkingConfig.thinkingBudget).toBe(10000);
+        // Default cap (8096) is below budget + 4000, so it is raised to leave room for the answer.
+        expect(opts.maxOutputTokens).toBe(14000);
     });
 
     it("chat() with extended thinking passes the turn's abort signal to streamText", () => {
@@ -213,7 +215,8 @@ describe("GoogleProvider tool handling", () => {
 
         const opts = streamTextMock.mock.calls[0][0] as any;
         expect(opts.providerOptions.google.thinkingConfig.thinkingBudget).toBe(25000);
-        expect(opts.maxOutputTokens).toBe(5000);
+        // Thinking tokens count toward the cap, so it is raised to budget + 4000.
+        expect(opts.maxOutputTokens).toBe(29000);
         // Function tools present → agentic loop options set on the thinking path.
         expect(opts.toolChoice).toBe("auto");
         expect(opts.stopWhen).toBeDefined();
