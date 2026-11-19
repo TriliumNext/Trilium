@@ -214,7 +214,10 @@ vi.mock("@triliumnext/server/src/services/config.js", () => ({
     default: { Security: {}, General: { readOnly: false } }
 }));
 vi.mock("@triliumnext/server/src/services/export/zip/factory.js", () => ({ serverZipExportProviderFactory: vi.fn() }));
-vi.mock("@triliumnext/server/src/services/i18n.js", () => ({ initializeTranslations: vi.fn() }));
+vi.mock("@triliumnext/server/src/services/i18n.js", () => ({
+    initializeTranslations: vi.fn(),
+    initializeTranslationsWithParams: vi.fn()
+}));
 vi.mock("@triliumnext/server/src/services/image_provider.js", () => ({ serverImageProvider: {} }));
 vi.mock("@triliumnext/server/src/www.js", () => ({ default: vi.fn(() => h.startServer()) }));
 
@@ -897,6 +900,22 @@ describe("initializeCore dbConfig callbacks + getDemoArchive", () => {
         // getDemoArchive reads the demo zip.
         const archive = await getDemoArchive();
         expect(archive).toBeInstanceOf(Buffer);
+    });
+
+    it("loads translations in the locale initializeCore() asks for", async () => {
+        const { main } = await importMain();
+        await main();
+
+        const translations = h.initConfig?.translations as
+            | ((instance: unknown, locale: string) => Promise<void>)
+            | undefined;
+        expect(translations).toBeTypeOf("function");
+        const instance = {};
+        await translations?.(instance, "de");
+
+        const i18n = await import("@triliumnext/server/src/services/i18n.js");
+        expect(i18n.initializeTranslationsWithParams).toHaveBeenCalledWith(instance, "de");
+        expect(i18n.initializeTranslations).not.toHaveBeenCalled();
     });
 });
 
