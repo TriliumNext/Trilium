@@ -1,27 +1,27 @@
-# Grid View
+# Сетка
 <figure class="image"><img style="aspect-ratio:990/590;" src="Grid View_image.png" width="990" height="590"></figure>
 
-This view presents the child notes in a grid format, allowing for a more visual navigation experience.
+Этот вид представляет дочерние заметки в формате сетки, обеспечивая более визуальный опыт навигации.
 
-Each tile contains:
+Каждая плитка содержит:
 
-*   The title of a note.
-*   A snippet of the content.
-*   For empty notes, the sub-children are also displayed, allowing for quick navigation.
+*   Заголовок заметки.
+*   Фрагмент содержимого.
+*   Для пустых заметок также отображаются под-потомки, обеспечивая быструю навигацию.
 
-Depending on the type of note:
+В зависимости от типа заметки:
 
-*   For <a class="reference-link" href="../Note%20Types/Text.md">Text</a> notes, the text can be slightly scrollable via the mouse wheel to reveal more context.
-*   For <a class="reference-link" href="../Note%20Types/Code.md">Code</a> notes, syntax highlighting is applied, with line numbers as in the editor.
-*   For <a class="reference-link" href="../Note%20Types/File.md">File</a> notes, a preview is made available for audio, video and PDF notes.
-*   If the note does not have a content, a list of its child notes will be displayed instead.
+*   Для заметок <a class="reference-link" href="../Note%20Types/Text.md">Текст</a> текст можно слегка прокручивать колёсиком мыши, чтобы раскрыть больше контекста.
+*   Для заметок <a class="reference-link" href="../Note%20Types/Code.md">Код</a> применяется подсветка синтаксиса с номерами строк, как в редакторе.
+*   Для заметок-<a class="reference-link" href="../Note%20Types/File.md">Файлов</a> доступен предпросмотр для аудио-, видео- и PDF-заметок.
+*   Если у заметки нет содержимого, вместо него будет показан список её дочерних заметок.
 
-The grid view is also used by default in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Note List</a> of every note, making it easy to navigate to children notes.
+Вид сетки также используется по умолчанию в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Списке заметок</a> каждой заметки, облегчая навигацию к дочерним заметкам.
 
-### Creating a new table
+### Создание новой таблицы
 
-Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ → _Collection_ → _Grid View_.
+Щёлкните правой кнопкой по существующей заметке в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дереве заметок</a> и выберите _Вставить дочернюю заметку_ → _Коллекция_ → _Сетка_.
 
-## Configuration
+## Конфигурация
 
-Unlike most other view types, the grid view is not actually configurable.
+В отличие от большинства других типов видов, вид сетки на самом деле не настраивается.

@@ -1,60 +1,60 @@
-# Tray icon & automatic startup
+# Значок в трее и автоматический запуск
 > [!NOTE]
-> Automatic startup and better integration with the system tray was introduced in v0.104.0. Versions prior to that only have the system tray option which could be found in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Others_.
+> Автоматический запуск и улучшенная интеграция с системным треем появились в v0.104.0. В более ранних версиях есть только опция системного трея, которая находилась в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Прочее_.
 
-## Tray icon
+## Значок в трее
 
 <figure class="image image-style-align-right"><img style="aspect-ratio:332/71;" src="Tray icon &amp; automatic startup_image.png" width="332" height="71"></figure>
 
-The desktop application has native integration with the system tray on all operating systems.
+Десктопное приложение имеет нативную интеграцию с системным треем на всех операционных системах.
 
-The tray icon is enabled by default, but it can be toggled from <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Desktop_.
+Значок в трее включён по умолчанию, но его можно переключить в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Десктоп_.
 
-The tray icon has the following functionality:
+Значок в трее имеет следующую функциональность:
 
-*   When clicked, the last window is hidden (minimized to the tray icon). Clicking it again will reveal that window.
-*   Right clicking reveals the following options:
-    *   Each window can be individually shown or hidden, identified by their active note.
-    *   New windows can be opened.
-    *   A new note can be created directly, which will be created in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Note%20Inbox.md">Note Inbox</a> (or <a class="reference-link" href="../../Advanced%20Usage/Advanced%20Showcases/Day%20Notes.md">Day Notes</a> if an inbox is not available).
-    *   Today's day note can be opened.
-    *   Bookmarks and recent notes are displayed in a sub-menu and clicking them navigates to that note.
-    *   Quitting the application.
+*   При щелчке последнее окно скрывается (сворачивается в значок трея). Повторный щелчок снова покажет это окно.
+*   Правый щелчок раскрывает следующие опции:
+    *   Каждое окно можно отдельно показать или скрыть, идентифицируемое по его активной заметке.
+    *   Можно открыть новые окна.
+    *   Можно напрямую создать новую заметку, которая будет создана во <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Note%20Inbox.md">Входящих заметках</a> (или в <a class="reference-link" href="../../Advanced%20Usage/Advanced%20Showcases/Day%20Notes.md">Заметках дня</a>, если входящих нет).
+    *   Можно открыть сегодняшнюю заметку дня.
+    *   Закладки и недавние заметки отображаются в подменю, и щелчок по ним переходит к этой заметке.
+    *   Выход из приложения.
 
-### Opening a new window from the taskbar
+### Открытие нового окна из панели задач
 
-A new window can also be opened without the tray icon, by right-clicking the application's icon:
+Новое окно также можно открыть без значка в трее, щёлкнув правой кнопкой по значку приложения:
 
-*   On Windows, in the taskbar, select _Open New Window_.
-*   On Linux, in the dock or application launcher (such as GNOME's or KDE's), select _New Window_.
+*   В Windows на панели задач выберите _Открыть новое окно_.
+*   В Linux в доке или меню запуска приложений (таком как GNOME или KDE) выберите _Новое окно_.
 
-### Closing to system tray
+### Закрытие в системный трей
 
-This is an option which is not enabled by default and it allows a specific behavior: instead of exiting the application when the last window has been closed, the last window is instead hidden with the tray icon remaining available.
+Это опция, которая не включена по умолчанию, и она позволяет определённое поведение: вместо выхода из приложения при закрытии последнего окна последнее окно скрывается, а значок в трее остаётся доступным.
 
-This option requires the tray icon to be enabled, otherwise it has no effect.
+Эта опция требует, чтобы значок в трее был включён, иначе она не имеет эффекта.
 
-## Automatic startup
+## Автоматический запуск
 
-Two options control the automatic startup functionality in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Startup_:
+Две опции управляют функциональностью автоматического запуска в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Запуск_:
 
-*   When _Launch on startup_ is enabled, the application will automatically start up when logging into the current user.
-    *   Note that on Linux support depends on the desktop environment. Feel free to [report](../../Troubleshooting/Reporting%20issues.md) any issues.
-*   If _Start minimized to tray_ is also enabled, the application will start up in the background and can be revealed from the tray icon.
-    *   This only applies if _Launch on startup_ is enabled, manual starts are not impacted by this option.
+*   Когда включён _Запускать при старте_, приложение автоматически запускается при входе текущего пользователя.
+    *   Обратите внимание, что в Linux поддержка зависит от окружения рабочего стола. Не стесняйтесь [сообщать](../../Troubleshooting/Reporting%20issues.md) о любых проблемах.
+*   Если также включён _Запускать свёрнутым в трей_, приложение запускается в фоне и может быть показано из значка в трее.
+    *   Это применяется, только если включён _Запускать при старе_; ручные запуски этой опцией не затрагиваются.
 
 ### Linux: Flatpak
 
-The Flatpak cannot write to the autostart directory itself, so _Launch on startup_ asks the desktop's Background portal instead, which creates `~/.config/autostart/org.triliumnotes.Trilium.desktop`. If the desktop environment is set to ask before letting applications run in the background, it shows a prompt the first time; denying it leaves _Launch on startup_ without effect, and the permission can be changed later from the system settings.
+Flatpak не может сам писать в каталог автозапуска, поэтому _Запускать при старте_ обращается к Background portal рабочего стола, который создаёт `~/.config/autostart/org.triliumnotes.Trilium.desktop`. Если окружение рабочего стола настроено спрашивать перед тем, как позволить приложениям работать в фоне, оно показывает запрос в первый раз; отказ оставляет _Запускать при старте_ без эффекта, и разрешение можно изменить позже в настройках системы.
 
-### Linux: custom launch command for packagers
+### Linux: пользовательская команда запуска для упаковщиков
 
-On Linux, _Launch on startup_ writes a `trilium.desktop` entry to the user's autostart directory (`$XDG_CONFIG_HOME/autostart`, usually `~/.config/autostart`). Its `Exec` line points to the AppImage when running from one, or to the running executable otherwise.
+В Linux _Запускать при старте_ пишет запись `trilium.desktop` в каталог автозапуска пользователя (`$XDG_CONFIG_HOME/autostart`, обычно `~/.config/autostart`). Её строка `Exec` указывает на AppImage при запуске из него или на запущенный исполняемый файл в противном случае.
 
-Distribution packages that run Trilium on a system-wide Electron (for example `electron /usr/lib/trilium/app.asar`) cannot rely on the running executable, since it is the bare Electron binary, which starts without Trilium. Such packages can set the `TRILIUM_LAUNCH_EXEC` environment variable, typically in their wrapper script, to the full command that starts Trilium:
+Дистрибутивные пакеты, запускающие Trilium на системном Electron (например, `electron /usr/lib/trilium/app.asar`), не могут полагаться на запущенный исполняемый файл, так как это голый бинарник Electron, который запускается без Trilium. Такие пакеты могут задать переменную окружения `TRILIUM_LAUNCH_EXEC`, как правило, в своём обёрточном скрипте, равной полной команде, запускающей Trilium:
 
 ```
 export TRILIUM_LAUNCH_EXEC='electron "/usr/lib/trilium/app.asar"'
 ```
 
-The value is written to the `Exec` line as-is, so any paths containing spaces must already be quoted. When _Start minimized to tray_ is enabled, `--start-hidden` is appended to it. `TRILIUM_LAUNCH_EXEC` takes precedence over both the AppImage path and the running executable.
+Значение записывается в строку `Exec` как есть, поэтому любые пути, содержащие пробелы, должны быть уже заключены в кавычки. Когда включён _Запускать свёрнутым в трей_, к нему добавляется `--start-hidden`. `TRILIUM_LAUNCH_EXEC` имеет приоритет над путём AppImage и над запущенным исполняемым файлом.

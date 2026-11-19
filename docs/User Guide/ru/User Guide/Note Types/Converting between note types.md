@@ -1,26 +1,26 @@
-# Converting between note types
-A note's type may be converted to another:
+# Преобразование между типами заметок
+Тип заметки можно преобразовать в другой:
 
-*   <a class="reference-link" href="Text.md">Text</a> notes to <a class="reference-link" href="Markdown.md">Markdown</a> notes
-*   Markdown notes to Text notes
+*   Заметки <a class="reference-link" href="Text.md">Текст</a> в заметки <a class="reference-link" href="Markdown.md">Markdown</a>
+*   Заметки Markdown в заметки Текст
 
-Before conversion, a revision is saved automatically, so you can restore the original or recover any missing elements from it if the conversion produces undesired results. Read more about <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20Revisions.md">Note Revisions</a>.
+Перед преобразованием автоматически сохраняется ревизия, поэтому вы можете восстановить оригинал или извлечь из него недостающие элементы, если преобразование даёт нежелательные результаты. Подробнее о <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20Revisions.md">Ревизиях заметки</a>.
 
-## Converting individual notes
+## Преобразование отдельных заметок
 
-### Markdown to Text Note
+### Markdown в текстовую заметку
 
-Markdown notes can be converted to Text Notes with negligible loss of formatting fidelity.
+Заметки Markdown можно преобразовать в текстовые заметки с пренебрежимой потерей точности форматирования.
 
-To do so, go to the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Advanced_ and select _Convert to text note_.
+Для этого перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a> → _Дополнительно_ и выберите _Преобразовать в текстовую заметку_.
 
-### Text Note to Markdown
+### Текстовая заметка в Markdown
 
 > [!WARNING]
-> Since Markdown does not support all the capabilities of Text notes, this conversion is lossy in terms of formatting: some formatting may be lost, and some unsupported elements may even be dropped. It's strongly recommended that you inspect the content for any information that might have gone missing after the conversion.
+> Поскольку Markdown не поддерживает все возможности текстовых заметок, это преобразование приводит к потерям форматирования: часть форматирования может быть потеряна, а некоторые неподдерживаемые элементы могут быть даже отброшены. Настоятельно рекомендуется проверить содержимое на предмет информации, которая могла пропасть после преобразования.
 
-To convert a text note to Markdown, go to the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Advanced_ and select _Convert to Markdown note_.
+Чтобы преобразовать текстовую заметку в Markdown, перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a> → _Дополнительно_ и выберите _Преобразовать в Markdown-заметку_.
 
-## Converting multiple notes
+## Преобразование нескольких заметок
 
-A note type conversion can also be performed on an entire subtree or a set of multiple notes using <a class="reference-link" href="../Advanced%20Usage/Bulk%20Actions.md">Bulk Actions</a>.
+Преобразование типа заметки также можно выполнить над целым поддеревом или набором нескольких заметок с помощью <a class="reference-link" href="../Advanced%20Usage/Bulk%20Actions.md">Массовых действий</a>.

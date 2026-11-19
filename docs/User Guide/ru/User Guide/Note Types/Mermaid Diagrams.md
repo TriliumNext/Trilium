@@ -1,60 +1,60 @@
-# Mermaid Diagrams
+# Диаграммы Mermaid
 > [!TIP]
-> For a quick understanding of the Mermaid syntax, see <a class="reference-link" href="Mermaid%20Diagrams/Syntax%20reference.dat">Syntax reference</a> (official documentation).
+> Для быстрого понимания синтаксиса Mermaid см. <a class="reference-link" href="Mermaid%20Diagrams/Syntax%20reference.dat">Справочник синтаксиса</a> (официальная документация).
 
 <figure class="image"><img style="aspect-ratio:1464/915;" src="Mermaid Diagrams_image.png" width="1464" height="915"></figure>
 
-Trilium supports Mermaid, which adds support for various diagrams such as flowchart, sequence diagram, class diagram, state diagram, pie charts, etc., all using a text description of the chart instead of manually drawing the diagram.
+Trilium поддерживает Mermaid, который добавляет поддержку различных диаграмм, таких как блок-схемы, диаграммы последовательностей, диаграммы классов, диаграммы состояний, круговые диаграммы и т.д., — всё с использованием текстового описания диаграммы вместо ручного её рисования.
 
-This note type is a split view, meaning that both the source code and a preview of the document are displayed side-by-side. See <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20types%20with%20split%20view.md">Note types with split view</a> for more information.
+Этот тип заметки имеет разделённый вид, то есть исходный код и предпросмотр документа отображаются бок о бок. Подробнее см. <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20types%20with%20split%20view.md">Типы заметок с разделённым видом</a>.
 
-## Sample diagrams
+## Образцы диаграмм
 
-Starting with v0.103.0, Mermaid diagrams no longer start with a sample flowchart, but instead a pane at the bottom will show all the supported diagrams with sample code for each:
+Начиная с v0.103.0, диаграммы Mermaid больше не начинаются с образца блок-схемы; вместо этого панель внизу будет показывать все поддерживаемые диаграммы с образцом кода для каждой:
 
-*   Simply click on any of the samples to apply it.
-*   The pane will disappear as soon as something is typed in the code editor or a sample is selected. To make it appear again, simply remove the content of the note.
+*   Просто щёлкните по любому из образцов, чтобы применить его.
+*   Панель исчезнет, как только что-то будет набрано в редакторе кода или выбран образец. Чтобы она появилась снова, просто удалите содержимое заметки.
 
-## Layouts
+## Макеты
 
-Depending on the chart being edited and user preference, there are two layouts supported by the Mermaid note type:
+В зависимости от редактируемой диаграммы и предпочтения пользователя, тип заметки Mermaid поддерживает два макета:
 
-*   Horizontal, where the source code (editable part) is on the left side of the screen and the preview is to the right.
-*   Vertical, where the source code is at the bottom of the screen and the preview is at the top.
+*   Горизонтальный, где исходный код (редактируемая часть) находится с левой стороны экрана, а предпросмотр — справа.
+*   Вертикальный, где исходный код находится внизу экрана, а предпросмотр — вверху.
 
-It's possible to switch between the two layouts at any time by pressing the <span class="tn-icon bx bxs-dock-left"></span> icon in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a>.
+Между двумя макетами можно переключаться в любое время, нажимая значок <span class="tn-icon bx bxs-dock-left"></span> в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Кнопках заметки</a>.
 
-## Interaction
+## Взаимодействие
 
-*   The source code of the diagram (in Mermaid format) is displayed on the left or bottom side of the note (depending on the layout).
-    *   Changing the diagram code will refresh automatically the diagram.
-    *   The front matter (the block between `---` lines at the start of the diagram, which holds its title and configuration) is highlighted as YAML, and so are the node properties of flowcharts and Kanban boards (such as `@{ shape: tool }`). Configuration directives (`%%{init: …}%%`) are highlighted apart from comments, and so are the accessibility title and description (`accTitle:` and `accDescr:`).
-    *   <kbd>Ctrl</kbd>+<kbd>/</kbd> (Mac: <kbd>⌘</kbd>+<kbd>/</kbd>) comments out the current or selected lines with `%%`, or with `#` in the front matter. Pressing it again on commented lines removes the comment marker.
-*   The preview of the diagram is displayed at the right or top side of the note (depending on the layout):
-    *   There are dedicated buttons at the bottom-right of the preview to control the zoom in, zoom out or fit the diagram.
-    *   The preview can be moved around by holding the left mouse button and dragging.
-    *   Zooming can also be done by using the scroll wheel.
-    *   The zoom and position on the preview will remain fixed as the diagram changes, to be able to work more easily with large diagrams.
-    *   Double-clicking the preview resets the zoom/position.
-    *   The preview can also be focused by clicking on it, case in which keyboard shortcuts can be used:
-        *   <kbd>+</kbd> or <kbd>E</kbd> to zoom in, <kbd>-</kbd> or <kbd>Q</kbd> to zoom out.
-        *   <kbd>/</kbd> to reset the zoom/position.
-        *   Arrow keys or <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> to pan. Holding <kbd>Shift</kbd> pans faster.
-*   The size of the source/preview panes can be adjusted by hovering over the border between them and dragging it with the mouse.
-*   In the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a>:
-    *   The source/preview can be laid out left-right (via <span class="tn-icon bx bxs-dock-left"></span>) or bottom-top (via <span class="tn-icon bx bxs-dock-bottom"></span>).
-    *   Press the <span class="tn-icon bx bx-copy"></span> (_Copy image reference to the clipboard_) to be able to insert the image representation of the diagram into a text note. See <a class="reference-link" href="Text/Images/Image%20references.md">Image references</a> for more information.
-*   To export the diagram as either SVG or PNG, go to the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> and select _Export as image_:
-    *   Select _SVG (vector)_ to download a scalable/vector rendering of the diagram. Can be used to present the diagram without degrading when zooming.
-    *   Select _PNG (raster)_ to download a normal image (at 1x scale, raster) of the diagram. Can be used to send the diagram in more traditional channels such as e-mail.
-*   The note can be marked as [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md), case in which it switches by default to the preview (although it can be switched back using the source/preview buttons) and the source is no longer editable.
+*   Исходный код диаграммы (в формате Mermaid) отображается слева или внизу заметки (в зависимости от макета).
+    *   Изменение кода диаграммы автоматически обновит диаграмму.
+    *   Front matter (блок между строками `---` в начале диаграммы, содержащий её заголовок и конфигурацию) подсвечивается как YAML, как и свойства узлов блок-схем и канбан-досок (такие как `@{ shape: tool }`). Директивы конфигурации (`%%{init: …}%%`) подсвечиваются отдельно от комментариев, как и заголовок и описание доступности (`accTitle:` и `accDescr:`).
+    *   <kbd>Ctrl</kbd>+<kbd>/</kbd> (Mac: <kbd>⌘</kbd>+<kbd>/</kbd>) комментирует текущие или выбранные строки с помощью `%%`, или с помощью `#` в front matter. Повторное нажатие на закомментированных строках убирает маркер комментария.
+*   Предпросмотр диаграммы отображается справа или вверху заметки (в зависимости от макета):
+    *   В правом нижнем углу предпросмотра есть выделенные кнопки для управления увеличением, уменьшением или вписыванием диаграммы.
+    *   Предпросмотр можно перемещать, удерживая левую кнопку мыши и перетаскивая.
+    *   Масштабирование также можно выполнять колёсиком мыши.
+    *   Масштаб и положение на предпросмотре останутся фиксированными по мере изменения диаграммы, чтобы можно было легче работать с большими диаграммами.
+    *   Двойной щелчок по предпросмотру сбрасывает масштаб/положение.
+    *   Предпросмотр также можно сфокусировать щелчком по нему, в этом случае можно использовать сочетания клавиш:
+        *   <kbd>+</kbd> или <kbd>E</kbd> для увеличения, <kbd>-</kbd> или <kbd>Q</kbd> для уменьшения.
+        *   <kbd>/</kbd> для сброса масштаба/положения.
+        *   Клавиши со стрелками или <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> для панорамирования. Удержание <kbd>Shift</kbd> панорамирует быстрее.
+*   Размер панелей исходника/предпросмотра можно настроить, наведя курсор на границу между ними и перетащив её мышью.
+*   В <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Кнопках заметки</a>:
+    *   Исходник/предпросмотр можно разместить слева-справа (через <span class="tn-icon bx bxs-dock-left"></span>) или снизу-сверху (через <span class="tn-icon bx bxs-dock-bottom"></span>).
+    *   Нажмите <span class="tn-icon bx bx-copy"></span> (_Копировать ссылку на изображение в буфер обмена_), чтобы иметь возможность вставить графическое представление диаграммы в текстовую заметку. Подробнее см. <a class="reference-link" href="Text/Images/Image%20references.md">Ссылки на изображения</a>.
+*   Чтобы экспортировать диаграмму как SVG или PNG, перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Кнопки заметки</a> и выберите _Экспортировать как изображение_:
+    *   Выберите _SVG (вектор)_, чтобы скачать масштабируемый/векторный рендеринг диаграммы. Можно использовать для показа диаграммы без деградации при масштабировании.
+    *   Выберите _PNG (растр)_, чтобы скачать обычное изображение (в масштабе 1x, растр) диаграммы. Можно использовать для отправки диаграммы по более традиционным каналам, таким как электронная почта.
+*   Заметку можно пометить как [только для чтения](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md), в этом случае она по умолчанию переключается на предпросмотр (хотя её можно переключить обратно кнопками исходника/предпросмотра), а исходник больше не редактируется.
 
-## Errors in the diagram
+## Ошибки в диаграмме
 
-If there is an error in the source code, the error will be displayed in an information pane.
+Если в исходном коде есть ошибка, ошибка будет отображена в информационной панели.
 
-During the state of an error, the diagram will no longer be rendered and the previously working diagram will remain in the preview section.
+Во время состояния ошибки диаграмма больше не будет отрисовываться, а ранее работавшая диаграмма останется в секции предпросмотра.
 
-## Diagrams in a text note
+## Диаграммы в текстовой заметке
 
-To show a diagram inside a <a class="reference-link" href="Text.md">Text</a> note instead of in a note of its own, insert one with the <span class="tn-icon cke cke-trilium-mermaid-insert"></span> _Mermaid diagram_ button of the <span class="tn-icon cke cke-plus"></span> _Insert_ menu. It has the same views, zoom and error display as a Mermaid note, and its source stays in the text note as a code block. See _Mermaid diagram_ in <a class="reference-link" href="Text/Insert%20buttons.md">Insert buttons</a>.
+Чтобы показать диаграмму внутри заметки <a class="reference-link" href="Text.md">Текст</a> вместо отдельной заметки, вставьте её кнопкой <span class="tn-icon cke cke-trilium-mermaid-insert"></span> _Диаграмма Mermaid_ меню <span class="tn-icon cke cke-plus"></span> _Вставка_. Она имеет те же виды, масштаб и отображение ошибок, что и заметка Mermaid, а её исходник остаётся в текстовой заметке как блок кода. См. _Диаграмма Mermaid_ в <a class="reference-link" href="Text/Insert%20buttons.md">Кнопках вставки</a>.

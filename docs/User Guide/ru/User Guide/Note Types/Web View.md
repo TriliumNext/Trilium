@@ -1,35 +1,35 @@
-# Web View
-## Configuration
+# Веб-представление
+## Конфигурация
 
-A webview needs to know which URL to render, and it can be provided by setting the `webViewSrc` [label](../Advanced%20Usage/Attributes.md), such as:
+Веб-представление должно знать, какой URL отображать, и его можно предоставить, задав [метку](../Advanced%20Usage/Attributes.md) `webViewSrc`, например:
 
 ```
 #webViewSrc="https://www.wikipedia.org"
 ```
 
-The URL needs to contain the full scheme.
+URL должен содержать полную схему.
 
-## Web view on the server vs. Electron
+## Веб-представление на сервере и в Electron
 
-When accessing Trilium via a browser instead of the desktop application, the web view will still try to render the content of the desired webpage. However, since it's running in a browser there are quite a few limitations as opposed to the desktop one.
+При доступе к Trilium через браузер вместо десктопного приложения веб-представление всё равно будет пытаться отобразить содержимое нужной веб-страницы. Однако, поскольку оно работает в браузере, есть довольно много ограничений по сравнению с десктопным.
 
-More specifically, quite a few websites oppose being embedded in another website (technically they have a non-permisive `X-Frame-Options` header). This is not bypassable by Trilium so the page will simply fail to render.
+Более конкретно, многие веб-сайты возражают против встраивания в другой веб-сайт (технически у них есть неразрешающий заголовок `X-Frame-Options`). Это невозможно обойти в Trilium, поэтому страница просто не будет отображаться.
 
-You can diagnose this by right clicking the Trilium web page → Inspect (element) and looking in the “Console” tab for errors such as:
+Это можно диагностировать, щёлкнув правой кнопкой по странице Trilium → Просмотреть код (элемент) и посмотрев на вкладку «Консоль» на предмет ошибок, таких как:
 
 *   `Refused to display 'https://www.google.com/' in a frame because it set 'X-Frame-Options' to 'sameorigin'.`
 *   `Refused to frame 'https://duckduckgo.com/' because an ancestor violates the following Content Security Policy directive: "frame-ancestors 'self' https://html.duckduckgo.com".`
 
-There are a few websites that do render such as `wikipedia.org`.
+Есть несколько веб-сайтов, которые отображаются, например `wikipedia.org`.
 
-Do note that we are also applying some sandboxing constraints on the server side, so if you have any issues other than the unresolvable `X-Frame-Options` described above, feel free to report them.
+Обратите внимание, что мы также применяем некоторые ограничения песочницы на стороне сервера, поэтому если у вас есть какие-либо проблемы, кроме описанной выше неразрешимой `X-Frame-Options`, не стесняйтесь сообщать о них.
 
-On the desktop side, a different technology is used which bypasses the constraints of an `iframe` (`webview`).
+На десктопе используется другая технология, которая обходит ограничения `iframe` (`webview`).
 
-## Embedding in other note types
+## Встраивание в другие типы заметок
 
-Starting with v0.104.0, web views can be embedded into other note types:
+Начиная с v0.104.0, веб-представления можно встраивать в другие типы заметок:
 
-*   <a class="reference-link" href="../Collections/Dashboard.md">Dashboard</a>
-*   <a class="reference-link" href="Canvas.md">Canvas</a>
-*   <a class="reference-link" href="Text.md">Text</a> notes via <a class="reference-link" href="Text/Include%20Note.md">Include Note</a>.
+*   <a class="reference-link" href="../Collections/Dashboard.md">Дашборд</a>
+*   <a class="reference-link" href="Canvas.md">Холст</a>
+*   Заметки <a class="reference-link" href="Text.md">Текст</a> через <a class="reference-link" href="Text/Include%20Note.md">Включение заметки</a>.

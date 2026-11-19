@@ -1,49 +1,49 @@
-# Note Types
-One of the core features of Trilium is that it supports multiple types of notes, depending on the need.
+# Типы заметок
+Одна из ключевых возможностей Trilium — поддержка множества типов заметок в зависимости от потребности.
 
-## Creating a new note with a different type via the note tree
+## Создание новой заметки другого типа через дерево заметок
 
-The default note type in Trilium (e.g. when creating a new note) is <a class="reference-link" href="Note%20Types/Text.md">Text</a>, since it's for general use.
+Тип заметки по умолчанию в Trilium (например, при создании новой заметки) — <a class="reference-link" href="Note%20Types/Text.md">Текст</a>, так как он предназначен для общего использования.
 
-To create a new note of a different type, head to the <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and right click an existing note where to place the new one and select:
+Чтобы создать новую заметку другого типа, перейдите к <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дереву заметок</a>, щёлкните правой кнопкой по существующей заметке, рядом с которой разместить новую, и выберите:
 
-*   _Insert note after_, to put the new note underneath the one selected.
-*   _Insert child note_, to insert the note as a child of the selected note.
+*   _Вставить заметку после_, чтобы поместить новую заметку под выбранной.
+*   _Вставить дочернюю заметку_, чтобы вставить заметку как дочернюю выбранной.
 
-The note types created less often, <a class="reference-link" href="Note%20Types/Saved%20Search.md">Saved Search</a>, <a class="reference-link" href="Note%20Types/Render%20Note.md">Render Note</a>, <a class="reference-link" href="Note%20Types/Web%20View.md">Web View</a> and <a class="reference-link" href="Note%20Types/Note%20Map.md">Note Map</a>, are in the _More_ submenu.
+Типы заметок, создаваемые реже, — <a class="reference-link" href="Note%20Types/Saved%20Search.md">Сохранённый поиск</a>, <a class="reference-link" href="Note%20Types/Render%20Note.md">Render Note</a>, <a class="reference-link" href="Note%20Types/Web%20View.md">Веб-представление</a> и <a class="reference-link" href="Note%20Types/Note%20Map.md">Карта заметок</a> — находятся в подменю _Ещё_.
 
 ![](Note%20Types_image.png)
 
-## Creating a new note of a different type via add link or new tab
+## Создание новой заметки другого типа через добавление ссылки или новую вкладку
 
-*   When adding a [link](Note%20Types/Text/Links.md) in a <a class="reference-link" href="Note%20Types/Text.md">Text</a> note, type the desired title of the new note and press Enter. Afterwards the type of the note will be asked.
-*   Similarly, when creating a new tab, type the desired title and press Enter.
+*   При добавлении [ссылки](Note%20Types/Text/Links.md) в заметке <a class="reference-link" href="Note%20Types/Text.md">Текст</a> введите нужный заголовок новой заметки и нажмите Enter. После этого будет спрошен тип заметки.
+*   Аналогично при создании новой вкладки введите нужный заголовок и нажмите Enter.
 
-The note type is chosen from the same menu as in the note tree, with its submenus (code languages, snippets, collections and the note types created less often) and its search box: type to narrow the list, then press <kbd>Enter</kbd> to create the first match. <kbd>Enter</kbd> right away creates a Text note.
+Тип заметки выбирается из того же меню, что и в дереве заметок, с его подменю (языки кода, фрагменты, коллекции и типы заметок, создаваемые реже) и его полем поиска: введите текст, чтобы сузить список, затем нажмите <kbd>Enter</kbd>, чтобы создать первое совпадение. <kbd>Enter</kbd> сразу создаёт текстовую заметку.
 
-## Changing the type of a note
+## Изменение типа заметки
 
-It is possible to change the type of a note after it has been created via <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Note type_. This feature can also be used to edit the [source of a note](Advanced%20Usage/Note%20source.md).
+Тип заметки можно изменить после её создания через <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a> → _Тип заметки_. Эту возможность также можно использовать для редактирования [исходного кода заметки](Advanced%20Usage/Note%20source.md).
 
 > [!NOTE]
-> Note that it's generally a good idea to change the note type only if the note is empty
+> Обратите внимание, что, как правило, менять тип заметки стоит, только если заметка пуста.
 
-## Supported note types
+## Поддерживаемые типы заметок
 
-The following note types are supported by Trilium:
+Trilium поддерживает следующие типы заметок:
 
-| Note Type | Description |
+| Тип заметки | Описание |
 | --- | --- |
-| <a class="reference-link" href="Note%20Types/Text.md">Text</a> | The default note type, which allows for rich text formatting, images, admonitions and right-to-left support. |
-| <a class="reference-link" href="Note%20Types/Code.md">Code</a> | Uses a mono-space font and can be used to store larger chunks of code or plain text than a text note, and has better syntax highlighting. |
-| <a class="reference-link" href="Note%20Types/Saved%20Search.md">Saved Search</a> | Stores the information about a search (the search text, criteria, etc.) for later use. Can be used for quick filtering of a large amount of notes, for example. The search can easily be triggered. |
-| <a class="reference-link" href="Note%20Types/Relation%20Map.md">Relation Map</a> | Allows easy creation of notes and relations between them. Can be used for mainly relational data such as a family tree. |
-| <a class="reference-link" href="Note%20Types/Note%20Map.md">Note Map</a> | Displays the relationships between the notes, whether via relations or their hierarchical structure. |
-| <a class="reference-link" href="Note%20Types/Render%20Note.md">Render Note</a> | Used in <a class="reference-link" href="Scripting.md">Scripting</a>, it displays the HTML content of another note. This allows displaying any kind of content, provided there is a script behind it to generate it. |
-| <a class="reference-link" href="Collections.md">Collections</a> | Displays the children of the note either as a grid, a list, or for a more specialized case: a calendar.              <br>  <br>Generally useful for easy reading of short notes. |
-| <a class="reference-link" href="Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a> | Displays diagrams such as bar charts, flow charts, state diagrams, etc. Requires a bit of technical knowledge since the diagrams are written in a specialized format. |
-| <a class="reference-link" href="Note%20Types/Canvas.md">Canvas</a> | Allows easy drawing of sketches, diagrams, handwritten content. Uses the same technology behind [excalidraw.com](https://excalidraw.com). |
-| <a class="reference-link" href="Note%20Types/Web%20View.md">Web View</a> | Displays the content of an external web page, similar to a browser. |
-| <a class="reference-link" href="Note%20Types/Mind%20Map.md">Mind Map</a> | Easy for brainstorming ideas, by placing them in a hierarchical layout. |
-| <a class="reference-link" href="Collections/Geo%20Map.md">Geo Map</a> | Displays the children of the note as a geographical map, one use-case would be to plan vacations. It even has basic support for tracks. Notes can also be created from it. |
-| <a class="reference-link" href="Note%20Types/File.md">File</a> | Represents an uploaded file such as PDFs, images, video or audio files. |
+| <a class="reference-link" href="Note%20Types/Text.md">Текст</a> | Тип заметки по умолчанию, позволяющий форматированный текст, изображения, замечания и поддержку письма справа налево. |
+| <a class="reference-link" href="Note%20Types/Code.md">Код</a> | Использует моноширинный шрифт; может использоваться для хранения больших фрагментов кода или простого текста, чем текстовая заметка, и имеет улучшенную подсветку синтаксиса. |
+| <a class="reference-link" href="Note%20Types/Saved%20Search.md">Сохранённый поиск</a> | Хранит информацию о поиске (текст поиска, критерии и т.д.) для последующего использования. Может использоваться, например, для быстрой фильтрации большого количества заметок. Поиск легко запустить. |
+| <a class="reference-link" href="Note%20Types/Relation%20Map.md">Карта отношений</a> | Позволяет легко создавать заметки и отношения между ними. Может использоваться в основном для реляционных данных, таких как генеалогическое древо. |
+| <a class="reference-link" href="Note%20Types/Note%20Map.md">Карта заметок</a> | Отображает отношения между заметками — через отношения или их иерархическую структуру. |
+| <a class="reference-link" href="Note%20Types/Render%20Note.md">Render Note</a> | Используется в <a class="reference-link" href="Scripting.md">Скриптинге</a>, отображает HTML-содержимое другой заметки. Это позволяет отображать любой вид содержимого при наличии скрипта, который его генерирует. |
+| <a class="reference-link" href="Collections.md">Коллекции</a> | Отображает потомков заметки сеткой, списком или, для более специализированного случая, календарём.  <br>  <br>Как правило, полезно для лёгкого чтения коротких заметок. |
+| <a class="reference-link" href="Note%20Types/Mermaid%20Diagrams.md">Диаграммы Mermaid</a> | Отображает диаграммы, такие как столбчатые диаграммы, блок-схемы, диаграммы состояний и т.д. Требует некоторых технических знаний, так как диаграммы записываются в специализированном формате. |
+| <a class="reference-link" href="Note%20Types/Canvas.md">Холст</a> | Позволяет легко рисовать наброски, диаграммы, рукописный текст. Использует ту же технологию, что и [excalidraw.com](https://excalidraw.com). |
+| <a class="reference-link" href="Note%20Types/Web%20View.md">Веб-представление</a> | Отображает содержимое внешней веб-страницы, подобно браузеру. |
+| <a class="reference-link" href="Note%20Types/Mind%20Map.md">Mind Map</a> | Удобен для мозгового штурма идей, размещая их в иерархическом макете. |
+| <a class="reference-link" href="Collections/Geo%20Map.md">Геокарта</a> | Отображает потомков заметки как географическую карту; один из сценариев — планирование отпусков. Имеет даже базовую поддержку треков. Заметки также можно создавать из неё. |
+| <a class="reference-link" href="Note%20Types/File.md">Файл</a> | Представляет загруженный файл, такой как PDF, изображения, видео- или аудиофайлы. |

@@ -1,14 +1,14 @@
-# Saved Search
-Trilium allows you to save common searches as notes within the note tree. The search results will appear as sub-notes under these "saved search" notes. Here is an example of how it works:
+# Сохранённый поиск
+Trilium позволяет сохранять частые поиски как заметки внутри дерева заметок. Результаты поиска будут появляться как подзаметки под этими заметками «сохранённого поиска». Вот пример того, как это работает:
 
 <figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:812/585;" src="Saved Search_saved-search.gif" width="812" height="585"></figure>
 
-A saved search runs when you open it, and when you expand it in the note tree. A saved search in a tab that is not shown, such as a background tab restored at startup, runs when you switch to that tab. Its results stay until you run the search again with the _Search_ button of the search parameters. If the query has an error, it appears as a notification.
+Сохранённый поиск выполняется при его открытии и при его разворачивании в дереве заметок. Сохранённый поиск во вкладке, которая не показана, такой как фоновая вкладка, восстановленная при запуске, выполняется при переключении на эту вкладку. Его результаты остаются, пока вы не запустите поиск снова кнопкой _Искать_ параметров поиска. Если в запросе есть ошибка, она появляется как уведомление.
 
-In <a class="reference-link" href="../Advanced%20Usage/Safe%20mode.md">Safe mode</a>, and when the request fails, the search does not run on its own. Press _Search now_ to run it.
+В <a class="reference-link" href="../Advanced%20Usage/Safe%20mode.md">Безопасном режиме</a> и при неудаче запроса поиск не выполняется сам. Нажмите _Искать сейчас_, чтобы запустить его.
 
-Once a search is saved, the _Search parameters_ is still available underneath the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Title.md">Title</a> in order to be able to change the settings later on but it will appear collapsed by default.
+После сохранения поиска _Параметры поиска_ всё ещё доступны под <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Title.md">Заголовком</a>, чтобы иметь возможность изменить настройки позже, но по умолчанию они будут свёрнуты.
 
-## Location
+## Расположение
 
-By default, saved searches are stored in the day note. However, you can designate a different note to store saved searches by marking it with the `#searchHome` label. Additionally, for [workspaces](../Basic%20Concepts%20and%20Features/Navigation/Workspaces.md), you can use the `#workspaceSearchHome` label to specify a storage location for saved searches within that workspace.
+По умолчанию сохранённые поиски хранятся в заметке дня. Однако можно назначить другую заметку для хранения сохранённых поисков, пометив её меткой `#searchHome`. Кроме того, для [рабочих областей](../Basic%20Concepts%20and%20Features/Navigation/Workspaces.md) можно использовать метку `#workspaceSearchHome`, чтобы указать место хранения сохранённых поисков внутри этой рабочей области.

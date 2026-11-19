@@ -1,94 +1,94 @@
-# Spreadsheets
+# Таблицы (Spreadsheets)
 <figure class="image"><img style="aspect-ratio:1102/573;" src="Spreadsheets_image.png" width="1102" height="573"></figure>
 
 > [!IMPORTANT]
-> Spreadsheets are a new type of note introduced in v0.103.0 and are currently considered experimental/beta. As such, expect major changes to occur to this note type.
+> Таблицы (Spreadsheets) — новый тип заметок, представленный в v0.103.0, и в настоящее время считается экспериментальным/бета. Как such, ожидайте серьёзных изменений в этом типе заметок.
 
-Spreadsheets provide a familiar experience to Microsoft Excel or LibreOffice Calc, with support for formulas, data validation and text formatting.
+Таблицы предоставляют привычный опыт, как Microsoft Excel или LibreOffice Calc, с поддержкой формул, проверки данных и форматирования текста.
 
-## Spreadsheets vs. collections
+## Таблицы и коллекции
 
-There is a slight overlap between spreadsheets and the <a class="reference-link" href="../Collections/Table.md">Table</a> collection. In general the table collection is useful to track meta-information about notes (for example a collection of people and their birthdays), whereas spreadsheets are quite useful for calculations since they support formulas.
+Есть небольшое пересечение между таблицами и коллекцией <a class="reference-link" href="../Collections/Table.md">Таблица</a>. В целом коллекция-таблица полезна для отслеживания метаинформации о заметках (например, коллекция людей и их дней рождения), тогда как таблицы весьма полезны для вычислений, так как поддерживают формулы.
 
-Spreadsheets also benefit from a wider range of features such as data validation, formatting and can work on a relatively large dataset.
+Таблицы также выигрывают от более широкого набора возможностей, таких как проверка данных, форматирование, и могут работать с относительно большим набором данных.
 
-## Data intercompatibility (import/export)
+## Совместимость данных (импорт/экспорт)
 
-Starting with v0.104.0, Trilium provides a level of data intercompatibility between the internal format (Univer) and the following formats:
+Начиная с v0.104.0, Trilium предоставляет уровень совместимости данных между внутренним форматом (Univer) и следующими форматами:
 
 *   Microsoft Excel (.xlsx)
-    *   Preserves basic formatting (fonts, sizes, borders, backgrounds).
-    *   Formulas are preserved, but note that not all Excel functions are supported and vice-versa with Univer.
-    *   Images (cell-bound or floating), without preserving rotation.
-    *   Supports multi-sheets natively.
+    *   Сохраняет базовое форматирование (шрифты, размеры, границы, фоны).
+    *   Формулы сохраняются, но обратите внимание, что не все функции Excel поддерживаются и наоборот с Univer.
+    *   Изображения (привязанные к ячейке или плавающие), без сохранения поворота.
+    *   Поддерживает несколько листов нативно.
 *   Comma-Separated Values (.csv)
-    *   Since it's a text-based format, any formatting is lost.
-    *   Formulas are evaluated and turned into their final value instead.
-    *   Multi-sheets spreadsheets are exported as a single ZIP containing a CSV file per sheet.
+    *   Поскольку это текстовый формат, любое форматирование теряется.
+    *   Формулы вычисляются и превращаются в их конечное значение вместо этого.
+    *   Таблицы с несколькими листами экспортируются как один ZIP, содержащий CSV-файл на лист.
 
-Both [import and export](../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md) are supported, as follows:
+Поддерживаются как [импорт, так и экспорт](../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md), следующим образом:
 
-*   To import a file, simply drag it into the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and it will be converted into a spreadsheet note.
-    *   To avoid this behavior (e.g. to import a .xlsx file as an actual <a class="reference-link" href="File.md">File</a>), uncheck the corresponding option in the [Import dialog](../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md). Such a file is shown in a read-only spreadsheet (see <a class="reference-link" href="File/Office%20documents.md">Office documents</a>).
-    *   Multiple files can be imported at the same time, including a mixture of .csv and .xlsx files. Folder structure can be preserved by using a .zip file.
-*   Unlike importing, exporting is on a per-note basis:
-    *   In the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a>, choose the _Export to Excel_ or _Export to CSV_ options.
-    *   If exported as a single file via <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md">Import &amp; Export</a>, the resulting file will be a custom `.triliumsheet` file that preserves the spreadsheet as-is.
-        *   The export is intentionally a different process than the normal <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md">Import &amp; Export</a> functionality because it does conversion to multiple formats with varying degrees of compatibility.
+*   Чтобы импортировать файл, просто перетащите его в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дерево заметок</a>, и он будет конвертирован в заметку-таблицу.
+    *   Чтобы избежать этого поведения (например, чтобы импортировать .xlsx-файл как настоящий <a class="reference-link" href="File.md">Файл</a>), снимите соответствующую отметку в [Диалоге импорта](../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md). Такой файл показывается в таблице только для чтения (см. <a class="reference-link" href="File/Office%20documents.md">Документы Office</a>).
+    *   Несколько файлов можно импортировать одновременно, включая смесь .csv и .xlsx файлов. Структуру папок можно сохранить, используя .zip-файл.
+*   В отличие от импорта, экспорт выполняется по заметке:
+    *   В <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a> выберите опции _Экспорт в Excel_ или _Экспорт в CSV_.
+    *   Если экспортировать как один файл через <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md">Импорт и экспорт</a>, результирующий файл будет пользовательским файлом `.triliumsheet`, который сохраняет таблицу как есть.
+        *   Экспорт намеренно является другим процессом, чем обычная функциональность <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md">Импорта и экспорта</a>, потому что он выполняет конвертацию в несколько форматов с разной степенью совместимости.
 
-Cells pasted from Excel or another application keep their formatting except for the font, so they use the spreadsheet's font like the rest of the cells.
+Ячейки, вставленные из Excel или другого приложения, сохраняют своё форматирование, кроме шрифта, поэтому они используют шрифт таблицы, как и остальные ячейки.
 
 > [!IMPORTANT]
-> Import & export for both .xlsx and .csv files are supported on a best-effort basis. It does not support advanced features (data validation, scripting, etc.). If you notice a particular issue, it can be [reported](../Troubleshooting/Reporting%20issues.md), however all bug reports must contain a sample file in order to be taken into consideration.
+> Импорт и экспорт для обоих форматов .xlsx и .csv поддерживаются по возможности. Они не поддерживают продвинутые возможности (проверка данных, скриптинг и т.д.). Если вы заметите конкретную проблему, о ней можно [сообщить](../Troubleshooting/Reporting%20issues.md), однако все сообщения об ошибках должны содержать образец файла, чтобы быть рассмотренными.
 
-## Supported features
+## Поддерживаемые возможности
 
-The spreadsheet has support for the following features:
+Таблица поддерживает следующие возможности:
 
-*   Since v0.104.0, images that can be either inside a cell or floating above.
-    *   The images are saved as <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Attachments.md">Attachments</a> for performance reasons.
-    *   The image upload respects the same compression settings as text <a class="reference-link" href="Text/Images.md">Images</a>.
-*   Filtering
-*   Sorting
-*   Data validation
-*   Conditional formatting
-*   Notes / annotations
-*   Find / replace
+*   Начиная с v0.104.0, изображения, которые могут быть как внутри ячейки, так и плавающими над ней.
+    *   Изображения сохраняются как <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Attachments.md">Вложения</a> из соображений производительности.
+    *   Загрузка изображений уважает те же настройки сжатия, что и <a class="reference-link" href="Text/Images.md">Изображения</a> в тексте.
+*   Фильтрация
+*   Сортировка
+*   Проверка данных
+*   Условное форматирование
+*   Заметки / аннотации
+*   Поиск / замена
 
-We might consider adding [other features](https://docs.univer.ai/guides/sheets/features/filter) from Univer at some point. If there is a particular feature that can be added easily, it can be discussed over [GitHub Issues](../Troubleshooting/Reporting%20issues.md).
+Мы можем рассмотреть добавление [других возможностей](https://docs.univer.ai/guides/sheets/features/filter) из Univer в какой-то момент. Если есть конкретная возможность, которую можно легко добавить, её можно обсудить в [GitHub Issues](../Troubleshooting/Reporting%20issues.md).
 
-### Share functionality
+### Функциональность публикации
 
-Spreadsheets can be [shared](../Advanced%20Usage/Sharing.md), case in which a best-effort HTML rendering of the spreadsheet is done:
+Таблицы можно [публиковать](../Advanced%20Usage/Sharing.md), в этом случае выполняется попытка HTML-рендеринга таблицы по возможности:
 
-*   Preserves basic formatting.
-*   Cells with formulas display the precalculated value instead of the formula.
+*   Сохраняет базовое форматирование.
+*   Ячейки с формулами отображают предвычисленное значение вместо формулы.
 
-Since v0.104.0:
+Начиная с v0.104.0:
 
-*   Numbers and dates are properly formatted.
-*   Images are shown inside a cell or floating above, including rotation.
+*   Числа и даты корректно форматируются.
+*   Изображения показываются внутри ячейки или плавающими над ней, включая поворот.
 
-For more advanced use cases, this will most likely not work as intended. Feel free to [report issues](../Troubleshooting/Reporting%20issues.md), but keep in mind that we might not be able to have a complete feature parity with all the features of Univer.
+Для более продвинутых случаев использования это, скорее всего, не будет работать как задумано. Не стесняйтесь [сообщать о проблемах](../Troubleshooting/Reporting%20issues.md), но имейте в виду, что мы можем не достичь полного паритета возможностей со всеми возможностями Univer.
 
-## Features not supported yet
+## Возможности, пока не поддерживаемые
 
-### Regarding Pro features
+### О Pro-возможностях
 
-Univer spreadsheets also feature a [Pro plan](https://univer.ai/pro) which adds quite a lot of functionality such as charts, printing, pivot tables, export, etc.
+Таблицы Univer также имеют [Pro-план](https://univer.ai/pro), который добавляет довольно много функциональности, такой как диаграммы, печать, сводные таблицы, экспорт и т.д.
 
-As the Pro plan needs a license, Trilium does not support any of the premium features. Theoretically, pro features can be used in trial mode with some limitations, we might explore this direction at some point.
+Поскольку Pro-план требует лицензии, Trilium не поддерживает никакие премиум-возможности. Теоретически pro-возможности можно использовать в пробном режиме с некоторыми ограничениями; мы можем исследовать это направление в какой-то момент.
 
-### Planned features
+### Запланированные возможности
 
-There are a few features that are already planned but are not supported yet:
+Есть несколько возможностей, которые уже запланированы, но пока не поддерживаются:
 
-*   Trilium-specific formulas (e.g. to obtain the title of a note).
-*   User-defined formulas
-*   Cross-workbook calculation
+*   Специфичные для Trilium формулы (например, для получения заголовка заметки).
+*   Пользовательские формулы
+*   Межкнижные вычисления
 
-If you would like us to work on these features, consider [supporting us](https://triliumnotes.org/en/support-us).
+Если вы хотите, чтобы мы работали над этими возможностями, рассмотрите [поддержку нас](https://triliumnotes.org/en/support-us).
 
-### Mobile support
+### Поддержка мобильных устройств
 
-Versions prior to v0.104.0 have no dedicated mobile support, which means that the interaction is difficult without a mouse and keyboard. Starting with v0.104.0 we integrate Univer's mobile plugin, which introduces feature such as drag to pan which makes the interface more usable on mobile.
+Версии до v0.104.0 не имеют выделенной мобильной поддержки, что означает, что взаимодействие затруднено без мыши и клавиатуры. Начиная с v0.104.0 мы интегрируем мобильный плагин Univer, который вводит такие возможности, как перетаскивание для панорамирования, что делает интерфейс более удобным на мобильных устройствах.

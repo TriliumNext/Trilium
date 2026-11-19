@@ -1,46 +1,46 @@
-# Server Installation
-This guide outlines the steps to install Trilium on your own server. You might consider this option if you want to set up [synchronization](Synchronization.md) or use Trilium in a browser - accessible from anywhere.
+# Установка на сервер
+Это руководство описывает шаги по установке Trilium на собственный сервер. Вы можете рассмотреть этот вариант, если хотите настроить [синхронизацию](Synchronization.md) или использовать Trilium в браузере — доступным откуда угодно.
 
-## Installation Options
+## Варианты установки
 
-There are several ways to install Trilium on a server, each with its own advantages:
+Есть несколько способов установить Trilium на сервер, каждый со своими преимуществами:
 
-*   **Recommended**: [Docker Installation](Server%20Installation/1.%20Installing%20the%20server/Using%20Docker.md) - Available for **AMD64** and **ARM** architectures.
-*   [Packaged Server Installation](Server%20Installation/1.%20Installing%20the%20server/Packaged%20version%20for%20Linux.md)
-*   [PikaPods managed hosting](https://www.pikapods.com/pods?run=trilium-next)
-*   [Manual Installation](Server%20Installation/1.%20Installing%20the%20server/Manually.md)
+*   **Рекомендуется**: [Установка через Docker](Server%20Installation/1.%20Installing%20the%20server/Using%20Docker.md) — доступна для архитектур **AMD64** и **ARM**.
+*   [Пакетная установка сервера](Server%20Installation/1.%20Installing%20the%20server/Packaged%20version%20for%20Linux.md)
+*   [Управляемый хостинг PikaPods](https://www.pikapods.com/pods?run=trilium-next)
+*   [Ручная установка](Server%20Installation/1.%20Installing%20the%20server/Manually.md)
 *   [Kubernetes](Server%20Installation/1.%20Installing%20the%20server/Using%20Kubernetes.md)
 *   [Cloudron](https://www.cloudron.io/store/com.github.trilium.cloudronapp.html)
 *   [HomelabOS](https://homelabos.com/docs/software/trilium/)
-*   [NixOS Module](Server%20Installation/1.%20Installing%20the%20server/On%20NixOS.md)
+*   [Модуль NixOS](Server%20Installation/1.%20Installing%20the%20server/On%20NixOS.md)
 
-The server installation includes both web and [mobile frontends](Mobile%20Frontend.md).
+Установка на сервер включает и веб-, и [мобильный интерфейс](Mobile%20Frontend.md).
 
-## Configuration
+## Конфигурация
 
-After setting up your server installation, you may want to configure settings such as the port or enable [TLS](Server%20Installation/HTTPS%20\(TLS\).md). Configuration is managed via the Trilium `config.ini` file, which is located in the [data directory](Data%20directory.md) by default. To begin customizing your setup, copy the provided `config-sample.ini` file with default values to `config.ini`.
+После настройки установки на сервере вы можете захотеть настроить параметры, такие как порт, или включить [TLS](Server%20Installation/HTTPS%20\(TLS\).md). Конфигурация управляется через файл Trilium `config.ini`, который по умолчанию находится в [каталоге данных](Data%20directory.md). Чтобы начать настраивать свою установку, скопируйте предоставленный файл `config-sample.ini` со значениями по умолчанию в `config.ini`.
 
-You can also review the [configuration](../Advanced%20Usage/Configuration%20\(config.ini%20or%20environment%20variables\).md) file to provide all `config.ini` values as environment variables instead.
+Также можно рассмотреть [конфигурацию](../Advanced%20Usage/Configuration%20\(config.ini%20or%20environment%20variables\).md), чтобы задавать все значения `config.ini` вместо этого как переменные окружения.
 
-### Config Location
+### Расположение конфигурации
 
-By default, `config.ini`, the [database](../Advanced%20Usage/Database.md), and other important Trilium data files are stored in the [data directory](Data%20directory.md). If you prefer a different location, you can change it by setting the `TRILIUM_DATA_DIR` environment variable:
+По умолчанию `config.ini`, [база данных](../Advanced%20Usage/Database.md) и другие важные файлы данных Trilium хранятся в [каталоге данных](Data%20directory.md). Если вы предпочитаете другое местоположение, можно изменить его, задав переменную окружения `TRILIUM_DATA_DIR`:
 
 ```
 export TRILIUM_DATA_DIR=/home/myuser/data/my-trilium-data
 ```
 
-### Disabling Authentication
+### Отключение аутентификации
 
-See <a class="reference-link" href="Server%20Installation/Authentication.md">Authentication</a>.
+См. <a class="reference-link" href="Server%20Installation/Authentication.md">Аутентификация</a>.
 
-## Reverse Proxy Setup
+## Настройка обратного прокси
 
-To configure a reverse proxy for Trilium, you can use either **nginx** or **Apache**. You can also check out the documentation stored in the Reverse proxy folder.
+Чтобы настроить обратный прокси для Trilium, можно использовать либо **nginx**, либо **Apache**. Также можно изучить документацию, хранящуюся в папке обратного прокси.
 
 === "nginx"
 
-    Add the following configuration to your `nginx` setup to proxy requests to Trilium:
+    Добавьте следующую конфигурацию в вашу настройку `nginx`, чтобы проксировать запросы в Trilium:
 
     ```
     location /trilium/ {
@@ -53,13 +53,13 @@ To configure a reverse proxy for Trilium, you can use either **nginx** or **Apac
     }
     ```
 
-    To avoid limiting the size of payloads, include this in the `server {}` block:
+    Чтобы избежать ограничения размера полезной нагрузки, включите это в блок `server {}`:
 
     ```
-    # Set to 0 for unlimited. Default is 1M.
+    # Установите 0 для безлимита. По умолчанию 1M.
     client_max_body_size 0;
     ```
 
 === "Apache"
 
-    For an Apache setup, refer to the <a class="reference-link" href="Server%20Installation/2.%20Reverse%20proxy/Apache%20using%20Docker.md">Apache using Docker</a> guide.
+    Для настройки Apache обратитесь к руководству <a class="reference-link" href="Server%20Installation/2.%20Reverse%20proxy/Apache%20using%20Docker.md">Apache с использованием Docker</a>.

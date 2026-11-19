@@ -1,38 +1,38 @@
-# Dashboard
+# Дашборд (Dashboard)
 <figure class="image"><img style="aspect-ratio:1406/1030;" src="Dashboard_image.png" width="1406" height="1030"></figure>
 
 > [!NOTE]
-> The dashboard is currently considered beta. This means that it might face some changes in behavior until it is stabilized.
+> Дашборд в настоящее время считается бета-версией. Это означает, что его поведение может меняться до стабилизации.
 
-The dashboard is a collection introduced in Trilium v0.104.0. It is similar to the <a class="reference-link" href="Grid%20View.md">Grid View</a> collection, but with some key differences:
+Дашборд — коллекция, представленная в Trilium v0.104.0. Она похожа на коллекцию <a class="reference-link" href="Grid%20View.md">Сетка</a>, но имеет ключевые отличия:
 
-*   The grid layout is not fixed, allowing for tiles of varying widths and heights. The grid has 12 columns and an unlimited number of rows.
-*   Each widget represents a child note of the collection and can be reordered or resized.
-*   The grid will distribute the columns evenly to fill the entire screen.
-    *   If the available space is too low (e.g. in a split or in mobile), the columns are collapsed so that all widgets are displayed one under the other.
-    *   While the columns are collapsed, the widgets cannot be reordered or resized.
-*   Unlike the <a class="reference-link" href="Grid%20View.md">Grid View</a>, the widgets are not clickable which allows them to be interactive.
+*   Макет сетки не фиксирован, что позволяет использовать плитки разной ширины и высоты. Сетка имеет 12 колонок и неограниченное число строк.
+*   Каждый виджет представляет дочернюю заметку коллекции и может быть переставлен или изменён в размере.
+*   Сетка распределяет колонки равномерно, заполняя весь экран.
+    *   Если доступное пространство слишком мало (например, в разделении или на мобильном), колонки сворачиваются, и все виджеты отображаются один под другим.
+    *   Пока колонки свёрнуты, виджеты нельзя переставлять или изменять в размере.
+*   В отличие от <a class="reference-link" href="Grid%20View.md">Сетки</a>, виджеты не кликабельны, что позволяет им быть интерактивными.
 
-## Types of widgets
+## Типы виджетов
 
-The dashboard uses the same rendering mechanism as the <a class="reference-link" href="Grid%20View.md">Grid View</a> or the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Note List</a>, which means every note can be rendered, such as:
+Дашборд использует тот же механизм рендеринга, что и <a class="reference-link" href="Grid%20View.md">Сетка</a> или <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Список заметок</a>, что означает, что может быть отрендерена любая заметка, например:
 
-*   Static content, via <a class="reference-link" href="../Note%20Types/Text.md">Text</a> or <a class="reference-link" href="../Note%20Types/Code.md">Code</a>.
-*   Images via <a class="reference-link" href="../Note%20Types/File.md">File</a>, <a class="reference-link" href="../Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a>, <a class="reference-link" href="../Note%20Types/Mind%20Map.md">Mind Map</a>.
-*   Interactive widgets via <a class="reference-link" href="../Note%20Types/Render%20Note.md">Render Note</a>.
-*   Web pages can be displayed via <a class="reference-link" href="../Note%20Types/Web%20View.md">Web View</a> and refreshed via the context menu.
-*   <a class="reference-link" href="../Collections.md">Collections</a> render interactively inside the dashboard
+*   Статическое содержимое через <a class="reference-link" href="../Note%20Types/Text.md">Текст</a> или <a class="reference-link" href="../Note%20Types/Code.md">Код</a>.
+*   Изображения через <a class="reference-link" href="../Note%20Types/File.md">Файл</a>, <a class="reference-link" href="../Note%20Types/Mermaid%20Diagrams.md">Диаграммы Mermaid</a>, <a class="reference-link" href="../Note%20Types/Mind%20Map.md">Mind Map</a>.
+*   Интерактивные виджеты через <a class="reference-link" href="../Note%20Types/Render%20Note.md">Render Note</a>.
+*   Веб-страницы можно отображать через <a class="reference-link" href="../Note%20Types/Web%20View.md">Веб-представление</a> и обновлять через контекстное меню.
+*   <a class="reference-link" href="../Collections.md">Коллекции</a> рендерятся интерактивно внутри дашборда.
 
 > [!TIP]
-> Interactive widgets through the use of <a class="reference-link" href="../Note%20Types/Render%20Note.md">Render Note</a> is the highlighted use case of the dashboard. Using the <a class="reference-link" href="../AI.md">AI</a> chat, these widgets can be easily created as the AI is instructed in how to write them.
+> Интерактивные виджеты с использованием <a class="reference-link" href="../Note%20Types/Render%20Note.md">Render Note</a> — главный сценарий использования дашборда. С помощью чата <a class="reference-link" href="../AI.md">ИИ</a> эти виджеты легко создавать, так как ИИ обучен их писать.
 
-## Adding new widgets
+## Добавление новых виджетов
 
-There are two ways to add widgets to a dashboard:
+Есть два способа добавить виджеты на дашборд:
 
-*   Create a child note of any type, the dashboard will automatically pick it up and add it onto the grid.
-*   From the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>, drag an existing note onto the dashboard and it will be placed there. This will [clone](../Basic%20Concepts%20and%20Features/Notes/Cloning%20Notes.md) the note into the collection.
+*   Создайте дочернюю заметку любого типа — дашборд автоматически подхватит её и добавит на сетку.
+*   Из <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дерева заметок</a> перетащите существующую заметку на дашборд, и она будет размещена там. Это [клонирует](../Basic%20Concepts%20and%20Features/Notes/Cloning%20Notes.md) заметку в коллекцию.
 
-## Read-only dashboards
+## Дашборды только для чтения
 
-On a [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) dashboard, the widgets can't be moved or resized, notes dragged from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> aren't added, and the menu of a widget no longer offers to remove it.
+На [дашборде только для чтения](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) виджеты нельзя перемещать или изменять в размере, заметки, перетащенные из <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дерева заметок</a>, не добавляются, а меню виджета больше не предлагает его удалить.

@@ -1,36 +1,36 @@
-# Trusted proxy
-If you are running the Trilium server under a [reverse proxy](../2.%20Reverse%20proxy.md), it's important to configure it as a trusted proxy so that the application can correctly identify the real IP address of the clients. Trilium uses that address for [brute-force protection](../Authentication.md), for the failed sign-in entries in its logs and to detect whether the connection was made over HTTPS.
+# Доверенный прокси
+Если вы запускаете сервер Trilium под [обратным прокси](../2.%20Reverse%20proxy.md), важно настроить его как доверенный прокси, чтобы приложение могло корректно определять реальный IP-адрес клиентов. Trilium использует этот адрес для [защиты от перебора](../Authentication.md), для записей о неудачных входах в своих журналах и для определения того, было ли соединение установлено по HTTPS.
 
-Without this setting, every request appears to come from the reverse proxy, so all clients share a single limit of failed sign-in attempts.
+Без этой настройки каждый запрос выглядит так, будто он пришёл от обратного прокси, поэтому все клиенты разделяют единый лимит неудачных попыток входа.
 
-## Configuring the trusted proxy
+## Настройка доверенного прокси
 
-To trust the reverse proxy, modify <a class="reference-link" href="../../../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables).md">Configuration (config.ini or environment variables)</a> and set `trustedReverseProxy` to the address the reverse proxy connects to Trilium from:
+Чтобы доверять обратному прокси, измените <a class="reference-link" href="../../../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables).md">Конфигурацию (config.ini или переменные окружения)</a> и задайте `trustedReverseProxy` равным адресу, с которого обратный прокси подключается к Trilium:
 
 ```
 [Network]
 trustedReverseProxy=loopback
 ```
 
-The value is a comma-separated list of IP addresses, subnets in CIDR notation or one of the following names:
+Значение — разделённый запятыми список IP-адресов, подсетей в нотации CIDR или одно из следующих имён:
 
-| Name | Addresses |
+| Имя | Адреса |
 | --- | --- |
 | `loopback` | `127.0.0.1/8`, `::1/128` |
 | `linklocal` | `169.254.0.0/16`, `fe80::/10` |
 | `uniquelocal` | `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `fc00::/7` |
 
-Trilium then reads the client's address from the `X-Forwarded-For` header, taking the right-most entry that does not belong to a trusted address. Entries a client adds to the header are to the left of the ones the proxy appends, so they are ignored.
+Trilium затем читает адрес клиента из заголовка `X-Forwarded-For`, беря самую правую запись, не принадлежащую доверенному адресу. Записи, которые клиент добавляет в заголовок, находятся левее тех, что добавляет прокси, поэтому игнорируются.
 
-Common setups:
+Типовые настройки:
 
-*   **The reverse proxy runs on the same machine**: use `loopback`.
-*   **Trilium runs in Docker, with the reverse proxy on the host or in another container**: use the subnet of the Docker network (for example `172.18.0.0/16`), or `uniquelocal` to cover every Docker network. With the environment variable: `TRILIUM_NETWORK_TRUSTEDREVERSEPROXY=172.18.0.0/16`.
-*   **The reverse proxy runs on another machine**: use its IP address.
+*   **Обратный прокси работает на той же машине**: используйте `loopback`.
+*   **Trilium работает в Docker, а обратный прокси — на хосте или в другом контейнере**: используйте подсеть сети Docker (например, `172.18.0.0/16`) или `uniquelocal`, чтобы покрыть каждую сеть Docker. С переменной окружения: `TRILIUM_NETWORK_TRUSTEDREVERSEPROXY=172.18.0.0/16`.
+*   **Обратный прокси работает на другой машине**: используйте его IP-адрес.
 
-Only list addresses that the reverse proxy connects from. Any client connecting from a trusted address can claim to be another client through the `X-Forwarded-For` header. This matters for broad values such as `uniquelocal`: if devices on your local network can also reach Trilium directly, use the proxy's exact address instead.
+Перечисляйте только адреса, с которых подключается обратный прокси. Любой клиент, подключающийся с доверенного адреса, может претендовать на то, что он другой клиент, через заголовок `X-Forwarded-For`. Это важно для широких значений, таких как `uniquelocal`: если устройства в вашей локальной сети также могут напрямую достигать Trilium, используйте вместо этого точный адрес прокси.
 
 > [!WARNING]
-> Avoid setting `trustedReverseProxy=true`. It makes Trilium use the left-most entry of `X-Forwarded-For`, which is the value the client sent, unless the proxy discards the incoming header. Proxies usually append to it instead (such as Nginx's `$proxy_add_x_forwarded_for`), so a client can send a different address with every request and bypass the limit on failed sign-in attempts.
+> Избегайте установки `trustedReverseProxy=true`. Это заставляет Trilium использовать самую левую запись `X-Forwarded-For`, то есть значение, отправленное клиентом, если только прокси не отбрасывает входящий заголовок. Прокси обычно добавляют к нему запись (например, `$proxy_add_x_forwarded_for` у Nginx), поэтому клиент может отправлять разный адрес с каждым запросом и обходить лимит неудачных попыток входа.
 
-For more information, consult [Express behind proxies](https://expressjs.com/en/guide/behind-proxies.html).
+Подробнее см. [Express behind proxies](https://expressjs.com/en/guide/behind-proxies.html).

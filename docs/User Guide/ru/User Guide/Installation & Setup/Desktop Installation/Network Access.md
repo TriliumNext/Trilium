@@ -1,14 +1,14 @@
-# Network Access
-Prior to v0.104.0, the [desktop application](../Desktop%20Installation.md) would also open a network port so that it can offer access to <a class="reference-link" href="../../Advanced%20Usage/ETAPI%20(REST%20API).md">ETAPI (REST API)</a> or even use it as a web server (see <a class="reference-link" href="Using%20the%20desktop%20application%20as%20a%20server.md">Using the desktop application as a server</a>).
+# Сетевой доступ
+До v0.104.0 [десктопное приложение](../Desktop%20Installation.md) также открывало сетевой порт, чтобы предлагать доступ к <a class="reference-link" href="../../Advanced%20Usage/ETAPI%20(REST%20API).md">ETAPI (REST API)</a> или даже использовать его как веб-сервер (см. <a class="reference-link" href="Using%20the%20desktop%20application%20as%20a%20server.md">Использование десктопного приложения как сервера</a>).
 
-In order to reduce the attack surface, Trilium now enables these services only for the local device (e.g. `localhost`) instead of serving them over the LAN.
+Чтобы уменьшить поверхность атак, Trilium теперь включает эти сервисы только для локального устройства (например, `localhost`) вместо их раздачи через локальную сеть.
 
-To better understand what is affected, refer to the following table:
+Чтобы лучше понять, что затронуто, обратитесь к следующей таблице:
 
-| Feature | Network access OFF | Network access ON |
+| Возможность | Сетевой доступ ВЫКЛ | Сетевой доступ ВКЛ |
 | --- | --- | --- |
-| <a class="reference-link" href="../Web%20Clipper.md">Web Clipper</a> | 🔒️ `localhost` only (still accessible to the browser extension on the same device) | 🌐 `localhost` + LAN |
-| <a class="reference-link" href="../../Advanced%20Usage/ETAPI%20(REST%20API).md">ETAPI (REST API)</a> | 🔒️ `localhost` only | 🌐 `localhost` + LAN |
-| [LLM MCP](../../AI.md) (only if enabled in settings) | 🔒️ `localhost` only (needs auth) | 🌐 `localhost` + LAN (needs auth) |
-| [Web app](Using%20the%20desktop%20application%20as%20a%20server.md) | ❌️ completely disabled (403), only the desktop app is usable. | 🌐 `localhost` + LAN |
-| <a class="reference-link" href="../../Advanced%20Usage/Sharing.md">Sharing</a> notes | ❌️ completely disabled (403), if you are using <a class="reference-link" href="../Synchronization.md">Synchronization</a> this will still work as part of the [server](../Server%20Installation.md). | 🌐 `localhost` + LAN |
+| <a class="reference-link" href="../Web%20Clipper.md">Web Clipper</a> | 🔒️ только `localhost` (по-прежнему доступно расширению браузера на том же устройстве) | 🌐 `localhost` + локальная сеть |
+| <a class="reference-link" href="../../Advanced%20Usage/ETAPI%20(REST%20API).md">ETAPI (REST API)</a> | 🔒️ только `localhost` | 🌐 `localhost` + локальная сеть |
+| [LLM MCP](../../AI.md) (только если включено в настройках) | 🔒️ только `localhost` (требуется аутентификация) | 🌐 `localhost` + локальная сеть (требуется аутентификация) |
+| [Веб-приложение](Using%20the%20desktop%20application%20as%20a%20server.md) | ❌️ полностью отключено (403), можно использовать только десктопное приложение. | 🌐 `localhost` + локальная сеть |
+| <a class="reference-link" href="../../Advanced%20Usage/Sharing.md">Публикация</a> заметок | ❌️ полностью отключено (403); если вы используете <a class="reference-link" href="../Synchronization.md">Синхронизацию</a>, это всё равно будет работать как часть [сервера](../Server%20Installation.md). | 🌐 `localhost` + локальная сеть |

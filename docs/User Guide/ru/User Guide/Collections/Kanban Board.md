@@ -1,178 +1,178 @@
-# Kanban Board
-The Board view lets you arrange subnotes as cards on a [Kanban board](https://en.wikipedia.org/wiki/Kanban_board).
+# Kanban-доска
+Вид Доска позволяет размещать подзаметки как карточки на [канбан-доске](https://en.wikipedia.org/wiki/Kanban_board).
 
-## Creating a Kanban board
+## Создание Kanban-доски
 
-Right-click an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>, select _Insert child note_ → _Collection_ → _Kanban Board_.
+Щёлкните правой кнопкой по существующей заметке в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дереве заметок</a>, выберите _Вставить дочернюю заметку_ → _Коллекция_ → _Kanban-доска_.
 
-## How it works
+## Как это работает
 
-When you first create a collection of the _Board_ type, a few subnotes are created, each with a `#status` label set. The board then groups each note by the value of its status attribute.
+При первом создании коллекции типа _Доска_ создаётся несколько подзаметок, каждая с заданной меткой `#status`. Доска затем группирует каждую заметку по значению её атрибута статуса.
 
-Notes are displayed recursively, so even grandchildren and more deeply nested notes will be displayed. However, unlike the <a class="reference-link" href="Table.md">Table</a>, the notes are not displayed hierarchically.
+Заметки отображаются рекурсивно, поэтому отображаются даже внуки и заметки более глубоких уровней вложенности. Однако, в отличие от <a class="reference-link" href="Table.md">Таблицы</a>, заметки не отображаются иерархически.
 
-To limit how deep the board looks, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_ and set _Maximum nesting depth_ (under the _Included notes_ section), or apply the `#maxNestingDepth` label to the board note: `0` shows only the children, `1` adds their children, and so on. Without a value, every level is shown.
+Чтобы ограничить, насколько глубоко доска ищет, перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a> → _Свойства доски_ и задайте _Максимальную глубину вложенности_ (в разделе _Включённые заметки_), или примените метку `#maxNestingDepth` к заметке доски: `0` показывает только дочерние заметки, `1` добавляет их детей и так далее. Без значения показывается каждый уровень.
 
-## Working with columns
+## Работа с колонками
 
-### Creating columns
+### Создание колонок
 
-You can create a new column by pressing the <span class="tn-icon bx bx-plus"></span>_Add column_ button located after the last column.
+Новую колонку можно создать, нажав кнопку <span class="tn-icon bx bx-plus"></span>_Добавить колонку_, расположенную после последней колонки.
 
-Enter the new name (which must not match another column), optionally select an icon by pressing the circle at the start of the text box, and then press the (+) button or <kbd>Enter</kbd>. Click or tap outside the text box, or press <kbd>Esc</kbd>, to dismiss it.
+Введите новое имя (которое не должно совпадать с другой колонкой), опционально выберите значок, нажав кружок в начале текстового поля, а затем нажмите кнопку (+) или <kbd>Enter</kbd>. Щёлкните или нажмите вне текстового поля или нажмите <kbd>Esc</kbd>, чтобы закрыть его.
 
-Columns can also be added from a context menu:
+Колонки также можно добавлять из контекстного меню:
 
-*   To add a column at the end of the board, right-click an empty area of the board and select <span class="tn-icon bx bx-columns"></span>_Add new column_.
-*   To add a column next to an existing one, open its column menu and select <span class="tn-icon bx bx-columns"></span>_Add new column_ → _Before_ (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd>) or _After_ (<kbd>Ctrl</kbd>+<kbd>Enter</kbd>).
+*   Чтобы добавить колонку в конец доски, щёлкните правой кнопкой по пустой области доски и выберите <span class="tn-icon bx bx-columns"></span>_Добавить новую колонку_.
+*   Чтобы добавить колонку рядом с существующей, откройте её меню колонки и выберите <span class="tn-icon bx bx-columns"></span>_Добавить новую колонку_ → _Перед_ (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd>) или _После_ (<kbd>Ctrl</kbd>+<kbd>Enter</kbd>).
 
-Once a board is set up, the _Add column_ button can be hidden. To do so, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_ and turn off _Show the "Add column" button_ (under the _General_ section), or apply the `#board:hideAddColumn` label to the board note. Columns can still be added from the context menus above.
+После настройки доски кнопку _Добавить колонку_ можно скрыть. Для этого перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a> → _Свойства доски_ и выключите _Показывать кнопку «Добавить колонку»_ (в разделе _Общие_), или примените метку `#board:hideAddColumn` к заметке доски. Колонки всё ещё можно добавлять из контекстных меню выше.
 
-### Reordering columns
+### Изменение порядка колонок
 
-The order of the columns can be changed at any time. There are several ways to do this:
+Порядок колонок можно изменить в любое время. Есть несколько способов сделать это:
 
-*   **Using touch or a mouse:** Touch and hold the column header, or click and hold it with the mouse. Drag the column left or right until it reaches the desired location, and then release it.
-*   **Using the keyboard:** While the keyboard focus is anywhere inside the column, you can use these key combinations. If the column header itself is focused, you can omit <kbd>Alt</kbd>:
-    *   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Right</kbd>: Move the column to the right.
-    *   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Left</kbd>: Move the column to the left.
-    *   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Home</kbd>: Make it the first column.
-    *   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>End</kbd>: Make it the last column.
-*   _Using the column menu:_ Open the column menu and use the <span class="tn-icon bx bx-horizontal-left"></span> _Move column_ submenu.
+*   **С помощью касания или мыши:** коснитесь и удерживайте заголовок колонки или щёлкните и удерживайте его мышью. Перетащите колонку влево или вправо, пока она не достигнет нужного места, а затем отпустите.
+*   **С помощью клавиатуры:** пока фокус клавиатуры находится где угодно внутри колонки, можно использовать эти комбинации клавиш. Если сфокусирован сам заголовок колонки, можно опустить <kbd>Alt</kbd>:
+    *   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>→</kbd>: переместить колонку вправо.
+    *   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>←</kbd>: переместить колонку влево.
+    *   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Home</kbd>: сделать её первой колонкой.
+    *   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>End</kbd>: сделать её последней колонкой.
+*   _Через меню колонки:_ откройте меню колонки и используйте подменю <span class="tn-icon bx bx-horizontal-left"></span> _Переместить колонку_.
 
-### Renaming and recoloring columns
+### Переименование и перекрашивание колонок
 
-To change the name of a column, open the column menu and select <span class="tn-icon bx bx-edit-alt"></span> _Rename column_, or press <kbd>F2</kbd> while the column header is selected.
+Чтобы изменить имя колонки, откройте меню колонки и выберите <span class="tn-icon bx bx-edit-alt"></span> _Переименовать колонку_ или нажмите <kbd>F2</kbd>, пока выбран заголовок колонки.
 
-From the same menu, you can tint the column with a different color by using the color palette at the bottom of the menu.
+Из того же меню можно оттенить колонку другим цветом с помощью палитры внизу меню.
 
-### Collapsing and expanding columns
+### Сворачивание и разворачивание колонок
 
-#### Collapsing
+#### Сворачивание
 
-A column can be collapsed (minimized) to occupy less space on the screen and make the board look less cluttered. This is particularly useful for columns that are not frequently used, or when you want to focus on only a few columns and keep the rest out of sight.
+Колонку можно свернуть (минимизировать), чтобы она занимала меньше места на экране и доска выглядела менее загромождённой. Это особенно полезно для колонок, которые используются нечасто, или когда нужно сфокусироваться лишь на нескольких колонках и держать остальные вне вида.
 
-To collapse a column:
+Чтобы свернуть колонку:
 
-*   **Using a mouse:** Double-click the column header.
-*   **Using touch:** Tap the column header, and then press the <span class="tn-icon bx bx-collapse-horizontal"></span> button on the side toolbar.
-*   **Using the keyboard:** Focus the column header, and then press <kbd>Space</kbd>.
+*   **Мышью:** дважды щёлкните заголовок колонки.
+*   **Касанием:** нажмите заголовок колонки, а затем нажмите кнопку <span class="tn-icon bx bx-collapse-horizontal"></span> на боковой панели инструментов.
+*   **Клавиатурой:** сфокусируйте заголовок колонки, а затем нажмите <kbd>Пробел</kbd>.
 
-Alternatively, you can use the <span class="tn-icon bx bx-collapse-horizontal"></span> _Collapse column_ command from the column menu.
+Альтернативно можно использовать команду <span class="tn-icon bx bx-collapse-horizontal"></span> _Свернуть колонку_ из меню колонки.
 
-Once a column is collapsed, its cards are no longer visible, but the column can still receive cards from other columns:
+После сворачивания колонки её карточки больше не видны, но колонка всё ещё может принимать карточки от других колонок:
 
-*   **Drop cards onto a collapsed column:** The cards will be moved to the column (at the bottom if manual sorting is enabled).
-*   **Hold cards over a collapsed column for a few seconds:** The column will expand, allowing you to drop the cards at the desired position (if manual sorting is enabled) or peek at the other cards before deciding whether to drop them.
-*   **Move a card to a collapsed column using the keyboard:** The column will temporarily expand to reveal the moved card. You can then continue moving the selected cards up or down, or to another column.
+*   **Сбросьте карточки на свёрнутую колонку:** карточки будут перемещены в колонку (вниз, если включена ручная сортировка).
+*   **Удерживайте карточки над свёрнутой колонкой несколько секунд:** колонка развернётся, позволяя сбросить карточки в нужную позицию (если включена ручная сортировка) или подсмотреть другие карточки, прежде чем решить, сбрасывать ли их.
+*   **Переместите карточку в свёрнутую колонку с помощью клавиатуры:** колонка временно развернётся, показывая перемещённую карточку. Затем можно продолжить перемещение выбранных карточек вверх или вниз, либо в другую колонку.
 
-Collapsed columns can still be reordered, and their menus remain available.
+Свёрнутые колонки всё ещё можно менять местами, и их меню остаются доступными.
 
-A collapsed column shows its title vertically, read from the bottom up. If any column title on the board contains Chinese, Japanese or Korean characters, the titles of all collapsed columns read from the top down instead, so that those characters stay upright.
+Свёрнутая колонка показывает свой заголовок вертикально, читаемым снизу вверх. Если какой-либо заголовок колонки на доске содержит китайские, японские или корейские символы, заголовки всех свёрнутых колонок читаются сверху вниз, чтобы эти символы оставались прямо.
 
-#### Expanding
+#### Разворачивание
 
-You can restore a collapsed column so that its content is visible again in the following ways:
+Свёрнутую колонку можно восстановить так, чтобы её содержимое снова стало видимым, следующими способами:
 
-*   **Using a mouse:** Click the collapsed column.
-*   **Using touch:** Tap the collapsed column, and then press the <span class="tn-icon bx bx-expand-horizontal"></span> button on the side toolbar.
-*   **Using the keyboard:** Move the focus to the collapsed column, and then press <kbd>Space</kbd>.
+*   **Мышью:** щёлкните свёрнутую колонку.
+*   **Касанием:** нажмите свёрнутую колонку, а затем нажмите кнопку <span class="tn-icon bx bx-expand-horizontal"></span> на боковой панели инструментов.
+*   **Клавиатурой:** переместите фокус на свёрнутую колонку, а затем нажмите <kbd>Пробел</kbd>.
 
-#### Keeping a column collapsed
+#### Держать колонку свёрнутой
 
-By default, once a column is expanded, it remains expanded. However, you can configure a column to collapse again after you finish working with it. To activate this behavior, open the column menu and check <span class="tn-icon bx bx-lock-alt"></span> _Keep the column collapsed_.
+По умолчанию развёрнутая колонка остаётся развёрнутой. Однако можно настроить колонку так, чтобы она сворачивалась снова после того, как вы закончите с ней работать. Чтобы активировать это поведение, откройте меню колонки и отметьте <span class="tn-icon bx bx-lock-alt"></span> _Держать колонку свёрнутой_.
 
-A column configured to remain collapsed will expand like any other collapsed column, but only temporarily, until another column is focused.
+Колонка, настроенная оставаться свёрнутой, будет разворачиваться, как любая другая свёрнутая колонка, но только временно, пока не сфокусирована другая колонка.
 
-#### Collapsing and expanding all columns
+#### Сворачивание и разворачивание всех колонок
 
-You can expand or collapse all columns at once by using the <span class="tn-icon bx bx-collapse-alt"></span> (collapse) and <span class="tn-icon bx bx-expand-alt"></span> (expand) buttons. On the desktop, these buttons are located at the bottom of the screen; on the mobile interface, they are in the header.
+Можно развернуть или свернуть все колонки сразу, используя кнопки <span class="tn-icon bx bx-collapse-alt"></span> (свернуть) и <span class="tn-icon bx bx-expand-alt"></span> (развернуть). На десктопе эти кнопки расположены внизу экрана; в мобильном интерфейсе — в заголовке.
 
-### Sorting cards within a column
+### Сортировка карточек внутри колонки
 
-By default, the cards in a column are sorted manually by moving them up and down. You can also keep them sorted automatically, using customizable criteria for each column. To customize the sorting options, open the column menu → _Sort_. The following options are available:
+По умолчанию карточки в колонке сортируются вручную, перемещая их вверх и вниз. Также можно держать их отсортированными автоматически, с настраиваемыми критериями для каждой колонки. Чтобы настроить параметры сортировки, откройте меню колонки → _Сортировка_. Доступны следующие опции:
 
-*   <span class="tn-icon bx bx-collection"></span> _Board's default_: Use the default sorting order (initially manual for new boards).
-*   <span class="tn-icon bx bx-move-vertical"></span> _Manually_: Sort cards by manually moving them up and down.
-*   <span class="tn-icon bx bx-text"></span> _Title_: Sort cards by title.
-*   <span class="tn-icon bx bx-calendar-plus"></span> _Creation date & time_: Sort cards by the creation date and time of the note represented by each card. If a card was created from an existing note, the date and time will match the original creation date and time of that note, not when the card was added to the board.
-*   Any custom attribute: Any card attribute (see <a class="reference-link" href="../Advanced%20Usage/Attributes.md">Attributes</a>) can be used as a sorting criterion.
-*   <span class="tn-icon bx bx-sort-up"></span> _Ascending_: Sort from smallest to largest (A to Z, 0 to 9, or oldest to newest).
-*   <span class="tn-icon bx bx-sort-down"></span> _Descending_: Sort in reverse order, from largest to smallest.
+*   <span class="tn-icon bx bx-collection"></span> _По умолчанию доски_: использовать порядок сортировки по умолчанию (изначально ручной для новых досок).
+*   <span class="tn-icon bx bx-move-vertical"></span> _Вручную_: сортировать карточки, вручную перемещая их вверх и вниз.
+*   <span class="tn-icon bx bx-text"></span> _Заголовок_: сортировать карточки по заголовку.
+*   <span class="tn-icon bx bx-calendar-plus"></span> _Дата и время создания_: сортировать карточки по дате и времени создания заметки, представленной каждой карточкой. Если карточка была создана из существующей заметки, дата и время будут соответствовать исходной дате и времени создания этой заметки, а не моменту добавления карточки на доску.
+*   Любой пользовательский атрибут: любой атрибут карточки (см. <a class="reference-link" href="../Advanced%20Usage/Attributes.md">Атрибуты</a>) может использоваться как критерий сортировки.
+*   <span class="tn-icon bx bx-sort-up"></span> _По возрастанию_: сортировать от меньшего к большему (от A до Z, от 0 до 9 или от самого старого к самому новому).
+*   <span class="tn-icon bx bx-sort-down"></span> _По убыванию_: сортировать в обратном порядке, от большего к меньшему.
 
 > [!IMPORTANT]
-> The card order you set is preserved after you switch away from manual sorting. When you switch back to manual sorting, the cards will be in the same order in which you arranged them.
+> Порядок карточек, который вы задали, сохраняется после переключения с ручной сортировки. Когда вы переключитесь обратно на ручную сортировку, карточки будут в том же порядке, в котором вы их расположили.
 
-#### How card attributes are sorted
+#### Как сортируются атрибуты карточек
 
-When cards are sorted by an attribute, they are ordered according to the following rules:
+Когда карточки сортируются по атрибуту, они упорядочены по следующим правилам:
 
-| Attribute type | Sort order (ascending) |
+| Тип атрибута | Порядок сортировки (по возрастанию) |
 | --- | --- |
-| Text, Multi-line text, URL, Email, Phone | A to Z, 0 to 9 |
-| Number | lowest → greatest |
-| Date, Date & time | oldest → newest |
-| Time | earliest hour (closest to 0) → latest hour (closest to 24) |
-| Checkbox | unchecked → checked |
-| Select | The order in which the options are declared.       <br>For example, a select attribute declared with “Low”, “Medium”, and “High” options will be sorted as follows: Low → Medium → High. |
-| Color | Grays → colors. Colors are ordered by their color-wheel [hue](https://en.wikipedia.org/wiki/Hue) angle (from 0° to 360°). |
+| Текст, Многострочный текст, URL, Электронная почта, Телефон | от A до Z, от 0 до 9 |
+| Число | от наименьшего к наибольшему |
+| Дата, Дата и время | от самого старого к самому новому |
+| Время | от самого раннего часа (ближе к 0) к самому позднему (ближе к 24) |
+| Флажок | от неснятых к снятым |
+| Список (Select) | Порядок, в котором объявлены варианты. Например, атрибут-список, объявленный с вариантами «Низкий», «Средний» и «Высокий», будет отсортирован так: Низкий → Средний → Высокий. |
+| Цвет | Оттенки серого → цвета. Цвета упорядочены по углу [оттенка](https://en.wikipedia.org/wiki/Hue) цветового круга (от 0° до 360°). |
 
-Relation attributes are ordered according to the title of the target note.
+Атрибуты-отношения упорядочены по заголовку целевой заметки.
 
-Cards with attributes that have no value set are always sorted at the end of the column, regardless of whether the sort order is ascending or descending. If an attribute holds more than one value, only the first value is used for sorting.
+Карточки с атрибутами, у которых не задано значение, всегда сортируются в конце колонки независимо от того, по возрастанию или убыванию идёт сортировка. Если атрибут содержит более одного значения, для сортировки используется только первое значение.
 
-#### Configuring the default sorting options
+#### Настройка параметров сортировки по умолчанию
 
-Every new column uses the _Board's default_ sorting option, which is initially set to manual sorting on new boards. However, the default can be changed to any other sorting criterion and direction. To configure it, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_ → _Default card order_ (under the _General_ section).
+Каждая новая колонка использует опцию сортировки _По умолчанию доски_, которая изначально установлена в ручную сортировку на новых досках. Однако по умолчанию можно изменить на любой другой критерий сортировки и направление. Чтобы настроить его, перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a> → _Свойства доски_ → _Порядок карточек по умолчанию_ (в разделе _Общие_).
 
-Once the default is changed, all columns set to the _Board's default_ sorting option will follow the new sorting options.
+После изменения значения по умолчанию все колонки, установленные в опцию _По умолчанию доски_, будут следовать новым параметрам сортировки.
 
-Columns using a sorting option other than _Board's default_ will not be affected by the new default. To override all columns so that they use the default sorting options, use the _Reset sorting options to default for all columns_ command in _Board properties_.
+Колонки, использующие опцию сортировки, отличную от _По умолчанию доски_, не будут затронуты новым значением по умолчанию. Чтобы переопределить все колонки так, чтобы они использовали параметры сортировки по умолчанию, используйте команду _Сбросить параметры сортировки до значений по умолчанию для всех колонок_ в _Свойствах доски_.
 
 > [!WARNING]
-> Using the `#sorted` attribute on Kanban boards **is no longer recommended**, because it applies to every column and prevents manual sorting. Instead, use `#board:sortColumns`, which is designed exclusively for board collections and can take one of the following values: `title`, `creationDate`, or `attr:_<attribute name>_`, for example, `#board:sortColumns=attr:dueDate`. Using the `#board:sortColumnsDescending` label will switch to descending order.
+> Использование атрибута `#sorted` на канбан-досках **больше не рекомендуется**, так как он применяется к каждой колонке и не даёт сортировать вручную. Вместо этого используйте `#board:sortColumns`, разработанный исключительно для коллекций-досок, который может принимать одно из следующих значений: `title`, `creationDate` или `attr:_<имя атрибута>_`, например `#board:sortColumns=attr:dueDate`. Использование метки `#board:sortColumnsDescending` переключит на порядок по убыванию.
 
-### Setting a limit
+### Установка лимита
 
-For each column, you can limit the number of cards it contains (also known as a WIP limit). Once the limit is exceeded, the column displays a visual warning to indicate that it is over its limit.
+Для каждой колонки можно ограничить количество содержащихся в ней карточек (также известно как WIP-лимит). Как только лимит превышен, колонка отображает визуальное предупреждение о том, что она за своим лимитом.
 
-To enable the limit, go to the column menu → <span class="tn-icon bx bx-tachometer"></span> _Set limit_, and then:
+Чтобы включить лимит, перейдите в меню колонки → <span class="tn-icon bx bx-tachometer"></span> _Задать лимит_, а затем:
 
-*   Turn on the _Warn for exceeding the column capacity_ toggle.
-*   Enter the desired limit in the _Maximum number of cards in the column_ text box.
-*   Press the _Set limit_ button.
+*   Включите переключатель _Предупреждать о превышении ёмкости колонки_.
+*   Введите нужный лимит в текстовое поле _Максимальное количество карточек в колонке_.
+*   Нажмите кнопку _Задать лимит_.
 
-A column that has reached its limit can still accept new cards. Blocking new cards is not supported and most likely never will be, due to the way Trilium works: cards are regular notes, and the attributes used to group them into columns can be set from anywhere in the app, outside the board control. As a result, enforcing the limit would not be consistent.
+Колонка, достигшая своего лимита, всё ещё может принимать новые карточки. Блокировка новых карточек не поддерживается и, скорее всего, никогда не будет поддерживаться из-за того, как работает Trilium: карточки — обычные заметки, и атрибуты, используемые для группировки их в колонки, можно задать откуда угодно в приложении, вне контроля доски. В результате принудительное соблюдение лимита было бы непоследовательным.
 
-### Archiving a column
+### Архивирование колонки
 
-If you want to hide a column from the board without deleting it, you can archive it by opening the column menu → <span class="tn-icon bx bx-archive-in"></span> _Archive column_. Archiving a column does not set the archived flag (see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Archived%20Notes.md">Archived Notes</a>) on the notes corresponding to its cards.
+Если нужно скрыть колонку с доски, не удаляя её, можно архивировать её, открыв меню колонки → <span class="tn-icon bx bx-archive-in"></span> _Архивировать колонку_. Архивирование колонки не устанавливает флаг архивности (см. <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Archived%20Notes.md">Архивные заметки</a>) на заметках, соответствующих её карточкам.
 
-To show archived columns again, go to <span class="tn-icon bx bx-cog"></span> _Collection options_ and toggle <span class="tn-icon bx bx-archive-in"></span> _Show archived notes_, or turn on _Show archived cards and columns_ in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_ (under the _Included notes_ section). Archived columns will appear faded. To restore one, open its column menu and select <span class="tn-icon bx bx-archive-out"></span> _Unarchive column_.
+Чтобы снова показать архивные колонки, перейдите в <span class="tn-icon bx bx-cog"></span> _Настройки коллекции_ и переключите <span class="tn-icon bx bx-archive-in"></span> _Показывать архивные заметки_, или включите _Показывать архивные карточки и колонки_ в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a> → _Свойства доски_ (в разделе _Включённые заметки_). Архивные колонки будут выглядеть блёклыми. Чтобы восстановить одну, откройте её меню колонки и выберите <span class="tn-icon bx bx-archive-out"></span> _Разархивировать колонку_.
 
-### Deleting a column
+### Удаление колонки
 
-You can delete a column by opening the column menu → <span class="tn-icon bx bx-trash"></span> _Delete column_, or by pressing <kbd>Delete</kbd> when a column header is focused, and then confirming. This removes the column from the board and unsets the grouping attribute for each note represented by a card in that column. If the column contains cards, the confirmation also offers to delete their notes instead of keeping them.
+Колонку можно удалить, открыв меню колонки → <span class="tn-icon bx bx-trash"></span> _Удалить колонку_ или нажав <kbd>Delete</kbd>, когда сфокусирован заголовок колонки, а затем подтвердив. Это убирает колонку с доски и снимает группирующий атрибут для каждой заметки, представленной карточкой в этой колонке. Если колонка содержит карточки, подтверждение также предлагает удалить их заметки вместо того, чтобы сохранить их.
 
-The inbox column is not deleted this way. Its menu entry is <span class="tn-icon bx bx-trash"></span> _Remove inbox column_, and <kbd>Delete</kbd> on its header hides the inbox without changing any card.
+Колонка входящих так не удаляется. Её пункт меню — <span class="tn-icon bx bx-trash"></span> _Убрать колонку входящих_, а <kbd>Delete</kbd> на её заголовке скрывает входящие, не меняя ни одной карточки.
 
-### The inbox column
+### Колонка входящих
 
-The inbox column is a special column containing cards that are not assigned to another column. It is particularly useful when you switch an existing collection containing child notes to a board collection. The inbox column turns all child notes into cards that you can quickly distribute among the other columns. It can also act as a backlog where you can keep new cards that might eventually become part of the board.
+Колонка входящих — особая колонка, содержащая карточки, не назначенные другой колонке. Она особенно полезна при переключении существующей коллекции, содержащей дочерние заметки, на коллекцию-доску. Колонка входящих превращает все дочерние заметки в карточки, которые можно быстро распределить по другим колонкам. Она также может служить бэклогом, где можно держать новые карточки, которые в итоге могут стать частью доски.
 
-The inbox column is hidden by default. To show it, go to <span class="tn-icon bx bx-cog"></span> _Collection options_ and toggle _Show inbox column_. The inbox column is distinguishable by its transparent background. It is always the first column and cannot be moved. It does not support a card limit. Otherwise, it operates like a regular column: its title, icon, and color can be changed; it can be sorted manually or automatically; and it can be collapsed.
+Колонка входящих по умолчанию скрыта. Чтобы показать её, перейдите в <span class="tn-icon bx bx-cog"></span> _Настройки коллекции_ и переключите _Показывать колонку входящих_. Колонку входящих можно отличить по её прозрачному фону. Она всегда первая колонка и не может быть перемещена. Она не поддерживает лимит карточек. В остальном она работает как обычная колонка: её заголовок, значок и цвет можно изменять; её можно сортировать вручную или автоматически; и её можно сворачивать.
 
-You can also show the inbox column by applying the `#board:showInbox` label (read more about <a class="reference-link" href="../Advanced%20Usage/Attributes.md">Attributes</a>) to the board note.
+Колонку входящих также можно показать, применив метку `#board:showInbox` (подробнее об <a class="reference-link" href="../Advanced%20Usage/Attributes.md">Атрибутах</a>) к заметке доски.
 
-Optionally, the inbox column can also list nested notes from the board collection's subtree. To enable this, open the column menu and check <span class="tn-icon bx bx-subdirectory-right"></span> _Include nested notes_.
+Опционально колонка входящих также может перечислять вложенные заметки из поддерева коллекции-доски. Чтобы включить это, откройте меню колонки и отметьте <span class="tn-icon bx bx-subdirectory-right"></span> _Включать вложенные заметки_.
 
-### Changing the width of columns
+### Изменение ширины колонок
 
-There are three predefined widths for board columns: narrow (default), medium, and wide. To change the width, open the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_ → _Column width_ (under the _General_ section). This option applies to every column on the board, except in the mobile version.
+Есть три предопределённые ширины колонок досок: узкая (по умолчанию), средняя и широкая. Чтобы изменить ширину, откройте <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a> → _Свойства доски_ → _Ширина колонки_ (в разделе _Общие_). Эта опция применяется к каждой колонке на доске, кроме мобильной версии.
 
-The same option is also available through the `#board:columnWidth` label (read more about <a class="reference-link" href="../Advanced%20Usage/Attributes.md">Attributes</a>) on the board note, which accepts “`narrow`”, “`medium`”, or “`wide`” as its value.
+Та же опция также доступна через метку `#board:columnWidth` (подробнее об <a class="reference-link" href="../Advanced%20Usage/Attributes.md">Атрибутах</a>) на заметке доски, которая принимает значения «`narrow`», «`medium`» или «`wide`».
 
-You can also redefine these three widths by using custom app CSS (read more about <a class="reference-link" href="../Theme%20development/Custom%20app-wide%20CSS.md">Custom app-wide CSS</a>) and assigning the desired pixel values as follows:
+Также можно переопределить эти три ширины, используя пользовательский CSS приложения (подробнее о <a class="reference-link" href="../Theme%20development/Custom%20app-wide%20CSS.md">Пользовательском CSS для всего приложения</a>) и задав нужные пиксельные значения следующим образом:
 
 ```
 #trilium-app {
@@ -182,285 +182,285 @@ You can also redefine these three widths by using custom app CSS (read more abou
 }
 ```
 
-## Working with cards
+## Работа с карточками
 
-### Creating a new card
+### Создание новой карточки
 
-To create a new card, press the <span class="tn-icon bx bx-plus"></span>_New card_ button located at the bottom of each column. To create a new card above or below a specific card, right-click or hold that card, and then select <span class="tn-icon bx bx-list-plus bx-flip-vertical"></span> _Insert new above_ or <span class="tn-icon bx bx-list-plus"></span> _Insert new below_ from the context menu. Alternatively, press <kbd>Shift</kbd> + <kbd>Enter</kbd> to create a new card above the focused card, or <kbd>Enter</kbd> to create one below it.
+Чтобы создать новую карточку, нажмите кнопку <span class="tn-icon bx bx-plus"></span>_Новая карточка_, расположенную внизу каждой колонки. Чтобы создать новую карточку над или под конкретной карточкой, щёлкните правой кнопкой или удерживайте эту карточку, а затем выберите <span class="tn-icon bx bx-list-plus bx-flip-vertical"></span> _Вставить новую выше_ или <span class="tn-icon bx bx-list-plus"></span> _Вставить новую ниже_ из контекстного меню. Альтернативно нажмите <kbd>Shift</kbd> + <kbd>Enter</kbd>, чтобы создать новую карточку над сфокусированной, или <kbd>Enter</kbd>, чтобы создать её под ней.
 
-Next, type the title of the new card, and then press the <span class="tn-icon bx bx-plus-circle"></span> button or <kbd>Enter</kbd> to complete it. Tap or click anywhere outside the text box to dismiss it. You can also select a different icon and card template. To learn more about card templates, see Card templates (learn more about <a class="reference-link" href="../Advanced%20Usage/Templates.md">Templates</a>).
+Затем введите заголовок новой карточки и нажмите кнопку <span class="tn-icon bx bx-plus-circle"></span> или <kbd>Enter</kbd>, чтобы завершить. Нажмите или щёлкните где угодно вне текстового поля, чтобы закрыть его. Также можно выбрать другой значок и шаблон карточки. Чтобы узнать больше о шаблонах карточек, см. Шаблоны карточек (подробнее о <a class="reference-link" href="../Advanced%20Usage/Templates.md">Шаблонах</a>).
 
-After the card is created, you can tap or click it, or press <kbd>Space</kbd>, to edit the note content.
+После создания карточки можно нажать или щёлкнуть её или нажать <kbd>Пробел</kbd>, чтобы отредактировать содержимое заметки.
 
-When using the <span class="tn-icon bx bx-plus"></span> _New card_ button, cards are always created at the end of the column. To create the card at the top of the column, right-click or hold the <span class="tn-icon bx bx-plus-circle"></span> button and select <span class="tn-icon bx bx-vertical-top"></span> _Create at top_. When using keyboard shortcuts, focus the column header and press <kbd>Enter</kbd> to create a new card at the start of the column, or <kbd>Shift</kbd> + <kbd>Enter</kbd> to create one at the end.
+При использовании кнопки <span class="tn-icon bx bx-plus"></span> _Новая карточка_ карточки всегда создаются в конце колонки. Чтобы создать карточку в начале колонки, щёлкните правой кнопкой или удерживайте кнопку <span class="tn-icon bx bx-plus-circle"></span> и выберите <span class="tn-icon bx bx-vertical-top"></span> _Создать в начале_. При использовании сочетаний клавиш сфокусируйте заголовок колонки и нажмите <kbd>Enter</kbd>, чтобы создать новую карточку в начале колонки, или <kbd>Shift</kbd> + <kbd>Enter</kbd>, чтобы создать её в конце.
 
-### Adding an existing note as a card
+### Добавление существующей заметки как карточки
 
-Any note in your knowledge base can be represented as a card on a board. To add an existing note to your board, create a new card but do not enter a title. Instead, press the <span class="tn-icon bx bx-folder-open"></span> button. Alternatively, use the <span class="tn-icon bx bx-folder-open"></span> _Add an existing note as a card_ command from the column menu.
+Любая заметка в вашей базе знаний может быть представлена карточкой на доске. Чтобы добавить существующую заметку на доску, создайте новую карточку, но не вводите заголовок. Вместо этого нажмите кнопку <span class="tn-icon bx bx-folder-open"></span>. Альтернативно используйте команду <span class="tn-icon bx bx-folder-open"></span> _Добавить существующую заметку как карточку_ из меню колонки.
 
-In the dialog that opens, search for the note by name, and then press the _Add to column_ button to insert it. Alternatively, you can drag any note from the tree and drop it at the desired position on the board.
+В открывшемся диалоге найдите заметку по имени, а затем нажмите кнопку _Добавить в колонку_, чтобы вставить её. Альтернативно можно перетащить любую заметку из дерева и сбросить в нужную позицию на доске.
 
-If the target note is already in the board collection's subtree, it will already be listed in the **inbox column**.
-
-> [!IMPORTANT]
-> Notes added to the board are cloned, not duplicated. This means that changes to their titles, content, and attributes on the board are reflected in their original locations as well. See <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Cloning%20Notes.md">Cloning Notes</a> for more information.
-
-### Selecting multiple cards
-
-When working with a board, you may need to perform operations on multiple cards at once, such as moving them to another column, setting attributes or colors, deleting them, or archiving them.
-
-You can select multiple cards in the following ways:
-
-*   **Using a mouse and keyboard:**
-    *   To add a card to the selection, hold <kbd>Ctrl</kbd> and click the card. Repeat this for other cards until all the desired cards are selected. Clicking a selected card again while holding <kbd>Ctrl</kbd> will deselect it.
-    *   If the cards you want to select form a continuous sequence within a column, hold <kbd>Shift</kbd>, click the first card in the sequence, and then click the last card.
-    *   Press <kbd>Esc</kbd> to clear the selection.
-*   **On mobile:**
-    1.  To enter selection mode, tap the <span class="tn-icon bx bx-select-multiple"></span> button at the top of the screen. A selection toolbar will appear in the header, displaying “0 cards selected”.
-    2.  Tap the cards you want to select. If you tap a selected card again, it will be deselected. To select all cards in a column, press the <span class="tn-icon bx bx-list-check"></span> button on the selection toolbar. To clear the selection, press the <span class="tn-icon bx bx-x"></span> button.
-    3.  Use the side toolbar to apply actions to the selected cards.
-*   **Using only the keyboard:**
-    *   To add the currently focused card to the selection, press <kbd>Ctrl</kbd> + <kbd>Space</kbd>. Repeat this for the other cards you want to select. Pressing <kbd>Ctrl</kbd> + <kbd>Space</kbd> again on a selected card will deselect it.
-    *   To select a continuous sequence of cards within a column, hold <kbd>Shift</kbd> and use the <kbd>Up</kbd> and <kbd>Down</kbd> arrow keys to expand or shrink the selection.
-    *   To select every card in the column the focus is in, press <kbd>Ctrl</kbd> + <kbd>A</kbd>. The same action is available from the column menu, as <span class="tn-icon bx bx-selection"></span>_Select all cards_.
-    *   Press <kbd>Esc</kbd> to clear the selection.
-
-### Moving cards between columns
-
-To move one or more cards to another column, use one of the following methods:
-
-#### Using touch or a mouse
-
-Touch and hold the card, or click and hold it with the mouse, and then drag it to the desired column. If the column uses manual sorting, you can also position the card relative to the other cards.
-
-> [!TIP]
-> To drag a card outside the board, for example to the note tree, another split, or another window, hold <kbd>Ctrl</kbd> and then start dragging.
-
-If the target column is collapsed, you can drop the card onto its header to move it into that column (at the end if manually sorted), without expanding it. However, if you want to reveal its cards before dropping, hold the card over the column for a few seconds; the column will then expand.
-
-> [!TIP]
-> **You can quickly drop a card at the start or end of a column.**
-> 
-> Drop the card above the column while the “Drop as the first card” hint is displayed to make it the first card in that column. Alternatively, drop it below the column while the “Drop as the last card” hint is displayed to make it the last card.
-
-#### Using the keyboard
-
-You can also use keyboard shortcuts to move the selected card or cards between columns:
-
-*   <kbd>Ctrl</kbd> + <kbd>Right</kbd>: Move to the next column.
-*   <kbd>Ctrl</kbd> + <kbd>Left</kbd>: Move to the previous column.
-*   <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Right</kbd>: Move to the last column.
-*   <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Left</kbd>: Move to the first column.
-
-#### Using the context menu
-
-To quickly move a card to another column, open the card's context menu and select the destination column. The menu lists the first seven columns; on a wider board, the remaining ones are grouped under _More…_.
-
-### Reordering cards within a column
-
-Cards within a column can be freely reordered unless the column uses a sorting option other than manual. To reposition a card, drag it as described in the **Moving cards between columns** section and drop it at the desired position.
-
-Alternatively, you can use keyboard shortcuts to move the selected card or cards:
-
-*   <kbd>Ctrl</kbd> + <kbd>Up</kbd>: Move up.
-*   <kbd>Ctrl</kbd> + <kbd>Down</kbd>: Move down.
-*   <kbd>Ctrl</kbd> + <kbd>Home</kbd>: Move to the top of the column.
-*   <kbd>Ctrl</kbd> + <kbd>End</kbd>: Move to the end of the column.
-
-If multiple cards are selected, the keyboard shortcuts work only if the selection consists of a continuous sequence of cards.
-
-### Editing a card
-
-Every card on a board is a regular note. To edit the note associated with a card, click or tap the card, or press <kbd>Space</kbd> when the card is selected. The note will open in a Quick Edit dialog, where you can modify it. You can also open the note in a new tab, split, or window by using the <span class="tn-icon bx bx-link-external"></span> _Open note_ submenu in the card's context menu. To open the note in a new tab on the desktop version, you can also click or tap the <span class="tn-icon bx bx-link-external"></span> _Open note_ menu item directly, without opening its submenu.
-
-To change the title or icon of a card, use one of the following methods:
-
-*   **Using a mouse:** Place the mouse pointer over the card, and then click the <span class="tn-icon bx bx-rename"></span> button.
-*   **On mobile:** Hold the card until the side toolbar appears, and then tap the <span class="tn-icon bx bx-rename"></span> button.
-*   **Using the keyboard:** Select a card, and then press <kbd>F2</kbd>.
-*   _Using the context menu:_ Open the card's context menu and select <span class="tn-icon bx bx-rename"></span> _Edit title & icon_.
-
-You can then enter a new name and select another icon. To move the keyboard focus from the title field to the icon selector, press <kbd>Shift</kbd> + <kbd>Tab</kbd>. Click or tap anywhere outside the card, or press <kbd>Enter</kbd>, to apply the change. Press <kbd>Esc</kbd> to discard the changes.
-
-Each card can be tinted with a different color. Open the card's context menu and select the desired color. If no color is assigned, the card inherits the column color.
+Если целевая заметка уже находится в поддереве коллекции-доски, она уже будет перечислена в **колонке входящих**.
 
 > [!IMPORTANT]
-> The title, icon, and color of a card are the same as those of the corresponding note. If that note exists in multiple locations in the tree, any change to its title, icon, or color on the board will apply in those locations as well, not only on the board.
+> Заметки, добавленные на доску, клонируются, а не дублируются. Это означает, что изменения их заголовков, содержимого и атрибутов на доске отражаются и в их исходных местах. Подробнее см. <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Cloning%20Notes.md">Клонирование заметок</a>.
 
-### Archiving a card
+### Выбор нескольких карточек
 
-A card can be hidden from the board without deleting it by using the <span class="tn-icon bx bx-archive-in"></span> _Archive note_ command from the card's context menu.
+Работая с доской, может понадобиться выполнить операции сразу над несколькими карточками, например переместить их в другую колонку, задать атрибуты или цвета, удалить или заархивировать их.
 
-To show archived cards again, go to <span class="tn-icon bx bx-cog"></span> _Collection options_ and toggle <span class="tn-icon bx bx-archive-in"></span> _Show archived notes_, or turn on _Show archived cards and columns_ in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_ (under the _Included notes_ section). Archived cards will appear faded. To restore one, open its context menu and select <span class="tn-icon bx bx-archive-out"></span> _Unarchive note_.
+Несколько карточек можно выбрать следующими способами:
+
+*   **С помощью мыши и клавиатуры:**
+    *   Чтобы добавить карточку к выбору, удерживайте <kbd>Ctrl</kbd> и щёлкните по карточке. Повторяйте для других карточек, пока не будут выбраны все нужные. Щелчок по выбранной карточке снова с удержанием <kbd>Ctrl</kbd> снимет её выбор.
+    *   Если карточки, которые нужно выбрать, образуют непрерывную последовательность внутри колонки, удерживайте <kbd>Shift</kbd>, щёлкните первую карточку последовательности, а затем щёлкните последнюю.
+    *   Нажмите <kbd>Esc</kbd>, чтобы очистить выбор.
+*   **На мобильном:**
+    1.  Чтобы войти в режим выбора, нажмите кнопку <span class="tn-icon bx bx-select-multiple"></span> вверху экрана. В заголовке появится панель выбора, показывающая «Выбрано карточек: 0».
+    2.  Нажимайте карточки, которые нужно выбрать. Если нажать выбранную карточку снова, её выбор будет снят. Чтобы выбрать все карточки в колонке, нажмите кнопку <span class="tn-icon bx bx-list-check"></span> на панели выбора. Чтобы очистить выбор, нажмите кнопку <span class="tn-icon bx bx-x"></span>.
+    3.  Используйте боковую панель инструментов, чтобы применить действия к выбранным карточкам.
+*   **Только клавиатурой:**
+    *   Чтобы добавить текущую сфокусированную карточку к выбору, нажмите <kbd>Ctrl</kbd> + <kbd>Пробел</kbd>. Повторяйте для других карточек, которые нужно выбрать. Повторное нажатие <kbd>Ctrl</kbd> + <kbd>Пробел</kbd> на выбранной карточке снимет её выбор.
+    *   Чтобы выбрать непрерывную последовательность карточек внутри колонки, удерживайте <kbd>Shift</kbd> и используйте клавиши <kbd>↑</kbd> и <kbd>↓</kbd>, чтобы расширять или сужать выбор.
+    *   Чтобы выбрать каждую карточку в колонке, в которой находится фокус, нажмите <kbd>Ctrl</kbd> + <kbd>A</kbd>. То же действие доступно из меню колонки как <span class="tn-icon bx bx-selection"></span>_Выбрать все карточки_.
+    *   Нажмите <kbd>Esc</kbd>, чтобы очистить выбор.
+
+### Перемещение карточек между колонками
+
+Чтобы переместить одну или несколько карточек в другую колонку, используйте один из следующих способов:
+
+#### С помощью касания или мыши
+
+Коснитесь и удерживайте карточку или щёлкните и удерживайте её мышью, а затем перетащите в нужную колонку. Если колонка использует ручную сортировку, также можно разместить карточку относительно других карточек.
+
+> [!TIP]
+> Чтобы перетащить карточку за пределы доски, например в дерево заметок, другое разделение или другое окно, удерживайте <kbd>Ctrl</kbd> и затем начните перетаскивание.
+
+Если целевая колонка свёрнута, можно сбросить карточку на её заголовок, чтобы переместить её в эту колонку (в конец при ручной сортировке), не разворачивая её. Однако если нужно раскрыть её карточки перед сбросом, удерживайте карточку над колонкой несколько секунд; колонка затем развернётся.
+
+> [!TIP]
+> **Можно быстро сбросить карточку в начало или конец колонки.**
+>
+> Сбросьте карточку над колонкой, пока показывается подсказка «Сбросить первой карточкой», чтобы сделать её первой карточкой в этой колонке. Альтернативно сбросьте её под колонку, пока показывается подсказка «Сбросить последней карточкой», чтобы сделать её последней карточкой.
+
+#### С помощью клавиатуры
+
+Также можно использовать сочетания клавиш для перемещения выбранной карточки или карточек между колонками:
+
+*   <kbd>Ctrl</kbd> + <kbd>→</kbd>: переместить в следующую колонку.
+*   <kbd>Ctrl</kbd> + <kbd>←</kbd>: переместить в предыдущую колонку.
+*   <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>→</kbd>: переместить в последнюю колонку.
+*   <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>←</kbd>: переместить в первую колонку.
+
+#### Через контекстное меню
+
+Чтобы быстро переместить карточку в другую колонку, откройте контекстное меню карточки и выберите колонку назначения. Меню перечисляет первые семь колонок; на более широкой доске остальные сгруппированы под _Ещё…_.
+
+### Изменение порядка карточек внутри колонки
+
+Карточки внутри колонки можно свободно менять местами, если колонка не использует опцию сортировки, отличную от ручной. Чтобы переместить карточку, перетащите её, как описано в разделе **Перемещение карточек между колонками**, и сбросьте в нужной позиции.
+
+Альтернативно можно использовать сочетания клавиш для перемещения выбранной карточки или карточек:
+
+*   <kbd>Ctrl</kbd> + <kbd>↑</kbd>: переместить вверх.
+*   <kbd>Ctrl</kbd> + <kbd>↓</kbd>: переместить вниз.
+*   <kbd>Ctrl</kbd> + <kbd>Home</kbd>: переместить в начало колонки.
+*   <kbd>Ctrl</kbd> + <kbd>End</kbd>: переместить в конец колонки.
+
+Если выбрано несколько карточек, сочетания клавиш работают, только если выбор состоит из непрерывной последовательности карточек.
+
+### Редактирование карточки
+
+Каждая карточка на доске — обычная заметка. Чтобы отредактировать заметку, связанную с карточкой, щёлкните или нажмите карточку или нажмите <kbd>Пробел</kbd>, когда карточка выбрана. Заметка откроется в диалоге быстрого редактирования, где её можно изменить. Также можно открыть заметку в новой вкладке, разделении или окне, используя подменю <span class="tn-icon bx bx-link-external"></span> _Открыть заметку_ в контекстном меню карточки. Чтобы открыть заметку в новой вкладке в десктопной версии, также можно щёлкнуть или нажать пункт меню <span class="tn-icon bx bx-link-external"></span> _Открыть заметку_ напрямую, не открывая его подменю.
+
+Чтобы изменить заголовок или значок карточки, используйте один из следующих способов:
+
+*   **Мышью:** наведите указатель мыши на карточку, а затем нажмите кнопку <span class="tn-icon bx bx-rename"></span>.
+*   **На мобильном:** удерживайте карточку, пока не появится боковая панель инструментов, а затем нажмите кнопку <span class="tn-icon bx bx-rename"></span>.
+*   **Клавиатурой:** выберите карточку, а затем нажмите <kbd>F2</kbd>.
+*   _Через контекстное меню:_ откройте контекстное меню карточки и выберите <span class="tn-icon bx bx-rename"></span> _Редактировать заголовок и значок_.
+
+Затем можно ввести новое имя и выбрать другой значок. Чтобы переместить фокус клавиатуры из поля заголовка в выбор значка, нажмите <kbd>Shift</kbd> + <kbd>Tab</kbd>. Щёлкните или нажмите где угодно вне карточки или нажмите <kbd>Enter</kbd>, чтобы применить изменение. Нажмите <kbd>Esc</kbd>, чтобы отменить изменения.
+
+Каждую карточку можно оттенить другим цветом. Откройте контекстное меню карточки и выберите нужный цвет. Если цвет не назначен, карточка наследует цвет колонки.
+
+> [!IMPORTANT]
+> Заголовок, значок и цвет карточки совпадают с заголовком, значком и цветом соответствующей заметки. Если эта заметка существует в нескольких местах дерева, любое изменение её заголовка, значка или цвета на доске применится и в этих местах, не только на доске.
+
+### Архивирование карточки
+
+Карточку можно скрыть с доски, не удаляя её, командой <span class="tn-icon bx bx-archive-in"></span> _Архивировать заметку_ из контекстного меню карточки.
+
+Чтобы снова показать архивные карточки, перейдите в <span class="tn-icon bx bx-cog"></span> _Настройки коллекции_ и переключите <span class="tn-icon bx bx-archive-in"></span> _Показывать архивные заметки_, или включите _Показывать архивные карточки и колонки_ в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a> → _Свойства доски_ (в разделе _Включённые заметки_). Архивные карточки будут выглядеть блёклыми. Чтобы восстановить одну, откройте её контекстное меню и выберите <span class="tn-icon bx bx-archive-out"></span> _Разархивировать заметку_.
 
 > [!WARNING]
-> Archiving a card sets the `#archived` flag on its note. If the note exists in multiple locations in the tree, it will appear archived in those locations as well. Read more about <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Archived%20Notes.md">Archived Notes</a>.
+> Архивирование карточки устанавливает флаг `#archived` на её заметке. Если заметка существует в нескольких местах дерева, она будет выглядеть архивной и в этих местах. Подробнее об <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Archived%20Notes.md">Архивных заметках</a>.
 
-### Deleting a card
+### Удаление карточки
 
-You can remove one or more cards from the board and delete their associated notes by using the <span class="tn-icon bx bx-trash"></span> _Delete note…_ command from the card's context menu, or by pressing <kbd>Shift</kbd> + <kbd>Delete</kbd>. On mobile, hold the card until the side toolbar appears, and then tap the <span class="tn-icon bx bx-trash"></span> button.
+Одну или несколько карточек можно убрать с доски и удалить их заметки командой <span class="tn-icon bx bx-trash"></span> _Удалить заметку…_ из контекстного меню карточки или нажав <kbd>Shift</kbd> + <kbd>Delete</kbd>. На мобильном удерживайте карточку, пока не появится боковая панель инструментов, а затем нажмите кнопку <span class="tn-icon bx bx-trash"></span>.
 
-#### Removing a card from the board without deleting the note
+#### Удаление карточки с доски без удаления заметки
 
-To remove a card from the board's columns while keeping its note, open the card's context menu and select <span class="tn-icon bx bx-task-x"></span> _Remove from column_, or press <kbd>Delete</kbd>. On mobile, hold the card until the side toolbar appears, and then tap the <span class="tn-icon bx bx-task-x"></span> button.
+Чтобы убрать карточку из колонок доски, сохранив её заметку, откройте контекстное меню карточки и выберите <span class="tn-icon bx bx-task-x"></span> _Убрать из колонки_ или нажмите <kbd>Delete</kbd>. На мобильном удерживайте карточку, пока не появится боковая панель инструментов, а затем нажмите кнопку <span class="tn-icon bx bx-task-x"></span>.
 
-This command is not available when the inbox column is enabled. Instead, drag the card to the inbox column to achieve the same result.
+Эта команда недоступна, когда включена колонка входящих. Вместо этого перетащите карточку в колонку входящих, чтобы добиться того же результата.
 
-The note remains in the board collection but is not assigned to any column. To see it on the board again, enable the inbox column.
-
-> [!NOTE]
-> Under the hood, removing a card simply unsets the note's grouping attribute.
-
-### Working with custom card attributes
-
-By default, the face of a card displays a minimal set of information: the title, icon, and color. In some cases, this may not provide enough useful information at a glance. You can extend the card to display extra information, called card attributes, such as a due date, priority, completion status, or any other information you need. Card attributes use the same principles as <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a>.
-
-#### Creating a new attribute
-
-To create a new attribute, follow these steps:
-
-1.  Go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_, find the _Card attributes_ section, and then press the <span class="tn-icon bx bx-plus"></span> _Create a new attribute_ button.
-2.  Enter a name for the attribute. This is the internal name used by Trilium, so do not use spaces or special characters.
-3.  Select a type (text, number, checkbox, and so on).
-4.  Set the display name. This is the name shown on the card.
-5.  Press _Save & close_.
+Заметка остаётся в коллекции-доске, но не назначена ни одной колонке. Чтобы снова увидеть её на доске, включите колонку входящих.
 
 > [!NOTE]
-> For each newly created attribute, Trilium creates an attribute definition on the board collection note. A card displays the attributes declared as inheritable on the board note, as well as any attribute the card gets a definition for from elsewhere, for example through <a class="reference-link" href="../Advanced%20Usage/Templates.md">Templates</a> or another parent note it is cloned under. Attributes that only the cards define are listed after the board's own.
+> Внутренне удаление карточки просто снимает группирующий атрибут заметки.
 
-Here is an example of the attributes you can define for a typical Kanban board used to track tasks:
+### Работа с пользовательскими атрибутами карточек
 
-| Attribute name | Attribute type | Attribute display name |
+По умолчанию лицевая сторона карточки отображает минимальный набор информации: заголовок, значок и цвет. В некоторых случаях этого может быть недостаточно для полезной информации с первого взгляда. Можно расширить карточку, чтобы она отображала дополнительную информацию, называемую атрибутами карточек, такую как срок выполнения, приоритет, статус завершения или любая другая нужная информация. Атрибуты карточек используют те же принципы, что и <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Продвигаемые атрибуты</a>.
+
+#### Создание нового атрибута
+
+Чтобы создать новый атрибут, выполните следующие шаги:
+
+1.  Перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a> → _Свойства доски_, найдите раздел _Атрибуты карточек_, а затем нажмите кнопку <span class="tn-icon bx bx-plus"></span> _Создать новый атрибут_.
+2.  Введите имя атрибута. Это внутреннее имя, используемое Trilium, поэтому не используйте пробелы и специальные символы.
+3.  Выберите тип (текст, число, флажок и так далее).
+4.  Задайте отображаемое имя. Это имя, показываемое на карточке.
+5.  Нажмите _Сохранить и закрыть_.
+
+> [!NOTE]
+> Для каждого вновь созданного атрибута Trilium создаёт определение атрибута на заметке коллекции-доски. Карточка отображает атрибуты, объявленные наследуемыми на заметке доски, а также любой атрибут, для которого карточка получает определение откуда-то ещё, например через <a class="reference-link" href="../Advanced%20Usage/Templates.md">Шаблоны</a> или другую родительскую заметку, под которой она клонирована. Атрибуты, которые определяют только карточки, перечислены после собственных атрибутов доски.
+
+Вот пример атрибутов, которые можно определить для типичной канбан-доски, используемой для отслеживания задач:
+
+| Имя атрибута | Тип атрибута | Отображаемое имя атрибута |
 | --- | --- | --- |
-| dueDate | Date & Time | Due date |
-| priority | Select (options: Low, Medium, High, Urgent) | Priority |
-| done | Checkbox | Done |
+| dueDate | Дата и время | Срок выполнения |
+| priority | Список (варианты: Низкий, Средний, Высокий, Срочный) | Приоритет |
+| done | Флажок | Выполнено |
 
-#### Modifying the values of custom attributes
+#### Изменение значений пользовательских атрибутов
 
-To set the value of a custom attribute, click or tap the card, and then enter or select the desired value in the dialog header.
+Чтобы задать значение пользовательского атрибута, щёлкните или нажмите карточку, а затем введите или выберите нужное значение в заголовке диалога.
 
-For attributes of the “select”, “checkbox” or “date” type, you can quickly change the value by using the card's context menu under the _Attributes_ section. A date attribute's submenu offers _Not set_ to clear the value, and a date picker: a calendar to pick any day, with buttons below it for _Today_, _Tomorrow_ and _Next week_ (the first day of next week, as set in the first day of the week option). Use the arrows to change the month, and click a day to set it. From the keyboard, the arrow keys move by day and week, <kbd>Page Up</kbd> and <kbd>Page Down</kbd> by month, and <kbd>Enter</kbd> sets the day; <kbd>↓</kbd> from the last week moves to the buttons, <kbd>←</kbd> and <kbd>→</kbd> move between them, and <kbd>↑</kbd> returns to the calendar.
+Для атрибутов типа «список», «флажок» или «дата» можно быстро изменить значение через контекстное меню карточки в разделе _Атрибуты_. Подменю атрибута даты предлагает _Не задано_ для очистки значения и выбор даты: календарь для выбора любого дня, с кнопками _Сегодня_, _Завтра_ и _Следующая неделя_ (первый день следующей недели, как задано в опции первого дня недели). Используйте стрелки для смены месяца и щёлкните по дню, чтобы задать его. С клавиатуры клавиши со стрелками перемещаются по дням и неделям, <kbd>Page Up</kbd> и <kbd>Page Down</kbd> — по месяцам, а <kbd>Enter</kbd> задаёт день; <kbd>↓</kbd> от последней недели перемещается к кнопкам, <kbd>←</kbd> и <kbd>→</kbd> перемещаются между ними, а <kbd>↑</kbd> возвращается к календарю.
 
-#### Reordering, hiding, redefining, and deleting custom attributes
+#### Изменение порядка, скрытие, переопределение и удаление пользовательских атрибутов
 
-Go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_. Under the _Card attributes_ section, you can:
+Перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a> → _Свойства доски_. В разделе _Атрибуты карточек_ вы можете:
 
-*   Hold the **\=** handle shown beside an attribute, and then drag the item up or down to reorder the attributes. This determines the order in which the attributes are displayed on the card.
-*   Turn off the toggle to hide an attribute from the card's face. The attribute remains available when you edit the card. For the current grouping attribute, the toggle is disabled.
-*   Press the <span class="tn-icon bx bxs-edit"></span> button to modify the definition of an attribute.
-*   Press the <span class="tn-icon bx bx-trash"></span> button to delete the attribute and all its values from every note in the board collection.
+*   Удерживать ручку **\=**, показанную рядом с атрибутом, а затем перетащить элемент вверх или вниз, чтобы изменить порядок атрибутов. Это определяет порядок, в котором атрибуты отображаются на карточке.
+*   Выключить переключатель, чтобы скрыть атрибут с лица карточки. Атрибут остаётся доступен при редактировании карточки. Для текущего группирующего атрибута переключатель отключён.
+*   Нажать кнопку <span class="tn-icon bx bxs-edit"></span>, чтобы изменить определение атрибута.
+*   Нажать кнопку <span class="tn-icon bx bx-trash"></span>, чтобы удалить атрибут и все его значения из каждой заметки в коллекции-доске.
 
-Attributes that the cards get from a template or another parent note can be reordered and hidden here, but not modified or deleted. Edit them on the note that defines them.
+Атрибуты, которые карточки получают из шаблона или другой родительской заметки, можно здесь менять местами и скрывать, но не изменять и не удалять. Редактируйте их на заметке, которая их определяет.
 
-If cards define an attribute with the same name but a different type or different select options, for example through two different templates, or if a card overrides the board's definition with its own, the attribute is marked _Multiple definitions_. Such an attribute is sorted as text and does not appear in the card's context menu.
+Если карточки определяют атрибут с тем же именем, но другим типом или другими вариантами списка, например через два разных шаблона, или если карточка переопределяет определение доски собственным, атрибут помечается как _Несколько определений_. Такой атрибут сортируется как текст и не появляется в контекстном меню карточки.
 
-### Managing card templates
+### Управление шаблонами карточек
 
-When you create a new card, Trilium offers four templates by default: _Text_, _Markdown_, _Canvas_, and _Spreadsheet_. You can customize this list to include other note types or custom templates with predefined placeholder content and prefilled card attributes.
+При создании новой карточки Trilium по умолчанию предлагает четыре шаблона: _Текст_, _Markdown_, _Холст_ и _Таблица (Spreadsheet)_. Можно настроить этот список, включив другие типы заметок или пользовательские шаблоны с предопределённым содержимым-заполнителем и предзаполненными атрибутами карточек.
 
-To customize the card templates, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_ and find _Card templates_. Here you can:
+Чтобы настроить шаблоны карточек, перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a> → _Свойства доски_ и найдите _Шаблоны карточек_. Здесь вы можете:
 
-*   Include a note type or note template already created in your knowledge base by pressing the <span class="tn-icon bx bx-list-plus"></span> _Add existing template_ button and then selecting the desired note type or template.
-*   Create a new template by pressing the <span class="tn-icon bx bx-plus"></span> _Create a new template_ button. The template editor will open, where you can define the icon, title, default attribute values, and default content. The note template will be created as a child of the board collection.
-*   Press the <span class="tn-icon bx bx-x"></span> button to remove a template from the list. The template is removed only from the list, not deleted from your knowledge base. You can add it again using <span class="tn-icon bx bx-list-plus"></span> _Add existing template_.
-*   Press the <span class="tn-icon bx bx-dots-vertical-rounded"></span> button to open a dropdown that lets you edit, open in a new window, duplicate, or delete a template. This button is visible only for custom note templates.
-*   Hold the **\=** handle shown beside a template, and then drag the item up or down to reorder the templates. This determines the order in which templates are listed in the template dropdown when you create a new card. You can move the most frequently used templates to the top for faster access.
+*   Включить тип заметки или шаблон заметки, уже созданный в вашей базе знаний, нажав кнопку <span class="tn-icon bx bx-list-plus"></span> _Добавить существующий шаблон_, а затем выбрав нужный тип заметки или шаблон.
+*   Создать новый шаблон, нажав кнопку <span class="tn-icon bx bx-plus"></span> _Создать новый шаблон_. Откроется редактор шаблонов, где можно определить значок, заголовок, значения атрибутов по умолчанию и содержимое по умолчанию. Шаблон заметки будет создан как дочерний для коллекции-доски.
+*   Нажать кнопку <span class="tn-icon bx bx-x"></span>, чтобы убрать шаблон из списка. Шаблон удаляется только из списка, а не из вашей базы знаний. Можно добавить его снова через <span class="tn-icon bx bx-list-plus"></span> _Добавить существующий шаблон_.
+*   Нажать кнопку <span class="tn-icon bx bx-dots-vertical-rounded"></span>, чтобы открыть выпадающий список, позволяющий редактировать, открыть в новом окне, продублировать или удалить шаблон. Эта кнопка видна только для пользовательских шаблонов заметок.
+*   Удерживать ручку **\=**, показанную рядом с шаблоном, а затем перетащить элемент вверх или вниз, чтобы изменить порядок шаблонов. Это определяет порядок, в котором шаблоны перечислены в выпадающем списке шаблонов при создании новой карточки. Можно переместить наиболее часто используемые шаблоны наверх для более быстрого доступа.
 
-### Grouping cards
+### Группировка карточек
 
-On a board, cards are grouped into columns. The column to which a card belongs is determined by the value of the **grouping attribute**, which is a regular attribute of the card's note.
+На доске карточки сгруппированы в колонки. Колонка, которой принадлежит карточка, определяется значением **группирующего атрибута**, который является обычным атрибутом заметки карточки.
 
-By default, boards use the **Status** attribute as the grouping attribute. When you move a card to a column called “Waiting on Customer”, the card's Status attribute is set to “Waiting on Customer”.
+По умолчанию доски используют атрибут **Статус** как группирующий атрибут. Когда вы перемещаете карточку в колонку «Ожидание клиента», атрибут Статуса карточки устанавливается в «Ожидание клиента».
 
 > [!NOTE]
-> Under the hood, the Status attribute is declared on the board collection note with the name `status`. It is a select-type attribute that is inheritable and promoted. Each select option becomes a column, and each new column created on the board extends the list of options.
+> Внутренне атрибут Статус объявлен на заметке коллекции-доски с именем `status`. Это атрибут типа «список», наследуемый и продвигаемый. Каждый вариант списка становится колонкой, и каждая новая колонка, созданная на доске, расширяет список вариантов.
 
-#### Creating a new grouping attribute
+#### Создание нового группирующего атрибута
 
-To quickly create a new grouping attribute:
+Чтобы быстро создать новый группирующий атрибут:
 
-1.  Open the <span class="tn-icon bx bx-category-alt"></span> _Group by_ dropdown in the board header and select <span class="tn-icon bx bx-plus"></span> _Create a new attribute_.
-2.  Fill in the _Name_ field. This is used internally by Trilium, so do not use spaces or special characters.
-3.  Enter the _Display name_. This is the attribute name shown in the dropdown list.
-4.  Press _Save & close_.
+1.  Откройте выпадающий список <span class="tn-icon bx bx-category-alt"></span> _Группировать по_ в заголовке доски и выберите <span class="tn-icon bx bx-plus"></span> _Создать новый атрибут_.
+2.  Заполните поле _Имя_. Оно используется внутренне Trilium, поэтому не используйте пробелы и специальные символы.
+3.  Введите _Отображаемое имя_. Это имя атрибута, показываемое в выпадающем списке.
+4.  Нажмите _Сохранить и закрыть_.
 
 > [!TIP]
-> Because the grouping attribute is a regular card attribute, you can also create it in _Board properties_. Make sure you set the attribute type to “select”.
+> Поскольку группирующий атрибут — обычный атрибут карточки, его также можно создать в _Свойствах доски_. Убедитесь, что задали тип атрибута «список».
 
-#### Switching the grouping attribute
+#### Переключение группирующего атрибута
 
-Switching the grouping attribute lets you view your cards by priority, category, or any other custom grouping attribute. You can switch the grouping attribute at any time by using the <span class="tn-icon bx bx-category-alt"></span> _Group by_ dropdown in the board header. You can also change it using the `#board:groupBy=<_attribute name_>` label.
+Переключение группирующего атрибута позволяет просматривать карточки по приоритету, категории или любому другому пользовательскому группирующему атрибуту. Группирующий атрибут можно переключать в любое время выпадающим списком <span class="tn-icon bx bx-category-alt"></span> _Группировать по_ в заголовке доски. Его также можно изменить меткой `#board:groupBy=<_имя атрибута_>`.
 
 > [!WARNING]
-> The order of cards in manually sorted columns corresponds to their positions within the board collection subtree. This means that the card order is shared across all views, regardless of the grouping attribute. Reordering notes in one view will also reorder them in other views that use a different grouping attribute.
+> Порядок карточек в колонках с ручной сортировкой соответствует их позициям внутри поддерева коллекции-доски. Это означает, что порядок карточек разделяется всеми видами независимо от группирующего атрибута. Изменение порядка заметок в одном виде также изменит их порядок в других видах, использующих другой группирующий атрибут.
 
-#### Deleting a grouping attribute
+#### Удаление группирующего атрибута
 
-To delete a grouping attribute, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_, find the attribute under the _Card attributes_ section, and press the corresponding <span class="tn-icon bx bx-trash"></span> button.
+Чтобы удалить группирующий атрибут, перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a> → _Свойства доски_, найдите атрибут в разделе _Атрибуты карточек_ и нажмите соответствующую кнопку <span class="tn-icon bx bx-trash"></span>.
 
-#### Grouping by relations
+#### Группировка по отношениям
 
-A more advanced use case is grouping by [Relations](../Advanced%20Usage/Attributes/Relations.md).
+Более продвинутый сценарий — группировка по [Отношениям](../Advanced%20Usage/Attributes/Relations.md).
 
-In this mode:
+В этом режиме:
 
-*   The columns represent the _target notes_ of a relation.
-*   When creating a new column, you select a note instead of entering a column name.
-*   The column icon matches the target note.
-*   Moving notes between columns changes their relations.
-*   Renaming an existing column changes the target note for all notes in that column.
+*   Колонки представляют _целевые заметки_ отношения.
+*   При создании новой колонки вы выбираете заметку вместо ввода имени колонки.
+*   Значок колонки соответствует целевой заметке.
+*   Перемещение заметок между колонками изменяет их отношения.
+*   Переименование существующей колонки изменяет целевую заметку для всех заметок в этой колонке.
 
-Using relations instead of labels has several benefits:
+Использование отношений вместо меток имеет несколько преимуществ:
 
-*   The status or grouping of notes is visible outside the Kanban board, for example, on the <a class="reference-link" href="../Note%20Types/Note%20Map.md">Note Map</a>.
-*   A column takes its title and icon from the target note, so renaming that note anywhere in the tree renames the column.
+*   Статус или группировка заметок видны за пределами канбан-доски, например на <a class="reference-link" href="../Note%20Types/Note%20Map.md">Карте заметок</a>.
+*   Колонка берёт свой заголовок и значок из целевой заметки, поэтому переименование этой заметки где угодно в дереве переименовывает колонку.
 
-To use relations for grouping:
+Чтобы использовать отношения для группировки:
 
-1.  Create a Kanban board from scratch rather than from a template.
-2.  Assign `#viewType=board #hidePromotedAttributes` to emulate the default template.
-3.  Set `#board:groupBy` to the name of a relation, **including the** `~` **prefix** (for example, `~status`).
-4.  Optionally, use <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> to make changing the status within the note easier:
-    
+1.  Создайте канбан-доску с нуля, а не из шаблона.
+2.  Присвойте `#viewType=board #hidePromotedAttributes`, чтобы эмулировать шаблон по умолчанию.
+3.  Задайте `#board:groupBy` как имя отношения, **включая префикс** `~` (например, `~status`).
+4.  Опционально используйте <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Продвигаемые атрибуты</a>, чтобы облегчить изменение статуса внутри заметки:
+
     ```
     #relation:status(inheritable)="promoted,alias=Status,single"
     ```
 
-## Searching and filtering the board
+## Поиск и фильтрация доски
 
-You can search for cards using the search box at the top of the board. Enter your keywords, and then press the <span class="tn-icon bx bx-search"></span> button in the search field or press <kbd>Enter</kbd>. Only cards whose titles, content, or attribute values match the query will be displayed. Columns without results will be temporarily collapsed to make room for the matching cards. Press the <span class="tn-icon bx bx-x"></span> button in the search field to clear the search and display all cards again.
+Можно искать карточки с помощью поля поиска вверху доски. Введите ключевые слова, а затем нажмите кнопку <span class="tn-icon bx bx-search"></span> в поле поиска или нажмите <kbd>Enter</kbd>. Будут отображены только карточки, чьи заголовки, содержимое или значения атрибутов совпадают с запросом. Колонки без результатов будут временно свёрнуты, чтобы освободить место для совпадающих карточек. Нажмите кнопку <span class="tn-icon bx bx-x"></span> в поле поиска, чтобы очистить поиск и снова показать все карточки.
 
-### Advanced filtering
+### Продвинутая фильтрация
 
-If you need to refine the view to display only cards matching specific criteria beyond a regular text search, you can use Trilium's search query syntax. Here are some example queries:
+Если нужно уточнить вид, чтобы показывать только карточки, совпадающие с конкретными критериями за пределами обычного текстового поиска, можно использовать синтаксис поисковых запросов Trilium. Вот несколько примеров запросов:
 
-Display only cards whose **Priority** attribute is set to “Low”:
+Показывать только карточки, у которых атрибут **Приоритет** установлен в «Низкий»:
 
 ```
 #priority=Low
 ```
 
-Display only cards whose **Issue Category** is set to “Software” and whose **Site** is set to either “Office” or “Factory”:
+Показывать только карточки, у которых **Категория обращения** установлена в «Программное обеспечение», а **Площадка** установлена либо в «Офис», либо в «Завод»:
 
 ```
 #issueCategory="Software" AND (#site="Office" OR #site="Factory")
 ```
 
-Display only cards with a **Due Date** in the next seven days that are not yet marked as **Done**:
+Показывать только карточки со **Сроком выполнения** в следующие семь дней, ещё не помеченные как **Выполнено**:
 
 ```
 #dueDate >= TODAY AND #dueDate <= TODAY+7 AND #!done
 ```
 
-The filter persists even after you close the tab. When you reopen the collection, the filter remains active until you clear the search query by using the <span class="tn-icon bx bx-x"></span> button.
+Фильтр сохраняется даже после закрытия вкладки. При повторном открытии коллекции фильтр остаётся активным, пока вы не очистите поисковый запрос кнопкой <span class="tn-icon bx bx-x"></span>.
 
-## Linking to a column or a card
+## Ссылки на колонку или карточку
 
-You can create a link that opens the board and points out a specific column or card. Open the column menu or the card’s context menu, select <span class="tn-icon bx bx-copy"></span> _Copy reference_, and then paste the link where you need it.
+Можно создать ссылку, которая открывает доску и указывает на конкретную колонку или карточку. Откройте меню колонки или контекстное меню карточки, выберите <span class="tn-icon bx bx-copy"></span> _Копировать ссылку_, а затем вставьте ссылку там, где она нужна.
 
-In a text note, the pasted link displays the title, icon, and color of the column or card it points to. In a Markdown or code note, the plain link address is pasted instead. Opening the link scrolls the board to the column or card and focuses it. If the column belongs to a different grouping attribute, the board switches to that attribute first.
+В текстовой заметке вставленная ссылка показывает заголовок, значок и цвет колонки или карточки, на которые указывает. В Markdown- или кодовой заметке вместо неё вставляется простой адрес ссылки. Открытие ссылки прокручивает доску к колонке или карточке и фокусирует её. Если колонка принадлежит другому группирующему атрибуту, доска сначала переключается на этот атрибут.
 
-## Read-only boards
+## Доски только для чтения
 
-A board marked as [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) only shows its cards. It has no buttons to add a card or a column, column and card titles can't be renamed, and column icons can't be changed. Cards and columns can't be dragged, moved or deleted with the keyboard, and notes dragged in from the note tree aren't added. The context menus of a card or a column keep only the entries that change nothing, such as opening the note or <span class="tn-icon bx bx-copy"></span>_Copy reference_, and the board's own menu doesn't open. The cards can still be grouped by another attribute, but the choice isn't saved, and no new grouping attribute can be created.
+Доска, помеченная как [только для чтения](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md), показывает только свои карточки. У неё нет кнопок добавления карточки или колонки, заголовки колонок и карточек нельзя переименовывать, а значки колонок нельзя менять. Карточки и колонки нельзя перетаскивать, перемещать или удалять с клавиатуры, а заметки, перетащенные из дерева заметок, не добавляются. Контекстные меню карточки или колонки сохраняют только записи, ничего не меняющие, такие как открытие заметки или <span class="tn-icon bx bx-copy"></span>_Копировать ссылку_, а собственное меню доски не открывается. Карточки всё ещё можно группировать по другому атрибуту, но выбор не сохраняется, и нельзя создавать новый группирующий атрибут.

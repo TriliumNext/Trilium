@@ -1,73 +1,73 @@
-# Data directory
-Data directory contains:
+# Каталог данных
+Каталог данных содержит:
 
-*   `document.db` - [database](../Advanced%20Usage/Database.md)
-*   `config.ini` - instance level settings like port on which the Trilium application runs
-*   `backup` - contains automatically [backup](Backup.md) of documents
-*   `log` - contains application log files
+*   `document.db` — [базу данных](../Advanced%20Usage/Database.md)
+*   `config.ini` — настройки уровня экземпляра, такие как порт, на котором запускается приложение Trilium
+*   `backup` — содержит автоматические [резервные копии](Backup.md) документов
+*   `log` — содержит файлы журнала приложения
 
-## Location of the data directory
+## Расположение каталога данных
 
-Easy way how to find out which data directory Trilium uses is to look at the "About Trilium Notes" dialog (from "Menu" in upper left corner):
+Простой способ узнать, какой каталог данных использует Trilium, — посмотреть диалог «О Trilium Notes» (из «Меню» в левом верхнем углу):
 
 ![](Data%20directory_image.jpg)
 
-Here's how the location is decided:
+Вот как определяется расположение:
 
-Data directory is normally named `trilium-data` and it is stored in:
+Каталог данных обычно называется `trilium-data` и хранится в:
 
-*   `/home/[user]/.local/share` for Linux
-*   `/home/[user]/.var/app/org.triliumnotes.Trilium/data` for the Flathub version on Linux
-*   `C:\Users\[user]\AppData\Roaming` for Windows Vista and up
-*   `/Users/[user]/Library/Application Support` for Mac OS
-*   user's home is a fallback if some of the paths above don't exist
-*   user's home is also a default setup for \[\[docker|Docker server installation\]\]
+*   `/home/[user]/.local/share` для Linux
+*   `/home/[user]/.var/app/org.triliumnotes.Trilium/data` для версии Flathub на Linux
+*   `C:\Users\[user]\AppData\Roaming` для Windows Vista и новее
+*   `/Users/[user]/Library/Application Support` для Mac OS
+*   домашний каталог пользователя — запасной вариант, если некоторые из путей выше не существуют
+*   домашний каталог пользователя также является настройкой по умолчанию для \[\[docker|Docker-установки сервера\]\]
 
-If you want to back up your Trilium data, just backup this single directory - it contains everything you need.
+Если вы хотите сделать резервную копию ваших данных Trilium, просто скопируйте этот единственный каталог — он содержит всё необходимое.
 
-### Changing the location of data directory
+### Изменение расположения каталога данных
 
-If you want to use some other location for the data directory than the default one, you may change it via `TRILIUM_DATA_DIR` environment variable to some other location:
+Если вы хотите использовать другое расположение для каталога данных, отличное от значения по умолчанию, можно изменить его через переменную окружения `TRILIUM_DATA_DIR`:
 
-=== "<span class="tn-icon bx bxl-windows"></span> Windows"
+=== "<span class="tn-icon bx bxl-windows"></span> Windows"
 
-    1.  Press the <span class="tn-icon bx bxl-windows"></span> key on your keyboard.
-    2.  Search and select _Edit the system variables_.
-    3.  Press the _Environment Variables…_ button in the bottom-right of the newly opened screen.
-    4.  On the top section (_User variables for \[user\]_), press the _New…_ button.
-    5.  In the _Variable name_ field insert `TRILIUM_DATA_DIR`.
-    6.  Press the _Browse Directory…_ button and select the new directory where to store the database.
-    7.  Close all the windows by pressing the _OK_ button for each of them.
+    1.  Нажмите клавишу <span class="tn-icon bx bxl-windows"></span> на клавиатуре.
+    2.  Найдите и выберите _Изменить системные переменные среды_.
+    3.  Нажмите кнопку _Переменные среды…_ в правом нижнем углу вновь открытого экрана.
+    4.  В верхнем разделе (_Переменные среды пользователя \[user\]_) нажмите кнопку _Создать…_.
+    5.  В поле _Имя переменной_ введите `TRILIUM_DATA_DIR`.
+    6.  Нажмите кнопку _Обзор каталога…_ и выберите новый каталог для хранения базы данных.
+    7.  Закройте все окна, нажимая кнопку _ОК_ в каждом из них.
 
-=== "<span class="tn-icon bx bxl-tux"></span> Linux"
+=== "<span class="tn-icon bx bxl-tux"></span> Linux"
 
-    Trilium reads `TRILIUM_DATA_DIR` when it starts, so the variable must be set in the environment that launches it.
+    Trilium читает `TRILIUM_DATA_DIR` при запуске, поэтому переменная должна быть задана в окружении, которое его запускает.
 
     > [!NOTE]
-    > Setting the variable does not move existing notes. To keep them, close Trilium and copy the old data directory to the new location first. Trilium creates the last folder of the path if it is missing, but not its parent folders.
+    > Установка переменной не перемещает существующие заметки. Чтобы их сохранить, закройте Trilium и сначала скопируйте старый каталог данных в новое место. Trilium создаёт последнюю папку пути, если её нет, но не её родительские папки.
 
-    **Desktop application (.deb, .rpm, AppImage or .zip)**
+    **Десктопное приложение (.deb, .rpm, AppImage или .zip)**
 
-    To use the new location however Trilium is started (from the application menu, a desktop shortcut, at login or from a terminal), set the variable for the whole session:
+    Чтобы использовать новое расположение независимо от того, как запускается Trilium (из меню приложений, ярлыка на рабочем столе, при входе или из терминала), задайте переменную для всей сессии:
 
-    1.  Create the file `~/.config/environment.d/trilium.conf` with the following content, using the full path (`~` is not expanded in this file):
-        
+    1.  Создайте файл `~/.config/environment.d/trilium.conf` со следующим содержимым, используя полный путь (`~` в этом файле не раскрывается):
+
         ```
         TRILIUM_DATA_DIR=/home/myuser/data/my-trilium-data
         ```
-    2.  Log out and log back in.
+    2.  Выйдите из системы и войдите снова.
 
-    This works on desktops started by `systemd`, which covers most distributions running GNOME or KDE Plasma. On other systems, add the following line to `~/.profile` instead, then log out and log back in:
+    Это работает на рабочих столах, запускаемых через `systemd`, что охватывает большинство дистрибутивов с GNOME или KDE Plasma. На других системах добавьте следующую строку в `~/.profile` вместо этого, затем выйдите из системы и войдите снова:
 
     ```sh
     export TRILIUM_DATA_DIR="$HOME/data/my-trilium-data"
     ```
 
-    The same line in `~/.bashrc` (or your shell's equivalent) only applies when Trilium is started from a terminal, not from the application menu.
+    Та же строка в `~/.bashrc` (или эквиваленте вашей оболочки) применяется, только когда Trilium запускается из терминала, а не из меню приложений.
 
     **Flatpak (Flathub)**
 
-    The Flathub version runs in a sandbox that cannot see the rest of the file system, so it needs access to the folder as well as the variable:
+    Версия из Flathub работает в песочнице, которая не видит остальную файловую систему, поэтому ей нужен доступ к папке, а также переменная:
 
     ```sh
     flatpak override --user \
@@ -76,33 +76,33 @@ If you want to use some other location for the data directory than the default o
         org.triliumnotes.Trilium
     ```
 
-    To return to the default location, run `flatpak override --user --reset org.triliumnotes.Trilium`. This also removes any other overrides set for Trilium.
+    Чтобы вернуться к расположению по умолчанию, выполните `flatpak override --user --reset org.triliumnotes.Trilium`. Это также удалит любые другие переопределения, заданные для Trilium.
 
-    **Server running as a systemd service**
+    **Сервер, работающий как служба systemd**
 
-    Add an `Environment=` line to the `[Service]` section of the unit file described in <a class="reference-link" href="Server%20Installation/1.%20Installing%20the%20server/Packaged%20version%20for%20Linux.md">Packaged version for Linux</a>:
+    Добавьте строку `Environment=` в секцию `[Service]` unit-файла, описанного в <a class="reference-link" href="Server%20Installation/1.%20Installing%20the%20server/Packaged%20version%20for%20Linux.md">Пакетной версии для Linux</a>:
 
     ```
     [Service]
     Environment=TRILIUM_DATA_DIR=/var/lib/trilium-data
     ```
 
-    Then reload and restart the service:
+    Затем перезагрузите и перезапустите службу:
 
     ```sh
     sudo systemctl daemon-reload
     sudo systemctl restart trilium
     ```
 
-    The user set in `User=` must be able to write to the folder. For Docker, see <a class="reference-link" href="Server%20Installation/1.%20Installing%20the%20server/Using%20Docker.md">Using Docker</a> instead.
+    Пользователь, заданный в `User=`, должен иметь возможность записи в папку. Для Docker см. вместо этого <a class="reference-link" href="Server%20Installation/1.%20Installing%20the%20server/Using%20Docker.md">Использование Docker</a>.
 
-=== "<span class="tn-icon bx bxl-apple"></span> macOS"
+=== "<span class="tn-icon bx bxl-apple"></span> macOS"
 
-    You need to create a `.plist` file under `~/Library/LaunchAgents` to load it properly each login.
+    Нужно создать `.plist`-файл в `~/Library/LaunchAgents`, чтобы он корректно загружался при каждом входе.
 
-    To load it manually, you need to use `launchctl setenv TRILIUM_DATA_DIR <yourpath>`
+    Чтобы загрузить его вручную, нужно использовать `launchctl setenv TRILIUM_DATA_DIR <ваш_путь>`
 
-    Here is a pre-defined template, where you just need to add your path to:
+    Вот предопределённый шаблон, в который нужно только добавить свой путь:
 
     ```xml
     <?xml version="1.0" encoding="UTF-8"?>
@@ -125,35 +125,35 @@ If you want to use some other location for the data directory than the default o
 
     ```
 
-### Create a script to run with specific data directory
+### Создание скрипта для запуска с конкретным каталогом данных
 
-An alternative to globally setting environment variable is to run only the Trilium Notes with this environment variable. This then allows for different setup styles like two [database](../Advanced%20Usage/Database.md) instances or "portable" installation.
+Альтернатива глобальной установке переменной окружения — запускать только Trilium Notes с этой переменной окружения. Это позволяет разные стили настройки, такие как два экземпляра [базы данных](../Advanced%20Usage/Database.md) или «портативная» установка.
 
-To do this in Unix-based systems simply run `trilium` like this:
+Чтобы сделать это в системах на базе Unix, просто запустите `trilium` так:
 
 ```
 TRILIUM_DATA_DIR=/home/myuser/data/my-trilium-data trilium
 ```
 
-You can then save the above command as a shell script on your path for convenience.
+Затем можно сохранить приведённую выше команду как shell-скрипт в вашем PATH для удобства.
 
-## Electron user data directory (desktop only)
+## Каталог пользовательских данных Electron (только десктоп)
 
-When running the desktop application, Electron stores internal data (caches, spell-check dictionaries, session storage, etc.) separately from the Trilium data directory. By default this goes to the system's application data folder (e.g. `%APPDATA%` on Windows), which may be undesirable in corporate environments with roaming profiles or when running in portable mode.
+При запуске десктопного приложения Electron хранит внутренние данные (кэши, словари проверки орфографии, хранилище сессии и т.д.) отдельно от каталога данных Trilium. По умолчанию это происходит в системную папку данных приложения (например, `%APPDATA%` в Windows), что может быть нежелательно в корпоративных средах с перемещаемыми профилями или при работе в портативном режиме.
 
-To keep Electron data out of the system's roaming profile, set the `TRILIUM_ELECTRON_DATA_DIR` environment variable to an explicit path. The `trilium-portable` script does this automatically, pointing it to `trilium-electron-data/` next to the application.
+Чтобы держать данные Electron вне системного перемещаемого профиля, задайте переменную окружения `TRILIUM_ELECTRON_DATA_DIR` в явный путь. Скрипт `trilium-portable` делает это автоматически, указывая на `trilium-electron-data/` рядом с приложением.
 
-## Fine-grained directory/path location
+## Точная настройка расположения каталогов/путей
 
-Apart from the data directory, some of the subdirectories of it can be moved elsewhere by changing an environment variable:
+Помимо каталога данных, некоторые его подкаталоги можно переместить в другое место, изменив переменную окружения:
 
-| Environment variable | Default value | Description |
+| Переменная окружения | Значение по умолчанию | Описание |
 | --- | --- | --- |
-| `TRILIUM_DOCUMENT_PATH` | `${TRILIUM_DATA_DIR}/document.db` | Path to the <a class="reference-link" href="../Advanced%20Usage/Database.md">Database</a> (storing all notes and metadata). |
-| `TRILIUM_BACKUP_DIR` | `${TRILIUM_DATA_DIR}/backup` | Directory where automated <a class="reference-link" href="Backup.md">Backup</a> databases are stored. |
-| `TRILIUM_LOG_DIR` | `${TRILIUM_DATA_DIR}/log` | Directory where daily <a class="reference-link" href="../Troubleshooting/Error%20logs/Backend%20(server)%20logs.md">Backend (server) logs</a> are stored. |
-| `TRILIUM_TMP_DIR` | `${TRILIUM_DATA_DIR}/tmp` | Directory where temporary files are stored (for example when opening in an external app). |
-| `TRILIUM_ANONYMIZED_DB_DIR` | `${TRILIUM_DATA_DIR}/anonymized-db` | Directory where a <a class="reference-link" href="../Troubleshooting/Anonymized%20Database.md">Anonymized Database</a> is stored. |
-| `TRILIUM_RESOURCES_DIR` | `${TRILIUM_DATA_DIR}/resources` | Directory where <a class="reference-link" href="Downloaded%20resources.md">Downloaded resources</a> are stored, such as the speech recognition models. |
-| `TRILIUM_CONFIG_INI_PATH` | `${TRILIUM_DATA_DIR}/config.ini` | Path to <a class="reference-link" href="../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables).md">Configuration (config.ini or environment variables)</a> file. |
-| `TRILIUM_ELECTRON_DATA_DIR` | System appData | Directory for Electron internal data (caches, spell-check dictionaries, etc.). Set this in portable mode to avoid writing to the system profile (desktop only). |
+| `TRILIUM_DOCUMENT_PATH` | `${TRILIUM_DATA_DIR}/document.db` | Путь к [Базе данных](../Advanced%20Usage/Database.md) (хранящей все заметки и метаданные). |
+| `TRILIUM_BACKUP_DIR` | `${TRILIUM_DATA_DIR}/backup` | Каталог, где хранятся автоматические резервные копии [Резервного копирования](Backup.md). |
+| `TRILIUM_LOG_DIR` | `${TRILIUM_DATA_DIR}/log` | Каталог, где хранятся ежедневные [Журналы сервера](../Troubleshooting/Error%20logs/Backend%20(server)%20logs.md). |
+| `TRILIUM_TMP_DIR` | `${TRILIUM_DATA_DIR}/tmp` | Каталог, где хранятся временные файлы (например, при открытии во внешнем приложении). |
+| `TRILIUM_ANONYMIZED_DB_DIR` | `${TRILIUM_DATA_DIR}/anonymized-db` | Каталог, где хранится [Анонимизированная база данных](../Troubleshooting/Anonymized%20Database.md). |
+| `TRILIUM_RESOURCES_DIR` | `${TRILIUM_DATA_DIR}/resources` | Каталог, где хранятся <a class="reference-link" href="Downloaded%20resources.md">Загруженные ресурсы</a>, такие как модели распознавания речи. |
+| `TRILIUM_CONFIG_INI_PATH` | `${TRILIUM_DATA_DIR}/config.ini` | Путь к файлу [Конфигурации (config.ini или переменные окружения)](../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables).md). |
+| `TRILIUM_ELECTRON_DATA_DIR` | Системный appData | Каталог для внутренних данных Electron (кэши, словари проверки орфографии и т.д.). Задайте это в портативном режиме, чтобы не писать в системный профиль (только десктоп). |

@@ -1,157 +1,157 @@
-# Presentation
+# Презентация
 <figure class="image"><img style="aspect-ratio:1120/763;" src="Presentation_image.png" width="1120" height="763"></figure>
 
-The Presentation view allows the creation of slideshows directly from within Trilium.
+Вид Презентация позволяет создавать слайд-шоу прямо внутри Trilium.
 
-### Creating a new presentation
+### Создание новой презентации
 
-Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ → _Collection_ → _Presentation_.
+Щёлкните правой кнопкой по существующей заметке в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дереве заметок</a> и выберите _Вставить дочернюю заметку_ → _Коллекция_ → _Презентация_.
 
-A presentation without slides shows, in place of the slides and the slide sidebar, a <span class="tn-icon bx bx-plus"></span> _New slide_ button that creates the first slide and starts editing it. The arrow beside it creates a slide of another type instead, as described below. A read-only presentation shows only a message that it has no slides. Until there is a slide, the _Slide sidebar_ button is disabled and the controls below the slides are not shown.
+Презентация без слайдов показывает вместо слайдов и боковой панели слайдов кнопку <span class="tn-icon bx bx-plus"></span> _Новый слайд_, которая создаёт первый слайд и начинает его редактирование. Стрелка рядом с ней создаёт вместо этого слайд другого типа, как описано ниже. Презентация только для чтения показывает только сообщение о том, что в ней нет слайдов. Пока нет ни одного слайда, кнопка _Боковая панель слайдов_ отключена, а элементы управления под слайдами не показываются.
 
-## How it works
+## Как это работает
 
-*   Each slide is a child note of the collection.
-*   The slides are not shown in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> by default, since the slide sidebar already lists them (see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree/Hiding%20the%20subtree.md">Hiding the subtree</a>). To show them, open the collection's <span class="tn-icon bx bx-cog"></span> settings and turn off _Hide child notes in tree_.
-*   The order of the child notes determines the order of the slides.
-*   Unlike traditional presentation software, slides can be laid out both horizontally and vertically (see below for more information).
-*   Direct children will be laid out horizontally and the children of those will be laid out vertically. Children deeper than two levels of nesting are ignored.
-*   A <a class="reference-link" href="Kanban%20Board.md">Kanban Board</a> or <a class="reference-link" href="Table.md">Table</a> collection is shown as one slide, working as it does in the note itself, so its children are not laid out as vertical slides. Other collections keep their children as vertical slides.
-*   Slides have a fixed 16:9 shape (1280×720). The preview in the note is a scaled-down copy of what is shown in full-screen, so content that fits in the preview fits when presenting. When the window or the screen has a different shape, the slide is centered with bars around it.
-*   A slide whose content is larger than the slide is zoomed out until it fits, text included. To keep the text large, split the content over several slides.
+*   Каждый слайд — дочерняя заметка коллекции.
+*   Слайды по умолчанию не показываются в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дереве заметок</a>, так как боковая панель слайдов уже перечисляет их (см. <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree/Hiding%20the%20subtree.md">Скрытие поддерева</a>). Чтобы показать их, откройте <span class="tn-icon bx bx-cog"></span> настройки коллекции и выключите _Скрыть дочерние заметки в дереве_.
+*   Порядок дочерних заметок определяет порядок слайдов.
+*   В отличие от традиционного программного обеспечения для презентаций, слайды можно размещать как горизонтально, так и вертикально (подробнее см. ниже).
+*   Прямые потомки размещаются горизонтально, а их потомки — вертикально. Потомки глубже двух уровней вложенности игнорируются.
+*   Коллекция <a class="reference-link" href="Kanban%20Board.md">Kanban-доска</a> или <a class="reference-link" href="Table.md">Таблица</a> показывается как один слайд, работая так же, как в самой заметке, поэтому её потомки не размещаются как вертикальные слайды. Другие коллекции сохраняют своих потомков как вертикальные слайды.
+*   Слайды имеют фиксированную форму 16:9 (1280×720). Предпросмотр в заметке — уменьшенная копия того, что показывается в полноэкранном режиме, поэтому содержимое, помещающееся в предпросмотре, помещается и при показе. Когда окно или экран имеет другую форму, слайд центрируется с полосами вокруг него.
+*   Слайд, чьё содержимое больше самого слайда, уменьшается до вписывания, включая текст. Чтобы сохранить текст крупным, разделите содержимое на несколько слайдов.
 
-## Interaction and navigation
+## Взаимодействие и навигация
 
-### Slide sidebar
+### Боковая панель слайдов
 
-A sidebar to the left of the slides shows a thumbnail of every slide in the presentation's theme, with vertical slides indented under the slide they belong to. Web view, <a class="reference-link" href="Kanban%20Board.md">Kanban Board</a> and <a class="reference-link" href="Table.md">Table</a> slides are shown as an icon.
+Боковая панель слева от слайдов показывает миниатюру каждого слайда в теме презентации, с вертикальными слайдами, сдвинутыми вправо под слайдом, которому они принадлежат. Слайды Веб-представления, <a class="reference-link" href="Kanban%20Board.md">Kanban-доски</a> и <a class="reference-link" href="Table.md">Таблицы</a> показываются значком.
 
-*   The slide being shown is outlined, and the sidebar scrolls to keep it in view.
-*   Click a thumbnail to go to its slide.
-*   To move a slide, drag its thumbnail; a line shows where it goes. Dragged straight up or down, a slide keeps its level:
-    *   A top-level slide takes its vertical slides with it, and dragged over another slide's vertical slides it goes after that whole stack.
-    *   A vertical slide can go among the vertical slides of any slide. Dropped below a slide that has none, it becomes that slide's first vertical slide, and the line is indented.
-*   To change a slide's level, drag it to the side as well: to the right to make it a vertical slide, to the left to make it a top-level slide. The line's indent shows the level it will have.
-    *   A slide that has vertical slides of its own can't become a vertical slide, and a <a class="reference-link" href="Kanban%20Board.md">Kanban Board</a> or <a class="reference-link" href="Table.md">Table</a> slide can't take vertical slides.
-*   Slides can't be dragged in a read-only or search-based presentation, or into a note that sorts its children with `#sorted`.
-*   Once a thumbnail is clicked, or reached with <kbd>Tab</kbd>, the sidebar takes the keyboard until you click the slides:
-    *   Press <kbd>↑</kbd> and <kbd>↓</kbd> to go to the previous or next slide in order, vertical slides included.
-    *   Press <kbd>Home</kbd> and <kbd>End</kbd> to go to the first or last slide.
-    *   Press <kbd>Alt</kbd>+<kbd>↑</kbd> and <kbd>Alt</kbd>+<kbd>↓</kbd> to move the slide up or down at its level, past a whole stack of vertical slides. Press <kbd>Alt</kbd>+<kbd>→</kbd> to make it a vertical slide where it stands, and <kbd>Alt</kbd>+<kbd>←</kbd> to make it a top-level slide (the other way around in right-to-left languages). The same limits apply as for dragging.
-*   Right-click a thumbnail, or press <kbd>Shift</kbd>+<kbd>F10</kbd> or the <kbd>Menu</kbd> key on a focused one, to open its context menu. The thumbnail is outlined while the menu is open, and the slide being shown doesn't change:
-    *   _Edit slide_ goes to the slide and edits it in place, as a double-click does. It's available for text, <a class="reference-link" href="Kanban%20Board.md">Kanban Board</a> and <a class="reference-link" href="Table.md">Table</a> slides.
-    *   _Open note_ opens the slide's note in a new tab, split or window.
-    *   _New slide after_ adds an empty slide after it, at its level, and _New vertical slide_ adds one at the end of its vertical slides. Each asks for the type of the slide, from the same list as the arrow beside the _New slide_ button. The presentation goes to the new slide. _Duplicate_ copies the slide, with its vertical slides, right after it.
-    *   _Move up_, _Move down_, _Make vertical slide_ and _Make top-level slide_ move the slide as <kbd>Alt</kbd> and the arrow keys do. An item is disabled where the slide can't go.
-    *   _Delete slide..._ deletes the slide, with its vertical slides, after asking for confirmation.
-    *   A read-only presentation offers only _Open note_. A search-based presentation can't add, move or delete slides.
-*   To collapse the sidebar, press the <span class="tn-icon bx bx-sidebar"></span> _Slide sidebar_ button on the left of the toolbar above the slides, after the collection's settings. Press it again to bring the sidebar back. Each device remembers the choice for every presentation.
-*   The sidebar is hidden when the note is too narrow to fit it.
+*   Показываемый слайд обведён, а панель прокручивается, чтобы держать его в виду.
+*   Щёлкните миниатюру, чтобы перейти к её слайду.
+*   Чтобы переместить слайд, перетащите его миниатюру; линия показывает, куда он попадёт. Перетащенный строго вверх или вниз, слайд сохраняет свой уровень:
+    *   Слайд верхнего уровня забирает с собой свои вертикальные слайды, а перетащенный над вертикальными слайдами другого слайда, он встаёт после всего этого стека.
+    *   Вертикальный слайд может встать среди вертикальных слайдов любого слайда. Сброшенный под слайд, у которого их нет, он становится первым вертикальным слайдом этого слайда, и линия сдвигается вправо.
+*   Чтобы изменить уровень слайда, перетащите его также в сторону: вправо, чтобы сделать его вертикальным слайдом, влево — чтобы сделать слайдом верхнего уровня. Отступ линии показывает уровень, который он получит.
+    *   Слайд, имеющий собственные вертикальные слайды, не может стать вертикальным слайдом, а слайд <a class="reference-link" href="Kanban%20Board.md">Kanban-доски</a> или <a class="reference-link" href="Table.md">Таблицы</a> не может принимать вертикальные слайды.
+*   Слайды нельзя перетаскивать в презентации только для чтения или на основе поиска, а также в заметку, сортирующую своих потомков с помощью `#sorted`.
+*   После того как миниатюра нажата или достигнута с помощью <kbd>Tab</kbd>, боковая панель принимает клавиатуру, пока вы не щёлкнете по слайдам:
+    *   Нажмите <kbd>↑</kbd> и <kbd>↓</kbd>, чтобы перейти к предыдущему или следующему слайду по порядку, включая вертикальные слайды.
+    *   Нажмите <kbd>Home</kbd> и <kbd>End</kbd>, чтобы перейти к первому или последнему слайду.
+    *   Нажмите <kbd>Alt</kbd>+<kbd>↑</kbd> и <kbd>Alt</kbd>+<kbd>↓</kbd>, чтобы переместить слайд вверх или вниз на его уровне, мимо целого стека вертикальных слайдов. Нажмите <kbd>Alt</kbd>+<kbd>→</kbd>, чтобы сделать его вертикальным слайдом на его месте, и <kbd>Alt</kbd>+<kbd>←</kbd>, чтобы сделать его слайдом верхнего уровня (наоборот в языках справа налево). Применяются те же ограничения, что и при перетаскивании.
+*   Правый щелчок по миниатюре или нажатие <kbd>Shift</kbd>+<kbd>F10</kbd> либо клавиши <kbd>Menu</kbd> на сфокусированной открывает её контекстное меню. Миниатюра обведена, пока меню открыто, а показываемый слайд не меняется:
+    *   _Редактировать слайд_ переходит к слайду и редактирует его на месте, как это делает двойной щелчок. Доступно для текстовых слайдов, слайдов <a class="reference-link" href="Kanban%20Board.md">Kanban-доски</a> и <a class="reference-link" href="Table.md">Таблицы</a>.
+    *   _Открыть заметку_ открывает заметку слайда в новой вкладке, разделении или окне.
+    *   _Новый слайд после_ добавляет пустой слайд после него на его уровне, а _Новый вертикальный слайд_ добавляет его в конец его вертикальных слайдов. Каждый спрашивает тип слайда из того же списка, что и стрелка рядом с кнопкой _Новый слайд_. Презентация переходит к новому слайду. _Дублировать_ копирует слайд с его вертикальными слайдами сразу после него.
+    *   _Переместить вверх_, _Переместить вниз_, _Сделать вертикальным слайдом_ и _Сделать слайдом верхнего уровня_ перемещают слайд, как это делают <kbd>Alt</kbd> и клавиши со стрелками. Пункт отключён там, куда слайд не может попасть.
+    *   _Удалить слайд…_ удаляет слайд с его вертикальными слайдами после запроса подтверждения.
+    *   Презентация только для чтения предлагает только _Открыть заметку_. Презентация на основе поиска не может добавлять, перемещать или удалять слайды.
+*   Чтобы свернуть боковую панель, нажмите кнопку <span class="tn-icon bx bx-sidebar"></span> _Боковая панель слайдов_ слева на панели инструментов над слайдами, после настроек коллекции. Нажмите её снова, чтобы вернуть панель. Каждое устройство запоминает выбор для каждой презентации.
+*   Боковая панель скрыта, когда заметка слишком узкая, чтобы вместить её.
 
-### Controls below the slides
+### Элементы управления под слайдами
 
-Below the slides are three groups of buttons.
+Под слайдами находятся три группы кнопок.
 
-#### Moving between slides
+#### Перемещение между слайдами
 
-On the left, the <span class="tn-icon bx bx-chevron-left"></span> _Previous slide_ and <span class="tn-icon bx bx-chevron-right"></span> _Next slide_ buttons go through every slide in order, vertical slides included, as <kbd>Shift</kbd>+<kbd>Space</kbd> and <kbd>Space</kbd> do. Between them is the number of the slide being shown, out of the number of slides.
+Слева кнопки <span class="tn-icon bx bx-chevron-left"></span> _Предыдущий слайд_ и <span class="tn-icon bx bx-chevron-right"></span> _Следующий слайд_ проходят через каждый слайд по порядку, включая вертикальные слайды, как это делают <kbd>Shift</kbd>+<kbd>Пробел</kbd> и <kbd>Пробел</kbd>. Между ними находится номер показываемого слайда из общего числа слайдов.
 
-A presentation opens on the slide it showed last, also on another device after a sync, unless that slide was deleted. A read-only presentation doesn't remember its slide and opens on the one that was saved, or on the first.
+Презентация открывается на слайде, который она показывала в последний раз, в том числе на другом устройстве после синхронизации, если только этот слайд не был удалён. Презентация только для чтения не помнит свой слайд и открывается на сохранённом или на первом.
 
-#### Editing
+#### Редактирование
 
-In the middle:
+В центре:
 
-*   <span class="tn-icon bx bx-plus"></span> _New slide_ button to add an empty text slide after the slide being shown, at the same level: after a slide and its vertical slides, or among the vertical slides. The presentation goes to the new slide and starts editing it in place. The <span class="tn-icon bx bx-chevron-down"></span> arrow beside it adds a slide of another type instead:
-    
-    *   _Text_ and <a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a> come first, as the slides that can be edited in place; the presentation starts editing the new slide.
-    *   <a class="reference-link" href="Kanban%20Board.md">Kanban Board</a> and <a class="reference-link" href="Table.md">Table</a> create a collection, from the same template as a new one elsewhere, which the presentation also starts editing.
-    *   <a class="reference-link" href="../Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a> create a diagram and open it in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a> to write it. The slide shows the diagram once it is saved, and the <span class="tn-icon bx bx-edit"></span> _Edit this slide_ button opens it in Quick edit again.
-    *   <a class="reference-link" href="../Note%20Types/Code.md">Code</a> opens a list of the code languages enabled in the code note options, as the app's other note type menus do, ending with _Configure code notes..._ to change which ones it offers. The new note opens in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a> to write the code, as a Mermaid diagram does.
-    *   _Web View_ and _Spreadsheet_ create an empty note of that type. Its content is added in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a>, with the <span class="tn-icon bx bx-edit"></span> _Edit this slide_ button.
-    
-    A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation doesn't show it, and neither does one made from a search.
-*   <span class="tn-icon bx bx-edit"></span> _Edit this slide_ button to edit the current slide: in place for a text, canvas, Kanban Board or Table slide, as a double-click does, and in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a> for a slide of any other type, or where the slide can't be edited in place. A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation doesn't show it. While a slide is edited in place, the button becomes the <span class="tn-icon bx bx-check"></span> _Finish editing_ button.
-*   <span class="tn-icon bx bx-palette"></span> _Slide background_ button to pick the background color of the current slide, or to clear it so the slide uses the theme's background. It is unavailable for web view, Kanban Board and Table slides, which cover the whole slide, and a read-only presentation doesn't show it. A gradient can still be set through the `#slide:background` label.
+*   Кнопка <span class="tn-icon bx bx-plus"></span> _Новый слайд_ добавляет пустой текстовый слайд после показываемого слайда на том же уровне: после слайда и его вертикальных слайдов или среди вертикальных слайдов. Презентация переходит к новому слайду и начинает редактировать его на месте. Стрелка <span class="tn-icon bx bx-chevron-down"></span> рядом с ней добавляет вместо этого слайд другого типа:
 
-#### Viewing
+    *   _Текст_ и <a class="reference-link" href="../Note%20Types/Canvas.md">Холст</a> идут первыми, как слайды, которые можно редактировать на месте; презентация начинает редактировать новый слайд.
+    *   <a class="reference-link" href="Kanban%20Board.md">Kanban-доска</a> и <a class="reference-link" href="Table.md">Таблица</a> создают коллекцию из того же шаблона, что и новая в другом месте, которую презентация также начинает редактировать.
+    *   <a class="reference-link" href="../Note%20Types/Mermaid%20Diagrams.md">Диаграммы Mermaid</a> создают диаграмму и открывают её в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Быстром редактировании</a>, чтобы написать её. Слайд показывает диаграмму после её сохранения, а кнопка <span class="tn-icon bx bx-edit"></span> _Редактировать этот слайд_ открывает её в Быстром редактировании снова.
+    *   <a class="reference-link" href="../Note%20Types/Code.md">Код</a> открывает список языков кода, включённых в настройках кодовых заметок, как это делают другие меню типов заметок приложения, заканчиваясь пунктом _Настроить заметки с кодом..._, чтобы изменить, какие из них предлагаются. Новая заметка открывается в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Быстром редактировании</a> для написания кода, как и диаграмма Mermaid.
+    *   _Веб-представление_ и _Таблица (Spreadsheet)_ создают пустую заметку этого типа. Её содержимое добавляется в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Быстром редактировании</a> кнопкой <span class="tn-icon bx bx-edit"></span> _Редактировать этот слайд_.
 
-On the right:
+    [Презентация только для чтения](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) её не показывает, как и презентация, созданная из поиска.
+*   Кнопка <span class="tn-icon bx bx-edit"></span> _Редактировать этот слайд_ редактирует текущий слайд: на месте для текстового слайда, слайда-холста, Kanban-доски или Таблицы, как это делает двойной щелчок, и в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Быстром редактировании</a> для слайда любого другого типа или там, где слайд нельзя редактировать на месте. [Презентация только для чтения](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) её не показывает. Пока слайд редактируется на месте, кнопка становится кнопкой <span class="tn-icon bx bx-check"></span> _Завершить редактирование_.
+*   Кнопка <span class="tn-icon bx bx-palette"></span> _Фон слайда_ выбирает цвет фона текущего слайда или очищает его, чтобы слайд использовал фон темы. Она недоступна для слайдов веб-представления, Kanban-доски и Таблицы, которые покрывают весь слайд, а презентация только для чтения её не показывает. Градиент всё равно можно задать через метку `#slide:background`.
 
-*   Press the <span class="tn-icon bx bx-grid-horizontal"></span> Overview button (or the <kbd>O</kbd> key) to show a birds-eye view of the slides. Press the button again to disable it.
-*   Press the <span class="tn-icon bx bx-fullscreen"></span> _Start presentation_ button (or the <kbd>F</kbd> key) to show the presentation in full-screen. Press <kbd>Esc</kbd> or the <span class="tn-icon bx bx-exit-fullscreen"></span> _Exit fullscreen_ button to leave it.
+#### Просмотр
 
-In full-screen, the editing buttons are hidden, and the other two groups fade out while the mouse rests. Move the mouse to bring it back.
+Справа:
 
-### Keyboard shortcuts
+*   Нажмите кнопку Обзор <span class="tn-icon bx bx-grid-horizontal"></span> (или клавишу <kbd>O</kbd>), чтобы показать вид с высоты птичьего полёта на слайды. Нажмите кнопку снова, чтобы выключить его.
+*   Нажмите кнопку <span class="tn-icon bx bx-fullscreen"></span> _Начать показ_ (или клавишу <kbd>F</kbd>), чтобы показать презентацию в полноэкранном режиме. Нажмите <kbd>Esc</kbd> или кнопку <span class="tn-icon bx bx-exit-fullscreen"></span> _Выйти из полноэкранного режима_, чтобы покинуть его.
 
-The following keyboard shortcuts work while the presentation is the active note: after clicking the slides or the sidebar, and in full-screen. Keys pressed in another split, the note tree or a field go there instead.
+В полноэкранном режиме кнопки редактирования скрыты, а две другие группы гаснут, пока мышь неподвижна. Двигайте мышь, чтобы вернуть их.
 
-*   Press <kbd>←</kbd> and <kbd>→</kbd> (or <kbd>H</kbd> and <kbd>L</kbd>) to go to the slide on the left or on the right (horizontal).
-*   Press <kbd>↑</kbd> and <kbd>↓</kbd>  (or <kbd>K</kbd> and <kbd>J</kbd>) to go to the upward or downward slide (vertical).
-*   Press <kbd>Space</kbd> and <kbd>Shift</kbd>+<kbd>Space</kbd> to go to the next/previous slide in order.
-*   Press <kbd>F</kbd> to start the presentation in full-screen.
-*   And a few more, press <kbd>?</kbd> to display a popup with all the supported keyboard combinations.
+### Сочетания клавиш
 
-## Editing a slide in place
+Следующие сочетания клавиш работают, пока презентация является активной заметкой: после щелчка по слайдам или боковой панели и в полноэкранном режиме. Клавиши, нажатые в другом разделении, дереве заметок или поле, идут туда.
 
-Double-click a slide made from a text note to edit it directly on the slide, in the presentation's theme. A dashed outline marks the slide being edited, and the formatting toolbar appears next to the selected text. Changes are saved as you type, as in any text note, and a slide that grows past the edge of the slide is zoomed out to fit.
+*   Нажмите <kbd>←</kbd> и <kbd>→</kbd> (или <kbd>H</kbd> и <kbd>L</kbd>), чтобы перейти к слайду слева или справа (горизонтально).
+*   Нажмите <kbd>↑</kbd> и <kbd>↓</kbd> (или <kbd>K</kbd> и <kbd>J</kbd>), чтобы перейти к слайду вверх или вниз (вертикально).
+*   Нажмите <kbd>Пробел</kbd> и <kbd>Shift</kbd>+<kbd>Пробел</kbd>, чтобы перейти к следующему/предыдущему слайду по порядку.
+*   Нажмите <kbd>F</kbd>, чтобы начать показ в полноэкранном режиме.
+*   И ещё несколько — нажмите <kbd>?</kbd>, чтобы показать всплывающее окно со всеми поддерживаемыми комбинациями клавиш.
 
-To finish editing, press <kbd>Esc</kbd>, press the <span class="tn-icon bx bx-check"></span> _Finish editing_ button below the slides or go to another slide. Starting the presentation in full-screen also finishes editing, and slides can't be edited in full-screen.
+## Редактирование слайда на месте
 
-A <a class="reference-link" href="Kanban%20Board.md">Kanban Board</a> or <a class="reference-link" href="Table.md">Table</a> slide is read-only until it is edited, so that a card or a cell can't be changed by accident while presenting, and clicking a card or a row opens nothing. Double-click it to edit it on the slide as in its note, then press the <span class="tn-icon bx bx-check"></span> _Finish editing_ button or go to another slide to finish. The bar above the collection has no view type switcher on a slide, and shows the <span class="tn-icon bx bx-cog"></span> settings only while the slide is edited.
+Дважды щёлкните слайд, сделанный из текстовой заметки, чтобы отредактировать его прямо на слайде в теме презентации. Пунктирный контур отмечает редактируемый слайд, а панель форматирования появляется рядом с выделенным текстом. Изменения сохраняются по мере ввода, как в любой текстовой заметке, а слайд, выросший за край слайда, уменьшается для вписывания.
 
-Double-click a <a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a> slide to draw on it in place. The canvas editor covers the presentation, with the same tools as in the canvas note, and opens on the drawing at the size and place that the slide shows it. The drawing is saved as you go. Press <kbd>Esc</kbd> or the <span class="tn-icon bx bx-check"></span> _Finish editing_ button to finish.
+Чтобы завершить редактирование, нажмите <kbd>Esc</kbd>, нажмите кнопку <span class="tn-icon bx bx-check"></span> _Завершить редактирование_ под слайдами или перейдите к другому слайду. Запуск показа в полноэкранном режиме также завершает редактирование, и в полноэкранном режиме слайды нельзя редактировать.
 
-Slides of other note types, such as diagrams, open in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a> from the <span class="tn-icon bx bx-edit"></span> _Edit this slide_ button. A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation can't be edited in place, and neither can a slide whose own note is read-only.
+Слайд <a class="reference-link" href="Kanban%20Board.md">Kanban-доски</a> или <a class="reference-link" href="Table.md">Таблицы</a> доступен только для чтения, пока он не отредактирован, чтобы карточку или ячейку нельзя было изменить случайно во время показа, и щелчок по карточке или строке ничего не открывает. Дважды щёлкните его, чтобы отредактировать на слайде, как в его заметке, затем нажмите кнопку <span class="tn-icon bx bx-check"></span> _Завершить редактирование_ или перейдите к другому слайду, чтобы завершить. Панель над коллекцией не имеет переключателя типа вида на слайде и показывает <span class="tn-icon bx bx-cog"></span> настройки только пока слайд редактируется.
 
-## Vertical slides and nesting
+Дважды щёлкните слайд-<a class="reference-link" href="../Note%20Types/Canvas.md">Холст</a>, чтобы рисовать на нём на месте. Редактор холста покрывает презентацию, с теми же инструментами, что и в заметке-холсте, и открывает рисунок в том размере и месте, в котором слайд его показывает. Рисунок сохраняется по ходу. Нажмите <kbd>Esc</kbd> или кнопку <span class="tn-icon bx bx-check"></span> _Завершить редактирование_, чтобы завершить.
 
-Unlike traditional presentation software such as Microsoft PowerPoint, the slides in Trilium can be laid out horizontally or vertically in order to create depth or better organize the slides by topic.
+Слайды других типов заметок, таких как диаграммы, открываются в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Быстром редактировании</a> кнопкой <span class="tn-icon bx bx-edit"></span> _Редактировать этот слайд_. [Презентация только для чтения](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) не может редактироваться на месте, как и слайд, собственная заметка которого доступна только для чтения.
 
-This horizontal/vertical organization affects transitions (especially on the “slide” transition), however it is most noticeable in navigation.
+## Вертикальные слайды и вложенность
 
-*   Pressing <kbd>←</kbd> and <kbd>→</kbd> will navigate through slides horizontally, thus skipping vertical notes under the current slide. This is useful to skip entire chapters/related slides.
-*   Pressing <kbd>↑</kbd> and <kbd>↓</kbd> will navigate through the vertical slides at the current level.
-*   Pressing <kbd>Space</kbd> and <kbd>Shift</kbd> + <kbd>Space</kbd> will go to the next/previous slide in order, regardless of the direction. This is generally the key combination to use when presenting.
-*   The _Previous slide_ and _Next slide_ buttons below the slides go in order, as <kbd>Space</kbd> and <kbd>Shift</kbd>+<kbd>Space</kbd> do.
+В отличие от традиционного программного обеспечения для презентаций, такого как Microsoft PowerPoint, слайды в Trilium можно размещать горизонтально или вертикально, чтобы создать глубину или лучше организовать слайды по темам.
+
+Такая горизонтальная/вертикальная организация влияет на переходы (особенно на переход «слайд»), однако наиболее заметна она в навигации.
+
+*   Нажатие <kbd>←</kbd> и <kbd>→</kbd> перемещается по слайдам горизонтально, пропуская вертикальные заметки под текущим слайдом. Это полезно для пропуска целых глав/связанных слайдов.
+*   Нажатие <kbd>↑</kbd> и <kbd>↓</kbd> перемещается по вертикальным слайдам на текущем уровне.
+*   Нажатие <kbd>Пробел</kbd> и <kbd>Shift</kbd> + <kbd>Пробел</kbd> переходит к следующему/предыдущему слайду по порядку независимо от направления. Как правило, это комбинация клавиш, которую стоит использовать при показе.
+*   Кнопки _Предыдущий слайд_ и _Следующий слайд_ под слайдами идут по порядку, как <kbd>Пробел</kbd> и <kbd>Shift</kbd>+<kbd>Пробел</kbd>.
 
 <figure class="image image-style-align-right image_resized" style="width:55.57%;"><img style="aspect-ratio:890/569;" src="1_Presentation_image.png" width="890" height="569"></figure>
 
-All direct children of the collection will be laid out horizontally. If a direct child also has children, those children will be placed as vertical slides.
+Все прямые потомки коллекции будут размещены горизонтально. Если прямой потомок также имеет потомков, эти потомки будут размещены как вертикальные слайды.
 
-In the following example, the note structure is as follows:
+В следующем примере структура заметок такова:
 
-*   Presentation collection
-    *   Trilium Notes (demo page)
-    *   “Introduction” slide
-        *   “The challenge of personal knowledge management”
-        *   “Note-taking structures”
-    *   “Demo & Feature highlights” slide
-        *   “Really fast installation process”
-        *   Video slide
+*   Коллекция-презентация
+    *   Trilium Notes (демонстрационная страница)
+    *   Слайд «Введение»
+        *   «Проблема управления личными знаниями»
+        *   «Структуры ведения заметок»
+    *   Слайд «Демонстрация и основные возможности»
+        *   «Действительно быстрый процесс установки»
+        *   Видео-слайд
 
-## Customization
+## Настройка
 
-At collection level, it's possible to adjust:
+На уровне коллекции можно настроить:
 
-*   The theme of the entire presentation to one of the predefined themes by going to the <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a> and looking for the _Theme_ option.
-*   It's currently not possible to create custom themes, although it is planned.
-*   Note that it is note possible to alter the CSS via <a class="reference-link" href="../Theme%20development/Custom%20app-wide%20CSS.md">Custom app-wide CSS</a> because the slides are rendered isolated (in a shadow DOM).
+*   Тему всей презентации на одну из предопределённых тем, перейдя в <a class="reference-link" href="Collection%20Properties.md">Свойства коллекции</a> и найдя опцию _Тема_.
+*   В настоящее время невозможно создавать пользовательские темы, хотя это планируется.
+*   Обратите внимание, что невозможно изменить CSS через <a class="reference-link" href="../Theme%20development/Custom%20app-wide%20CSS.md">Пользовательский CSS для всего приложения</a>, так как слайды рендерятся изолированно (в shadow DOM).
 
-At slide level:
+На уровне слайда:
 
-*   To change the background color of a slide, go to it and use the <span class="tn-icon bx bx-palette"></span> _Slide background_ button in the toolbar, or set `#slide:background` on its note to a hex color.
-*   More complex backgrounds can be achieved via gradients. There's no UI for it; it has to be set via `#slide:background` to a CSS gradient definition such as: `linear-gradient(to bottom, #283b95, #17b2c3)`.
+*   Чтобы изменить цвет фона слайда, перейдите к нему и используйте кнопку <span class="tn-icon bx bx-palette"></span> _Фон слайда_ на панели инструментов или задайте `#slide:background` на его заметке в hex-цвет.
+*   Более сложные фоны можно получить через градиенты. Для этого нет интерфейса; это нужно задавать через `#slide:background` как определение CSS-градиента, например: `linear-gradient(to bottom, #283b95, #17b2c3)`.
 
-## Tips and tricks
+## Советы и приёмы
 
-*   Text notes generally respect the formatting (bold, italic, foreground and background colors) and font size. Code blocks and tables also work.
-*   Try using more than just text notes, the presentation uses the same mechanism as [shared notes](../Advanced%20Usage/Sharing.md) and <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Note List</a> so it should be able to display <a class="reference-link" href="../Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a>, <a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a> and <a class="reference-link" href="../Note%20Types/Mind%20Map.md">Mind Map</a> in full-screen (without the interactivity).
-    *   A <a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a> takes on the light or dark style of the theme, or of the slide's own background color.
-    *   A <a class="reference-link" href="../Note%20Types/Code.md">Code</a> note fills the width of the slide, highlighted as in the note. With the code theme following the app's, the slide uses the light or the dark code theme to match the presentation's theme. Long code is zoomed out to fit the slide.
-    *   For <a class="reference-link" href="../Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a>, some of them have a predefined background which can be changed via the frontmatter. For example, for XY-charts:
-        
+*   Текстовые заметки, как правило, сохраняют форматирование (полужирный, курсив, цвета переднего плана и фона) и размер шрифта. Блоки кода и таблицы также работают.
+*   Попробуйте использовать не только текстовые заметки — презентация использует тот же механизм, что и [опубликованные заметки](../Advanced%20Usage/Sharing.md) и <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Список заметок</a>, поэтому она должна уметь отображать <a class="reference-link" href="../Note%20Types/Mermaid%20Diagrams.md">Диаграммы Mermaid</a>, <a class="reference-link" href="../Note%20Types/Canvas.md">Холст</a> и <a class="reference-link" href="../Note%20Types/Mind%20Map.md">Mind Map</a> в полноэкранном режиме (без интерактивности).
+    *   <a class="reference-link" href="../Note%20Types/Canvas.md">Холст</a> принимает светлый или тёмный стиль темы или собственный цвет фона слайда.
+    *   Заметка <a class="reference-link" href="../Note%20Types/Code.md">Код</a> заполняет ширину слайда, подсвеченная как в заметке. С темой кода, следующей за темой приложения, слайд использует светлую или тёмную тему кода, соответствующую теме презентации. Длинный код уменьшается для вписывания в слайд.
+    *   Для <a class="reference-link" href="../Note%20Types/Mermaid%20Diagrams.md">Диаграмм Mermaid</a> у некоторых есть предопределённый фон, который можно изменить через frontmatter. Например, для XY-диаграмм:
+
         ```
         ---
         config:
@@ -160,8 +160,8 @@ At slide level:
                     backgroundColor: transparent
         ---
         ```
-*   A <a class="reference-link" href="../Note%20Types/Web%20View.md">Web View</a> slide shows its page across the whole slide, and the page can be scrolled and its links clicked. The keyboard stays with the presentation, so <kbd>Space</kbd> and the arrow keys still change slides after clicking the page; to type into the page, open the web view note itself. Only `http://` and `https://` addresses are shown. It works the same way as the web view note itself, so outside the desktop application some websites refuse to be shown.
+*   Слайд-<a class="reference-link" href="../Note%20Types/Web%20View.md">Веб-представление</a> показывает свою страницу через весь слайд, страницу можно прокручивать, а её ссылки — нажимать. Клавиатура остаётся у презентации, поэтому <kbd>Пробел</kbd> и клавиши со стрелками по-прежнему меняют слайды после щелчка по странице; чтобы печатать на странице, откройте саму заметку веб-представления. Показываются только адреса `http://` и `https://`. Это работает так же, как сама заметка веб-представления, поэтому вне десктопного приложения некоторые веб-сайты отказываются отображаться.
 
-## Under the hood
+## Внутреннее устройство
 
-The Presentation view uses [Reveal.js](https://revealjs.com/) to handle the navigation and layout of the slides.
+Вид Презентация использует [Reveal.js](https://revealjs.com/) для обработки навигации и макета слайдов.

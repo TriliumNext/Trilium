@@ -1,192 +1,192 @@
-# Mobile Frontend
+# Мобильный интерфейс
 <figure class="image image-style-align-right image_resized" style="width:33.52%;"><img style="aspect-ratio:1242/2688;" src="Mobile Frontend_IMG_1765.PNG" width="1242" height="2688"></figure>
 
-Trilium has a mobile web frontend which is optimized for touch based devices - smartphones and tablets. It is activated automatically during login process based on browser detection.
+У Trilium есть мобильный веб-интерфейс, оптимизированный для сенсорных устройств — смартфонов и планшетов. Он активируется автоматически в процессе входа на основе определения браузера.
 
-Mobile frontend is limited in features compared to the full desktop version. See below for more details on this.
+Мобильный интерфейс ограничен в возможностях по сравнению с полной десктопной версией. Подробнее об этом ниже.
 
-## Layout basics
+## Основы макета
 
-Unlike the desktop version, the mobile version has a slightly different UI meant to better fit the constrained screens of a mobile phone.
+В отличие от десктопной версии, мобильная версия имеет слегка отличающийся интерфейс, предназначенный для лучшего соответствия ограниченным экранам мобильных телефонов.
 
-Here is a non-exhaustive list of differences between the desktop version and the mobile one:
+Вот неисчерпывающий список различий между десктопной версией и мобильной:
 
-*   On a phone, the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> lies under the note. The <span class="tn-icon bx bx-chevron-left"></span> button in the top-left of the screen slides the note away to reveal the tree, on the folder holding the note, with the note highlighted. Opening a note from the tree slides it back in.
-    *   To return to the note without opening it again, tap its title with the <span class="tn-icon bx bx-chevron-right"></span> icon in the top-right of the tree, whichever folder the tree is showing.
-    *   A swipe from the left edge of the screen also reveals the tree, but the system's or the browser's back gesture can take it over, depending on the platform.
-    *   Each tab remembers whether it was showing the tree or its note, and, for a tab left on the tree, the folder the tree was showing. Switching tabs brings both back. Once the tab shows its note again, its tree goes back to the folder holding the note.
-    *   A new tab opens on the tree, at the root, with the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Workspaces.md">Workspaces</a> and the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Bookmarks.md">Bookmarks</a>, if there are any, listed above it. Tap a workspace to hoist the tab into it.
-    *   In the Android app, the system back gesture or button closes the menu or dialog on top first, then a settings page in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a>, then slides the note away to reveal the tree, then goes up one level in the tree. At the top of the tree, it sends the app to the background.
-    *   On wider screens, such as a tablet in landscape, the note tree is displayed as a sidebar next to the note instead. There, a <span class="tn-icon bx bx-sidebar"></span> button hides and shows it, and the choice is remembered together with the left pane of the desktop version.
-    *   A note with children shows a <span class="tn-icon bx bx-chevron-right"></span> (on iOS, preceded by how many children it lists): tapping it lists its children, and tapping any other note opens it. The note whose children are listed stands at the top, with a preview of its content; tap it, or the _Open_ at its foot, to open it.
-    *   Press and hold a note to display the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree/Note%20tree%20contextual%20menu.md">Note tree contextual menu</a>. Opening a note in a new tab from it keeps the tree on screen, so you can open several notes in a row.
-*   The <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20search.md">Quick search</a> bar is also displayed at the top of the note tree.
-*   The full <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Search.md">Search</a> function can be triggered either from either the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a> or from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>, if configured.
-*   The <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a> is shorter: _New window_ and _Keyboard shortcuts_ are left out, and _Switch to desktop version_ is under _Advanced_.
-*   The <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a> is displayed at the bottom of the screen.
-    *   The launch bar uses a different configuration for icons than the desktop version. See the dedicated page for more information on how to configure it.
-*   Most of the note-related actions are grouped in the horizontal dots icon on the top-right of the note.
-*   The <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a> is replaced by the note panel, a sheet that opens from the bottom of the screen with the <span class="tn-icon bx bx-dock-bottom"></span> button to the left of those dots. Its tabs (outline, attributes, connections, AI chat and widgets) are switched from a bar at the bottom of the sheet.
-*   In a text note, the formatting toolbar sits at the bottom of the screen. See _Editing text notes_ below.
-*   On iOS, the buttons of the title row, the launch bar, the formatting toolbar, the menus that open from the bottom of the screen and short dialogs are translucent panes that float clear of the screen's edges, and the note scrolls beneath the title row and the launch bar. A dialog taller than half the screen is opaque and attached to the bottom of the screen instead. To make the panes opaque, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Appearance_ → _Performance_ and turn off _Background effects for menus, popups and panels_. On Android, the option is not shown and they are always opaque.
-*   While the on-screen keyboard is open, a <span class="tn-icon bx bxs-keyboard"></span> button in the bottom-right corner, just above the keyboard, hides it. In a text note, the button is at the right end of the formatting toolbar. While a menu of the formatting toolbar is open in place of the keyboard, the button becomes a <span class="tn-icon bx bx-x"></span>, which closes the menu and brings the keyboard back. This works in every note type and in every text field, and is the only way to hide the keyboard in the iOS app, where the keyboard has no _Done_ button.
-*   The <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Tabs.md">Tabs</a> are grouped under a tab switcher in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>, where the tabs are displayed in a full-screen grid with preview for easy switching, as well as additional options such as reopening closed tabs. On a phone, a tab left on the note tree shows the folder it was on, with the tab's note highlighted, instead of a preview of the note.
-    *   Swipe left or right anywhere on the launch bar to go to the next or previous tab without opening the switcher. This works while the tab switcher is in the launch bar and all of the bar's buttons fit on the screen; when they do not, swiping scrolls the bar instead. The page follows your finger and reaches the other tab as your finger reaches the edge of the screen: let go less than a third of the way there to stay on the current tab, unless you flick. Past the first or the last tab, the page only stretches a little and springs back when you let go.
-*   Since v0.100.0, <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Split%20View.md">Split View</a> can also be used in mobile view, but with a maximum of two panes at once. The splits are displayed vertically instead of horizontally.
+*   На телефоне <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дерево заметок</a> находится под заметкой. Кнопка <span class="tn-icon bx bx-chevron-left"></span> в левом верхнем углу экрана отодвигает заметку, открывая дерево на папке, содержащей заметку, с заметкой, подсвеченной. Открытие заметки из дерева сдвигает её обратно.
+    *   Чтобы вернуться к заметке, не открывая её снова, нажмите её заголовок со значком <span class="tn-icon bx bx-chevron-right"></span> в правом верхнем углу дерева, независимо от того, какую папку показывает дерево.
+    *   Смахивание от левого края экрана также открывает дерево, но системный или браузерный жест «назад» может перехватить его в зависимости от платформы.
+    *   Каждая вкладка запоминает, показывала ли она дерево или свою заметку, а для вкладки, оставленной на дереве, — папку, которую показывало дерево. Переключение вкладок возвращает и то, и другое. Как только вкладка снова показывает свою заметку, её дерево возвращается к папке, содержащей заметку.
+    *   Новая вкладка открывается на дереве, в корне, с <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Workspaces.md">Рабочими областями</a> и <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Bookmarks.md">Закладками</a>, если они есть, перечисленными над ним. Нажмите рабочую область, чтобы поднять вкладку в неё.
+    *   В приложении Android системный жест или кнопка «назад» сначала закрывает меню или диалог поверх, затем страницу настроек в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a>, затем отодвигает заметку, открывая дерево, затем поднимается на один уровень в дереве. В верхней части дерева она отправляет приложение в фон.
+    *   На более широких экранах, таких как планшет в альбомной ориентации, дерево заметок вместо этого отображается как боковая панель рядом с заметкой. Там кнопка <span class="tn-icon bx bx-sidebar"></span> скрывает и показывает его, и выбор запоминается вместе с левой панелью десктопной версии.
+    *   Заметка с потомками показывает <span class="tn-icon bx bx-chevron-right"></span> (на iOS — с указанием, сколько потомков она перечисляет): нажатие перечисляет её потомков, а нажатие любой другой заметки открывает её. Заметка, чьи потомки перечислены, стоит вверху с предпросмотром её содержимого; нажмите её или _Открыть_ в её нижней части, чтобы открыть её.
+    *   Нажмите и удерживайте заметку, чтобы показать <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree/Note%20tree%20contextual%20menu.md">Контекстное меню дерева заметок</a>. Открытие заметки в новой вкладке из него оставляет дерево на экране, поэтому можно открыть несколько заметок подряд.
+*   Строка <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20search.md">Быстрого поиска</a> также отображается вверху дерева заметок.
+*   Полную функцию <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Search.md">Поиска</a> можно вызвать либо из <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Глобального меню</a>, либо из <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Панели запуска</a>, если она настроена.
+*   <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Глобальное меню</a> короче: _Новое окно_ и _Сочетания клавиш_ опущены, а _Переключиться на десктопную версию_ находится в _Дополнительно_.
+*   <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Панель запуска</a> отображается внизу экрана.
+    *   Панель запуска использует другую конфигурацию значков, чем десктопная версия. Подробнее о её настройке см. выделенную страницу.
+*   Большинство действий, связанных с заметкой, сгруппированы в значке с горизонтальными точками в правом верхнем углу заметки.
+*   <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Правая боковая панель</a> заменена панелью заметки — шторкой, которая открывается снизу экрана кнопкой <span class="tn-icon bx bx-dock-bottom"></span> слева от этих точек. Её вкладки (структура, атрибуты, связи, ИИ-чат и виджеты) переключаются с панели внизу шторки.
+*   В текстовой заметке панель форматирования находится внизу экрана. См. _Редактирование текстовых заметок_ ниже.
+*   На iOS кнопки строки заголовка, панели запуска, панели форматирования, меню, открывающихся снизу экрана, и короткие диалоги — полупрозрачные плавающие панели, не касающиеся краёв экрана, а заметка прокручивается под строкой заголовка и панелью запуска. Диалог выше половины экрана непрозрачен и прикреплён к низу экрана. Чтобы сделать панели непрозрачными, перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Внешний вид_ → _Производительность_ и выключите _Фоновые эффекты для меню, всплывающих окон и панелей_. На Android опция не показывается, и они всегда непрозрачны.
+*   Пока открыта экранная клавиатура, кнопка <span class="tn-icon bx bxs-keyboard"></span> в правом нижнем углу, прямо над клавиатурой, скрывает её. В текстовой заметке кнопка находится в правом конце панели форматирования. Пока меню панели форматирования открыто вместо клавиатуры, кнопка становится <span class="tn-icon bx bx-x"></span>, которая закрывает меню и возвращает клавиатуру. Это работает в каждом типе заметок и в каждом текстовом поле и является единственным способом скрыть клавиатуру в приложении iOS, где у клавиатуры нет кнопки _Готово_.
+*   <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Tabs.md">Вкладки</a> сгруппированы под переключателем вкладок в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Панели запуска</a>, где вкладки отображаются в полноэкранной сетке с предпросмотром для лёгкого переключения, а также дополнительными опциями, такими как повторное открытие закрытых вкладок. На телефоне вкладка, оставленная на дереве заметок, показывает папку, на которой она была, с заметкой вкладки, подсвеченной, вместо предпросмотра заметки.
+    *   Смахните влево или вправо где угодно по панели запуска, чтобы перейти к следующей или предыдущей вкладке, не открывая переключатель. Это работает, пока переключатель вкладок находится в панели запуска и все кнопки панели помещаются на экране; когда не помещаются, смахивание вместо этого прокручивает панель. Страница следует за пальцем и достигает другой вкладки, когда палец достигает края экрана: отпустите, не пройдя треть пути, чтобы остаться на текущей вкладке, если только вы не смахнёте резко. За первой или последней вкладкой страница лишь слегка растягивается и возвращается при отпускании.
+*   Начиная с v0.100.0, <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Split%20View.md">Разделённый вид</a> также можно использовать в мобильном виде, но с максимум двумя панелями одновременно. Разделения отображаются вертикально вместо горизонтально.
 
-## Editing text notes
+## Редактирование текстовых заметок
 
-### The formatting toolbar
+### Панель форматирования
 
-In a text note, the formatting toolbar sits at the bottom of the screen as a single row that scrolls sideways. It is shown only while you are editing the text, and hides when you hide the keyboard or move to another field, such as the note title. From left to right, it holds:
+В текстовой заметке панель форматирования находится внизу экрана одной строкой, прокручивающейся вбок. Она показывается, только пока вы редактируете текст, и скрывается, когда вы скрываете клавиатуру или переходите в другое поле, например заголовок заметки. Слева направо она содержит:
 
-*   _Undo_ and _Redo_, since the on-screen keyboard has no keys for them.
-*   A highlighted button naming the element the cursor is in, such as _Table ›_ or _List ›_, when it is in one. See _Tables, images and other elements_ and _Lists_ below.
-*   The <span class="tn-icon cke cke-trilium-block-type"></span> block type button, <span class="tn-icon cke cke-plus"></span> to insert content, and <span class="tn-icon cke cke-text"></span> for the formatting applied to text.
-*   <span class="tn-icon cke cke-link"></span> to add a link and <span class="tn-icon cke cke-paper-clip"></span> to attach a file.
-*   The indentation buttons, then <span class="tn-icon cke cke-arrow-up"></span> and <span class="tn-icon cke cke-arrow-down"></span>, which move the current block, or the selected blocks, up or down, as <kbd>Alt</kbd>+<kbd>↑</kbd> and <kbd>Alt</kbd>+<kbd>↓</kbd> do on a keyboard. Inside a table they move the row instead.
-*   The <span class="tn-icon cke cke-trilium-ai"></span> AI assistant button, shown once a provider is configured, which opens its quick actions as a menu at the bottom of the screen, with _Ask AI…_ at its top.
+*   _Отменить_ и _Повторить_, так как экранная клавиатура не имеет для них клавиш.
+*   Подсвеченную кнопку, называющую элемент, в котором находится курсор, такую как _Таблица ›_ или _Список ›_, когда он внутри одного из них. См. _Таблицы, изображения и другие элементы_ и _Списки_ ниже.
+*   Кнопку типа блока <span class="tn-icon cke cke-trilium-block-type"></span>, <span class="tn-icon cke cke-plus"></span> для вставки содержимого и <span class="tn-icon cke cke-text"></span> для форматирования, применённого к тексту.
+*   <span class="tn-icon cke cke-link"></span> для добавления ссылки и <span class="tn-icon cke cke-paper-clip"></span> для прикрепления файла.
+*   Кнопки отступов, затем <span class="tn-icon cke cke-arrow-up"></span> и <span class="tn-icon cke cke-arrow-down"></span>, которые перемещают текущий блок или выбранные блоки вверх или вниз, как это делают <kbd>Alt</kbd>+<kbd>↑</kbd> и <kbd>Alt</kbd>+<kbd>↓</kbd> на клавиатуре. Внутри таблицы они перемещают строку.
+*   Кнопку ИИ-ассистента <span class="tn-icon cke cke-trilium-ai"></span>, показываемую после настройки провайдера, которая открывает его быстрые действия меню внизу экрана с _Спросить ИИ…_ вверху.
 
-While the keyboard is open, the <span class="tn-icon bx bxs-keyboard"></span> button at the right end of the toolbar hides it.
+Пока клавиатура открыта, кнопка <span class="tn-icon bx bxs-keyboard"></span> в правом конце панели скрывает её.
 
-The hints in the corner of the editor that explain the element under the cursor, such as a to-do item's state and its shortcut, are not shown, whatever the _Content hints_ setting under _Options_ → _Text Notes_ → _Features_.
+Подсказки в углу редактора, объясняющие элемент под курсором, такие как состояние элемента списка дел и его сочетание клавиш, не показываются независимо от настройки _Подсказки содержимого_ в _Настройки_ → _Текстовые заметки_ → _Возможности_.
 
-### Inserting content
+### Вставка содержимого
 
-The <span class="tn-icon cke cke-plus"></span> button opens insertions as tiles at the bottom of the screen:
+Кнопка <span class="tn-icon cke cke-plus"></span> открывает вставки плитками внизу экрана:
 
-*   Image, table and to-do list.
-*   Code block, block quote and admonition.
-*   The less common collapsible, tabs, columns, horizontal line, page break, footnote, math, drawing canvas, Mermaid diagram, bookmark, link and content embeds, special characters, emoji, icon, date/time, template and Markdown import.
+*   Изображение, таблица и список дел.
+*   Блок кода, цитата и замечание.
+*   Менее частые: сворачиваемый блок, вкладки, колонки, горизонтальная линия, разрыв страницы, сноска, математика, холст для рисования, диаграмма Mermaid, закладка, ссылка и встраивания содержимого, специальные символы, эмодзи, значок, дата/время, шаблон и импорт Markdown.
 
-The image is also under the paperclip, and the to-do list, code block, block quote and admonition are also in the block type button.
+Изображение также находится под скрепкой, а список дел, блок кода, цитата и замечание также есть в кнопке типа блока.
 
-The tiles marked with <span class="tn-icon bx bx-chevron-right"></span> open a list of choices:
+Плитки, помеченные <span class="tn-icon bx bx-chevron-right"></span>, открывают список вариантов:
 
-*   _Code block_: the language.
-*   _Admonition_: its type.
-*   _Insert table_: the size of the table.
-*   _Columns_: the number of columns.
-*   _Footnote_: a new footnote or a reference to an existing one.
-*   _Date/time_: the format of the date and time.
-*   _Insert text snippet_: the template to insert. It is grayed out while there are none.
+*   _Блок кода_: язык.
+*   _Замечание_: его тип.
+*   _Вставить таблицу_: размер таблицы.
+*   _Колонки_: число колонок.
+*   _Сноска_: новая сноска или ссылка на существующую.
+*   _Дата/время_: формат даты и времени.
+*   _Вставить текстовый фрагмент_: шаблон для вставки. Он серый, пока их нет.
 
-### Block types
+### Типы блоков
 
-The <span class="tn-icon cke cke-trilium-block-type"></span> block type button opens the block types as tiles at the bottom of the screen, with the current one highlighted:
+Кнопка типа блока <span class="tn-icon cke cke-trilium-block-type"></span> открывает типы блоков плитками внизу экрана, с текущим, подсвеченным:
 
-*   Paragraph and heading 2 to 6.
-*   Bulleted list, numbered list and to-do list.
-*   Code block, block quote and admonition.
+*   Абзац и заголовки с 2 по 6.
+*   Маркированный список, нумерованный список и список дел.
+*   Блок кода, цитата и замечание.
 
-Picking a paragraph or a heading in a list turns the item back into plain text, and the same goes for a code block. Block quote and admonition wrap the current block rather than replace it, so they are highlighted alongside it; pick one again to remove it.
+Выбор абзаца или заголовка в списке превращает элемент обратно в обычный текст, то же касается блока кода. Цитата и замечание оборачивают текущий блок, а не заменяют его, поэтому они подсвечены рядом с ним; выберите снова, чтобы убрать.
 
-Typing `-` , `1.` or `[ ]` at the start of a line also starts a list.
+Ввод `-` , `1.` или `[ ]` в начале строки также начинает список.
 
-### Lists
+### Списки
 
-While the cursor is in a list, a _List ›_ button follows _Undo_ and _Redo_. Its row holds:
+Пока курсор находится в списке, кнопка _Список ›_ следует за _Отменить_ и _Повторить_. Её строка содержит:
 
-*   The indentation buttons and the buttons that move the item up or down, as on the main row.
-*   _List type_, which opens the to-do list and the markers of bulleted and numbered lists (such as squares or roman numerals) as tiles, the markers under the kind of each, with the current one highlighted. Picking a tile of another kind also turns the list into that kind, such as a bulleted list into a numbered one or a to-do list back into a bulleted one.
-*   In a numbered list, _Start at_, which asks for the number the list starts at, and <span class="tn-icon bx bx-sort-down"></span> _Reversed order_, which is highlighted while the list counts down.
-*   In a to-do list, a button for each task state, followed by <span class="tn-icon bx bx-pencil"></span> to edit the states.
+*   Кнопки отступов и кнопки, перемещающие элемент вверх или вниз, как в основной строке.
+*   _Тип списка_, который открывает список дел и маркеры маркированных и нумерованных списков (такие как квадраты или римские цифры) плитками, маркеры под видом каждого, с текущим, подсвеченным. Выбор плитки другого вида также превращает список в этот вид, например маркированный список в нумерованный или список дел обратно в маркированный.
+*   В нумерованном списке _Начать с_, который спрашивает число, с которого начинается список, и <span class="tn-icon bx bx-sort-down"></span> _Обратный порядок_, которая подсвечена, пока список считает вниз.
+*   В списке дел кнопку для каждого состояния задачи, за которой следует <span class="tn-icon bx bx-pencil"></span> для редактирования состояний.
 
-Starting a list, from the block type button, the insert menu or by typing `-` , `1.` or `[ ]`, shows this row right away. It stays closed once you tap the back button, until you start another list.
+Запуск списка — кнопкой типа блока, меню вставки или вводом `-` , `1.` или `[ ]` — сразу показывает эту строку. Она остаётся закрытой после нажатия кнопки «назад», пока вы не начнёте другой список.
 
-### Tables, images and other elements
+### Таблицы, изображения и другие элементы
 
-While the cursor is in a table, an image, a code block, a link or another element that has a toolbar of its own on desktop, a highlighted button naming that element, such as _Table ›_, follows _Undo_ and _Redo_. It replaces the formatting toolbar with the element's toolbar, which starts with a back button that closes it again, followed by the element's name ahead of its tools. The button goes away when the cursor leaves the element.
+Пока курсор находится в таблице, изображении, блоке кода, ссылке или другом элементе, имеющем собственную панель инструментов на десктопе, подсвеченная кнопка, называющая этот элемент, такая как _Таблица ›_, следует за _Отменить_ и _Повторить_. Она заменяет панель форматирования панелью инструментов элемента, которая начинается с кнопки «назад», закрывающей её, за которой следует имя элемента перед его инструментами. Кнопка исчезает, когда курсор покидает элемент.
 
-Selecting an element as a whole, such as an image, or tapping a link shows its toolbar right away; tap the back button to return to the formatting toolbar.
+Выбор элемента целиком, например изображения, или нажатие ссылки сразу показывает его панель инструментов; нажмите кнопку «назад», чтобы вернуться к панели форматирования.
 
-Buttons of the element's toolbar with a list of choices, such as the column and row actions of a table, open that list as a menu at the bottom of the screen, where an option that is on or off, such as a table's header row, is a switch.
+Кнопки панели инструментов элемента со списком вариантов, такие как действия со столбцами и строками таблицы, открывают этот список меню внизу экрана, где опция включена или выключена, такая как строка заголовка таблицы, — переключатель.
 
-### Formatting text
+### Форматирование текста
 
-The formatting applied to text (bold, italic, underline, strikethrough, inline code, superscript and subscript, keyboard shortcut, font size and colors, and removing formatting) is on a row of its own, followed by the left, center, right and justify alignments of the current block, with the current one highlighted. The row ends with <span class="tn-icon cke cke-trilium-scissors"></span> to cut the selection into a sub-note.
+Форматирование, применённое к тексту (полужирный, курсив, подчёркивание, зачёркивание, встроенный код, надстрочный и подстрочный, сочетание клавиш, размер шрифта и цвета, а также снятие форматирования), находится на собственной строке, за которой следуют выравнивания текущего блока по левому краю, по центру, по правому краю и по ширине, с текущим, подсвеченным. Строка заканчивается <span class="tn-icon cke cke-trilium-scissors"></span> для вырезания выделения в подзаметку.
 
-*   Tap <span class="tn-icon cke cke-text"></span> after the <span class="tn-icon cke cke-plus"></span> button to show it, and <span class="tn-icon cke cke-previous-arrow"></span> at its start to return to the main row.
-*   Selecting text shows this row on its own, and it goes back to the main row once the selection is gone (for example as you start typing), unless you opened or closed the row yourself in the meantime.
+*   Нажмите <span class="tn-icon cke cke-text"></span> после кнопки <span class="tn-icon cke cke-plus"></span>, чтобы показать её, и <span class="tn-icon cke cke-previous-arrow"></span> в её начале, чтобы вернуться к основной строке.
+*   Выделение текста показывает эту строку отдельно, и она возвращается к основной строке, как только выделение исчезает (например, когда вы начинаете печатать), если вы сами не открыли или не закрыли строку за это время.
 
-The font size button opens the list of sizes as a menu at the bottom of the screen, each drawn at its size, with the current one checked.
+Кнопка размера шрифта открывает список размеров меню внизу экрана, каждый нарисованный своим размером, с текущим, отмеченным.
 
-A single color button replaces the separate text and background color buttons. It opens a menu with a row of colors for the text and one for its background, each with a cell that removes the color and one that opens the device's color picker.
+Одна кнопка цвета заменяет отдельные кнопки цвета текста и фона. Она открывает меню со строкой цветов для текста и одной для его фона, каждая с ячейкой, убирающей цвет, и одной, открывающей палитру устройства.
 
-### Links and attachments
+### Ссылки и вложения
 
-The <span class="tn-icon cke cke-link"></span> link button replaces the separate link and internal link buttons. It opens the _Add link_ dialog, which links to a note or to a web address, or _Edit link_ when the cursor is inside a link. The dialog does not open the keyboard by itself; tap the note or address field to type. The same button is on the row of text formatting, after the inline styles, to turn selected text into a link.
+Кнопка ссылки <span class="tn-icon cke cke-link"></span> заменяет отдельные кнопки ссылки и внутренней ссылки. Она открывает диалог _Добавить ссылку_, который связывает с заметкой или веб-адресом, или _Редактировать ссылку_, когда курсор находится внутри ссылки. Диалог сам не открывает клавиатуру; нажмите поле заметки или адреса для ввода. Та же кнопка находится на строке форматирования текста после встроенных стилей, чтобы превратить выделенный текст в ссылку.
 
-The <span class="tn-icon cke cke-paper-clip"></span> button opens _Image_, _Camera_, _Attach and embed file_ and _Attach file as a link_ as a list: the menu of the desktop toolbar, with _Camera_ added. _Camera_ opens the device's camera and inserts the photo taken; the others open the device's file picker.
+Кнопка <span class="tn-icon cke cke-paper-clip"></span> открывает _Изображение_, _Камеру_, _Прикрепить и встроить файл_ и _Прикрепить файл как ссылку_ списком: меню десктопной панели инструментов с добавленной _Камерой_. _Камера_ открывает камеру устройства и вставляет сделанное фото; остальные открывают выбор файлов устройства.
 
-## Installing as a PWA
+## Установка как PWA
 
-The mobile view can be set up as a PWA. While this does not offer any offline capabilities, it will display the application in full-screen and makes it easy to access via your mobile phone's home screen.
+Мобильный вид можно настроить как PWA. Хотя это не даёт никаких офлайн-возможностей, оно отображает приложение в полноэкранном режиме и облегчает доступ через главный экран мобильного телефона.
 
-=== "<span class="tn-icon bx bxl-apple"></span> iOS with Safari"
+=== "<span class="tn-icon bx bxl-apple"></span> iOS с Safari"
 
-    1.  Open your default web browser and access your Trilium instance.
-    2.  Login.
-    3.  Press the \[…\] button in the bottom-right of the screen and select Share.
-    4.  Scroll down to reveal the full list of items and choose _Add to Home Screen_.
-    5.  Press _Add_ and the web app will be available.
+    1.  Откройте ваш браузер по умолчанию и перейдите к вашему экземпляру Trilium.
+    2.  Войдите.
+    3.  Нажмите кнопку \[…\] в правом нижнем углу экрана и выберите «Поделиться».
+    4.  Прокрутите вниз, чтобы раскрыть полный список элементов, и выберите _На экран «Домой»_.
+    5.  Нажмите _Добавить_, и веб-приложение станет доступно.
 
-=== "<span class="tn-icon bx bxl-chrome"></span> Android with Google Chrome"
-
-    > [!IMPORTANT]
-    > Google Chrome requires the server to be served over HTTPS in order to display in full-screen. If using HTTP, the app will appear like a normal web page (similar to a bookmark).
-
-    1.  Open your default web browser and access your Trilium instance.
-    2.  Login.
-    3.  Press the three vertical dots icon in the top-right of the screen and select _Add to Home screen._
-    4.  Select the _Install_ option.
-    5.  Select an appropriate name.
-    6.  The web app will appear as an application, not on the home screen.
-
-=== "Android with Brave"
+=== "<span class="tn-icon bx bxl-chrome"></span> Android с Google Chrome"
 
     > [!IMPORTANT]
-    > Brave requires the server to be served over HTTPS in order to display in full-screen. If using HTTP, the app will appear like a normal web page (similar to a bookmark).
+    > Google Chrome требует, чтобы сервер отдавался по HTTPS, чтобы показываться в полноэкранном режиме. При использовании HTTP приложение будет выглядеть как обычная веб-страница (похоже на закладку).
 
-    1.  Open your default web browser and access your Trilium instance.
-    2.  Login.
-    3.  Press the three vertical dots icon in the bottom-right of the screen and select _Add to Home screen_.
-    4.  Press the _Install_ option.
-    5.  The web app will appear as an application, not on the home screen.
+    1.  Откройте ваш браузер по умолчанию и перейдите к вашему экземпляру Trilium.
+    2.  Войдите.
+    3.  Нажмите значок с тремя вертикальными точками в правом верхнем углу экрана и выберите _Добавить на главный экран_.
+    4.  Выберите опцию _Установить_.
+    5.  Выберите подходящее имя.
+    6.  Веб-приложение появится как приложение, а не на главном экране.
+
+=== "Android с Brave"
+
+    > [!IMPORTANT]
+    > Brave требует, чтобы сервер отдавался по HTTPS, чтобы показываться в полноэкранном режиме. При использовании HTTP приложение будет выглядеть как обычная веб-страница (похоже на закладку).
+
+    1.  Откройте ваш браузер по умолчанию и перейдите к вашему экземпляру Trilium.
+    2.  Войдите.
+    3.  Нажмите значок с тремя вертикальными точками в правом нижнем углу экрана и выберите _Добавить на главный экран_.
+    4.  Нажмите опцию _Установить_.
+    5.  Веб-приложение появится как приложение, а не на главном экране.
 
 === "Samsung Browser"
 
-    1.  Open your default web browser and access your Trilium instance.
-    2.  Login.
-    3.  Press the hamburger menu in the bottom-right of the screen.
-    4.  Select _Add to_, followed by _Home screen_.
-    5.  Press _Add_ and the web app will appear on the home page.
+    1.  Откройте ваш браузер по умолчанию и перейдите к вашему экземпляру Trilium.
+    2.  Войдите.
+    3.  Нажмите меню-гамбургер в правом нижнем углу экрана.
+    4.  Выберите _Добавить в_, затем _Главный экран_.
+    5.  Нажмите _Добавить_, и веб-приложение появится на главном экране.
 
-## Sharing to Trilium
+## Отправка в Trilium
 
-Once installed as a PWA on Android, Trilium appears in the system's share menu, so links, text, images and other files can be sent to it from other apps. Shared content is saved to the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20Inbox.md">Note Inbox</a>, and Trilium opens the note it created:
+После установки как PWA на Android Trilium появляется в системном меню «Поделиться», поэтому ссылки, текст, изображения и другие файлы можно отправлять в него из других приложений. Отправленное содержимое сохраняется во <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20Inbox.md">Входящих заметках</a>, а Trilium открывает созданную им заметку:
 
-*   Text or a link becomes a text note. A shared link is also stored in the `#pageUrl` label.
-*   A single file becomes an image note or a file note, placed directly in the inbox.
-*   Several files, or files shared together with text, are placed under a new text note that holds the text.
+*   Текст или ссылка становятся текстовой заметкой. Отправленная ссылка также хранится в метке `#pageUrl`.
+*   Один файл становится заметкой-изображением или файлом-заметкой, помещённым прямо во входящие.
+*   Несколько файлов или файлы, отправленные вместе с текстом, помещаются под новую текстовую заметку, содержащую текст.
 
-Every note created this way carries the `#clipType=share` label, which gives a shared text note the <span class="tn-icon bx bx-share"></span> icon unless the note has an `#iconClass` of its own. A single share can carry at most 20 files.
+Каждая созданная таким образом заметка несёт метку `#clipType=share`, которая даёт отправленной текстовой заметке значок <span class="tn-icon bx bx-share"></span>, если у заметки нет собственного `#iconClass`. Одна отправка может нести не более 20 файлов.
 
 > [!NOTE]
-> Sharing requires being logged in. If the session has expired, log in again and share once more.
+> Отправка требует, чтобы вы были вошли. Если сессия истекла, войдите снова и отправьте ещё раз.
 
-## Testing via the desktop application
+## Тестирование через десктопное приложение
 
-If you are running Trilium without a dedicated [server installation](Server%20Installation.md), you can still test the mobile application using the desktop application. For more information, see <a class="reference-link" href="Desktop%20Installation/Using%20the%20desktop%20application%20as%20a%20server.md">Using the desktop application as a server</a>. To access it go to `http://<ip>:37840/login?mobile` .
+Если вы запускаете Trilium без выделенной [установки сервера](Server%20Installation.md), вы всё равно можете протестировать мобильное приложение с помощью десктопного приложения. Подробнее см. <a class="reference-link" href="Desktop%20Installation/Using%20the%20desktop%20application%20as%20a%20server.md">Использование десктопного приложения как сервера</a>. Чтобы получить к нему доступ, перейдите на `http://<ip>:37840/login?mobile` .
 
-## Forcing mobile/desktop frontend
+## Принудительное использование мобильного/десктопного интерфейса
 
-Trilium decides automatically whether to use mobile or desktop front-end. If this is not appropriate, you can use `?mobile` or `?desktop` query param on **login** page (Note: you might need to log out).
+Trilium сам решает, использовать ли мобильный или десктопный интерфейс. Если это не подходит, можно использовать параметр запроса `?mobile` или `?desktop` на странице **входа** (Примечание: возможно, вам потребуется выйти).
 
-Alternatively, simply select _Switch to mobile version_ in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>. In the mobile version, select _Advanced_ → _Switch to desktop version_ there instead.
+Альтернативно, просто выберите _Переключиться на мобильную версию_ в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Глобальном меню</a>. В мобильной версии вместо этого выберите там _Дополнительно_ → _Переключиться на десктопную версию_.
 
-## Scripting
+## Скриптинг
 
-You can alter the behavior with <a class="reference-link" href="../Scripting.md">Scripting</a>, just like for normal frontend. For script notes to be executed, they need to have labeled `#run=mobileStartup`.
+Поведение можно изменить с помощью <a class="reference-link" href="../Scripting.md">Скриптинга</a>, как и для обычного интерфейса. Чтобы скриптовые заметки выполнялись, они должны иметь метку `#run=mobileStartup`.
 
-Custom <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a> widgets are also supported. [Right pane widgets](../Scripting/Frontend%20Basics/Custom%20Widgets/Right%20pane%20widget.md) are shown in the _Widgets_ tab of the note panel.
+Пользовательские виджеты <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Панели запуска</a> также поддерживаются. [Виджеты правой панели](../Scripting/Frontend%20Basics/Custom%20Widgets/Right%20pane%20widget.md) показываются на вкладке _Виджеты_ панели заметки.

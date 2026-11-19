@@ -1,101 +1,101 @@
-# File
-The _File_ note type can be used to attach various external files such as images, videos or PDF documents.
+# Файл
+Тип заметки _Файл_ можно использовать для прикрепления различных внешних файлов, таких как изображения, видео или PDF-документы.
 
-## Uploading a file
+## Загрузка файла
 
-Since these files come from an external source, it is not possible to create a _File_ note type directly:
+Поскольку эти файлы поступают из внешнего источника, создать тип заметки _Файл_ напрямую невозможно:
 
-*   Drag a file into the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>.
-*   Right click a note and select _Import into note_ and point it to one of the supported files.
+*   Перетащите файл в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дерево заметок</a>.
+*   Щёлкните правой кнопкой по заметке и выберите _Импортировать в заметку_, указав один из поддерживаемых файлов.
 
-## Supported file types
+## Поддерживаемые типы файлов
 
-### PDFs
+### PDF
 
-PDFs can be uploaded to Trilium and they will display a live preview with full support for various features such as table of contents, annotations, as well as remembering the last page read. For more information, see the dedicated <a class="reference-link" href="File/PDFs.md">PDFs</a> page.
+PDF можно загружать в Trilium, и они будут отображать живой предпросмотр с полной поддержкой различных возможностей, таких как оглавление, аннотации, а также запоминание последней прочитанной страницы. Подробнее см. выделенную страницу <a class="reference-link" href="File/PDFs.md">PDF</a>.
 
-## Office documents
+## Документы Office
 
-Trilium offers previews for Office documents such as Word (`.docx`), Excel (`.xlsx`) and PowerPoint (`.pptx`). For more information, see the dedicated <a class="reference-link" href="File/Office%20documents.md">Office documents</a>.
+Trilium предлагает предпросмотры для документов Office, таких как Word (`.docx`), Excel (`.xlsx`) и PowerPoint (`.pptx`). Подробнее см. выделенный раздел <a class="reference-link" href="File/Office%20documents.md">Документы Office</a>.
 
-### Images
+### Изображения
 
 <figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:879/766;" src="2_File_image.png" width="879" height="766"></figure>
 
-Interaction:
+Взаимодействие:
 
-*   An [image reference](Text/Images/Image%20references.md) can be copied by pressing the <span class="tn-icon bx bx-copy"></span> icon from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> area, which allows pasting it in a <a class="reference-link" href="Text.md">Text</a> note.
+*   [Ссылку на изображение](Text/Images/Image%20references.md) можно скопировать, нажав значок <span class="tn-icon bx bx-copy"></span> из области <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Кнопок заметки</a>, что позволяет вставить её в заметку <a class="reference-link" href="Text.md">Текст</a>.
 
-### Videos
+### Видео
 
-See <a class="reference-link" href="File/Audio%20%26%20Video.md">Audio &amp; Video</a>.
+См. <a class="reference-link" href="File/Audio%20%26%20Video.md">Аудио и видео</a>.
 
-### Audio
+### Аудио
 
 <figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:850/243;" src="1_File_image.png" width="850" height="243"></figure>
 
-Adding a supported audio file will reveal a basic audio player that can be used to play it.
+Добавление поддерживаемого аудиофайла раскроет базовый аудиоплеер, который можно использовать для его воспроизведения.
 
-Interactions:
+Взаимодействия:
 
-*   The audio can be played/paused using the dedicated button.
-*   Dragging the mouse across, or clicking the progress bar will seek through the song.
-*   The volume can be set.
-*   The playback speed can be adjusted via the contextual menu next to the volume.
+*   Аудио можно воспроизвести/приостановить с помощью выделенной кнопки.
+*   Перетаскивание мыши по полосе прогресса или щелчок по ней будет перематывать по песне.
+*   Можно установить громкость.
+*   Скорость воспроизведения можно настроить через контекстное меню рядом с громкостью.
 
-### Text files
+### Текстовые файлы
 
 <figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:926/347;" src="File_image.png" width="926" height="347"></figure>
 
-Files that are identified as containing text will show a preview of their content. One common use case for this type of file is to embed text files whose content is not necessarily of interest to the user, such as third-party libraries or generated content, that can then be downloaded if needed.
+Файлы, опознанные как содержащие текст, будут показывать предпросмотр их содержимого. Один частый сценарий использования этого типа файла — встраивание текстовых файлов, содержимое которых не обязательно представляет интерес для пользователя, таких как сторонние библиотеки или сгенерированное содержимое, которые затем можно скачать при необходимости.
 
-Note that generally text files will be [imported](../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md) as either <a class="reference-link" href="Text.md">Text</a> or <a class="reference-link" href="Code.md">Code</a> notes. To bypass this behavior and create a _File_ note type, use the _Import into note_ feature and uncheck _Import HTML, Markdown and TXT as text notes_, as well as _Import recognized code files as code notes_. 
+Обратите внимание, что, как правило, текстовые файлы будут [импортированы](../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md) как заметки <a class="reference-link" href="Text.md">Текст</a> или <a class="reference-link" href="Code.md">Код</a>. Чтобы обойти это поведение и создать тип заметки _Файл_, используйте функцию _Импортировать в заметку_ и снимите отметки _Импортировать HTML, Markdown и TXT как текстовые заметки_, а также _Импортировать распознанные кодовые файлы как кодовые заметки_.
 
-Since one of the use cases for having files instead of notes is to display large files, the content preview is limited to a relatively small amount of characters. To view the full file, consider opening it in an external application.
+Поскольку один из сценариев использования файлов вместо заметок — отображение больших файлов, предпросмотр содержимого ограничен относительно небольшим количеством символов. Чтобы просмотреть весь файл, рассмотрите открытие его во внешнем приложении.
 
-### GPS tracks
+### GPS-треки
 
-Trilium displays information about GPS tracks in `.gpx` format, such as the distance, duration, elevation profile, tracks, markers.
+Trilium отображает информацию о GPS-треках в формате `.gpx`, такую как расстояние, продолжительность, профиль высот, треки, метки.
 
-When a `.gpx` note is dropped in a <a class="reference-link" href="../Collections/Geo%20Map.md">Geo Map</a>, the track itself will also be displayed on the map.
+Когда заметка `.gpx` сброшена на <a class="reference-link" href="../Collections/Geo%20Map.md">Геокарту</a>, сам трек также будет отображён на карте.
 
 <figure class="image"><img style="aspect-ratio:1500/807;" src="4_File_image.png" width="1500" height="807"></figure>
 
-### Fonts
+### Шрифты
 
-Supported font formats will show an interactive preview of the font:
+Поддерживаемые форматы шрифтов будут показывать интерактивный предпросмотр шрифта:
 
-*   A field to type in a custom text.
-*   A slider to change the font size of the preview.
-*   A preview of the text at the given size.
-*   A sampling of various font sizes for this font.
-*   The Latin alphabet.
+*   Поле для ввода пользовательского текста.
+*   Ползунок для изменения размера шрифта предпросмотра.
+*   Предпросмотр текста в заданном размере.
+*   Выборка различных размеров шрифта для этого шрифта.
+*   Латинский алфавит.
 
-Additionally, enabling _In font picker_ will make the font available in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Appearance_ font selection. See <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Themes/Personalizing%20the%20font.md">Personalizing the font</a> for more information.
+Кроме того, включение _В выборе шрифта_ сделает шрифт доступным в выборе шрифта <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Внешний вид_. Подробнее см. <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Themes/Personalizing%20the%20font.md">Персонализация шрифта</a>.
 
-### Unknown file types
+### Неизвестные типы файлов
 
 <figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:532/240;" src="3_File_image.png" width="532" height="240"></figure>
 
-If the file could not be identified as any of the supported file types from above, it will be treated as an unknown file. In this case, all the default interactions will be available such as downloading or opening the file externally, but there will be no preview of the content.
+Если файл не удалось опознать как ни один из поддерживаемых типов файлов выше, он будет обработан как неизвестный файл. В этом случае будут доступны все взаимодействия по умолчанию, такие как скачивание или открытие файла внешне, но предпросмотра содержимого не будет.
 
-## Interaction
+## Взаимодействие
 
-*   Regardless of the file type, a series of buttons will be displayed in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> area.
-    *   <span class="tn-icon bx bx-download"></span> (Download), which will download the file for local use.
-    *   <span class="tn-icon bx bx-link-external"></span> (Open), will will open the file with the system-default application.
-    *   <span class="tn-icon bx bx-folder-open"></span> (Upload new revision) to replace the file with a new one.
-*   It is **not** possible to change the note type of a _File_ note.
-*   Convert into an [attachment](../Basic%20Concepts%20and%20Features/Notes/Attachments.md) from the [note menu](../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md).
+*   Независимо от типа файла, в области <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a> будет отображён ряд кнопок.
+    *   <span class="tn-icon bx bx-download"></span> (Скачать), которая скачает файл для локального использования.
+    *   <span class="tn-icon bx bx-link-external"></span> (Открыть), которая откроет файл в приложении по умолчанию системы.
+    *   <span class="tn-icon bx bx-folder-open"></span> (Загрузить новую ревизию), чтобы заменить файл новым.
+*   Изменить тип заметки _Файл_ **невозможно**.
+*   Преобразуйте во [вложение](../Basic%20Concepts%20and%20Features/Notes/Attachments.md) из [меню заметки](../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md).
 
-## Relation with other notes
+## Связь с другими заметками
 
-*   Files are also displayed in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Note List</a> based on their type:
-    
+*   Файлы также отображаются в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Списке заметок</a> в зависимости от их типа:
+
     <img class="image_resized" style="aspect-ratio:853/315;width:50%;" src="5_File_image.png" width="853" height="315">
-*   Non-image files can be embedded into text notes as read-only widgets via the <a class="reference-link" href="Text/Include%20Note.md">Include Note</a> functionality.
-*   Image files can be embedded into text notes like normal images via <a class="reference-link" href="Text/Images/Image%20references.md">Image references</a>.
+*   Не-изображения можно встраивать в текстовые заметки как виджеты только для чтения через функциональность <a class="reference-link" href="Text/Include%20Note.md">Включение заметки</a>.
+*   Файлы-изображения можно встраивать в текстовые заметки как обычные изображения через <a class="reference-link" href="Text/Images/Image%20references.md">Ссылки на изображения</a>.
 
-## File size limit
+## Лимит размера файла
 
-An individual file cannot be bigger than 374 MiB. For more information see _Maximum import size_ in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md">Import &amp; Export</a>.
+Отдельный файл не может быть больше 374 МиБ. Подробнее см. _Максимальный размер импорта_ в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md">Импорт и экспорт</a>.

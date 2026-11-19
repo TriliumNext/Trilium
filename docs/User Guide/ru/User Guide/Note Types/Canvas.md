@@ -1,33 +1,33 @@
-# Canvas
+# Холст
 <figure class="image"><img src="Canvas_image.png" alt="grafik"></figure>
 
-Canvas notes use the Excalidraw library to allow handwritten notes with mouse, pen or touch on an infinite canvas. It also supports basic diagramming, text and graphics input.
+Заметки-холсты используют библиотеку Excalidraw, позволяющую вести рукописные заметки мышью, пером или касанием на бесконечном холсте. Также поддерживается базовое диаграммирование, ввод текста и графики.
 
-## Interaction
+## Взаимодействие
 
-*   The note can be togged [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a>.
+*   Заметку можно переключить [только для чтения](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) из <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a>.
 
-## Pen width
+## Толщина пера
 
-The pen draws at half the _Stroke width_ picked in the properties panel, which suits handwriting. To draw at the full width instead, turn off _Thin pen stroke_ in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Other_. Strokes already drawn keep their width.
+Перо рисует с половиной _толщины штриха_, выбранной в панели свойств, что подходит для рукописного ввода. Чтобы рисовать с полной толщиной, выключите _Тонкий штрих пера_ в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Прочее_. Уже нарисованные штрихи сохраняют свою толщину.
 
-## Embedding notes
+## Встраивание заметок
 
-Since v0.104.0, Canvas supports embedding notes in a similar fashion to the <a class="reference-link" href="Text/Include%20Note.md">Include Note</a> functionality for <a class="reference-link" href="Text.md">Text</a> notes.
+Начиная с v0.104.0, Холст поддерживает встраивание заметок аналогично функциональности <a class="reference-link" href="Text/Include%20Note.md">Включения заметки</a> для заметок <a class="reference-link" href="Text.md">Текст</a>.
 
-To embed a note:
+Чтобы встроить заметку:
 
-*   From the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>, drag the item onto the canvas.
-*   Manually, by choosing _More tools_ → _Web Embed_ and pasting the link to the note (e.g. `root/MujWAc9fQ1nj`).
+*   Из <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дерева заметок</a> перетащите элемент на холст.
+*   Вручную, выбрав _Ещё инструменты_ → _Веб-встраивание_ и вставив ссылку на заметку (например, `root/MujWAc9fQ1nj`).
 
-Embedding notes in the canvas follows the same rules as <a class="reference-link" href="Text/Include%20Note.md">Include Note</a>: some notes are rendered as images (e.g. <a class="reference-link" href="Mind%20Map.md">Mind Map</a>), whereas some render fully interactive such as <a class="reference-link" href="../Collections.md">Collections</a>.
+Встраивание заметок в холст следует тем же правилам, что и <a class="reference-link" href="Text/Include%20Note.md">Включение заметки</a>: некоторые заметки отображаются как изображения (например, <a class="reference-link" href="Mind%20Map.md">Mind Map</a>), а некоторые отображаются полностью интерактивно, такие как <a class="reference-link" href="../Collections.md">Коллекции</a>.
 
-## Linking to a note
+## Ссылка на заметку
 
-1.  From the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> right click the note to be linked and selected _Advanced → Copy note path to the clipboard_.
-2.  In the canvas note, right click an element and select _Add link_ (or press <kbd>Ctrl</kbd>+<kbd>K</kbd>). Paste the link and press <kbd>Enter</kbd>.
-3.  A <span class="tn-icon bx bx-link-external"></span> icon will appear at the top-right of the element which will navigate to the linked note when clicked.
+1.  Из <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дерева заметок</a> щёлкните правой кнопкой по заметке, на которую нужно сослаться, и выберите _Дополнительно → Копировать путь заметки в буфер обмена_.
+2.  В заметке-холсте щёлкните правой кнопкой по элементу и выберите _Добавить ссылку_ (или нажмите <kbd>Ctrl</kbd>+<kbd>K</kbd>). Вставьте ссылку и нажмите <kbd>Enter</kbd>.
+3.  Значок <span class="tn-icon bx bx-link-external"></span> появится в правом верхнем углу элемента и при щелчке перейдёт к связанной заметке.
 
-## Drawing in a text note
+## Рисование в текстовой заметке
 
-To draw inside a <a class="reference-link" href="Text.md">Text</a> note instead of in a note of its own, insert a drawing canvas with <span class="tn-icon bx bx-pen"></span>_Drawing canvas_ in the <span class="tn-icon cke cke-plus"></span>_Insert_ menu. See _Drawing canvases_ in <a class="reference-link" href="Text/Include%20Note.md">Include Note</a>.
+Чтобы рисовать внутри заметки <a class="reference-link" href="Text.md">Текст</a> вместо отдельной заметки, вставьте холст для рисования через <span class="tn-icon bx bx-pen"></span>_Холст для рисования_ в меню <span class="tn-icon cke cke-plus"></span>_Вставка_. См. _Холсты для рисования_ в <a class="reference-link" href="Text/Include%20Note.md">Включении заметки</a>.

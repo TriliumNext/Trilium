@@ -1,56 +1,55 @@
 # Markdown
-Trilium has always supported Markdown through its [import feature](../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown.md), however the file was either transformed to a <a class="reference-link" href="Text.md">Text</a> note (converted to Trilium's internal HTML format) or saved as a <a class="reference-link" href="Code.md">Code</a> note with only syntax highlight.
+Trilium всегда поддерживал Markdown через свою [функцию импорта](../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown.md), однако файл либо преобразовывался в заметку <a class="reference-link" href="Text.md">Текст</a> (конвертировался во внутренний HTML-формат Trilium), либо сохранялся как заметка <a class="reference-link" href="Code.md">Код</a> только с подсветкой синтаксиса.
 
-This note type is a split view, meaning that both the source code and a preview of the document are displayed side-by-side. See <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20types%20with%20split%20view.md">Note types with split view</a> for more information.
+Этот тип заметки имеет разделённый вид, то есть исходный код и предпросмотр документа отображаются бок о бок. Подробнее см. <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20types%20with%20split%20view.md">Типы заметок с разделённым видом</a>.
 
-## Rationale
+## Обоснование
 
-The goal of this note type is to fill a gap: rendering Markdown but not altering its structure or its whitespace which would inevitably change otherwise through import/export.
+Цель этого типа заметки — заполнить пробел: рендерить Markdown, не изменяя его структуру или пробелы, которые неизбежно изменились бы иначе через импорт/экспорт.
 
-Even if Markdown is now specially treated by having a preview mechanism, Trilium remains at its core a WYSWYG editor so Markdown will not replace text notes.
+Хотя Markdown теперь специально обрабатывается наличием механизма предпросмотра, Trilium в своей основе остаётся WYSIWYG-редактором, поэтому Markdown не заменит текстовые заметки.
 
 > [!NOTE]
-> Feature requests regarding the Markdown implementation will be considered, but if they are outside the realm of Trilium, they will not be implemented. One of the core aspects of the Markdown integration is that it reuses components that are already available through other features of the application.
+> Запросы возможностей, касающиеся реализации Markdown, будут рассматриваться, но если они выходят за рамки Trilium, они не будут реализованы. Один из ключевых аспектов интеграции Markdown — повторное использование компонентов, уже доступных через другие возможности приложения.
 
-## Features
+## Возможности
 
-### Source view pane
+### Панель вида исходника
 
-*   Syntax highlighting for the Markdown syntax.
-*   Nested syntax highlighting for code inside code blocks, including <a class="reference-link" href="Mermaid%20Diagrams.md">Mermaid Diagrams</a> in ` ```mermaid ` blocks.
-*   When editing larger documents, the preview scrolls along with the source editor.
+*   Подсветка синтаксиса для синтаксиса Markdown.
+*   Вложенная подсветка синтаксиса для кода внутри блоков кода, включая <a class="reference-link" href="Mermaid%20Diagrams.md">Диаграммы Mermaid</a> в блоках ` ```mermaid `.
+*   При редактировании больших документов предпросмотр прокручивается вместе с редактором исходника.
 
-### Preview pane
+### Панель предпросмотра
 
-The following features are supported by Trilium's Markdown format and will show up in the preview pane:
+Следующие возможности поддерживаются форматом Markdown Trilium и будут видны в панели предпросмотра:
 
-*   All standard and GitHub-flavored syntax (basic formatting, tables, blockquotes).
-*   Basic HTML is also supported (e.g. collapsible blocks using `<details>` and `<summary>`).
-*   Code blocks with syntax highlight.
-    
-    *   The language must be specified for syntax highlight to be applied (e.g. ` ```js `).
-    *   Code blocks will respect the text wrapping from the <a class="reference-link" href="Text.md">Text</a> section in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a>.
-*   <a class="reference-link" href="Text/Block%20quotes%20%26%20admonitions.md">Block quotes &amp; admonitions</a>
-*   <a class="reference-link" href="Text/Math%20Equations.md">Math Equations</a> (both inline and block)
-*   <a class="reference-link" href="Mermaid%20Diagrams.md">Mermaid Diagrams</a> using ` ```mermaid `
-*   <a class="reference-link" href="Text/Include%20Note.md">Include Note</a> (no built-in Markdown syntax, but HTML syntax works just fine):
-    
+*   Весь стандартный и синтаксис GitHub (базовое форматирование, таблицы, цитаты).
+*   Базовый HTML также поддерживается (например, сворачиваемые блоки с помощью `<details>` и `<summary>`).
+*   Блоки кода с подсветкой синтаксиса.
+    *   Язык должен быть указан, чтобы применилась подсветка синтаксиса (например, ` ```js `).
+    *   Блоки кода будут уважать перенос строк из раздела <a class="reference-link" href="Text.md">Текст</a> в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a>.
+*   <a class="reference-link" href="Text/Block%20quotes%20%26%20admonitions.md">Цитаты и замечания</a>
+*   <a class="reference-link" href="Text/Math%20Equations.md">Математические формулы</a> (как встроенные, так и блочные)
+*   <a class="reference-link" href="Mermaid%20Diagrams.md">Диаграммы Mermaid</a> с помощью ` ```mermaid `
+*   <a class="reference-link" href="Text/Include%20Note.md">Включение заметки</a> (встроенного синтаксиса Markdown нет, но HTML-синтаксис прекрасно работает):
+
     ```html
     <figure class="include-note" data-note-id="vJDjQm0VK8Na" data-box-size="expandable">
-        <figcaption>An optional caption, with <strong>HTML</strong> formatting</figcaption>
+        <figcaption>Необязательная подпись с <strong>HTML</strong>-форматированием</figcaption>
     </figure>
     ```
-    
-    *   The caption is optional. Markdown is not processed inside the HTML block, so format the caption with HTML tags.
-    *   Includes written as `<section class="include-note">`, the syntax of earlier versions, still work.
-    *   These can also be quickly created via the `/include` command or via a dedicated keyboard shortcut (not assigned by default).
-*   <a class="reference-link" href="Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> via its HTML syntax, or through a _Wikilinks_\-like format (only <a class="reference-link" href="../Advanced%20Usage/Note%20ID.md">Note ID</a>):
-    
+
+    *   Подпись необязательна. Markdown внутри HTML-блока не обрабатывается, поэтому форматируйте подпись HTML-тегами.
+    *   Включения, записанные как `<section class="include-note">`, — синтаксис более ранних версий — по-прежнему работают.
+    *   Их также можно быстро создать через команду `/include` или через выделенное сочетание клавиш (по умолчанию не назначено).
+*   <a class="reference-link" href="Text/Links/Internal%20(reference)%20links.md">Внутренние (ссылочные) ссылки</a> через её HTML-синтаксис или через формат в стиле _Wikilinks_ (только <a class="reference-link" href="../Advanced%20Usage/Note%20ID.md">ID заметки</a>):
+
     ```
     [[Hg8TS5ZOxti6]]
     ```
-*   To-do lists with extended task states:
-    
+*   Списки дел с расширенными состояниями задач:
+
     <table class="ck-table-resized" style="border-style:none;">
         <colgroup>
             <col style="width:80.6%;">
@@ -67,215 +66,215 @@ The following features are supported by Trilium's Markdown format and will show 
             </tr>
         </tbody>
     </table>
-    
-    Task states are customizable: you can reorder them, create new ones with different colors and symbols, or delete the ones you don't need. See <a class="reference-link" href="../Advanced%20Usage/Customizing%20to-do%20task%20states.md">Customizing to-do task states</a> for more details.
-    
-    Note that to-do items with task states other than "None" and "Done" are Trilium-specific and may not work well with other Markdown software.
-*   <a class="reference-link" href="Text/Footnotes.md">Footnotes</a> are also supported via the corresponding Markdown syntax:
-    
+
+    Состояния задач настраиваются: их можно менять местами, создавать новые с разными цветами и символами или удалять ненужные. Подробнее см. <a class="reference-link" href="../Advanced%20Usage/Customizing%20to-do%20task%20states.md">Настройка состояний задач списка дел</a>.
+
+    Обратите внимание, что элементы списка дел с состояниями, отличными от «None» и «Done», специфичны для Trilium и могут плохо работать с другим программным обеспечением для Markdown.
+*   <a class="reference-link" href="Text/Footnotes.md">Сноски</a> также поддерживаются через соответствующий синтаксис Markdown:
+
     ```
     This is [^1], while this is [^2].
-    
+
     [^1]: the first footnote
     [^2]: the second footnote
     ```
-    
-    *   These can also be quickly created using the `/footnote` command.
-*   <a class="reference-link" href="Text/Aside%20blocks.md">Aside blocks</a> set content apart in a gray box at the right, with the main text wrapping around it (for the other positions and colors, see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown/Supported%20syntax.md">Supported syntax</a>). Write the `<aside>` tags on lines of their own, with blank lines around the content, which is read as Markdown:
-    
+
+    *   Их также можно быстро создать командой `/footnote`.
+*   <a class="reference-link" href="Text/Aside%20blocks.md">Боковые блоки</a> отделяют содержимое в сером блоке справа, с обтеканием основного текста вокруг него (другие позиции и цвета см. в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown/Supported%20syntax.md">Поддерживаемом синтаксисе</a>). Запишите теги `<aside>` на отдельных строках, с пустыми строками вокруг содержимого, которое читается как Markdown:
+
     ```
     <aside>
-    
+
     A **side note** at the right of the text.
-    
+
     </aside>
     ```
-*   Page breaks for <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Printing%20%26%20Exporting%20as%20PDF.md">Printing &amp; Exporting as PDF</a>:
-    
+*   Разрывы страниц для <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Printing%20%26%20Exporting%20as%20PDF.md">Печати и экспорта в PDF</a>:
+
     ```
     <div class="page-break"></div>
     ```
-*   Highlights (background color) are supported both via the `==` Markdown syntax, as well as the canonical HTML representation in Trilium:
-    
+*   Выделения (цвет фона) поддерживаются как через синтаксис Markdown `==`, так и через каноническое HTML-представление в Trilium:
+
     ```
     ==highlighted==
     <span style="background-color:#e5e64d;--tn-background:#e5e64d;">Highlighted</span>
     ```
 
-### Links
+### Ссылки
 
-Multiple types of links are supported:
+Поддерживается несколько типов ссылок:
 
-*   Web URLs can be written with the standard Markdown syntax:
-    
+*   Веб-URL можно записывать стандартным синтаксисом Markdown:
+
     ```
     [Wikipedia](https://www.wikipedia.org)
     ```
-*   [Reference link](Text/Links/Internal%20\(reference\)%20links.md) to other notes with dynamic title, either by manually entering the note ID or via the _Add link_ dialog:
-    
+*   [Референс-ссылка](Text/Links/Internal%20\(reference\)%20links.md) на другие заметки с динамическим заголовком — либо вручную, введя ID заметки, либо через диалог _Добавить ссылку_:
+
     ```
     [[B9oMG6rFvvfq]]
     ```
-*   Since v0.108.0, [reference link](Text/Links/Internal%20\(reference\)%20links.md) to a [heading](Text/Block%20references.md) or an [anchor](Text/Anchors.md) of a <a class="reference-link" href="Text.md">Text</a> note, which shows the note's title followed by the heading or the anchor. The _Add link_ dialog and the `@` list write the link with its target after the note ID:
-    
+*   Начиная с v0.108.0, [референс-ссылка](Text/Links/Internal%20\(reference\)%20links.md) на [заголовок](Text/Block%20references.md) или [якорь](Text/Anchors.md) заметки <a class="reference-link" href="Text.md">Текст</a>, которая показывает заголовок заметки, за которым следует заголовок или якорь. Диалог _Добавить ссылку_ и список `@` записывают ссылку с её целью после ID заметки:
+
     ```
     [[B9oMG6rFvvfq?block=a1b2c3d4]]
     [[B9oMG6rFvvfq?bookmark=setup]]
     ```
-*   [Reference link](Text/Links/Internal%20\(reference\)%20links.md) to other notes with a custom text:
-    
+*   [Референс-ссылка](Text/Links/Internal%20\(reference\)%20links.md) на другие заметки с пользовательским текстом:
+
     ```
     [This is a link](#root/LhtnZxtVsUMp)
     ```
 
-To create a link, either:
+Чтобы создать ссылку:
 
-*   Type it manually using the syntax described above.
-*   Use the _Add link_ dialog by pressing <kbd>Ctrl</kbd>+<kbd>L</kbd> or typing the `/link` command.
+*   Наберите её вручную, используя описанный выше синтаксис.
+*   Используйте диалог _Добавить ссылку_, нажав <kbd>Ctrl</kbd>+<kbd>L</kbd> или введя команду `/link`.
 
-<a class="reference-link" href="Text/Link%20Previews.md">Link Previews</a> are also rendered, but there is no mechanism to insert them automatically as of now, they have to be copied from a <a class="reference-link" href="Text.md">Text</a> note instead.
+<a class="reference-link" href="Text/Link%20Previews.md">Превью ссылок</a> также отображаются, но пока нет механизма для их автоматической вставки — их нужно копировать из заметки <a class="reference-link" href="Text.md">Текст</a>.
 
-### Keyboard shortcuts
+### Сочетания клавиш
 
-The Markdown notes share some of the keyboard shortcuts from <a class="reference-link" href="Text.md">Text</a> notes:
+Заметки Markdown разделяют некоторые сочетания клавиш заметок <a class="reference-link" href="Text.md">Текст</a>:
 
-*   _Cut to note_ (<kbd>Ctrl</kbd>+<kbd>X</kbd>) which cuts the selection into a new child note.
-*   _Add link_ (<kbd>Ctrl</kbd>+<kbd>L</kbd>) which shows the dialog to create external or reference links.
-*   _Date/time_ (<kbd>Alt</kbd>+<kbd>T</kbd>) which respects the same formatting as text notes.
-*   _Include note_ (not assigned by default), which triggers the same dialog to insert notes as the one for text notes.
+*   _Вырезать в заметку_ (<kbd>Ctrl</kbd>+<kbd>X</kbd>), которая вырезает выделение в новую дочернюю заметку.
+*   _Добавить ссылку_ (<kbd>Ctrl</kbd>+<kbd>L</kbd>), которая показывает диалог создания внешних или референсных ссылок.
+*   _Дата/время_ (<kbd>Alt</kbd>+<kbd>T</kbd>), которая уважает то же форматирование, что и текстовые заметки.
+*   _Включить заметку_ (по умолчанию не назначено), которая вызывает тот же диалог вставки заметок, что и для текстовых заметок.
 
-In addition, the following formatting keyboard shortcuts are available:
+Кроме того, доступны следующие сочетания клавиш форматирования:
 
-*   <kbd>Ctrl</kbd>+<kbd>B</kbd> to toggle **bold**.
-*   <kbd>Ctrl</kbd>+<kbd>I</kbd> to toggle _italic_.
-*   <kbd>Ctrl</kbd>+<kbd>M</kbd> to wrap the current selection in an inline math (`$`).
-*   <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> to toggle ~~strikethrough~~.
+*   <kbd>Ctrl</kbd>+<kbd>B</kbd> для переключения **полужирного**.
+*   <kbd>Ctrl</kbd>+<kbd>I</kbd> для переключения _курсива_.
+*   <kbd>Ctrl</kbd>+<kbd>M</kbd> для оборачивания текущего выделения во встроенную математику (`$`).
+*   <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> для переключения ~~зачёркивания~~.
 
-### Images & attachments
+### Изображения и вложения
 
-Images can be inserted into the document in four different methods:
+Изображения можно вставлять в документ четырьмя разными способами:
 
-*   Drag & drop directly into the editor area.
-*   Pasting an image from clipboard.
-*   Pasting a reference to another [attachment](../Basic%20Concepts%20and%20Features/Notes/Attachments.md) (e.g. _Copy reference to clipboard_ button).
-*   Use the `/image` slash command.
+*   Перетаскиванием прямо в область редактора.
+*   Вставкой изображения из буфера обмена.
+*   Вставкой ссылки на другое [вложение](../Basic%20Concepts%20and%20Features/Notes/Attachments.md) (например, кнопкой _Копировать ссылку в буфер обмена_).
+*   Использованием слэш-команды `/image`.
 
-An image reference to an attachment looks like this:
+Ссылка на изображение вложения выглядит так:
 
 ```
 ![Name.jpeg](api/attachments/z50RceuHXe9J/image/image)
 ```
 
-### Auto-completion
+### Автодополнение
 
-#### Slash commands
+#### Слэш-команды
 
-Just like <a class="reference-link" href="Text.md">Text</a> notes, Markdown notes support a selection of slash commands:
+Как и заметки <a class="reference-link" href="Text.md">Текст</a>, заметки Markdown поддерживают набор слэш-команд:
 
-*   Inserting the current date & time (`/date`).
-*   [Including](Text/Include%20Note.md) another note (`/include`).
-*   Uploading and inserting an image (`/image`).
-*   Inserting a note link (`/link`).
-*   Inserting a math equation block (`/math`).
-*   Inserting a [footnote](Text/Footnotes.md) (`/footnote`).
-*   Inserting a [Mermaid](Mermaid%20Diagrams.md) diagram (`/mermaid`), with one variant per sample template (e.g. `/mermaid:flowchart`).
-*   Inserting a collapsible block (`/collapsible`).
-*   Inserting [tabs](../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown/Supported%20syntax.md) (`/tabs`).
-*   Inserting an [aside block](Text/Aside%20blocks.md) (`/aside`), a gray box placed at the right with the text wrapping around it.
-*   Inserting a page break for printing (`/page-break`).
-*   Inserting a table (`/table`).
-*   Creating admonitions (e.g. `/tip`, `/note`, `/important`, `/caution`, `/warning`).
-*   Inserting task items (`/todo:<state>`, e.g. `/todo:done`), one per configured task state.
-*   Inserting code snippets (`/snippet:<name>`) from your Markdown/plain-text snippet notes.
+*   Вставка текущей даты и времени (`/date`).
+*   [Включение](Text/Include%20Note.md) другой заметки (`/include`).
+*   Загрузка и вставка изображения (`/image`).
+*   Вставка ссылки на заметку (`/link`).
+*   Вставка блока математической формулы (`/math`).
+*   Вставка [сноски](Text/Footnotes.md) (`/footnote`).
+*   Вставка диаграммы [Mermaid](Mermaid%20Diagrams.md) (`/mermaid`), с одним вариантом на образец шаблона (например, `/mermaid:flowchart`).
+*   Вставка сворачиваемого блока (`/collapsible`).
+*   Вставка [вкладок](../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown/Supported%20syntax.md) (`/tabs`).
+*   Вставка [бокового блока](Text/Aside%20blocks.md) (`/aside`) — серого блока справа с обтеканием текста вокруг него.
+*   Вставка разрыва страницы для печати (`/page-break`).
+*   Вставка таблицы (`/table`).
+*   Создание замечаний (например, `/tip`, `/note`, `/important`, `/caution`, `/warning`).
+*   Вставка элементов задач (`/todo:<состояние>`, например `/todo:done`), по одному на настроенное состояние задачи.
+*   Вставка кодовых фрагментов (`/snippet:<имя>`) из ваших Markdown-/обычнотекстовых фрагментов.
 
-The list shows each command by its title, as in Text notes. Typing a command's title, its keyword (as listed above) or a related word such as `latex` or `grid` finds it.
+Список показывает каждую команду по её названию, как в текстовых заметках. Ввод названия команды, её ключевого слова (как перечислены выше) или связанного слова, такого как `latex` или `grid`, находит её.
 
-Note that slash commands only work outside of code blocks and inline code.
+Обратите внимание, что слэш-команды работают только вне блоков кода и встроенного кода.
 
-#### Linking notes with `@` or `[[`
+#### Связывание заметок через `@` или `[[`
 
-As in <a class="reference-link" href="Text.md">Text</a> notes, typing `@` at the start of a line or after a space opens the note search. Picking a note replaces what was typed with a link to it in the Wikilinks-like format (`[[noteId]]`), which the preview shows as an <a class="reference-link" href="Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> with the note's title.
+Как и в заметках <a class="reference-link" href="Text.md">Текст</a>, ввод `@` в начале строки или после пробела открывает поиск заметок. Выбор заметки заменяет набранное ссылкой на неё в формате в стиле Wikilinks (`[[noteId]]`), который предпросмотр показывает как <a class="reference-link" href="Text/Links/Internal%20(reference)%20links.md">Внутреннюю (ссылочную) ссылку</a> с заголовком заметки.
 
-The search runs on everything typed after the `@`, spaces included, so a title such as `@My meeting notes` can be typed out; press <kbd>Esc</kbd> to close the list and go on writing. If no note fits, the list offers to create one, as a child of the Markdown note or in the inbox; the link is inserted once the note is created.
+Поиск выполняется по всему, что набрано после `@`, включая пробелы, поэтому можно набрать заголовок вроде `@My meeting notes`; нажмите <kbd>Esc</kbd>, чтобы закрыть список и продолжить писать. Если ни одна заметка не подходит, список предлагает создать её как дочернюю для Markdown-заметки или во входящих; ссылка вставляется после создания заметки.
 
-You can also start typing the link directly: `[[` opens the same list, and closing the brackets yourself dismisses it. To change where an existing link points, place the cursor inside it and pick another note.
+Также можно начать набирать ссылку напрямую: `[[` открывает тот же список, а закрытие скобок самостоятельно закрывает его. Чтобы изменить, куда указывает существующая ссылка, поместите курсор внутрь неё и выберите другую заметку.
 
-Since v0.108.0, the note is linked as soon as it is picked. A ¶ then follows the link, and the list shows where in the note the link can point: _Link to the whole note_, its headings and its anchors.
+Начиная с v0.108.0, заметка связывается, как только она выбрана. За ссылкой следует ¶, и список показывает, куда в заметке может указывать ссылка: _Ссылка на всю заметку_, её заголовки и её якоря.
 
-*   To point the link at a heading or an anchor, type part of its name after the ¶ and press <kbd>Enter</kbd> or <kbd>Tab</kbd>. The link then carries its target after the note ID, such as `[[noteId?block=a1b2c3d4]]`.
-*   To keep the link to the whole note, press <kbd>Enter</kbd> on _Link to the whole note_, or press <kbd>Esc</kbd>. Pressing <kbd>Backspace</kbd> or typing a space right after the ¶ does the same.
-*   The ¶ is not part of the note. Text typed after it stays, unless a heading or an anchor is picked.
+*   Чтобы направить ссылку на заголовок или якорь, введите часть его имени после ¶ и нажмите <kbd>Enter</kbd> или <kbd>Tab</kbd>. Ссылка затем несёт свою цель после ID заметки, например `[[noteId?block=a1b2c3d4]]`.
+*   Чтобы оставить ссылку на всю заметку, нажмите <kbd>Enter</kbd> на _Ссылка на всю заметку_ или нажмите <kbd>Esc</kbd>. Нажатие <kbd>Backspace</kbd> или ввод пробела сразу после ¶ делает то же самое.
+*   ¶ не является частью заметки. Текст, набранный после неё, остаётся, если только не выбран заголовок или якорь.
 
-Only <a class="reference-link" href="Text.md">Text</a> notes have headings and anchors to link to. A note created from the list is linked without this step. To skip it for every note, turn off _Suggest headings and anchors to link to_ under _Note auto-completion_ in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ → _Features_.
+Только заметки <a class="reference-link" href="Text.md">Текст</a> имеют заголовки и якоря для связывания. Заметка, созданная из списка, связывается без этого шага. Чтобы пропустить его для каждой заметки, выключите _Предлагать заголовки и якоря для ссылок_ под _Автодополнение заметок_ в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Текстовые заметки_ → _Возможности_.
 
-Like slash commands, `@` and `[[` do nothing inside code blocks and inline code.
+Как и слэш-команды, `@` и `[[` ничего не делают внутри блоков кода и встроенного кода.
 
-In the editor, a `[[noteId]]` link shows as the note's icon and title, followed by the heading or the anchor it points at, so you can tell which note it points to without looking up its ID. Clicking it, or moving the cursor next to it, shows the link as written so it can be edited. Links inside code blocks and inline code are left as they are.
+В редакторе ссылка `[[noteId]]` показывается как значок и заголовок заметки, за которыми следует заголовок или якорь, на который она указывает, чтобы можно было понять, на какую заметку она указывает, не отыскивая её ID. Щелчок по ней или перемещение курсора рядом с ней показывает ссылку как она записана, чтобы её можно было отредактировать. Ссылки внутри блоков кода и встроенного кода остаются как есть.
 
-#### Code block language auto-completion
+#### Автодополнение языка блока кода
 
-Starting with v0.104.0, typing \`\`\` to insert a code block will automatically open a list of suggested language types which have syntax highlighting.
+Начиная с v0.104.0, ввод \`\`\` для вставки блока кода автоматически открывает список предлагаемых типов языков, имеющих подсветку синтаксиса.
 
-The list of languages matches the one for <a class="reference-link" href="Code.md">Code</a> notes set in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a>, it's not the full list of languages supported by Trilium.
+Список языков совпадает с заданным для заметок <a class="reference-link" href="Code.md">Код</a> в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a>, это не полный список языков, поддерживаемых Trilium.
 
-### Other features
+### Другие возможности
 
-*   The <a class="reference-link" href="Text/Table%20of%20contents.md">Table of contents</a> will be displayed in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a> based on the Markdown-level headings.
-*   A Markdown note included in a <a class="reference-link" href="Text.md">Text</a> note shows its source, its preview or both, and can be edited in place. See _Included Markdown_ in <a class="reference-link" href="Text/Include%20Note.md">Include Note</a>.
+*   <a class="reference-link" href="Text/Table%20of%20contents.md">Оглавление</a> будет отображено в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Правой боковой панели</a> на основе заголовков уровней Markdown.
+*   Markdown-заметка, включённая в заметку <a class="reference-link" href="Text.md">Текст</a>, показывает её исходник, её предпросмотр или оба, и может редактироваться на месте. См. _Включённый Markdown_ в <a class="reference-link" href="Text/Include%20Note.md">Включении заметки</a>.
 
-### Shared notes
+### Опубликованные заметки
 
-When a Markdown note is [shared publicly](../Advanced%20Usage/Sharing.md), it will be rendered with extended formatting just like <a class="reference-link" href="Text.md">Text</a> notes.
+Когда Markdown-заметка [публикуется публично](../Advanced%20Usage/Sharing.md), она отображается с расширенным форматированием так же, как заметки <a class="reference-link" href="Text.md">Текст</a>.
 
-Most of the features described previously should be supported. If you face any issues, feel free to [report it](../Troubleshooting/Reporting%20issues.md) alongside a sample Markdown file.
+Большинство описанных выше возможностей должно поддерживаться. Если вы столкнётесь с какими-либо проблемами, не стесняйтесь [сообщить о них](../Troubleshooting/Reporting%20issues.md) вместе с образцом Markdown-файла.
 
-## Creating Markdown notes
+## Создание Markdown-заметок
 
-There are two ways to create a Markdown note:
+Есть два способа создать Markdown-заметку:
 
-1.  Create a new note (e.g. in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>) and select the type _Markdown_, just like all the other note types.
-2.  Create a note of type <a class="reference-link" href="Code.md">Code</a> and select as the language either _Markdown_ or _GitHub-Flavored Markdown_. This maintains compatibility with your existing notes prior to the introduction of this feature.
+1.  Создайте новую заметку (например, в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дереве заметок</a>) и выберите тип _Markdown_, как и все остальные типы заметок.
+2.  Создайте заметку типа <a class="reference-link" href="Code.md">Код</a> и выберите в качестве языка либо _Markdown_, либо _GitHub-Flavored Markdown_. Это сохраняет совместимость с вашими существующими заметками до появления этой возможности.
 
 > [!NOTE]
-> There is no distinction between the new Markdown note type and code notes of type Markdown; internally both are represented as <a class="reference-link" href="Code.md">Code</a> notes with one of the following MIME types:
-> 
+> Различия между новым типом заметки Markdown и кодовыми заметками типа Markdown нет; внутренне оба представлены как заметки <a class="reference-link" href="Code.md">Код</a> с одним из следующих MIME-типов:
+>
 > *   `text/markdown`
 > *   `text/x-markdown`
 > *   `text/x-gfm` (GitHub Flavored Markdown)
 
-## Import/export
+## Импорт/экспорт
 
-### Import
+### Импорт
 
-By default, when importing a single Markdown file it automatically gets converted to a <a class="reference-link" href="Text.md">Text</a> note. To avoid that and have it imported as a Markdown note instead:
+По умолчанию при импорте одного Markdown-файла он автоматически конвертируется в заметку <a class="reference-link" href="Text.md">Текст</a>. Чтобы избежать этого и импортировать его как Markdown-заметку вместо этого:
 
-*   Right click the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Import into note_.
-*   Select the file normally.
-*   Uncheck _Import HTML, Markdown and TXT as text notes if it's unclear from the metadata_.
+*   Щёлкните правой кнопкой по <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дереву заметок</a> и выберите _Импортировать в заметку_.
+*   Выберите файл как обычно.
+*   Снимите отметку _Импортировать HTML, Markdown и TXT как текстовые заметки, если это неясно из метаданных_.
 
-When importing a Trilium ZIP, it will preserve the Markdown type without converting to text notes thanks to the meta-information in it.
+При импорте ZIP Trilium тип Markdown сохраняется без преобразования в текстовые заметки благодаря метаинформации в нём.
 
-### Exporting
+### Экспорт
 
-When exporting Markdown files, the extension is preserved and the content remains the same as in the source view (with some small exceptions such as handling of attachments).
+При экспорте Markdown-файлов расширение сохраняется, а содержимое остаётся таким же, как в виде исходника (с некоторыми мелкими исключениями, такими как обработка вложений).
 
-When exporting Markdown files as ZIP, choosing HTML or Markdown as the export format makes no difference as that only affects <a class="reference-link" href="Text.md">Text</a> notes.
+При экспорте Markdown-файлов как ZIP выбор HTML или Markdown в качестве формата экспорта не имеет значения, так как это затрагивает только заметки <a class="reference-link" href="Text.md">Текст</a>.
 
-If the Markdown note contains attachments, a ZIP export will rewrite the links to attachments so that they are replaced with a relative path to the attachment. On import, the links are re-written back.
+Если Markdown-заметка содержит вложения, ZIP-экспорт перепишет ссылки на вложения так, что они будут заменены относительным путём к вложению. При импорте ссылки переписываются обратно.
 
-## Conversion between text notes and Markdown notes
+## Преобразование между текстовыми и Markdown-заметками
 
-<a class="reference-link" href="Text.md">Text</a> notes can be converted into Markdown notes and vice versa. See <a class="reference-link" href="Converting%20between%20note%20types.md">Converting between note types</a>.
+Заметки <a class="reference-link" href="Text.md">Текст</a> можно преобразовать в Markdown-заметки и наоборот. См. <a class="reference-link" href="Converting%20between%20note%20types.md">Преобразование между типами заметок</a>.
 
-## Sync-scrolling & block highlight
+## Синхронная прокрутка и подсветка блоков
 
-When scrolling through the editing pane, the preview pane will attempt to synchronize its position to make it easier to see the preview.
+При прокрутке через панель редактирования панель предпросмотра будет пытаться синхронизировать свою позицию, чтобы облегчить просмотр предпросмотра.
 
-In addition, the block in the preview matching the position of the cursor in the source view will appear slightly highlighted.
+Кроме того, блок в предпросмотре, соответствующий позиции курсора в виде исходника, будет слегка подсвечен.
 
-The sync is currently one-way only, scrolling the preview will not synchronize the position of the editor.
+Синхронизация в настоящее время односторонняя: прокрутка предпросмотра не синхронизирует позицию редактора.
 
-This feature cannot be disabled as of now; if the scrolling feels distracting, consider temporarily switching to the editor mode and then switching to preview mode when ready.
+Эту возможность пока нельзя отключить; если прокрутка отвлекает, рассмотрите временное переключение в режим редактора, а затем переключение в режим предпросмотра, когда будете готовы.
 
 > [!NOTE]
-> This feature of synchronizing the scroll is based on blocks but it's provided on a best-effort basis since our underlying Markdown library doesn't support this feature natively, so we had to implement our own algorithm. Feel free to [report issues](../Troubleshooting/Reporting%20issues.md), but always provide a sample Markdown file to be able to reproduce it.
+> Эта возможность синхронизации прокрутки основана на блоках, но предоставляется по возможности, так как наша лежащая в основе библиотека Markdown не поддерживает её нативно, и нам пришлось реализовать собственный алгоритм. Не стесняйтесь [сообщать о проблемах](../Troubleshooting/Reporting%20issues.md), но всегда предоставляйте образец Markdown-файла, чтобы можно было воспроизвести проблему.

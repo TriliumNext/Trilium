@@ -1,77 +1,77 @@
-# Image maps
-An image map is a geo map drawn over an image of your own instead of a world map, such as a floor plan, a fantasy map for a tabletop game, or a diagram to annotate. Markers and shapes work as they do on a geo map, but their positions are measured on the image instead of in latitude and longitude: in the image's own pixels, or in a coordinate system of your choosing, such as the one a video game uses.
+# Карты-изображения
+Карта-изображение — это геокарта, нарисованная поверх собственного изображения вместо карты мира, например плана этажа, фэнтезийной карты для настольной игры или схемы для аннотации. Метки и фигуры работают так же, как на геокарте, но их позиции измеряются на изображении вместо широты и долготы: в собственных пикселях изображения или в системе координат по вашему выбору, например той, что использует видеоигра.
 
-## Creating an image map
+## Создание карты-изображения
 
-1.  Upload the image as a note of its own, for example by dragging the file into the note tree. PNG, JPEG, WebP and GIF images are supported; SVG images are not.
-2.  Create a geo map, or open an existing one.
-3.  Open the <span class="tn-icon bx bx-cog"></span>_Geo map properties_ dialog from the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> or from the settings menu of the <a class="reference-link" href="../Collection%20Properties.md">Collection Properties</a>.
-4.  Under _Background_, set _Type_ to _Custom image_, then choose the image note in _Image note_. The list only offers image notes in a format the map can draw (PNG, JPEG, WebP or GIF), and shows all of them before anything is typed.
+1.  Загрузите изображение как отдельную заметку, например перетащив файл в дерево заметок. Поддерживаются изображения PNG, JPEG, WebP и GIF; SVG-изображения не поддерживаются.
+2.  Создайте геокарту или откройте существующую.
+3.  Откройте диалог <span class="tn-icon bx bx-cog"></span>_Свойства геокарты_ из <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a> или из меню настроек <a class="reference-link" href="../Collection%20Properties.md">Свойств коллекции</a>.
+4.  В разделе _Фон_ установите _Тип_ в _Пользовательское изображение_, затем выберите заметку с изображением в поле _Заметка изображения_. Список предлагает только заметки-изображения в формате, который карта может нарисовать (PNG, JPEG, WebP или GIF), и показывает их все, пока ничего не введено.
 
-The map then shows the image instead of the world map and opens with the whole image in view. To go back to a world map, set _Type_ back to _Vector & Raster_. The image is switched off rather than removed: its relation is renamed to `~disabled:map:image`, so setting _Type_ to _Custom image_ again brings back the same image, with its coordinates. An image that the geo map inherits from a parent note or a template can only be switched off on the note that holds it.
+Карта затем показывает изображение вместо карты мира и открывается с изображением целиком в видимой области. Чтобы вернуться к карте мира, установите _Тип_ обратно в _Векторный и растровый_. Изображение выключается, а не удаляется: его отношение переименовывается в `~disabled:map:image`, поэтому повторная установка _Типа_ в _Пользовательское изображение_ возвращает то же изображение с его координатами. Изображение, которое геокарта наследует от родительской заметки или шаблона, можно выключить только на заметке, которая его держит.
 
-The image note is stored in a `~map:image` [relation](../../Advanced%20Usage/Attributes/Relations.md) of the geo map, which can also be added by hand.
+Заметка изображения хранится в [отношении](../../Advanced%20Usage/Attributes/Relations.md) `~map:image` геокарты, которое также можно добавить вручную.
 
-## Image size
+## Размер изображения
 
-Images are resized when they are uploaded, so by default the image of a map is at most 2000 pixels on its longer side, which can be too coarse for a detailed map. To keep an image at a higher resolution, do one of the following before uploading it:
+Изображения изменяются в размере при загрузке, поэтому по умолчанию изображение карты имеет длинную сторону не более 2000 пикселей, что может быть слишком грубо для детальной карты. Чтобы сохранить изображение в более высоком разрешении, сделайте одно из следующего перед его загрузкой:
 
-*   In <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Media_, raise _Max image dimensions_ or turn off _Automatically compress images_.
-*   Upload it through the _Import_ dialog with _Compress images_ unchecked.
+*   В <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Медиа_ увеличьте _Максимальные размеры изображения_ или выключите _Автоматически сжимать изображения_.
+*   Загрузите его через диалог _Импорт_ с снятой отметкой _Сжимать изображения_.
 
-An image that was already uploaded keeps its size; upload it again after changing the settings.
+Уже загруженное изображение сохраняет свой размер; загрузите его заново после изменения настроек.
 
-The image is drawn as a single picture by the graphics card, which limits how large it can be. Images up to 4096 pixels on their longer side are safe on practically every device, and most computers handle up to 16384 pixels. On a device whose graphics card cannot hold the image, the markers and shapes still appear but the image itself does not. The _Geo map properties_ dialog warns about an image larger than 4096 pixels, and about one that can't be used at all, such as an SVG image.
+Изображение рисуется как единая картинка графической картой, что ограничивает его размер. Изображения с длинной стороной до 4096 пикселей безопасны практически на каждом устройстве, а большинство компьютеров справляются с размером до 16384 пикселей. На устройстве, чья графическая карта не может вместить изображение, метки и фигуры всё равно появляются, но само изображение — нет. Диалог _Свойства геокарты_ предупреждает об изображении больше 4096 пикселей и об изображении, которое нельзя использовать вовсе, например SVG-изображении.
 
-## Interaction
+## Взаимодействие
 
-Adding, moving and removing markers, drawing shapes, the popup view and the contextual menu work as described for the <a class="reference-link" href="../Geo%20Map.md">Geo Map</a>. The camera stays over the image and can zoom in up to four times past the image's own resolution.
+Добавление, перемещение и удаление меток, рисование фигур, всплывающий вид и контекстное меню работают, как описано для <a class="reference-link" href="../Geo%20Map.md">Геокарты</a>. Камера остаётся над изображением и может увеличиваться до четырёх раз за пределами собственного разрешения изображения.
 
-The features that only make sense on a real map are not available on an image map:
+Возможности, которые имеют смысл только на настоящей карте, недоступны на карте-изображении:
 
-*   Searching the map and searching for places online.
-*   Going to your location.
-*   Adding GPS tracks.
-*   Clicking the places the base map shows.
-*   The 3D buildings.
-*   Opening a location in an external map application.
+*   Поиск по карте и поиск мест онлайн.
+*   Переход к вашему местоположению.
+*   Добавление GPS-треков.
+*   Щелчок по местам, которые показывает базовая карта.
+*   3D-здания.
+*   Открытие местоположения во внешнем картографическом приложении.
 
-The look of the marker titles follows the image: if the image is dark, turn on _Dark image_ under _Background_ in the _Geo map properties_ dialog, so that the titles are drawn in a light color. This sets the `#map:darkStyle` label.
+Вид заголовков меток следует за изображением: если изображение тёмное, включите _Тёмное изображение_ под _Фон_ в диалоге _Свойства геокарты_, чтобы заголовки рисовались светлым цветом. Это задаёт метку `#map:darkStyle`.
 
-The _Map style_ setting doesn't apply to an image map, so it's hidden from the settings menu of the collection while the map has an image.
+Настройка _Стиль карты_ не применяется к карте-изображению, поэтому она скрыта из меню настроек коллекции, пока у карты есть изображение.
 
-## Choosing the coordinate system
+## Выбор системы координат
 
-By default, positions are measured in pixels of the image at its original size, from its top-left corner, with `x` growing to the right and `y` growing downwards.
+По умолчанию позиции измеряются в пикселях изображения в его исходном размере, от его левого верхнего угла, с ростом `x` вправо и ростом `y` вниз.
 
-To use coordinates of your own instead, open the _Geo map properties_ dialog, set _Coordinates_ under _Background_ to _Custom_, and enter the coordinates of the image's _Top-left corner_ and _Bottom-right corner_. Switching to _Custom_ starts from the image's size in pixels, so the markers stay where they are until the corners are changed; for that reason, _Custom_ can only be chosen once the image has loaded. All positions are then read and written in those coordinates, including the ones shown in the contextual menu and in the popup view. To go back to pixels, set _Coordinates_ to _Image pixels_. Corners that the geo map inherits from a parent note or a template can only be removed on the note that holds them; entering other corners on this map overrides them.
+Чтобы использовать вместо этого собственные координаты, откройте диалог _Свойства геокарты_, установите _Координаты_ под _Фон_ в _Пользовательские_ и введите координаты _Левого верхнего угла_ и _Правого нижнего угла_ изображения. Переключение на _Пользовательские_ начинается от размера изображения в пикселях, поэтому метки остаются на месте, пока углы не изменены; по этой причине _Пользовательские_ можно выбрать, только когда изображение загрузилось. Все позиции затем читаются и записываются в этих координатах, включая показываемые в контекстном меню и во всплывающем виде. Чтобы вернуться к пикселям, установите _Координаты_ в _Пиксели изображения_. Углы, которые геокарта наследует от родительской заметки или шаблона, можно удалить только на заметке, которая их держит; ввод других углов на этой карте переопределяет их.
 
-The corners are stored in the `#map:imageBounds` label of the geo map as `x,y x,y`, with a space between the two corners, which can also be set by hand. For example:
+Углы хранятся в метке `#map:imageBounds` геокарты в виде `x,y x,y` с пробелом между двумя углами, что также можно задать вручную. Например:
 
-*   A screenshot of a game map that covers `x` from -512 to 512 and `y` from -512 to 512, with `y` growing downwards: `#map:imageBounds=-512,-512 512,512`. Coordinates copied from the game can then be pasted directly into `#mapPosition`.
-*   A world whose `y` grows upwards, with the origin in the middle of the image: `#map:imageBounds=-2000,1000 2000,-1000`. A top-left `y` larger than the bottom-right one is what flips the axis.
-*   A floor plan measured in meters: `#map:imageBounds=0,0 24,12`.
+*   Скриншот игровой карты, покрывающей `x` от -512 до 512 и `y` от -512 до 512, с ростом `y` вниз: `#map:imageBounds=-512,-512 512,512`. Координаты, скопированные из игры, можно затем вставлять прямо в `#mapPosition`.
+*   Мир, у которого `y` растёт вверх, с началом координат в середине изображения: `#map:imageBounds=-2000,1000 2000,-1000`. Левый верхний `y`, больший правого нижнего, — это то, что переворачивает ось.
+*   План этажа, измеренный в метрах: `#map:imageBounds=0,0 24,12`.
 
-The two axes don't have to use the same scale. A circle is always measured in the map's own units, so it appears as an ellipse when the units are stretched differently along the two axes.
+Две оси не обязаны использовать один масштаб. Круг всегда измеряется в собственных единицах карты, поэтому он выглядит как эллипс, когда единицы растянуты по-разному вдоль двух осей.
 
-Corners that share an `x` or a `y` don't span an area: the dialog doesn't save them, and a label holding them, or a value that cannot be read, is ignored and the pixels of the image are used instead.
+Углы, разделяющие `x` или `y`, не охватывают площадь: диалог их не сохраняет, а метка, содержащая их, или значение, которое нельзя прочитать, игнорируется, и вместо него используются пиксели изображения.
 
-## Coordinate rulers
+## Координатные линейки
 
-Enabling _Show scale_ in the collection properties draws rulers along the edges of the image instead of a distance scale. Round values of the map's coordinates are marked with ticks along all four edges, labeled along the top and left ones, with faint grid lines across the image. The spacing follows the zoom level, and the values follow `#map:imageBounds` when it is set.
+Включение _Показывать масштаб_ в свойствах коллекции рисует линейки вдоль краёв изображения вместо масштабной линейки расстояния. Круглые значения координат карты отмечаются засечками вдоль всех четырёх краёв, с подписями вдоль верхнего и левого, с бледными линиями сетки через всё изображение. Шаг следует уровню масштаба, а значения следуют `#map:imageBounds`, когда она задана.
 
-The rulers are drawn on the image itself, so they move out of view along with its edges when zooming in. The grid lines remain visible across the image.
+Линейки рисуются на самом изображении, поэтому они уходят из вида вместе с его краями при увеличении. Линии сетки остаются видимыми через всё изображение.
 
-## How the positions are stored
+## Как хранятся позиции
 
-Because positions are stored in different labels from the ones of a geo map, the same note can be placed both on a geo map and on an image map.
+Поскольку позиции хранятся в метках, отличных от меток геокарты, одну и ту же заметку можно разместить и на геокарте, и на карте-изображении.
 
-| Label | Content |
+| Метка | Содержимое |
 | --- | --- |
-| `#mapPosition` | The position of a marker, as `x,y`, for example `#mapPosition=320,145`. |
-| `#mapShape` | A shape, in the same format as `#geoShape` (see <a class="reference-link" href="Drawing%20shapes.md">Drawing shapes</a>) but with `x,y` pairs, and a circle's radius in the map's units, for example `#mapShape=circle:400,300 50`. |
+| `#mapPosition` | Позиция метки как `x,y`, например `#mapPosition=320,145`. |
+| `#mapShape` | Фигура в том же формате, что `#geoShape` (см. <a class="reference-link" href="Drawing%20shapes.md">Рисование фигур</a>), но с парами `x,y`, а радиус круга — в единицах карты, например `#mapShape=circle:400,300 50`. |
 
-The positions belong to the coordinate system, not to the image. When replacing the image with a different one, for example a higher-resolution copy, keep `#map:imageBounds` describing the area the new image covers and every marker stays in place. With _Image pixels_, the positions are pixels, so an image of a different size moves the markers relative to what the image shows; to avoid that, switch _Coordinates_ to _Custom_ before replacing the image, which keeps the size of the old one (`0,0 <width>,<height>`) as the corners.
+Позиции принадлежат системе координат, а не изображению. При замене изображения другим, например копией в более высоком разрешении, сохраните `#map:imageBounds`, описывающую область, которую покрывает новое изображение, и каждая метка останется на месте. С _Пикселями изображения_ позиции — пиксели, поэтому изображение другого размера сдвигает метки относительно того, что показывает изображение; чтобы избежать этого, переключите _Координаты_ на _Пользовательские_ перед заменой изображения, что сохраняет размер старого (`0,0 <ширина>,<высота>`) в качестве углов.
 
 > [!TIP]
-> To draw freely over an image instead of placing notes on it, consider a <a class="reference-link" href="../../Note%20Types/Canvas.md">Canvas</a>.
+> Чтобы рисовать свободно поверх изображения вместо размещения на нём заметок, рассмотрите <a class="reference-link" href="../../Note%20Types/Canvas.md">Холст</a>.

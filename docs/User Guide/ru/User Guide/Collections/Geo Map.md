@@ -1,411 +1,411 @@
-# Geo Map
+# Геокарта
 <figure class="image"><img style="aspect-ratio:1561/1149;" src="Geo Map_image.png" width="1561" height="1149"></figure>
 
-This note type displays the children notes on a geographical map, based on an attribute. It is also possible to add new notes at a specific location using the built-in interface.
+Этот тип заметки отображает дочерние заметки на географической карте на основе атрибута. Также возможно добавлять новые заметки в конкретном месте с помощью встроенного интерфейса.
 
-## Features
+## Возможности
 
-*   Add markers on the map, which can be customized with icons, colors and text.
-*   Search the notes already on the map, and look up places anywhere in the world.
-*   Turn a place the map already shows into a marker by clicking it.
-*   Draw paths, areas, rectangles and circles onto the map.
-*   Display tracks on the map using `.gpx` files.
-*   Show your own location on the map and follow it as you move.
-*   3D view of the map, which displays buildings when using a vector map.
+*   Добавление меток на карту, которые можно настраивать значками, цветами и текстом.
+*   Поиск по заметкам, уже находящимся на карте, и поиск мест где угодно в мире.
+*   Превращение места, которое карта уже показывает, в метку щелчком по нему.
+*   Рисование путей, областей, прямоугольников и кругов на карте.
+*   Отображение треков на карте с помощью файлов `.gpx`.
+*   Показ вашего собственного местоположения на карте и слежение за ним при движении.
+*   3D-вид карты, отображающий здания при использовании векторной карты.
 
-## System requirements
+## Системные требования
 
-Starting with v0.105.0, the geomap uses MapLibre GL which requires WebGL v1 support. In general, most devices will support it because browsers/Electron can render it in software if needed.
+Начиная с v0.105.0 геокарта использует MapLibre GL, которому требуется поддержка WebGL v1. Как правило, большинство устройств её поддерживают, так как браузеры/Electron могут рендерить её программно при необходимости.
 
-If the map could not be drawn because WebGL could not be initialized, an error message will appear instead of the map (_This map can't be drawn because WebGL isn't available…_).
+Если карту не удалось отрисовать из-за невозможности инициализации WebGL, вместо карты появится сообщение об ошибке (_This map can't be drawn because WebGL isn't available…_).
 
-The button that shows your location is offered only when Trilium is reached over HTTPS, in the desktop application or in the mobile application. Browsers refuse to share the location of a device with a page served over plain HTTP, so on such a server the button does not appear. The desktop application on Linux does not offer it either, because it has no way to find the location of the device there.
+Кнопка, показывающая ваше местоположение, предлагается только когда к Trilium обращаются по HTTPS, в десктопном приложении или в мобильном приложении. Браузеры отказываются передавать местоположение устройства странице, отдаваемой по обычному HTTP, поэтому на таком сервере кнопка не появляется. Десктопное приложение на Linux также её не предлагает, так как там нет способа определить местоположение устройства.
 
-## Interaction
+## Взаимодействие
 
-*   At the top-left there is the search bar. It searches the notes already on the map, and it can also search for places online when you ask it to. While you move through the results of a search, a counter with previous (<span class="tn-icon bx bx-chevron-left"></span>) and next (<span class="tn-icon bx bx-chevron-right"></span>) buttons appears under it.
-*   At the bottom-center there is a central toolbar which provides editing features: adding new markers on the map (<span class="tn-icon bx bx-pin"></span>) and importing GPX tracks (<span class="tn-icon bx bx-trip"></span>).
-*   At the bottom-right there are the viewport items:
-    *   Zoom in/out (<span class="tn-icon bx bx-plus-circle"></span> / <span class="tn-icon bx bx-minus-circle"></span>)
-        *   On mobile these are hidden, use pinch to zoom instead.
-        *   On desktop, alternatively use the scroll wheel to adjust the zoom.
-    *   A <span class="tn-icon bx bx-current-location"></span> button that shows your location on the map and follows it (see _Going to your location_ below).
-    *   <span class="tn-icon bx bx-fullscreen"></span> Full screen button which focuses the entire map onto the screen, while still allowing for edits.
-*   At the top-center (on desktop, or left-center on mobile and in split views) there are the drawing tools such as paths, areas, rectangles and circles.
-    *   When the map is read-only, the toolbar is not shown.
+*   В левом верхнем углу находится строка поиска. Она ищет по заметкам, уже находящимся на карте, а также может искать места онлайн, когда вы её об этом просите. Пока вы перемещаетесь по результатам поиска, под ней появляется счётчик с кнопками предыдущего (<span class="tn-icon bx bx-chevron-left"></span>) и следующего (<span class="tn-icon bx bx-chevron-right"></span>) результата.
+*   Внизу по центру находится центральная панель инструментов, предоставляющая возможности редактирования: добавление новых меток на карту (<span class="tn-icon bx bx-pin"></span>) и импорт GPX-треков (<span class="tn-icon bx bx-trip"></span>).
+*   В правом нижнем углу находятся элементы видового экрана:
+    *   Увеличение/уменьшение (<span class="tn-icon bx bx-plus-circle"></span> / <span class="tn-icon bx bx-minus-circle"></span>)
+        *   На мобильных устройствах они скрыты — используйте вместо них щипок.
+        *   На десктопе альтернативно используйте колёсико мыши для настройки масштаба.
+    *   Кнопка <span class="tn-icon bx bx-current-location"></span>, показывающая ваше местоположение на карте и следующая за ним (см. _Переход к вашему местоположению_ ниже).
+    *   Кнопка <span class="tn-icon bx bx-fullscreen"></span> полного экрана, разворачивающая всю карту на экран, сохраняя возможность редактирования.
+*   Вверху по центру (на десктопе) или слева по центру (на мобильном и в разделённых видах) находятся инструменты рисования: пути, области, прямоугольники и круги.
+    *   Когда карта доступна только для чтения, панель инструментов не показывается.
 
-## Creating a new geo map
+## Создание новой геокарты
 
-Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ → _Collection_ → _Geo Map_.
+Щёлкните правой кнопкой по существующей заметке в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дереве заметок</a> и выберите _Вставить дочернюю заметку_ → _Коллекция_ → _Геокарта_.
 
-By default the map will be empty and will show the entire world.
+По умолчанию карта будет пустой и будет показывать весь мир.
 
-## Repositioning the map
+## Перемещение карты
 
-*   Click and drag the map in order to move across the map.
-*   Use the mouse wheel, two-finger gesture on a touchpad or the +/- buttons on the bottom-right to adjust the zoom.
+*   Щёлкните и перетащите карту, чтобы перемещаться по ней.
+*   Используйте колёсико мыши, жест двумя пальцами на тачпаде или кнопки +/- в правом нижнем углу для настройки масштаба.
 
-The position on the map and the zoom are saved inside the map note and restored when visiting again the note.
+Положение на карте и масштаб сохраняются внутри заметки карты и восстанавливаются при повторном посещении заметки.
 
-A map that has no position saved yet is framed around the markers it contains when you open it, so they are all in view without having to go looking for them. A map that contains no markers shows the whole world instead.
+Карта, у которой ещё нет сохранённого положения, при открытии обрамляется вокруг содержащихся в ней меток, так что все они видны без поиска. Карта, не содержащая меток, показывает вместо этого весь мир.
 
-In practice this applies to maps whose markers were added externally, by a script or through <a class="reference-link" href="../Advanced%20Usage/ETAPI%20(REST%20API).md">ETAPI (REST API)</a>. When you add markers yourself you have already moved the map to reach the place you are marking, and that movement saves a position.
+На практике это применяется к картам, чьи метки были добавлены извне — скриптом или через <a class="reference-link" href="../Advanced%20Usage/ETAPI%20(REST%20API).md">ETAPI (REST API)</a>. Когда вы добавляете метки сами, вы уже переместили карту, чтобы добраться до места, которое метите, и это движение сохраняет положение.
 
-## Going to your location
+## Переход к вашему местоположению
 
-Press the _Show your location_ (<span class="tn-icon bx bx-current-location"></span>) button at the bottom-right of the map, beside the zoom buttons. The first time, the browser or the operating system asks whether Trilium may know where the device is. In the desktop application the operating system's location settings decide.
+Нажмите кнопку _Показать ваше местоположение_ (<span class="tn-icon bx bx-current-location"></span>) в правом нижнем углу карты, рядом с кнопками масштаба. При первом нажатии браузер или операционная система спрашивает, может ли Trilium знать, где находится устройство. В десктопном приложении решают настройки местоположения операционной системы.
 
-The map then moves to where the device is and marks it with a blue dot. A lighter circle around the dot shows how accurate the position is: a phone with GPS gives a dot on the street, while a computer located through its network connection can give a circle that covers a neighbourhood. The map follows the dot as it moves, and the button stays pressed while it does.
+Карта затем перемещается туда, где находится устройство, и отмечает его синей точкой. Более светлый кружок вокруг точки показывает точность позиции: телефон с GPS даёт точку на уровне улицы, а компьютер, определяемый через сетевое подключение, может дать кружок, покрывающий целый район. Карта следует за точкой по мере её движения, и кнопка остаётся нажатой, пока это происходит.
 
-Dragging the map stops it from following. The dot stays and keeps moving, and pressing the button again brings the map back to it. Pressing the button while the map is following turns the dot off.
+Перетаскивание карты прекращает слежение. Точка остаётся и продолжает двигаться, и повторное нажатие кнопки возвращает карту к ней. Нажатие кнопки, пока карта следует, выключает точку.
 
-Click the dot to see its coordinates in the panel a searched place is shown in. From there the position can be kept as a marker (see _Keeping a place as a marker_). Clicking the lighter circle around the dot is a click on the map.
+Щёлкните по точке, чтобы увидеть её координаты в панели, в которой показывается найденное место. Оттуда позицию можно сохранить как метку (см. _Сохранение места как метки_). Щелчок по более светлому кружку вокруг точки — это щелчок по карте.
 
-If the position cannot be found, a message says so and the button keeps waiting for one; press it again to stop. If you refuse the permission, the button is disabled until the map is opened again. To allow it after all, change the permission for Trilium in the browser or in the system's location settings.
+Если позицию найти не удаётся, сообщение говорит об этом, и кнопка продолжает ждать позицию; нажмите её снова, чтобы остановить. Если вы отказали в разрешении, кнопка отключена до повторного открытия карты. Чтобы всё же разрешить, измените разрешение для Trilium в браузере или в настройках местоположения системы.
 
-Your position is not stored in the note, and Trilium does not send it anywhere on its own. Moving the map there does what any other pan or zoom does: the tile provider behind the map's style sees the coordinates of the area now on screen. The map does remember where you left it, as it does after any other movement, so a map you have taken to your location opens there the next time.
+Ваше местоположение не сохраняется в заметке, и Trilium никуда его сам не отправляет. Перемещение карты туда делает то же, что и любое другое панорамирование или масштабирование: поставщик тайлов за стилем карты видит координаты области, сейчас видимой на экране. Карта запоминает, где вы её оставили, как и после любого другого движения, поэтому карта, которую вы перенесли к вашему местоположению, откроется там в следующий раз.
 
-## Searching the map
+## Поиск по карте
 
-The search bar at the top-left of the map searches in two places. It always searches the notes that are already on the map. It can also search for places online, but only when you ask it to.
+Строка поиска в левом верхнем углу карты ищет в двух местах. Она всегда ищет по заметкам, уже находящимся на карте. Она также может искать места онлайн, но только когда вы её об этом просите.
 
-### Searching the notes already on the map
+### Поиск по заметкам, уже находящимся на карте
 
-Type in the search bar, and the notes on the map are matched by their title as you type. Accents are ignored, both in what you type and in the titles, so `zurich` finds _Zürich Hauptbahnhof_. Each word is searched for on its own, so `hotel paris` finds _Paris Hotel_. Notes without a `#geolocation` attribute are not offered, since there would be nowhere to go. Drawn shapes and GPS tracks are offered, even though they carry no such attribute: selecting one brings the whole shape or route into view.
+Введите текст в строку поиска, и заметки на карте будут сопоставляться по заголовку по мере ввода. Акценты игнорируются и в набранном, и в заголовках, поэтому `zurich` находит _Zürich Hauptbahnhof_. Каждое слово ищется само по себе, поэтому `hotel paris` находит _Paris Hotel_. Заметки без атрибута `#geolocation` не предлагаются, так как идти им некуда. Нарисованные фигуры и GPS-треки предлагаются, хотя такого атрибута у них нет: выбор одной из них показывает всю фигуру или маршрут в видимой области.
 
-If more notes match than the list can show, you are offered the ones closest to the area you are viewing.
+Если совпадающих заметок больше, чем список может показать, вам предлагаются ближайшие к области, которую вы просматриваете.
 
-### Searching for places online
+### Поиск мест онлайн
 
-Looking up a place sends what you typed to a third-party service. For this reason, it never happens while you type. Instead, the last row of the result list offers the search. That row reads _Search online for "…"_, with the name of the service below it. The search runs only when you press that row or select it with Enter.
+Поиск мест отправляет набранное стороннему сервису. По этой причине он никогда не происходит по мере ввода. Вместо этого последняя строка списка результатов предлагает поиск. Эта строка читается _Искать онлайн «…»_, с именем сервиса под ней. Поиск выполняется только когда вы нажимаете эту строку или выбираете её Enter'ом.
 
-Trilium uses Nominatim, the place search run by the OpenStreetMap Foundation. It needs no account and no API key. Its name is shown on every row that belongs to it: the row that offers the search, the row that says a search is running, and the row that reports that nothing was found or that the service could not be reached.
+Trilium использует Nominatim, поиск мест, запускаемый фондом OpenStreetMap. Он не требует ни учётной записи, ни API-ключа. Его имя показано на каждой строке, которая ему принадлежит: строке, предлагающей поиск, строке, сообщающей, что поиск выполняется, и строке, сообщающей, что ничего не найдено или что сервис недоступен.
 
-The search prefers the area you are viewing. Places inside the current view are searched for first and listed above the others. If you search for a shop while looking at your own town, you therefore find the branch in that town, and not one with the same name on another continent. The view is always treated as at least 25 km across, so a search made while zoomed into a single street still covers the town around it.
+Поиск предпочитает область, которую вы просматриваете. Места внутри текущего вида ищутся первыми и перечислены выше остальных. Если вы ищете магазин, глядя на свой город, вы находите филиал в этом городе, а не одноимённый на другом континенте. Вид всегда трактуется как имеющий ширину не менее 25 км, поэтому поиск, сделанный при масштабировании до одной улицы, всё равно покрывает окружающий город.
 
-### Going to a point
+### Переход к точке
 
-If you type or paste coordinates into the search bar, a _Go to_ row is offered above all the other results. Selecting it moves the map to that exact spot and marks it. You can then keep it as a marker, in the same way you keep a place found by searching.
+Если вы введёте или вставите координаты в строку поиска, над всеми остальными результатами будет предложена строка _Перейти к_. Выбор её перемещает карту к этому точному месту и отмечает его. Затем вы можете сохранить его как метку так же, как сохраняете место, найденное поиском.
 
-Points are untitled by default; the corresponding note opens with the default name selected so it can be easily replaced. If the map has a <a class="reference-link" href="../Advanced%20Usage/Default%20Note%20Title.md">Default Note Title</a> label, the marker is named by that template instead.
+Точки по умолчанию безымянны; соответствующая заметка открывается с выделенным именем по умолчанию, чтобы его можно было легко заменить. Если у карты есть метка <a class="reference-link" href="../Advanced%20Usage/Default%20Note%20Title.md">Заголовок заметки по умолчанию</a>, метка вместо этого называется по этому шаблону.
 
-The supported forms are:
+Поддерживаемые формы:
 
-*   A plain pair, such as `45.9432, 24.9668`. This is what Google Maps and OpenStreetMap both give you when you ask for the coordinates of a place, and it is also what the `#geolocation` attribute holds.
-*   The `geo:` link that the map itself offers for a place, through the _Open location_ action.
-*   The address of a place on Google Maps or OpenStreetMap, pasted whole.
+*   Простая пара, например `45.9432, 24.9668`. Это то, что и Google Maps, и OpenStreetMap дают вам при запросе координат места, и это также то, что держит атрибут `#geolocation`.
+*   Ссылка `geo:`, которую карта сама предлагает для места через действие _Открыть местоположение_.
+*   Адрес места в Google Maps или OpenStreetMap, вставленный целиком.
 
-A pair that is not a place on Earth, such as `1234, 5678`, is not offered.
+Пара, не являющаяся местом на Земле, например `1234, 5678`, не предлагается.
 
-### Reading the results
+### Чтение результатов
 
-Results are gathered under headings, and each group is ordered by distance from the middle of the map:
+Результаты собраны под заголовками, и каждая группа упорядочена по расстоянию от центра карты:
 
-*   _On this map_: notes that are already on the map, whatever their distance.
-*   _Nearby_: places found within about 25 km of the view.
-*   _Far away_: all the other places.
+*   _На этой карте_: заметки, уже находящиеся на карте, независимо от расстояния.
+*   _Рядом_: места, найденные в пределах примерно 25 км от вида.
+*   _Далеко_: все остальные места.
 
-The headings only appear when at least two of the three groups contain something. Every row that has a position shows how far away it is, in kilometres or miles according to your locale. A place found online shows its name on the first line and its address on the second.
+Заголовки появляются, только когда хотя бы две из трёх групп содержат что-то. Каждая строка, имеющая позицию, показывает, как далеко она находится, в километрах или милях в зависимости от вашей локали. Место, найденное онлайн, показывает своё имя на первой строке и адрес на второй.
 
-### Selecting a result
+### Выбор результата
 
-Selecting a note already on the map moves to its marker and opens the note beside the map, as clicking the marker would.
+Выбор заметки, уже находящейся на карте, перемещает к её метке и открывает заметку рядом с картой, как при щелчке по метке.
 
-Selecting a place found online moves the map to it and marks it with a temporary pin. The pin has a different color from the map's own markers. The map is fitted to the area that the place covers, so a country fills the view, while a house is shown at street level. Some places have a boundary, such as a country, a county or a park. When the service reports one, that boundary is outlined under the pin.
+Выбор места, найденного онлайн, перемещает карту к нему и отмечает его временной меткой. Метка имеет цвет, отличный от собственных меток карты. Карта вписывается в область, которую место покрывает, поэтому страна заполняет вид, а дом показывается на уровне улицы. У некоторых мест есть граница, такая как страна, округ или парк. Когда сервис сообщает таковую, она обводится под меткой.
 
-A panel then opens with the place's full address and its coordinates: in the top-right corner on desktop, and at the bottom of the map on mobile, where the top is kept for the search bar and the result counter. Pressing the coordinates copies them to the clipboard.
+Затем открывается панель с полным адресом места и его координатами: в правом верхнем углу на десктопе и внизу карты на мобильном, где верх занят строкой поиска и счётчиком результатов. Нажатие на координаты копирует их в буфер обмена.
 
-### Keeping a place as a marker
+### Сохранение места как метки
 
-Press _Add as marker_ in that panel to keep the place. A child note is created under the map. It takes the name of the place, as well as the icon, which matches the kind of place it is. Its `#geolocation` attribute is already set. The note opens beside the map, so you can edit it straight away. The temporary pin disappears, because the place is now a marker like any other.
+Нажмите _Добавить как метку_ в этой панели, чтобы сохранить место. Создаётся дочерняя заметка под картой. Она получает имя места, а также значок, соответствующий виду места. Её атрибут `#geolocation` уже задан. Заметка открывается рядом с картой, так что вы можете сразу её отредактировать. Временная метка исчезает, потому что место теперь обычная метка.
 
-The button is not offered on a map that cannot be edited, where the panel can still be read.
+Кнопка не предлагается на карте, которую нельзя редактировать, где панель всё равно можно прочитать.
 
-Press the panel's close button, or the Escape key, to send the place away without keeping it. The pin goes with it.
+Нажмите кнопку закрытия панели или клавишу Escape, чтобы отпустить место, не сохраняя его. Метка уходит вместе с ним.
 
-### Stepping through the results
+### Перебор результатов
 
-Once you select a result, a counter appears under the search bar, with a previous (<span class="tn-icon bx bx-chevron-left"></span>) and a next (<span class="tn-icon bx bx-chevron-right"></span>) button. These buttons move through everything the search offered, in the order it was listed. You can therefore compare several results without opening the list again. Pressing the counter itself moves the map back to the current result, which is useful after you have moved the map away from it.
+После выбора результата под строкой поиска появляется счётчик с кнопками предыдущего (<span class="tn-icon bx bx-chevron-left"></span>) и следующего (<span class="tn-icon bx bx-chevron-right"></span>) результата. Эти кнопки перемещаются по всему, что предложил поиск, в том порядке, в котором это было перечислено. Поэтому вы можете сравнить несколько результатов, не открывая список заново. Нажатие на сам счётчик возвращает карту к текущему результату, что полезно после того, как вы отодвинули карту от него.
 
-### The keyboard
+### Клавиатура
 
-*   <kbd>Enter</kbd> runs the online search when its row is the one selected, and otherwise moves to the highlighted result. Pressed after a result has been taken, it brings the list back.
-*   <kbd>Escape</kbd> closes the result list, and closes the place panel.
-*   Returning to the search bar reopens the list it was showing.
-*   The <span class="tn-icon bx bx-x"></span> button at the end of the bar empties it, which also takes a searched place, its pin and its panel off the map.
+*   <kbd>Enter</kbd> выполняет онлайн-поиск, когда выбрана его строка, иначе переходит к подсвеченному результату. Нажатый после того, как результат выбран, он возвращает список.
+*   <kbd>Escape</kbd> закрывает список результатов и панель места.
+*   Возврат в строку поиска вновь открывает показывавшийся список.
+*   Кнопка <span class="tn-icon bx bx-x"></span> в конце строки очищает её, что также убирает с карты найденное место, его метку и его панель.
 
-## Adding a marker using the map
+## Добавление метки с помощью карты
 
-### Adding a new note using the _Add marker_ button
+### Добавление новой заметки кнопкой _Добавить метку_
 
-1.  To create a marker, first navigate to the desired point on the map. Then press the _Add marker_ (<span class="tn-icon bx bx-pin"></span>) button at the center-bottom of the map.
-2.  Once pressed, the map will enter in the insert mode, as illustrated by the notification. Additionally, a preview of the marker will be shown at the cursor position.
-    
-    Simply click the point on the map where to place the marker. To cancel, press either the  Escape key or press again the _Add marker_ button.
-3.  Once clicked, the marker will show up on the map and a popup will show to the right with the title already selected to be changed.
+1.  Чтобы создать метку, сначала перейдите к нужной точке на карте. Затем нажмите кнопку _Добавить метку_ (<span class="tn-icon bx bx-pin"></span>) внизу по центру карты.
+2.  После нажатия карта перейдёт в режим вставки, о чём сообщит уведомление. Дополнительно предпросмотр метки будет показан в позиции курсора.
 
-### Adding a new note using the contextual menu
+    Просто щёлкните по точке на карте, где разместить метку. Чтобы отменить, нажмите клавишу Escape или снова нажмите кнопку _Добавить метку_.
+3.  После щелчка метка появится на карте, и справа покажется всплывающее окно с уже выделенным заголовком для изменения.
 
-1.  Right click anywhere on the map, where to place the newly created marker (and corresponding note).
-2.  Select _Add a marker at this location_ (<span class="tn-icon bx bx-pin"></span>).
-3.  Once clicked on a position on the map, the marker will show up on the map and a popup will show to the right with the title already selected to be changed.
+### Добавление новой заметки через контекстное меню
 
-### Adding an existing note from the note tree
+1.  Щёлкните правой кнопкой где угодно на карте, где разместить вновь созданную метку (и соответствующую заметку).
+2.  Выберите _Добавить метку в этом месте_ (<span class="tn-icon bx bx-pin"></span>).
+3.  После щелчка по позиции на карте метка появится на карте, и справа покажется всплывающее окно с уже выделенным заголовком для изменения.
 
-1.  Select the desired note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>.
-2.  Hold the mouse on the note and drag it to the map to the desired location.
-3.  The map should be updated with the new marker.
+### Добавление существующей заметки из дерева заметок
 
-This works for:
+1.  Выберите нужную заметку в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дереве заметок</a>.
+2.  Удерживайте мышь на заметке и перетащите её на карту в нужное место.
+3.  Карта должна обновиться новой меткой.
 
-*   Notes that are not part of the geo map, case in which a [clone](../Basic%20Concepts%20and%20Features/Notes/Cloning%20Notes.md) will be created.
-*   Notes that are a child of the geo map but not yet positioned on the map.
-*   Notes that are a child of the geo map and also positioned, case in which the marker will be relocated to the new position.
+Это работает для:
+
+*   Заметок, не входящих в геокарту, в этом случае будет создан [клон](../Basic%20Concepts%20and%20Features/Notes/Cloning%20Notes.md).
+*   Заметок, являющихся дочерними для геокарты, но ещё не размещённых на карте.
+*   Заметок, являющихся дочерними для геокарты и уже размещённых, в этом случае метка будет перенесена на новую позицию.
 
 > [!NOTE]
-> Dragging existing notes only works if the map is in editing mode. See the _Read-only_ section for more information.
+> Перетаскивание существующих заметок работает, только если карта в режиме редактирования. См. раздел _Только для чтения_ для получения дополнительной информации.
 
-### Adding a note from a place the map already shows
+### Добавление заметки из места, которое карта уже показывает
 
-When a vector map style is used, the map itself draws the shops, cafés, museums and other places around the area being viewed. Once the map is zoomed in far enough for these to be drawn, they can be clicked:
+Когда используется векторный стиль карты, сама карта рисует магазины, кафе, музеи и другие места вокруг просматриваемой области. Как только карта увеличена достаточно, чтобы они рисовались, по ним можно щёлкать:
 
-1.  Look for the places drawn in orange. This is the same color used for a place found by searching. These are the places you can click. They are drawn almost solid, while the other places on the map stay a faint grey.
-2.  Rest the mouse on one of them. Its name appears above it, and the mouse cursor changes to a pointer. The map draws these places as icons without names, so you read a name by hovering over it. If all the names were shown at once, they would crowd out the titles of your own markers.
-3.  Click it. The same panel used for a place found by searching appears. It shows the name of the place and its coordinates, and a pin is placed on the map.
-4.  Press _Add as marker_ to keep it. The note is created with the name of the place as its title, and with the icon that matches the kind of place it is.
+1.  Ищите места, нарисованные оранжевым. Это тот же цвет, что используется для места, найденного поиском. Это места, по которым можно щёлкать. Они нарисованы почти сплошным цветом, тогда как остальные места на карте остаются бледно-серыми.
+2.  Наведите мышь на одно из них. Его имя появится над ним, а курсор мыши сменится на указатель. Карта рисует эти места значками без имён, поэтому имя читается при наведении. Если бы все имена показывались сразу, они затеснили бы заголовки ваших собственных меток.
+3.  Щёлкните по нему. Появится та же панель, что используется для места, найденного поиском. Она показывает имя места и его координаты, и на карту ставится метка.
+4.  Нажмите _Добавить как метку_, чтобы сохранить его. Заметка создаётся с именем места в качестве заголовка и со значком, соответствующим виду места.
 
-Places are read from the map data that has already been downloaded, so clicking one does not send anything to the internet.
+Места читаются из уже загруженных данных карты, поэтому щелчок по ним ничего не отправляет в интернет.
 
-Some things to keep in mind:
+Несколько вещей, о которых стоит помнить:
 
-*   Places with no name in the map data, such as benches or parking spaces, show no name and cannot be clicked. Clicking them does nothing, just like clicking an empty part of the map.
-*   The map's own markers come first. If a marker covers a place, clicking it opens the note and not the place.
-*   This does not work with the raster (OpenStreetMap) style, because its places are part of the map image. It also does not work with the _Neutrino_ style, which draws no places.
-*   In read-only mode you can still click a place and read it, but you cannot keep it as a marker.
+*   Места без имени в данных карты, такие как скамейки или парковочные места, не показывают имени и не кликабельны. Щелчок по ним ничего не делает, как и щелчок по пустой части карты.
+*   Собственные метки карты имеют приоритет. Если метка покрывает место, щелчок по ней открывает заметку, а не место.
+*   Это не работает с растровым стилем (OpenStreetMap), так как его места являются частью изображения карты. Это также не работает со стилем _Neutrino_, который не рисует мест.
+*   В режиме только для чтения вы всё равно можете щёлкнуть по месту и прочитать его, но не можете сохранить его как метку.
 
-## How the location of the markers is stored
+## Как хранится местоположение меток
 
-The location of a marker is stored in the `#geolocation` attribute of the child notes:
+Местоположение метки хранится в атрибуте `#geolocation` дочерних заметок:
 
-This value can be added manually if needed. The value of the attribute is made up of the latitude and longitude separated by a comma.
+Это значение можно при необходимости добавить вручную. Значение атрибута состоит из широты и долготы, разделённых запятой.
 
-On an image map, the position is stored in `#mapPosition` instead (see <a class="reference-link" href="Geo%20Map/Image%20maps.md">Image maps</a>).
+На карте-изображении позиция вместо этого хранится в `#mapPosition` (см. <a class="reference-link" href="Geo%20Map/Image%20maps.md">Карты-изображения</a>).
 
-## Repositioning markers
+## Перемещение меток
 
-Once a marker is set, it can be repositioned using one of the two ways:
+После установки метку можно переместить одним из двух способов:
 
-*   By right clicking the marker and selecting _Move to another location_ (<span class="tn-icon bx bx-move"></span>).
-*   By clicking the marker to open the popup and selecting the _Move to another location_ (<span class="tn-icon bx bx-move"></span>) button underneath the title bar.
+*   Щёлкнув правой кнопкой по метке и выбрав _Переместить в другое место_ (<span class="tn-icon bx bx-move"></span>).
+*   Щёлкнув по метке, чтобы открыть всплывающее окно, и выбрав кнопку _Переместить в другое место_ (<span class="tn-icon bx bx-move"></span>) под строкой заголовка.
 
-After clicking the button to move the marker, click at the desired position on the map to replace it. To cancel the operation, press Escape.
+После нажатия кнопки перемещения метки щёлкните по нужной позиции на карте, чтобы заменить её. Чтобы отменить операцию, нажмите Escape.
 
 > [!NOTE]
-> If the map is locked for editing (see below), the map needs to be unlocked before moving the marker.
+> Если карта заблокирована для редактирования (см. ниже), перед перемещением метки её нужно разблокировать.
 
-## Interaction with the markers, tracks or shapes
+## Взаимодействие с метками, треками или фигурами
 
-*   Hovering over a marker will display a <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tooltip.md">Note Tooltip</a> with the content of the note it belongs to.
-    *   Clicking on the note title in the tooltip will navigate to the note in the current view.
-*   Right-clicking the marker will open a contextual menu (as described below).
-*   Clicking a marker will focus on the marker and display a dedicated popup with the details. This works regardless of whether the map is editable or not.
+*   Наведение на метку отобразит <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tooltip.md">Подсказку заметки</a> с содержимым заметки, которой она принадлежит.
+    *   Щелчок по заголовку заметки в подсказке перейдёт к заметке в текущем виде.
+*   Правый щелчок по метке откроет контекстное меню (как описано ниже).
+*   Щелчок по метке сфокусируется на метке и отобразит выделенное всплывающее окно с деталями. Это работает независимо от того, редактируема ли карта.
 
-### Popup view
+### Всплывающий вид
 
-When a marker, a [shape](Geo%20Map/Drawing%20shapes.md), or track is clicked, a popup will open to the right which contains the following information:
+При щелчке по метке, [фигуре](Geo%20Map/Drawing%20shapes.md) или треку справа откроется всплывающее окно, содержащее следующую информацию:
 
-*   The title and icon of the marker, both editable.
-*   An indicator for the coordinates (<span class="tn-icon bx bx-crosshair"></span>); clicking it will copy the coordinates to clipboard.
-*   A <span class="tn-icon bx bx-expand-alt"></span> button to maximize the popup.
-*   Buttons to interact with the current item:
-    *   <span class="tn-icon bx bx-log-in"></span> Open the marker in the same pane, or use <span class="tn-icon bx bx-dots-horizontal-rounded"></span> to open it in a new tab, split, etc.
-    *   A <span class="tn-icon bx bx-map-alt"></span> button to open the location in a dedicated application (e.g. Google Maps on mobile).
-    *   <span class="tn-icon bx bx-palette"></span> Color picker to change the color of the marker.
-    *   <span class="tn-icon bx bx-move"></span> Markers can also be moved, unlike tracks or shapes (which need to be redrawn).
-    *   <span class="tn-icon bx bx-trash"></span> Button to remove the marker from the map, which can optionally delete its corresponding note.
-        *   Removing a marker without deleting the note will only remove its `#geolocation` attribute (case in which the coordinates have to be manually added back in in order to get the note to show on the map again).
-        *   Similarly, removing a shape will remove its `#geoShape` attribute.
-*   The <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> of the marker, if any.
-*   The note's content which can be edited directly from the panel.
+*   Заголовок и значок метки, оба редактируемые.
+*   Индикатор координат (<span class="tn-icon bx bx-crosshair"></span>); щелчок по нему скопирует координаты в буфер обмена.
+*   Кнопка <span class="tn-icon bx bx-expand-alt"></span> для разворачивания всплывающего окна.
+*   Кнопки для взаимодействия с текущим элементом:
+    *   <span class="tn-icon bx bx-log-in"></span> Открыть метку в той же панели или использовать <span class="tn-icon bx bx-dots-horizontal-rounded"></span>, чтобы открыть её в новой вкладке, разделении и т.д.
+    *   Кнопка <span class="tn-icon bx bx-map-alt"></span>, чтобы открыть местоположение в выделенном приложении (например, Google Maps на мобильном).
+    *   <span class="tn-icon bx bx-palette"></span> Палитра для изменения цвета метки.
+    *   <span class="tn-icon bx bx-move"></span> Метки также можно перемещать, в отличие от треков или фигур (которые нужно перерисовывать).
+    *   <span class="tn-icon bx bx-trash"></span> Кнопка удаления метки с карты, которая может опционально удалить её заметку.
+        *   Удаление метки без удаления заметки уберёт только её атрибут `#geolocation` (в этом случае координаты нужно будет вручную добавить обратно, чтобы заметка снова показалась на карте).
+        *   Аналогично, удаление фигуры уберёт её атрибут `#geoShape`.
+*   <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Продвигаемые атрибуты</a> метки, если есть.
+*   Содержимое заметки, которое можно редактировать прямо из панели.
 
-To dismiss the popup:
+Чтобы закрыть всплывающее окно:
 
-*   Press the X button at the top-right of the popup.
-*   In the map, press anywhere outside the popup.
-*   Or simply press the Escape key.
+*   Нажмите кнопку X в правом верхнем углу всплывающего окна.
+*   На карте нажмите куда угодно вне всплывающего окна.
+*   Или просто нажмите клавишу Escape.
 
-When a marker is clicked, the map will automatically adjust the viewport so that the marker is still visible with the popup open. The currently selected marker is shown slightly bigger.
+При щелчке по метке карта автоматически подстроит видовой экран так, чтобы метка оставалась видимой при открытом всплывающем окне. Текущая выбранная метка показана чуть крупнее.
 
-It is possible to switch between markers by clicking on them even when the popup view is already open.
+Можно переключаться между метками, щёлкая по ним, даже когда всплывающий вид уже открыт.
 
-Markers can have <a class="reference-link" href="../Note%20Types/Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> between them and clicking on such a link will automatically adjust the viewport and the popup view to the new note.
+Метки могут иметь <a class="reference-link" href="../Note%20Types/Text/Links/Internal%20(reference)%20links.md">Внутренние (ссылочные) ссылки</a> между собой, и щелчок по такой ссылке автоматически подстроит видовой экран и всплывающий вид к новой заметке.
 
-### Contextual menu
+### Контекстное меню
 
-It's possible to press the right mouse button to display a contextual menu.
+Можно нажать правую кнопку мыши, чтобы показать контекстное меню.
 
-1.  If right-clicking an empty section of the map (not on a marker), it allows to:
-    1.  <span class="tn-icon bx bx-crosshair"></span> Displays the latitude and longitude. Clicking this option will copy them to the clipboard.
-    2.  <span class="tn-icon bx bx-map-alt"></span> Open the location using an external application (if the operating system supports it).
-    3.  <span class="tn-icon bx bx-pin"></span> Adding a new marker at that location.
-2.  If right-clicking on a marker, it allows to:
-    1.  <span class="tn-icon bx bx-crosshair"></span> Displays the latitude and longitude. Clicking this option will copy them to the clipboard.
-    2.  <span class="tn-icon bx bx-map-alt"></span> Open the location using an external application (if the operating system supports it).
-    3.  Open the note in a new tab, split or window.
-    4.  <span class="tn-icon bx bx-move"></span> Move the marker to another location.
-    5.  <span class="tn-icon bx bx-trash"></span> Button to remove the marker from the map, which can optionally delete its corresponding note. Removing a marker without deleting the note will only remove its `#geolocation` attribute (case in which the coordinates have to be manually added back in in order to get the note to show on the map again).
-3.  Shapes can also be right-clicked and the menu is similar to markers except they cannot be moved.
+1.  Если щёлкнуть правой кнопкой по пустому участку карты (не по метке), оно позволяет:
+    1.  <span class="tn-icon bx bx-crosshair"></span> Показать широту и долготу. Щелчок по этой опции скопирует их в буфер обмена.
+    2.  <span class="tn-icon bx bx-map-alt"></span> Открыть местоположение во внешнем приложении (если операционная система это поддерживает).
+    3.  <span class="tn-icon bx bx-pin"></span> Добавить новую метку в этом месте.
+2.  Если щёлкнуть правой кнопкой по метке, оно позволяет:
+    1.  <span class="tn-icon bx bx-crosshair"></span> Показать широту и долготу. Щелчок по этой опции скопирует их в буфер обмена.
+    2.  <span class="tn-icon bx bx-map-alt"></span> Открыть местоположение во внешнем приложении (если операционная система это поддерживает).
+    3.  Открыть заметку в новой вкладке, разделении или окне.
+    4.  <span class="tn-icon bx bx-move"></span> Переместить метку в другое место.
+    5.  <span class="tn-icon bx bx-trash"></span> Кнопка удаления метки с карты, которая может опционально удалить её заметку. Удаление метки без удаления заметки уберёт только её атрибут `#geolocation` (в этом случае координаты нужно будет вручную добавить обратно, чтобы заметка снова показалась на карте).
+3.  По фигурам также можно щёлкнуть правой кнопкой, и меню похоже на метки, за исключением того, что их нельзя перемещать.
 
-### Icon and color
+### Значок и цвет
 
 <figure class="image image-style-align-right image_resized" style="width:47.42%;"><img style="aspect-ratio:885/321;" src="3_Geo Map_image.png" width="885" height="321"></figure>
 
-The markers will have the same icon as the note.
+Метки будут иметь тот же значок, что и заметка.
 
-It's possible to add a custom color to a marker by assigning them a `#color` attribute such as `#color=green`.
+Можно добавить пользовательский цвет метке, присвоив им атрибут `#color`, например `#color=green`.
 
-This also applies to tracks and [shapes](Geo%20Map/Drawing%20shapes.md).
+Это также применяется к трекам и [фигурам](Geo%20Map/Drawing%20shapes.md).
 
 > [!NOTE]
-> The color as it will be displayed on the map might be slightly tinted in order to make the text or icon more legible.
+> Цвет, как он будет отображён на карте, может быть слегка оттенён, чтобы сделать текст или значок более читаемым.
 
-### Adding the coordinates manually
+### Добавление координат вручную
 
-Searching for the place is usually quicker (see _Searching the map_ above). The steps below remain useful for a coordinate that is already to hand, or for a place the search cannot find.
+Поиск места обычно быстрее (см. _Поиск по карте_ выше). Шаги ниже остаются полезными для координат, которые уже есть под рукой, или для места, которое поиск не может найти.
 
-In a nutshell, create a child note and set the `#geolocation` attribute to the coordinates.
+Кратко: создайте дочернюю заметку и задайте атрибуту `#geolocation` координаты.
 
-The value of the attribute is made up of the latitude and longitude separated by a comma.
+Значение атрибута состоит из широты и долготы, разделённых запятой.
 
-#### Adding from Google Maps
+#### Добавление из Google Maps
 
-1.  In Google Maps, on the web:
-    1.  Look for a desired location, right click on it and a context menu will show up.
-    2.  Simply click on the first item displaying the coordinates and they will be copied to clipboard.
-2.  In Trilium, create a child note under the map.
-3.  Then paste the value inside the text box into the `#geolocation` attribute of a child note of the map (don't forget to surround the value with a `"` character).
+1.  В Google Maps в вебе:
+    1.  Найдите нужное место, щёлкните по нему правой кнопкой, и появится контекстное меню.
+    2.  Просто щёлкните по первому элементу, показывающему координаты, и они будут скопированы в буфер обмена.
+2.  В Trilium создайте дочернюю заметку под картой.
+3.  Затем вставьте значение внутрь текстового поля в атрибут `#geolocation` дочерней заметки карты (не забудьте окружить значение символом `"`).
 
-#### Adding from OpenStreetMap
+#### Добавление из OpenStreetMap
 
-Similarly to the Google Maps approach:
+Аналогично подходу с Google Maps:
 
-1.  Go to any location on openstreetmap.org and right click to bring up the context menu. Select the _Show address_ item.
-2.  The address will be visible in the top-left of the screen, in the place of the search bar. Select the coordinates and copy them into the clipboard.
-3.  Simply paste the value inside the text box into the `#geolocation` attribute of a child note of the map and then it should be displayed on the map.
+1.  Перейдите к любому месту на openstreetmap.org и щёлкните правой кнопкой, чтобы вызвать контекстное меню. Выберите пункт _Показать адрес_.
+2.  Адрес будет виден в левом верхнем углу экрана на месте строки поиска. Выделите координаты и скопируйте их в буфер обмена.
+3.  Просто вставьте значение внутрь текстового поля в атрибут `#geolocation` дочерней заметки карты, и затем она должна отобразиться на карте.
 
-## Drawing shapes on the map
+## Рисование фигур на карте
 
-See the dedicated <a class="reference-link" href="Geo%20Map/Drawing%20shapes.md">Drawing shapes</a> page.
+См. выделенную страницу <a class="reference-link" href="Geo%20Map/Drawing%20shapes.md">Рисование фигур</a>.
 
-## Using an image instead of the world map
+## Использование изображения вместо карты мира
 
-A geo map can be drawn over an image of your own, such as a floor plan or a fantasy map, with markers placed in the image's pixels. See <a class="reference-link" href="Geo%20Map/Image%20maps.md">Image maps</a>.
+Геокарту можно рисовать поверх собственного изображения, такого как план этажа или фэнтезийная карта, с метками, размещёнными в пикселях изображения. См. <a class="reference-link" href="Geo%20Map/Image%20maps.md">Карты-изображения</a>.
 
-## Adding GPS tracks (.gpx)
+## Добавление GPS-треков (.gpx)
 
 <figure class="image"><img style="aspect-ratio:1566/1155;" src="1_Geo Map_image.png" width="1566" height="1155"></figure>
 
-Trilium can display GPS tracks on the geo map, in the form of `.gpx` files.
+Trilium может отображать GPS-треки на геокарте в виде файлов `.gpx`.
 
-To add a track, either:
+Чтобы добавить трек:
 
-1.  Drag & drop a `.gpx` file inside the geo map in the note tree.
-    1.  In order for the file to be recognized as a GPS track, it needs to show up as `application/gpx+xml` in the _File type_ field.
-2.  Press the _Add a GPS track from a GPX file_ (<span class="tn-icon bx bx-trip"></span>) button which will directly prompt for a GPX file and import it as a subnote of the collection.
+1.  Перетащите файл `.gpx` внутрь геокарты в дереве заметок.
+    1.  Чтобы файл был распознан как GPS-трек, он должен показываться как `application/gpx+xml` в поле _Тип файла_.
+2.  Нажмите кнопку _Добавить GPS-трек из GPX-файла_ (<span class="tn-icon bx bx-trip"></span>), которая сразу запросит GPX-файл и импортирует его как подзаметку коллекции.
 
-When going back to the map, the track should now be visible.
+Вернувшись к карте, трек должен стать видимым.
 
-The starting point of the track will be displayed as a marker, with the name of the note underneath. The start marker will also respect the icon and the `color` of the note. The end marker is displayed with a distinct icon.
+Начальная точка трека будет отображена как метка с именем заметки под ней. Начальная метка также будет учитывать значок и `color` заметки. Конечная метка отображается отдельным значком.
 
-If the track file contains multiple tracks, they will all be displayed as well as markers. Trilium will also split a single track that happens to have non-continuous points.
+Если файл трека содержит несколько треков, все они будут отображены, как и метки. Trilium также разделит единственный трек, у которого оказались непоследовательные точки.
 
-If the GPX contains waypoints, they will also be displayed, including their names.
+Если GPX содержит путевые точки, они также будут отображены, включая их имена.
 
-When the track is clicked, the entire route is brought into view, as well as the right popup will indicate details about the track such as distance, duration and the elevation map. This information is also displayed when clicking the `.gpx` note itself.
+При щелчке по треку весь маршрут показывается в видимой области, а правое всплывающее окно укажет детали о треке, такие как расстояние, продолжительность и карта высот. Эта информация также отображается при щелчке по самой заметке `.gpx`.
 
-When clicking on the markers of a track (whether it's the start or stop builtin markers, or custom markers that are part of the track), only that marker is brought into view, as opposed to the entire route.
+При щелчке по меткам трека (будь то встроенные метки начала и конца или пользовательские метки, являющиеся частью трека) в видимую область показывается только эта метка, а не весь маршрут.
 
-## Read-only mode
+## Режим только для чтения
 
-When a map is [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) all editing features will be disabled such as:
+Когда карта [доступна только для чтения](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md), все возможности редактирования отключены, такие как:
 
-*   The _Add marker_ (<span class="tn-icon bx bx-pin"></span>) button at the bottom of the map.
-*   Repositioning markers.
-*   Editing from the contextual menu (removing locations or adding new items).
-*   Keeping a place as a marker, whether you found it by searching or clicked it on the map. You can still search and click, and you can still look at a place and copy its coordinates.
-*   Drawing [shapes](Geo%20Map/Drawing%20shapes.md).
-*   The _Geo map properties_ dialog; its entry is hidden from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a>.
+*   Кнопка _Добавить метку_ (<span class="tn-icon bx bx-pin"></span>) внизу карты.
+*   Перемещение меток.
+*   Редактирование из контекстного меню (удаление местоположений или добавление новых элементов).
+*   Сохранение места как метки, нашли ли вы его поиском или щёлкнули на карте. Вы всё равно можете искать и щёлкать, и можете просматривать место и копировать его координаты.
+*   Рисование [фигур](Geo%20Map/Drawing%20shapes.md).
+*   Диалог _Свойства геокарты_; его запись скрыта из <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a>.
 
-To set a map as read-only, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Editable_ → _Read-only_.
+Чтобы установить карту в режим только для чтения, перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a> → _Редактируемость_ → _Только для чтения_.
 
-## Configuration
+## Конфигурация
 
-### Map Style
+### Стиль карты
 
-The styling of the map can be adjusted in the <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a>, under _Background_ in the _Geo map properties_ dialog, or manually via the `#map:style` attribute.
+Оформление карты можно настроить в <a class="reference-link" href="Collection%20Properties.md">Свойствах коллекции</a>, в разделе _Фон_ диалога _Свойства геокарты_, или вручную через атрибут `#map:style`.
 
-The geo map comes with two different types of styles:
+Геокарта поставляется с двумя разными типами стилей:
 
-*   Raster styles
-    *   For these styles the map is represented as a grid of images at different zoom levels. This is the traditional way OpenStreetMap used to work.
-    *   Zoom is slightly restricted.
-    *   Currently, the only raster theme is the original OpenStreetMap style.
-*   Vector styles
-    *   Vector styles are not represented as images, but as geometrical shapes. This makes the rendering much smoother, especially when zooming and looking at the building edges, for example.
-    *   The map can be zoomed in much further.
-    *   These come in various styles that are both light (Colorful, Graybeard, Neutrino) and dark (Eclipse, Shadow).
-    *   The vector styles come from [VersaTiles](https://versatiles.org/), a free and open-source project providing map tiles based on OpenStreetMap.
-    *   The VersaTiles layers also provide 3D building information (see below).
+*   Растровые стили
+    *   В этих стилях карта представлена сеткой изображений на разных уровнях масштаба. Это традиционный способ работы OpenStreetMap.
+    *   Масштаб слегка ограничен.
+    *   В настоящее время единственная растровая тема — исходный стиль OpenStreetMap.
+*   Векторные стили
+    *   Векторные стили представлены не изображениями, а геометрическими фигурами. Это делает рендеринг намного более плавным, особенно при масштабировании и рассмотрении границ зданий, например.
+    *   Карту можно увеличивать намного сильнее.
+    *   Они поставляются в разных стилях, как светлых (Colorful, Graybeard, Neutrino), так и тёмных (Eclipse, Shadow).
+    *   Векторные стили взяты из [VersaTiles](https://versatiles.org/) — свободного проекта с открытым исходным кодом, предоставляющего картографические тайлы на основе OpenStreetMap.
+    *   Слои VersaTiles также предоставляют 3D-информацию о зданиях (см. ниже).
 
-The default theme is Versatiles Colorful (vector).
+Тема по умолчанию — Versatiles Colorful (векторная).
 
-#### 3D view with buildings
+#### 3D-вид со зданиями
 
 <figure class="image"><img style="aspect-ratio:2727/1642;" src="2_Geo Map_image.png" width="2727" height="1642"></figure>
 
-Trilium v0.105.0 introduces a 3D view, courtesy of MapLibre GL. To enter 3D mode, simply press the _3D_ button at the bottom-right of the map or press Ctrl and drag across the map.
+Trilium v0.105.0 представляет 3D-вид, благодаря MapLibre GL. Чтобы войти в 3D-режим, просто нажмите кнопку _3D_ в правом нижнем углу карты или нажмите Ctrl и перетащите по карте.
 
-The buildings will only appear from zoom 14 onwards to avoid lag.
-
-> [!NOTE]
-> To get 3D buildings, make sure you are using the _VersaTiles_ styles which provide the building informatia via the `versatiles-shortbread` source.
-
-### Custom map style / tiles
-
-Starting with v0.102.0 it is possible to use custom tile sets, but only in raster format.
-
-To use one:
-
-1.  Open the _Geo map properties_ dialog from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a>.
-2.  Under _Background_, set _Type_ to _Custom tileset_.
-3.  In _Tile URL_, enter the address of the tile set, with `{z}`, `{x}` and `{y}` where the zoom level and the position of the tile go. For example, to use Esri.NatGeoWorldMap, enter [`https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}`](https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/%7Bz%7D/%7By%7D/%7Bx%7D). The URL is saved once you leave the field; a URL that doesn't start with `http://` or `https://`, or that lacks one of the three placeholders, is not saved. A map drawn over an image keeps its image until a URL is saved.
-4.  If the tiles are dark, turn on _Dark tileset_, which draws the marker titles in a light color so that they remain readable.
-
-Additionally:
-
-*   Hi-DPI tiles are supported via the `{r}` placeholder.
-*   Servers that number their tiles by quadkey are supported via the `{quadkey}` placeholder, in place of `{z}`, `{x}` and `{y}`.
-
-To go back to a built-in style, set _Type_ back to _Vector & Raster_. The tile set is switched off rather than removed: its label is renamed to `#disabled:map:style`, so setting _Type_ to _Custom tileset_ again brings back the same URL. A tile set inherited from a parent note or a template is overridden by the default style instead.
-
-The tile set can also be set manually: the URL goes in the `#map:style` [label](../Advanced%20Usage/Attributes/Labels.md), and the `#map:darkStyle` label marks it as dark. `#map:darkStyle` also overrides the built-in styles.
+Здания будут появляться только с 14-го уровня масштаба, чтобы избежать подтормаживаний.
 
 > [!NOTE]
-> For a list of tile sets, see the [Leaflet Providers preview](https://leaflet-extras.github.io/leaflet-providers/preview/) page. Select a desired tile set and just copy the URL from the _Plain JavaScript_ example.
+> Чтобы получить 3D-здания, убедитесь, что вы используете стили _VersaTiles_, которые предоставляют информацию о зданиях через источник `versatiles-shortbread`.
 
-Custom vector map support is planned, but not yet implemented.
+### Пользовательский стиль карты / тайлы
 
-### Other options
+Начиная с v0.102.0 возможно использовать пользовательские наборы тайлов, но только в растровом формате.
 
-The following options can be configured either via the <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a>, by clicking on the settings (<span class="tn-icon bx bx-cog"></span>) button. Alternatively, each of these options also have a corresponding [label](../Advanced%20Usage/Attributes/Labels.md) that can be set manually.
+Чтобы использовать один:
 
-*   Scale, which illustrates the scale of the map in either kilometers or miles in the bottom-left of the map.
-    *   The unit is determined by the _Formatting locale_ option in _Language & Region_.
-*   The name of the markers is displayed by default underneath the pin on the map. Since v0.102.0, it is possible to hide these labels which increases the performance and decreases clutter when there are many markers on the map.
-*   v0.105.0 also introduces a feature called _Group nearby markers_ which will cluster multiple markers together at low zoom.
-    *   The clusters display the number of items they contain. The color also changes based on the count.
-    *   Clicking on a cluster will automatically zoom in so that the individual markers that make up the cluster are now visible.
+1.  Откройте диалог _Свойства геокарты_ из <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a>.
+2.  В разделе _Фон_ установите _Тип_ в _Пользовательский набор тайлов_.
+3.  В _URL тайлов_ введите адрес набора тайлов с `{z}`, `{x}` и `{y}` там, где должны идти уровень масштаба и позиция тайла. Например, чтобы использовать Esri.NatGeoWorldMap, введите [`https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}`](https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/%7Bz%7D/%7By%7D/%7Bx%7D). URL сохраняется при покидании поля; URL, не начинающийся с `http://` или `https://` или не содержащий один из трёх заполнителей, не сохраняется. Карта, нарисованная поверх изображения, сохраняет своё изображение, пока не сохранён URL.
+4.  Если тайлы тёмные, включите _Тёмный набор тайлов_, который рисует заголовки меток светлым цветом, чтобы они оставались читаемыми.
 
-The same options are also listed under _General_ in the <span class="tn-icon bx bx-cog"></span>_Geo map properties_ dialog, opened from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> or from the settings menu of the <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a>. Its _Included notes_ section sets whether archived notes are shown and the _Maximum nesting depth_ (see below), and its _Background_ section holds the map style, the URL of a custom tile set when _Type_ is set to _Custom tileset_ (see above), or, with _Type_ set to _Custom image_, draws the map over an image of your own instead, as described in <a class="reference-link" href="Geo%20Map/Image%20maps.md">Image maps</a>.
+Дополнительно:
 
-The map shows the notes of its whole subtree, not only its children. _Maximum nesting depth_ (`#maxNestingDepth`) limits how deep below the map it looks: `0` shows only the children, `1` adds their children, and so on. Without a value, every level is shown.
+*   Поддерживаются тайлы Hi-DPI через заполнитель `{r}`.
+*   Серверы, нумерующие свои тайлы квадроключами, поддерживаются через заполнитель `{quadkey}` вместо `{z}`, `{x}` и `{y}`.
+
+Чтобы вернуться к встроенному стилю, установите _Тип_ обратно в _Векторный и растровый_. Набор тайлов выключается, а не удаляется: его метка переименовывается в `#disabled:map:style`, поэтому повторная установка _Типа_ в _Пользовательский набор тайлов_ возвращает тот же URL. Набор тайлов, унаследованный от родительской заметки или шаблона, переопределяется стилем по умолчанию.
+
+Набор тайлов также можно задать вручную: URL идёт в [метку](../Advanced%20Usage/Attributes/Labels.md) `#map:style`, а метка `#map:darkStyle` помечает его как тёмный. `#map:darkStyle` также переопределяет встроенные стили.
+
+> [!NOTE]
+> Список наборов тайлов см. на странице предпросмотра [Leaflet Providers](https://leaflet-extras.github.io/leaflet-providers/preview/). Выберите нужный набор тайлов и просто скопируйте URL из примера _Plain JavaScript_.
+
+Поддержка пользовательских векторных карт планируется, но ещё не реализована.
+
+### Другие опции
+
+Следующие опции можно настроить либо через <a class="reference-link" href="Collection%20Properties.md">Свойства коллекции</a>, нажав кнопку настроек (<span class="tn-icon bx bx-cog"></span>). Альтернативно, каждая из этих опций также имеет соответствующую [метку](../Advanced%20Usage/Attributes/Labels.md), которую можно задать вручную.
+
+*   Масштабная линейка, показывающая масштаб карты в километрах или милях в левом нижнем углу карты.
+    *   Единица определяется опцией _Локаль форматирования_ в _Язык и регион_.
+*   Имя меток по умолчанию отображается под меткой на карте. Начиная с v0.102.0, эти подписи можно скрыть, что повышает производительность и уменьшает загромождение, когда на карте много меток.
+*   v0.105.0 также представляет возможность _Группировать ближайшие метки_, которая объединяет несколько меток в кластеры при малом масштабе.
+    *   Кластеры показывают число содержащихся в них элементов. Цвет также меняется в зависимости от количества.
+    *   Щелчок по кластеру автоматически увеличивает масштаб так, что отдельные метки, составляющие кластер, становятся видимы.
+
+Те же опции также перечислены под _Общие_ в диалоге <span class="tn-icon bx bx-cog"></span>_Свойства геокарты_, открываемом из <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a> или из меню настроек <a class="reference-link" href="Collection%20Properties.md">Свойств коллекции</a>. Его раздел _Включённые заметки_ задаёт, показываются ли архивные заметки, и _Максимальную глубину вложенности_ (см. ниже), а его раздел _Фон_ содержит стиль карты, URL пользовательского набора тайлов, когда _Тип_ установлен в _Пользовательский набор тайлов_ (см. выше), или, при _Типе_, установленном в _Пользовательское изображение_, рисует карту поверх собственного изображения, как описано в <a class="reference-link" href="Geo%20Map/Image%20maps.md">Картах-изображениях</a>.
+
+Карта показывает заметки всего своего поддерева, а не только своих дочерних заметок. _Максимальная глубина вложенности_ (`#maxNestingDepth`) ограничивает, насколько глубоко под картой она ищет: `0` показывает только дочерние заметки, `1` добавляет их детей и так далее. Без значения показывается каждый уровень.

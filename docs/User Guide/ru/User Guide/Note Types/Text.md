@@ -1,102 +1,102 @@
-# Text
-The default note type in Trilium, text notes allow for rich formatting, tables, images, admonitions and a handful of other features.
+# Текст
+Тип заметки по умолчанию в Trilium; текстовые заметки позволяют форматирование, таблицы, изображения, замечания и ряд других возможностей.
 
-## Formatting bars
+## Панели форматирования
 
-Most of the interaction with text notes is done via the built-in toolbars. Depending on preference, there are two different layouts:
+Большая часть взаимодействия с текстовыми заметками выполняется через встроенные панели инструментов. В зависимости от предпочтения есть два разных макета:
 
-*   The _Floating toolbar_ is hidden by default and only appears when needed. In this mode there are actually two different toolbars:  
+*   _Плавающая панель инструментов_ по умолчанию скрыта и появляется только при необходимости. В этом режиме есть на самом деле две разные панели:
     <img src="1_Text_image.png" width="496" height="91"><img src="2_Text_image.png" width="812" height="114">
-*   A toolbar that appears when text is selected. This provides text-level formatting such as bold, italic, text colors, inline code, etc.  
+*   Панель инструментов, появляющаяся при выделении текста. Она предоставляет форматирование на уровне текста, такое как полужирный, курсив, цвета текста, встроенный код и т.д.
     _<img src="Text_image.png" width="1109" height="124">_
 
-Fore more information see <a class="reference-link" href="Text/Formatting%20toolbar.md">Formatting toolbar</a>.
+Подробнее см. <a class="reference-link" href="Text/Formatting%20toolbar.md">Панель форматирования</a>.
 
-## Features and formatting
+## Возможности и форматирование
 
-Here's a list of various features supported by text notes:
+Вот список различных возможностей, поддерживаемых текстовыми заметками:
 
 <table>
     <thead>
         <tr>
-            <th>Dedicated article</th>
-            <th>Feature</th>
+            <th>Выделенная статья</th>
+            <th>Возможность</th>
         </tr>
     </thead>
     <tbody>
         <tr>
-            <td><a class="reference-link" href="Text/General%20formatting.md">General formatting</a></td>
-            <td><ul><li>Headings (section titles, paragraph)</li><li>Font size</li><li>Bold, italic, underline, strike-through</li><li>Superscript, subscript</li><li>Font color &amp; background color</li><li>Remove formatting</li></ul></td>
+            <td><a class="reference-link" href="Text/General%20formatting.md">Общее форматирование</a></td>
+            <td><ul><li>Заголовки (названия разделов, абзац)</li><li>Размер шрифта</li><li>Полужирный, курсив, подчёркивание, зачёркивание</li><li>Надстрочный, подстрочный</li><li>Цвет шрифта и цвет фона</li><li>Снятие форматирования</li></ul></td>
         </tr>
         <tr>
-            <td><a class="reference-link" href="Text/Lists.md">Lists</a></td>
-            <td><ul><li>Bulleted lists</li><li>Numbered lists</li><li>To-do lists</li></ul></td>
+            <td><a class="reference-link" href="Text/Lists.md">Списки</a></td>
+            <td><ul><li>Маркированные списки</li><li>Нумерованные списки</li><li>Списки дел</li></ul></td>
         </tr>
         <tr>
-            <td><a class="reference-link" href="Text/Block%20quotes%20%26%20admonitions.md">Block quotes &amp; admonitions</a></td>
-            <td><ul><li>Block quotes</li><li>Admonitions</li></ul></td>
+            <td><a class="reference-link" href="Text/Block%20quotes%20%26%20admonitions.md">Цитаты и замечания</a></td>
+            <td><ul><li>Цитаты</li><li>Замечания (admonitions)</li></ul></td>
         </tr>
         <tr>
-            <td><a class="reference-link" href="Text/Tables.md">Tables</a></td>
-            <td><ul><li>Basic tables</li><li>Merging cells</li><li>Styling tables and cells.</li><li>Table captions</li></ul></td>
+            <td><a class="reference-link" href="Text/Tables.md">Таблицы</a></td>
+            <td><ul><li>Базовые таблицы</li><li>Объединение ячеек</li><li>Стилизация таблиц и ячеек</li><li>Подписи таблиц</li></ul></td>
         </tr>
         <tr>
-            <td><a class="reference-link" href="Text/Developer-specific%20formatting.md">Developer-specific formatting</a></td>
-            <td><ul><li>Inline code</li><li>Code blocks</li><li>Keyboard shortcuts</li></ul></td>
+            <td><a class="reference-link" href="Text/Developer-specific%20formatting.md">Форматирование для разработчиков</a></td>
+            <td><ul><li>Встроенный код</li><li>Блоки кода</li><li>Сочетания клавиш</li></ul></td>
         </tr>
         <tr>
-            <td><a class="reference-link" href="Text/Footnotes.md">Footnotes</a></td>
-            <td><ul><li>Footnotes</li></ul></td>
+            <td><a class="reference-link" href="Text/Footnotes.md">Сноски</a></td>
+            <td><ul><li>Сноски</li></ul></td>
         </tr>
         <tr>
-            <td><a class="reference-link" href="Text/Images.md">Images</a></td>
-            <td><ul><li>Images</li></ul></td>
+            <td><a class="reference-link" href="Text/Images.md">Изображения</a></td>
+            <td><ul><li>Изображения</li></ul></td>
         </tr>
         <tr>
-            <td><a class="reference-link" href="Text/Links.md">Links</a></td>
-            <td><ul><li>External links</li><li>Internal Trilium links</li></ul></td>
+            <td><a class="reference-link" href="Text/Links.md">Ссылки</a></td>
+            <td><ul><li>Внешние ссылки</li><li>Внутренние ссылки Trilium</li></ul></td>
         </tr>
         <tr>
-            <td><a class="reference-link" href="Text/Include%20Note.md">Include Note</a></td>
-            <td><ul><li>Include note</li></ul></td>
+            <td><a class="reference-link" href="Text/Include%20Note.md">Включение заметки</a></td>
+            <td><ul><li>Включение заметки</li></ul></td>
         </tr>
         <tr>
-            <td><a class="reference-link" href="Text/Block%20references.md">Block references</a></td>
-            <td><ul><li>Links to blocks of a note</li><li>Including blocks of a note</li></ul></td>
+            <td><a class="reference-link" href="Text/Block%20references.md">Блочные ссылки</a></td>
+            <td><ul><li>Ссылки на блоки заметки</li><li>Включение блоков заметки</li></ul></td>
         </tr>
         <tr>
-            <td><a class="reference-link" href="Text/Insert%20buttons.md">Insert buttons</a></td>
-            <td><ul><li>Symbols</li><li><a class="reference-link" href="Text/Math%20Equations.md">Math Equations</a></li><li>Mermaid diagrams</li><li>Horizontal ruler</li><li>Page break</li></ul></td>
+            <td><a class="reference-link" href="Text/Insert%20buttons.md">Кнопки вставки</a></td>
+            <td><ul><li>Символы</li><li><a class="reference-link" href="Text/Math%20Equations.md">Математические формулы</a></li><li>Диаграммы Mermaid</li><li>Горизонтальная линейка</li><li>Разрыв страницы</li></ul></td>
         </tr>
         <tr>
-            <td><a class="reference-link" href="Text/Other%20features.md">Other features</a></td>
-            <td><ul><li>Indentation<ul><li>Markdown import</li></ul></li><li><a class="reference-link" href="Text/Cut%20to%20subnote.md">Cut to subnote</a></li><li><a class="reference-link" href="Text/Sorting.md">Sorting</a></li></ul></td>
+            <td><a class="reference-link" href="Text/Other%20features.md">Другие возможности</a></td>
+            <td><ul><li>Отступы<ul><li>Импорт Markdown</li></ul></li><li><a class="reference-link" href="Text/Cut%20to%20subnote.md">Вырезать в подзаметку</a></li><li><a class="reference-link" href="Text/Sorting.md">Сортировка</a></li></ul></td>
         </tr>
         <tr>
-            <td><a class="reference-link" href="Text/Premium%20features.md">Premium features</a></td>
-            <td><ul><li><a class="reference-link" href="Text/Slash%20Commands.md">Slash Commands</a></li><li><a class="reference-link" href="../Advanced%20Usage/Templates.md">Templates</a></li><li><a class="reference-link" href="Text/Format%20Painter.md">Format Painter</a></li></ul></td>
+            <td><a class="reference-link" href="Text/Premium%20features.md">Премиум-возможности</a></td>
+            <td><ul><li><a class="reference-link" href="Text/Slash%20Commands.md">Слэш-команды</a></li><li><a class="reference-link" href="../Advanced%20Usage/Templates.md">Шаблоны</a></li><li><a class="reference-link" href="Text/Format%20Painter.md">Формат по образцу</a></li></ul></td>
         </tr>
     </tbody>
 </table>
 
-## Read-Only vs. Editing Mode
+## Режим «только для чтения» и режим редактирования
 
-Text notes are usually opened in edit mode. However, they may open in read-only mode if the note is too big or the note is explicitly marked as read-only. For more information, see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">Read-Only Notes</a>.
+Текстовые заметки обычно открываются в режиме редактирования. Однако они могут открываться в режиме только для чтения, если заметка слишком велика или явно помечена как доступная только для чтения. Подробнее см. <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">Заметки только для чтения</a>.
 
-## Keyboard shortcuts
+## Сочетания клавиш
 
-There are numerous keyboard shortcuts to format the text without having to use the mouse. For a reference of all the key combinations, see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Keyboard%20Shortcuts.md">Keyboard Shortcuts</a>. In addition, see <a class="reference-link" href="Text/Markdown-like%20formatting.md">Markdown-like formatting</a> as an alternative to the keyboard shortcuts.
+Есть множество сочетаний клавиш для форматирования текста без использования мыши. Справочник по всем комбинациям клавиш см. в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Keyboard%20Shortcuts.md">Сочетаниях клавиш</a>. Кроме того, см. <a class="reference-link" href="Text/Markdown-like%20formatting.md">Markdown-подобное форматирование</a> как альтернативу сочетаниям клавиш.
 
-To edit with the keys of the Vim text editor, see <a class="reference-link" href="Text/Vim%20mode.md">Vim mode</a>.
+Для редактирования клавишами текстового редактора Vim см. <a class="reference-link" href="Text/Vim%20mode.md">Режим Vim</a>.
 
-## Content width
+## Ширина содержимого
 
-For readability purposes on wider screens, the width of text notes is limited via a configurable option. See <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Content%20width.md">Content width</a> for more information.
+Для удобства чтения на более широких экранах ширина текстовых заметок ограничена настраиваемой опцией. Подробнее см. <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Content%20width.md">Ширина содержимого</a>.
 
-## Converting to a Markdown note
+## Преобразование в Markdown-заметку
 
-Text notes can be converted to <a class="reference-link" href="Markdown.md">Markdown</a> notes. See <a class="reference-link" href="Converting%20between%20note%20types.md">Converting between note types</a>.
+Текстовые заметки можно преобразовать в заметки <a class="reference-link" href="Markdown.md">Markdown</a>. См. <a class="reference-link" href="Converting%20between%20note%20types.md">Преобразование между типами заметок</a>.
 
-## Technical details
+## Технические детали
 
-For the text editing functionality, Trilium uses a commercial product (with an open-source base) called <a class="reference-link" href="../Advanced%20Usage/Technologies%20used/CKEditor.md">CKEditor</a>. This brings the benefit of having a powerful WYSIWYG (What You See Is What You Get) editor.
+Для функциональности редактирования текста Trilium использует коммерческий продукт (с открытым ядром) под названием <a class="reference-link" href="../Advanced%20Usage/Technologies%20used/CKEditor.md">CKEditor</a>. Это даёт преимущество мощного WYSIWYG-редактора (What You See Is What You Get — «что видишь, то и получаешь»).

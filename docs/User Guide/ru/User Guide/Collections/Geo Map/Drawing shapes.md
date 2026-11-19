@@ -1,43 +1,43 @@
-# Drawing shapes
-The following shapes can be drawn on the map: a path, an area, a rectangle or a circle.
+# Рисование фигур
+На карте можно рисовать следующие фигуры: путь, область, прямоугольник или круг.
 
-Unlike markers, the title of the shape is not displayed directly on the map but it will be displayed when hovered.
+В отличие от меток, заголовок фигуры не отображается напрямую на карте, но будет показан при наведении.
 
-The shape will also be drawn in the [color of the note](../../Basic%20Concepts%20and%20Features/Notes/Note%20Icons%20%26%20Colors.md), if set. 
+Фигура также будет нарисована [цветом заметки](../../Basic%20Concepts%20and%20Features/Notes/Note%20Icons%20%26%20Colors.md), если он задан.
 
-## Drawing a shape on the map
+## Рисование фигуры на карте
 
-To draw a shape, use the toolbar that appears in the top-center area on desktop and on the left-center on mobile and in split view.
+Чтобы нарисовать фигуру, используйте панель инструментов, которая появляется вверху по центру на десктопе и слева по центру на мобильных устройствах и в разделённом виде.
 
-Once a shape is drawn, it cannot be moved or modified. To do so, simply remove the shape and draw another one instead.
+После того как фигура нарисована, её нельзя переместить или изменить. Для этого просто удалите фигуру и нарисуйте вместо неё другую.
 
-### Drawing a path or an area
+### Рисование пути или области
 
-1.  Press the _Draw a path on the map_ (<span class="tn-icon bx bx-vector"></span>) or _Draw an area on the map_ (<span class="tn-icon bx bx-shape-polygon"></span>) button. The button stays held down while the tool is armed, and a notification describes what to do.
-2.  Click on the map once for each point. The shape is previewed as it grows.
-3.  Finish it by pressing <kbd>Enter</kbd>. A path can also be finished by clicking its last point again, and an area by clicking the corner it started from. A path needs at least two points and an area at least three.
+1.  Нажмите кнопку _Нарисовать путь на карте_ (<span class="tn-icon bx bx-vector"></span>) или _Нарисовать область на карте_ (<span class="tn-icon bx bx-shape-polygon"></span>). Кнопка остаётся нажатой, пока инструмент активен, а уведомление описывает, что делать.
+2.  Щёлкайте по карте по разу для каждой точки. Фигура предпросматривается по мере роста.
+3.  Завершите её нажатием <kbd>Enter</kbd>. Путь также можно завершить повторным щелчком по его последней точке, а область — щелчком по углу, с которого она началась. Пути нужно минимум две точки, области — минимум три.
 
-### Drawing a rectangle or a circle
+### Рисование прямоугольника или круга
 
-1.  Press the _Draw a rectangle on the map_ (<span class="tn-icon bx bx-shape-square"></span>) or _Draw a circle on the map_ (<span class="tn-icon bx bx-shape-circle"></span>) button.
-2.  Click once to set the first corner, or the center of the circle. Click a second time at the opposite corner, or at the distance the circle should reach.
-3.  Instead of two clicks you can drag from one to the other. This also works on mobile and other touch-based apps.
+1.  Нажмите кнопку _Нарисовать прямоугольник на карте_ (<span class="tn-icon bx bx-shape-square"></span>) или _Нарисовать круг на карте_ (<span class="tn-icon bx bx-shape-circle"></span>).
+2.  Щёлкните один раз, чтобы задать первый угол или центр круга. Щёлкните второй раз на противоположном углу или на расстоянии, до которого должен доставать круг.
+3.  Вместо двух щелчков можно перетащить от одной точки к другой. Это также работает на мобильных и других сенсорных устройствах.
 
-### Finishing and cancelling
+### Завершение и отмена
 
-To give up on a shape while drawing it, press <kbd>Escape</kbd> or press the tool's button again. Whatever has been drawn so far is discarded.
+Чтобы отказаться от фигуры во время рисования, нажмите <kbd>Escape</kbd> или снова нажмите кнопку инструмента. Всё нарисованное к этому моменту отбрасывается.
 
-The tool is deactivated once a shape is finished, so drawing a second shape requires another button press.
+Инструмент деактивируется после завершения фигуры, поэтому для рисования второй фигуры потребуется ещё одно нажатие кнопки.
 
-## Interaction
+## Взаимодействие
 
-Once a shape is created:
+После создания фигуры:
 
-*   Clicking a shape opens the standard panel which allows changing the title, the content and with buttons to open the note or remove it.
-    *   When clicking, a marker takes priority over the shape.
-*   Right-clicking a shape opens a contextual menu similar to the one for markers, which allows opening the corresponding note or removing the shape.
-*   Typing in the map's search bar finds shapes by their title, as it does markers. Selecting one brings the whole shape into view.
+*   Щелчок по фигуре открывает стандартную панель, которая позволяет менять заголовок, содержимое и имеет кнопки для открытия заметки или её удаления.
+    *   При щелчке метка имеет приоритет над фигурой.
+*   Правый щелчок по фигуре открывает контекстное меню, похожее на меню меток, которое позволяет открыть соответствующую заметку или удалить фигуру.
+*   Ввод в строке поиска карты находит фигуры по заголовку, как и метки. Выбор одной из них показывает всю фигуру в видимой области.
 
-## How shapes are represented
+## Как представлены фигуры
 
-Shapes are represented quite similarly to markers, which means each shape is a note. The information about the same is stored using a [label](../../Advanced%20Usage/Attributes/Labels.md) called `geoShape`.
+Фигуры представлены довольно похоже на метки, то есть каждая фигура является заметкой. Информация о фигуре хранится с помощью [метки](../../Advanced%20Usage/Attributes/Labels.md) с именем `geoShape`.

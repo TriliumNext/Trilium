@@ -1,167 +1,167 @@
-# Table
+# Таблица
 <figure class="image"><img style="aspect-ratio:1050/259;" src="Table_image.png" width="1050" height="259"></figure>
 
-The table view displays information in a grid, where the rows are individual notes and the columns are <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a>. In addition, values are editable.
+Вид таблицы отображает информацию в виде сетки, где строки — отдельные заметки, а столбцы — <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Продвигаемые атрибуты</a>. Кроме того, значения можно редактировать.
 
-## How it works
+## Как это работает
 
-The tabular structure is represented as such:
+Табличная структура представлена так:
 
-*   Each child note is a row in the table.
-*   If child rows also have children, they will be displayed under an expander (nested notes).
-*   Each column is a [promoted attribute](../Advanced%20Usage/Attributes/Promoted%20Attributes.md) that is defined on the Collection note.
-    *   Actually, both promoted and unpromoted attributes are supported, but it's a requirement to use a label/relation definition.
-    *   The promoted attributes are usually defined as inheritable in order to show up in the child notes, but it's not a requirement.
-*   If there are multiple attribute definitions with the same `name`, only one will be displayed.
-*   If an attribute definition has multiple values, they will all be grouped under a single column, with chips indicating individual values.
+*   Каждая дочерняя заметка — строка в таблице.
+*   Если дочерние строки также имеют потомков, они будут показаны под разворачиваемым элементом (вложенные заметки).
+*   Каждый столбец — [продвигаемый атрибут](../Advanced%20Usage/Attributes/Promoted%20Attributes.md), определённый на заметке коллекции.
+    *   На самом деле поддерживаются и продвигаемые, и непродвигаемые атрибуты, но требуется использовать определение метки/отношения.
+    *   Продвигаемые атрибуты обычно определяются как наследуемые, чтобы появляться в дочерних заметках, но это не обязательно.
+*   Если есть несколько определений атрибутов с тем же `name`, будет показано только одно.
+*   Если у определения атрибута несколько значений, все они будут сгруппированы под одним столбцом с плашками, указывающими отдельные значения.
 
-There are also a few predefined columns:
+Также есть несколько предопределённых столбцов:
 
-*   The current item number, identified by the `#` symbol.
-    *   This simply counts the note and is affected by sorting.
-*   <a class="reference-link" href="../Advanced%20Usage/Note%20ID.md">Note ID</a>, representing the unique ID used internally by Trilium
-*   The title of the note.
-*   _Created_ and _Modified_, the date and time the note was created and last modified. These columns are hidden by default and can't be edited; show them from the column context menu and click their header to sort by them.
+*   Текущий номер элемента, обозначаемый символом `#`.
+    *   Он просто считает заметку и зависит от сортировки.
+*   <a class="reference-link" href="../Advanced%20Usage/Note%20ID.md">ID заметки</a>, представляющий уникальный ID, используемый внутренне Trilium.
+*   Заголовок заметки.
+*   _Создана_ и _Изменена_ — дата и время создания и последнего изменения заметки. Эти столбцы по умолчанию скрыты и не редактируются; покажите их из контекстного меню столбца и щёлкните их заголовок, чтобы сортировать по ним.
 
-## Interaction
+## Взаимодействие
 
-### Creating a new table
+### Создание новой таблицы
 
-Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ → _Collection_ → _Table_.
+Щёлкните правой кнопкой по существующей заметке в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дереве заметок</a> и выберите _Вставить дочернюю заметку_ → _Коллекция_ → _Таблица_.
 
-### Adding columns
+### Добавление столбцов
 
-Each column is a [promoted or unpromoted attribute](../Advanced%20Usage/Attributes/Promoted%20Attributes.md) that is defined on the Collection note.
+Каждый столбец — [продвигаемый или непродвигаемый атрибут](../Advanced%20Usage/Attributes/Promoted%20Attributes.md), определённый на заметке коллекции.
 
-To create a new column, either:
+Чтобы создать новый столбец:
 
-*   Press _Add new column_ at the bottom of the table.
-*   Right click on an existing column and select Add column to the left/right.
-*   Right click on the empty space of the column header and select _Label_ or _Relation_ in the _New column_ section.
+*   Нажмите _Добавить новый столбец_ внизу таблицы.
+*   Щёлкните правой кнопкой по существующему столбцу и выберите Добавить столбец слева/справа.
+*   Щёлкните правой кнопкой по пустому месту заголовка столбцов и выберите _Метка_ или _Отношение_ в разделе _Новый столбец_.
 
-### Adding new rows
+### Добавление новых строк
 
-Each row is actually a note that is a child of the Collection note.
+Каждая строка — на самом деле заметка, являющаяся дочерней заметкой заметки коллекции.
 
-To create a new note, either:
+Чтобы создать новую заметку:
 
-*   Press _Add new row_ at the bottom of the table.
-*   Right click on an existing row and select _Insert row above, Insert child note_ or _Insert row below_.
+*   Нажмите _Добавить новую строку_ внизу таблицы.
+*   Щёлкните правой кнопкой по существующей строке и выберите _Вставить строку выше_, _Вставить дочернюю заметку_ или _Вставить строку ниже_.
 
-By default it will try to edit the title of the newly created note.
+По умолчанию будет предложено отредактировать заголовок вновь созданной заметки.
 
-Alternatively, the note can be created from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> or [scripting](../Scripting.md).
+Альтернативно заметку можно создать из <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дерева заметок</a> или [скриптинга](../Scripting.md).
 
-### Context menu
+### Контекстное меню
 
-There are multiple menus:
+Есть несколько меню:
 
-*   Right clicking on a column, allows:
-    *   Sorting by the selected column and resetting the sort.
-    *   Hiding the selected column or adjusting the visibility of every column.
-    *   Adding new columns to the left or the right of the column.
-    *   Editing the current column.
-    *   Deleting the current column.
-*   Right clicking on the space to the right of the columns, allows:
-    *   Adjusting the visibility of every column.
-    *   Adding new columns.
-*   Right clicking on a row, allows:
-    *   Opening the corresponding note of the row in a new tab, split, window or quick editing it.
-    *   Inserting a new note above or below the selected row. These options are only enabled if the table is not sorted.
-    *   Inserting a new child note for the selected row.
-    *   Deleting the row.
+*   Правый щелчок по столбцу позволяет:
+    *   Сортировать по выбранному столбцу и сбрасывать сортировку.
+    *   Скрывать выбранный столбец или настраивать видимость каждого столбца.
+    *   Добавлять новые столбцы слева или справа от столбца.
+    *   Редактировать текущий столбец.
+    *   Удалять текущий столбец.
+*   Правый щелчок по месту справа от столбцов позволяет:
+    *   Настраивать видимость каждого столбца.
+    *   Добавлять новые столбцы.
+*   Правый щелчок по строке позволяет:
+    *   Открывать соответствующую заметку строки в новой вкладке, разделении, окне или редактировать её в быстром редактировании.
+    *   Вставлять новую заметку над или под выбранной строкой. Эти опции доступны, только если таблица не отсортирована.
+    *   Вставлять новую дочернюю заметку для выбранной строки.
+    *   Удалять строку.
 
-### Opening notes
+### Открытие заметок
 
-Hovering over a row shows an _Open_ button at the end of its title, which opens the note in quick edit. On a touch screen, the button is always visible.
+Наведение на строку показывает кнопку _Открыть_ в конце её заголовка, которая открывает заметку в быстром редактировании. На сенсорном экране кнопка видна всегда.
 
-Clicking the title itself renames the note instead (see below). To open the note elsewhere:
+Щелчок по самому заголовку вместо этого переименовывает заметку (см. ниже). Чтобы открыть заметку в другом месте:
 
-*   <kbd>Ctrl</kbd>+click or middle click the title to open the note in a new tab.
-*   <kbd>Shift</kbd>+click the title to open it in a new window.
-*   Right click the row to open the note in a new tab, split or window, or in quick edit.
+*   <kbd>Ctrl</kbd>+щелчок или средний щелчок по заголовку открывает заметку в новой вкладке.
+*   <kbd>Shift</kbd>+щелчок по заголовку открывает её в новом окне.
+*   Правый щелчок по строке открывает заметку в новой вкладке, разделении или окне, или в быстром редактировании.
 
-### Editing data
+### Редактирование данных
 
-Simply click on a cell within a row to change its value. The change will not only reflect in the table, but also as an attribute of the corresponding note.
+Просто щёлкните по ячейке в строке, чтобы изменить её значение. Изменение отразится не только в таблице, но и как атрибут соответствующей заметки.
 
-*   The editing will respect the type of the promoted attribute, by presenting a normal text box, a number selector or a date selector for example.
-*   A boolean column shows a checkbox, which is checked or unchecked with a single click. A note without the label shows an unchecked box.
-*   It also possible to change the title of a note by clicking it.
-*   Editing relations is also possible
-    *   Simply click on a relation and it will become editable. Enter the text to look for a note and click on it.
-    *   To remove a relation, remove the title of the note from the text box and click outside the cell.
+*   Редактирование будет уважать тип продвигаемого атрибута, предлагая, например, обычное текстовое поле, поле выбора числа или выбор даты.
+*   Булев столбец показывает флажок, который устанавливается или снимается одним щелчком. Заметка без метки показывает неснятый флажок.
+*   Также можно изменить заголовок заметки, щёлкнув по нему.
+*   Редактирование отношений также возможно.
+    *   Просто щёлкните по отношению, и оно станет редактируемым. Введите текст для поиска заметки и щёлкните по ней.
+    *   Чтобы удалить отношение, удалите заголовок заметки из текстового поля и щёлкните вне ячейки.
 
-### Editing columns
+### Редактирование столбцов
 
-It is possible to edit a column by right clicking it and selecting _Edit column…_ This will basically change the label/relation definition at the collection level.
+Столбец можно отредактировать, щёлкнув по нему правой кнопкой и выбрав _Редактировать столбец…_ Это в основном изменит определение метки/отношения на уровне коллекции.
 
-Turn on _Multiple values_ to let each note hold several values in that column. The cell then shows them as chips (see [Multiple values](../Advanced%20Usage/Attributes/Promoted%20Attributes.md) in Promoted Attributes). The same toggle is available when adding a column.
+Включите _Несколько значений_, чтобы каждая заметка могла содержать несколько значений в этом столбце. Ячейка затем показывает их как плашки (см. [Несколько значений](../Advanced%20Usage/Attributes/Promoted%20Attributes.md) в Продвигаемых атрибутах). Тот же переключатель доступен при добавлении столбца.
 
-If the _Name_ field of a column is changed, this will trigger a batch operation in which the corresponding label/relation will be renamed in all the children.
+Если изменить поле _Имя_ столбца, это запустит пакетную операцию, в которой соответствующая метка/отношение будет переименована во всех потомках.
 
-### Read-only tables
+### Таблицы только для чтения
 
-On a [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) table, the cells can't be edited and the rows can't be dragged. Clicking a note's title opens it in quick edit, so there's no _Open_ button. The _New row_ and _New column_ buttons are hidden, and the context menus offer only what leaves the notes as they are: sorting and hiding columns, and opening the notes. Columns can still be resized and reordered, but the layout isn't saved. The _Table properties_ dialog isn't available.
+В [таблице только для чтения](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) ячейки нельзя редактировать, а строки нельзя перетаскивать. Щелчок по заголовку заметки открывает её в быстром редактировании, поэтому кнопки _Открыть_ нет. Кнопки _Новая строка_ и _Новый столбец_ скрыты, а контекстные меню предлагают только то, что оставляет заметки как есть: сортировку и скрытие столбцов и открытие заметок. Столбцы всё ещё можно менять в размере и местами, но макет не сохраняется. Диалог _Свойства таблицы_ недоступен.
 
-## Working with the data
+## Работа с данными
 
-### Sorting by column
+### Сортировка по столбцу
 
-By default, the order of the notes matches the order in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>. However, it is possible to sort the data by the values of a column:
+По умолчанию порядок заметок соответствует порядку в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дереве заметок</a>. Однако можно отсортировать данные по значениям столбца:
 
-*   To do so, simply click on a column.
-*   To switch between ascending or descending sort, simply click again on the same column. The arrow next to the column will indicate the direction of the sort. On a column that isn't sorted, the arrow appears only while hovering over its header.
-*   To disable sorting and fall back to the original order, right click any column on the header and select _Clear sorting._
+*   Для этого просто щёлкните по столбцу.
+*   Чтобы переключиться между сортировкой по возрастанию или убыванию, просто щёлкните снова по тому же столбцу. Стрелка рядом со столбцом укажет направление сортировки. На несортированном столбце стрелка появляется только при наведении на его заголовок.
+*   Чтобы отключить сортировку и вернуться к исходному порядку, щёлкните правой кнопкой по любому столбцу на заголовке и выберите _Очистить сортировку_.
 
-### Reordering and hiding columns
+### Изменение порядка и скрытие столбцов
 
-*   Columns can be reordered by dragging the header of the columns.
-*   Columns can be hidden or shown by right clicking on a column and clicking the item corresponding to the column.
+*   Столбцы можно менять местами, перетаскивая заголовок столбцов.
+*   Столбцы можно скрывать или показывать, щёлкая правой кнопкой по столбцу и нажимая пункт, соответствующий столбцу.
 
-### Reordering rows
+### Изменение порядка строк
 
-Notes can be dragged around to change their order. To do so, move the mouse over the three vertical dots near the number row and drag the mouse to the desired position.
+Заметки можно перетаскивать, чтобы изменить их порядок. Для этого наведите мышь на три вертикальные точки рядом с номером строки и перетащите мышь в нужную позицию.
 
-This will also change the order of the note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>.
+Это также изменит порядок заметки в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дереве заметок</a>.
 
-Reordering does have some limitations:
+Изменение порядка имеет некоторые ограничения:
 
-*   If the parent note has `#sorted`, reordering will be disabled.
-*   If using nested tables, then reordering will also be disabled.
-*   Currently, it's possible to reorder notes even if column sorting is used, but the result might be inconsistent.
+*   Если у родительской заметки есть `#sorted`, изменение порядка будет отключено.
+*   При использовании вложенных таблиц изменение порядка также будет отключено.
+*   В настоящее время можно менять заметки местами даже при использовании сортировки по столбцу, но результат может быть непоследовательным.
 
-### Nested trees
+### Вложенные деревья
 
-If the child notes of the collection also have their own child notes, then they will be displayed in a hierarchy.
+Если дочерние заметки коллекции также имеют собственных потомков, они будут отображены в иерархии.
 
-Next to the title of each element there will be a button to expand or collapse. By default, all items are expanded.
+Рядом с заголовком каждого элемента будет кнопка разворачивания или сворачивания. По умолчанию все элементы развёрнуты.
 
-Since nesting is not always desirable, it is possible to limit the nesting to a certain number of levels or even disable it completely. To do so, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Table properties_ and set _Maximum nesting depth_ (under the _Included notes_ section), or set the `#maxNestingDepth` [label](../Advanced%20Usage/Attributes/Labels.md) of the collection:
+Поскольку вложенность не всегда желательна, можно ограничить вложенность определённым числом уровней или даже полностью отключить её. Для этого перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a> → _Свойства таблицы_ и задайте _Максимальную глубину вложенности_ (в разделе _Включённые заметки_) или задайте [метку](../Advanced%20Usage/Attributes/Labels.md) `#maxNestingDepth` коллекции:
 
-*   `0` disables nesting, showing only the children of the collection.
-*   `1` also shows their children, `2` the level below that, and so on.
-*   Removing the label shows every level again.
+*   `0` отключает вложенность, показывая только дочерние заметки коллекции.
+*   `1` также показывает их детей, `2` — уровень ниже, и так далее.
+*   Удаление метки снова показывает каждый уровень.
 
-Limitations:
+Ограничения:
 
-*   While in this mode, it's not possible to reorder notes.
+*   В этом режиме нельзя менять заметки местами.
 
-## Limitations
+## Ограничения
 
-*   There is no support to filter the rows by a certain criteria. Consider using the table view in search for that use case; for example, `note.dateCreated >= TODAY-7` lists the notes created in the last week.
+*   Нет поддержки фильтрации строк по определённым критериям. Для этого случая рассмотрите использование вида таблицы в поиске; например, `note.dateCreated >= TODAY-7` перечисляет заметки, созданные за последнюю неделю.
 
-## Use in search
+## Использование в поиске
 
-The table view can be used in a <a class="reference-link" href="../Note%20Types/Saved%20Search.md">Saved Search</a> by adding the `#viewType=table` attribute.
+Вид таблицы можно использовать в <a class="reference-link" href="../Note%20Types/Saved%20Search.md">Сохранённом поиске</a>, добавив атрибут `#viewType=table`.
 
-Unlike when used in a Collection, saved searches are not limited to the sub-hierarchy of a note and allows for advanced queries thanks to the power of the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Search.md">Search</a>.
+В отличие от использования в коллекции, сохранённые поиски не ограничены подиерархией заметки и допускают продвинутые запросы благодаря мощности <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Search.md">Поиска</a>.
 
-However, there are also some limitations:
+Однако есть и некоторые ограничения:
 
-*   It's not possible to reorder notes.
-*   It's not possible to add a new row.
+*   Невозможно менять заметки местами.
+*   Невозможно добавить новую строку.
 
-Columns are supported, by being defined as <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> to the <a class="reference-link" href="../Note%20Types/Saved%20Search.md">Saved Search</a> note.
+Столбцы поддерживаются — они определяются как <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Продвигаемые атрибуты</a> заметки <a class="reference-link" href="../Note%20Types/Saved%20Search.md">Сохранённого поиска</a>.
 
-Editing is also supported.
+Редактирование также поддерживается.

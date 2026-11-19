@@ -1,124 +1,124 @@
-# Backup
-Trilium supports simple backup scheme where it saves copy of the <a class="reference-link" href="../Advanced%20Usage/Database.md">Database</a> on these events:
+# Резервное копирование
+Trilium поддерживает простую схему резервного копирования, при которой он сохраняет копию [Базы данных](../Advanced%20Usage/Database.md) при следующих событиях:
 
-*   once a day
-*   once a week
-*   once a month
-*   before DB migration to newer version
+*   раз в день
+*   раз в неделю
+*   раз в месяц
+*   перед миграцией базы данных на более новую версию
 
-So in total you'll have at most 4 backups from different points in time which should protect you from various problems. These backups are stored by default in `backup` directory placed in the [data directory](Data%20directory.md).
+Итого у вас будет не более 4 резервных копий из разных точек во времени, что должно защитить вас от различных проблем. Эти резервные копии по умолчанию хранятся в каталоге `backup`, расположенном в [каталоге данных](Data%20directory.md).
 
-This is only very basic backup solution, and you're encouraged to add some better backup solution - e.g. backing up the <a class="reference-link" href="../Advanced%20Usage/Database.md">Database</a> to cloud / different computer etc.
+Это лишь очень базовое решение резервного копирования, и вам рекомендуется добавить более надёжное решение резервного копирования, например копирование [Базы данных](../Advanced%20Usage/Database.md) в облако / на другой компьютер и т.д.
 
-Note that <a class="reference-link" href="Synchronization.md">Synchronization</a> provides also some backup capabilities by its nature of distributing the data to other computers.
+Обратите внимание, что <a class="reference-link" href="Synchronization.md">Синхронизация</a> также предоставляет некоторые возможности резервного копирования по своей природе распределения данных на другие компьютеры.
 
-## Creating a backup
+## Создание резервной копии
 
-=== "<span class="tn-icon bx bx-desktop"></span> On the desktop app & web client"
+=== "<span class="tn-icon bx bx-desktop"></span> В десктопном приложении и веб-клиенте"
 
-    1.  Go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Backup_ and press the _Backup now_ button.
-    2.  The backup creation process may take a few moments, especially for larger databases. A notification will inform you when the backup is complete.
-    3.  The backup will be saved as `backup-now` in the _Existing backups_ list, where you can download it.
+    1.  Перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Резервное копирование_ и нажмите кнопку _Создать резервную копию_.
+    2.  Процесс создания резервной копии может занять несколько минут, особенно для больших баз данных. Уведомление сообщит, когда резервная копия будет готова.
+    3.  Резервная копия будет сохранена как `backup-now` в списке _Существующие резервные копии_, откуда её можно скачать.
 
-=== "<span class="tn-icon bx bx-globe"></span> On the standalone client"
+=== "<span class="tn-icon bx bx-globe"></span> В автономном клиенте"
 
-    1.  Go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Backup_ and press the _Download backup_ button.
-    2.  You will be prompted to restart the app. Confirm, and the app will restart automatically.
-    3.  Set a _backup name_ or _password_ (both optional), then press _Continue_.
-    4.  Press the _Generate and download_ button and wait for the download to complete.
-    5.  Once you confirm the download is saved on your device, press _Finish_ to complete
+    1.  Перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Резервное копирование_ и нажмите кнопку _Скачать резервную копию_.
+    2.  Вам будет предложено перезапустить приложение. Подтвердите, и приложение перезапустится автоматически.
+    3.  Задайте _имя резервной копии_ или _пароль_ (оба опциональны), затем нажмите _Продолжить_.
+    4.  Нажмите кнопку _Сгенерировать и скачать_ и дождитесь завершения загрузки.
+    5.  Как только вы подтвердите, что загрузка сохранена на вашем устройстве, нажмите _Готово_ для завершения.
 
-## Downloading a backup
+## Скачивание резервной копии
 
-*   **Desktop and web client**: to download an existing backup, navigate to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Backup_ → _Existing backups_ and select _Download_ (<span class="tn-icon bx bx-download"></span>).
-*   **Standalone client**: automatic backups are not supported in this version. You can manually create and download a backup by going to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Backup_ → _Download backup_.
+*   **Десктопный и веб-клиент**: чтобы скачать существующую резервную копию, перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Резервное копирование_ → _Существующие резервные копии_ и выберите _Скачать_ (<span class="tn-icon bx bx-download"></span>).
+*   **Автономный клиент**: автоматические резервные копии в этой версии не поддерживаются. Вы можете вручную создать и скачать резервную копию, перейдя в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Резервное копирование_ → _Скачать резервную копию_.
 
-## Restoring a backup
+## Восстановление из резервной копии
 
-*   **For a new Trilium instance**: When setting up a new Trilium instance, use the _Restore from backup_ option in the setup menu to guide you through restoring your existing backup.
-*   **For an existing Trilium instance**: To restore a backup and replace your current database, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Backup_ and click _Restore a backup_. You will be prompted to restart the app for the restoration process to begin. After restarting, you can choose to back up the existing database before overwriting it. Note: For the web client, use the Start Over feature ( <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Database_ → _Start over_ (<span class="tn-icon bx bx-reset"></span>)) to switch to the setup screen and restore a backup.
+*   **Для нового экземпляра Trilium**: при настройке нового экземпляра Trilium используйте опцию _Восстановить из резервной копии_ в меню настройки, которая проведёт вас через восстановление существующей резервной копии.
+*   **Для существующего экземпляра Trilium**: чтобы восстановить резервную копию и заменить текущую базу данных, перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Резервное копирование_ и нажмите _Восстановить резервную копию_. Вам будет предложено перезапустить приложение для начала процесса восстановления. После перезапуска можно выбрать создание резервной копии существующей базы данных перед её перезаписью. Примечание: для веб-клиента используйте функцию «Начать сначала» (<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _База данных_ → _Начать сначала_ (<span class="tn-icon bx bx-reset"></span>)), чтобы перейти на экран настройки и восстановить резервную копию.
 
-Next, select the backup file (.db or .tnbackup) from your device. The web client is optimized for handling large backups and is resilient to unstable network conditions, similar to the desktop application.
+Затем выберите файл резервной копии (.db или .tnbackup) на вашем устройстве. Веб-клиент оптимизирован для работы с большими резервными копиями и устойчив к нестабильным сетевым условиям, как и десктопное приложение.
 
-If your database is encrypted, you will be prompted to enter the password used for encrypting the backup file. Without the correct password, decryption and restoration cannot proceed.
+Если ваша база данных зашифрована, вам будет предложено ввести пароль, использованный для шифрования файла резервной копии. Без правильного пароля расшифровка и восстановление невозможны.
 
-Restoring a backup may take some time, depending on its size. Once it completes, Trilium will open the freshly restored database.
+Восстановление резервной копии может занять некоторое время в зависимости от её размера. После завершения Trilium откроет свежевосстановленную базу данных.
 
-### The alternative way for restoring a backup
+### Альтернативный способ восстановления резервной копии
 
-Let's assume you want to restore the weekly backup (only in .db format, .tnbackup files are not supported by this method), here's how to do it:
+Допустим, вы хотите восстановить еженедельную резервную копию (только в формате .db, файлы .tnbackup этим методом не поддерживаются), вот как это сделать:
 
-*   find [data directory](Data%20directory.md) Trilium uses - easy way is to open "About Trilium Notes" (<span class="tn-icon bx bx-info-circle"></span>) from "Menu" in upper left corner and looking at "data directory"
-    *   I'll refer to `~/trilium-data` as data directory from now on
-*   find `~/trilium-data/backup/backup-weekly.db` - this is the <a class="reference-link" href="../Advanced%20Usage/Database.md">Database</a> backup.
-*   at this point stop/kill Trilium
-*   delete `~/trilium-data/document.db`, `~/trilium-data/document.db-wal` and `~/trilium-data/document.db-shm` (latter two files are auto generated)
-*   copy and rename this `~/trilium-data/backup/backup-weekly.db` to `~/trilium-data/document.db`
-*   make sure that the file is writable, e.g. with `chmod 600 document.db`
-*   start Trilium again
+*   найдите [каталог данных](Data%20directory.md), который использует Trilium, — простой способ: открыть «О Trilium Notes» (<span class="tn-icon bx bx-info-circle"></span>) из «Меню» в левом верхнем углу и посмотреть «каталог данных».
+    *   далее я буду называть `~/trilium-data` каталогом данных.
+*   найдите `~/trilium-data/backup/backup-weekly.db` — это резервная копия [Базы данных](../Advanced%20Usage/Database.md).
+*   на этом этапе остановите/завершите Trilium.
+*   удалите `~/trilium-data/document.db`, `~/trilium-data/document.db-wal` и `~/trilium-data/document.db-shm` (два последних файла генерируются автоматически).
+*   скопируйте и переименуйте этот `~/trilium-data/backup/backup-weekly.db` в `~/trilium-data/document.db`.
+*   убедитесь, что файл доступен для записи, например командой `chmod 600 document.db`.
+*   снова запустите Trilium.
 
 > [!WARNING]
-> If you have configured sync then you need to do it across all members of the sync cluster, otherwise older version (restored backup) of the document will be detected and synced to the newer version.
+> Если вы настроили синхронизацию, это нужно сделать на всех участниках кластера синхронизации, иначе более старая версия документа (восстановленная резервная копия) будет обнаружена и синхронизирована на более новую версию.
 
-## Changing the backup location in Trilium (desktop only)
+## Изменение местоположения резервных копий в Trilium (только десктоп)
 
-Starting with version 0.105, the Trilium desktop client allows users to change the directory where backups are stored. Follow these steps to specify a custom backup directory:
+Начиная с версии 0.105, десктопный клиент Trilium позволяет пользователям изменять каталог, где хранятся резервные копии. Выполните следующие шаги, чтобы задать пользовательский каталог резервных копий:
 
-1.  Navigate to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Backup_ → _Backup location_.
-2.  Click the _Select location_ button.
-3.  Choose any writable directory on your file system. This could include network shares, depending on your operating system.
+1.  Перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Резервное копирование_ → _Местоположение резервных копий_.
+2.  Нажмите кнопку _Выбрать местоположение_.
+3.  Выберите любой доступный для записи каталог в вашей файловой системе. Это может включать сетевые папки в зависимости от вашей операционной системы.
 
-Once you set a custom directory, all manual and automatic backups will be saved there. If the selected directory becomes unavailable, backups may fail or revert to the default location.
+После задания пользовательского каталога все ручные и автоматические резервные копии будут сохраняться там. Если выбранный каталог станет недоступен, резервные копии могут завершаться ошибкой или возвращаться к местоположению по умолчанию.
 
 > [!TIP]
-> For better privacy when using unsafe backup locations, you can enable backup encryption, which makes the backup file unreadable without the correct password.
+> Для лучшей конфиденциальности при использовании небезопасных мест хранения резервных копий можно включить шифрование резервных копий, что делает файл резервной копии нечитаемым без правильного пароля.
 
-## Backup encryption
+## Шифрование резервных копий
 
-Trilium can secure the entire content of the database backup, ensuring it remains unreadable unless the correct password is provided. This is particularly useful for storing backups in unsecured locations, like network shares, unencrypted external drives, or cloud services. 
+Trilium может защитить всё содержимое резервной копии базы данных, гарантируя, что оно остаётся нечитаемым без предоставления правильного пароля. Это особенно полезно для хранения резервных копий в незащищённых местах, таких как сетевые папки, незашифрованные внешние диски или облачные сервисы.
 
-Encrypted database backups use the Trilium Backup Container (.tnbackup) format, which relies on AES-256-GCM. This authenticated encryption mode scrambles the data and generates a tag confirming it hasn't been altered. The password itself isn't directly used as the key; it's processed through scrypt, a key derivation function designed to be slow and memory-intensive, making brute-force password guessing difficult even with powerful hardware. Each backup also receives a random 16-byte salt, ensuring that the same password never produces the same encryption key twice. Additionally, critical metadata such as chunk order, length, and header flags are cryptographically bound into the encryption (via "additional authenticated data"), preventing undetected tampering like reorder, truncate, or splice operations.
+Зашифрованные резервные копии базы данных используют формат Trilium Backup Container (.tnbackup), который опирается на AES-256-GCM. Этот режим аутентифицированного шифрования перемешивает данные и генерирует тег, подтверждающий, что они не были изменены. Сам пароль напрямую не используется как ключ; он обрабатывается через scrypt — функцию вывода ключей, спроектированную быть медленной и требовательной к памяти, что затрудняет подбор пароля перебором даже на мощном оборудовании. Каждая резервная копия также получает случайную соль из 16 байт, гарантирующую, что один и тот же пароль никогда не производит один и тот же ключ шифрования дважды. Кроме того, критичные метаданные, такие как порядок чанков, длина и флаги заголовка, криптографически связаны в шифрование (через «дополнительные аутентифицированные данные»), предотвращая незаметное вмешательство, такое как переупорядочивание, усечение или склейка.
 
-### Enabling backup encryption
+### Включение шифрования резервных копий
 
-To enable encryption for automatic backups in the Desktop application:
+Чтобы включить шифрование для автоматических резервных копий в десктопном приложении:
 
-1.  Go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Backup_ → _Backup options_.
-2.  Click on _Turn on encryption_ and set a password.
+1.  Перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Резервное копирование_ → _Параметры резервного копирования_.
+2.  Нажмите _Включить шифрование_ и задайте пароль.
 
-Once encryption is enabled, all newly created backups (both automatic and manual) will be encrypted with the specified password. Backups created prior to enabling encryption will remain unsecured.
+После включения шифрования все вновь создаваемые резервные копии (как автоматические, так и ручные) будут зашифрованы указанным паролем. Резервные копии, созданные до включения шифрования, останутся незащищёнными.
 
-You can change the password anytime using the _Change password_ button. The new password will apply to backups created after the change.
+Пароль можно изменить в любое время кнопкой _Сменить пароль_. Новый пароль будет применяться к резервным копиям, созданным после изменения.
 
-To disable encryption, uncheck <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Backup_ → _Enable encryption_.
+Чтобы отключить шифрование, снимите отметку <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Резервное копирование_ → _Включить шифрование_.
 
 > [!NOTE]
-> On some systems, a keyring may not be available for Trilium to securely store the encryption password. In such cases, the encryption option is disabled.
+> В некоторых системах связка ключей может быть недоступна для Trilium, чтобы безопасно хранить пароль шифрования. В таких случаях опция шифрования отключена.
 
-## Backup compression
+## Сжатие резервных копий
 
-Database backups can be optionally compressed to minimize storage footprint. This method is effective primarily when the database consists largely of text content. However, media files (images, videos, audio), along with PDF, ODF, and DOCX files, are already compressed in their original formats and won't benefit from further compression.
+Резервные копии базы данных можно опционально сжимать, чтобы минимизировать объём хранилища. Этот метод эффективен в основном, когда база данных состоит в значительной степени из текстового содержимого. Однако медиафайлы (изображения, видео, аудио), а также файлы PDF, ODF и DOCX уже сжаты в своих исходных форматах и не выиграют от дальнейшего сжатия.
 
-Compressed backups are stored using the Trilium Backup Container (.tnbackup), employing RFC 1952 GZIP compression.
+Сжатые резервные копии хранятся с использованием Trilium Backup Container (.tnbackup) с GZIP-сжатием по RFC 1952.
 
 > [!WARNING]
-> **Note:** Compression increases the time required for backup creation and restoration. It may also lead to higher CPU usage during automatic backups, potentially draining the battery faster on battery-powered devices. Enable this option only if necessary.
+> **Примечание:** Сжатие увеличивает время, необходимое для создания и восстановления резервной копии. Оно также может привести к повышенному использованию CPU во время автоматических резервных копий, что может быстрее разряжать батарею на устройствах с питанием от батареи. Включайте эту опцию только при необходимости.
 
-### Enabling Backup Compression (Desktop Only)
+### Включение сжатия резервных копий (только десктоп)
 
-To enable compression for new automatic and manual backups, navigate to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Backup_ → _Backup options_ and toggle _Enable compression_ to on.
+Чтобы включить сжатие для новых автоматических и ручных резервных копий, перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Резервное копирование_ → _Параметры резервного копирования_ и включите переключатель _Включить сжатие_.
 
-## Disabling backup
+## Отключение резервного копирования
 
-Although this is not recommended, it is possible to disable backup in `config.ini` in the [data directory](Data%20directory.md):
+Хотя это не рекомендуется, резервное копирование можно отключить в `config.ini` в [каталоге данных](Data%20directory.md):
 
 ```
 [General]
-... some other configs
-# set to true to disable backups (e.g. because of limited space on server)
+... некоторые другие настройки
+# установите true, чтобы отключить резервные копии (например, из-за ограниченного места на сервере)
 noBackup=true
 ```
 
-You can also review the [configuration](../Advanced%20Usage/Configuration%20\(config.ini%20or%20environment%20variables\).md) file to provide all `config.ini` values as environment variables instead.
+Также можно рассмотреть [конфигурацию](../Advanced%20Usage/Configuration%20\(config.ini%20or%20environment%20variables\).md), чтобы задавать все значения `config.ini` вместо этого как переменные окружения.
 
-See [sample config](https://github.com/TriliumNext/Trilium/blob/master/config-sample.ini).
+См. [пример конфигурации](https://github.com/TriliumNext/Trilium/blob/master/config-sample.ini).

@@ -1,44 +1,44 @@
-# Desktop Installation
-To install Trilium on your desktop, follow these steps:
+# Установка на компьютер
+Чтобы установить Trilium на компьютер, выполните следующие шаги:
 
-1.  **Download the Latest Release**: Obtain the appropriate binary release for your operating system from the [latest release page](https://github.com/TriliumNext/Trilium/releases/latest) on GitHub.
-2.  **Extract the Package**: Unzip the downloaded package to a location of your choice.
-3.  **Run the Application**: Launch Trilium by executing the `trilium` executable found within the unzipped folder.
+1.  **Скачайте последний выпуск**: получите соответствующий бинарный выпуск для вашей операционной системы со [страницы последнего выпуска](https://github.com/TriliumNext/Trilium/releases/latest) на GitHub.
+2.  **Распакуйте пакет**: разархивируйте скачанный пакет в место по вашему выбору.
+3.  **Запустите приложение**: запустите Trilium, выполнив исполняемый файл `trilium` внутри распакованной папки.
 
-## Installing from Flathub
+## Установка из Flathub
 
-On Linux, Trilium is also available on [Flathub](https://flathub.org/en/apps/org.triliumnotes.Trilium), for both x86\_64 and ARM (aarch64). Install it from your software center (e.g. GNOME Software or KDE Discover), or from a terminal:
+В Linux Trilium также доступен на [Flathub](https://flathub.org/en/apps/org.triliumnotes.Trilium) для x86\_64 и ARM (aarch64). Установите его из центра приложений (например, GNOME Software или KDE Discover) или из терминала:
 
 ```sh
 flatpak install flathub org.triliumnotes.Trilium
 ```
 
-Updates arrive through the software center or `flatpak update`, like any other Flatpak.
+Обновления приходят через центр приложений или `flatpak update`, как у любого другого Flatpak.
 
-The Flathub version runs in a sandbox and keeps its [data directory](Data%20directory.md) in `~/.var/app/org.triliumnotes.Trilium/data/trilium-data`. It cannot see the data directory of a `.deb`, `.rpm`, AppImage or `.zip` installation (`~/.local/share/trilium-data`), so it starts with an empty database. To bring existing notes over:
+Версия из Flathub работает в песочнице и хранит свой [каталог данных](Data%20directory.md) в `~/.var/app/org.triliumnotes.Trilium/data/trilium-data`. Она не видит каталог данных установки `.deb`, `.rpm`, AppImage или `.zip` (`~/.local/share/trilium-data`), поэтому запускается с пустой базой данных. Чтобы перенести существующие заметки:
 
-1.  Close Trilium, in both the old installation and the Flatpak.
-2.  Copy the old data directory into the sandbox:
-    
+1.  Закройте Trilium и в старой установке, и в Flatpak.
+2.  Скопируйте старый каталог данных в песочницу:
+
     ```sh
     mkdir -p ~/.var/app/org.triliumnotes.Trilium/data
     cp -a ~/.local/share/trilium-data ~/.var/app/org.triliumnotes.Trilium/data/
     ```
-3.  Start the Flatpak version.
+3.  Запустите версию из Flathub.
 
-If `~/.var/app/org.triliumnotes.Trilium/data/trilium-data` already exists because the Flatpak version was started before, remove or rename it first.
+Если `~/.var/app/org.triliumnotes.Trilium/data/trilium-data` уже существует, потому что версия из Flathub запускалась раньше, сначала удалите или переименуйте его.
 
-The sandbox also hides the command-line tools that the [subscription-based AI providers](../AI/Providers/Subscription-based%20providers.md) run (Claude Code, GitHub Copilot, OpenAI Codex, Google Antigravity); that page describes the permission that lets the Flatpak start them.
+Песочница также скрывает инструменты командной строки, которые запускают [провайдеры ИИ по подписке](../AI/Providers/Subscription-based%20providers.md) (Claude Code, GitHub Copilot, OpenAI Codex, Google Antigravity); эта страница описывает разрешение, которое позволяет Flatpak запускать их.
 
-## Startup Scripts
+## Скрипты запуска
 
-Trilium offers various startup scripts to customize your experience:
+Trilium предлагает различные скрипты запуска для настройки вашего опыта:
 
-*   `trilium-no-cert-check`: Starts Trilium without validating [TLS certificates](Server%20Installation/HTTPS%20\(TLS\).md), useful if connecting to a server with a self-signed certificate.
-    *   Alternatively, set the `NODE_TLS_REJECT_UNAUTHORIZED=0` environment variable before starting Trilium.
-*   `trilium-portable`: Launches Trilium in portable mode, where the [data directory](Data%20directory.md) is created within the application's directory, making it easy to move the entire setup. Electron's internal data (caches, dictionaries, etc.) is also stored within the data directory, so no files are written to the system's roaming profile.
-*   `trilium-safe-mode`: Boots Trilium in "safe mode," disabling any startup scripts that might cause the application to crash.
+*   `trilium-no-cert-check`: запускает Trilium без проверки [TLS-сертификатов](Server%20Installation/HTTPS%20\(TLS\).md), полезно при подключении к серверу с самоподписанным сертификатом.
+    *   Альтернативно задайте переменную окружения `NODE_TLS_REJECT_UNAUTHORIZED=0` перед запуском Trilium.
+*   `trilium-portable`: запускает Trilium в портативном режиме, где [каталог данных](Data%20directory.md) создаётся внутри каталога приложения, что облегчает перемещение всей установки. Внутренние данные Electron (кэши, словари и т.д.) также хранятся внутри каталога данных, поэтому никакие файлы не пишутся в системный перемещаемый профиль.
+*   `trilium-safe-mode`: загружает Trilium в «безопасном режиме», отключая любые скрипты запуска, которые могут вызвать падение приложения.
 
-## Synchronization
+## Синхронизация
 
-For Trilium desktop users who wish to synchronize their data with a server instance, refer to the <a class="reference-link" href="Synchronization.md">Synchronization</a> guide for detailed instructions.
+Для пользователей десктопного Trilium, желающих синхронизировать свои данные с серверным экземпляром, обратитесь к руководству по <a class="reference-link" href="Synchronization.md">Синхронизации</a> для подробных инструкций.

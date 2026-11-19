@@ -1,138 +1,138 @@
-# Code
-Trilium supports creating "code" notes, i.e. notes which contain some sort of formal code - be it programming language (C++, JavaScript), structured data (JSON, XML) or other types of codes (CSS etc.).
+# Код
+Trilium поддерживает создание заметок «код», то есть заметок, содержащих какой-либо формальный код — будь то язык программирования (C++, JavaScript), структурированные данные (JSON, XML) или другие виды кода (CSS и т.д.).
 
-This can be useful for a few things:
+Это может быть полезно для нескольких вещей:
 
-*   computer programmers can store code snippets as notes with syntax highlighting
-*   JavaScript code notes can be executed inside Trilium for some extra functionality
-    *   we call such JavaScript code notes "scripts" – see <a class="reference-link" href="../Scripting.md">Scripting</a>
-*   JSON, XML etc. can be used as storage for structured data (typically used in conjunction with scripting)
+*   программисты могут хранить фрагменты кода как заметки с подсветкой синтаксиса
+*   заметки с JavaScript-кодом можно выполнять внутри Trilium для дополнительной функциональности
+    *   такие заметки с JavaScript-кодом мы называем «скриптами» — см. <a class="reference-link" href="../Scripting.md">Скриптинг</a>
+*   JSON, XML и т.д. можно использовать для хранения структурированных данных (как правило, в сочетании со скриптингом)
 
-For shorter snippets of code that can be embedded in [Text](Text.md) notes, see [Code blocks](Text/Developer-specific%20formatting/Code%20blocks.md).
+Для более коротких фрагментов кода, которые можно встроить в заметки [Текст](Text.md), см. [Блоки кода](Text/Developer-specific%20formatting/Code%20blocks.md).
 
 ![](Code_image.jpg)
 
-## Creating a code note
+## Создание кодовой заметки
 
-In the [Note Tree](../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md), right-click a note and select _Insert child note_ or _Insert note after_, then:
+В [Дереве заметок](../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md) щёлкните правой кнопкой по заметке и выберите _Вставить дочернюю заметку_ или _Вставить заметку после_, затем:
 
-*   To create a plain text code note, select _Code_.
-*   To create a code note in a given language, hover _Code_ and select the language. The list shows the languages enabled in the options (see below), and ends with _Configure code notes..._, which opens them.
+*   Чтобы создать кодовую заметку с простым текстом, выберите _Код_.
+*   Чтобы создать кодовую заметку на заданном языке, наведите на _Код_ и выберите язык. Список показывает языки, включённые в настройках (см. ниже), и заканчивается пунктом _Настроить заметки с кодом..._, который открывает их.
 
-## Adjusting the language of a code note
+## Изменение языка кодовой заметки
 
-To change the language of a code note, look for the <span class="tn-icon bx bx-code"></span> icon in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a>. When clicked it will reveal the list of available languages (which can be customized according to the section below). The menu also features a search bar to quickly filter, and icons to visually distinguish some of the programming languages.
+Чтобы изменить язык кодовой заметки, найдите значок <span class="tn-icon bx bx-code"></span> в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Строке состояния</a>. При щелчке он раскроет список доступных языков (который можно настроить согласно разделу ниже). Меню также содержит строку поиска для быстрой фильтрации и значки для визуального различения некоторых языков программирования.
 
-On the <a class="reference-link" href="../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>, the same list is available in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Note settings_ → _Change language mode_.
+В <a class="reference-link" href="../Installation%20%26%20Setup/Mobile%20Frontend.md">Мобильном интерфейсе</a> тот же список доступен в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a> → _Настройки заметки_ → _Изменить языковой режим_.
 
-## Adjusting the list of languages
+## Настройка списка языков
 
-Trilium supports syntax highlighting for many languages, but by default displays only some of them. To change which languages are offered, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Code Notes_ and find _Available MIME types in the dropdown_. Here you can:
+Trilium поддерживает подсветку синтаксиса для многих языков, но по умолчанию показывает только некоторые из них. Чтобы изменить, какие языки предлагаются, перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Заметки с кодом_ и найдите _Доступные MIME-типы в выпадающем списке_. Здесь вы можете:
 
-*   Add a language by pressing the <span class="tn-icon bx bx-plus"></span> _Add another language_ button, which also shows how many languages are left, and then selecting it. While picking, hover a language to see where it is syntax highlighted.
-*   Press the <span class="tn-icon bx bx-x"></span> button beside a language, or select it and press <kbd>Delete</kbd>, to remove it from the list. _Plain text_ cannot be removed.
-*   See where each language is syntax highlighted: the _Code blocks_ badge stands for code blocks in text notes, the _Code notes_ badge for code notes.
+*   Добавить язык, нажав кнопку <span class="tn-icon bx bx-plus"></span> _Добавить ещё один язык_, которая также показывает, сколько языков осталось, а затем выбрав его. При выборе наведите курсор на язык, чтобы увидеть, где он подсвечивается синтаксически.
+*   Нажать кнопку <span class="tn-icon bx bx-x"></span> рядом с языком или выбрать его и нажать <kbd>Delete</kbd>, чтобы убрать его из списка. _Простой текст_ удалить нельзя.
+*   Увидеть, где каждый язык подсвечивается синтаксически: значок _Блоки кода_ означает блоки кода в текстовых заметках, значок _Заметки с кодом_ — кодовые заметки.
 
-The languages are listed in the same order wherever you choose one: the language menu in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a>, the _Code_ submenu when creating a note, and the language of a code block. By default, the list is sorted alphabetically, with _Plain text_ first. To use an order of your own:
+Языки перечислены в одном порядке везде, где выбирается один: в меню языка в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Строке состояния</a>, в подменю _Код_ при создании заметки и в языке блока кода. По умолчанию список отсортирован по алфавиту, с _Простым текстом_ первым. Чтобы использовать собственный порядок:
 
-1.  Turn off the _Sort alphabetically_ switch at the top of the section.
-2.  Hold the **\=** handle shown beside a language, and then drag it up or down. Alternatively, select a language and press <kbd>Ctrl</kbd>+<kbd>↑</kbd> or <kbd>Ctrl</kbd>+<kbd>↓</kbd>.
+1.  Выключите переключатель _Сортировать по алфавиту_ вверху раздела.
+2.  Удерживайте ручку **\=**, показанную рядом с языком, а затем перетащите его вверх или вниз. Альтернативно выберите язык и нажмите <kbd>Ctrl</kbd>+<kbd>↑</kbd> или <kbd>Ctrl</kbd>+<kbd>↓</kbd>.
 
-Turning _Sort alphabetically_ back on does not discard your order: it is used again the next time the switch is turned off.
+Повторное включение _Сортировать по алфавиту_ не отбрасывает ваш порядок: он используется снова при следующем выключении переключателя.
 
-Note that the list of languages is not immediately refreshed, you'd have to manually [refresh the application](../Troubleshooting/Refreshing%20the%20application.md).
+Обратите внимание, что список языков не обновляется немедленно — нужно вручную [обновить приложение](../Troubleshooting/Refreshing%20the%20application.md).
 
-The list of languages is also shared with the [Code blocks](Text/Developer-specific%20formatting/Code%20blocks.md) feature of [Text](Text.md) notes.
+Список языков также разделяется с возможностью [Блоки кода](Text/Developer-specific%20formatting/Code%20blocks.md) заметок [Текст](Text.md).
 
-## Word wrap
+## Перенос строк
 
-Long lines can be displayed on multiple lines:
+Длинные строки можно отображать на нескольких строках:
 
-*   Globally for all code notes, from <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Code Notes._
-*   For a particular note, by going to the menu in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> and selecting _Word wrap_ and selecting the appropriate option:
-    *   _Auto_, to respect the global word wrap for code notes.
-    *   _On_ or _Off_, to change the state of the word wrap for this note regardless of the global option.
-
-> [!NOTE]
-> Word wrapping can also be adjusted at note level through the `#wrapLines` [label](../Advanced%20Usage/Attributes/Labels.md), which can also be inherited.
-
-## Line numbers
-
-The numbers at the start of each line can be hidden from <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Code Notes_ → _Editor_ → _Line numbers_. The setting applies to every code editor, such as the source of a [Markdown](Markdown.md) note, and to code shown without its editor (see _Color schemes_ below).
-
-An included code note or an embedded code file can show or hide them on its own through the _Line numbers_ submenu of its _More actions_ menu, see <a class="reference-link" href="Text/Include%20Note.md">Include Note</a>. Its _Auto_ entry follows the setting.
-
-## Adjusting options using the status bar
-
-The status bar at the bottom of the editor shows the position of the cursor, the current indentation settings and language.
-
-The cursor position is shown as _Ln_ (the line) and _Col_ (the column), both counted from 1. A tab counts as many columns as the display width of tabs, so the column matches where the cursor appears on screen. While text is selected, _Selected_ shows the number of selected characters, counting each line break as one.
-
-Clicking on the indentation indicator opens a menu with three sections:
-
-1.  _Indent Using_ — switch between Spaces and Tabs (`#indentWithTabs`). If a per-note override is active, a "Reset to default" option appears.
-2.  _Display Width_ — choose from preset widths (1, 2, 3, 4, 6, 8). Changes are saved as a per-note `#tabWidth` label.
-3.  _Re-indent Content To_ — convert existing indentation to a different style. For example, re-indent a file from 4 spaces to 2 spaces, or from spaces to tabs. This rewrites the leading whitespace on every line while preserving alignment remainders.
-
-Clicking the language indicator lets you change the note's MIME type. As in the _Note type_ selector, typing narrows the list of languages.
-
-The same two menus are in the toolbar of a code note or a code file included in a text note, see <a class="reference-link" href="Text/Include%20Note.md">Include Note</a>.
-
-### Re-indentation
-
-When you re-indent content, the editor:
-
-*   Measures the visual column width of each line's leading whitespace using the current style
-*   Calculates indent levels and any alignment remainder
-*   Rebuilds the leading whitespace in the target style
-*   Preserves non-leading whitespace, blank lines, and content without indentation
-
-## Transforming text
-
-To change the selected lines or text, right-click the selection and open _Transform_. Its commands come in three groups:
-
-*   _Sort ascending_, _Sort descending_, _Shuffle lines_, _Reverse line order_ and _Deduplicate lines_, which keeps the first copy of each line.
-*   _Trim leading_, _Trim trailing_ and _Trim both_ remove the whitespace at the start, at the end or at both ends of each line. _Remove blank lines_ also removes the lines that hold only whitespace.
-*   _To uppercase_, _To lowercase_, _To sentence case_, _To title case_ and _Remove diacritics_.
-
-The commands of the first two groups change every line that the selection touches, even partly. Those of the third group change only the selected text. Each change is undone in one step with <kbd>Ctrl</kbd>+<kbd>Z</kbd>.
-
-*   Sorting reads numbers, dates and times by their value, as sorting a table does (see <a class="reference-link" href="Text/Tables.md">Tables</a>), and ignores the case of letters and the indentation. Blank lines go last.
-*   _To sentence case_ lowercases the text and capitalizes the first word of each sentence and of each line. _To title case_ capitalizes every word except minor words such as "of" and "the", which stay lowercase unless they start or end a sentence.
-*   _Remove diacritics_ turns letters such as `é`, `ș` and `ł` into `e`, `s` and `l`, and removes the vowel points of Hebrew and Arabic. Letters such as `ß` and `æ` stay as they are.
-*   Sorting and the case changes follow the language set in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Language & Region_ → _Default content language_. In Turkish, for example, an uppercase `i` is `İ`.
-
-## Vim keybindings
-
-Code notes can be edited with Vim-style keybindings, which imitate the keys of the [Vim](https://www.vim.org/) text editor. To turn them on, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Code Notes_ → _Editor_ and turn on _Vim keybindings_. The option applies to the current device only.
-
-*   If you are new to Vim, start with the <a class="reference-link" href="Text/Vim%20mode/Vim%20beginner%20guide.md">Vim beginner guide</a>.
-*   For the keys and commands, see the <a class="reference-link" href="Text/Vim%20mode/Vim%20full%20reference.md">Vim full reference</a>. Its rows marked **Text notes only** do not apply to code notes.
-
-Text notes have a Vim mode of their own, with its own option and settings: see <a class="reference-link" href="Text/Vim%20mode.md">Vim mode</a>.
-
-## Color schemes
-
-Since Trilium 0.94.0 the colors of code notes can be customized by going <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → Code Notes and looking for the _Appearance_ section.
-
-A code note or a code file shown without its editor, such as in an <a class="reference-link" href="Text/Include%20Note.md">Include Note</a>, on the cards of <a class="reference-link" href="../Collections.md">Collections</a> or in a tooltip, uses the same colors and line numbers as the editor does. A printout uses the _Light theme_. A [shared page](../Advanced%20Usage/Sharing.md) uses the VS Code light or dark theme, following the mode of the page.
+*   Глобально для всех кодовых заметок в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Заметки с кодом_.
+*   Для конкретной заметки, перейдя в меню в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a> и выбрав _Перенос строк_ и выбрав соответствующую опцию:
+    *   _Авто_, чтобы уважать глобальный перенос строк для кодовых заметок.
+    *   _Вкл_ или _Выкл_, чтобы изменить состояние переноса строк для этой заметки независимо от глобальной опции.
 
 > [!NOTE]
-> **Why are there only a few themes whereas the code block themes for text notes have a lot?**  
-> The reason is that Code notes use a different technology than the one used in Text notes, and as such there is a more limited selection of themes. If you find a CodeMirror 6 (not 5) theme that you would like to use, let us know and we might consider adding it to the set of default themes. There is no possibility of adding new themes (at least for now), since the themes are defined in JavaScript and not at CSS level.
+> Перенос строк также можно настроить на уровне заметки через [метку](../Advanced%20Usage/Attributes/Labels.md) `#wrapLines`, которая также может наследоваться.
 
-## Programming ligatures
+## Номера строк
 
-If you see `!=` displayed as `≠` or `->` as `→` inside a code note, those are _font ligature_: the default monospace font draws certain character pairs as a single symbol. The underlying text is not changed by Trilium (unlike text notes which have <a class="reference-link" href="Text/Automatic%20replacements.md">Automatic replacements</a>), and copying it out gives you back `!=` and `->`.
+Числа в начале каждой строки можно скрыть в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Заметки с кодом_ → _Редактор_ → _Номера строк_. Настройка применяется к каждому редактору кода, такому как исходник заметки [Markdown](Markdown.md), и к коду, показанному без его редактора (см. _Цветовые схемы_ ниже).
 
-This can be turned off with <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a>_→ Appearance → Fonts → Programming ligatures_.
+Включённая кодовая заметка или встроенный кодовый файл могут показывать или скрывать их самостоятельно через подменю _Номера строк_ своего меню _Дополнительные действия_, см. <a class="reference-link" href="Text/Include%20Note.md">Включение заметки</a>. Его запись _Авто_ следует настройке.
 
-## Virtual keyboard behavior
+## Настройка опций через строку состояния
 
-When using a virtual keyboard, keyboard suggestions and corrections are controlled as follows:
+Строка состояния внизу редактора показывает позицию курсора, текущие настройки отступов и язык.
 
-*   For <a class="reference-link" href="Markdown.md">Markdown</a> and plain text code notes, the autocorrect is **on**, as well as automatic capitalization.
-*   For all the other code notes, the autocorrect is off in order to avoid issues when typing code.
+Позиция курсора показана как _Ln_ (строка) и _Col_ (столбец), обе считаются от 1. Табуляция считается за столько столбцов, сколь отображаемая ширина табуляции, поэтому столбец соответствует тому, где курсор появляется на экране. Пока выделен текст, _Выделено_ показывает число выделенных символов, считая каждый разрыв строки за один.
+
+Щелчок по индикатору отступов открывает меню из трёх разделов:
+
+1.  _Отступать с помощью_ — переключение между пробелами и табуляцией (`#indentWithTabs`). Если активно переопределение для конкретной заметки, появляется опция «Сбросить к значению по умолчанию».
+2.  _Отображаемая ширина_ — выбор из предустановленных ширин (1, 2, 3, 4, 6, 8). Изменения сохраняются как метка `#tabWidth` для конкретной заметки.
+3.  _Переотступить содержимое в_ — преобразование существующих отступов в другой стиль. Например, переотступить файл с 4 пробелов на 2 пробела или с пробелов на табуляцию. Это перезаписывает начальные пробелы на каждой строке, сохраняя остатки выравнивания.
+
+Щелчок по индикатору языка позволяет изменить MIME-тип заметки. Как и в выборе _Типа заметки_, ввод текста сужает список языков.
+
+Те же два меню находятся на панели инструментов кодовой заметки или кодового файла, включённого в текстовую заметку, см. <a class="reference-link" href="Text/Include%20Note.md">Включение заметки</a>.
+
+### Переотступка
+
+Когда вы переотступаете содержимое, редактор:
+
+*   Измеряет визуальную ширину столбца начальных пробелов каждой строки, используя текущий стиль
+*   Вычисляет уровни отступов и любой остаток выравнивания
+*   Перестраивает начальные пробелы в целевом стиле
+*   Сохраняет не-начальные пробелы, пустые строки и содержимое без отступов
+
+## Преобразование текста
+
+Чтобы изменить выделенные строки или текст, щёлкните по выделению правой кнопкой и откройте _Преобразовать_. Его команды идут в трёх группах:
+
+*   _Сортировать по возрастанию_, _Сортировать по убыванию_, _Перемешать строки_, _Обратить порядок строк_ и _Убрать дубликаты строк_, которая сохраняет первую копию каждой строки.
+*   _Убрать в начале_, _Убрать в конце_ и _Убрать с обеих сторон_ удаляют пробелы в начале, в конце или с обеих сторон каждой строки. _Убрать пустые строки_ также удаляет строки, содержащие только пробелы.
+*   _В верхний регистр_, _В нижний регистр_, _Как в предложении_, _Как в заголовке_ и _Убрать диакритику_.
+
+Команды первых двух групп изменяют каждую строку, которую выделение затрагивает, даже частично. Команды третьей группы изменяют только выделенный текст. Каждое изменение отменяется за один шаг через <kbd>Ctrl</kbd>+<kbd>Z</kbd>.
+
+*   Сортировка читает числа, даты и времена по их значению, как сортировка таблицы (см. <a class="reference-link" href="Text/Tables.md">Таблицы</a>), и игнорирует регистр букв и отступы. Пустые строки идут последними.
+*   _Как в предложении_ переводит текст в нижний регистр и делает заглавной первое слово каждого предложения и каждой строки. _Как в заголовке_ делает заглавной каждое слово, кромке малозначительных слов, таких как «of» и «the», которые остаются в нижнем регистре, если только не начинают или не заканчивают предложение.
+*   _Убрать диакритику_ превращает буквы, такие как `é`, `ș` и `ł`, в `e`, `s` и `l`, и убирает огласовки иврита и арабского. Буквы, такие как `ß` и `æ`, остаются как есть.
+*   Сортировка и изменения регистра следуют языку, заданному в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Язык и регион_ → _Язык содержимого по умолчанию_. В турецком, например, заглавная `i` — это `İ`.
+
+## Привязки клавиш Vim
+
+Кодовые заметки можно редактировать с привязками клавиш в стиле Vim, имитирующими клавиши текстового редактора [Vim](https://www.vim.org/). Чтобы включить их, перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Заметки с кодом_ → _Редактор_ и включите _Привязки клавиш Vim_. Опция применяется только к текущему устройству.
+
+*   Если вы новичок в Vim, начните с <a class="reference-link" href="Text/Vim%20mode/Vim%20beginner%20guide.md">Руководства для начинающих Vim</a>.
+*   По клавишам и командам см. <a class="reference-link" href="Text/Vim%20mode/Vim%20full%20reference.md">Полный справочник Vim</a>. Его строки, помеченные **Только текстовые заметки**, не применяются к кодовым заметкам.
+
+Текстовые заметки имеют собственный режим Vim с собственной опцией и настройками: см. <a class="reference-link" href="Text/Vim%20mode.md">Режим Vim</a>.
+
+## Цветовые схемы
+
+Начиная с Trilium 0.94.0 цвета кодовых заметок можно настраивать, перейдя в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → Заметки с кодом и найдя раздел _Внешний вид_.
+
+Кодовая заметка или кодовый файл, показанные без своего редактора, например во <a class="reference-link" href="Text/Include%20Note.md">Включении заметки</a>, на карточках <a class="reference-link" href="../Collections.md">Коллекций</a> или в подсказке, используют те же цвета и номера строк, что и редактор. Распечатка использует _Светлую тему_. [Опубликованная страница](../Advanced%20Usage/Sharing.md) использует светлую или тёмную тему VS Code, следующую режиму страницы.
 
 > [!NOTE]
-> Not all browsers and platforms respect this value, so the keyboard suggestions might appear without autocorrecting or the browser might disregard this and autocorrect anyway.
+> **Почему здесь всего несколько тем, тогда как для тем блоков кода текстовых заметок их много?**
+> Причина в том, что заметки с кодом используют другую технологию, чем используемая в текстовых заметках, и поэтому выбор тем более ограничен. Если вы найдёте тему CodeMirror 6 (не 5), которую хотели бы использовать, сообщите нам, и мы можем рассмотреть её добавление в набор тем по умолчанию. Возможности добавлять новые темы нет (по крайней мере, пока), так как темы определены в JavaScript, а не на уровне CSS.
+
+## Лигатуры программирования
+
+Если вы видите `!=`, отображаемое как `≠`, или `->` как `→` внутри кодовой заметки, это _лигатуры шрифта_: шрифт моноширинный по умолчанию рисует определённые пары символов как единый символ. Сам текст не изменяется Trilium (в отличие от текстовых заметок, имеющих <a class="reference-link" href="Text/Automatic%20replacements.md">Автоматические замены</a>), и при копировании вы получаете обратно `!=` и `->`.
+
+Это можно отключить в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → Внешний вид → Шрифты → Лигатуры программирования.
+
+## Поведение виртуальной клавиатуры
+
+При использовании виртуальной клавиатуры предложения и исправления клавиатуры управляются следующим образом:
+
+*   Для заметок [Markdown](Markdown.md) и кодовых заметок с простым текстом автокоррекция **включена**, как и автоматическая капитализация.
+*   Для всех остальных кодовых заметок автокоррекция выключена, чтобы избежать проблем при наборе кода.
+
+> [!NOTE]
+> Не все браузеры и платформы уважают это значение, поэтому предложения клавиатуры могут появляться без автокоррекции, или браузер может проигнорировать это и всё равно скорректировать текст.

@@ -1,104 +1,104 @@
-# FAQ
-## Inspiration for the name “Trilium”
+# Частые вопросы
+## Происхождение названия «Trilium»
 
-> Naming software is hard. I lived in Ontario when I first started the project and Trillium (the flower) is sort of a provincial logo, many institutions in Ontario are named "Trillium \[something\]". So I kept hearing/reading it almost everyday, I liked the sound of it and its nature motif, so I just reused it.
-> 
-> _– Zadam (original Trilium maintainer)_
+> Назвать программу — дело трудное. Когда я начинал проект, я жил в Онтарио, а Trillium (цветок) — своего рода провинциальный символ; множество учреждений Онтарио называются «Trillium \[что-то\]». Так что я почти каждый день слышал и читал это слово, мне нравился его звук и природная тематика, поэтому я просто переиспользовал его.
+>
+> _– Zadam (исходный сопровождающий Trilium)_
 
 > [!NOTE]
-> Despite the fact that the Trillium flower has two “l"s, the Trilium application only has one.
+> Несмотря на то, что у цветка Trillium два «l», в приложении Trilium — только одна.
 
-## How do I create a folder?
+## Как создать папку?
 
-Trilium has no separate folder type: any note can have child notes, so any note can act as a folder. A note can hold its own content and have children at the same time, unlike a file system, which separates files from directories.
+В Trilium нет отдельного типа «папка»: любая заметка может иметь дочерние заметки, поэтому любая заметка может выступать в роли папки. Заметка может одновременно содержать собственное содержимое и иметь потомков, в отличие от файловой системы, которая разделяет файлы и каталоги.
 
-To organize notes into a folder:
+Чтобы организовать заметки в папку:
 
-1.  Create a note that acts as the folder, for example "Projects".
-2.  Right-click it in the <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_, or hover over it and press the <span class="tn-icon bx bx-plus"></span> button.
-3.  To move existing notes into it, drag them onto it in the tree.
+1.  Создайте заметку, выступающую папкой, например «Проекты».
+2.  Щёлкните по ней правой кнопкой в <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дереве заметок</a> и выберите _Вставить дочернюю заметку_ или наведите на неё и нажмите кнопку <span class="tn-icon bx bx-plus"></span>.
+3.  Чтобы переместить существующие заметки в неё, перетащите их на неё в дереве.
 
-The children of a note are listed at the end of its content (see <a class="reference-link" href="Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Note List</a>).
+Потомки заметки перечислены в конце её содержимого (см. <a class="reference-link" href="Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Список заметок</a>).
 
-If you want the note to look like a folder, with no content of its own and only its children shown, make it a collection instead: right-click in the tree, select _Insert child note_ → _Collection_, then choose <a class="reference-link" href="Collections/Grid%20View.md">Grid View</a> or <a class="reference-link" href="Collections/List%20View.md">List View</a>. See <a class="reference-link" href="Collections.md">Collections</a> for the other views, such as tables, boards and calendars.
+Если вы хотите, чтобы заметка выглядела как папка — без собственного содержимого, с показом только своих потомков — сделайте её коллекцией: щёлкните правой кнопкой в дереве, выберите _Вставить дочернюю заметку_ → _Коллекция_, затем выберите <a class="reference-link" href="Collections/Grid%20View.md">Сетку</a> или <a class="reference-link" href="Collections/List%20View.md">Список</a>. Остальные виды, такие как таблицы, доски и календари, см. <a class="reference-link" href="Collections.md">Коллекции</a>.
 
-## macOS support
+## Поддержка macOS
 
-Originally, Trilium Notes considered the macOS build unsupported. TriliumNext commits to make the experience on macOS as good as possible.
+Изначально сборка Trilium Notes для macOS считалась неподдерживаемой. TriliumNext обязуется сделать работу на macOS настолько хорошей, насколько возможно.
 
-if you find any platform-specific issues, feel free to [report them](Troubleshooting/Reporting%20issues.md).
+Если вы найдёте какие-либо специфичные для платформы проблемы, не стесняйтесь [сообщать о них](Troubleshooting/Reporting%20issues.md).
 
-## Translation / localisation support
+## Поддержка перевода / локализации
 
-The original Trilium Notes application did not support multiple languages. Since we believe that internationalisation is a core part of an application, we have added support for it.
+Исходное приложение Trilium Notes не поддерживало несколько языков. Поскольку мы считаем, что интернационализация — ключевая часть приложения, мы добавили её поддержку.
 
-Contributions to translations are welcome.
+Вклады в переводы приветствуются.
 
-## Multi-user support
+## Поддержка нескольких пользователей
 
-Common request is to allow multiple users collaborate, share notes etc. So far I'm resisting this because of these reasons:
+Частый запрос — разрешить нескольким пользователям совместно работать, делиться заметками и т.д. До сих пор я сопротивляюсь этому по следующим причинам:
 
-*   it's a huge feature, or rather a Pandora's box of collaboration features like user management, permissions, conflict resolution, real-time editing of a note by multiple people etc. This would be a huge amount of work. Trilium Notes is project made mostly by one person in free time and that's unlikely to change in the future.
-*   given its size it would probably pivot the attention away from my main focus which is a personal note-taking
-*   the assumption that only single person has access to the app simplifies many things, or just outright makes them possible. In multi-user app, our [scripting](Scripting.md)support would be a XSS security hole, while with the single user assumption it's an endless customizable tool.
+*   это огромная возможность, вернее, ящик Пандоры возможностей совместной работы: управление пользователями, разрешения, разрешение конфликтов, редактирование заметки несколькими людьми в реальном времени и т.д. Это огромный объём работы. Trilium Notes — проект, созданный в основном одним человеком в свободное время, и это вряд ли изменится в будущем.
+*   учитывая его размер, он, вероятно, отвлёк бы внимание от моего основного фокуса — личного ведения заметок.
+*   допущение, что доступ к приложению имеет только один человек, упрощает многие вещи или попросту делает их возможными. В многопользовательском приложении наша поддержка [скриптинга](Scripting.md) была бы дырой в безопасности XSS, тогда как с допущением одного пользователя это бесконечно настраиваемый инструмент.
 
-## How to open multiple documents in one Trilium instance
+## Как открыть несколько документов в одном экземпляре Trilium
 
-This is normally not supported - one Trilium process can open only a single instance of a [database](Advanced%20Usage/Database.md). However, you can run two Trilium processes (from one installation), each connected to a separate document. To achieve this, you need to set a location for the [data directory](Installation%20%26%20Setup/Data%20directory.md) in the `TRILIUM_DATA_DIR` environment variable and separate port on `TRILIUM_PORT` environment variable. How to do that depends on the platform, in Unix-based systems you can achieve that by running command such as this:
+Обычно это не поддерживается — один процесс Trilium может открыть только один экземпляр [базы данных](Advanced%20Usage/Database.md). Однако можно запустить два процесса Trilium (из одной установки), каждый со своим отдельным документом. Для этого нужно задать местоположение [каталога данных](Installation%20%26%20Setup/Data%20directory.md) в переменной окружения `TRILIUM_DATA_DIR` и отдельный порт в переменной окружения `TRILIUM_PORT`. Как это сделать, зависит от платформы; в системах на базе Unix это можно сделать командой вроде этой:
 
 ```sh
 TRILIUM_DATA_DIR=/home/me/path/to/data/dir TRILIUM_PORT=12345 trilium 
 ```
 
-You can save this command into a `.sh` script file or make an alias. Do this similarly for a second instance with different data directory and port.
+Можно сохранить эту команду в `.sh`-скрипт или сделать алиас. Сделайте аналогично для второго экземпляра с другим каталогом данных и портом.
 
-## Can I use Dropbox / Google Drive / OneDrive to sync data across multiple computers.
+## Можно ли использовать Dropbox / Google Drive / OneDrive для синхронизации данных между несколькими компьютерами?
 
-No.
+Нет.
 
-These general purpose sync apps are not suitable to sync database files which are open and being worked on by another application. The result is that they will corrupt the database file, resulting in data loss and this message in the Trilium logs:
+Эти приложения синхронизации общего назначения не подходят для синхронизации файлов базы данных, которые открыты и с которыми работает другое приложение. Результат в том, что они повредят файл базы данных, что приведёт к потере данных и этому сообщению в журналах Trilium:
 
 ```
 SqliteError: database disk image is malformed
 ```
 
-The only supported way to sync Trilium's data across the network is to use a [sync/web server](Installation%20%26%20Setup/Synchronization.md).
+Единственный поддерживаемый способ синхронизации данных Trilium по сети — использовать [сервер синхронизации/веб](Installation%20%26%20Setup/Synchronization.md).
 
-## Why database instead of flat files?
+## Почему база данных вместо плоских файлов?
 
-Trilium stores notes in a [database](Advanced%20Usage/Database.md) which is an SQLite database. People often ask why doesn't Trilium rather use flat files for note storage - it's fair question since flat files are easily interoperable, work with SCM/git etc.
+Trilium хранит заметки в [базе данных](Advanced%20Usage/Database.md) — базе данных SQLite. Люди часто спрашивают, почему бы Trilium не использовать плоские файлы для хранения заметок — это справедливый вопрос, так как плоские файлы легко совместимы, работают с системами контроля версий/git и т.д.
 
-Short answer is that file systems are simply not powerful enough for what we want to achieve with Trilium. Using filesystem would mean fewer features with probably more problems.
+Короткий ответ: файловые системы просто недостаточно мощны для того, что мы хотим достичь с Trilium. Использование файловой системы означало бы меньше возможностей и, вероятно, больше проблем.
 
-More detailed answer:
+Более подробный ответ:
 
-*   [clones](Basic%20Concepts%20and%20Features/Notes/Cloning%20Notes.md) are what you might call "hard directory link" in filesystem lingo, but this concept is not implemented in any filesystem
-*   filesystems make a distinction between directory and file while there's intentionally no such difference in Trilium
-*   files are stored in no particular order and user can't change this
-*   Trilium allows storing note [attributes](Advanced%20Usage/Attributes.md) which could be represented in extended user attributes but their support differs greatly among different filesystems / operating systems
-*   Trilium makes links / relations between different notes which can be quickly retrieved / navigated (e.g. for [note map](Advanced%20Usage/Note%20Map%20\(Link%20map%2C%20Tree%20map\).md)). There's no such support in file systems which means these would have to be stored in some kind of side-car files (mini-databases).
-*   Filesystems are generally not transactional. While this is not completely required for a note-taking application, having transactions make it way easier to keep notes and their metadata in predictable and consistent state.
+*   [клоны](Basic%20Concepts%20and%20Features/Notes/Cloning%20Notes.md) — это то, что в терминологии файловых систем можно назвать «жёсткой ссылкой на каталог», но эта концепция не реализована ни в одной файловой системе.
+*   файловые системы различают каталог и файл, тогда как в Trilium намеренно нет такого различия.
+*   файлы хранятся в определённом порядке, и пользователь не может его изменить.
+*   Trilium позволяет хранить [атрибуты](Advanced%20Usage/Attributes.md) заметок, которые можно было бы представить в расширенных пользовательских атрибутах, но их поддержка сильно различается между разными файловыми системами и операционными системами.
+*   Trilium создаёт ссылки/отношения между разными заметками, которые можно быстро извлекать и по которым можно перемещаться (например, для [карты заметок](Advanced%20Usage/Note%20Map%20\(Link%20map%2C%20Tree%20map\).md)). Нет такой поддержки в файловых системах, что означало бы необходимость хранить их в каких-то файлах-сателлитах (мини-базах данных).
+*   Файловые системы в целом не транзакционны. Хотя это не абсолютно необходимо для приложения для заметок, наличие транзакций сильно упрощает поддержание заметок и их метаданных в предсказуемом и согласованном состоянии.
 
-## Search-related Questions
+## Вопросы о поиске
 
-### Why does search sometimes find results with typos?
+### Почему поиск иногда находит результаты с опечатками?
 
-Trilium uses a progressive search strategy that includes fuzzy matching when exact matches return fewer than 5 results. This finds notes despite minor typos in your search query. You can use fuzzy search operators (`~=` for fuzzy exact match and `~*` for fuzzy contains). See the <a class="reference-link" href="Basic%20Concepts%20and%20Features/Navigation/Search.md">Search</a> documentation for details.
+Trilium использует стратегию прогрессивного поиска, которая включает нечёткое сопоставление, когда точные совпадения возвращают менее 5 результатов. Это находит заметки несмотря на мелкие опечатки в поисковом запросе. Можно использовать операторы нечёткого поиска (`~=` для нечёткого точного совпадения и `~*` для нечёткого «содержит»). Подробности см. в документации <a class="reference-link" href="Basic%20Concepts%20and%20Features/Navigation/Search.md">Поиска</a>.
 
-### How can I search for notes when I'm not sure of the exact spelling?
+### Как искать заметки, когда я не уверен в точном написании?
 
-Use the fuzzy search operators:
+Используйте операторы нечёткого поиска:
 
-*   `#title ~= "projct"` - finds notes with titles like "project" despite the typo
-*   `note.content ~* "algoritm"` - finds content containing "algorithm" or similar words
+*   `#title ~= "projct"` — находит заметки с заголовками вроде «project» несмотря на опечатку.
+*   `note.content ~* "algoritm"` — находит содержимое, содержащее «algorithm» или похожие слова.
 
-### Why do some search results appear before others with lower scores?
+### Почему некоторые результаты поиска появляются перед другими с меньшими оценками?
 
-Trilium places exact matches before fuzzy matches. When you search for "project", notes containing exactly "project" appear before notes with variations like "projects" or "projection", regardless of other scoring factors.
+Trilium размещает точные совпадения перед нечёткими. Когда вы ищете «project», заметки, содержащие точно «project», появляются перед заметками с вариациями вроде «projects» или «projection» независимо от других факторов оценки.
 
-### How can I make my searches faster?
+### Как ускорить мои поиски?
 
-1.  Use the "Fast search" option to search only titles and attributes (not content)
-2.  Limit search scope using the "Ancestor" field
-3.  Set a result limit to prevent loading too many results
-4.  For large databases, consider archiving old notes to reduce search scope
+1.  Используйте опцию «Быстрый поиск», чтобы искать только по заголовкам и атрибутам (не по содержимому).
+2.  Ограничьте область поиска с помощью поля «Предок».
+3.  Задайте лимит результатов, чтобы не загружать слишком много результатов.
+4.  Для больших баз данных рассмотрите архивирование старых заметок, чтобы сузить область поиска.

@@ -1,36 +1,36 @@
-# Feature Highlights
-This section presents the most important changes by version. For a full set of changes, please consult the change log of each release. For purposes of brevity, beta versions are skipped and the features gathered to the nearest stable version.
+# Основные новые возможности
+Этот раздел представляет наиболее важные изменения по версиям. Полный набор изменений см. в журнале изменений каждого выпуска. Для краткости бета-версии пропущены, а возможности собраны к ближайшей стабильной версии.
 
 *   v0.105.0:
-    *   Text notes now have a <a class="reference-link" href="Note%20Types/Text/In-editor%20AI%20assistant.md">In-editor AI assistant</a> for quick proof-reading and other text-based operations that don't require a full chat.
+    *   Текстовые заметки теперь имеют <a class="reference-link" href="Note%20Types/Text/In-editor%20AI%20assistant.md">Встроенного ИИ-ассистента</a> для быстрой проверки текста и других операций с текстом, не требующих полноценного чата.
 *   v0.101.0:
-    *   A new layout has been introduced, making significant modifications to the UI/UX such as integrating the ribbon and the floating buttons into other UI elements and introducing new functionality such as the <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Breadcrumb.md">Breadcrumb</a>.
+    *   Представлен новый макет, вносящий значительные изменения в интерфейс и опыт взаимодействия, такие как интеграция ленты и плавающих кнопок в другие элементы интерфейса и предоставление новой функциональности, такой как <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Breadcrumb.md">Хлебные крошки</a>.
 *   v0.97.0:
-    *   Books are now <a class="reference-link" href="Collections.md">Collections</a>.
-    *   <a class="reference-link" href="Collections/Table.md">Table</a> is a new collection type displaying notes and attributes in an editable grid.
-    *   <a class="reference-link" href="Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a> is introduced, adding a new way to edit notes in a popup instead of opening a new tab. It also integrates well with <a class="reference-link" href="Collections.md">Collections</a>.
+    *   Книги теперь стали <a class="reference-link" href="Collections.md">Коллекциями</a>.
+    *   <a class="reference-link" href="Collections/Table.md">Таблица</a> — новый тип коллекции, отображающий заметки и атрибуты в редактируемой сетке.
+    *   Представлено <a class="reference-link" href="Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Быстрое редактирование</a> — новый способ редактировать заметки во всплывающем окне вместо открытия новой вкладки. Оно также хорошо сочетается с <a class="reference-link" href="Collections.md">Коллекциями</a>.
 *   v0.96.0:
-    *   <a class="reference-link" href="Note%20Types/Text.md">Text</a> gain premium features thanks to a collaboration with the CKEditor team:
-        *   <a class="reference-link" href="Note%20Types/Text/Slash%20Commands.md">Slash Commands</a>
-        *   <a class="reference-link" href="Note%20Types/Text/Text%20Snippets.md">Text Snippets</a>
+    *   <a class="reference-link" href="Note%20Types/Text.md">Текст</a> получает премиум-возможности благодаря сотрудничеству с командой CKEditor:
+        *   <a class="reference-link" href="Note%20Types/Text/Slash%20Commands.md">Слэш-команды</a>
+        *   <a class="reference-link" href="Note%20Types/Text/Text%20Snippets.md">Текстовые фрагменты</a>
 *   v0.95.0:
-    *   A more friendly theme was introduced for <a class="reference-link" href="Advanced%20Usage/Sharing.md">Sharing</a>, with search, expandable tree, night mode and more.
+    *   Для <a class="reference-link" href="Advanced%20Usage/Sharing.md">Публикации</a> представлена более дружественная тема с поиском, разворачиваемым деревом, ночным режимом и многим другим.
 *   v0.94.0:
-    *   Added integration with <a class="reference-link" href="AI.md">AI</a> (using self-hosted LLMs such as Ollama or industry standards such as ChatGPT).
+    *   Добавлена интеграция с <a class="reference-link" href="AI.md">ИИ</a> (с использованием самостоятельно размещаемых LLM, таких как Ollama, или отраслевых стандартов, таких как ChatGPT).
 *   v0.92.5:
-    *   Windows binaries are now signed.
-    *   <a class="reference-link" href="Installation%20%26%20Setup/Server%20Installation/Multi-factor%20authentication%20with%20TOTP.md">Multi-factor authentication with TOTP</a> was introduced.
+    *   Бинарные файлы Windows теперь подписаны.
+    *   Представлена <a class="reference-link" href="Installation%20%26%20Setup/Server%20Installation/Multi-factor%20authentication%20with%20TOTP.md">Многофакторная аутентификация с TOTP</a>.
 *   v0.92.4:
-    *   macOS binaries are now signed.
-    *   <a class="reference-link" href="Note%20Types/Text.md">Text</a> notes can now have adjustable <a class="reference-link" href="Note%20Types/Text/Content%20language%20%26%20Right-to-left%20support.md">Content language &amp; Right-to-left support</a>.
-    *   <a class="reference-link" href="Basic%20Concepts%20and%20Features/Notes/Printing%20%26%20Exporting%20as%20PDF.md">Printing &amp; Exporting as PDF</a>
-    *   <a class="reference-link" href="Basic%20Concepts%20and%20Features/Zen%20mode.md">Zen mode</a>
-    *   <a class="reference-link" href="Collections/Calendar.md">Calendar</a>, allowing notes to be displayed in a monthly grid based on start and end dates.
+    *   Бинарные файлы macOS теперь подписаны.
+    *   Заметки <a class="reference-link" href="Note%20Types/Text.md">Текст</a> теперь могут иметь настраиваемые <a class="reference-link" href="Note%20Types/Text/Content%20language%20%26%20Right-to-left%20support.md">Язык содержимого и поддержку справа налево</a>.
+    *   <a class="reference-link" href="Basic%20Concepts%20and%20Features/Notes/Printing%20%26%20Exporting%20as%20PDF.md">Печать и экспорт в PDF</a>
+    *   <a class="reference-link" href="Basic%20Concepts%20and%20Features/Zen%20mode.md">Режим дзена</a>
+    *   <a class="reference-link" href="Collections/Calendar.md">Календарь</a>, позволяющий отображать заметки в помесячной сетке на основе дат начала и окончания.
 *   v0.91.5:
-    *   Significant improvements for mobile.
-    *   <a class="reference-link" href="Note%20Types/Text/Footnotes.md">Footnotes</a> are now supported in <a class="reference-link" href="Note%20Types/Text.md">Text</a> notes.
-    *   Mermaid diagrams can now be inserted inline within <a class="reference-link" href="Note%20Types/Text.md">Text</a> notes.
-    *   The TriliumNext theme is introduced, bringing a more modern design to the application.
-    *   <a class="reference-link" href="Collections/Geo%20Map.md">Geo Map</a>, displaying notes as markers on a geographical map for easy trip planning.
+    *   Значительные улучшения для мобильных устройств.
+    *   <a class="reference-link" href="Note%20Types/Text/Footnotes.md">Сноски</a> теперь поддерживаются в заметках <a class="reference-link" href="Note%20Types/Text.md">Текст</a>.
+    *   Диаграммы Mermaid теперь можно вставлять встроенно внутрь заметок <a class="reference-link" href="Note%20Types/Text.md">Текст</a>.
+    *   Представлена тема TriliumNext, приносящая более современный дизайн приложению.
+    *   <a class="reference-link" href="Collections/Geo%20Map.md">Геокарта</a>, отображающая заметки как метки на географической карте для удобного планирования поездок.
 *   v0.90.8:
-    *   A new note type was introduced: <a class="reference-link" href="Note%20Types/Mind%20Map.md">Mind Map</a>
+    *   Представлен новый тип заметки: <a class="reference-link" href="Note%20Types/Mind%20Map.md">Mind Map</a>

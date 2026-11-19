@@ -1,40 +1,40 @@
-# List View
+# Список
 <figure class="image"><img style="aspect-ratio:1387/758;" src="List View_image.png" width="1387" height="758"></figure>
 
-List view is similar to <a class="reference-link" href="Grid%20View.md">Grid View</a>, but in the list view mode, each note is displayed in a single row with only the title and the icon of the note being visible by the default. By pressing the <span class="tn-icon bx bx-chevron-right"></span> expand button it's possible to view the content of the note, as well as the children of the note (recursively).
+Вид списка похож на <a class="reference-link" href="Grid%20View.md">Сетку</a>, но в режиме списка каждая заметка отображается в одной строке, и по умолчанию видны только заголовок и значок заметки. Нажав кнопку разворачивания <span class="tn-icon bx bx-chevron-right"></span>, можно просмотреть содержимое заметки, а также её дочерние заметки (рекурсивно).
 
-In the example above, the "Node.js" note on the left panel contains several child notes. The right panel displays the content of these child notes as a single continuous document.
+В примере выше заметка «Node.js» на левой панели содержит несколько дочерних заметок. Правая панель отображает содержимое этих дочерних заметок как один непрерывный документ.
 
-### Creating a new table
+### Создание новой таблицы
 
-Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ → _Collection_ → _List View_.
+Щёлкните правой кнопкой по существующей заметке в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дереве заметок</a> и выберите _Вставить дочернюю заметку_ → _Коллекция_ → _Список_.
 
-## Interaction
+## Взаимодействие
 
-*   Each note can be expanded or collapsed by clicking on the <span class="tn-icon bx bx-chevron-right"></span> arrow to the left of the title.
-*   In the <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a> toolbar, the buttons at the right end expand (<span class="tn-icon bx bx-move-vertical"></span>) and collapse (<span class="tn-icon bx bx-layer-minus"></span>) all notes easily.
+*   Каждую заметку можно развернуть или свернуть, щёлкнув по стрелке <span class="tn-icon bx bx-chevron-right"></span> слева от заголовка.
+*   На панели инструментов <a class="reference-link" href="Collection%20Properties.md">Свойств коллекции</a> кнопки в правом конце легко разворачивают (<span class="tn-icon bx bx-move-vertical"></span>) и сворачивают (<span class="tn-icon bx bx-layer-minus"></span>) все заметки.
 
-## Printing and exporting to PDF
+## Печать и экспорт в PDF
 
-Since v0.100.0, list collections can be [printed or exported to PDF](../Basic%20Concepts%20and%20Features/Notes/Printing%20%26%20Exporting%20as%20PDF.md).
+Начиная с v0.100.0, коллекции-списки можно [распечатать или экспортировать в PDF](../Basic%20Concepts%20and%20Features/Notes/Printing%20%26%20Exporting%20as%20PDF.md).
 
-A printed list collection will print all the notes in the collection, in the right order and preserving the full hierarchy.
+Напечатанная коллекция-список напечатает все заметки коллекции в правильном порядке, сохраняя полную иерархию.
 
-If exported to PDF within the desktop application, there is additional functionality:
+При экспорте в PDF в десктопном приложении есть дополнительные возможности:
 
-*   The table of contents of the PDF will reflect the structure of the notes.
-*   Reference and inline links to other notes within the same hierarchy will be functional (will jump to the corresponding page). If a link refers to a note that is not in the printed hierarchy, it will be unlinked.
+*   Оглавление PDF будет отражать структуру заметок.
+*   Референсные и встроенные ссылки на другие заметки внутри той же иерархии будут работать (переходят на соответствующую страницу). Если ссылка указывает на заметку вне печатаемой иерархии, она будет разорвана.
 
-## Expanding and collapsing multiple notes at once
+## Разворачивание и сворачивание нескольких заметок одновременно
 
-Apart from individually expanding or collapsing notes, it's also possible to expand or collapse them all at once. To do so, go to the <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a> toolbar and look for the buttons at its right end.
+Помимо разворачивания или сворачивания заметок по отдельности, можно развернуть или свернуть их все сразу. Для этого перейдите на панель инструментов <a class="reference-link" href="Collection%20Properties.md">Свойств коллекции</a> и найдите кнопки в её правом конце.
 
-By default, the <span class="tn-icon bx bx-move-vertical"></span> button expands only the direct children (first level) of the collection. Starting with v0.100.0, it's possible to expand multiple levels of notes using the <span class="tn-icon bx bx-chevron-down"></span> button next to it.
+По умолчанию кнопка <span class="tn-icon bx bx-move-vertical"></span> разворачивает только прямых потомков (первый уровень) коллекции. Начиная с v0.100.0, возможно развернуть несколько уровней заметок кнопкой <span class="tn-icon bx bx-chevron-down"></span> рядом с ней.
 
-Manually expanded notes will reset if the application/tab is closed and then the collection is visited again. However notes automatically expanded/collapsed via the buttons in <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a> will persist.
+Вручную развёрнутые заметки сбросятся, если приложение/вкладка закрыты, а затем коллекция посещена снова. Однако заметки, автоматически развёрнутые/свёрнутые кнопками в <a class="reference-link" href="Collection%20Properties.md">Свойствах коллекции</a>, сохраняются.
 
 > [!TIP]
-> By design, the UI provides only a handful of levels of depth for expanding notes (direct children, 2-5, all levels). It's also possible to specify any desired depth by manually setting the [corresponding label](../Advanced%20Usage/Attributes/Labels.md). For example: `#expanded=100` to expand up to 100 levels of depth.
+> По замыслу интерфейс предоставляет лишь несколько уровней глубины для разворачивания заметок (прямые потомки, 2-5, все уровни). Также возможно указать любую желаемую глубину, вручную задав [соответствующую метку](../Advanced%20Usage/Attributes/Labels.md). Например: `#expanded=100`, чтобы развернуть до 100 уровней глубины.
 
 > [!NOTE]
-> From a performance standpoint, the List collection is efficient since it does not load child notes unless the notes are actually expanded. Expanding the list for a significantly large hierarchy can cause slow-downs.
+> С точки зрения производительности коллекция-список эффективна, так как не загружает дочерние заметки, пока заметки фактически не развёрнуты. Разворачивание списка для значительно большой иерархии может вызвать замедления.

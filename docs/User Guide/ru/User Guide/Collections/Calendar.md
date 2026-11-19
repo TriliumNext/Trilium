@@ -1,211 +1,211 @@
-# Calendar
+# Календарь
 <figure class="image"><img style="aspect-ratio:2016/1413;" src="1_Calendar_image.png" width="2016" height="1413"></figure>
 
-The Calendar view will display each child note in a calendar that has a start date and optionally an end date, as an event.
+Вид календаря отображает каждую дочернюю заметку с датой начала и опциональной датой окончания как событие.
 
-The Calendar view has multiple display modes:
+У вида календаря есть несколько режимов отображения:
 
-*   Month view, where the entire month is displayed and all-day events can be inserted. Both time-specific events and all-day events are listed.
-*   Week view, where all the 7 days of the week (or 5 if the weekends are hidden) are displayed in columns. This mode allows entering and displaying time-specific events, not just all-day events.
-*   Day view, which views only a single day. Especially useful for heavy agendas or mobile views.
-*   List view, which displays all the events of a given month in sequence.
-*   Year view, which displays the entire year for quick reference.
+*   Вид месяца, где отображается весь месяц, и можно вставлять события на весь день. Перечислены и события с конкретным временем, и события на весь день.
+*   Вид недели, где все 7 дней недели (или 5, если выходные скрыты) отображаются колонками. Этот режим позволяет вводить и отображать события с конкретным временем, а не только события на весь день.
+*   Вид дня, который показывает только один день. Особенно полезен для плотного расписания или мобильных видов.
+*   Вид списка, который отображает последовательно все события заданного месяца.
+*   Вид года, который отображает весь год для быстрой справки.
 
-Unlike other Collection view types, the Calendar view also allows some kind of interaction, such as moving events around as well as creating new ones.
+В отличие от других видов коллекций, вид календаря также допускает некоторое взаимодействие, например перемещение событий и создание новых.
 
-## Creating a calendar
+## Создание календаря
 
-Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ → _Collection_ → _Calendar_.
+Щёлкните правой кнопкой по существующей заметке в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дереве заметок</a> и выберите _Вставить дочернюю заметку_ → _Коллекция_ → _Календарь_.
 
-## Creating a new event/note
+## Создание нового события/заметки
 
-To create a new event:
+Чтобы создать новое событие:
 
-*   First, click the desired day (month & year views) or the desired timeslot (day view).
-*   Alternatively, drag across multiple days (or time slots) to set both the start and end date.
+*   Сначала нажмите нужный день (виды месяца и года) или нужный временной слот (вид дня).
+*   Альтернативно, перетащите через несколько дней (или временных слотов), чтобы задать и дату начала, и дату окончания.
 
-In either cases, a small popup will show with a prompt for a title and the date & time of the event that will be created. The date and time can be changed there the same way as in the popup view of an existing event (see below).
+В любом случае появится небольшое всплывающее окно с запросом заголовка и даты и времени события, которое будет создано. Дату и время там можно изменить так же, как во всплывающем виде существующего события (см. ниже).
 
-At this point, the event hasn't been created yet to protect against accidental clicks. Add a title optionally and press the _Create_ button. If no title is provided, the event will follow the <a class="reference-link" href="../Advanced%20Usage/Default%20Note%20Title.md">Default Note Title</a> rules.
+На этом этапе событие ещё не создано — это защита от случайных щелчков. Добавьте заголовок по желанию и нажмите кнопку _Создать_. Если заголовок не задан, для события будут применены правила <a class="reference-link" href="../Advanced%20Usage/Default%20Note%20Title.md">Заголовка заметки по умолчанию</a>.
 
-The <span class="tn-icon bx bx-detail"></span> template field below the date and time shows the note type or template the event's note is made from. To make the event from another one, press the field and select it from the list; the calendar remembers the choice for the next event. Select _More templates…_ to change which templates are listed (see [Event templates](#event-templates)). The date and time entered for the event replace any dates and times the template carries.
+Поле шаблона <span class="tn-icon bx bx-detail"></span> под датой и временем показывает тип заметки или шаблон, из которого сделана заметка события. Чтобы сделать событие из другого, нажмите поле и выберите его из списка; календарь запомнит выбор для следующего события. Выберите _Ещё шаблоны…_, чтобы изменить, какие шаблоны перечислены (см. [Шаблоны событий](#шаблоны-событий)). Введённые для события дата и время заменяют любые даты и времена, которые несёт шаблон.
 
-To give the event a time before creating it (for example, after clicking a day in the month view), press _Add time_ and set the start and end time; the duration is shown to the right of them. To make the event all-day again, press the <span class="tn-icon bx bx-x"></span> button at the end of the row. Adding or removing a time keeps the dates, so an event can start at a time on one day and end at a time on another (for example, a night shift). Changing the start date or time moves the end by the same amount, keeping the duration. An empty end date means the event ends on the day it starts; setting the end time before the start time moves the end date to the next day.
+Чтобы задать событиям время перед созданием (например, после щелчка по дню в виде месяца), нажмите _Добавить время_ и задайте время начала и окончания; продолжительность показана справа от них. Чтобы снова сделать событие на весь день, нажмите кнопку <span class="tn-icon bx bx-x"></span> в конце строки. Добавление или удаление времени сохраняет даты, поэтому событие может начинаться во времени в один день и заканчиваться во времени в другой (например, ночная смена). Изменение даты или времени начала сдвигает окончание на ту же величину, сохраняя продолжительность. Пустая дата окончания означает, что событие заканчивается в день своего начала; установка времени окончания раньше времени начала переносит дату окончания на следующий день.
 
-After creating the event, it will show up on the calendar. To edit the content of the event (including recurrence), click on it to bring it into the popup view.
+После создания событие появится на календаре. Чтобы отредактировать содержимое события (включая повторение), нажмите на него, чтобы открыть во всплывающем виде.
 
 > [!NOTE]
-> Creating new notes from the calendar will respect the `~child:template` relation if set on the Collection note.
+> Создание новых заметок из календаря будет учитывать отношение `~child:template`, если оно задано на заметке коллекции.
 
-## Interacting with events
+## Взаимодействие с событиями
 
-*   Hovering the mouse over an event will display information about the note.  
+*   Наведение мыши на событие отобразит информацию о заметке.
     ![](4_Calendar_image.png)
-*   Left clicking the event will open a dedicated popup to quickly configure the event or edit its note content.
-*   Right click will offer more options including opening the note in a new split or window.
-*   Drag and drop an event on the calendar to move it to another day.
-*   The length of an event can be changed by placing the mouse to the right edge of the event and dragging the mouse around.
+*   Левый щелчок по событию откроет выделенное всплывающее окно для быстрой настройки события или редактирования содержимого его заметки.
+*   Правый щелчок предложит больше опций, включая открытие заметки в новом разделении или окне.
+*   Перетащите событие по календарю, чтобы перенести его на другой день.
+*   Длину события можно изменить, поместив мышь на правый край события и перетащив.
 
-On a [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) calendar, events can't be dragged, resized or created, their context menu only offers the places to open them in, and the button to pin the current date is hidden. Switching between the month, week and day views still works, but the choice isn't saved.
+На [календаре только для чтения](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) события нельзя перетаскивать, изменять в размере или создавать, их контекстное меню предлагает только места, где их можно открыть, а кнопка закрепления текущей даты скрыта. Переключение между видами месяца, недели и дня всё ещё работает, но выбор не сохраняется.
 
-### Popup view
+### Всплывающий вид
 
-When an event is clicked, a popup will show near the event which contains the following inforamtion:
+При щелчке по событию рядом с ним появится всплывающее окно, содержащее следующую информацию:
 
-*   The title and icon of the event, both editable.
-*   Buttons to interact with the event:
-    *   Open the event in the same pane, new tab, etc.
-    *   Color picker to change the color of the event.
-    *   Button to remove the event from the calendar, which can optionally delete its corresponding note.
-*   Calendar-specific features:
-    *   The start date and, for an event spanning several days, the end date.
-    *   The start and end time with the duration to the right of them, and a <span class="tn-icon bx bx-x"></span> button that removes the time, making the event all-day. An all-day event shows an _Add time_ button instead.
-    *   A full recurrence editor, opened from the dropdown below the time, to have the same event show up weekly, monthly, etc.
-*   The <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> of the marker, if any.
-*   The note's content which can be edited directly from the panel.
+*   Заголовок и значок события, оба редактируемые.
+*   Кнопки для взаимодействия с событием:
+    *   Открыть событие в той же панели, новой вкладке и т.д.
+    *   Палитра для изменения цвета события.
+    *   Кнопка удаления события из календаря, которая может опционально удалить его заметку.
+*   Возможности, специфичные для календаря:
+    *   Дата начала и, для события, охватывающего несколько дней, дата окончания.
+    *   Время начала и окончания с продолжительностью справа от них и кнопкой <span class="tn-icon bx bx-x"></span>, которая убирает время, делая событие на весь день. Событие на весь день вместо этого показывает кнопку _Добавить время_.
+    *   Полный редактор повторения, открываемый из выпадающего списка под временем, чтобы одно и то же событие появлялось еженедельно, ежемесячно и т.д.
+*   <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Продвигаемые атрибуты</a> метки, если есть.
+*   Содержимое заметки, которое можно редактировать прямо из панели.
 
-To dismiss the popup:
+Чтобы закрыть всплывающее окно:
 
-*   Press the X button at the top-right of the popup.
-*   In the calendar, press anywhere outside the popup.
-*   Or simply press the <kbd>Escape</kbd> key.
+*   Нажмите кнопку X в правом верхнем углу всплывающего окна.
+*   В календаре нажмите куда угодно вне всплывающего окна.
+*   Или просто нажмите клавишу <kbd>Escape</kbd>.
 
-It is possible to switch between events by clicking on them even when the popup view is already open.
+Можно переключаться между событиями, щёлкая по ним, даже когда всплывающий вид уже открыт.
 
-Events can have <a class="reference-link" href="../Note%20Types/Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> between them and clicking on such a link will automatically navigate the calendar to the right date and the popup view to the new note.
+События могут иметь <a class="reference-link" href="../Note%20Types/Text/Links/Internal%20(reference)%20links.md">Внутренние (ссылочные) ссылки</a> между собой, и щелчок по такой ссылке автоматически перенесёт календарь на нужную дату, а всплывающий вид — на новую заметку.
 
-## Interaction on mobile
+## Взаимодействие на мобильных устройствах
 
-When Trilium is on mobile, the interaction with the calendar is slightly different:
+Когда Trilium на мобильном устройстве, взаимодействие с календарём немного отличается:
 
-*   Clicking on an event displays the popup view, which allows editing the event.
-*   Long-presing an event triggers the contextual menu, including the option to open in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a>.
-*   To insert a new event, touch and hold the empty space. When successful, the empty space will become colored to indicate the selection.
-    *   Before releasing, drag across multiple spaces to create multi-day events.
-    *   When released, a prompt will appear to enter the note title.
-*   To move an existing event, touch and hold the event until the empty space near it will become colored.
-    *   At this point the event can be dragged across other days on the calendar.
-    *   Or the event can be resized by tapping on the small circle to the right end of the event.
-    *   To exit out of editing mode, simply tap the empty space anywhere on the calendar.
+*   Нажатие на событие отображает всплывающий вид, который позволяет редактировать событие.
+*   Длительное нажатие события вызывает контекстное меню, включая опцию открытия в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Быстром редактировании</a>.
+*   Чтобы вставить новое событие, коснитесь и удерживайте пустое место. При успехе пустое место окрасится, указывая выбор.
+    *   Перед отпусканием протяните через несколько ячеек, чтобы создать многодневные события.
+    *   При отпускании появится запрос ввода заголовка заметки.
+*   Чтобы переместить существующее событие, коснитесь и удерживайте его, пока пустое место рядом с ним не окрасится.
+    *   В этот момент событие можно перетащить на другие дни календаря.
+    *   Или событие можно изменить в размере, нажав на маленький кружок на правом конце события.
+    *   Чтобы выйти из режима редактирования, просто нажмите на пустое место где угодно на календаре.
 
-## Configuring the calendar view
+## Настройка вида календаря
 
-In the <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a>, it's possible to:
+В <a class="reference-link" href="Collection%20Properties.md">Свойствах коллекции</a> можно:
 
-*   Hide weekends from the week view.
-*   Display week numbers on the calendar.
-*   Hide routine events from the month, year and list views (see [Hiding routine events](#hiding-routine-events)).
-*   Set the slot duration (the length of each time row in day/week view).
-*   Set the slot label interval (how often time labels appear on the axis in day/week view).
+*   Скрыть выходные из вида недели.
+*   Отображать номера недель на календаре.
+*   Скрывать регулярные события из видов месяца, года и списка (см. [Скрытие регулярных событий](#скрытие-регулярных-событий)).
+*   Задать продолжительность слота (длину каждой временной строки в виде дня/недели).
+*   Задать интервал подписей слотов (как часто появляются временные подписи на оси в виде дня/недели).
 
-The same settings are also listed under _General_ in the <span class="tn-icon bx bx-cog"></span> _Calendar properties_ dialog (see [Event templates](#event-templates) for how to open it). The time slots are listed there whichever view the calendar is in. Its _Included notes_ section sets whether archived notes are shown and how deep the calendar looks for events (see [Limiting the depth](#limiting-the-depth)).
+Те же настройки также перечислены под _Общие_ в диалоге <span class="tn-icon bx bx-cog"></span> _Свойства календаря_ (как его открыть, см. [Шаблоны событий](#шаблоны-событий)). Временные слоты перечислены там независимо от того, в каком виде находится календарь. Его раздел _Включённые заметки_ задаёт, показываются ли архивные заметки и насколько глубоко календарь ищет события (см. [Ограничение глубины](#ограничение-глубины)).
 
-### Event templates
+### Шаблоны событий
 
-By default, a new event is a <a class="reference-link" href="../Note%20Types/Text.md">Text</a> note. To make events from other note types, or from <a class="reference-link" href="../Advanced%20Usage/Templates.md">Templates</a> with predefined content and attributes (such as a color), open the <span class="tn-icon bx bx-cog"></span> _Calendar properties_ dialog from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> or from the settings menu of the <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a>, and find _Event templates_. Here you can:
+По умолчанию новое событие — заметка <a class="reference-link" href="../Note%20Types/Text.md">Текст</a>. Чтобы делать события из других типов заметок или из <a class="reference-link" href="../Advanced%20Usage/Templates.md">Шаблонов</a> с предопределённым содержимым и атрибутами (такими как цвет), откройте диалог <span class="tn-icon bx bx-cog"></span> _Свойства календаря_ из <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a> или из меню настроек <a class="reference-link" href="Collection%20Properties.md">Свойств коллекции</a> и найдите _Шаблоны событий_. Здесь вы можете:
 
-*   Include a note type or note template already created in your knowledge base by pressing the <span class="tn-icon bx bx-list-plus"></span> _Add existing template_ button and then selecting the desired note type or template.
-*   Create a new template by pressing the <span class="tn-icon bx bx-plus"></span> _Create a new template_ button. The template is created as a child of the calendar, and is not shown as an event.
-*   Press the <span class="tn-icon bx bx-x"></span> button to remove a template from the list. The template is removed only from the list, not deleted.
-*   Press the <span class="tn-icon bx bx-dots-vertical-rounded"></span> button of a custom template to edit, open in a new window, duplicate, or delete it.
-*   Drag a template by its handle to reorder the list shown when creating an event.
+*   Включить тип заметки или шаблон заметки, уже созданный в вашей базе знаний, нажав кнопку <span class="tn-icon bx bx-list-plus"></span> _Добавить существующий шаблон_, а затем выбрав нужный тип заметки или шаблон.
+*   Создать новый шаблон, нажав кнопку <span class="tn-icon bx bx-plus"></span> _Создать новый шаблон_. Шаблон создаётся как дочерний для календаря и не показывается как событие.
+*   Нажать кнопку <span class="tn-icon bx bx-x"></span>, чтобы убрать шаблон из списка. Шаблон удаляется только из списка, а не стирается.
+*   Нажать кнопку <span class="tn-icon bx bx-dots-vertical-rounded"></span> пользовательского шаблона, чтобы отредактировать, открыть в новом окне, продублировать или удалить его.
+*   Перетащить шаблон за его ручку, чтобы изменить порядок списка, показываемого при создании события.
 
-The dialog is not available on a read-only calendar, or on a calendar marked with `#calendarRoot` or `#workspaceCalendarRoot` (see [Using with the Journal / calendar](#using-with-the-journal--calendar)).
+Диалог недоступен на календаре только для чтения или на календаре, помеченном `#calendarRoot` или `#workspaceCalendarRoot` (см. [Использование с Журналом / календарём](#использование-с-журналом--календарём)).
 
-### Event attributes
+### Атрибуты событий
 
-Events can show the values of their attributes below their title, in the month view, and in the week and day views for all-day events and for timed ones tall enough to hold them. To choose which attributes are shown, open the <span class="tn-icon bx bx-cog"></span> _Calendar properties_ dialog (see [Event templates](#event-templates) for how to open it) and find _Event attributes_. It lists the <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> the calendar defines, and those its events define themselves. Here you can:
+События могут показывать значения своих атрибутов под заголовком — в виде месяца, а в видах недели и дня — для событий на весь день и для событий с временем, достаточно высоких, чтобы их вместить. Чтобы выбрать, какие атрибуты показываются, откройте диалог <span class="tn-icon bx bx-cog"></span> _Свойства календаря_ (как его открыть, см. [Шаблоны событий](#шаблоны-событий)) и найдите _Атрибуты событий_. Он перечисляет <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Продвигаемые атрибуты</a>, которые определяет календарь, и те, которые определяют сами события. Здесь вы можете:
 
-*   Turn an attribute on to show it on the events. New attributes are hidden until you turn them on, which keeps the calendar from getting cluttered.
-*   Drag an attribute by its handle to change the order in which the events show them.
-*   Create a new attribute, which is shown on the events right away, or edit or delete one the calendar defines.
+*   Включить атрибут, чтобы показывать его на событиях. Новые атрибуты скрыты, пока вы их не включите, что не даёт календарю загромождаться.
+*   Перетащить атрибут за его ручку, чтобы изменить порядок, в котором события их показывают.
+*   Создать новый атрибут, который сразу показывается на событиях, или отредактировать либо удалить один из определяемых календарём.
 
-The dates, times and recurrence of the events are not listed, as the calendar always shows them itself.
+Даты, времена и повторение событий не перечислены, так как календарь всегда показывает их сам.
 
-To change an attribute's value without opening the event, right-click the event (or long-press it on a phone) and use the _Attributes_ section of its context menu. It lists the shown attributes of the “checkbox”, “select” and “date” types, and works as on a [Kanban Board](Kanban%20Board.md).
+Чтобы изменить значение атрибута, не открывая событие, щёлкните правой кнопкой по событию (или долго нажмите его на телефоне) и используйте раздел _Атрибуты_ его контекстного меню. Он перечисляет показываемые атрибуты типов «флажок», «список» и «дата» и работает как на [Kanban-доске](Kanban%20Board.md).
 
-If an event has a `#calendar:displayedAttributes` label, including one inherited from the calendar, the attributes listed in that label are shown instead.
+Если у события есть метка `#calendar:displayedAttributes`, включая унаследованную от календаря, вместо этого показываются атрибуты, перечисленные в этой метке.
 
-## Configuring the calendar using attributes
+## Настройка календаря с помощью атрибутов
 
-The following attributes can be added to the Collection type:
+Следующие атрибуты можно добавить к типу Коллекция:
 
 <table>
     <thead>
         <tr>
-            <th>Name</th>
-            <th>Description</th>
+            <th>Имя</th>
+            <th>Описание</th>
         </tr>
     </thead>
     <tbody>
         <tr>
             <td><code>#calendar:hideWeekends</code></td>
-            <td>When present (regardless of value), it will hide Saturday and Sundays from the calendar.</td>
+            <td>Когда присутствует (независимо от значения), скроет субботу и воскресенье из календаря.</td>
         </tr>
         <tr>
             <td><code>#calendar:weekNumbers</code></td>
-            <td>When present (regardless of value), it will show the number of the week on the calendar.</td>
+            <td>Когда присутствует (независимо от значения), покажет номер недели на календаре.</td>
         </tr>
         <tr>
             <td><code>#calendar:hideRoutineEvents</code></td>
-            <td>When present (regardless of value), it will hide routine events from the month, year and list views. See <a href="#hiding-routine-events">Hiding routine events</a>.</td>
+            <td>Когда присутствует (независимо от значения), скроет регулярные события из видов месяца, года и списка. См. <a href="#скрытие-регулярных-событий">Скрытие регулярных событий</a>.</td>
         </tr>
         <tr>
             <td><code>#calendar:initialDate</code></td>
-            <td>Change the date the calendar opens on. When not present, the calendar opens on the current date.</td>
+            <td>Изменяет дату, на которой открывается календарь. Когда отсутствует, календарь открывается на текущей дате.</td>
         </tr>
         <tr>
             <td><code>#calendar:view</code></td>
-            <td><p>Which view to display in the calendar:</p><ul><li><code>timeGridDay</code> for the <em>day</em> view;</li><li><code>timeGridWeek</code> for the <em>week</em> view;</li><li><code>dayGridMonth</code> for the <em>month</em> view;</li><li><code>multiMonthYear</code> for the <em>year</em> view;</li><li><code>listMonth</code> for the <em>list</em> view.</li></ul><p>Any other value will be dismissed and the default view (month) will be used instead.</p><p>The value of this label is automatically updated when changing the view using the UI buttons.</p></td>
+            <td><p>Какой вид отображать в календаре:</p><ul><li><code>timeGridDay</code> для вида <em>день</em>;</li><li><code>timeGridWeek</code> для вида <em>неделя</em>;</li><li><code>dayGridMonth</code> для вида <em>месяц</em>;</li><li><code>multiMonthYear</code> для вида <em>год</em>;</li><li><code>listMonth</code> для вида <em>список</em>.</li></ul><p>Любое другое значение будет отброшено, и вместо него будет использован вид по умолчанию (месяц).</p><p>Значение этой метки автоматически обновляется при изменении вида кнопками интерфейса.</p></td>
         </tr>
         <tr>
             <td><code>#calendar:slotDuration</code></td>
-            <td>Sets how long each timeslot is on the calendar. Defaults to <code>00:15:00</code> (15 minutes). Must have the format "HH:MM:SS". For example, to create timeslots for every 10 minutes, you would set <code>#calendar:slotDuration="00:10:00"</code>.</td>
+            <td>Задаёт, какой длины каждый временной слот на календаре. По умолчанию <code>00:15:00</code> (15 минут). Должно иметь формат "HH:MM:SS". Например, чтобы создать слоты каждые 10 минут, задайте <code>#calendar:slotDuration="00:10:00"</code>.</td>
         </tr>
         <tr>
             <td><code>#calendar:slotLabelInterval</code></td>
-            <td>Sets how often the timeslots on the calendar should be labeled. Defaults to <code>01:00:00</code> (1 hour). Must have the format "HH:MM:SS". For example, to label timeslots every 30 minutes, you would set <code>#calendar:slotLabelInterval="00:30:00"</code>.</td>
+            <td>Задаёт, как часто временные слоты на календаре должны иметь подписи. По умолчанию <code>01:00:00</code> (1 час). Должно иметь формат "HH:MM:SS". Например, чтобы подписывать слоты каждые 30 минут, задайте <code>#calendar:slotLabelInterval="00:30:00"</code>.</td>
         </tr>
         <tr>
             <td><code>~child:template</code></td>
-            <td>Defines the template for newly created notes in the calendar (via dragging or clicking).</td>
+            <td>Определяет шаблон для вновь создаваемых заметок в календаре (перетаскиванием или щелчком).</td>
         </tr>
     </tbody>
 </table>
 
-In addition, the first day of the week can be either Sunday or Monday and can be adjusted from the application settings.
+Кроме того, первый день недели может быть воскресеньем или понедельником и настраивается в настройках приложения.
 
-## Configuring the calendar events using attributes
+## Настройка событий календаря с помощью атрибутов
 
-For each note of the calendar, the following attributes can be used:
+Для каждой заметки календаря можно использовать следующие атрибуты:
 
-| Name | Description |
+| Имя | Описание |
 | --- | --- |
-| `#startDate` | The date the event starts, which will display it in the calendar. The format is `YYYY-MM-DD` (year, month and day separated by a minus sign). |
-| `#endDate` | Similar to `startDate`, mentions the end date if the event spans across multiple days. The date is inclusive, so the end day is also considered. The attribute can be missing for single-day events. |
-| `#startTime` | The time the event starts at. If this value is missing, then the event is considered a full-day event. The format is `HH:MM` (hours in 24-hour format and minutes). |
-| `#endTime` | Similar to `startTime`, it mentions the time at which the event ends (in relation with `endDate` if present, or `startDate`). |
-| `#recurrence` | This is an optional CalDAV `RRULE` string that if present, determines whether a task should repeat or not. Note that it does not include the `DTSTART` attribute, which is derived from the `#startDate` and `#startTime` directly. For examples of valid `RRULE` strings see [https://icalendar.org/rrule-tool.html](https://icalendar.org/rrule-tool.html) |
-| `#color` | Displays the event with a specified color (named such as `red`, `gray` or hex such as `#FF0000`). This will also change the color of the note in other places such as the note tree. |
-| `#calendar:color` | **❌️ Removed since v0.100.0. Use** `#color` **instead.**       <br>  <br>Similar to `#color`, but applies the color only for the event in the calendar and not for other places such as the note tree. |
-| `#iconClass` | If present, the icon of the note will be displayed to the left of the event title. |
-| `#calendar:title` | Changes the title of an event to point to an attribute of the note other than the title, can either a label or a relation (without the `#` or `~` symbol). See _Use-cases_ for more information. |
-| `#calendar:titleTemplate` | Changes the title an event is displayed with on the calendar, filled in again for every occurrence of a repeating event. See _Use-cases_ for displaying an age on a birthday. |
-| `#calendar:displayedAttributes` | Takes precedence over the [Event attributes](#event-attributes) chosen in the calendar's properties. Allows displaying the value of one or more attributes in the calendar, in the order given, like this:            <br>  <br>![](6_Calendar_image.png)           <br>  <br>`#weight="70" #Mood="Good" #calendar:displayedAttributes="weight,Mood"`          <br>  <br>It can also be used with relations, case in which it will display the title of the target note:           <br>  <br>`~assignee=@My assignee #calendar:displayedAttributes="assignee"` |
-| `#calendar:startDate` | Allows using a different label to represent the start date, other than `startDate` (e.g. `expiryDate`). The label name **must not be** prefixed with `#`. If the label is not defined for a note, the default will be used instead. |
-| `#calendar:endDate` | Similar to `#calendar:startDate`, allows changing the attribute which is being used to read the end date. |
-| `#calendar:startTime` | Similar to `#calendar:startDate`, allows changing the attribute which is being used to read the start time. |
-| `#calendar:endTime` | Similar to `#calendar:startDate`, allows changing the attribute which is being used to read the end time. |
+| `#startDate` | Дата начала события, которая отобразит его в календаре. Формат — `YYYY-MM-DD` (год, месяц и день, разделённые дефисом). |
+| `#endDate` | Похоже на `startDate`, указывает дату окончания, если событие охватывает несколько дней. Дата включается, так что последний день тоже учитывается. Атрибут может отсутствовать для однодневных событий. |
+| `#startTime` | Время начала события. Если это значение отсутствует, событие считается событиям на весь день. Формат — `HH:MM` (часы в 24-часовом формате и минуты). |
+| `#endTime` | Похоже на `startTime`, указывает время окончания события (относительно `endDate`, если она есть, или `startDate`). |
+| `#recurrence` | Это опциональная строка CalDAV `RRULE`, которая, если присутствует, определяет, должен ли задача повторяться. Обратите внимание, что она не включает атрибут `DTSTART`, который выводится напрямую из `#startDate` и `#startTime`. Примеры корректных строк `RRULE` см. на [https://icalendar.org/rrule-tool.html](https://icalendar.org/rrule-tool.html) |
+| `#color` | Отображает событие указанным цветом (именованным, таким как `red`, `gray`, или hex, таким как `#FF0000`). Это также изменит цвет заметки в других местах, таких как дерево заметок. |
+| `#calendar:color` | **❌ Удалено начиная с v0.100.0. Используйте** `#color` **вместо него.**  <br>  <br>Похоже на `#color`, но применяет цвет только для события в календаре, а не для других мест, таких как дерево заметок. |
+| `#iconClass` | Если присутствует, значок заметки будет отображён слева от заголовка события. |
+| `#calendar:title` | Изменяет заголовок события, чтобы указывать на атрибут заметки, отличный от заголовка; может быть меткой или отношением (без символа `#` или `~`). См. _Сценарии использования_ для получения дополнительной информации. |
+| `#calendar:titleTemplate` | Изменяет заголовок, с которым событие отображается на календаре, и заполняется заново для каждого повторения повторяющегося события. См. _Сценарии использования_ для отображения возраста в день рождения. |
+| `#calendar:displayedAttributes` | Имеет приоритет над [Атрибутами событий](#атрибуты-событий), выбранными в свойствах календаря. Позволяет отображать значение одного или нескольких атрибутов в календаре в заданном порядке, так: <br>  <br>![](6_Calendar_image.png)   <br>  <br>`#weight="70" #Mood="Good" #calendar:displayedAttributes="weight,Mood"`  <br>  <br>Может также использоваться с отношениями, в этом случае отобразится заголовок целевой заметки:  <br>  <br>`~assignee=@My assignee #calendar:displayedAttributes="assignee"` |
+| `#calendar:startDate` | Позволяет использовать другую метку для представления даты начала, отличную от `startDate` (например, `expiryDate`). Имя метки **не должно** иметь префикс `#`. Если метка не определена для заметки, вместо неё будет использоваться значение по умолчанию. |
+| `#calendar:endDate` | Похоже на `#calendar:startDate`, позволяет изменить атрибут, который используется для чтения даты окончания. |
+| `#calendar:startTime` | Похоже на `#calendar:startDate`, позволяет изменить атрибут, который используется для чтения времени начала. |
+| `#calendar:endTime` | Похоже на `#calendar:startDate`, позволяет изменить атрибут, который используется для чтения времени окончания. |
 
-## How the calendar works
+## Как работает календарь
 
 ![](8_Calendar_image.png)
 
-The calendar displays all the child notes of the Collection that have a `#startDate`. An `#endDate` can optionally be added.
+Календарь отображает все дочерние заметки коллекции, имеющие `#startDate`. Опционально можно добавить `#endDate`.
 
-A text note with a start date is shown with the <span class="tn-icon bx bx-calendar-event"></span> icon in the note tree and elsewhere, unless it has an icon of its own (set with `#iconClass`). The start date is read from the label `#calendar:startDate` names, if any.
+Текстовая заметка с датой начала показывается со значком <span class="tn-icon bx bx-calendar-event"></span> в дереве заметок и в других местах, если у неё нет собственного значка (заданного через `#iconClass`). Дата начала читается из меток, которые называет `#calendar:startDate`, если таковые есть.
 
-The start date & end date can easily be edited from the calendar collection itself by clicking on the event. To edit the date while in the event note itself, the following attributes can be added to the Collection note:
+Дату начала и окончания легко отредактировать прямо из коллекции календаря, нажав на событие. Чтобы отредактировать дату, находясь в самой заметке события, можно добавить к заметке коллекции следующие атрибуты:
 
 ```
 #viewType=calendar #label:startDate(inheritable)="promoted,alias=Start Date,single,date"
@@ -213,153 +213,153 @@ The start date & end date can easily be edited from the calendar collection itse
 #hidePromotedAttributes 
 ```
 
-This will result in:
+Это даст результат:
 
 ![](7_Calendar_image.png)
 
-When not used in a Journal, the calendar is recursive. That is, it will look for events not just in its child notes but also in the children of these child notes.
+Когда не используется в Журнале, календарь является рекурсивным. То есть он ищет события не только в своих дочерних заметках, но и в детях этих дочерних заметок.
 
-### Limiting the depth
+### Ограничение глубины
 
-To limit how deep the calendar looks for events, set _Maximum nesting depth_ under _Included notes_ in the <span class="tn-icon bx bx-cog"></span>_Calendar properties_ dialog (see [Event templates](#event-templates) for how to open it), or the `#maxNestingDepth` label: `0` shows only the child notes, `1` adds their children, and so on. Without a value, events are looked for at every level. The setting doesn't apply in a Journal.
+Чтобы ограничить, насколько глубоко календарь ищет события, задайте _Максимальная глубина вложенности_ под _Включённые заметки_ в диалоге <span class="tn-icon bx bx-cog"></span>_Свойства календаря_ (как его открыть, см. [Шаблоны событий](#шаблоны-событий)) или метку `#maxNestingDepth`: `0` показывает только дочерние заметки, `1` добавляет их детей и так далее. Без значения события ищутся на каждом уровне. Настройка не применяется в Журнале.
 
-## Recurrence
+## Повторение
 
-The built in calendar view also supports repeating tasks (e.g. every week, every month as well as more complex recurrency rules).
+Встроенный вид календаря также поддерживает повторяющиеся задачи (например, каждую неделю, каждый месяц, а также более сложные правила повторения).
 
-Starting with v0.105.0, recurrence can be directly edited from the calendar by clicking on an event and then selecting the _Repeats_ option.
+Начиная с v0.105.0, повторение можно редактировать прямо из календаря, нажав на событие, а затем выбрав опцию _Повторяется_.
 
-### Custom recurrence using a subset of RRULE
+### Пользовательское повторение с использованием подмножества RRULE
 
-If the existing recurrence editor from the event popup is not sufficient, more complex rules can be manually set via the `#recurrence` label.
+Если встроенного редактора повторения из всплывающего окна события недостаточно, более сложные правила можно задать вручную через метку `#recurrence`.
 
-For example, to make a note repeat on the calendar:
+Например, чтобы заметка повторялась на календаре:
 
-*   Every Day - `#recurrence="FREQ=DAILY;INTERVAL=1"`
-*   Every 3 days - `#recurrence="FREQ=DAILY;INTERVAL=3"`
-*   Every week - `#recurrence="FREQ=WEEKLY;INTERVAL=1"`
-*   Every 2 weeks on Monday, Wednesday and Friday - `#recurrence="FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE,FR"`
-*   Every 3 months - `#recurrence="FREQ=MONTHLY;INTERVAL=3"`
-*   Every 2 months on the First Sunday - `#recurrence="FREQ=MONTHLY;INTERVAL=2;BYDAY=1SU"`
-*   Every month on the Last Friday - `#recurrence="FREQ=MONTHLY;INTERVAL=1;BYDAY=-1FR"`
+*   Каждый день — `#recurrence="FREQ=DAILY;INTERVAL=1"`
+*   Каждые 3 дня — `#recurrence="FREQ=DAILY;INTERVAL=3"`
+*   Каждую неделю — `#recurrence="FREQ=WEEKLY;INTERVAL=1"`
+*   Каждые 2 недели в понедельник, среду и пятницу — `#recurrence="FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE,FR"`
+*   Каждые 3 месяца — `#recurrence="FREQ=MONTHLY;INTERVAL=3"`
+*   Каждые 2 месяца в первое воскресенье — `#recurrence="FREQ=MONTHLY;INTERVAL=2;BYDAY=1SU"`
+*   Каждый месяц в последнюю пятницу — `#recurrence="FREQ=MONTHLY;INTERVAL=1;BYDAY=-1FR"`
 
-For other examples of valid `RRULE` strings see [https://icalendar.org/rrule-tool.html](https://icalendar.org/rrule-tool.html)
+Другие примеры корректных строк `RRULE` см. на [https://icalendar.org/rrule-tool.html](https://icalendar.org/rrule-tool.html)
 
-Note that the recurrence string does not include the `DTSTART` attribute as defined in the iCAL specifications. This is derived directly from the `startDate` and `startTime` attributes
+Обратите внимание, что строка повторения не включает атрибут `DTSTART`, как определено в спецификации iCAL. Он выводится напрямую из атрибутов `startDate` и `startTime`.
 
-If you want to override the label the calendar uses to fetch the recurrence string, you can use the `#calendar:recurrence` attribute. For example, you can set `#calendar:recurrence=taskRepeats`. Then you can set your recurrence string like `#taskRepeats="FREQ=DAILY;INTERVAL=1"`
+Если вы хотите переопределить метку, которую календарь использует для получения строки повторения, используйте атрибут `#calendar:recurrence`. Например, можно задать `#calendar:recurrence=taskRepeats`. Тогда строку повторения можно задать так: `#taskRepeats="FREQ=DAILY;INTERVAL=1"`.
 
-Also note that the recurrence label can be made promoted as with the start and end dates. 
+Также обратите внимание, что метка повторения может быть сделана продвигаемой, как и даты начала и окончания.
 
 > [!WARNING]
-> If the recurrence string is not valid, a toast will be shown with the note ID and title of the note with the erroneous recurrence message. This note will not be added to the calendar
+> Если строка повторения некорректна, будет показано всплывающее уведомление с ID заметки и заголовком заметки с ошибочным сообщением о повторении. Эта заметка не будет добавлена в календарь.
 
-### Hiding routine events
+### Скрытие регулярных событий
 
-Events that repeat on most days of the week, such as sleep or working hours, fill every cell of the month view. To hide them from the views that show many days at once, check _Hide routine events_ in the <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a> (or set `#calendar:hideRoutineEvents`).
+События, повторяющиеся в большинство дней недели, такие как сон или рабочие часы, заполняют каждую ячейку вида месяца. Чтобы скрыть их из видов, показывающих много дней сразу, отметьте _Скрыть регулярные события_ в <a class="reference-link" href="Collection%20Properties.md">Свойствах коллекции</a> (или задайте `#calendar:hideRoutineEvents`).
 
-An event counts as routine when it has a start time and repeats on 4 or more days a week on average, for example:
+Событием считается регулярным, когда у него есть время начала и оно повторяется в среднем 4 и более дней в неделю, например:
 
-| Event | Days a week | Hidden from the month, year and list views |
+| Событие | Дней в неделю | Скрыто из видов месяца, года и списка |
 | --- | --- | --- |
-| Every day from 23:00 to 07:00 | 7 | Yes |
-| Monday to Friday from 09:00 to 17:00 | 5 | Yes |
-| Every other day at 07:00 | 3.5 | No |
-| Monday, Wednesday and Friday at 18:00 | 3 | No |
-| Every day, without a start time | 7 | No, as it lasts the whole day |
-| Every month or every year | — | No |
+| Каждый день с 23:00 до 07:00 | 7 | Да |
+| С понедельника по пятницу с 09:00 до 17:00 | 5 | Да |
+| Через день в 07:00 | 3.5 | Нет |
+| Понедельник, среда и пятница в 18:00 | 3 | Нет |
+| Каждый день, без времени начала | 7 | Нет, так как длится весь день |
+| Каждый месяц или каждый год | — | Нет |
 
-The day and week views always show routine events. To show them everywhere again, uncheck the option.
+Виды дня и недели всегда показывают регулярные события. Чтобы снова показывать их везде, снимите отметку с опции.
 
-## Customizing the slot duration and label interval
+## Настройка продолжительности слота и интервала подписей
 
-Time slots in day and week views can be customized from <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a>
+Временные слоты в видах дня и недели можно настроить в <a class="reference-link" href="Collection%20Properties.md">Свойствах коллекции</a>
 
-*   _Slot duration_ controls how tall each time slot is on the calendar (essentially the smallest unit of time the grid is divided into).
-    *   A shorter duration means more rows and finer granularity; a longer one means fewer, chunkier rows.
-    *   The default is one row every 15 minutes.
-*   _Label interval_ controls how often a time label appears on the left-hand axis.
-    *   This is independent of the slot size: you can have very small slots but only label every hour to keep the axis readable.
-    *   The default is a time label shown every hour.
+*   _Продолжительность слота_ управляет тем, какой высоты каждый временной слот на календаре (по сути, наименьшая единица времени, на которую разбита сетка).
+    *   Более короткая продолжительность означает больше строк и более мелкую гранулярность; более длинная — меньше, более крупных строк.
+    *   По умолчанию одна строка каждые 15 минут.
+*   _Интервал подписей_ управляет тем, как часто временная подпись появляется на левой оси.
+    *   Это не зависит от размера слота: можно иметь очень маленькие слоты, но подписывать только каждый час, чтобы ось оставалась читаемой.
+    *   По умолчанию временная подпись показывается каждый час.
 
 > [!NOTE]
-> These values can also be customized directly via the `#calendar:slotDuration` and `#calendar:slotLabelInterval` [labels](../Advanced%20Usage/Attributes/Labels.md). Both values use `HH:mm:ss` format. Hours can go up to `24` (`24:00:00`), while minutes and seconds must be between `00` and `59`. The minimum meaningful duration is 1 minute (`00:01:00`).
+> Эти значения также можно настроить напрямую через [метки](../Advanced%20Usage/Attributes/Labels.md) `#calendar:slotDuration` и `#calendar:slotLabelInterval`. Оба значения используют формат `HH:mm:ss`. Часы могут достигать `24` (`24:00:00`), а минуты и секунды должны быть между `00` и `59`. Минимальная осмысленная продолжительность — 1 минута (`00:01:00`).
 
-## Use-cases
+## Сценарии использования
 
-### Using with the Journal / calendar
+### Использование с Журналом / календарём
 
-It is possible to integrate the calendar view into the Journal with day notes. In order to do so change the note type of the Journal note (calendar root) to Collection and then select the Calendar View.
+Возможно интегрировать вид календаря в Журнал с заметками дня. Для этого измените тип заметки Журнала (корень календаря) на Коллекция, а затем выберите вид Календарь.
 
-While in journal mode, the popup editor will not show dates, recurrence, colors or removal, since day notes aren't editable events.
+В режиме журнала всплывающий редактор не будет показывать даты, повторение, цвета или удаление, так как заметки дня не являются редактируемыми событиями.
 
-Based on the `#calendarRoot` (or `#workspaceCalendarRoot`) attribute, the calendar will know that it's in a calendar and apply the following:
+На основе атрибута `#calendarRoot` (или `#workspaceCalendarRoot`) календарь узнаёт, что он находится в календаре, и применяет следующее:
 
-*   The calendar events are now rendered based on their `dateNote` attribute rather than `startDate`.
-*   Interactive editing such as dragging over an empty era or resizing an event is no longer possible.
-*   Clicking on the empty space on a date will automatically open that day's note or create it if it does not exist.
-*   Direct children of a day note will be displayed on the calendar despite not having a `dateNote` attribute. Children of the child notes will not be displayed.
+*   События календаря теперь отображаются на основе их атрибута `dateNote`, а не `startDate`.
+*   Интерактивное редактирование, такое как перетаскивание по пустому периоду или изменение размера события, больше невозможно.
+*   Нажатие на пустое место даты автоматически откроет заметку этого дня или создаст её, если её не существует.
+*   Прямые потомки заметки дня будут отображены на календаре, несмотря на отсутствие атрибута `dateNote`. Потомки дочерних заметок отображаться не будут.
 
 <img src="5_Calendar_image.png" width="1217" height="724">
 
-### Using a different attribute as event title
+### Использование другого атрибута в качестве заголовка события
 
-<img class="image-style-align-right" src="2_Calendar_image.png" width="445" height="124">By default, events are displayed on the calendar by their note title. However, it is possible to configure a different attribute to be displayed instead.
+<img class="image-style-align-right" src="2_Calendar_image.png" width="445" height="124">По умолчанию события отображаются на календаре по заголовку их заметки. Однако можно настроить отображение другого атрибута вместо него.
 
-To do so, assign `#calendar:title` to the child note (not the calendar/Collection note), with the value being `name` where `name` can be any label (make not to add the `#` prefix). The attribute can also come through inheritance such as a template attribute. If the note does not have the requested label, the title of the note will be used instead.
+Для этого присвойте дочерней заметке (не заметке календаря/коллекции) `#calendar:title` со значением `name`, где `name` — любая метка (не добавляйте префикс `#`). Атрибут также может прийти через наследование, например из атрибута шаблона. Если у заметки нет запрошенной метки, вместо неё будет использоваться заголовок заметки.
 
 ```
-#startDate=2025-02-11 #endDate=2025-02-13 #name="My vacation" #calendar:title="name"
+#startDate=2025-02-11 #endDate=2025-02-13 #name="Мой отпуск" #calendar:title="name"
 ```
 
-### Using a relation attribute as event title
+### Использование атрибута-отношения в качестве заголовка события
 
-<img class="image-style-align-right image_resized" style="aspect-ratio:294/151;width:21.22%;" src="3_Calendar_image.png" width="294" height="151">Similarly to using an attribute, use `#calendar:title` and set it to `name` where `name` is the name of the relation to use.
+<img class="image-style-align-right image_resized" style="aspect-ratio:294/151;width:21.22%;" src="3_Calendar_image.png" width="294" height="151">Аналогично использованию атрибута, используйте `#calendar:title` и задайте ему значение `name`, где `name` — имя используемого отношения.
 
-Moreover, if there are more relations of the same name, they will be displayed as multiple events coming from the same note.
+Более того, если отношений с одним именем несколько, они будут отображены как несколько событий, исходящих из одной заметки.
 
 ```
 #startDate=2025-02-14 #endDate=2025-02-15 ~for=@John Smith ~for=@Jane Doe #calendar:title="for"
 ```
 
-<img class="image-style-align-left" src="Calendar_image.png" width="296" height="150">Note that it's even possible to have a `#calendar:title` on the target note (e.g. “John Smith”) which will try to render an attribute of it. Note that it's not possible to use a relation here as well for safety reasons (an accidental recursion  of attributes could cause the application to loop infinitely).
+<img class="image-style-align-left" src="Calendar_image.png" width="296" height="150">Обратите внимание, что возможно даже задать `#calendar:title` на целевой заметке (например, «John Smith»), которая попытается отрендерить её атрибут. Обратите внимание, что по соображениям безопасности здесь нельзя использовать и отношение (случайная рекурсия атрибутов могла бы зациклить приложение бесконечно).
 
 ```
 #calendar:title="shortName" #shortName="John S."
 ```
 
-### Displaying an age on a recurring event
+### Отображение возраста в повторяющемся событии
 
-A birthday or an anniversary repeats every year, and what is interesting about each occurrence is the number of years it marks. To display it:
+День рождения или годовщина повторяется каждый год, и интересно в каждом повторении число лет, которое она отмечает. Чтобы отобразить его:
 
-1.  Set the event's start date to the original date (for example, the date of birth).
-2.  Click the event, then select the _Repeats_ dropdown.
-3.  Select _Yearly_ and check _Show the number of years in the title_.
+1.  Задайте дату начала события как исходную дату (например, дату рождения).
+2.  Нажмите на событие, затем выберите выпадающий список _Повторяется_.
+3.  Выберите _Ежегодно_ и отметьте _Показывать число лет в заголовке_.
 
-The event is then displayed as “John Smith (35)” in 2025, “John Smith (36)” in 2026, and so on. Only the calendar is affected; the note keeps its own title.
+Событие затем отображается как «John Smith (35)» в 2025 году, «John Smith (36)» в 2026 году и так далее. Затронут только календарь; заметка сохраняет свой заголовок.
 
-The checkbox sets the `#calendar:titleTemplate` label, which sets the title an event is displayed with and is filled in again for every occurrence the recurrence rule produces:
+Флажок задаёт метку `#calendar:titleTemplate`, которая задаёт заголовок, с которым отображается событие, и заполняется заново для каждого повторения, которое производит правило повторения:
 
 ```
 #startDate=1990-05-12 #recurrence="FREQ=YEARLY" #calendar:titleTemplate="${title} (${years})"
 ```
 
-To word the title differently, edit the label directly. The checkbox is then disabled, as it is when the template is inherited, so that it never overwrites a template of your own.
+Чтобы сформулировать заголовок иначе, отредактируйте метку напрямую. Флажок тогда отключён, как и когда шаблон унаследован, чтобы он никогда не перезаписывал ваш собственный шаблон.
 
-The following values can be used in the template:
+В шаблоне можно использовать следующие значения:
 
-| Value | Description |
+| Значение | Описание |
 | --- | --- |
-| `${title}` | The title the event would otherwise be displayed with: the note title, or the attribute `#calendar:title` points to. |
-| `${years}` | The whole years between `#startDate` and the occurrence being displayed. It is `0` on the first occurrence. |
-| `${date}` | The date of the occurrence being displayed, as a [day.js](https://day.js.org/docs/en/display/format) object. For example, `${date.format('YYYY')}`. |
-| `${startDate}` | The date the event starts on, in the same form. For example, `${startDate.format('YYYY')}`. |
+| `${title}` | Заголовок, который иначе отображался бы с событием: заголовок заметки или атрибут, на который указывает `#calendar:title`. |
+| `${years}` | Целые годы между `#startDate` и отображаемым повторением. На первом повторении равен `0`. |
+| `${date}` | Дата отображаемого повторения как объект [day.js](https://day.js.org/docs/en/display/format). Например, `${date.format('YYYY')}`. |
+| `${startDate}` | Дата начала события в той же форме. Например, `${startDate.format('YYYY')}`. |
 
-To use the same template for every event of a calendar, make the label inheritable on the Collection note:
+Чтобы использовать один и тот же шаблон для каждого события календаря, сделайте метку наследуемой на заметке коллекции:
 
 ```
 #calendar:titleTemplate(inheritable)="${title} (${years})"
 ```
 
 > [!NOTE]
-> A template that cannot be read — an unknown value, or an expression other than a value and the `format` call shown above — leaves the event with its plain title and reports the reason in the browser console.
+> Шаблон, который нельзя прочитать — неизвестное значение или выражение, отличное от значения и показанного выше вызова `format` — оставляет событие с его простым заголовком и сообщает причину в консоли браузера.

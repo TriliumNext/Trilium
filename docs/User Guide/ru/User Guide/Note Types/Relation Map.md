@@ -1,97 +1,97 @@
-# Relation Map
-Relation map is a type of note which visualizes notes and their [relations](../Advanced%20Usage/Attributes.md).
+# Карта отношений
+Карта отношений — это тип заметки, который визуализирует заметки и их [отношения](../Advanced%20Usage/Attributes.md).
 
-## Interaction
+## Взаимодействие
 
-*   To create a new note and add it to the map, press the <span class="tn-icon bx bx-note"></span> _Add note_ button at the bottom of the map, then click anywhere on the map to place it there.
-    *   While the map waits for the click, a translucent box follows the mouse to show where the note will go. To cancel, press the button again (now labeled _Cancel_) or press <kbd>Esc</kbd>.
-    *   The note is created as a child of the map, with the default title of a new note. It opens in the note panel (see below) with its title selected, so you can type its name straight away.
-*   An existing note can also be dragged from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>. It will be placed at the position it's dragged on.
-    *   Multiple notes can also be dragged via <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree/Multiple%20selection.md">Multiple selection</a>. The notes will be positioned near the dragged position without overlapping.
-    *   The dragged note can be a sub-child of the map, or it can be at any arbitrary position.
-*   Notes can also be pasted onto the map. Copy or cut them in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>, then click the map and press <kbd>Ctrl</kbd>+<kbd>V</kbd>, or right click an empty part of the map and select _Paste note(s)_.
-    *   With <kbd>Ctrl</kbd>+<kbd>V</kbd>, the notes are placed under the mouse, or in the middle of the map if the mouse is not over it. From the right click menu, they are placed where the menu was opened.
-    *   Copied notes stay where they are in the tree. Cut notes are moved under the map, as if they had been pasted into it in the tree.
-    *   Links to notes, such as an <a class="reference-link" href="Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> copied from a text note, can be pasted the same way. If the clipboard holds no link to a note, the notes last copied or cut in the tree are pasted.
-    *   The right click menu of an empty part of the map also has _Add note_, which creates a new note where the menu was opened.
-*   To create a relationship, hold the mouse on the dot on the right of a note and then:
-    *   Drag it over another note to create a relationship pointing from the first note to the second one.
-    *   Drag over the same note to create a self-referencing relationship (represented as a loop).
-    *   Once dragged, a popover next to the relationship asks for its name. Type a new name and press <kbd>Enter</kbd>, or pick a relation name already in use from the suggestions. To cancel, press <kbd>Esc</kbd>, close the popover or click elsewhere on the map.
-*   Each note is shown as a card with its icon and title, colored in the note's color the same way as the cards of a <a class="reference-link" href="../Collections/Kanban%20Board.md">Kanban Board</a>.
-*   Hovering a note highlights its relationships, in the note's color if it has one, and fades the other relationships.
-*   To view or edit a note, click it on the map. This opens the note panel (see below).
-    *   To open the note in a new tab instead, <kbd>Ctrl</kbd>+click it or click it with the middle mouse button. <kbd>Shift</kbd>+click opens it in a new window. The right click menu offers the same options.
-*   To edit the title of a note, change its color or delete it (either from the map, or delete it completely), right click the note.
-*   To rename or delete a relationship, right click it and select the corresponding option.
-*   On a [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) map, notes cannot be moved and relationships cannot be drawn, renamed or deleted. The right click menu of a note only offers to open it, and a relationship has no right click menu.
-*   To move around the map, drag an empty part of it, and zoom with the mouse wheel or the <span class="tn-icon bx bx-minus-circle"></span> and <span class="tn-icon bx bx-plus-circle"></span> buttons at the bottom-right corner. Clicking the zoom percentage goes back to 100%, and <span class="tn-icon bx bx-scan"></span> _Fit to view_ zooms and pans so that all the notes are visible.
-    *   Once the map has been clicked, the arrow keys or <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> pan it, and <kbd>+</kbd> and <kbd>-</kbd> zoom it. The <kbd>?</kbd> button at the top-right corner of the map lists all its keyboard shortcuts.
+*   Чтобы создать новую заметку и добавить её на карту, нажмите кнопку <span class="tn-icon bx bx-note"></span> _Добавить заметку_ внизу карты, а затем щёлкните где угодно на карте, чтобы поместить её там.
+    *   Пока карта ждёт щелчка, полупрозрачный прямоугольник следует за мышью, показывая, куда попадёт заметка. Чтобы отменить, нажмите кнопку ещё раз (теперь с надписью _Отмена_) или нажмите <kbd>Esc</kbd>.
+    *   Заметка создаётся как дочерняя для карты с заголовком по умолчанию новой заметки. Она открывается в панели заметки (см. ниже) с выделенным заголовком, так что вы можете сразу ввести её имя.
+*   Существующую заметку также можно перетащить из <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дерева заметок</a>. Она будет размещена в позиции, куда её перетащили.
+    *   Несколько заметок также можно перетащить через <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree/Multiple%20selection.md">Множественный выбор</a>. Заметки будут расположены рядом с перетащенной позицией без наложения.
+    *   Перетащенная заметка может быть подпотомком карты или находиться в любом произвольном месте.
+*   Заметки также можно вставить на карту. Скопируйте или вырежьте их в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дереве заметок</a>, затем щёлкните по карте и нажмите <kbd>Ctrl</kbd>+<kbd>V</kbd>, или щёлкните правой кнопкой по пустой части карты и выберите _Вставить заметку(и)_.
+    *   С помощью <kbd>Ctrl</kbd>+<kbd>V</kbd> заметки помещаются под мышью или в центре карты, если мышь не над ней. Из контекстного меню они помещаются там, где было открыто меню.
+    *   Скопированные заметки остаются там, где они есть в дереве. Вырезанные заметки перемещаются под карту, как если бы они были вставлены в неё в дереве.
+    *   Ссылки на заметки, такие как <a class="reference-link" href="Text/Links/Internal%20(reference)%20links.md">Внутренняя (ссылочная) ссылка</a>, скопированная из текстовой заметки, можно вставить тем же способом. Если буфер обмена не содержит ссылки на заметку, вставляются заметки, скопированные или вырезанные в дереве последними.
+    *   Контекстное меню пустой части карты также содержит _Добавить заметку_, которая создаёт новую заметку там, где было открыто меню.
+*   Чтобы создать отношение, удерживайте мышь на точке справа от заметки, а затем:
+    *   Перетащите её на другую заметку, чтобы создать отношение, указывающее от первой заметки ко второй.
+    *   Перетащите на ту же заметку, чтобы создать самоссылочное отношение (представленное как петля).
+    *   После перетаскивания всплывающее окно рядом с отношением запрашивает его имя. Введите новое имя и нажмите <kbd>Enter</kbd> или выберите имя отношения, уже используемое, из предложений. Чтобы отменить, нажмите <kbd>Esc</kbd>, закройте всплывающее окно или щёлкните в другом месте карты.
+*   Каждая заметка показана карточкой со своим значком и заголовком, окрашенная в цвет заметки так же, как карточки <a class="reference-link" href="../Collections/Kanban%20Board.md">Kanban-доски</a>.
+*   Наведение на заметку подсвечивает её отношения цветом заметки, если он есть, и бледнеет остальные отношения.
+*   Чтобы просмотреть или отредактировать заметку, щёлкните её на карте. Это открывает панель заметки (см. ниже).
+    *   Чтобы открыть заметку в новой вкладке вместо этого, щёлкните её с <kbd>Ctrl</kbd> или щёлкните средней кнопкой мыши. <kbd>Shift</kbd>+щелчок открывает её в новом окне. Контекстное меню предлагает те же опции.
+*   Чтобы отредактировать заголовок заметки, изменить её цвет или удалить её (либо с карты, либо полностью), щёлкните по заметке правой кнопкой.
+*   Чтобы переименовать или удалить отношение, щёлкните по нему правой кнопкой и выберите соответствующую опцию.
+*   На [карте только для чтения](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) заметки нельзя перемещать, а отношения нельзя рисовать, переименовывать или удалять. Контекстное меню заметки предлагает только её открытие, а у отношения нет контекстного меню.
+*   Чтобы перемещаться по карте, перетащите пустую её часть, а для масштаба используйте колёсико мыши или кнопки <span class="tn-icon bx bx-minus-circle"></span> и <span class="tn-icon bx bx-plus-circle"></span> в правом нижнем углу. Щелчок по проценту масштаба возвращает к 100%, а <span class="tn-icon bx bx-scan"></span> _Вписать в вид_ масштабирует и панорамирует так, что все заметки видны.
+    *   После того как карта была нажата, клавиши со стрелками или <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> панорамируют её, а <kbd>+</kbd> и <kbd>-</kbd> масштабируют. Кнопка <kbd>?</kbd> в правом верхнем углу карты перечисляет все её сочетания клавиш.
 
-## Note panel
+## Панель заметки
 
-When a note on the map is clicked, a panel opens to the right of the map and the note is highlighted. If the panel would cover the note, or the note is partly off-screen, the map pans to bring it into view. The panel contains:
+При щелчке по заметке на карте справа открывается панель, а заметка подсвечивается. Если панель закрыла бы заметку или заметка частично за экраном, карта панорамируется, чтобы показать её. Панель содержит:
 
-*   The title and icon of the note, both editable.
-*   A <span class="tn-icon bx bx-expand-alt"></span> button to expand the panel over the whole map, and to restore it afterwards.
-*   Buttons to interact with the note:
-    *   <span class="tn-icon bx bx-log-in"></span> Open the note in the current tab, or, through the <span class="tn-icon bx bx-dots-horizontal-rounded"></span> menu, in a new tab, split, window or the quick edit popup.
-    *   A <span class="tn-icon bx bx-palette"></span> color picker to change the color of the note.
-    *   A <span class="tn-icon bx bx-trash"></span> button to remove the note from the map, which can optionally delete the note as well.
-*   The <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> of the note, if any.
-*   The note's content, which can be edited directly from the panel.
+*   Заголовок и значок заметки, оба редактируемые.
+*   Кнопку <span class="tn-icon bx bx-expand-alt"></span> для разворачивания панели на всю карту и восстановления её после.
+*   Кнопки для взаимодействия с заметкой:
+    *   <span class="tn-icon bx bx-log-in"></span> Открыть заметку в текущей вкладке или через меню <span class="tn-icon bx bx-dots-horizontal-rounded"></span> в новой вкладке, разделении, окне или всплывающем окне быстрого редактирования.
+    *   Палитру <span class="tn-icon bx bx-palette"></span> для изменения цвета заметки.
+    *   Кнопку <span class="tn-icon bx bx-trash"></span> для удаления заметки с карты, которая может опционально удалить и саму заметку.
+*   <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Продвигаемые атрибуты</a> заметки, если есть.
+*   Содержимое заметки, которое можно редактировать прямо из панели.
 
-The color picker and the remove button are not shown if the map is read-only.
+Палитра и кнопка удаления не показываются, если карта доступна только для чтения.
 
-Clicking another note on the map switches the panel to it. Similarly, clicking an <a class="reference-link" href="Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> inside the panel switches the panel to that note, as long as it is on the map.
+Щелчок по другой заметке на карте переключает панель на неё. Аналогично, щелчок по <a class="reference-link" href="Text/Links/Internal%20(reference)%20links.md">Внутренней (ссылочной) ссылке</a> внутри панели переключает панель на эту заметку, пока она есть на карте.
 
-To close the panel, press the <span class="tn-icon bx bx-x"></span> button at its top-right, click an empty part of the map, or press <kbd>Esc</kbd>.
+Чтобы закрыть панель, нажмите кнопку <span class="tn-icon bx bx-x"></span> в её правом верхнем углу, щёлкните по пустой части карты или нажмите <kbd>Esc</kbd>.
 
-On mobile, the note opens as a dialog over the whole screen instead of a panel.
+На мобильном заметка открывается как диалог поверх всего экрана вместо панели.
 
-## Development process demo
+## Демонстрация процесса разработки
 
-This is a basic example how you can create simple diagram using relation maps:
+Это базовый пример того, как можно создать простую диаграмму с помощью карт отношений:
 
 <img src="Relation Map_relation-map-dev-process.png" width="934" height="667">
 
-And this is how you can create it:
+А вот как её можно создать:
 
 <img src="Relation Map_relation-map-dev-process-demo.gif" width="812" height="585">
 
-We start completely from scratch by first creating new note called "Development process" and changing its type to "Relation map". After that we create new notes one by one and place them by clicking into the map. We also drag [relations](../Advanced%20Usage/Attributes.md)between notes and name them. That's all!
+Мы начинаем полностью с нуля, сначала создав новую заметку «Процесс разработки» и изменив её тип на «Карта отношений». После этого мы создаём новые заметки одну за другой и размещаем их щелчком по карте. Мы также перетаскиваем [отношения](../Advanced%20Usage/Attributes.md) между заметками и называем их. Вот и всё!
 
-Items on the map - "Specification", "Development", "Testing" and "Demo" are actually notes which have been created under "Development process" note - you can click on them and write some content. Connections between notes are called "[relations](../Advanced%20Usage/Attributes.md)".
+Элементы на карте — «Спецификация», «Разработка», «Тестирование» и «Демо» — на самом деле заметки, созданные под заметкой «Процесс разработки»; вы можете щёлкнуть по ним и написать содержимое. Связи между заметками называются «[отношениями](../Advanced%20Usage/Attributes.md)».
 
-## Family demo
+## Семейная демонстрация
 
-This is more complicated demo using some advanced concepts. Resulting diagram is here:
+Это более сложная демонстрация, использующая некоторые продвинутые концепции. Итоговая диаграмма здесь:
 
 <img src="Relation Map_relation-map-family.png" width="941" height="758">
 
-This is how you get to it:
+Вот как к ней прийти:
 
 <img src="Relation Map_relation-map-family-demo.gif" width="812" height="585">
 
-There are several steps here:
+Здесь есть несколько шагов:
 
-*   we start with empty relation map and two existing notes representing Prince Philip and Queen Elizabeth II. These two notes already have `isPartnerOf` [relations](../Advanced%20Usage/Attributes.md)defined.
-    *   There are actually two "inverse" relations (one from Philip to Elizabeth and one from Elizabeth to Philip)
-*   we drag both notes to relation map and place to suitable position. Notice how the existing `isPartnerOf` relations are displayed.
-*   now we create new note - we name it "Prince Charles" and place it on the relation map by clicking on the desired position. The note is by default created under the relation map note (visible in the note tree on the left).
-*   we create two new relations `isChildOf` targeting both Philip and Elizabeth
-    *   now there's something unexpected - we can also see the relation to display another `hasChild` relation. This is because there's a [relation definition](../Advanced%20Usage/Attributes/Promoted%20Attributes.md) which puts `isChildOf` as an "[inverse](../Advanced%20Usage/Attributes/Promoted%20Attributes.md)" relation of `hasChildOf` (and vice versa) and thus it is created automatically.
-*   we create another note for Princess Diana and create `isPartnerOf` relation from Charles. Again notice how the relation has arrows both ways - this is because `isPartnerOf` definition specifies its inverse relation as again "isPartnerOf" so the opposite relation is created automatically.
-*   as the last step we pan & zoom the map to fit better to window dimensions.
+*   мы начинаем с пустой карты отношений и двух существующих заметок, представляющих принца Филиппа и королеву Елизавету II. Эти две заметки уже имеют определённые [отношения](../Advanced%20Usage/Attributes.md) `isPartnerOf`.
+    *   На самом деле есть два «обратных» отношения (одно от Филиппа к Елизавете и одно от Елизаветы к Филиппу).
+*   мы перетаскиваем обе заметки на карту отношений и размещаем в подходящей позиции. Обратите внимание, как отображаются существующие отношения `isPartnerOf`.
+*   теперь мы создаём новую заметку — называем её «Принц Чарльз» и размещаем на карте отношений щелчком по нужной позиции. Заметка по умолчанию создаётся под заметкой карты отношений (видно в дереве заметок слева).
+*   мы создаём два новых отношения `isChildOf`, указывающих на Филиппа и Елизавету.
+    *   теперь происходит что-то неожиданное — мы также видим отображение другого отношения `hasChild`. Это связано с тем, что есть [определение отношения](../Advanced%20Usage/Attributes/Promoted%20Attributes.md), которое устанавливает `isChildOf` как «[обратное](../Advanced%20Usage/Attributes/Promoted%20Attributes.md)» отношение `hasChildOf` (и наоборот), и поэтому оно создаётся автоматически.
+*   мы создаём ещё одну заметку для принцессы Дианы и создаём отношение `isPartnerOf` от Чарльза. Снова обратите внимание, как отношение имеет стрелки в обе стороны — это связано с тем, что определение `isPartnerOf` указывает его обратное отношение снова как «isPartnerOf», поэтому противоположное отношение создаётся автоматически.
+*   как последний шаг мы панорамируем и масштабируем карту, чтобы лучше вписать её в размеры окна.
 
-Relation definitions mentioned above come from "Person template" note which is assigned to any child of "My Family Tree" relation note. You can play with the whole thing in the [demo notes](../Advanced%20Usage/Database.md).
+Упомянутые выше определения отношений взяты из заметки «Шаблон персоны», которая назначена любому потомку заметки отношений «Моё семейное древо». Вы можете поэкспериментировать со всем этим в [демонстрационных заметках](../Advanced%20Usage/Database.md).
 
-## Details
+## Детали
 
-You can specify which relations should be displayed with comma delimited names of relations in `displayRelations` label.
+Можно указать, какие отношения должны отображаться, в метке `displayRelations` с именами отношений через запятую.
 
-Alternatively, you can specify comma delimited list of relation names in `hideRelations` which will display all relations, except for the ones defined in the label.
+Альтернативно, можно указать разделённый запятыми список имён отношений в `hideRelations`, который отобразит все отношения, кроме определённых в метке.
 
-## See also
+## См. также
 
-*   <a class="reference-link" href="Note%20Map.md">Note Map</a> is a similar concept.
+*   <a class="reference-link" href="Note%20Map.md">Карта заметок</a> — схожая концепция.

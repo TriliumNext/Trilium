@@ -1,26 +1,26 @@
-# Note Map
+# Карта заметок
 <figure class="image image_resized" style="width:72.68%;"><img style="aspect-ratio:1311/1271;" src="Note Map_image.png" width="1311" height="1271"></figure>
 
-A Note map is a note type which displays a standalone version of the feature of the same name: <a class="reference-link" href="../Advanced%20Usage/Note%20Map%20(Link%20map%2C%20Tree%20map).md">Note Map (Link map, Tree map)</a>. Consult that page for more information on how the note map works and what it displays.
+Карта заметок — это тип заметки, который отображает автономную версию одноимённой возможности: <a class="reference-link" href="../Advanced%20Usage/Note%20Map%20(Link%20map%2C%20Tree%20map).md">Карта заметок (Link map, Tree map)</a>. За информацией о том, как работает карта заметок и что она отображает, обратитесь к той странице.
 
-Once created, the note map will display the relations between notes. Only the notes that are part of the parent of the note map will be displayed (including their children).
+После создания карта заметок будет отображать отношения между заметками. Будут отображены только заметки, которые являются частью родителя карты заметок (включая их потомков).
 
-## Root note
+## Корневая заметка
 
-The root note defines the starting point of the graph, from which the relations and the hierarchy are derived from.
+Корневая заметка определяет отправную точку графа, из которой выводятся отношения и иерархия.
 
-There are three possible root notes:
+Есть три возможные корневые заметки:
 
-*   The default root note is the parent note of the note map.
-*   To use the currently [hoisted note](../Basic%20Concepts%20and%20Features/Navigation/Note%20Hoisting.md) instead, set the `mapRootNoteId` label to `hoisted`.
-*   To use a specific note instead, set `mapRootNoteId` to the <a class="reference-link" href="../Advanced%20Usage/Note%20ID.md">Note ID</a> of the desired note.
+*   Корневой заметкой по умолчанию является родительская заметка карты заметок.
+*   Чтобы использовать вместо неё текущую [поднятую заметку](../Basic%20Concepts%20and%20Features/Navigation/Note%20Hoisting.md), задайте метке `mapRootNoteId` значение `hoisted`.
+*   Чтобы использовать вместо неё конкретную заметку, задайте `mapRootNoteId` равным <a class="reference-link" href="../Advanced%20Usage/Note%20ID.md">ID заметки</a> нужной заметки.
 
-## Customization
+## Настройка
 
-The note map can be customized using the following <a class="reference-link" href="../Advanced%20Usage/Attributes/Labels.md">Labels</a>:
+Карту заметок можно настроить с помощью следующих [Меток](../Advanced%20Usage/Attributes/Labels.md):
 
-| Label | Description |
+| Метка | Описание |
 | --- | --- |
-| `#mapIncludeRelation` | Comma-delimited relation names to include from the note map. |
-| `#mapExcludeRelation` | Comma-delimited relation names to exclude from the note map. |
-| `#mapRootNoteId` | The ID of the note the map roots from, or `hoisted`. See the root note section above for more information. |
+| `#mapIncludeRelation` | Имена отношений через запятую, которые нужно включить в карту заметок. |
+| `#mapExcludeRelation` | Имена отношений через запятую, которые нужно исключить из карты заметок. |
+| `#mapRootNoteId` | ID заметки, с которой начинается карта, или `hoisted`. Подробнее см. раздел о корневой заметке выше. |
