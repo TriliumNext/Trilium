@@ -106,6 +106,13 @@ export function getHelpHiddenSubtreeData(): HiddenSubtreeItem[] {
     return provider?.getHelpHiddenSubtreeData(currentHelpLocale()) ?? [];
 }
 
+/** Returns rendered HTML for a help note in `locale` (or the active display language). */
+export function getHelpNoteContent(noteId: string, locale?: string): string | undefined {
+    const targetLocale = locale && locale.length > 0 ? locale : currentHelpLocale();
+    const page = provider?.getHelpContent(targetLocale)[noteId];
+    return page?.replaceAll(HELP_ASSET_TOKEN, provider?.getHelpAssetBase() ?? "");
+}
+
 /**
  * The display language the help should be served in: the active i18next language, which the
  * application keeps in sync with the `locale` option (including runtime switches). Read on every

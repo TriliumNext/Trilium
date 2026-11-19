@@ -317,7 +317,7 @@ export async function exportData(mapping: NoteMapping, baseUrl: string) {
         for (const [ locale, localeMapping ] of Object.entries(mapping.helpLocales)) {
             await syncGeneratedPagesToLocale(outputPath, localeMapping.path, generatedNoteIds);
             console.log(`Building in-app help for locale '${locale}'...`);
-            await writeHelpArtifacts(localeMapping.path, localeMapping.helpMeta, localeMapping.helpContent, baseUrl, outputPath);
+            await writeHelpArtifacts(localeMapping.path, localeMapping.helpMeta, localeMapping.helpContent, baseUrl, outputPath, locale);
         }
         await writeHelpLocalesIndex(mapping);
     }
@@ -395,7 +395,8 @@ export async function writeHelpArtifacts(
     helpMetaPath?: string,
     helpContentPath?: string,
     baseUrl?: string,
-    englishDir?: string
+    englishDir?: string,
+    locale = "en"
 ) {
     const meta = JSON.parse(await fs.readFile(path.join(exportDir, "!!!meta.json"), "utf-8")) as NoteMetaFile;
     const { meta: helpMeta, sources } = buildHelpMeta(meta, baseUrl);
@@ -420,7 +421,7 @@ export async function writeHelpArtifacts(
         );
 
         if (englishDir) {
-            await markOutdatedTranslations(bundle, helpMeta, sources, exportDir, englishDir);
+            await markOutdatedTranslations(bundle, helpMeta, sources, exportDir, englishDir, locale);
         }
 
         // One page per line: the bundle is a flat map from note ID to HTML.
@@ -437,7 +438,8 @@ async function markOutdatedTranslations(
     items: ReturnType<typeof buildHelpMeta>["meta"],
     sources: ReturnType<typeof buildHelpMeta>["sources"],
     exportDir: string,
-    englishDir: string
+    englishDir: string,
+    locale: string
 ) {
     let savedHashes: Record<string, string>;
     try {
@@ -445,6 +447,8 @@ async function markOutdatedTranslations(
     } catch {
         return;
     }
+
+    const { title: bannerTitle, link: bannerLink } = await loadOutdatedBannerStrings(locale);
 
     const typesById = new Map<string, string>();
     const collectTypes = (nodes: typeof items) => {
@@ -472,9 +476,27 @@ async function markOutdatedTranslations(
             continue;
         }
         if (currentHash !== expectedHash) {
-            bundle[itemId] = `<blockquote class="help-outdated-banner"><p><strong>Данная информация устарела.</strong> Актуальная версия доступна на <a href="#help-locale:${itemId}:en">английском языке</a>.</p></blockquote>\n${bundle[itemId]}`;
+            bundle[itemId] = `<blockquote class="help-outdated-banner"><p><strong>${bannerTitle}</strong> <a href="#help-locale:${itemId}:en">${bannerLink}</a></p></blockquote>\n${bundle[itemId]}`;
         }
     }
+}
+
+async function loadOutdatedBannerStrings(locale: string): Promise<{ title: string; link: string }> {
+    const fallback = { title: "This page may be outdated.", link: "View the up-to-date English version" };
+    for (const loc of [ locale, "en" ]) {
+        try {
+            const p = path.resolve(import.meta.dirname, "../../server/src/assets/translations", loc, "server.json");
+            const data = JSON.parse(await fs.readFile(p, "utf-8")) as {
+                hidden_subtree?: { "help-outdated-title"?: string; "help-outdated-link"?: string };
+            };
+            const title = data.hidden_subtree?.["help-outdated-title"];
+            const link = data.hidden_subtree?.["help-outdated-link"];
+            if (title && link) return { title, link };
+        } catch {
+            // Try next locale fallback.
+        }
+    }
+    return fallback;
 }
 
 /** Writes a generated help artifact, creating its directory if needed. */
@@ -523,10 +545,14 @@ async function createImportZip(dirPath: string, excludeDirs: string[] = []) {
     } else {
         const entries = await fs.readdir(resolvedDir, { withFileTypes: true, recursive: true });
         for (const entry of entries) {
-            if (!entry.isFile()) continue;
             const fullPath = path.join(entry.parentPath, entry.name);
             const rel = path.relative(resolvedDir, fullPath).replaceAll("\\", "/");
-            if (!excludedPrefixes.some((p) => rel === p || rel.startsWith(`${p}/`))) {
+            if (excludedPrefixes.some((p) => rel === p || rel.startsWith(`${p}/`))) {
+                continue;
+            }
+            if (entry.isDirectory()) {
+                archive.append("", { name: `${rel}/` });
+            } else if (entry.isFile()) {
                 archive.file(fullPath, { name: rel });
             }
         }
