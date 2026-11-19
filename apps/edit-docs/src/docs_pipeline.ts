@@ -287,29 +287,6 @@ function findDataFile(
     return undefined;
 }
 
-/** Clears `outputPath` before re-export while preserving nested localized help directories. */
-async function cleanExportDir(outputPath: string, preserveDirs: string[]) {
-    const resolvedOut = path.resolve(outputPath);
-    const preserved = preserveDirs.map((d) => path.resolve(d)).filter((d) => d.startsWith(resolvedOut + path.sep));
-    if (preserved.length === 0) {
-        await fs.rm(outputPath, { recursive: true, force: true });
-        return;
-    }
-    let entries: string[];
-    try {
-        entries = await fs.readdir(resolvedOut);
-    } catch {
-        return;
-    }
-    for (const entry of entries) {
-        const full = path.join(resolvedOut, entry);
-        const keep = preserved.some((p) => p === full || p.startsWith(full + path.sep));
-        if (!keep) {
-            await fs.rm(full, { recursive: true, force: true });
-        }
-    }
-}
-
 export async function exportData(mapping: NoteMapping, baseUrl: string) {
     const { path: outputPath, ignoredFiles: ignoredFileNames } = mapping;
     const ignoredFiles = ignoredFileNames ? new Set(ignoredFileNames) : undefined;
@@ -337,6 +314,29 @@ export async function exportData(mapping: NoteMapping, baseUrl: string) {
             await writeHelpArtifacts(localeMapping.path, localeMapping.helpMeta, localeMapping.helpContent, baseUrl);
         }
         await writeHelpLocalesIndex(mapping);
+    }
+}
+
+/** Clears `outputPath` before re-export while preserving nested localized help directories. */
+async function cleanExportDir(outputPath: string, preserveDirs: string[]) {
+    const resolvedOut = path.resolve(outputPath);
+    const preserved = preserveDirs.map((d) => path.resolve(d)).filter((d) => d.startsWith(resolvedOut + path.sep));
+    if (preserved.length === 0) {
+        await fs.rm(outputPath, { recursive: true, force: true });
+        return;
+    }
+    let entries: string[];
+    try {
+        entries = await fs.readdir(resolvedOut);
+    } catch {
+        return;
+    }
+    for (const entry of entries) {
+        const full = path.join(resolvedOut, entry);
+        const keep = preserved.some((p) => p === full || p.startsWith(full + path.sep));
+        if (!keep) {
+            await fs.rm(full, { recursive: true, force: true });
+        }
     }
 }
 

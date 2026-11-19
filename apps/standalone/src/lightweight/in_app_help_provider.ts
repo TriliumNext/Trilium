@@ -85,9 +85,13 @@ export default class StandaloneInAppHelpProvider extends InAppHelpProvider {
         if (existing) {
             return existing;
         }
-        const task = this.loadLocale(locale).finally(() => {
-            this.pendingLoads.delete(locale);
-        });
+        const task = this.loadLocale(locale)
+            .catch((e) => {
+                console.warn("[Worker] In-app help content could not be loaded:", e);
+            })
+            .finally(() => {
+                this.pendingLoads.delete(locale);
+            });
         this.pendingLoads.set(locale, task);
         return task;
     }

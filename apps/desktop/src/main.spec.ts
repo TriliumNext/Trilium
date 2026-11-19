@@ -209,7 +209,7 @@ vi.mock("@triliumnext/server/src/services/data_dir.js", () => ({
     default: { TRILIUM_DATA_DIR: "/data", DOCUMENT_PATH: "/data/doc.db" }
 }));
 vi.mock("@triliumnext/server/src/services/port.js", () => ({ default: 37740 }));
-vi.mock("@triliumnext/server/src/services/resource_dir.js", () => ({ RESOURCE_DIR: "/res" }));
+vi.mock("@triliumnext/server/src/services/resource_dir.js", () => ({ RESOURCE_DIR: "/res", readDemoArchive: vi.fn() }));
 vi.mock("@triliumnext/server/src/services/config.js", () => ({
     default: { Security: {}, General: { readOnly: false } }
 }));
