@@ -65,13 +65,16 @@
     "fix_link": "Link korrigieren",
     "button_fix_link": "Link reparieren",
     "web_link": "Webseite",
-    "url": "Adresse (URL)",
+    "url": "URL",
     "invalid_url": "Dies ist keine valide URL.",
     "script_link_not_allowed": "Links, die mit {{scheme}} starten, können Code ausführen, darum sind sie nicht erlaubt.",
     "display_as": "Anzeigen als",
     "display_plain": "Text",
     "display_inline": "Icon & Text",
-    "display_card": "Karte"
+    "display_card": "Karte",
+    "description": "Beschreibung",
+    "retrieving_from_page": "Webseite wird ausgelesen...",
+    "top_of_note": "Link zur kompletten Notiz"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Zweigpräfix bearbeiten",
