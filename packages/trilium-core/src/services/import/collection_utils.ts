@@ -5,6 +5,8 @@
  * reference links and file attachments — so those formats stay consistent across importers.
  */
 
+import { getAttachmentEmbedHref } from "@triliumnext/commons";
+
 import type BNote from "../../becca/entities/bnote.js";
 import { escapeHtml } from "../utils/index.js";
 import mimeService from "./mime.js";
@@ -39,7 +41,8 @@ export function buildPromotedDefinition({ alias, labelType, multiplicity }: { al
 
 /** A Trilium attachment reference-link (the chip CKEditor renders) pointing at a note's attachment. */
 export function attachmentReferenceLink(noteId: string, attachmentId: string, title: string): string {
-    return `<a class="reference-link" href="#root/${noteId}?viewMode=attachments&attachmentId=${attachmentId}">${escapeHtml(title)}</a>`;
+    const href = getAttachmentEmbedHref(noteId, attachmentId);
+    return `<a class="reference-link" href="${href}">${escapeHtml(title)}</a>`;
 }
 
 /** Strips a value's clickable scheme (`mailto:` for an email, `tel:` for a phone) if it carries one, leaving

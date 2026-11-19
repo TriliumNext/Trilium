@@ -144,6 +144,10 @@ Core routes, so they run on the server, in desktop and in standalone.
 Errors: 400 without `block`, without `content`, or for a note that is not a text note with
 available content; 404 when the note or a block is missing or the range is not editable apart.
 
+A `PUT` with a `base` saves only while the blocks still have the hash read with them, else 409:
+`replaceBlockRangeOnBase()` makes that check, for this route and for the draft of an excerpt
+(`getDraftContent()` in `routes/api/revisions.ts`), which goes into the note only when it passes.
+
 **Writing** (`replaceBlockRangeContent(content, block, fragment)`):
 
 1. Find the run of `block` as the note **stores** it (the client sends its stored range, not the

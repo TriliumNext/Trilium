@@ -169,7 +169,7 @@ function EventPopoverShell({ note, anchorRect, updateKey, parentNote, isEditable
  *
  * Dressed as the quick editor is, that being the app's own way of showing a whole note over
  * whatever raised it — the note's title row heading the dialog rather than standing inside it, at
- * the height it stands there (see the shared rules in PopupEditor.css). It rises to what a dialog
+ * the height it stands there (see the shared rules in TitleRow.css). It rises to what a dialog
  * may take rather than to the whole page, as the quick editor does: a page-high sheet squares off
  * the corners the app rounds every dialog by, and gains nothing for it.
  *

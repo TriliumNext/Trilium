@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { getBlockRangeContent, replaceBlockRangeContent } from "./block_ranges";
+import {
+    getBlockRangeContent, replaceBlockRangeContent, replaceBlockRangeOnBase
+} from "./block_ranges";
+import { hashedBlobId } from "./utils/index.js";
 
 const BEFORE = `<h2 class='title'>Intro</h2><!-- kept -->\n<p>Skip&nbsp;me</p>`;
 const RANGE = `<p data-trilium-block-id="a">A</p><ul><li>x</li></ul>`
@@ -111,5 +114,20 @@ describe("replaceBlockRangeContent", () => {
         expect(replaceBlockRangeContent(bullets, "a", "Plain text")).toBe(
             `Plain text<ul><li><p>B</p></li></ul>`
         );
+    });
+});
+
+describe("replaceBlockRangeOnBase", () => {
+    it("replaces the blocks only while they are as they were read", () => {
+        const fragment = `<p data-trilium-block-id="a">New A</p>`;
+        const hash = hashedBlobId(RANGE);
+
+        expect(replaceBlockRangeOnBase(NOTE, "a:b", fragment, hash)).toStrictEqual({
+            status: "replaced", hash, content: `${BEFORE}${fragment}${AFTER}`
+        });
+        expect(replaceBlockRangeOnBase(NOTE, "a:b", fragment, "stale"))
+            .toStrictEqual({ status: "changed", hash });
+        expect(replaceBlockRangeOnBase(NOTE, "a:z", fragment, hash))
+            .toStrictEqual({ status: "missing" });
     });
 });

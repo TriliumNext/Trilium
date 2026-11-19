@@ -925,9 +925,9 @@ describe("DetailPane", () => {
         }
 
         /** A link as the note's content carries one, clicked as the browser reports it. */
-        function clickLink(noteId: string, init: MouseEventInit = {}) {
+        function clickLink(noteId: string, init: MouseEventInit = {}, query = "") {
             const anchor = document.createElement("a");
-            anchor.setAttribute("href", `#root/${noteId}`);
+            anchor.setAttribute("href", `#root/${noteId}${query}`);
             pane()?.querySelector(".geo-detail-pane-body")?.appendChild(anchor);
 
             const event = new MouseEvent("click", { bubbles: true, cancelable: true, ...init });
@@ -965,6 +965,25 @@ describe("DetailPane", () => {
 
             // The click fell through to the app's own handler, and the pane stayed where it was.
             expect(openInCurrentNoteContext).toHaveBeenCalledWith(expect.anything(), "root/offmap", expect.anything());
+            expect(pane()?.textContent).toContain("From here");
+        });
+
+        it("leaves a link to a place in a PDF to the app, which opens the PDF there", async () => {
+            const notes = twoMarkersAndAStray();
+            const map = fakeMap();
+            await openPaneOn(notes[0], notes, map);
+
+            const targets: Record<string, string>[] = [
+                { page: "3" }, { page: "3", annotation: "12R" }, { page: "3", heading: "abc" }
+            ];
+            for (const target of targets) {
+                openInCurrentNoteContext.mockClear();
+                const query = `?${new URLSearchParams(target)}`;
+                await act(async () => { clickLink("tothere", {}, query); });
+                await settle();
+                expect(openInCurrentNoteContext, query).toHaveBeenCalledWith(
+                    expect.anything(), "root/tothere", expect.objectContaining(target));
+            }
             expect(pane()?.textContent).toContain("From here");
         });
 

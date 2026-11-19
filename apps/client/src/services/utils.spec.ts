@@ -254,6 +254,12 @@ describe("isHtmlEmpty", () => {
         expect(isHtmlEmpty("<p>hello</p>")).toBe(false);
     });
 
+    it("counts a block with an id as content, which references point at", () => {
+        expect(isHtmlEmpty(`<p data-trilium-block-id="p">&nbsp;</p>`)).toBe(false);
+        expect(isHtmlEmpty(`<hr data-trilium-block-id="r">`)).toBe(false);
+        expect(isHtmlEmpty("<p>&nbsp;</p><hr>")).toBe(true);
+    });
+
     it("logs and returns false for a non-string input", () => {
         const logError = vi.fn();
         (globalThis as any).logError = logError;

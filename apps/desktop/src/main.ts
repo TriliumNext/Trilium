@@ -276,7 +276,7 @@ export async function main() {
         messaging,
         schema: loadCoreSchema(),
         platform: new DesktopPlatformProvider(),
-        translations: (await import("@triliumnext/server/src/services/i18n.js")).initializeTranslations,
+        translations: (await import("@triliumnext/server/src/services/i18n.js")).initializeTranslationsWithParams,
         // Localized demo archives (demo-<locale>.zip, e.g. demo-ru.zip) live next to the default
         // English demo.zip; src/assets is copied to dist/assets by the build script, so the same
         // RESOURCE_DIR-relative lookup works in both source and bundled production modes.

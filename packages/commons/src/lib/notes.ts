@@ -342,6 +342,17 @@ export function isMarkdownMime(mime: string) {
 }
 
 /**
+ * The format of the content of a note of `type` and `mime`, which a save checks before it writes:
+ * the type, with Markdown apart from other code. The language of other code is not part of it.
+ */
+export function getContentFormat(type: string, mime: string) {
+    if (type !== "code") {
+        return type;
+    }
+    return isMarkdownMime(mime) ? "markdown" : "code";
+}
+
+/**
  * The kind of content a note renders as, which picks its renderer: `iconPack` for an icon pack's
  * manifest, `markdown` for a Markdown code note, else what {@link getFileContentType} names.
  *
@@ -357,12 +368,16 @@ export function getNoteContentType(type: string, mime: string, hasIconPackLabel:
     return getFileContentType(type, mime);
 }
 
-/** Narrows a file, or a `viewConfig` attachment, to the kind of file its media type names. */
+/**
+ * Narrows a file, or a `viewConfig` or `tocCache` attachment, to the kind of file its media type
+ * names.
+ */
 export function getFileContentType(type: string, mime: string) {
     if (type === "file" && mime === "application/pdf") return "pdf";
     if (type === "file" && mime === CANVAS_ATTACHMENT_MIME) return "canvasDrawing";
     if (type === "file" && mime === MERMAID_ATTACHMENT_MIME) return "mermaidDiagram";
-    if ((type === "file" || type === "viewConfig") && mime === "application/json") return "code";
+    if ((type === "file" || type === "viewConfig" || type === "tocCache")
+        && mime === "application/json") return "code";
     if (type === "file" && mime.startsWith("audio/")) return "audio";
     if (type === "file" && mime.startsWith("video/")) return "video";
     if (type === "file" && isOfficeMimeType(mime)) return "office";

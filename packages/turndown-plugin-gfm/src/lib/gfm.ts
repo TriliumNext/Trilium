@@ -16,3 +16,4 @@ function gfm (turndownService: Turnish) {
 }
 
 export { gfm, highlightedCodeBlock, serializeStructuralHtml, strikethrough, tables, taskListItems }
+export type { TableBlockId, TableBlockIdOption } from "./tables.js";

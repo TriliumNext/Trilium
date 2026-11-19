@@ -1,6 +1,7 @@
 import type { Locale } from "./i18n.js";
 import { AttachmentRow, AttributeRow, BranchRow, NoteRow, NoteType, OptionRow, RevisionSource } from "./rows.js";
 import type { SetupTargetScreen } from "./setup_marker.js";
+import type { TocHeading } from "./toc.js";
 
 type Response = {
     success: true,
@@ -339,6 +340,18 @@ export type ReferenceKind = (typeof REFERENCE_KINDS)[number];
  */
 export type ReferenceParams = Record<string, string>;
 
+/**
+ * Every parameter of a link that points inside a note or an attachment, in the order that links
+ * write them. Archives keep them, and the link dialog replaces them together.
+ */
+export const LINK_TARGET_PARAMS = [ "block", "bookmark", "page", "annotation", "heading" ] as const;
+
+/** A table of contents that the viewer of a document builds, since the server cannot read it. */
+export interface PendingToc {
+    /** The name of the format, such as `pdf`. */
+    format: string;
+}
+
 /** A place inside a note that a link can point at. */
 export interface ReferenceTarget {
     kind: ReferenceKind;
@@ -354,6 +367,41 @@ export interface ReferenceTarget {
 export interface NoteReferencesResponse {
     /** In the order that the lists show them, the targets of each kind together. */
     targets: ReferenceTarget[];
+    /** The blob of the note that the targets were read from. */
+    blobId?: string;
+    /** Set when the targets come from a table of contents that the viewer has yet to build. */
+    pendingToc?: PendingToc;
+}
+
+/** The answer of `GET /api/notes/:noteId/toc`, which reads the ToC cache and never builds it. */
+export type CachedTocResponse =
+    /** A cache of the document as it is. `blobId` is its `targetBlobHash`. */
+    | { status: "ready"; blobId: string; headings: TocHeading[] }
+    /** A cache of an earlier blob of the document. */
+    | { status: "stale"; blobId: string; headings: TocHeading[]; pendingToc?: PendingToc }
+    /** A document with a table of contents format, and no cache to read. */
+    | { status: "missing"; pendingToc?: PendingToc }
+    /** A document without a table of contents format. */
+    | { status: "none" };
+
+/** A table of contents that a viewer read, for `PUT /api/notes/:noteId/toc`. */
+export interface ClientTocRequest {
+    /** The `blobId` of the bytes that the viewer read, from their digest. */
+    targetBlobHash: string;
+    /** In document order: `title`, `level` and the fields of the format. Without ids. */
+    headings: Record<string, unknown>[];
+    /** The properties of the format, such as `{ reader: 1 }`. */
+    properties?: Record<string, unknown>;
+    /** Whether the viewer stopped reading at `MAX_TOC_HEADINGS`, before another entry. */
+    isCut?: boolean;
+    /** How long the viewer took to read the outline and digest the bytes, for the log. */
+    elapsedMs: number;
+}
+
+/** The answer of 409 for a table of contents of a blob that the document no longer has. */
+export interface TocConflictResponse {
+    reason: "changed";
+    message: string;
 }
 
 /** Names a target without `params` for `POST /api/notes/:noteId/references`. */
@@ -363,11 +411,192 @@ export interface CreateReferenceRequest {
     index: number;
     /** Its `title` there. */
     title: string;
+    /**
+     * The `blobId` of the listing that the target was picked from. On another blob the target is
+     * refused with 409, reason `listing`. Without it, the target is found as in any listing.
+     */
+    blobId?: string;
 }
 
 export interface CreateReferenceResponse {
     /** The link parameters that point at the target. */
     params: ReferenceParams;
+}
+
+/** The answer of 409 to `POST /api/notes/:noteId/references` for a listing of another blob. */
+export interface ReferenceConflictResponse {
+    reason: "listing";
+    message: string;
+}
+
+/** What a save of the content of a note is based on: the blob the editor read, and its format. */
+export interface NoteSaveBase {
+    blobId: string;
+    type: NoteType;
+    mime: string;
+}
+
+/**
+ * An attachment that a save writes. With `attachmentId` it replaces that attachment, in a save with
+ * a base only while the attachment is at `blobId`. Without it, a save with a base creates an
+ * attachment of its `title`, and is refused when one exists; a save without a base replaces it.
+ */
+export interface SavedAttachmentRow {
+    attachmentId?: string;
+    /** The blob that the attachment was read at. */
+    blobId?: string;
+    role: string;
+    title: string;
+    mime: string;
+    content: string;
+    position?: number;
+    /** `"base64"` when `content` is binary data in base64, which is decoded before it is stored. */
+    encoding?: "base64";
+}
+
+/** An attachment as a save left it. */
+export interface SavedAttachmentBase {
+    attachmentId: string;
+    title: string;
+    blobId: string;
+}
+
+/** The body of `PUT /api/notes/:noteId/data`. */
+export interface SaveNoteDataRequest {
+    content: string;
+    attachments?: SavedAttachmentRow[];
+    /** What `content` is based on. A save without it is unconditional. */
+    base?: NoteSaveBase;
+    /**
+     * Saves over the version that `base` names, which another writer saved, after the note keeps
+     * that version as a revision.
+     */
+    keepOther?: boolean;
+}
+
+/** The answer of `PUT /api/notes/:noteId/data`: what the next save of the editor is based on. */
+export interface SaveNoteDataResponse {
+    blobId: string;
+    /** The attachments that the save created or replaced. */
+    attachments: SavedAttachmentBase[];
+    /** The content as the note holds it, when the server changed the content that was sent. */
+    content?: string;
+}
+
+/**
+ * Why a save was refused with 409: the note now has another format, after a conversion, or
+ * another version than the one the save is based on.
+ */
+export type SaveConflictReason = "format" | "version";
+
+/** The answer of 409 to `PUT /api/notes/:noteId/data`. */
+export interface SaveConflictResponse {
+    reason: SaveConflictReason;
+    message: string;
+    /** The blob of the note now. A save that keeps its own version is based on it. */
+    blobId: string;
+    type: NoteType;
+    mime: string;
+    /** Whether the note keeps revisions. Without them, the version that is not chosen is lost. */
+    isVersioned: boolean;
+    /**
+     * The attachments that the rows of the save name, by ID or by title, as the note has them now.
+     * A save that keeps its own version replaces them at these blobs.
+     */
+    attachments?: SavedAttachmentBase[];
+}
+
+/** The answer of `GET /api/notes/:noteId/blocks`. */
+export interface NoteBlocksResponse {
+    content: string;
+    /** The hash of `content`, which the save of the blocks is based on. */
+    hash: string;
+    /** The whole note that `content` was read from, which a draft of the blocks goes into. */
+    note: string;
+}
+
+/** The body of `PUT /api/notes/:noteId/blocks`. */
+export interface SaveNoteBlocksRequest {
+    content: string;
+    attachments?: SavedAttachmentRow[];
+    /** The `hash` of the blocks that `content` is based on. A save without it is unconditional. */
+    base?: { hash: string };
+    /** Saves over the blocks that `base` names, after the note keeps its version as a revision. */
+    keepOther?: boolean;
+    /** The `block` parameter of the blocks after the save, when it differs from the query. */
+    block?: string;
+}
+
+/** The answer of `PUT /api/notes/:noteId/blocks`. */
+export interface SaveNoteBlocksResponse {
+    /** The hash of the blocks as saved, or `null` when they cannot be read apart any more. */
+    hash: string | null;
+    /** The whole note as the save left it, which a draft of the blocks goes into. */
+    note: string;
+    /** The attachments that the save created or replaced. */
+    attachments: SavedAttachmentBase[];
+}
+
+/** The answer of 409 to `PUT /api/notes/:noteId/blocks`. */
+export type BlocksConflictResponse = BlocksVersionConflict | BlocksGoneConflict;
+
+/** The blocks, or an attachment that the save replaces, changed since they were read. */
+export interface BlocksVersionConflict {
+    reason: "version";
+    message: string;
+    /** The hash of the blocks now. A save that keeps its own version is based on it. */
+    hash: string;
+    /** As {@link SaveConflictResponse.attachments}. */
+    attachments: SavedAttachmentBase[];
+    /** Whether the note keeps revisions. Without them, the version that is not chosen is lost. */
+    isVersioned: boolean;
+}
+
+/**
+ * The blocks can no longer be saved apart: the note was converted (`format`), or the `block`
+ * parameter no longer points at blocks that can be edited apart (`range`).
+ */
+export interface BlocksGoneConflict {
+    reason: "format" | "range";
+    message: string;
+}
+
+/**
+ * The body of `POST /api/notes/:noteId/revisions/draft`: changes that an editor could not save,
+ * which the note keeps as a revision.
+ */
+export interface SaveDraftRequest {
+    /** Drawn once for each draft, so that a repeated request makes one revision. */
+    revisionId: string;
+    /** The type of the note that the draft was written for. */
+    type: NoteType;
+    mime: string;
+    /** The content of the whole note. */
+    content?: string;
+    /** For a draft of an excerpt: the edited blocks, and the `block` parameter they replace. */
+    fragment?: DraftFragment;
+    attachments?: SavedAttachmentRow[];
+}
+
+/** The edited blocks of an excerpt, which a draft revision keeps. */
+export interface DraftFragment {
+    content: string;
+    block: string;
+    /**
+     * The whole note that the blocks were read from, as the editor last read or saved it, and the
+     * hash of the blocks in it. The revision is that note with the edited blocks; without it, the
+     * blocks alone.
+     */
+    base?: { note: string; hash: string };
+}
+
+/** The answer of `POST /api/notes/:noteId/revisions/draft`. */
+export interface SaveDraftResponse {
+    revisionId: string;
+    /** Whether the revision is kept. A note that keeps no revisions discards the draft. */
+    isKept: boolean;
+    /** Whether the revision holds the edited blocks alone, which cannot be restored. */
+    isFragment: boolean;
 }
 
 export interface NoteSizeResponse {
@@ -946,6 +1175,15 @@ export interface ConvertToAttachmentResponse {
 export interface ConvertAttachmentToNoteResponse {
     note: NoteRow;
     branch: BranchRow;
+}
+
+/** The answer to converting a note between a text note and a Markdown note. */
+export interface ConvertNoteFormatResponse {
+    /** The type of the note after the conversion. */
+    type: string;
+    /** The block ids that the conversion lost, and those it put on another block. */
+    lostBlockIds: string[];
+    movedBlockIds: string[];
 }
 
 export type SaveSqlConsoleResponse = CloneResponse;

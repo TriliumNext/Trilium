@@ -4,14 +4,33 @@
  * elements carrying metadata. Rendering the stored HTML on its own therefore shows less than the
  * note does, and in the case of a link preview shows nothing at all (#10707).
  */
-import { describe, expect, it, vi } from "vitest";
+import type { RevisionItem, RevisionPojo, RevisionSource } from "@triliumnext/commons";
+import type { ComponentChildren } from "preact";
+import { act } from "preact/test-utils";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import Component from "../../components/component";
 import { diffHtml } from "../../services/html_diff";
+import server from "../../services/server";
+import utils from "../../services/utils";
 import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
-import { RevisionContentDiff, RevisionContentText, seedLinkPreviewTitles } from "./revisions";
+import { ParentComponent } from "../react/react_utils";
+import RevisionsDialog, {
+    RevisionContentDiff, RevisionContentText, seedLinkPreviewTitles
+} from "./revisions";
 
 vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
+const copyHtmlWithToast = vi.hoisted(() => vi.fn());
+vi.mock("../../services/clipboard_ext", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../services/clipboard_ext")>()),
+    copyHtmlWithToast
+}));
+// The dialog's content, without Bootstrap's modal around it.
+vi.mock("../react/Modal", () => ({
+    default: ({ children, show }: { children: ComponentChildren; show: boolean }) =>
+        (show ? <div className="modal-stub">{children}</div> : null)
+}));
 
 /**
  * Every fixture starts with a paragraph that is not the subject of its assertion: DOMPurify running
@@ -115,6 +134,81 @@ describe("RevisionContentDiff", () => {
                 .toEqual([ "trilium-list-item-aligned-center", "" ]);
         });
     });
+});
+
+describe("RevisionsDialog", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+        copyHtmlWithToast.mockClear();
+    });
+
+    it("offers to copy the edited blocks of an excerpt, which cannot be restored", async () => {
+        const { container, fullRevision } = await openDialog("fragment");
+        const toolbar = container.querySelector(".revision-toolbar");
+        expect(toolbar?.querySelector(".alert.alert-info")).not.toBeNull();
+        expect(toolbar?.querySelector("button:has(.bx-history)")).toBeNull();
+        const copy = toolbar?.querySelector<HTMLButtonElement>("button:has(.bx-copy)");
+        expect(copy).toBeTruthy();
+
+        await act(async () => copy?.click());
+        await vi.waitFor(() => expect(copyHtmlWithToast).toHaveBeenCalledOnce());
+        expect(copyHtmlWithToast).toHaveBeenCalledWith("<p>kept</p>");
+
+        // Content that is not text is not copied.
+        fullRevision.content = new Uint8Array([ 1 ]);
+        await act(async () => copy?.click());
+        await settle();
+        expect(copyHtmlWithToast).toHaveBeenCalledOnce();
+    });
+
+    it("offers to restore any other revision, as the footer's main action on mobile", async () => {
+        const desktop = await openDialog("manual");
+        expect(desktop.container.querySelector(".revision-toolbar .alert")).toBeNull();
+        expect(desktop.container.querySelector("button:has(.bx-copy)")).toBeNull();
+        const restore = desktop.container
+            .querySelector(".revision-toolbar-actions button.btn:has(.bx-history)");
+        expect(restore?.classList.contains("btn-secondary")).toBe(true);
+
+        vi.spyOn(utils, "isMobile").mockReturnValue(true);
+        const mobile = await openDialog("manual");
+        expect(mobile.container.querySelector(".revision-toolbar button:has(.bx-history)"))
+            .toBeNull();
+        const footerRestore = mobile.container
+            .querySelector(".revision-detail-footer button.btn:has(.bx-history)");
+        expect(footerRestore?.classList.contains("btn-primary")).toBe(true);
+    });
+
+    /** Opens the revisions of a text note whose one revision has `source`, once it is shown. */
+    async function openDialog(source: RevisionSource) {
+        const note = buildNote({ title: "Revised note", content: "<p>now</p>" });
+        const revision: RevisionItem = {
+            noteId: note.noteId, revisionId: "rev1", type: "text", mime: "text/html",
+            title: "Revised note", source, dateCreated: "2026-01-01 10:00:00.000+0100"
+        };
+        const fullRevision: RevisionPojo = { ...revision, content: "<p>kept</p>" };
+        vi.spyOn(server, "get").mockImplementation(async (url: string) =>
+            (url === `notes/${note.noteId}/revisions` ? [ revision ] : fullRevision));
+        const component = new Component();
+        const container = renderInto(
+            <ParentComponent.Provider value={component}>
+                <RevisionsDialog />
+            </ParentComponent.Provider>
+        );
+        await act(async () => {
+            await component.handleEvent("showRevisions", { noteId: note.noteId });
+        });
+        await vi.waitFor(() => {
+            expect(container.querySelector(".revision-toolbar-actions")).not.toBeNull();
+        });
+        return { container, fullRevision };
+    }
+
+    /** Lets the requests in flight finish. */
+    async function settle() {
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+    }
 });
 
 describe("seedLinkPreviewTitles", () => {

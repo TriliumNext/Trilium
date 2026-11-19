@@ -427,8 +427,8 @@ export function SaveStatus({ rootRef, editor, isShown }: SaveStatusProps) {
 
 /**
  * Shows the content of `entity` after each save, also one made by another embed of it, once
- * `shownRef` is shown. Unsaved changes made in the embed are kept, and replace that content when
- * they save.
+ * `shownRef` is shown, and tells `editor` the version that it shows. Unsaved changes made in the
+ * embed are kept, and replace that content when they save.
  */
 export function useSavedContent(
     entity: FNote | FAttachment,
@@ -461,6 +461,9 @@ export function useSavedContent(
     useEffect(() => {
         if (content !== undefined && editor?.getUnsavedContent() === undefined) {
             setContent(content);
+            if (noteBlob) {
+                editor?.setLoadedVersion?.(noteBlob.blobId, content);
+            }
         }
     }, [ content ]);
 }

@@ -9,6 +9,11 @@ This page explains how to manipulate the note tree in TriliumNext, focusing on m
 
 You can easily rearrange the note tree by dragging and dropping notes, as demonstrated in the example above.
 
+Where the note lands depends on the part of the row the pointer is over:
+
+*   The middle of a note: the dragged note becomes its last child.
+*   The line between two notes: the dragged note is placed between them. Below an expanded note, that line places it as the first child.
+
 ### Importing files
 
 A file or archive can easily be imported into Trilium just by dragging it inside the note tree.

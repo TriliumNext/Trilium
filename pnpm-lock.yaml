@@ -84,7 +84,7 @@ overrides:
   extract-zip>yauzl: 3.4.0
 
 patchedDependencies:
-  '@excalidraw/excalidraw@0.18.1': fad905a376f61a69d8d4c0840746664872303a9f3107ff45f929eec28c664125
+  '@excalidraw/excalidraw@0.18.1': ab1f9211ffc9c7f65505b0f4f17f9a7879f35a67c4a87efcd98c54e41743618a
   exceljs@4.4.0: 608c2aabb16393f2cc7f10e1e34a3b8b0f1b346e11be78dea365a09e40bb165f
   react-zoom-pan-pinch@4.2.0: 09dfeb6f635c52ef565ca21aec3f70eb129577661f85eb67262092e8cb9f8548
 
@@ -197,7 +197,7 @@ importers:
     dependencies:
       '@excalidraw/excalidraw':
         specifier: 0.18.1
-        version: 0.18.1(patch_hash=fad905a376f61a69d8d4c0840746664872303a9f3107ff45f929eec28c664125)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 0.18.1(patch_hash=ab1f9211ffc9c7f65505b0f4f17f9a7879f35a67c4a87efcd98c54e41743618a)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@floating-ui/dom':
         specifier: 1.8.0
         version: 1.8.0
@@ -814,7 +814,7 @@ importers:
     dependencies:
       '@excalidraw/excalidraw':
         specifier: 0.18.1
-        version: 0.18.1(patch_hash=fad905a376f61a69d8d4c0840746664872303a9f3107ff45f929eec28c664125)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 0.18.1(patch_hash=ab1f9211ffc9c7f65505b0f4f17f9a7879f35a67c4a87efcd98c54e41743618a)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@floating-ui/dom':
         specifier: 1.8.0
         version: 1.8.0
@@ -1310,6 +1310,9 @@ importers:
 
   packages/pdfjs-viewer:
     dependencies:
+      '@noble/hashes':
+        specifier: 2.4.0
+        version: 2.4.0
       '@triliumnext/commons':
         specifier: workspace:*
         version: link:../commons
@@ -1432,6 +1435,9 @@ importers:
       ejs:
         specifier: 7.0.2
         version: 7.0.2
+      fflate:
+        specifier: 0.8.3
+        version: 0.8.3
       i18next:
         specifier: 27.1.1
         version: 27.1.1(typescript@6.0.3)
@@ -13443,7 +13449,7 @@ snapshots:
       '@eslint/core': 1.2.1
       levn: 0.4.1
 
-  '@excalidraw/excalidraw@0.18.1(patch_hash=fad905a376f61a69d8d4c0840746664872303a9f3107ff45f929eec28c664125)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@excalidraw/excalidraw@0.18.1(patch_hash=ab1f9211ffc9c7f65505b0f4f17f9a7879f35a67c4a87efcd98c54e41743618a)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@braintree/sanitize-url': 6.0.2
       '@excalidraw/laser-pointer': 1.3.1

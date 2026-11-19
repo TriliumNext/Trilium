@@ -26,7 +26,8 @@ const ATTACHMENT_ROLE_NAMES: Record<NamedAttachmentRole, () => string> = {
     viewConfig: () => t("attachment_roles.viewConfig"),
     canvasLibraryItem: () => t("attachment_roles.canvasLibraryItem"),
     importSource: () => t("attachment_roles.importSource"),
-    transcript: () => t("attachment_roles.transcript")
+    transcript: () => t("attachment_roles.transcript"),
+    tocCache: () => t("attachment_roles.tocCache")
 };
 
 /**

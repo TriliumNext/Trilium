@@ -1,10 +1,14 @@
 import {
-    BLOCK_ID_ATTRIBUTE, type CreateReferenceRequest, generateBlockId, isValidBlockId,
+    BLOCK_ID_ATTRIBUTE, type CreateReferenceRequest, drawBlockId, generateBlockId, isValidBlockId,
     type ReferenceTarget
 } from "@triliumnext/commons";
-import { HTMLElement, type Node, parse, TextNode } from "node-html-parser";
+import {
+    findRequestedHeading, getHeadingLevel, getHeadingText, type HeadingTarget, isAnchor,
+    toReferenceTargets
+} from "@triliumnext/commons/src/lib/reference_targets.js";
+import { HTMLElement, type Node, parse } from "node-html-parser";
 
-import type { ReferenceProvider } from "./index.js";
+import { type ReferenceProvider, readContent } from "./index.js";
 
 /**
  * The headings and anchors of text notes. A heading links through `?block=` once it has a block
@@ -12,7 +16,10 @@ import type { ReferenceProvider } from "./index.js";
  */
 const textReferences: ReferenceProvider = {
     isFor: (type) => type === "text",
-    findTargets: (content) => typeof content === "string" ? findTextTargets(content) : [],
+    findTargets(source) {
+        const content = readContent(source);
+        return typeof content === "string" ? findTextTargets(content) : [];
+    },
     createReference(content, request) {
         if (typeof content !== "string" || request.kind !== "heading") {
             return null;
@@ -26,44 +33,31 @@ export default textReferences;
 /** The headings that have text, in document order, then the anchors, by name. */
 export function findTextTargets(content: string): ReferenceTarget[] {
     const { headings, anchors } = collectReferences(content);
-    return [
-        ...headings.map(({ level, title, blockId }): ReferenceTarget => (blockId
-            ? { kind: "heading", title, level, params: { block: blockId } }
-            : { kind: "heading", title, level })),
-        // Sorted as `getAnchorNames()` sorts them in the editor.
-        ...[ ...anchors ].sort((a, b) => a.localeCompare(b)).map((name): ReferenceTarget => (
-            { kind: "anchor", title: name, params: { bookmark: name } }
-        ))
-    ];
+    return toReferenceTargets(headings, anchors);
 }
 
 /**
  * `content` with a block id on the heading that `request` names, and the link parameters of the
  * heading. That heading is the one at `request.index` while its text is `request.title`, else the
  * only heading with that text. The content comes back unchanged when the heading has an id
- * already, and `null` when no heading matches.
+ * already, and `null` when no heading matches or `createId` draws no free id.
  */
 export function addHeadingReference(
     content: string, request: Pick<CreateReferenceRequest, "index" | "title">,
     createId: () => string
 ) {
-    const heading = findHeading(collectReferences(content).headings, request);
+    const heading = findRequestedHeading(collectReferences(content).headings, request);
     if (!heading) {
         return null;
     }
-    if (heading.blockId) {
-        return { content, params: { block: heading.blockId } };
+    if (heading.id) {
+        return { content, params: { block: heading.id } };
     }
 
-    // An id found nowhere in the content is not the id of another block either.
-    let blockId = createId();
-    while (content.includes(blockId)) {
-        blockId = createId();
-    }
-    return {
-        content: insertBlockId(content, heading.element, blockId),
-        params: { block: blockId }
-    };
+    const blockId = drawBlockId(content, createId);
+    return blockId
+        ? { content: insertBlockId(content, heading.element, blockId), params: { block: blockId } }
+        : null;
 }
 
 /**
@@ -89,17 +83,9 @@ export function insertBlockId(content: string, element: HTMLElement, blockId: st
 const MAY_HOLD_REFERENCES = /<(?:h[1-6]|a)[\s/>]/i;
 /** `getAttribute()` parses every attribute of an element, so it runs only when this matches. */
 const MAY_HOLD_BLOCK_ID = new RegExp(BLOCK_ID_ATTRIBUTE, "i");
-const HEADING_TAG = /^H([1-6])$/;
-/** The elements that `getHeadings()` in the editor reads as a space. */
-const SPACE_TAGS = new Set([ "BR", "IMG" ]);
 
-interface FoundHeading {
+interface FoundHeading extends HeadingTarget {
     element: HTMLElement;
-    /** 1 for `<h1>`, up to 6 for `<h6>`. */
-    level: number;
-    /** The plain text of the heading. */
-    title: string;
-    blockId?: string;
 }
 
 function collectReferences(content: string) {
@@ -124,7 +110,7 @@ function collectReferences(content: string) {
         if (level) {
             const title = getHeadingText(element);
             if (title) {
-                headings.push({ element, level, title, blockId });
+                headings.push({ element, level, title, id: blockId });
             }
         } else if (isAnchor(element)) {
             const anchorId = element.getAttribute("id");
@@ -134,30 +120,6 @@ function collectReferences(content: string) {
         }
     }
     return { headings, anchors };
-}
-
-/**
- * The text of `heading` as `getHeadings()` reads it in the editor: line breaks, images, formulas
- * and anchors read as a space. A heading inside it has an entry of its own.
- */
-function getHeadingText(heading: HTMLElement) {
-    let text = "";
-    const stack: Node[] = [];
-    pushChildren(stack, heading);
-    for (let node = stack.pop(); node; node = stack.pop()) {
-        if (node instanceof TextNode) {
-            text += node.text;
-        } else if (node instanceof HTMLElement && !getHeadingLevel(node)) {
-            const isFormula = node.classList.contains("math-tex");
-            if (isFormula || isAnchor(node) || SPACE_TAGS.has(node.tagName)) {
-                text += " ";
-            }
-            if (!isFormula) {
-                pushChildren(stack, node);
-            }
-        }
-    }
-    return text.replace(/\s+/g, " ").trim();
 }
 
 /**
@@ -180,25 +142,4 @@ function pushChildren(stack: Node[], node: Node) {
     for (let index = node.childNodes.length - 1; index >= 0; index--) {
         stack.push(node.childNodes[index]);
     }
-}
-
-function getHeadingLevel(element: HTMLElement) {
-    return Number(HEADING_TAG.exec(element.tagName)?.[1] ?? 0);
-}
-
-/** Whether `element` is an anchor: CKEditor reads an `<a>` without `href` as a bookmark. */
-function isAnchor(element: HTMLElement) {
-    return element.tagName === "A" && !element.hasAttribute("href");
-}
-
-/** The heading at `index` while its text is `title`, else the only heading with that text. */
-function findHeading(
-    headings: FoundHeading[], { index, title }: Pick<CreateReferenceRequest, "index" | "title">
-) {
-    if (headings[index]?.title === title) {
-        return headings[index];
-    }
-
-    const matches = headings.filter((heading) => heading.title === title);
-    return matches.length === 1 ? matches[0] : null;
 }

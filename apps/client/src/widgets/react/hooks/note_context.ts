@@ -131,6 +131,34 @@ export function useSameNoteSwitch(
     });
 }
 
+/** The widget that {@link useLinkTargetLanding} lands the links in. */
+export interface LandingWidget {
+    /** The note that the widget shows. */
+    note: FNote | null | undefined;
+    ntxId: string | null | undefined;
+    /** False while `NoteDetail` keeps the widget mounted but the pane shows another one. */
+    isVisible?: boolean;
+}
+
+/**
+ * Lands on the target of a link to the note that the widget shows: calls `land` after a render
+ * that changes `contentDeps` or shows the widget, and on a switch to the same note
+ * (`useSameNoteSwitch()`). A hidden widget leaves the target to the one on display. While the
+ * content does not show the note, `land` leaves the target in the view scope for a later call.
+ */
+export function useLinkTargetLanding(
+    { note, ntxId, isVisible }: LandingWidget,
+    land: () => void,
+    contentDeps: unknown[] = []
+) {
+    useEffect(() => {
+        if (isVisible !== false) land();
+    }, [ ...contentDeps, isVisible ]);
+    useSameNoteSwitch(note, ntxId, () => {
+        if (isVisible !== false) land();
+    });
+}
+
 /**
  * Indicates that the current note is in read-only mode, while an editing mode is available,
  * and provides a way to switch to editing mode. `isLocked` marks a note that no editing mode can

@@ -168,7 +168,7 @@ export default function ContentEmbed({
                     className="include-note-open"
                     action={getOpenInNewTabAction(notePath, viewScope)}
                 />}
-                {isExcerpt && (
+                {isExcerpt && contentType === "text" && (
                     <ExcerptEditButton
                         contentRef={contentRef}
                         content={content}

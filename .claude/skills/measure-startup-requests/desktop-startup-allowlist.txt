@@ -386,6 +386,7 @@ ws://*/
 ? /src/menus/electron_context_menu.ts
 ? /src/services/mime_types.ts
 ? /src/services/native_window.ts
+? /src/services/note_save.ts
 ? /src/services/note_types.ts
 ? /src/widgets/PromotedAttributes.css
 ? /src/widgets/PromotedAttributes.tsx

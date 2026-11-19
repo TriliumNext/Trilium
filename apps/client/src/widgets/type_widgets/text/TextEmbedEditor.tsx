@@ -17,7 +17,7 @@ import { useTriliumEvent } from "../../react/hooks/events";
 import { useNoteContext } from "../../react/hooks/note_context";
 import { useLegacyComponentElement } from "../../react/hooks/legacy";
 import { registerEmbedFindTarget } from "./content_embed_tools";
-import EditableText, { getBlockData } from "./EditableText";
+import EditableText, { getBlockData, getNoteData } from "./EditableText";
 import {
     EmbedEditorShownContext, findTextEditorIn, NestedEmbedContext, useEmbedBadgeSlot,
     useEmbedCaretNavigation, useTextNoteVimMode
@@ -72,7 +72,7 @@ export default function TextEmbedEditor({
         if (!editor) return;
 
         const content = block === undefined
-            ? editor.getData()
+            ? getNoteData(editor)
             : getBlockData(editor, block).content;
         onCloseRef.current(content, save);
     }, [ component, noteContext, ntxId ]);

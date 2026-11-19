@@ -462,6 +462,8 @@ describe("getContentClasses", () => {
     it("styles text and Markdown notes as the editor's content, and marks empty content", () => {
         expect(classes("text", "text/html")).toBe("type-text ck-content");
         expect(classes("code", "text/x-markdown")).toBe("type-code ck-content");
+        expect(classes("code", "text/markdown")).toBe("type-code ck-content");
+        expect(classes("code", "text/x-gfm")).toBe("type-code ck-content");
         expect(classes("text", "text/html", true)).toBe("type-text ck-content no-content");
     });
 

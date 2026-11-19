@@ -160,6 +160,24 @@ describe("bulk_actions service (real DB)", () => {
         });
     });
 
+    it("renameLabel / renameRelation keep inheritable attributes inheritable", () => {
+        const note = createNote("root");
+        getContext().init(() => {
+            note.note.addLabel("color", "red", true);
+            note.note.addRelation("link", "root", true);
+            bulkActionService.executeActions(
+                [
+                    { name: "renameLabel", oldLabelName: "color", newLabelName: "shade" },
+                    { name: "renameRelation", oldRelationName: "link", newRelationName: "ref" }
+                ],
+                [note.note.noteId]
+            );
+        });
+
+        expect(note.note.getOwnedLabel("shade")).toMatchObject({ value: "red", isInheritable: true });
+        expect(note.note.getOwnedRelation("ref")).toMatchObject({ value: "root", isInheritable: true });
+    });
+
     describe("renameNote", () => {
         it("evaluates the new title as a template with `note` in scope", () => {
             const note = createNote("root");

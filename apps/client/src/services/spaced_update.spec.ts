@@ -520,6 +520,63 @@ describe("SpacedUpdate", () => {
 
             expect(commits).toEqual(["async snapshot"]);
         });
+
+        it("drops the queued and the pending change of a discarded key", async () => {
+            const editor = { content: "first" };
+            const commits: string[] = [];
+            let finishFirstCommit = () => {};
+            const firstCommitDone = new Promise<void>((resolve) => {
+                finishFirstCommit = resolve;
+            });
+            const spacedUpdate = new SpacedUpdate<string>({
+                key: "A",
+                prepare: () => editor.content,
+                commit: async (data) => {
+                    commits.push(data);
+                    if (commits.length === 1) await firstCommitDone;
+                }
+            }, 50);
+
+            spacedUpdate.scheduleUpdate();
+            const firstSave = spacedUpdate.updateNowIfNecessary();
+            editor.content = "queued";
+            spacedUpdate.scheduleUpdate();
+            expect(spacedUpdate.isAllSavedAndTriggerUpdate()).toBe(false);
+            editor.content = "pending";
+            spacedUpdate.scheduleUpdate();
+
+            spacedUpdate.discard("B");
+            expect(spacedUpdate.hasUnsavedChanges()).toBe(true);
+            spacedUpdate.discard("A");
+            finishFirstCommit();
+            await firstSave;
+            await vi.runAllTimersAsync();
+            expect(commits).toEqual([ "first" ]);
+            expect(spacedUpdate.isAllSavedAndTriggerUpdate()).toBe(true);
+        });
+
+        it("drops a snapshot of a discarded key that is still being taken", async () => {
+            let resolvePrepare = (_data: string) => {};
+            const commits: string[] = [];
+            const spacedUpdate = new SpacedUpdate<string>({
+                key: "A",
+                prepare: () => new Promise<string>((resolve) => {
+                    resolvePrepare = resolve;
+                }),
+                commit: async (data) => {
+                    commits.push(data);
+                }
+            }, 50);
+
+            spacedUpdate.scheduleUpdate();
+            const save = spacedUpdate.updateNowIfNecessary();
+            spacedUpdate.discard("A");
+            resolvePrepare("typed");
+            await save;
+
+            expect(commits).toEqual([]);
+            expect(spacedUpdate.hasUnsavedChanges()).toBe(false);
+        });
     });
 
     describe("allowUpdateWithoutChange", () => {

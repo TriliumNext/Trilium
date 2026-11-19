@@ -91,7 +91,9 @@
     "heading_reference_failed": "Unable to create reference to the given heading",
     "link_to_heading": "Link to a heading",
     "link_to_anchor": "Link to an anchor",
-    "no_link_targets": "There are no headings and anchors available to link to."
+    "no_link_targets": "There are no headings and anchors available to link to.",
+    "open_file_for_targets": "Open the file to list its headings.",
+    "listing_changed": "The note changed while its headings were listed. Pick the heading again."
   },
   "branch_prefix": {
     "edit_branch_prefix": "Edit branch prefix",
@@ -576,7 +578,11 @@
     "source_description_etapi": "Created via the External Trilium API",
     "source_description_llm": "Created by the AI assistant",
     "source_description_restore": "Saved before restoring a previous revision",
-    "source_description_unknown": "Source not available"
+    "source_description_unknown": "Source not available",
+    "source_description_draft": "Unsaved changes, kept after the note changed elsewhere",
+    "source_description_fragment": "Unsaved changes to an excerpt whose blocks are gone",
+    "fragment_not_restorable": "This revision holds only some blocks of the note, which are no longer in it. It cannot be restored, but it can be copied.",
+    "copy_button": "Copy"
   },
   "sort_child_notes": {
     "sort_children_by": "Sort children by...",
@@ -1287,7 +1293,8 @@
     "note_map": "Note map",
     "search_in_note_short": "Find",
     "note_attachments_short": "Attachments",
-    "note_settings": "Note settings"
+    "note_settings": "Note settings",
+    "convert_block_references_changed": "References to blocks of this note that no longer work: {{lost}} lost, {{moved}} pointing at another block. The revision saved before the conversion keeps the note as it was."
   },
   "onclick_button": {
     "no_click_handler": "Button widget '{{componentId}}' has no defined click handler"
@@ -2569,7 +2576,8 @@
     "viewConfig": "View settings",
     "canvasLibraryItem": "Canvas library",
     "importSource": "Import source",
-    "transcript": "Meeting transcript"
+    "transcript": "Meeting transcript",
+    "tocCache": "Table of contents cache"
   },
   "bookmark_switch": {
     "bookmark": "Bookmark"
@@ -5238,7 +5246,11 @@
     "untitled": "Block",
     "excerpt": "Excerpt",
     "excerpt_description": "You are currently seeing just a fragment of this note. Press the {{icon}} button to open the entire note in a new tab.",
-    "edit_excerpt": "Edit excerpt"
+    "edit_excerpt": "Edit excerpt",
+    "inert_marker": "Reference {{id}} marks no block",
+    "remove_reference": "Remove reference",
+    "copy_failed": "The reference could not be created.",
+    "paste_failed": "The reference could not be pasted here."
   },
   "block_handle_menu": {
     "block_count_one": "{{count}} block",
@@ -5477,5 +5489,18 @@
     "untitled": "Protected note",
     "password": "Password",
     "password_description": "The password you use for protected notes."
+  },
+  "note_save": {
+    "conflict_title": "Changed elsewhere",
+    "conflict_message": "This note was changed elsewhere while you were editing it. Choose the version to keep; the other one is kept as a revision.",
+    "conflict_message_unversioned": "This note was changed elsewhere while you were editing it. Choose the version to keep; the note keeps no revisions, so the other one is discarded.",
+    "keep_this_version": "Keep this version",
+    "load_other_version": "Load the other version",
+    "draft_kept": "Your unsaved changes were kept as a revision of the note.",
+    "draft_discarded": "Your unsaved changes were discarded, as the note keeps no revisions.",
+    "draft_kept_after_conversion": "The note was converted while you were editing it. Your unsaved changes were kept as a revision.",
+    "draft_discarded_after_conversion": "The note was converted while you were editing it, and keeps no revisions, so your unsaved changes were discarded.",
+    "draft_kept_blocks_gone": "The blocks that you were editing were changed elsewhere and can no longer be edited here. Your unsaved changes were kept as a revision.",
+    "draft_discarded_blocks_gone": "The blocks that you were editing were changed elsewhere and can no longer be edited here. The note keeps no revisions, so your unsaved changes were discarded."
   }
 }

@@ -545,7 +545,13 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                             .map((note) => note.branchId)
                             .filter((branchId) => branchId) as string[];
 
-                        if (data.hitMode === "before") {
+                        // The marker for "after" an expanded note sits above its first child, so the
+                        // drop goes there rather than to the note's next sibling.
+                        const firstChild = data.hitMode === "after" ? firstChildBelow(node) : undefined;
+
+                        if (firstChild) {
+                            branchService.moveBeforeBranch(selectedBranchIds, firstChild.data.branchId);
+                        } else if (data.hitMode === "before") {
                             branchService.moveBeforeBranch(selectedBranchIds, node.data.branchId);
                         } else if (data.hitMode === "after") {
                             branchService.moveAfterBranch(selectedBranchIds, node.data.branchId);
@@ -1970,6 +1976,17 @@ export function publishDropMarkerShift(node: Fancytree.FancytreeNode) {
     // On the body, since the marker is parented there and custom properties inherit; it is also
     // created lazily, so it cannot be relied on to exist when the first note is dragged over.
     document.body.style.setProperty("--tree-drop-marker-shift", `${shift}px`);
+
+    // A drop "after" an expanded note lands before its first child, so the line starts at that
+    // child's indent, as it does when the pointer is over the child itself.
+    const childTitle = firstChildBelow(node)?.span?.querySelector(".fancytree-title");
+    const indent = childTitle ? childTitle.getBoundingClientRect().left - title.getBoundingClientRect().left : 0;
+    document.body.style.setProperty("--tree-drop-marker-indent", `${indent}px`);
+}
+
+/** The child that a drop "after" `node` goes before, which is its first child while it is expanded. */
+function firstChildBelow(node: Fancytree.FancytreeNode) {
+    return node.isExpanded() ? node.children?.[0] : undefined;
 }
 
 type ScrollIntoViewFn = (this: Fancytree.FancytreeNode, effects?: boolean | object, options?: object) => JQueryPromise<unknown>;

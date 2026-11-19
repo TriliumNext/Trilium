@@ -422,6 +422,20 @@ describe("LinkMentionList", () => {
         expect(consoleError).toHaveBeenCalledOnce();
     });
 
+    it("links nothing, with an error, for headings listed before the note changed", async () => {
+        const showError = vi.spyOn(toast, "showError").mockImplementation(() => {});
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+        createHeadingReference.mockRejectedValueOnce(
+            JSON.stringify({ reason: "listing", message: "Changed" }));
+        const { onPick } = await showAlphaLinked();
+        await clickRow("Setup");
+
+        expect(createHeadingReference).toHaveBeenCalledOnce();
+        expect(await onPick.mock.calls[0]?.[0]).toBeUndefined();
+        expect(showError).toHaveBeenCalledExactlyOnceWith("add_link.listing_changed");
+        expect(consoleError).not.toHaveBeenCalled();
+    });
+
     it("picks a heading or an anchor only once the link is in the text", async () => {
         const { press, draw, onPick, onKeepLink } = await show("al");
         await press("Enter");

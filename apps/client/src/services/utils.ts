@@ -1,6 +1,7 @@
 import {
     filterAttributeName, isValidAttributeName
 } from "@triliumnext/commons/src/lib/attribute_names.js";
+import { BLOCK_ID_ATTRIBUTE } from "@triliumnext/commons/src/lib/block_reference.js";
 import type { ViteHotContext } from "vite/types/hot.js";
 
 import FNote from "../entities/fnote";
@@ -431,6 +432,8 @@ export function isHtmlEmpty(html: string) {
         !html.includes("<section") &&
         !html.includes("include-note") &&
         !html.includes("link-mention") &&
+        // A block with an id is content: references point at it.
+        !html.includes(BLOCK_ID_ATTRIBUTE) &&
         // the line below will actually attempt to load images so better to check for images first
         $("<div>").html(html).text().trim().length === 0
     );

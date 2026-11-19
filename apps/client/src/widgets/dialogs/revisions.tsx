@@ -12,6 +12,7 @@ import { Dispatch, StateUpdater, useEffect, useLayoutEffect, useRef, useState } 
 
 import appContext from "../../components/app_context";
 import FNote from "../../entities/fnote";
+import { copyHtmlWithToast } from "../../services/clipboard_ext";
 import { dayjs } from "../../services/dayjs.js";
 import dialog from "../../services/dialog";
 import froca from "../../services/froca";
@@ -26,6 +27,7 @@ import server from "../../services/server";
 import toast from "../../services/toast";
 import utils from "../../services/utils";
 import ActionButton from "../react/ActionButton";
+import Alert from "../react/Alert";
 import Button from "../react/Button";
 import Dropdown from "../react/Dropdown";
 import FormList, { FormDropdownDivider, FormListItem } from "../react/FormList";
@@ -319,7 +321,9 @@ const REVISION_SOURCE_ICONS: Record<string, string> = {
     manual: "bx bx-save",
     etapi: "bx bx-code-alt",
     llm: "bx bx-bot",
-    restore: "bx bx-history"
+    restore: "bx bx-history",
+    draft: "bx bx-git-compare",
+    fragment: "bx bx-git-compare"
 };
 const DEFAULT_REVISION_ICON = "bx bx-file";
 
@@ -465,6 +469,9 @@ function RevisionToolbar({ revisionItem, showDiff, setShowDiff, setShown, showAc
                     )}
                 </div>
             )}
+            {revisionItem?.source === "fragment" && (
+                <Alert type="info">{t("revisions.fragment_not_restorable")}</Alert>
+            )}
             {revisionItem && (
                 <RevisionDescription
                     revisionItem={revisionItem}
@@ -523,22 +530,30 @@ function RevisionActions({ revisionItem, setShown, onRevisionDeleted, variant }:
             toast.showMessage(t("revisions.revision_restored"));
         }
     };
+    const onCopy = async () => {
+        const { content } = await server.get<RevisionPojo>(`revisions/${revisionItem.revisionId}`);
+        if (typeof content === "string") {
+            await copyHtmlWithToast(content);
+        }
+    };
 
-    if (variant === "footer") {
-        return (
-            <>
-                <ActionButton icon="bx bx-trash" text={t("revisions.delete_button")} onClick={onDelete} frame />
-                <ActionButton icon="bx bx-download" text={t("revisions.download_button")} onClick={onDownload} frame />
-                <Button kind="primary" icon="bx bx-history" text={t("revisions.restore_button")} onClick={onRestore} />
-            </>
+    // The edited blocks of an excerpt, kept alone, can be copied and not restored.
+    const lastAction = revisionItem.source === "fragment"
+        ? <Button icon="bx bx-copy" text={t("revisions.copy_button")} onClick={onCopy} />
+        : (
+            <Button
+                kind={variant === "footer" ? "primary" : undefined}
+                icon="bx bx-history"
+                text={t("revisions.restore_button")}
+                onClick={onRestore}
+            />
         );
-    }
 
     return (
         <>
             <ActionButton icon="bx bx-trash" text={t("revisions.delete_button")} onClick={onDelete} frame />
             <ActionButton icon="bx bx-download" text={t("revisions.download_button")} onClick={onDownload} frame />
-            <Button icon="bx bx-history" text={t("revisions.restore_button")} onClick={onRestore} />
+            {lastAction}
         </>
     );
 }

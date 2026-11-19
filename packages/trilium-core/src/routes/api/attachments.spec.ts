@@ -1,4 +1,6 @@
-import { CANVAS_ATTACHMENT_MIME } from "@triliumnext/commons";
+import {
+    CANVAS_ATTACHMENT_MIME, type SaveConflictResponse, type SavedAttachmentBase
+} from "@triliumnext/commons";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { getImageProvider } from "../../services/image_provider";
@@ -353,6 +355,85 @@ describe("Attachments API (core)", () => {
             const list = await api.get<AttachmentPojo[]>(`/api/notes/${noteId}/attachments`);
             // Each save matched the existing attachment and replaced its content, so no other one appeared.
             expect(list.body.map((a) => a.attachmentId)).toEqual([ original.attachmentId ]);
+        });
+
+        it("refuses a save based on a blob that the attachment no longer has", async () => {
+            const { noteId } = await createTextNote(api, { title: "Conflict owner" });
+            const original = await saveAttachment(noteId, { title: "Drawing", content: "v1" });
+            const url = `/api/notes/${noteId}/attachments`;
+            const { attachmentId } = original;
+            const row = { attachmentId, role: "file", mime: "text/plain", title: "Drawing" };
+            const readContent = async () => (await api.get<{ content: string }>(
+                `/api/attachments/${attachmentId}/blob`)).body.content;
+            const countRevisions = () => getSql().getValue<number>(
+                "SELECT COUNT(*) FROM revisions WHERE noteId = ?", [ noteId ]);
+
+            const saved = await api.post<SavedAttachmentBase>(url, {
+                body: { ...row, content: "v2", blobId: original.blobId }
+            });
+            expect(saved.status).toBe(200);
+            expect(saved.body).toMatchObject({ attachmentId, title: "Drawing" });
+            expect(saved.body.blobId).not.toBe(original.blobId);
+
+            // Based on the blob that the save above replaced.
+            const refused = await api.post<SaveConflictResponse>(url, {
+                body: { ...row, content: "v3", blobId: original.blobId }
+            });
+            expect(refused.status).toBe(409);
+            expect(refused.body).toMatchObject({
+                reason: "version", type: "text", isVersioned: true,
+                attachments: [ { attachmentId, title: "Drawing", blobId: saved.body.blobId } ]
+            });
+            expect(await readContent()).toBe("v2");
+
+            // Keeping this version saves over the other one, which a revision of the note keeps.
+            const revisions = countRevisions();
+            const kept = await api.post<SavedAttachmentBase>(url, {
+                body: { ...row, content: "v3", blobId: saved.body.blobId, keepOther: true }
+            });
+            expect(kept.status).toBe(200);
+            expect(await readContent()).toBe("v3");
+            expect(countRevisions()).toBe(revisions + 1);
+
+            // A save without a blob replaces the attachment as it is, and one keeping needs it.
+            const unconditional = await api.post(url, { body: { ...row, content: "v4" } });
+            expect(unconditional.status).toBe(204);
+            expect(await readContent()).toBe("v4");
+            const keepingBlind = await api.post(url, {
+                body: { ...row, content: "v5", keepOther: true }
+            });
+            expect(keepingBlind.status).toBe(400);
+            expect(await readContent()).toBe("v4");
+        });
+
+        it("checks the blob of a save by title, and creates one without an ID", async () => {
+            const { noteId } = await createTextNote(api, { title: "Conflict by title" });
+            const original = await saveAttachment(noteId, { title: "Drawing", content: "v1" });
+            const url = `/api/notes/${noteId}/attachments`;
+            const row = { role: "file", mime: "text/plain", title: "Drawing" };
+            const byTitle = { matchBy: "title" };
+
+            const refused = await api.post<SaveConflictResponse>(url, {
+                query: byTitle, body: { ...row, content: "v2", blobId: "stale" }
+            });
+            expect(refused.status).toBe(409);
+            const saved = await api.post<SavedAttachmentBase>(url, {
+                query: byTitle, body: { ...row, content: "v2", blobId: original.blobId }
+            });
+            expect(saved.status).toBe(200);
+            expect(saved.body.attachmentId).toBe(original.attachmentId);
+
+            const created = await api.post<SavedAttachmentBase>(url, {
+                body: { ...row, content: "v3", blobId: "any" }
+            });
+            expect(created.status).toBe(200);
+            expect(created.body.attachmentId).not.toBe(original.attachmentId);
+
+            const invalid = await api.post(url, { body: { ...row, content: "v4", blobId: 42 } });
+            expect(invalid.status).toBe(400);
+            const list = await api.get<AttachmentPojo[]>(`/api/notes/${noteId}/attachments`);
+            expect(list.body.map((a) => a.attachmentId).toSorted()).toStrictEqual(
+                [ original.attachmentId, created.body.attachmentId ].toSorted());
         });
 
         it("404s when saving an attachment on a missing note", async () => {

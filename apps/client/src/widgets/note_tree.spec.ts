@@ -5,6 +5,7 @@ import appContext from "../components/app_context.js";
 import type { EventData } from "../components/app_context.js";
 import type TabManager from "../components/tab_manager.js";
 import FBranch from "../entities/fbranch.js";
+import branchService from "../services/branches.js";
 import froca from "../services/froca.js";
 import hoistedNoteService from "../services/hoisted_note.js";
 import keyboardActionsService from "../services/keyboard_actions.js";
@@ -363,18 +364,31 @@ describe("NoteTreeWidget", () => {
 describe("the drop marker's distance from the row boundary", () => {
     const shift = () => document.body.style.getPropertyValue("--tree-drop-marker-shift");
 
-    /** A row of `rowHeight` around a title of `titleHeight`, which is all the measurement reads. */
-    function nodeWithRow(rowHeight: number, titleHeight: number) {
+    const indent = () => document.body.style.getPropertyValue("--tree-drop-marker-indent");
+
+    /** A row of `rowHeight` around a title of `titleHeight` starting at `titleLeft`. */
+    function nodeWithRow(rowHeight: number, titleHeight: number, titleLeft = 0, children: Fancytree.FancytreeNode[] = [], expanded = false) {
         const row = document.createElement("span");
         const title = document.createElement("span");
         title.className = "fancytree-title";
         row.appendChild(title);
 
         vi.spyOn(row, "getBoundingClientRect").mockReturnValue({ height: rowHeight } as DOMRect);
-        vi.spyOn(title, "getBoundingClientRect").mockReturnValue({ height: titleHeight } as DOMRect);
+        vi.spyOn(title, "getBoundingClientRect").mockReturnValue({ height: titleHeight, left: titleLeft } as DOMRect);
 
-        return { span: row } as Fancytree.FancytreeNode;
+        return { span: row, children, isExpanded: () => expanded } as unknown as Fancytree.FancytreeNode;
     }
+
+    it("lines up the marker below an expanded note with its first child", () => {
+        const child = nodeWithRow(34, 18, 44);
+
+        // The drop lands before the first child, so the line starts where that child's title does.
+        publishDropMarkerShift(nodeWithRow(34, 18, 24, [ child ], true));
+        expect(indent()).toBe("20px");
+
+        publishDropMarkerShift(nodeWithRow(34, 18, 24, [ child ], false));
+        expect(indent()).toBe("0px");
+    });
 
     it("is half the room the row leaves around its title", () => {
         // dnd5 anchors on the title's edge, which is that far from the boundary the note lands on.
@@ -521,5 +535,34 @@ describe("drags onto the tree", () => {
         const editorTypes = [ "text/plain", "text/html", "application/ckeditor5-dragging-uid" ];
         expect(dnd.dragEnter(target, dragOf(...editorTypes))).toBe(false);
         expect(dnd.dragEnter(target, dragOf("text/plain", "text/html"))).toBe(true);
+    });
+
+    it("drops below an expanded note as its first child, not as its next sibling", async () => {
+        vi.spyOn(hoistedNoteService, "getHoistedNoteId").mockReturnValue("root");
+        const moveBefore = vi.spyOn(branchService, "moveBeforeBranch").mockResolvedValue(true);
+        const moveAfter = vi.spyOn(branchService, "moveAfterBranch").mockResolvedValue(true);
+        const dnd = await getDndHandlers();
+
+        const grandparent = { data: { noteId: "grandparent", noteType: "text" } };
+        const firstChild = { data: { noteId: "first", branchId: "parent_first", noteType: "text" } };
+        const parentNode = (expanded: boolean) => ({
+            data: { noteId: "parent", branchId: "grandparent_parent", noteType: "text" },
+            children: [ firstChild ],
+            isExpanded: () => expanded,
+            getParent: () => grandparent
+        });
+        const dropAfter = (node: unknown) => dnd.dragDrop(node, {
+            hitMode: "after",
+            dataTransfer: { files: [], getData: () => JSON.stringify([ { noteId: "moved", branchId: "x_moved" } ]) }
+        });
+
+        await dropAfter(parentNode(true));
+        expect(moveBefore).toHaveBeenCalledWith([ "x_moved" ], "parent_first");
+        expect(moveAfter).not.toHaveBeenCalled();
+
+        moveBefore.mockClear();
+        await dropAfter(parentNode(false));
+        expect(moveAfter).toHaveBeenCalledWith([ "x_moved" ], "grandparent_parent");
+        expect(moveBefore).not.toHaveBeenCalled();
     });
 });

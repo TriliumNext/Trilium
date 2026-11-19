@@ -55,6 +55,7 @@ Additionally, revisions can also come from somewhere else, and this is indicated
 *   <span class="tn-icon bx bx-code-alt"></span> Generated externally, by <a class="reference-link" href="../../Advanced%20Usage/ETAPI%20(REST%20API).md">ETAPI (REST API)</a>.
 *   <span class="tn-icon bx bx-bot"></span> A modification created by <a class="reference-link" href="../../AI.md">AI</a>.
 *   <span class="tn-icon bx bx-history"></span> A revision is restored, causing the existing note content to be saved as a revision to prevent potential data loss.
+*   <span class="tn-icon bx bx-git-compare"></span> Your unsaved changes, kept because they could not be saved into the note (see _Changes made elsewhere_ below).
 
 #### Snapshot interval
 
@@ -69,3 +70,14 @@ The limit on the number of note snapshots can be configured in the Options → O
 The note limit will not take effect immediately; it will only apply when the note is modified.
 
 You can click the _Erase now_ button under _Erase excess revision snapshots_ to apply the changes immediately.
+
+## Changes made elsewhere
+
+If a note changes elsewhere while you edit it, for example in another window or on another device, Trilium asks which version to keep:
+
+*   _Keep this version_ saves your changes. The other version is kept as a revision.
+*   _Load the other version_ shows the other version. Your changes are kept as a revision.
+
+If the note keeps no revisions, the version you don't choose is discarded.
+
+Your changes are also kept as a revision if the note is converted to another type while you edit it, or if the blocks of an excerpt you edit are changed elsewhere and can no longer be edited apart. A revision that holds only the blocks of an excerpt cannot be restored, but you can copy it.

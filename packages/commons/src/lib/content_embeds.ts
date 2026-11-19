@@ -1,4 +1,4 @@
-import { encodeBlockParameter } from "./block_reference.js";
+import { encodeBlockParameter, ENTITY_ID_PATTERN as ENTITY_ID } from "./block_reference.js";
 
 /**
  * Where an embed sits: what has been rendered on the path down to it, and how deep embedding goes.
@@ -169,8 +169,6 @@ export const CAPTIONED_CONTENT_EMBED_CLASS = "captioned-content-embed";
  * attachment.
  */
 export const CONTENT_EMBED_KIND_ATTRIBUTE = "data-trilium-embed";
-
-const ENTITY_ID = /^[a-zA-Z0-9_]+$/;
 
 /** The key of an embed in `seenNoteIds`. A note can embed blocks of itself. */
 export function getEmbedKey(noteId: string, block: string | null | undefined) {

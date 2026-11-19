@@ -220,6 +220,29 @@ describe("ShareThemeExportProvider", () => {
             expect(out).toContain('href=""');
         });
 
+        it("keeps the blocks and the bookmark that a note link points at", () => {
+            const note = { noteId: "linkNote", getBestNotePath: () => [ "root", "linkNote" ] };
+            mockBecca.getNote.mockReturnValue(null);
+            mockContentRenderer.renderNoteForExport.mockReturnValue(
+                `<a href="./otherNote123?block=a:b%20c">range</a>`
+                + `<a href="./otherNote123?block=a#Set%20up">both</a>`
+                + `<a href="./otherNote123#Set%20up">bookmark</a>`
+                + `<a href="./rootNote1234?block=r">root</a>`
+            );
+
+            const p = makeProvider();
+            (p as any).rootMeta = { noteId: "rootNote1234" };
+            const noteMeta: any = {
+                notePath: [ "root", "rootNote1234", "linkNote" ], attachments: []
+            };
+
+            const out = String(p.prepareContent("t", "<p>c</p>", noteMeta, note as any, {} as any));
+            expect(out).toContain(`href="#root/otherNote123?block=a:b%20c">range`);
+            expect(out).toContain(`href="#root/otherNote123?block=a#Set%20up">both`);
+            expect(out).toContain(`href="#root/otherNote123#Set%20up">bookmark`);
+            expect(out).toContain(`href="../?block=r">root`);
+        });
+
         it("links the notes of an app view to their pages, the root to the base path", () => {
             const note = { noteId: "viewNote", getBestNotePath: () => [ "root", "viewNote" ] };
             mockBecca.getNote.mockReturnValue(null);
@@ -416,7 +439,10 @@ describe("hasMermaidDiagrams", () => {
 
         const fenced = "# Title\n\n~~~ mermaid\ngraph TD;\n~~~";
 
-        expect(hasMermaidDiagrams(subtreeOf({ ...markdown, content: fenced }))).toBe(true);
+        for (const mime of [ "text/x-markdown", "text/markdown", "text/x-gfm" ]) {
+            const note = subtreeOf({ type: "code", mime, content: fenced });
+            expect(hasMermaidDiagrams(note)).toBe(true);
+        }
         expect(hasMermaidDiagrams(subtreeOf(
             { ...markdown, content: "Inline ```mermaid is not a fence.\n\n```js\nmermaid();\n```" },
             { type: "code", mime: "application/javascript", content: "```mermaid" }

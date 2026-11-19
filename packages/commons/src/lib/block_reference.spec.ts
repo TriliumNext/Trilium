@@ -1,20 +1,31 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
     BLOCK_ID_ATTRIBUTE,
     type BlockNode,
+    decodeBlockMarkerId,
+    drawBlockId,
     encodeBlockParameter,
+    findBlockIdAttributes,
+    findBlockMarkers,
+    findOwnElementById,
+    formatBlockMarker,
     formatBlockRange,
     generateBlockId,
+    getContentScopes,
     getEditableBlockRun,
     getListItemNumber,
+    isNoteEmbed,
     isValidBlockId,
     MULTICOLUMN_COLUMN_CLASS,
     MULTICOLUMN_LAYOUT_CLASS,
     parseBlockRange,
+    removeBlockMarkers,
     resolveBlockRange,
     resolveBlockReference,
-    sliceToBlockReference
+    sliceToBlockReference,
+    stripBlockMarkers,
+    walkOwnContent
 } from "./block_reference.js";
 
 describe("parseBlockRange", () => {
@@ -67,6 +78,23 @@ describe("generateBlockId", () => {
             expect(id).toMatch(/^[A-Za-z0-9]{12}$/);
             expect(isValidBlockId(id)).toBe(true);
         }
+    });
+});
+
+describe("drawBlockId", () => {
+    it("draws again while the id is invalid or the content holds it, sixteen times at most", () => {
+        const createId = vi.fn()
+            .mockReturnValueOnce("Taken")
+            .mockReturnValueOnce("a:b")
+            .mockReturnValueOnce("")
+            .mockReturnValue("Free");
+
+        expect(drawBlockId("<p>Taken</p>", createId)).toBe("Free");
+        expect(createId).toHaveBeenCalledTimes(4);
+
+        const repeating = vi.fn(() => "Taken");
+        expect(drawBlockId("<p>Taken</p>", repeating)).toBeNull();
+        expect(repeating).toHaveBeenCalledTimes(16);
     });
 });
 
@@ -314,6 +342,115 @@ describe("getEditableBlockRun", () => {
             expect(getEditableBlockRun(root, value), value).toBeNull();
         }
         expect(getEditableBlockRun(root, "s")).not.toBeNull();
+    });
+});
+
+describe("block markers", () => {
+    it("writes a marker with every character outside [A-Za-z0-9_.-] as a reference", () => {
+        expect(formatBlockMarker("aB3_.-z")).toBe(`<a data-trilium-block-id="aB3_.-z"></a>`);
+        expect(formatBlockMarker("a b|$`\"&<\u{1F600}")).toBe(`<a data-trilium-block-id="`
+            + `a&#32;b&#124;&#36;&#96;&#34;&#38;&#60;&#128512;"></a>`);
+        for (const id of [ "a b|$`\"&<\u{1F600}", "plain", "é" ]) {
+            expect(findBlockMarkers(formatBlockMarker(id))[0]?.id).toBe(id);
+        }
+    });
+
+    it("decodes an id, and refuses an empty one, a colon and a reference to nothing", () => {
+        expect(decodeBlockMarkerId("a&amp;b")).toBe("a&b");
+        for (const value of [ "", "a:b", "a&#58;b", "&#x3A;", "&#x110000;", "&#xD800;", "&#0;" ]) {
+            expect(decodeBlockMarkerId(value), value).toBeNull();
+        }
+    });
+
+    it("finds the markers of a text in their read forms, and every block id attribute", () => {
+        const source = `a <a data-trilium-block-id="x"></a> b <a data-trilium-block-id='y' />`
+            + ` <a data-trilium-block-id="a:b"> <p class="p" data-trilium-block-id=z>`
+            + ` <a data-trilium-block-id="split\n"></a>`;
+        expect(findBlockMarkers(source).map(({ id }) => id)).toEqual([ "x", "y", null ]);
+        expect(findBlockMarkers(source)[0]).toEqual({ from: 2, to: 35, id: "x" });
+        expect(findBlockIdAttributes(source).map(({ id }) => id))
+            .toEqual([ "x", "y", null, "z", "split\n" ]);
+        const [ first ] = findBlockIdAttributes(source);
+        expect(source.slice(first.from, first.to)).toBe(` data-trilium-block-id="x"`);
+    });
+
+    it("strips markers in any spelling, with the white space in front of each", () => {
+        expect(stripBlockMarkers(`Title <a data-trilium-block-id="x"></a>`)).toBe("Title");
+        expect(stripBlockMarkers(`A <a\n data-trilium-block-id=x/> b`)).toBe("A b");
+        expect(removeBlockMarkers(`<div> <a data-trilium-block-id='x'>\n</a></div>`))
+            .toBe("<div> </div>");
+        expect(removeBlockMarkers(`<a href="x" data-trilium-block-id="y">link</a>`))
+            .toBe(`<a href="x" data-trilium-block-id="y">link</a>`);
+    });
+});
+
+describe("embeds of other notes", () => {
+    /** A note that embeds note `other`, with a caption, above its own blocks. */
+    function createHost() {
+        const caption = el("figcaption", {}, block("span", "caption"), text("Caption"));
+        const embed = el("figure", { class: "include-note", "data-note-id": "other" },
+            el("div", {}, block("h2", "intro"), block("p", "end")),
+            caption);
+        const ownIntro = block("h2", "intro");
+        const own = block("p", "own");
+        const root = el("div", {}, embed, ownIntro, own);
+        return { root, embed, caption, ownIntro, own };
+    }
+
+    it("are not searched for the blocks of the note around them, but their captions are", () => {
+        const { root, caption, ownIntro, own } = createHost();
+        expect(resolveBlockRange(root, { startId: "intro", endId: "intro" }).start).toBe(ownIntro);
+        expect(resolveBlockRange(root, { startId: "intro", endId: "own" }))
+            .toEqual({ start: ownIntro, end: own });
+        expect(resolveBlockRange(root, { startId: "own", endId: "end" }).end).toBeNull();
+        expect(resolveBlockRange(root, { startId: "caption", endId: "caption" }).start)
+            .toBe(caption.childNodes[0]);
+    });
+
+    it("hold the blocks of the embedded note but for their own caption", () => {
+        const { embed } = createHost();
+        const range = resolveBlockRange(embed, { startId: "intro", endId: "end" });
+        expect(range.start?.getAttribute?.(BLOCK_ID_ATTRIBUTE)).toBe("intro");
+        expect(range.end?.getAttribute?.(BLOCK_ID_ATTRIBUTE)).toBe("end");
+        expect(resolveBlockRange(embed, { startId: "caption", endId: "caption" }).start).toBeNull();
+        expect(Array.from(walkOwnContent(embed))).not.toContain(embed.childNodes[1]);
+    });
+
+    it("hold anchors apart from those of the note around them", () => {
+        const inner = el("a", { id: "setup" });
+        const embed = el("figure", { class: "include-note", "data-note-id": "other" },
+            el("p", {}, inner), el("figcaption", {}, el("a", { id: "caption" })));
+        const own = el("a", { id: "setup" });
+        const root = el("div", {}, embed, el("p", {}, own));
+        expect(findOwnElementById(root, "setup")).toBe(own);
+        expect(findOwnElementById(root, "caption")).toBe(embed.childNodes[1].childNodes[0]);
+        expect(findOwnElementById(embed, "setup")).toBe(inner);
+        expect(findOwnElementById(embed, "caption")).toBeNull();
+        expect(findOwnElementById(root, "missing")).toBeNull();
+    });
+
+    it("are scopes of the nodes inside them, but not of their captions", () => {
+        const { root, embed, caption, own } = createHost();
+        const heading = (embed.childNodes[0] as TestElement).childNodes[0];
+        expect(getContentScopes(heading, root)).toEqual([
+            { noteId: "other", root: embed },
+            { noteId: null, root }
+        ]);
+        expect(getContentScopes(caption.childNodes[0], root)).toEqual([ { noteId: null, root } ]);
+        expect(getContentScopes(own, root)).toEqual([ { noteId: null, root } ]);
+    });
+
+    it("are told apart from an embed of an attachment and from other figures", () => {
+        const embed = (attributes: Record<string, string>) =>
+            isNoteEmbed(el("figure", { class: "include-note", ...attributes }));
+        expect(embed({ "data-note-id": "abc" })).toBe(true);
+        const div = el("div", { class: "x include-note", "data-note-id": "abc" });
+        expect(isNoteEmbed(div)).toBe(true);
+        expect(embed({ "data-note-id": "abc", "data-attachment-id": "def" })).toBe(false);
+        expect(embed({ "data-note-id": "a b" })).toBe(false);
+        expect(embed({})).toBe(false);
+        expect(isNoteEmbed(el("figure", { class: "image", "data-note-id": "abc" }))).toBe(false);
+        expect(isNoteEmbed(text("include-note"))).toBe(false);
     });
 });
 

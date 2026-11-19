@@ -151,6 +151,9 @@ export {
     type VirtualSubtreeAttribute,
     type VirtualSubtreeItem
 } from "./services/virtual_notes";
+export {
+    type GeneratedToc, registerTocGenerator, type TocGenerator, unregisterTocGenerator
+} from "./services/toc/index";
 export { type ImageProvider, type ImageFormat, type ImageCompressionOutcome, type ImageCompressionRequest, type ImageShrink, type ProcessedImage, getImageProvider } from "./services/image_provider";
 export { default as imageCompressionService } from "./services/image_compression";
 export { default as imageInventoryService, type ImageInventoryOptions } from "./services/image_inventory";

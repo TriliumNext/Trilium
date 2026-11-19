@@ -1,12 +1,15 @@
 import type {
-    CreateReferenceRequest, CreateReferenceResponse, NoteReferencesResponse, ReferenceKind,
-    ReferenceParams, ReferenceTarget
+    CreateReferenceRequest, CreateReferenceResponse, NoteReferencesResponse,
+    ReferenceConflictResponse, ReferenceKind, ReferenceParams, ReferenceTarget
 } from "@triliumnext/commons";
 import { encodeBlockParameter } from "@triliumnext/commons/src/lib/block_reference.js";
+import { LINK_TARGET_PARAMS } from "@triliumnext/commons/src/lib/server_api.js";
 
 import appContext from "../components/app_context";
 import froca from "./froca";
 import { t } from "./i18n";
+import { getTocUrl, rememberHeadingTitles, type ViewScope } from "./link";
+import { parseConflict } from "./note_save";
 import server from "./server";
 
 /** A place inside a note that a link can point at, such as a heading or an anchor. */
@@ -52,40 +55,108 @@ export const LINK_TARGET_KINDS: Record<ReferenceKind, LinkTargetKind> = {
     }
 };
 
-/** The link parameters that point inside a note, which the targets of a note use. */
-const TARGET_PARAMS = [ "block", "bookmark" ];
+/** The targets of a note or an attachment that the server lists. */
+export interface LinkTargetListing {
+    targets: LinkTarget[];
+    /**
+     * Whether the document has a table of contents that its viewer builds the first time it opens
+     * the document, so that its headings are listed only then.
+     */
+    isTocPending: boolean;
+}
+
+/**
+ * What `LinkTarget.createReference()` rejects with when the note changed since its targets were
+ * listed: the target picked is then not known for sure, and the targets have to be listed again.
+ */
+export class StaleListingError extends Error {}
 
 /**
  * The targets of the note `noteId` that the server reads, which link to it at `notePath`. A note
  * that is protected outside a protected session has none.
  */
-export async function getLinkTargets(noteId: string, notePath: string): Promise<LinkTarget[]> {
+export async function getLinkTargets(noteId: string, notePath: string): Promise<LinkTargetListing> {
     try {
         const note = await froca.getNote(noteId);
-        if (!note?.isContentAvailable()) return [];
+        if (!note?.isContentAvailable()) return noTargets();
 
-        const { targets } = await server.get<NoteReferencesResponse>(
+        // Saved first, so that the save before a reference leaves the listing as it is.
+        await appContext.triggerEvent("saveNoteChanges", { noteId });
+        const { targets, blobId, pendingToc } = await server.get<NoteReferencesResponse>(
             `notes/${noteId}/references`, undefined, false, { silentBadRequest: true }
         );
+        rememberLinkedHeadings(getTocUrl("notes", noteId), blobId, targets);
         const counts = new Map<ReferenceKind, number>();
-        return targets.map((target) => {
+        const noteTargets = targets.map((target) => {
             const index = counts.get(target.kind) ?? 0;
             counts.set(target.kind, index + 1);
-            return createNoteTarget(noteId, notePath, target, index);
+            return createNoteTarget(noteId, notePath, target, index, blobId);
         });
+        return { targets: noteTargets, isTocPending: !!pendingToc };
     } catch (e) {
         console.error(`Failed to read the link targets of note '${noteId}':`, e);
-        return [];
+        return noTargets();
     }
 }
 
 /**
- * The `index`-th target of its kind that the server lists for note `noteId`, which links to it in
- * the note at `notePath`, and which the server gives a reference when it has none.
+ * The targets of the attachment `attachmentId` of the note `noteId`, such as the headings of a
+ * PDF, which link to it at `linkPath`. An attachment that is protected outside a protected
+ * session has none.
+ */
+export async function getAttachmentLinkTargets(
+    noteId: string, attachmentId: string, linkPath: string
+): Promise<LinkTargetListing> {
+    try {
+        const note = await froca.getNote(noteId);
+        if (!note?.isContentAvailable()) return noTargets();
+
+        const { targets, blobId, pendingToc } = await server.get<NoteReferencesResponse>(
+            `attachments/${attachmentId}/references`, undefined, false,
+            { silentBadRequest: true, silentNotFound: true }
+        );
+        rememberLinkedHeadings(getTocUrl("attachments", attachmentId), blobId, targets);
+        const attachmentTargets = targets.map(({ kind, title, level, params }): LinkTarget => ({
+            kind, title, level, params, createLinkPath: () => addParameters(linkPath, params)
+        }));
+        return { targets: attachmentTargets, isTocPending: !!pendingToc };
+    } catch (e) {
+        console.error(`Failed to read the link targets of attachment '${attachmentId}':`, e);
+        return noTargets();
+    }
+}
+
+/**
+ * What the lists show for a note without targets: that its viewer lists its headings once it has
+ * opened it, when `isTocPending`.
+ */
+export function getNoTargetsText(isTocPending: boolean) {
+    return isTocPending ? t("add_link.open_file_for_targets") : t("add_link.no_link_targets");
+}
+
+function noTargets(): LinkTargetListing {
+    return { targets: [], isTocPending: false };
+}
+
+/** Remembers the titles of the headings that `targets` link to, for the labels of such links. */
+function rememberLinkedHeadings(
+    tocUrl: string, blobId: string | undefined, targets: ReferenceTarget[]
+) {
+    const headings = targets.flatMap(({ title, params }) =>
+        params?.heading ? [ { id: params.heading, title } ] : []);
+    if (blobId && headings.length > 0) {
+        rememberHeadingTitles(tocUrl, blobId, headings);
+    }
+}
+
+/**
+ * The `index`-th target of its kind that the server lists for note `noteId` from its blob
+ * `blobId`, which links to it in the note at `notePath`, and which the server gives a reference
+ * when it has none.
  */
 function createNoteTarget(
     noteId: string, notePath: string, { kind, title, level, params }: ReferenceTarget,
-    index: number
+    index: number, blobId: string | undefined
 ): LinkTarget {
     const target: LinkTarget = {
         kind,
@@ -98,11 +169,18 @@ function createNoteTarget(
             // An editor with unsaved changes skips the content the server writes, and its next
             // save would drop the reference.
             await appContext.triggerEvent("saveNoteChanges", { noteId });
-            const request: CreateReferenceRequest = { kind, index, title };
-            const response = await server.postWithSilentErrors<CreateReferenceResponse>(
-                `notes/${noteId}/references`, request
-            );
-            target.params = response.params;
+            const request: CreateReferenceRequest = { kind, index, title, blobId };
+            try {
+                const response = await server.postWithSilentErrors<CreateReferenceResponse>(
+                    `notes/${noteId}/references`, request
+                );
+                target.params = response.params;
+            } catch (e) {
+                if (parseConflict<ReferenceConflictResponse>(e)?.reason === "listing") {
+                    throw new StaleListingError(`The targets of note '${noteId}' changed.`);
+                }
+                throw e;
+            }
         }
     };
     return target;
@@ -218,7 +296,7 @@ export function splitTargetParameters(notePath: string) {
     const [ path, query = "" ] = notePath.split("?", 2);
     const params = new URLSearchParams(query);
     const targetParams: ReferenceParams = {};
-    for (const name of TARGET_PARAMS) {
+    for (const name of LINK_TARGET_PARAMS) {
         const value = params.get(name);
         if (value !== null) {
             targetParams[name] = value;
@@ -241,4 +319,43 @@ export function addParameters(notePath: string, params: ReferenceParams = {}) {
         path = `${path}${path.includes("?") ? "&" : "?"}${name}=${encoded}`;
     }
     return path;
+}
+
+/** A parameter of a link that points inside a note, such as `block` or `page`. */
+export type LinkTargetParam = (typeof LINK_TARGET_PARAMS)[number];
+
+/** The place that a link opens a note at, as {@link takeLinkTarget} reads it from a view scope. */
+export interface LandingTarget {
+    block?: string;
+    bookmark?: string;
+    /** The page number, absent unless the `page` parameter is a whole number of at least 1. */
+    page?: number;
+    annotation?: string;
+    heading?: string;
+}
+
+/**
+ * Takes the link parameters `names` out of `viewScope`, setting them to `undefined` so that a link
+ * lands once, and returns them with the page parsed. Returns `undefined` and leaves `viewScope` as
+ * it is when it holds none of them.
+ */
+export function takeLinkTarget(
+    viewScope: ViewScope | null | undefined, names: readonly LinkTargetParam[]
+): LandingTarget | undefined {
+    if (!viewScope || !names.some((name) => viewScope[name])) {
+        return undefined;
+    }
+
+    const target: LandingTarget = {};
+    for (const name of names) {
+        const value = viewScope[name];
+        viewScope[name] = undefined;
+        if (name === "page") {
+            const page = Number.parseInt(value ?? "", 10);
+            target.page = page >= 1 ? page : undefined;
+        } else {
+            target[name] = value;
+        }
+    }
+    return target;
 }
