@@ -318,10 +318,11 @@ export async function exportData(mapping: NoteMapping, baseUrl: string) {
 }
 
 /** The languages with an in-app help bundle, default English included. */
-async function writeHelpLocalesIndex(mapping: NoteMapping) {
+export async function writeHelpLocalesIndex(mapping: NoteMapping) {
     const locales = [ "en", ...Object.keys(mapping.helpLocales ?? {}) ];
     const target = mapping.helpContent
-        ? path.join(path.dirname(mapping.helpContent), "help_locales.json");
+        ? path.join(path.dirname(mapping.helpContent), "help_locales.json")
+        : null;
     if (target) {
         await writeArtifact(target, JSON.stringify(locales, null, 4));
     }
@@ -360,7 +361,7 @@ async function cleanUpMeta(outputPath: string, mapping: NoteMapping, baseUrl: st
  * Derives the in-app help tree and its rendered content from a markdown export directory
  * (the freshly exported User Guide, or one of its localized variants).
  */
-async function writeHelpArtifacts(exportDir: string, helpMetaPath?: string, helpContentPath?: string, baseUrl?: string) {
+export async function writeHelpArtifacts(exportDir: string, helpMetaPath?: string, helpContentPath?: string, baseUrl?: string) {
     const meta = JSON.parse(await fs.readFile(path.join(exportDir, "!!!meta.json"), "utf-8")) as NoteMetaFile;
     const { meta: helpMeta, sources } = buildHelpMeta(meta, baseUrl);
 
