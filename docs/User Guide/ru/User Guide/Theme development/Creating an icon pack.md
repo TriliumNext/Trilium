@@ -1,49 +1,49 @@
-# Creating an icon pack
+# Создание набора значков
 > [!NOTE]
-> This page explains, step‑by‑step, how to create a custom icon pack. For a general description of how to use already existing icon packs, see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Themes/Icon%20Packs.md">Icon Packs</a>.
+> На этой странице шаг за шагом объясняется, как создать собственный набор значков. Общее описание использования уже существующих наборов значков см. в разделе <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Themes/Icon%20Packs.md">Наборы значков</a>.
 
-First read the quick flow to get the overall steps. After that there is a concrete example (Phosphor) with a small Node.js script you can run to generate the manifest.
+Сначала ознакомьтесь с кратким порядком действий, чтобы понять общие шаги. Далее приведён конкретный пример (Phosphor) с небольшим скриптом на Node.js, который можно запустить для генерации манифеста.
 
-## Quick flow (what you need to do)
+## Краткий порядок действий (что нужно сделать)
 
-1.  Verify the icon set is a font (one of: .woff2, .woff, .ttf).
-2.  Obtain a list that maps icon names to Unicode code points (often provided as a JSON like `selection.json` or a CSS file).
-3.  Create a manifest JSON that maps icon ids to glyphs and search terms.
-4.  Create a Trilium note of type Code, set language to JSON, paste the manifest as the note content.
-5.  Upload the font file as an attachment to the same note (MIME type must be `font/woff2`, `font/woff`, or `font/ttf` and role `file`).
-6.  Add the label `#iconPack=<prefix>` to the note (prefix: letters, digits, hyphen, underscore and non-ASCII characters only).
-7.  Refresh the client and verify the icon pack appears in the icon selector.
+1.  Убедитесь, что набор значков представляет собой шрифт (один из форматов: `.woff2`, `.woff`, `.ttf`).
+2.  Получите список, сопоставляющий имена значков с кодовыми точками Unicode (часто предоставляется в виде JSON, например `selection.json`, или CSS-файла).
+3.  Создайте JSON-манифест, сопоставляющий идентификаторы значков с глифами и поисковыми терминами.
+4.  Создайте заметку в Trilium типа Код, выберите язык JSON и вставьте манифест в качестве содержимого заметки.
+5.  Загрузите файл шрифта как вложение к этой же заметке (MIME-тип должен быть `font/woff2`, `font/woff` или `font/ttf`, а роль — `file`).
+6.  Добавьте заметке метку `#iconPack=<prefix>` (префикс может содержать только буквы, цифры, дефис, подчёркивание и не-ASCII символы).
+7.  Обновите клиент и убедитесь, что набор значков появился в окне выбора значков.
 
-## Verify the icon set
+## Проверка набора значков
 
-The first step is to analyze if the icon set being packed can be integrated into Trilium.
+Первый шаг — проверить, можно ли интегрировать выбранный набор значков в Trilium.
 
-Trilium only supports **font-based icon sets**, with the following formats:
+Trilium поддерживает только **шрифтовые наборы значков** следующих форматов:
 
-| Extension | MIME type | Description |
+| Расширение | MIME-тип | Описание |
 | --- | --- | --- |
-| `.woff2` | `font/woff2` | Recommended due to great compression (low size). |
-| `.woff` | `font/woff` | Higher compatibility, but the font file is bigger. |
-| `.ttf` | `font/ttf` | Most common, but highest font size. |
+| `.woff2` | `font/woff2` | Рекомендуется благодаря отличному сжатию (малый размер). |
+| `.woff` | `font/woff` | Более высокая совместимость, но размер файла шрифта больше. |
+| `.ttf` | `font/ttf` | Самый распространённый формат, но наибольший размер файла. |
 
-Trilium **does not** support the following formats:
+Trilium **не поддерживает** следующие форматы:
 
-*   SVG-based fonts.
-*   Individual SVGs.
-*   `.eot` fonts (legacy and proprietary).
-*   Duotone icons, since it requires a special CSS format that Trilium doesn't support.
-*   Any other font format not specified in the _Supported formats_ section.
+*   Шрифты на основе SVG.
+*   Отдельные SVG-файлы.
+*   Шрифты `.eot` (устаревший и проприетарный формат).
+*   Двухцветные (duotone) значки, поскольку они требуют специального формата CSS, который Trilium не поддерживает.
+*   Любые другие форматы шрифтов, не указанные в таблице поддерживаемых форматов.
 
-In this case, the font must be manually converted to one of the supported formats (ideally `.woff2`).
+В таком случае шрифт необходимо вручную преобразовать в один из поддерживаемых форматов (в идеале `.woff2`).
 
-## Manifest format
+## Формат манифеста
 
-The manifest is a JSON object with an `icons` map. Each entry key is the CSS/class id you will use (Trilium uses the CSS class when rendering). Value object:
+Манифест представляет собой JSON-объект со словарём `icons`. Каждый ключ записи — это идентификатор CSS-класса, который будет использоваться (Trilium использует CSS-класс при рендеринге). Объект значения содержит:
 
-*   glyph: the single character (the glyph) — can be the escaped Unicode (e.g. "\\ue9c2") or the literal character.
-*   terms: array of search aliases; the first term is used as display name in the selector.
+*   `glyph`: один символ (глиф) — может быть экранированной последовательностью Unicode (например, `"\\ue9c2"`) или самим символом.
+*   `terms`: массив поисковых псевдонимов; первый термин используется в качестве отображаемого имени в окне выбора значков.
 
-Example minimal manifest:
+Пример минимального манифеста:
 
 ```
 {
@@ -61,16 +61,16 @@ Example minimal manifest:
 ```
 
 > [!NOTE]
-> *   You can supply glyph as the escaped `\uXXXX` sequence or as the actual UTF‑8 character. The CSS form (`\ea3f`, as written in a stylesheet's `content`) is accepted too, so glyphs copied out of the font's own CSS work as they stand.
-> *   It is also possible to use the unescaped glyph inside the JSON. It will appear strange (e.g. ), but it will be rendered properly regardless.
-> *   The manifest keys (e.g. `ph-acorn`) should match the class names used by the font (prefix + name is a common pattern).
-> *   Like the prefix, a manifest key becomes a CSS class name, so it can contain only letters, digits, hyphens, underscores and non-ASCII characters. Punctuation and whitespace (e.g. `ph.acorn` or `ph acorn`) are not usable as class names; icons with such a key are skipped and an error is logged in <a class="reference-link" href="../Troubleshooting/Error%20logs/Backend%20(server)%20logs.md">Backend (server) logs</a>, while the rest of the pack still loads.
+> *   Вы можете указать глиф как экранированную последовательность `\uXXXX` или как сам символ UTF‑8. Форма CSS (`\ea3f`, как в свойстве `content` таблицы стилей) также принимается, поэтому глифы, скопированные из собственного CSS-файла шрифта, работают без изменений.
+> *   Также можно использовать неэкранированный глиф прямо внутри JSON. Он будет выглядеть странно (например, ), но всё равно будет отображаться корректно.
+> *   Ключи манифеста (например, `ph-acorn`) должны соответствовать именам классов, используемым шрифтом (обычно это префикс + имя).
+> *   Как и префикс, ключ манифеста становится именем CSS-класса, поэтому он может содержать только буквы, цифры, дефисы, подчёркивания и не-ASCII символы. Знаки пунктуации и пробелы (например, `ph.acorn` или `ph acorn`) нельзя использовать в именах классов; значки с такими ключами пропускаются с записью ошибки в <a class="reference-link" href="../Troubleshooting/Error%20logs/Backend%20(server)%20logs.md">журналы бэкенда (сервера)</a>, при этом остальная часть набора всё равно загружается.
 
-## Concrete example: Phosphor Icons
+## Конкретный пример: Phosphor Icons
 
-[Phosphor Icons](https://phosphoricons.com/) provide a `selection.json` that includes `properties.code` (the codepoint) and `properties.name` (the icon name). The goal: convert that into Trilium's manifest.
+[Phosphor Icons](https://phosphoricons.com/) предоставляет файл `selection.json`, содержащий `properties.code` (кодовую точку) и `properties.name` (имя значка). Цель: преобразовать его в манифест Trilium.
 
-Sample `selection.json` excerpt:
+Фрагмент файла `selection.json`:
 
 ```
 {
@@ -103,8 +103,8 @@ Sample `selection.json` excerpt:
 ```
 
 <details open="">
-    <summary>A tiny Node.js script to produce the manifest</summary>
-    <p>Place <code>selection.json</code> in the same directory and run with Node 20+):</p>
+    <summary>Небольшой скрипт на Node.js для создания манифеста</summary>
+    <p>Поместите <code>selection.json</code> в ту же папку и запустите с помощью Node 20+:</p>
     <pre><code class="language-text-javascript">import { join } from "node:path";
 import { readFileSync, writeFileSync } from "node:fs";&#10;
 function processIconPack(packName) {
@@ -126,62 +126,62 @@ function processIconPack(packName) {
     console.log("manifest.json created");
 }&#10;
 processIconPack("light");</code></pre>
-    <p>What to do with the script:</p>
+    <p>Как использовать скрипт:</p>
     <ul>
-        <li>Put <code>selection.json</code> and <code>build-manifest.js</code> in a folder.</li>
-        <li>Run: node build-manifest.js</li>
-        <li>The script writes <code>manifest.json</code> — open it, verify contents, then copy into a Trilium Code note (language: JSON).</li>
+        <li>Поместите <code>selection.json</code> и <code>build-manifest.js</code> в одну папку.</li>
+        <li>Выполните команду: <code>node build-manifest.js</code></li>
+        <li>Скрипт создаст файл <code>manifest.json</code> — откройте его, проверьте содержимое и скопируйте в заметку типа Код в Trilium (язык: JSON).</li>
     </ul>
 </details>
 
 > [!TIP]
-> **Mind the escape format when processing CSS**
+> **Обратите внимание на формат экранирования при обработке CSS**
 > 
-> The Unicode escape syntax is different in CSS (`"\ea3f"`) when compared to JSON (`"\uea3f"`). Notice how the JSON escape is `\u` and not `\`. Both forms are accepted: keep the CSS escape by writing the backslash itself as `"\\ea3f"` in the JSON, or convert it to the JSON escape `"\uea3f"`.
+> Синтаксис экранирования Unicode в CSS (`"\ea3f"`) отличается от JSON (`"\uea3f"`). Обратите внимание, что в JSON используется `\u`, а не `\`. Принимаются обе формы: можно сохранить экранирование CSS, записав обратную косую черту как `"\\ea3f"` в JSON, либо преобразовать его в формат JSON `"\uea3f"`.
 > 
-> As a more compact alternative, provide the un-escaped character directly, as UTF-8 is supported.
+> В качестве более компактной альтернативы можно указать неэкранированный символ напрямую, поскольку поддерживается UTF-8.
 
-### Assigning the prefix
+### Назначение префикса
 
-Before an icon pack can be used, it needs to have a prefix defined. This prefix uniquely identifies the icon pack so that it can be used throughout the application.
+Прежде чем набор значков можно будет использовать, ему необходимо задать префикс. Этот префикс уникально идентифицирует набор значков для использования во всём приложении.
 
-To do so, Trilium makes use of the same format that was used for the internal icon pack (Boxicons). For example, when an icon from Boxicons is set, it looks like this: `#iconClass="bx bxs-sushi"`. In this case, the icon pack prefix is `bx` and the icon class name is `bxs-sushi`.
+Для этого Trilium использует тот же формат, что и для встроенного набора значков (Boxicons). Например, когда выбран значок из Boxicons, метка выглядит так: `#iconClass="bx bxs-sushi"`. В данном случае префикс набора значков — `bx`, а имя класса значка — `bxs-sushi`.
 
-In order for an icon pack to be recognized, the prefix must be specified in the `#iconPack` label. 
+Чтобы набор значков распознавался, префикс должен быть указан в метке `#iconPack`. 
 
-For our example with Phosphor Icons, we can use the `ph` prefix since it also matches the prefix set in the original CSS. So in this case it would be `#iconPack=ph`.
+В нашем примере с Phosphor Icons можно использовать префикс `ph`, так как он совпадает с префиксом в исходном CSS. Таким образом, метка будет выглядеть как `#iconPack=ph`.
 
 > [!IMPORTANT]
-> The prefix must consist of only letters, digits, hyphens, underscores and non-ASCII characters. If the prefix doesn't match these constraints, the icon pack will be ignored and an error will be logged in <a class="reference-link" href="../Troubleshooting/Error%20logs/Backend%20(server)%20logs.md">Backend (server) logs</a>.
+> Префикс должен состоять только из букв, цифр, дефисов, подчёркиваний и не-ASCII символов. Если префикс не соответствует этим требованиям, набор значков будет проигнорирован, а в <a class="reference-link" href="../Troubleshooting/Error%20logs/Backend%20(server)%20logs.md">журналы бэкенда (сервера)</a> будет записана ошибка.
 
-## Creating the Trilium icon pack note
+## Создание заметки набора значков в Trilium
 
-1.  Create a note of type _Code_.
-2.  Set the language to _JSON_.
-3.  Rename the note. The name of the note will also be the name of the icon pack as displayed in the list of icons.
-4.  Copy and paste the manifest generated in the previous step as the content of this note.
-5.  Go to the [note attachment](../Basic%20Concepts%20and%20Features/Notes/Attachments.md) and upload the font file (in `.woff2`, `.woff`, `.ttf`) format.
-    1.  Trilium identifies the font to use from attachments via the MIME type, make sure the MIME type is displayed correctly after uploading the attachment (for example `font/woff2`).
-    2.  Make sure the `role` appears as `file`, otherwise the font will not be identified.
-    3.  Multiple attachments are supported, but only one font will actually be used in Trilium's order of preference: `.woff2`, `.woff`, `.ttf`. As such, there's not much reason to upload more than one font per icon pack.
-6.  Add label: `#iconPack=<prefix>` (for Phosphor example: `#iconPack=ph`).
+1.  Создайте заметку типа _Код_.
+2.  Установите язык _JSON_.
+3.  Переименуйте заметку. Название заметки будет также отображаться как название набора значков в списке значков.
+4.  Скопируйте и вставьте манифест, сгенерированный на предыдущем шаге, в содержимое этой заметки.
+5.  Перейдите во [вложения заметки](../Basic%20Concepts%20and%20Features/Notes/Attachments.md) и загрузите файл шрифта (в формате `.woff2`, `.woff` или `.ttf`).
+    1.  Trilium определяет шрифт во вложениях по MIME-типу, поэтому убедитесь, что после загрузки вложения отображается правильный MIME-тип (например, `font/woff2`).
+    2.  Убедитесь, что в поле `role` указано `file`, иначе шрифт не будет распознан.
+    3.  Поддерживается несколько вложений, но фактически Trilium будет использовать только один шрифт в порядке приоритета: `.woff2`, `.woff`, `.ttf`. Поэтому нет особого смысла загружать более одного файла шрифта для одного набора значков.
+6.  Добавьте метку `#iconPack=<prefix>` (в примере с Phosphor: `#iconPack=ph`).
 
-### Final steps
+### Заключительные шаги
 
-*   [Refresh the client](../Troubleshooting/Refreshing%20the%20application.md)
-    *   Change the icon of the note and look for the _Filter_ icon in the top-right side.
-    *   Check if the new icon pack is displayed there and click on it to see the full list of icons.
-    *   Go through most of the items to look for issues such as missing icon, wrong names (some icons have aliases/terms that can cause issues).
-*   Optionally, assign an icon from the new icon pack to this note. This icon will be used in the icon pack filter for a visual distinction.
-*   The icon pack can then be [exported as ZIP](../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md) in order to be distributed to other users.
-    *   It's important to note that icon packs are considered “unsafe” by default, so “Safe mode” must be disabled when importing the ZIP.
-    *   Consider linking new users to the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Themes/Icon%20Packs.md">Icon Packs</a> documentation in order to understand how to import and use an icon pack.
+*   [Обновите клиент](../Troubleshooting/Refreshing%20the%20application.md)
+    *   Откройте смену значка заметки и найдите значок _Фильтр_ (_Filter_) в правом верхнем углу.
+    *   Проверьте, отображается ли там новый набор значков, и нажмите на него, чтобы увидеть полный список значков.
+    *   Просмотрите большую часть элементов, чтобы убедиться в отсутствии проблем, таких как пропущенные значки или неверные названия (у некоторых значков есть псевдонимы/термины, которые могут вызывать ошибки).
+*   При желании назначьте этой заметке значок из нового набора. Этот значок будет использоваться в фильтре наборов значков для визуального различия.
+*   Затем набор значков можно [экспортировать в ZIP](../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md), чтобы поделиться им с другими пользователями.
+    *   Важно помнить, что наборы значков по умолчанию считаются «небезопасными», поэтому при импорте ZIP необходимо отключить «Безопасный режим» («Safe mode»).
+    *   Рекомендуется давать новым пользователям ссылку на документацию <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Themes/Icon%20Packs.md">Наборы значков</a>, чтобы они знали, как импортировать и использовать набор.
 
-### Troubleshooting
+### Устранение неполадок
 
-If the icon pack doesn't show up, look through the <a class="reference-link" href="../Troubleshooting/Error%20logs/Backend%20(server)%20logs.md">Backend (server) logs</a> for clues.
+Если набор значков не отображается, проверьте <a class="reference-link" href="../Troubleshooting/Error%20logs/Backend%20(server)%20logs.md">журналы бэкенда (сервера)</a> на наличие подсказок.
 
-*   One example is if the font could not be retrieved: `ERROR: Icon pack is missing WOFF/WOFF2/TTF attachment: Boxicons v3 400 (dup) (XRzqDQ67fHEK)`.
-*   Make sure the prefix is unique and not already taken by some other icon pack. When there are two icon packs with the same prefix, only one is used. The server logs will indicate if this situation occurs.
-*   Make sure the prefix consists only of letters, digits, hyphens, underscores and non-ASCII characters.
-*   If the pack loads but individual icons are missing, check the logs for `Skipping icon '<key>' of icon pack` — that key uses characters outside the allowed set and needs renaming in the manifest.
+*   Например, если не удалось получить файл шрифта: `ERROR: Icon pack is missing WOFF/WOFF2/TTF attachment: Boxicons v3 400 (dup) (XRzqDQ67fHEK)`.
+*   Убедитесь, что префикс уникален и не занят другим набором значков. Если есть два набора значков с одинаковым префиксом, используется только один. В журналах сервера будет указано, если возникла такая ситуация.
+*   Убедитесь, что префикс состоит только из букв, цифр, дефисов, подчёркиваний и не-ASCII символов.
+*   Если набор загружается, но отдельные значки отсутствуют, поищите в журналах строку `Skipping icon '<key>' of icon pack` — это означает, что данный ключ содержит недопустимые символы и его нужно переименовать в манифесте.

@@ -1,30 +1,30 @@
-# Content width
-Some note types (such as <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> and saved search) intentionally limit the width of the content.
+# Ширина содержимого
+Некоторые типы заметок (например, <a class="reference-link" href="../../Note%20Types/Text.md">Текст</a> и сохранённый поиск) намеренно ограничивают ширину содержимого.
 
-This might appear surprising at first, but the idea is to make text fit well on wider screens without appearing distorted. This is especially the case if the document contains <a class="reference-link" href="../../Note%20Types/Text/Images.md">Images</a>, tables or other width-dependent elements.
+Поначалу это может показаться неожиданным, но цель такого решения — сделать текст удобным для чтения на широких экранах без искажения вёрстки. Это особенно важно, если документ содержит <a class="reference-link" href="../../Note%20Types/Text/Images.md">изображения</a>, таблицы или другие элементы, зависящие от ширины.
 
-## Configuring the content width and alignment
+## Настройка ширины и выравнивания содержимого
 
-The content width is expressed in pixels and can be changed from <a class="reference-link" href="Options.md">Options</a> → _Appearance_ → _Content Width_ and adjusting the _Max content width_ section.
+Ширина содержимого задаётся в пикселях и настраивается в разделе <a class="reference-link" href="Options.md">Настройки</a> → _Appearance_ → _Content Width_, в пункте _Max content width_.
 
-To effectively disable the content width limitation, simply set the width to a value larger than your screen size (e.g. 9999).
+Чтобы фактически отключить ограничение ширины содержимого, просто укажите значение, превышающее ширину вашего экрана (например, 9999).
 
-By default, the content is aligned to the left, but it can be centered horizontally by checking _Keep content centered_ from the same section as the content width.
+По умолчанию содержимое выравнивается по левому краю, но его можно отцентрировать по горизонтали, установив флажок _Keep content centered_ в том же разделе настроек.
 
-## Adjusting at note level
+## Настройка на уровне отдельной заметки
 
-For notes with large elements such as <a class="reference-link" href="../../Note%20Types/Text/Tables.md">Tables</a>, it sometimes makes sense to avoid the content width without affecting other notes. To do so:
+Для заметок с крупными элементами, такими как <a class="reference-link" href="../../Note%20Types/Text/Tables.md">таблицы</a>, иногда имеет смысл снять ограничение ширины содержимого, не затрагивая остальные заметки. Для этого:
 
-*   Go to <a class="reference-link" href="Note%20menu.md">Note menu</a> and toggle _Full width_.
-*   Or manually apply the `fullContentWidth` [label](../../Advanced%20Usage/Attributes/Labels.md) to the note.
+*   Откройте <a class="reference-link" href="Note%20menu.md">меню заметки</a> и переключите параметр _Full width_.
+*   Или вручную добавьте к заметке [метку](../../Advanced%20Usage/Attributes/Labels.md) `fullContentWidth`.
 
-Since v0.107.0, a single table can also be made wider than the content width, in which case it scrolls sideways. See <a class="reference-link" href="../../Note%20Types/Text/Tables.md">Tables</a>.
+Начиная с версии v0.107.0, отдельную таблицу также можно сделать шире ширины содержимого — в этом случае у неё появится горизонтальная прокрутка. Подробнее см. в разделе <a class="reference-link" href="../../Note%20Types/Text/Tables.md">Таблицы</a>.
 
 > [!NOTE]
-> Some [note types](../../Note%20Types.md) are full width by default, such as the <a class="reference-link" href="../../Note%20Types/Canvas.md">Canvas</a>. In that case the _Full width_ toggle will not be displayed and the label will have no effect.
+> Некоторые [типы заметок](../../Note%20Types.md) по умолчанию отображаются во всю ширину, например <a class="reference-link" href="../../Note%20Types/Canvas.md">Холст</a>. В таком случае переключатель _Full width_ не отображается, а метка не оказывает никакого эффекта.
 > 
-> An [attachment](../Notes/Attachments.md) opened on its own follows the same rule as a note of its kind: a picture, a drawing, a PDF, a video, an audio file or an Excel workbook takes the full width, whatever the width of the note it belongs to.
+> [Вложение](../Notes/Attachments.md), открытое отдельно, подчиняется тому же правилу, что и заметка соответствующего типа: изображение, рисунок, PDF, видео, аудиофайл или книга Excel занимают всю ширину независимо от ширины заметки, которой они принадлежат.
 
-## Shared notes
+## Опубликованные заметки
 
-On a [shared page](../../Advanced%20Usage/Sharing.md), a text note is shown at a fixed reading width, whatever the width configured in Options, and the navigation tree, the content and the table of contents are kept together in a column centered on a wide screen. A note with `fullContentWidth`, or of a type that is full width in the application, uses the whole width of the window there, with the navigation tree and the table of contents at its edges.
+На [опубликованной странице](../../Advanced%20Usage/Sharing.md) текстовая заметка отображается с фиксированной шириной для чтения независимо от значения в настройках, а дерево навигации, содержимое и оглавление собраны вместе в колонке по центру широкого экрана. Заметка с меткой `fullContentWidth` или такого типа, который в приложении занимает всю ширину, использует на опубликованной странице всю ширину окна, при этом дерево навигации и оглавление располагаются по краям.

@@ -1,8 +1,8 @@
-# Word count widget
+# Виджет подсчёта слов
 > [!TIP]
-> This widget is also present in new installations in the <a class="reference-link" href="../../../Advanced%20Usage/Database/Demo%20Notes.md">Demo Notes</a>.
+> Этот виджет также присутствует в новых установках в разделе <a class="reference-link" href="../../../Advanced%20Usage/Database/Demo%20Notes.md">Демо-заметки</a>.
 
-Create a <a class="reference-link" href="../../../Note%20Types/Code.md">Code</a> note of type JavaScript (Trilium frontend) and **give it a** `#widget` **label**.
+Создайте <a class="reference-link" href="../../../Note%20Types/Code.md">заметку с кодом</a> типа JavaScript (Trilium frontend) и **добавьте ей метку** `#widget`.
 
 ```
 /*
@@ -82,10 +82,10 @@ class WordCountWidget extends api.NoteContextAwareWidget {
 module.exports = new WordCountWidget();
 ```
 
-After you make changes it is necessary to [restart Trilium](../../../Troubleshooting/Refreshing%20the%20application.md) so that the layout can be rebuilt.
+После внесения изменений необходимо [перезапустить Trilium](../../../Troubleshooting/Refreshing%20the%20application.md), чтобы макет перестроился.
 
-The widget only activates on text notes that have the `#wordCount` label. This label can be a [reference link](../../../Note%20Types/Text/Links/Internal%20\(reference\)%20links.md) to enable the widget for an entire subtree.
+Виджет активируется только для текстовых заметок с меткой `#wordCount`. Эту метку можно сделать наследуемой (см. [внутренние ссылки](../../../Note%20Types/Text/Links/Internal%20\(reference\)%20links.md)), чтобы включить виджет для всего поддерева.
 
-At the bottom of the note you can see the resulting widget:
+В нижней части заметки отобразится получившийся виджет:
 
 <figure class="image"><img style="aspect-ratio:792/603;" src="Word count widget_image.png" width="792" height="603"></figure>

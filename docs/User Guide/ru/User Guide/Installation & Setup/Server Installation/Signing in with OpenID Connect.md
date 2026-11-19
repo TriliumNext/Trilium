@@ -1,104 +1,104 @@
-# Signing in with OpenID Connect
-OpenID is a standardized way to let you log into websites using an account from another service, like Google or Authelia, to verify your identity.
+# Вход с помощью OpenID Connect
+OpenID — это стандартизированный способ входа на веб-сайты с использованием учётной записи другого сервиса, например Google или Authelia, для подтверждения вашей личности.
 
-When OpenID is activated, the password-based authentication in Trilium is replaced with a button that connects using your provider. This means that the configuration of <a class="reference-link" href="Multi-factor%20authentication%20with%20TOTP.md">Multi-factor authentication with TOTP</a> no longer takes effect, since your provider has to handle any multi-factor authentication.
+Когда OpenID активирован, аутентификация по паролю в Trilium заменяется кнопкой входа через вашего провайдера. Это означает, что настройки <a class="reference-link" href="Multi-factor%20authentication%20with%20TOTP.md">многофакторной аутентификации с помощью TOTP</a> больше не действуют, так как многофакторную аутентификацию должен обеспечивать ваш провайдер.
 
-## Setup
+## Настройка
 
-Setting up authentication with OpenID connect is a two-step process:
+Настройка аутентификации через OpenID Connect состоит из двух этапов:
 
-1.  First the Trilium server must be configured with information about your authentication provider such as the URL, client ID and secret.
-2.  Second, the user must connect from options to create a link between the account on the provider and the one Trilium has.
+1.  Сначала необходимо настроить сервер Trilium, указав данные вашего провайдера аутентификации, такие как URL, ID клиента и секрет.
+2.  Затем пользователь должен подключить учётную запись в настройках, чтобы связать аккаунт у провайдера с учётной записью в Trilium.
 
-### Configuring the authentication provider
+### Настройка провайдера аутентификации
 
-1.  First, make sure the authentication provider (e.g. Google, Authelia) is configured properly. See <a class="reference-link" href="Signing%20in%20with%20OpenID%20Connect/Setting%20up%20with%20various%20providers.md">Setting up with various providers</a> for concrete examples.
+1.  Сначала убедитесь, что провайдер аутентификации (например, Google, Authelia) настроен правильно. Конкретные примеры см. в разделе <a class="reference-link" href="Signing%20in%20with%20OpenID%20Connect/Setting%20up%20with%20various%20providers.md">Настройка с различными провайдерами</a>.
     
-    1.  The redirect URL of Trilium is `https://<your-trilium-domain>/callback`.
-    2.  You should obtain the base URL, client ID and client secret.
-2.  Set the following information using <a class="reference-link" href="../../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables).md">Configuration (config.ini or environment variables)</a>:
+    1.  URL перенаправления (redirect URL) для Trilium — `https://<your-trilium-domain>/callback`.
+    2.  Вам потребуются базовый URL, ID клиента и секрет клиента.
+2.  Задайте следующие параметры с помощью <a class="reference-link" href="../../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables).md">конфигурации (config.ini или переменные окружения)</a>:
     
-    | Configuration | `config.ini` in `[MultiFactorAuthentication]` section | Environment variable | Description |
+    | Параметр | `config.ini` в секции `[MultiFactorAuthentication]` | Переменная окружения | Описание |
     | --- | --- | --- | --- |
-    | Base URL\* | `oauthBaseUrl` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL` | The URL of your Trilium instance (e.g. `https://example.com`). |
-    | Client ID\* | `oauthClientId` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID` | The client ID from your provider configuration. |
-    | Client Secret\* | `oauthClientSecret` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET` | The client secret from your provider configuration. |
-    | Client auth method | `oauthClientAuthMethod` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTAUTHMETHOD` | Token-endpoint auth method: `client_secret_basic` or `client_secret_post`. Empty auto-detects.  Only needed if sign-in fails with a `WWW-Authenticate` or `invalid_client` error. |
-    | ID token algorithm | `oauthIdTokenSigningAlg` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHIDTOKENSIGNINGALG` | <span style="color:rgb(32,32,32);">The algorithm your provider signs ID tokens with, e.g.</span> `RS256`<span style="color:rgb(32,32,32);">,</span> `EdDSA`<span style="color:rgb(32,32,32);">,</span> `ES256`<span style="color:rgb(32,32,32);">. Empty auto-detects from the provider. Only needed if sign-in fails with an</span> `unexpected JWT alg` <span style="color:rgb(32,32,32);">error.</span> |
+    | Базовый URL\* | `oauthBaseUrl` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL` | URL вашего экземпляра Trilium (например, `https://example.com`). |
+    | Client ID\* | `oauthClientId` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID` | ID клиента из конфигурации вашего провайдера. |
+    | Client Secret\* | `oauthClientSecret` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET` | Секрет клиента из конфигурации вашего провайдера. |
+    | Метод аутентификации клиента | `oauthClientAuthMethod` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTAUTHMETHOD` | Метод аутентификации на конечной точке токенов: `client_secret_basic` или `client_secret_post`. Если не указан, определяется автоматически. Нужен только в том случае, если вход завершается с ошибкой `WWW-Authenticate` или `invalid_client`. |
+    | Алгоритм подписи ID-токена | `oauthIdTokenSigningAlg` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHIDTOKENSIGNINGALG` | <span style="color:rgb(32,32,32);">Алгоритм, которым ваш провайдер подписывает ID-токены, например</span> `RS256`<span style="color:rgb(32,32,32);">,</span> `EdDSA`<span style="color:rgb(32,32,32);">,</span> `ES256`<span style="color:rgb(32,32,32);">. Если не указан, определяется автоматически у провайдера. Нужен только в том случае, если вход завершается с ошибкой</span> `unexpected JWT alg`<span style="color:rgb(32,32,32);">.</span> |
     
-    Asterisk (\*) marks a required field
-3.  The default OAuth issuer is Google. To use other services such as Authentik or Auth0, you can configure the settings via `oauthIssuerBaseUrl`, `oauthIssuerName`, and `oauthIssuerIcon` in the `config.ini` file. Alternatively, these values can be set using environment variables:
+    Звёздочкой (\*) отмечены обязательные поля.
+3.  По умолчанию издателем OAuth является Google. Чтобы использовать другие сервисы, такие как Authentik или Auth0, можно настроить параметры `oauthIssuerBaseUrl`, `oauthIssuerName` и `oauthIssuerIcon` в файле `config.ini`. В качестве альтернативы эти значения можно задать через переменные окружения:
     
-    | Configuration | `config.ini` in `[MultiFactorAuthentication]` section | Environment variable | Description |
+    | Параметр | `config.ini` в секции `[MultiFactorAuthentication]` | Переменная окружения | Описание |
     | --- | --- | --- | --- |
-    | Issuer base URL | `oauthIssuerBaseUrl` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL` | Either the issuer itself (`https://auth.example.com`) or a full discovery URL (`https://auth.example.com/.well-known/openid-configuration`).  <br>  <br>A URL containing `/.well-known/` is used as-is<span style="color:rgb(32,32,32);">, which is convenient when your provider hands you a discovery URL to copy. A trailing slash may be included or omitted; Trilium matches whichever spelling the provider advertises.</span>  <br>  <br>Use the full form when your provider advertises an issuer that differs from the path serving its discovery document, such as Authentik in "global" issuer mode. |
-    | Issuer name | `oauthIssuerName` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME` | The name of your authentication provider, used for reference on the login screen and in settings. Default is “Google”. |
-    | Issuer icon | `oauthIssuerIcon` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON` | Optionally, the URL to a logo of the provider. By default it will try to obtain the favicon from the website, so it's optional. |
+    | Базовый URL издателя | `oauthIssuerBaseUrl` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL` | Либо сам URL издателя (`https://auth.example.com`), либо полный URL обнаружения (`https://auth.example.com/.well-known/openid-configuration`).  <br>  <br>URL, содержащий `/.well-known/`, используется как есть<span style="color:rgb(32,32,32);">, что удобно, когда провайдер сразу выдаёт discovery URL для копирования. Завершающую косую черту можно включать или опускать — Trilium сопоставит вариант, объявленный провайдером.</span>  <br>  <br>Используйте полную форму, если ваш провайдер объявляет издателя, отличающегося от пути к документу обнаружения (например, Authentik в режиме глобального издателя). |
+    | Имя издателя | `oauthIssuerName` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME` | Название вашего провайдера аутентификации, отображаемое на экране входа и в настройках. По умолчанию — «Google». |
+    | Иконка издателя | `oauthIssuerIcon` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON` | Необязательный URL логотипа провайдера. По умолчанию Trilium пытается получить favicon с сайта, поэтому это поле необязательно. |
     
-    All the fields here are optional, since the default OAuth issuer is Google.
-4.  Optionally, tune the following advanced settings. All are optional and have sensible defaults:
+    Все поля здесь необязательны, так как издателем OAuth по умолчанию является Google.
+4.  При необходимости можно настроить следующие дополнительные параметры. Все они необязательны и имеют разумные значения по умолчанию:
     
-    | Configuration | `config.ini` in `[MultiFactorAuthentication]` section | Environment variable | Description |
+    | Параметр | `config.ini` в секции `[MultiFactorAuthentication]` | Переменная окружения | Описание |
     | --- | --- | --- | --- |
-    | HTTP timeout | `oauthHttpTimeout` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT` | Timeout in milliseconds for the provider HTTP requests (discovery, token exchange, userinfo). Defaults to `30000` (30s). Raise this if your provider cold-starts slowly and you are occasionally asked to sign in twice. Minimum accepted value is `500`. |
-    | Scopes | `oauthScope` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE` | Space-separated list of OIDC scopes requested at login. Defaults to `openid profile email`. `openid` is required and is prepended automatically if you omit it. |
+    | Таймаут HTTP | `oauthHttpTimeout` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT` | Таймаут в миллисекундах для HTTP-запросов к провайдеру (discovery, обмен токенами, userinfo). По умолчанию `30000` (30 с). Увеличьте это значение, если ваш провайдер медленно запускается и иногда приходится входить дважды. Минимальное допустимое значение — `500`. |
+    | Области (Scopes) | `oauthScope` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE` | Список областей OIDC, разделённых пробелами, запрашиваемых при входе. По умолчанию `openid profile email`. Область `openid` обязательна и добавляется в начало автоматически, если вы её пропустите. |
     
-    The OIDC session lifetime is automatically bound to Trilium's own session cookie lifetime (the `cookieMaxAge` setting in the `[Session]` section, 21 days by default), so a single sign-in stays valid for as long as your Trilium session does rather than expiring early on the OIDC library's shorter internal defaults.
-5.  Restart the server so that the changes are applied.
+    Срок действия сессии OIDC автоматически привязан к сроку действия cookie сессии самого Trilium (параметр `cookieMaxAge` в секции `[Session]`, по умолчанию 21 день), поэтому один вход остаётся действительным столько же, сколько и сессия Trilium, а не истекает раньше по коротким внутренним настройкам библиотеки OIDC.
+5.  Перезапустите сервер, чтобы изменения вступили в силу.
 
 > [!NOTE]
-> Legacy environment variables are also supported: `TRILIUM_OAUTH_BASE_URL`, `TRILIUM_OAUTH_CLIENT_ID`, `TRILIUM_OAUTH_CLIENT_SECRET`, and for customizing the provider: `TRILIUM_OAUTH_ISSUER_BASE_URL`, `TRILIUM_OAUTH_ISSUER_NAME`, `TRILIUM_OAUTH_ISSUER_ICON`, `TRILIUM_OAUTH_HTTP_TIMEOUT`, `TRILIUM_OAUTH_SCOPE`, `TRILIUM_OAUTH_CLIENT_AUTH_METHOD`, `TRILIUM_OAUTH_ID_TOKEN_SIGNING_ALG`.
+> Также поддерживаются устаревшие переменные окружения: `TRILIUM_OAUTH_BASE_URL`, `TRILIUM_OAUTH_CLIENT_ID`, `TRILIUM_OAUTH_CLIENT_SECRET`, а для настройки провайдера: `TRILIUM_OAUTH_ISSUER_BASE_URL`, `TRILIUM_OAUTH_ISSUER_NAME`, `TRILIUM_OAUTH_ISSUER_ICON`, `TRILIUM_OAUTH_HTTP_TIMEOUT`, `TRILIUM_OAUTH_SCOPE`, `TRILIUM_OAUTH_CLIENT_AUTH_METHOD`, `TRILIUM_OAUTH_ID_TOKEN_SIGNING_ALG`.
 
-## Connecting to the authentication provider
+## Подключение к провайдеру аутентификации
 
-Once the server has been configured at the previous step, the next step is to create a link between your account on the authentication provider and the Trilium instance. This makes sure that only you can access the Trilium instance, and not just any other valid account.
+После настройки сервера на предыдущем шаге необходимо связать вашу учётную запись у провайдера аутентификации с экземпляром Trilium. Это гарантирует, что доступ к экземпляру Trilium будет только у вас, а не у любого другого пользователя с действительной учётной записью.
 
-To do so:
+Для этого:
 
-1.  Go to <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Password & Auth._
-2.  In the _Sign-in with_ field, choose _OpenID Connect provider._
-3.  In the _OpenID Connect_ section, look for the _Connect account_ (<span class="tn-icon bx bx-log-in"></span>) button.
-4.  This will redirect you to your authentication provider, where you can sign in or confirm the action if needed.
-5.  Once you are authenticated you will be redirected back to the Trilium application.
+1.  Перейдите в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Пароль и аутентификация_ (_Password & Auth_).
+2.  В поле _Способ входа_ (_Sign-in with_) выберите _Провайдер OpenID Connect_ (_OpenID Connect provider_).
+3.  В разделе _OpenID Connect_ найдите кнопку _Подключить аккаунт_ (_Connect account_) (<span class="tn-icon bx bx-log-in"></span>).
+4.  Вы будете перенаправлены к провайдеру аутентификации, где сможете войти в систему или подтвердить действие при необходимости.
+5.  После успешной аутентификации вы будете перенаправлены обратно в приложение Trilium.
 
-## Logging out
+## Выход из системы
 
-When logging out of Trilium, a request is made to the authentication provider to log out from there as well. This feature depends on the authentication provider, so it may not be honored (Google and Authelia are known cases in which they don't respect the logout feature).
+При выходе из Trilium отправляется запрос провайдеру аутентификации для выхода и из него. Эта возможность зависит от провайдера и может не поддерживаться (известно, что Google и Authelia не поддерживают такой выход).
 
-## Switching providers
+## Смена провайдера
 
-When switching providers (e.g. going from Google to Authelia), it's important to take the following steps:
+При смене провайдера (например, при переходе с Google на Authelia) важно выполнить следующие шаги:
 
-1.  Go to <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Password & Auth_.
-2.  In the _OpenID Connect_ section, press the _Disconnect_ (<span class="tn-icon bx bx-trash"></span>) button.
-3.  Wait for the section to indicate that you are disconnected.
-4.  Change the configuration pointing to the new provider.
-5.  Restart your server.
-6.  Repeat the normal steps to connect to the authentication provider.
+1.  Перейдите в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Пароль и аутентификация_ (_Password & Auth_).
+2.  В разделе _OpenID Connect_ нажмите кнопку _Отключить_ (_Disconnect_) (<span class="tn-icon bx bx-trash"></span>).
+3.  Дождитесь, пока в разделе не отобразится статус отключения.
+4.  Измените конфигурацию, указав нового провайдера.
+5.  Перезапустите сервер.
+6.  Повторите обычные шаги для подключения к провайдеру аутентификации.
 
-Failing to disconnect before switching providers might temporarily lock you in, as you will not be able to login (credentials won't match). Should this happen:
+Если не отключить старого провайдера перед переключением, вы можете временно потерять доступ, так как не сможете войти (учётные данные не совпадут). Если это произошло:
 
-1.  Modify the server configuration again to your old provider.
-2.  Restart the server and follow the disconnect instructions above.
-3.  Modify the server configuration again to your new provider.
-4.  Restart again the server.
+1.  Верните конфигурацию сервера к старому провайдеру.
+2.  Перезапустите сервер и выполните инструкции по отключению выше.
+3.  Снова измените конфигурацию сервера на нового провайдера.
+4.  Снова перезапустите сервер.
 
-## Deactivating OpenID Connect temporarily
+## Временное отключение OpenID Connect
 
-To disable the OpenID Connect authentication and instead rely on the local password temporarily, you must:
+Чтобы временно отключить аутентификацию через OpenID Connect и вернуться к локальному паролю:
 
-1.  Modify the `config.ini` or environment variables (depending on how you set up the provider information) and temporarily deactivate the multi-factor authentication section by renaming `[MultiFactorAuthentication]` to something else (e.g. `[MultiFactorAuthentication.bak]`.
-2.  Restart the server for the changes to take effect.
+1.  Отредактируйте `config.ini` или переменные окружения (в зависимости от того, как вы настраивали провайдера) и временно деактивируйте секцию многофакторной аутентификации, переименовав `[MultiFactorAuthentication]` во что-нибудь другое (например, `[MultiFactorAuthentication.bak]`).
+2.  Перезапустите сервер, чтобы изменения вступили в силу.
 
-## Troubleshooting
+## Устранение неполадок
 
-### Setup fails with a `WWW-Authenticate` or `invalid_client` error
+### Ошибка настройки `WWW-Authenticate` или `invalid_client`
 
-Your provider disagrees with Trilium about how client credentials should be sent to the token endpoint. Set `oauthClientAuthMethod` to `client_secret_post` (or `client_secret_basic` if it's already set to post) and restart. Providers vary: some reject `client_secret_post` outright because the method is fixed when the client is registered (e.g. Authelia), so if one value doesn't work, try the other.
+Ваш провайдер и Trilium расходятся в том, как учётные данные клиента должны передаваться на конечную точку токенов. Задайте `oauthClientAuthMethod` равным `client_secret_post` (или `client_secret_basic`, если уже задан `post`) и перезапустите сервер. Провайдеры ведут себя по-разному: некоторые сразу отклоняют `client_secret_post`, так как метод фиксируется при регистрации клиента (например, Authelia), поэтому если одно значение не работает, попробуйте другое.
 
-### Setup fails with `invalid user`
+### Ошибка настройки `invalid user`
 
-If you are running behind a [reverse proxy](2.%20Reverse%20proxy.md), a buffer overflow can also cause this issue. Here is a sample fix for <a class="reference-link" href="2.%20Reverse%20proxy/Nginx.md">Nginx</a>: 
+Если вы работаете за [обратным прокси](2.%20Reverse%20proxy.md), причиной этой ошибки также может быть переполнение буфера. Вот пример исправления для <a class="reference-link" href="2.%20Reverse%20proxy/Nginx.md">Nginx</a>: 
 
 ```
 proxy_buffer_size 128k;
@@ -106,12 +106,12 @@ proxy_buffers 4 256k;
 proxy_busy_buffers_size 256k;
 ```
 
-### Setup fails with an `unexpected JWT alg` error
+### Ошибка настройки `unexpected JWT alg`
 
-Depending on your version the message reads `unexpected JWT "alg" header parameter` or `unexpected JWT alg received, expected RS256, got: EdDSA`. Both mean the same thing: your provider signs ID tokens with an algorithm other than RS256. Pocket ID (Ed25519) and Kanidm (ES256) do this.
+В зависимости от версии сообщение выглядит как `unexpected JWT "alg" header parameter` или `unexpected JWT alg received, expected RS256, got: EdDSA`. Оба означают одно и то же: ваш провайдер подписывает ID-токены алгоритмом, отличным от RS256. Так работают Pocket ID (Ed25519) и Kanidm (ES256).
 
-From v0.104.2 Trilium detects the algorithm from your provider automatically, and the log records the outcome (`OAuth: the issuer does not sign ID tokens with RS256; expecting ES256`). If detection can't reach the provider it falls back to RS256, so check that the issuer URL is correct and reachable first. Should it still fail, set `oauthIdTokenSigningAlg` explicitly to the algorithm your provider uses.
+Начиная с версии v0.104.2 Trilium автоматически определяет алгоритм у провайдера и записывает результат в журнал (`OAuth: the issuer does not sign ID tokens with RS256; expecting ES256`). Если при определении не удаётся связаться с провайдером, используется RS256, поэтому сначала проверьте, что URL издателя указан верно и доступен. Если ошибка сохраняется, явно задайте `oauthIdTokenSigningAlg` в соответствии с алгоритмом вашего провайдера.
 
-### Setup fails with `OAUTH_RESPONSE_IS_NOT_CONFORM`
+### Ошибка настройки `OAUTH_RESPONSE_IS_NOT_CONFORM`
 
-Make sure the base URL is correct and that the identity provider actually supports OpenID Connect. Some providers such as GitHub offer only OAuth 2.0.
+Убедитесь, что базовый URL указан верно и что провайдер удостоверений действительно поддерживает OpenID Connect. Некоторые провайдеры, такие как GitHub, поддерживают только OAuth 2.0.

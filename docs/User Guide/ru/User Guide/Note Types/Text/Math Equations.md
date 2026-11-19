@@ -1,30 +1,30 @@
-# Math Equations
+# Математические уравнения
 <figure class="image image-style-align-right"><img style="aspect-ratio:350/193;" src="Math Equations_image.png" width="350" height="193"></figure>
 
-Within text notes, it's possible to enter mathematical equations using the <span class="tn-icon cke cke-trilium-math"></span> button from the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a> (generally found under the <a class="reference-link" href="Insert%20buttons.md">Insert buttons</a>).
+В текстовых заметках можно вводить математические уравнения с помощью кнопки <span class="tn-icon cke cke-trilium-math"></span> на <a class="reference-link" href="Formatting%20toolbar.md">Панели форматирования</a> (обычно находится в меню <a class="reference-link" href="Insert%20buttons.md">Кнопки вставки</a>).
 
-By default, the math dialog includes a MathLive visual editor and a TeX field. Disable _MathLive visual editor_ under Options → Text Notes → Features to use only the TeX field and preview.
+По умолчанию диалог формул включает визуальный редактор MathLive и поле TeX. Отключите _Визуальный редактор MathLive_ в Настройках → Текстовые заметки → Функции, чтобы использовать только поле TeX и предпросмотр.
 
-To make the fields bigger, drag the bottom-right corner of the dialog: the MathLive editor and the TeX field grow with it.
+Чтобы увеличить поля, потяните за правый нижний угол диалога: редактор MathLive и поле TeX увеличатся вместе с ним.
 
-Enabling _Display mode_ will render the equation slightly bigger (especially if using big operators such as summation, or fractions) and center it. Display mode equations will act as blocks (i.e. like paragraphs, or tables) and can be inserted for example in lists. Non-display equations can be part of the text.
+Включение _Режима отображения (Display mode)_ делает формулу немного крупнее (особенно при использовании крупных операторов вроде суммы или дробей) и выравнивает её по центру. Такие формулы ведут себя как блоки (как абзацы или таблицы) и могут вставляться, например, в списки. Обычные (строчные) формулы располагаются прямо внутри текста.
 
-## Keyboard shortcuts
+## Сочетания клавиш
 
-If inserting equations frequently, using the <kbd>Ctrl</kbd>+<kbd>M</kbd> keyboard shortcut can be more comfortable. Alternatively, type `$$` or `\[` to trigger the popup directly.
+Если вы часто вставляете формулы, удобнее использовать сочетание <kbd>Ctrl</kbd>+<kbd>M</kbd>. Также можно ввести `$$` или `\[`, чтобы сразу открыть всплывающее окно.
 
-There is currently no quick way to turn an already typed-out equation, such as surrounding it with `$` or pressing <kbd>Ctrl</kbd>+<kbd>M</kbd>.
+В настоящее время нет быстрого способа преобразовать уже набранную формулу (например, окружив её `$` или нажав <kbd>Ctrl</kbd>+<kbd>M</kbd>).
 
-## Supported math features
+## Поддерживаемые возможности
 
-Technically we are using the KaTeX library which allows for a subset of the TeX format. To see the full list of supported features, consult the [Supported Functions](https://katex.org/docs/supported) and the [Support Table](https://katex.org/docs/support_table) from the official documentation.
+Технически используется библиотека KaTeX, поддерживающая подмножество формата TeX. Полный список возможностей см. в разделах [Supported Functions](https://katex.org/docs/supported) и [Support Table](https://katex.org/docs/support_table) официальной документации.
 
-## Markdown support
+## Поддержка Markdown
 
-Math equations will be preserved when exporting to or importing from Markdown, surrounded by `$` characters for inline math expressions, and `$$` for display mode.
+Математические уравнения сохраняются при экспорте в Markdown и импорте из него: строчные формулы окружаются символами `$`, а блочные (display mode) — `$$`.
 
-If you notice any issue with the Markdown import/export for equations, feel free to [report](../../Troubleshooting/Reporting%20issues.md) it while providing the equation that causes issues.
+Если вы заметили проблему при импорте или экспорте уравнений в Markdown, пожалуйста, [сообщите](../../Troubleshooting/Reporting%20issues.md) об этом, приложив проблемную формулу.
 
-## Formatting the equation
+## Форматирование уравнения
 
-It is possible to customize the font size and foreground color for both inline and display-mode equations, just like any other text. For inline equations, the background color/highlight can also be adjusted.
+Для строчных и блочных формул можно настраивать размер шрифта и цвет текста, как для обычного текста. Для строчных формул также можно задать цвет фона / выделения.

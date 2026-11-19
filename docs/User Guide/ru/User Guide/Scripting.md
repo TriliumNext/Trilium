@@ -1,61 +1,61 @@
-# Scripting
-Trilium supports creating <a class="reference-link" href="Note%20Types/Code.md">Code</a> notes, i.e. notes which allow you to store some programming code and highlight it. Special case is JavaScript code notes which can also be executed inside Trilium which can in conjunction with <a class="reference-link" href="Scripting/Script%20API.md">Script API</a> provide extra functionality.
+# Скриптинг
+Trilium поддерживает создание заметок типа <a class="reference-link" href="Note%20Types/Code.md">Код</a> — то есть заметок, позволяющих хранить программный код с подсветкой синтаксиса. Особый случай — заметки с кодом JavaScript, которые можно выполнять прямо внутри Trilium, что в сочетании со <a class="reference-link" href="Scripting/Script%20API.md">Script API</a> позволяет добавлять дополнительную функциональность.
 
-## Architecture Overview
+## Обзор архитектуры
 
-To go further I must explain basic architecture of Trilium - in its essence it is a classic web application - it has these two main components:
+Чтобы двигаться дальше, нужно объяснить базовую архитектуру Trilium — по своей сути это классическое веб-приложение, состоящее из двух основных компонентов:
 
-*   frontend running in the browser (using HTML, CSS, JavaScript) - this is mainly used to interact with the user, display notes etc.
-*   backend running JavaScript code in node.js runtime - this is responsible for e.g. storing notes, encrypting them etc.
+*   фронтенд, работающий в браузере (с использованием HTML, CSS, JavaScript) — отвечает в основном за взаимодействие с пользователем, отображение заметок и т. д.;
+*   бэкенд, выполняющий код JavaScript в среде выполнения Node.js — отвечает, например, за хранение заметок, их шифрование и т. д.
 
-So we have frontend and backend, each with their own set of responsibilities, but their common feature is that they both run JavaScript code. Add to this the fact, that we're able to create JavaScript <a class="reference-link" href="Note%20Types/Code.md">Code</a> and we're onto something.
+Итак, у нас есть фронтенд и бэкенд, каждый со своим набором обязанностей, но их общая черта в том, что оба выполняют код JavaScript. Добавьте к этому возможность создавать заметки типа <a class="reference-link" href="Note%20Types/Code.md">Код</a> на JavaScript — и у нас появляются широкие возможности для расширения приложения.
 
-## Use cases
+## Примеры использования
 
-*   <a class="reference-link" href="Scripting/Frontend%20Basics/Examples/New%20Task%20launcher%20button.md">"New Task" launcher button</a>
+*   <a class="reference-link" href="Scripting/Frontend%20Basics/Examples/New%20Task%20launcher%20button.md">Кнопка панели запуска «Новая задача»</a>
 
-## Action handler
+## Обработчик действий
 
-Saving the note to the database is backend's responsibility, so we immediately pass control to the backend and ask it to create a note. Once this is done, we show the newly created note so that the user can set the task title and maybe some attributes.
+Сохранение заметки в базу данных — обязанность бэкенда, поэтому мы сразу передаём управление бэкенду и просим его создать заметку. Как только это сделано, мы отображаем вновь созданную заметку, чтобы пользователь мог задать название задачи и, при необходимости, некоторые атрибуты.
 
-## Script execution
+## Выполнение скриптов
 
-So we have a script which will add the button to the toolbar. But how can we execute it? One possibility is to click on the <span class="tn-icon bx bx-play"></span> _Execute script_ button. The problem with this is that this UI change is time bound by Trilium runtime so when we restart Trilium, button won't be there.
+Итак, у нас есть скрипт, который добавит кнопку на панель инструментов. Но как его выполнить? Один из вариантов — нажать кнопку <span class="tn-icon bx bx-play"></span> _Выполнить скрипт_ (_Execute script_). Проблема в том, что это изменение интерфейса действует только в рамках текущего сеанса работы Trilium, поэтому после перезапуска Trilium кнопка исчезнет.
 
-We need to execute it every time Trilium starts up, but we probably don't want to have to manually click on play button on every start up.
+Нам нужно, чтобы скрипт выполнялся при каждом запуске Trilium, но мы вряд ли хотим каждый раз вручную нажимать кнопку запуска.
 
-The solution is to give the note the [label](Advanced%20Usage/Attributes.md) `#run=frontendStartup` - this is one of the "system" labels which Trilium understands. As you might guess, this will cause all such labeled script notes to be executed once Trilium frontend starts up.
+Решение — добавить заметке [метку](Advanced%20Usage/Attributes.md) `#run=frontendStartup` — это одна из «системных» меток, которые понимает Trilium. Как несложно догадаться, все заметки со скриптами, имеющие такую метку, будут выполняться автоматически при запуске фронтенда Trilium.
 
-(`#run=frontendStartup` does not work for [Mobile frontend](Installation%20%26%20Setup/Mobile%20Frontend.md) - if you want to have scripts running there, give the script `#run=mobileStartup` label).
+(`#run=frontendStartup` не работает для [мобильного фронтенда](Installation%20%26%20Setup/Mobile%20Frontend.md) — если вы хотите запускать скрипты там, добавьте скрипту метку `#run=mobileStartup`).
 
-### Execute button
+### Кнопка выполнения
 
-Runnable code notes (frontend or backend) and saved SQL consoles can optionally have a dedicated <span class="tn-icon bx bx-play"></span> execute button alongside a description.
+Исполняемые заметки с кодом (фронтенд или бэкенд) и сохранённые SQL-консоли могут дополнительно иметь специальную кнопку выполнения <span class="tn-icon bx bx-play"></span> вместе с описанием.
 
-To do so, apply the following [labels](Advanced%20Usage/Attributes/Labels.md):
+Для этого добавьте следующие [метки](Advanced%20Usage/Attributes/Labels.md):
 
-*   A `#executeButton` with the value of the label being displayed as the label of the button.
-*   An optional `#executeDescription` which adds explanatory text beside it.
+*   `#executeButton` — значение этой метки будет отображаться в качестве текста на кнопке.
+*   Необязательную `#executeDescription`, которая добавляет пояснительный текст рядом с кнопкой.
 
-## Autocomplete & linting
+## Автодополнение и линтинг
 
-Starting with Trilium v0.104.0, frontend scripts, backend scripts and render notes benefit from an autocomplete system.
+Начиная с Trilium v0.104.0, фронтенд-скрипты, бэкенд-скрипты и заметки рендеринга поддерживают систему автодополнения.
 
-The autocomplete opens automatically while typing a name or after a <kbd>.</kbd>, or manually by pressing <kbd>Ctrl</kbd>+<kbd>Space</kbd>. Its list looks and works like the <kbd>/</kbd> list of a text note: each entry has an icon for its kind (function, property, class…), <kbd>Enter</kbd> or <kbd>Tab</kbd> inserts the highlighted one and <kbd>Esc</kbd> closes it.
+Автодополнение открывается автоматически при вводе имени или после точки <kbd>.</kbd>, либо вручную нажатием <kbd>Ctrl</kbd>+<kbd>Space</kbd>. Список выглядит и работает так же, как меню <kbd>/</kbd> в текстовой заметке: у каждого элемента есть значок его типа (функция, свойство, класс…), <kbd>Enter</kbd> или <kbd>Tab</kbd> вставляет выбранный вариант, а <kbd>Esc</kbd> закрывает список.
 
-In addition to that, the editor will also display syntax errors and warnings such as unreachable code.
+Кроме того, редактор отображает синтаксические ошибки и предупреждения, например о недостижимом коде.
 
 > [!NOTE]
-> If you notice a false positive in regards with the errors/warnings reported or an incorrect or missing API, feel free to [open a issue](Troubleshooting/Reporting%20issues.md) with a code sample.
+> Если вы заметили ложное срабатывание ошибок/предупреждений или неточный/отсутствующий API, пожалуйста, [создайте отчёт об ошибке](Troubleshooting/Reporting%20issues.md) с примером кода.
 
-## More showcases
+## Другие примеры
 
-You can see more scripting with explanation in <a class="reference-link" href="Advanced%20Usage/Advanced%20Showcases.md">Advanced Showcases</a>.
+Дополнительные примеры скриптов с пояснениями можно найти в разделе <a class="reference-link" href="Advanced%20Usage/Advanced%20Showcases.md">Продвинутые примеры</a>.
 
-## Events
+## События
 
-See <a class="reference-link" href="Scripting/Backend%20scripts/Backend%20Events.md">Events</a>.
+См. <a class="reference-link" href="Scripting/Backend%20scripts/Backend%20Events.md">События</a>.
 
 ## Script API
 
-See <a class="reference-link" href="Scripting/Script%20API.md">Script API</a>.
+См. <a class="reference-link" href="Scripting/Script%20API.md">Script API</a>.

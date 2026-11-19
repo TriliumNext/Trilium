@@ -1,116 +1,116 @@
-# Insert buttons
-Press the <span class="tn-icon cke cke-plus"></span> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a> to reveal special inserable items and blocks such as symbols, Math expressions and separators.
+# Кнопки вставки
+Нажмите кнопку <span class="tn-icon cke cke-plus"></span> на <a class="reference-link" href="Formatting%20toolbar.md">Панели форматирования</a>, чтобы открыть список специальных вставляемых элементов и блоков, таких как символы, математические выражения и разделители.
 
-## Bookmarks
+## Закладки
 
-See the dedicated <a class="reference-link" href="Anchors.md">Anchors</a> section.
+См. отдельный раздел <a class="reference-link" href="Anchors.md">Якоря</a>.
 
-## New child note
+## Новая подзаметка
 
-Choose <span class="tn-icon bx bx-subdirectory-right"></span> _New child note_ to create an empty child note of the current note and insert a link to it at the cursor. The new note opens in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a> with its title selected, so typing names it, and the link shows the new title. While the note is still empty, Quick edit offers the note types to turn it into.
+Выберите <span class="tn-icon bx bx-subdirectory-right"></span> _Новая подзаметка_, чтобы создать пустую дочернюю заметку для текущей и вставить ссылку на неё в позиции курсора. Новая заметка откроется в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Быстром редактировании</a> с выделенным заголовком — достаточно начать печатать, чтобы назвать её, и ссылка сразу отобразит новое название. Пока заметка пуста, Быстрое редактирование предлагает выбрать её тип.
 
-The same action is available as _Create a new child note_ in the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>. A child note of a protected note is protected too.
+То же действие доступно как _Create a new child note_ в <a class="reference-link" href="Slash%20Commands.md">Слэш-командах</a>. Подзаметка защищённой заметки также создаётся защищённой.
 
-## Emoji
+## Эмодзи
 
 <figure class="image image-style-align-right image_resized" style="width:42.4%;"><img style="aspect-ratio:366/410;" src="Insert buttons_plus.png" width="366" height="410"></figure>
 
-This feature allows inserting Unicode emoji characters. Simply select a category and a desired emoji to insert it.
+Эта функция позволяет вставлять символы эмодзи Unicode. Просто выберите категорию и нужный эмодзи, чтобы вставить его.
 
-Emojis can also be searched by their English name and the skin tone can be selected via a combo box to the right.
+Эмодзи также можно искать по их английскому названию, а оттенок кожи выбирается в выпадающем списке справа.
 
-There is also the possibility of inserting emojis directly by typing `:` followed by a name of an emoji, triggering the display of a list of emojis. Simply use the arrow keys to select one and press <kbd>Enter</kbd> or <kbd>Tab</kbd> to insert it.
+Кроме того, эмодзи можно вставлять напрямую, введя `:` и название эмодзи — появится список подходящих вариантов. Выберите нужный клавишами со стрелками и нажмите <kbd>Enter</kbd> или <kbd>Tab</kbd> для вставки.
 
 <img src="1_Insert buttons_plus.png" width="272" height="187">
 
-## Symbols
+## Символы
 
 <figure class="image image-style-align-right"><img style="aspect-ratio:346/322;" src="Insert buttons_image.png" width="346" height="322"></figure>
 
-Pressing the <span class="tn-icon cke cke-special-characters"></span> button will reveal a popup window displaying a list of characters that are generally more difficult to insert directly from the keyboard, such as a subset of emojis, quotation characters, etc.
+Нажатие кнопки <span class="tn-icon cke cke-special-characters"></span> открывает всплывающее окно со списком символов, которые сложно ввести напрямую с клавиатуры (например, часть эмодзи, кавычки и т. д.).
 
-Interaction:
+Взаимодействие:
 
-*   Click on a character to insert it at the current cursor position.
-*   The window can be dragged around by the top bar where the title is, to avoid it getting in the way of the text.
-*   Click on the _Category_ selector to filter the characters.
+*   Кликните по символу, чтобы вставить его в текущую позицию курсора.
+*   Окно можно перетаскивать за верхнюю панель с заголовком, чтобы оно не мешало тексту.
+*   Нажмите на селектор _Категория_, чтобы отфильтровать символы.
 
-## Multicolumn layout
+## Многоколоночная разметка
 
-See the dedicated <a class="reference-link" href="Multicolumn%20layout.md">Multicolumn layout</a> page.
+См. отдельную страницу <a class="reference-link" href="Multicolumn%20layout.md">Многоколоночная разметка</a>.
 
-## Aside blocks
+## Боковые блоки
 
-See the dedicated <a class="reference-link" href="Aside%20blocks.md">Aside blocks</a> page.
+См. отдельную страницу <a class="reference-link" href="Aside%20blocks.md">Боковые блоки</a>.
 
-## Math equations
+## Математические уравнения
 
-See the dedicated <a class="reference-link" href="Math%20Equations.md">Math Equations</a> page.
+См. отдельную страницу <a class="reference-link" href="Math%20Equations.md">Математические уравнения</a>.
 
-## Drawing canvas
+## Холст для рисования
 
-Choose <span class="tn-icon bx bx-pen"></span> _Drawing canvas_ to draw on an Excalidraw canvas inside the text. See _Drawing canvases_ in <a class="reference-link" href="Include%20Note.md">Include Note</a>.
+Выберите <span class="tn-icon bx bx-pen"></span> _Холст для рисования_, чтобы рисовать на холсте Excalidraw прямо в тексте. См. раздел _Холсты для рисования_ на странице <a class="reference-link" href="Include%20Note.md">Включение заметки</a>.
 
-## Mermaid diagram
+## Диаграмма Mermaid
 
-Press the <span class="tn-icon cke cke-trilium-mermaid-insert"></span> button to create an inline Mermaid diagram. The arrow next to it lists a template for each kind of diagram. The diagram is also available as _Mermaid diagram_ in the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>.
+Нажмите кнопку <span class="tn-icon cke cke-trilium-mermaid-insert"></span>, чтобы создать встроенную диаграмму Mermaid. Стрелка рядом с ней открывает список шаблонов для каждого типа диаграмм. Диаграмма также доступна как _Mermaid diagram_ в <a class="reference-link" href="Slash%20Commands.md">Слэш-командах</a>.
 
-This feature is quite similar to the <a class="reference-link" href="../Mermaid%20Diagrams.md">Mermaid Diagrams</a> note types and is meant as an alternative to it for simple diagrams. For more complex diagrams, use the <a class="reference-link" href="Include%20Note.md">Include Note</a> feature for a dedicated Mermaid note.
+Эта функция похожа на тип заметки <a class="reference-link" href="../Mermaid%20Diagrams.md">Диаграммы Mermaid</a> и предназначена для простых диаграмм. Для более сложных диаграмм используйте <a class="reference-link" href="Include%20Note.md">Включение заметки</a> для отдельной заметки Mermaid.
 
 <figure class="image"><img style="aspect-ratio:1174/358;" src="2_Insert buttons_image.png" width="1174" height="358"></figure>
 
-A diagram shows in a box like the one of an included note, so it can be resized, given another box size (_Resizable_ or _Full_) from its <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu or shown in fullscreen, as described in <a class="reference-link" href="Include%20Note.md">Include Note</a>.
+Диаграмма отображается в блоке, аналогичном включённой заметке, поэтому её размер можно изменять, выбирать другой размер блока (_Изменяемый_ или _Полный_) из меню <span class="tn-icon cke cke-three-vertical-dots"></span> _Дополнительные действия_ или открывать на весь экран, как описано в <a class="reference-link" href="Include%20Note.md">Включение заметки</a>.
 
-*   The <span class="tn-icon bx bx-edit-alt"></span> _Editable_ button at the start of the diagram's toolbar decides whether its source can be changed. While it is off, the source still shows, but read-only.
-*   The buttons next to it choose what the diagram shows, as for a Mermaid note: <span class="tn-icon bx bx-code"></span> _Source view_ for the Mermaid source alone, <span class="tn-icon bx bxs-dock-left"></span> _Split view_ for the source with the diagram next to it, and <span class="tn-icon bx bx-show"></span> _Preview_ for the diagram alone. Its _More actions_ menu offers the same choice.
-*   The _Word wrap_ and _Line numbers_ submenus of its _More actions_ menu change how the source shows, each with _Auto_, _On_ and _Off_, as for an included code note (see _Editing an include in place_ in <a class="reference-link" href="Include%20Note.md">Include Note</a>).
-*   A new diagram starts editable, in _Split view_. The diagram updates a moment after you stop typing. If the source has an error, the error shows over the last diagram that worked, which stays dimmed, as in a Mermaid note. On desktop, drag the divider between the source and the diagram to resize them.
-*   A diagram without a chosen view shows the source next to the diagram while it is editable, and the diagram alone otherwise. In a read-only note, the source can never be changed. A read-only note and the AI chat show a diagram in the same box, in the view it was saved with, and with the zoom buttons over the diagram instead of in a toolbar. A _Medium_ or _Full_ diagram also has a <span class="tn-icon bx bx-fullscreen"></span> _Fullscreen_ button there, or over the source in the _Source_ view.
-*   To zoom, use the <span class="tn-icon bx bx-zoom-out"></span> and <span class="tn-icon bx bx-zoom-in"></span> buttons of the diagram's toolbar; the zoom level between them resets the zoom. In fullscreen, where the toolbar is hidden, the same buttons show over the diagram. Drag the diagram to move around it, and double-click it to reset the view. The mouse wheel scrolls the note until you click the diagram, and then zooms it.
-*   While the source shows, the <span class="tn-icon bx bx-help-circle"></span> _Mermaid syntax help_ button at the end of the toolbar opens the help on <a class="reference-link" href="../Mermaid%20Diagrams.md">Mermaid Diagrams</a>, which links to the Mermaid syntax.
-*   The changes made to the source of a diagram are part of the undo history of the text note, in the order they were made. <kbd>Ctrl</kbd>+<kbd>Z</kbd> and <kbd>Ctrl</kbd>+<kbd>Y</kbd> undo and redo them from the source as well as from the text, as described in _Editing an include in place_ in <a class="reference-link" href="Include%20Note.md">Include Note</a>.
+*   Кнопка <span class="tn-icon bx bx-edit-alt"></span> _Редактируемый_ в начале панели инструментов диаграммы определяет, можно ли изменять её исходный код. Пока она выключена, код всё равно отображается, но только для чтения.
+*   Кнопки рядом с ней выбирают режим отображения, как в заметке Mermaid: <span class="tn-icon bx bx-code"></span> _Исходный код_ — только код Mermaid, <span class="tn-icon bx bxs-dock-left"></span> _Разделённый вид_ — код рядом с диаграммой, и <span class="tn-icon bx bx-show"></span> _Предпросмотр_ — только диаграмма. Тот же выбор есть в меню _Дополнительные действия_.
+*   Подменю _Перенос строк_ и _Номера строк_ в меню _Дополнительные действия_ управляют отображением кода (варианты _Авто_, _Вкл_ и _Выкл_), как для включённой заметки с кодом (см. _Редактирование включения на месте_ в <a class="reference-link" href="Include%20Note.md">Включение заметки</a>).
+*   Новая диаграмма открывается редактируемой в режиме _Разделённый вид_. Диаграмма обновляется вскоре после остановки ввода. При ошибке в коде сообщение об ошибке отображается поверх последней корректной диаграммы, которая затемняется, как в заметке Mermaid. На компьютере можно перетаскивать разделитель между кодом и диаграммой.
+*   Диаграмма без выбранного режима показывает код рядом с диаграммой, пока она редактируема, и только диаграмму в остальное время. В заметке только для чтения код никогда нельзя изменить. В заметке только для чтения и в ИИ-чате диаграмма отображается в том же блоке, в сохранённом режиме и с кнопками масштабирования поверх диаграммы вместо панели инструментов. У диаграммы размера _Средний_ или _Полный_ там же находится кнопка <span class="tn-icon bx bx-fullscreen"></span> _На весь экран_ (или поверх кода в режиме _Исходный код_).
+*   Для масштабирования используйте кнопки <span class="tn-icon bx bx-zoom-out"></span> и <span class="tn-icon bx bx-zoom-in"></span> на панели диаграммы; значение масштаба между ними сбрасывает его. В полноэкранном режиме, где панель скрыта, те же кнопки отображаются поверх диаграммы. Перетаскивайте диаграмму для перемещения и дважды кликните по ней для сброса вида. Колесо мыши прокручивает заметку до клика по диаграмме, а после — масштабирует её.
+*   Пока отображается исходный код, кнопка <span class="tn-icon bx bx-help-circle"></span> _Справка по синтаксису Mermaid_ в конце панели инструментов открывает справку по <a class="reference-link" href="../Mermaid%20Diagrams.md">Диаграммам Mermaid</a> со ссылкой на синтаксис Mermaid.
+*   Изменения исходного кода диаграммы входят в общую историю отмены текстовой заметки в порядке их внесения. <kbd>Ctrl</kbd>+<kbd>Z</kbd> и <kbd>Ctrl</kbd>+<kbd>Y</kbd> отменяют и повторяют их как из кода, так и из текста, как описано в _Редактирование включения на месте_ на странице <a class="reference-link" href="Include%20Note.md">Включение заметки</a>.
 
-The source of the diagram stays in the note as a Mermaid code block, so the diagram is exported to Markdown as a `mermaid` code block that other applications can show.
+Исходный код диаграммы хранится в заметке как блок кода Mermaid, поэтому при экспорте в Markdown она сохраняется как блок кода `mermaid`, который могут отображать другие приложения.
 
-Diagrams created in earlier versions keep the view they were saved with, and open editable.
+Диаграммы, созданные в более ранних версиях, сохраняют свой режим отображения и открываются редактируемыми.
 
-## Audio/video embed
+## Встраивание аудио/видео
 
-Choose <span class="tn-icon bx bx-movie-play"></span> _Audio/video embed_ to insert a YouTube video, or an audio or video file from its web address, that can be played inside the note. Paste the address, then press _Insert media_ or <kbd>Enter</kbd>. The media is inserted as a link preview in the _Embed_ display mode, described in <a class="reference-link" href="Link%20Previews.md">Link Previews</a>. The same action is available as _Audio/video embed_ in the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>.
+Выберите <span class="tn-icon bx bx-movie-play"></span> _Встраивание аудио/видео_, чтобы вставить видео с YouTube либо аудио- или видеофайл по веб-адресу с возможностью воспроизведения прямо внутри заметки. Вставьте адрес и нажмите _Вставить медиа_ или <kbd>Enter</kbd>. Медиа вставляется как предпросмотр ссылки в режиме отображения _Встраивание_, описанном на странице <a class="reference-link" href="Link%20Previews.md">Предпросмотр ссылок</a>. То же действие доступно как _Audio/video embed_ в <a class="reference-link" href="Slash%20Commands.md">Слэш-командах</a>.
 
-## Horizontal ruler
+## Горизонтальная линия
 
-This feature will display a horizontal line, generally useful to separate different sections of the text. To do so, press the <span class="tn-icon cke cke-horizontal-line"></span> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>.
+Эта функция добавляет горизонтальную линию, удобную для разделения разных разделов текста. Для этого нажмите кнопку <span class="tn-icon cke cke-horizontal-line"></span> на <a class="reference-link" href="Formatting%20toolbar.md">Панели форматирования</a>.
 
 <img src="1_Insert buttons_image.png" width="502" height="95">
 
-Alternatively, it's possible to insert a horizontal ruler by typing `---`.
+Также горизонтальную линию можно вставить, введя `---`.
 
-## Page break
+## Разрыв страницы
 
 <figure class="image image-style-align-right"><img style="aspect-ratio:371/79;" src="3_Insert buttons_image.png" width="371" height="79"></figure>
 
-Page breaks provide a way to force the next paragraph or block (table, image, etc.) to be displayed onto the next page when printing (either to a real printer to [when exporting to PDF](../../Basic%20Concepts%20and%20Features/Notes/Printing%20%26%20Exporting%20as%20PDF.md)).
+Разрывы страниц позволяют принудительно перенести следующий абзац или блок (таблицу, изображение и т. д.) на новую страницу при печати (как на физическом принтере, так и [при экспорте в PDF](../../Basic%20Concepts%20and%20Features/Notes/Printing%20%26%20Exporting%20as%20PDF.md)).
 
-Page breaks are marked in the editor with the words _Page break_, but they will not actually be shown when printed.
+В редакторе разрывы страниц отмечены надписью _Разрыв страницы_, но при печати они не отображаются.
 
-*   To insert a page break, press the <span class="tn-icon cke cke-page-break"></span> in the formatting toolbar.
-*   To insert many page breaks at once, insert a page break first, click on it and press <kbd>Ctrl</kbd>+<kbd>C</kbd>. Then use <kbd>Ctrl</kbd>+<kbd>V</kbd>, to paste as many times as needed.
+*   Чтобы вставить разрыв страницы, нажмите кнопку <span class="tn-icon cke cke-page-break"></span> на панели форматирования.
+*   Чтобы вставить несколько разрывов страниц сразу, вставьте один разрыв, кликните по нему и нажмите <kbd>Ctrl</kbd>+<kbd>C</kbd>, затем используйте <kbd>Ctrl</kbd>+<kbd>V</kbd> столько раз, сколько нужно.
 
-## Footnotes
+## Сноски
 
-See the dedicated <a class="reference-link" href="Footnotes.md">Footnotes</a> page.
+См. отдельную страницу <a class="reference-link" href="Footnotes.md">Сноски</a>.
 
-## Date and time
+## Дата и время
 
-The <span class="tn-icon cke cke-trilium-date-time"></span> button inserts the current date and time at the cursor, replacing the selected text if there is any. The inserted text takes the formatting of the text around it, so a date inserted inside bold text is bold too.
+Кнопка <span class="tn-icon cke cke-trilium-date-time"></span> вставляет текущую дату и время в позиции курсора, заменяя выделенный текст, если он есть. Вставленный текст наследует форматирование окружающего текста, поэтому дата внутри жирного текста также будет жирной.
 
-*   To insert the date in the default format, press the button itself or press <kbd>Alt</kbd>+<kbd>T</kbd>.
-*   To insert it in another format, press the arrow next to the button and pick a format from the list. Each entry shows the current date and time in that format: the default one, the date or the time alone, the date written out, and ISO 8601.
-*   The same formats are offered by the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>: type `/date`, `/time`, `/now` or `/today`. The _Insert date/time_ entry uses the default format, and shows what it inserts underneath; the other entries show their output in the title.
+*   Чтобы вставить дату в формате по умолчанию, нажмите саму кнопку или <kbd>Alt</kbd>+<kbd>T</kbd>.
+*   Чтобы вставить её в другом формате, нажмите стрелку рядом с кнопкой и выберите формат из списка. Каждый пункт показывает текущую дату и время в соответствующем формате: по умолчанию, только дата или только время, дата прописью и ISO 8601.
+*   Те же форматы доступны в <a class="reference-link" href="Slash%20Commands.md">Слэш-командах</a>: введите `/date`, `/time`, `/now` или `/today`. Пункт _Insert date/time_ использует формат по умолчанию и показывает результат под ним; остальные пункты показывают результат прямо в заголовке.
 
-The default format can be changed in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ → _Editor_ → _Date/time format_, using [Day.js format tokens](https://day.js.org/docs/en/display/format) (for example `DD.MM.YYYY HH:mm`).
+Формат по умолчанию можно изменить в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Текстовые заметки_ → _Редактор_ → _Формат даты/времени_, используя [токены формата Day.js](https://day.js.org/docs/en/display/format) (например, `DD.MM.YYYY HH:mm`).
 
-## Icons
+## Значки
 
-Icons just like the ones for the [note icon](../../Basic%20Concepts%20and%20Features/Notes/Note%20Icons%20%26%20Colors.md) can be inserted in text. For more information see <a class="reference-link" href="Insert%20buttons/Icons.md">Icons</a>.
+Значки, аналогичные [значкам заметок](../../Basic%20Concepts%20and%20Features/Notes/Note%20Icons%20%26%20Colors.md), можно вставлять в текст. Подробнее см. в разделе <a class="reference-link" href="Insert%20buttons/Icons.md">Значки</a>.

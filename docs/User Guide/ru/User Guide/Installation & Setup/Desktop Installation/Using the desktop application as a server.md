@@ -1,32 +1,32 @@
-# Using the desktop application as a server
-Sometimes, setting up a [dedicated server installation](../Server%20Installation.md) is not feasible. The desktop application ships with a fully functional server instance by default.
+# Использование настольного приложения в качестве сервера
+Иногда развёртывание [выделенного сервера](../Server%20Installation.md) оказывается нецелесообразным. Настольное приложение по умолчанию поставляется с полностью функциональным встроенным сервером.
 
-For security reasons, this feature is **not enabled** by default. To enable it, enable _Network access_ in <a class="reference-link" href="../../Scripting/Security.md">Security</a>.
+Из соображений безопасности эта функция **отключена** по умолчанию. Чтобы включить её, активируйте параметр _Network access_ в разделе <a class="reference-link" href="../../Scripting/Security.md">Безопасность</a>.
 
-After enabling network access and restarting the application, you can access this web interface locally by navigating to [http://localhost:37840/login](http://localhost:37840/login).
+После включения сетевого доступа и перезапуска приложения вы сможете открыть веб-интерфейс локально по адресу [http://localhost:37840/login](http://localhost:37840/login).
 
-The web interface asks for a password to log in. If you haven't set one yet, set it in the desktop application under _Options_ → _Password & Auth_ first; for security reasons, the password can't be set from the browser.
+Для входа веб-интерфейс запрашивает пароль. Если вы ещё не задали его, сначала установите пароль в настольном приложении в разделе _Options_ → _Password & Auth_; из соображений безопасности задать пароль через браузер нельзя.
 
 > [!NOTE]
-> The server embedded in the desktop application will only run as long as the desktop application itself is running. So closing the application will also close the server. To overcome this, you can try hiding the application in the system tray.
+> Встроенный в настольное приложение сервер работает только до тех пор, пока запущено само настольное приложение. При закрытии приложения сервер также останавливается. Чтобы избежать этого, можно сворачивать приложение в системный трей.
 
-## Mobile interface
+## Мобильный интерфейс
 
-By default, this will display the desktop user interface, even on mobile. To switch to the mobile version, simply go to the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a> and select “Switch to the mobile version”.
+По умолчанию отображается настольный интерфейс, даже на мобильных устройствах. Чтобы переключиться на мобильную версию, откройте <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Глобальное меню</a> и выберите «Switch to the mobile version».
 
-## Allowing the port externally on Windows with Windows Defender Firewall
+## Открытие порта для внешнего доступа в Windows через Брандмауэр Защитника Windows
 
-First, find out the IP of your desktop server by running `ipconfig` in your local terminal. Then try accessing `http://<ip>:37840/login` on another device. If it doesn't work, then most likely the port is blocked by your operating system's firewall.
+Сначала узнайте IP-адрес вашего настольного сервера, выполнив команду `ipconfig` в локальном терминале. Затем попробуйте открыть `http://<ip>:37840/login` на другом устройстве. Если страница не открывается, скорее всего, порт заблокирован брандмауэром операционной системы.
 
-If you use Windows Defender Firewall:
+Если вы используете Брандмауэр Защитника Windows:
 
-1.  Go to Windows's start menu and look for “Windows Defender Firewall with Advanced Security”.
-2.  Go to “Inbound Rules” on the left tree, and select “New Rule” in the “Actions” sidebar on the right.
-3.  Select “Port” and press “Next”.
-4.  Type in `37840` in the “Specific local ports” section and then press “Next”.
-5.  Leave “Allow the connection” checked and press “Next”.
-6.  Configure the networks to apply to (check all if unsure) and then press “Next”.
-7.  Add an appropriate name to the rule (e.g. “Trilium Notes”) and press “Finish”.
+1.  Откройте меню «Пуск» Windows и найдите «Монитор Брандмауэра Защитника Windows в режиме повышенной безопасности» («Windows Defender Firewall with Advanced Security»).
+2.  Перейдите в раздел «Правила для входящих подключений» («Inbound Rules») в дереве слева и выберите «Создать правило» («New Rule») на панели «Действия» («Actions») справа.
+3.  Выберите «Для порта» («Port») и нажмите «Далее» («Next»).
+4.  Введите `37840` в поле «Определённые локальные порты» («Specific local ports») и нажмите «Далее» («Next»).
+5.  Оставьте выбранным вариант «Разрешить подключение» («Allow the connection») и нажмите «Далее» («Next»).
+6.  Выберите профили сетей, к которым будет применяться правило (если не уверены, отметьте все), и нажмите «Далее» («Next»).
+7.  Укажите подходящее имя правила (например, «Trilium Notes») и нажмите «Готово» («Finish»).
 
 > [!WARNING]
-> Since v0.104.0, the port used by Trilium is accessible only on `localhost`. To enable across the local network, see <a class="reference-link" href="Network%20Access.md">Network Access</a>.
+> Начиная с версии v0.104.0, порт, используемый Trilium, доступен только на `localhost`. Чтобы открыть доступ в локальной сети, см. <a class="reference-link" href="Network%20Access.md">Сетевой доступ</a>.

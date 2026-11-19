@@ -1,24 +1,24 @@
-# Reference
-## Detecting mobile vs. desktop
+# Справочник
+## Определение мобильной и настольной версии
 
-The mobile layout is different than the one on the desktop. Use `body.mobile` and `body.desktop` to differentiate between them.
+Мобильная разметка отличается от настольной. Используйте `body.mobile` и `body.desktop`, чтобы различать их.
 
 ```css
 body.mobile #root-widget {
-	/* Do something on mobile */
+	/* Действие для мобильной версии */
 }
 
 body.desktop #root-widget {
-	/* Do something on desktop */
+	/* Действие для настольной версии */
 }
 ```
 
-Do note that there is also a “tablet mode” in the mobile layout. For that particular case media queries are required:
+Обратите внимание, что в мобильной разметке также есть «планшетный режим». Для этого случая требуются медиазапросы:
 
 ```css
 @media (max-width: 991px) {
     #launcher-pane {
-        /* Do something on mobile layout */
+        /* Действие для мобильной разметки */
     }
 }
 
@@ -26,30 +26,30 @@ Do note that there is also a “tablet mode” in the mobile layout. For that pa
 
 @media (min-width: 992px) {
     #launcher-pane {
-        /* Do something on mobile tablet + desktop layout */
+        /* Действие для планшетной и настольной разметки */
     }
 }
 ```
 
-## Detecting horizontal vs. vertical layout
+## Определение горизонтальной и вертикальной разметки
 
-The user can select between vertical layout (the classical one, where the launcher bar is on the left) and a horizontal layout (where the launcher bar is on the top and tabs are full-width).
+Пользователь может выбирать между вертикальной разметкой (классической, где панель запуска находится слева) и горизонтальной разметкой (где панель запуска находится сверху, а вкладки занимают всю ширину).
 
-Different styles can be applied by using classes at `body` level:
+Различные стили можно применять с помощью классов на уровне `body`:
 
 ```css
 body.layout-vertical #left-pane {
-	/* Do something */
+	/* Действие */
 }
 
 body.layout-horizontal #center-pane {
-	/* Do something else */	
+	/* Другое действие */	
 }
 ```
 
-The two different layouts use different containers (but they are present in the DOM regardless of the user's choice), for example `#horizontal-main-container` and `#vertical-main-container` can be used to customize the background of the content section.
+Эти две разметки используют разные контейнеры (хотя оба присутствуют в DOM независимо от выбора пользователя): например, `#horizontal-main-container` и `#vertical-main-container` можно использовать для настройки фона области содержимого.
 
-## Detecting platform (Windows, macOS) or Electron
+## Определение платформы (Windows, macOS) или Electron
 
 === "<span class="tn-icon bx bxl-windows"></span> Windows"
 
@@ -67,9 +67,9 @@ The two different layouts use different containers (but they are present in the 
     }
     ```
 
-=== "<span class="tn-icon bx bx-windows"></span> Electron (desktop app)"
+=== "<span class="tn-icon bx bx-windows"></span> Electron (настольное приложение)"
 
-    To distinguish between a <a class="reference-link" href="../Installation%20%26%20Setup/Desktop%20Installation.md">Desktop Installation</a> and a <a class="reference-link" href="../Installation%20%26%20Setup/Server%20Installation.md">Server Installation</a>:
+    Чтобы отличить <a class="reference-link" href="../Installation%20%26%20Setup/Desktop%20Installation.md">настольную установку</a> от <a class="reference-link" href="../Installation%20%26%20Setup/Server%20Installation.md">серверной установки</a>:
 
     ```
     body.electron {
@@ -77,31 +77,31 @@ The two different layouts use different containers (but they are present in the 
     }
     ```
 
-    Can be chained with Windows/macOS detections (e.g. `body.electron.platform-win32`).
+    Можно комбинировать с определением Windows/macOS (например, `body.electron.platform-win32`).
 
-### Native title bar
+### Системная строка заголовка
 
-It's possible to detect if the user has selected the native title bar or the custom title bar by querying against `body`:
+Можно определить, выбрал ли пользователь системную строку заголовка или пользовательскую, проверив класс у `body`:
 
 ```
 body.electron.native-titlebar {
-	/* Do something */
+	/* Действие */
 }
 
 body.electron:not(.native-titlebar) {
-	/* Do something else */
+	/* Другое действие */
 }
 ```
 
-### Native window buttons
+### Системные кнопки окна
 
-When running under Electron with native title bar off, a feature was introduced to use the platform-specific window buttons such as the semaphore on macOS.
+При запуске в Electron с отключённой системной строкой заголовка была добавлена возможность использовать платформенные кнопки окна, такие как «светофор» в macOS.
 
-See [Native title bar buttons by eliandoran · Pull Request #702 · TriliumNext/Notes](https://github.com/TriliumNext/Notes/pull/702) for the original implementation of this feature, including screenshots.
+См. [Native title bar buttons by eliandoran · Pull Request #702 · TriliumNext/Notes](https://github.com/TriliumNext/Notes/pull/702) для ознакомления с исходной реализацией этой функции, включая скриншоты.
 
 === "<span class="tn-icon bx bxl-windows"></span> Windows"
 
-    The colors of the native window button area can be adjusted using a RGB hex color:
+    Цвета области системных кнопок окна можно настроить с помощью RGB hex-цвета:
 
     ```
     body {
@@ -110,7 +110,7 @@ See [Native title bar buttons by eliandoran · Pull Request #702 · TriliumNext/
     }
     ```
 
-    It is also possible to use transparency at the cost of reduced hover colors using a RGBA hex color:
+    Также можно использовать прозрачность (ценой менее выраженного цвета при наведении) с помощью RGBA hex-цвета:
 
     ```
     body {
@@ -118,11 +118,11 @@ See [Native title bar buttons by eliandoran · Pull Request #702 · TriliumNext/
     }
     ```
 
-    Note that the value is read when the window is initialized and then it is refreshed only when the user changes their light/dark mode preference.
+    Обратите внимание, что значение считывается при инициализации окна, а затем обновляется только тогда, когда пользователь меняет настройку светлого/тёмного режима.
 
 === "<span class="tn-icon bx bxl-apple"></span> macOS"
 
-    On macOS the semaphore window buttons are enabled by default when the native title bar is disabled. The offset of the buttons can be adjusted using:
+    В macOS кнопки окна «светофор» включены по умолчанию при отключённой системной строке заголовка. Смещение кнопок можно настроить с помощью:
 
     ```css
     body {
@@ -131,17 +131,17 @@ See [Native title bar buttons by eliandoran · Pull Request #702 · TriliumNext/
     }
     ```
 
-### Background/transparency effects (Mica and vibrancy)
+### Фоновые эффекты и прозрачность (Mica и vibrancy)
 
-When background effects are enabled in the desktop application, Trilium draws a translucent backdrop behind the window: Mica on Windows 11 (its `tabbed` variant in the horizontal layout) and vibrancy on macOS. Trilium chooses the backdrop itself and applies it only to the Next themes and to custom themes based on them through `#appThemeBase` (see <a class="reference-link" href="Customize%20the%20Next%20theme.md">Customize the Next theme</a>). Other themes get no backdrop.
+Когда в настольном приложении включены фоновые эффекты, Trilium отрисовывает полупрозрачный фон за окном: Mica в Windows 11 (вариант `tabbed` в горизонтальной разметке) и vibrancy в macOS. Trilium выбирает фон самостоятельно и применяет его только к темам Next и пользовательским темам на их основе через `#appThemeBase` (см. <a class="reference-link" href="Customize%20the%20Next%20theme.md">Настройка темы Next</a>). Другие темы не получают фонового эффекта.
 
-The backdrop is visible only where the theme leaves the page (semi-)transparent. Use the Next theme as an inspiration.
+Фоновый эффект виден только там, где тема оставляет страницу (полу)прозрачной. Используйте тему Next в качестве примера.
 
-## Note icons, tab workspace accent color
+## Значки заметок, акцентный цвет рабочего пространства на вкладках
 
-Theme capabilities are small adjustments done through CSS variables that can affect the layout or the visual aspect of the application.
+Возможности темы — это небольшие настройки с помощью CSS-переменных, которые могут влиять на разметку или внешний вид приложения.
 
-In the tab bar, to display the icons of notes instead of the icon of the workspace:
+Чтобы на панели вкладок отображались значки заметок вместо значка рабочего пространства:
 
 ```css
 :root {
@@ -149,7 +149,7 @@ In the tab bar, to display the icons of notes instead of the icon of the workspa
 }
 ```
 
-When a workspace is hoisted for a given tab, it is possible to get the background color of that workspace, for example to apply a small strip on the tab instead of the whole background color:
+Когда для вкладки выбрано рабочее пространство, можно получить цвет фона этого рабочего пространства, например чтобы отобразить тонкую полоску на вкладке вместо заливки всего фона:
 
 ```css
 .note-tab .note-tab-wrapper {
@@ -167,15 +167,15 @@ When a workspace is hoisted for a given tab, it is possible to get the backgroun
 }
 ```
 
-## Custom fonts
+## Пользовательские шрифты
 
-The recommended way of using customized fonts is to import a font directly in Trilium. See <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Themes/Personalizing%20the%20font.md">Personalizing the font</a> for information on how to do so.
+Рекомендуемый способ использования пользовательских шрифтов — импортировать шрифт непосредственно в Trilium. Подробнее см. в разделе <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Themes/Personalizing%20the%20font.md">Настройка шрифта</a>.
 
-Alternatively, for a theme providing its own font, [Custom resource providers](../Advanced%20Usage/Custom%20Resource%20Providers.md) can be used: Import a font into Trilium and assign it `#customResourceProvider=fonts/myfont.ttf` and then import the font in CSS via `/custom/fonts/myfont.ttf`. Use `../../../custom/fonts/myfont.ttf` if you run your Trilium server on a different path than `/`.
+В качестве альтернативы для темы, поставляющей собственный шрифт, можно использовать [пользовательские поставщики ресурсов](../Advanced%20Usage/Custom%20Resource%20Providers.md): импортируйте шрифт в Trilium, назначьте ему `#customResourceProvider=fonts/myfont.ttf`, а затем подключите шрифт в CSS через `/custom/fonts/myfont.ttf`. Используйте `../../../custom/fonts/myfont.ttf`, если ваш сервер Trilium работает по пути, отличному от `/`.
 
-## Dark and light themes
+## Тёмные и светлые темы
 
-A light theme needs to have the following CSS:
+Светлая тема должна содержать следующий CSS:
 
 ```css
 :root {
@@ -183,9 +183,9 @@ A light theme needs to have the following CSS:
 }
 ```
 
-if the theme is dark, then `--theme-style` needs to be `dark`. A dark `--theme-style` also tells the Dark Reader browser extension to leave the page alone.
+Если тема тёмная, то `--theme-style` должно иметь значение `dark`. Значение `dark` для `--theme-style` также сообщает расширению браузера Dark Reader, что страницу не нужно изменять.
 
-If the theme is auto (e.g. supports both light or dark based on `prefers-color-scheme`) it must also declare (in addition to setting `--theme-style` to either `light` or `dark`):
+Если тема автоматическая (т. е. поддерживает и светлый, и тёмный режим на основе `prefers-color-scheme`), она также должна объявить (в дополнение к установке `--theme-style` в `light` или `dark`):
 
 ```css
 :root {
@@ -195,11 +195,11 @@ If the theme is auto (e.g. supports both light or dark based on `prefers-color-s
 }
 ```
 
-This will affect the behavior of the Electron application by informing the operating system of the color preference (e.g. background effects will appear correct on Windows).
+Это повлияет на поведение приложения Electron, сообщив операционной системе о предпочтительной цветовой схеме (например, фоновые эффекты в Windows будут отображаться корректно).
 
-## Adaptive text and table colors
+## Адаптивные цвета текста и таблиц
 
-Colors applied in a text note, from the font color and background color buttons (see <a class="reference-link" href="../Note%20Types/Text/General%20formatting.md">General formatting</a>), from the table and cell properties (see <a class="reference-link" href="../Note%20Types/Text/Tables.md">Tables</a>) or to an aside block (see <a class="reference-link" href="../Note%20Types/Text/Aside%20blocks.md">Aside blocks</a>), are shown in a shade that suits the theme: the hue stays, while the lightness and the saturation are kept within limits. A theme can change these limits, for example if its page background is much darker or lighter than the one of the built-in themes:
+Цвета, применённые в текстовой заметке с помощью кнопок цвета шрифта и цвета фона (см. <a class="reference-link" href="../Note%20Types/Text/General%20formatting.md">Общее форматирование</a>), из свойств таблиц и ячеек (см. <a class="reference-link" href="../Note%20Types/Text/Tables.md">Таблицы</a>) или к выноскам (см. <a class="reference-link" href="../Note%20Types/Text/Aside%20blocks.md">Блоки-выноски</a>), отображаются в оттенке, подходящем для текущей темы: цветовой тон сохраняется, а светлота и насыщенность удерживаются в заданных пределах. Тема может изменить эти пределы, например если фон её страницы намного темнее или светлее, чем у встроенных тем:
 
 ```css
 :root {
@@ -208,15 +208,15 @@ Colors applied in a text note, from the font color and background color buttons 
 }
 ```
 
-Each variable is named `--adaptive-<role>-<light|dark>-<limit>`:
+Каждая переменная имеет имя `--adaptive-<role>-<light|dark>-<limit>`:
 
-*   The role is `text` (font color), `background` (font background color), `table-border` or `table-background` (tables and cells), or `aside-background` (aside blocks).
-*   `light` or `dark` is the kind of theme the limit applies to, as declared by `--theme-style`.
-*   The limit is `min-lightness` or `max-lightness` (the CIELAB lightness, from 0 for black to 100 for white), or `max-chroma` (how saturated the color can be; `150` sets no practical limit). Each value must be a plain number, otherwise the colors lose their adaptation.
+*   `role` — это `text` (цвет шрифта), `background` (цвет фона шрифта), `table-border` или `table-background` (таблицы и ячейки), либо `aside-background` (блоки-выноски).
+*   `light` или `dark` — тип темы, к которому применяется ограничение, как указано в `--theme-style`.
+*   `limit` — это `min-lightness` или `max-lightness` (светлота в CIELAB, от 0 для чёрного до 100 для белого), либо `max-chroma` (максимальная насыщенность цвета; `150` фактически снимает ограничение). Каждое значение должно быть простым числом, иначе цвета потеряют адаптацию.
 
-The defaults are:
+Значения по умолчанию:
 
-| Role | Light themes | Dark themes |
+| Роль | Светлые темы | Тёмные темы |
 | --- | --- | --- |
 | `text` | `max-lightness: 45`, `max-chroma: 150` | `min-lightness: 75`, `max-chroma: 55` |
 | `background` | `min-lightness: 90`, `max-chroma: 20` | `max-lightness: 30`, `max-chroma: 30` |
@@ -224,4 +224,4 @@ The defaults are:
 | `table-background` | `min-lightness: 90`, `max-chroma: 20` | `max-lightness: 30`, `max-chroma: 30` |
 | `aside-background` | `min-lightness: 95`, `max-chroma: 15` | `max-lightness: 26`, `max-chroma: 19` |
 
-The limits apply while a note is displayed, so a change to them affects every note at once. The note itself keeps each color as it was picked, in its `color`, `background-color` or `border-color` style, and a second time in a `--tn-color`, `--tn-background` or `--tn-border-color` variable, which the adaptation reads.
+Ограничения применяются во время отображения заметки, поэтому их изменение сразу влияет на все заметки. Сама заметка сохраняет каждый цвет в том виде, в каком он был выбран, в стиле `color`, `background-color` или `border-color`, а также повторно в переменной `--tn-color`, `--tn-background` или `--tn-border-color`, которую считывает механизм адаптации.

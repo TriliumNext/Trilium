@@ -1,20 +1,20 @@
-# Setting up with various providers
-This page contains instructions on how to set up <a class="reference-link" href="../Signing%20in%20with%20OpenID%20Connect.md">Signing in with OpenID Connect</a> with various providers such as Authelia, GitLab, Google.
+# Настройка с различными провайдерами
+Эта страница содержит инструкции по настройке <a class="reference-link" href="../Signing%20in%20with%20OpenID%20Connect.md">входа с помощью OpenID Connect</a> для различных провайдеров, таких как Authelia, GitLab, Google.
 
 > [!NOTE]
-> While the configuration reference is correct and up to date, the steps to create the OAuth application might differ slightly as providers change their UI.
+> Хотя справочник конфигурации актуален и верен, шаги по созданию приложения OAuth могут немного отличаться по мере того, как провайдеры обновляют свой интерфейс.
 
 === "Authelia"
 
-    1.  Generate a client secret:
+    1.  Сгенерируйте секрет клиента:
         
         ```
         authelia crypto hash generate pbkdf2 --variant sha512 --random --random.length 72 --random.charset rfc3986
         
         ```
         
-        `Random Password` goes to Trilium, `Digest` (the `$pbkdf2-sha512$…` string) goes to Authelia.
-    2.  Add a client under `identity_providers.oidc.clients` in Authelia's `configuration.yml`, replacing `<server>` with the URL of your Trilium instance:
+        Значение `Random Password` используется в Trilium, а `Digest` (строка `$pbkdf2-sha512$…`) — в Authelia.
+    2.  Добавьте клиента в раздел `identity_providers.oidc.clients` файла `configuration.yml` Authelia, заменив `<server>` на URL вашего экземпляра Trilium:
         
         ```yaml
         identity_providers:
@@ -33,10 +33,10 @@ This page contains instructions on how to set up <a class="reference-link" href
                   - 'email'
         ```
         
-        Unlike GitLab, `client_id` is a name you choose rather than one the provider generates.
-    3.  Restart Authelia.
+        В отличие от GitLab, `client_id` — это имя, которое вы выбираете сами, а не генерируемое провайдером.
+    3.  Перезапустите Authelia.
 
-    Adjust `config.ini`, using the `Random Password` from step 1:
+    Отредактируйте `config.ini`, используя `Random Password` из шага 1:
 
     ```
     [MultiFactorAuthentication]
@@ -48,19 +48,19 @@ This page contains instructions on how to set up <a class="reference-link" href
     ```
 
     > [!IMPORTANT]
-    > Do **not** set `oauthClientAuthMethod` for Authelia. It defaults confidential clients to `client_secret_basic` and rejects any other method with `invalid_client`, which is the default Trilium already uses. This is the opposite of the GitLab case below.
+    > **Не** задавайте `oauthClientAuthMethod` для Authelia. По умолчанию для конфиденциальных клиентов используется `client_secret_basic`, а любой другой метод отклоняется с ошибкой `invalid_client`, и Trilium уже использует этот метод по умолчанию. Это противоположно случаю с GitLab ниже.
 
 === "<span class="tn-icon bx bxl-gitlab"></span> GitLab"
 
-    1.  Go to user settings on [gitlab.com](https://gitlab.com/-/user_settings/applications) or your own self-hosted instance.
-    2.  Press _Add new application_.
-    3.  Give it a name (e.g. Trilium).
-    4.  Set _Redirect URI_ to `https://<server>/callback`
-    5.  Make sure _Confidential_ is checked and _Device authorization grant_ is unchecked.
-    6.  Under scopes, check _openid_, _profile_ and _email_ (they should be near the end).
-    7.  Save the application and copy the _Application ID_ and _Secret_.
+    1.  Перейдите в настройки пользователя на [gitlab.com](https://gitlab.com/-/user_settings/applications) или на вашем собственном сервере GitLab.
+    2.  Нажмите _Add new application_.
+    3.  Укажите название (например, Trilium).
+    4.  Установите _Redirect URI_ в значение `https://<server>/callback`.
+    5.  Убедитесь, что флажок _Confidential_ установлен, а _Device authorization grant_ снят.
+    6.  В разделе scopes отметьте _openid_, _profile_ и _email_ (обычно они находятся ближе к концу списка).
+    7.  Сохраните приложение и скопируйте _Application ID_ и _Secret_.
 
-    Adjust `config.ini` as follows, replacing `<ApplicationId>` and `<Secret>` with the values from the last step as well as the `<server>` with a URL to your Trilium instance.
+    Отредактируйте `config.ini` следующим образом, заменив `<ApplicationId>` и `<Secret>` на значения из последнего шага, а `<server>` — на URL вашего экземпляра Trilium:
 
     ```
     [MultiFactorAuthentication]
@@ -74,13 +74,13 @@ This page contains instructions on how to set up <a class="reference-link" href
     ```
 
     > [!IMPORTANT]
-    > If you are using a self-hosted instance of GitLab, make sure to also update `oauthIssuerBaseUrl`, and keep the `oauthClientAuthMethod` line above.
+    > Если вы используете самостоятельно размещённый экземпляр GitLab, обязательно обновите `oauthIssuerBaseUrl` и сохраните строку `oauthClientAuthMethod` выше.
     > 
-    > GitLab's token endpoint does not decode credentials sent via HTTP Basic, so without `oauthClientAuthMethod`, sign-in fails with a `server responded with a challenge in the WWW-Authenticate HTTP Header` error. Trilium applies this automatically for `gitlab.com`, but a self-hosted issuer URL cannot be detected.
+    > Конечная точка токенов GitLab не декодирует учётные данные, переданные через HTTP Basic, поэтому без `oauthClientAuthMethod` вход завершится с ошибкой `server responded with a challenge in the WWW-Authenticate HTTP Header`. Trilium применяет это автоматически для `gitlab.com`, но для собственного URL провайдера определить это автоматически невозможно.
 
 === "Kanidm"
 
-    1.  Create the client, add the redirect URL and grant the scopes, replacing `<server>` with the URL of your Trilium instance and `<group>` with an existing Kanidm group whose members may sign in:
+    1.  Создайте клиента, добавьте URL перенаправления и назначьте области (scopes), заменив `<server>` на URL вашего экземпляра Trilium, а `<group>` — на существующую группу Kanidm, участники которой могут входить в систему:
         
         ```
         kanidm system oauth2 create trilium "Trilium" "https://<server>"
@@ -88,14 +88,14 @@ This page contains instructions on how to set up <a class="reference-link" href
         kanidm system oauth2 update-scope-map trilium <group> openid profile email
         ```
         
-        The `openid` scope is mandatory; without it Kanidm treats the client as plain OAuth 2.0.
-    2.  Read the client secret:
+        Область `openid` обязательна; без неё Kanidm считает клиента обычным OAuth 2.0.
+    2.  Просмотрите секрет клиента:
         
         ```
         kanidm system oauth2 show-basic-secret trilium
         ```
 
-    Adjust `config.ini` as follows, replacing `<idm>` with the URL of your Kanidm instance and `<BasicSecret>` with the value from step 2:
+    Отредактируйте `config.ini` следующим образом, заменив `<idm>` на URL вашего экземпляра Kanidm, а `<BasicSecret>` — на значение из шага 2:
 
     ```
     [MultiFactorAuthentication]
@@ -106,22 +106,22 @@ This page contains instructions on how to set up <a class="reference-link" href
     oauthIssuerName=Kanidm
     ```
 
-    The client name you chose in step 1 is both the client ID and the last path segment of the issuer URL, so the two must match.
+    Имя клиента, выбранное на шаге 1, является одновременно и ID клиента, и последним сегментом пути в URL издателя (issuer URL), поэтому они должны совпадать.
 
     > [!IMPORTANT]
-    > Kanidm signs ID tokens with ES256, not RS256. Trilium detects this from the provider on v0.105.0 and later, so no extra configuration is needed. Do **not** run `kanidm system oauth2 warning-enable-legacy-crypto`, it downgrades the client to RS256 and disables ES256 entirely. On older Trilium versions sign-in fails with an `unexpected JWT alg` error.
+    > Kanidm подписывает ID-токены с помощью ES256, а не RS256. Начиная с версии v0.105.0 Trilium определяет это автоматически у провайдера, поэтому дополнительная настройка не требуется. **Не** выполняйте `kanidm system oauth2 warning-enable-legacy-crypto` — это понижает клиента до RS256 и полностью отключает ES256. В более старых версиях Trilium вход завершается с ошибкой `unexpected JWT alg`.
 
 === "Pocket ID"
 
     > [!IMPORTANT]
-    > Pocket ID is passwordless, signing in requires a passkey. Register one and confirm you can sign in to Pocket ID itself _before_ switching Trilium over to OpenID Connect, otherwise you may find yourself unable to authenticate at either end.
+    > Pocket ID работает без паролей — для входа требуется ключ доступа (passkey). Зарегистрируйте его и убедитесь, что вы можете войти в сам Pocket ID _до_ переключения Trilium на OpenID Connect, иначе вы рискуете потерять возможность аутентификации с обеих сторон.
 
-    1.  Sign in to Pocket ID as an administrator and go to _OIDC Clients_ → _Add OIDC Client_.
-    2.  Give it a name (e.g. Trilium).
-    3.  Set _Callback URLs_ to `https://<server>/callback`, replacing `<server>` with the URL of your Trilium instance.
-    4.  Save, then copy the _Client ID_, _Client Secret_ and _OIDC Discovery URL_.
+    1.  Войдите в Pocket ID как администратор и перейдите в _OIDC Clients_ → _Add OIDC Client_.
+    2.  Укажите название (например, Trilium).
+    3.  Установите _Callback URLs_ в значение `https://<server>/callback`, заменив `<server>` на URL вашего экземпляра Trilium.
+    4.  Сохраните настройки, затем скопируйте _Client ID_, _Client Secret_ и _OIDC Discovery URL_.
 
-    Adjust `config.ini` as follows, using the values from step 4:
+    Отредактируйте `config.ini` следующим образом, используя значения из шага 4:
 
     ```
     [MultiFactorAuthentication]
@@ -133,23 +133,23 @@ This page contains instructions on how to set up <a class="reference-link" href
     ```
 
     > [!NOTE]
-    > Pocket ID gives you an _OIDC Discovery URL_ ending in `/.well-known/openid-configuration`. On v0.105.0 and later you can paste it as-is. On earlier versions, remove that suffix and use only the part before it.
+    > Pocket ID предоставляет _OIDC Discovery URL_, заканчивающийся на `/.well-known/openid-configuration`. В версии v0.105.0 и новее его можно вставить как есть. В более ранних версиях удалите этот суффикс и используйте только часть до него.
 
     > [!IMPORTANT]
-    > Pocket ID generates an RS256 signing key on first start, which works without further configuration. If you rotate it to Ed25519 (`pocket-id key-rotate --alg EdDSA --crv Ed25519`), ID tokens are signed with EdDSA instead. Trilium detects this automatically on v0.105.0 and later; older versions fail with `unexpected JWT alg received, expected RS256, got: EdDSA`.
+    > При первом запуске Pocket ID генерирует ключ подписи RS256, который работает без дополнительной настройки. Если вы выполните ротацию на Ed25519 (`pocket-id key-rotate --alg EdDSA --crv Ed25519`), ID-токены будут подписываться с помощью EdDSA. Trilium определяет это автоматически начиная с v0.105.0; более старые версии завершаются с ошибкой `unexpected JWT alg received, expected RS256, got: EdDSA`.
 
 === "<span style="--tn-color:#e64d4d;color:#e64d4d;"><span class="tn-icon bx bx-x"></span> GitHub</span>"
 
-    GitHub cannot be used as an identity provider because it is plain OAuth 2.0 and not OpenID Connect, so it will fail with `OAUTH_RESPONSE_IS_NOT_CONFORM`.
+    GitHub нельзя использовать в качестве провайдера удостоверений, так как он поддерживает только обычный OAuth 2.0, а не OpenID Connect, и вход завершится с ошибкой `OAUTH_RESPONSE_IS_NOT_CONFORM`.
 
 === "<span class="tn-icon bx bxl-google"></span> Google"
 
-    1.  Go to [Google Cloud's Clients](https://console.cloud.google.com/auth/clients) dashboard and select _Create client_.
-    2.  For _Application type,_ select _Web application_.
-    3.  In _Authorized redirect URIs_, set  `https://<server>/callback`.
-    4.  Press _Create_ and copy _Client ID_ and _Client secret_.
+    1.  Перейдите на панель [Google Cloud's Clients](https://console.cloud.google.com/auth/clients) и выберите _Create client_.
+    2.  В поле _Application type_ выберите _Web application_.
+    3.  В разделе _Authorized redirect URIs_ укажите `https://<server>/callback`.
+    4.  Нажмите _Create_ и скопируйте _Client ID_ и _Client secret_.
 
-    Adjust `config.ini` as follows, replacing `<ClientID>` and `<ClientSecret>` with the values from the last step as well as the `<server>` with a URL to your Trilium instance.
+    Отредактируйте `config.ini` следующим образом, заменив `<ClientID>` и `<ClientSecret>` на значения из последнего шага, а `<server>` — на URL вашего экземпляра Trilium:
 
     ```
     [MultiFactorAuthentication]

@@ -1,15 +1,15 @@
-# Built-in components
-<figure class="image image_resized" style="width:54.58%;"><img style="aspect-ratio:896/712;" src="Built-in components_image.png" width="896" height="712"><figcaption>A partial screenshot from the Widget showcase example (see below).</figcaption></figure>
+# Встроенные компоненты
+<figure class="image image_resized" style="width:54.58%;"><img style="aspect-ratio:896/712;" src="Built-in components_image.png" width="896" height="712"><figcaption>Фрагмент скриншота из примера демонстрации виджетов (см. ниже).</figcaption></figure>
 
-Trilium comes with its own set of Preact components, some of which are also available to <a class="reference-link" href="../Custom%20Widgets.md">Custom Widgets</a> and <a class="reference-link" href="../../../Note%20Types/Render%20Note.md">Render Note</a>.
+Trilium поставляется с собственным набором компонентов Preact, часть из которых также доступна для <a class="reference-link" href="../Custom%20Widgets.md">пользовательских виджетов</a> и <a class="reference-link" href="../../../Note%20Types/Render%20Note.md">заметок рендеринга</a>.
 
-To use these components, simply import them from `trilium:preact`:
+Чтобы использовать эти компоненты, просто импортируйте их из `trilium:preact`:
 
 ```jsx
 import { ActionButton, Button, LinkButton } from "trilium:preact";
 ```
 
-and then use them:
+а затем используйте их:
 
 ```jsx
 export default function MyRenderNote() {
@@ -28,16 +28,16 @@ export default function MyRenderNote() {
 }
 ```
 
-## Widget showcase
+## Демонстрация виджетов
 
 > [!TIP]
-> Starting with v0.101.0, the widget showcase is also available in the <a class="reference-link" href="../../../Advanced%20Usage/Database/Demo%20Notes.md">Demo Notes</a>.
+> Начиная с версии v0.101.0, демонстрация виджетов также доступна в <a class="reference-link" href="../../../Advanced%20Usage/Database/Demo%20Notes.md">демонстрационных заметках</a>.
 
-This is a <a class="reference-link" href="../../../Note%20Types/Render%20Note.md">Render Note</a> example with JSX that shows most of the built-in components that are accessible to custom widgets and JSX render notes.
+Это пример <a class="reference-link" href="../../../Note%20Types/Render%20Note.md">заметки рендеринга</a> с JSX, который показывает большинство встроенных компонентов, доступных для пользовательских виджетов и JSX-заметок рендеринга.
 
-To use it, simply:
+Чтобы воспользоваться им:
 
-1.  Create a render note.
-2.  Create a child code note of JSX type with the content of this file: <a class="reference-link" href="Built-in%20components/Widget%20showcase.jsx">Widget showcase</a>
-3.  Set the `~renderNote` relation of the parent note to the child note.
-4.  Refresh the render note to see the results.
+1.  Создайте заметку рендеринга.
+2.  Создайте дочернюю заметку типа «Код» с языком JSX и содержимым этого файла: <a class="reference-link" href="Built-in%20components/Widget%20showcase.jsx">Демонстрация виджетов</a>
+3.  Задайте связь `~renderNote` родительской заметки на эту дочернюю заметку.
+4.  Обновите заметку рендеринга, чтобы увидеть результат.

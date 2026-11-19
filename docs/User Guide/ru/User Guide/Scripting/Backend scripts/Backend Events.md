@@ -1,61 +1,61 @@
-# Backend Events
-[Script](../../Scripting.md) notes can be triggered by events. Note that these are backend events and thus relation need to point to the "JavaScript (Trilium backend)" code note.
+# События бэкенда
+Заметки со [скриптами](../../Scripting.md) могут запускаться по событиям. Обратите внимание, что это события бэкенда, поэтому связь должна указывать на заметку с кодом типа «JavaScript (Trilium backend)».
 
-## Global events
+## Глобальные события
 
-Global events are attached to the script note via label. Simply create a `run` label with some of these values and script note will be executed once the event occurs.
+Глобальные события привязываются к заметке со скриптом с помощью метки. Просто создайте метку `run` с одним из указанных ниже значений, и скрипт будет выполняться при наступлении этого события.
 
 <table>
     <thead>
         <tr>
-            <th>Label</th>
-            <th>Description</th>
+            <th>Метка</th>
+            <th>Описание</th>
         </tr>
     </thead>
     <tbody>
         <tr>
             <td><code>run</code></td>
-            <td><p>Defines on which events script should run. Possible values are:</p><ul><li><code>backendStartup</code> - when Trilium backend starts up</li><li><code>hourly</code> - run once an hour. You can use additional label <code>runAtHour</code> to specify at which hour, on the back-end.</li><li><code>daily</code> - run once a day, on the back-end</li></ul></td>
+            <td><p>Определяет, при каких событиях должен запускаться скрипт. Возможные значения:</p><ul><li><code>backendStartup</code> — при запуске бэкенда Trilium</li><li><code>hourly</code> — запуск раз в час. Вы можете использовать дополнительную метку <code>runAtHour</code>, чтобы указать, в какой именно час на бэкенде.</li><li><code>daily</code> — запуск раз в день на бэкенде</li></ul></td>
         </tr>
         <tr>
             <td><code>runOnInstance</code></td>
-            <td>Specifies that the script should only run on a particular&nbsp;<a class="reference-link" href="../../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables)/Trilium%20instance.md">Trilium instance</a>.</td>
+            <td>Указывает, что скрипт должен выполняться только на определённом&nbsp;<a class="reference-link" href="../../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables)/Trilium%20instance.md">экземпляре Trilium</a>.</td>
         </tr>
         <tr>
             <td><code>runAtHour</code></td>
-            <td>On which hour should this run. Should be used together with <code>#run=hourly</code>. Can be defined multiple times for more runs during the day.</td>
+            <td>В какой час должен выполняться скрипт. Используется вместе с <code>#run=hourly</code>. Можно задать несколько раз для нескольких запусков в течение дня.</td>
         </tr>
     </tbody>
 </table>
 
-Frontend scripts also have similar <a class="reference-link" href="../Frontend%20Basics/Frontend%20Events.md">Events</a>, such as when the application starts.
+У фронтенд-скриптов также есть аналогичные <a class="reference-link" href="../Frontend%20Basics/Frontend%20Events.md">события</a>, например при запуске приложения.
 
 > [!NOTE]
-> One script can be triggered on multiple events, this can be done by adding multiple `run` labels. Separating multiple values by commas **is not** supported.
+> Один скрипт может срабатывать на несколько событий — для этого добавьте несколько меток `run`. Перечисление нескольких значений через запятую **не** поддерживается.
 
-## Entity events
+## События сущностей
 
-Other events are bound to some entity, these are defined as [relations](../../Advanced%20Usage/Attributes.md) - meaning that script is triggered only if note has this script attached to it through relations (or it can inherit it).
+Другие события привязаны к определённой сущности и задаются в виде [связей](../../Advanced%20Usage/Attributes.md) — это означает, что скрипт запускается только в том случае, если к заметке привязан этот скрипт через связь (или она наследует её).
 
-| Relation | Trigger condition | Origin entity (see below) |
+| Связь | Условие срабатывания | Исходная сущность (см. ниже) |
 | --- | --- | --- |
-| `runOnNoteCreation` | executes when note is created on backend. Use this relation if you want to run the script for all notes created under a specific subtree. In that case, create it on the subtree root note and make it inheritable. A new note created within the subtree (any depth) will trigger the script. | The `BNote` that got created. |
-| `runOnChildNoteCreation` | executes when new note is created under the note where this relation is defined | The `BNote` of the child that got created. |
-| `runOnNoteTitleChange` | executes when note title is changed (includes note creation as well) | The `BNote` of the note whose title got changed. |
-| `runOnNoteContentChange` | executes when note content is changed (includes note creation as well). | The `BNote` of the note whose content got changed. |
-| `runOnNoteChange` | executes when note is changed (includes note creation as well). Does not include content changes | The `BNote` of the note that got changed. |
-| `runOnNoteDeletion` | executes when note is being deleted | The `BNote` of the note that got (soft) deleted. |
-| `runOnBranchCreation` | executes when a branch is created. Branch is a link between parent note and child note and is created e.g. when cloning or moving note. | The `BBranch` that got created. |
-| `runOnBranchChange` | executes when a branch is updated. (since v0.62) | The `BBranch` that got changed. |
-| `runOnBranchDeletion` | executes when a branch is deleted. Branch is a link between parent note and child note and is deleted e.g. when moving note (old branch/link is deleted). | The `BBranch` that got (soft) deleted. |
-| `runOnAttributeCreation` | executes when new attribute is created for the note which defines this relation | The `BAttribute` that got created. |
-| `runOnAttributeChange` | executes when the attribute is changed of a note which defines this relation. This is triggered also when the attribute is deleted | The `BAttribute` that got changed. |
+| `runOnNoteCreation` | выполняется при создании заметки на бэкенде. Используйте эту связь, если хотите запускать скрипт для всех заметок, создаваемых в определённом поддереве. В этом случае создайте её на корневой заметке поддерева и сделайте наследуемой. Любая новая заметка, созданная в этом поддереве (на любой глубине), вызовет скрипт. | Созданный объект `BNote`. |
+| `runOnChildNoteCreation` | выполняется при создании новой подзаметки внутри заметки, на которой задана эта связь | Объект `BNote` созданной подзаметки. |
+| `runOnNoteTitleChange` | выполняется при изменении заголовка заметки (включая создание заметки) | Объект `BNote` заметки, заголовок которой изменился. |
+| `runOnNoteContentChange` | выполняется при изменении содержимого заметки (включая создание заметки). | Объект `BNote` заметки, содержимое которой изменилось. |
+| `runOnNoteChange` | выполняется при изменении заметки (включая создание заметки). Не включает изменения содержимого | Объект `BNote` изменённой заметки. |
+| `runOnNoteDeletion` | выполняется при удалении заметки | Объект `BNote` (мягко) удалённой заметки. |
+| `runOnBranchCreation` | выполняется при создании ветви. Ветвь — это связь между родительской заметкой и подзаметкой, которая создаётся, например, при клонировании или перемещении заметки. | Созданный объект `BBranch`. |
+| `runOnBranchChange` | выполняется при обновлении ветви (начиная с v0.62) | Изменённый объект `BBranch`. |
+| `runOnBranchDeletion` | выполняется при удалении ветви. Ветвь — это связь между родительской заметкой и подзаметкой, которая удаляется, например, при перемещении заметки (удаляется старая ветвь/связь). | (Мягко) удалённый объект `BBranch`. |
+| `runOnAttributeCreation` | выполняется при создании нового атрибута у заметки, на которой задана эта связь | Созданный объект `BAttribute`. |
+| `runOnAttributeChange` | выполняется при изменении атрибута заметки, на которой задана эта связь. Также срабатывает при удалении атрибута | Изменённый объект `BAttribute`. |
 
-## Origin entity
+## Исходная сущность
 
-When a script is run by an event such as the ones described above, `api.originEntity` will get populated with the note, branch or attribute that triggered the change.
+Когда скрипт запускается по одному из описанных выше событий, в `api.originEntity` помещается заметка, ветвь или атрибут, вызвавшие изменение.
 
-For example, here's a script with `~runOnAttributeChange` which automatically changes the color of a note based on the value of the `mycategory` label:
+Например, вот скрипт с `~runOnAttributeChange`, который автоматически меняет цвет заметки в зависимости от значения метки `mycategory`:
 
 ```javascript
 const attr = api.originEntity;
@@ -68,6 +68,6 @@ if (attr.value === "Health") {
 }
 ```
 
-## Safe mode
+## Безопасный режим
 
-While [safe mode](../../Advanced%20Usage/Safe%20mode.md) is active, scripts with events won't trigger.
+Пока активен [безопасный режим](../../Advanced%20Usage/Safe%20mode.md), скрипты по событиям не срабатывают.

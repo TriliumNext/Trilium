@@ -1,108 +1,108 @@
-# General formatting
-## Headings
+# Общее форматирование
+## Заголовки
 
 <figure class="image image-style-align-right"><img style="aspect-ratio:255/284;" src="2_General formatting_image.png" width="255" height="284"></figure>
 
-Trilium provides headings to define sections within text. Headings are numbered from 2 to 6.
+Trilium предоставляет заголовки для выделения разделов внутри текста. Заголовки имеют уровни от 2 до 6.
 
-The reason why Heading 1 is missing from the list is that it is being reserved for the title of note. A Heading 1 that is already in the text, for example in text pasted from another application, is kept as a heading.
+Заголовок 1 отсутствует в списке, поскольку он зарезервирован для названия самой заметки. Заголовок 1, который уже присутствует в тексте (например, в тексте, вставленном из другого приложения), сохраняется как заголовок.
 
-To turn a heading back into a normal text, select _Paragraph_ from the list.
+Чтобы вернуть заголовок к обычному тексту, выберите _Paragraph_ в списке.
 
-Apart from using the UI, it is also possible to quickly insert headings using the Markdown-like shortcuts:
+Помимо использования интерфейса, заголовки можно быстро вставлять с помощью Markdown-сокращений:
 
-*   `##` for Heading 2
-*   `###` for Heading 3
-*   `####` for Heading 4
-*   `#####` for Heading 5
-*   `######` for Heading 6
+*   `##` — для заголовка 2
+*   `###` — для заголовка 3
+*   `####` — для заголовка 4
+*   `#####` — для заголовка 5
+*   `######` — для заголовка 6
 
-A heading can be collapsed to hide the content under it, see <a class="reference-link" href="Collapsible%20headings.md">Collapsible headings</a>.
+Заголовок можно свернуть, чтобы скрыть содержимое под ним — см. <a class="reference-link" href="Collapsible%20headings.md">Сворачиваемые заголовки</a>.
 
-## Font size
+## Размер шрифта
 
 <figure class="image image-style-align-right"><img style="aspect-ratio:363/249;" src="General formatting_image.png" width="363" height="249"></figure>
 
-One way to highlight a portion of text is to increase the size of the font.
+Один из способов выделить фрагмент текста — увеличить размер шрифта.
 
-To do so, select some text and choose an option from the _Font size_ (<span class="tn-icon cke cke-font-size"></span>) selector (as pictured to the right).
+Для этого выделите нужный текст и выберите вариант из выпадающего списка _Font size_ (<span class="tn-icon cke cke-font-size"></span>), как показано справа.
 
-Unlike other text editors such as Microsoft Word, the font size is relative (i.e. “Tiny”, “Small” instead of a number like 12).
+В отличие от других текстовых редакторов, таких как Microsoft Word, размер шрифта здесь относительный (то есть «Tiny», «Small» вместо числа вроде 12).
 
-Avoid using this feature just to simply make all text bigger. In that case it's generally better to adjust the font size for all notes in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> or by zooming.
+Не используйте эту функцию только для того, чтобы сделать крупнее весь текст. В таком случае лучше изменить размер шрифта для всех заметок в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> или с помощью масштабирования.
 
-## Bold, italic, underline, strike-through
+## Полужирный, курсив, подчёркивание, зачёркивание
 
 <figure class="image image-style-align-right"><img style="aspect-ratio:215/71;" src="3_General formatting_image.png" width="215" height="71"></figure>
 
-Text can be formatted as **Bold,** _Italic,_ Underline or ~~Strike-through~~ via the dedicated buttons (<span class="tn-icon cke cke-bold"></span>, <span class="tn-icon cke cke-italic"></span>, <span class="tn-icon cke cke-underline"></span>, <span class="tn-icon cke cke-strikethrough"></span>) in the formatting toolbar.
+Текст можно оформить как **полужирный**, _курсив_, подчёркнутый или ~~зачёркнутый~~ с помощью соответствующих кнопок (<span class="tn-icon cke cke-bold"></span>, <span class="tn-icon cke cke-italic"></span>, <span class="tn-icon cke cke-underline"></span>, <span class="tn-icon cke cke-strikethrough"></span>) на панели форматирования.
 
-This formatting can be easily removed using the _Remove formatting_ (<span class="tn-icon cke cke-remove-format"></span>) item.
+Это форматирование легко снять с помощью кнопки _Remove formatting_ (<span class="tn-icon cke cke-remove-format"></span>).
 
-The following keyboard shortcuts can be used here:
+Здесь можно использовать следующие сочетания клавиш:
 
-*   <kbd>Ctrl</kbd>+<kbd>B</kbd> for bold
-*   <kbd>Ctrl</kbd>+<kbd>I</kbd> for italic
-*   <kbd>Ctrl</kbd>+<kbd>U</kbd> for underline
+*   <kbd>Ctrl</kbd>+<kbd>B</kbd> — полужирный
+*   <kbd>Ctrl</kbd>+<kbd>I</kbd> — курсив
+*   <kbd>Ctrl</kbd>+<kbd>U</kbd> — подчёркнутый
 
-Alternatively, Markdown-like formatting can be used:
+Также можно использовать Markdown-подобное форматирование:
 
-*   **Bold**: Type `**text**` or `__text__`
-*   _Italic_: Type `*text*` or `_text_`
-*   ~~Strikethrough~~: Type `~~text~~`
+*   **Полужирный**: введите `**text**` или `__text__`
+*   _Курсив_: введите `*text*` или `_text_`
+*   ~~Зачёркнутый~~: введите `~~text~~`
 
-## Superscript, subscript
+## Надстрочный и подстрочный текст
 
-This allows writing superscript or subscript text.
+Позволяет писать текст в верхнем или нижнем индексе.
 
-This is mostly useful for units of measure (e.g. cm3 for cubic centimeters) and chemical notations (e.g. NaHCO3)
+Это особенно полезно для единиц измерения (например, cm3 для кубических сантиметров) и химических формул (например, NaHCO3).
 
-For mathematical formulas, prefer the <a class="reference-link" href="Math%20Equations.md">Math Equations</a> feature instead.
+Для математических формул рекомендуется использовать функцию <a class="reference-link" href="Math%20Equations.md">Математические формулы</a>.
 
-## Font color and background color
+## Цвет шрифта и цвет фона
 
 <figure class="image image-style-align-right"><img style="aspect-ratio:167/204;" src="1_General formatting_image.png" width="167" height="204"></figure>
 
-Selected text can be colored with one of the predefined colors from a palette or any color can be selected using the color picker (<span class="tn-icon cke cke-color-palette"></span>). A selected link preview can be colored the same way (see <a class="reference-link" href="Link%20Previews.md">Link Previews</a>).
+Выделенный текст можно окрасить в один из предопределённых цветов палитры или выбрать любой цвет с помощью палитры выбора цвета (<span class="tn-icon cke cke-color-palette"></span>). Выделенный предпросмотр ссылки можно окрасить тем же способом (см. <a class="reference-link" href="Link%20Previews.md">Предпросмотр ссылок</a>).
 
-Once there is at least one color defined in the document, it will appear in the list for easy reuse.
+Как только в документе использован хотя бы один цвет, он появляется в списке для удобного повторного использования.
 
-Colors adapt to the [theme](../../Basic%20Concepts%20and%20Features/Themes.md). Trilium shows each color in a lighter or darker shade that suits the current theme, so the text stays readable after switching between light and dark themes. The hue stays the same: red text is red in both themes, only lighter or darker. This applies to the palette, the color picker and the document colors alike, and to shared notes too. The swatches of the font color and background color dropdowns show the same shades on a sample text, "Ab": as the color of the text, or as the background behind it. Printed notes and PDF exports always use the shades of light themes, which suit white paper. The note itself keeps the color as it was picked, so an exported note shows it unchanged.
+Цвета адаптируются к [теме](../../Basic%20Concepts%20and%20Features/Themes.md). Trilium отображает каждый цвет в более светлом или более тёмном оттенке, подходящем к текущей теме, чтобы текст оставался читаемым при переключении между светлой и тёмной темами. Оттенок (тон) при этом сохраняется: красный текст остаётся красным в обеих темах, меняя лишь яркость. Это относится к палитре, выбору цвета, цветам документа, а также к опубликованным заметкам. Образцы в выпадающих списках цвета шрифта и цвета фона показывают те же оттенки на примере текста «Ab»: как цвет текста или как фон за ним. Печатные заметки и экспорт в PDF всегда используют оттенки светлых тем, подходящие для белой бумаги. В самой заметке сохраняется исходно выбранный цвет, поэтому при экспорте заметки он остаётся неизменным.
 
-Colors applied with older versions of Trilium are shown exactly as they were picked, until the note is next edited.
+Цвета, применённые в более старых версиях Trilium, отображаются точно так, как они были выбраны, до следующего редактирования заметки.
 
-Older browsers that can't adapt colors show them exactly as they were picked.
+Старые браузеры, не поддерживающие адаптацию цветов, отображают их точно в том виде, в каком они были выбраны.
 
-When you paste text copied from a web page in Chrome, Edge or a Chromium-based app (such as Visual Studio Code), Trilium removes the page's styling:
+При вставке текста, скопированного с веб-страницы в Chrome, Edge или приложении на базе Chromium (например, Visual Studio Code), Trilium удаляет оформление страницы:
 
-*   Text and background colors.
-*   Fonts and font sizes.
-*   Table borders, backgrounds and spacing.
+*   Цвета текста и фона.
+*   Шрифты и размеры шрифтов.
+*   Границы, фоны и отступы таблиц.
 
-The following formatting is preserved:
+При этом сохраняется следующее форматирование:
 
-*   Bold, italic, underline and strikethrough.
-*   Subscript and superscript.
-*   Links, code and tables.
+*   Полужирный, курсив, подчёркивание и зачёркивание.
+*   Подстрочный и надстрочный текст.
+*   Ссылки, код и таблицы.
 
-Colors are preserved when pasting from Word, Google Docs or another note.
+При вставке из Word, Google Docs или другой заметки цвета сохраняются.
 
-To remove either the background or foreground color of a text, select the corresponding formatting button (<span class="tn-icon cke cke-font-color"></span> or <span class="tn-icon cke cke-font-background"></span>) and press _Remove color_ (<span class="tn-icon cke cke-eraser"></span>) or use the _Remove formatting_ (<span class="tn-icon cke cke-remove-format"></span>) toolbar item.
+Чтобы удалить цвет фона или текста, нажмите соответствующую кнопку форматирования (<span class="tn-icon cke cke-font-color"></span> или <span class="tn-icon cke cke-font-background"></span>) и выберите _Remove color_ (<span class="tn-icon cke cke-eraser"></span>), либо используйте кнопку _Remove formatting_ (<span class="tn-icon cke cke-remove-format"></span>) на панели инструментов.
 
-## Remove formatting
+## Удаление форматирования
 
-The <span class="tn-icon cke cke-remove-format"></span> _Remove formatting_ button is a quick way to eliminate the general formatting styling of a particular text.
+Кнопка <span class="tn-icon cke cke-remove-format"></span> _Remove formatting_ позволяет быстро очистить общее форматирование выбранного текста.
 
-Simply select the text and press the button to remove the formatting (bold, italic, colors, sizes, etc.). If the text does not have any removable formatting, the button will appear disabled.
+Просто выделите текст и нажмите кнопку, чтобы убрать форматирование (полужирный, курсив, цвета, размеры и т. д.). Если у текста нет удаляемого форматирования, кнопка будет неактивна.
 
-Note that heading styles are not taken into consideration, these must be manually changed back to a paragraph according to the _Headings_ section.
+Обратите внимание, что стили заголовков при этом не затрагиваются — их нужно вручную преобразовать обратно в абзац, как описано в разделе _Заголовки_.
 
-When pasting content that comes with undesired formatting, an alternative to pasting and then removing formatting is pasting as plain text via <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>V</kbd>.
+При вставке содержимого с нежелательным форматированием вместо вставки и последующей очистки можно вставить текст без форматирования с помощью <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>V</kbd>.
 
-## Format painter
+## Копирование формата
 
-The <a class="reference-link" href="Format%20Painter.md">Format Painter</a> allows users to copy the formatting of text (such as bold, italic, Strikethrough, etc.) and apply it to other parts of the document. It helps maintain consistent formatting and accelerates the creation of rich content.
+Инструмент <a class="reference-link" href="Format%20Painter.md">Копирование формата</a> позволяет копировать форматирование текста (полужирный, курсив, зачёркивание и т. д.) и применять его к другим частям документа. Он помогает поддерживать единый стиль оформления и ускоряет создание форматированного содержимого.
 
-## Support for Markdown
+## Поддержка Markdown
 
-When exported to <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown.md">Markdown</a>, most of the general formatting is maintained such as headings, bold, italic, underline, etc.
+При экспорте в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown.md">Markdown</a> большая часть общего форматирования (заголовки, полужирный, курсив, подчёркивание и т. д.) сохраняется.

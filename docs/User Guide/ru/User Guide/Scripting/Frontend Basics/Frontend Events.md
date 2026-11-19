@@ -1,16 +1,16 @@
-# Frontend Events
-Front-end scripts can be run automatically on certain triggering conditions.
+# События фронтенда
+Фронтенд-скрипты могут запускаться автоматически при наступлении определённых условий.
 
-To do so, set the `run` [label](../../Advanced%20Usage/Attributes/Labels.md) to either:
+Для этого задайте [метке](../../Advanced%20Usage/Attributes/Labels.md) `run` одно из значений:
 
-*   `frontendStartup` - when Trilium frontend starts up (or is refreshed), but not on mobile.
-*   `mobileStartup` - when Trilium frontend starts up (or is refreshed), on mobile.
+*   `frontendStartup` — при запуске (или обновлении) фронтенда Trilium, но не на мобильных устройствах.
+*   `mobileStartup` — при запуске (или обновлении) фронтенда Trilium на мобильных устройствах.
 
 > [!NOTE]
-> One script can be triggered on multiple events, this can be done by adding multiple `run` labels. Separating multiple values by commas **is not** supported.
+> Один скрипт может срабатывать по нескольким событиям — для этого нужно добавить несколько меток `run`. Перечисление нескольких значений через запятую **не** поддерживается.
 
-Backend scripts have more powerful triggering conditions, for example they can run automatically on a hourly or daily basis, but also on events such as when a note is created or an attribute is modified. See the server-side <a class="reference-link" href="../Backend%20scripts/Backend%20Events.md">Events</a> for more information.
+У бэкенд-скриптов более мощные условия запуска: например, они могут выполняться автоматически каждый час или каждый день, а также по таким событиям, как создание заметки или изменение атрибута. Подробнее см. в разделе серверных <a class="reference-link" href="../Backend%20scripts/Backend%20Events.md">Событий</a>.
 
-## Safe mode
+## Безопасный режим
 
-While [safe mode](../../Advanced%20Usage/Safe%20mode.md) is active, scripts with events won't trigger.
+Пока активен [безопасный режим](../../Advanced%20Usage/Safe%20mode.md), скрипты с событиями не запускаются.

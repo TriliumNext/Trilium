@@ -1,4 +1,4 @@
-# Reporting issues
-Go to [Issues · TriliumNext/Trilium](https://github.com/TriliumNext/Trilium/issues) and press “New issue”.
+# Сообщение о проблемах
+Перейдите на страницу [Issues · TriliumNext/Trilium](https://github.com/TriliumNext/Trilium/issues) и нажмите «New issue».
 
-If you are reporting a bug, select “Bug Report” and fill in the details.
+Если вы сообщаете об ошибке, выберите «Bug Report» и заполните подробности.

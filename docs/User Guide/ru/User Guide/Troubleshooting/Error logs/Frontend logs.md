@@ -1,15 +1,15 @@
-# Frontend logs
-To provide frontend logs, we need to open the Developer Console. Often the easiest way is to press <kbd>Ctrl</kbd>\-<kbd>Shift</kbd>\-<kbd>I</kbd> which should work in most browsers (and desktop app). Make sure that the error producing action happened right before you copy&paste the errors, the console is cleared on app restart.
+# Журналы фронтенда
+Чтобы предоставить журналы фронтенда, необходимо открыть консоль разработчика. Чаще всего проще всего нажать <kbd>Ctrl</kbd>\-<kbd>Shift</kbd>\-<kbd>I</kbd> — это должно работать в большинстве браузеров (и в настольном приложении). Убедитесь, что действие, вызывающее ошибку, произошло непосредственно перед тем, как вы скопируете ошибки, поскольку при перезапуске приложения консоль очищается.
 
-If that doesn't work, then:
+Если это не сработало:
 
-*   in Trilium desktop app, go to top-left menu button -> Advanced -> Developer tools
-*   In Firefox/Chrome right-click anywhere in the page and click Inspect:
+*   В настольном приложении Trilium нажмите кнопку меню в левом верхнем углу → Дополнительно → Инструменты разработчика (Advanced → Developer tools).
+*   В Firefox/Chrome щёлкните правой кнопкой мыши в любом месте страницы и выберите «Исследовать» / «Просмотреть код» (Inspect):
 
 ![](Frontend%20logs_error-logs-firefox-context-men.png)
 
-Once you have Dev Tools open, click on "Console" tab:
+После открытия инструментов разработчика перейдите на вкладку «Консоль» («Console»):
 
 ![](Frontend%20logs_image.jpg)
 
-Copy-paste (or screenshot) the logs. It's better to provide not just errors, but the whole log, which might provide context while analyzing the bug.
+Скопируйте (или сделайте скриншот) журналы. Лучше предоставлять не только ошибки, но и весь журнал целиком — это может дать полезный контекст при анализе ошибки.

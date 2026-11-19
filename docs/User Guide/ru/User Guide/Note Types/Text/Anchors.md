@@ -1,57 +1,57 @@
-# Anchors
+# Якоря
 > [!NOTE]
-> This feature used to be called _Bookmarks_ (as it is the official name in the editor we are using), but in order not to collide with the concept of <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Bookmarks.md">Bookmarks</a>, we have renamed it to _Anchors._
+> Раньше эта функция называлась _Закладки_ (_Bookmarks_, так как это официальное название в используемом нами редакторе), но чтобы избежать путаницы с <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Bookmarks.md">закладками</a> заметок, мы переименовали её в _Якоря_ (_Anchors_).
 
-Anchors allows creating [links](Links.md) to a certain part of a note, such as referencing a particular heading or section within a note.
+Якоря позволяют создавать [ссылки](Links.md) на определённую часть заметки, например на конкретный заголовок или раздел внутри заметки.
 
-This feature was introduced in TriliumNext v0.94.0 and augmented in v0.103.0 to support linking across notes.
+Эта функция появилась в TriliumNext v0.94.0 и была расширена в v0.103.0 поддержкой ссылок между разными заметками.
 
-## Interaction
+## Использование
 
-*   To create an anchor:
-    *   Place the cursor at the desired position where to place the anchor.
-    *   Look for the <span class="tn-icon bx bx-plus"></span> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, and then press the <span class="tn-icon cke cke-bookmark"></span> button.
-    *   Alternatively, use <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a> and look for _anchor_.
-*   To place a link to an anchor in the same note:
-    *   Place the cursor at the desired position of the link, or select the text to turn into a link.
-    *   Press <kbd>Ctrl</kbd>+<kbd>K</kbd> or the <span class="tn-icon cke cke-link"></span> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, then select _Heading / anchor_ at the top of the [_Add link_ dialog](Links.md). Alternatively, choose _Link to a heading or anchor_ in the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>, which opens the dialog on that page.
-    *   Under _Anchors_, click the desired anchor to check it. Optionally, type a _Link title_; without one, the link shows the anchor's name.
-    *   Press <kbd>Enter</kbd> or _Insert link_ to confirm.
-*   Clicking a link to an anchor of the same note scrolls to the anchor and briefly highlights the block that holds it, in read-only notes and on shared pages. While editing, clicking the link shows its popup, whose _Jump to anchor_ button does the same, as do <kbd>Ctrl</kbd>+click and double-click.
-*   To change a link to an anchor, place the cursor inside it and press <kbd>Ctrl</kbd>+<kbd>K</kbd>. Since v0.107.0, the _Edit link_ dialog opens on _Heading / anchor_, with the linked anchor checked.
+*   Чтобы создать якорь:
+    *   Поместите курсор в нужное место, где должен находиться якорь.
+    *   Найдите кнопку <span class="tn-icon bx bx-plus"></span> на <a class="reference-link" href="Formatting%20toolbar.md">панели форматирования</a> и нажмите кнопку <span class="tn-icon cke cke-bookmark"></span>.
+    *   Либо используйте <a class="reference-link" href="Slash%20Commands.md">слэш-команды</a> и найдите _anchor_.
+*   Чтобы вставить ссылку на якорь в той же заметке:
+    *   Поместите курсор в нужное место или выделите текст, который нужно превратить в ссылку.
+    *   Нажмите <kbd>Ctrl</kbd>+<kbd>K</kbd> или кнопку <span class="tn-icon cke cke-link"></span> на <a class="reference-link" href="Formatting%20toolbar.md">панели форматирования</a>, затем выберите _Heading / anchor_ в верхней части [диалога _Add link_](Links.md). Либо выберите _Link to a heading or anchor_ в <a class="reference-link" href="Slash%20Commands.md">слэш-командах</a>, что сразу откроет диалог на этой вкладке.
+    *   В разделе _Anchors_ нажмите на нужный якорь, чтобы отметить его. При желании введите _Link title_; если оставить поле пустым, ссылка отобразит имя якоря.
+    *   Нажмите <kbd>Enter</kbd> или _Insert link_ для подтверждения.
+*   Нажатие на ссылку на якорь в той же заметке прокручивает заметку к якорю и ненадолго подсвечивает содержащий его блок — в заметках только для чтения и на опубликованных страницах. В режиме редактирования нажатие на ссылку открывает всплывающее окно, кнопка _Jump to anchor_ в котором делает то же самое, как и <kbd>Ctrl</kbd>+клик и двойной клик.
+*   Чтобы изменить ссылку на якорь, поместите курсор внутрь неё и нажмите <kbd>Ctrl</kbd>+<kbd>K</kbd>. Начиная с версии v0.107.0 диалог _Edit link_ открывается на вкладке _Heading / anchor_ с уже отмеченным якорем.
 
 > [!TIP]
-> To link to a heading of the same note, no anchor is needed: pick the heading under _Headings_ in the same dialog. See [Linking to a heading](Block%20references.md) for details.
+> Чтобы сослаться на заголовок той же заметки, якорь не нужен: выберите заголовок в разделе _Headings_ в том же диалоге. Подробнее см. в разделе [Ссылка на заголовок](Block%20references.md).
 
-## Linking across notes
+## Ссылки между заметками
 
-Trilium v0.103.0 introduces cross-note Anchors, which makes it possible to create <a class="reference-link" href="Links/Internal%20(reference)%20links.md">Internal (reference) links</a> which point to a specific anchor in that document.
+В Trilium v0.103.0 появились межзаметочные якоря, позволяющие создавать <a class="reference-link" href="Links/Internal%20(reference)%20links.md">внутренние ссылки</a>, указывающие на конкретный якорь в другом документе.
 
-### Compatibility with documents from previous versions
+### Совместимость с документами из предыдущих версий
 
-For notes created prior to Trilium v0.103.0, you might notice that the Anchors might not be identified. This limitation is intentional in order not to have to re-process all the notes, looking for anchors.
+Для заметок, созданных до Trilium v0.103.0, якоря могут не определяться. Это ограничение сделано намеренно, чтобы не переобрабатывать все заметки в поисках якорей.
 
-To fix this, simply go that note and make any change (e.g. inserting a space), this will trigger the recalculation of the links.
+Чтобы исправить это, просто откройте такую заметку и внесите любое изменение (например, вставьте пробел) — это запустит пересчёт ссылок.
 
-### Linking to anchors through the _Add link_ dialog
+### Ссылка на якорь через диалог _Add link_
 
-1.  Create an anchor in the target note using the same process as described above.
-2.  In another note, press <kbd>Ctrl</kbd>+<kbd>L</kbd> to insert an internal link. Select the target note containing Anchors.
-3.  The headings and anchors of the target note are listed below the _Link title_. Under _Link to an anchor_, click the desired anchor to check it.
-4.  Add the link normally.
+1.  Создайте якорь в целевой заметке так же, как описано выше.
+2.  В другой заметке нажмите <kbd>Ctrl</kbd>+<kbd>L</kbd>, чтобы вставить внутреннюю ссылку. Выберите целевую заметку с якорями.
+3.  Заголовки и якоря целевой заметки отобразятся под полем _Link title_. В разделе _Link to an anchor_ нажмите на нужный якорь, чтобы отметить его.
+4.  Добавьте ссылку как обычно.
 
-Clicking on a reference link pointing to an anchor will automatically scroll to the desired section.
+Нажатие на внутреннюю ссылку, указывающую на якорь, автоматически прокрутит заметку к нужному разделу.
 
-### Linking to anchors through the `@` menu
+### Ссылка на якорь через меню `@`
 
-Since v0.108.0, type `@` in the text and pick the target note. Then type part of the anchor's name and press <kbd>Enter</kbd>, or select the anchor under _Link to an anchor_. See [In-place linking](Links/Internal%20\(reference\)%20links.md).
+Начиная с версии v0.108.0, введите `@` в тексте и выберите целевую заметку. Затем введите часть имени якоря и нажмите <kbd>Enter</kbd> или выберите якорь в разделе _Link to an anchor_. См. [Вставка ссылок по месту](Links/Internal%20\(reference\)%20links.md).
 
-### Linking to anchors through the bookmark toolbar
+### Ссылка на якорь через панель инструментов якоря
 
-1.  Create an anchor in the target note using the same process as described above.
-2.  Click on the anchor to reveal the anchor's floating toolbar.
-3.  Click on the <span class="tn-icon cke cke-trilium-copy"></span> _Copy anchor reference link_ button.
-4.  Go to the note where to insert the link and press <kbd>Ctrl</kbd>+<kbd>V</kbd>.
+1.  Создайте якорь в целевой заметке так же, как описано выше.
+2.  Нажмите на якорь, чтобы открыть его всплывающую панель инструментов.
+3.  Нажмите кнопку <span class="tn-icon cke cke-trilium-copy"></span> _Copy anchor reference link_.
+4.  Перейдите в заметку, куда нужно вставить ссылку, и нажмите <kbd>Ctrl</kbd>+<kbd>V</kbd>.
 
 > [!NOTE]
-> Use this method only to insert <a class="reference-link" href="Links/Internal%20(reference)%20links.md">Internal (reference) links</a> between two documents. To link to an anchor on the same note, use the _Add link_ dialog (<kbd>Ctrl</kbd>+<kbd>K</kbd>) and select _Heading / anchor_ at its top instead.
+> Используйте этот способ только для вставки <a class="reference-link" href="Links/Internal%20(reference)%20links.md">внутренних ссылок</a> между двумя разными документами. Для ссылки на якорь в той же заметке используйте диалог _Add link_ (<kbd>Ctrl</kbd>+<kbd>K</kbd>) и выберите _Heading / anchor_ в его верхней части.

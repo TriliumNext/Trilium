@@ -1,30 +1,30 @@
-# Collapsible headings
-A heading can be collapsed to hide the content under it, up to the next heading of the same or a higher level. A lower heading is hidden along with the rest, and keeps its own state.
+# Сворачиваемые заголовки
+Заголовок можно свернуть, чтобы скрыть содержимое под ним — вплоть до следующего заголовка того же или более высокого уровня. Заголовки более низкого уровня скрываются вместе с остальным содержимым и сохраняют своё собственное состояние.
 
-## Collapsing and expanding
+## Сворачивание и разворачивание
 
-*   To collapse or expand a heading, click the arrow at the end of the heading. The arrow appears while the mouse is over the heading or the cursor is in it, and stays visible while the heading is collapsed.
-*   To use the keyboard instead, place the cursor in the heading and press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Enter</kbd>.
-*   The menu of the drag handle beside a heading also offers _Collapse section_ and _Expand section_.
+*   Чтобы свернуть или развернуть заголовок, нажмите на стрелку в конце заголовка. Стрелка появляется при наведении указателя мыши на заголовок или когда в нём находится курсор, и остаётся видимой, пока заголовок свёрнут.
+*   Чтобы использовать клавиатуру, поместите курсор в заголовок и нажмите <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Enter</kbd>.
+*   Меню маркера перетаскивания рядом с заголовком также содержит пункты _Collapse section_ и _Expand section_.
 
-The collapsed state is saved with the note, so a heading stays collapsed when the note is opened again.
+Свёрнутое состояние сохраняется вместе с заметкой, поэтому при повторном открытии заметки заголовок остаётся свёрнутым.
 
-## Editing around a collapsed heading
+## Редактирование рядом со свёрнутым заголовком
 
-*   Pressing <kbd>Enter</kbd> at the end of a collapsed heading adds a new heading of the same level below the hidden content.
-*   The arrow keys move the cursor past the hidden content.
-*   <kbd>Backspace</kbd> right below a collapsed heading's content, or <kbd>Delete</kbd> at the end of a collapsed heading, expands the heading instead of deleting the hidden content. If the line right below the hidden content is empty, either key deletes that empty line instead.
-*   Dragging a collapsed heading by its drag handle moves its hidden content along with it.
-*   A collapsed heading expands when content is added to its section, for example by pasting or by dropping a block under it.
-*   _Search in note_, the table of contents and links to a block show hidden content when they lead to it, without expanding the heading.
+*   Нажатие <kbd>Enter</kbd> в конце свёрнутого заголовка добавляет новый заголовок того же уровня ниже скрытого содержимого.
+*   Клавиши со стрелками перемещают курсор мимо скрытого содержимого.
+*   Клавиша <kbd>Backspace</kbd> непосредственно под содержимым свёрнутого заголовка или <kbd>Delete</kbd> в конце свёрнутого заголовка разворачивает заголовок вместо удаления скрытого содержимого. Если строка сразу под скрытым содержимым пуста, любая из этих клавиш удалит эту пустую строку.
+*   Перетаскивание свёрнутого заголовка за его маркер перетаскивания перемещает его скрытое содержимое вместе с ним.
+*   Свёрнутый заголовок разворачивается при добавлении содержимого в его раздел, например при вставке или перетаскивании блока под него.
+*   _Search in note_, оглавление и ссылки на блок показывают скрытое содержимое при переходе к нему, не разворачивая сам заголовок.
 
-## Read-only notes
+## Заметки только для чтения
 
-The arrow also works in notes shown read-only (see <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">Read-Only Notes</a>), but there the changes are not saved: the note shows its saved state again when it is reopened.
+Стрелка также работает в заметках, открытых только для чтения (см. <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">Заметки только для чтения</a>), однако в этом режиме изменения не сохраняются: при повторном открытии заметка снова отображается в сохранённом состоянии.
 
-To use the keyboard there, press <kbd>Tab</kbd> to move to a heading that has content under it, then <kbd>Enter</kbd> or <kbd>Space</kbd> to collapse or expand it.
+Чтобы использовать клавиатуру в этом режиме, нажимайте <kbd>Tab</kbd> для перехода к заголовку с содержимым под ним, затем <kbd>Enter</kbd> или <kbd>Space</kbd>, чтобы свернуть или развернуть его.
 
-## Limitations
+## Ограничения
 
-*   Shared notes and printouts always show all the content.
-*   The collapsed state is kept in HTML exports, but not in Markdown exports.
+*   Опубликованные заметки и печатные версии всегда отображают всё содержимое целиком.
+*   Свёрнутое состояние сохраняется при экспорте в HTML, но не при экспорте в Markdown.

@@ -1,4 +1,4 @@
-# Refreshing the application
-Some changes to the application will not take effect immediately and as such it might require to manually reload or refresh the application.
+# Обновление приложения
+Некоторые изменения в приложении вступают в силу не сразу, поэтому может потребоваться вручную перезагрузить или обновить приложение.
 
-To do so, simply press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd>.
+Для этого просто нажмите <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd>.

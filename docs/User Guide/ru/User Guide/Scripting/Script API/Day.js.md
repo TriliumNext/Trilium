@@ -1,25 +1,25 @@
 # Day.js
-Day.js is a date manipulation library that's used by Trilium, but it's also shared with both front-end and back-end scripts. For more information about the library itself, consult the [official documentation](https://day.js.org/en/).
+Day.js — это библиотека для работы с датами, которую использует Trilium; она также доступна как во фронтенд-, так и в бэкенд-скриптах. Подробнее о самой библиотеке см. в [официальной документации](https://day.js.org/en/).
 
-## How to use
+## Как использовать
 
-The `dayjs` method is provided directly in the `api` global:
+Метод `dayjs` доступен напрямую в глобальном объекте `api`:
 
 ```javascript
 const date = api.dayjs();
 api.log(date.format("YYYY-MM-DD"));
 ```
 
-## Plugins
+## Плагины
 
-Day.js uses a modular, plugin-based architecture. Generally these plugins must be imported, but this process doesn't work inside Trilium scripts due to the use of a bundler.
+Day.js использует модульную архитектуру на основе плагинов. Обычно эти плагины нужно импортировать, но внутри скриптов Trilium это не работает из-за использования сборщика.
 
-Since v0.100.0, the same set of plugins is available for both front-end and back-end scripts.
+Начиная с версии v0.100.0, одинаковый набор плагинов доступен как для фронтенд-, так и для бэкенд-скриптов.
 
-The following Day.js plugins are directly integrated into Trilium:
+Следующие плагины Day.js встроены непосредственно в Trilium:
 
 *   [AdvancedFormat](https://day.js.org/docs/en/plugin/advanced-format)
-*   [Duration](https://day.js.org/docs/en/plugin/duration), since v0.100.0.
+*   [Duration](https://day.js.org/docs/en/plugin/duration), начиная с v0.100.0.
 *   [IsBetween](https://day.js.org/docs/en/plugin/is-between)
 *   [IsoWeek](https://day.js.org/docs/en/plugin/iso-week)
 *   [IsSameOrAfter](https://day.js.org/docs/en/plugin/is-same-or-after)
@@ -28,4 +28,4 @@ The following Day.js plugins are directly integrated into Trilium:
 *   [UTC](https://day.js.org/docs/en/plugin/utc)
 
 > [!NOTE]
-> If another Day.js plugin might be needed for scripting purposes, feel free to open a feature request for it. Depending on the size of the plugin and the potential use of it inside the Trilium code base, it has a chance of being integrated.
+> Если для написания скриптов вам понадобится другой плагин Day.js, вы можете создать запрос на добавление функции (feature request). В зависимости от размера плагина и его потенциальной полезности для кодовой базы Trilium он может быть интегрирован.

@@ -1,47 +1,47 @@
 # Preact
-Since v0.101.0, Trilium integrates Preact for front-end scripting, including support for JSX.
+Начиная с версии v0.101.0, Trilium включает интеграцию с Preact для фронтенд-скриптов, включая поддержку JSX.
 
-Preact can be used for:
+Preact можно использовать для:
 
-*   <a class="reference-link" href="../../Note%20Types/Render%20Note.md">Render Note</a>, where a JSX code note is used instead of a HTML one.
-*   <a class="reference-link" href="Custom%20Widgets.md">Custom Widgets</a>, where JSX can be used to replace the old, jQuery-based mechanism.
+*   <a class="reference-link" href="../../Note%20Types/Render%20Note.md">заметок рендеринга</a>, где вместо HTML-заметки используется заметка типа «Код» с языком JSX;
+*   <a class="reference-link" href="Custom%20Widgets.md">пользовательских виджетов</a>, где JSX может заменить старый механизм на базе jQuery.
 
-To get started, the first step is to enable JSX in the list of Code languages. Go to Options → Code Notes and check the “JSX” language. Afterwards, proceed with the documentation in either <a class="reference-link" href="../../Note%20Types/Render%20Note.md">Render Note</a> or <a class="reference-link" href="Custom%20Widgets.md">Custom Widgets</a>, which will both have a section on how to use the new Preact integration.
+Чтобы начать, сначала включите JSX в списке языков заметок с кодом. Перейдите в Options (Настройки) → Code Notes (Заметки с кодом) и отметьте язык «JSX». После этого переходите к документации по <a class="reference-link" href="../../Note%20Types/Render%20Note.md">заметкам рендеринга</a> или <a class="reference-link" href="Custom%20Widgets.md">пользовательским виджетам</a> — в обоих разделах описано, как использовать новую интеграцию с Preact.
 
 > [!IMPORTANT]
-> The documentation assumes prior knowledge with React or Preact. As a starting point, consider the [FreeCodeCamp course on Front End Development Libraries](https://www.freecodecamp.org/learn/front-end-development-libraries-v9/) or the [Preact Tutorial](https://preactjs.com/tutorial/).
+> Документация предполагает предварительное знакомство с React или Preact. Для начала можно изучить [курс FreeCodeCamp по библиотекам фронтенд-разработки](https://www.freecodecamp.org/learn/front-end-development-libraries-v9/) или [учебник по Preact](https://preactjs.com/tutorial/).
 
-## Import/exports
+## Импорт и экспорт
 
-When using Preact with JSX, there is a special syntax which provides ES-like imports. This `import` syntax makes way for a more intuitive that doesn't make use of global objects and paves the way for better auto-completion support that might be introduced in the future. 
+При использовании Preact с JSX доступен специальный синтаксис, предоставляющий импорты в стиле ES. Такой синтаксис `import` делает код более интуитивным, избавляет от необходимости обращаться к глобальным объектам и закладывает основу для улучшенного автодополнения в будущем.
 
-### API imports
+### Импорт API
 
-Instead of:
+Вместо:
 
 ```jsx
 api.showMessage("Hello");
 ```
 
-the JSX version looks like this:
+версия на JSX выглядит так:
 
 ```jsx
 import { showMessage } from "trilium:api";
 showMessage("hello");
 ```
 
-### Preact API imports (hooks, components)
+### Импорт Preact API (хуки, компоненты)
 
-There's a new <a class="reference-link" href="../Script%20API.md">Script API</a> dedicated to Preact, which provides shared components that are also used by Trilium internally as well as hooks, for example.
+Доступен новый <a class="reference-link" href="../Script%20API.md">Script API</a>, предназначенный для Preact, который предоставляет, например, общие компоненты, используемые внутри самого Trilium, а также хуки.
 
 ```jsx
 import { useState } from "trilium:preact";
 const [ myState, setMyState ] = useState("Hi");
 ```
 
-### Exporting
+### Экспорт
 
-JSX notes can export a component for use in <a class="reference-link" href="../../Note%20Types/Render%20Note.md">Render Note</a> or for <a class="reference-link" href="Preact/Component%20libraries.md">Component libraries</a>: 
+JSX-заметки могут экспортировать компонент для использования в <a class="reference-link" href="../../Note%20Types/Render%20Note.md">заметке рендеринга</a> или в <a class="reference-link" href="Preact/Component%20libraries.md">библиотеках компонентов</a>: 
 
 ```jsx
 export default function() {
@@ -53,13 +53,13 @@ export default function() {
 }
 ```
 
-### Import/export are not required
+### Импорт и экспорт не обязательны
 
-These imports are syntactic sugar meant to replace the usage for the `api` global object (see <a class="reference-link" href="../Script%20API.md">Script API</a>). 
+Эти импорты — синтаксический сахар, предназначенный для замены обращения к глобальному объекту `api` (см. <a class="reference-link" href="../Script%20API.md">Script API</a>).
 
 > [!NOTE]
-> The `import` and `export` syntax work only for JSX notes. Standard/jQuery code notes still need to use the `api` global and `module.exports`.
+> Синтаксис `import` и `export` работает только для JSX-заметок. Обычные заметки с кодом (в том числе на jQuery) по-прежнему должны использовать глобальный объект `api` и `module.exports`.
 
-## Under the hood
+## Как это работает внутри
 
-Unlike JavaScript, JSX requires pre-processing to turn it into JavaScript (just like TypeScript). To do so, Trilium uses [Sucrase](https://github.com/alangpierce/sucrase), a JavaScript library which processes the JSX to pure JavaScript. The processing is done each time a script is run (for widgets this happens at every program startup). If you notice any performance degradation due to long compilation, consider [reporting the issue](../../Troubleshooting/Reporting%20issues.md) to us.
+В отличие от JavaScript, JSX требует предварительной обработки для преобразования в JavaScript (как и TypeScript). Для этого Trilium использует [Sucrase](https://github.com/alangpierce/sucrase) — JavaScript-библиотеку, которая компилирует JSX в чистый JavaScript. Обработка выполняется при каждом запуске скрипта (для виджетов — при каждом запуске программы). Если вы заметите снижение производительности из-за длительной компиляции, пожалуйста, [сообщите нам об этой проблеме](../../Troubleshooting/Reporting%20issues.md).

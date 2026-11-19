@@ -1,7 +1,7 @@
-# Analog Watch
+# Аналоговые часы
 <figure class="image"><img style="aspect-ratio:1007/94;" src="Analog Watch_image.png" width="1007" height="94"></figure>
 
-This is a more intricate example of a basic widget, which displays an analog watch in the launch bar. Unlike note-context aware widgets, basic widgets don't react to note navigation.
+Это более сложный пример базового виджета, который отображает аналоговые часы на панели запуска. В отличие от виджетов, учитывающих контекст заметки, базовые виджеты не реагируют на переключение между заметками.
 
 ```javascript
 const TPL = `

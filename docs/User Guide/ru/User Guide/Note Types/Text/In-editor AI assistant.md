@@ -1,71 +1,71 @@
-# In-editor AI assistant
+# ИИ-помощник в редакторе
 <figure class="image image-style-align-center image_resized" style="width:76.29%;"><img style="aspect-ratio:1479/865;" src="In-editor AI assistant_image.png" width="1479" height="865"></figure>
 
-The AI assistant works on the text you are already writing: select a passage and have it rewritten, translated or turned into a table, or ask for new content at the cursor. Unlike the [AI chat](../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar/AI%20chat%20tab.md), it does not open a conversation window, the result is previewed in place and only enters the note when you accept it.
+ИИ-помощник работает прямо с текстом, который вы пишете: выделите фрагмент и попросите переписать его, перевести или превратить в таблицу, либо запросите новый текст в позиции курсора. В отличие от [ИИ-чата](../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar/AI%20chat%20tab.md), он не открывает окно беседы — результат отображается для предпросмотра прямо на месте и попадает в заметку только после вашего подтверждения.
 
-## Requirements
+## Требования
 
-The assistant is only available once at least one provider is configured in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _AI / LLM_, with at least one model selected for it. Until then the toolbar entry is not shown at all.
+Помощник доступен только после того, как в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _AI / LLM_ настроен хотя бы один провайдер и выбрана хотя бы одна модель. До этого кнопка на панели инструментов вообще не отображается.
 
-## Accessing the AI assistant
+## Как открыть ИИ-помощника
 
-To access the AI assistant:
+Чтобы открыть ИИ-помощника:
 
-*   Look for the <span class="tn-icon cke cke-trilium-ai"></span> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>. Press the button itself to enter the _Ask AI_ mode or press the arrow key next to it to access the quick commands and the model selection. On a phone, the button has no arrow: tapping it opens the same menu at the bottom of the screen, with _Ask AI…_ at its top, and a group such as _Translate_ opens as a page of its own.
-*   Look for _AI assistant_ or any of the _AI_\-prefixed quick commands in <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>.
-*   Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>.
-*   Select a text and choose the _AI assistant_ option in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20contextual%20menu.md">Note contextual menu</a>.
-*   Click or right-click the drag handle to the left of a paragraph and choose _AI assistant_, see <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>. It offers the same items as the toolbar button, and works on the blocks that the handle shades. If the assistant is already open, it starts over on these blocks, and a response you have not inserted is dropped.
+*   Найдите кнопку <span class="tn-icon cke cke-trilium-ai"></span> на <a class="reference-link" href="Formatting%20toolbar.md">Панели форматирования</a>. Нажмите саму кнопку, чтобы открыть режим _Спросить ИИ_, или нажмите стрелку рядом с ней для доступа к быстрым командам и выбору модели. На телефоне у кнопки нет стрелки: нажатие на неё открывает то же меню внизу экрана с пунктом _Спросить ИИ…_ наверху, а группы вроде _Перевести_ открываются как отдельные страницы.
+*   Найдите _AI assistant_ или любую из быстрых команд с префиксом _AI_ в <a class="reference-link" href="Slash%20Commands.md">Слэш-командах</a>.
+*   Нажмите <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>.
+*   Выделите текст и выберите пункт _AI assistant_ в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20contextual%20menu.md">Контекстном меню заметки</a>.
+*   Нажмите левой или правой кнопкой мыши на маркер перетаскивания слева от абзаца и выберите _AI assistant_, см. <a class="reference-link" href="Formatting%20toolbar.md">Панель форматирования</a>. В нём доступны те же пункты, что и в кнопке панели инструментов, и он работает со всеми блоками, подсвеченными маркером. Если помощник уже открыт, он запускается заново для этих блоков, а не вставленный ответ сбрасывается.
 
-## What the assistant works on
+## С чем работает помощник
 
-| Situation | What is sent |
+| Ситуация | Что отправляется |
 | --- | --- |
-| Text is selected | The selection. |
-| Nothing is selected, and you pick a quick action | The paragraph the cursor is in. |
-| Nothing is selected, and you type your own prompt | Nothing, the response is new content written at the cursor. |
-| You open the assistant from the menu of the drag handle | The whole blocks that the handle shades, even when only part of their text is selected. |
+| Текст выделен | Выделенный фрагмент. |
+| Ничего не выделено, выбрано быстрое действие | Абзац, в котором находится курсор. |
+| Ничего не выделено, вы вводите собственный запрос | Ничего, ответ генерируется как новый текст в позиции курсора. |
+| Вы открываете помощника из меню маркера перетаскивания | Все блоки целиком, подсвеченные маркером, даже если выделена только часть их текста. |
 
-In all cases the assistant also sends the text before and after the target, so that the model can tell what it is writing into: asked to _Continue writing_ or to summarize, a model that can only see the selected words is guessing at the document around them. This surrounding text is context only, it is never rewritten.
+Во всех случаях помощник также отправляет текст до и после целевого фрагмента, чтобы модель понимала контекст документа: при запросе _Продолжить текст_ или сделать краткую выжимку модель, видящая только выделенные слова, вынуждена была бы гадать об остальном тексте. Окружающий текст используется исключительно как контекст и никогда не переписывается.
 
 > [!IMPORTANT]
-> That means a single run sends more than the passage you highlighted. See <a class="reference-link" href="../../AI/Privacy.md">Privacy</a> for exactly what leaves your machine.
+> Это означает, что за один запуск отправляется больше текста, чем вы выделили. Подробнее о том, какие данные покидают ваш компьютер, см. в разделе <a class="reference-link" href="../../AI/Privacy.md">Конфиденциальность</a>.
 
-## Quick actions
+## Быстрые действия
 
-The arrow beside the toolbar button opens a menu of ready-made instructions, grouped by what they do.
+Стрелка рядом с кнопкой на панели инструментов открывает меню готовых инструкций, сгруппированных по назначению.
 
-*   The _Reformat_ actions produce real Trilium content rather than plain text: _Diagram_ inserts a Mermaid diagram, _Callout_ an admonition, and _Collapsible_ a collapsible block.
-*   The _Translate_ group lists the [content languages](Content%20language%20%26%20Right-to-left%20support.md) you have enabled, or a predefined list if no content languages are set. It can be filled from within the editor, the last entry of the submenu opens the language configuration directly.
+*   Действия из группы _Переформатировать_ создают настоящие элементы Trilium, а не простой текст: _Диаграмма_ вставляет диаграмму Mermaid, _Выноска_ — блок примечания (admonition), а _Сворачиваемый блок_ — сворачиваемую секцию.
+*   Группа _Перевести_ содержит список включённых вами [языков контента](Content%20language%20%26%20Right-to-left%20support.md) или предопределённый список, если языки контента не заданы. Его можно настроить прямо из редактора — последний пункт подменю сразу открывает настройки языков.
 
-Actions that need something to work on are greyed out when there is nothing to work on (for example an empty paragraph with no selection).
+Действия, которым нужен исходный текст, неактивны (выделены серым), если работать не с чем (например, пустой абзац без выделения).
 
-## Asking for something specific
+## Произвольный запрос
 
-Choosing _Ask AI…_ (<span class="tn-icon bx bx-message-square-dots"></span>) opens a prompt where you can describe the change in your own words, for example: "make this less formal", "add a row for 2024", "write an intro paragraph for this section". Press <kbd>Enter</kbd> or the <span class="tn-icon cke cke-arrow-up"></span> send button to run it.
+Выбор _Спросить ИИ…_ (<span class="tn-icon bx bx-message-square-dots"></span>) открывает поле ввода, где можно описать желаемое изменение своими словами, например: «сделай текст менее формальным», «добавь строку за 2024 год», «напиши вводный абзац для этого раздела». Нажмите <kbd>Enter</kbd> или кнопку отправки <span class="tn-icon cke cke-arrow-up"></span> для запуска.
 
-Once a response arrives you can keep going in the same prompt, and the assistant treats it as a conversation rather than as a fresh request: after _Translate this to German_, asking for _make it shorter_ shortens the German, not the original.
+После получения ответа вы можете продолжить диалог в том же поле — помощник воспринимает это как беседу, а не новый запрос с нуля: после _Переведи на немецкий_ запрос _сделай короче_ сократит немецкий текст, а не оригинал.
 
-## Reviewing the result
+## Просмотр результата
 
-The response streams in as it is generated, and can be interrupted at any point by pressing the _Stop_ (<span class="tn-icon cke cke-stop"></span>) button; whatever arrived before that stays usable.
+Ответ поступает потоком по мере генерации и может быть прерван в любой момент кнопкой _Остановить_ (<span class="tn-icon cke cke-stop"></span>); уже полученную часть всё равно можно использовать.
 
-Nothing is written into the note until you say so. The review offers:
+Ничего не записывается в заметку без вашего подтверждения. В окне предпросмотра доступны:
 
-*   _Result_, which displays the response as it will be inserted.
-*   _Changes_, which displays an inline diff against the original, with insertions and deletions marked. When the model rewrote the passage rather than editing it, the review opens on _Result_ instead: a diff of two texts with little in common is harder to read than the answer itself.
-*   _Try again_ (<span class="tn-icon cke cke-refresh"></span>), to re-run the same instruction.
-*   _Replace_, which substitutes the original passage
-*   _Insert below_, which keeps the original and adds the response after it.
+*   _Результат_ — показывает ответ в том виде, в каком он будет вставлен.
+*   _Изменения_ — показывает встроенное сравнение (diff) с оригиналом, где отмечены добавления и удаления. Если модель полностью переписала фрагмент, а не отредактировала его, предпросмотр сразу открывается на вкладке _Результат_, так как сравнение двух почти не пересекающихся текстов читать сложнее, чем сам ответ.
+*   _Попробовать снова_ (<span class="tn-icon cke cke-refresh"></span>) — повторно выполнить ту же инструкцию.
+*   _Заменить_ — заменяет исходный фрагмент.
+*   _Вставить ниже_ — сохраняет оригинал и добавляет ответ после него.
 
-Trilium also reports the model that produced it, the tokens consumed and, for providers that report it, the price.
+Trilium также показывает использованную модель, количество потраченных токенов и, если провайдер предоставляет эти данные, стоимость.
 
-If you ask for a correction and there is nothing to correct, the assistant will indicate it instead of showing a blank diff.
+Если вы попросили исправить ошибки, а исправлять нечего, помощник сообщит об этом вместо показа пустого сравнения.
 
-## Choosing the model
+## Выбор модели
 
-The bottom of the quick actions menu shows which model the assistant runs on, and lets you pick another from the models you selected in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _AI / LLM_, grouped by provider.
+В нижней части меню быстрых действий отображается текущая модель помощника и можно выбрать другую из моделей, отмеченных в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _AI / LLM_, сгруппированных по провайдерам.
 
-The model can also be changed while asking for something specific, or after the assistant has generated its response (i.e. if the response needs a better model).
+Модель также можно сменить во время ввода произвольного запроса или уже после генерации ответа (например, если для лучшего результата требуется более мощная модель).
 
-This choice is separate from the model used by the chat, and is remembered across notes and devices. Left unset, the assistant follows the first configured provider.
+Этот выбор не зависит от модели, используемой в чате, и запоминается между заметками и устройствами. Если модель не выбрана, помощник использует первого настроенного провайдера.

@@ -1,15 +1,15 @@
-# Security
-Starting with v0.104.0, some features in Trilium are intentionally disabled in order to reduce the attack surface:
+# Безопасность
+Начиная с версии v0.104.0 некоторые функции в Trilium намеренно отключены для уменьшения поверхности атаки:
 
-*   <a class="reference-link" href="Backend%20scripts.md">Backend scripts</a>, which can run processes on the server, access the file system or bypass security measures.
-*   <a class="reference-link" href="../Advanced%20Usage/Database/Manually%20altering%20the%20database/SQL%20Console.md">SQL Console</a>, which can be used to exfiltrate important data such as the document secret or cause irreparable damage to the database.
-*   <a class="reference-link" href="../Installation%20%26%20Setup/Desktop%20Installation/Network%20Access.md">Network Access</a> for the <a class="reference-link" href="../Installation%20%26%20Setup/Desktop%20Installation.md">Desktop Installation</a>.
+*   <a class="reference-link" href="Backend%20scripts.md">Серверные скрипты (бэкенд-скрипты)</a>, которые могут запускать процессы на сервере, обращаться к файловой системе или обходить меры безопасности.
+*   <a class="reference-link" href="../Advanced%20Usage/Database/Manually%20altering%20the%20database/SQL%20Console.md">SQL-консоль</a>, которая может использоваться для извлечения важных данных (например, секрета документа) или нанесения непоправимого ущерба базе данных.
+*   <a class="reference-link" href="../Installation%20%26%20Setup/Desktop%20Installation/Network%20Access.md">Сетевой доступ</a> для <a class="reference-link" href="../Installation%20%26%20Setup/Desktop%20Installation.md">настольной установки</a>.
 
-To activate any of them, there are three variants:
+Чтобы активировать любую из этих функций, есть три варианта:
 
-*   For the desktop app, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Security_ and toggle the desired option.
-    *   This will prompt a system dialog confirming the change. Note that scripts could potentially call this confirmation dialog as well, make sure to accept it only if enabling any of these features is required.
-    *   The settings page will be available for the server-side as well, but the options need to be manually toggled using the other mechanisms described here.
-    *   This works by setting a separate configuration file in the <a class="reference-link" href="../Installation%20%26%20Setup/Data%20directory.md">Data directory</a>.
-*   In [config.ini](../Advanced%20Usage/Configuration%20\(config.ini%20or%20environment%20variables\).md), set the corresponding option under the `Security` group.
-*   Or use environment variables (e.g. `TRILIUM_SECURITY_BACKEND_SCRIPTING_ENABLED=true`).
+*   В настольном приложении перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Безопасность_ (_Security_) и переключите нужный параметр.
+    *   При этом появится системное диалоговое окно для подтверждения изменения. Обратите внимание, что скрипты потенциально также могут вызвать это диалоговое окно, поэтому подтверждайте его только в том случае, если вам действительно нужно включить какую-либо из этих функций.
+    *   Страница настроек также доступна в серверной версии, но параметры необходимо переключать вручную с помощью других механизмов, описанных ниже.
+    *   Это работает путём создания отдельного файла конфигурации в <a class="reference-link" href="../Installation%20%26%20Setup/Data%20directory.md">каталоге данных</a>.
+*   В [config.ini](../Advanced%20Usage/Configuration%20\(config.ini%20or%20environment%20variables\).md) задайте соответствующий параметр в группе `Security`.
+*   Или используйте переменные окружения (например, `TRILIUM_SECURITY_BACKEND_SCRIPTING_ENABLED=true`).

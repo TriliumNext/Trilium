@@ -1,11 +1,11 @@
-# Script bundles
-For both <a class="reference-link" href="../../Note%20Types/Render%20Note.md">Render Note</a> and more complicated scripts, it's generally useful to split the code into multiple <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> notes.
+# Пакеты скриптов
+Как для <a class="reference-link" href="../../Note%20Types/Render%20Note.md">заметок рендеринга</a>, так и для более сложных скриптов обычно полезно разбивать код на несколько <a class="reference-link" href="../../Note%20Types/Code.md">заметок с кодом</a>.
 
-When a script is run, the sub-children of the script being run (or the <a class="reference-link" href="../../Note%20Types/Render%20Note.md">Render Note</a>) are checked for children. If the children are Code notes of the corresponding type (front-end or backend) as the code being run, they will be evaluated as well.
+При запуске скрипта проверяются дочерние заметки запускаемого скрипта (или <a class="reference-link" href="../../Note%20Types/Render%20Note.md">заметки рендеринга</a>). Если среди дочерних заметок есть заметки с кодом того же типа (клиентский или серверный), что и запускаемый код, они также будут выполнены.
 
-The collection of a script and its child notes is called a _bundle_. A child note inside a bundle is called a _module_.
+Совокупность скрипта и его дочерних заметок называется _пакетом_ (bundle). Дочерняя заметка внутри пакета называется _модулем_.
 
-As a basic example of dependencies, consider the following note structure:
+В качестве простого примера зависимостей рассмотрим следующую структуру заметок:
 
 *   _Script with dependency_
     
@@ -23,26 +23,26 @@ As a basic example of dependencies, consider the following note structure:
         };
         ```
 
-When _Script with dependency_ is run, it will detect _MyMath_ as a submodule and provide the result of its `module.exports` object into a global object with the same name as the note.
+При запуске _Script with dependency_ система обнаружит _MyMath_ как подмодуль и предоставит результат его объекта `module.exports` в глобальном объекте с тем же именем, что и заметка.
 
 > [!NOTE]
-> If the note contains spaces or special characters, they will be stripped. For example `My Nice Note!` becomes `MyNiceNote`.
+> Если в названии заметки содержатся пробелы или специальные символы, они будут удалены. Например, `My Nice Note!` превратится в `MyNiceNote`.
 
-## Alternative syntax
+## Альтернативный синтаксис
 
-Instead of providing an object to `module.exports`, it's also possible to add fields individually:
+Вместо передачи целого объекта в `module.exports` можно добавлять поля по отдельности:
 
 ```javascript
 module.exports.sum = (a, b) => a + b;
 module.exports.subtract = (a, b) => a - b;
 ```
 
-## Ignoring a code script from a bundle
+## Исключение скрипта из пакета
 
-To ignore a script from being included in a bundle (e.g. if it's unrelated to the parent script note), apply the `#disableInclusion` label.
+Чтобы исключить скрипт из включения в пакет (например, если он не связан с родительской заметкой-скриптом), добавьте метку `#disableInclusion`.
 
-## Sharing a module across multiple bundles
+## Повторное использование модуля в нескольких пакетах
 
-Modules can be reused across multiple scripts by simply cloning the shared module between two modules (see <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Cloning%20Notes.md">Cloning Notes</a>).
+Модули можно повторно использовать в нескольких скриптах, просто клонировав общий модуль в нужные места (см. <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Cloning%20Notes.md">Клонирование заметок</a>).
 
-Optionally, a separate note can be used to contain all the different reusable modules for an easy way to discover them.
+При желании можно создать отдельную заметку для хранения всех переиспользуемых модулей, чтобы их было легко находить.

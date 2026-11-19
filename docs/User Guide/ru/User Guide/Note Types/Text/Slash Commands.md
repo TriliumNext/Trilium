@@ -1,23 +1,23 @@
-# Slash Commands
+# Слэш-команды
 <figure class="image image-style-align-right"><img style="aspect-ratio:419/571;" src="Slash Commands_image.png" width="419" height="571"></figure>
 
-Slash commands is a feature of <a class="reference-link" href="../Text.md">Text</a> notes which allows easily accessing commonly used commands simply by using the keyboard, without having to remember dedicated <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Keyboard%20Shortcuts.md">Keyboard Shortcuts</a>.
+Слэш-команды — это функция <a class="reference-link" href="../Text.md">текстовых</a> заметок, которая позволяет легко получать доступ к часто используемым командам с помощью клавиатуры, не запоминая отдельные <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Keyboard%20Shortcuts.md">сочетания клавиш</a>.
 
-## Interaction
+## Взаимодействие
 
-*   As the name suggests, to trigger the slash commands simply press the / key to trigger it. Note that this can be anywhere in a paragraph as long as it's not part of the word, if it doesn't show up simply press a space and press the / key again.
-*   Use ↑ and ↓ keys to navigate between options.
-*   By default, the full list of commands is displayed.
-*   To search, simply start typing: commands are found by their title or by other names they go by (for example `h2` for _Heading 2_).
-*   To trigger the highlighted action, press Enter or Tab.
-*   With the fixed <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, the block handle beside an empty paragraph turns into a <span class="tn-icon cke cke-plus"></span> button. Clicking it opens the commands that insert content or turn the paragraph into another block, such as a heading, a list, a table or a link, as a menu, with a box at its top that finds them by their title, their description or the other names they go by. The commands that only change the paragraph, such as alignment or indentation, are left out of that menu.
-*   The menu of the block handle, described in <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, starts with _Insert above_ and _Insert below_, which list the same commands and add the one picked in a new paragraph above or below the block. Beside a list item, items that add an empty list item take their place.
+*   Как следует из названия, чтобы вызвать слэш-команды, просто нажмите клавишу `/`. Обратите внимание, что это можно сделать в любом месте абзаца, если слэш не является частью слова; если меню не появляется, просто поставьте пробел и снова нажмите `/`.
+*   Используйте клавиши ↑ и ↓ для навигации между вариантами.
+*   По умолчанию отображается полный список команд.
+*   Для поиска просто начните вводить текст: команды ищутся по их названию или по другим именам, под которыми они известны (например, `h2` для _Заголовок 2_).
+*   Чтобы выполнить выделенное действие, нажмите Enter или Tab.
+*   При использовании закреплённой <a class="reference-link" href="Formatting%20toolbar.md">панели форматирования</a> маркер блока рядом с пустым абзацем превращается в кнопку <span class="tn-icon cke cke-plus"></span>. Нажатие на неё открывает меню с командами, которые вставляют содержимое или превращают абзац в другой блок (например, заголовок, список, таблицу или ссылку), с полем поиска вверху, которое ищет команды по названию, описанию или альтернативным именам. Команды, которые только изменяют сам абзац (например, выравнивание или отступ), в этом меню не отображаются.
+*   Меню маркера блока, описанное в разделе <a class="reference-link" href="Formatting%20toolbar.md">Панель форматирования</a>, начинается с пунктов _Вставить выше_ и _Вставить ниже_, которые содержат те же команды и добавляют выбранный элемент в новом абзаце выше или ниже блока. Рядом с элементом списка их место занимают пункты, добавляющие пустой элемент списка.
 
-## Integration with other features
+## Интеграция с другими функциями
 
-Apart from the common set of commands, some features are specially integrated with the slash commands:
+Помимо стандартного набора команд, некоторые функции имеют специальную интеграцию со слэш-командами:
 
-*   For [admonitions](Block%20quotes%20%26%20admonitions.md), each admonition type (e.g. note, tip) will be individually displayed.
-*   Every <a class="reference-link" href="Text%20Snippets.md">Text Snippets</a> will also appear individually, making it easy to insert them.
-*   For [links](Links.md), _Link to a web page_, _Link to a note (internal link)_ and _Link to a heading or anchor_ open the _Add link_ dialog on the matching page. _Link to a web page (with icon)_ and _Link to a web page (as a card)_ also pick how the web link is displayed, as described in <a class="reference-link" href="Link%20Previews.md">Link Previews</a>.
-*   <a class="reference-link" href="In-editor%20AI%20assistant.md">In-editor AI assistant</a>: dedicated _Ask AI_ item as well as all the predefined and [custom quick actions](In-editor%20AI%20assistant/Custom%20AI%20quick%20actions.md).
+*   Для [выносок](Block%20quotes%20%26%20admonitions.md) каждый тип выноски (например, примечание, совет) отображается отдельно.
+*   Каждый <a class="reference-link" href="Text%20Snippets.md">текстовый фрагмент</a> также отображается отдельно, что позволяет легко вставлять их.
+*   Для [ссылок](Links.md) пункты _Ссылка на веб-страницу_, _Ссылка на заметку (внутренняя ссылка)_ и _Ссылка на заголовок или якорь_ открывают диалог _Добавить ссылку_ на соответствующей вкладке. Пункты _Ссылка на веб-страницу (со значком)_ и _Ссылка на веб-страницу (в виде карточки)_ также выбирают способ отображения веб-ссылки, как описано в разделе <a class="reference-link" href="Link%20Previews.md">Предпросмотр ссылок</a>.
+*   <a class="reference-link" href="In-editor%20AI%20assistant.md">ИИ-ассистент в редакторе</a>: отдельный пункт _Спросить ИИ_, а также все предустановленные и [пользовательские быстрые действия](In-editor%20AI%20assistant/Custom%20AI%20quick%20actions.md).

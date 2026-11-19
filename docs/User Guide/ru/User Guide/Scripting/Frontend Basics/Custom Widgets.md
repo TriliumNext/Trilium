@@ -1,31 +1,31 @@
-# Custom Widgets
-Custom widgets are a special subset of scripts that render graphical elements in certain parts of the application. These can be used to add new functionality to the Trilium application.
+# Пользовательские виджеты
+Пользовательские виджеты — это особая разновидность скриптов, отображающих графические элементы в определённых частях приложения. Их можно использовать для добавления новой функциональности в Trilium.
 
-## Preact with JSX vs. vanilla jQuery
+## Preact с JSX против обычного jQuery
 
-In older versions of Trilium, custom widgets were exclusively written in a combination of jQuery with Trilium's internal widget architecture (e.g., `BasicWidget`, `NoteContextAwareWidget`).
+В более старых версиях Trilium пользовательские виджеты писались исключительно с использованием jQuery и внутренней архитектуры виджетов Trilium (например, `BasicWidget`, `NoteContextAwareWidget`).
 
-Starting with v0.101.0, custom widgets can also be written in JSX using the <a class="reference-link" href="Preact.md">Preact</a> framework. Both legacy and Preact widgets have the same capabilities, with a single difference:
+Начиная с v0.101.0, пользовательские виджеты также можно писать на JSX с использованием фреймворка <a class="reference-link" href="Preact.md">Preact</a>. Устаревшие виджеты и виджеты Preact обладают одинаковыми возможностями, с одним отличием:
 
-*   Preact widgets are content-sized by default whereas legacy widgets need `this.contentSized()` applied in the constructor. For more information, see the corresponding section in <a class="reference-link" href="Custom%20Widgets/Troubleshooting.md">Troubleshooting</a>.
+*   Виджеты Preact по умолчанию подстраиваются под размер содержимого, тогда как для устаревших виджетов требуется вызывать `this.contentSized()` в конструкторе. Подробнее см. в соответствующем разделе <a class="reference-link" href="Custom%20Widgets/Troubleshooting.md">Устранения неполадок</a>.
 
-Wherever possible, widget examples will be both in the legacy and Preact format.
+Где это возможно, примеры виджетов приводятся как в устаревшем формате, так и в формате Preact.
 
-## Creating a custom widget
+## Создание пользовательского виджета
 
-The quickest way is _Insert child note_ → _Code_ → _Widget_ in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree/Note%20tree%20contextual%20menu.md">Note tree contextual menu</a>. It creates a JSX note with the `#widget` label and a minimal Preact widget to start from.
+Самый быстрый способ — выбрать _Вставить дочернюю заметку_ → _Код_ → _Виджет_ в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree/Note%20tree%20contextual%20menu.md">контекстном меню дерева заметок</a>. Это создаст JSX-заметку с меткой `#widget` и минимальным шаблоном виджета Preact.
 
-To set one up by hand instead:
+Чтобы настроить виджет вручную:
 
-1.  Create a <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> note.
-2.  Set the language to:
-    1.  JavaScript (frontend) for legacy widgets using jQuery.
-    2.  JSX for Preact widgets. You might need to go to Options → Code to enable the language first.
-3.  Apply the `#widget` [label](../../Advanced%20Usage/Attributes/Labels.md).
+1.  Создайте <a class="reference-link" href="../../Note%20Types/Code.md">заметку с кодом</a>.
+2.  Установите язык:
+    1.  JavaScript (frontend) — для устаревших виджетов на jQuery.
+    2.  JSX — для виджетов Preact. Возможно, сначала потребуется включить этот язык в Настройках → Код.
+3.  Добавьте [метку](../../Advanced%20Usage/Attributes/Labels.md) `#widget`.
 
-## Getting started with a simple example
+## Начало работы с простым примером
 
-Let's start by creating a widget that shows a message near the content area. Follow the previous section to create a code note, and use the following content.
+Начнём с создания виджета, который показывает сообщение рядом с областью содержимого. Следуйте предыдущему разделу, чтобы создать заметку с кодом, и вставьте следующее содержимое.
 
 === "<span class="tn-icon bx bxl-react"></span> Preact"
 
@@ -59,11 +59,11 @@ Let's start by creating a widget that shows a message near the content area. Fol
     module.exports = new HelloCenterPane();
     ```
 
-[Refresh the application](../../Troubleshooting/Refreshing%20the%20application.md) and the widget should appear underneath the content area.
+[Обновите приложение](../../Troubleshooting/Refreshing%20the%20application.md), и виджет появится под областью содержимого.
 
-## Widget location (parent widget)
+## Расположение виджета (родительский виджет)
 
-A widget can be placed in one of the following sections of the applications:
+Виджет можно разместить в одной из следующих областей приложения:
 
 <table class="ck-table-resized">
     <colgroup>
@@ -74,47 +74,47 @@ A widget can be placed in one of the following sections of the applications:
     </colgroup>
     <thead>
         <tr>
-            <th>Value for <code>parentWidget</code></th>
-            <th>Description</th>
-            <th>Sample widget</th>
-            <th>Special requirements</th>
+            <th>Значение для <code>parentWidget</code></th>
+            <th>Описание</th>
+            <th>Пример виджета</th>
+            <th>Особые требования</th>
         </tr>
     </thead>
     <tbody>
         <tr>
             <th><code>left-pane</code></th>
-            <td>Appears within the same pane that holds the&nbsp;<a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>.</td>
-            <td>Same as above, with only a different <code>parentWidget</code>.</td>
-            <td>None.</td>
+            <td>Отображается в той же панели, где находится&nbsp;<a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дерево заметок</a>.</td>
+            <td>То же, что и выше, но с другим значением <code>parentWidget</code>.</td>
+            <td>Нет.</td>
         </tr>
         <tr>
             <th><code>center-pane</code></th>
-            <td>In the content area. If a split is open, the widget will span all of the splits.</td>
-            <td>See example above.</td>
-            <td>None.</td>
+            <td>В области содержимого. Если открыто разделение экрана, виджет будет охватывать все разделённые области.</td>
+            <td>См. пример выше.</td>
+            <td>Нет.</td>
         </tr>
         <tr>
             <th><code>note-detail-pane</code></th>
-            <td><p>In the content area, inside the note detail area. If a split is open, the widget will be contained inside the split.</p><p>This is ideal if the widget is note-specific.</p></td>
-            <td><a class="reference-link" href="Custom%20Widgets/Note%20context%20aware%20widget.md">Note context aware widget</a></td>
-            <td><ul><li>The widget must export a <code>class</code> and not an instance of the class (e.g. <code>no new</code>) because it needs to be multiplied for each note, so that splits work correctly.</li><li>Since the <code>class</code> is exported instead of an instance, the <code>parentWidget</code> getter must be <code>static</code>, otherwise the widget is ignored.</li></ul></td>
+            <td><p>В области содержимого, внутри области деталей заметки. Если открыто разделение экрана, виджет будет находиться внутри конкретной разделённой области.</p><p>Идеально подходит, если виджет привязан к конкретной заметке.</p></td>
+            <td><a class="reference-link" href="Custom%20Widgets/Note%20context%20aware%20widget.md">Виджет, отслеживающий контекст заметки</a></td>
+            <td><ul><li>Виджет должен экспортировать <code>class</code>, а не экземпляр класса (то есть без <code>new</code>), поскольку его нужно создавать отдельно для каждой заметки, чтобы разделение экрана работало корректно.</li><li>Поскольку экспортируется <code>class</code>, а не экземпляр, геттер <code>parentWidget</code> должен быть <code>static</code>, иначе виджет будет проигнорирован.</li></ul></td>
         </tr>
         <tr>
             <th><code>right-pane</code></th>
-            <td>In the&nbsp;<a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a>, as a dedicated section.</td>
-            <td><a class="reference-link" href="Custom%20Widgets/Right%20pane%20widget.md">Right pane widget</a></td>
-            <td><ul><li>Although not mandatory, it's best to use a <code>RightPanelWidget</code> instead of a <code>BasicWidget</code> or a <code>NoteContextAwareWidget</code>.</li></ul></td>
+            <td>На&nbsp;<a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Правой боковой панели</a> в виде отдельного раздела.</td>
+            <td><a class="reference-link" href="Custom%20Widgets/Right%20pane%20widget.md">Виджет правой панели</a></td>
+            <td><ul><li>Хотя это не обязательно, лучше использовать <code>RightPanelWidget</code> вместо <code>BasicWidget</code> или <code>NoteContextAwareWidget</code>.</li></ul></td>
         </tr>
     </tbody>
 </table>
 
-To position the widget somewhere else, just change the value passed to `get parentWidget()` for legacy widgets or the `parent` field for Preact. Do note that some positions such as `note-detail-pane` and `right-pane` have special requirements that need to be accounted for (see the table above).
+Чтобы разместить виджет в другом месте, просто измените значение, возвращаемое `get parentWidget()` (для устаревших виджетов), или поле `parent` (для Preact). Учтите, что для некоторых расположений, таких как `note-detail-pane` и `right-pane`, действуют особые требования (см. таблицу выше).
 
-## Multiple widgets in a single note
+## Несколько виджетов в одной заметке
 
-A widget note usually returns one widget, but it can also return an array of them. This is useful when several widgets share code or state, since they can all live in the same note instead of being split across notes that need a shared module.
+Обычно заметка-виджет возвращает один виджет, но она также может возвращать массив виджетов. Это удобно, когда несколько виджетов используют общий код или состояние, так как все они могут находиться в одной заметке, а не разделяться на несколько заметок с общим модулем.
 
-Each widget of the array is registered on its own, so they can have different parents and positions. A widget that is missing its `parentWidget` (or `parent` for Preact) is reported as an error without affecting the other widgets of the note.
+Каждый виджет в массиве регистрируется отдельно, поэтому у них могут быть разные родительские панели и позиции. Если у какого-то виджета отсутствует `parentWidget` (или `parent` в Preact), об этом сообщается как об ошибке, не затрагивая остальные виджеты в заметке.
 
 === "<span class="tn-icon bx bxl-react"></span> Preact"
 
@@ -149,13 +149,13 @@ Each widget of the array is registered on its own, so they can have different pa
     module.exports = [ new TreeWidget(), new SidebarWidget() ];
     ```
 
-## Launch bar widgets
+## Виджеты панели запуска
 
-Launch bar widgets are similar to _Custom widgets_ but are specific to the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>. See <a class="reference-link" href="Launch%20Bar%20Widgets.md">Launch Bar Widgets</a> for more information.
+Виджеты панели запуска похожи на _пользовательские виджеты_, но предназначены специально для <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">панели запуска</a>. Подробнее см. в разделе <a class="reference-link" href="Launch%20Bar%20Widgets.md">Виджеты панели запуска</a>.
 
-## Custom position
+## Пользовательская позиция
 
-The position of a custom widget is defined via a `position` integer.
+Позиция пользовательского виджета задаётся целым числом `position`.
 
 === "<span class="tn-icon bx bxl-react"></span> Preact"
 

@@ -1,9 +1,9 @@
-# Widget Basics
-This guide will walk you through creating a basic widget inside Trilium. By following these steps, you'll learn how to build a simple UI element that interacts with the user.
+# Основы создания виджетов
+Это руководство проведёт вас через создание базового виджета в Trilium. Следуя этим шагам, вы научитесь создавать простой элемент интерфейса, который взаимодействует с пользователем.
 
-### Step 1: The Basic Widget Structure
+### Шаг 1: Базовая структура виджета
 
-To start, we'll create the most basic widget possible. Here's a simple example:
+Для начала создадим максимально простой виджет. Вот базовый пример:
 
 ```
 class MyWidget extends api.BasicWidget {
@@ -19,17 +19,17 @@ class MyWidget extends api.BasicWidget {
 module.exports = new MyWidget();
 ```
 
-To implement this widget:
+Чтобы реализовать этот виджет:
 
-1.  Create a new `JS Frontend` note in Trilium and paste in the code above.
-2.  Assign the `#widget` [attribute](../../../Advanced%20Usage/Attributes.md) to the [note](../../../Basic%20Concepts%20and%20Features/Notes.md).
-3.  Restart Trilium or reload the window.
+1.  Создайте новую заметку типа `JS Frontend` в Trilium и вставьте приведённый выше код.
+2.  Добавьте [атрибут](../../../Advanced%20Usage/Attributes.md) `#widget` к этой [заметке](../../../Basic%20Concepts%20and%20Features/Notes.md).
+3.  Перезапустите Trilium или перезагрузите окно.
 
-To verify that the widget is working, open the developer tools (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd>) and run `document.querySelector("#my-widget")`. If the element is found, the widget is functioning correctly. If `undefined` is returned, double-check that the [note](../../../Basic%20Concepts%20and%20Features/Notes.md) has the `#widget` [attribute](../../../Advanced%20Usage/Attributes.md).
+Чтобы убедиться, что виджет работает, откройте инструменты разработчика (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd>) и выполните `document.querySelector("#my-widget")`. Если элемент найден, виджет работает корректно. Если возвращается `undefined`, проверьте, что у [заметки](../../../Basic%20Concepts%20and%20Features/Notes.md) установлен [атрибут](../../../Advanced%20Usage/Attributes.md) `#widget`.
 
-### Step 2: Adding an UI Element
+### Шаг 2: Добавление элемента интерфейса
 
-Next, let's improve the widget by adding a button to it.
+Далее улучшим виджет, добавив в него кнопку.
 
 ```
 const template = `<div id="my-widget"><button>Click Me!</button></div>`;
@@ -47,19 +47,19 @@ class MyWidget extends api.BasicWidget {
 module.exports = new MyWidget();
 ```
 
-After making this change, reload Trilium. You should now see a button in the top-left corner of the left pane.
+После внесения этого изменения перезагрузите Trilium. Теперь в левом верхнем углу левой панели должна появиться кнопка.
 
-### Step 3: Styling the Widget
+### Шаг 3: Стилизация виджета
 
-To make the button more visually appealing and position it correctly, we'll apply some custom styling. Trilium includes [Box Icons](https://boxicons.com), which we'll use to replace the button text with an icon. For example the <span class="tn-icon bx bxs-magic-wand"></span> `bx bxs-magic-wand` icon.
+Чтобы кнопка выглядела аккуратнее и располагалась в нужном месте, добавим пользовательские стили. В Trilium встроены иконки [Box Icons](https://boxicons.com), с помощью которых мы заменим текст кнопки на иконку, например <span class="tn-icon bx bxs-magic-wand"></span> `bx bxs-magic-wand`.
 
-Here's the updated template:
+Вот обновлённый шаблон:
 
 ```
 const template = `<div id="my-widget"><button class="tree-floating-button bx bxs-magic-wand tree-settings-button"></button></div>`;
 ```
 
-Next, we'll adjust the button's position using CSS:
+Затем настроим положение кнопки с помощью CSS:
 
 ```
 class MyWidget extends api.BasicWidget {
@@ -81,11 +81,11 @@ class MyWidget extends api.BasicWidget {
 module.exports = new MyWidget();
 ```
 
-After reloading Trilium, the button should now appear at the bottom left of the left pane, alongside other action buttons.
+После перезагрузки Trilium кнопка должна появиться в левом нижнем углу левой панели, рядом с остальными кнопками действий.
 
-### Step 4: Adding User Interaction
+### Шаг 4: Добавление взаимодействия с пользователем
 
-Let’s make the button interactive by showing a message when it’s clicked. We'll use the `api.showMessage` method from the [Script API](../../Script%20API.md).
+Сделаем кнопку интерактивной, чтобы при нажатии на неё отображалось сообщение. Для этого воспользуемся методом `api.showMessage` из [Script API](../../Script%20API.md).
 
 ```
 class MyWidget extends api.BasicWidget {
@@ -108,6 +108,6 @@ class MyWidget extends api.BasicWidget {
 module.exports = new MyWidget();
 ```
 
-For the list of possible values for `parentWidget()`, see <a class="reference-link" href="../Custom%20Widgets.md">Custom Widgets</a>. 
+Список возможных значений для `parentWidget()` см. в разделе <a class="reference-link" href="../Custom%20Widgets.md">Пользовательские виджеты</a>.
 
-[Reload](../../../Troubleshooting/Refreshing%20the%20application.md) the application one last time. When you click the button, a "Hello World!" message should appear, confirming that your widget is fully functional.
+[Перезагрузите](../../../Troubleshooting/Refreshing%20the%20application.md) приложение в последний раз. При нажатии на кнопку должно появиться сообщение «Hello World!», подтверждающее, что ваш виджет полностью работает.

@@ -1,19 +1,19 @@
-# Collapsible blocks
-Collapsible blocks are sections of content that can be expanded and collapsed, letting you hide detail until it's needed.
+# Сворачиваемые блоки
+Сворачиваемые блоки — это разделы содержимого, которые можно разворачивать и сворачивать, скрывая подробности до тех пор, пока они не понадобятся.
 
-A collapsible block consists of:
+Сворачиваемый блок состоит из:
 
-*   **An always-visible header**, containing:
-    *   **An arrow** that expands or collapses the block when clicked.
-    *   **A summary line** that acts as the block's title. With the cursor in the summary line, press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to expand or collapse the block.
-    *   **A drag handle** for repositioning the block within the note.
-*   **The body**, which is hidden while the block is collapsed. It can hold any kind of content, including nested collapsible blocks. To break out of a collapsible block and continue typing outside it, press <kbd>Enter</kbd> twice at the end of the block.
+*   **Всегда видимого заголовка**, содержащего:
+    *   **Стрелку**, которая при нажатии разворачивает или сворачивает блок.
+    *   **Строку заголовка (сводки)**, служащую названием блока. Когда курсор находится в строке заголовка, нажмите <kbd>Ctrl</kbd>+<kbd>Enter</kbd>, чтобы развернуть или свернуть блок.
+    *   **Маркер перетаскивания** для перемещения блока внутри заметки.
+*   **Тела блока**, которое скрыто, пока блок свёрнут. Оно может содержать любое содержимое, включая вложенные сворачиваемые блоки. Чтобы выйти из сворачиваемого блока и продолжить ввод текста за его пределами, нажмите <kbd>Enter</kbd> дважды в конце блока.
 
-You can use the arrow keys to move freely with the cursor between the summary line, the block's body, and the text around the block.
+Вы можете использовать клавиши со стрелками для свободного перемещения курсора между строкой заголовка, телом блока и текстом вокруг него.
 
-## Inserting a collapsible block
+## Вставка сворачиваемого блока
 
-In the formatting bar, go to _Insert_ → _Collapsible Block_.
+На панели форматирования перейдите в _Insert_ → _Collapsible Block_.
 
 > [!TIP]
-> Place multiple collapsible blocks one after another to create an accordion, where each block can be expanded or collapsed independently.
+> Разместите несколько сворачиваемых блоков один за другим, чтобы создать аккордеон, в котором каждый блок можно разворачивать и сворачивать независимо.

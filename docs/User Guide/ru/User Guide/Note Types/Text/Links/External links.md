@@ -1,31 +1,31 @@
-# External links
-An external link is a standard web link targeting for example a website. For example, [https://en.wikipedia.org/wiki/South\_China\_Sea](https://en.wikipedia.org/wiki/South_China_Sea) is an external link to a Wikipedia page.
+# Внешние ссылки
+Внешняя ссылка — это обычная веб-ссылка, ведущая, например, на веб-сайт. Например, [https://en.wikipedia.org/wiki/South\_China\_Sea](https://en.wikipedia.org/wiki/South_China_Sea) — это внешняя ссылка на страницу Википедии.
 
-To create a link without a custom text:
+Чтобы создать ссылку без пользовательского текста:
 
-*   Press <span class="tn-icon cke cke-link"></span> in the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a>, or press <kbd>Ctrl</kbd>+<kbd>K</kbd>:
-    *   Since v0.107.0, the _Add link_ dialog opens on _Web page_, in a popup next to the cursor on desktop. Type or paste the address, and optionally a _Link title_; without one, the link shows its address. The <span class="tn-icon bx bx-paste"></span> _Paste_ button at the end of the address field replaces its text with the text on the clipboard. This button is shown only where Trilium can read the clipboard: in the desktop app, and in a browser over HTTPS unless access to the clipboard was blocked.
-    *   When you leave the address field, or paste with the _Paste_ button, an empty _Link title_ is filled with the title of the web page; a spinner at its end shows while it loads. A title you type is kept. To turn this off, go to <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ and turn off _Automatically retrieve titles for text links_ in the _Features_ section.
-    *   _Display as_ inserts the address as _Text_, or as one of the <a class="reference-link" href="../Link%20Previews.md">Link Previews</a>: _Icon & text_, _Card_ or, for a YouTube video or the address of an audio or video file, _Embed_.
-    *   Press <kbd>Enter</kbd> or _Insert link_ to confirm.
-*   Alternatively, use <a class="reference-link" href="../Slash%20Commands.md">Slash Commands</a> and choose _Link to a web page_, which opens the same dialog. _Link to a web page (with icon)_ and _Link to a web page (as a card)_ open it with that display already picked.
-*   A simpler way is to paste the raw link and press space to turn it automatically into a link.
-*   The <span class="tn-icon cke cke-trilium"></span> button and <kbd>Ctrl</kbd>+<kbd>L</kbd> of <a class="reference-link" href="Internal%20(reference)%20links.md">Internal (reference) links</a> open the same dialog on _Note_. Select _Web page_ at the top of the dialog to create an external link from there.
+*   Нажмите <span class="tn-icon cke cke-link"></span> на <a class="reference-link" href="../Formatting%20toolbar.md">Панели форматирования</a> или <kbd>Ctrl</kbd>+<kbd>K</kbd>:
+    *   Начиная с версии v0.107.0 диалог _Добавить ссылку_ открывается на вкладке _Веб-страница_ во всплывающем окне рядом с курсором на компьютере. Введите или вставьте адрес и при желании _Заголовок ссылки_; без заголовка ссылка отображает свой адрес. Кнопка <span class="tn-icon bx bx-paste"></span> _Вставить_ в конце поля адреса заменяет его содержимое текстом из буфера обмена. Эта кнопка отображается только там, где Trilium может читать буфер обмена: в настольном приложении и в браузере по HTTPS (если доступ не заблокирован).
+    *   Когда вы покидаете поле адреса или вставляете его кнопкой _Вставить_, пустой _Заголовок ссылки_ заполняется заголовком веб-страницы; во время загрузки отображается индикатор. Введённый вручную заголовок сохраняется. Чтобы отключить это, перейдите в <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Текстовые заметки_ и отключите _Автоматически получать заголовки для текстовых ссылок_ в разделе _Функции_.
+    *   Поле _Отображать как_ позволяет вставить адрес как _Текст_ или как один из вариантов <a class="reference-link" href="../Link%20Previews.md">Предпросмотра ссылок</a>: _Значок и текст_, _Карточка_ или (для видео YouTube и аудио-/видеофайлов) _Встраивание_.
+    *   Нажмите <kbd>Enter</kbd> или _Вставить ссылку_ для подтверждения.
+*   Либо используйте <a class="reference-link" href="../Slash%20Commands.md">Слэш-команды</a> и выберите _Link to a web page_, что откроет тот же диалог. Команды _Link to a web page (with icon)_ и _Link to a web page (as a card)_ открывают его с уже выбранным режимом отображения.
+*   Более простой способ — вставить сырую ссылку и нажать пробел, чтобы она автоматически превратилась в ссылку.
+*   Кнопка <span class="tn-icon cke cke-trilium"></span> и <kbd>Ctrl</kbd>+<kbd>L</kbd> для <a class="reference-link" href="Internal%20(reference)%20links.md">Внутренних (ссылочных) ссылок</a> открывают тот же диалог на вкладке _Заметка_. Выберите _Веб-страница_ в верхней части диалога, чтобы создать внешнюю ссылку.
 
-An address without a scheme, such as `example.com`, gets `https://`. The dialog does not insert an address that is not a valid URL, or a `javascript:`, `vbscript:` or `data:` link, since those can run code, and shows the reason under the address field. A URL pasted into the _Note_ field, or picked from its search, switches the dialog to _Web page_. The dialog also opens on _Web page_ when the selected text is a URL.
+Адрес без схемы (например, `example.com`) автоматически получает `https://`. Диалог не вставляет некорректные URL, а также ссылки `javascript:`, `vbscript:` и `data:`, поскольку они могут выполнять код, и показывает причину под полем адреса. URL, вставленный в поле _Заметка_ или выбранный из поиска, переключает диалог на _Веб-страница_. Диалог также открывается на _Веб-странице_, если выделенный текст является URL.
 
-To create a link with a custom text:
+Чтобы создать ссылку с пользовательским текстом:
 
-*   First, type and select the text which will be turned into a link.
-*   Open the _Add link_ dialog as above (via the formatting toolbar, or <kbd>Ctrl</kbd>+<kbd>K</kbd>). The selected text becomes the text of the link, so the dialog does not offer _Display as_.
-*   Alternatively, simply paste (<kbd>Ctrl</kbd>+<kbd>V</kbd>) over the selected text to turn it into a link.
+*   Сначала введите и выделите текст, который нужно превратить в ссылку.
+*   Откройте диалог _Добавить ссылку_, как описано выше (через панель форматирования или <kbd>Ctrl</kbd>+<kbd>K</kbd>). Выделенный текст станет текстом ссылки, поэтому поле _Отображать как_ не отображается.
+*   Либо просто вставьте (<kbd>Ctrl</kbd>+<kbd>V</kbd>) URL поверх выделенного текста, чтобы превратить его в ссылку.
 
-Once a link is inserted:
+После вставки ссылки:
 
-*   The text inside the link can be changed if needed but the link itself will remain.
-*   To modify the link, click on the link to display the popup and press the <span class="tn-icon cke cke-pencil"></span> _Edit link_ button. It opens the _Edit link_ dialog, filled with the link's address and text, as do placing the cursor inside the link and pressing <kbd>Ctrl</kbd>+<kbd>K</kbd>, <kbd>Ctrl</kbd>+<kbd>L</kbd> or one of the link buttons. _Save link_ changes the whole link, its text included, and the dialog can also turn it into a link to a note.
-*   To remove a link, click on it, open the <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu at the end of the popup and choose <span class="tn-icon cke cke-unlink"></span> _Unlink_. The text stays, without the link.
-*   The same menu has _Open link_, _Edit link_ and _Copy address (URL)_, and _Display as_, which turns the link into one of the <a class="reference-link" href="../Link%20Previews.md">Link Previews</a>, as does the _Display_ menu of the popup.
-*   Right-clicking a link opens the same menu.
+*   Текст внутри ссылки можно изменять, при этом сама ссылка сохранится.
+*   Чтобы изменить ссылку, кликните по ней для показа всплывающей панели и нажмите кнопку <span class="tn-icon cke cke-pencil"></span> _Изменить ссылку_. Откроется диалог _Изменить ссылку_ с её адресом и текстом (также работает установка курсора внутри ссылки и нажатие <kbd>Ctrl</kbd>+<kbd>K</kbd>, <kbd>Ctrl</kbd>+<kbd>L</kbd> или одной из кнопок ссылок). _Сохранить ссылку_ обновляет всю ссылку, включая текст; диалог также позволяет превратить её в ссылку на заметку.
+*   Чтобы удалить ссылку, кликните по ней, откройте меню <span class="tn-icon cke cke-three-vertical-dots"></span> _Дополнительные действия_ в конце всплывающей панели и выберите <span class="tn-icon cke cke-unlink"></span> _Удалить ссылку_. Текст останется без ссылки.
+*   В том же меню есть _Открыть ссылку_, _Изменить ссылку_, _Копировать адрес (URL)_ и _Отображать как_, превращающее ссылку в один из видов <a class="reference-link" href="../Link%20Previews.md">Предпросмотра ссылок</a> (как и меню _Отображение_ во всплывающей панели).
+*   Правый клик по ссылке открывает то же меню.
 
-To follow an external link in a note being edited, <kbd>Ctrl</kbd>+click or double-click it, which opens it in a new tab or window, place the cursor in it and press <kbd>Alt</kbd>+<kbd>Enter</kbd>, or right-click it and choose _Open link_. On a touch device, touch and hold the link, then choose _Open link_. A link in an [included note](../Include%20Note.md) that is not _Editable_ opens on a click, as in a read-only note.
+Чтобы перейти по внешней ссылке в редактируемой заметке, нажмите на неё с зажатым <kbd>Ctrl</kbd> или дважды кликните (она откроется в новой вкладке или окне), поставьте курсор внутрь и нажмите <kbd>Alt</kbd>+<kbd>Enter</kbd> либо кликните правой кнопкой мыши и выберите _Открыть ссылку_. На сенсорном устройстве удерживайте ссылку, затем выберите _Открыть ссылку_. Ссылка во [включённой заметке](../Include%20Note.md) с выключенным режимом _Редактируемый_ открывается обычным кликом, как в заметке только для чтения.

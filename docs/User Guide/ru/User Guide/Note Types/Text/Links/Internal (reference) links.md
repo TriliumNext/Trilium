@@ -1,58 +1,58 @@
-# Internal (reference) links
-Internal links are links to other notes within Trilium.
+# Внутренние (ссылочные) ссылки
+Внутренние ссылки — это ссылки на другие заметки внутри Trilium.
 
-You can open an internal link by clicking it. You can also see a read-only preview of an internal link's contents by hovering over it.
+Вы можете открыть внутреннюю ссылку кликом по ней, а также увидеть предпросмотр её содержимого (только для чтения) при наведении курсора.
 
-Since v0.107.0, clicking an internal link while editing a text note shows its popup instead, as clicking an external link does:
+Начиная с версии v0.107.0 клик по внутренней ссылке во время редактирования текстовой заметки открывает её всплывающую панель, как для внешней ссылки:
 
-*   _Open note_ opens the linked note, or _Open attachment_ for a link to an attachment. A link into the same note reads _Jump to heading_, _Jump to block_ or _Jump to anchor_ instead, and scrolls to it without leaving the note.
-*   <span class="tn-icon cke cke-trilium-download"></span> _Download_, for a link to an attachment, downloads the attachment.
-*   <span class="tn-icon cke cke-pencil"></span> _Edit link_ changes the link, as described below.
-*   The <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu, with <span class="tn-icon bx bx-right-arrow-circle"></span> _Open note_ first, which does what the first button does, then <span class="tn-icon bx bx-link-external"></span> _Open note in a new tab_, <span class="tn-icon bx bx-dock-right"></span> _Open note in a new split_, <span class="tn-icon bx bx-window-open"></span> _Open note in a new window_ and <span class="tn-icon bx bx-edit"></span> _Quick edit_, then _Edit link_ and <span class="tn-icon cke cke-unlink"></span> _Unlink_, which turns the link into plain text. A link that shows the title of the note ends with _Convert link to an included note_, described in <a class="reference-link" href="../Include%20Note.md">Include Note</a>. A link to an attachment lists the actions on the attachment between _Edit link_ and _Unlink_, except <span class="tn-icon bx bx-trash"></span> _Delete attachment..._, which follows _Unlink_, and ends with converting the attachment into a note. A link to blocks of the same note leaves out the ways to open the note elsewhere.
+*   _Открыть заметку_ — открывает связанную заметку (или _Открыть вложение_ для ссылки на вложение). Для ссылки внутри той же заметки отображается _Перейти к заголовку_, _Перейти к блоку_ или _Перейти к якорю_, что прокручивает заметку к нужному месту.
+*   <span class="tn-icon cke cke-trilium-download"></span> _Скачать_ — для ссылки на вложение, скачивает его.
+*   <span class="tn-icon cke cke-pencil"></span> _Изменить ссылку_ — редактирует ссылку, как описано ниже.
+*   Меню <span class="tn-icon cke cke-three-vertical-dots"></span> _Дополнительные действия_: сначала <span class="tn-icon bx bx-right-arrow-circle"></span> _Открыть заметку_ (то же, что первая кнопка), затем <span class="tn-icon bx bx-link-external"></span> _Открыть заметку в новой вкладке_, <span class="tn-icon bx bx-dock-right"></span> _Открыть заметку в новом разделении_, <span class="tn-icon bx bx-window-open"></span> _Открыть заметку в новом окне_ и <span class="tn-icon bx bx-edit"></span> _Быстрое редактирование_, далее _Изменить ссылку_ и <span class="tn-icon cke cke-unlink"></span> _Удалить ссылку_ (превращает ссылку в обычный текст). Для ссылки, отображающей заголовок заметки, в конце есть _Преобразовать ссылку во включённую заметку_, описанное на странице <a class="reference-link" href="../Include%20Note.md">Включение заметки</a>. Для ссылки на вложение между _Изменить ссылку_ и _Удалить ссылку_ перечислены действия с вложением (кроме <span class="tn-icon bx bx-trash"></span> _Удалить вложение..._, которое идёт после _Удалить ссылку_), а в конце — преобразование вложения в заметку. Для ссылки на блоки той же заметки пункты открытия в других местах отсутствуют.
 
-In a note being edited, right-clicking a link also opens this menu.
+В редактируемой заметке правый клик по ссылке также открывает это меню.
 
-To follow the link without the popup, <kbd>Ctrl</kbd>+click or double-click it, which does what the first button of the popup does, or place the cursor in it and press <kbd>Alt</kbd>+<kbd>Enter</kbd>. On a touch device, touch and hold the link, then choose the first entry of its menu, such as _Open note_ or _Jump to heading_. To open the note in a new tab, click it with the middle mouse button. The preview does not show while the popup is open.
+Чтобы перейти по ссылке без всплывающей панели, кликните по ней с зажатым <kbd>Ctrl</kbd>, дважды кликните или поставьте курсор внутрь и нажмите <kbd>Alt</kbd>+<kbd>Enter</kbd>. На сенсорном устройстве удерживайте ссылку и выберите первый пункт меню (например, _Открыть заметку_ или _Перейти к заголовку_). Чтобы открыть заметку в новой вкладке, кликните средней кнопкой мыши. Предпросмотр при наведении не показывается, пока открыта всплывающая панель.
 
-A link in an [included note](../Include%20Note.md) that is not _Editable_ opens on a click, as in a read-only note.
+Ссылка во [включённой заметке](../Include%20Note.md) с выключенным режимом _Редактируемый_ открывается обычным кликом, как в заметке только для чтения.
 
-## Inserting internal links
+## Вставка внутренних ссылок
 
-Internal links can be created at the current position in a text note by:
+Внутренние ссылки можно создать в текущей позиции текстовой заметки:
 
-1.  Pressing <kbd>Ctrl</kbd> + <kbd>L</kbd>, or by choosing _Link to a note (internal link)_ in the <a class="reference-link" href="../Slash%20Commands.md">Slash Commands</a>. The <span class="tn-icon cke cke-link"></span> button in the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a> opens the same dialog on _Web page_; select _Note_ at its top to link to a note. On desktop, the _Add link_ dialog opens in a popup next to the cursor.
-2.  Searching for the title of the desired note to link. It's also possible to create new notes from this dialog by typing a non-existing note title and selecting either _Create note_, which places it in the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Notes/Note%20Inbox.md">Note Inbox</a> (today's day note, or the top level, when no inbox is set), or _Create child note_, which places it under the note being edited.
+1.  Нажмите <kbd>Ctrl</kbd> + <kbd>L</kbd> или выберите _Link to a note (internal link)_ в <a class="reference-link" href="../Slash%20Commands.md">Слэш-командах</a>. Кнопка <span class="tn-icon cke cke-link"></span> на <a class="reference-link" href="../Formatting%20toolbar.md">Панели форматирования</a> открывает тот же диалог на вкладке _Веб-страница_; выберите _Заметка_ вверху, чтобы сослаться на заметку. На компьютере диалог _Добавить ссылку_ открывается во всплывающем окне рядом с курсором.
+2.  Найдите нужную заметку по названию. Из этого диалога можно также создавать новые заметки: введите несуществующее название и выберите _Создать заметку_ (помещает её во <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Notes/Note%20Inbox.md">Входящие</a> — сегодняшнюю заметку дня или на верхний уровень, если входящие не настроены) или _Создать подзаметку_ (помещает её под редактируемой заметкой).
 
-There are two link types, depending on the _Link title_ field of the dialog:
+Существует два типа ссылок в зависимости от поля _Заголовок ссылки_ в диалоге:
 
-1.  When the link title is not set, the link will display the title of the note. If the title of the note gets changed, the link will be renamed automatically to the new name.
-    1.  This is sometimes also called "reference link".
-    2.  The icon of the linked note will also be displayed.
-    3.  If the linked note is deleted, the link keeps the last title it showed, in red and with a <span class="tn-icon bx bx-x"></span> icon instead of the note icon. Clicking it while editing opens the _Fix link_ dialog, which searches for that title; picking a note, or creating a new one, replaces the link with one to that note.
-2.  When a link title is typed, the link shows that text instead.
-    1.  This will create a traditional hyperlink, where the text of the link can be different from the note title.
+1.  Если заголовок ссылки не задан, ссылка отображает заголовок целевой заметки. При переименовании заметки текст ссылки обновляется автоматически.
+    1.  Такую ссылку иногда называют «ссылочной» (reference link).
+    2.  Рядом также отображается значок связанной заметки.
+    3.  Если связанная заметка удалена, ссылка сохраняет последний показанный заголовок красным цветом и со значком <span class="tn-icon bx bx-x"></span> вместо значка заметки. Клик по ней при редактировании открывает диалог _Исправить ссылку_ с поиском по этому заголовку; выбор заметки или создание новой заменяет ссылку на неё.
+2.  Если заголовок ссылки введён, ссылка отображает указанный текст.
+    1.  Это создаёт обычную гиперссылку, текст которой может отличаться от заголовка заметки.
 
-Since v0.107.0, to change a link, click it and press the <span class="tn-icon cke cke-pencil"></span> _Edit link_ button in its popup. For a link with a title of its own, placing the cursor inside it and pressing <kbd>Ctrl</kbd> + <kbd>L</kbd> works too. The _Edit link_ dialog opens on the linked note, with its anchor and, for a link with a title of its own, the link's text; _Save link_ changes the whole link. Emptying the _Link title_ there turns the link into one that displays the title of the note, and typing one gives it a title of its own. For a link to an attachment, the dialog shows only the _Link title_, and emptying it makes the link display the title of the attachment.
+Начиная с версии v0.107.0 для изменения ссылки кликните по ней и нажмите <span class="tn-icon cke cke-pencil"></span> _Изменить ссылку_ во всплывающей панели. Для ссылки с собственным текстом также работает установка курсора внутрь и нажатие <kbd>Ctrl</kbd> + <kbd>L</kbd>. Диалог _Изменить ссылку_ открывается на связанной заметке с её якорем и (для ссылки с собственным текстом) текстом ссылки; _Сохранить ссылку_ обновляет всю ссылку. Очистка поля _Заголовок ссылки_ превращает ссылку в динамическую (показывающую заголовок заметки), а ввод текста задаёт собственный заголовок. Для ссылки на вложение диалог показывает только _Заголовок ссылки_, и его очистка заставляет ссылку отображать название вложения.
 
-## In-place linking
+## Вставка ссылок прямо в тексте
 
-You can also insert internal links “inline” by using the `@` symbol:
+Внутренние ссылки также можно вставлять «на лету» с помощью символа `@`:
 
-1.  Type `@` in a text note, which will open the note search menu.
-2.  Search for the desired note's title by typing a few characters. Use <kbd>Up</kbd> and <kbd>Down</kbd> to select the correct note, and press <kbd>Enter</kbd> or <kbd>Tab</kbd> to pick it. It's also possible to create new notes with this method by typing a non-existing note title and selecting _Create note_, as described above, or _Create child note_. _Create child note_ creates the note under the note being edited without asking for its type, inserts the link and opens the new note in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a>, which offers the note types to turn it into while it is still empty.
-3.  Since v0.108.0, the note is linked as soon as it is picked. A ¶ then follows the link, and the menu lists where in the note the link can point: _Link to the whole note_, its headings and its anchors.
+1.  Введите `@` в текстовой заметке — откроется меню поиска заметок.
+2.  Начните вводить название нужной заметки. Используйте <kbd>Up</kbd> и <kbd>Down</kbd> для выбора и нажмите <kbd>Enter</kbd> или <kbd>Tab</kbd>. Так же можно создавать новые заметки, введя несуществующее название и выбрав _Создать заметку_ (как описано выше) или _Создать подзаметку_. _Создать подзаметку_ создаёт заметку под текущей без запроса типа, вставляет ссылку и открывает новую заметку в <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Быстром редактировании</a>, где можно выбрать тип заметки, пока она пуста.
+3.  Начиная с версии v0.108.0 заметка связывается сразу после выбора. Затем после ссылки появляется символ ¶, а в меню перечислены цели внутри заметки: _Ссылка на всю заметку_, её заголовки и якоря.
     
-    *   To point the link at a heading or an anchor, type part of its name after the ¶ and press <kbd>Enter</kbd> or <kbd>Tab</kbd>, which takes the first match. <kbd>Up</kbd> and <kbd>Down</kbd> select another entry.
-    *   To keep the link to the whole note, press <kbd>Enter</kbd> on _Link to the whole note_, or press <kbd>Esc</kbd>. Pressing <kbd>Backspace</kbd> or typing a space right after the ¶ does the same, to go on writing.
-    *   The ¶ is not part of the note: it disappears with the menu. Text typed after it stays in the note, unless a heading or an anchor is picked.
+    *   Чтобы указать на заголовок или якорь, введите часть его названия после ¶ и нажмите <kbd>Enter</kbd> или <kbd>Tab</kbd> (выбирается первое совпадение). <kbd>Up</kbd> и <kbd>Down</kbd> выбирают другой пункт.
+    *   Чтобы оставить ссылку на всю заметку, нажмите <kbd>Enter</kbd> на _Ссылка на всю заметку_ или <kbd>Esc</kbd>. Нажатие <kbd>Backspace</kbd> или ввод пробела сразу после ¶ делает то же самое, позволяя продолжить ввод текста.
+    *   Символ ¶ не является частью заметки и исчезает вместе с меню. Текст, введённый после него, остаётся в заметке, если не был выбран заголовок или якорь.
     
-    A note created from the menu is linked without this step. To skip it for every note, turn off _Suggest headings and anchors to link to_ under _Note auto-completion_ in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ → _Features_. See [Linking to a heading](../Block%20references.md) and <a class="reference-link" href="../Anchors.md">Anchors</a>.
+    Заметка, созданная из меню, связывается без этого шага. Чтобы пропустить его для всех заметок, отключите _Предлагать заголовки и якоря для ссылок_ в разделе _Автодополнение заметок_ в <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Текстовые заметки_ → _Функции_. См. [Ссылки на заголовки](../Block%20references.md) и <a class="reference-link" href="../Anchors.md">Якоря</a>.
 
-To create an empty child note and link to it before naming it, use _New child note_, described in <a class="reference-link" href="../Insert%20buttons.md">Insert buttons</a>.
+Чтобы создать пустую подзаметку и сослаться на неё до ввода названия, используйте _Новая подзаметка_, описанную в <a class="reference-link" href="../Insert%20buttons.md">Кнопках вставки</a>.
 
-## Pasting internal links
+## Вставка внутренних ссылок копированием
 
-You can also insert internal links by copying a note from the note tree.
+Внутренние ссылки также можно вставлять, скопировав заметку из дерева заметок:
 
-1.  In the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>, select a note and press <kbd>Ctrl</kbd> + <kbd>C</kbd>.
-2.  In a text note, paste the link by pressing <kbd>Ctrl</kbd> + <kbd>V</kbd>.
+1.  В <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Дереве заметок</a> выберите заметку и нажмите <kbd>Ctrl</kbd> + <kbd>C</kbd>.
+2.  В текстовой заметке вставьте ссылку нажатием <kbd>Ctrl</kbd> + <kbd>V</kbd>.

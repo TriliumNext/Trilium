@@ -1,33 +1,33 @@
-# To-do Lists
-## Extended task states
+# Списки задач
+## Расширенные состояния задач
 
 <figure class="image image-style-align-left"><img style="aspect-ratio:303/264;" src="To-do Lists_image.png" width="303" height="264"></figure>
 
-In Trilium, to-do items aren't limited to a simple "done" or "not done." Tasks can also be marked as _in progress_ ("doing"), _under consideration_ ("maybe"), or _cancelled_ ("won't do"), thus giving a more accurate picture of where things actually stand.
+В Trilium элементы списка задач не ограничиваются простыми состояниями «выполнено» или «не выполнено». Задачи также можно отмечать как _в процессе_ («выполняется»), _на рассмотрении_ («возможно») или _отменено_ («не будет сделано»), что даёт более точную картину текущего положения дел.
 
-Right-click the checkbox and select the desired state. Alternatively, press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter </kbd> to cycle through the task states. Tapping or left-clicking the checkbox, or pressing <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the item, will always toggle between "None" and "Done". On the <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>, the states are buttons in the row of the _List ›_ button, which shows while the cursor is in the list.
+Нажмите правой кнопкой мыши на флажок и выберите нужное состояние. Также можно нажать <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter </kbd>, чтобы циклически переключать состояния задачи. Нажатие (или клик левой кнопкой мыши) на флажок, либо нажатие <kbd>Ctrl</kbd>+<kbd>Enter</kbd> в пункте списка всегда переключает состояние между «Нет» и «Выполнено». В <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">мобильном интерфейсе</a> состояния представлены кнопками в ряду кнопки _Список ›_, который отображается, пока курсор находится в списке.
 
-Task states are fully preserved when converting between <a class="reference-link" href="../Text.md">Text</a> and <a class="reference-link" href="../Markdown.md">Markdown</a> notes, in both directions.
+Состояния задач полностью сохраняются при преобразовании между <a class="reference-link" href="../Text.md">текстовыми</a> и <a class="reference-link" href="../Markdown.md">Markdown</a>-заметками в обоих направлениях.
 
-### Customizing the extended task states
+### Настройка расширенных состояний задач
 
-Task states are customizable: you can reorder them, create new ones with different colors and symbols, or delete the ones you don't need. See <a class="reference-link" href="../../Advanced%20Usage/Customizing%20to-do%20task%20states.md">Customizing to-do task states</a> for more details.
+Состояния задач можно настраивать: менять их порядок, создавать новые с другими цветами и символами или удалять ненужные. Подробнее см. в разделе <a class="reference-link" href="../../Advanced%20Usage/Customizing%20to-do%20task%20states.md">Настройка состояний задач</a>.
 
-## Keyboard shortcuts
+## Сочетания клавиш
 
-When at the beginning on an empty paragraph, type the following to insert a to-do list:
+Находясь в начале пустого абзаца, введите следующее, чтобы вставить список задач:
 
-*   `[ ]` for an unchecked item
-*   `[x]` for a checked item
+*   `[ ]` для неотмеченного пункта
+*   `[x]` для отмеченного пункта
 
-Extended task states are supported as well, using its corresponding _Markdown symbol_. These are the defaults but they can be changed if needed (see <a class="reference-link" href="../../Advanced%20Usage/Customizing%20to-do%20task%20states.md">Customizing to-do task states</a>):
+Расширенные состояния задач также поддерживаются с помощью соответствующих _символов Markdown_. Ниже приведены значения по умолчанию, которые при необходимости можно изменить (см. <a class="reference-link" href="../../Advanced%20Usage/Customizing%20to-do%20task%20states.md">Настройка состояний задач</a>):
 
-*   `[/]` for “Doing”.
-*   `[?]` for “Maybe”.
-*   `[-]` for “Cancelled”.
+*   `[/]` для «Выполняется» (Doing).
+*   `[?]` для «Возможно» (Maybe).
+*   `[-]` для «Отменено» (Cancelled).
 
-To reorder the item under the cursor, press <kbd>Alt</kbd>+<kbd>Up</kbd> or <kbd>Alt</kbd>+<kbd>Down</kbd>. To reorder multiple items, select them first.
+Чтобы переместить пункт под курсором, нажмите <kbd>Alt</kbd>+<kbd>Up</kbd> или <kbd>Alt</kbd>+<kbd>Down</kbd>. Чтобы переместить несколько пунктов, сначала выделите их.
 
-## See also
+## См. также
 
-*   To-do lists are meant for small task lists. For more complicated, day-to-day task tracking consider using a <a class="reference-link" href="../../Collections/Kanban%20Board.md">Kanban Board</a> collection instead.
+*   Списки задач предназначены для небольших перечней дел. Для более сложного повседневного отслеживания задач рассмотрите использование коллекции <a class="reference-link" href="../../Collections/Kanban%20Board.md">Канбан-доска</a>.

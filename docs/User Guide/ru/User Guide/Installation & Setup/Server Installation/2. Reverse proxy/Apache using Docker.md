@@ -1,18 +1,18 @@
-# Apache using Docker
-This tutorial assumes that you have created a DNS A record for `trilium.yourdomain.com` that you want to use for your Trilium server.
+# Apache с использованием Docker
+Это руководство предполагает, что вы создали DNS A-запись для `trilium.yourdomain.com`, которую хотите использовать для своего сервера Trilium.
 
-## Docker setup
+## Настройка Docker
 
-Download docker image and create container
+Скачайте Docker-образ и создайте контейнер:
 
 ```
  docker pull triliumnext/trilium:[VERSION]
  docker create --name trilium -t -p 127.0.0.1:8080:8080 -v ~/trilium-data:/home/node/trilium-data triliumnext/trilium:[VERSION]
 ```
 
-## Configuring the Apache proxy
+## Настройка прокси Apache
 
-1.  Enable apache proxy modules
+1.  Включите модули прокси Apache:
     
     ```
      a2enmod ssl
@@ -20,20 +20,20 @@ Download docker image and create container
      a2enmod proxy_http
      a2enmod proxy_wstunnel
     ```
-2.  Create a new let's encrypt certificate
+2.  Создайте новый сертификат Let's Encrypt:
     
     ```
      sudo certbot certonly -d trilium.mydomain.com
     ```
     
-    Choose standalone (2) and note the location of the created certificates (typically /etc/letsencrypt/live/...)
-3.  Create a new virtual host file for apache (you may want to use `apachectl -S` to determine the server root location, mine is /etc/apache2)
+    Выберите standalone (2) и запомните расположение созданных сертификатов (обычно `/etc/letsencrypt/live/...`).
+3.  Создайте новый файл виртуального хоста для Apache (вы можете использовать `apachectl -S`, чтобы определить корневой каталог сервера; в данном примере это `/etc/apache2`):
     
     ```
      sudo nano /etc/apache2/sites-available/trilium.yourdomain.com.conf
     ```
     
-    Paste (and customize) the following text into the configuration file
+    Вставьте (и отредактируйте под свои нужды) следующий текст в файл конфигурации:
     
     ```
      
@@ -55,18 +55,18 @@ Download docker image and create container
          Include /etc/letsencrypt/options-ssl-apache.conf
      
     ```
-4.  Enable the virtual host with `sudo a2ensite trilium.yourdomain.com.conf`
-5.  Reload apache2 with `sudo systemctl reload apache2`
+4.  Включите виртуальный хост с помощью `sudo a2ensite trilium.yourdomain.com.conf`.
+5.  Перезагрузите apache2 с помощью `sudo systemctl reload apache2`.
 
-## Configuring the trusted proxy
+## Настройка доверенного прокси
 
-After setting up a reverse proxy, make sure to configure the <a class="reference-link" href="Trusted%20proxy.md">Trusted proxy</a>.
+После настройки обратного прокси обязательно настройте <a class="reference-link" href="Trusted%20proxy.md">Доверенный прокси</a>.
 
-## Setup the systemd service to start up the server
+## Настройка службы systemd для запуска сервера
 
-Create and enable a systemd service to start the docker container on boot
+Создайте и включите службу systemd для запуска Docker-контейнера при загрузке системы:
 
-1.  Create a new empty file called `/lib/systemd/system/trilium.service` with the contents
+1.  Создайте новый пустой файл `/lib/systemd/system/trilium.service` со следующим содержимым:
     
     ```
      [Unit]
@@ -82,7 +82,7 @@ Create and enable a systemd service to start the docker container on boot
      [Install]
      WantedBy=local.target
     ```
-2.  Install, enable and start service
+2.  Установите, включите и запустите службу:
     
     ```
      sudo systemctl daemon-reload

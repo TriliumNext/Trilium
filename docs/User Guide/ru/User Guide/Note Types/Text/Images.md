@@ -1,61 +1,61 @@
-# Images
-Trilium supports storing and displaying images. Supported formats are PNG, JPEG, GIF, BMP, WebP, AVIF and SVG.
+# Изображения
+Trilium поддерживает хранение и отображение изображений. Поддерживаются форматы PNG, JPEG, GIF, BMP, WebP, AVIF и SVG.
 
-An image can be uploaded in the form of note's [attachment](../../Basic%20Concepts%20and%20Features/Notes/Attachments.md) or as a standalone [note](../../Basic%20Concepts%20and%20Features/Navigation/Tree%20Concepts.md) placed into the [note tree](../../Basic%20Concepts%20and%20Features/Navigation/Tree%20Concepts.md). Its reference can be copied into a text note, in order to display it in the text itself.
+Изображение можно загрузить в виде [вложения](../../Basic%20Concepts%20and%20Features/Notes/Attachments.md) к заметке или как отдельную [заметку](../../Basic%20Concepts%20and%20Features/Navigation/Tree%20Concepts.md), размещённую в [дереве заметок](../../Basic%20Concepts%20and%20Features/Navigation/Tree%20Concepts.md). Ссылку на него можно скопировать в текстовую заметку, чтобы отобразить изображение прямо в тексте.
 
-## Uploading images
+## Загрузка изображений
 
-To add an image to the note:
+Чтобы добавить изображение в заметку:
 
-*   Simply drag it from file explorer onto the note editor inside Trilium and the image will be uploaded.
-*   Alternatively, in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, press the <span class="tn-icon cke cke-paper-clip"></span>_Attach file_ button and select _Image_.
-*   On the <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>, the same menu also offers _Camera_, which takes a photo and inserts it.
-*   You can also copy and paste an image from web (see section below).
+*   Просто перетащите его из проводника файлов в редактор заметки в Trilium — изображение будет загружено автоматически.
+*   Либо на <a class="reference-link" href="Formatting%20toolbar.md">панели форматирования</a> нажмите кнопку <span class="tn-icon cke cke-paper-clip"></span> _Attach file_ и выберите _Image_.
+*   В <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">мобильном интерфейсе</a> в том же меню доступен пункт _Camera_, позволяющий сделать фотографию и сразу вставить её.
+*   Также можно скопировать и вставить изображение из интернета (см. раздел ниже).
 
-Where the image goes depends on the cursor. In an empty paragraph, the image is displayed on a line of its own. In a list item, or after some text in a paragraph, the image is inserted _In line_, inside the text. To change it afterwards, use the _Image position_ button described in the alignment section below.
+Место вставки изображения зависит от положения курсора. В пустом абзаце изображение отображается на отдельной строке. В пункте списка или после текста в абзаце изображение вставляется в режиме _In line_, внутри строки текста. Изменить расположение позже можно с помощью кнопки _Image position_, описанной в разделе выравнивания ниже.
 
 > [!TIP]
-> To link a picture instead of displaying it, attach it with _Attach file as a link_, from the <span class="tn-icon cke cke-paper-clip"></span>_Attach file_ button. See <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Attachments.md">Attachments</a>.
+> Чтобы вставить ссылку на изображение вместо его отображения, прикрепите его через _Attach file as a link_ в меню кнопки <span class="tn-icon cke cke-paper-clip"></span> _Attach file_. См. <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Attachments.md">Вложения</a>.
 
-## Clipboard & automatic download of images
+## Буфер обмена и автоматическая загрузка изображений
 
-Trilium has a special handling for images copied to and pasted from the clipboard.
+Trilium особым образом обрабатывает изображения, копируемые и вставляемые через буфер обмена.
 
-*   For a mix of text and images, the images are downloaded automatically by the server (or desktop app, depending on what is being used).
-    *   This means that the image must be publicly accessible and reachable from wherever Trilium is running. Inaccessible images will end up as broken images.
-*   If a single image is pasted into Trilium, it will prefer the image that comes in the clipboard. This makes it possible to copy images that Trilium would not otherwise be able to reach, such as Google Chat, Slack, etc.
-*   When a text with images is copied from Trilium and pasted in another app (such as Microsoft Word or LibreOffice Writer), the images will be preserved.
+*   При вставке смеси текста и изображений сервер (или настольное приложение — в зависимости от используемой версии) автоматически скачивает изображения.
+    *   Это означает, что изображение должно быть общедоступным и достижимым с того устройства, где запущен Trilium. Недоступные изображения отобразятся как битые.
+*   Если в Trilium вставляется одно изображение, приоритет отдаётся изображению из буфера обмена. Это позволяет копировать изображения из источников, к которым у Trilium нет прямого доступа, таких как Google Chat, Slack и др.
+*   При копировании текста с изображениями из Trilium и вставке в другое приложение (например, Microsoft Word или LibreOffice Writer) изображения сохраняются.
 
-The automatic download of images is enabled by default and can be toggled from <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Media_ → _Download images automatically._
+Автоматическая загрузка изображений включена по умолчанию и может быть переключена в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Media_ → _Download images automatically._
 
-## Configuring the images
+## Настройка изображений
 
-Clicking on an image will reveal a popup with multiple options:  
+Нажатие на изображение открывает всплывающую панель с несколькими параметрами:  
 ![](Images_image.png)
 
-### Alignment
+### Выравнивание
 
-The first button of the popup, _Image position_, shows the icon of the image's current position. It opens a menu that groups the positions by how text runs around the image:
+Первая кнопка всплывающей панели, _Image position_, показывает значок текущего расположения изображения. Она открывает меню, в котором варианты расположения сгруппированы по способу обтекания текстом:
 
-| Icon | Option | Preview | Description |
+| Значок | Вариант | Предпросмотр | Описание |
 | --- | --- | --- | --- |
-| <span class="tn-icon cke cke-object-inline"></span> | _In line_ | ![](Images_image.jpg) | The image sits inside a paragraph, like a large character, and moves with the text around it. Use drag & drop or cut-paste to move it around. |
-| <span class="tn-icon cke cke-object-center"></span> | _Break text_ → _Align left_, _Align center_ or _Align right_ | ![](1_Images_image.jpg) ![](2_Images_image.jpg) | The image is displayed on a line of its own, at the left, in the center or at the right; text continues above and below it but not beside it. |
-| <span class="tn-icon cke cke-object-inline-right"></span> | _Wrap text_ → _Align left_ or _Align right_ | ![](3_Images_image.jpg) | The image is displayed at the left or the right, and the text flows beside it. |
+| <span class="tn-icon cke cke-object-inline"></span> | _In line_ | ![](Images_image.jpg) | Изображение располагается внутри абзаца как крупный символ и перемещается вместе с окружающим текстом. Для перемещения используйте перетаскивание или вырезание и вставку. |
+| <span class="tn-icon cke cke-object-center"></span> | _Break text_ → _Align left_, _Align center_ или _Align right_ | ![](1_Images_image.jpg) ![](2_Images_image.jpg) | Изображение отображается на отдельной строке слева, по центру или справа; текст продолжается над ним и под ним, но не рядом с ним. |
+| <span class="tn-icon cke cke-object-inline-right"></span> | _Wrap text_ → _Align left_ или _Align right_ | ![](3_Images_image.jpg) | Изображение отображается слева или справа, а текст обтекает его сбоку. |
 
-### Drawing over an image
+### Рисование поверх изображения
 
-To draw or write over an image, press the <span class="tn-icon bx bxs-pen"></span> _Convert image to a drawing canvas_ button of its toolbar. The image becomes a drawing canvas that shows all of it, locked in place. See the drawing canvases section of <a class="reference-link" href="Include%20Note.md">Include Note</a>.
+Чтобы рисовать или писать поверх изображения, нажмите кнопку <span class="tn-icon bx bxs-pen"></span> _Convert image to a drawing canvas_ на его панели инструментов. Изображение превратится в холст для рисования, отображающий его целиком и закреплённый на месте. См. раздел о холстах для рисования в статье <a class="reference-link" href="Include%20Note.md">Включение заметки</a>.
 
-## Compression
+## Сжатие
 
-Since Trilium isn't really meant to be primary storage for image data, it attempts to compress and resize (with pretty aggressive settings) uploaded images before storing them to the database. You may then notice some quality degradation. Basic quality settings is available in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Media_.
+Поскольку Trilium не предназначен для использования в качестве основного хранилища изображений, он сжимает и изменяет размер загружаемых изображений (с довольно агрессивными настройками) перед сохранением в базу данных. В результате может быть заметно некоторое снижение качества. Базовые настройки качества доступны в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Media_.
 
-If you want to save images in their original resolution, it is recommended to save them as attachment to note (look for the contextual menu in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Import files_).
+Если вы хотите сохранить изображения в исходном разрешении, рекомендуется сохранять их как вложения к заметке (через контекстное меню <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a> → _Import files_).
 
-## Aligning images side-by-side
+## Размещение изображений рядом
 
-There are generally two ways to display images side by side:
+Обычно существует два способа разместить изображения рядом друг с другом:
 
-*   If they are roughly the same size, simply make the two images in-line, according to the alignment section above. The images can be dragged & dropped onto the same line.
-*   If they are on different size, create a [table](Tables.md) with invisible borders.
+*   Если они примерно одного размера, просто переведите оба изображения в режим _In line_, как описано в разделе выравнивания выше. Затем их можно перетащить на одну строку.
+*   Если они разного размера, создайте [таблицу](Tables.md) с невидимыми границами.

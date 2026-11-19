@@ -1,9 +1,9 @@
-# Note Title Widget
+# Виджет заголовка заметки
 <figure class="image"><img style="aspect-ratio:1007/94;" src="Note Title Widget_image.png" width="1007" height="94"></figure>
 
-This is an example of a note context-aware widget, which reacts to the currently opened note and refreshes automatically as the user navigates through the notes.
+Это пример виджета, учитывающего контекст заметки: он реагирует на текущую открытую заметку и автоматически обновляется при переходе пользователя между заметками.
 
-In this example, the title of the note is displayed. It works best on the [horizontal layout](../../../Basic%20Concepts%20and%20Features/UI%20Elements/Vertical%20and%20horizontal%20layout.md).
+В этом примере отображается заголовок заметки. Лучше всего он работает в [горизонтальной компоновке](../../../Basic%20Concepts%20and%20Features/UI%20Elements/Vertical%20and%20horizontal%20layout.md).
 
 === "<span class="tn-icon bx bxl-react"></span> Preact"
 
@@ -25,7 +25,7 @@ In this example, the title of the note is displayed. It works best on the [horiz
     });
     ```
 
-=== "<span class="tn-icon bx bxl-javascript"></span> Legacy"
+=== "<span class="tn-icon bx bxl-javascript"></span> Устаревший вариант"
 
     ```javascript
     const TPL = `\

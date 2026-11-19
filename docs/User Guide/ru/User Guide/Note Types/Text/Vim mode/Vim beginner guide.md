@@ -1,181 +1,181 @@
-# Vim beginner guide
-Vim is a text editor built around the keyboard. Trilium can imitate the way it works, in text notes and in code notes, and this is called Vim mode. This page explains the idea behind it, what each mode does and which keys to learn first. It applies to both kinds of notes, and where they differ, the text says so.
+# Руководство по Vim для начинающих
+Vim — это текстовый редактор, построенный вокруг работы с клавиатурой. Trilium умеет имитировать его принцип работы в текстовых заметках и заметках с кодом — это называется режимом Vim. На этой странице объясняется сама идея, назначение каждого режима и клавиши, которые стоит освоить в первую очередь. Руководство применимо к обоим типам заметок, а там, где есть различия, это указано отдельно.
 
 > [!NOTE]
-> Vim mode is optional and off by default. Nothing on this page applies until it is turned on, see _Turning it on_ below.
+> Режим Vim необязателен и по умолчанию выключен. Ничто на этой странице не действует, пока он не включён — см. _Включение режима_ ниже.
 
-## How the keys are written
+## Как записываются клавиши
 
-On these pages, a command is written as the keys to press, one after another. `dd` means pressing `d` twice, and `ciw` means pressing `c`, then `i`, then `w`. The keys are not held down together.
+На этих страницах команда записывается как последовательность клавиш, которые нужно нажимать одну за другой. `dd` означает нажать `d` дважды, а `ciw` — нажать `c`, затем `i`, затем `w`. Клавиши не нужно удерживать одновременно.
 
-Keys that are held down together are written with a plus sign, such as <kbd>Ctrl</kbd>+<kbd>R</kbd>. Capital letters matter: `A` is typed with <kbd>Shift</kbd> and does something else than `a`.
+Клавиши, которые удерживаются одновременно, записываются через знак плюс, например <kbd>Ctrl</kbd>+<kbd>R</kbd>. Регистр букв имеет значение: `A` вводится с <kbd>Shift</kbd> и делает не то же самое, что `a`.
 
-## What is Vim?
+## Что такое Vim?
 
-[Vim](https://www.vim.org/) is a popular text editor. Its most distinctive feature is that it is a **modal** editor. In most editors, pressing a letter always types that letter. In Vim, what a key does depends on the mode the editor is in: in one mode the letters type text, in another the same letters are commands that move the cursor, delete a word or copy a line.
+[Vim](https://www.vim.org/) — популярный текстовый редактор. Его главная отличительная черта в том, что это **модальный** редактор. В большинстве редакторов нажатие буквы всегда вводит эту букву. В Vim действие клавиши зависит от текущего режима редактора: в одном режиме буквы вводят текст, а в другом те же самые буквы являются командами для перемещения курсора, удаления слова или копирования строки.
 
-Trilium does not contain Vim itself. It imitates Vim's keys inside its own editors, so your notes stay ordinary Trilium notes.
+Trilium не содержит сам Vim. Он имитирует сочетания клавиш Vim внутри собственных редакторов, поэтому ваши заметки остаются обычными заметками Trilium.
 
-## Why use it?
+## Зачем его использовать?
 
-*   **The hands stay on the keyboard.** Moving, selecting, copying and searching are all done with the letter keys, without reaching for the mouse or the arrow keys. The mouse keeps working as usual.
-*   **Commands combine.** A few keys are learned once and then put together: `d` means delete and `w` means a word, so `dw` deletes a word.
-*   **Changes can be repeated.** `.` repeats the last change, and a number in front of a command runs it that many times.
-*   **Much of it carries over.** Many of the motions and editing commands also work in Vim itself and in the Vim modes of other editors. Trilium has some commands of its own, and text notes differ in places because they hold rich text, not plain text files.
+*   **Руки остаются на клавиатуре.** Перемещение, выделение, копирование и поиск выполняются буквенными клавишами, не тянусь к мыши или стрелкам. При этом мышь продолжает работать как обычно.
+*   **Команды комбинируются.** Вы запоминаете несколько клавиш один раз, а затем сочетаете их: `d` означает «удалить» (delete), `w` — «слово» (word), поэтому `dw` удаляет слово.
+*   **Изменения можно повторять.** `.` повторяет последнее изменение, а число перед командой выполняет её указанное количество раз.
+*   **Навыки переносятся.** Многие команды перемещения и редактирования работают точно так же в самом Vim и в режимах Vim других редакторов. В Trilium есть и собственные команды, а текстовые заметки местами отличаются, поскольку содержат форматированный текст, а не обычные текстовые файлы.
 
-Vim mode can take some time to get used to. If it does not suit you, turning the option off brings the regular editor back.
+К режиму Vim может потребоваться время, чтобы привыкнуть. Если он вам не подойдёт, отключение настройки вернёт обычный редактор.
 
-## Turning it on
+## Включение режима
 
-Text notes and code notes each have their own option, and both apply to the current device only:
+У текстовых заметок и заметок с кодом есть отдельные настройки, и обе применяются только к текущему устройству:
 
-*   For text notes, go to <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ → _Features_ and turn on _Vim mode_. To turn it off for a single note, click the _Vim_ badge in the status bar. See <a class="reference-link" href="../Vim%20mode.md">Vim mode</a> for its settings.
-*   For code notes, go to <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Code Notes_ → _Editor_ and turn on _Vim keybindings_.
+*   Для текстовых заметок перейдите в <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Текстовые заметки_ → _Функции_ и включите _Режим Vim_. Чтобы отключить его для одной заметки, нажмите на значок _Vim_ в строке состояния. Подробнее о настройках см. в разделе <a class="reference-link" href="../Vim%20mode.md">Режим Vim</a>.
+*   Для заметок с кодом перейдите в <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Заметки с кодом_ → _Редактор_ и включите _Привязки клавиш Vim_.
 
-## The modes
+## Режимы
 
-A mode decides what the keyboard does. There are five main modes:
+Режим определяет, что делают клавиши. Есть пять основных режимов:
 
-| Mode | What the keys do | How to enter it |
+| Режим | Что делают клавиши | Как войти |
 | --- | --- | --- |
-| Normal | Run commands: move, delete, copy, paste. | <kbd>Esc</kbd> from any other mode |
-| Insert | Type text, as in a regular editor. | `i` |
-| Visual | Select text. | `v` for characters, `V` for whole lines |
-| Replace | Type over the existing text. | `R` |
-| Command line | Type a command by its name, or a text to search for. | `:` for a command, `/` or `?` to search |
+| Обычный (Normal) | Выполняют команды: перемещение, удаление, копирование, вставка. | <kbd>Esc</kbd> из любого другого режима |
+| Вставка (Insert) | Вводят текст, как в обычном редакторе. | `i` |
+| Визуальный (Visual) | Выделяют текст. | `v` для символов, `V` для целых строк |
+| Замена (Replace) | Вводят текст поверх существующего. | `R` |
+| Командная строка | Ввод команды по имени или текста для поиска. | `:` для команды, `/` или `?` для поиска |
 
-Vim also has Visual Block mode, which selects a rectangle of text across several lines. It is not supported at present. In text notes, <kbd>Ctrl</kbd>+<kbd>V</kbd> pastes in Normal and Visual mode, and while typing too, unless the _Vim keys in Insert mode_ setting is on. In code notes, <kbd>Ctrl</kbd>+<kbd>V</kbd> or <kbd>Ctrl</kbd>+<kbd>Q</kbd> does start the mode, but the selection stays on one line, so it does not work as a rectangle.
+В Vim также есть режим блочного выделения (Visual Block), который выделяет прямоугольную область текста в нескольких строках. В настоящее время он не поддерживается. В текстовых заметках <kbd>Ctrl</kbd>+<kbd>V</kbd> вставляет текст в обычном и визуальном режимах, а также при вводе, если не включена настройка _Клавиши Vim в режиме вставки_. В заметках с кодом <kbd>Ctrl</kbd>+<kbd>V</kbd> или <kbd>Ctrl</kbd>+<kbd>Q</kbd> запускают этот режим, но выделение остаётся на одной строке, поэтому как прямоугольник оно не работает.
 
-### Normal mode
+### Обычный режим (Normal)
 
-Normal mode is the mode a note opens in, and the one you return to between two edits. The letter keys do not type here. Each one is a command: `j` moves down a line, `x` deletes a character, `u` undoes the last change.
+Обычный режим — это режим, в котором открывается заметка и в который вы возвращаетесь между правками. Буквенные клавиши здесь не печатают текст. Каждая из них — команда: `j` перемещает курсор на строку вниз, `x` удаляет символ, `u` отменяет последнее изменение.
 
-This is the part that feels strange at first. The idea is that most of the time spent in a note goes to reading, moving around and changing existing text, not to typing new text, so the keys under your fingers are given to those tasks.
+Поначалу это кажется непривычным. Идея в том, что большую часть времени в заметке вы читаете, перемещаетесь и редактируете уже написанный текст, а не печатаете новый, поэтому клавиши под пальцами отданы именно этим задачам.
 
-There is one exception to where a note starts: the text notes that were already open when Vim mode was turned on are in Insert mode, so that typing keeps working. Press <kbd>Esc</kbd> to go to Normal mode.
+Есть одно исключение: текстовые заметки, которые уже были открыты в момент включения режима Vim, находятся в режиме вставки, чтобы ввод текста не прерывался. Нажмите <kbd>Esc</kbd>, чтобы перейти в обычный режим.
 
-### Insert mode
+### Режим вставки (Insert)
 
-Insert mode is the editor you already know: the keys type text. Press `i` in Normal mode to enter it, and <kbd>Esc</kbd> to leave it.
+Режим вставки — это привычный вам редактор: клавиши вводят текст. Нажмите `i` в обычном режиме, чтобы войти в него, и <kbd>Esc</kbd>, чтобы выйти.
 
-In text notes, the regular editing features stay available in Insert mode, such as the formatting shortcuts, slash commands and toolbars. A few <kbd>Ctrl</kbd> shortcuts have a Vim meaning there: see <a class="reference-link" href="../Vim%20mode.md">Vim mode</a>.
+В текстовых заметках в режиме вставки остаются доступными обычные возможности редактирования, такие как сочетания клавиш форматирования, слэш-команды и панели инструментов. Несколько сочетаний с <kbd>Ctrl</kbd> имеют там значения Vim: см. <a class="reference-link" href="../Vim%20mode.md">Режим Vim</a>.
 
 > [!TIP]
-> There are several ways into Insert mode, depending on where you want to type: `i` before the cursor, `a` after it, `A` at the end of the line, and `o` on a new line below.
+> Есть несколько способов войти в режим вставки в зависимости от того, где вы хотите печатать: `i` — перед курсором, `a` — после него, `A` — в конце строки, `o` — на новой строке ниже.
 
-### Visual mode
+### Визуальный режим (Visual)
 
-Visual mode selects text. Press `v`, then move the cursor: the selection follows it. Then press a key to act on the selection, for example `d` to delete it or `y` to copy it. `V` selects whole lines in the same way. <kbd>Esc</kbd> leaves Visual mode without changing anything.
+Визуальный режим выделяет текст. Нажмите `v`, затем перемещайте курсор — выделение будет следовать за ним. Затем нажмите клавишу действия над выделением, например `d` для удаления или `y` для копирования. `V` таким же образом выделяет целые строки. <kbd>Esc</kbd> выходит из визуального режима без изменений.
 
-### Replace mode
+### Режим замены (Replace)
 
-In Replace mode, each character you type takes the place of the one under the cursor, instead of being added before it. Press `R` to enter it and <kbd>Esc</kbd> to leave it.
+В режиме замены каждый вводимый символ заменяет символ под курсором, а не вставляется перед ним. Нажмите `R`, чтобы войти в него, и <kbd>Esc</kbd>, чтобы выйти.
 
-### The command line
+### Командная строка
 
-Some commands are typed by name. Pressing `:` in Normal mode opens the command line, where you type the command and press <kbd>Enter</kbd>. For example, `:sort` sorts lines. Pressing `/` opens it for a search instead, and `?` for a search backward. <kbd>Esc</kbd> closes it without running anything.
+Некоторые команды вводятся по имени. Нажатие `:` в обычном режиме открывает командную строку, где вы вводите команду и нажимаете <kbd>Enter</kbd>. Например, `:sort` сортирует строки. Нажатие `/` открывает её для поиска вперёд, а `?` — для поиска назад. <kbd>Esc</kbd> закрывает командную строку без выполнения.
 
-In text notes, the command line opens in the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a>, where the breadcrumb is. In code notes, it opens at the bottom of the editor.
+В текстовых заметках командная строка открывается в <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">строке состояния</a> на месте навигационной цепочки. В заметках с кодом она открывается в нижней части редактора.
 
-### Which mode am I in?
+### В каком режиме я нахожусь?
 
-*   In text notes, the status bar shows the mode: `NORMAL`, `INSERT`, `VISUAL`, `VISUAL LINE` or `REPLACE`.
-*   In both kinds of notes, the cursor tells the mode as well. In Normal and Visual mode, it is a block that covers a character. In Insert mode, the block is gone and the ordinary thin caret shows in its place.
+*   В текстовых заметках строка состояния показывает режим: `NORMAL`, `INSERT`, `VISUAL`, `VISUAL LINE` или `REPLACE`.
+*   В обоих типах заметок курсор также подсказывает режим. В обычном и визуальном режимах это прямоугольный блок, накрывающий символ. В режиме вставки блок исчезает и появляется обычная тонкая вертикальная черта.
 
-## A first session
+## Первый сеанс
 
-This exercise is meant to give a feel for going between Normal and Insert mode, not to teach keys by heart. Use a note that you can experiment in, such as a new note or a copy of an existing one, and then:
+Это упражнение поможет почувствовать переходы между обычным режимом и режимом вставки, а не заучить клавиши наизусть. Откройте заметку, в которой можно поэкспериментировать (например, новую заметку или копию существующей), и выполните:
 
-1.  Press `i` and type a few words. You are in Insert mode.
-2.  Press <kbd>Esc</kbd>. You are back in Normal mode, and the cursor becomes a block.
-3.  Move the cursor with `h` (left), `j` (down), `k` (up) and `l` (right).
-4.  Press `x` to delete the character under the cursor, and then `u` to undo that.
-5.  Press `dd` to delete the whole line, and `u` to bring it back.
-6.  Press `A`. The cursor jumps to the end of the line, in Insert mode. Type something, and then press <kbd>Esc</kbd>.
-7.  Press `v`, move a few characters with `l`, and then press `d`. The selected text is deleted.
+1.  Нажмите `i` и введите несколько слов. Вы в режиме вставки.
+2.  Нажмите <kbd>Esc</kbd>. Вы снова в обычном режиме, и курсор стал блоком.
+3.  Перемещайте курсор с помощью `h` (влево), `j` (вниз), `k` (вверх) и `l` (вправо).
+4.  Нажмите `x`, чтобы удалить символ под курсором, а затем `u`, чтобы отменить это действие.
+5.  Нажмите `dd`, чтобы удалить всю строку, и `u`, чтобы вернуть её.
+6.  Нажмите `A`. Курсор перепрыгнет в конец строки в режиме вставки. Напишите что-нибудь, затем нажмите <kbd>Esc</kbd>.
+7.  Нажмите `v`, сдвиньтесь на несколько символов с помощью `l`, затем нажмите `d`. Выделенный текст удалится.
 
-That is the whole cycle: Normal mode to move and change, Insert mode to type, <kbd>Esc</kbd> to go back.
+Вот и весь цикл: обычный режим для перемещения и правок, режим вставки для набора текста, <kbd>Esc</kbd> для возврата.
 
-## Moving the cursor
+## Перемещение курсора
 
-| Keys | Moves to |
+| Клавиши | Куда перемещает |
 | --- | --- |
-| `h` `j` `k` `l` | Left, down, up, right. The arrow keys work as well. |
-| `w` / `b` | The next / previous word. |
-| `0` / `$` | The start / end of the line. |
-| `gg` / `G` | The first / last line of the note. |
-| `/text` and <kbd>Enter</kbd> | The next place where "text" appears. `n` goes to the following one. |
+| `h` `j` `k` `l` | Влево, вниз, вверх, вправо. Клавиши со стрелками тоже работают. |
+| `w` / `b` | К следующему / предыдущему слову. |
+| `0` / `$` | В начало / конец строки. |
+| `gg` / `G` | К первой / последней строке заметки. |
+| `/text` и <kbd>Enter</kbd> | К следующему месту, где встречается «text». `n` переходит к следующему совпадению. |
 
-In a text note, a line is a whole paragraph, even when it takes several lines on the screen. So `j` moves to the next paragraph, and `0` and `$` go to its start and end.
+В текстовой заметке строкой считается целый абзац, даже если он занимает несколько строк на экране. Поэтому `j` переходит к следующему абзацу, а `0` и `$` — к его началу и концу.
 
-## Changing text
+## Изменение текста
 
-| Keys | What it does |
+| Клавиши | Что делает |
 | --- | --- |
-| `x` | Deletes the character under the cursor. |
-| `dd` | Deletes the line. |
-| `cw` | Deletes the rest of the word and enters Insert mode, to type a new one. |
-| `r` and a character | Replaces the character under the cursor with that one. |
-| `u` | Undoes the last change. |
-| <kbd>Ctrl</kbd>+<kbd>R</kbd> | Redoes what was undone. |
-| `.` | Repeats the last change. |
+| `x` | Удаляет символ под курсором. |
+| `dd` | Удаляет строку. |
+| `cw` | Удаляет остаток слова и переходит в режим вставки для ввода нового. |
+| `r` и символ | Заменяет символ под курсором указанным символом. |
+| `u` | Отменяет последнее изменение. |
+| <kbd>Ctrl</kbd>+<kbd>R</kbd> | Повторяет отменённое изменение. |
+| `.` | Повторяет последнее изменение. |
 
-## Combining keys
+## Комбинирование клавиш
 
-Most commands of Vim are made of two parts, like a short sentence: what to do, and what to do it to.
+Большинство команд Vim состоят из двух частей, как короткое предложение: что сделать и с чем это сделать.
 
-*   The first part is an **operator**: `d` deletes, `c` changes (deletes, then lets you type), `y` copies.
-*   The second part is a **motion**, which is any key that moves the cursor: `w` for a word, `$` for the end of the line, `G` for the end of the note.
+*   Первая часть — **оператор**: `d` удаляет, `c` изменяет (удаляет и позволяет печатать), `y` копирует.
+*   Вторая часть — **перемещение (motion)**, то есть любая клавиша, двигающая курсор: `w` — слово, `$` — конец строки, `G` — конец заметки.
 
-| Keys | Meaning |
+| Клавиши | Значение |
 | --- | --- |
-| `dw` | Delete up to the next word. |
-| `d$` | Delete up to the end of the line. |
-| `cw` | Change the rest of the word. |
-| `yG` | Copy from here to the end of the note. |
+| `dw` | Удалить до следующего слова. |
+| `d$` | Удалить до конца строки. |
+| `cw` | Изменить остаток слова. |
+| `yG` | Скопировать отсюда до конца заметки. |
 
-Two more ideas complete the picture:
+Ещё две идеи дополняют картину:
 
-*   **A number repeats.** `3w` moves three words forward, and `3dd` deletes three lines.
-*   **Text objects name a thing around the cursor.** `iw` is "the word the cursor is in" and `ip` is "this paragraph". So `diw` deletes the word under the cursor, wherever the cursor is in it, and `yip` copies the paragraph.
+*   **Число задаёт повторение.** `3w` перемещает на три слова вперёд, а `3dd` удаляет три строки.
+*   **Текстовые объекты обозначают фрагмент вокруг курсора.** `iw` — это «слово, в котором находится курсор», а `ip` — «этот абзац». Так `diw` удаляет слово под курсором независимо от того, где внутри него стоит курсор, а `yip` копирует абзац.
 
-Since an operator can be combined with almost any motion and text object, a handful of keys gives a large number of commands, and there is no need to memorize them one by one.
+Поскольку оператор можно сочетать почти с любым перемещением и текстовым объектом, горстка клавиш даёт огромное количество команд, и их не нужно заучивать по отдельности.
 
-## Copying and pasting
+## Копирование и вставка
 
-Vim has its own words for these: to **yank** is to copy, and to **put** is to paste.
+В Vim для этого используются свои термины: **yank** (выдернуть) — скопировать, а **put** (положить) — вставить.
 
-*   `yy` yanks the current line, and `yw` yanks a word.
-*   `p` puts what was yanked after the cursor, and `P` before it.
-*   Deleted text can be put as well: `dd` followed by `p` moves a line down.
-*   In Visual mode, `y` yanks the selection.
+*   `yy` копирует текущую строку, а `yw` — слово.
+*   `p` вставляет скопированное после курсора, а `P` — перед ним.
+*   Удалённый текст тоже можно вставить: `dd`, а затем `p` перемещает строку вниз.
+*   В визуальном режиме `y` копирует выделение.
 
-Yanked text is kept in a **register**, which is Vim's own storage and is separate from the clipboard of your computer. To use the clipboard, type `"+` in front of the command: `"+yy` copies the line to the clipboard, and `"+p` pastes from it. In text notes, <kbd>Ctrl</kbd>+<kbd>C</kbd> and <kbd>Ctrl</kbd>+<kbd>V</kbd> also keep working with the clipboard.
+Скопированный текст хранится в **регистре** — собственном хранилище Vim, отдельном от системного буфера обмена. Чтобы использовать системный буфер обмена, введите `"+` перед командой: `"+yy` копирует строку в буфер обмена, а `"+p` вставляет из него. В текстовых заметках <kbd>Ctrl</kbd>+<kbd>C</kbd> и <kbd>Ctrl</kbd>+<kbd>V</kbd> также продолжают работать с буфером обмена.
 
-The clipboard is also the way to carry text between a text note and a code note, since the two kinds of notes do not share their registers: `"+y` in one, `"+p` in the other.
+Буфер обмена также позволяет переносить текст между текстовой заметкой и заметкой с кодом, так как у этих двух типов заметок регистры не общие: `"+y` в одной, `"+p` в другой.
 
-## Searching and replacing
+## Поиск и замена
 
-*   To search, press `/`, type the text and press <kbd>Enter</kbd>. `n` goes to the next match and `N` to the previous one.
-*   To search for the word under the cursor, press `*`.
-*   To replace in the current line, type `:s/old/new/`.
-*   To replace everywhere in the note, type `:%s/old/new/g`.
+*   Для поиска нажмите `/`, введите текст и нажмите <kbd>Enter</kbd>. `n` переходит к следующему совпадению, `N` — к предыдущему.
+*   Чтобы найти слово под курсором, нажмите `*`.
+*   Чтобы заменить текст в текущей строке, введите `:s/old/new/`.
+*   Чтобы заменить по всей заметке, введите `:%s/old/new/g`.
 
 > [!NOTE]
-> The text to search for is read as a regular expression, in the syntax of JavaScript. Letters, digits and spaces mean themselves, but characters such as `.`, `*`, `(` and `[` have a special meaning. To search for one of them as it is, put a `\` before it: `/1\.5` finds "1.5".
+> Текст для поиска интерпретируется как регулярное выражение в синтаксисе JavaScript. Буквы, цифры и пробелы означают сами себя, но такие символы, как `.`, `*`, `(` и `[`, имеют специальное значение. Чтобы найти один из них буквально, поставьте перед ним `\`: `/1\.5` найдёт «1.5».
 
-## Getting unstuck
+## Если что-то пошло не так
 
-*   **Not sure what is going on?** Press <kbd>Esc</kbd>, twice if needed. It cancels a command that is half typed and returns to Normal mode.
-*   **The keys do not type.** The editor is in Normal mode. Press `i`.
-*   **Typing changed the note in strange ways.** The editor was in Normal mode and the letters ran as commands. Press <kbd>Esc</kbd>, then press `u` once and look at the result. Repeat only as long as there is something left to take back, since each further `u` also undoes an earlier edit of yours. <kbd>Ctrl</kbd>+<kbd>R</kbd> redoes a step that went too far.
-*   **Vim mode is in the way.** Turn the option off. Your notes are not affected.
+*   **Не понимаете, что происходит?** Нажмите <kbd>Esc</kbd>, при необходимости дважды. Это отменит недописанную команду и вернёт в обычный режим.
+*   **Клавиши не печатают.** Редактор в обычном режиме. Нажмите `i`.
+*   **Набор текста странно изменил заметку.** Редактор был в обычном режиме, и буквы выполнились как команды. Нажмите <kbd>Esc</kbd>, затем один раз `u` и посмотрите на результат. Повторяйте только пока есть что отменять, так как каждое следующее `u` отменяет и ваши более ранние правки. <kbd>Ctrl</kbd>+<kbd>R</kbd> вернёт шаг, если вы зашли слишком далеко.
+*   **Режим Vim мешает.** Выключите эту настройку. Ваши заметки не пострадают.
 
 > [!TIP]
-> In text notes, the status bar helps while you learn: it shows the keys of the current mode, and after a short pause in the middle of a command, the keys that can follow. To see every key of the mode, click the mode in the status bar or press <kbd>Alt</kbd>+<kbd>F1</kbd>.
+> В текстовых заметках строка состояния помогает во время обучения: она показывает клавиши текущего режима, а после небольшой паузы в середине команды — клавиши, которые могут следовать дальше. Чтобы увидеть все клавиши режима, нажмите на название режима в строке состояния или нажмите <kbd>Alt</kbd>+<kbd>F1</kbd>.
 
-## Next steps
+## Что дальше
 
-*   The cheat sheet in <a class="reference-link" href="../Vim%20mode.md">Vim mode</a> lists the most used keys, including the ones that Trilium adds for text notes.
-*   The <a class="reference-link" href="Vim%20full%20reference.md">Vim full reference</a> lists the keys and commands that are supported.
-*   To practice, [OpenVim](https://openvim.com/) is a short interactive tutorial that runs in the browser. Vim itself comes with a longer one, started with the `vimtutor` command. Both teach the real Vim: most of it carries over, but not every command of Vim exists in Trilium.
+*   Шпаргалка в разделе <a class="reference-link" href="../Vim%20mode.md">Режим Vim</a> содержит самые частые клавиши, включая те, которые Trilium добавляет для текстовых заметок.
+*   <a class="reference-link" href="Vim%20full%20reference.md">Полный справочник по Vim</a> перечисляет все поддерживаемые клавиши и команды.
+*   Для практики подойдёт [OpenVim](https://openvim.com/) — короткий интерактивный учебник в браузере. У самого Vim есть более подробный учебник, запускаемый командой `vimtutor`. Оба обучают настоящему Vim: большая часть навыков переносится, но не каждая команда Vim есть в Trilium.

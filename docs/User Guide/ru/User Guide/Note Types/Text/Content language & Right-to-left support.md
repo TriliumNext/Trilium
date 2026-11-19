@@ -1,27 +1,27 @@
-# Content language & Right-to-left support
+# Язык содержимого и поддержка письма справа налево
 ![](Content%20language%20&%20Right-to-left%20support_image.jpg)
 
-The content language determines:
+Язык содержимого определяет:
 
-*   The spell-checking of the note, when in a browser. The desktop installation has a dedicated spellchecking section.
-*   Whether the text is displayed from right-to-left, for languages such as Arabic, Hebrew, etc.
-*   How typed quotes are [automatically replaced](Automatic%20replacements.md) (e.g. English uses `“text”`, whereas some languages use `«text»`). This applies only if <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text_ → _Single/Double quotation marks_ is set to _Based on note's content language_.
-*   Which languages are offered by the <a class="reference-link" href="In-editor%20AI%20assistant.md">In-editor AI assistant</a> for translation.
-*   The language and the text direction the content is marked with on a [shared page](../../Advanced%20Usage/Sharing.md), which screen readers and browsers follow.
+*   Проверку орфографии в заметке при работе в браузере. В настольном приложении для проверки орфографии предусмотрен отдельный раздел настроек.
+*   Отображение текста справа налево для таких языков, как арабский, иврит и др.
+*   Способ [автоматической замены](Automatic%20replacements.md) вводимых кавычек (например, в английском используются `“text”`, тогда как в некоторых языках — `«text»`). Это применяется только в том случае, если в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Text_ → _Single/Double quotation marks_ выбрано значение _Based on note's content language_.
+*   Какие языки предлагает <a class="reference-link" href="In-editor%20AI%20assistant.md">Встроенный ИИ-помощник</a> для перевода.
+*   Язык и направление текста, которыми размечается содержимое на [опубликованной странице](../../Advanced%20Usage/Sharing.md) и которым следуют программы чтения с экрана и браузеры.
 
-## Setting the language of a single note
+## Установка языка для отдельной заметки
 
-To set the language of the content of a <a class="reference-link" href="../Text.md">Text</a> note, there is a language selector in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a> indicated by a <span class="tn-icon bx bx-globe"></span> icon.
+Чтобы задать язык содержимого для <a class="reference-link" href="../Text.md">текстовой</a> заметки, используйте переключатель языка в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">строке состояния</a>, обозначенный значком <span class="tn-icon bx bx-globe"></span>.
 
-## Adjusting the list of languages
+## Настройка списка языков
 
-By default, no language is configured. To configure them, go to <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Language & Region_ → _Content languages_, or select the _Configure languages..._ item when setting the language. The enabled languages are listed by their native names, sorted alphabetically, which is also the order the language selector shows them in. Here you can:
+По умолчанию языки не настроены. Чтобы настроить их, перейдите в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Language & Region_ → _Content languages_ или выберите пункт _Configure languages..._ при выборе языка заметки. Включённые языки отображаются под своими оригинальными названиями в алфавитном порядке — в таком же порядке они выводятся в переключателе языка. Здесь вы можете:
 
-*   Add a language by pressing the <span class="tn-icon bx bx-plus"></span> _Add a language_ button (_Add another language_ once one is enabled), which also shows how many languages are left, and then selecting it.
-*   Press the <span class="tn-icon bx bx-x"></span> button beside a language to remove it from the list.
+*   Добавить язык, нажав кнопку <span class="tn-icon bx bx-plus"></span> _Add a language_ (_Add another language_, если хотя бы один язык уже включён), на которой также показано, сколько языков ещё доступно, а затем выбрав нужный язык.
+*   Нажать кнопку <span class="tn-icon bx bx-x"></span> рядом с языком, чтобы удалить его из списка.
 
-## Default content language
+## Язык содержимого по умолчанию
 
-Notes that do not have a language of their own follow <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Language & Region_ → _Default content language_. It is set to English initially, and can be set to any content language, or to _Based on the application's language_.
+Заметки, для которых не задан собственный язык, используют значение из <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настроек</a> → _Language & Region_ → _Default content language_. Изначально выбран английский, но можно указать любой язык содержимого или вариант _Based on the application's language_.
 
-If a note has a language set, it always takes precedence over the default.
+Если у заметки задан собственный язык, он всегда имеет приоритет над языком по умолчанию.

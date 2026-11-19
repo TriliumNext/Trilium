@@ -1,49 +1,49 @@
-# Backend (server) logs
-## Accessing via the backend log
+# Журналы бэкенда (сервера)
+## Доступ через журнал бэкенда
 
-In the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>, go to _Advanced_ → _Backend log_. This will display the current backend log (i.e. today's), with the historical information available only on disk (see below).
+В <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">главном меню</a> перейдите в _Дополнительно_ → _Журнал бэкенда_ (_Advanced_ → _Backend log_). Откроется текущий журнал бэкенда (то есть за сегодняшний день); архивные журналы доступны только на диске (см. ниже).
 
-The log is colored to make it easier to read: request status codes by class, slow SQL queries, warnings in amber and errors in red. The statement of a slow SQL query is highlighted the same way as in the <a class="reference-link" href="../../Advanced%20Usage/Database/Manually%20altering%20the%20database/SQL%20Console.md">SQL Console</a>, using the color scheme of code notes (see _Color schemes_ in <a class="reference-link" href="../../Note%20Types/Code.md">Code</a>).
+Журнал выделен цветом для удобства чтения: коды состояния запросов по классам, медленные SQL-запросы, предупреждения янтарным цветом и ошибки красным. Текст медленного SQL-запроса подсвечивается так же, как в <a class="reference-link" href="../../Advanced%20Usage/Database/Manually%20altering%20the%20database/SQL%20Console.md">SQL-консоли</a>, с использованием цветовой схемы заметок с кодом (см. _Цветовые схемы_ в разделе <a class="reference-link" href="../../Note%20Types/Code.md">Код</a>).
 
-A search that the app runs in the background, for example to filter a collection, or that a script runs is followed by a `Search:` line with its query and the number of notes it returned. The query is highlighted the same way as in a <a class="reference-link" href="../../Note%20Types/Saved%20Search.md">Saved Search</a>. Quick search and saved searches don't add this line.
+За поиском, который приложение выполняет в фоне (например, для фильтрации коллекции) или который запускает скрипт, следует строка `Search:` с его запросом и количеством возвращённых заметок. Запрос подсвечивается так же, как в <a class="reference-link" href="../../Note%20Types/Saved%20Search.md">сохранённом поиске</a>. Быстрый поиск и сохранённые поиски эту строку не добавляют.
 
-Interaction since v0.104.0:
+Возможности начиная с v0.104.0:
 
-*   The file can be downloaded as a text file using the <span class="tn-icon bx bx-download"></span> button in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> area.
-*   The file can also be searched just like a normal <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> note.
+*   Файл можно скачать как текстовый файл с помощью кнопки <span class="tn-icon bx bx-download"></span> в области <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">меню заметки</a>.
+*   По файлу также можно выполнять поиск, как в обычной заметке типа <a class="reference-link" href="../../Note%20Types/Code.md">Код</a>.
 
-## Location on the disk
+## Расположение на диске
 
-Backend logs are stored on the file system. To find them, open the <a class="reference-link" href="../../Installation%20%26%20Setup/Data%20directory.md">Data directory</a>, go to the `log` subdirectory and find the latest log file, e.g. `trilium-2022-12-14.log`. 
+Журналы бэкенда хранятся в файловой системе. Чтобы найти их, откройте <a class="reference-link" href="../../Installation%20%26%20Setup/Data%20directory.md">каталог данных</a>, перейдите в подкаталог `log` и найдите самый свежий файл журнала, например `trilium-2022-12-14.log`. 
 
-## In the terminal
+## В терминале
 
-The server also prints every log entry to its standard output, which is what `docker logs` or `journalctl` show. When that output is a terminal, each entry starts with its time and is colored like the backend log in the app: request status codes by class, slow SQL queries, warnings in yellow and errors in red. The statement of a slow SQL query and the query of a search are shown without syntax highlighting there. The startup banner with the Trilium logo and version information is colored too. Output to a file, a pipe or a container log stays plain text without the time, since those tools add their own.
+Сервер также выводит каждую запись журнала в стандартный вывод, который отображают `docker logs` или `journalctl`. Когда этот вывод направлен в терминал, каждая запись начинается со времени и выделяется цветом так же, как журнал бэкенда в приложении: коды состояния запросов по классам, медленные SQL-запросы, предупреждения жёлтым и ошибки красным. Текст медленного SQL-запроса и поисковый запрос там отображаются без подсветки синтаксиса. Приветственный баннер с логотипом Trilium и информацией о версии также цветной. Вывод в файл, конвейер (pipe) или журнал контейнера остаётся обычным текстом без отметки времени, так как эти инструменты добавляют собственные.
 
-To turn the colors off in a terminal, set the `NO_COLOR` environment variable; to force them on elsewhere, set `FORCE_COLOR=1`.
+Чтобы отключить цвета в терминале, задайте переменную окружения `NO_COLOR`; чтобы принудительно включить их в других местах, задайте `FORCE_COLOR=1`.
 
-## Reporting backend bugs
+## Сообщение об ошибках бэкенда
 
-You can attach the whole file to the bug report (preferable) or open it and copy-paste only the last lines / lines you believe are relevant.
+Вы можете прикрепить весь файл к отчёту об ошибке (предпочтительно) или открыть его и скопировать только последние строки / строки, которые считаете относящимися к проблеме.
 
-## Customizing the retention of logs
+## Настройка срока хранения журналов
 
-The backend logs are fully managed by the Trilium server. By default the last 90 days worth of logs are kept; the logs older than that are deleted in order to reduce the space consumption.
+Журналы бэкенда полностью управляются сервером Trilium. По умолчанию хранятся журналы за последние 90 дней; более старые журналы удаляются для экономии места.
 
-It's possible to change the retention period by modifying the <a class="reference-link" href="../../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables).md">Configuration (config.ini or environment variables)</a> via the `.ini` file:
+Срок хранения можно изменить, отредактировав <a class="reference-link" href="../../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables).md">конфигурацию (config.ini или переменные окружения)</a> через `.ini`-файл:
 
 ```
 [Logging]
 retentionDays=7
 ```
 
-Or via the environment variable `TRILIUM_LOGGING_RETENTION_DAYS`.
+Или с помощью переменной окружения `TRILIUM_LOGGING_RETENTION_DAYS`.
 
-Special cases:
+Особые случаи:
 
-*   Positive values indicate the number of days worth of logs to keep
-*   A value of 0 results with the default value (90 days) to be used
-*   Negative values (e.g. `-1`) result with all logs to be kept, irrespective how ancient and numerous (and
+*   Положительные значения указывают количество дней хранения журналов.
+*   Значение `0` приводит к использованию значения по умолчанию (90 дней).
+*   Отрицательные значения (например, `-1`) приводят к сохранению всех журналов независимо от их давности и количества.
 
 > [!NOTE]
-> If you set the retention days to a low number, you might notice that not all the log files are being deleted. This is because a minimum number of logs (7 at the time of writing) is maintained at all times.
+> Если задать небольшое количество дней хранения, вы можете заметить, что удаляются не все файлы журналов. Это связано с тем, что всегда сохраняется минимальное количество журналов (на момент написания — 7).

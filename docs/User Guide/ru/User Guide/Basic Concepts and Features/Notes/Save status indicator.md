@@ -1,13 +1,13 @@
-# Save status indicator
-<img class="image-style-align-right" src="Save status indicator_image.png" width="168" height="47">To the right of the note title, a temporary indicator appears after making a change to the document which shows whether the document has been saved.
+# Индикатор состояния сохранения
+<img class="image-style-align-right" src="Save status indicator_image.png" width="168" height="47">Справа от заголовка заметки после внесения изменений в документ появляется временный индикатор, показывающий, сохранён ли документ.
 
-It indicates the following states:
+Он отображает следующие состояния:
 
-*   <span class="tn-icon bx bx-pencil"></span> _Unsaved_, if the changes will be saved soon.
-*   <span class="tn-icon bx bx-loader"></span> _Saving_, if the changes are being saved.
-*   <span class="tn-icon bx bx-check"></span> _Saved_, if all the changes were successfully saved to the server.
-*   <span class="tn-icon bx bx-error"></span> _Error_, if the changes could not be saved, for example due to a communication server with the server.
+*   <span class="tn-icon bx bx-pencil"></span> _Unsaved_ (Не сохранено) — изменения скоро будут сохранены.
+*   <span class="tn-icon bx bx-loader"></span> _Saving_ (Сохранение) — изменения сохраняются в данный момент.
+*   <span class="tn-icon bx bx-check"></span> _Saved_ (Сохранено) — все изменения успешно сохранены на сервере.
+*   <span class="tn-icon bx bx-error"></span> _Error_ (Ошибка) — изменения не удалось сохранить, например из-за проблемы со связью с сервером.
 
-In a text note, the changes are saved once typing pauses for a second, and at least every ten seconds while typing continues.
+В текстовой заметке изменения сохраняются после паузы в наборе текста длительностью в одну секунду и не реже чем раз в десять секунд при непрерывном вводе.
 
-After all changes have been saved, the indicator will hide automatically after a few seconds.
+После того как все изменения сохранены, индикатор автоматически скрывается через несколько секунд.

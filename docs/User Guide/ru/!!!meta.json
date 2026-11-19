@@ -7,7 +7,7 @@
             "notePath": [
                 "pOsGYCXsbNQG"
             ],
-            "title": "User Guide",
+            "title": "Руководство пользователя",
             "notePosition": 1,
             "prefix": null,
             "isExpanded": false,
@@ -55,7 +55,7 @@
                         "pOsGYCXsbNQG",
                         "BOCnjTMBCoxW"
                     ],
-                    "title": "Feature Highlights",
+                    "title": "Основные новые возможности",
                     "notePosition": 10,
                     "prefix": null,
                     "isExpanded": false,
@@ -88,7 +88,7 @@
                         "pOsGYCXsbNQG",
                         "Otzi9La2YAUX"
                     ],
-                    "title": "Installation & Setup",
+                    "title": "Установка и настройка",
                     "notePosition": 20,
                     "prefix": null,
                     "isExpanded": false,
@@ -122,7 +122,7 @@
                                 "Otzi9La2YAUX",
                                 "poXkQfguuA0U"
                             ],
-                            "title": "Desktop Installation",
+                            "title": "Установка на компьютер",
                             "notePosition": 10,
                             "prefix": null,
                             "isExpanded": false,
@@ -158,7 +158,7 @@
                                         "poXkQfguuA0U",
                                         "nRqcgfTb97uV"
                                     ],
-                                    "title": "Using the desktop application as a server",
+                                    "title": "Использование настольного приложения в качестве сервера",
                                     "notePosition": 10,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -186,7 +186,7 @@
                                         "poXkQfguuA0U",
                                         "Rp0q8bSP6Ayl"
                                     ],
-                                    "title": "System Requirements",
+                                    "title": "Системные требования",
                                     "notePosition": 20,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -256,7 +256,7 @@
                                         "poXkQfguuA0U",
                                         "swSFivWk6KkA"
                                     ],
-                                    "title": "Network Access",
+                                    "title": "Сетевой доступ",
                                     "notePosition": 40,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -291,7 +291,7 @@
                                         "poXkQfguuA0U",
                                         "7iwde4lsKc6O"
                                     ],
-                                    "title": "Tray icon & automatic startup",
+                                    "title": "Значок в трее и автоматический запуск",
                                     "notePosition": 50,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -328,7 +328,7 @@
                                         "poXkQfguuA0U",
                                         "hvRfsDr591WP"
                                     ],
-                                    "title": "Troubleshooting",
+                                    "title": "Устранение неполадок",
                                     "notePosition": 60,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -357,7 +357,7 @@
                                 "Otzi9La2YAUX",
                                 "WOcw2SLH6tbX"
                             ],
-                            "title": "Server Installation",
+                            "title": "Установка на сервер",
                             "notePosition": 20,
                             "prefix": null,
                             "isExpanded": false,
@@ -393,7 +393,7 @@
                                         "WOcw2SLH6tbX",
                                         "Dgg7bR3b6K9j"
                                     ],
-                                    "title": "1. Installing the server",
+                                    "title": "1. Установка сервера",
                                     "notePosition": 10,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -422,7 +422,7 @@
                                                 "Dgg7bR3b6K9j",
                                                 "3tW6mORuTHnB"
                                             ],
-                                            "title": "Packaged version for Linux",
+                                            "title": "Готовая сборка для Linux",
                                             "notePosition": 10,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -460,7 +460,7 @@
                                                         "3tW6mORuTHnB",
                                                         "ZNAjFcxqHr9V"
                                                     ],
-                                                    "title": "Simple auto-update for server",
+                                                    "title": "Простое автообновление сервера",
                                                     "notePosition": 10,
                                                     "prefix": null,
                                                     "isExpanded": false,
@@ -482,7 +482,7 @@
                                                 "Dgg7bR3b6K9j",
                                                 "rWX5eY045zbE"
                                             ],
-                                            "title": "Using Docker",
+                                            "title": "Использование Docker",
                                             "notePosition": 20,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -518,7 +518,7 @@
                                                 "Dgg7bR3b6K9j",
                                                 "moVgBcoxE3EK"
                                             ],
-                                            "title": "On NixOS",
+                                            "title": "На NixOS",
                                             "notePosition": 30,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -554,7 +554,7 @@
                                                 "Dgg7bR3b6K9j",
                                                 "J1Bb6lVlwU5T"
                                             ],
-                                            "title": "Manually",
+                                            "title": "Ручная установка",
                                             "notePosition": 40,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -590,7 +590,7 @@
                                                 "Dgg7bR3b6K9j",
                                                 "DCmT6e7clMoP"
                                             ],
-                                            "title": "Using Kubernetes",
+                                            "title": "Использование Kubernetes",
                                             "notePosition": 50,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -626,7 +626,7 @@
                                                 "Dgg7bR3b6K9j",
                                                 "klCWNks3ReaQ"
                                             ],
-                                            "title": "Multiple server instances",
+                                            "title": "Несколько экземпляров сервера",
                                             "notePosition": 60,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -663,7 +663,7 @@
                                         "WOcw2SLH6tbX",
                                         "vcjrb3VVYPZI"
                                     ],
-                                    "title": "2. Reverse proxy",
+                                    "title": "2. Обратный прокси",
                                     "notePosition": 20,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -722,7 +722,7 @@
                                                 "vcjrb3VVYPZI",
                                                 "fDLvzOx29Pfg"
                                             ],
-                                            "title": "Apache using Docker",
+                                            "title": "Apache с использованием Docker",
                                             "notePosition": 20,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -751,7 +751,7 @@
                                                 "vcjrb3VVYPZI",
                                                 "LLzSMXACKhUs"
                                             ],
-                                            "title": "Trusted proxy",
+                                            "title": "Доверенный прокси",
                                             "notePosition": 30,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -845,7 +845,7 @@
                                         "WOcw2SLH6tbX",
                                         "0hzsNCP31IAB"
                                     ],
-                                    "title": "Authentication",
+                                    "title": "Аутентификация",
                                     "notePosition": 110,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -882,7 +882,7 @@
                                                 "0hzsNCP31IAB",
                                                 "lwAX5SvbrK2g"
                                             ],
-                                            "title": "Resetting your password",
+                                            "title": "Сброс пароля",
                                             "notePosition": 10,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -919,7 +919,7 @@
                                         "WOcw2SLH6tbX",
                                         "7DAiwaf8Z7Rz"
                                     ],
-                                    "title": "Multi-factor authentication with TOTP",
+                                    "title": "Многофакторная аутентификация с помощью TOTP",
                                     "notePosition": 120,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -970,7 +970,7 @@
                                         "WOcw2SLH6tbX",
                                         "x1lQNKQBqLcA"
                                     ],
-                                    "title": "Signing in with OpenID Connect",
+                                    "title": "Вход с помощью OpenID Connect",
                                     "notePosition": 130,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -1007,7 +1007,7 @@
                                                 "x1lQNKQBqLcA",
                                                 "IgkTHSaFfq6A"
                                             ],
-                                            "title": "Setting up with various providers",
+                                            "title": "Настройка с различными провайдерами",
                                             "notePosition": 10,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -1037,7 +1037,7 @@
                                         "WOcw2SLH6tbX",
                                         "yeEaYqosGLSh"
                                     ],
-                                    "title": "Third-party cloud hosting",
+                                    "title": "Сторонний облачный хостинг",
                                     "notePosition": 140,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -1072,7 +1072,7 @@
                                         "WOcw2SLH6tbX",
                                         "iGTnKjubbXkA"
                                     ],
-                                    "title": "System Requirements",
+                                    "title": "Системные требования",
                                     "notePosition": 150,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -1108,7 +1108,7 @@
                                 "Otzi9La2YAUX",
                                 "cbkrhQjrkKrh"
                             ],
-                            "title": "Synchronization",
+                            "title": "Синхронизация",
                             "notePosition": 30,
                             "prefix": null,
                             "isExpanded": false,
@@ -1167,7 +1167,7 @@
                                 "Otzi9La2YAUX",
                                 "RDslemsQ6gCp"
                             ],
-                            "title": "Mobile Frontend",
+                            "title": "Мобильный интерфейс",
                             "notePosition": 40,
                             "prefix": null,
                             "isExpanded": false,
@@ -1253,7 +1253,7 @@
                                 "Otzi9La2YAUX",
                                 "n1lujUxCwipy"
                             ],
-                            "title": "Upgrading TriliumNext",
+                            "title": "Обновление TriliumNext",
                             "notePosition": 60,
                             "prefix": null,
                             "isExpanded": false,
@@ -1287,7 +1287,7 @@
                                 "Otzi9La2YAUX",
                                 "ODY7qQn5m2FT"
                             ],
-                            "title": "Backup",
+                            "title": "Резервное копирование",
                             "notePosition": 70,
                             "prefix": null,
                             "isExpanded": false,
@@ -1321,7 +1321,7 @@
                                 "Otzi9La2YAUX",
                                 "tAassRL4RSQL"
                             ],
-                            "title": "Data directory",
+                            "title": "Каталог данных",
                             "notePosition": 80,
                             "prefix": null,
                             "isExpanded": false,
@@ -1364,7 +1364,7 @@
                                 "Otzi9La2YAUX",
                                 "ebyr7ES2SwOW"
                             ],
-                            "title": "Downloaded resources",
+                            "title": "Загружаемые ресурсы",
                             "notePosition": 90,
                             "prefix": null,
                             "isExpanded": false,
@@ -1399,7 +1399,7 @@
                         "pOsGYCXsbNQG",
                         "gh7bpGYxajRS"
                     ],
-                    "title": "Basic Concepts and Features",
+                    "title": "Основные понятия и возможности",
                     "notePosition": 40,
                     "prefix": null,
                     "isExpanded": false,
@@ -1433,7 +1433,7 @@
                                 "gh7bpGYxajRS",
                                 "Vc8PjrjAGuOp"
                             ],
-                            "title": "UI Elements",
+                            "title": "Элементы интерфейса",
                             "notePosition": 10,
                             "prefix": null,
                             "isExpanded": false,
@@ -1468,7 +1468,7 @@
                                         "Vc8PjrjAGuOp",
                                         "x0JgW8UqGXvq"
                                     ],
-                                    "title": "Vertical and horizontal layout",
+                                    "title": "Вертикальное и горизонтальное расположение",
                                     "notePosition": 10,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -1520,7 +1520,7 @@
                                         "Vc8PjrjAGuOp",
                                         "x3i7MxGccDuM"
                                     ],
-                                    "title": "Global menu",
+                                    "title": "Глобальное меню",
                                     "notePosition": 20,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -1564,7 +1564,7 @@
                                         "Vc8PjrjAGuOp",
                                         "oPVyFC7WL2Lp"
                                     ],
-                                    "title": "Note Tree",
+                                    "title": "Дерево заметок",
                                     "notePosition": 30,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -1626,7 +1626,7 @@
                                                 "oPVyFC7WL2Lp",
                                                 "YtSN43OrfzaA"
                                             ],
-                                            "title": "Note tree contextual menu",
+                                            "title": "Контекстное меню дерева заметок",
                                             "notePosition": 10,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -1679,7 +1679,7 @@
                                                 "oPVyFC7WL2Lp",
                                                 "yTjUdsOi4CIE"
                                             ],
-                                            "title": "Multiple selection",
+                                            "title": "Множественный выбор",
                                             "notePosition": 20,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -1740,7 +1740,7 @@
                                                 "oPVyFC7WL2Lp",
                                                 "DvdZhoQZY9Yd"
                                             ],
-                                            "title": "Keyboard shortcuts",
+                                            "title": "Сочетания клавиш",
                                             "notePosition": 30,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -1776,7 +1776,7 @@
                                                 "oPVyFC7WL2Lp",
                                                 "wyaGBBQrl4i3"
                                             ],
-                                            "title": "Hiding the subtree",
+                                            "title": "Скрытие поддерева",
                                             "notePosition": 40,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -1830,7 +1830,7 @@
                                         "Vc8PjrjAGuOp",
                                         "3seOhtN8uLIY"
                                     ],
-                                    "title": "Tabs",
+                                    "title": "Вкладки",
                                     "notePosition": 70,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -1882,7 +1882,7 @@
                                         "Vc8PjrjAGuOp",
                                         "xYmIYSP6wE3F"
                                     ],
-                                    "title": "Launch Bar",
+                                    "title": "Панель запуска",
                                     "notePosition": 110,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -1926,7 +1926,7 @@
                                         "Vc8PjrjAGuOp",
                                         "8YBEPzcpUgxw"
                                     ],
-                                    "title": "Note menu",
+                                    "title": "Меню заметки",
                                     "notePosition": 130,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -1970,7 +1970,7 @@
                                         "Vc8PjrjAGuOp",
                                         "1P8QXI5edXNd"
                                     ],
-                                    "title": "Note buttons",
+                                    "title": "Кнопки заметки",
                                     "notePosition": 140,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -2005,7 +2005,7 @@
                                         "Vc8PjrjAGuOp",
                                         "4TIF1oA4VQRO"
                                     ],
-                                    "title": "Options",
+                                    "title": "Настройки",
                                     "notePosition": 150,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -2049,7 +2049,7 @@
                                         "Vc8PjrjAGuOp",
                                         "luNhaphA37EO"
                                     ],
-                                    "title": "Split View",
+                                    "title": "Разделённый вид",
                                     "notePosition": 160,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -2093,7 +2093,7 @@
                                         "Vc8PjrjAGuOp",
                                         "RnaPdbciOfeq"
                                     ],
-                                    "title": "Right Sidebar",
+                                    "title": "Правая боковая панель",
                                     "notePosition": 180,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -2139,7 +2139,7 @@
                                                 "RnaPdbciOfeq",
                                                 "2dcGDhp9WFKb"
                                             ],
-                                            "title": "Outline tab",
+                                            "title": "Вкладка «Структура»",
                                             "notePosition": 10,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -2192,7 +2192,7 @@
                                                 "RnaPdbciOfeq",
                                                 "uNtgN0cUKEBc"
                                             ],
-                                            "title": "Attributes tab",
+                                            "title": "Вкладка «Атрибуты»",
                                             "notePosition": 20,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -2237,7 +2237,7 @@
                                                 "RnaPdbciOfeq",
                                                 "LrKznOtw9cQD"
                                             ],
-                                            "title": "AI chat tab",
+                                            "title": "Вкладка «ИИ-чат»",
                                             "notePosition": 30,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -2266,7 +2266,7 @@
                                                 "RnaPdbciOfeq",
                                                 "KRlZFoIH0j6p"
                                             ],
-                                            "title": "Connections tab",
+                                            "title": "Вкладка «Связи»",
                                             "notePosition": 40,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -2312,7 +2312,7 @@
                                         "Vc8PjrjAGuOp",
                                         "r5JGHN99bVKn"
                                     ],
-                                    "title": "Recent Changes",
+                                    "title": "Последние изменения",
                                     "notePosition": 200,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -2356,7 +2356,7 @@
                                         "Vc8PjrjAGuOp",
                                         "ny318J39E5Z0"
                                     ],
-                                    "title": "Zoom",
+                                    "title": "Масштаб",
                                     "notePosition": 210,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -2391,7 +2391,7 @@
                                         "Vc8PjrjAGuOp",
                                         "lgKX7r3aL30x"
                                     ],
-                                    "title": "Note Tooltip",
+                                    "title": "Подсказка заметки",
                                     "notePosition": 230,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -2435,7 +2435,7 @@
                                         "Vc8PjrjAGuOp",
                                         "SL5f1Auq7sVN"
                                     ],
-                                    "title": "Note types with split view",
+                                    "title": "Типы заметок с разделённым видом",
                                     "notePosition": 250,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -2470,7 +2470,7 @@
                                         "Vc8PjrjAGuOp",
                                         "t596jLvPrqkS"
                                     ],
-                                    "title": "Content width",
+                                    "title": "Ширина содержимого",
                                     "notePosition": 260,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -2505,7 +2505,7 @@
                                         "Vc8PjrjAGuOp",
                                         "jcQVxzYybYgz"
                                     ],
-                                    "title": "Note contextual menu",
+                                    "title": "Контекстное меню заметки",
                                     "notePosition": 270,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -2549,7 +2549,7 @@
                                         "Vc8PjrjAGuOp",
                                         "AlJ73vBCjWDw"
                                     ],
-                                    "title": "Status bar",
+                                    "title": "Строка состояния",
                                     "notePosition": 280,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -2584,7 +2584,7 @@
                                         "Vc8PjrjAGuOp",
                                         "I6p2a06hdnL6"
                                     ],
-                                    "title": "Breadcrumb",
+                                    "title": "Навигационная цепочка",
                                     "notePosition": 290,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -2629,7 +2629,7 @@
                                 "gh7bpGYxajRS",
                                 "BFs8mudNFgCS"
                             ],
-                            "title": "Notes",
+                            "title": "Заметки",
                             "notePosition": 40,
                             "prefix": null,
                             "isExpanded": false,
@@ -2665,7 +2665,7 @@
                                         "BFs8mudNFgCS",
                                         "l7pigIGu01K2"
                                     ],
-                                    "title": "Title",
+                                    "title": "Заголовок",
                                     "notePosition": 10,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -2717,7 +2717,7 @@
                                         "BFs8mudNFgCS",
                                         "p9kXRFAkwN4o"
                                     ],
-                                    "title": "Note Icons & Colors",
+                                    "title": "Значки и цвета заметок",
                                     "notePosition": 20,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -2761,7 +2761,7 @@
                                         "BFs8mudNFgCS",
                                         "0vhv7lsOLy82"
                                     ],
-                                    "title": "Attachments",
+                                    "title": "Вложения",
                                     "notePosition": 60,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -2796,7 +2796,7 @@
                                         "BFs8mudNFgCS",
                                         "IakOLONlIfGI"
                                     ],
-                                    "title": "Cloning Notes",
+                                    "title": "Клонирование заметок",
                                     "notePosition": 70,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -2842,7 +2842,7 @@
                                                 "IakOLONlIfGI",
                                                 "TBwsyfadTA18"
                                             ],
-                                            "title": "Branch prefix",
+                                            "title": "Префикс ветви",
                                             "notePosition": 10,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -2879,7 +2879,7 @@
                                         "BFs8mudNFgCS",
                                         "bwg0e8ewQMak"
                                     ],
-                                    "title": "Protected Notes",
+                                    "title": "Защищённые заметки",
                                     "notePosition": 80,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -2923,7 +2923,7 @@
                                         "BFs8mudNFgCS",
                                         "MKmLg5x6xkor"
                                     ],
-                                    "title": "Archived Notes",
+                                    "title": "Архивные заметки",
                                     "notePosition": 90,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -2967,7 +2967,7 @@
                                         "BFs8mudNFgCS",
                                         "vZWERwf8U3nx"
                                     ],
-                                    "title": "Note Revisions",
+                                    "title": "Ревизии заметки",
                                     "notePosition": 100,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -3011,7 +3011,7 @@
                                         "BFs8mudNFgCS",
                                         "aGlEvb9hyDhS"
                                     ],
-                                    "title": "Sorting Notes",
+                                    "title": "Сортировка заметок",
                                     "notePosition": 110,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -3046,7 +3046,7 @@
                                         "BFs8mudNFgCS",
                                         "NRnIZmSMc5sj"
                                     ],
-                                    "title": "Printing & Exporting as PDF",
+                                    "title": "Печать и экспорт в PDF",
                                     "notePosition": 130,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -3090,7 +3090,7 @@
                                         "BFs8mudNFgCS",
                                         "CoFPLs3dRlXc"
                                     ],
-                                    "title": "Read-Only Notes",
+                                    "title": "Заметки только для чтения",
                                     "notePosition": 140,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -3125,7 +3125,7 @@
                                         "BFs8mudNFgCS",
                                         "0ESUbbAxVnoK"
                                     ],
-                                    "title": "Note List",
+                                    "title": "Список заметок",
                                     "notePosition": 150,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -3169,7 +3169,7 @@
                                         "BFs8mudNFgCS",
                                         "S0Fos78ZfcY7"
                                     ],
-                                    "title": "Note Inbox",
+                                    "title": "Входящие заметки",
                                     "notePosition": 160,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -3204,7 +3204,7 @@
                                         "BFs8mudNFgCS",
                                         "5Ct4MAJTS4tQ"
                                     ],
-                                    "title": "Restoring Deleted Notes",
+                                    "title": "Восстановление удалённых заметок",
                                     "notePosition": 170,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -3239,7 +3239,7 @@
                                         "BFs8mudNFgCS",
                                         "m3VlURMSeOrd"
                                     ],
-                                    "title": "New note type switcher",
+                                    "title": "Переключатель типа новой заметки",
                                     "notePosition": 180,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -3283,7 +3283,7 @@
                                         "BFs8mudNFgCS",
                                         "B5dihXRDksTk"
                                     ],
-                                    "title": "Note badges",
+                                    "title": "Значки заметки",
                                     "notePosition": 190,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -3327,7 +3327,7 @@
                                         "BFs8mudNFgCS",
                                         "Bsm4fyzPJkSc"
                                     ],
-                                    "title": "Save status indicator",
+                                    "title": "Индикатор состояния сохранения",
                                     "notePosition": 210,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -3372,7 +3372,7 @@
                                 "gh7bpGYxajRS",
                                 "wArbEsdSae6g"
                             ],
-                            "title": "Navigation",
+                            "title": "Навигация",
                             "notePosition": 50,
                             "prefix": null,
                             "isExpanded": false,
@@ -3407,7 +3407,7 @@
                                         "wArbEsdSae6g",
                                         "kBrnXNG3Hplm"
                                     ],
-                                    "title": "Tree Concepts",
+                                    "title": "Концепции дерева",
                                     "notePosition": 10,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -3442,7 +3442,7 @@
                                         "wArbEsdSae6g",
                                         "MMiBEQljMQh2"
                                     ],
-                                    "title": "Note Navigation",
+                                    "title": "Навигация по заметкам",
                                     "notePosition": 30,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -3486,7 +3486,7 @@
                                         "wArbEsdSae6g",
                                         "Ms1nauBra7gq"
                                     ],
-                                    "title": "Quick search",
+                                    "title": "Быстрый поиск",
                                     "notePosition": 40,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -3530,7 +3530,7 @@
                                         "wArbEsdSae6g",
                                         "F1r9QtzQLZqm"
                                     ],
-                                    "title": "Jump to & command palette",
+                                    "title": "«Переход к» и палитра команд",
                                     "notePosition": 50,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -3582,7 +3582,7 @@
                                         "wArbEsdSae6g",
                                         "eIg8jdvaoNNd"
                                     ],
-                                    "title": "Search",
+                                    "title": "Поиск",
                                     "notePosition": 60,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -3628,7 +3628,7 @@
                                                 "eIg8jdvaoNNd",
                                                 "Oxyb6jOjjVNL"
                                             ],
-                                            "title": "Under the hood",
+                                            "title": "Внутреннее устройство",
                                             "notePosition": 10,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -3664,7 +3664,7 @@
                                                 "eIg8jdvaoNNd",
                                                 "WbjlujkUhEb5"
                                             ],
-                                            "title": "How search matches your text",
+                                            "title": "Как поиск сопоставляет ваш текст",
                                             "notePosition": 20,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -3701,7 +3701,7 @@
                                         "wArbEsdSae6g",
                                         "u3YFHC9tQlpm"
                                     ],
-                                    "title": "Bookmarks",
+                                    "title": "Закладки",
                                     "notePosition": 70,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -3736,7 +3736,7 @@
                                         "wArbEsdSae6g",
                                         "OR8WJ7Iz9K4U"
                                     ],
-                                    "title": "Note Hoisting",
+                                    "title": "Поднятие заметки (Note Hoisting)",
                                     "notePosition": 80,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -3780,7 +3780,7 @@
                                         "wArbEsdSae6g",
                                         "ZjLYv08Rp3qC"
                                     ],
-                                    "title": "Quick edit",
+                                    "title": "Быстрое редактирование",
                                     "notePosition": 90,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -3824,7 +3824,7 @@
                                         "wArbEsdSae6g",
                                         "9sRHySam5fXb"
                                     ],
-                                    "title": "Workspaces",
+                                    "title": "Рабочие области",
                                     "notePosition": 90,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -3876,7 +3876,7 @@
                                         "wArbEsdSae6g",
                                         "xWtq5NUHOwql"
                                     ],
-                                    "title": "Similar Notes",
+                                    "title": "Похожие заметки",
                                     "notePosition": 100,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -3920,7 +3920,7 @@
                                         "wArbEsdSae6g",
                                         "McngOG2jbUWX"
                                     ],
-                                    "title": "Search in note",
+                                    "title": "Поиск в заметке",
                                     "notePosition": 110,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -3965,7 +3965,7 @@
                                 "gh7bpGYxajRS",
                                 "A9Oc6YKKc65v"
                             ],
-                            "title": "Keyboard Shortcuts",
+                            "title": "Сочетания клавиш",
                             "notePosition": 60,
                             "prefix": null,
                             "isExpanded": false,
@@ -3999,7 +3999,7 @@
                                 "gh7bpGYxajRS",
                                 "Wy267RK4M69c"
                             ],
-                            "title": "Themes",
+                            "title": "Темы",
                             "notePosition": 80,
                             "prefix": null,
                             "isExpanded": false,
@@ -4060,7 +4060,7 @@
                                         "Wy267RK4M69c",
                                         "VbjZvtUek0Ln"
                                     ],
-                                    "title": "Theme Gallery",
+                                    "title": "Галерея тем",
                                     "notePosition": 10,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -4095,7 +4095,7 @@
                                         "Wy267RK4M69c",
                                         "gOKqSJgXLcIj"
                                     ],
-                                    "title": "Icon Packs",
+                                    "title": "Наборы значков",
                                     "notePosition": 20,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -4139,7 +4139,7 @@
                                         "Wy267RK4M69c",
                                         "w4rMEhJsALlA"
                                     ],
-                                    "title": "Personalizing the font",
+                                    "title": "Персонализация шрифта",
                                     "notePosition": 30,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -4175,7 +4175,7 @@
                                 "gh7bpGYxajRS",
                                 "mHbBMPDPkVV5"
                             ],
-                            "title": "Import & Export",
+                            "title": "Импорт и экспорт",
                             "notePosition": 90,
                             "prefix": null,
                             "isExpanded": false,
@@ -4281,7 +4281,7 @@
                                                 "Oau6X9rCuegd",
                                                 "rJ9grSgoExl9"
                                             ],
-                                            "title": "Supported syntax",
+                                            "title": "Поддерживаемый синтаксис",
                                             "notePosition": 10,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -4318,7 +4318,7 @@
                                         "mHbBMPDPkVV5",
                                         "ckZ2uNWQmVeX"
                                     ],
-                                    "title": "Importing data from other applications",
+                                    "title": "Импорт данных из других приложений",
                                     "notePosition": 40,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -4400,7 +4400,7 @@
                                                         "GnhlmrATVqcH",
                                                         "LpvyEIBIAAj7"
                                                     ],
-                                                    "title": "Tags",
+                                                    "title": "Теги",
                                                     "notePosition": 10,
                                                     "prefix": null,
                                                     "isExpanded": false,
@@ -4548,7 +4548,7 @@
                                                         "syuSEKf2rUGr",
                                                         "dj3j8dG4th4l"
                                                     ],
-                                                    "title": "Process internal links by title",
+                                                    "title": "Обработка внутренних ссылок по заголовку",
                                                     "notePosition": 10,
                                                     "prefix": null,
                                                     "isExpanded": false,
@@ -4652,7 +4652,7 @@
                                 "gh7bpGYxajRS",
                                 "rC3pL2aptaRE"
                             ],
-                            "title": "Zen mode",
+                            "title": "Режим дзена",
                             "notePosition": 100,
                             "prefix": null,
                             "isExpanded": false,
@@ -4711,7 +4711,7 @@
                                 "gh7bpGYxajRS",
                                 "YzMcWlCVeW09"
                             ],
-                            "title": "Active content",
+                            "title": "Активное содержимое",
                             "notePosition": 110,
                             "prefix": null,
                             "isExpanded": false,
@@ -4746,7 +4746,7 @@
                         "pOsGYCXsbNQG",
                         "s3YCWHBfmYuM"
                     ],
-                    "title": "Quick Start",
+                    "title": "Быстрый старт",
                     "notePosition": 60,
                     "prefix": null,
                     "isExpanded": false,
@@ -4779,7 +4779,7 @@
                         "pOsGYCXsbNQG",
                         "i6dbnitykE5D"
                     ],
-                    "title": "FAQ",
+                    "title": "Частые вопросы",
                     "notePosition": 70,
                     "prefix": null,
                     "isExpanded": false,
@@ -4812,7 +4812,7 @@
                         "pOsGYCXsbNQG",
                         "KSZ04uQ2D1St"
                     ],
-                    "title": "Note Types",
+                    "title": "Типы заметок",
                     "notePosition": 130,
                     "prefix": null,
                     "isExpanded": false,
@@ -4856,7 +4856,7 @@
                                 "KSZ04uQ2D1St",
                                 "iPIMuisry3hd"
                             ],
-                            "title": "Text",
+                            "title": "Текст",
                             "notePosition": 10,
                             "prefix": null,
                             "isExpanded": false,
@@ -4931,7 +4931,7 @@
                                         "iPIMuisry3hd",
                                         "oSuaNgyyKnhu"
                                     ],
-                                    "title": "Anchors",
+                                    "title": "Якоря",
                                     "notePosition": 10,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -4966,7 +4966,7 @@
                                         "iPIMuisry3hd",
                                         "dDYOyeOGdZRS"
                                     ],
-                                    "title": "Aside blocks",
+                                    "title": "Боковые блоки (Aside)",
                                     "notePosition": 20,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -5001,7 +5001,7 @@
                                         "iPIMuisry3hd",
                                         "oI7GoyilXXAr"
                                     ],
-                                    "title": "Automatic replacements",
+                                    "title": "Автоматические замены",
                                     "notePosition": 30,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -5036,7 +5036,7 @@
                                         "iPIMuisry3hd",
                                         "NwBbFdNZ9h7O"
                                     ],
-                                    "title": "Block quotes & admonitions",
+                                    "title": "Цитаты и блоки уведомлений (Admonitions)",
                                     "notePosition": 40,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -5088,7 +5088,7 @@
                                         "iPIMuisry3hd",
                                         "klC3ilXa9kUE"
                                     ],
-                                    "title": "Block references",
+                                    "title": "Ссылки на блоки",
                                     "notePosition": 50,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -5123,7 +5123,7 @@
                                         "iPIMuisry3hd",
                                         "4n4oQUVbnOxa"
                                     ],
-                                    "title": "Collapsible blocks",
+                                    "title": "Сворачиваемые блоки",
                                     "notePosition": 60,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -5158,7 +5158,7 @@
                                         "iPIMuisry3hd",
                                         "ExlzCSENCWaF"
                                     ],
-                                    "title": "Collapsible headings",
+                                    "title": "Сворачиваемые заголовки",
                                     "notePosition": 70,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -5193,7 +5193,7 @@
                                         "iPIMuisry3hd",
                                         "veGu4faJErEM"
                                     ],
-                                    "title": "Content language & Right-to-left support",
+                                    "title": "Язык содержимого и поддержка письма справа налево",
                                     "notePosition": 80,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -5237,7 +5237,7 @@
                                         "iPIMuisry3hd",
                                         "EK2ckIZ74tbT"
                                     ],
-                                    "title": "Content tabs",
+                                    "title": "Вкладки содержимого",
                                     "notePosition": 90,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -5272,7 +5272,7 @@
                                         "iPIMuisry3hd",
                                         "2x0ZAX9ePtzV"
                                     ],
-                                    "title": "Cut to subnote",
+                                    "title": "Вырезать в подзаметку",
                                     "notePosition": 100,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -5316,7 +5316,7 @@
                                         "iPIMuisry3hd",
                                         "UYuUB1ZekNQU"
                                     ],
-                                    "title": "Developer-specific formatting",
+                                    "title": "Форматирование для разработчиков",
                                     "notePosition": 110,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -5378,7 +5378,7 @@
                                                 "UYuUB1ZekNQU",
                                                 "QxEyIjRBizuC"
                                             ],
-                                            "title": "Code blocks",
+                                            "title": "Блоки кода",
                                             "notePosition": 10,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -5432,7 +5432,7 @@
                                         "iPIMuisry3hd",
                                         "AgjCISero73a"
                                     ],
-                                    "title": "Footnotes",
+                                    "title": "Сноски",
                                     "notePosition": 120,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -5476,7 +5476,7 @@
                                         "iPIMuisry3hd",
                                         "5wZallV2Qo1t"
                                     ],
-                                    "title": "Format Painter",
+                                    "title": "Копирование формата",
                                     "notePosition": 130,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -5520,7 +5520,7 @@
                                         "iPIMuisry3hd",
                                         "nRhnJkTT8cPs"
                                     ],
-                                    "title": "Formatting toolbar",
+                                    "title": "Панель форматирования",
                                     "notePosition": 140,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -5588,7 +5588,7 @@
                                         "iPIMuisry3hd",
                                         "Gr6xFaF6ioJ5"
                                     ],
-                                    "title": "General formatting",
+                                    "title": "Общее форматирование",
                                     "notePosition": 150,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -5656,7 +5656,7 @@
                                         "iPIMuisry3hd",
                                         "AxshuNRegLAv"
                                     ],
-                                    "title": "Highlights list",
+                                    "title": "Список выделений",
                                     "notePosition": 160,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -5691,7 +5691,7 @@
                                         "iPIMuisry3hd",
                                         "mT0HEkOsz6i1"
                                     ],
-                                    "title": "Images",
+                                    "title": "Изображения",
                                     "notePosition": 170,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -5769,7 +5769,7 @@
                                                 "mT0HEkOsz6i1",
                                                 "0Ofbk1aSuVRu"
                                             ],
-                                            "title": "Image references",
+                                            "title": "Ссылки на изображения",
                                             "notePosition": 10,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -5815,7 +5815,7 @@
                                         "iPIMuisry3hd",
                                         "VRoP0g1uHHc2"
                                     ],
-                                    "title": "In-editor AI assistant",
+                                    "title": "ИИ-помощник в редакторе",
                                     "notePosition": 180,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -5861,7 +5861,7 @@
                                                 "VRoP0g1uHHc2",
                                                 "mVEYwt20exhO"
                                             ],
-                                            "title": "Custom AI quick actions",
+                                            "title": "Пользовательские быстрые действия ИИ",
                                             "notePosition": 10,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -5891,7 +5891,7 @@
                                         "iPIMuisry3hd",
                                         "nBAXQFj20hS1"
                                     ],
-                                    "title": "Include Note",
+                                    "title": "Включение заметки",
                                     "notePosition": 190,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -5919,7 +5919,7 @@
                                         "iPIMuisry3hd",
                                         "CohkqWQC1iBv"
                                     ],
-                                    "title": "Insert buttons",
+                                    "title": "Кнопки вставки",
                                     "notePosition": 200,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -6005,7 +6005,7 @@
                                                 "CohkqWQC1iBv",
                                                 "hD8GawVuazff"
                                             ],
-                                            "title": "Icons",
+                                            "title": "Значки",
                                             "notePosition": 10,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -6042,7 +6042,7 @@
                                         "iPIMuisry3hd",
                                         "oiVPnW8QfnvS"
                                     ],
-                                    "title": "Keyboard shortcuts",
+                                    "title": "Сочетания клавиш",
                                     "notePosition": 210,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -6077,7 +6077,7 @@
                                         "iPIMuisry3hd",
                                         "UmgZAfcltxkS"
                                     ],
-                                    "title": "Link Previews",
+                                    "title": "Предпросмотр ссылок",
                                     "notePosition": 220,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -6137,7 +6137,7 @@
                                         "iPIMuisry3hd",
                                         "QEAPj01N5f7w"
                                     ],
-                                    "title": "Links",
+                                    "title": "Ссылки",
                                     "notePosition": 230,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -6174,7 +6174,7 @@
                                                 "QEAPj01N5f7w",
                                                 "3IDVtesTQ8ds"
                                             ],
-                                            "title": "External links",
+                                            "title": "Внешние ссылки",
                                             "notePosition": 10,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -6210,7 +6210,7 @@
                                                 "QEAPj01N5f7w",
                                                 "hrZ1D00cLbal"
                                             ],
-                                            "title": "Internal (reference) links",
+                                            "title": "Внутренние (ссылочные) ссылки",
                                             "notePosition": 20,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -6246,7 +6246,7 @@
                                                 "QEAPj01N5f7w",
                                                 "wfGXLmm7x27z"
                                             ],
-                                            "title": "Backlinks",
+                                            "title": "Обратные ссылки",
                                             "notePosition": 30,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -6283,7 +6283,7 @@
                                         "iPIMuisry3hd",
                                         "S6Xx8QIWTV66"
                                     ],
-                                    "title": "Lists",
+                                    "title": "Списки",
                                     "notePosition": 240,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -6367,7 +6367,7 @@
                                         "iPIMuisry3hd",
                                         "QrtTYPmdd1qq"
                                     ],
-                                    "title": "Markdown-like formatting",
+                                    "title": "Markdown-подобное форматирование",
                                     "notePosition": 250,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -6402,7 +6402,7 @@
                                         "iPIMuisry3hd",
                                         "YfYAtQBcfo5V"
                                     ],
-                                    "title": "Math Equations",
+                                    "title": "Математические уравнения",
                                     "notePosition": 260,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -6446,7 +6446,7 @@
                                         "iPIMuisry3hd",
                                         "wYDzQ1fBFgfT"
                                     ],
-                                    "title": "Multicolumn layout",
+                                    "title": "Многоколоночная разметка",
                                     "notePosition": 270,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -6481,7 +6481,7 @@
                                         "iPIMuisry3hd",
                                         "dEHYtoWWi8ct"
                                     ],
-                                    "title": "Other features",
+                                    "title": "Другие функции",
                                     "notePosition": 280,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -6533,7 +6533,7 @@
                                         "iPIMuisry3hd",
                                         "gLt3vA97tMcp"
                                     ],
-                                    "title": "Premium features",
+                                    "title": "Премиум-функции",
                                     "notePosition": 290,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -6568,7 +6568,7 @@
                                         "iPIMuisry3hd",
                                         "ZlN4nump6EbW"
                                     ],
-                                    "title": "Slash Commands",
+                                    "title": "Слэш-команды",
                                     "notePosition": 300,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -6612,7 +6612,7 @@
                                         "iPIMuisry3hd",
                                         "0vgWgxQAWj4a"
                                     ],
-                                    "title": "Sorting",
+                                    "title": "Сортировка",
                                     "notePosition": 310,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -6647,7 +6647,7 @@
                                         "iPIMuisry3hd",
                                         "oBo3iHIZnbG2"
                                     ],
-                                    "title": "Spell Check",
+                                    "title": "Проверка орфографии",
                                     "notePosition": 320,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -6682,7 +6682,7 @@
                                         "iPIMuisry3hd",
                                         "BFvAtE74rbP6"
                                     ],
-                                    "title": "Table of contents",
+                                    "title": "Оглавление",
                                     "notePosition": 330,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -6717,7 +6717,7 @@
                                         "iPIMuisry3hd",
                                         "NdowYOC1GFKS"
                                     ],
-                                    "title": "Tables",
+                                    "title": "Таблицы",
                                     "notePosition": 340,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -6785,7 +6785,7 @@
                                         "iPIMuisry3hd",
                                         "pwc194wlRzcH"
                                     ],
-                                    "title": "Text Snippets",
+                                    "title": "Текстовые фрагменты",
                                     "notePosition": 350,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -6814,7 +6814,7 @@
                                         "iPIMuisry3hd",
                                         "fASfBrYnquKU"
                                     ],
-                                    "title": "To-do Lists",
+                                    "title": "Списки задач",
                                     "notePosition": 360,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -6858,7 +6858,7 @@
                                         "iPIMuisry3hd",
                                         "enVNpi1Njswq"
                                     ],
-                                    "title": "Vim mode",
+                                    "title": "Режим Vim",
                                     "notePosition": 370,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -6895,7 +6895,7 @@
                                                 "enVNpi1Njswq",
                                                 "qxtXjXzFOEn1"
                                             ],
-                                            "title": "Vim beginner guide",
+                                            "title": "Руководство по Vim для начинающих",
                                             "notePosition": 10,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -6931,7 +6931,7 @@
                                                 "enVNpi1Njswq",
                                                 "EF1o4L2hif4c"
                                             ],
-                                            "title": "Vim full reference",
+                                            "title": "Полный справочник по Vim",
                                             "notePosition": 20,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -6969,7 +6969,7 @@
                                 "KSZ04uQ2D1St",
                                 "6f9hih2hXXZk"
                             ],
-                            "title": "Code",
+                            "title": "Код",
                             "notePosition": 40,
                             "prefix": null,
                             "isExpanded": false,
@@ -7012,7 +7012,7 @@
                                 "KSZ04uQ2D1St",
                                 "m523cpzocqaD"
                             ],
-                            "title": "Saved Search",
+                            "title": "Сохранённый поиск",
                             "notePosition": 60,
                             "prefix": null,
                             "isExpanded": false,
@@ -7055,7 +7055,7 @@
                                 "KSZ04uQ2D1St",
                                 "iRwzGnHPzonm"
                             ],
-                            "title": "Relation Map",
+                            "title": "Карта отношений",
                             "notePosition": 70,
                             "prefix": null,
                             "isExpanded": false,
@@ -7122,7 +7122,7 @@
                                 "KSZ04uQ2D1St",
                                 "bdUJEHsAPYQR"
                             ],
-                            "title": "Note Map",
+                            "title": "Карта заметок",
                             "notePosition": 90,
                             "prefix": null,
                             "isExpanded": false,
@@ -7165,7 +7165,7 @@
                                 "KSZ04uQ2D1St",
                                 "HcABDtFCkbFN"
                             ],
-                            "title": "Render Note",
+                            "title": "Заметка-рендер (Render Note)",
                             "notePosition": 110,
                             "prefix": null,
                             "isExpanded": false,
@@ -7208,7 +7208,7 @@
                                 "KSZ04uQ2D1St",
                                 "s1aBHPd79XYj"
                             ],
-                            "title": "Mermaid Diagrams",
+                            "title": "Диаграммы Mermaid",
                             "notePosition": 140,
                             "prefix": null,
                             "isExpanded": false,
@@ -7253,7 +7253,7 @@
                                         "s1aBHPd79XYj",
                                         "RH6yLjjWJHof"
                                     ],
-                                    "title": "ELK layout",
+                                    "title": "Компоновка ELK",
                                     "notePosition": 30,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -7305,7 +7305,7 @@
                                         "s1aBHPd79XYj",
                                         "WWgeUaBb7UfC"
                                     ],
-                                    "title": "Syntax reference",
+                                    "title": "Справочник синтаксиса",
                                     "notePosition": 40,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -7340,7 +7340,7 @@
                                 "KSZ04uQ2D1St",
                                 "grjYqerjn243"
                             ],
-                            "title": "Canvas",
+                            "title": "Холст",
                             "notePosition": 170,
                             "prefix": null,
                             "isExpanded": false,
@@ -7383,7 +7383,7 @@
                                 "KSZ04uQ2D1St",
                                 "1vHRoWCEjj0L"
                             ],
-                            "title": "Web View",
+                            "title": "Веб-представление",
                             "notePosition": 180,
                             "prefix": null,
                             "isExpanded": false,
@@ -7460,7 +7460,7 @@
                                 "KSZ04uQ2D1St",
                                 "W8vYD3Q1zjCR"
                             ],
-                            "title": "File",
+                            "title": "Файл",
                             "notePosition": 210,
                             "prefix": null,
                             "isExpanded": false,
@@ -7545,7 +7545,7 @@
                                         "W8vYD3Q1zjCR",
                                         "XJGJrpu7F9sh"
                                     ],
-                                    "title": "PDFs",
+                                    "title": "PDF-файлы",
                                     "notePosition": 10,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -7597,7 +7597,7 @@
                                         "W8vYD3Q1zjCR",
                                         "AjqEeiDUOzj4"
                                     ],
-                                    "title": "Audio & Video",
+                                    "title": "Аудио и видео",
                                     "notePosition": 20,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -7649,7 +7649,7 @@
                                         "W8vYD3Q1zjCR",
                                         "KG48zgNY31NW"
                                     ],
-                                    "title": "Office documents",
+                                    "title": "Офисные документы",
                                     "notePosition": 30,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -7678,7 +7678,7 @@
                                 "KSZ04uQ2D1St",
                                 "GWHEkY4I4OE3"
                             ],
-                            "title": "Spreadsheets",
+                            "title": "Таблицы (Spreadsheets)",
                             "notePosition": 220,
                             "prefix": null,
                             "isExpanded": false,
@@ -7764,7 +7764,7 @@
                                 "KSZ04uQ2D1St",
                                 "jludwdW7N4hg"
                             ],
-                            "title": "Converting between note types",
+                            "title": "Преобразование между типами заметок",
                             "notePosition": 240,
                             "prefix": null,
                             "isExpanded": false,
@@ -7799,7 +7799,7 @@
                         "pOsGYCXsbNQG",
                         "GTwFsgaA0lCt"
                     ],
-                    "title": "Collections",
+                    "title": "Коллекции",
                     "notePosition": 250,
                     "prefix": null,
                     "isExpanded": false,
@@ -7875,7 +7875,7 @@
                                 "GTwFsgaA0lCt",
                                 "xWbu3jpNWapp"
                             ],
-                            "title": "Calendar",
+                            "title": "Календарь",
                             "notePosition": 10,
                             "prefix": null,
                             "isExpanded": false,
@@ -7982,7 +7982,7 @@
                                 "GTwFsgaA0lCt",
                                 "2FvYrpmOXm29"
                             ],
-                            "title": "Table",
+                            "title": "Таблица",
                             "notePosition": 20,
                             "prefix": null,
                             "isExpanded": false,
@@ -8025,7 +8025,7 @@
                                 "GTwFsgaA0lCt",
                                 "CtBQqbwXDx1w"
                             ],
-                            "title": "Kanban Board",
+                            "title": "Kanban-доска",
                             "notePosition": 30,
                             "prefix": null,
                             "isExpanded": false,
@@ -8059,7 +8059,7 @@
                                 "GTwFsgaA0lCt",
                                 "81SGnPGMk7Xc"
                             ],
-                            "title": "Geo Map",
+                            "title": "Геокарта",
                             "notePosition": 40,
                             "prefix": null,
                             "isExpanded": false,
@@ -8135,7 +8135,7 @@
                                         "81SGnPGMk7Xc",
                                         "C2H9HK4BzwG7"
                                     ],
-                                    "title": "Drawing shapes",
+                                    "title": "Рисование фигур",
                                     "notePosition": 10,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -8170,7 +8170,7 @@
                                         "81SGnPGMk7Xc",
                                         "ZRDXGc0nAIh4"
                                     ],
-                                    "title": "Image maps",
+                                    "title": "Карты-изображения",
                                     "notePosition": 20,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -8206,7 +8206,7 @@
                                 "GTwFsgaA0lCt",
                                 "zP3PMqaG71Ct"
                             ],
-                            "title": "Presentation",
+                            "title": "Презентация",
                             "notePosition": 90,
                             "prefix": null,
                             "isExpanded": false,
@@ -8257,7 +8257,7 @@
                                 "GTwFsgaA0lCt",
                                 "8QqnMzx393bx"
                             ],
-                            "title": "Grid View",
+                            "title": "Сетка",
                             "notePosition": 100,
                             "prefix": null,
                             "isExpanded": false,
@@ -8300,7 +8300,7 @@
                                 "GTwFsgaA0lCt",
                                 "mULW0Q3VojwY"
                             ],
-                            "title": "List View",
+                            "title": "Список",
                             "notePosition": 110,
                             "prefix": null,
                             "isExpanded": false,
@@ -8343,7 +8343,7 @@
                                 "GTwFsgaA0lCt",
                                 "CssoWBu8I7jF"
                             ],
-                            "title": "Collection Properties",
+                            "title": "Свойства коллекции",
                             "notePosition": 120,
                             "prefix": null,
                             "isExpanded": false,
@@ -8386,7 +8386,7 @@
                                 "GTwFsgaA0lCt",
                                 "IF7Q6I9x7zuw"
                             ],
-                            "title": "Dashboard",
+                            "title": "Дашборд (Dashboard)",
                             "notePosition": 130,
                             "prefix": null,
                             "isExpanded": false,
@@ -8430,7 +8430,7 @@
                         "pOsGYCXsbNQG",
                         "BgmBlOIl72jZ"
                     ],
-                    "title": "Troubleshooting",
+                    "title": "Устранение неполадок",
                     "notePosition": 260,
                     "prefix": null,
                     "isExpanded": false,
@@ -8465,7 +8465,7 @@
                                 "BgmBlOIl72jZ",
                                 "wy8So3yZZlH9"
                             ],
-                            "title": "Reporting issues",
+                            "title": "Сообщение о проблемах",
                             "notePosition": 10,
                             "prefix": null,
                             "isExpanded": false,
@@ -8499,7 +8499,7 @@
                                 "BgmBlOIl72jZ",
                                 "x59R8J8KV5Bp"
                             ],
-                            "title": "Anonymized Database",
+                            "title": "Анонимизированная база данных",
                             "notePosition": 20,
                             "prefix": null,
                             "isExpanded": false,
@@ -8542,7 +8542,7 @@
                                 "BgmBlOIl72jZ",
                                 "qzNzp9LYQyPT"
                             ],
-                            "title": "Error logs",
+                            "title": "Журналы ошибок",
                             "notePosition": 30,
                             "prefix": null,
                             "isExpanded": false,
@@ -8587,7 +8587,7 @@
                                         "qzNzp9LYQyPT",
                                         "bnyigUA2UK7s"
                                     ],
-                                    "title": "Backend (server) logs",
+                                    "title": "Журналы бэкенда (сервера)",
                                     "notePosition": 10,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -8622,7 +8622,7 @@
                                         "qzNzp9LYQyPT",
                                         "9yEHzMyFirZR"
                                     ],
-                                    "title": "Frontend logs",
+                                    "title": "Журналы фронтенда",
                                     "notePosition": 20,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -8675,7 +8675,7 @@
                                 "BgmBlOIl72jZ",
                                 "vdlYGAcpXAgc"
                             ],
-                            "title": "Synchronization fails with 504 Gateway Timeout",
+                            "title": "Синхронизация завершается с ошибкой 504 Gateway Timeout",
                             "notePosition": 50,
                             "prefix": null,
                             "isExpanded": false,
@@ -8709,7 +8709,7 @@
                                 "BgmBlOIl72jZ",
                                 "s8alTXmpFR61"
                             ],
-                            "title": "Refreshing the application",
+                            "title": "Обновление приложения",
                             "notePosition": 60,
                             "prefix": null,
                             "isExpanded": false,
@@ -8744,7 +8744,7 @@
                         "pOsGYCXsbNQG",
                         "pKK96zzmvBGf"
                     ],
-                    "title": "Theme development",
+                    "title": "Разработка тем",
                     "notePosition": 270,
                     "prefix": null,
                     "isExpanded": false,
@@ -8778,7 +8778,7 @@
                                 "pKK96zzmvBGf",
                                 "7NfNr5pZpVKV"
                             ],
-                            "title": "Creating a custom theme",
+                            "title": "Создание собственной темы",
                             "notePosition": 10,
                             "prefix": null,
                             "isExpanded": false,
@@ -8861,7 +8861,7 @@
                                 "pKK96zzmvBGf",
                                 "WFGzWeUK6arS"
                             ],
-                            "title": "Customize the Next theme",
+                            "title": "Настройка темы Next",
                             "notePosition": 20,
                             "prefix": null,
                             "isExpanded": false,
@@ -8904,7 +8904,7 @@
                                 "pKK96zzmvBGf",
                                 "WN5z4M8ASACJ"
                             ],
-                            "title": "Reference",
+                            "title": "Справочник",
                             "notePosition": 30,
                             "prefix": null,
                             "isExpanded": false,
@@ -8938,7 +8938,7 @@
                                 "pKK96zzmvBGf",
                                 "AlhDUqhENtH7"
                             ],
-                            "title": "Custom app-wide CSS",
+                            "title": "Пользовательский CSS для всего приложения",
                             "notePosition": 40,
                             "prefix": null,
                             "isExpanded": false,
@@ -8981,7 +8981,7 @@
                                 "pKK96zzmvBGf",
                                 "g1mlRoU8CsqC"
                             ],
-                            "title": "Creating an icon pack",
+                            "title": "Создание набора значков",
                             "notePosition": 50,
                             "prefix": null,
                             "isExpanded": false,
@@ -9016,7 +9016,7 @@
                         "pOsGYCXsbNQG",
                         "tC7s2alapj8V"
                     ],
-                    "title": "Advanced Usage",
+                    "title": "Продвинутое использование",
                     "notePosition": 330,
                     "prefix": null,
                     "isExpanded": false,
@@ -9050,7 +9050,7 @@
                                 "tC7s2alapj8V",
                                 "zEY4DaJG4YT5"
                             ],
-                            "title": "Attributes",
+                            "title": "Атрибуты",
                             "notePosition": 10,
                             "prefix": null,
                             "isExpanded": false,
@@ -9095,7 +9095,7 @@
                                         "zEY4DaJG4YT5",
                                         "HI6GBBIduIgv"
                                     ],
-                                    "title": "Labels",
+                                    "title": "Метки",
                                     "notePosition": 10,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -9130,7 +9130,7 @@
                                         "zEY4DaJG4YT5",
                                         "Cq5X6iKQop6R"
                                     ],
-                                    "title": "Relations",
+                                    "title": "Отношения",
                                     "notePosition": 20,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -9165,7 +9165,7 @@
                                         "zEY4DaJG4YT5",
                                         "bwZpz2ajCEwO"
                                     ],
-                                    "title": "Attribute Inheritance",
+                                    "title": "Наследование атрибутов",
                                     "notePosition": 30,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -9200,7 +9200,7 @@
                                         "zEY4DaJG4YT5",
                                         "OFXdgB2nNk1F"
                                     ],
-                                    "title": "Promoted Attributes",
+                                    "title": "Продвигаемые атрибуты",
                                     "notePosition": 40,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -9269,7 +9269,7 @@
                                 "tC7s2alapj8V",
                                 "KC1HB96bqqHX"
                             ],
-                            "title": "Templates",
+                            "title": "Шаблоны",
                             "notePosition": 30,
                             "prefix": null,
                             "isExpanded": false,
@@ -9320,7 +9320,7 @@
                                 "tC7s2alapj8V",
                                 "B2ORr7OVEZtc"
                             ],
-                            "title": "Snippets",
+                            "title": "Фрагменты (Snippets)",
                             "notePosition": 40,
                             "prefix": null,
                             "isExpanded": false,
@@ -9356,7 +9356,7 @@
                                         "B2ORr7OVEZtc",
                                         "VQjhl61rlWh9"
                                     ],
-                                    "title": "Markdown Snippets",
+                                    "title": "Markdown-фрагменты",
                                     "notePosition": 20,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -9391,7 +9391,7 @@
                                         "B2ORr7OVEZtc",
                                         "IEgsWp5hHH35"
                                     ],
-                                    "title": "Code Snippets",
+                                    "title": "Кодовые фрагменты",
                                     "notePosition": 21,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -9426,7 +9426,7 @@
                                         "B2ORr7OVEZtc",
                                         "pwc194wlRzcH"
                                     ],
-                                    "title": "Text Snippets",
+                                    "title": "Текстовые фрагменты",
                                     "prefix": null,
                                     "dataFileName": "Text Snippets.clone.md",
                                     "type": "text",
@@ -9443,7 +9443,7 @@
                                 "tC7s2alapj8V",
                                 "BCkXAVs63Ttv"
                             ],
-                            "title": "Note Map (Link map, Tree map)",
+                            "title": "Карта заметок (Link map, Tree map)",
                             "notePosition": 50,
                             "prefix": null,
                             "isExpanded": false,
@@ -9494,7 +9494,7 @@
                                 "tC7s2alapj8V",
                                 "R9pX4DGra2Vt"
                             ],
-                            "title": "Sharing",
+                            "title": "Публикация (Sharing)",
                             "notePosition": 70,
                             "prefix": null,
                             "isExpanded": false,
@@ -9547,7 +9547,7 @@
                                         "R9pX4DGra2Vt",
                                         "Qjt68inQ2bRj"
                                     ],
-                                    "title": "Serving directly the content of a note",
+                                    "title": "Отдача содержимого заметки напрямую",
                                     "notePosition": 10,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -9599,7 +9599,7 @@
                                         "R9pX4DGra2Vt",
                                         "ycBFjKrrwE9p"
                                     ],
-                                    "title": "Exporting static HTML for web publishing",
+                                    "title": "Экспорт статического HTML для веб-публикации",
                                     "notePosition": 20,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -9634,7 +9634,7 @@
                                         "R9pX4DGra2Vt",
                                         "sLIJ6f1dkJYW"
                                     ],
-                                    "title": "Reverse proxy configuration",
+                                    "title": "Конфигурация обратного прокси",
                                     "notePosition": 30,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -9669,7 +9669,7 @@
                                         "R9pX4DGra2Vt",
                                         "Ad7Ku5gOHrDU"
                                     ],
-                                    "title": "Custom share template",
+                                    "title": "Пользовательский шаблон публикации",
                                     "notePosition": 40,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -9705,7 +9705,7 @@
                                 "tC7s2alapj8V",
                                 "5668rwcirq1t"
                             ],
-                            "title": "Advanced Showcases",
+                            "title": "Продвинутые примеры",
                             "notePosition": 100,
                             "prefix": null,
                             "isExpanded": false,
@@ -9741,7 +9741,7 @@
                                         "5668rwcirq1t",
                                         "l0tKav7yLHGF"
                                     ],
-                                    "title": "Day Notes",
+                                    "title": "Заметки дня",
                                     "notePosition": 10,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -9793,7 +9793,7 @@
                                         "5668rwcirq1t",
                                         "R7abl2fc6Mxi"
                                     ],
-                                    "title": "Weight Tracker",
+                                    "title": "Трекер веса",
                                     "notePosition": 20,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -9837,7 +9837,7 @@
                                         "5668rwcirq1t",
                                         "xYjQUYhpbUEW"
                                     ],
-                                    "title": "Task Manager",
+                                    "title": "Менеджер задач",
                                     "notePosition": 30,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -9882,7 +9882,7 @@
                                 "tC7s2alapj8V",
                                 "i16PM6A7GXdU"
                             ],
-                            "title": "Customizing to-do task states",
+                            "title": "Настройка состояний задач списка дел",
                             "notePosition": 110,
                             "prefix": null,
                             "isExpanded": false,
@@ -9916,7 +9916,7 @@
                                 "tC7s2alapj8V",
                                 "J5Ex1ZrMbyJ6"
                             ],
-                            "title": "Custom Request Handler",
+                            "title": "Пользовательский обработчик запросов",
                             "notePosition": 120,
                             "prefix": null,
                             "isExpanded": false,
@@ -9950,7 +9950,7 @@
                                 "tC7s2alapj8V",
                                 "d3fAXQ2diepH"
                             ],
-                            "title": "Custom Resource Providers",
+                            "title": "Пользовательские поставщики ресурсов",
                             "notePosition": 130,
                             "prefix": null,
                             "isExpanded": false,
@@ -10020,7 +10020,7 @@
                                         "pgxEVkzLl1OP",
                                         "9qPsTWBorUhQ"
                                     ],
-                                    "title": "API Reference",
+                                    "title": "Справочник API",
                                     "notePosition": 10,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -10063,7 +10063,7 @@
                                 "tC7s2alapj8V",
                                 "47ZrP6FNuoG8"
                             ],
-                            "title": "Default Note Title",
+                            "title": "Заголовок заметки по умолчанию",
                             "notePosition": 170,
                             "prefix": null,
                             "isExpanded": false,
@@ -10097,7 +10097,7 @@
                                 "tC7s2alapj8V",
                                 "wX4HbRucYSDD"
                             ],
-                            "title": "Database",
+                            "title": "База данных",
                             "notePosition": 190,
                             "prefix": null,
                             "isExpanded": false,
@@ -10133,7 +10133,7 @@
                                         "wX4HbRucYSDD",
                                         "oyIAJ9PvvwHX"
                                     ],
-                                    "title": "Manually altering the database",
+                                    "title": "Ручное изменение базы данных",
                                     "notePosition": 10,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -10179,7 +10179,7 @@
                                                 "oyIAJ9PvvwHX",
                                                 "YKWqdJhzi2VY"
                                             ],
-                                            "title": "SQL Console",
+                                            "title": "SQL-консоль",
                                             "notePosition": 10,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -10233,7 +10233,7 @@
                                         "wX4HbRucYSDD",
                                         "6tZeKvSHEUiB"
                                     ],
-                                    "title": "Demo Notes",
+                                    "title": "Демонстрационные заметки",
                                     "notePosition": 20,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -10269,7 +10269,7 @@
                                 "tC7s2alapj8V",
                                 "Gzjqa934BdH4"
                             ],
-                            "title": "Configuration (config.ini or environment variables)",
+                            "title": "Конфигурация (config.ini или переменные окружения)",
                             "notePosition": 200,
                             "prefix": null,
                             "isExpanded": false,
@@ -10305,7 +10305,7 @@
                                         "Gzjqa934BdH4",
                                         "c5xB8m4g2IY6"
                                     ],
-                                    "title": "Trilium instance",
+                                    "title": "Экземпляр Trilium",
                                     "notePosition": 10,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -10376,7 +10376,7 @@
                                 "tC7s2alapj8V",
                                 "ivYnonVFBxbQ"
                             ],
-                            "title": "Bulk Actions",
+                            "title": "Массовые действия",
                             "notePosition": 220,
                             "prefix": null,
                             "isExpanded": false,
@@ -10419,7 +10419,7 @@
                                 "tC7s2alapj8V",
                                 "4FahAwuGTAwC"
                             ],
-                            "title": "Note source",
+                            "title": "Исходный код заметки",
                             "notePosition": 230,
                             "prefix": null,
                             "isExpanded": false,
@@ -10462,7 +10462,7 @@
                                 "tC7s2alapj8V",
                                 "1YeN2MzFUluU"
                             ],
-                            "title": "Technologies used",
+                            "title": "Используемые технологии",
                             "notePosition": 240,
                             "prefix": null,
                             "isExpanded": false,
@@ -10534,7 +10534,7 @@
                                 "tC7s2alapj8V",
                                 "m1lbrzyKDaRB"
                             ],
-                            "title": "Note ID",
+                            "title": "ID заметки",
                             "notePosition": 250,
                             "prefix": null,
                             "isExpanded": false,
@@ -10568,7 +10568,7 @@
                                 "tC7s2alapj8V",
                                 "0vTSyvhPTAOz"
                             ],
-                            "title": "Internal API",
+                            "title": "Внутренний API",
                             "notePosition": 260,
                             "prefix": null,
                             "isExpanded": false,
@@ -10603,7 +10603,7 @@
                                         "0vTSyvhPTAOz",
                                         "z8O2VG4ZZJD7"
                                     ],
-                                    "title": "API Reference",
+                                    "title": "Справочник API",
                                     "notePosition": 10,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -10639,7 +10639,7 @@
                                 "tC7s2alapj8V",
                                 "2mUhVmZK8RF3"
                             ],
-                            "title": "Hidden Notes",
+                            "title": "Скрытые заметки",
                             "notePosition": 270,
                             "prefix": null,
                             "isExpanded": false,
@@ -10682,7 +10682,7 @@
                                 "tC7s2alapj8V",
                                 "uYF7pmepw27K"
                             ],
-                            "title": "Metrics",
+                            "title": "Метрики",
                             "notePosition": 280,
                             "prefix": null,
                             "isExpanded": false,
@@ -10771,7 +10771,7 @@
                                 "tC7s2alapj8V",
                                 "64ZTlUPgEPtW"
                             ],
-                            "title": "Safe mode",
+                            "title": "Безопасный режим",
                             "notePosition": 290,
                             "prefix": null,
                             "isExpanded": false,
@@ -10805,7 +10805,7 @@
                                 "tC7s2alapj8V",
                                 "HAIOFBoYIIdO"
                             ],
-                            "title": "Nightly release",
+                            "title": "Ночные сборки",
                             "notePosition": 310,
                             "prefix": null,
                             "isExpanded": false,
@@ -10839,7 +10839,7 @@
                                 "tC7s2alapj8V",
                                 "ZmT9ln8XJX2o"
                             ],
-                            "title": "Read-only database",
+                            "title": "База данных только для чтения",
                             "notePosition": 320,
                             "prefix": null,
                             "isExpanded": false,
@@ -10873,7 +10873,7 @@
                                 "tC7s2alapj8V",
                                 "TiQbQDgP8L5t"
                             ],
-                            "title": "Text Extraction (OCR)",
+                            "title": "Извлечение текста (OCR)",
                             "notePosition": 330,
                             "prefix": null,
                             "isExpanded": false,
@@ -10901,7 +10901,7 @@
                         "pOsGYCXsbNQG",
                         "GBBMSlVSOIGP"
                     ],
-                    "title": "AI",
+                    "title": "ИИ",
                     "notePosition": 340,
                     "prefix": null,
                     "isExpanded": false,
@@ -10936,7 +10936,7 @@
                                 "GBBMSlVSOIGP",
                                 "bkPZAMT7d2sR"
                             ],
-                            "title": "Providers",
+                            "title": "Провайдеры",
                             "notePosition": 10,
                             "prefix": null,
                             "isExpanded": false,
@@ -10972,7 +10972,7 @@
                                         "bkPZAMT7d2sR",
                                         "eFhxp9laTW1S"
                                     ],
-                                    "title": "Subscription-based providers",
+                                    "title": "Провайдеры по подписке",
                                     "notePosition": 10,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -11008,7 +11008,7 @@
                                 "GBBMSlVSOIGP",
                                 "cRRrdZjgyhNc"
                             ],
-                            "title": "Privacy",
+                            "title": "Конфиденциальность",
                             "notePosition": 20,
                             "prefix": null,
                             "isExpanded": false,
@@ -11070,7 +11070,7 @@
                         "pOsGYCXsbNQG",
                         "Y84QCbArmK3z"
                     ],
-                    "title": "Meeting transcription",
+                    "title": "Расшифровка встреч",
                     "notePosition": 350,
                     "prefix": null,
                     "isExpanded": false,
@@ -11103,7 +11103,7 @@
                         "pOsGYCXsbNQG",
                         "CdNpE2pqjmI6"
                     ],
-                    "title": "Scripting",
+                    "title": "Скриптинг",
                     "notePosition": 360,
                     "prefix": null,
                     "isExpanded": false,
@@ -11138,7 +11138,7 @@
                                 "CdNpE2pqjmI6",
                                 "yIhgI5H7A2Sm"
                             ],
-                            "title": "Frontend Basics",
+                            "title": "Основы фронтенда",
                             "notePosition": 20,
                             "prefix": null,
                             "isExpanded": false,
@@ -11174,7 +11174,7 @@
                                         "yIhgI5H7A2Sm",
                                         "MgibgPcfeuGz"
                                     ],
-                                    "title": "Custom Widgets",
+                                    "title": "Пользовательские виджеты",
                                     "notePosition": 10,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -11211,7 +11211,7 @@
                                                 "MgibgPcfeuGz",
                                                 "SynTBQiBsdYJ"
                                             ],
-                                            "title": "Widget Basics",
+                                            "title": "Основы создания виджетов",
                                             "notePosition": 10,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -11240,7 +11240,7 @@
                                                 "MgibgPcfeuGz",
                                                 "GhurYZjh8e1V"
                                             ],
-                                            "title": "Note context aware widget",
+                                            "title": "Виджет, отслеживающий контекст заметки",
                                             "notePosition": 20,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -11269,7 +11269,7 @@
                                                 "MgibgPcfeuGz",
                                                 "M8IppdwVHSjG"
                                             ],
-                                            "title": "Right pane widget",
+                                            "title": "Виджет правой панели",
                                             "notePosition": 30,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -11298,7 +11298,7 @@
                                                 "MgibgPcfeuGz",
                                                 "YNxAqkI5Kg1M"
                                             ],
-                                            "title": "Word count widget",
+                                            "title": "Виджет подсчёта слов",
                                             "notePosition": 40,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -11365,7 +11365,7 @@
                                                 "MgibgPcfeuGz",
                                                 "gMkgcLJ6jBkg"
                                             ],
-                                            "title": "Troubleshooting",
+                                            "title": "Устранение неполадок",
                                             "notePosition": 80,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -11395,7 +11395,7 @@
                                         "yIhgI5H7A2Sm",
                                         "es8OU2GuguFU"
                                     ],
-                                    "title": "Examples",
+                                    "title": "Примеры",
                                     "notePosition": 20,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -11431,7 +11431,7 @@
                                                 "es8OU2GuguFU",
                                                 "TjLYAo3JMO8X"
                                             ],
-                                            "title": "\"New Task\" launcher button",
+                                            "title": "Кнопка «Новая задача» на панели запуска",
                                             "notePosition": 10,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -11467,7 +11467,7 @@
                                                 "es8OU2GuguFU",
                                                 "7kZPMD0uFwkH"
                                             ],
-                                            "title": "Downloading responses from Google Forms",
+                                            "title": "Загрузка ответов из Google Forms",
                                             "notePosition": 20,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -11496,7 +11496,7 @@
                                                 "es8OU2GuguFU",
                                                 "DL92EjAaXT26"
                                             ],
-                                            "title": "Using promoted attributes to configure scripts",
+                                            "title": "Использование продвигаемых атрибутов для настройки скриптов",
                                             "notePosition": 30,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -11535,7 +11535,7 @@
                                         "yIhgI5H7A2Sm",
                                         "4Gn3psZKsfSm"
                                     ],
-                                    "title": "Launch Bar Widgets",
+                                    "title": "Виджеты панели запуска",
                                     "notePosition": 30,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -11572,7 +11572,7 @@
                                                 "4Gn3psZKsfSm",
                                                 "IPArqVfDQ4We"
                                             ],
-                                            "title": "Note Title Widget",
+                                            "title": "Виджет заголовка заметки",
                                             "notePosition": 10,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -11617,7 +11617,7 @@
                                                 "4Gn3psZKsfSm",
                                                 "gcI7RPbaNSh3"
                                             ],
-                                            "title": "Analog Watch",
+                                            "title": "Аналоговые часы",
                                             "notePosition": 20,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -11700,7 +11700,7 @@
                                                 "KLsqhjaqh1QW",
                                                 "Bqde6BvPo05g"
                                             ],
-                                            "title": "Component libraries",
+                                            "title": "Библиотеки компонентов",
                                             "notePosition": 10,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -11736,7 +11736,7 @@
                                                 "KLsqhjaqh1QW",
                                                 "ykYtbM9k3a7B"
                                             ],
-                                            "title": "Hooks",
+                                            "title": "Хуки",
                                             "notePosition": 20,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -11808,7 +11808,7 @@
                                                 "KLsqhjaqh1QW",
                                                 "RSssb9S3xgSr"
                                             ],
-                                            "title": "Built-in components",
+                                            "title": "Встроенные компоненты",
                                             "notePosition": 40,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -11855,7 +11855,7 @@
                                                         "RSssb9S3xgSr",
                                                         "i9B4IW7b6V6z"
                                                     ],
-                                                    "title": "Widget showcase",
+                                                    "title": "Витрина виджетов",
                                                     "notePosition": 10,
                                                     "prefix": null,
                                                     "isExpanded": false,
@@ -11886,7 +11886,7 @@
                                         "yIhgI5H7A2Sm",
                                         "irkwjdNtjcxR"
                                     ],
-                                    "title": "Frontend Events",
+                                    "title": "События фронтенда",
                                     "notePosition": 50,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -11922,7 +11922,7 @@
                                 "CdNpE2pqjmI6",
                                 "SPirpZypehBG"
                             ],
-                            "title": "Backend scripts",
+                            "title": "Бэкенд-скрипты",
                             "notePosition": 30,
                             "prefix": null,
                             "isExpanded": false,
@@ -11958,7 +11958,7 @@
                                         "SPirpZypehBG",
                                         "fZ2IGYFXjkEy"
                                     ],
-                                    "title": "Server-side imports",
+                                    "title": "Серверные импорты",
                                     "notePosition": 10,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -11986,7 +11986,7 @@
                                         "SPirpZypehBG",
                                         "GPERMystNGTB"
                                     ],
-                                    "title": "Backend Events",
+                                    "title": "События бэкенда",
                                     "notePosition": 20,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -12022,7 +12022,7 @@
                                 "CdNpE2pqjmI6",
                                 "wqXwKJl6VpNk"
                             ],
-                            "title": "Common concepts",
+                            "title": "Общие понятия",
                             "notePosition": 40,
                             "prefix": null,
                             "isExpanded": false,
@@ -12057,7 +12057,7 @@
                                         "wqXwKJl6VpNk",
                                         "hA834UaHhSNn"
                                     ],
-                                    "title": "Script bundles",
+                                    "title": "Пакеты скриптов",
                                     "notePosition": 10,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -12291,7 +12291,7 @@
                                 "CdNpE2pqjmI6",
                                 "vElnKeDNPSVl"
                             ],
-                            "title": "Logging",
+                            "title": "Журналирование",
                             "notePosition": 120,
                             "prefix": null,
                             "isExpanded": false,
@@ -12334,7 +12334,7 @@
                                 "CdNpE2pqjmI6",
                                 "cNpC0ITcfX0N"
                             ],
-                            "title": "Breaking changes",
+                            "title": "Критические изменения",
                             "notePosition": 130,
                             "prefix": null,
                             "isExpanded": false,
@@ -12389,7 +12389,7 @@
                                         "cNpC0ITcfX0N",
                                         "IjZS7iK5EXtb"
                                     ],
-                                    "title": "v0.107.0: Removal of the old layout",
+                                    "title": "v0.107.0: Удаление старого макета",
                                     "notePosition": 10,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -12424,7 +12424,7 @@
                                         "cNpC0ITcfX0N",
                                         "kTx7WqLdZ3Ry"
                                     ],
-                                    "title": "v0.106.0: Removal of cheerio",
+                                    "title": "v0.106.0: Удаление cheerio",
                                     "notePosition": 20,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -12452,7 +12452,7 @@
                                         "cNpC0ITcfX0N",
                                         "YeOa2l7Pu39I"
                                     ],
-                                    "title": "v0.104.0: Disabling the Node integration in Electron",
+                                    "title": "v0.104.0: Отключение интеграции Node в Electron",
                                     "notePosition": 30,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -12480,7 +12480,7 @@
                                         "cNpC0ITcfX0N",
                                         "fqAK6opjUagR"
                                     ],
-                                    "title": "v0.103.0: Removal of axios",
+                                    "title": "v0.103.0: Удаление axios",
                                     "notePosition": 40,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -12508,7 +12508,7 @@
                                         "cNpC0ITcfX0N",
                                         "pAJ0jWz16xFm"
                                     ],
-                                    "title": "v0.103.0: `cheerio` is now deprecated",
+                                    "title": "v0.103.0: `cheerio` объявлена устаревшей",
                                     "notePosition": 50,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -12536,7 +12536,7 @@
                                         "cNpC0ITcfX0N",
                                         "72dxvnbnkDFY"
                                     ],
-                                    "title": "v0.102.0: Upgrade to jQuery 4.0.0",
+                                    "title": "v0.102.0: Обновление до jQuery 4.0.0",
                                     "notePosition": 60,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -12565,7 +12565,7 @@
                                 "CdNpE2pqjmI6",
                                 "fiHicjpHjIRJ"
                             ],
-                            "title": "Security",
+                            "title": "Безопасность",
                             "notePosition": 140,
                             "prefix": null,
                             "isExpanded": false,
@@ -12600,7 +12600,7 @@
                         "pOsGYCXsbNQG",
                         "Fm0j45KqyHpU"
                     ],
-                    "title": "Miscellaneous",
+                    "title": "Разное",
                     "notePosition": 370,
                     "prefix": null,
                     "isExpanded": false,
@@ -12634,7 +12634,7 @@
                                 "Fm0j45KqyHpU",
                                 "WFbFXrgnDyyU"
                             ],
-                            "title": "Privacy Policy",
+                            "title": "Политика конфиденциальности",
                             "notePosition": 10,
                             "prefix": null,
                             "isExpanded": false,
@@ -12661,7 +12661,7 @@
                                 "Fm0j45KqyHpU",
                                 "NcsmUYZRWEW4"
                             ],
-                            "title": "Patterns of personal knowledge",
+                            "title": "Паттерны организации личной базы знаний",
                             "notePosition": 20,
                             "prefix": null,
                             "isExpanded": false,
@@ -12697,7 +12697,7 @@
                                 "Fm0j45KqyHpU",
                                 "d1Ap6Pg6IjaJ"
                             ],
-                            "title": "License",
+                            "title": "Лицензия",
                             "notePosition": 40,
                             "prefix": null,
                             "isExpanded": false,

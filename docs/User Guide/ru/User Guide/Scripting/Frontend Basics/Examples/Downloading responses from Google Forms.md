@@ -1,20 +1,20 @@
-# Downloading responses from Google Forms
-This tutorial showcases a basic integration with Google Forms, where we are able to download the responses of a form using the “Link to Sheets" functionality.
+# Загрузка ответов из Google Forms
+В этом руководстве показана базовая интеграция с Google Forms, позволяющая загружать ответы формы с помощью функции «Связать с Таблицами» (Link to Sheets).
 
-Note that the link will be publicly accessible to everyone (however the link is in a hard-to-guess format such as `https://docs.google.com/spreadsheets/d/e/2PACX-1vTA8NU2_eZFhc8TFadCZPreBfvP7un8IHd6J0SchrLLw3ueGmntNZjwRmsH2ZRcp1pJYDAzMz1FmFaj/pub?output=csv`). Make sure you are not accidentally publishing sensitive information.
+Обратите внимание, что ссылка будет общедоступна всем (однако она имеет трудноугадываемый формат, например `https://docs.google.com/spreadsheets/d/e/2PACX-1vTA8NU2_eZFhc8TFadCZPreBfvP7un8IHd6J0SchrLLw3ueGmntNZjwRmsH2ZRcp1pJYDAzMz1FmFaj/pub?output=csv`). Убедитесь, что вы случайно не публикуете конфиденциальную информацию.
 
-## Obtaining the CSV link
+## Получение ссылки на CSV
 
-1.  Open the Google Forms in a browser.
-2.  Select the “Responses” tab and click on “Link to Sheets”.
-3.  Select “Create a new spreadsheet” and press “Create”.
-4.  In Google Sheets, select File → Share → Publish to web.
-5.  In the “Publish to the web” screen, make sure the “Link” tab is selected and instead of “Web page”, select “Comma-separated values (.csv)”.
-6.  Copy the given link which will be used for the upcoming script.
+1.  Откройте Google Forms в браузере.
+2.  Перейдите на вкладку «Ответы» и нажмите «Связать с Таблицами» (Link to Sheets).
+3.  Выберите «Создать новую таблицу» и нажмите «Создать».
+4.  В Google Таблицах выберите Файл → Поделиться → Опубликовать в интернете.
+5.  В окне «Опубликовать в интернете» убедитесь, что выбрана вкладка «Ссылка», и вместо «Веб-страница» выберите «Значения, разделённые запятыми (.csv)».
+6.  Скопируйте полученную ссылку — она понадобится для скрипта.
 
-## Creating the script
+## Создание скрипта
 
-Create a “JS Frontend” script:
+Создайте скрипт типа «JS Frontend»:
 
 ```
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTiwooLV2whjCSVa49dJ99p_G3_qhqHHRqttMjYCJVfLXVdTgUSNJu5K0rpqmaHYF2k7Vofi3o7gW82/pub?output=csv";
@@ -33,7 +33,7 @@ console.log(data);
 // Do something with the data.
 ```
 
-Note that the data will be received as a string and there is no library to do the CSV parsing for us. To do a very simple parsing of CSV:
+Обратите внимание, что данные придут в виде строки, а встроенной библиотеки для разбора CSV нет. Для максимально простого разбора CSV можно использовать следующий код:
 
 ```
 const content = data
@@ -42,4 +42,4 @@ const content = data
 	.map((row) => row.split(","));
 ```
 
-This will return the data as an array of arrays.
+Это вернёт данные в виде массива массивов.

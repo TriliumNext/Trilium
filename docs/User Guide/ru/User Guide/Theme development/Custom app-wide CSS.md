@@ -1,33 +1,33 @@
-# Custom app-wide CSS
-It is possible to provide a CSS file to be used regardless of the theme set by the user.
+# Пользовательский CSS для всего приложения
+Можно подключить CSS-файл, который будет применяться независимо от выбранной пользователем темы.
 
-The quickest way to create one is _Insert child note_ → _Code_ → _Custom CSS_ in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree/Note%20tree%20contextual%20menu.md">Note tree contextual menu</a>.
+Самый быстрый способ создать его — выбрать _Вставить дочернюю заметку_ → _Код_ → _Пользовательский CSS_ (_Insert child note_ → _Code_ → _Custom CSS_) в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree/Note%20tree%20contextual%20menu.md">контекстном меню дерева заметок</a>.
 
-Alternatively, create a <a class="reference-link" href="../Note%20Types/Code.md">Code</a> note manually, set the language to CSS and apply the `#appCss` label.
+Либо создайте заметку типа <a class="reference-link" href="../Note%20Types/Code.md">Код</a> вручную, выберите язык CSS и добавьте метку `#appCss`.
 
-## Seeing the changes
+## Просмотр изменений
 
-Adding a new _app CSS note_ or modifying an existing one does not immediately apply changes. To see the changes, press Ctrl+Shift+R to refresh the page first.
+Добавление новой _заметки CSS приложения_ или изменение существующей не применяет изменения мгновенно. Чтобы увидеть их, сначала нажмите Ctrl+Shift+R для обновления страницы.
 
-## Sample use cases
+## Примеры использования
 
-### Customizing the printing stylesheet
+### Настройка стилей печати
 
 > [!TIP]
-> Since v0.99.2, it's no longer possible to use `#appCss` to customize the printing CSS, since the printing is now done in an isolated environment.
+> Начиная с v0.99.2, использовать `#appCss` для настройки CSS печати больше нельзя, так как печать теперь выполняется в изолированной среде.
 > 
-> However, it's still possible to customize the CSS via `~printCss`; see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Printing%20%26%20Exporting%20as%20PDF.md">Printing &amp; Exporting as PDF</a> for more information.
+> Тем не менее вы всё ещё можете настроить CSS с помощью `~printCss`; подробнее см. в разделе <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Printing%20%26%20Exporting%20as%20PDF.md">Печать и экспорт в PDF</a>.
 
-### Per-workspace styles
+### Стили для отдельных рабочих пространств
 
-When using <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Workspaces.md">Workspaces</a>, it can be helpful to create a visual distinction between notes in different workspaces.
+При использовании <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Workspaces.md">рабочих пространств</a> бывает полезно визуально различать заметки из разных рабочих пространств.
 
-To do so:
+Для этого:
 
-1.  In the note with `#workspace`, add an inheritable attribute `#cssClass(inheritable)` with a value that uniquely identifies the workspace (say `my-workspace`).
-2.  Anywhere in the note structure, create a CSS note with `#appCss`.
+1.  В заметке с `#workspace` добавьте наследуемый атрибут `#cssClass(inheritable)` со значением, уникально идентифицирующим рабочее пространство (например, `my-workspace`).
+2.  В любом месте структуры заметок создайте CSS-заметку с меткой `#appCss`.
 
-#### Change the color of the icons in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>
+#### Изменение цвета значков в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">дереве заметок</a>
 
 ```
 .fancytree-node.my-workspace.fancytree-custom-icon {
@@ -35,9 +35,9 @@ To do so:
 }
 ```
 
-#### Change the color of the note title and the icon
+#### Изменение цвета заголовка и значка заметки
 
-To change the color of the note title and the icon (above the content):
+Чтобы изменить цвет заголовка заметки и её значка (над содержимым):
 
 ```
 .note-split.my-workspace .note-icon-widget button.note-icon,
@@ -46,12 +46,12 @@ To change the color of the note title and the icon (above the content):
 }
 ```
 
-#### Add a watermark to the note content
+#### Добавление водяного знака на содержимое заметки
 
 <figure class="image image-style-align-right image_resized" style="width:39.97%;"><img style="aspect-ratio:641/630;" src="Custom app-wide CSS_image.png" width="641" height="630"></figure>
 
-1.  Insert an image in any note and take the URL of the image.
-2.  Use the following CSS, adjusting the `background-image` and `width` and `height` to the desired values.
+1.  Вставьте изображение в любую заметку и скопируйте его URL.
+2.  Используйте следующий CSS, настроив `background-image`, `width` и `height` по своему усмотрению.
 
 ```
 .note-split.my-workspace .scrolling-container:after {
@@ -70,8 +70,8 @@ To change the color of the note title and the icon (above the content):
 }
 ```
 
-## Limitations
+## Ограничения
 
-Some parts of the application can't be styled directly via custom CSS because they are rendered in an isolated mode (shadow DOM), more specifically:
+Некоторые части приложения нельзя стилизовать напрямую через пользовательский CSS, поскольку они отображаются в изолированном режиме (shadow DOM), в частности:
 
-*   The slides in a <a class="reference-link" href="../Collections/Presentation.md">Presentation</a>.
+*   Слайды в <a class="reference-link" href="../Collections/Presentation.md">презентации</a>.

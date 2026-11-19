@@ -1,50 +1,50 @@
-# Downloaded resources
-Downloaded resources are large files that some features need but that do not ship with Trilium, such as the speech recognition models used to transcribe meetings. Trilium downloads them the first time a feature needs them, and keeps them on the device for later use.
+# Загружаемые ресурсы
+Загружаемые ресурсы — это крупные файлы, которые необходимы некоторым функциям, но не входят в стандартную поставку Trilium, например модели распознавания речи, используемые для расшифровки встреч. Trilium загружает их при первом обращении к соответствующей функции и сохраняет на устройстве для дальнейшего использования.
 
-Currently, only <a class="reference-link" href="../Meeting%20transcription.md">Meeting transcription</a> on the desktop application uses downloaded resources:
+В настоящее время загружаемые ресурсы использует только <a class="reference-link" href="../Meeting%20transcription.md">расшифровка встреч</a> в настольном приложении:
 
-| Resource | Size | License | Used for |
+| Ресурс | Размер | Лицензия | Назначение |
 | --- | --- | --- | --- |
-| Parakeet TDT 0.6B v3 (standard) | 0.6 GB | CC-BY-4.0 | Recognizing speech, with the _Standard_ model. |
-| Parakeet TDT 0.6B v3 (high accuracy) | 2.4 GB | CC-BY-4.0 | Recognizing speech, with the _High accuracy_ model. |
-| Silero VAD | 0.6 MB | MIT | Detecting when someone speaks. |
-| TitaNet | 40 MB | Apache-2.0 | Telling speakers apart, while _Identify speakers_ is on. |
+| Parakeet TDT 0.6B v3 (standard) | 0.6 GB | CC-BY-4.0 | Распознавание речи с моделью _Standard_. |
+| Parakeet TDT 0.6B v3 (high accuracy) | 2.4 GB | CC-BY-4.0 | Распознавание речи с моделью _High accuracy_. |
+| Silero VAD | 0.6 MB | MIT | Определение моментов, когда кто-то говорит. |
+| TitaNet | 40 MB | Apache-2.0 | Различение говорящих при включённом параметре _Identify speakers_. |
 
-## Downloading resources
+## Загрузка ресурсов
 
-When a feature needs resources that are not on the device yet, Trilium asks before downloading them. The dialog lists each resource with what it is used for, where it is downloaded from, its license and its size, followed by the total download size and the free space on the disk.
+Когда функции требуются ресурсы, которых ещё нет на устройстве, Trilium запрашивает подтверждение перед загрузкой. В диалоговом окне перечисляется каждый ресурс с указанием его назначения, источника загрузки, лицензии и размера, а также общий объём загрузки и доступное свободное место на диске.
 
-*   To start the download, press _Download_. Each resource shows its progress, and the feature continues once all of them are downloaded.
-*   To stop the download, press _Cancel_ or close the dialog. The files already downloaded are kept, and the next download continues where this one stopped, even within a large file.
-*   If the disk does not have enough free space, the dialog says so and the download cannot be started.
+*   Чтобы начать загрузку, нажмите _Download_. Для каждого ресурса отображается прогресс, и функция продолжит работу, как только все ресурсы будут загружены.
+*   Чтобы остановить загрузку, нажмите _Cancel_ или закройте окно. Уже загруженные файлы сохраняются, и при следующей попытке загрузка продолжится с места остановки, даже внутри крупного файла.
+*   Если на диске недостаточно свободного места, в окне появится соответствующее предупреждение, и начать загрузку будет невозможно.
 
-Every file is checked against a checksum built into Trilium before it is used, so a file that was damaged or altered during the download is discarded.
+Перед использованием каждый файл проверяется по контрольной сумме, встроенной в Trilium, поэтому повреждённый или изменённый при загрузке файл отбрасывается.
 
 > [!NOTE]
-> Downloaded resources are not synchronized. Each device that uses a feature downloads its resources separately, even when the notes are kept in sync through <a class="reference-link" href="Synchronization.md">Synchronization</a>.
+> Загружаемые ресурсы не синхронизируются. Каждое устройство, использующее соответствующую функцию, загружает ресурсы отдельно, даже если заметки синхронизируются через <a class="reference-link" href="Synchronization.md">синхронизацию</a>.
 
-## Managing downloaded resources
+## Управление загружаемыми ресурсами
 
-To see the downloaded resources, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Downloaded resources_. Each resource that was downloaded, or partly downloaded by an interrupted download, is listed with the space it takes on the disk and its status. Below the list, _Space used_ shows the space they take in total, and how much free space is left on the disk.
+Чтобы просмотреть загруженные ресурсы, перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Downloaded resources_. Каждый загруженный или частично загруженный (после прерванной загрузки) ресурс отображается с указанием занимаемого места на диске и статуса. Под списком в строке _Space used_ показано общее занятое пространство и объём свободного места на диске.
 
-*   To open the folder of a resource, press the <span class="tn-icon bx bx-folder-open"></span> button (desktop only).
-*   To delete a resource, press the <span class="tn-icon bx bx-trash"></span> button. If a feature needs it again, it is downloaded again.
+*   Чтобы открыть папку ресурса, нажмите кнопку <span class="tn-icon bx bx-folder-open"></span> (только в настольном приложении).
+*   Чтобы удалить ресурс, нажмите кнопку <span class="tn-icon bx bx-trash"></span>. Если он снова понадобится какой-либо функции, он будет загружен заново.
 
-The list also shows, faded out, anything else in the resources folder:
+В списке также отображается (приглушённым цветом) всё остальное содержимое папки ресурсов:
 
-*   _Older version_: the files of an earlier version of a resource. When a resource is updated, the new version is downloaded into a new folder, and the old one is left behind.
-*   _Not used_: a resource that no feature of this installation uses, for example one downloaded by a feature that was removed.
-*   _Unknown_: any other file or folder, for example one copied there by hand.
+*   _Older version_: файлы более ранней версии ресурса. При обновлении ресурса новая версия загружается в новую папку, а старая остаётся на диске.
+*   _Not used_: ресурс, который не используется ни одной функцией данной установки, например загруженный для удалённой функции.
+*   _Unknown_: любой другой файл или папка, например скопированные туда вручную.
 
-These can be deleted in the same way.
+Их можно удалить тем же способом.
 
 > [!WARNING]
-> If a server and a desktop application share the same data directory, a resource used by only one of them shows as _Not used_ in the other. Deleting it there removes it for both.
+> Если сервер и настольное приложение используют один и тот же каталог данных, ресурс, используемый только одним из них, будет отображаться как _Not used_ в другом. Его удаление приведёт к удалению ресурса для обоих приложений.
 
-## Location
+## Расположение
 
-The resources are stored in the `resources` folder of the <a class="reference-link" href="Data%20directory.md">Data directory</a>, one folder per resource. To store them elsewhere, set the `TRILIUM_RESOURCES_DIR` environment variable to another folder before starting Trilium.
+Ресурсы хранятся в папке `resources` внутри <a class="reference-link" href="Data%20directory.md">каталога данных</a>, по одной папке на каждый ресурс. Чтобы хранить их в другом месте, задайте переменную окружения `TRILIUM_RESOURCES_DIR` с путём к другой папке перед запуском Trilium.
 
-## Installing without an Internet connection
+## Установка без подключения к интернету
 
-To install a resource on a device that cannot download it, copy its folder from the `resources` folder of a device that already has it into the same place on the other device. The next time a feature asks to download it, press _Download_: the files already in place are checked against their checksums and kept, and only the missing ones are downloaded.
+Чтобы установить ресурс на устройстве без доступа к сети, скопируйте его папку из каталога `resources` устройства, где он уже загружен, в то же место на другом устройстве. При следующем запросе на загрузку нажмите _Download_: уже имеющиеся файлы будут проверены по контрольным суммам и сохранены, а загружены будут только недостающие.

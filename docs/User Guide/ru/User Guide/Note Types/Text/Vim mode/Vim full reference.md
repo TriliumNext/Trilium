@@ -1,473 +1,473 @@
-# Vim full reference
-This page lists the keys and commands of Vim mode, for text notes and for <a class="reference-link" href="../../Code.md">Code</a> notes. Unless a row says otherwise, it applies to both. For an introduction, see <a class="reference-link" href="Vim%20beginner%20guide.md">Vim beginner guide</a>; for the settings, the keys used most and how text notes are read as lines, see <a class="reference-link" href="../Vim%20mode.md">Vim mode</a>.
+# Полный справочник по Vim
+На этой странице перечислены клавиши и команды режима Vim для текстовых заметок и <a class="reference-link" href="../../Code.md">заметок с кодом</a>. Если в строке не указано иное, она относится к обоим типам. Введение см. в <a class="reference-link" href="Vim%20beginner%20guide.md">Руководстве по Vim для начинающих</a>; настройки, самые частые клавиши и принцип представления текстовых заметок в виде строк см. в разделе <a class="reference-link" href="../Vim%20mode.md">Режим Vim</a>.
 
-## Reading the tables
+## Как читать таблицы
 
-*   Keys typed one after another are written together: `dd` is `d` pressed twice. Keys held together are written with a plus sign: <kbd>Ctrl</kbd>+<kbd>R</kbd>.
-*   `{motion}` stands for any key from _Motions_, `{char}` for any character, `{count}` for a number and `{register}` for the name of a register.
-*   Unless a section says otherwise, the keys are typed in Normal mode.
-*   In a browser on Windows and Linux, <kbd>Ctrl</kbd>+<kbd>W</kbd>, <kbd>Ctrl</kbd>+<kbd>T</kbd> and <kbd>Ctrl</kbd>+<kbd>N</kbd> are kept by the browser, which closes a tab or opens a tab or a window, so they never reach Trilium. The rows that use them say so. The desktop app and macOS are not affected.
+*   Клавиши, нажимаемые одна за другой, записаны слитно: `dd` означает нажать `d` дважды. Клавиши, удерживаемые одновременно, записаны через знак плюс: <kbd>Ctrl</kbd>+<kbd>R</kbd>.
+*   `{motion}` обозначает любую клавишу из раздела _Перемещения_, `{char}` — любой символ, `{count}` — число, `{register}` — имя регистра.
+*   Если в разделе не указано иное, клавиши вводятся в обычном режиме (Normal).
+*   В браузере на Windows и Linux сочетания <kbd>Ctrl</kbd>+<kbd>W</kbd>, <kbd>Ctrl</kbd>+<kbd>T</kbd> и <kbd>Ctrl</kbd>+<kbd>N</kbd> перехватываются браузером (закрывают или открывают вкладку/окно), поэтому не доходят до Trilium. В строках, где они используются, это отмечено. Настольного приложения и macOS это не касается.
 
-A badge at the end of a description tells where the row applies:
+Метка в конце описания указывает, где применима строка:
 
-*   **Text notes only**: not available in code notes.
-*   **Code notes only**: not available in text notes.
-*   **Trilium-exclusive**: a command introduced by Trilium, or a command of Vim whose behavior is adapted to Trilium.
+*   **Только текстовые заметки**: недоступно в заметках с кодом.
+*   **Только заметки с кодом**: недоступно в текстовых заметках.
+*   **Эксклюзивно для Trilium**: команда, добавленная в Trilium, или команда Vim, поведение которой адаптировано под Trilium.
 
-### Available, but not guaranteed
+### Доступно, но без гарантий
 
-In text notes, most keys and commands are adapted to rich text and tested with it. The ones below work as they do in Vim on plain text, but they have been tested less with the structures of a text note, such as tables, images and nested lists. If one of them makes an unexpected change to the text, press `u` to undo it, and check the result before going on. The app lists them under the same name, in the list of keys and in the command line.
+В текстовых заметках большинство клавиш и команд адаптировано для форматированного текста и протестировано с ним. Перечисленные ниже функции работают так же, как в Vim с обычным текстом, но меньше тестировались со структурами текстовой заметки (таблицами, изображениями, вложенными списками). Если какая-то из них внесёт неожиданное изменение, нажмите `u` для отмены и проверьте результат перед продолжением. Приложение перечисляет их под тем же названием в списке клавиш и в командной строке.
 
-*   Macros: `q` and `@`.
-*   Registers with a name: `"a` to `"z`, the numbered ones and the special ones. This does not include the register used when none is named, or the clipboard registers `"+` and `"*`.
-*   Marks: `m`, `'` and `` ` ``.
-*   These commands of the command line: `:g`, `:v`, `:normal`, `:d`, `:y`, `:pu`, `:j`, `:registers`, `:marks`, `:delmarks`, and the key mappings (`:map` and its variants, `:unmap`, `:mapclear`).
+*   Макросы: `q` и `@`.
+*   Именованные регистры: от `"a` до `"z`, нумерованные и специальные. Сюда не относятся регистр по умолчанию и регистры буфера обмена `"+` и `"*`.
+*   Метки (marks): `m`, `'` и `` ` ``.
+*   Следующие команды командной строки: `:g`, `:v`, `:normal`, `:d`, `:y`, `:pu`, `:j`, `:registers`, `:marks`, `:delmarks`, а также привязки клавиш (`:map` и её варианты, `:unmap`, `:mapclear`).
 
-The sections below say so again where it applies. Code notes have no such distinction.
+В разделах ниже это дополнительно отмечено там, где применимо. В заметках с кодом такого разделения нет.
 
-## Help
+## Справка
 
-| Keys | Action |
+| Клавиши | Действие |
 | --- | --- |
-| <kbd>Alt</kbd>+<kbd>F1</kbd> | List the keys of the current mode. While a command is being typed, the keys that can follow it; in the command line, its keys and commands. A click on the mode in the status bar opens the same list. **Trilium-exclusive** **Text notes only** |
+| <kbd>Alt</kbd>+<kbd>F1</kbd> | Показать список клавиш текущего режима. Во время набора команды — клавиши, которые могут за ней следовать; в командной строке — её клавиши и команды. Нажатие на индикатор режима в строке состояния открывает тот же список. **Эксклюзивно для Trilium** **Только текстовые заметки** |
 
-## Counts and repeating
+## Счётчики и повторение
 
-| Keys | Action |
+| Клавиши | Действие |
 | --- | --- |
-| `{count}` before a command | Runs the command that many times: `3w`, `5dd`, `2d3w`. |
-| `.` | Repeats the last change. |
-| `u` | Undoes the last change. |
-| <kbd>Ctrl</kbd>+<kbd>R</kbd> | Redoes the change that was undone. |
+| `{count}` перед командой | Выполняет команду указанное количество раз: `3w`, `5dd`, `2d3w`. |
+| `.` | Повторяет последнее изменение. |
+| `u` | Отменяет последнее изменение. |
+| <kbd>Ctrl</kbd>+<kbd>R</kbd> | Повторяет отменённое изменение. |
 
-## Changing mode
+## Смена режима
 
-| Keys | Action |
+| Клавиши | Действие |
 | --- | --- |
-| `i` / `a` | Insert before / after the cursor. On an image or an included note of a text note, enters its caption or its content. |
-| `I` / `A` | Insert before the first non-blank character / at the end of the line. |
-| `gI` | Insert at the very start of the line. |
-| `gi` | Insert where the last change ended. |
-| `o` / `O` | Open a new line below / above and insert. In text notes, the new line is what <kbd>Enter</kbd> would add there: a paragraph, a list item or a code line. |
-| `s` | Delete the character under the cursor and insert. |
-| `S` | Clear the line and insert. |
-| `R` | Enter Replace mode, where typed characters overwrite the existing ones. <kbd>Backspace</kbd> restores them. |
-| <kbd>Insert</kbd> | Enter Insert mode. In Insert mode, switches between Insert and Replace mode. |
-| `v` | Enter Visual mode, which selects characters. |
-| `V` | Enter Visual Line mode, which selects whole lines. |
-| `gv` | Select the previous selection again. |
-| `:` | Open the command line. |
-| <kbd>Esc</kbd> or <kbd>Ctrl</kbd>+<kbd>[</kbd> | Return to Normal mode, or cancel the keys typed so far. |
-| <kbd>Ctrl</kbd>+<kbd>C</kbd> | The same as <kbd>Esc</kbd>. In text notes, it copies when something is selected. |
+| `i` / `a` | Вставка перед / после курсора. На изображении или встроенной заметке в текстовой заметке переходит к редактированию подписи или содержимого. |
+| `I` / `A` | Вставка перед первым непробельным символом / в конце строки. |
+| `gI` | Вставка в самом начале строки. |
+| `gi` | Вставка в месте, где закончилось последнее изменение. |
+| `o` / `O` | Открыть новую строку ниже / выше и перейти в режим вставки. В текстовых заметках новая строка соответствует тому, что добавил бы <kbd>Enter</kbd>: абзац, элемент списка или строка кода. |
+| `s` | Удалить символ под курсором и перейти в режим вставки. |
+| `S` | Очистить строку и перейти в режим вставки. |
+| `R` | Войти в режим замены (Replace), где вводимые символы заменяют существующие. <kbd>Backspace</kbd> восстанавливает их. |
+| <kbd>Insert</kbd> | Войти в режим вставки. В режиме вставки переключает между режимами вставки и замены. |
+| `v` | Войти в визуальный режим (выделение символов). |
+| `V` | Войти в режим построчного визуального выделения (выделение целых строк). |
+| `gv` | Снова выделить предыдущее выделение. |
+| `:` | Открыть командную строку. |
+| <kbd>Esc</kbd> или <kbd>Ctrl</kbd>+<kbd>[</kbd> | Вернуться в обычный режим или отменить набранные клавиши. |
+| <kbd>Ctrl</kbd>+<kbd>C</kbd> | То же, что <kbd>Esc</kbd>. В текстовых заметках копирует, если есть выделение. |
 
-## Motions
+## Перемещения
 
-A motion moves the cursor. After an operator, it tells how much text the operator takes. In Visual mode, it extends the selection.
+Перемещение сдвигает курсор. После оператора оно определяет, какой фрагмент текста обрабатывает оператор. В визуальном режиме оно расширяет выделение.
 
-### Characters and lines
+### Символы и строки
 
-| Keys | Moves to |
+| Клавиши | Куда перемещает |
 | --- | --- |
-| `h` / `l` | The character on the left / right, within the line. Also <kbd>←</kbd> or <kbd>Backspace</kbd>, and <kbd>→</kbd> or <kbd>Space</kbd>. |
-| `j` / `k` | The line below / above. Also <kbd>↓</kbd> and <kbd>↑</kbd>. In a table of a text note, they move down / up the column. |
-| <kbd>Ctrl</kbd>+<kbd>N</kbd> / <kbd>Ctrl</kbd>+<kbd>P</kbd> | The same as `j` / `k`. <kbd>Ctrl</kbd>+<kbd>N</kbd> does not work in a browser on Windows and Linux. |
-| `gj` / `gk` | The screen line below / above, inside a line that wraps. |
-| `0` or <kbd>Home</kbd> | The start of the line. |
-| `^` | The first non-blank character of the line. |
-| `$` or <kbd>End</kbd> | The end of the line. |
-| `g0` or `g^` / `g$` | The start / end of the screen line. |
-| `{count}\|` | The column with that number. |
-| `+` or <kbd>Enter</kbd> / `-` | The first non-blank character of the next / previous line. |
-| `_` | The first non-blank character of the current line. |
+| `h` / `l` | Символ слева / справа в пределах строки. Также <kbd>←</kbd> или <kbd>Backspace</kbd>, и <kbd>→</kbd> или <kbd>Space</kbd>. |
+| `j` / `k` | Строка ниже / выше. Также <kbd>↓</kbd> и <kbd>↑</kbd>. В таблице текстовой заметки перемещают вниз / вверх по столбцу. |
+| <kbd>Ctrl</kbd>+<kbd>N</kbd> / <kbd>Ctrl</kbd>+<kbd>P</kbd> | То же, что `j` / `k`. <kbd>Ctrl</kbd>+<kbd>N</kbd> не работает в браузере на Windows и Linux. |
+| `gj` / `gk` | Экранная строка ниже / выше внутри перенесённой строки. |
+| `0` или <kbd>Home</kbd> | Начало строки. |
+| `^` | Первый непробельный символ строки. |
+| `$` или <kbd>End</kbd> | Конец строки. |
+| `g0` или `g^` / `g$` | Начало / конец экранной строки. |
+| `{count}\|` | Столбец с указанным номером. |
+| `+` или <kbd>Enter</kbd> / `-` | Первый непробельный символ следующей / предыдущей строки. |
+| `_` | Первый непробельный символ текущей строки. |
 
-### Words and sentences
+### Слова и предложения
 
-| Keys | Moves to |
+| Клавиши | Куда перемещает |
 | --- | --- |
-| `w` / `b` | The start of the next / previous word. |
-| `e` / `ge` | The end of the word / of the previous word. |
-| `W` `B` `E` `gE` | The same, for words separated by spaces only, so that punctuation is part of the word. |
-| `(` / `)` | The start of the previous / next sentence. |
+| `w` / `b` | Начало следующего / предыдущего слова. |
+| `e` / `ge` | Конец слова / предыдущего слова. |
+| `W` `B` `E` `gE` | То же самое для слов, разделённых только пробелами (знаки препинания считаются частью слова). |
+| `(` / `)` | Начало предыдущего / следующего предложения. |
 
-### In the line
+### В пределах строки
 
-| Keys | Moves to |
+| Клавиши | Куда перемещает |
 | --- | --- |
-| `f{char}` / `F{char}` | The next / previous `{char}` in the line. |
-| `t{char}` / `T{char}` | Just before the next / just after the previous `{char}` in the line. |
-| `;` / `,` | Repeat the last `f`, `F`, `t` or `T`, in the same / opposite direction. |
-| `%` | The bracket that matches the one under the cursor: `()`, `[]` or `{}`. |
-| `[(` / `])` | The parenthesis that opens / closes the pair around the cursor. |
-| `[{` / `]}` | The brace that opens / closes the pair around the cursor. |
+| `f{char}` / `F{char}` | Следующий / предыдущий символ `{char}` в строке. |
+| `t{char}` / `T{char}` | Непосредственно перед следующим / сразу после предыдущего `{char}` в строке. |
+| `;` / `,` | Повторить последний `f`, `F`, `t` или `T` в том же / противоположном направлении. |
+| `%` | Парная скобка для той, что под курсором: `()`, `[]` или `{}`. |
+| `[(` / `])` | Открывающая / закрывающая круглая скобка вокруг курсора. |
+| `[{` / `]}` | Открывающая / закрывающая фигурная скобка вокруг курсора. |
 
-### Blocks and headings
+### Блоки и заголовки
 
-| Keys | Moves to |
+| Клавиши | Куда перемещает |
 | --- | --- |
-| `{` / `}` | The previous / next paragraph, which is separated by a blank line. In text notes, the previous / next block (a paragraph, a list item, a table, a quote and so on) at the nesting level of the cursor. |
-| `[[` / `]]` | The previous / next heading. **Trilium-exclusive** **Text notes only** |
-| `[]` / `][` | The line before the previous / next heading. **Trilium-exclusive** **Text notes only** |
-| `[z` / `]z` | The heading / the last line of the section the cursor is in. **Trilium-exclusive** **Text notes only** |
-| `zk` / `zj` | The previous / next heading. **Trilium-exclusive** **Text notes only** |
+| `{` / `}` | Предыдущий / следующий абзац, отделённый пустой строкой. В текстовых заметках — предыдущий / следующий блок (абзац, элемент списка, таблица, цитата и т. д.) на уровне вложенности курсора. |
+| `[[` / `]]` | Предыдущий / следующий заголовок. **Эксклюзивно для Trilium** **Только текстовые заметки** |
+| `[]` / `][` | Строка перед предыдущим / следующим заголовком. **Эксклюзивно для Trilium** **Только текстовые заметки** |
+| `[z` / `]z` | Заголовок / последняя строка раздела, в котором находится курсор. **Эксклюзивно для Trilium** **Только текстовые заметки** |
+| `zk` / `zj` | Предыдущий / следующий заголовок. **Эксклюзивно для Trilium** **Только текстовые заметки** |
 
-### The note and the screen
+### Заметка и экран
 
-| Keys | Moves to |
+| Клавиши | Куда перемещает |
 | --- | --- |
-| `gg` / `G` | The first / last line of the note. |
-| `{count}G` or `{count}gg` | The line with that number. |
-| `{count}%` | The line that many percent into the note. **Text notes only** |
-| `H` / `M` / `L` | The top / middle / bottom line on the screen. |
-| <kbd>Ctrl</kbd>+<kbd>D</kbd> / <kbd>Ctrl</kbd>+<kbd>U</kbd> | Half a page down / up. |
-| <kbd>Ctrl</kbd>+<kbd>F</kbd> / <kbd>Ctrl</kbd>+<kbd>B</kbd> | A page down / up. Also <kbd>Page Down</kbd> and <kbd>Page Up</kbd>. |
+| `gg` / `G` | Первая / последняя строка заметки. |
+| `{count}G` или `{count}gg` | Строка с указанным номером. |
+| `{count}%` | Строка на указанном проценте от начала заметки. **Только текстовые заметки** |
+| `H` / `M` / `L` | Верхняя / средняя / нижняя строка на экране. |
+| <kbd>Ctrl</kbd>+<kbd>D</kbd> / <kbd>Ctrl</kbd>+<kbd>U</kbd> | На полстраницы вниз / вверх. |
+| <kbd>Ctrl</kbd>+<kbd>F</kbd> / <kbd>Ctrl</kbd>+<kbd>B</kbd> | На страницу вниз / вверх. Также <kbd>Page Down</kbd> и <kbd>Page Up</kbd>. |
 
-## Scrolling
+## Прокрутка
 
-These keys scroll the note and leave the cursor on its line.
+Эти клавиши прокручивают заметку, оставляя курсор на его строке.
 
-| Keys | Action |
+| Клавиши | Действие |
 | --- | --- |
-| <kbd>Ctrl</kbd>+<kbd>E</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd> | Scroll one line down / up. |
-| `zz` / `zt` / `zb` | Scroll the line of the cursor to the middle / top / bottom of the screen. |
-| `z.` / `z`<kbd>Enter</kbd> / `z-` | The same, and move the cursor to the first non-blank character. |
+| <kbd>Ctrl</kbd>+<kbd>E</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd> | Прокрутить на одну строку вниз / вверх. |
+| `zz` / `zt` / `zb` | Прокрутить строку с курсором в середину / верх / низ экрана. |
+| `z.` / `z`<kbd>Enter</kbd> / `z-` | То же самое, плюс переместить курсор на первый непробельный символ. |
 
-## Operators
+## Операторы
 
-An operator acts on the text that the motion or text object after it covers: `dw`, `c$`, `yap`. Typing the last key of an operator twice applies it to the line: `dd`, `yy`, `cc`, `>>`, `g~~`, `guu`, `gUU`. In Visual mode, an operator acts on the selection.
+Оператор действует на текст, охваченный последующим перемещением или текстовым объектом: `dw`, `c$`, `yap`. Двойное нажатие последней клавиши оператора применяет его к текущей строке: `dd`, `yy`, `cc`, `>>`, `g~~`, `guu`, `gUU`. В визуальном режиме оператор действует на выделение.
 
-| Keys | Action |
+| Клавиши | Действие |
 | --- | --- |
-| `d{motion}` | Delete. The deleted text goes to a register, so `p` can put it back. |
-| `y{motion}` | Yank, which copies into a register. |
-| `c{motion}` | Change: delete, then enter Insert mode. |
-| `>{motion}` / `<{motion}` | Indent / outdent. In text notes, this changes the level of a list item or the indentation of a paragraph. |
-| `g~{motion}` | Switch between upper and lower case. |
-| `gu{motion}` / `gU{motion}` | Make lower case / upper case. |
-| `g?{motion}` | Encode with ROT13. |
-| `={motion}` | Indent the code again, by the rules of its language. `==` does it for the line. **Code notes only** |
-| `gq{motion}` / `gw{motion}` | Wrap long lines at the text width, which is 80 characters unless `:set textwidth` changes it. `gw` leaves the cursor where it is. **Code notes only** |
-| `gc{motion}` | Turn lines into comments, or back into code, in a language that has line comments. `gcc` does it for the line. **Code notes only** |
+| `d{motion}` | Удалить. Удалённый текст попадает в регистр, поэтому `p` может вставить его обратно. |
+| `y{motion}` | Скопировать (yank) в регистр. |
+| `c{motion}` | Изменить: удалить и перейти в режим вставки. |
+| `>{motion}` / `<{motion}` | Увеличить / уменьшить отступ. В текстовых заметках меняет уровень элемента списка или отступ абзаца. |
+| `g~{motion}` | Переключить регистр (верхний/нижний). |
+| `gu{motion}` / `gU{motion}` | Перевести в нижний / верхний регистр. |
+| `g?{motion}` | Закодировать с помощью ROT13. |
+| `={motion}` | Отформатировать отступы кода по правилам его языка. `==` — для текущей строки. **Только заметки с кодом** |
+| `gq{motion}` / `gw{motion}` | Переносить длинные строки по ширине текста (80 символов, если не изменено через `:set textwidth`). `gw` оставляет курсор на месте. **Только заметки с кодом** |
+| `gc{motion}` | Закомментировать или раскомментировать строки в языке, поддерживающем строчные комментарии. `gcc` — для текущей строки. **Только заметки с кодом** |
 
-### Shorter forms
+### Короткие формы
 
-| Keys | The same as | Action |
+| Клавиши | Эквивалент | Действие |
 | --- | --- | --- |
-| `x` or <kbd>Delete</kbd> | `dl` | Delete the character under the cursor. In a text note, on an image or another object, deletes it. |
-| `X` | `dh` | Delete the character before the cursor. |
-| `D` | `d$` | Delete to the end of the line. |
-| `C` | `c$` | Change to the end of the line. |
-| `Y` | `yy` | Yank the line. |
-| `s` | `cl` | Change the character under the cursor. |
-| `S` | `cc` | Change the line. |
-| `~` |  | Switch the case of the character under the cursor and move right. |
+| `x` или <kbd>Delete</kbd> | `dl` | Удалить символ под курсором. В текстовой заметке на изображении или другом объекте удаляет его. |
+| `X` | `dh` | Удалить символ перед курсором. |
+| `D` | `d$` | Удалить до конца строки. |
+| `C` | `c$` | Изменить до конца строки. |
+| `Y` | `yy` | Скопировать строку. |
+| `s` | `cl` | Изменить символ под курсором. |
+| `S` | `cc` | Изменить строку. |
+| `~` |  | Переключить регистр символа под курсором и сдвинуться вправо. |
 
-## Other changes
+## Прочие изменения
 
-| Keys | Action |
+| Клавиши | Действие |
 | --- | --- |
-| `r{char}` | Replace the character under the cursor with `{char}`. |
-| `J` | Join the next line to this one, with a space between them. In text notes, the lines join the way <kbd>Backspace</kbd> at the start of the next line would join them. |
-| `gJ` | Join without adding a space. |
-| `p` / `P` | Put the content of a register after / before the cursor. Yanked lines go below / above the current line. |
-| `]p` / `[p` | Put, with the indentation of the current line. In text notes, the same as `p` and `P`. |
-| <kbd>Ctrl</kbd>+<kbd>A</kbd> / <kbd>Ctrl</kbd>+<kbd>X</kbd> | Add one to / subtract one from the number at or after the cursor. With a count, that amount. |
-| <kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> | The same as `u` and <kbd>Ctrl</kbd>+<kbd>R</kbd>. **Text notes only** |
+| `r{char}` | Заменить символ под курсором на `{char}`. |
+| `J` | Присоединить следующую строку к текущей через пробел. В текстовых заметках строки соединяются так же, как при нажатии <kbd>Backspace</kbd> в начале следующей строки. |
+| `gJ` | Присоединить без добавления пробела. |
+| `p` / `P` | Вставить содержимое регистра после / перед курсором. Скопированные строки вставляются ниже / выше текущей строки. |
+| `]p` / `[p` | Вставить с отступом текущей строки. В текстовых заметках — то же, что `p` и `P`. |
+| <kbd>Ctrl</kbd>+<kbd>A</kbd> / <kbd>Ctrl</kbd>+<kbd>X</kbd> | Увеличить / уменьшить на 1 число под курсором или после него. Со счётчиком — на указанную величину. |
+| <kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> | То же, что `u` и <kbd>Ctrl</kbd>+<kbd>R</kbd>. **Только текстовые заметки** |
 
-## Text objects
+## Текстовые объекты
 
-A text object is typed after an operator or in Visual mode, and names a piece of text around the cursor. `i` takes the inside, and `a` also takes what surrounds it: `ciw`, `da(`, `yip`.
+Текстовый объект вводится после оператора или в визуальном режиме и обозначает фрагмент текста вокруг курсора. `i` берёт содержимое внутри, а `a` — вместе с обрамлением: `ciw`, `da(`, `yip`.
 
-| Keys | Selects |
+| Клавиши | Что выделяет |
 | --- | --- |
-| `iw` / `aw` | The word, without / with the space next to it. |
-| `iW` / `aW` | The same, for a word separated by spaces only. |
-| `is` / `as` | The sentence. |
-| `ip` / `ap` | The paragraph, without / with the blank line after it. In text notes, the block around the cursor: a paragraph, a list item (with `ap`, its nested items too), a quote, a table cell, a code block. On a heading, `ip` is the heading and `ap` is the heading with its section. |
-| `i(` / `a(` | The text in parentheses, without / with them. Also `i)` and `ib`. |
-| `i[` / `a[` | The text in square brackets, without / with them. |
-| `i{` / `a{` | The text in braces, without / with them. Also `i}` and `iB`. |
-| `i<` / `a<` | The text in angle brackets, without / with them. |
-| `i"` / `a"` | The text in double quotes, without / with them. |
-| `i'` / `a'` | The text in single quotes, without / with them. |
-| `` i` `` / `` a` `` | The text between two backticks, without / with them. The second key is the backtick. |
-| `it` / `at` | The content of a tag, without / with the tag, in a note whose language has tags, such as HTML. **Code notes only** |
+| `iw` / `aw` | Слово без / с соседним пробелом. |
+| `iW` / `aW` | То же самое для слова, ограниченного только пробелами. |
+| `is` / `as` | Предложение. |
+| `ip` / `ap` | Абзац без / с пустой строкой после него. В текстовых заметках — блок вокруг курсора: абзац, элемент списка (с `ap` — включая вложенные элементы), цитата, ячейка таблицы, блок кода. На заголовке `ip` — сам заголовок, `ap` — заголовок с его разделом. |
+| `i(` / `a(` | Текст в круглых скобках без / вместе с ними. Также `i)` и `ib`. |
+| `i[` / `a[` | Текст в квадратных скобках без / вместе с ними. |
+| `i{` / `a{` | Текст в фигурных скобках без / вместе с ними. Также `i}` и `iB`. |
+| `i<` / `a<` | Текст в угловых скобках без / вместе с ними. |
+| `i"` / `a"` | Текст в двойных кавычках без / вместе с ними. |
+| `i'` / `a'` | Текст в одинарных кавычках без / вместе с ними. |
+| `` i` `` / `` a` `` | Текст между двумя обратными апострофами без / вместе с ними. Вторая клавиша — обратный апостроф. |
+| `it` / `at` | Содержимое тега без / вместе с тегом в заметке, язык которой использует теги (например, HTML). **Только заметки с кодом** |
 
-## Visual mode
+## Визуальный режим
 
-| Keys | Action |
+| Клавиши | Действие |
 | --- | --- |
-| Any motion or text object | Extend the selection. |
-| `o` | Go to the other end of the selection. |
-| `v` / `V` | Switch between characters and whole lines. The key of the current mode leaves Visual mode. |
-| `d` or `x` | Delete the selection. |
-| `y` | Yank the selection. |
-| `c` or `s` | Change the selection. |
-| `D` / `Y` | Delete / yank the whole lines of the selection. |
-| `S` or `R` | Change the whole lines of the selection. |
-| `>` / `<` | Indent / outdent the selected lines. |
-| `~` / `u` / `U` | Switch the case / make lower case / make upper case. |
-| `J` / `gJ` | Join the selected lines, with / without spaces. |
-| `r{char}` | Replace every selected character with `{char}`. |
-| `p` or `P` | Replace the selection with the content of a register. |
-| `:` | Open the command line for the selected lines. |
-| <kbd>Ctrl</kbd>+<kbd>C</kbd> | Copy the selection to the clipboard, with its formatting, and leave Visual mode. **Text notes only** |
-| <kbd>Esc</kbd> | Leave Visual mode. |
+| Любое перемещение или текстовый объект | Расширить выделение. |
+| `o` | Перейти к другому концу выделения. |
+| `v` / `V` | Переключиться между символами и целыми строками. Клавиша текущего режима выходит из визуального режима. |
+| `d` или `x` | Удалить выделение. |
+| `y` | Скопировать выделение. |
+| `c` или `s` | Изменить выделение. |
+| `D` / `Y` | Удалить / скопировать целые строки выделения. |
+| `S` или `R` | Изменить целые строки выделения. |
+| `>` / `<` | Увеличить / уменьшить отступ выделенных строк. |
+| `~` / `u` / `U` | Переключить регистр / в нижний регистр / в верхний регистр. |
+| `J` / `gJ` | Соединить выделенные строки с пробелами / без пробелов. |
+| `r{char}` | Заменить каждый выделенный символ на `{char}`. |
+| `p` или `P` | Заменить выделение содержимым регистра. |
+| `:` | Открыть командную строку для выделенных строк. |
+| <kbd>Ctrl</kbd>+<kbd>C</kbd> | Скопировать выделение в буфер обмена с форматированием и выйти из визуального режима. **Только текстовые заметки** |
+| <kbd>Esc</kbd> | Выйти из визуального режима. |
 
-In text notes, selecting with the mouse in Normal mode enters Visual mode.
+В текстовых заметках выделение мышью в обычном режиме переводит редактор в визуальный режим.
 
-## Registers
+## Регистры
 
-A register holds yanked or deleted text. To use one, type `"` and its name before the command: `"ayy` yanks the line into `a`, and `"ap` puts it. In text notes, the registers with a name are _available, but not guaranteed_.
+Регистр хранит скопированный или удалённый текст. Чтобы использовать регистр, введите `"` и его имя перед командой: `"ayy` копирует строку в `a`, а `"ap` вставляет её. В текстовых заметках именованные регистры относятся к категории _доступно, но без гарантий_.
 
-| Register | Holds |
+| Регистр | Что хранит |
 | --- | --- |
-| `""` | The last yanked or deleted text. This is the register used when none is named. |
-| `"a` to `"z` | What you put there. With a capital letter, `"A` to `"Z`, the text is added to what the register holds. |
-| `"0` | The last yanked text. |
-| `"1` to `"9` | The last deleted lines, the most recent first. |
-| `"-` | The last deleted text that was shorter than a line. |
-| `"_` | Nothing: text deleted into it is gone and leaves the other registers as they are. |
-| `".` | The last inserted text. |
-| `":` | The last command of the command line. |
-| `"/` | The last search pattern. |
-| `"+` | The system clipboard. In text notes, `"+y` copies with the formatting. |
-| `"*` | The system clipboard as well. **Text notes only** |
+| `""` | Последний скопированный или удалённый текст. Используется по умолчанию, если регистр не указан. |
+| От `"a` до `"z` | То, что вы туда поместите. С заглавной буквой (от `"A` до `"Z`) текст добавляется к содержимому регистра. |
+| `"0` | Последний скопированный текст. |
+| От `"1` до `"9` | Последние удалённые строки, начиная с самой недавней. |
+| `"-` | Последний удалённый фрагмент короче одной строки. |
+| `"_` | Ничего: удалённый сюда текст исчезает, не затрагивая остальные регистры. |
+| `".` | Последний введённый текст. |
+| `":` | Последняя команда командной строки. |
+| `"/` | Последний шаблон поиска. |
+| `"+` | Системный буфер обмена. В текстовых заметках `"+y` копирует с форматированием. |
+| `"*` | Также системный буфер обмена. **Только текстовые заметки** |
 
-| Keys | Action |
+| Клавиши | Действие |
 | --- | --- |
-| <kbd>Ctrl</kbd>+<kbd>R</kbd> `{register}` | In Insert mode, insert the content of the register. |
-| `:registers` | List the registers and what they hold. |
+| <kbd>Ctrl</kbd>+<kbd>R</kbd> `{register}` | В режиме вставки вставить содержимое регистра. |
+| `:registers` | Показать список регистров и их содержимое. |
 
-In text notes, registers keep the formatting of the text, such as bold, links and colors. All text notes share one set of registers, and code notes have another.
+В текстовых заметках регистры сохраняют форматирование текста (жирный шрифт, ссылки, цвета). Все текстовые заметки делят один набор регистров, а заметки с кодом — другой.
 
-## Marks and jumps
+## Метки и переходы
 
-A mark remembers a position in the note. The jump list remembers the positions that large motions left, such as `G`, `/` and `%`. In text notes, marks are _available, but not guaranteed_.
+Метка (mark) запоминает позицию в заметке. Список переходов (jump list) запоминает позиции, из которых совершались крупные перемещения, такие как `G`, `/` и `%`. В текстовых заметках метки относятся к категории _доступно, но без гарантий_.
 
-Two keys go to a mark: the backtick, written `` ` ``, and the apostrophe, written `'`.
+К метке ведут две клавиши: обратный апостроф `` ` `` и обычный апостроф `'`.
 
-| Keys | Action |
+| Клавиши | Действие |
 | --- | --- |
-| `m{a-z}` | Set the mark with that letter at the cursor: `ma`. |
-| Backtick, then the letter | Go to the mark: `` `a ``. |
-| Apostrophe, then the letter | Go to the first non-blank character of the line of the mark: `'a`. |
-| Backtick or apostrophe, twice | Go back to the position before the last jump: ` `` ` or `''`. |
-| Backtick, then `.` | Go to the last change: `` `. ``. |
-| Backtick, then `<` or `>` | Go to the start / end of the last selection: `` `< ``, `` `> ``. |
-| `]`, then backtick / `[`, then backtick | Go to the next / previous mark. |
-| <kbd>Ctrl</kbd>+<kbd>O</kbd> / <kbd>Ctrl</kbd>+<kbd>I</kbd> | Go back / forward through the jump list. |
-| `:marks` | List the marks. |
-| `:delmarks {marks}` | Delete the marks: `:delmarks a`, `:delmarks a-d`. |
+| `m{a-z}` | Поставить метку с указанной буквой на позиции курсора: `ma`. |
+| Обратный апостроф, затем буква | Перейти к метке: `` `a ``. |
+| Апостроф, затем буква | Перейти к первому непробельному символу строки с меткой: `'a`. |
+| Обратный апостроф или апостроф дважды | Вернуться к позиции до последнего перехода: ` `` ` или `''`. |
+| Обратный апостроф, затем `.` | Перейти к последнему изменению: `` `. ``. |
+| Обратный апостроф, затем `<` или `>` | Перейти к началу / концу последнего выделения: `` `< ``, `` `> ``. |
+| `]`, затем обратный апостроф / `[`, затем обратный апостроф | Перейти к следующей / предыдущей метке. |
+| <kbd>Ctrl</kbd>+<kbd>O</kbd> / <kbd>Ctrl</kbd>+<kbd>I</kbd> | Назад / вперёд по списку переходов. |
+| `:marks` | Показать список меток. |
+| `:delmarks {marks}` | Удалить метки: `:delmarks a`, `:delmarks a-d`. |
 
-## Macros
+## Макросы
 
-A macro records keys and plays them again. In text notes, macros are _available, but not guaranteed_.
+Макрос записывает последовательность клавиш и воспроизводит её снова. В текстовых заметках макросы относятся к категории _доступно, но без гарантий_.
 
-| Keys | Action |
+| Клавиши | Действие |
 | --- | --- |
-| `q{a-z}` | Start recording into the register with that letter. `q` stops the recording. |
-| `@{a-z}` | Play the macro of that register. With a count, that many times. |
-| `@@` | Play the last played macro again. |
+| `q{a-z}` | Начать запись в регистр с указанной буквой. `q` останавливает запись. |
+| `@{a-z}` | Воспроизвести макрос из этого регистра. Со счётчиком — указанное количество раз. |
+| `@@` | Снова воспроизвести последний запущенный макрос. |
 
-## Searching
+## Поиск
 
-| Keys | Action |
+| Клавиши | Действие |
 | --- | --- |
-| `/pattern` and <kbd>Enter</kbd> | Search forward. The matches are highlighted as you type. |
-| `?pattern` and <kbd>Enter</kbd> | Search backward. |
-| `n` / `N` | Go to the next / previous match. |
-| `*` / `#` | Search forward / backward for the word under the cursor, as a whole word. |
-| `g*` / `g#` | The same, also inside longer words. |
-| `gn` / `gN` | Select the next / previous match. After an operator, act on it: `cgn` changes the next match. |
-| `:noh` | Clear the highlights. In text notes, <kbd>Esc</kbd> in Normal mode does it too. |
+| `/pattern` и <kbd>Enter</kbd> | Поиск вперёд. Совпадения подсвечиваются по мере ввода. |
+| `?pattern` и <kbd>Enter</kbd> | Поиск назад. |
+| `n` / `N` | Перейти к следующему / предыдущему совпадению. |
+| `*` / `#` | Поиск вперёд / назад слова под курсором целиком. |
+| `g*` / `g#` | То же самое, включая совпадения внутри более длинных слов. |
+| `gn` / `gN` | Выделить следующее / предыдущее совпадение. После оператора — применить его: `cgn` изменяет следующее совпадение. |
+| `:noh` | Убрать подсветку. В текстовых заметках это также делает <kbd>Esc</kbd> в обычном режиме. |
 
-*   A pattern is a JavaScript regular expression, not one in Vim's own syntax.
-*   Upper and lower case are treated as the same, unless the pattern contains a capital letter.
-*   In the search prompt, <kbd>↑</kbd> and <kbd>↓</kbd> bring back earlier searches, and <kbd>Ctrl</kbd>+<kbd>U</kbd> clears the prompt.
-*   In text notes, a match cannot span more than one line. Searching looks inside collapsed headings and list items, and expands the one that holds a match.
+*   Шаблон — это регулярное выражение JavaScript, а не собственный синтаксис Vim.
+*   Регистр не учитывается, если в шаблоне нет заглавных букв.
+*   В строке поиска <kbd>↑</kbd> и <kbd>↓</kbd> листают историю поиска, а <kbd>Ctrl</kbd>+<kbd>U</kbd> очищает строку.
+*   В текстовых заметках совпадение не может охватывать более одной строки. Поиск заглядывает внутрь свёрнутых заголовков и элементов списка и разворачивает тот, где нашлось совпадение.
 
-## Folding
+## Сворачивание
 
-These keys act on [collapsible headings](../Collapsible%20headings.md), collapsible list items and <a class="reference-link" href="../Collapsible%20blocks.md">Collapsible blocks</a>.
+Эти клавиши действуют на [сворачиваемые заголовки](../Collapsible%20headings.md), сворачиваемые элементы списка и <a class="reference-link" href="../Collapsible%20blocks.md">сворачиваемые блоки</a>.
 
-| Keys | Action |
+| Клавиши | Действие |
 | --- | --- |
-| `za` | Collapse or expand what is at the cursor. **Trilium-exclusive** **Text notes only** |
-| `zo` / `zc` | Expand / collapse it. **Trilium-exclusive** **Text notes only** |
-| `zA` / `zO` / `zC` | The same as `za`, `zo` and `zc`, including the sections nested inside. **Trilium-exclusive** **Text notes only** |
+| `za` | Свернуть или развернуть элемент под курсором. **Эксклюзивно для Trilium** **Только текстовые заметки** |
+| `zo` / `zc` | Развернуть / свернуть его. **Эксклюзивно для Trilium** **Только текстовые заметки** |
+| `zA` / `zO` / `zC` | То же, что `za`, `zo` и `zc`, включая вложенные разделы. **Эксклюзивно для Trilium** **Только текстовые заметки** |
 
-## Links and tabs
+## Ссылки и вкладки
 
-| Keys | Action |
+| Клавиши | Действие |
 | --- | --- |
-| `gf` | Follow the [link](../Links.md) or [link preview](../Link%20Previews.md) under the cursor. **Trilium-exclusive** **Text notes only** |
-| `ZZ` | Close the tab of the note, or its split. **Trilium-exclusive** **Text notes only** |
+| `gf` | Перейти по [ссылке](../Links.md) или [предпросмотру ссылки](../Link%20Previews.md) под курсором. **Эксклюзивно для Trilium** **Только текстовые заметки** |
+| `ZZ` | Закрыть вкладку заметки или её разделённую панель. **Эксклюзивно для Trilium** **Только текстовые заметки** |
 
-## Insert mode
+## Режим вставки
 
-In Insert mode, the keys type text. The keys below are the exceptions, in two groups.
+В режиме вставки клавиши вводят текст. Ниже приведены исключения в двух группах.
 
-### Keys that always follow Vim
+### Клавиши, которые всегда работают по правилам Vim
 
-| Keys | Action |
+| Клавиши | Действие |
 | --- | --- |
-| <kbd>Esc</kbd>, <kbd>Ctrl</kbd>+<kbd>[</kbd> or <kbd>Ctrl</kbd>+<kbd>C</kbd> | Return to Normal mode. In text notes, <kbd>Ctrl</kbd>+<kbd>C</kbd> copies when something is selected. |
-| <kbd>Ctrl</kbd>+<kbd>O</kbd> | Run one Normal-mode command, then return to Insert mode. |
-| <kbd>Ctrl</kbd>+<kbd>W</kbd> | Delete the word before the cursor. Does not work in a browser on Windows and Linux, where it closes the browser tab. |
-| <kbd>Ctrl</kbd>+<kbd>R</kbd> `{register}` | Insert the content of a register. |
-| <kbd>Ctrl</kbd>+<kbd>T</kbd> / <kbd>Ctrl</kbd>+<kbd>D</kbd> | Indent / outdent the line. <kbd>Ctrl</kbd>+<kbd>T</kbd> does not work in a browser on Windows and Linux, where it opens a browser tab. |
+| <kbd>Esc</kbd>, <kbd>Ctrl</kbd>+<kbd>[</kbd> или <kbd>Ctrl</kbd>+<kbd>C</kbd> | Вернуться в обычный режим. В текстовых заметках <kbd>Ctrl</kbd>+<kbd>C</kbd> копирует, если есть выделение. |
+| <kbd>Ctrl</kbd>+<kbd>O</kbd> | Выполнить одну команду обычного режима и вернуться в режим вставки. |
+| <kbd>Ctrl</kbd>+<kbd>W</kbd> | Удалить слово перед курсором. Не работает в браузере на Windows и Linux, где закрывает вкладку. |
+| <kbd>Ctrl</kbd>+<kbd>R</kbd> `{register}` | Вставить содержимое регистра. |
+| <kbd>Ctrl</kbd>+<kbd>T</kbd> / <kbd>Ctrl</kbd>+<kbd>D</kbd> | Увеличить / уменьшить отступ строки. <kbd>Ctrl</kbd>+<kbd>T</kbd> не работает в браузере на Windows и Linux, где открывает новую вкладку. |
 
-### Keys that depend on a setting
+### Клавиши, зависящие от настройки
 
-In text notes, the six shortcuts below follow Vim only while the _Vim keys in Insert mode_ setting is on, see <a class="reference-link" href="../Vim%20mode.md">Vim mode</a>. While it is off, which is the default, they keep the meaning the editor gives them: <kbd>Ctrl</kbd>+<kbd>U</kbd> underlines, <kbd>Ctrl</kbd>+<kbd>Y</kbd> redoes, <kbd>Ctrl</kbd>+<kbd>K</kbd> creates a link, <kbd>Ctrl</kbd>+<kbd>V</kbd> pastes and <kbd>Ctrl</kbd>+<kbd>A</kbd> selects all.
+В текстовых заметках шесть сочетаний ниже работают по правилам Vim только при включённой настройке _Клавиши Vim в режиме вставки_ — см. <a class="reference-link" href="../Vim%20mode.md">Режим Vim</a>. Когда она выключена (по умолчанию), они сохраняют значения редактора: <kbd>Ctrl</kbd>+<kbd>U</kbd> подчёркивает, <kbd>Ctrl</kbd>+<kbd>Y</kbd> повторяет, <kbd>Ctrl</kbd>+<kbd>K</kbd> создаёт ссылку, <kbd>Ctrl</kbd>+<kbd>V</kbd> вставляет, <kbd>Ctrl</kbd>+<kbd>A</kbd> выделяет всё.
 
-Code notes have no such setting. There, <kbd>Ctrl</kbd>+<kbd>U</kbd> always follows Vim, and the other five are not Vim keys.
+В заметках с кодом такой настройки нет. Там <kbd>Ctrl</kbd>+<kbd>U</kbd> всегда работает по правилам Vim, а остальные пять не являются клавишами Vim.
 
-| Keys | Action |
+| Клавиши | Действие |
 | --- | --- |
-| <kbd>Ctrl</kbd>+<kbd>U</kbd> | Delete from the cursor to the start of the line. In text notes, with the setting on; in code notes, always. |
-| <kbd>Ctrl</kbd>+<kbd>E</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd> | Insert the character that is below / above the cursor. With the setting on. **Text notes only** |
-| <kbd>Ctrl</kbd>+<kbd>K</kbd> `{char}{char}` | Insert a digraph, a character typed as two keys: `e:` gives `ë`. With the setting on. **Text notes only** |
-| <kbd>Ctrl</kbd>+<kbd>V</kbd> `{key}` | Insert the next key as it is, such as <kbd>Tab</kbd>. With the setting on. **Text notes only** |
-| <kbd>Ctrl</kbd>+<kbd>A</kbd> | Insert the last inserted text again. With the setting on. **Text notes only** |
+| <kbd>Ctrl</kbd>+<kbd>U</kbd> | Удалить от курсора до начала строки. В текстовых заметках — при включённой настройке; в заметках с кодом — всегда. |
+| <kbd>Ctrl</kbd>+<kbd>E</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd> | Вставить символ, находящийся под / над курсором. При включённой настройке. **Только текстовые заметки** |
+| <kbd>Ctrl</kbd>+<kbd>K</kbd> `{char}{char}` | Вставить диграф — символ, вводимый двумя клавишами: `e:` даёт `ë`. При включённой настройке. **Только текстовые заметки** |
+| <kbd>Ctrl</kbd>+<kbd>V</kbd> `{key}` | Вставить следующую клавишу буквально, например <kbd>Tab</kbd>. При включённой настройке. **Только текстовые заметки** |
+| <kbd>Ctrl</kbd>+<kbd>A</kbd> | Снова вставить последний введённый текст. При включённой настройке. **Только текстовые заметки** |
 
-## Command line
+## Командная строка
 
-`:` opens the command line. Type a command and press <kbd>Enter</kbd> to run it, or <kbd>Esc</kbd> to cancel. A command can be shortened to its first letters, as the tables show: `:s` is `:substitute`. In text notes, the command line opens in the status bar; in code notes, at the bottom of the editor.
+`:` открывает командную строку. Введите команду и нажмите <kbd>Enter</kbd> для выполнения или <kbd>Esc</kbd> для отмены. Команду можно сокращать до первых букв, как показано в таблицах: `:s` — это `:substitute`. В текстовых заметках командная строка открывается в строке состояния; в заметках с кодом — в нижней части редактора.
 
-| Keys | Action |
+| Клавиши | Действие |
 | --- | --- |
-| <kbd>Enter</kbd> | Run the command. |
-| <kbd>Esc</kbd> | Close the command line. |
-| <kbd>↑</kbd> / <kbd>↓</kbd> | Bring back earlier commands. |
-| <kbd>Ctrl</kbd>+<kbd>U</kbd> | Clear the command line. |
-| <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> | Go to the next / previous suggestion. **Text notes only** |
-| <kbd>↓</kbd> / <kbd>↑</kbd> | Go to the next / previous suggestion while they are shown. Until you type or pick a suggestion, <kbd>↑</kbd> brings back earlier commands instead, as does <kbd>↓</kbd> after it. **Text notes only** |
+| <kbd>Enter</kbd> | Выполнить команду. |
+| <kbd>Esc</kbd> | Закрыть командную строку. |
+| <kbd>↑</kbd> / <kbd>↓</kbd> | Вернуть предыдущие команды. |
+| <kbd>Ctrl</kbd>+<kbd>U</kbd> | Очистить командную строку. |
+| <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> | Перейти к следующей / предыдущей подсказке. **Только текстовые заметки** |
+| <kbd>↓</kbd> / <kbd>↑</kbd> | Перейти к следующей / предыдущей подсказке, пока они отображаются. Пока вы не начали ввод или не выбрали подсказку, <kbd>↑</kbd> вместо этого листает историю команд, как и <kbd>↓</kbd> после неё. **Только текстовые заметки** |
 
-### Ranges
+### Диапазоны
 
-Many commands act on a range of lines, written before the name. Without a range, they act on the current line.
+Многие команды действуют на диапазон строк, указанный перед именем. Без диапазона они действуют на текущую строку.
 
-| Range | Lines |
+| Диапазон | Строки |
 | --- | --- |
-| `:12` | Line 12. Typed alone, it moves the cursor to that line. |
-| `:.` / `:$` | The current line / the last line. |
-| `:%` | The whole note. |
-| `:5,12` | Lines 5 to 12. |
-| `:.,+3` | The current line and the next three. |
-| `:.,$` | From the current line to the end. |
-| `:'a,'b` | From the mark `a` to the mark `b`. |
-| `:'<,'>` | The lines of the selection. Pressing `:` in Visual mode writes it for you. |
+| `:12` | Строка 12. Введённое само по себе перемещает курсор на эту строку. |
+| `:.` / `:$` | Текущая строка / последняя строка. |
+| `:%` | Вся заметка. |
+| `:5,12` | Строки с 5 по 12. |
+| `:.,+3` | Текущая строка и следующие три. |
+| `:.,$` | От текущей строки до конца. |
+| `:'a,'b` | От метки `a` до метки `b`. |
+| `:'<,'>` | Строки выделения. Нажатие `:` в визуальном режиме подставляет его автоматически. |
 
-### Commands
+### Команды
 
-| Command | Action |
+| Команда | Действие |
 | --- | --- |
-| `:s/pattern/replacement/flags` | Replace the first match of the pattern in each line of the range. See _Replacing_ below. |
-| `:sor` | Sort the lines. See _Sorting_ below. |
-| `:u` / `:red` | Undo / redo. |
-| `:start` | Enter Insert mode. |
-| `:noh` | Clear the search highlights. |
-| `:se` | Change an option. See _Options_ below. |
+| `:s/pattern/replacement/flags` | Заменить первое совпадение шаблона в каждой строке диапазона. См. _Замена_ ниже. |
+| `:sor` | Отсортировать строки. См. _Сортировка_ ниже. |
+| `:u` / `:red` | Отменить / повторить. |
+| `:start` | Войти в режим вставки. |
+| `:noh` | Убрать подсветку поиска. |
+| `:se` | Изменить параметр. См. _Параметры_ ниже. |
 
-### Commands that are available, but not guaranteed in text notes
+### Команды, доступные без гарантий в текстовых заметках
 
-These work in both kinds of notes. In text notes they belong to the level described under _Available, but not guaranteed_, as do the key mappings below.
+Они работают в обоих типах заметок. В текстовых заметках они относятся к уровню, описанному в разделе _Доступно, но без гарантий_, как и привязки клавиш ниже.
 
-| Command | Action |
+| Команда | Действие |
 | --- | --- |
-| `:g/pattern/command` | Run a command on every line that matches the pattern: `:g/^TODO/d`. |
-| `:v/pattern/command` | Run a command on every line that does not match. |
-| `:d` | Delete the lines. |
-| `:y` | Yank the lines. |
-| `:pu` | Put the content of a register below the line. |
-| `:j` | Join the lines. |
-| `:norm {keys}` | Type Normal-mode keys on each line of the range. |
-| `:reg` | List the registers. |
-| `:marks` / `:delm {marks}` | List / delete marks. |
+| `:g/pattern/command` | Выполнить команду для каждой строки, соответствующей шаблону: `:g/^TODO/d`. |
+| `:v/pattern/command` | Выполнить команду для каждой строки, не соответствующей шаблону. |
+| `:d` | Удалить строки. |
+| `:y` | Скопировать строки. |
+| `:pu` | Вставить содержимое регистра ниже строки. |
+| `:j` | Соединить строки. |
+| `:norm {keys}` | Выполнить клавиши обычного режима на каждой строке диапазона. |
+| `:reg` | Показать список регистров. |
+| `:marks` / `:delm {marks}` | Показать / удалить метки. |
 
-### Trilium commands
+### Команды Trilium
 
-Code notes have none of these: there, `:w` does nothing and `:q` is not a command, since notes are saved by Trilium itself.
+В заметках с кодом этих команд нет: там `:w` ничего не делает, а `:q` не является командой, так как заметки сохраняются самим Trilium.
 
-| Command | Action |
+| Команда | Действие |
 | --- | --- |
-| `:w` | Save the note now. Trilium also saves by itself. **Trilium-exclusive** **Text notes only** |
-| `:q` | Close the tab of the note, or its split, after saving. `:wq` and `:x` do the same. **Trilium-exclusive** **Text notes only** |
-| `:ck {command} {value}` | Run a command of the text editor by its name: `:ck bold`, `:ck heading heading2`, `:ck horizontalLine`. With a range or after a selection, it acts on that text. The command line lists the commands as you type. **Trilium-exclusive** **Text notes only** |
-| `:set hints` / `:set nohints` | Turn the key hints on / off. **Trilium-exclusive** **Text notes only** |
+| `:w` | Сохранить заметку сейчас. Trilium также сохраняет её автоматически. **Эксклюзивно для Trilium** **Только текстовые заметки** |
+| `:q` | Закрыть вкладку заметки или её разделённую панель после сохранения. `:wq` и `:x` делают то же самое. **Эксклюзивно для Trilium** **Только текстовые заметки** |
+| `:ck {command} {value}` | Выполнить команду текстового редактора по её имени: `:ck bold`, `:ck heading heading2`, `:ck horizontalLine`. С диапазоном или после выделения действует на этот текст. Командная строка предлагает список команд по мере ввода. **Эксклюзивно для Trilium** **Только текстовые заметки** |
+| `:set hints` / `:set nohints` | Включить / выключить подсказки клавиш. **Эксклюзивно для Trilium** **Только текстовые заметки** |
 
-### Replacing
+### Замена
 
-`:s/pattern/replacement/flags` replaces text in the current line, `:%s` in the whole note, and `:'<,'>s` in the selected lines.
+`:s/pattern/replacement/flags` заменяет текст в текущей строке, `:%s` — во всей заметке, `:'<,'>s` — в выделенных строках.
 
-| Part | Meaning |
+| Часть | Значение |
 | --- | --- |
-| `pattern` | A JavaScript regular expression. |
-| `$1`, `$2` in the replacement | The text of a group of the pattern. |
-| `$&` in the replacement | The whole match, in text notes. In code notes, the whole match is written `&`. |
-| `\n` in the replacement | A line break. In text notes, it starts a new paragraph. |
-| Flag `g` | Replace every match in the line, not only the first. |
-| Flag `i` | Treat upper and lower case as the same. |
-| Flag `c` | Ask before each replacement: `y` replaces, `n` skips, `a` replaces all the rest, `q` stops, `l` replaces this one and stops. |
+| `pattern` | Регулярное выражение JavaScript. |
+| `$1`, `$2` в замене | Текст соответствующей группы шаблона. |
+| `$&` в замене | Всё совпадение (в текстовых заметках). В заметках с кодом всё совпадение записывается как `&`. |
+| `\n` в замене | Перенос строки. В текстовых заметках начинает новый абзац. |
+| Флаг `g` | Заменить все совпадения в строке, а не только первое. |
+| Флаг `i` | Не учитывать регистр. |
+| Флаг `c` | Запрашивать подтверждение перед каждой заменой: `y` — заменить, `n` — пропустить, `a` — заменить все оставшиеся, `q` — остановить, `l` — заменить это и остановить. |
 
-### Sorting
+### Сортировка
 
-`:sort` sorts the lines of the range, or of the selection.
+`:sort` сортирует строки диапазона или выделения.
 
-| Argument | Meaning |
+| Аргумент | Значение |
 | --- | --- |
-| `!` | Reverse the order: `:sort!`. |
-| `i` | Treat upper and lower case as the same. |
-| `n` | Sort by the first number in each line. `x` reads hexadecimal numbers, `o` octal ones. |
-| `u` | Keep only one of the lines that are equal. |
-| `/pattern/` | Sort by the text that follows the match. With `r`, by the match itself. |
+| `!` | Обратный порядок: `:sort!`. |
+| `i` | Не учитывать регистр. |
+| `n` | Сортировать по первому числу в каждой строке. `x` читает шестнадцатеричные числа, `o` — восьмеричные. |
+| `u` | Оставлять только одну из одинаковых строк. |
+| `/pattern/` | Сортировать по тексту, следующему за совпадением. С флагом `r` — по самому совпадению. |
 
-In text notes, `:sort` moves paragraphs and list items whole, with their formatting, and a list item takes its nested items along. Without a range, it sorts the list the cursor is in, at the level of the cursor, or the paragraphs around the cursor; in code notes, it sorts the whole note. Lines of different kinds, such as paragraphs mixed with list items, and the rows of a table cannot be sorted this way. To sort tables and for more options, see <a class="reference-link" href="../Sorting.md">Sorting</a>.
+В текстовых заметках `:sort` перемещает абзацы и элементы списка целиком вместе с их форматированием, а элемент списка уносит с собой вложенные пункты. Без диапазона сортируется список, в котором находится курсор (на уровне курсора), или абзацы вокруг курсора; в заметках с кодом сортируется вся заметка. Строки разных типов (например, абзацы вперемешку с элементами списка) и строки таблиц таким способом отсортировать нельзя. О сортировке таблиц и других параметрах см. в разделе <a class="reference-link" href="../Sorting.md">Сортировка</a>.
 
-### Key mappings
+### Привязки клавиш
 
-A mapping gives keys another meaning. In text notes, mappings are _available, but not guaranteed_.
+Привязка (mapping) задаёт клавишам другое значение. В текстовых заметках привязки относятся к категории _доступно, но без гарантий_.
 
-| Command | Action |
+| Команда | Действие |
 | --- | --- |
-| `:map {keys} {target}` | Make `{keys}` act as `{target}`, in every mode. |
-| `:nmap` / `:vmap` / `:imap` | The same, in Normal / Visual / Insert mode only. |
-| `:noremap`, `:nnoremap`, `:vnoremap`, `:inoremap` | The same, where the keys of the target keep their original meaning even if they are mapped too. |
-| `:unmap {keys}` | Remove a mapping made with `:map`. It does not remove a mapping of one mode. |
-| `:mapclear` | Remove all mappings. `:nmapclear`, `:vmapclear` and `:imapclear` remove those of one mode. |
+| `:map {keys} {target}` | Заставить `{keys}` действовать как `{target}` во всех режимах. |
+| `:nmap` / `:vmap` / `:imap` | То же самое, но только в обычном / визуальном / режиме вставки. |
+| `:noremap`, `:nnoremap`, `:vnoremap`, `:inoremap` | То же самое, но клавиши в `{target}` сохраняют своё исходное значение, даже если для них тоже заданы привязки. |
+| `:unmap {keys}` | Удалить привязку, созданную через `:map`. Не удаляет привязку для отдельного режима. |
+| `:mapclear` | Удалить все привязки. `:nmapclear`, `:vmapclear` и `:imapclear` удаляют привязки одного режима. |
 
-*   Keys with a name are written in angle brackets: `<Esc>`, `<CR>` for <kbd>Enter</kbd>, `<Space>`, `<BS>` for <kbd>Backspace</kbd>, `<C-r>` for <kbd>Ctrl</kbd>+<kbd>R</kbd>.
-*   A target that starts with `:` is a command of the command line. End it with `<CR>` to run it at once: `:nmap gs :sort<CR>`. Without `<CR>`, the command line opens with the command typed and waits for <kbd>Enter</kbd>.
-*   `:imap jk <Esc>` leaves Insert mode when `j` and `k` are typed quickly one after the other.
-*   A mapping lasts until Trilium is reloaded. To keep one in text notes, add it to the _Startup commands_ setting, see <a class="reference-link" href="../Vim%20mode.md">Vim mode</a>.
+*   Клавиши с названиями пишутся в угловых скобках: `<Esc>`, `<CR>` для <kbd>Enter</kbd>, `<Space>`, `<BS>` для <kbd>Backspace</kbd>, `<C-r>` для <kbd>Ctrl</kbd>+<kbd>R</kbd>.
+*   Цель, начинающаяся с `:`, — это команда командной строки. Завершите её `<CR>`, чтобы она выполнялась сразу: `:nmap gs :sort<CR>`. Без `<CR>` откроется командная строка с набранной командой в ожидании <kbd>Enter</kbd>.
+*   `:imap jk <Esc>` выходит из режима вставки при быстром последовательном нажатии `j` и `k`.
+*   Привязка действует до перезагрузки Trilium. Чтобы сохранить её в текстовых заметках, добавьте её в настройку _Команды запуска_ — см. <a class="reference-link" href="../Vim%20mode.md">Режим Vim</a>.
 
-### Options
+### Параметры
 
-| Command | Action |
+| Команда | Действие |
 | --- | --- |
-| `:set hints` / `:set nohints` | Turn the key hints on / off. **Trilium-exclusive** **Text notes only** |
-| `:set textwidth=80` | Set the width that `gq` wraps lines at. Also `:set tw=80`. **Code notes only** |
+| `:set hints` / `:set nohints` | Включить / выключить подсказки клавиш. **Эксклюзивно для Trilium** **Только текстовые заметки** |
+| `:set textwidth=80` | Задать ширину переноса строк для `gq`. Также `:set tw=80`. **Только заметки с кодом** |
 
-## Not supported
+## Не поддерживается
 
-These parts of Vim are not available in either kind of note:
+Следующие возможности Vim недоступны ни в одном типе заметок:
 
-*   The windows, buffers, tabs and files of Vim: the window commands that start with <kbd>Ctrl</kbd>+<kbd>W</kbd> in Normal mode, and commands such as `:e` and `:help`. In Insert mode, <kbd>Ctrl</kbd>+<kbd>W</kbd> is supported and deletes a word. `:q!` and `ZQ` only show a message in text notes, since there is nothing to discard.
-*   The Normal-mode commands in the table below.
-*   The marks `[` and `]`, which in Vim hold the ends of the last changed text.
-*   Search patterns in Vim's own syntax.
-*   Plugins, scripts and `.vimrc` files made for Vim.
-*   Visual Block mode, which selects a rectangle of text across several lines. In text notes, <kbd>Ctrl</kbd>+<kbd>V</kbd> pastes in Normal and Visual mode. In code notes, <kbd>Ctrl</kbd>+<kbd>V</kbd> or <kbd>Ctrl</kbd>+<kbd>Q</kbd> does start the mode, but the selection stays on one line, so it does not work as a rectangle.
+*   Окна, буферы, вкладки и файлы Vim: команды окон, начинающиеся с <kbd>Ctrl</kbd>+<kbd>W</kbd> в обычном режиме, а также команды вроде `:e` и `:help`. В режиме вставки <kbd>Ctrl</kbd>+<kbd>W</kbd> поддерживается и удаляет слово. `:q!` и `ZQ` в текстовых заметках лишь показывают сообщение, так как отменять нечего.
+*   Команды обычного режима из таблицы ниже.
+*   Метки `[` и `]`, которые в Vim указывают на границы последнего изменённого текста.
+*   Шаблоны поиска в собственном синтаксисе Vim.
+*   Плагины, скрипты и файлы `.vimrc`, созданные для Vim.
+*   Режим блочного выделения (Visual Block), выделяющий прямоугольную область текста. В текстовых заметках <kbd>Ctrl</kbd>+<kbd>V</kbd> вставляет в обычном и визуальном режимах. В заметках с кодом <kbd>Ctrl</kbd>+<kbd>V</kbd> или <kbd>Ctrl</kbd>+<kbd>Q</kbd> запускают этот режим, но выделение остаётся на одной строке и не работает как прямоугольник.
 
-| Normal-mode keys | What they do in Vim |
+| Клавиши обычного режима | Что они делают в Vim |
 | --- | --- |
-| `gp` / `gP` | Put, and leave the cursor after the put text. |
-| `@:` | Repeat the last command of the command line. |
-| `&` / `g&` | Repeat the last `:s`, on the line / on every line. The `&` inside the replacement of `:s` is something else, and is described under _Replacing_. |
-| `g;` / `g,` | Go to the previous / next place where the text was changed. |
-| `U` | Undo all the changes made to the line. In Visual mode, `U` makes the selection upper case, and that is supported. |
-| `K` | Look up the word under the cursor. |
-| `Q` | Switch to Ex mode. |
-| <kbd>Ctrl</kbd>+<kbd>]</kbd> | Jump to the definition of the word under the cursor. |
-| `zf` | Create a fold by hand. |
+| `gp` / `gP` | Вставить и оставить курсор после вставленного текста. |
+| `@:` | Повторить последнюю команду командной строки. |
+| `&` / `g&` | Повторить последнюю замену `:s` в текущей строке / во всех строках. Символ `&` внутри замены `:s` — это другое, см. _Замена_. |
+| `g;` / `g,` | Перейти к предыдущему / следующему месту изменения текста. |
+| `U` | Отменить все изменения в текущей строке. В визуальном режиме `U` переводит выделение в верхний регистр, и это поддерживается. |
+| `K` | Открыть справку по слову под курсором. |
+| `Q` | Переключиться в режим Ex. |
+| <kbd>Ctrl</kbd>+<kbd>]</kbd> | Перейти к определению слова под курсором. |
+| `zf` | Создать свёртку вручную. |

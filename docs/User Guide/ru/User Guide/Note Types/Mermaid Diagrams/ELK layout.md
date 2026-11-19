@@ -1,7 +1,7 @@
-# ELK layout
-Mermaid supports a different layout engine which supports slightly more complex diagrams, called the [Eclipse Layout Kernel (ELK)](https://eclipse.dev/elk/). Trilium has support for these as well, but it's not enabled by default.
+# Компоновка ELK
+Mermaid поддерживает альтернативный движок компоновки для более сложных диаграмм — [Eclipse Layout Kernel (ELK)](https://eclipse.dev/elk/). Trilium также поддерживает его, но по умолчанию он не включён.
 
-In order to activate ELK for any diagram, insert the following YAML frontmatter right at the beginning of the diagram:
+Чтобы активировать ELK для любой диаграммы, вставьте следующий YAML-заголовок (frontmatter) в самое начало диаграммы:
 
 ```yaml
 ---
@@ -10,6 +10,6 @@ config:
 ---
 ```
 
-| With ELK off | With ELK on |
+| ELK выключен | ELK включён |
 | --- | --- |
 | ![](ELK%20layout_ELK%20off.svg) | ![](ELK%20layout_ELK%20on.svg) |

@@ -1,148 +1,148 @@
 # Web Clipper
 ![](Web%20Clipper_image.png)
 
-Trilium Web Clipper is a web browser extension which allows user to clip text, screenshots, whole pages and short notes and save them directly to Trilium Notes.
+Trilium Web Clipper — это расширение для веб-браузера, которое позволяет сохранять выделенный текст, скриншоты, целые веб-страницы и короткие заметки напрямую в Trilium Notes.
 
-## Supported browsers
+## Поддерживаемые браузеры
 
-Trilium Web Clipper officially supports the following web browsers:
+Trilium Web Clipper официально поддерживает следующие веб-браузеры:
 
-*   Mozilla Firefox, using Manifest v2.
-*   Google Chrome, using Manifest v3. Theoretically the extension should work on other Chromium-based browsers as well, but they are not officially supported.
+*   Mozilla Firefox (с использованием Manifest v2).
+*   Google Chrome (с использованием Manifest v3). Теоретически расширение должно работать и в других браузерах на базе Chromium, но они официально не поддерживаются.
 
-## Obtaining the extension
+## Получение расширения
 
-The extension is available from the official browser web stores:
+Расширение доступно в официальных магазинах расширений браузеров:
 
-*   **Firefox**: [Trilium Web Clipper on Firefox Add-ons](https://addons.mozilla.org/firefox/addon/trilium-notes-web-clipper/)
-*   **Chrome**: [Trilium Web Clipper on Chrome Web Store](https://chromewebstore.google.com/detail/trilium-web-clipper/ofoiklieachadcaeffficgjaajojpkpi)
+*   **Firefox**: [Trilium Web Clipper в Firefox Add-ons](https://addons.mozilla.org/firefox/addon/trilium-notes-web-clipper/)
+*   **Chrome**: [Trilium Web Clipper в Chrome Web Store](https://chromewebstore.google.com/detail/trilium-web-clipper/ofoiklieachadcaeffficgjaajojpkpi)
 
-## Functionality
+## Функциональность
 
-*   select text and clip it with the right-click context menu
-*   click on an image or link and save it through context menu
-*   save whole page from the popup or context menu
-*   save a PDF that the browser shows, as a file note
-*   save a screenshot of an area you select, of the visible part of the page or of the whole page, from either popup or context menu
-*   create short text note from popup
+*   выделение текста и сохранение его через контекстное меню (правой кнопкой мыши)
+*   нажатие на изображение или ссылку и сохранение их через контекстное меню
+*   сохранение всей страницы из всплывающего окна или контекстного меню
+*   сохранение PDF-файла, открытого в браузере, в виде файловой заметки
+*   сохранение скриншота выбранной области, видимой части страницы или всей страницы из всплывающего окна или контекстного меню
+*   создание короткой текстовой заметки из всплывающего окна
 
-## The popup
+## Всплывающее окно
 
-Clicking the extension's button in the browser toolbar opens its popup:
+Нажатие на кнопку расширения на панели инструментов браузера открывает его всплывающее окно:
 
-*   The popup shows what will be saved from the current page: the note's title, which can be edited before saving, the website, and below them a preview, which starts with a box for your own note and the page's description. A switch above the preview chooses what to save, among what the page offers:
+*   Во всплывающем окне отображается то, что будет сохранено с текущей страницы: заголовок заметки (его можно отредактировать перед сохранением), адрес сайта, а ниже — предварительный просмотр, который начинается с поля для вашей собственной заметки и описания страницы. Переключатель над предпросмотром позволяет выбрать, что именно сохранить из доступного на странице:
     
-    *   _Selection_, when text is selected on the page: _Save selection_ saves it into the note of that page's clippings, as the context menu does.
-    *   _Page_: _Save page to Trilium_ saves the page's text and images. A smaller switch at the top of the preview chooses how much of the page to keep: _Article_ keeps only the page's main text, without its menus, sidebars and footers, and _Whole page_ keeps everything the page shows. _Whole page_ is for pages that are not an article (such as a gallery or a page of cards), where _Article_ can leave out part of the content; the preview shows what each one keeps. _Article_ is unavailable on a page where Trilium finds no article. The author the page names shows under the description, marked by the <span class="tn-icon bx bx-user"></span> icon. It can be edited or cleared before saving, or written in when the page names none, and is saved in the `#pageAuthor` label of the note. When the page states when it was published, that date shows under the author, marked by the <span class="tn-icon bx bx-calendar"></span> icon, and is saved in the `#publishedDate` label of the note. When it states when it was last modified, that date shows below, marked by the <span class="tn-icon bx bx-history"></span> icon, and is saved in the `#modifiedDate` label.
-    *   _PDF_, when the tab shows a PDF in the browser's viewer: _Save PDF to Trilium_ downloads the PDF and saves it as a file note, which Trilium opens in its <a class="reference-link" href="../Note%20Types/File/PDFs.md">PDFs</a> viewer. Only the title and the description can be edited, since a file note has no text of its own for your note. The page's address is saved in the note's `#pageUrl` label and the PDF's file name in `#originalFileName`. Saving a PDF needs Trilium v0.107.0 or later.
-    *   _Bookmark_, always: there is no preview, and _Save bookmark_ saves a link to the page with your note as the content of the note. Left empty, the title stays the page's title.
+    *   _Selection_ (Выделение), когда на странице выделен текст: _Save selection_ сохраняет его в заметку с вырезками этой страницы, как и через контекстное меню.
+    *   _Page_ (Страница): _Save page to Trilium_ сохраняет текст и изображения страницы. Небольшой переключатель в верхней части предпросмотра определяет, какую часть страницы сохранить: _Article_ (Статья) оставляет только основной текст страницы без меню, боковых панелей и подвалов, а _Whole page_ (Вся страница) сохраняет всё содержимое страницы. _Whole page_ подходит для страниц, не являющихся статьями (например, галерей или страниц с карточками), где _Article_ может пропустить часть содержимого; предпросмотр показывает, что именно сохранит каждый режим. Режим _Article_ недоступен на страницах, где Trilium не находит статью. Автор, указанный на странице, отображается под описанием со значком <span class="tn-icon bx bx-user"></span>. Его можно отредактировать или очистить перед сохранением либо ввести вручную, если на странице он не указан; значение сохраняется в метке `#pageAuthor` заметки. Если на странице указана дата публикации, она отображается под автором со значком <span class="tn-icon bx bx-calendar"></span> и сохраняется в метке `#publishedDate`. Если указана дата последнего изменения, она отображается ниже со значком <span class="tn-icon bx bx-history"></span> и сохраняется в метке `#modifiedDate`.
+    *   _PDF_, когда во вкладке открыт PDF во встроенном просмотрщике браузера: _Save PDF to Trilium_ скачивает PDF и сохраняет его как файловую заметку, которую Trilium открывает в своём просмотрщике <a class="reference-link" href="../Note%20Types/File/PDFs.md">PDF</a>. Редактировать можно только заголовок и описание, так как у файловой заметки нет собственного текста для вашей заметки. Адрес страницы сохраняется в метке `#pageUrl`, а имя PDF-файла — в `#originalFileName`. Для сохранения PDF требуется Trilium версии v0.107.0 или выше.
+    *   _Bookmark_ (Закладка), доступна всегда: предпросмотра нет, а _Save bookmark_ сохраняет ссылку на страницу с вашей заметкой в качестве содержимого заметки. Если оставить поле заголовка пустым, сохранится заголовок страницы.
     
-    The box for your note, marked by the <span class="tn-icon bx bx-info-circle"></span> icon, has the cursor when the popup opens, so a note (such as why the page is worth keeping) can be typed right away. It grows with its text, and keeps it when switching between _Selection_, _Page_ and _Bookmark_. A note on a selection or a page is saved above the clipped content, in a _Note_ admonition. Left empty, nothing is added. <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in any of the popup's fields saves, whichever is chosen.
+    Поле для вашей заметки, отмеченное значком <span class="tn-icon bx bx-info-circle"></span>, получает фокус сразу при открытии всплывающего окна, так что заметку (например, почему эту страницу стоит сохранить) можно набрать немедленно. Оно увеличивается по мере ввода текста и сохраняет его при переключении между _Selection_, _Page_ и _Bookmark_. Заметка к выделению или странице сохраняется над вырезанным содержимым в виде блока уведомления _Note_. Если оставить поле пустым, ничего не добавляется. Нажатие <kbd>Ctrl</kbd>+<kbd>Enter</kbd> в любом поле всплывающего окна сохраняет выбранный вариант.
     
-    The description, marked by the <span class="tn-icon bx bx-align-left"></span> icon, comes from the page's `description` meta tag, or the one it gives social sites. It can be edited or cleared before saving, or written in when the page has none, and is saved in the `#pageDescription` label of the note. Clippings saved with the keyboard shortcuts or the context menu, screenshots and images included, get the description as the page gives it. Each clipping that brings a description updates the label. The description, the author and the dates are shown by clicking the _Web clip_ badge next to the title of the note (see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20badges.md">Note badges</a>).
+    Описание, отмеченное значком <span class="tn-icon bx bx-align-left"></span>, берётся из метатега `description` страницы или из метатегов для соцсетей. Его можно отредактировать или очистить перед сохранением либо ввести вручную, если на странице его нет; оно сохраняется в метке `#pageDescription` заметки. Вырезки, сохранённые с помощью горячих клавиш или контекстного меню (включая скриншоты и изображения), получают описание так, как оно задано на странице. Каждая вырезка с описанием обновляет эту метку. Описание, автора и даты можно посмотреть, нажав на значок _Web clip_ рядом с заголовком заметки (см. <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20badges.md">Значки заметок</a>).
     
-    The popup opens on the selection if there is one, otherwise on _Page_, showing the article, or the whole page when the page has no article. On a PDF, it opens on _PDF_. On a page that shows nothing to save, it opens on _Bookmark_ and says so. The keyboard shortcuts and the context menu still save right away, without a preview: saving the whole page that way saves the article, the whole page when the page has no article, or the PDF when the tab shows one.
-*   Pages the extension cannot access (the browser's own pages, the extension stores, and pages that were open before the extension was installed until they are reloaded) cannot be saved or captured, so the popup says so in place of the preview, and only _All tabs_ remains available there.
-*   Below the preview, a row of buttons offers the other actions: _Area_ (a screenshot of an area you select), _Visible_ (a screenshot of the visible part of the page), _Full page_ (a screenshot of the whole page) and _All tabs_ (saves the links of every tab in the current window as a list of <a class="reference-link" href="../Note%20Types/Text/Link%20Previews.md">Link Previews</a>, or of text links when _Autogenerate link previews_ is turned off). Hovering over a button shows its full name and, if it has one, its keyboard shortcut.
-*   _Full page_ scrolls through the page, takes a screenshot of each part and joins them into one image, then scrolls back to where the page was. The scrollbars are hidden while it does, so they do not appear in the image. Stay on the tab until it is saved: switching to another tab stops the screenshot. A header that stays at the top of the window appears once, at the top of the image, and headings that stick while scrolling appear where they are in the page. Other elements that stay in place while scrolling (such as cookie banners and chat buttons) are left out, while a background that fills the whole window repeats on every screen. In Firefox, the page is captured without scrolling through it, which is faster: such a background then appears only at the top, and images that the page loads only once they are scrolled into view can be missing. A long page is saved as several images, one below the other in the note. A page longer than 100 screens is cut off there, and the message after saving says so. Screenshots keep their full height in Trilium: _Resize image_ (under _Automatically compress images_ in Options → Media) limits only their width.
-*   The popup stays open while Trilium saves, which can take a few seconds for a long page or a large PDF, and the other actions wait until it is done. The bar at the top of the popup then says, in green, that the clipping was saved (in place of the notice that the page was already clipped), with _Open note_ to open it in Trilium (and, after _All tabs_, _Close saved tabs_), or, in red, why it could not be saved. The same clipping cannot be saved twice by accident: the save button stays disabled until another mode is chosen. _Crop_ is the exception: the popup closes so that an area of the page can be selected, and the notification on the page reports the outcome.
-*   If the current page was already clipped, a notice at the top offers to open the note in Trilium.
-*   If Trilium cannot be found, the popup explains why instead of showing the actions, with buttons to look for Trilium again and to open the options.
-*   The bottom of the popup shows whether the extension is connected to Trilium, as a colored dot (green when connected, amber when the versions are not compatible, red when Trilium was not found) next to a description of the connection, followed by the buttons for the extension's options and for this help page. A button to check the connection again appears next to them when hovering over the bar, and stays visible while Trilium cannot be reached or is not compatible.
+    Всплывающее окно открывается на вкладке выделения, если текст выделен, иначе — на _Page_, показывая статью (или всю страницу, если статьи нет). Для PDF оно открывается на _PDF_. На странице, где нечего сохранять, оно открывается на _Bookmark_ и сообщает об этом. Горячие клавиши и контекстное меню по-прежнему сохраняют сразу, без предпросмотра: сохранение всей страницы таким способом сохраняет статью, всю страницу (если статьи нет) или PDF, если во вкладке открыт PDF.
+*   Страницы, к которым расширение не имеет доступа (внутренние страницы браузера, магазины расширений и страницы, открытые до установки расширения, пока они не будут перезагружены), нельзя сохранить или снять с них скриншот — всплывающее окно сообщает об этом вместо предпросмотра, и там остаётся доступна только кнопка _All tabs_.
+*   Под предпросмотром расположен ряд кнопок для других действий: _Area_ (скриншот выбранной области), _Visible_ (скриншот видимой части страницы), _Full page_ (скриншот всей страницы) и _All tabs_ (сохраняет ссылки всех вкладок текущего окна в виде списка <a class="reference-link" href="../Note%20Types/Text/Link%20Previews.md">предпросмотров ссылок</a> или текстовых ссылок, если отключена настройка _Autogenerate link previews_). При наведении на кнопку отображается её полное название и горячая клавиша, если она назначена.
+*   _Full page_ прокручивает страницу, делает скриншот каждой части и склеивает их в одно изображение, а затем прокручивает страницу обратно. Полосы прокрутки на это время скрываются, чтобы не попасть на снимок. Оставайтесь на вкладке до завершения сохранения: переключение на другую вкладку прерывает создание скриншота. Закреплённая шапка в верхней части окна появляется один раз — в самом верху изображения, а заголовки, прилипающие при прокрутке, остаются на своих местах на странице. Прочие элементы, остающиеся на месте при прокрутке (например, баннеры cookie и кнопки чата), исключаются, тогда как фон, заполняющий всё окно, повторяется на каждом экране. В Firefox страница захватывается без прокрутки, что быстрее: такой фон появляется только вверху, а изображения, загружаемые страницей только при прокрутке до них, могут отсутствовать. Длинная страница сохраняется как несколько изображений, расположенных одно под другим в заметке. Страница длиннее 100 экранов обрезается на этом пределе, о чём сообщается после сохранения. Скриншоты сохраняют полную высоту в Trilium: параметр _Resize image_ (в разделе _Automatically compress images_ в Options → Media) ограничивает только их ширину.
+*   Всплывающее окно остаётся открытым, пока Trilium сохраняет данные, что может занять несколько секунд для длинной страницы или большого PDF, а остальные действия ждут завершения. После этого панель в верхней части окна сообщает зелёным цветом, что вырезка сохранена (вместо уведомления о том, что страница уже была сохранена ранее), с кнопкой _Open note_ для открытия заметки в Trilium (а после _All tabs_ — _Close saved tabs_), либо красным цветом — почему сохранить не удалось. Одну и ту же вырезку нельзя случайно сохранить дважды: кнопка сохранения остаётся неактивной, пока не выбран другой режим. Исключением является _Crop_: всплывающее окно закрывается, чтобы можно было выделить область на странице, а результат отображается в уведомлении на самой странице.
+*   Если текущая страница уже была сохранена ранее, уведомление вверху предлагает открыть заметку в Trilium.
+*   Если не удаётся найти Trilium, всплывающее окно объясняет причину вместо показа действий и предлагает кнопки для повторного поиска Trilium и открытия настроек.
+*   В нижней части всплывающего окна отображается статус подключения расширения к Trilium в виде цветной точки (зелёная — подключено, жёлтая — несовместимые версии, красная — Trilium не найден) рядом с описанием подключения, а также кнопки настроек расширения и этой страницы справки. При наведении на панель рядом с ними появляется кнопка повторной проверки подключения, которая остаётся видимой, пока Trilium недоступен или несовместим.
 
-## Location of clippings
+## Расположение вырезок
 
-Trilium will save these clippings as a new child note under a "clipper inbox" note.
+Trilium сохраняет эти вырезки как новую дочернюю заметку внутри заметки «clipper inbox».
 
-By default, that's the <a class="reference-link" href="../Advanced%20Usage/Advanced%20Showcases/Day%20Notes.md">Day Notes</a> but you can override that by setting the [label](../Advanced%20Usage/Attributes.md) `clipperInbox`, on any other note.
+По умолчанию это <a class="reference-link" href="../Advanced%20Usage/Advanced%20Showcases/Day%20Notes.md">Ежедневные заметки</a>, но вы можете изменить это, добавив [метку](../Advanced%20Usage/Attributes.md) `clipperInbox` к любой другой заметке.
 
-Further clippings of the same kind from the same page are added to the note created by the first one, even on a later day or after that note was moved out of the clipper inbox. The note stays where it is and is not cloned back into the inbox. A PDF is the exception: each save creates a new file note, since the PDF can have changed since it was last saved.
+Дальнейшие вырезки того же типа с той же страницы добавляются в заметку, созданную при первом сохранении, даже в другой день или после того, как эта заметка была перемещена из «clipper inbox». Заметка остаётся на своём месте и не клонируется обратно во входящие. Исключением является PDF: каждое сохранение создаёт новую файловую заметку, поскольку PDF мог измениться с момента последнего сохранения.
 
-The icon of a clipped note shows what was saved:
+Значок сохранённой заметки показывает, что именно было сохранено:
 
-*   <span class="tn-icon bx bx-paperclip"></span> a selection, a screenshot or a link from the context menu;
-*   <span class="tn-icon bx bx-globe"></span> a page (_Article_ or _Whole page_);
-*   <span class="tn-icon bx bx-bookmark"></span> a bookmark;
-*   <span class="tn-icon bx bx-window-alt"></span> the tabs of a window.
+*   <span class="tn-icon bx bx-paperclip"></span> выделение, скриншот или ссылка из контекстного меню;
+*   <span class="tn-icon bx bx-globe"></span> страница (_Article_ или _Whole page_);
+*   <span class="tn-icon bx bx-bookmark"></span> закладка;
+*   <span class="tn-icon bx bx-window-alt"></span> вкладки окна.
 
-The icon is derived from the note's `#clipType` label, so setting an `#iconClass` label on the note replaces it. A saved PDF has the icon of a PDF file, like any other PDF in Trilium.
+Значок определяется меткой `#clipType` заметки, поэтому добавление метки `#iconClass` заменит его. Сохранённый PDF получает значок PDF-файла, как и любой другой PDF в Trilium.
 
-## Embedded videos
+## Встроенные видео
 
-A YouTube video embedded in a clipped page is saved as a <a class="reference-link" href="../Note%20Types/Text/Link%20Previews.md">Link Previews</a> embed, with the video's title and thumbnail. As with a link preview added in the editor, the video plays only when clicked. Other embedded content (such as videos from other websites) is not saved.
+Видео с YouTube, встроенное на сохраняемую страницу, сохраняется как встроенный блок <a class="reference-link" href="../Note%20Types/Text/Link%20Previews.md">предпросмотра ссылки</a> с названием и миниатюрой видео. Как и в случае с предпросмотром ссылки, добавленным в редакторе, видео воспроизводится только по нажатию. Другой встроенный контент (например, видео с других сайтов) не сохраняется.
 
-The popup's preview shows each such video as a chip with the YouTube icon and the video's short link, and leaves out the embedded content that will not be saved.
+В предпросмотре всплывающего окна каждое такое видео отображается в виде чипа со значком YouTube и короткой ссылкой на видео, а встроенный контент, который не будет сохранён, опускается.
 
-## Keyboard shortcuts
+## Горячие клавиши
 
-Keyboard shortcuts are available for most functions:
+Для большинства функций доступны горячие клавиши:
 
-*   Save selected text: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> (Mac: <kbd>⌘</kbd>+<kbd>⇧</kbd>+<kbd>S</kbd>)
-*   Save whole page: <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> (Mac: <kbd>⌥</kbd>+<kbd>⇧</kbd>+<kbd>S</kbd>)
-*   Save a screenshot of an area: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd> (Mac: <kbd>⌘</kbd>+<kbd>⇧</kbd>+<kbd>E</kbd>)
-*   Save all tabs of the current window: no default shortcut, but one can be assigned as described below.
-*   Save a screenshot of the whole page: no default shortcut, but one can be assigned as described below.
+*   Сохранить выделенный текст: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> (Mac: <kbd>⌘</kbd>+<kbd>⇧</kbd>+<kbd>S</kbd>)
+*   Сохранить всю страницу: <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> (Mac: <kbd>⌥</kbd>+<kbd>⇧</kbd>+<kbd>S</kbd>)
+*   Сохранить скриншот области: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd> (Mac: <kbd>⌘</kbd>+<kbd>⇧</kbd>+<kbd>E</kbd>)
+*   Сохранить все вкладки текущего окна: по умолчанию сочетания нет, но его можно назначить, как описано ниже.
+*   Сохранить скриншот всей страницы: по умолчанию сочетания нет, но его можно назначить, как описано ниже.
 
-To set custom shortcuts, follow the directions for your browser.
+Чтобы задать собственные горячие клавиши, следуйте инструкциям для вашего браузера.
 
-*   **Firefox**: `about:addons` → Gear icon ⚙️ → Manage extension shortcuts
+*   **Firefox**: `about:addons` → значок шестерёнки ⚙️ → Manage extension shortcuts
 *   **Chrome**: `chrome://extensions/shortcuts`
 
 > [!NOTE]
-> On Firefox, the default shortcuts interfere with some browser features. As such, the keyboard combinations will not trigger the Web Clipper action. To fix this, simply change the keyboard shortcut to something that works. The defaults will be adjusted in future versions.
+> В Firefox горячие клавиши по умолчанию конфликтуют с некоторыми функциями браузера. Из-за этого сочетания клавиш не будут запускать действие Web Clipper. Чтобы исправить это, просто измените горячую клавишу на другую, которая работает. Значения по умолчанию будут скорректированы в будущих версиях.
 
-## Configuration
+## Настройка
 
-The extension needs to connect to a running Trilium instance. By default, it looks for the desktop application on port 37840 of the local computer. If the desktop application runs on a different port (for example because it was started with the `TRILIUM_PORT` environment variable), enter that port in the extension's options. The extension checks for Trilium again every minute, or right away when pressing the refresh button at the bottom of its popup.
+Расширению необходимо подключиться к запущенному экземпляру Trilium. По умолчанию оно ищет настольное приложение на порту 37840 локального компьютера. Если настольное приложение работает на другом порту (например, было запущено с переменной окружения `TRILIUM_PORT`), укажите этот порт в настройках расширения. Расширение проверяет наличие Trilium каждую минуту или сразу при нажатии кнопки обновления в нижней части всплывающего окна.
 
-It's also possible to configure the [server](Server%20Installation.md) address if you don't run the desktop application, or want it to work without the desktop application running.
+Также можно указать адрес [сервера](Server%20Installation.md), если вы не используете настольное приложение или хотите, чтобы расширение работало без запущенного настольного приложения.
 
-To connect to a server, enter its address and your password in the extension's options and press _Login to the server instance_. If the server uses [multi-factor authentication](Server%20Installation/Multi-factor%20authentication%20with%20TOTP.md), also fill in _Authentication code_ with the current code from your authenticator app (or one of your recovery codes); otherwise leave it empty. The password and the code are used only once, to obtain a token for the extension, and are not stored.
+Чтобы подключиться к серверу, введите его адрес и ваш пароль в настройках расширения и нажмите _Login to the server instance_. Если сервер использует [многофакторную аутентификацию](Server%20Installation/Multi-factor%20authentication%20with%20TOTP.md), также заполните поле _Authentication code_ текущим кодом из приложения-аутентификатора (или одним из кодов восстановления); в противном случае оставьте его пустым. Пароль и код используются только один раз для получения токена расширения и не сохраняются.
 
-### When a clipping fails
+### Если сохранение не удалось
 
-After each clipping made with a keyboard shortcut or the context menu, a notification in the corner of the page confirms that it was saved, with a link to open the new note in Trilium. A clipping made from the popup reports in the popup instead, unless the popup was closed before it was saved. If the clipping could not be saved, the message says why instead:
+После каждого сохранения с помощью горячей клавиши или контекстного меню в углу страницы появляется уведомление, подтверждающее сохранение, со ссылкой для открытия новой заметки в Trilium. При сохранении из всплывающего окна результат отображается в самом всплывающем окне, если оно не было закрыто до завершения сохранения. Если сохранить не удалось, сообщение указывает причину:
 
-*   Trilium was not found: start the desktop application, or check the server address and token in the extension's options.
-*   The versions of Trilium and the extension are not compatible: update the one the message names.
-*   Trilium rejected the request: the message includes the reason Trilium gave.
-*   The popup could not reach the extension's background script, or it gave no answer: close the popup and open it again. If the extension was just updated or reloaded, reload the page as well.
-*   A PDF could not be saved: Trilium is older than v0.107.0, the website refused to send the PDF again, or the PDF is larger than 100 MB. The extension downloads the PDF with the browser's cookies for that website, so a PDF behind a login can be saved while you are logged in.
+*   Trilium не найден: запустите настольное приложение или проверьте адрес сервера и токен в настройках расширения.
+*   Версии Trilium и расширения несовместимы: обновите компонент, указанный в сообщении.
+*   Trilium отклонил запрос: сообщение содержит причину, возвращённую Trilium.
+*   Всплывающее окно не смогло связаться с фоновым скриптом расширения или не получило ответа: закройте всплывающее окно и откройте его снова. Если расширение только что обновилось или перезагрузилось, также перезагрузите страницу.
+*   Не удалось сохранить PDF: версия Trilium старше v0.107.0, сайт отказался повторно отдать PDF или размер PDF превышает 100 МБ. Расширение скачивает PDF с использованием cookie браузера для этого сайта, поэтому PDF, требующий авторизации, можно сохранить, пока вы вошли в систему.
 
-The extension downloads the images of a clipping itself, so that they are stored in Trilium together with the note. If some of them cannot be downloaded (for example because the website refuses the request), the clipping is still saved, and the notification says how many images are missing. Those images keep their address on the original website: Trilium tries to download them once more if _Download images automatically_ is enabled in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Media_, and otherwise the note shows them from the website for as long as it serves them.
+Расширение само скачивает изображения из вырезки, чтобы они хранились в Trilium вместе с заметкой. Если часть из них не удаётся скачать (например, сайт отклоняет запрос), вырезка всё равно сохраняется, а уведомление сообщает, сколько изображений отсутствует. Эти изображения сохраняют свои адреса на исходном сайте: Trilium попытается скачать их ещё раз, если в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Media_ включён параметр _Download images automatically_; в противном случае заметка отображает их с сайта, пока он их отдаёт.
 
-The notification is shown on the page itself, so it does not appear on pages where extensions cannot run (such as the browser's own settings pages, the extension stores and Firefox's PDF viewer). A clipping saved from the popup on such a page still reports in the popup.
+Уведомление отображается на самой странице, поэтому оно не появляется на страницах, где расширения не могут работать (например, на страницах настроек браузера, в магазинах расширений и в просмотрщике PDF в Firefox). Вырезка, сохранённая из всплывающего окна на такой странице, всё равно отобразит результат во всплывающем окне.
 
-## Testing development versions
+## Тестирование версий для разработки
 
-Development versions are version pre-release versions, generally meant for testing purposes. These are not available in the Google or Firefox web stores, but can be downloaded from either:
+Версии для разработки — это предварительные сборки, предназначенные для тестирования. Они недоступны в магазинах Chrome или Firefox, но их можно скачать из одного из следующих источников:
 
-*   [GitHub Releases](https://github.com/TriliumNext/Trilium/releases) by looking for releases starting with _Web Clipper._
-*   Artifacts in GitHub Actions, by looking for the [_Deploy web clipper extension_ workflow](https://github.com/TriliumNext/Trilium/actions/workflows/web-clipper.yml). Once a workflow run is selected, the ZIP files are available in the _Artifacts_ section, under the name `web-clipper-extension`.
+*   [GitHub Releases](https://github.com/TriliumNext/Trilium/releases) — ищите релизы, начинающиеся с _Web Clipper._
+*   Артефакты в GitHub Actions — найдите рабочий процесс [_Deploy web clipper extension_](https://github.com/TriliumNext/Trilium/actions/workflows/web-clipper.yml). Выбрав нужный запуск, вы найдёте ZIP-файлы в разделе _Artifacts_ под именем `web-clipper-extension`.
 
-=== "<span class="tn-icon bx bxl-chrome"></span> Chrome"
+=== "<span class="tn-icon bx bxl-chrome"></span> Chrome"
 
-    1.  Download `trilium-web-clipper-[x.y.z]-chrome.zip`.
-    2.  Extract the archive.
-    3.  In Chrome, navigate to `chrome://extensions/`
-    4.  Toggle _Developer Mode_ in top-right of the page.
-    5.  Press the _Load unpacked_ button near the header.
-    6.  Point to the extracted directory from step (2).
+    1.  Скачайте `trilium-web-clipper-[x.y.z]-chrome.zip`.
+    2.  Распакуйте архив.
+    3.  В Chrome перейдите по адресу `chrome://extensions/`
+    4.  Включите _Режим разработчика_ (_Developer Mode_) в правом верхнем углу страницы.
+    5.  Нажмите кнопку _Загрузить распакованное расширение_ (_Load unpacked_) рядом с заголовком.
+    6.  Укажите папку, распакованную на шаге (2).
 
-=== "<span class="tn-icon bx bxl-firefox"></span> Firefox"
+=== "<span class="tn-icon bx bxl-firefox"></span> Firefox"
 
     > [!WARNING]
-    > Firefox prevents installation of unsigned packages in the “retail” version. To be able to install extensions from disk, consider using _Firefox Developer Edition_ or a non-branded version of Firefox (e.g. _GNU IceCat_).
+    > Обычная («розничная») версия Firefox запрещает установку неподписанных пакетов. Чтобы устанавливать расширения с диска, используйте _Firefox Developer Edition_ или небрендированную версию Firefox (например, _GNU IceCat_).
     > 
-    > One time, go to `about:config` and change `xpinstall.signatures.required` to `false`.
+    > Один раз перейдите на `about:config` и измените `xpinstall.signatures.required` на `false`.
 
-    1.  Navigate to `about:addons`.
-    2.  Select _Extensions_ in the left-side navigation.
-    3.  Press the _Gear_ icon on the right of the _Manage Your Extensions_ title.
-    4.  Select _Install Add-on From File…_
-    5.  Point it to `trilium-web-clipper-[x.y.z]-firefox.zip`.
-    6.  Press the _Add_ button to confirm.
+    1.  Перейдите на `about:addons`.
+    2.  Выберите _Расширения_ (_Extensions_) в левом меню навигации.
+    3.  Нажмите на значок _шестерёнки_ справа от заголовка _Управление расширениями_ (_Manage Your Extensions_).
+    4.  Выберите _Установить дополнение из файла…_ (_Install Add-on From File…_)
+    5.  Укажите файл `trilium-web-clipper-[x.y.z]-firefox.zip`.
+    6.  Нажмите кнопку _Добавить_ (_Add_) для подтверждения.
 
-## Credits
+## Благодарности
 
-Some parts of the code are based on the [Joplin Notes browser extension](https://github.com/laurent22/joplin/tree/master/Clipper).
+Часть кода основана на [расширении для браузера Joplin Notes](https://github.com/laurent22/joplin/tree/master/Clipper).

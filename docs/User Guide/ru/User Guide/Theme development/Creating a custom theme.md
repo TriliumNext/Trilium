@@ -1,36 +1,36 @@
-# Creating a custom theme
-## Step 1. Find a place to place the themes
+# Создание собственной темы
+## Шаг 1. Найдите место для хранения тем
 
-Organization is an important aspect of managing a knowledge base. When developing a new theme or importing an existing one it's a good idea to keep them into one place.
+Организация — важный аспект управления базой знаний. При разработке новой темы или импорте существующей рекомендуется хранить их в одном месте.
 
-As such, the first step is to create a new note to gather all the themes.
+Поэтому первый шаг — создать новую заметку, в которой будут собраны все темы.
 
 ![](Creating%20a%20custom%20theme_5_Creating%20a%20custom%20theme_im.jpg)
 
-## Step 2. Create the theme
+## Шаг 2. Создайте тему
 
 <table>
     <tbody>
         <tr>
             <td><img src="Creating a custom theme_3_Creating a custom theme_im.jpg"></td>
-            <td>Themes are code notes with a special attribute. Start by creating a new code note.</td>
+            <td>Темы — это заметки с кодом и специальным атрибутом. Начните с создания новой заметки с кодом.</td>
         </tr>
         <tr>
             <td><img src="Creating a custom theme_1_Creating a custom theme_im.jpg"></td>
-            <td>Then change the note type to a CSS code.</td>
+            <td>Затем измените тип кода заметки на CSS.</td>
         </tr>
         <tr>
             <td><img src="Creating a custom theme_Creating a custom theme_im.jpg"></td>
-            <td>In the attributes of the note (the&nbsp;<span class="tn-icon bx bx-list-check"></span> button in the&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a>), define the <code>#appTheme</code> attribute to point to any desired name. This is the name that will show up in the appearance section in settings.</td>
+            <td>В атрибутах заметки (кнопка&nbsp;<span class="tn-icon bx bx-list-check"></span> в&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">строке состояния</a>) задайте атрибут <code>#appTheme</code> со значением любого желаемого названия. Именно это название будет отображаться в разделе внешнего вида в настройках.</td>
         </tr>
     </tbody>
 </table>
 
-## Step 3. Define the theme's CSS
+## Шаг 3. Определите CSS темы
 
-As a very simple example we will change the background color of the launcher pane to a shade of blue.
+В качестве очень простого примера изменим цвет фона панели запуска на оттенок синего.
 
-To alter the different variables of the theme:
+Чтобы изменить различные переменные темы:
 
 ```css
 :root {
@@ -38,20 +38,20 @@ To alter the different variables of the theme:
 }
 ```
 
-## Step 4. Activating the theme
+## Шаг 4. Активация темы
 
-Refresh the application (Ctrl+Shift+R is a good way to do so) and go to settings. You should see the newly created theme:
+Обновите приложение (для этого удобно нажать Ctrl+Shift+R) и перейдите в настройки. Вы должны увидеть созданную тему:
 
 ![](Creating%20a%20custom%20theme_2_Creating%20a%20custom%20theme_im.jpg)
 
-Afterwards the application will refresh itself with the new theme:
+После этого приложение обновится с новой темой:
 
 ![](Creating%20a%20custom%20theme_4_Creating%20a%20custom%20theme_im.jpg)
 
-Do note that the theme will be based off of the legacy theme. To override that and base the theme on the Modern theme, see <a class="reference-link" href="Customize%20the%20Next%20theme.md">Customize the Next theme</a>.
+Обратите внимание, что тема будет основана на устаревшей (legacy) теме. Чтобы переопределить это и создать тему на основе современной темы (Modern / Next), см. <a class="reference-link" href="Customize%20the%20Next%20theme.md">Настройка темы Next</a>.
 
-## Step 5. Making changes
+## Шаг 5. Внесение изменений
 
-Simply go back to the note and change according to needs. To apply the changes to the current window, press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd> to refresh.
+Просто вернитесь к заметке и внесите нужные изменения. Чтобы применить их в текущем окне, нажмите <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd> для обновления.
 
-It's a good idea to keep two windows, one for editing and the other one for previewing the changes.
+Удобно держать открытыми два окна: одно для редактирования, а другое для предпросмотра изменений.

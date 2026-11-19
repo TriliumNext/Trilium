@@ -1,54 +1,54 @@
-# Protected Notes
-Trilium is designed to store a wide variety of data, including sensitive information such as personal journals, credentials, or confidential documents. To safeguard this type of content, Trilium offers the option to protect notes, which involves the following measures:
+# Защищённые заметки
+Trilium предназначен для хранения самых разных данных, включая конфиденциальную информацию — личные дневники, учётные данные или секретные документы. Чтобы обезопасить такой контент, Trilium позволяет защищать заметки с помощью следующих мер:
 
-*   **Encryption:** Protected notes are encrypted using a key derived from your password. This ensures that without the correct password, protected notes remain indecipherable. Even if someone gains access to your Trilium [database](../../Advanced%20Usage/Database.md), they won't be able to read your encrypted notes.
-*   **Time-limited access:** To access protected notes, you must first enter your password, which decrypts the note for reading and writing. However, after a specified period of inactivity (10 minutes by default), the note is unloaded from memory, requiring you to re-enter your password to access it again.
-    *   The session timeout is extended automatically while you're interacting with the protected note, so if you're actively editing, the session remains open. However, if you switch to an unprotected note, the session timer starts, and the session expires after 10 minutes of inactivity unless you return to the protected notes.
-*   **Protection scope:** Protected notes ensure the confidentiality of their content and partially their integrity. While unauthorized users cannot read or edit protected notes, they can still delete or move them outside of the protected session.
+*   **Шифрование:** защищённые заметки шифруются ключом, полученным из вашего пароля. Это гарантирует, что без правильного пароля их содержимое невозможно расшифровать. Даже если кто-то получит доступ к вашей [базе данных](../../Advanced%20Usage/Database.md) Trilium, он не сможет прочитать зашифрованные заметки.
+*   **Ограниченный по времени доступ:** чтобы открыть защищённую заметку, необходимо ввести пароль, который расшифровывает её для чтения и редактирования. Однако после определённого периода бездействия (по умолчанию 10 минут) заметка выгружается из памяти, и для повторного доступа потребуется снова ввести пароль.
+    *   Время действия сеанса автоматически продлевается, пока вы работаете с защищённой заметкой, поэтому при активном редактировании сеанс остаётся открытым. Но если переключиться на незащищённую заметку, запускается таймер, и через 10 минут бездействия сеанс завершается, если вы не вернётесь к защищённым заметкам.
+*   **Область защиты:** защищённые заметки обеспечивают конфиденциальность своего содержимого и частично — его целостность. Посторонние пользователи не смогут прочитать или изменить защищённые заметки, однако вне защищённого сеанса их всё ещё можно удалить или переместить.
 
-## Using Protected Notes
+## Использование защищённых заметок
 
-By default, notes are unprotected. To protect a note, simply click on the shield icon next to the note's title, as shown here:
+По умолчанию заметки не защищены. Чтобы защитить заметку, просто нажмите на значок щита рядом с её заголовком, как показано ниже:
 
-![example animation of unlocking protected notes](Protected%20Notes_protecting-note.gif)
+![пример анимации разблокировки защищённых заметок](Protected%20Notes_protecting-note.gif)
 
-To protect or unprotect a whole subtree at once, right-click its top note in the note tree and choose _Protect subtree_ or _Unprotect subtree_. If no protected session is running, a dialog explains what the action does and asks for your password, so you don't have to start a protected session beforehand.
+Чтобы защитить или снять защиту сразу со всего поддерева, нажмите правой кнопкой мыши на его верхнюю заметку в дереве заметок и выберите _Protect subtree_ (Защитить поддерево) или _Unprotect subtree_ (Снять защиту с поддерева). Если защищённый сеанс не запущен, появится диалоговое окно с пояснением действия и запросом пароля — запускать защищённый сеанс заранее не требуется.
 
-### Removing protection
+### Снятие защиты
 
-Unprotecting decrypts the notes: their content, attachments and revisions are stored without encryption from then on, also in backups and on the sync server. Because of this, _Unprotect subtree_ always asks for confirmation first, even while a protected session is running.
+Снятие защиты расшифровывает заметки: с этого момента их содержимое, вложения и ревизии хранятся без шифрования, в том числе в резервных копиях и на сервере синхронизации. По этой причине _Unprotect subtree_ всегда сначала запрашивает подтверждение, даже если защищённый сеанс уже активен.
 
-## What is Encrypted?
+## Что шифруется?
 
-Trilium encrypts the data within protected notes but not their metadata. Specifically:
+Trilium шифрует данные внутри защищённых заметок, но не их метаданные. А именно:
 
-**Encrypted:**
+**Шифруется:**
 
-*   Note title
-*   Note content
-*   Images
-*   File attachments
+*   Заголовок заметки
+*   Содержимое заметки
+*   Изображения
+*   Прикреплённые файлы
 
-**Not encrypted:**
+**Не шифруется:**
 
-*   Note structure (i.e., it remains visible that there are protected notes)
-*   Metadata, such as the last modified date
-*   [Attributes](../../Advanced%20Usage/Attributes.md)
+*   Структура заметок (то есть остаётся видно, что существуют защищённые заметки)
+*   Метаданные, например дата последнего изменения
+*   [Атрибуты](../../Advanced%20Usage/Attributes.md)
 
-## Encryption Details
+## Подробности шифрования
 
-The following steps outline how encryption and decryption work in Trilium:
+Ниже описано, как в Trilium работают шифрование и расшифровка:
 
-1.  The user enters a password.
-2.  The password is passed through the [scrypt](https://en.wikipedia.org/wiki/Scrypt) algorithm along with a "password verification" [salt](https://en.wikipedia.org/wiki/Salt_\(cryptography\)) to confirm that the password is correct.
-3.  The password is then processed again through scrypt with an "encryption" salt, which generates a hash.
-    *   Scrypt is used for [key stretching](https://en.wikipedia.org/wiki/Key_stretching) to make the password harder to guess.
-4.  The generated hash is used to decrypt the actual _data encryption key_.
-    *   The data encryption key is encrypted using [AES-128](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard) with a random [IV](https://en.wikipedia.org/wiki/Initialization_vector).
-    *   The data encryption key is randomly generated during the [database](../../Advanced%20Usage/Database.md) initialization and remains constant throughout the document’s lifetime. When the password is changed, only this key is re-encrypted.
-5.  The data encryption key is then used to decrypt the actual content of the note, including its title and body.
-    *   The encryption algorithm used is AES-128 with [CBC mode](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation), where a unique IV is generated for each encryption operation and stored with the cipher text.
+1.  Пользователь вводит пароль.
+2.  Пароль пропускается через алгоритм [scrypt](https://en.wikipedia.org/wiki/Scrypt) вместе с [солью](https://en.wikipedia.org/wiki/Salt_\(cryptography\)) для «проверки пароля», чтобы подтвердить его правильность.
+3.  Затем пароль снова обрабатывается через scrypt с солью для «шифрования», в результате чего генерируется хеш.
+    *   Scrypt используется для [растяжения ключа](https://en.wikipedia.org/wiki/Key_stretching), чтобы усложнить подбор пароля.
+4.  Полученный хеш используется для расшифровки фактического _ключа шифрования данных_.
+    *   Ключ шифрования данных зашифрован с помощью [AES-128](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard) со случайным [IV](https://en.wikipedia.org/wiki/Initialization_vector).
+    *   Ключ шифрования данных генерируется случайным образом при инициализации [базы данных](../../Advanced%20Usage/Database.md) и остаётся неизменным на протяжении всего времени жизни документа. При смене пароля перешифровывается только этот ключ.
+5.  Затем ключ шифрования данных используется для расшифровки самого содержимого заметки, включая её заголовок и текст.
+    *   Применяется алгоритм шифрования AES-128 в [режиме CBC](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation), где для каждой операции шифрования генерируется уникальный IV, который хранится вместе с шифротекстом.
 
-## Sharing Protected Notes
+## Публикация защищённых заметок
 
-Protected notes cannot be shared in the same way as regular notes. Their encryption ensures that only authorized users with the correct password can access them.
+Защищённые заметки нельзя публиковать так же, как обычные. Их шифрование гарантирует, что доступ к ним имеют только авторизованные пользователи с правильным паролем.

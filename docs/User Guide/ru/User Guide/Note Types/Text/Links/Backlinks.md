@@ -1,40 +1,40 @@
-# Backlinks
-A link points from one note to another; a _backlink_ is that same connection seen from the other end: the list of notes that refer to the current one.
+# Обратные ссылки
+Ссылка ведёт от одной заметки к другой; _обратная ссылка_ (backlink) — это та же связь, но с другой стороны: список заметок, которые ссылаются на текущую.
 
-Backlinks are maintained automatically and are read-only from this side. A backlink disappears when the note that created it removes the link; it cannot be deleted from the note being pointed at.
+Обратные ссылки поддерживаются автоматически и доступны только для чтения с этой стороны. Обратная ссылка исчезает, когда ссылающаяся заметка удаляет ссылку; удалить её со стороны целевой заметки нельзя.
 
-## What counts as a backlink
+## Что считается обратной ссылкой
 
-Any <a class="reference-link" href="Internal%20(reference)%20links.md">Internal (reference) links</a> pointing at the current note, which covers two rather different cases:
+Любые <a class="reference-link" href="Internal%20(reference)%20links.md">Внутренние (ссылочные) ссылки</a>, указывающие на текущую заметку, что охватывает два разных случая:
 
-*   Relations that Trilium maintains on your behalf.
-    *   The most common is `internalLink`, created whenever a note refers to another one through <a class="reference-link" href="Internal%20(reference)%20links.md">Internal (reference) links</a> in its text.
-    *   Embedded images (`imageLink`), relation map connections (`relationMapLink`) and note inclusions (`includeNoteLink`) work the same way.
-*   Relations you define yourself.
-    *   If another note has `~author` pointing at the current note, that note is listed here as well.
+*   Связи, которые Trilium поддерживает автоматически:
+    *   Самая частая — `internalLink`, создаваемая при ссылке на заметку через <a class="reference-link" href="Internal%20(reference)%20links.md">Внутренние (ссылочные) ссылки</a> в тексте.
+    *   Встроенные изображения (`imageLink`), соединения на карте связей (`relationMapLink`) и включения заметок (`includeNoteLink`) работают так же.
+*   Связи, заданные вами вручную:
+    *   Если у другой заметки есть связь `~author`, указывающая на текущую заметку, она также отобразится здесь.
 
-Relations coming from a <a class="reference-link" href="../../Saved%20Search.md">Saved Search</a> are excluded, since a search stores an `ancestor` relation that would otherwise list every one of its results as a backlink.
+Связи из <a class="reference-link" href="../../Saved%20Search.md">Сохранённого поиска</a> исключаются, поскольку поиск хранит связь `ancestor`, которая иначе добавляла бы каждый результат поиска в обратные ссылки.
 
 > [!NOTE]
-> Only some note types have their content scanned for links: <a class="reference-link" href="../../Text.md">Text</a>, <a class="reference-link" href="../../Markdown.md">Markdown</a>, <a class="reference-link" href="../../Relation%20Map.md">Relation Map</a> and <a class="reference-link" href="../../../AI.md">AI</a> chats. A link written inside a <a class="reference-link" href="../../Code.md">Code</a> note is not registered and will not appear as a backlink on the target note. A relation set manually on a code note does still count.
+> Содержимое сканируется на наличие ссылок только для некоторых типов заметок: <a class="reference-link" href="../../Text.md">Текст</a>, <a class="reference-link" href="../../Markdown.md">Markdown</a>, <a class="reference-link" href="../../Relation%20Map.md">Карта связей</a> и <a class="reference-link" href="../../../AI.md">ИИ</a>-чаты. Ссылка внутри заметки типа <a class="reference-link" href="../../Code.md">Код</a> не регистрируется и не появится как обратная ссылка у целевой заметки. Однако связь, заданная вручную на заметке с кодом, учитывается.
 
-## How entries are displayed
+## Как отображаются записи
 
-Each entry names the note the reference comes from, followed by one of:
+Каждая запись содержит название заметки-источника, за которым следует одно из двух:
 
-*   **An excerpt** of the surrounding content, with the link itself highlighted. This is available for <a class="reference-link" href="../../Text.md">Text</a> notes and for <a class="reference-link" href="../../../AI.md">AI</a> chat notes. Roughly 200 characters of context are quoted around the link, trimmed with an ellipsis where the surrounding text is longer, and images are left out.
-*   **The name of the relation**, for every other note type where the source cannot be quoted. This is the case for <a class="reference-link" href="../../Relation%20Map.md">Relation Map</a> notes and for any note carrying a relation you defined yourself.
+*   **Фрагмент** окружающего текста с подсветкой самой ссылки. Доступно для заметок типа <a class="reference-link" href="../../Text.md">Текст</a> и заметок <a class="reference-link" href="../../../AI.md">ИИ</a>-чата. Цитируется около 200 символов контекста вокруг ссылки (с многоточием при обрезке), изображения опускаются.
+*   **Название связи** — для всех остальных типов заметок, где источник нельзя процитировать. Это относится к заметкам <a class="reference-link" href="../../Relation%20Map.md">Карты связей</a> и к любым заметкам с пользовательскими связями.
 
-A note is listed once per reference it makes, so a note that links to the current one three times occupies three rows.
+Заметка указывается по одному разу на каждую ссылку, поэтому заметка, ссылающаяся на текущую трижды, займёт три строки.
 
-Of note:
+Примечания:
 
-*   For AI chat notes, only the assistant's own prose is quoted. A chat that reached the note purely through tool calls has nothing to quote and is listed by relation name instead.
-*   Excerpts are only generated for roughly the first 50 sources. On a heavily referenced note, the remaining entries fall back to showing the relation name.
+*   Для заметок ИИ-чата цитируется только текст самого помощника. Чат, обратившийся к заметке исключительно через вызовы инструментов, не имеет текста для цитирования и указывается по названию связи.
+*   Фрагменты генерируются примерно для первых 50 источников. Для заметки с большим числом ссылок остальные записи показывают только название связи.
 
-## Where backlinks are shown
+## Где отображаются обратные ссылки
 
-*   In the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar/Connections%20tab.md">Connections tab</a> of the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a>, as a dedicated section.
-*   As a badge in the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a> showing the number of backlinks. The badge only appears when the note is being read normally (not in a revision or attachment view) and when there is at least one backlink; pressing it opens the section above.
-*   In <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a>, as a button with a link icon in the header of the popup, under the same conditions; its tooltip gives the number of backlinks. Pressing a backlink opens that note in the popup.
-*   Incoming links are also drawn on the link map, see <a class="reference-link" href="../../../Advanced%20Usage/Note%20Map%20(Link%20map%2C%20Tree%20map).md">Note Map (Link map, Tree map)</a>.
+*   На <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar/Connections%20tab.md">вкладке «Связи»</a> <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">правой боковой панели</a> в отдельном разделе.
+*   В виде значка в <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">строке состояния</a> с количеством обратных ссылок. Значок появляется только при обычном просмотре заметки (не в режиме ревизий или вложений) и при наличии хотя бы одной обратной ссылки; нажатие на него открывает указанный выше раздел.
+*   В <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Быстром редактировании</a> в виде кнопки со значком ссылки в заголовке всплывающего окна (при тех же условиях); во всплывающей подсказке указано число обратных ссылок. Нажатие на обратную ссылку открывает эту заметку во всплывающем окне.
+*   Входящие ссылки также отображаются на карте ссылок, см. <a class="reference-link" href="../../../Advanced%20Usage/Note%20Map%20(Link%20map%2C%20Tree%20map).md">Карта заметок (карта ссылок, карта дерева)</a>.

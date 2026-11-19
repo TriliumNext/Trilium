@@ -1,97 +1,97 @@
-# Keyboard shortcuts
+# Сочетания клавиш
 > [!NOTE]
-> With <a class="reference-link" href="Vim%20mode.md">Vim mode</a> turned on, some of these shortcuts follow Vim instead, such as <kbd>Ctrl</kbd>+<kbd>B</kbd>, which scrolls a page up in Normal mode. See _Shortcuts that change in the editor_ on that page.
+> При включённом <a class="reference-link" href="Vim%20mode.md">режиме Vim</a> некоторые из этих сочетаний работают по правилам Vim — например, <kbd>Ctrl</kbd>+<kbd>B</kbd> прокручивает страницу вверх в обычном режиме. См. раздел _Сочетания клавиш, которые меняются в редакторе_ на этой странице.
 
-## Trilium-specific shortcuts
+## Специфичные для Trilium сочетания
 
-| Action | PC | Mac |
+| Действие | PC | Mac |
 | --- | --- | --- |
-| Bring up inline formatting toolbar (arrow keys ←,→ to navigate, Enter to apply) | Alt+F10 | ⌥+F10 |
-| Bring up block formatting toolbar | Alt+F10 | ⌥+F10 |
-| Create [external link](Links.md) | Ctrl+K | ⌘+K |
-| Create [internal (note) link](Links.md) | Ctrl+L | ⌘+L |
-| Inserts current date and time at caret position | Alt+T | ⌥+T |
-| Increase paragraph indentation | Tab | ⇥ |
-| Decrease paragraph indentation | Shift + Tab | ⇧ + ⇥ |
-| Mark selected text as [keyboard shortcut](Developer-specific%20formatting.md) | Ctrl + Alt + K | ⌘+ ⌥+ K |
-| Insert <a class="reference-link" href="Math%20Equations.md">Math Equations</a> | Ctrl + M | ⌘+ M |
-| Move blocks (lists, paragraphs, etc.) up, or in a [table](Tables.md) the rows | Alt+↑ | ⌥+↑ |
-| Move blocks (lists, paragraphs, etc.) down, or in a [table](Tables.md) the rows | Alt+↓ | ⌥+↓ |
-| Collapse or expand a [heading](Collapsible%20headings.md) or a [list item](Lists.md) | Ctrl+Alt+Enter | ⌘+⌥+Enter |
-| Move the selected content to another column of a <a class="reference-link" href="Multicolumn%20layout.md">Multicolumn layout</a> | Ctrl+←, Ctrl+→, Ctrl+Shift+Home, Ctrl+Shift+End | ⌘+←, ⌘+→, ⌘+⇧+Home, ⌘+⇧+End |
-| Move the current column of a multicolumn layout | Ctrl+Alt+←, Ctrl+Alt+→, Ctrl+Alt+Home, Ctrl+Alt+End | ⌘+⌥+←, ⌘+⌥+→, ⌘+⌥+Home, ⌘+⌥+End |
-| Add a column after or before the current one in a multicolumn layout | Ctrl+Enter, Ctrl+Shift+Enter | ⌘+Enter, ⌘+⇧+Enter |
-| Move the selected content to another tab in <a class="reference-link" href="Content%20tabs.md">Content tabs</a> | Ctrl+←, Ctrl+→, Ctrl+Shift+Home, Ctrl+Shift+End | ⌘+←, ⌘+→, ⌘+⇧+Home, ⌘+⇧+End |
-| Move the current tab of a tabs block | Ctrl+Alt+←, Ctrl+Alt+→, Ctrl+Alt+Home, Ctrl+Alt+End | ⌘+⌥+←, ⌘+⌥+→, ⌘+⌥+Home, ⌘+⌥+End |
-| Add a tab after or before the current one in a tabs block | Ctrl+Enter, Ctrl+Shift+Enter | ⌘+Enter, ⌘+⇧+Enter |
+| Открыть встроенную панель форматирования (стрелки ←,→ для навигации, Enter для применения) | Alt+F10 | ⌥+F10 |
+| Открыть блочную панель форматирования | Alt+F10 | ⌥+F10 |
+| Создать [внешнюю ссылку](Links.md) | Ctrl+K | ⌘+K |
+| Создать [внутреннюю ссылку (на заметку)](Links.md) | Ctrl+L | ⌘+L |
+| Вставить текущую дату и время в позиции курсора | Alt+T | ⌥+T |
+| Увеличить отступ абзаца | Tab | ⇥ |
+| Уменьшить отступ абзаца | Shift + Tab | ⇧ + ⇥ |
+| Оформить выделенный текст как [сочетание клавиш](Developer-specific%20formatting.md) | Ctrl + Alt + K | ⌘+ ⌥+ K |
+| Вставить <a class="reference-link" href="Math%20Equations.md">Математическое уравнение</a> | Ctrl + M | ⌘+ M |
+| Переместить блоки (списки, абзацы и т. д.) вверх или строки в [таблице](Tables.md) | Alt+↑ | ⌥+↑ |
+| Переместить блоки (списки, абзацы и т. д.) вниз или строки в [таблице](Tables.md) | Alt+↓ | ⌥+↓ |
+| Свернуть или развернуть [заголовок](Collapsible%20headings.md) или [пункт списка](Lists.md) | Ctrl+Alt+Enter | ⌘+⌥+Enter |
+| Переместить выделенное содержимое в другую колонку <a class="reference-link" href="Multicolumn%20layout.md">Многоколоночной разметки</a> | Ctrl+←, Ctrl+→, Ctrl+Shift+Home, Ctrl+Shift+End | ⌘+←, ⌘+→, ⌘+⇧+Home, ⌘+⇧+End |
+| Переместить текущую колонку многоколоночной разметки | Ctrl+Alt+←, Ctrl+Alt+→, Ctrl+Alt+Home, Ctrl+Alt+End | ⌘+⌥+←, ⌘+⌥+→, ⌘+⌥+Home, ⌘+⌥+End |
+| Добавить колонку после или перед текущей в многоколоночной разметке | Ctrl+Enter, Ctrl+Shift+Enter | ⌘+Enter, ⌘+⇧+Enter |
+| Переместить выделенное содержимое на другую вкладку в <a class="reference-link" href="Content%20tabs.md">Вкладках контента</a> | Ctrl+←, Ctrl+→, Ctrl+Shift+Home, Ctrl+Shift+End | ⌘+←, ⌘+→, ⌘+⇧+Home, ⌘+⇧+End |
+| Переместить текущую вкладку блока вкладок | Ctrl+Alt+←, Ctrl+Alt+→, Ctrl+Alt+Home, Ctrl+Alt+End | ⌘+⌥+←, ⌘+⌥+→, ⌘+⌥+Home, ⌘+⌥+End |
+| Добавить вкладку после или перед текущей в блоке вкладок | Ctrl+Enter, Ctrl+Shift+Enter | ⌘+Enter, ⌘+⇧+Enter |
 
-## Common shortcuts
+## Общие сочетания клавиш
 
 > [!TIP]
-> This section of keyboard shortcuts presents a subset of the keyboard shortcuts as supported by the editor technology we are using, <a class="reference-link" href="../../Advanced%20Usage/Technologies%20used/CKEditor.md">CKEditor</a>. The shortcuts were taken from the [official documentation](https://ckeditor.com/docs/ckeditor5/latest/features/accessibility.html#keyboard-shortcuts). Note that not all the shortcuts in the original documentation are applicable (due to using a different configuration).
+> В этом разделе приведена часть сочетаний клавиш, поддерживаемых используемым нами редактором <a class="reference-link" href="../../Advanced%20Usage/Technologies%20used/CKEditor.md">CKEditor</a>. Сочетания взяты из [официальной документации](https://ckeditor.com/docs/ckeditor5/latest/features/accessibility.html#keyboard-shortcuts). Обратите внимание, что не все сочетания из оригинальной документации применимы из-за отличий в конфигурации.
 
-### Content editing
+### Редактирование содержимого
 
-| Action | PC | Mac |
+| Действие | PC | Mac |
 | --- | --- | --- |
-| Insert a hard break (a new paragraph) | Enter |  |
-| Insert a soft break (a `<br>` element) | Shift+Enter | ⇧Enter |
-| Copy selected content | Ctrl+C | ⌘C |
-| Paste content | Ctrl+V | ⌘V |
-| Paste content as plain text | Ctrl+Shift+V | ⌘⇧V |
-| Undo | Ctrl+Z | ⌘Z |
-| Redo | Ctrl+Y, Ctrl+Shift+Z | ⌘Y, ⌘⇧Z |
-| Bold text | Ctrl+B | ⌘B |
-| Change text case | Shift+F3 | ⇧F3 (may require Fn) |
-| Create link | Ctrl+K | ⌘K |
-| Move out of a link | ←←, →→ |  |
-| Move out of an inline code style | ←←, →→ |  |
-| Select all | Ctrl+A | ⌘A |
-| Find in the document | Ctrl+F | ⌘F |
-| Copy text formatting | Ctrl+Shift+C | ⌘⇧C |
-| Paste text formatting | Ctrl+Shift+V | ⌘⇧V |
-| Italic text | Ctrl+I | ⌘I |
-| Strikethrough text | Ctrl+Shift+X | ⌘⇧X |
-| Underline text | Ctrl+U | ⌘U |
-| Revert autoformatting action | Backspace |  |
+| Вставить жёсткий разрыв (новый абзац) | Enter |  |
+| Вставить мягкий перенос строки (элемент `<br>`) | Shift+Enter | ⇧Enter |
+| Копировать выделенное содержимое | Ctrl+C | ⌘C |
+| Вставить содержимое | Ctrl+V | ⌘V |
+| Вставить содержимое как обычный текст | Ctrl+Shift+V | ⌘⇧V |
+| Отменить | Ctrl+Z | ⌘Z |
+| Повторить | Ctrl+Y, Ctrl+Shift+Z | ⌘Y, ⌘⇧Z |
+| Жирный текст | Ctrl+B | ⌘B |
+| Изменить регистр текста | Shift+F3 | ⇧F3 (может потребоваться Fn) |
+| Создать ссылку | Ctrl+K | ⌘K |
+| Выйти за пределы ссылки | ←←, →→ |  |
+| Выйти за пределы встроенного кода | ←←, →→ |  |
+| Выделить всё | Ctrl+A | ⌘A |
+| Найти в документе | Ctrl+F | ⌘F |
+| Копировать форматирование текста | Ctrl+Shift+C | ⌘⇧C |
+| Вставить форматирование текста | Ctrl+Shift+V | ⌘⇧V |
+| Курсив | Ctrl+I | ⌘I |
+| Зачёркнутый текст | Ctrl+Shift+X | ⌘⇧X |
+| Подчёркнутый текст | Ctrl+U | ⌘U |
+| Отменить автоформатирование | Backspace |  |
 
-### Interacting with blocks
+### Взаимодействие с блоками
 
-Blocks are images, tables, blockquotes, annotations.
+Блоки — это изображения, таблицы, цитаты, аннотации.
 
-| Action | PC | Mac |
+| Действие | PC | Mac |
 | --- | --- | --- |
-| Insert a new paragraph directly after a widget | Enter |  |
-| Insert a new paragraph directly before a widget | Shift+Enter | ⇧Enter |
-| Move the caret to allow typing directly before a widget | ↑, ← |  |
-| Move the caret to allow typing directly after a widget | ↓, → |  |
-| After entering a nested editable, move the selection to the closest ancestor widget. For example: move from an image caption to the whole image widget. | Tab then Esc |  |
+| Вставить новый абзац сразу после виджета | Enter |  |
+| Вставить новый абзац сразу перед виджетом | Shift+Enter | ⇧Enter |
+| Переместить курсор для ввода непосредственно перед виджетом | ↑, ← |  |
+| Переместить курсор для ввода непосредственно после виджета | ↓, → |  |
+| После входа во вложенную редактируемую область переместить выделение на ближайший родительский виджет (например, из подписи изображения на весь виджет изображения) | Tab, затем Esc |  |
 
-Specifically for lists:
+Для списков:
 
-| Action | PC | Mac |
+| Действие | PC | Mac |
 | --- | --- | --- |
-| Increase list item indent | ⇥ |  |
-| Decrease list item indent | Shift+⇥ | ⇧⇥ |
+| Увеличить отступ пункта списка | ⇥ |  |
+| Уменьшить отступ пункта списка | Shift+⇥ | ⇧⇥ |
 
-In tables:
+В таблицах:
 
-| Action | PC | Mac |
+| Действие | PC | Mac |
 | --- | --- | --- |
-| Move the selection to the next cell | ⇥ |  |
-| Move the selection to the previous cell | Shift+⇥ | ⇧⇥ |
-| Insert a new table row (when in the last cell of a table) | ⇥ |  |
-| Navigate through the table | ↑, →, ↓, ← |  |
+| Переместить выделение в следующую ячейку | ⇥ |  |
+| Переместить выделение в предыдущую ячейку | Shift+⇥ | ⇧⇥ |
+| Вставить новую строку таблицы (находясь в последней ячейке) | ⇥ |  |
+| Навигация по таблице | ↑, →, ↓, ← |  |
 
-### General UI shortcuts
+### Общие сочетания интерфейса
 
-| Action | PC | Mac |
+| Действие | PC | Mac |
 | --- | --- | --- |
-| Close contextual balloons, dropdowns, and dialogs | Esc |  |
-| Open the accessibility help dialog | Alt+0 | ⌥0 |
-| Move focus between form fields (inputs, buttons, etc.) | ⇥, Shift+⇥ | ⇥, ⇧⇥ |
-| Move focus to the toolbar, navigate between toolbars | Alt+F10 | ⌥F10 (may require Fn) |
-| Navigate through the toolbar or menu bar | ↑, →, ↓, ← |  |
-| Navigate to the next focusable field or an element outside the editor | Tab, Shift+Tab |  |
-| Execute the currently focused button. Executing buttons that interact with the editor content moves the focus back to the content. | Enter, Space |  |
-| Move focus in and out of an active dialog window | Ctrl+F6 | ⌘F6 (may require Fn) |
+| Закрыть контекстные панели, выпадающие списки и диалоги | Esc |  |
+| Открыть справку по доступности | Alt+0 | ⌥0 |
+| Переместить фокус между полями формы (полями ввода, кнопками и т. д.) | ⇥, Shift+⇥ | ⇥, ⇧⇥ |
+| Переместить фокус на панель инструментов, переключаться между панелями | Alt+F10 | ⌥F10 (может потребоваться Fn) |
+| Навигация по панели инструментов или строке меню | ↑, →, ↓, ← |  |
+| Перейти к следующему фокусируемому полю или элементу вне редактора | Tab, Shift+Tab |  |
+| Активировать кнопку в фокусе (кнопки, взаимодействующие с содержимым редактора, возвращают фокус в текст) | Enter, Space |  |
+| Переместить фокус в активное диалоговое окно и обратно | Ctrl+F6 | ⌘F6 (может потребоваться Fn) |

@@ -1,17 +1,17 @@
-# Troubleshooting
-## Trilium only shows a blank window
+# Устранение неполадок
+## Trilium отображает только пустое окно
 
-Trilium uses Electron which is based on Chromium (the open-source alternative to Google Chrome); in order to improve performance it makes use of _GPU acceleration_. In some cases, a GPU incompatibility (especially on older models of integrated graphics) can cause nothing to render at all, resulting in a blank window. 
+Trilium использует Electron, который основан на Chromium (открытой альтернативе Google Chrome); для повышения производительности он задействует _аппаратное ускорение GPU_. В некоторых случаях несовместимость видеокарты (особенно на старых моделях встроенной графики) может приводить к тому, что интерфейс вообще не отрисовывается, и появляется пустое окно. 
 
-To bypass this, try running Trilium with the following command line argument:
+Чтобы обойти эту проблему, попробуйте запустить Trilium со следующим аргументом командной строки:
 
 ```
 trilium --disable-gpu
 ```
 
-If that doesn't work, try the following commands as well:
+Если это не помогло, попробуйте также следующие команды:
 
 *   `trilium --disable-gpu-compositing`
-*   `ELECTRON_OZONE_PLATFORM_HINT=x11 trilium` (this one forces the rendering to X11 on Wayland)
+*   `ELECTRON_OZONE_PLATFORM_HINT=x11 trilium` (принудительно включает отрисовку через X11 в Wayland)
 
-If Trilium renders fine after this, Trilium offers a built-in option to disable GPU acceleration: go to <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Appearance_, look for the _Performance_ section and then uncheck _Hardware acceleration (GPU)_.
+Если после этого Trilium отображается корректно, в приложении есть встроенная настройка для отключения ускорения GPU: перейдите в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Appearance_, найдите раздел _Performance_ и снимите флажок _Hardware acceleration (GPU)_.

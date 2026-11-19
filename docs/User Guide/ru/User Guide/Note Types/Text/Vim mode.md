@@ -1,48 +1,48 @@
-# Vim mode
+# Режим Vim
 > [!TIP]
-> New to Vim? Start with the <a class="reference-link" href="Vim%20mode/Vim%20beginner%20guide.md">Vim beginner guide</a>, which explains what the modes are and which keys to learn first.
+> Новичок в Vim? Начните с <a class="reference-link" href="Vim%20mode/Vim%20beginner%20guide.md">Руководства по Vim для начинающих</a>, где объясняется, что такое режимы и какие клавиши стоит освоить в первую очередь.
 
-Vim mode brings Vim-style modal editing to text notes: the motions, operators and commands of the [Vim](https://www.vim.org/) text editor, in Trilium's own editor. It understands the structure of rich text: a paragraph, a heading, a list item or a table cell is a line, and so is an image or an included note.
+Режим Vim добавляет модальное редактирование в стиле Vim в текстовые заметки: перемещения, операторы и команды текстового редактора [Vim](https://www.vim.org/) прямо внутри редактора Trilium. Он понимает структуру форматированного текста: абзац, заголовок, элемент списка или ячейка таблицы считаются строкой, как и изображение или встроенная заметка.
 
-The most used keys are in the _Cheat sheet_ below, and all of them in the <a class="reference-link" href="Vim%20mode/Vim%20full%20reference.md">Vim full reference</a>.
+Наиболее часто используемые клавиши приведены в разделе _Шпаргалка_ ниже, а полный список — в <a class="reference-link" href="Vim%20mode/Vim%20full%20reference.md">Полном справочнике по Vim</a>.
 
-## Enabling Vim mode
+## Включение режима Vim
 
-1.  Go to <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ → _Features_.
-2.  Turn on _Vim mode_.
+1.  Перейдите в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Текстовые заметки_ → _Функции_.
+2.  Включите _Режим Vim_.
 
-The option applies to the current device only, so repeat these steps on each device where you want Vim mode. It takes effect at once, without a reload. Code notes have an option of their own: <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Code Notes_ → _Editor_ → _Vim keybindings_.
+Настройка применяется только к текущему устройству, поэтому повторите эти шаги на каждом устройстве, где вам нужен режим Vim. Она вступает в силу сразу, без перезагрузки. У заметок с кодом есть собственная настройка: <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Заметки с кодом_ → _Редактор_ → _Привязки клавиш Vim_.
 
-Once Vim mode is on:
+Когда режим Vim включён:
 
-*   Newly opened text notes start in Normal mode: press `i` to type, and <kbd>Esc</kbd> to return to the commands.
-*   The notes that were already open when Vim mode was turned on switch to Insert mode, so you can continue typing.
-*   In Insert mode, the regular editor stays available, with its formatting, slash commands, Markdown-like formatting and toolbars. A few shortcuts follow Vim there too, see _Shortcuts that change in the editor_ below.
+*   Вновь открываемые текстовые заметки запускаются в обычном режиме (Normal): нажмите `i`, чтобы печатать, и <kbd>Esc</kbd>, чтобы вернуться к командам.
+*   Заметки, которые уже были открыты при включении режима Vim, переходят в режим вставки (Insert), чтобы вы могли продолжить набор текста.
+*   В режиме вставки остаются доступными все обычные возможности редактора: форматирование, слэш-команды, Markdown-разметка и панели инструментов. Несколько сочетаний клавиш следуют правилам Vim и там — см. _Сочетания клавиш, которые меняются в редакторе_ ниже.
 
-### Where Vim mode shows
+### Где отображается режим Vim
 
-Vim mode uses three places of the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a>, at the bottom of the window:
+Режим Vim использует три области <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">строки состояния</a> в нижней части окна:
 
-*   The _Vim_ badge, before the other indicators of the status bar, is highlighted while Vim mode is on for the current note. Click it to turn Vim mode off or on for that note, see _Vim mode for a single note_ below. Right-click it for a menu with the same switch, a switch for the key hints, the settings and this page.
-*   The **mode indicator**, after the badge, shows the current mode: `NORMAL`, `INSERT`, `VISUAL`, `VISUAL LINE` or `REPLACE`. Beside it appear the keys of a command that is not complete yet, short messages and the macro being recorded.
-*   The area of the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Breadcrumb.md">Breadcrumb</a> is used for two things: the key hints, described below, and the command line, which opens there when you press `:`, `/` or `?`.
+*   Значок _Vim_ перед остальными индикаторами строки состояния подсвечен, пока режим Vim активен для текущей заметки. Нажмите на него, чтобы выключить или включить режим Vim для этой заметки — см. _Режим Vim для одной заметки_ ниже. Нажатие правой кнопкой мыши открывает меню с тем же переключателем, переключателем подсказок клавиш, настройками и этой страницей.
+*   **Индикатор режима** после значка показывает текущий режим: `NORMAL`, `INSERT`, `VISUAL`, `VISUAL LINE` или `REPLACE`. Рядом с ним отображаются клавиши незавершённой команды, короткие сообщения и записываемый макрос.
+*   Область <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Breadcrumb.md">навигационной цепочки</a> используется для двух вещей: подсказок клавиш (описанных ниже) и командной строки, которая открывается там при нажатии `:`, `/` или `?`.
 
-In <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Zen%20mode.md">Zen mode</a>, the key hints, the _Vim_ badge and the mode indicator are visible.
+В <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Zen%20mode.md">режиме Дзен</a> подсказки клавиш, значок _Vim_ и индикатор режима остаются видимыми.
 
-## Settings
+## Настройки
 
-The settings are in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ → _Features_. The last three appear below _Vim mode_ once it is turned on. _Vim mode_ itself is kept per device, while the other three are synchronized.
+Настройки находятся в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Текстовые заметки_ → _Функции_. Последние три появляются под _Режим Vim_ после его включения. Сам _Режим Vim_ хранится локально для устройства, а остальные три параметра синхронизируются.
 
-| Setting | Default | Applies to | What it does |
+| Настройка | По умолчанию | Применяется к | Что делает |
 | --- | --- | --- | --- |
-| _Vim mode_ | Off | This device | Turns Vim mode on in text notes. |
-| _Key hints_ | On | All your devices | Shows the keys of the current mode, the keys that can follow a command and the suggestions of the command line. See _Key hints_ below. |
-| _Vim keys in Insert mode_ | Off | All your devices | Makes <kbd>Ctrl</kbd>+<kbd>U</kbd>, <kbd>Ctrl</kbd>+<kbd>E</kbd>, <kbd>Ctrl</kbd>+<kbd>Y</kbd>, <kbd>Ctrl</kbd>+<kbd>K</kbd>, <kbd>Ctrl</kbd>+<kbd>V</kbd> and <kbd>Ctrl</kbd>+<kbd>A</kbd> follow Vim while typing. When off, they keep the meaning the editor gives them, such as underline for <kbd>Ctrl</kbd>+<kbd>U</kbd> and paste for <kbd>Ctrl</kbd>+<kbd>V</kbd>. |
-| _Startup commands_ | Empty | All your devices | Runs commands when Vim mode starts, mostly to set up key mappings. |
+| _Режим Vim_ | Выкл. | Это устройство | Включает режим Vim в текстовых заметках. |
+| _Подсказки клавиш_ | Вкл. | Все устройства | Показывает клавиши текущего режима, клавиши, которые могут следовать за командой, и подсказки командной строки. См. _Подсказки клавиш_ ниже. |
+| _Клавиши Vim в режиме вставки_ | Выкл. | Все устройства | Заставляет <kbd>Ctrl</kbd>+<kbd>U</kbd>, <kbd>Ctrl</kbd>+<kbd>E</kbd>, <kbd>Ctrl</kbd>+<kbd>Y</kbd>, <kbd>Ctrl</kbd>+<kbd>K</kbd>, <kbd>Ctrl</kbd>+<kbd>V</kbd> и <kbd>Ctrl</kbd>+<kbd>A</kbd> работать по правилам Vim при вводе текста. Когда выключено, они сохраняют значения редактора, такие как подчёркивание для <kbd>Ctrl</kbd>+<kbd>U</kbd> и вставка для <kbd>Ctrl</kbd>+<kbd>V</kbd>. |
+| _Команды запуска_ | Пусто | Все устройства | Выполняет команды при запуске режима Vim, в основном для настройки привязок клавиш. |
 
-### Startup commands
+### Команды запуска
 
-Write one command per line, as it would be typed after `:`. A line that starts with `"` is a comment.
+Записывайте по одной команде на строку так, как она вводилась бы после `:`. Строка, начинающаяся с `"`, является комментарием.
 
 ```
 " Leave Insert mode by typing jk
@@ -51,188 +51,188 @@ imap jk <Esc>
 nmap Y y$
 ```
 
-When you edit the list, the commands run again as soon as you leave the field, and their mappings replace those of the previous list. Changing the other settings does not run them again. Only the commands of Vim mode are understood, so a `.vimrc` file made for Vim does not work as it is.
+При редактировании списка команды выполняются заново сразу после выхода из поля, а их привязки заменяют привязки из предыдущего списка. Изменение других настроек не вызывает повторного запуска. Понимаются только команды режима Vim, поэтому файл `.vimrc` от обычного Vim в неизменном виде не подойдёт.
 
-### Vim mode for a single note
+### Режим Vim для одной заметки
 
-To decide for one note, whatever the option says, add a [label](../../Advanced%20Usage/Attributes/Labels.md) to it:
+Чтобы задать поведение для конкретной заметки независимо от общей настройки, добавьте к ней [метку](../../Advanced%20Usage/Attributes/Labels.md):
 
-*   `#vimMode` turns Vim mode on in that note.
-*   `#vimMode=false` keeps that note in the regular editor.
+*   `#vimMode` включает режим Vim в этой заметке.
+*   `#vimMode=false` оставляет эту заметку в обычном редакторе.
 
-The label can be inherited, so one label can cover a whole subtree. A label set on the note itself wins over an inherited one: with an inheritable `#vimMode` on a parent note, a child note that has `#vimMode=false` stays in the regular editor.
+Метку можно сделать наследуемой, чтобы одна метка охватывала целое поддерево. Метка на самой заметке имеет приоритет над унаследованной: при наследуемой `#vimMode` на родительской заметке подзаметка с `#vimMode=false` останется в обычном редакторе.
 
-While the _Vim mode_ option is on, the _Vim_ badge in the status bar sets this label for you: a click on it gives the current note `#vimMode=false`, and another click removes that label again, or sets `#vimMode=true` where the note would inherit `#vimMode=false`. When the label of the note is inheritable, the click changes Vim mode for the notes under it too, and its menu says so.
+Пока включена настройка _Режим Vim_, значок _Vim_ в строке состояния сам управляет этой меткой: нажатие на него добавляет текущей заметке `#vimMode=false`, а повторное нажатие снова удаляет эту метку (или ставит `#vimMode=true`, если заметка наследует `#vimMode=false`). Если метка на заметке наследуемая, нажатие меняет режим Vim и для заметок под ней, о чём сообщается в меню.
 
-## Key hints
+## Подсказки клавиш
 
-Key hints help while you learn, and can be turned off once the keys are familiar. They show in the status bar, in the area of the breadcrumb:
+Подсказки клавиш помогают во время обучения, и их можно отключить, когда клавиши станут привычными. Они отображаются в строке состояния на месте навигационной цепочки:
 
-*   In Normal and Visual mode, the most used keys of the mode take the place of the breadcrumb. To switch between the keys and the breadcrumb, press <kbd>Esc</kbd> in Normal mode. This is the last thing <kbd>Esc</kbd> does: when something else applies, such as search highlights to clear, that happens first and it takes another press. See _The Esc key_ below.
-*   After a pause in the middle of a command, such as after `d` or `g`, the keys that can follow are shown.
-*   The command line suggests the commands that match what is typed, and <kbd>Tab</kbd> or the arrow keys complete them. The search prompt tells how the pattern is read.
-*   To see every key of the current mode, click the mode indicator or press <kbd>Alt</kbd>+<kbd>F1</kbd>.
+*   В обычном и визуальном режимах самые частые клавиши режима занимают место навигационной цепочки. Чтобы переключиться между подсказками и навигационной цепочкой, нажмите <kbd>Esc</kbd> в обычном режиме. Это последнее действие <kbd>Esc</kbd>: если применимо что-то другое (например, сброс подсветки поиска), сначала выполняется оно и потребуется ещё одно нажатие. См. _Клавиша Esc_ ниже.
+*   После паузы в середине команды (например, после `d` или `g`) показываются клавиши, которые могут идти дальше.
+*   Командная строка предлагает команды, соответствующие введённому тексту, а <kbd>Tab</kbd> или стрелки дополняют их. Строка поиска подсказывает, как интерпретируется шаблон.
+*   Чтобы увидеть все клавиши текущего режима, нажмите на индикатор режима или нажмите <kbd>Alt</kbd>+<kbd>F1</kbd>.
 
-To turn the hints off, use the _Key hints_ setting or type `:set nohints`. `:set hints` turns them back on.
+Чтобы выключить подсказки, используйте настройку _Подсказки клавиш_ или введите `:set nohints`. Команда `:set hints` снова включит их.
 
-## Cheat sheet
+## Шпаргалка
 
-These are the keys and commands used most. Keys typed one after another are written together, such as `dd`. Unless stated otherwise, they are typed in Normal mode.
+Ниже приведены наиболее часто используемые клавиши и команды. Клавиши, нажимаемые одна за другой, записаны слитно, например `dd`. Если не указано иное, они вводятся в обычном режиме.
 
 <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
 <div class="trilium-multicolumn-column">
 
-### Modes
+### Режимы
 
-*   `i` / `a`: type before / after the cursor.
-*   `I` / `A`: type at the start / end of the line.
-*   `o` / `O`: open a line below / above and type.
-*   `v` / `V`: select characters / whole lines.
-*   `R`: type over the existing text.
-*   <kbd>Esc</kbd>: return to Normal mode.
+*   `i` / `a`: печатать перед / после курсора.
+*   `I` / `A`: печатать в начале / конце строки.
+*   `o` / `O`: открыть новую строку ниже / выше и печатать.
+*   `v` / `V`: выделять символы / целые строки.
+*   `R`: печатать поверх существующего текста.
+*   <kbd>Esc</kbd>: вернуться в обычный режим.
 
-### Moving
+### Перемещение
 
-*   `h` `j` `k` `l`: left, down, up, right.
-*   `w` / `b` / `e`: next word, previous word, end of the word.
-*   `0` / `^` / `$`: start of the line, first character, end of the line.
-*   `gg` / `G`: first / last line of the note. `12G` goes to line 12.
-*   `{` / `}`: previous / next block.
-*   `f` and a character: jump to that character in the line. `;` repeats the jump.
-*   `%`: go to the matching bracket.
-*   <kbd>Ctrl</kbd>+<kbd>D</kbd> / <kbd>Ctrl</kbd>+<kbd>U</kbd>: half a page down / up.
-*   <kbd>Ctrl</kbd>+<kbd>O</kbd> / <kbd>Ctrl</kbd>+<kbd>I</kbd>: back / forward through the places you jumped from.
+*   `h` `j` `k` `l`: влево, вниз, вверх, вправо.
+*   `w` / `b` / `e`: следующее слово, предыдущее слово, конец слова.
+*   `0` / `^` / `$`: начало строки, первый непробельный символ, конец строки.
+*   `gg` / `G`: первая / последняя строка заметки. `12G` переходит к строке 12.
+*   `{` / `}`: предыдущий / следующий блок.
+*   `f` и символ: перейти к этому символу в строке. `;` повторяет переход.
+*   `%`: перейти к парной скобке.
+*   <kbd>Ctrl</kbd>+<kbd>D</kbd> / <kbd>Ctrl</kbd>+<kbd>U</kbd>: на полстраницы вниз / вверх.
+*   <kbd>Ctrl</kbd>+<kbd>O</kbd> / <kbd>Ctrl</kbd>+<kbd>I</kbd>: назад / вперёд по истории переходов.
 
-### Editing
+### Редактирование
 
-*   `x`: delete the character under the cursor.
-*   `dd` / `dw` / `D`: delete the line, the word, the rest of the line.
-*   `cc` / `cw` / `C`: change the line, the word, the rest of the line.
-*   `ciw`: change the word under the cursor, wherever the cursor is in it.
-*   `r` and a character: replace one character.
-*   `J`: join the next line to this one.
-*   `>>` / `<<`: indent / outdent the line.
-*   `~`: switch between upper and lower case.
-*   `u` / <kbd>Ctrl</kbd>+<kbd>R</kbd>: undo / redo.
-*   `.`: repeat the last change.
-*   A number repeats a command: `3dd` deletes three lines, `2w` moves two words.
+*   `x`: удалить символ под курсором.
+*   `dd` / `dw` / `D`: удалить строку, слово, остаток строки.
+*   `cc` / `cw` / `C`: изменить строку, слово, остаток строки.
+*   `ciw`: изменить слово под курсором, где бы внутри него ни находился курсор.
+*   `r` и символ: заменить один символ.
+*   `J`: присоединить следующую строку к текущей.
+*   `>>` / `<<`: увеличить / уменьшить отступ строки.
+*   `~`: переключить регистр символа.
+*   `u` / <kbd>Ctrl</kbd>+<kbd>R</kbd>: отменить / повторить.
+*   `.`: повторить последнее изменение.
+*   Число повторяет команду: `3dd` удаляет три строки, `2w` сдвигает на два слова.
 
 </div>
 <div class="trilium-multicolumn-column">
 
-### Copying and pasting
+### Копирование и вставка
 
-*   `yy` / `yw` / `y$`: yank (copy) the line, the word, the rest of the line.
-*   `p` / `P`: put (paste) after / before the cursor.
-*   `"ayy` / `"ap`: yank the line into the register `a` / put from it.
-*   `"+y` / `"+p`: copy to / paste from the system clipboard.
+*   `yy` / `yw` / `y$`: скопировать строку, слово, остаток строки.
+*   `p` / `P`: вставить после / перед курсором.
+*   `"ayy` / `"ap`: скопировать строку в регистр `a` / вставить из него.
+*   `"+y` / `"+p`: скопировать в / вставить из системного буфера обмена.
 
-Yanked text keeps its formatting, such as bold, links and colors.
+Скопированный текст сохраняет форматирование (жирный шрифт, ссылки, цвета и т. д.).
 
-### Selecting
+### Выделение
 
-*   `v` / `V`: start selecting characters / lines. Any motion extends the selection.
-*   `iw`, `ip`, `i"`, `i(`: select a word, a block, the text inside quotes or parentheses. `a` in place of `i` also takes what surrounds it.
-*   `y` / `d` / `c`: yank, delete or change the selection.
-*   `>` / `<`: indent / outdent the selected lines.
-*   `o`: jump to the other end of the selection.
-*   `gv`: select the previous selection again.
+*   `v` / `V`: начать выделение символов / строк. Любое перемещение расширяет выделение.
+*   `iw`, `ip`, `i"`, `i(`: выделить слово, блок, текст внутри кавычек или скобок. `a` вместо `i` также захватывает обрамляющие символы.
+*   `y` / `d` / `c`: скопировать, удалить или изменить выделение.
+*   `>` / `<`: увеличить / уменьшить отступ выделенных строк.
+*   `o`: перейти к другому концу выделения.
+*   `gv`: снова выделить предыдущее выделение.
 
-### Searching and replacing
+### Поиск и замена
 
-*   `/text` / `?text`: search forward / backward, then press <kbd>Enter</kbd>.
-*   `n` / `N`: next / previous match.
-*   `*` / `#`: search for the word under the cursor, forward / backward.
-*   `:s/old/new/`: replace in the current line.
-*   `:%s/old/new/g`: replace everywhere in the note. Add `c` to confirm each match.
-*   `:noh`: clear the search highlights.
+*   `/text` / `?text`: поиск вперёд / назад, затем нажмите <kbd>Enter</kbd>.
+*   `n` / `N`: следующее / предыдущее совпадение.
+*   `*` / `#`: поиск слова под курсором вперёд / назад.
+*   `:s/old/new/`: заменить в текущей строке.
+*   `:%s/old/new/g`: заменить по всей заметке. Добавьте `c`, чтобы подтверждать каждое совпадение.
+*   `:noh`: убрать подсветку поиска.
 
-### Trilium-specific features
+### Специфичные функции Trilium
 
-*   `:w`: save the note now. Trilium also saves by itself.
-*   `:q` or `ZZ`: close the tab of the note, or its split.
-*   `gf`: follow the link or link preview under the cursor.
-*   `]]` / `[[`: go to the next / previous heading.
-*   `za`: collapse or expand the heading, list item or collapsible block at the cursor.
-*   `:sort`: sort the selected paragraphs or list items, or the ones around the cursor.
-*   `:ck bold`: run a command of the text editor by its name, here on the selection.
-*   `i` or `a` on an image or an included note: edit its caption or its content.
-*   <kbd>Alt</kbd>+<kbd>F1</kbd>: list every key of the current mode.
+*   `:w`: сохранить заметку сейчас. Trilium также сохраняет её автоматически.
+*   `:q` или `ZZ`: закрыть вкладку заметки или её разделённую панель.
+*   `gf`: перейти по ссылке или предпросмотру ссылки под курсором.
+*   `]]` / `[[`: перейти к следующему / предыдущему заголовку.
+*   `za`: свернуть или развернуть заголовок, элемент списка или сворачиваемый блок под курсором.
+*   `:sort`: отсортировать выделенные абзацы или элементы списка, либо те, что вокруг курсора.
+*   `:ck bold`: выполнить команду текстового редактора по её имени (здесь — для выделения).
+*   `i` или `a` на изображении или встроенной заметке: редактировать подпись или содержимое.
+*   <kbd>Alt</kbd>+<kbd>F1</kbd>: показать все клавиши текущего режима.
 
 </div>
 </div>
 
-For the other keys and commands, see <a class="reference-link" href="Vim%20mode/Vim%20full%20reference.md">Vim full reference</a>.
+Остальные клавиши и команды см. в <a class="reference-link" href="Vim%20mode/Vim%20full%20reference.md">Полном справочнике по Vim</a>.
 
-## How Vim reads a text note
+## Как Vim воспринимает текстовую заметку
 
-Vim works with lines, and a text note has none of its own. This is how the two fit together:
+Vim работает со строками, а в текстовой заметке строк в обычном смысле нет. Вот как они соотносятся:
 
-*   Each paragraph, heading, paragraph of a list item, paragraph of a table cell and line of a code block is one line, however many lines it takes on the screen. This is sometimes called a _logical line_, as opposed to a _screen line_. `dd`, `yy`, `j` and `k` act on logical lines, while `gj` and `gk` move by screen line.
-*   An image, a diagram, a horizontal rule or an included note is also one line: `j` and `k` stop on it and `dd` deletes it. `i` or `a` enters its caption or its content. To leave an included note, press <kbd>Esc</kbd> in its Normal mode, `k` on its first line or `j` on its last line.
-*   `o` and `O` add what <kbd>Enter</kbd> would add at that place, such as a paragraph, a list item or a code line. `J` joins lines the way <kbd>Backspace</kbd> does. `>>` and `<<` change the level of a list item or the indentation of a paragraph.
-*   `{`, `}`, `ip` and `ap` work with blocks instead of blank lines: a paragraph, a list item, a quote, a table cell, a code block. On a heading, `ap` is the heading together with its section.
-*   In a table, `h` and `l` stay inside the cell, and `j` and `k` move down and up the column.
-*   A collapsed heading or list item counts as one line for `j` and `k`. Searching also looks inside it, and expands the one that holds a match.
-*   Registers are shared by all text notes, but not with code notes. To carry text between the two, use the clipboard register `"+`.
+*   Каждый абзац, заголовок, абзац элемента списка, абзац ячейки таблицы и строка блока кода считаются одной строкой, сколько бы строк они ни занимали на экране. Иногда это называют _логической строкой_ в отличие от _экранной строки_. `dd`, `yy`, `j` и `k` работают с логическими строками, а `gj` и `gk` перемещаются по экранным строкам.
+*   Изображение, диаграмма, горизонтальная линия или встроенная заметка также считаются одной строкой: `j` и `k` останавливаются на них, а `dd` удаляет их. `i` или `a` переходит к редактированию их подписи или содержимого. Чтобы выйти из встроенной заметки, нажмите <kbd>Esc</kbd> в её обычном режиме, `k` на её первой строке или `j` на последней.
+*   `o` и `O` добавляют то же, что добавил бы <kbd>Enter</kbd> в этом месте (абзац, элемент списка или строку кода). `J` соединяет строки так же, как <kbd>Backspace</kbd>. `>>` и `<<` меняют уровень элемента списка или отступ абзаца.
+*   `{`, `}`, `ip` и `ap` работают с блоками вместо пустых строк: абзацем, элементом списка, цитатой, ячейкой таблицы, блоком кода. На заголовке `ap` означает заголовок вместе с его разделом.
+*   В таблице `h` и `l` остаются внутри ячейки, а `j` и `k` перемещаются вниз и вверх по столбцу.
+*   Свёрнутый заголовок или элемент списка считается одной строкой для `j` и `k`. Поиск также заглядывает внутрь него и разворачивает блок, содержащий совпадение.
+*   Регистры общие для всех текстовых заметок, но не для заметок с кодом. Чтобы перенести текст между ними, используйте регистр буфера обмена `"+`.
 
-## Shortcuts that change in the editor
+## Сочетания клавиш, которые меняются в редакторе
 
-Vim uses some of the <kbd>Ctrl</kbd> shortcuts of Trilium. While the cursor is in a text note, Vim's meaning wins, as it already does in code notes. The last column shows Insert mode with the _Vim keys in Insert mode_ setting off, which is the default:
+Vim использует часть сочетаний с <kbd>Ctrl</kbd> из Trilium. Пока курсор находится в текстовой заметке, приоритет имеет значение Vim, как это уже работает в заметках с кодом. В последнем столбце показан режим вставки при выключенной настройке _Клавиши Vim в режиме вставки_ (по умолчанию):
 
-| Shortcut | Without Vim mode | In Normal and Visual mode | In Insert mode |
+| Сочетание | Без режима Vim | В обычном и визуальном режимах | В режиме вставки |
 | --- | --- | --- | --- |
-| <kbd>Ctrl</kbd>+<kbd>R</kbd> | Reload the app (<kbd>F5</kbd> still does) | Redo | Insert the content of a register |
-| <kbd>Ctrl</kbd>+<kbd>O</kbd> | Create a note after the current one | Go back to the previous jump | Run one Normal-mode command |
-| <kbd>Ctrl</kbd>+<kbd>P</kbd> | Create a child note | Move up a line, as `k` | Nothing |
-| <kbd>Ctrl</kbd>+<kbd>F</kbd> | Search in note (desktop app) | Scroll a page down | Unchanged |
-| <kbd>Ctrl</kbd>+<kbd>B</kbd>, <kbd>Ctrl</kbd>+<kbd>I</kbd>, <kbd>Ctrl</kbd>+<kbd>U</kbd> | Bold, italic, underline | Scroll a page up, go forward to the next jump, scroll half a page up | Unchanged |
-| <kbd>Ctrl</kbd>+<kbd>A</kbd>, <kbd>Ctrl</kbd>+<kbd>X</kbd> | Select all, cut | Increase, decrease the number at the cursor | Unchanged |
-| <kbd>Ctrl</kbd>+<kbd>Z</kbd>, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> | Undo, redo | The same as `u` and <kbd>Ctrl</kbd>+<kbd>R</kbd> | Unchanged |
-| <kbd>Ctrl</kbd>+<kbd>W</kbd> | Close the tab | Nothing | Delete the word before the cursor |
-| <kbd>Ctrl</kbd>+<kbd>T</kbd>, <kbd>Ctrl</kbd>+<kbd>D</kbd> | Open a new tab, nothing | Unchanged, scroll half a page down | Indent, outdent the line |
-| <kbd>Ctrl</kbd>+<kbd>C</kbd> | Copy | Copy the selection and leave Visual mode. With nothing selected, the same as <kbd>Esc</kbd> | Copy the selection. With nothing selected, leave Insert mode |
-| `/` and `:` | Slash commands and emoji completion | Search and the command line | Unchanged |
+| <kbd>Ctrl</kbd>+<kbd>R</kbd> | Перезагрузить приложение (<kbd>F5</kbd> по-прежнему работает) | Повторить (Redo) | Вставить содержимое регистра |
+| <kbd>Ctrl</kbd>+<kbd>O</kbd> | Создать заметку после текущей | Вернуться к предыдущему переходу | Выполнить одну команду обычного режима |
+| <kbd>Ctrl</kbd>+<kbd>P</kbd> | Создать подзаметку | Переместиться на строку вверх, как `k` | Ничего |
+| <kbd>Ctrl</kbd>+<kbd>F</kbd> | Поиск в заметке (настольное приложение) | Прокрутить на страницу вниз | Без изменений |
+| <kbd>Ctrl</kbd>+<kbd>B</kbd>, <kbd>Ctrl</kbd>+<kbd>I</kbd>, <kbd>Ctrl</kbd>+<kbd>U</kbd> | Жирный, курсив, подчёркнутый | Прокрутить на страницу вверх, перейти вперёд по истории переходов, прокрутить на полстраницы вверх | Без изменений |
+| <kbd>Ctrl</kbd>+<kbd>A</kbd>, <kbd>Ctrl</kbd>+<kbd>X</kbd> | Выделить всё, вырезать | Увеличить, уменьшить число под курсором | Без изменений |
+| <kbd>Ctrl</kbd>+<kbd>Z</kbd>, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> | Отменить, повторить | То же, что `u` и <kbd>Ctrl</kbd>+<kbd>R</kbd> | Без изменений |
+| <kbd>Ctrl</kbd>+<kbd>W</kbd> | Закрыть вкладку | Ничего | Удалить слово перед курсором |
+| <kbd>Ctrl</kbd>+<kbd>T</kbd>, <kbd>Ctrl</kbd>+<kbd>D</kbd> | Открыть новую вкладку, ничего | Без изменений, прокрутить на полстраницы вниз | Увеличить, уменьшить отступ строки |
+| <kbd>Ctrl</kbd>+<kbd>C</kbd> | Копировать | Скопировать выделение и выйти из визуального режима. Без выделения — то же, что <kbd>Esc</kbd> | Скопировать выделение. Без выделения — выйти из режима вставки |
+| `/` и `:` | Слэш-команды и автодополнение эмодзи | Поиск и командная строка | Без изменений |
 
-With _Vim keys in Insert mode_ turned on, six more shortcuts follow Vim while typing. In Normal and Visual mode, the setting changes nothing.
+При включении _Клавиши Vim в режиме вставки_ ещё шесть сочетаний начинают работать по правилам Vim при наборе текста. В обычном и визуальном режимах эта настройка ничего не меняет.
 
-| Shortcut | In Insert mode, setting off | In Insert mode, setting on |
+| Сочетание | В режиме вставки, настройка выкл. | В режиме вставки, настройка вкл. |
 | --- | --- | --- |
-| <kbd>Ctrl</kbd>+<kbd>U</kbd> | Underline | Delete from the cursor to the start of the line |
-| <kbd>Ctrl</kbd>+<kbd>E</kbd> | Nothing | Insert the character that is below the cursor |
-| <kbd>Ctrl</kbd>+<kbd>Y</kbd> | Redo | Insert the character that is above the cursor |
-| <kbd>Ctrl</kbd>+<kbd>K</kbd> | Create a link | Start a digraph, a character typed as two keys |
-| <kbd>Ctrl</kbd>+<kbd>V</kbd> | Paste | Insert the next key as it is |
-| <kbd>Ctrl</kbd>+<kbd>A</kbd> | Select all | Insert the last inserted text again |
+| <kbd>Ctrl</kbd>+<kbd>U</kbd> | Подчёркнутый | Удалить от курсора до начала строки |
+| <kbd>Ctrl</kbd>+<kbd>E</kbd> | Ничего | Вставить символ, находящийся под курсором |
+| <kbd>Ctrl</kbd>+<kbd>Y</kbd> | Повторить | Вставить символ, находящийся над курсором |
+| <kbd>Ctrl</kbd>+<kbd>K</kbd> | Создать ссылку | Начать ввод диграфа (символа из двух клавиш) |
+| <kbd>Ctrl</kbd>+<kbd>V</kbd> | Вставить | Вставить следующую клавишу буквально |
+| <kbd>Ctrl</kbd>+<kbd>A</kbd> | Выделить всё | Снова вставить последний введённый текст |
 
-To paste while the setting is on, press <kbd>Esc</kbd> first: in Normal and Visual mode, <kbd>Ctrl</kbd>+<kbd>V</kbd> always pastes.
+Чтобы вставлять из буфера обмена при включённой настройке, сначала нажмите <kbd>Esc</kbd>: в обычном и визуальном режимах <kbd>Ctrl</kbd>+<kbd>V</kbd> всегда вставляет.
 
-*   Shortcuts with <kbd>Alt</kbd>, with <kbd>Ctrl</kbd>+<kbd>Shift</kbd> or <kbd>Ctrl</kbd>+<kbd>Alt</kbd>, and the function keys keep their meaning in every mode, apart from <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> above. So do the shortcuts that Vim does not use, such as <kbd>Ctrl</kbd>+<kbd>L</kbd> for a link to a note. <kbd>Ctrl</kbd>+<kbd>K</kbd> for a link is one of them too, except in Insert mode with the setting above turned on.
-*   On macOS, the shortcuts of Trilium use <kbd>⌘</kbd> and those of Vim use <kbd>Ctrl</kbd>, so nothing is taken over. <kbd>⌘</kbd>+<kbd>Z</kbd> and <kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> undo and redo.
-*   In a browser on Windows and Linux, <kbd>Ctrl</kbd>+<kbd>W</kbd>, <kbd>Ctrl</kbd>+<kbd>T</kbd> and <kbd>Ctrl</kbd>+<kbd>N</kbd> always belong to the browser.
+*   Сочетания с <kbd>Alt</kbd>, <kbd>Ctrl</kbd>+<kbd>Shift</kbd> или <kbd>Ctrl</kbd>+<kbd>Alt</kbd>, а также функциональные клавиши сохраняют своё значение во всех режимах, за исключением <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> выше. То же относится к сочетаниям, которые Vim не использует, например <kbd>Ctrl</kbd>+<kbd>L</kbd> для ссылки на заметку. <kbd>Ctrl</kbd>+<kbd>K</kbd> для ссылки тоже относится к ним, кроме режима вставки при включённой настройке выше.
+*   В macOS сочетания Trilium используют <kbd>⌘</kbd>, а Vim — <kbd>Ctrl</kbd>, поэтому конфликтов нет. <kbd>⌘</kbd>+<kbd>Z</kbd> и <kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> отменяют и повторяют действия.
+*   В браузере на Windows и Linux сочетания <kbd>Ctrl</kbd>+<kbd>W</kbd>, <kbd>Ctrl</kbd>+<kbd>T</kbd> и <kbd>Ctrl</kbd>+<kbd>N</kbd> всегда перехватываются браузером.
 
-### The Esc key
+### Клавиша Esc
 
-<kbd>Esc</kbd> does one thing per press, the first of these that applies:
+<kbd>Esc</kbd> выполняет одно действие за нажатие — первое подходящее из списка:
 
-1.  Closes what is open: the command line or the search prompt, a popup such as the link balloon, a completion list or the list of keys.
-2.  Cancels the keys typed so far of a command.
-3.  Leaves Visual or Insert mode.
-4.  Clears the search highlights.
-5.  In an included note, returns to the note around it.
-6.  Switches between the key hints and the breadcrumb, when the key hints are on.
+1.  Закрывает открытый элемент: командную строку или строку поиска, всплывающее окно (например, окно ссылки), список автодополнения или список клавиш.
+2.  Отменяет уже набранные клавиши незавершённой команды.
+3.  Выходит из визуального режима или режима вставки.
+4.  Сбрасывает подсветку поиска.
+5.  Во встроенной заметке возвращает к окружающей заметке.
+6.  Переключает между подсказками клавиш и навигационной цепочкой, если подсказки включены.
 
-So with a link balloon open in Insert mode, the first press closes the balloon and the second one leaves Insert mode. <kbd>Ctrl</kbd>+<kbd>[</kbd> does the same as <kbd>Esc</kbd>.
+Таким образом, если в режиме вставки открыто окно ссылки, первое нажатие закроет окно, а второе выйдет из режима вставки. <kbd>Ctrl</kbd>+<kbd>[</kbd> работает так же, как <kbd>Esc</kbd>.
 
-## Limitations
+## Ограничения
 
-*   Vim mode imitates Vim, it does not run Vim itself. Plugins and scripts made for Vim are not available, and some of its commands are missing: see _Not supported_ in the <a class="reference-link" href="Vim%20mode/Vim%20full%20reference.md">Vim full reference</a>.
-*   Vim mode is not available in the mobile layout, and read-only notes have no modes.
-*   Visual Block mode is not supported. <kbd>Ctrl</kbd>+<kbd>V</kbd> pastes, except in Insert mode when _Vim keys in Insert mode_ is on.
-*   Search patterns are JavaScript regular expressions, not Vim's own, and a match cannot span more than one line.
-*   `:q!` and `ZQ` only show a message: notes are saved as you type, so there is nothing to discard.
+*   Режим Vim имитирует Vim, а не запускает сам Vim. Плагины и скрипты для Vim недоступны, а часть команд отсутствует: см. _Не поддерживается_ в <a class="reference-link" href="Vim%20mode/Vim%20full%20reference.md">Полном справочнике по Vim</a>.
+*   Режим Vim недоступен в мобильной раскладке, а в заметках только для чтения режимов нет.
+*   Режим блочного выделения (Visual Block) не поддерживается. <kbd>Ctrl</kbd>+<kbd>V</kbd> вставляет текст, кроме режима вставки при включённой настройке _Клавиши Vim в режиме вставки_.
+*   Шаблоны поиска — это регулярные выражения JavaScript, а не собственный синтаксис Vim, и совпадение не может охватывать более одной строки.
+*   `:q!` и `ZQ` лишь показывают сообщение: заметки сохраняются по мере ввода, поэтому отменять нечего.
 
-## See also
+## См. также
 
-*   <a class="reference-link" href="Vim%20mode/Vim%20beginner%20guide.md">Vim beginner guide</a>, for the modes and the first keys to learn.
-*   <a class="reference-link" href="Vim%20mode/Vim%20full%20reference.md">Vim full reference</a>, for all the keys and commands.
+*   <a class="reference-link" href="Vim%20mode/Vim%20beginner%20guide.md">Руководство по Vim для начинающих</a> — о режимах и первых клавишах, которые стоит выучить.
+*   <a class="reference-link" href="Vim%20mode/Vim%20full%20reference.md">Полный справочник по Vim</a> — все клавиши и команды.

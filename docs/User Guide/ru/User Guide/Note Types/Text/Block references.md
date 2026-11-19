@@ -1,65 +1,65 @@
-# Block references
-Block references are [links](Links.md) to a block of a text note, such as a paragraph, a heading, a list item or a table, or to a range of consecutive blocks. A block reference can be pasted in another note as a link, or turned into an <a class="reference-link" href="Include%20Note.md">Include Note</a> that shows only the referenced blocks.
+# Ссылки на блоки
+Ссылки на блоки — это [ссылки](Links.md) на отдельный блок текстовой заметки (например, абзац, заголовок, элемент списка или таблицу) либо на диапазон подряд идущих блоков. Ссылку на блок можно вставить в другую заметку как ссылку или превратить во <a class="reference-link" href="Include%20Note.md">включение заметки</a>, отображающее только указанные блоки.
 
-## Copying a reference
+## Копирование ссылки на блок
 
-1.  Place the cursor in the block to reference. To reference several consecutive blocks, select them.
-2.  Right-click the block handle, the sequence of dots to the left of the block (see <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>), and select _Copy reference_. With the fixed formatting toolbar, clicking the block handle opens the same menu. Alternatively, right-click the text and select _Copy reference to this block_ in the _Copy_ submenu, or _Copy reference to these blocks_ for a selection. The referenced blocks flash briefly.
-3.  Go to the note where to insert the link and press <kbd>Ctrl</kbd>+<kbd>V</kbd>.
+1.  Поместите курсор в нужный блок. Чтобы сослаться на несколько подряд идущих блоков, выделите их.
+2.  Нажмите правой кнопкой мыши на маркер блока — ряд точек слева от блока (см. <a class="reference-link" href="Formatting%20toolbar.md">Панель форматирования</a>) — и выберите _Copy reference_. При использовании фиксированной панели форматирования обычное нажатие на маркер блока открывает то же меню. Либо нажмите правой кнопкой мыши по тексту и выберите _Copy reference to this block_ в подменю _Copy_ (или _Copy reference to these blocks_ для выделения). Выбранные блоки ненадолго подсветятся.
+3.  Перейдите в заметку, куда нужно вставить ссылку, и нажмите <kbd>Ctrl</kbd>+<kbd>V</kbd>.
 
-Inside a [table](Tables.md), an [aside](Aside%20blocks.md) or a <a class="reference-link" href="Content%20tabs.md">Content tabs</a> block, the reference points to the whole block. To link to a single tab, use _Copy reference to this tab_ in the <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu of the tabs block instead. Inside a <a class="reference-link" href="Multicolumn%20layout.md">Multicolumn layout</a>, the reference points to the blocks in the column, and an include shows them without the layout around them.
+Внутри [таблицы](Tables.md), [бокового блока](Aside%20blocks.md) или блока <a class="reference-link" href="Content%20tabs.md">вкладок содержимого</a> ссылка указывает на весь блок целиком. Чтобы сослаться на отдельную вкладку, используйте _Copy reference to this tab_ в меню <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ блока вкладок. Внутри <a class="reference-link" href="Multicolumn%20layout.md">многоколоночной разметки</a> ссылка указывает на блоки внутри колонки, а включение отображает их без окружающей разметки.
 
-The link shows the title of the note, followed by the beginning of the referenced text. A link to blocks of the same note shows only the beginning of the referenced text, and a link to a heading of the same note shows the whole heading.
+Ссылка отображает заголовок заметки, за которым следует начало цитируемого текста. Ссылка на блоки той же заметки показывает только начало текста, а ссылка на заголовок той же заметки — весь заголовок.
 
-If the note is [shared](../../Advanced%20Usage/Sharing.md), the menu of the block handle also offers _Copy public link_. It copies the web address of the shared page with the reference added, to send to people who read the note outside Trilium. Opening the address scrolls the shared page to the referenced blocks and flashes them. On a shared page, a link to blocks of another shared note does the same.
+Если заметка [опубликована](../../Advanced%20Usage/Sharing.md), меню маркера блока также предлагает пункт _Copy public link_. Он копирует веб-адрес опубликованной страницы с добавленной ссылкой на блок, чтобы вы могли отправить его тем, кто читает заметку вне Trilium. Открытие этого адреса прокручивает опубликованную страницу к нужным блокам и подсвечивает их. На опубликованной странице ссылка на блоки другой опубликованной заметки работает так же.
 
-The _Paste_ submenu of the context menu offers two more ways to insert a copied reference:
+Подменю _Paste_ в контекстном меню предлагает ещё два способа вставки скопированной ссылки:
 
-*   _Paste reference as a link_ inserts only the link, even when the reference was copied as plain text or along with other content.
-*   _Paste reference as an excerpt_ inserts an include of the referenced blocks, as described below.
+*   _Paste reference as a link_ вставляет только ссылку, даже если она была скопирована как обычный текст или вместе с другим содержимым.
+*   _Paste reference as an excerpt_ вставляет включение указанных блоков, как описано ниже.
 
-In a browser, the context menu of the text editor opens only when right-clicking selected text. Elsewhere the browser shows its own menu.
+В браузере контекстное меню текстового редактора открывается только при правом клике по выделенному тексту. В остальных случаях браузер показывает собственное меню.
 
-## Linking to a heading
+## Ссылка на заголовок
 
-Since v0.107.0, a link to a heading of the same note can be created from the _Add link_ dialog:
+Начиная с версии v0.107.0, ссылку на заголовок той же заметки можно создать через диалог _Add link_:
 
-*   Place the cursor at the desired position of the link, or select the text to turn into a link.
-*   Press <kbd>Ctrl</kbd>+<kbd>K</kbd> or the <span class="tn-icon cke cke-link"></span> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, then select _Heading / anchor_ at the top of the dialog. Alternatively, choose _Link to a heading or anchor_ in the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>, which opens the dialog on that page.
-*   Under _Headings_, click the desired heading to check it. Sub-headings are listed under their heading and start collapsed; expand or collapse a heading with the arrow in front of it, or with <kbd>→</kbd> and <kbd>←</kbd> while it is focused. Optionally, type a _Link title_.
-*   Press <kbd>Enter</kbd> or _Insert link_ to confirm.
+*   Поместите курсор в нужное место или выделите текст, который нужно превратить в ссылку.
+*   Нажмите <kbd>Ctrl</kbd>+<kbd>K</kbd> или кнопку <span class="tn-icon cke cke-link"></span> на <a class="reference-link" href="Formatting%20toolbar.md">панели форматирования</a>, затем выберите _Heading / anchor_ в верхней части диалога. Либо выберите _Link to a heading or anchor_ в <a class="reference-link" href="Slash%20Commands.md">слэш-командах</a>, что сразу откроет диалог на этой вкладке.
+*   В разделе _Headings_ нажмите на нужный заголовок, чтобы отметить его. Подзаголовки перечислены под своим заголовком и изначально свёрнуты; разворачивайте и сворачивайте их стрелкой перед заголовком или клавишами <kbd>→</kbd> и <kbd>←</kbd>, когда элемент в фокусе. При желании введите _Link title_.
+*   Нажмите <kbd>Enter</kbd> или _Insert link_ для подтверждения.
 
-When the link title is not set, the link displays the text of the heading. If the heading gets changed, the link is renamed automatically to the new text, shortly after you stop typing. A link with a title of its own keeps that title.
+Если заголовок ссылки не задан, ссылка отображает текст заголовка. Если текст заголовка изменится, ссылка автоматически переименуется вскоре после того, как вы закончите печатать. Ссылка с собственным заголовком сохраняет его.
 
-The link is a block reference to the heading, so it keeps working when the heading is moved. To change the link, click it and press the <span class="tn-icon cke cke-pencil"></span> _Edit link_ button in its popup. For a link with a title of its own, placing the cursor inside it and pressing <kbd>Ctrl</kbd>+<kbd>K</kbd> works too. The dialog opens on _Heading / anchor_, with the heading checked. Emptying the _Link title_ there makes the link display the text of the heading again.
+Такая ссылка является ссылкой на блок заголовка, поэтому продолжает работать при перемещении заголовка. Чтобы изменить ссылку, нажмите на неё и выберите кнопку <span class="tn-icon cke cke-pencil"></span> _Edit link_ во всплывающем окне. Для ссылки с собственным заголовком также можно поместить курсор внутрь неё и нажать <kbd>Ctrl</kbd>+<kbd>K</kbd>. Диалог откроется на вкладке _Heading / anchor_ с отмеченным заголовком. Очистка поля _Link title_ снова заставит ссылку отображать текст заголовка.
 
-### A heading of another note
+### Заголовок другой заметки
 
-Since v0.108.0, a link can point at a heading of another note too:
+Начиная с версии v0.108.0, ссылка может указывать и на заголовок другой заметки:
 
-*   In the _Add link_ dialog, pick the note on the _Note_ page. Its headings and anchors are listed below the _Link title_, after _Link to the whole note_.
-*   Under _Link to a heading_, click the desired heading to check it, then press <kbd>Enter</kbd> or _Insert link_. The link can be inserted before the list appears; it then links to the note itself.
-*   Alternatively, type `@` and pick the note: the menu then lists the same headings, and the text typed next narrows them down. See [In-place linking](Links/Internal%20\(reference\)%20links.md).
+*   В диалоге _Add link_ выберите заметку на вкладке _Note_. Её заголовки и якоря появятся под полем _Link title_, после _Link to the whole note_.
+*   В разделе _Link to a heading_ нажмите на нужный заголовок, чтобы отметить его, затем нажмите <kbd>Enter</kbd> или _Insert link_. Ссылку можно вставить и до появления списка — тогда она будет указывать на саму заметку.
+*   Либо введите `@` и выберите заметку: в меню появятся те же заголовки, а дальнейший ввод текста отфильтрует их. См. [Вставка ссылок по месту](Links/Internal%20\(reference\)%20links.md).
 
-This link is a block reference too. Linking to the heading saves an invisible identifier in it, also when that note is read-only. If the heading cannot be referenced, for example because it was changed in the meantime, an error is shown and no link is inserted. The dialog stays open. From the `@` menu, the link keeps pointing at the whole note.
+Эта ссылка также является ссылкой на блок. При создании ссылки на заголовок в нём сохраняется невидимый идентификатор — даже если целевая заметка доступна только для чтения. Если на заголовок невозможно сослаться (например, потому что он был изменён в этот момент), отображается ошибка, ссылка не вставляется, а диалог остаётся открытым. При использовании меню `@` ссылка продолжит указывать на всю заметку целиком.
 
-## Following a reference
+## Переход по ссылке
 
-Clicking a block reference opens the note, scrolls to the referenced blocks and flashes them. If a referenced block was deleted, an error message is shown. When only the first or the last block of a range still exists, the note scrolls to that block.
+Нажатие на ссылку на блок открывает заметку, прокручивает её к указанным блокам и подсвечивает их. Если указанный блок был удалён, отображается сообщение об ошибке. Если из диапазона сохранился только первый или последний блок, заметка прокручивается к нему.
 
-A link to blocks of the note it is in, such as a link to a heading, scrolls to them and flashes them without leaving the note, as a link within a web page does. This works in read-only notes and on shared pages too. While editing, clicking the link shows its popup: press _Jump to heading_ there, or _Jump to block_ for other blocks.
+Ссылка на блоки той же заметки (например, на заголовок) прокручивает к ним и подсвечивает их без выхода из заметки, как якорная ссылка на веб-странице. Это работает и в заметках только для чтения, и на опубликованных страницах. В режиме редактирования нажатие на ссылку открывает всплывающее окно: нажмите в нём _Jump to heading_ (или _Jump to block_ для других блоков).
 
-## Including the referenced blocks
+## Включение указанных блоков
 
-To show the referenced blocks inside another note, right-click the link in a note being edited and select _Convert link to note excerpt_, or paste the copied reference with _Paste_ → _Paste reference as an excerpt_. The include shows only the referenced blocks, not the rest of the note, and marks them with an _Excerpt_ badge in its title. It starts at the _Full_ box size, so all the referenced blocks are visible. To see the whole note, press the <span class="tn-icon bx bx-link-external"></span> button in the same title, which opens the note in a new tab. Converting the include back to a link keeps the reference.
+Чтобы отобразить указанные блоки внутри другой заметки, нажмите правой кнопкой мыши на ссылку в редактируемой заметке и выберите _Convert link to note excerpt_, либо вставьте скопированную ссылку через _Paste_ → _Paste reference as an excerpt_. Включение отображает только указанные блоки, без остальной части заметки, и помечает их значком _Excerpt_ в заголовке. По умолчанию используется размер _Full_, чтобы были видны все указанные блоки. Чтобы увидеть всю заметку целиком, нажмите кнопку <span class="tn-icon bx bx-link-external"></span> в том же заголовке — заметка откроется в новой вкладке. Преобразование включения обратно в ссылку сохраняет ссылку на блок.
 
-To edit the referenced blocks without leaving the note, press the <span class="tn-icon bx bx-pencil"></span> _Edit excerpt_ button in the title of the include, or turn on _Editable_ (<span class="tn-icon bx bx-edit-alt"></span>) in its toolbar, as for any <a class="reference-link" href="Include%20Note.md">Include Note</a>. Press the button again to stop editing. The changes are saved to the referenced blocks, and the rest of the note stays as it is. The button is grayed out where the blocks cannot be edited, such as in a read-only note. An excerpt has no _Fullscreen_ button.
+Чтобы редактировать указанные блоки, не покидая текущую заметку, нажмите кнопку <span class="tn-icon bx bx-pencil"></span> _Edit excerpt_ в заголовке включения или включите _Editable_ (<span class="tn-icon bx bx-edit-alt"></span>) на его панели инструментов, как для любого <a class="reference-link" href="Include%20Note.md">включения заметки</a>. Нажмите кнопку ещё раз, чтобы завершить редактирование. Изменения сохраняются в исходных блоках, а остальная часть заметки остаётся без изменений. Кнопка неактивна, если блоки нельзя редактировать (например, в заметке только для чтения). У фрагмента (excerpt) нет кнопки _Fullscreen_.
 
-If a referenced block was deleted, the include shows _Broken reference_.
+Если указанный блок был удалён, включение отображает _Broken reference_.
 
-## Limitations
+## Ограничения
 
-*   References can be copied only from a note being edited, and not in the mobile layout.
-*   An include of a range that covers only part of a list or a quote, such as from its second item to a paragraph after it, cannot be edited in place. Neither can an include of a single code block or diagram.
-*   Deleting a block, or merging it into the block above with <kbd>Backspace</kbd>, breaks the references to it.
-*   When a subtree is [exported](../../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md), links to blocks lead to the whole note. Exporting to Markdown also removes the invisible identifiers of most blocks, so references to them break when the note is imported again.
+*   Ссылки можно копировать только из редактируемой заметки и нельзя в мобильном интерфейсе.
+*   Включение диапазона, охватывающего только часть списка или цитаты (например, со второго пункта до абзаца после него), нельзя редактировать по месту. То же касается включения одного блока кода или диаграммы.
+*   Удаление блока или его объединение с предыдущим блоком клавишей <kbd>Backspace</kbd> нарушает ссылки на него.
+*   При [экспорте](../../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md) поддерева ссылки на блоки ведут на всю заметку целиком. Экспорт в Markdown также удаляет невидимые идентификаторы большинства блоков, поэтому ссылки на них перестают работать при повторном импорте заметки.

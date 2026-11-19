@@ -1,19 +1,19 @@
 # Script API
-For [script code notes](../Scripting.md), Trilium offers an API that gives them access to various features of the application.
+Для [заметок со скриптами](../Scripting.md) Trilium предоставляет API, который даёт доступ к различным функциям приложения.
 
-There are two APIs:
+Существует два API:
 
-*   One for the front-end scripts: <a class="reference-link" href="Script%20API/Frontend%20API.md">Frontend API</a>
-*   One for the back-end scripts: <a class="reference-link" href="Script%20API/Backend%20API.md">Backend API</a>
+*   Для фронтенд-скриптов: <a class="reference-link" href="Script%20API/Frontend%20API.md">Frontend API</a>
+*   Для бэкенд-скриптов: <a class="reference-link" href="Script%20API/Backend%20API.md">Backend API</a>
 
-In both cases, the API resides in a global variable, `api`, that can be used anywhere in the script.
+В обоих случаях API находится в глобальной переменной `api`, которую можно использовать в любом месте скрипта.
 
-For example, to display a message to the user the following front-end script can be used:
+Например, чтобы показать пользователю сообщение, можно использовать следующий фронтенд-скрипт:
 
 ```
 api.showMessage("Hello world.");
 ```
 
 > [!NOTE]
-> **Note**  
-> The Script API is currently experimental and may undergo changes in future updates.
+> **Примечание**  
+> Script API в настоящее время является экспериментальным и может изменяться в будущих обновлениях.

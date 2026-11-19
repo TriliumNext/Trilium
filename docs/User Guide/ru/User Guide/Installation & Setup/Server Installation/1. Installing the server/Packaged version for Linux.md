@@ -1,42 +1,42 @@
-# Packaged version for Linux
-This is essentially Trilium sources + node modules + node.js runtime packaged into one 7z file.
+# Готовая сборка для Linux
+По сути, это исходный код Trilium + модули node + среда выполнения node.js, упакованные в один архив.
 
-## Steps
+## Шаги установки
 
-*   SSH into your server
-*   use `wget` (or `curl`) to download latest `TriliumNotes-Server-[VERSION]-linux-x64.tar.xz` (copy link from [release page](https://github.com/TriliumNext/Trilium/releases), notice `-Server` suffix) on your server.
-*   unpack the archive, e.g. using `tar -xf -d TriliumNotes-Server-[VERSION]-linux-x64.tar.xz`
+*   Подключитесь к вашему серверу по SSH.
+*   Используйте `wget` (или `curl`), чтобы загрузить последнюю версию `TriliumNotes-Server-[VERSION]-linux-x64.tar.xz` (скопируйте ссылку со [страницы релизов](https://github.com/TriliumNext/Trilium/releases), обратите внимание на суффикс `-Server`) на ваш сервер.
+*   Распакуйте архив, например с помощью `tar -xf -d TriliumNotes-Server-[VERSION]-linux-x64.tar.xz`.
 *   `cd trilium-linux-x64-server`
 *   `./trilium.sh`
-*   you can open the browser and open http://\[your-server-hostname\]:8080 and you should see Trilium initialization page
-*   the console lists the addresses the server can be reached on, so you can also copy one from there
+*   Откройте в браузере http://\[your-server-hostname\]:8080 — вы должны увидеть страницу инициализации Trilium.
+*   В консоли также выводятся адреса, по которым доступен сервер, так что вы можете скопировать один из них оттуда.
 
-The problem with above steps is that once you close the SSH connection or the terminal, the Trilium process is terminated. Generally, the best way to avoid that is to configure systemd to run Trilium in the background on every boot, as described in the next section. It also restarts Trilium if it stops unexpectedly.
+Проблема описанного выше способа в том, что после закрытия SSH-соединения или терминала процесс Trilium завершается. Как правило, лучший способ избежать этого — настроить systemd для автоматического запуска Trilium в фоновом режиме при каждой загрузке системы, как описано в следующем разделе. Это также обеспечит автоматический перезапуск Trilium при неожиданном сбое.
 
-To keep Trilium running without a service, stop it (with <kbd>Ctrl</kbd>+<kbd>C</kbd>) and start it again detached from the terminal:
+Чтобы оставить Trilium работать без настройки службы, остановите его (нажав <kbd>Ctrl</kbd>+<kbd>C</kbd>) и запустите снова, отсоединив от терминала:
 
-*   `setsid -f ./trilium.sh > trilium.out 2>&1` starts Trilium in a new session, so closing the terminal does not reach it. Its output goes to `trilium.out`.
-*   Alternatively, in Bash or Zsh, `./trilium.sh > trilium.out 2>&1 & disown` starts it in the background and removes it from the shell's jobs, so the shell does not stop it on exit.
+*   `setsid -f ./trilium.sh > trilium.out 2>&1` запускает Trilium в новом сеансе, поэтому закрытие терминала его не затрагивает. Вывод записывается в файл `trilium.out`.
+*   В качестве альтернативы в Bash или Zsh команда `./trilium.sh > trilium.out 2>&1 & disown` запускает процесс в фоне и удаляет его из списка заданий оболочки, чтобы она не останавливала его при выходе.
 
 > [!WARNING]
-> `nohup ./trilium.sh &` does not keep Trilium running. Node.js resets the signal handlers at startup, so it no longer ignores the hang-up signal (`SIGHUP`) that `nohup` sets up, and Trilium stops as soon as the terminal closes.
+> Команда `nohup ./trilium.sh &` не сохраняет работу Trilium. Node.js сбрасывает обработчики сигналов при запуске, поэтому перестаёт игнорировать сигнал разрыва соединения (`SIGHUP`), установленный `nohup`, и Trilium останавливается сразу после закрытия терминала.
 
-## Configure Trilium to auto-run on boot with systemd
+## Настройка автозапуска Trilium при загрузке с помощью systemd
 
-*   After downloading, extract and move Trilium:
+*   После загрузки распакуйте и переместите Trilium:
 
 ```
 tar -xvf TriliumNotes-Server-[VERSION]-linux-x64.tar.xz
 sudo mv trilium-linux-x64-server /opt/trilium
 ```
 
-*   Create the service:
+*   Создайте файл службы:
 
 ```
 sudo nano /etc/systemd/system/trilium.service
 ```
 
-*   Paste this into the file (replace the user and group as needed):
+*   Вставьте в файл следующее содержимое (укажите нужных пользователя и группу):
 
 ```
 [Unit]
@@ -58,33 +58,33 @@ Restart=always
 WantedBy=multi-user.target
 ```
 
-*   Save the file (CTRL-S) and exit (CTRL-X)
-*   Enable and launch the service:
+*   Сохраните файл (CTRL-S) и выйдите (CTRL-X).
+*   Включите и запустите службу:
 
 ```
 sudo systemctl enable --now -q trilium
 ```
 
-*   You can now open a browser to http://\[your-server-hostname\]:8080 and you should see the Trilium initialization page.
+*   Теперь вы можете открыть в браузере http://\[your-server-hostname\]:8080 и увидеть страницу инициализации Trilium.
 
-## Simple auto-update for Server
+## Простое автообновление сервера
 
-The script is available in <a class="reference-link" href="Packaged%20version%20for%20Linux/Simple%20auto-update%20for%20server.dat">Simple auto-update for server</a>.
+Скрипт доступен по ссылке <a class="reference-link" href="Packaged%20version%20for%20Linux/Simple%20auto-update%20for%20server.dat">Simple auto-update for server</a>.
 
-*   Run as the same User Trilium runs.
+*   Запускайте от имени того же пользователя, от которого работает Trilium.
     
-    *   If you run as `root` please remove `sudo` from the commands.
-*   Requires `jq`:
+    *   Если вы запускаете от `root`, удалите `sudo` из команд.
+*   Требуется `jq`:
     
     ```sh
     apt install jq
     ```
 
-It will stop the service above, overwrite everything (expecting no `config.ini`), and start service. It also creates a version file in the Trilium directory so it updates only with a newer version.
+Скрипт остановит указанную выше службу, перезапишет все файлы (предполагая отсутствие `config.ini`) и снова запустит службу. Он также создаёт файл версии в каталоге Trilium, чтобы обновление выполнялось только при выходе более новой версии.
 
-## Common issues
+## Частые проблемы
 
-### Outdated glibc
+### Устаревшая версия glibc
 
 ```
 Error: /usr/lib64/libstdc++.so.6: version `GLIBCXX_3.4.21' not found (required by /var/www/virtual/.../node_modules/@mlink/scrypt/build/Release/scrypt.node)
@@ -93,8 +93,8 @@ Error: /usr/lib64/libstdc++.so.6: version `GLIBCXX_3.4.21' not found (required b
     at tryModuleLoad (module.js:505:12)
 ```
 
-If you get an error like this, you need to either upgrade your glibc (typically by upgrading to up-to-date distribution version) or use some other [server installation](../../Server%20Installation.md) method.
+Если вы столкнулись с такой ошибкой, необходимо либо обновить glibc (обычно путём обновления дистрибутива до актуальной версии), либо воспользоваться другим способом [установки сервера](../../Server%20Installation.md).
 
 ## TLS
 
-Don't forget to [configure TLS](../HTTPS%20\(TLS\).md), which is required for secure usage!
+Не забудьте [настроить TLS](../HTTPS%20\(TLS\).md) — это необходимо для безопасной работы!

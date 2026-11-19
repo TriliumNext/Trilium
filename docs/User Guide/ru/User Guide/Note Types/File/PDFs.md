@@ -1,102 +1,102 @@
-# PDFs
+# PDF-файлы
 <figure class="image image_resized" style="width:74.34%;"><img style="aspect-ratio:1360/698;" src="PDFs_image.png" width="1360" height="698"></figure>
 
-PDFs file can be uploaded in Trilium, where they will be displayed without the need to download them first.
+PDF-файлы можно загружать в Trilium, где они будут отображаться без необходимости предварительно их скачивать.
 
-Since v0.102.0, PDFs will be rendered using Trilium's built-in PDF viewer, which is a customization of [Mozilla's PDF.js viewer](https://mozilla.github.io/pdf.js/) (also built-in in the Mozilla Firefox browser). Versions prior to that render PDFs using the browser's default PDF viewer.
+Начиная с версии v0.102.0 PDF-файлы отображаются с помощью встроенного в Trilium просмотрщика PDF, представляющего собой адаптированную версию [просмотрщика PDF.js от Mozilla](https://mozilla.github.io/pdf.js/) (также встроенного в браузер Mozilla Firefox). В более ранних версиях PDF отображаются с помощью стандартного просмотрщика браузера.
 
-## Features
+## Возможности
 
-*   The last page viewed and scroll position is maintained in between restarts or note navigations.
-*   Annotations (text, highlights) as well as comments. These are saved automatically.
-*   Forms can be filled.
-*   Can be printed or downloaded.
-*   Can be saved as a [template](../../Advanced%20Usage/Templates.md) and the content of the PDF will be copied over to the new note. This is especially useful in combination with annotations or filled forms.
-*   Integrates with the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a> by displaying the list of pages with thumbnails, table of contents and a listing of the annotations.
-*   Basic support for signatures (the hand-drawn ones, not proper digital signatures), similar to annotations. Signatures are stored and can be reused across multiple documents (up to 5).
+*   Последняя просмотренная страница и позиция прокрутки сохраняются между перезапусками и переключениями заметок.
+*   Аннотации (текст, выделение) и комментарии. Они сохраняются автоматически.
+*   Возможность заполнения форм.
+*   Возможность печати или скачивания.
+*   Можно сохранить как [шаблон](../../Advanced%20Usage/Templates.md), и содержимое PDF будет скопировано в новую заметку. Это особенно полезно в сочетании с аннотациями или заполненными формами.
+*   Интеграция с <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">правой боковой панелью</a>: отображение списка страниц с миниатюрами, оглавления и списка аннотаций.
+*   Базовая поддержка подписей (рукописных, а не полноценных цифровых подписей), аналогично аннотациям. Подписи сохраняются и могут повторно использоваться в нескольких документах (до 5 штук).
 
-## Storing last position and settings
+## Сохранение последней позиции и настроек
 
-For every PDF, Trilium will remember the following information:
+Для каждого PDF Trilium запоминает следующую информацию:
 
-*   The current page.
-*   The scroll position, within the current page.
-*   The rotation of the page.
+*   Текущую страницу.
+*   Позицию прокрутки на текущей странице.
+*   Поворот страницы.
 
-This makes it useful when reading large documents since the position is remembered automatically. This happens in the background, however it's recorded only a few seconds after stopping any scroll actions.
+Это удобно при чтении больших документов, поскольку позиция запоминается автоматически. Сохранение происходит в фоновом режиме через несколько секунд после прекращения прокрутки.
 
 > [!TIP]
-> Technically, the information about the scroll position and rotation is stored in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Attachments.md">Attachments</a> section, in a dedicated attachment called `pdfHistory.json`.
+> Технически информация о позиции прокрутки и повороте хранится в разделе <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Attachments.md">вложений</a>, в специальном вложении `pdfHistory.json`.
 
-## Annotations
+## Аннотации
 
-Since v0.102.0 it's possible to annotate PDFs. To do so, look for the annotation buttons on the right side of the PDF toolbar (<img src="1_PDFs_image.png" width="120" height="32">).
+Начиная с версии v0.102.0 можно добавлять аннотации к PDF. Для этого воспользуйтесь кнопками аннотаций в правой части панели инструментов PDF (<img src="1_PDFs_image.png" width="120" height="32">).
 
-Since v0.103.0:
+Начиная с версии v0.103.0:
 
-*   Annotations are disabled if the note is marked as <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">Read-Only Notes</a>.
-*   Comments can also be added, which is similar to highlights but also attach a text.
-*   The <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a> also displays a list of annotations (highlights, comments).
+*   Аннотации отключены, если заметка помечена как <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">заметка только для чтения</a>.
+*   Также можно добавлять комментарии — они похожи на выделение, но позволяют прикрепить текст.
+*   <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Правая боковая панель</a> также отображает список аннотаций (выделений, комментариев).
 
-### Supported annotations
+### Поддерживаемые виды аннотаций
 
-The following annotation methods are supported:
+Поддерживаются следующие способы аннотирования:
 
-*   **Highlight**  
-    Allows highlighting text with one of the predefined colors.
-    *   The thickness is also adjustable.
-    *   It's also possible to highlight the blank space, turning the feature more into a thicker pen.
-*   **Text**  
-    Allows adding arbitrary text, with a custom color and size.
-*   **Pen**  
-    Allows free drawing on the document, with variable color, thickness and opacity.
-*   **Image**  
-    Allows inserting images from outside Trilium directly into the document.
+*   **Выделение (Highlight)**  
+    Позволяет выделять текст одним из предустановленных цветов.
+    *   Также настраивается толщина.
+    *   Можно выделять и пустое пространство, используя инструмент как толстый маркер.
+*   **Текст (Text)**  
+    Позволяет добавлять произвольный текст с настраиваемым цветом и размером.
+*   **Перо (Pen)**  
+    Позволяет свободно рисовать на документе с настраиваемым цветом, толщиной и прозрачностью.
+*   **Изображение (Image)**  
+    Позволяет вставлять изображения извне Trilium прямо в документ.
 
-### Editing existing annotations
+### Редактирование существующих аннотаций
 
-Although annotations are stored in the PDF itself, they can be edited. To edit an annotation, press one of the annotation buttons from the previous section to enter edit mode and click on an existing annotation. This will reveal a toolbar with options to customize the annotation (e.g. to change a color), as well as the possibility to remove it.
+Хотя аннотации хранятся внутри самого PDF, их можно редактировать. Чтобы отредактировать аннотацию, нажмите одну из кнопок аннотаций из предыдущего раздела для входа в режим редактирования и кликните по существующей аннотации. Появится панель инструментов с параметрами настройки аннотации (например, смены цвета), а также возможностью удалить её.
 
-### How are annotations stored
+### Как хранятся аннотации
 
-Annotations are stored directly in the PDF. When modifications are made, Trilium will replace the PDF with the new one.
+Аннотации сохраняются непосредственно в сам PDF-файл. При внесении изменений Trilium заменяет PDF на обновлённый.
 
-Since modifications are automatically saved, there's no need to manually save the document after making modifications to the annotations.
+Поскольку изменения сохраняются автоматически, вручную сохранять документ после работы с аннотациями не нужно.
 
-The benefit of “baked-in annotations” is that they are also accessible if downloading (for external use outside Trilium) or sharing the note.
+Преимущество «вшитых аннотаций» в том, что они остаются доступными при скачивании (для использования вне Trilium) или при публикации заметки.
 
-The downside is that the entire PDF needs to be sent back to the server, which can slow down performance for larger documents. If you encounter any issues from this system, feel free to [report it](../../Troubleshooting/Reporting%20issues.md).
+Недостаток заключается в том, что весь PDF приходится заново отправлять на сервер, что может снижать производительность на больших документах. Если вы столкнётесь с проблемами в работе этой системы, пожалуйста, [сообщите об этом](../../Troubleshooting/Reporting%20issues.md).
 
-## Linking to a page or an annotation
+## Ссылки на страницу или аннотацию
 
-A link can open a PDF at a given page, or at one of its annotations. To create one:
+Ссылка может открывать PDF на конкретной странице или на одной из его аннотаций. Чтобы создать такую ссылку:
 
-*   To link to a page, right-click the page in the _Pages_ section of the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a> and select _Copy reference_.
-*   To link to an annotation, right-click it in the _Annotations_ section of the sidebar and select _Copy reference_.
+*   Для ссылки на страницу нажмите правой кнопкой мыши по странице в разделе _Pages_ <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">правой боковой панели</a> и выберите _Copy reference_.
+*   Для ссылки на аннотацию нажмите правой кнопкой мыши по ней в разделе _Annotations_ боковой панели и выберите _Copy reference_.
 
-Pasted into a text note, the reference becomes one of the <a class="reference-link" href="../Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a>, showing the title of the PDF followed by the page (_Page 5_), or by _Annotation on page 5_ for a reference to an annotation. Clicking it opens the PDF and scrolls to the page or to the annotation.
+Вставленная в текстовую заметку ссылка превращается во <a class="reference-link" href="../Text/Links/Internal%20(reference)%20links.md">внутреннюю ссылку</a>, отображающую название PDF, за которым следует страница (_Page 5_) или _Annotation on page 5_ для ссылки на аннотацию. Нажатие по ней открывает PDF и прокручивает его к нужной странице или аннотации.
 
-A reference to an annotation also carries its page, so a link to an annotation that was deleted still opens the right page.
+Ссылка на аннотацию также хранит номер её страницы, поэтому ссылка на удалённую аннотацию всё равно откроет правильную страницу.
 
 > [!NOTE]
-> An annotation drawn since the PDF was opened does not have a permanent identifier until the PDF is opened again, so a reference copied for it points at its page only.
+> Аннотация, созданная после открытия PDF, не имеет постоянного идентификатора до повторного открытия PDF, поэтому скопированная для неё ссылка указывает только на её страницу.
 
-## Filling out forms
+## Заполнение форм
 
-Similar to annotations, forms are also supported by Trilium since v0.102.0. If the document has fields that can be filled-in, they will be indicated with a colored background.
+Как и аннотации, формы поддерживаются в Trilium начиная с версии v0.102.0. Если в документе есть поля для заполнения, они подсвечиваются цветным фоном.
 
-Simply type text in the forms and they will be automatically saved.
+Просто введите текст в поля формы, и он будет сохранён автоматически.
 
-## Sidebar navigation
+## Навигация по боковой панели
 
-See the dedicated section on PDFs in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar/Outline%20tab.md">Outline tab</a>.
+См. специальный раздел о PDF на странице <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar/Outline%20tab.md">Вкладка «Структура» (Outline)</a>.
 
-## Share functionality
+## Функция публикации
 
-PDFs can also be shared using the <a class="reference-link" href="../../Advanced%20Usage/Sharing.md">Sharing</a> feature. This will also use Trilium's customized PDF viewer.
+PDF-файлами также можно делиться с помощью функции <a class="reference-link" href="../../Advanced%20Usage/Sharing.md">публикации</a>. При этом также используется встроенный просмотрщик PDF Trilium.
 
-If you are using a reverse proxy on your server with strict access limitations for the share functionality, make sure that `[host].com/pdfjs` directory is accessible. Note that this directory is outside the `/share` route as it's common with the rest of the application.
+Если вы используете обратный прокси на сервере со строгими ограничениями доступа для функции публикации, убедитесь, что каталог `[host].com/pdfjs` доступен. Обратите внимание, что этот каталог находится вне маршрута `/share`, так как он является общим для всего приложения.
 
 ## OCR
 
-PDFs are eligible for <a class="reference-link" href="../../Advanced%20Usage/Text%20Extraction%20(OCR).md">Text Extraction (OCR)</a>, which means that their text can be used in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Search.md">Search</a>.
+PDF-файлы поддерживают <a class="reference-link" href="../../Advanced%20Usage/Text%20Extraction%20(OCR).md">извлечение текста (OCR)</a>, что позволяет находить их содержимое через <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Search.md">поиск</a>.

@@ -1,18 +1,18 @@
-# Customize the Next theme
-By default, any custom theme will be based on the legacy light theme. To use the TriliumNext theme instead, add the `#appThemeBase=next` attribute onto the existing theme. The `appTheme` attribute must also be present.
+# Настройка темы Next
+По умолчанию любая пользовательская тема основывается на устаревшей светлой теме. Чтобы вместо неё использовать тему TriliumNext, добавьте атрибут `#appThemeBase=next` к существующей теме. Атрибут `appTheme` также должен присутствовать.
 
 ![](Customize%20the%20Next%20theme_image.png)
 
-The `appThemeBase` label can be set to one of the following values:
+Метка `appThemeBase` может принимать одно из следующих значений:
 
-*   `next`, for the TriliumNext (auto light or dark mode).
-*   `next-light`, for the always light mode of the TriliumNext.
-*   `next-dark`, for the always dark mode of the TriliumNext.
-*   Any other value is ignored and will use the legacy white theme instead.
+*   `next` — для TriliumNext (автоматический светлый или тёмный режим).
+*   `next-light` — для постоянно светлого режима TriliumNext.
+*   `next-dark` — для постоянно тёмного режима TriliumNext.
+*   Любое другое значение игнорируется, и вместо него используется устаревшая светлая тема.
 
-## Overrides
+## Переопределения
 
-Do note that the TriliumNext theme has a few more overrides than the legacy theme. Due to that, it is recommended to use `#trilium-app` with a next theme instead of the `:root` of a legacy theme.
+Обратите внимание, что тема TriliumNext содержит несколько больше переопределений, чем устаревшая тема. Поэтому в теме на основе Next рекомендуется использовать `#trilium-app` вместо `:root` устаревшей темы.
 
 ```css
 #trilium-app {

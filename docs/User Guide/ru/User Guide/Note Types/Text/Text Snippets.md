@@ -1,35 +1,35 @@
-# Text Snippets
+# Текстовые фрагменты
 <figure class="image image-style-align-right"><img style="aspect-ratio:265/108;" src="Text Snippets_image.png" width="265" height="108"></figure>
 
-Text Snippets are closely related to <a class="reference-link" href="../../Advanced%20Usage/Templates.md">Templates</a>, but instead of defining the content of an entire note, text snippets are pieces of formatted text that can easily be inserted in a text note.
+Текстовые фрагменты тесно связаны с <a class="reference-link" href="../../Advanced%20Usage/Templates.md">шаблонами</a>, но вместо определения содержимого целой заметки они представляют собой кусочки отформатированного текста, которые можно легко вставить в текстовую заметку.
 
-## Creating a text snippet
+## Создание текстового фрагмента
 
-In the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>: 
+В <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">дереве заметок</a>:
 
-1.  Right click a note where to place the text snippet.
-2.  Select _Insert child note_.
-3.  Select _More_ → _Text snippet_.
+1.  Нажмите правой кнопкой мыши на заметку, в которую хотите поместить текстовый фрагмент.
+2.  Выберите _Вставить подзаметку_.
+3.  Выберите _Ещё_ → _Текстовый фрагмент_.
 
-Afterwards, simply type in the content of the note the desired text. The text can be formatted in the same manner as a normal text note.
+После этого просто введите нужный текст в содержимое заметки. Текст можно форматировать точно так же, как в обычной текстовой заметке.
 
-The title of the note will become the title of the template. Optionally, a description can be added in the <a class="reference-link" href="../../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> section.
+Заголовок заметки станет названием фрагмента. При желании можно добавить описание в разделе <a class="reference-link" href="../../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Продвигаемые атрибуты</a>.
 
-## Inserting a snippet
+## Вставка фрагмента
 
-Once a snippet is created, there are two options to insert it:
+После создания фрагмента его можно вставить двумя способами:
 
-1.  From the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, by looking for the <span class="tn-icon cke cke-trilium-template"></span> button.
-2.  Using <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>: 
-    1.  To look for a specific template, start typing the name of the template (its title).
-    2.  To look for all the templates, type `template`.
+1.  С <a class="reference-link" href="Formatting%20toolbar.md">панели форматирования</a>, нажав кнопку <span class="tn-icon cke cke-trilium-template"></span>.
+2.  С помощью <a class="reference-link" href="Slash%20Commands.md">слэш-команд</a>:
+    1.  Чтобы найти конкретный фрагмент, начните вводить его название (заголовок).
+    2.  Чтобы увидеть все фрагменты, введите `template`.
 
 > [!TIP]
-> A newly created snippet doesn't appear? Generally it takes up to a few seconds to refresh the list of templates once you make a change.
+> Только что созданный фрагмент не появляется? Обычно после внесения изменений требуется несколько секунд для обновления списка фрагментов.
 > 
-> If this doesn't happen, [reload the application](../../Troubleshooting/Refreshing%20the%20application.md) and [report the issue](../../Troubleshooting/Reporting%20issues.md)to us. 
+> Если этого не происходит, [перезагрузите приложение](../../Troubleshooting/Refreshing%20the%20application.md) и [сообщите нам о проблеме](../../Troubleshooting/Reporting%20issues.md).
 
-## Limitations
+## Ограничения
 
-*   Whenever a snippet is created, deleted or its title/description are modified, all the open text notes will need to be refreshed. This causes a slight flash for usually under a second, but it can cause some discomfort.
-*   Unlike <a class="reference-link" href="../../Advanced%20Usage/Templates.md">Templates</a>, the snippets cannot be limited to a particular [workspace](../../Basic%20Concepts%20and%20Features/Navigation/Workspaces.md).
+*   Каждый раз при создании, удалении или изменении заголовка/описания фрагмента все открытые текстовые заметки должны обновиться. Это вызывает кратковременное мерцание (обычно меньше секунды), но может доставлять небольшой дискомфорт.
+*   В отличие от <a class="reference-link" href="../../Advanced%20Usage/Templates.md">шаблонов</a>, текстовые фрагменты нельзя ограничить конкретным [рабочим пространством](../../Basic%20Concepts%20and%20Features/Navigation/Workspaces.md).

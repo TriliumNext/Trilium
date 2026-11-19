@@ -1,11 +1,11 @@
-# Restoring Deleted Notes
-Deleted notes are listed in the _Deleted Notes_ dialog (<a class="reference-link" href="../UI%20Elements/Global%20menu.md">Global menu</a> → _Deleted notes_) and can be restored by pressing the _undelete_ link.
+# Восстановление удалённых заметок
+Удалённые заметки отображаются в диалоговом окне _Deleted Notes_ (<a class="reference-link" href="../UI%20Elements/Global%20menu.md">Глобальное меню</a> → _Deleted notes_), и их можно восстановить, нажав на ссылку _undelete_.
 
-If a note has child notes, they will be restored along with it. Should the original location no longer exist (e.g. the parent has been deleted), the note will be restored into the default location for new notes (<a class="reference-link" href="Note%20Inbox.md">Note Inbox</a>).
+Если у заметки есть дочерние заметки, они будут восстановлены вместе с ней. Если исходное расположение больше не существует (например, родительская заметка была удалена), заметка будет восстановлена в расположение по умолчанию для новых заметок (<a class="reference-link" href="Note%20Inbox.md">Входящие заметки</a>).
 
 > [!NOTE]
-> When a note is hoisted in the tree, the dialog will only display notes deleted from the subtree of that hoisted note.
+> Если в дереве заметок закреплена (hoisted) определённая заметка, в диалоговом окне будут показаны только заметки, удалённые из поддерева этой закреплённой заметки.
 
-To permanently erase deleted notes and clear the list, press the three-dots menu and select _Erase deleted notes now_.
+Чтобы окончательно стереть удалённые заметки и очистить список, нажмите на меню с тремя точками и выберите _Erase deleted notes now_.
 
-Deleted notes are permanently erased after a certain amount of time (7 days by default). To change this interval, press the three-dots menu and select _Deleted Notes Settings_.
+Удалённые заметки окончательно стираются по истечении определённого времени (по умолчанию 7 дней). Чтобы изменить этот интервал, нажмите на меню с тремя точками и выберите _Deleted Notes Settings_.

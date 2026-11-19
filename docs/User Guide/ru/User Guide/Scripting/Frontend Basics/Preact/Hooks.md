@@ -1,22 +1,22 @@
-# Hooks
-## Standard Preact hooks
+# Хуки
+## Стандартные хуки Preact
 
-All standard Preact hooks are available as an import in `trilium:api`.
+Все стандартные хуки Preact доступны для импорта из `trilium:api`.
 
-For example:
+Например:
 
 ```jsx
 import { useState } from "trilium:preact";
 const [ myState, setMyState ] = useState("Hi");
 ```
 
-## Custom hooks
+## Пользовательские хуки
 
-Trilium comes with a large set of custom hooks for Preact, all of which are also available to custom widgets and <a class="reference-link" href="../../../Note%20Types/Render%20Note.md">Render Note</a>.
+Trilium поставляется с большим набором пользовательских хуков для Preact, все они также доступны для пользовательских виджетов и <a class="reference-link" href="../../../Note%20Types/Render%20Note.md">заметок рендеринга</a>.
 
 ### `useNoteContext`
 
-As a replacement to <a class="reference-link" href="../Custom%20Widgets/Note%20context%20aware%20widget.md">Note context aware widget</a>, Preact exposes the current note context in the `useNoteContext` hook:
+В качестве замены <a class="reference-link" href="../Custom%20Widgets/Note%20context%20aware%20widget.md">виджета, учитывающего контекст заметки</a>, Preact предоставляет контекст текущей заметки через хук `useNoteContext`:
 
 ```jsx
 import { defineWidget, useNoteContext, useNoteProperty } from "trilium:preact";
@@ -32,12 +32,12 @@ export default defineWidget({
 });
 ```
 
-Note that the custom widget must be inside the content area (so note detail widget) for this to work properly, especially when dealing with splits.
+Обратите внимание, что пользовательский виджет должен находиться внутри области содержимого (то есть быть виджетом области просмотра заметки), чтобы это работало корректно, особенно при использовании разделённых панелей (splits).
 
 ### `useActiveNoteContext`
 
-`useActiveNoteContext` is an alternative to `useNoteContext` which works even if the widget is not within the note detail section and it automatically switches the note context as the user is navigating around between tabs and splits.
+`useActiveNoteContext` — это альтернатива `useNoteContext`, которая работает, даже если виджет находится вне области просмотра заметки, и автоматически переключает контекст заметки, когда пользователь переходит между вкладками и разделёнными панелями.
 
 ### `useNoteProperty`
 
-This hook allows “listening” for changes to a particular property of a `FNote`, such as the `title` or `type` of a note. The benefit from using the hook is that it actually reacts to changes, for example if the note title or type is changed.
+Этот хук позволяет «подписаться» на изменения определённого свойства объекта `FNote`, например `title` или `type` заметки. Преимущество использования этого хука в том, что он действительно реагирует на изменения — например, при изменении заголовка или типа заметки.

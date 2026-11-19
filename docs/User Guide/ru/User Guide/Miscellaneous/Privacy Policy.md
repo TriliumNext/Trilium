@@ -1,17 +1,17 @@
-# Privacy Policy
+# Политика конфиденциальности
 ### Trilium Notes
 
-Trilium Notes does not collect/send any data from the user's installation, i.e. no analytics, no telemetry etc. The data flows only between user controlled / installed applications, without any intermediary.
+Trilium Notes не собирает и не отправляет никаких данных из установки пользователя — то есть никакой аналитики, телеметрии и т. п. Данные передаются только между приложениями, установленными и контролируемыми пользователем, без каких-либо посредников.
 
-Automatic network activity consists of:
+Автоматическая сетевая активность сводится к следующему:
 
-*   Trilium periodically queries URL [https://github.com/TriliumNext/Trilium/releases](https://github.com/TriliumNext/Trilium/releases) to see if there's a new stable version released. (check only, there's no automatic download and/or installation).
-*   Trilium will download spelling dictionaries automatically as needed based on language settings
+*   Trilium периодически опрашивает URL [https://github.com/TriliumNext/Trilium/releases](https://github.com/TriliumNext/Trilium/releases), чтобы проверить наличие новой стабильной версии (только проверка, без автоматической загрузки и/или установки).
+*   Trilium автоматически загружает словари проверки орфографии по мере необходимости в соответствии с языковыми настройками.
 
 ### Trilium Web Clipper
 
-Trilium Web Clipper does not collect/send any data from the user's installation, i.e. no analytics, no telemetry etc. The data flows only between user controlled / installed applications, without any intermediary.
+Trilium Web Clipper не собирает и не отправляет никаких данных из установки пользователя — никакой аналитики, телеметрии и т. п. Данные передаются только между приложениями, установленными и контролируемыми пользователем, без каких-либо посредников.
 
 ### Trilium Sender for Android
 
-Trilium Sender for Android does not collect/send any data from the user's installation, i.e. no analytics, no telemetry etc. The data flows only between user controlled / installed applications, without any intermediary.
+Trilium Sender for Android не собирает и не отправляет никаких данных из установки пользователя — никакой аналитики, телеметрии и т. п. Данные передаются только между приложениями, установленными и контролируемыми пользователем, без каких-либо посредников.

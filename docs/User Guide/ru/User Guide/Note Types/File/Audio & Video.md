@@ -1,121 +1,121 @@
-# Audio & Video
+# Аудио и видео
 <figure class="image image-style-align-right image_resized" style="width:61.8%;"><img style="aspect-ratio:953/587;" src="Audio &amp; Video_image.png" width="953" height="587"></figure>
 
-Starting with v0.103.0, Trilium has a custom media player for both video and audio files, which offers more features than the built-in player.
+Начиная с версии v0.103.0 в Trilium появился собственный медиаплеер для видео- и аудиофайлов, предлагающий больше возможностей по сравнению со встроенным плеером браузера.
 
-Versions prior to v0.103.0 also support media, but using the built-in player.
+Версии до v0.103.0 также поддерживают медиафайлы, но используют встроенный плеер.
 
-The file is streamed directly, so when accessing the note from a server it doesn't have to download the entire file to start playing it.
+Файл воспроизводится потоково, поэтому при открытии заметки с сервера нет необходимости скачивать весь файл целиком, чтобы начать воспроизведение.
 
-## Note on large media files
+## Замечание о больших медиафайлах
 
-Although Trilium offers support for media files, it is generally not meant to be used with very large files. Uploading large media will cause the <a class="reference-link" href="../../Advanced%20Usage/Database.md">Database</a> to balloon, as well as any <a class="reference-link" href="../../Installation%20%26%20Setup/Backup.md">Backup</a> of it. In addition, there might be slowdowns when first uploading the files. Otherwise, a large database should not impact the general performance of Trilium significantly.
+Хотя Trilium поддерживает медиафайлы, в целом он не предназначен для хранения очень больших файлов. Загрузка крупных медиафайлов приведёт к разрастанию <a class="reference-link" href="../../Advanced%20Usage/Database.md">базы данных</a>, а также всех её <a class="reference-link" href="../../Installation%20%26%20Setup/Backup.md">резервных копий</a>. Кроме того, при первичной загрузке файлов возможны замедления. В остальном большой размер базы данных не должен существенно влиять на общую производительность Trilium.
 
-## Supported formats
+## Поддерживаемые форматы
 
-Trilium uses the built-in media decoding mechanism of the browser (or Electron/Chromium when running on the desktop). Starting with v0.103.0, a message will be displayed instead when a media format is not supported.
+Trilium использует встроенный механизм декодирования медиа браузера (или Electron/Chromium в настольном приложении). Начиная с версии v0.103.0, если формат медиа не поддерживается, вместо плеера отображается соответствующее сообщение.
 
-## Interactions
+## Управление
 
-To play/pause, simply click anywhere on the media. For video files, the controls at the bottom will hide automatically after playing, simply move the mouse to show them again.
+Чтобы запустить или поставить воспроизведение на паузу, просто нажмите в любом месте медиафайла. Для видеофайлов нижняя панель управления автоматически скрывается после начала воспроизведения — просто переместите мышь, чтобы снова её показать.
 
-The bottom bar has the following features:
+Нижняя панель содержит следующие элементы:
 
-*   A track bar to seek across the media. Audio files up to 60 MB will display a waveform seekbar, to give a visual overview of the track's structure: silences, pauses, and louder segments.
-*   On the left of the track bar, the current time is indicated.
-*   On the right of the track bar, the remaining time is indicated.
-*   On the left side there are buttons to:
-    *   Adjust the playback speed (e.g. 0.5x, 1x).
-    *   Play mode (applies to all media from the parent note):
-        *   Play once — play the media until it ends, then stop.
-        *   Loop — replay the media automatically once it ends.
-        *   Play next — when the current item ends, continue with the next one in the same parent note until the last item finishes.
-    *   Rotate the video by 90 degrees (video only).
-*   In the center:
-    *   Previous media — jumps to the previous media: the nearest media note above the current one in the tree (within the same parent note) in the case of media notes, or the previous media attachment.
-    *   Go back by 10s
-    *   Play/pause
-    *   Go forward by 10s
-    *   Next media — jumps to the next media: the nearest media note below the current one in the tree (within the same parent note) in the case of media notes, or the next media attachment.
-*   On the right side:
-    *   Mute button
-    *   Volume adjustment
-    *   Full screen (video only)
-    *   Zoom to fill, which will crop the video so that it fills the entire window (video only).
-    *   Picture-in-picture, if the browser supports it (video only).
+*   Полоса прокрутки для перемотки. Для аудиофайлов размером до 60 МБ отображается осциллограмма (waveform), наглядно показывающая структуру дорожки: тишину, паузы и громкие фрагменты.
+*   Слева от полосы прокрутки отображается текущее время.
+*   Справа от полосы прокрутки отображается оставшееся время.
+*   С левой стороны находятся кнопки:
+    *   Настройка скорости воспроизведения (например, 0.5x, 1x).
+    *   Режим воспроизведения (применяется ко всем медиафайлам внутри родительской заметки):
+        *   Воспроизвести один раз — проиграть файл до конца и остановиться.
+        *   Повтор — автоматически перезапускать воспроизведение по окончании.
+        *   Воспроизвести следующий — по окончании текущего файла перейти к следующему в той же родительской заметке и так до последнего элемента.
+    *   Поворот видео на 90 градусов (только для видео).
+*   По центру:
+    *   Предыдущий медиафайл — переход к предыдущему медиафайлу: ближайшей медиазаметке выше текущей в дереве заметок (в пределах той же родительской заметки) или предыдущему медиавложению.
+    *   Назад на 10 с
+    *   Воспроизведение / пауза
+    *   Вперёд на 10 с
+    *   Следующий медиафайл — переход к следующему медиафайлу: ближайшей медиазаметке ниже текущей в дереве заметок (в пределах той же родительской заметки) или следующему медиавложению.
+*   С правой стороны:
+    *   Кнопка отключения звука
+    *   Регулировка громкости
+    *   Полноэкранный режим (только для видео)
+    *   Масштабирование с заполнением — обрезает видео так, чтобы оно заполняло всё окно (только для видео).
+    *   Картинка в картинке, если поддерживается браузером (только для видео).
 
-## Including media in notes
+## Встраивание медиа в заметки
 
-<figure class="image"><img style="aspect-ratio:1395/145;" src="1_Audio &amp; Video_image.png" width="1395" height="145"><figcaption>An audio note include (configured to the "Small" size).</figcaption></figure>
+<figure class="image"><img style="aspect-ratio:1395/145;" src="1_Audio &amp; Video_image.png" width="1395" height="145"><figcaption>Встроенная аудиозаметка (выбран размер «Small»).</figcaption></figure>
 
-<a class="reference-link" href="../Text.md">Text</a> and <a class="reference-link" href="../Markdown.md">Markdown</a> notes can embed an interactive media player directly in the note content. To do so, include the audio or video file:
+В <a class="reference-link" href="../Text.md">текстовые</a> и <a class="reference-link" href="../Markdown.md">Markdown</a>-заметки можно встраивать интерактивный медиаплеер прямо в содержимое заметки. Для этого включите аудио- или видеофайл:
 
-*   **Text notes:** in the formatting toolbar, click _Insert_ → _Include_.
-*   **Markdown notes:** type `/include` press <kbd>Enter</kbd>.
+*   **Текстовые заметки:** на панели форматирования нажмите _Insert_ → _Include_.
+*   **Markdown-заметки:** введите `/include` и нажмите <kbd>Enter</kbd>.
 
-Then select the audio/video file note to be included.
+Затем выберите файловую заметку с аудио или видео для включения.
 
-## Keyboard shortcuts
+## Горячие клавиши
 
-The following keyboard shortcuts are supported by the media player:
+Медиаплеер поддерживает следующие горячие клавиши:
 
 <table>
     <tbody>
         <tr>
             <td><kbd>Space</kbd></td>
-            <td>Play/pause</td>
+            <td>Воспроизведение / пауза</td>
         </tr>
         <tr>
             <td><kbd>Left arrow key</kbd></td>
-            <td>Go back by 10s</td>
+            <td>Назад на 10 с</td>
         </tr>
         <tr>
             <td><kbd>Right arrow key</kbd></td>
-            <td>Go forward by 10s</td>
+            <td>Вперёд на 10 с</td>
         </tr>
         <tr>
             <td><kbd>Ctrl</kbd> + <kbd>Left arrow key</kbd></td>
-            <td>Go back by 1 min</td>
+            <td>Назад на 1 мин</td>
         </tr>
         <tr>
             <td><kbd>Ctrl</kbd> + <kbd>Right arrow key</kbd></td>
-            <td>Go right by 1 min</td>
+            <td>Вперёд на 1 мин</td>
         </tr>
         <tr>
             <td><kbd>Page Up</kbd></td>
-            <td>Navigate to the previous media</td>
+            <td>Перейти к предыдущему медиафайлу</td>
         </tr>
         <tr>
             <td><kbd>Page Down</kbd></td>
-            <td>Navigate to the next media</td>
+            <td>Перейти к следующему медиафайлу</td>
         </tr>
         <tr>
             <td><kbd>F</kbd></td>
-            <td>Toggle full-screen</td>
+            <td>Переключить полноэкранный режим</td>
         </tr>
         <tr>
             <td><kbd>M</kbd></td>
-            <td>Mute/unmute</td>
+            <td>Включить / выключить звук</td>
         </tr>
         <tr>
             <td><kbd>Home</kbd></td>
-            <td>Go to the beginning of the media</td>
+            <td>Перейти в начало медиафайла</td>
         </tr>
         <tr>
             <td><kbd>End</kbd></td>
-            <td>Go to the end of the media</td>
+            <td>Перейти в конец медиафайла</td>
         </tr>
         <tr>
             <td><kbd>Up</kbd></td>
-            <td>Increase volume by 5%</td>
+            <td>Увеличить громкость на 5%</td>
         </tr>
         <tr>
             <td><kbd>Down</kbd></td>
-            <td>Decrease volume by 5%</td>
+            <td>Уменьшить громкость на 5%</td>
         </tr>
         <tr>
-            <td><kbd>Alt+F1</kbd> (customizable)</td>
-            <td>Show this list of keyboard shortcuts on screen.</td>
+            <td><kbd>Alt+F1</kbd> (настраивается)</td>
+            <td>Показать этот список горячих клавиш на экране.</td>
         </tr>
     </tbody>
 </table>

@@ -1,11 +1,11 @@
-# Synchronization fails with 504 Gateway Timeout
-Synchronization can sometimes take a long amount of time in order to compute the items that require update. When running behind a reverse proxy, the request can time out.
+# Синхронизация завершается с ошибкой 504 Gateway Timeout
+Синхронизация иногда может занимать продолжительное время для вычисления элементов, требующих обновления. При работе за обратным прокси-сервером время ожидания запроса может истечь.
 
-The solution is to increase the timeout at proxy level.
+Решение — увеличить таймаут на уровне прокси-сервера.
 
 ## Nginx
 
-Add the following to the configuration file:
+Добавьте следующие строки в файл конфигурации:
 
 ```nginx
 proxy_connect_timeout 300;
@@ -14,8 +14,8 @@ proxy_read_timeout 300;
 send_timeout 300;
 ```
 
-And restart the server.
+И перезапустите сервер.
 
-See [Nginx Proxy Setup](../Installation%20%26%20Setup/Server%20Installation/2.%20Reverse%20proxy/Nginx.md) for more information about the Nginx setup.
+Подробнее о настройке Nginx см. в разделе [Настройка прокси Nginx](../Installation%20%26%20Setup/Server%20Installation/2.%20Reverse%20proxy/Nginx.md).
 
-If it still doesn't work, try increasing the timeout.
+Если проблема сохраняется, попробуйте ещё больше увеличить таймаут.

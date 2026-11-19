@@ -1,27 +1,27 @@
 # Traefik
-The goal of this article is to configure Traefik proxy and HTTPS. See [#7768](https://github.com/TriliumNext/Trilium/issues/7768#issuecomment-3539165814) for reference.
+Цель этой статьи — настроить прокси Traefik и HTTPS. Для справки см. [#7768](https://github.com/TriliumNext/Trilium/issues/7768#issuecomment-3539165814).
 
-## Breaking change in Traefik 3.6.4
+## Критическое изменение в Traefik 3.6.4
 
-Traefik 3.6.4 introduced a [breaking change](https://doc.traefik.io/traefik/migrate/v3/#encoded-characters-in-request-path) regarding how percent-encoded characters are handled in URLs. Trilium puts the title of an image or attachment in its URL path, so one whose title contains `#` or `/` is requested at a path such as `/api/images/…/diagram%231.png`. Traefik rejects these paths with HTTP 400, and the image does not load. Search is not affected, because it sends its text in a query parameter.
+В Traefik 3.6.4 было внесено [критическое изменение](https://doc.traefik.io/traefik/migrate/v3/#encoded-characters-in-request-path), касающееся обработки символов в процентной кодировке в URL. Trilium включает название изображения или вложения в путь URL, поэтому файл, название которого содержит `#` или `/`, запрашивается по пути вроде `/api/images/…/diagram%231.png`. Traefik отклоняет такие пути с ошибкой HTTP 400, и изображение не загружается. Поиск не затрагивается, поскольку он передаёт текст в параметре запроса.
 
-The easiest solution is to update to Traefik 3.6.7 or later which reverts this configuration change. Alternatively, the configuration can be changed according to the section below.
+Самое простое решение — обновиться до Traefik 3.6.7 или более поздней версии, в которой это изменение конфигурации отменено. В качестве альтернативы можно изменить конфигурацию согласно разделу ниже.
 
 <details>
-    <summary>Configuration change</summary>
-    <p>To solve this, the Traefik <a href="https://doc.traefik.io/traefik/getting-started/configuration-overview/#the-install-configuration"><strong>static</strong> configuration</a> must be modified in order to allow those characters:</p>
+    <summary>Изменение конфигурации</summary>
+    <p>Чтобы решить эту проблему, необходимо изменить <a href="https://doc.traefik.io/traefik/getting-started/configuration-overview/#the-install-configuration"><strong>статическую</strong> конфигурацию</a> Traefik, разрешив эти символы:</p>
     <pre><code class="language-text-x-yaml">entryPoints:
   web:
     http:
       encodedCharacters:
         allowEncodedSlash: true
         allowEncodedHash: true</code></pre>
-    <aside class="admonition tip"><p>If images still fail to load, you might need to enable more encoded character groups. For more information, see <a href="https://github.com/TriliumNext/Trilium/issues/7968">the relevant GitHub issue</a>; feel free to report your findings.</p></aside>
+    <aside class="admonition tip"><p>Если изображения всё равно не загружаются, возможно, потребуется разрешить дополнительные группы закодированных символов. Подробнее см. в <a href="https://github.com/TriliumNext/Trilium/issues/7968">соответствующей задаче на GitHub</a>; не стесняйтесь сообщать о своих результатах.</p></aside>
 </details>
 
-### Build the docker-compose file
+### Создание файла docker-compose
 
-Setting up Traefik as reverse proxy requires setting the following labels:
+Для настройки Traefik в качестве обратного прокси необходимо задать следующие метки (labels):
 
 ```yaml
     labels:
@@ -39,11 +39,11 @@ Setting up Traefik as reverse proxy requires setting the following labels:
       - traefik.http.middlewares.trilium-headers.headers.customrequestheaders.X-Forwarded-Proto=https
 ```
 
-### Setup needed environment variables
+### Настройка необходимых переменных окружения
 
-After setting up a reverse proxy, make sure to configure the <a class="reference-link" href="Trusted%20proxy.md">Trusted proxy</a>.
+После настройки обратного прокси обязательно настройте <a class="reference-link" href="Trusted%20proxy.md">Доверенный прокси</a>.
 
-### Example `docker-compose.yaml`
+### Пример `docker-compose.yaml`
 
 ```yaml
 services:

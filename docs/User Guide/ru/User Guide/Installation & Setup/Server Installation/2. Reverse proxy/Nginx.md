@@ -1,24 +1,24 @@
 # Nginx
-Configure Nginx proxy and HTTPS. The operating system here is Ubuntu.
+Настройка прокси Nginx и HTTPS. В качестве операционной системы здесь используется Ubuntu.
 
-## Installing Nginx
+## Установка Nginx
 
-Download Nginx and remove Apache2
+Установите Nginx и удалите Apache2:
 
 ```
 sudo apt-get install nginx
 sudo apt-get remove apache2
 ```
 
-## Build the configuration file
+## Создание файла конфигурации
 
-1.  First, create the configuration file:
+1.  Сначала создайте файл конфигурации:
     
     ```
     cd /etc/nginx/conf.d
     vim default.conf
     ```
-2.  Fill the file with the context shown below, part of the setting show be changed. Then you can enjoy your web with HTTPS forced and proxy.
+2.  Заполните файл содержимым, показанным ниже (часть параметров необходимо изменить). После этого вы сможете пользоваться веб-интерфейсом с принудительным HTTPS и прокси.
     
     ```
     # This part configures, where your Trilium server is running
@@ -60,12 +60,12 @@ sudo apt-get remove apache2
     }
     ```
 
-## Serving under a different path
+## Размещение по другому пути
 
-Alternatively if you want to serve the instance under a different path (useful e.g. if you want to serve multiple instances), update the location block like so:
+Если вы хотите разместить экземпляр по другому пути (например, чтобы обслуживать несколько экземпляров), обновите блок `location` следующим образом:
 
-*   update the location with your desired path (make sure to not leave a trailing slash "/", if your `proxy_pass` does not end on a slash as well)
-*   add the `proxy_cookie_path` directive with the same path: this allows you to stay logged in at multiple instances at the same time.
+*   укажите нужный путь в `location` (убедитесь, что в конце нет косой черты `/`, если `proxy_pass` также не заканчивается косой чертой);
+*   добавьте директиву `proxy_cookie_path` с тем же путём: это позволит оставаться авторизованным в нескольких экземплярах одновременно.
 
 ```
     location /trilium/instance-one {
@@ -82,6 +82,6 @@ Alternatively if you want to serve the instance under a different path (useful e
     }
 ```
 
-## Configuring the trusted proxy
+## Настройка доверенного прокси
 
-After setting up a reverse proxy, make sure to configure the <a class="reference-link" href="Trusted%20proxy.md">Trusted proxy</a>.
+После настройки обратного прокси обязательно настройте <a class="reference-link" href="Trusted%20proxy.md">Доверенный прокси</a>.

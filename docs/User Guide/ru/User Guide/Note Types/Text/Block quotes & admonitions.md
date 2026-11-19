@@ -1,27 +1,27 @@
-# Block quotes & admonitions
-## Block quotes
+# Цитаты и блоки уведомлений (Admonitions)
+## Цитаты (Block quotes)
 
-As the name suggests, block quotes can be useful to cite one or more paragraphs.
+Как следует из названия, блоки цитат полезны для цитирования одного или нескольких абзацев.
 
-To create a block quote, press <span class="tn-icon cke cke-quote"></span> from the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>. It's also possible to type <kbd>&gt;</kbd>, followed by a space to create one (but only if the cursor is at the beginning of a line).
+Чтобы создать цитату, нажмите <span class="tn-icon cke cke-quote"></span> на <a class="reference-link" href="Formatting%20toolbar.md">панели форматирования</a>. Также можно ввести <kbd>&gt;</kbd> и пробел (но только если курсор находится в начале строки).
 
-Inside the quote block, other block items can be inserted such as tables, images, or even other block quotes or admonitions.
+Внутрь блока цитаты можно вставлять другие блочные элементы: таблицы, изображения и даже другие цитаты или блоки уведомлений.
 
-## Admonitions
+## Блоки уведомлений (Admonitions)
 
-Admonitions are a way to highlight information to the reader. Other names for it include _call-outs_ and _info/warning/alert boxes_.
+Блоки уведомлений — это способ выделить важную информацию для читателя. Их также называют _выносками_ (_call-outs_) и _блоками информации/предупреждений_.
 
 <figure class="image image-style-align-center"><img style="aspect-ratio:959/547;" src="1_Block quotes &amp; admonitions_image.png" width="959" height="547"></figure>
 
-From a functional point of view, admonitions act very similarly to a block quote, just with different styling. This includes the ability to insert other elements in it such as headings, tables, images, etc.
+С функциональной точки зрения блоки уведомлений работают очень похоже на цитаты, но имеют другое оформление. В них также можно вставлять другие элементы: заголовки, таблицы, изображения и т. д.
 
-### Inserting a new admonition
+### Вставка нового блока уведомления
 
-In the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>:
+На <a class="reference-link" href="Formatting%20toolbar.md">панели форматирования</a>:
 
 ![](Block%20quotes%20&%20admonitions_image.png)
 
-It's possible to insert an admonition simply by typing:
+Блок уведомления можно вставить, просто набрав:
 
 *   `!!! note`
 *   `!!! tip`
@@ -29,27 +29,27 @@ It's possible to insert an admonition simply by typing:
 *   `!!! caution`
 *   `!!! warning`
 
-In addition to that, it's also possible to type `!!!`  followed by any text, case in which a default admonition type will appear (note) with the entered text inside it.
+Кроме того, можно ввести `!!!` и любой текст после него — в этом случае появится блок уведомления типа по умолчанию (note) с введённым текстом внутри.
 
-### Interaction
+### Взаимодействие
 
-By design, admonitions act very similar to block quotes.
+По задумке блоки уведомлений ведут себя очень похоже на цитаты.
 
-*   Selecting a text and pressing the admonition button will turn that text into an admonition.
-*   If selecting multiple admonitions, pressing the admonition button will automatically merge them into one.
+*   Если выделить текст и нажать кнопку блока уведомления, этот текст превратится в блок уведомления.
+*   Если выделить несколько блоков уведомлений и нажать кнопку блока уведомления, они автоматически объединятся в один.
 
-Inside an admonition:
+Внутри блока уведомления:
 
-*   Pressing <kbd>Backspace</kbd> while the admonition is empty will remove it.
-*   Pressing <kbd>Enter</kbd> will start a new paragraph. Pressing it twice will exit out of the admonition.
-*   Headings and other block content including tables can be inserted inside the admonition.
+*   Нажатие <kbd>Backspace</kbd> в пустом блоке удаляет его.
+*   Нажатие <kbd>Enter</kbd> начинает новый абзац. Двойное нажатие <kbd>Enter</kbd> выводит курсор из блока уведомления.
+*   Внутри блока уведомления можно вставлять заголовки и другой блочный контент, включая таблицы.
 
-### Types of admonitions
+### Типы блоков уведомлений
 
-There are currently five types of admonitions: _Note_, _Tip_, _Important_, _Caution_, _Warning_.
+В настоящее время существует пять типов блоков уведомлений: _Note_ (Примечание), _Tip_ (Совет), _Important_ (Важно), _Caution_ (Осторожно), _Warning_ (Предупреждение).
 
-These types were inspired by GitHub's support for this feature and there are currently no plans for adjusting it or allowing the user to customize them.
+Эти типы вдохновлены поддержкой аналогичной функции на GitHub, и в настоящее время не планируется изменять их или добавлять возможность пользовательской настройки.
 
-### Markdown support
+### Поддержка Markdown
 
-See <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown/Supported%20syntax.md">Supported syntax</a>.
+См. <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown/Supported%20syntax.md">Поддерживаемый синтаксис</a>.

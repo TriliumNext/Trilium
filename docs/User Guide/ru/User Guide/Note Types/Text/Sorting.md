@@ -1,25 +1,25 @@
-# Sorting
+# Сортировка
 > [!IMPORTANT]
-> Sorting the selection is experimental, and it changes as it matures. To use it, turn on _Sort selection in text editor_ in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Advanced_ → _Experimental Options_.
+> Сортировка выделенного фрагмента является экспериментальной функцией и может меняться по мере доработки. Чтобы использовать её, включите _Sort selection in text editor_ в разделе <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Дополнительно_ → _Экспериментальные настройки_.
 
-Trilium can sort the items of a list, a group of paragraphs or the rows of a table in a text note, comparing numbers, dates and times by their value.
+Trilium может сортировать элементы списка, группу абзацев или строки таблицы в текстовой заметке, сравнивая числа, даты и время по их значению.
 
-## Sorting
+## Сортировка
 
-*   To sort, place the cursor in a list or a table, or select the paragraphs to sort, then press the <span class="tn-icon bx bx-sort-alt-2"></span> _Sort_ button of the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a> to sort in ascending order. The arrow beside it offers _Ascending_ and _Descending_. With the floating toolbar, the button is in the block-level popup.
-*   When the selection covers several paragraphs, list items or table cells, the same choices are also in a submenu of the menu of the block handle (the sequence of dots to the left of the block), just above _Delete_, and in the right-click menu of the selection. The submenu is named after what it sorts: _Sort blocks_, _Sort list items_ or _Sort rows_.
-*   On the <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>, the button is in the main row of the toolbar and in the row of the _List ›_ button.
+*   Чтобы выполнить сортировку, поместите курсор в список или таблицу либо выделите нужные абзацы, а затем нажмите кнопку <span class="tn-icon bx bx-sort-alt-2"></span> _Сортировать_ на <a class="reference-link" href="Formatting%20toolbar.md">панели форматирования</a> для сортировки по возрастанию. Стрелка рядом с ней предлагает варианты _По возрастанию_ и _По убыванию_. На плавающей панели инструментов эта кнопка находится во всплывающем окне уровня блока.
+*   Когда выделение охватывает несколько абзацев, элементов списка или ячеек таблицы, те же варианты доступны в подменю маркера блока (ряда точек слева от блока) прямо над пунктом _Удалить_, а также в контекстном меню выделения. Подменю называется в зависимости от того, что сортируется: _Сортировать блоки_, _Сортировать элементы списка_ или _Сортировать строки_.
+*   В <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">мобильном интерфейсе</a> кнопка находится в основном ряду панели инструментов и в ряду кнопки _Список ›_.
 
-A sort can be undone with <kbd>Ctrl</kbd>+<kbd>Z</kbd>.
+Сортировку можно отменить с помощью <kbd>Ctrl</kbd>+<kbd>Z</kbd>.
 
-## What is sorted
+## Что сортируется
 
-*   **List items**: with the cursor in a list, the items at its level are sorted. Nested items move with the item they belong to and keep their own order. To sort only some of the items, select them.
-*   **Paragraphs and other blocks**: select two or more paragraphs, headings, quotes, collapsible blocks or images. Each block is sorted by its first text: a collapsible block by its title, a quote by its first paragraph and an image by its caption. A selection that mixes a list with other blocks cannot be sorted.
-*   **Table rows**: the rows are sorted by the column of the cursor, as described in _Sorting rows_ in <a class="reference-link" href="Tables.md">Tables</a>. Inside a table cell, a list or several selected paragraphs are sorted instead of the rows.
+*   **Элементы списка**: если курсор находится в списке, сортируются элементы на его уровне. Вложенные элементы перемещаются вместе с родительским элементом и сохраняют свой собственный порядок. Чтобы отсортировать только часть элементов, выделите их.
+*   **Абзацы и другие блоки**: выделите два или более абзаца, заголовка, цитаты, сворачиваемых блока или изображения. Каждый блок сортируется по своему первому тексту: сворачиваемый блок — по заголовку, цитата — по первому абзацу, изображение — по подписи. Выделение, смешивающее список с другими блоками, отсортировать нельзя.
+*   **Строки таблицы**: строки сортируются по столбцу, в котором находится курсор, как описано в разделе _Сортировка строк_ на странице <a class="reference-link" href="Tables.md">Таблицы</a>. Внутри ячейки таблицы вместо строк таблицы сортируются список или несколько выделенных абзацев.
 
-Values are compared the same way as table rows, see _How values are compared_ in <a class="reference-link" href="Tables.md">Tables</a>.
+Значения сравниваются так же, как и строки таблицы — см. раздел _Как сравниваются значения_ на странице <a class="reference-link" href="Tables.md">Таблицы</a>.
 
-## Limitations
+## Ограничения
 
-*   The lines of a code block, or of a paragraph split with <kbd>Shift</kbd>+<kbd>Enter</kbd>, are not sorted one by one. A <a class="reference-link" href="../Code.md">Code</a> note can sort its lines, see _Transforming text_ there.
+*   Строки блока кода или абзаца, разделённого с помощью <kbd>Shift</kbd>+<kbd>Enter</kbd>, не сортируются по одной. В <a class="reference-link" href="../Code.md">заметке с кодом</a> можно сортировать строки — см. раздел _Преобразование текста_ на соответствующей странице.

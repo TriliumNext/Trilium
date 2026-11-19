@@ -1,75 +1,75 @@
-# Multicolumn layout
-A multicolumn layout arranges content in two to four columns, side by side. A column can hold any kind of content, including tables, images and another multicolumn layout.
+# Многоколоночная разметка
+Многоколоночная разметка располагает содержимое в две–четыре колонки рядом друг с другом. Колонка может содержать любой контент, включая таблицы, изображения и другую многоколоночную разметку.
 
-## Inserting a layout
+## Вставка разметки
 
-*   In the formatting bar, go to _Insert_ → <span class="tn-icon cke cke-trilium-multicolumn"></span> _Columns_ to insert a layout with two columns. Its submenu offers _2 columns_, _3 columns_ and _4 columns_.
-*   Alternatively, type `/columns` and choose _2 columns layout_, _3 columns layout_ or _4 columns layout_, as described in <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>.
+*   На панели форматирования выберите _Вставить_ → <span class="tn-icon cke cke-trilium-multicolumn"></span> _Колонки_, чтобы вставить разметку из двух колонок. В подменю доступны _2 колонки_, _3 колонки_ и _4 колонки_.
+*   Либо введите `/columns` и выберите _2 columns layout_, _3 columns layout_ или _4 columns layout_, как описано в <a class="reference-link" href="Slash%20Commands.md">Слэш-командах</a>.
 
-The columns of a new layout have equal widths. If text is selected when the layout is inserted, the selection moves into the first column.
+Колонки новой разметки имеют одинаковую ширину. Если при вставке разметки выделен текст, выделение переносится в первую колонку.
 
-## Changing the columns
+## Изменение колонок
 
-### Changing the layout
+### Изменение макета
 
-While the cursor is inside a layout, a toolbar appears above it with a button that shows the current layout. Clicking it opens a row of figures, one for each available layout; hovering over a figure shows its number of columns and their widths:
+Когда курсор находится внутри разметки, над ней появляется панель инструментов с кнопкой текущего макета. Клик по ней открывает ряд схем для всех доступных макетов; при наведении на схему показывается число колонок и их ширина:
 
-| Columns | Widths |
+| Колонки | Ширина |
 | --- | --- |
 | 2 | 50%-50%, 25%-75%, 75%-25% |
 | 3 | 33%-33%-33%, 25%-50%-25% |
 | 4 | 25%-25%-25%-25% |
 
-*   Choosing a layout with more columns adds empty columns at the end.
-*   Choosing a layout with fewer columns removes the last columns and moves their content to the end of the last remaining column.
+*   Выбор макета с большим числом колонок добавляет пустые колонки в конец.
+*   Выбор макета с меньшим числом колонок удаляет последние колонки и переносит их содержимое в конец последней оставшейся колонки.
 
-### Adding columns
+### Добавление колонок
 
-While the cursor is in a column, you can use these key combinations:
+Когда курсор находится в колонке, можно использовать следующие сочетания клавиш:
 
-*   <kbd>Ctrl</kbd> + <kbd>Enter</kbd>: Add a column after the current one.
-*   <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd>: Add a column before the current one.
+*   <kbd>Ctrl</kbd> + <kbd>Enter</kbd>: добавить колонку после текущей.
+*   <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd>: добавить колонку перед текущей.
 
-The new column is empty and the cursor moves into it. All the columns then have equal widths. A layout has at most four columns, so the keys do nothing in a layout that already has four.
+Новая колонка создаётся пустой, и курсор переходит в неё. Все колонки при этом получают одинаковую ширину. Максимум в разметке может быть четыре колонки, поэтому если их уже четыре, эти сочетания ничего не делают.
 
-<kbd>Ctrl</kbd> + <kbd>Enter</kbd> keeps its usual function on a link, in a to-do item and in the title of a collapsible block, and <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd> in a to-do item.
+<kbd>Ctrl</kbd> + <kbd>Enter</kbd> сохраняет своё обычное действие на ссылке, в пункте списка задач и в заголовке сворачиваемого блока, а <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd> — в пункте списка задач.
 
-### Reordering columns
+### Изменение порядка колонок
 
-While the cursor is anywhere inside a column, you can use these key combinations:
+Когда курсор находится в любом месте колонки, можно использовать следующие сочетания:
 
-*   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Right</kbd>: Move the column to the right.
-*   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Left</kbd>: Move the column to the left.
-*   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Home</kbd>: Make it the first column.
-*   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>End</kbd>: Make it the last column.
+*   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Right</kbd>: переместить колонку вправо.
+*   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Left</kbd>: переместить колонку влево.
+*   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Home</kbd>: сделать её первой колонкой.
+*   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>End</kbd>: сделать её последней колонкой.
 
-In a layout with two columns of different widths, the column keeps its width.
+В разметке с двумя колонками разной ширины колонка сохраняет свою ширину.
 
-## Moving content between columns
+## Перемещение содержимого между колонками
 
-To move content to another column, select it, and then use these key combinations:
+Чтобы перенести содержимое в другую колонку, выделите его и используйте сочетания клавиш:
 
-*   <kbd>Ctrl</kbd> + <kbd>Right</kbd>: Move to the column on the right.
-*   <kbd>Ctrl</kbd> + <kbd>Left</kbd>: Move to the column on the left.
-*   <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>End</kbd>: Move to the last column.
-*   <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Home</kbd>: Move to the first column.
+*   <kbd>Ctrl</kbd> + <kbd>Right</kbd>: перенести в колонку справа.
+*   <kbd>Ctrl</kbd> + <kbd>Left</kbd>: перенести в колонку слева.
+*   <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>End</kbd>: перенести в последнюю колонку.
+*   <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Home</kbd>: перенести в первую колонку.
 
-Paragraphs, list items, tables and other blocks move whole, even when only part of them is selected. Content moved to a column on the left goes to the end of that column, and content moved to a column on the right goes to its start, so it keeps its place in the reading order.
+Абзацы, пункты списков, таблицы и другие блоки переносятся целиком, даже если выделена только их часть. Содержимое, перенесённое в колонку слева, попадает в её конец, а в колонку справа — в её начало, сохраняя естественный порядок чтения.
 
-Without a selection, these keys keep their usual function: moving the cursor by word, or selecting up to the start or end of the column.
+Без выделения эти клавиши выполняют свои обычные функции: перемещение курсора по словам или выделение до начала/конца колонки.
 
-When a layout and <a class="reference-link" href="Content%20tabs.md">Content tabs</a> are nested in one another, the key combinations act on the one closest to the cursor.
+Если многоколоночная разметка и <a class="reference-link" href="Content%20tabs.md">Вкладки контента</a> вложены друг в друга, сочетания клавиш действуют на элемент, ближайший к курсору.
 
-## Removing a layout
+## Удаление разметки
 
-*   To remove the layout but keep its content, click the <span class="tn-icon cke cke-remove"></span> _Remove layout_ button in the layout's toolbar. The content of the columns is placed one after another where the layout was, and empty columns are left out.
-*   To delete the layout together with its content, click the handle at its top-left corner to select it, then press <kbd>Delete</kbd>.
+*   Чтобы убрать разметку, сохранив содержимое, нажмите кнопку <span class="tn-icon cke cke-remove"></span> _Удалить разметку_ на её панели инструментов. Содержимое колонок выстроится друг за другом на месте разметки, а пустые колонки будут опущены.
+*   Чтобы удалить разметку вместе с содержимым, кликните по маркеру в её левом верхнем углу для выделения и нажмите <kbd>Delete</kbd>.
 
-## Narrow screens
+## Узкие экраны
 
-When a layout has too little room for its columns (narrower than about 500 pixels, such as on a phone), the columns are stacked one below the other. While editing, alternating background colors tell the columns apart. This applies to each layout on its own, so a layout inside a narrow column is stacked while the outer one stays side by side.
+Когда для колонок недостаточно места (ширина меньше примерно 500 пикселей, например на телефоне), колонки выстраиваются друг под другом. Во время редактирования чередующиеся цвета фона помогают различать колонки. Это применяется к каждой разметке независимо, поэтому разметка внутри узкой колонки сложится вертикально, а внешняя останется в несколько колонок.
 
-## Printing and exporting
+## Печать и экспорт
 
-*   When printing or [exporting to PDF](../../Basic%20Concepts%20and%20Features/Notes/Printing%20%26%20Exporting%20as%20PDF.md), the columns are printed side by side.
-*   Markdown has no columns, so Markdown export keeps the layout and each column as HTML `<div>` tags, with the content of each column written as Markdown between them. Importing the file back restores the layout. Markdown viewers that don't support HTML show the content of the columns one after another.
+*   При печати или [экспорте в PDF](../../Basic%20Concepts%20and%20Features/Notes/Printing%20%26%20Exporting%20as%20PDF.md) колонки печатаются рядом друг с другом.
+*   В Markdown нет колонок, поэтому при экспорте в Markdown разметка и каждая колонка сохраняются как HTML-теги `<div>`, между которыми содержимое колонок записано в формате Markdown. Обратный импорт файла восстанавливает разметку. Просмотрщики Markdown без поддержки HTML показывают содержимое колонок последовательно.

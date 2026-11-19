@@ -1,84 +1,84 @@
-# Synchronization
-Trilium is an offline-first note-taking application that stores all data locally on the desktop client. However, it also offers the option to set up synchronization with a server instance, allowing multiple desktop clients to sync with a central server. This creates a star-shaped topology:
+# Синхронизация
+Trilium — это приложение для ведения заметок с приоритетом офлайн-работы (offline-first), которое хранит все данные локально в настольном клиенте. Тем не менее оно также позволяет настроить синхронизацию с серверным экземпляром, благодаря чему несколько настольных клиентов могут синхронизироваться с центральным сервером. Это образует топологию «звезда»:
 
 ![](Synchronization_image.jpg)
 
-In this setup, a central server (referred to as the _sync server_) and multiple _client_ (or _desktop_) instances synchronize with the sync server. Once configured, synchronization is automatic and ongoing, requiring no manual intervention.
+В такой конфигурации центральный сервер (называемый _сервером синхронизации_) и несколько _клиентских_ (или _настольных_) экземпляров синхронизируются с сервером синхронизации. После настройки синхронизация выполняется автоматически и непрерывно, не требуя ручного вмешательства.
 
-## Setting Up Synchronization
+## Настройка синхронизации
 
-### Security Considerations
+### Вопросы безопасности
 
-Setting up the server securely is critical and can be complex. It is crucial to use a valid [TLS certificate](Server%20Installation/HTTPS%20\(TLS\).md) (HTTPS) rather than an unencrypted HTTP connection to ensure security and avoid potential vulnerabilities.
+Безопасная настройка сервера крайне важна и может быть сложной. Крайне важно использовать действительный [сертификат TLS](Server%20Installation/HTTPS%20\(TLS\).md) (HTTPS), а не незашифрованное HTTP-соединение, чтобы обеспечить безопасность и избежать потенциальных уязвимостей.
 
-### Synchronizing a Desktop Instance with a Sync Server
+### Синхронизация настольного экземпляра с сервером синхронизации
 
-This method is used when you already have a desktop instance of Trilium and want to set up a sync server on your web host.
+Этот способ используется, когда у вас уже есть настольный экземпляр Trilium и вы хотите настроить сервер синхронизации на своём веб-хосте.
 
-1.  **Server Deployment**: Ensure your server instance is deployed but uninitialized.
-2.  **Desktop Configuration**: Open your desktop instance, navigate to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Sync_ → _Sync server_, and set the _Server address_ to your sync server's address.
-    *   Note that the sync server can also be overridden through <a class="reference-link" href="../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables).md">Configuration (config.ini or environment variables)</a>, case in which that value takes precedence. If that's the case, a field called _Server in use_ indicates it.
-3.  **Testing Sync**: Click the _Test sync_ button to verify the connection to the sync server.
-    *   If successful, the client will start pushing all data to the server instance.
-    *   This process may take some time, but you can continue using Trilium. Periodically check the server instance to confirm when the sync is complete. Once finished, you should see the login screen on the server.
+1.  **Развёртывание сервера**: убедитесь, что ваш серверный экземпляр развёрнут, но ещё не инициализирован.
+2.  **Настройка настольного приложения**: откройте настольный экземпляр, перейдите в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Синхронизация_ (_Sync_) → _Сервер синхронизации_ (_Sync server_) и укажите адрес вашего сервера в поле _Адрес сервера_ (_Server address_).
+    *   Обратите внимание, что адрес сервера синхронизации также можно переопределить через <a class="reference-link" href="../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables).md">конфигурацию (config.ini или переменные окружения)</a> — в этом случае приоритет имеет указанное там значение. Если это так, на это укажет поле _Используемый сервер_ (_Server in use_).
+3.  **Проверка синхронизации**: нажмите кнопку _Проверить синхронизацию_ (_Test sync_), чтобы проверить соединение с сервером синхронизации.
+    *   В случае успеха клиент начнёт отправку всех данных на серверный экземпляр.
+    *   Этот процесс может занять некоторое время, но вы можете продолжать пользоваться Trilium. Периодически проверяйте серверный экземпляр, чтобы убедиться, что синхронизация завершена. После завершения на сервере должен появиться экран входа.
 
-### Synchronizing a Desktop Instance from a Sync Server
+### Синхронизация настольного экземпляра с существующего сервера синхронизации
 
-This method is used when you already have a sync server and want to configure a new desktop instance to sync with it.
+Этот способ используется, когда у вас уже есть сервер синхронизации и вы хотите настроить новый настольный экземпляр для синхронизации с ним.
 
-1.  **Desktop Setup**: Follow the [desktop installation page](Desktop%20Installation.md).
-2.  **Initial Configuration**: When prompted, choose the option to set up sync with a sync server.
+1.  **Установка настольного приложения**: следуйте инструкциям на странице [установки настольного приложения](Desktop%20Installation.md).
+2.  **Первоначальная настройка**: когда появится запрос, выберите вариант настройки синхронизации с сервером синхронизации.
 
-![screenshot of the sync from server setup page](Synchronization_sync-init.png)
+![скриншот страницы настройки синхронизации с сервера](Synchronization_sync-init.png)
 
-1.  **Server Details**: Configure the Trilium server address and enter the server's password. If the server has <a class="reference-link" href="Server%20Installation/Multi-factor%20authentication%20with%20TOTP.md">Multi-factor authentication with TOTP</a> enabled, also enter a one-time password from your authenticator app, or a recovery code.
-2.  **Finish Setup**: Click the "Finish setup" button. If successful, you will see the following screen:
+1.  **Данные сервера**: укажите адрес сервера Trilium и введите пароль сервера. Если на сервере включена <a class="reference-link" href="Server%20Installation/Multi-factor%20authentication%20with%20TOTP.md">многофакторная аутентификация с помощью TOTP</a>, также введите одноразовый пароль из приложения-аутентификатора или код восстановления.
+2.  **Завершение настройки**: нажмите кнопку «Finish setup». В случае успеха вы увидите следующий экран:
 
-![screenshot of the sync page](Synchronization_sync-in-progress.png)
+![скриншот страницы синхронизации](Synchronization_sync-in-progress.png)
 
-Once synchronization is complete, you will be automatically redirected to the Trilium application.
+После завершения синхронизации вы будете автоматически перенаправлены в приложение Trilium.
 
-### Desktop-to-desktop sync
+### Синхронизация между настольными приложениями (Desktop-to-desktop)
 
-This method allows two desktop instances to synchronize between each other without requiring a <a class="reference-link" href="Server%20Installation.md">Server Installation</a>.
+Этот способ позволяет двум настольным экземплярам синхронизироваться друг с другом без необходимости <a class="reference-link" href="Server%20Installation.md">установки сервера</a>.
 
-Every desktop app contains a built-in server. In this setup, the new desktop instance uses that server to act as the sync server for the existing one, so it must be running and reachable over the network whenever the other instance synchronizes. Both devices must be on the same network.
+Каждое настольное приложение содержит встроенный сервер. В этой схеме новый настольный экземпляр использует этот сервер в качестве сервера синхронизации для существующего, поэтому он должен быть запущен и доступен по сети всякий раз, когда выполняется синхронизация. Оба устройства должны находиться в одной сети.
 
-1.  **New desktop**: On the first start, in the setup screen, choose _Connect a desktop app_. The page lists the _Addresses for this device_ and waits for a connection.
-2.  **Network access**: If the page says the device can't be reached by other devices, select _Allow network access & restart_. Trilium restarts, after which you choose _Connect a desktop app_ again.
-3.  **Existing desktop**: Open <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Sync_, set the _Server address_ to one of the addresses shown on the new desktop (for example `http://192.168.0.10:37840`), then select _Test now_.
-4.  **Initial sync**: The new desktop shows the progress of the sync and opens the knowledge base once it is complete. From then on, the existing desktop keeps synchronizing with the new one.
+1.  **Новый настольный экземпляр**: при первом запуске на экране настройки выберите _Connect a desktop app_. На странице отобразятся _Addresses for this device_, и приложение начнёт ожидать подключения.
+2.  **Доступ по сети**: если на странице указано, что устройство недоступно для других устройств, выберите _Allow network access & restart_. Trilium перезапустится, после чего снова выберите _Connect a desktop app_.
+3.  **Существующий настольный экземпляр**: откройте <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Синхронизация_ (_Sync_), укажите в поле _Адрес сервера_ (_Server address_) один из адресов, показанных на новом настольном экземпляре (например, `http://192.168.0.10:37840`), и нажмите _Test now_.
+4.  **Начальная синхронизация**: новый настольный экземпляр отобразит ход синхронизации и откроет базу знаний после её завершения. После этого существующий экземпляр продолжит синхронизироваться с новым.
 
 > [!WARNING]
-> Since v0.104.0, LAN access needs to be enabled to allow this sync to function. See <a class="reference-link" href="Desktop%20Installation/Network%20Access.md">Network Access</a> for information on how to do so.
+> Начиная с версии v0.104.0 для работы этой синхронизации необходимо включить доступ по локальной сети (LAN). Подробнее см. в разделе <a class="reference-link" href="Desktop%20Installation/Network%20Access.md">Сетевой доступ</a>.
 
-## Proxy Configuration
+## Настройка прокси
 
-Two proxy setups are supported:
+Поддерживаются два варианта настройки прокси:
 
-*   **Explicit Proxy Configuration**: Set the proxy server in Options / Sync. Only unauthenticated proxy servers are supported.
-*   **System Proxy Settings**: If no proxy server is explicitly configured, Trilium will use the system proxy settings.
+*   **Явная настройка прокси**: укажите прокси-сервер в разделе Настройки / Синхронизация. Поддерживаются только прокси-серверы без аутентификации.
+*   **Системные настройки прокси**: если прокси-сервер не задан явно, Trilium будет использовать системные настройки прокси.
 
-## Troubleshooting
+## Устранение неполадок
 
-### Date/Time Synchronization
+### Синхронизация даты и времени
 
-For successful synchronization, both client and server must have the same date and time, with a tolerance of up to five minutes.
+Для успешной синхронизации на клиенте и сервере должны быть установлены одинаковые дата и время с допустимым расхождением до пяти минут.
 
-### Certificate Issues
+### Проблемы с сертификатами
 
-When using TLS, Trilium will verify the server certificate. If verification fails (e.g., due to self-signed certificates or certain corporate proxies), you can run the Trilium client with the `NODE_TLS_REJECT_UNAUTHORIZED` environment variable set to `0`:
+При использовании TLS Trilium проверяет сертификат сервера. Если проверка не проходит (например, из-за самоподписанных сертификатов или некоторых корпоративных прокси), вы можете запустить клиент Trilium с переменной окружения `NODE_TLS_REJECT_UNAUTHORIZED`, установленной в `0`:
 
 ```
 export NODE_TLS_REJECT_UNAUTHORIZED=0
 ```
 
-This will disable TLS certificate verification, significantly reducing security and exposing the setup to MITM attacks. It is strongly recommended to use a valid signed server certificate. Newer Trilium versions include a script called `trilium-no-cert-check.sh` for this purpose.
+Это отключит проверку сертификатов TLS, что значительно снизит безопасность и сделает соединение уязвимым для атак MITM. Настоятельно рекомендуется использовать действительный подписанный сертификат сервера. Более новые версии Trilium включают скрипт `trilium-no-cert-check.sh` для этой цели.
 
-### Conflict Resolution
+### Разрешение конфликтов
 
-If you edit the same note on multiple instances before synchronization, Trilium resolves conflicts by retaining the newer change and discarding the older one. The older version remains accessible in [note revisions](../Basic%20Concepts%20and%20Features/Notes/Note%20Revisions.md), allowing data recovery if needed.
+Если вы отредактировали одну и ту же заметку на нескольких экземплярах до синхронизации, Trilium разрешает конфликты, сохраняя более новое изменение и отбрасывая более старое. Старая версия остаётся доступной в [истории версий заметки](../Basic%20Concepts%20and%20Features/Notes/Note%20Revisions.md), что позволяет при необходимости восстановить данные.
 
-### Hash Check
+### Проверка контрольных сумм (Hash Check)
 
-After each synchronization, Trilium computes a hash of all synced data on both the client and the sync server. If there is a discrepancy, Trilium will automatically initiate a recovery mechanism to resolve the issue.
+После каждой синхронизации Trilium вычисляет хеш всех синхронизированных данных как на клиенте, так и на сервере синхронизации. При обнаружении расхождения Trilium автоматически запускает механизм восстановления для устранения проблемы.

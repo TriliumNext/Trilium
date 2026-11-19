@@ -1,101 +1,101 @@
-# Code blocks
+# Блоки кода
 ![](Code%20blocks_image.jpg)
 
-The code blocks feature allows entering pieces of code in text notes.
+Блоки кода позволяют вставлять фрагменты кода в текстовые заметки.
 
-Note that this feature is meant for generally small snippets of code. For larger files such as an entire log, see the <a class="reference-link" href="../../Code.md">Code</a> note type instead.
+Обратите внимание, что эта функция предназначена в основном для небольших фрагментов кода. Для более крупных файлов, таких как полный журнал (лог), используйте тип заметок <a class="reference-link" href="../../Code.md">Код</a>.
 
-## Inserting a code block
+## Вставка блока кода
 
-*   Via the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a>, look for the <span class="tn-icon cke cke-code-block"></span> button.
-    *   Pressing directly on the icon will insert a code block with the language that was selected most recently. If this is the first time a code block is inserted, the language will be “Auto-detected” by default.
-    *   Pressing the arrow next to the icon, which will show a popup with the available languages.
-*   Type ` ``` ` (as in Markdown).
-    *   Note that it's not possible to specify the language, as it will default to the last selected language.
-*   Paste several lines of code copied from Visual Studio Code.
-    *   The code block uses the language of the file in Visual Studio Code.
-    *   If that language is not in the list of languages, the code block uses _Auto-detected_.
-    *   The colors of the Visual Studio Code theme are removed.
-    *   A single line becomes inline code instead of a code block.
-    *   In Firefox, the code block always uses _Auto-detected_. Firefox can't read the language from Visual Studio Code.
+*   На <a class="reference-link" href="../Formatting%20toolbar.md">панели форматирования</a> найдите кнопку <span class="tn-icon cke cke-code-block"></span>.
+    *   Нажатие непосредственно на значок вставит блок кода с последним выбранным языком. Если блок кода вставляется впервые, по умолчанию используется язык «Auto-detected».
+    *   Нажатие на стрелку рядом со значком откроет всплывающий список доступных языков.
+*   Введите ` ``` ` (как в Markdown).
+    *   Обратите внимание, что указать язык таким способом нельзя — будет использован последний выбранный язык.
+*   Вставьте несколько строк кода, скопированных из Visual Studio Code.
+    *   Блок кода автоматически получит язык файла из Visual Studio Code.
+    *   Если этого языка нет в списке, блок кода получит значение _Auto-detected_.
+    *   Цвета темы Visual Studio Code удаляются.
+    *   Одна строка вставляется как встроенный код, а не как блок кода.
+    *   В Firefox блок кода всегда использует _Auto-detected_, так как Firefox не может прочитать язык из Visual Studio Code.
 
-## Exiting out of the code block
+## Выход из блока кода
 
-*   To exit out of a code block and enter a normal paragraph, move the cursor at the end of the code block and press Enter twice.
-*   Similarly, to insert a paragraph above the note block, move the cursor at the beginning of the code block and press Enter twice.
-
-> [!NOTE]
-> If you've pasted a code block with a more complex HTML structure, exiting out of the code block by pressing Enter multiple times might not work. In that case the best approach is to delete the code block entirely and use Ctrl+Shift+V (paste as plain text).
-
-## Syntax highlighting & color schemes
-
-Since TriliumNext v0.90.12, Trilium will try to offer syntax highlighting to the code block. Note that the syntax highlighting mechanism is slightly different than the one in <a class="reference-link" href="../../Code.md">Code</a> notes as different technologies are involved.
-
-Interaction:
-
-*   When the language is set to _Auto-detected_ (by default), Trilium will try to identify the programming language (or similar) that corresponds to the given snippet of text and highlight it. Only the languages enabled in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Code Notes_ → _Available MIME types in the dropdown_ are considered. If this is problematic, consider changing the language of the code block manually.
-*   When the language is set to _Plain text_, there will be no syntax highlighting.
-
-Note that when editing a text note, syntax highlighting is automatically disabled if the code block is too big (somewhere around 500 lines). In <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">Read-Only Notes</a>, in print and on a [shared page](../../../Advanced%20Usage/Sharing.md), a code block of more than 500 lines or 50,000 characters is shown without syntax highlighting. These limits are not configurable.
-
-In order to configure this new feature, a section has been added in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Appearance_ to control the syntax highlighting. There the color scheme can be chosen, from a builtin selection of themes from Highlight.js. _VS Code (Light)_ and _VS Code (Dark)_ use the same colors as the default themes of <a class="reference-link" href="../../Code.md">Code</a> notes, so a code block and a code note color the same code alike.
-
-*   It is possible to disable the syntax highlighting for all the notes by selecting “No syntax highlighting” in the “Color scheme” option.
-*   Word wrapping is disabled by default, but can be configured from the same section.
-*   The tab width can also be adjusted from Options.
+*   Чтобы выйти из блока кода и перейти к обычному абзацу, переместите курсор в конец блока кода и дважды нажмите Enter.
+*   Аналогично, чтобы вставить абзац над блоком кода, переместите курсор в начало блока кода и дважды нажмите Enter.
 
 > [!NOTE]
-> **Context regarding syntax highlighting**
+> Если вы вставили блок кода со сложной HTML-структурой, выход из него многократным нажатием Enter может не сработать. В этом случае лучше всего полностью удалить блок кода и использовать Ctrl+Shift+V (вставка без форматирования).
+
+## Подсветка синтаксиса и цветовые схемы
+
+Начиная с TriliumNext v0.90.12, Trilium предлагает подсветку синтаксиса для блоков кода. Обратите внимание, что механизм подсветки синтаксиса здесь немного отличается от механизма в заметках типа <a class="reference-link" href="../../Code.md">Код</a>, поскольку используются разные технологии.
+
+Особенности работы:
+
+*   Когда выбран язык _Auto-detected_ (по умолчанию), Trilium пытается автоматически определить язык программирования (или формат) данного фрагмента текста и подсветить его. Учитываются только языки, включённые в <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Code Notes_ → _Available MIME types in the dropdown_. Если автоопределение работает некорректно, выберите язык блока кода вручную.
+*   Когда выбран язык _Plain text_, подсветка синтаксиса отсутствует.
+
+Обратите внимание, что при редактировании текстовой заметки подсветка синтаксиса автоматически отключается, если блок кода слишком велик (около 500 строк). В <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">заметках только для чтения</a>, при печати и на [опубликованной странице](../../../Advanced%20Usage/Sharing.md) блок кода объёмом более 500 строк или 50 000 символов отображается без подсветки синтаксиса. Эти ограничения не настраиваются.
+
+Для настройки этой функции в <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Appearance_ добавлен соответствующий раздел управления подсветкой синтаксиса. Там можно выбрать цветовую схему из встроенного набора тем Highlight.js. Темы _VS Code (Light)_ и _VS Code (Dark)_ используют те же цвета, что и стандартные темы заметок типа <a class="reference-link" href="../../Code.md">Код</a>, поэтому блок кода и заметка кода подсвечивают один и тот же код одинаково.
+
+*   Подсветку синтаксиса можно отключить для всех заметок, выбрав «No syntax highlighting» в параметре «Color scheme».
+*   Перенос строк по умолчанию отключён, но его можно включить в том же разделе.
+*   Ширину табуляции также можно настроить в Настройках.
+
+> [!NOTE]
+> **Контекст по подсветке синтаксиса**
 > 
-> In order to achieve the syntax highlight, the Highlight.js library is being used. Do note that support for syntax highlighting in code blocks is not a supported feature of the text editor we are using CKEditor), but rather a hack which makes use of the highlights API (used for highlighting search results for example). Nevertheless, we haven't noticed any major issues during the development of the feature, but feel free to report any issues you might have.
+> Для подсветки синтаксиса используется библиотека Highlight.js. Обратите внимание, что подсветка синтаксиса в блоках кода не является встроенной функцией используемого текстового редактора (CKEditor), а реализована с помощью API выделений (который применяется, например, для подсветки результатов поиска). Тем не менее в ходе разработки серьёзных проблем выявлено не было, но вы всегда можете сообщить о любых найденных ошибках.
 > 
-> Most of the work to achieve the syntax highlight itself was already done by [antoniotejada](https://github.com/antoniotejada) in [https://github.com/antoniotejada/Trilium-SyntaxHighlightWidget](https://github.com/antoniotejada/Trilium-SyntaxHighlightWidget). On our side we added customization but also additional functionality.
+> Основная часть работы по реализации подсветки синтаксиса была выполнена [antoniotejada](https://github.com/antoniotejada) в проекте [https://github.com/antoniotejada/Trilium-SyntaxHighlightWidget](https://github.com/antoniotejada/Trilium-SyntaxHighlightWidget). С нашей стороны были добавлены возможности настройки и дополнительная функциональность.
 
-### Migrating from existing syntax highlight plugins
+### Миграция с существующих плагинов подсветки синтаксиса
 
-If you are already using a syntax highlighting plugin such as the [Trilium-SyntaxHighlightWidget](https://github.com/antoniotejada/Trilium-SyntaxHighlightWidget) we are basing off of, it is important to disable that plugin before upgrading in order for it not to conflict with our implementation.
+Если вы уже используете плагин подсветки синтаксиса, такой как [Trilium-SyntaxHighlightWidget](https://github.com/antoniotejada/Trilium-SyntaxHighlightWidget), на котором основана наша реализация, важно отключить его перед обновлением, чтобы избежать конфликтов.
 
-Should you encounter any issues after the migration, try running Trilium in safe mode.
+Если после миграции возникнут какие-либо проблемы, попробуйте запустить Trilium в безопасном режиме.
 
-## Changing the language of a code block
+## Изменение языка блока кода
 
-Simply click anywhere inside the code block and press again the code block button in the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a>:  
+Просто нажмите в любом месте внутри блока кода и снова нажмите кнопку блока кода на <a class="reference-link" href="../Formatting%20toolbar.md">панели форматирования</a>:  
 ![](Code%20blocks_image.png)
 
-## Adjusting the list of languages
+## Настройка списка языков
 
-The code blocks feature shares the list of languages with the <a class="reference-link" href="../../Code.md">Code</a> note type.
+Функция блоков кода использует общий список языков с типом заметок <a class="reference-link" href="../../Code.md">Код</a>.
 
-The supported languages, and the order in which they are listed, can be adjusted by going to <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Code Notes_ → _Available MIME types in the dropdown_. See <a class="reference-link" href="../../Code.md">Code</a> for how to add, remove and reorder them.
+Поддерживаемые языки и порядок их отображения можно настроить в <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Code Notes_ → _Available MIME types in the dropdown_. Подробнее о добавлении, удалении и изменении порядка языков см. в разделе <a class="reference-link" href="../../Code.md">Код</a>.
 
-Note that the list of languages is not immediately refreshed, you'd have to manually [refresh the application](../../../Troubleshooting/Refreshing%20the%20application.md).
+Обратите внимание, что список языков обновляется не сразу — необходимо вручную [перезагрузить приложение](../../../Troubleshooting/Refreshing%20the%20application.md).
 
-## Text replacements and ligatures
+## Автозамены текста и лигатуры
 
-<a class="reference-link" href="../Automatic%20replacements.md">Automatic replacements</a> are a feature of text notes which converts some character sequences into another and some of them interfere with programming text, such as the conversion of quotes. While in a code block, the automatic replacements **are not effect**. The only way the automatic replacements can interfere is if the text is typed/pasted before being put in a code block.
+<a class="reference-link" href="../Automatic%20replacements.md">Автоматические замены</a> — это функция текстовых заметок, которая преобразует определённые последовательности символов в другие, и некоторые из них мешают написанию кода (например, преобразование кавычек). Внутри блока кода автоматические замены **не действуют**. Единственный случай, когда они могут повлиять на код, — если текст был набран или вставлен до помещения в блок кода.
 
-A different feature is _programming ligatures_, which is simply a display affordance which turns `!=` into `≠` or `->` as `→` . These come from the [font](../../../Basic%20Concepts%20and%20Features/Themes/Personalizing%20the%20font.md). The underlying text is not actually changed, and copying it out gives you back `!=` and `->`.
+Другая функция — _лигатуры программирования_, которые представляют собой лишь визуальное отображение, превращающее `!=` в `≠` или `->` в `→`. Они обеспечиваются [шрифтом](../../../Basic%20Concepts%20and%20Features/Themes/Personalizing%20the%20font.md). Сам текст при этом не меняется, и при копировании вы получите обратно `!=` и `->`.
 
-Ligatures can be disabled in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a>_→ Appearance → Fonts → Programming ligatures._
+Лигатуры можно отключить в <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> _→ Appearance → Fonts → Programming ligatures._
 
-## Extended code blocks
+## Расширенные блоки кода
 
 > [!IMPORTANT]
-> Extended code blocks are experimental, and they change as they mature. To use them, turn on _Extended code blocks_ in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Advanced_ → _Experimental Options_.
+> Расширенные блоки кода являются экспериментальной функцией и могут изменяться по мере доработки. Чтобы использовать их, включите _Extended code blocks_ в <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Advanced_ → _Experimental Options_.
 
-An extended code block is a code block that is edited with the code editor of a <a class="reference-link" href="../../Code.md">Code</a> note, inside the text. It has the same syntax highlighting and code folding as a code note, and it suits longer pieces of code.
+Расширенный блок кода — это блок кода, который редактируется с помощью редактора кода из заметки типа <a class="reference-link" href="../../Code.md">Код</a> прямо внутри текста. Он обладает той же подсветкой синтаксиса и сворачиванием кода, что и заметка кода, и хорошо подходит для более длинных фрагментов.
 
-While the feature is on, every code block of a text note is an extended code block: the ones already in the notes, and the new ones.
+Пока функция включена, каждый блок кода в текстовой заметке является расширенным: как уже существующие в заметках, так и новые.
 
-*   To insert one, insert a code block in any of the ways described in _Inserting a code block_.
-*   A new block is editable, in a _Full_ box, and takes the focus. Its language is the one picked from the list of the <span class="tn-icon cke cke-code-block"></span> button, otherwise the one set last on a code block, or _Plain text_.
-*   The list of languages has no _Auto-detected_ entry. A code block saved as _Auto-detected_ takes the language that Trilium detects in its code, or _Plain text_, once its note is opened for editing. The language can then be changed from the toolbar of the block.
-*   A click places the cursor in the code, as in a code block. Over a _Small_ or _Medium_ box, the mouse wheel scrolls the code.
-*   The block shows in a box like the one of an included code note, with the corners and the shadow of a code block. While the block is editable, its language shows in its top corner, as for a code block. While it is read-only, because _Editable_ is unchecked or the note is one of the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">Read-Only Notes</a>, that corner has a <span class="tn-icon bx bx-copy"></span> _Copy to clipboard_ button instead, as a code block of a read-only note does.
-*   Its toolbar has the _Change language mode_ menu of an embedded code file, described in _Editing an include in place_ in <a class="reference-link" href="../Include%20Note.md">Include Note</a>, and the <span class="tn-icon cke cke-trilium-copy"></span> _Copy to clipboard_ button, which copies the code as the one of a code block does. Its <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu has _Editable_, which shows the code read-only once unchecked, the _Word wrap_ and _Line numbers_ submenus, the _Tab width_ submenu, with the items of the _Change tab width_ menu of an embedded code file, the _Size_ submenu, with _Resizable_, _Full_ and _Default_, the _Position_ submenu, and <span class="tn-icon bx bx-trash"></span> _Delete block_, which removes the block from the note.
-*   The _Position_ submenu places the block as it places an include, described in _Positioning_ in <a class="reference-link" href="../Include%20Note.md">Include Note</a>: on lines of its own at the left, the center or the right, or at the left or the right with the text running beside it. Only a _Resizable_ box can be placed, and it takes the full width of the note until it is resized narrower. In the mobile layout, a block with a position other than _Align center_ takes the full width.
-*   The changes made in the block are part of the undo history of the text note.
+*   Чтобы вставить его, добавьте блок кода любым из способов, описанных в разделе _Вставка блока кода_.
+*   Новый блок доступен для редактирования, отображается в рамке размера _Full_ и сразу получает фокус. Его язык соответствует выбранному из списка кнопки <span class="tn-icon cke cke-code-block"></span>, иначе используется последний выбранный язык блока кода или _Plain text_.
+*   В списке языков нет пункта _Auto-detected_. Блок кода, сохранённый как _Auto-detected_, получает язык, который Trilium определит по его содержимому, или _Plain text_, как только заметка будет открыта для редактирования. Затем язык можно изменить на панели инструментов блока.
+*   Щелчок помещает курсор в код, как в обычном блоке кода. Над рамкой размера _Small_ или _Medium_ колёсико мыши прокручивает код.
+*   Блок отображается в рамке, аналогичной включённой заметке кода, с углами и тенью блока кода. Пока блок доступен для редактирования, в его верхнем углу отображается язык, как в обычном блоке кода. Когда он доступен только для чтения (поскольку снят флажок _Editable_ или заметка является <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">заметкой только для чтения</a>), в этом углу вместо языка отображается кнопка <span class="tn-icon bx bx-copy"></span> _Copy to clipboard_, как в блоке кода заметки только для чтения.
+*   На его панели инструментов есть меню _Change language mode_ (как у встроенного файла кода, описано в подразделе _Editing an include in place_ раздела <a class="reference-link" href="../Include%20Note.md">Включение заметки</a>) и кнопка <span class="tn-icon cke cke-trilium-copy"></span> _Copy to clipboard_, копирующая код. В меню <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ доступны: _Editable_ (при снятии флажка код становится доступен только для чтения), подменю _Word wrap_ и _Line numbers_, подменю _Tab width_ (с пунктами меню _Change tab width_ встроенного файла кода), подменю _Size_ с вариантами _Resizable_, _Full_ и _Default_, подменю _Position_, а также <span class="tn-icon bx bx-trash"></span> _Delete block_ для удаления блока из заметки.
+*   Подменю _Position_ размещает блок так же, как включение заметки (см. _Positioning_ в разделе <a class="reference-link" href="../Include%20Note.md">Включение заметки</a>): на отдельной строке слева, по центру или справа, либо слева или справа с обтеканием текстом. Позиционировать можно только рамку _Resizable_, причём она занимает всю ширину заметки, пока вы не уменьшите её размер. В мобильной разметке блок с любым расположением, кроме _Align center_, занимает всю ширину.
+*   Изменения, внесённые в блоке, сохраняются в истории отмены действий текстовой заметки.
 
-The code stays in the note as a code block of its language. The Markdown export, [shared pages](../../../Advanced%20Usage/Sharing.md) and printing show it as a code block, and copying it into another application pastes a code block.
+Код сохраняется в заметке как блок кода соответствующего языка. При экспорте в Markdown, на [опубликованных страницах](../../../Advanced%20Usage/Sharing.md) и при печати он отображается как обычный блок кода, а при копировании в другое приложение вставляется как блок кода.
 
-Turning _Extended code blocks_ off again shows the code blocks as before, as does a version of Trilium without this feature. Saving a note there drops the box size and the other settings of its blocks. An extended code block inserted from the _Insert_ menu of Trilium 0.107 stays one while the feature is off.
+При повторном отключении _Extended code blocks_ блоки кода отображаются как раньше (то же происходит и в версиях Trilium без этой функции). Сохранение заметки в таком режиме сбрасывает размер рамки и другие настройки её блоков. Расширенный блок кода, вставленный из меню _Insert_ в Trilium 0.107, остаётся расширенным даже при отключённой функции.

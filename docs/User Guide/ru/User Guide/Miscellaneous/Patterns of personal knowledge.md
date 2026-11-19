@@ -1,155 +1,155 @@
-# Patterns of personal knowledge
+# Паттерны организации личной базы знаний
 > [!NOTE]
-> This article is a description of the original author of Trilium (zadam) in regards with his own knowledge base.
+> Эта статья написана первоначальным автором Trilium (zadam) и описывает его собственную базу знаний.
 
-This page contains description of some of the patterns I use to organize information in my knowledge base. This is meant to give some inspiration of how one might create and structure their knowledge base in general and also specifically in Trilium Notes. It also gives some background and justification for some of the design decisions.
+На этой странице описаны некоторые паттерны, которые я использую для организации информации в своей базе знаний. Цель статьи — вдохновить вас на создание и структурирование собственной базы знаний в целом и в Trilium Notes в частности. Она также объясняет предпосылки и обоснование некоторых проектных решений.
 
-## Meta patterns
+## Метапаттерны
 
-Just to be clear, meta patterns are "patterns of patterns", i.e. patterns appearing in other patterns.
+Для ясности: метапаттерны — это «паттерны паттернов», то есть закономерности, проявляющиеся внутри других паттернов.
 
-### Hierarchical organization of information
+### Иерархическая организация информации
 
-Basic meta pattern is that I sort notes (units of information) into a hierarchy - I have some "top level" notes which represent coarse grained organization, these then split into sub-notes defining finer grained organization and so on. I consider this hierarchical (tree) organization very efficient for organization of large amounts of information. A lot of note taking software (such as Evernote) are frustratingly limited in this regard which limits scalability of the software to large amounts of notes.
+Базовый метапаттерн заключается в том, что я сортирую заметки (единицы информации) в иерархию: у меня есть несколько заметок «верхнего уровня», задающих крупное разбиение, которые затем делятся на подзаметки с более тонкой структурой и так далее. Я считаю такую иерархическую (древовидную) организацию очень эффективной для больших объёмов информации. Многие программы для ведения заметок (например, Evernote) досадно ограничены в этом отношении, что мешает им масштабироваться на большое количество заметок.
 
-#### Scalability
+#### Масштабируемость
 
-It's important to frame the following (meta) patterns with some idea of how large amount of data are we talking about.
+Важно рассматривать дальнейшие (мета)паттерны с пониманием того, о каких объёмах данных идёт речь.
 
-My rule of thumb for estimation of size of personal knowledge base is that you can reasonably produce around 10 notes a day, which is 3650 in a year. I plan to use my knowledge base long term (with or without Trilium Notes), probably decades so you can easily get to number 100 000 or even more. Right now, my personal knowledge base has around 10 000 notes.
+Моё практическое правило для оценки размера личной базы знаний: разумно создавать около 10 заметок в день, что составляет 3650 в год. Я планирую пользоваться своей базой знаний долгосрочно (с Trilium Notes или без него), вероятно десятилетиями, так что легко можно дойти до 100 000 заметок или даже больше. Прямо сейчас в моей личной базе знаний около 10 000 заметок.
 
-100 000 is a number to which most note taking software doesn't scale well (in both performance and UI). Yet I don't think it's really very much considering a lifetime of knowledge.
+100 000 — это число, до которого большинство программ для заметок плохо масштабируются (как по производительности, так и по интерфейсу). И всё же я не считаю, что это так уж много, если говорить о знаниях за целую жизнь.
 
-#### Lazy hierarchy
+#### Ленивая иерархия
 
-My approach to creating the hierarchy is being lazy - I don't create the structure first and then fill it with notes, instead I create single note for some specific topic and start using this one note. Once the content starts to grow, and I see how _some_ parts could be split out, I move them out into separate sub notes. As an example I have a book review for _The Fellowship of the Ring_:
+Мой подход к созданию иерархии — ленивый: я не создаю структуру заранее, чтобы потом заполнять её заметками; вместо этого я создаю одну заметку по конкретной теме и начинаю ею пользоваться. Когда содержимое разрастается и я вижу, какие _части_ можно выделить отдельно, я выношу их в отдельные подзаметки. Например, у меня есть обзор книги _«Братство Кольца»_:
 
-*   Book reviews
-    *   The Fellowship of the Ring
+*   Обзоры книг
+    *   Братство Кольца
 
-The note contains basic book info (author, publisher etc.), book highlights with the comments and then overall review. Now it turns out there's far too many book highlights and overall review is also rather long, so I want to change the structure to the following:
+Заметка содержит базовую информацию о книге (автор, издательство и т. д.), цитаты из книги с комментариями и общий обзор. Когда выясняется, что цитат стало слишком много, а обзор тоже довольно длинный, я меняю структуру на следующую:
 
-*   Book reviews
-    *   The Fellowship of the Ring       _(still contains basic info)_
-        *   Highlights
-        *   Review
+*   Обзоры книг
+    *   Братство Кольца        _(по-прежнему содержит базовую информацию)_
+        *   Цитаты
+        *   Обзор
 
-If I used standard text file stored in a filesystem I would soon run into an annoying problem that in order to split out the Highlights and Review into sub-notes I would also have to convert _The Fellowship of the Ring_ from text file into directory and split out all sections of the note into sub-notes. Instead, Trilium treats all notes as equal - both leaf notes and inner notes can have both text content which allows me to sub-structure only content which needs it.
+Если бы я использовал обычные текстовые файлы в файловой системе, я бы быстро столкнулся с неприятной проблемой: чтобы вынести «Цитаты» и «Обзор» в подзаметки, мне пришлось бы превратить _«Братство Кольца»_ из текстового файла в каталог и разбить все разделы заметки на отдельные файлы. Вместо этого Trilium считает все заметки равноправными — и листовые, и внутренние заметки могут содержать текст, что позволяет структурировать только тот контент, которому это действительно нужно.
 
-### Sorting notes into multiple places in the hierarchy
+### Размещение заметок в нескольких местах иерархии
 
-While organizing the notes into the hierarchy, you very quickly run into a dilemma - your note seem to belong to two places in the hierarchy equally. As an example - you want to make a note about [bash](https://en.wikipedia.org/wiki/Bash_\(Unix_shell\)) - does it belong to "OS / Linux" or "Programming / Scripting languages"? This is actually a false dichotomy forced down by the limits of the basic tree hierarchy - the answer is _of course it belongs to both_. This is the reason why Trilium doesn't use standard tree structure (which requires every note to have exactly one parent), but an extension which allows every note to have several parents, thus effectively allowing it to appear in multiple places in the hierarchy. For lack of better term I call this "cloning". The main problem with this term is that it suggests that each clone must have an original, but here all clones are completely equal - effectively there's no original.
+Организуя заметки в иерархию, вы очень быстро столкнётесь с дилеммой: заметка в равной степени относится к двум местам в иерархии. Например, вы хотите сделать заметку про [bash](https://en.wikipedia.org/wiki/Bash_\(Unix_shell\)) — куда её поместить: в «ОС / Linux» или в «Программирование / Скриптовые языки»? На самом деле это ложная дихотомия, навязанная ограничениями обычной древовидной иерархии: ответ очевиден — _она относится к обоим разделам_. Именно поэтому Trilium использует не стандартную древовидную структуру (где у каждой заметки ровно один родитель), а расширение, позволяющее каждой заметке иметь несколько родителей и тем самым появляться в нескольких местах иерархии. За неимением лучшего термина я называю это «клонированием». Главная проблема этого термина в том, что он намекает на наличие оригинала, хотя здесь все клоны полностью равноправны — фактически оригинала нет.
 
-In tech lingo, it might be better to describe it as a [hard link](https://en.wikipedia.org/wiki/Hard_link) with an important difference that it is possible to hard link (clone) a directory (inner note).
+На техническом языке это точнее описать как [жёсткую ссылку](https://en.wikipedia.org/wiki/Hard_link) с важным отличием: здесь можно создать жёсткую ссылку (клон) и на каталог (внутреннюю заметку).
 
-### Protected notes
+### Защищённые заметки
 
-I have Trilium Notes opened non-stop. Sometimes I forget to lock my computer when going to the bathroom. Sometimes I let a friend or family member to use my computer for a minute without supervision. They might click on (running) Trilium and inadvertently see a note I really don't want anybody to see (personal diary, credentials). To cover this, Trilium has a concept of "[protected notes](https://github.com/zadam/trilium/wiki/Protected-notes)" - protected note is encrypted and on top of that requires the user to enter the password every 5 minutes which guarantees that such note can be in a readable state only for small amount of time. Working with ordinary (not protected) notes don't require password so you're not bothered by extra security when it's not needed.
+Trilium Notes открыт у меня постоянно. Иногда я забываю заблокировать компьютер, когда отхожу. Иногда даю другу или члену семьи попользоваться компьютером на минуту без присмотра. Они могут случайно нажать на (запущенный) Trilium и увидеть заметку, которую мне совсем не хотелось бы показывать (личный дневник, учётные данные). Для этого в Trilium есть концепция «[защищённых заметок](https://github.com/zadam/trilium/wiki/Protected-notes)» — защищённая заметка зашифрована и вдобавок требует ввода пароля каждые 5 минут, что гарантирует её доступность для чтения лишь в течение короткого времени. Работа с обычными (незащищёнными) заметками не требует пароля, поэтому лишняя защита не мешает там, где она не нужна.
 
-### Archiving notes
+### Архивирование заметок
 
-Notes can lose relevancy with time - let's say I switch jobs - all the notes specific to the former employer immediately lose most of its import. This doesn't mean I want to delete these notes though - typically I just want them to somehow deprioritize - in Trilium I would do that by assigning an [inherited](https://github.com/zadam/trilium/wiki/Attribute-inheritance) [label](https://github.com/zadam/trilium/wiki/Attributes) `archived` to the company root note. The main effect of this label is that all the notes from this sub-tree are filtered out from search results (fast search via note autocomplete is my main [navigation approach](https://github.com/zadam/trilium/wiki/Note-navigation)). Apart from this, I also typically move such outdated notes to some less prominent place in the hierarchy.
+Со временем заметки теряют актуальность — допустим, я меняю работу, и все заметки, относящиеся к прежнему работодателю, сразу теряют большую часть своей важности. Однако это не значит, что я хочу их удалить — обычно я просто хочу понизить их приоритет. В Trilium я делаю это, назначая [наследуемую](https://github.com/zadam/trilium/wiki/Attribute-inheritance) [метку](https://github.com/zadam/trilium/wiki/Attributes) `archived` корневой заметке компании. Главный эффект этой метки в том, что все заметки из этого поддерева исключаются из результатов поиска (быстрый поиск через автодополнение заметок — мой основной [способ навигации](https://github.com/zadam/trilium/wiki/Note-navigation)). Кроме того, я обычно перемещаю такие устаревшие заметки в менее заметное место иерархии.
 
-I use archivation also for notes which are not very relevant from their creation - an example might be automatically imported reddit comments.
+Я также использую архивирование для заметок, которые изначально не слишком актуальны — например, автоматически импортированных комментариев с Reddit.
 
-Sometimes there's no clear _category_ split between relevant and non-relevant notes, in that case I just create "_OLD_" note with `archived` label and move all irrelevant notes there. So my credentials note might look something like this:
+Иногда нет чёткого разделения по _категориям_ между актуальными и неактуальными заметками — в этом случае я просто создаю заметку «_OLD_» с меткой `archived` и переношу туда все неактуальные заметки. Например, моя заметка с учётными данными может выглядеть так:
 
-*   Credentials
-    *   Personal
-        *   OLD       _(contains a bunch of notes with credentials for services I don't use anymore)_
+*   Учётные данные
+    *   Личные
+        *   OLD        _(содержит набор заметок с учётными данными от сервисов, которыми я больше не пользуюсь)_
         *   Gmail
         *   Github
         *   ...
 
-## Patterns
+## Паттерны
 
-### Day note
+### Ежедневная заметка
 
-Every day has its note which contains or references everything related to the given day. Structure looks like this:
+У каждого дня есть своя заметка, которая содержит всё связанное с этим днём или ссылается на него. Структура выглядит так:
 
 *   2018
-    *   11 - November
-        *   26 - Monday
-        *   27 - Tuesday
-            *   subnote 1
+    *   11 - Ноябрь
+        *   26 - Понедельник
+        *   27 - Вторник
+            *   подзаметка 1
 
-Day note serves as a workspace and note inbox at the same time - it's the default location to create a note when I don't have time to think about proper placement. At the end of the day I typically review my day note and clone the notes into suitable locations in the hierarchy.
+Ежедневная заметка одновременно служит рабочим пространством и «входящими» для заметок — это место по умолчанию для создания заметки, когда некогда думать о правильном расположении. В конце дня я обычно просматриваю ежедневную заметку и клонирую заметки в подходящие места иерархии.
 
-Trilium has this pattern partly built-in - Trilium understands and can create this Year / Month / Day structure semi-automatically (on API call). There's also global keyboard shortcut `CTRL-ALT-P` which will create new note in the day note.
+Этот паттерн частично встроен в Trilium: Trilium понимает и умеет полуавтоматически (через вызов API) создавать структуру Год / Месяц / День. Также есть глобальная горячая клавиша `CTRL-ALT-P`, которая создаёт новую заметку в ежедневной заметке.
 
-What notes do I keep under this day note?
+Какие заметки я храню в ежедневной заметке?
 
-*   TODO list for given day (this can be automated - see <a class="reference-link" href="../Advanced%20Usage/Advanced%20Showcases/Task%20Manager.md">Task Manager</a>)
-*   Personal diary
-*   [clones](../Basic%20Concepts%20and%20Features/Notes/Cloning%20Notes.md) of notes I created during this day (which kind of represents what I've been working on).
-*   I often clone notes (or sub-trees) of e.g. projects I'm working on at given day so they are at hand
-*   I have some [scripts](../Scripting.md) which allow me to track certain daily metrics (like weight). These are saved into one daily "data note" (actually JSON [code note](../Note%20Types/Code.md)).
-    *   I have other scripts which then help me to visualize these data (see a <a class="reference-link" href="../Advanced%20Usage/Advanced%20Showcases/Weight%20Tracker.md">Weight Tracker</a> example)
-    *   I have a script which automatically imports all my comments from reddit into the day note.
-        *   People are sometimes wondering why. The answer is that I usually put some effort and thought into a comment and that's why I feel it's worth preserving, especially if it can be done automatically.
+*   Список задач на день (его можно автоматизировать — см. <a class="reference-link" href="../Advanced%20Usage/Advanced%20Showcases/Task%20Manager.md">Менеджер задач</a>)
+*   Личный дневник
+*   [Клоны](../Basic%20Concepts%20and%20Features/Notes/Cloning%20Notes.md) заметок, созданных в этот день (что-то вроде журнала того, над чем я работал).
+*   Я часто клонирую туда заметки (или поддеревья), например, проектов, над которыми работаю в конкретный день, чтобы они были под рукой.
+*   У меня есть [скрипты](../Scripting.md) для отслеживания некоторых ежедневных показателей (например, веса). Они сохраняются в одну ежедневную «заметку с данными» (по сути JSON-[заметку с кодом](../Note%20Types/Code.md)).
+    *   Другие скрипты помогают визуализировать эти данные (см. пример <a class="reference-link" href="../Advanced%20Usage/Advanced%20Showcases/Weight%20Tracker.md">Трекер веса</a>).
+    *   У меня есть скрипт, который автоматически импортирует все мои комментарии с Reddit в ежедневную заметку.
+        *   Люди иногда спрашивают зачем. Ответ прост: обычно я вкладываю в комментарий определённые усилия и мысли, поэтому считаю, что его стоит сохранить, особенно если это делается автоматически.
 
-For most notes, this day note placement is _secondary_ and their primary location is somewhere else (e.g. for a book review I've been working on it's _Book / Reviews_, not the day note). So for this pattern to work, ability to [clone](../Basic%20Concepts%20and%20Features/Notes/Cloning%20Notes.md) notes into multiple places is pretty fundamental.
+Для большинства заметок размещение в ежедневной заметке является _вторичным_, а их основное место находится в другом разделе (например, для обзора книги, над которым я работал, это _Книги / Обзоры_, а не ежедневная заметка). Поэтому для работы этого паттерна возможность [клонировать](../Basic%20Concepts%20and%20Features/Notes/Cloning%20Notes.md) заметки в несколько мест является фундаментальной.
 
-### Projects
+### Проекты
 
-_Project_ is pretty self-explanatory, for me specifically it also means being long term (years) - an example of a project might be Trilium Notes or university studies. Given their longevity, projects can be large and deep, but their structure is very domain specific, and I don't see any common patterns. What's pretty clear is they are often widely interconnected with other parts of the knowledge base - e.g. university credentials are cloned from "Credentials / University" top level notes and Trilium related blog posts are in "Blog / \[Name of the blog\] / Trilium".
+Понятие _Проект_ говорит само за себя; лично для меня оно также означает долгосрочность (годы) — примером проекта могут быть Trilium Notes или учёба в университете. Из-за длительности проекты могут быть большими и глубокими, но их структура сильно зависит от предметной области, и общих шаблонов я здесь не вижу. Очевидно одно: они часто тесно связаны с другими частями базы знаний — например, университетские учётные данные клонированы из заметок верхнего уровня «Учётные данные / Университет», а статьи в блоге о Trilium находятся в «Блог / \[Название блога\] / Trilium».
 
-_Epics_ are the same thing as projects, but differ in scope - they are typically several months long and as such are usually placed into a year note (e.g. _2018 / Epics_). Epics are often of work nature (also cloned into work note) and personal (e.g. currently I have large epic for moving to a different city).
+_Эпики_ — это то же самое, что и проекты, но меньшего масштаба: обычно они длятся несколько месяцев и поэтому размещаются в заметке года (например, _2018 / Эпики_). Эпики бывают рабочими (тогда они также клонируются в рабочую заметку) и личными (например, сейчас у меня есть крупный эпик по переезду в другой город).
 
-I don't have a term for short term projects (typically several days long), but continuing the scrum analogy I might call them _story_. These are often placed directly into day notes and manually moved from one day to another (or place into a month note, e.g. _2018 / 11 - November_).
+У меня нет термина для краткосрочных проектов (обычно на несколько дней), но, продолжая аналогию со Scrum, их можно назвать _историями_ (_story_). Их я часто размещаю прямо в ежедневных заметках и вручную переношу со дня на день (или помещаю в заметку месяца, например _2018 / 11 - Ноябрь_).
 
-### Credentials
+### Учётные данные
 
-I keep all my credentials in the knowledge base, they are sorted into categories - work related, project related, personal per country etc. These notes are of course [protected](../Basic%20Concepts%20and%20Features/Notes/Protected%20Notes.md) and are often cloned into other places (e.g. project credentials are cloned into the project itself). This is a pretty important advantage compared to traditional tools like KeePass - all the relevant information is centralized into one place without compromising security.
+Я храню все свои учётные данные в базе знаний, рассортированными по категориям — рабочие, проектные, личные по странам и т. д. Эти заметки, разумеется, [защищены](../Basic%20Concepts%20and%20Features/Notes/Protected%20Notes.md) и часто клонируются в другие места (например, учётные данные проекта клонируются в сам проект). Это очень важное преимущество по сравнению с традиционными инструментами вроде KeePass: вся нужная информация централизована в одном месте без ущерба для безопасности.
 
-### People profiles
+### Профили людей
 
-This might seem creepy to some, but I keep a profile on most people. It contains pretty standard things like date of birth, contacts, address, but also current and previous employments, their hobbies and worldviews and sometimes even important (IM/mail/meatspace) conversations. Just about everything I find notable. It helps to refresh some basic info before meeting people, especially if you haven't been in touch in a while. It gets pretty awkward to ask for the tenth time where do they work for example, because you keep forgetting it.
+Кому-то это может показаться странным, но я веду профиль почти на каждого знакомого. Он содержит стандартные вещи — дату рождения, контакты, адрес, а также текущее и прошлые места работы, хобби, взгляды и иногда даже важные разговоры (в мессенджерах, почте или вживую). Словом, всё, что кажется примечательным. Это помогает освежить базовую информацию перед встречей, особенно если вы давно не общались. Довольно неловко, например, в десятый раз спрашивать, где человек работает, просто потому что постоянно это забываешь.
 
-Naturally I have a lot of (extended) family members, friends, acquaintances etc. so I need some way to sort them. My main method is to sort them by social circle (work, high school, sports club etc.), sometimes also by their town of residence. Family _circle_ is still too large so the further organization is by _clan_ (as in "Smiths"). Some people are members of several such circles, so they are just cloned into multiple places.
+Разумеется, у меня много родственников, друзей, знакомых и т. д., поэтому нужен способ их сортировать. Мой основной метод — сортировка по кругу общения (работа, школа, спортивный клуб и т. д.), иногда также по городу проживания. Семейный _круг_ всё равно слишком велик, поэтому дальше идёт деление по _семьям/кланам_ (например, «Смиты»). Некоторые люди входят сразу в несколько кругов, поэтому они просто клонируются в несколько мест.
 
-For family specifically it's pretty useful to create a <a class="reference-link" href="../Note%20Types/Relation%20Map.md">Relation Map</a> to visualize relationships:
+Специально для семьи очень полезно создать <a class="reference-link" href="../Note%20Types/Relation%20Map.md">карту связей</a>, чтобы визуализировать родственные отношения:
 
 <figure class="image"><img style="aspect-ratio:941/758;" src="Patterns of personal knowledge_relation-map-family.png" width="941" height="758"></figure>
 
-### Books
+### Книги
 
-Of course, I keep standard "To read" list. I also keep a record on the books I've read - typically one book has one subtree where the root has some basic info like author, page count, publication date, date started, date finished (in the form of <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a>). I also write a (private) review and keep list of highlights from Kindle, optionally with some commentary, these are usually stored in sub notes (unless they are pretty short).
+Конечно, я веду обычный список «Прочитать». Я также веду учёт прочитанных книг: обычно у одной книги есть одно поддерево, где корневая заметка содержит базовую информацию — автора, количество страниц, дату публикации, дату начала и окончания чтения (в виде <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">продвигаемых атрибутов</a>). Я также пишу (личный) обзор и храню список цитат из Kindle, иногда с комментариями — обычно они хранятся в подзаметках (если не совсем короткие).
 
-To keep the list of books manageable, I sort them per year (of reading them), this also gives me some basic overview of "reading performance" for given year. I plan to create a [script](../Scripting.md) which would show some timeline chart visualizing book attributes `dateStarted` - `dateFinished` to have nicer view of my reading sprints and trends.
+Чтобы список книг оставался управляемым, я сортирую их по годам прочтения — это также даёт базовое представление о «темпе чтения» за год. Я планирую написать [скрипт](../Scripting.md), который строил бы временную шкалу по атрибутам книги `dateStarted` — `dateFinished`, чтобы нагляднее видеть мои читательские рывки и тенденции.
 
-Some specific authors also have their own note which contains cloned book reviews, links to interviews and other related resources.
+У некоторых авторов также есть своя заметка, содержащая клоны обзоров их книг, ссылки на интервью и другие связанные материалы.
 
-I have similar system for movies and TV shows, but not as sophisticated.
+Похожую, но менее сложную систему я использую для фильмов и сериалов.
 
-### Personal diary
+### Личный дневник
 
-This is a place to reflect on events, experiences, new findings etc. This can help you get deeper understanding of your inner self, clarify your thinking and make better decisions as a result.
+Это место для размышлений о событиях, переживаниях, новых открытиях и т. д. Это помогает лучше понимать себя, прояснять мысли и в результате принимать более взвешенные решения.
 
-I sort personal diary notes directly under _day note_ (explained above), but it can be cloned also to e.g. "trip note" (if the diary note is about given trip) or to person's profile (if the person plays a role in the diary note). All my diary notes are [protected](../Basic%20Concepts%20and%20Features/Notes/Protected%20Notes.md) since they are usually pretty sensitive.
+Записи личного дневника я размещаю прямо под _ежедневной заметкой_ (описанной выше), но их можно также клонировать, например, в «заметку о поездке» (если запись касается поездки) или в профиль человека (если он играет роль в этой записи). Все мои дневниковые заметки [защищены](../Basic%20Concepts%20and%20Features/Notes/Protected%20Notes.md), поскольку обычно содержат очень личную информацию.
 
-### Documents
+### Документы
 
-I keep all my personal documents (ID, passport, education certificates ...) scanned in the knowledge base. They are [synchronized](../Installation%20%26%20Setup/Synchronization.md) across every PC which provides decent backup and makes them available everywhere.
+Я храню отсканированные копии всех личных документов (удостоверение личности, паспорт, дипломы...) в базе знаний. Они [синхронизируются](../Installation%20%26%20Setup/Synchronization.md) между всеми ПК, что обеспечивает надёжное резервное копирование и доступность отовсюду.
 
-Advantage compared to e.g. keeping them in Dropbox or Google Drive is that they are not stored on some 3rd party server and they can be encrypted (see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Protected%20Notes.md">Protected Notes</a>).
+Преимущество по сравнению с хранением, например, в Dropbox или Google Диске в том, что они не лежат на стороннем сервере и могут быть зашифрованы (см. <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Protected%20Notes.md">Защищённые заметки</a>).
 
-### Inventory
+### Инвентарь
 
-Inventory contains documents and other relevant importation for my important belongings - e.g. for car you can keep the registration card, maintenance record, related costs etc. I also keep inventory for some items personally important to me - mainly computers, phones, cameras and similar electronics. This can be practical at times but also provides sentimental value.
+Инвентарь содержит документы и другую важную информацию о значимых вещах — например, для автомобиля можно хранить свидетельство о регистрации, историю обслуживания, связанные расходы и т. д. Я также веду учёт некоторых лично важных для меня вещей — в основном компьютеров, телефонов, камер и подобной электроники. Иногда это практично, а кроме того, имеет сентиментальную ценность.
 
-### Topic knowledge base
+### Тематическая база знаний
 
-This where I store hard "knowledge" - summarized topics and findings from different domains. Topics can range from traditional sciences - physics, history, economy to philosophy, mental models, apps (notes about specific apps I use) etc. Of course this is very subjective - given what I do, my Physics sub-tree is pretty sparse compared to my Programming subtree.
+Здесь я храню «твёрдые» знания — конспекты тем и выводы из разных областей. Темы варьируются от традиционных наук (физика, история, экономика) до философии, ментальных моделей, приложений (заметки о конкретных программах, которыми я пользуюсь) и т. д. Разумеется, это очень субъективно: учитывая род моей деятельности, поддерево по физике довольно скромное по сравнению с поддеревом по программированию.
 
-### Work knowledge base
+### Рабочая база знаний
 
-I usually keep top level note for the company I currently work at (past jobs are moved elsewhere). I track basic organization of the company (divisions, business units), who is who (<a class="reference-link" href="../Note%20Types/Relation%20Map.md">Relation Map</a>) are again useful for visualization), projects I work at etc.
+Обычно я веду заметку верхнего уровня для компании, в которой работаю сейчас (прошлые места работы переносятся в другое место). Я фиксирую базовую структуру компании (подразделения, отделы), кто есть кто (для визуализации снова полезна <a class="reference-link" href="../Note%20Types/Relation%20Map.md">карта связей</a>), проекты, над которыми работаю, и т. д.
 
-There's a number of credentials to various company services I need to use. Companies usually have a bunch of complex processes and tools. I record meeting minutes, link to the company wiki (which is usually difficult to find relevant info). In general there's a lot of company specific information I need to know or need have them at hand in a nice structure I can understand. Often it's just copy pasting and reshuffling of existing information into something more understandable for me.
+Есть множество учётных данных для разных корпоративных сервисов, которыми нужно пользоваться. В компаниях обычно много сложных процессов и инструментов. Я записываю протоколы встреч, ссылки на корпоративную вики (в которой обычно трудно найти нужную информацию). В целом накапливается много специфичной для компании информации, которую нужно знать или держать под рукой в понятной мне структуре. Часто это просто копирование и перекомпоновка существующей информации в более удобный для меня вид.
 
-From my experience, keeping this makes me more productive and even more importantly dramatically reduces frustration and stress.
+По моему опыту, ведение такой базы делает меня продуктивнее, а главное — резко снижает раздражение и стресс.
 
-## Conclusion
+## Заключение
 
-I could probably go on with more patterns (e.g. study notes, travelling), but I think you get the idea. Whatever is important in your life, it probably makes sense to document and track it.
+Я мог бы продолжать перечислять и другие паттерны (например, учебные конспекты, путешествия), но думаю, идея понятна. Всё, что важно в вашей жизни, вероятно, имеет смысл документировать и отслеживать.

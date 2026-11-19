@@ -1,9 +1,9 @@
-# Troubleshooting
-## Why is my widget clipped by other UI elements
+# Устранение неполадок
+## Почему мой виджет обрезается другими элементами интерфейса
 
-For performance and layout reasons, the size of widgets in Trilium is independent from its children. At CSS level, this means that the widget container has `contain: size` applied to it.
+По соображениям производительности и вёрстки размер виджетов в Trilium не зависит от их дочерних элементов. На уровне CSS это означает, что к контейнеру виджета применено правило `contain: size`.
 
-This works well if the widget has a fixed size (or based on its parent container), however to make a widget resize to fit its content, apply the following change:
+Это хорошо работает, если виджет имеет фиксированный размер (или зависит от родительского контейнера), однако чтобы виджет подстраивал свой размер под содержимое, внесите следующее изменение:
 
 ```diff
 class MyWidget extends api.RightPanelWidget {
@@ -16,4 +16,4 @@ class MyWidget extends api.RightPanelWidget {
 }
 ```
 
-Alternatively apply `contain: none` to its CSS.
+В качестве альтернативы примените `contain: none` в его CSS.

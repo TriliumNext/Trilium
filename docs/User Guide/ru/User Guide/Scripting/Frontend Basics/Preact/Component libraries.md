@@ -1,17 +1,17 @@
-# Component libraries
-Using the concept of <a class="reference-link" href="../../Common%20concepts/Script%20bundles.md">Script bundles</a>, it's possible to create components that are shared for multiple widgets or <a class="reference-link" href="../../../Note%20Types/Render%20Note.md">Render Note</a>.
+# Библиотеки компонентов
+Используя концепцию <a class="reference-link" href="../../Common%20concepts/Script%20bundles.md">пакетов скриптов</a>, можно создавать компоненты, которые используются совместно в нескольких виджетах или <a class="reference-link" href="../../../Note%20Types/Render%20Note.md">заметках рендеринга</a>.
 
-## Exporting a single component
+## Экспорт одного компонента
 
-This is generally useful for big components.
+Обычно это полезно для крупных компонентов.
 
-Here's an example child hierarchy using <a class="reference-link" href="../../../Note%20Types/Render%20Note.md">Render Note</a>: 
+Вот пример иерархии дочерних заметок с использованием <a class="reference-link" href="../../../Note%20Types/Render%20Note.md">заметки рендеринга</a>: 
 
 *   _My render note_  
-    Note type: Render Note  
-    Link `~renderNote` to the child note (_Render note with subcomponents_)
+    Тип заметки: Render Note (Заметка рендеринга)  
+    Укажите связь `~renderNote` на дочернюю заметку (_Render note with subcomponents_)
     *   _Render note with subcomponents_  
-        Type: JSX
+        Тип: JSX
         
         ```jsx
         export default function() {
@@ -22,7 +22,7 @@ Here's an example child hierarchy using <a class="reference-link" href="../../.
         ```
         
         *   _MyComponent_  
-            Type: Code / JSX
+            Тип: Код / JSX
             
             ```jsx
             export default function MyComponent() {
@@ -30,11 +30,11 @@ Here's an example child hierarchy using <a class="reference-link" href="../../.
             }
             ```
 
-## Multiple components per note
+## Несколько компонентов в одной заметке
 
-To export multiple components, use the `export` keyword next to each of the function components.
+Чтобы экспортировать несколько компонентов, используйте ключевое слово `export` перед каждым функциональным компонентом.
 
-Here's how a sub-note called `MyComponents` would look like:
+Вот как может выглядеть подзаметка с названием `MyComponents`:
 
 ```jsx
 export function MyFirstComponent() {
@@ -46,7 +46,7 @@ export function MySecondComponent() {
 }
 ```
 
-Then in its parent note:
+Затем в родительской заметке:
 
 ```jsx
 const { MyFirstComponent, MySecondComponent } = MyComponents;
@@ -61,7 +61,7 @@ export default function() {
 }
 ```
 
-Alternatively, it's also possible to use the components directly without assigning them to a `const` first:
+В качестве альтернативы компоненты можно использовать напрямую, без предварительного присваивания в `const`:
 
 ```jsx
 <MyComponents.MyFirstComponent />

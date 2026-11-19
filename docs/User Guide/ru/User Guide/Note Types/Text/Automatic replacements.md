@@ -1,61 +1,61 @@
-# Automatic replacements
-## Automatic replacements
+# Автоматические замены
+## Автоматические замены
 
-As you type in a text note, certain character sequences are replaced with the typographic symbol they represent. Typing `(c)` gives you `©`, `...` gives you `…`, and `"quote"` gives you `“quote”`.
+При наборе текста в текстовой заметке определённые последовательности символов заменяются соответствующими типографскими знаками. Например, `(c)` превращается в `©`, `...` — в `…`, а `"quote"` — в `“quote”`.
 
-These replacements are not applied inside code blocks or inline code, and pasted text is never affected, only text you type. If you have pasted a code snippet, or written one inside a code block, its characters are left exactly as they are.
+Эти замены не применяются внутри блоков кода или встроенного кода, а вставленный из буфера обмена текст никогда не затрагивается — только набираемый вами текст. Если вы вставили фрагмент кода или написали его внутри блока кода, его символы остаются точно такими же.
 
-### Undoing a replacement
+### Отмена замены
 
-Once an automatic replacement takes place, it can be undone by:
+После того как автоматическая замена сработала, её можно отменить следующими способами:
 
-*   Pressing <kbd>Backspace</kbd> immediately after a replacement undoes it and restores what you typed.
-    *   Note that this consumes the undo, so a further <kbd>Ctrl</kbd>+<kbd>Z</kbd> might delete your typed text.
-    *   Pressing <kbd>Space</kbd> or changing the cursor position disables this functionality.
-*   Pressing <kbd>Ctrl</kbd>+<kbd>Z</kbd>, which works even after pressing space.
+*   Нажатие <kbd>Backspace</kbd> сразу после замены отменяет её и возвращает набранные вами символы.
+    *   Обратите внимание, что это расходует шаг отмены, поэтому последующее нажатие <kbd>Ctrl</kbd>+<kbd>Z</kbd> может удалить набранный текст.
+    *   Нажатие <kbd>Space</kbd> или перемещение курсора отключает эту возможность.
+*   Нажатие <kbd>Ctrl</kbd>+<kbd>Z</kbd>, которое работает даже после нажатия пробела.
 
-### Replacement groups & configuration
+### Группы замен и настройка
 
-Each group can be turned off in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text notes_ → _Automatic replacements_.
+Каждую группу можно отключить в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Text notes_ → _Automatic replacements_.
 
-| Group | What it replaces |
+| Группа | Что заменяется |
 | --- | --- |
-| Punctuation | `...` with an ellipsis (`…`), and `--` and `---` _surrounded by spaces_ with an en dash (`–`) and an em dash (`—`) |
-| Mathematical symbols | fractions such as `1/2` with `½`, and the operators `<=`, `>=`, `!=`, `<-` and `->` with `≤`, `≥`, `≠`, `←` and `→` |
-| Copyright and trademark | `(c)`, `(r)` and `(tm)` with `©`, `®` and `™` |
-| Quotation marks | straight quotes with typographic ones — see below |
+| Пунктуация (Punctuation) | `...` на многоточие (`…`), а `--` и `---`, _окружённые пробелами_, на короткое (`–`) и длинное (`—`) тире |
+| Математические символы (Mathematical symbols) | дроби вроде `1/2` на `½`, а операторы `<=`, `>=`, `!=`, `<-` и `->` на `≤`, `≥`, `≠`, `←` и `→` |
+| Авторские права и товарные знаки (Copyright and trademark) | `(c)`, `(r)` и `(tm)` на `©`, `®` и `™` |
+| Кавычки (Quotation marks) | прямые кавычки на типографские — см. ниже |
 
-## Quotation marks
+## Кавычки
 
-Quotation marks are configured separately from the rest, with one setting for the **double** quote key and one for the **single** quote key, because which pair belongs on which key differs between conventions: British typography traditionally sets a quotation in `‘…’` where American sets it in `“…”`.
+Кавычки настраиваются отдельно от остальных групп: есть отдельная настройка для клавиши **двойных** кавычек и отдельная — для клавиши **одинарных** кавычек, поскольку в разных традициях пары распределяются по-разному: британская типографика традиционно использует `‘…’`, тогда как американская — `“…”`.
 
-Each offers:
+Для каждой настройки доступны варианты:
 
-*   _Based on the note's content language_ (the default) — English gives `“quote”`, German `„quote“`, French `« quote »`, Japanese `「quote」`. See <a class="reference-link" href="Content%20language%20%26%20Right-to-left%20support.md">Content language &amp; Right-to-left support</a> for how a note's language is decided.
-*   _Disabled,_ straight quotes stay straight.
-*   A specific pair\_:\_ `“…”`, `‘…’`, `„…“`, `„…”`, `«…»`, `« … »`, `‹…›`, `「…」`, `『…』`. Choosing one applies it to every note, regardless of its content language.
+*   _Based on the note's content language_ (по умолчанию) — в зависимости от языка содержимого заметки: английский даёт `“quote”`, немецкий — `„quote“`, французский — `« quote »`, японский — `「quote」`. Подробнее о том, как определяется язык заметки, см. в разделе <a class="reference-link" href="Content%20language%20%26%20Right-to-left%20support.md">Язык содержимого и поддержка письма справа налево</a>.
+*   _Disabled_ — прямые кавычки остаются прямыми.
+*   Конкретная пара: `“…”`, `‘…’`, `„…“`, `„…”`, `«…»`, `« … »`, `‹…›`, `「…」`, `『…』`. Выбор конкретной пары применяет её ко всем заметкам независимо от языка содержимого.
 
-## Custom replacements
+## Пользовательские замены
 
-You can add your own under <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text notes_ → _Automatic replacements_ → _Custom replacements_. Type the text to replace and the replacement, then press Enter. Existing ones are shown as chips and removed with the × on each.
+Вы можете добавить собственные замены в разделе <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Text notes_ → _Automatic replacements_ → _Custom replacements_. Введите заменяемый текст и текст замены, затем нажмите Enter. Существующие замены отображаются в виде чипов и удаляются нажатием на × на каждом из них.
 
-A custom replacement is applied when the text is typed as a whole word and followed by a space, so longer words that begin with it are left alone — a `TN` replacement does not rewrite the end of `BTN`, and `TNT` can still be typed.
+Пользовательская замена применяется, когда текст набран как отдельное слово и за ним следует пробел, поэтому более длинные слова, начинающиеся с него, не затрагиваются — замена для `TN` не перепишет конец слова `BTN`, и слово `TNT` по-прежнему можно набрать.
 
-Capitalization follows what you type, unless the replacement has capitals of its own:
+Регистр букв соответствует набранному тексту, если только сама замена не содержит заглавных букв:
 
-| **Replacement you defined** | **You type** | **You get** |
+| **Заданная замена** | **Вы набираете** | **Вы получаете** |
 | --- | --- | --- |
 | `teh` → `the` | `teh` / `Teh` / `TEH` | `the` / `The` / `THE` |
-| `TN` → `Trilium Notes` | `TN` or `tn` | `Trilium Notes` (unchanged, it has capitals) |
+| `TN` → `Trilium Notes` | `TN` или `tn` | `Trilium Notes` (без изменений, содержит заглавные) |
 
-Of note:
+Обратите внимание:
 
-*   The text to replace is matched literally; it is not a pattern.
-*   Typing a "text to replace" that already exists in the list of replacements will update the existing one instead. It's not possible to have multiple replacements for the same text.
-*   The same “text to replace” with different capitalization (e.g. `TN` and `tn` co-existing) doesn't work because it would interfere with the capitalization rules above.
+*   Заменяемый текст сопоставляется буквально; это не шаблон.
+*   Ввод «заменяемого текста», который уже есть в списке замен, обновит существующую запись. Невозможно иметь несколько замен для одного и того же текста.
+*   Один и тот же «заменяемый текст» в разном регистре (например, одновременное существование `TN` и `tn`) не поддерживается, так как это противоречило бы правилам регистра выше.
 
-## Characters that only look replaced (ligatures)
+## Символы, которые только выглядят заменёнными (лигатуры)
 
-If you see `!=` displayed as `≠` or `->` as `→` inside a code block, that is not a replacement since replacements never run there (unless a code block is applied to an existing text). It is a _font ligature_: the default monospace font draws certain character pairs as a single symbol. The underlying text is unchanged, and copying it out gives you back `!=` and `->`.
+Если вы видите, что `!=` отображается как `≠` или `->` как `→` внутри блока кода, это не замена, поскольку замены там не выполняются (если только стиль блока кода не был применён к уже существующему тексту). Это _шрифтовая лигатура_: моноширинный шрифт по умолчанию рисует определённые пары символов как единый знак. Сам текст при этом не меняется, и при копировании вы получите обратно `!=` и `->`.
 
-This can be turned off with <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a>_→ Appearance → Fonts → Programming ligatures._
+Это можно отключить в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> _→ Appearance → Fonts → Programming ligatures._

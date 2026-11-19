@@ -1,38 +1,38 @@
-# Developer-specific formatting
-### Inline code
+# Форматирование для разработчиков
+### Встроенный код
 
-Inline code formats text using a monospace font to indicate technical content in a sentence such as code, paths, etc.
+Встроенный код форматирует текст моноширинным шрифтом, чтобы выделить технические элементы внутри предложения — например, код, пути к файлам и т. д.
 
 ![](Developer-specific%20formatting_image.png)
 
-Example of inline code being used to illustrate file system paths as well as shell commands (`git` in this case).
+Пример использования встроенного кода для обозначения путей файловой системы и команд оболочки (в данном случае `git`).
 
-To insert an inline code:
+Чтобы вставить встроенный код:
 
-*   Via the [Formatting toolbar](Formatting%20toolbar.md), look for the <span class="tn-icon cke cke-code"></span> button.
-*   Type \`code\` where `code` is the desired text to be automatically formatted as inline code.
-*   Paste a single line copied from Visual Studio Code. See [Code blocks](Developer-specific%20formatting/Code%20blocks.md) for pasting several lines.
+*   На [панели форматирования](Formatting%20toolbar.md) найдите кнопку <span class="tn-icon cke cke-code"></span>.
+*   Введите \`code\`, где `code` — нужный текст, который автоматически отформатируется как встроенный код.
+*   Вставьте одну строку, скопированную из Visual Studio Code. О вставке нескольких строк см. в разделе [Блоки кода](Developer-specific%20formatting/Code%20blocks.md).
 
-### Code blocks
+### Блоки кода
 
-Code blocks display a snippet of code as a dedicated block:
+Блоки кода отображают фрагмент кода в виде отдельного блока:
 
 ![](1_Developer-specific%20formatting_image.jpg)
 
-A code block with JavaScript syntax highlight enabled.
+Блок кода с включённой подсветкой синтаксиса JavaScript.
 
-Note that these are not meant for very large portions of code. Use the dedicated [Code](../Code.md) note type instead.
+Обратите внимание, что они не предназначены для очень больших фрагментов кода. В таких случаях используйте специальный тип заметок [Код](../Code.md).
 
-See the dedicated documentation for more information: [Code blocks](Developer-specific%20formatting/Code%20blocks.md)
+Подробнее см. в отдельной документации: [Блоки кода](Developer-specific%20formatting/Code%20blocks.md)
 
-### Keyboard shortcuts
+### Сочетания клавиш
 
-This allows marking a portion of text as a shortcut key.
+Позволяет оформить фрагмент текста как сочетание клавиш.
 
 ![](Developer-specific%20formatting_image.jpg)
 
-To apply this style, press the <span class="tn-icon cke cke-trilium-kbd"></span> button in <span class="tn-icon bx bx-text"></span> group from the [Formatting toolbar](Formatting%20toolbar.md). On the floating toolbar, the buttons appear when selecting a text.
+Чтобы применить этот стиль, нажмите кнопку <span class="tn-icon cke cke-trilium-kbd"></span> в группе <span class="tn-icon bx bx-text"></span> на [панели форматирования](Formatting%20toolbar.md). На плавающей панели инструментов эти кнопки появляются при выделении текста.
 
-Alternatively, press the <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd> combination to apply keyboard shortcut formatting to the current text selection.
+Либо нажмите сочетание <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd>, чтобы применить форматирование сочетания клавиш к текущему выделению текста.
 
-The formatting can be removed by pressing again the button (from the UI or from the keyboard), or by using the <span class="tn-icon cke cke-remove-format"></span> _Remove formatting_ button.
+Форматирование можно снять, повторно нажав кнопку (в интерфейсе или с клавиатуры) либо воспользовавшись кнопкой <span class="tn-icon cke cke-remove-format"></span> _Remove formatting_.

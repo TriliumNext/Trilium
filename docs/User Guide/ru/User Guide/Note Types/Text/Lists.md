@@ -1,92 +1,92 @@
-# Lists
-There are three types of lists supported by text notes:
+# Списки
+Текстовые заметки поддерживают три типа списков:
 
-*   <span class="tn-icon cke cke-bulleted-list"></span> Bulleted lists (also known as unordered lists).
-*   <span class="tn-icon cke cke-numbered-list"></span> Numbered lists (or ordered lists).
-*   <span class="tn-icon cke cke-todo-list"></span> To-do lists
+*   <span class="tn-icon cke cke-bulleted-list"></span> Маркированные списки (неупорядоченные).
+*   <span class="tn-icon cke cke-numbered-list"></span> Нумерованные списки (упорядоченные).
+*   <span class="tn-icon cke cke-todo-list"></span> Списки задач
 
-For bulleted and numbered lists, it's possible to configure an alternative marker such as squares or Roman numbering by pressing the <span class="tn-icon cke cke-dropdown-arrow"></span> icon. For numbered lists, it's also possible to specify the number to start at or whether to count in reverse order. On the <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>, these are in the row of the _List ›_ button, which shows while the cursor is in a list; its _List type_ button also turns the list into another kind, to-do lists included.
+Для маркированных и нумерованных списков можно выбрать другой маркер (например, квадраты или римские цифры), нажав значок <span class="tn-icon cke cke-dropdown-arrow"></span>. Для нумерованных списков также можно указать начальный номер или обратный порядок нумерации. В <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">мобильном интерфейсе</a> эти настройки находятся в строке кнопки _List ›_, которая появляется, когда курсор находится в списке; её кнопка _Тип списка_ также позволяет преобразовать список в другой тип, включая списки задач.
 
-## Keyboard interaction
+## Работа с клавиатуры
 
-*   To create a new list:
-    *   Bulleted list: Start a line with `*` or `-` followed by a space;
-    *   Numbered list: Start a line with `1.` or `1)` followed by a space;
-    *   To-do list: Start a line with `- [ ]` for an unchecked item or `[x]` for a checked item.
-*   To create a new item in the list, press <kbd>Enter</kbd>.
-*   To create a blank line within a list item, press <kbd>Shift</kbd>+<kbd>Enter</kbd>.
-*   To exit out of the list, press <kbd>Enter</kbd> twice.
-*   To merge two lists, simply delete the gap between them.
-*   To create nested lists, simply use the <span class="tn-icon cke cke-indent"></span> button (see _Indentation_ in <a class="reference-link" href="Other%20features.md">Other features</a>) or the <kbd>Tab</kbd> key. To decrease the nesting level for the current element, press <kbd>Shift</kbd>+<kbd>Tab</kbd>.
-*   The menu of the block handle, described in <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, has _Insert item above_, _Insert item below_ and _Insert child item_, which add an empty item above the item, below it and its nested items, or as its first nested item.
+*   Чтобы создать новый список:
+    *   Маркированный список: начните строку с `*` или `-` и пробела;
+    *   Нумерованный список: начните строку с `1.` или `1)` и пробела;
+    *   Список задач: начните строку с `- [ ]` для невыполненного пункта или `[x]` для выполненного.
+*   Чтобы создать новый пункт списка, нажмите <kbd>Enter</kbd>.
+*   Чтобы добавить пустую строку внутри пункта списка, нажмите <kbd>Shift</kbd>+<kbd>Enter</kbd>.
+*   Чтобы выйти из списка, нажмите <kbd>Enter</kbd> дважды.
+*   Чтобы объединить два списка, просто удалите промежуток между ними.
+*   Чтобы создать вложенные списки, используйте кнопку <span class="tn-icon cke cke-indent"></span> (см. _Отступы_ в разделе <a class="reference-link" href="Other%20features.md">Другие функции</a>) или клавишу <kbd>Tab</kbd>. Чтобы уменьшить уровень вложенности текущего элемента, нажмите <kbd>Shift</kbd>+<kbd>Tab</kbd>.
+*   В меню маркера блока, описанном на странице <a class="reference-link" href="Formatting%20toolbar.md">Панель форматирования</a>, есть пункты _Вставить элемент выше_, _Вставить элемент ниже_ и _Вставить дочерний элемент_, которые добавляют пустой пункт выше текущего, ниже него и его вложенных пунктов либо как первый вложенный пункт.
 
-## Headings, code blocks within lists
+## Заголовки и блоки кода внутри списков
 
-It possible to add content-level blocks such as headings, code blocks, tables within lists, as follows:
+В списки можно добавлять блочные элементы, такие как заголовки, блоки кода и таблицы, следующим образом:
 
 <table>
     <tbody>
         <tr>
             <td>1</td>
             <td><img src="2_Lists_image.jpg"></td>
-            <td>First, create a list.</td>
+            <td>Сначала создайте список.</td>
         </tr>
         <tr>
             <td>2</td>
             <td><img src="4_Lists_image.jpg"></td>
-            <td>Press Enter to create a new list item.</td>
+            <td>Нажмите Enter, чтобы создать новый пункт списка.</td>
         </tr>
         <tr>
             <td>3</td>
             <td><img src="1_Lists_image.jpg"></td>
-            <td>Press Backspace to get rid of the bullet point. Notice the cursor position.</td>
+            <td>Нажмите Backspace, чтобы убрать маркер. Обратите внимание на положение курсора.</td>
         </tr>
         <tr>
             <td>4</td>
             <td><img class="image_resized" style="aspect-ratio:676/112;width:98.29%;" src="5_Lists_image.jpg" width="676" height="112"></td>
-            <td>At this point, insert any desired block-level item such as a code block.</td>
+            <td>Теперь вставьте любой нужный блочный элемент, например блок кода.</td>
         </tr>
         <tr>
             <td>5</td>
             <td><img class="image_resized" style="aspect-ratio:675/129;width:94.22%;" src="3_Lists_image.jpg" width="675" height="129"></td>
-            <td>To continue with a new bullet point, press Enter until the cursor moves to a new blank position.</td>
+            <td>Чтобы продолжить новым пунктом списка, нажимайте Enter, пока курсор не перейдёт на новую пустую позицию.</td>
         </tr>
         <tr>
             <td>6</td>
             <td><img class="image_resized" style="aspect-ratio:675/129;width:100%;" src="Lists_image.jpg" width="675" height="129"></td>
-            <td>Press Enter once more to create the new bullet.</td>
+            <td>Нажмите Enter ещё раз, чтобы создать новый маркер.</td>
         </tr>
     </tbody>
 </table>
 
-The same principle applies to all three list types (bullet, numbered and to-do).
+Тот же принцип работает для всех трёх типов списков (маркированных, нумерованных и списков задач).
 
-## Sorting
+## Сортировка
 
-The items of a list can be sorted, nested items moving with the item they belong to. This is experimental, see <a class="reference-link" href="Sorting.md">Sorting</a>.
+Пункты списка можно сортировать, при этом вложенные элементы перемещаются вместе со своим родительским пунктом. Это экспериментальная функция, см. <a class="reference-link" href="Sorting.md">Сортировка</a>.
 
-## Alignment
+## Выравнивание
 
-A list item can be centered or aligned to the right, either with the text alignment button in the formatting toolbar or by aligning the <a class="reference-link" href="Tables.md">Tables</a> cell that contains the list. The bullet, number or checkbox then moves together with the text of the item.
+Пункт списка можно выровнять по центру или по правому краю с помощью кнопки выравнивания текста на панели форматирования или выровняв ячейку <a class="reference-link" href="Tables.md">таблицы</a>, в которой находится список. Маркер, номер или флажок перемещается вместе с текстом пункта.
 
-## To-do lists
+## Списки задач
 
-See <a class="reference-link" href="To-do%20Lists.md">To-do Lists</a>.
+См. <a class="reference-link" href="To-do%20Lists.md">Списки задач</a>.
 
-## Collapsible lists
+## Сворачиваемые списки
 
-Starting with Trilium v0.104.0, it is possible to collapse nested list items. This applies to bullet lists, numbered lists as well as to-do lists.
+Начиная с Trilium v0.104.0 вложенные пункты списков можно сворачивать. Это работает для маркированных, нумерованных и списков задач.
 
-To collapse or expand a list item that has nested sub-items:
+Чтобы свернуть или развернуть пункт списка с вложенными подпунктами:
 
-*   Using the mouse, move the cursor over the list item and an arrow will appear to its left. Clicking it will toggle between collapsed and expanded.
-*   For bullet lists and numbered lists, it's also possible to click directly on the marker (e.g. the bullet or the number) instead of on the arrow to collapse or expand it. This won't work for to-do lists since this would toggle the to-do instead.
-*   Press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Enter</kbd> which will toggle the collapse/expand state for the item at the cursor position.
+*   Наведите курсор мыши на пункт списка — слева появится стрелка. Клик по ней переключает состояние между свёрнутым и развёрнутым.
+*   Для маркированных и нумерованных списков можно также кликнуть прямо по маркеру (точке или номеру) вместо стрелки. Для списков задач это не работает, так как клик по флажку отмечает задачу выполненной.
+*   Нажмите <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Enter</kbd>, чтобы свернуть или развернуть пункт в позиции курсора.
 
-Of note:
+Примечания:
 
-*   Collapsed items always show the arrow to indicate its state.
-*   The collapsed state is saved at note level and synced across instances, which means that it will restore after a refresh or reopening of the application.
-*   The collapsed state is also persisted in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md">Import &amp; Export</a>, but only for the HTML format. Markdown exports will not preserve the collapse state.
-*   Collapsible bullets only exist in the context of editable text notes. Read-only lists will always be fully expanded.
-*   The list items will auto-expand on edit to avoid typing in a hidden area.
+*   Свёрнутые пункты всегда показывают стрелку для обозначения своего состояния.
+*   Состояние сворачивания сохраняется на уровне заметки и синхронизируется между устройствами, то есть восстанавливается после обновления страницы или перезапуска приложения.
+*   Состояние сворачивания также сохраняется при <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md">Импорте и экспорте</a>, но только для формата HTML. При экспорте в Markdown оно не сохраняется.
+*   Сворачиваемые списки работают только в редактируемых текстовых заметках. В режиме только для чтения списки всегда полностью развёрнуты.
+*   Пункты списка автоматически разворачиваются при редактировании, чтобы избежать ввода в скрытую область.

@@ -1,16 +1,16 @@
-# Note context aware widget
-Note context-aware widgets are a different type of widget which automatically react to changes in the current note.
+# Виджет, отслеживающий контекст заметки
+Виджеты, отслеживающие контекст заметки (note context-aware widgets), — это отдельный тип виджетов, которые автоматически реагируют на изменения текущей заметки.
 
-Important aspects:
+Важные особенности:
 
-*   The widget must export a `class` and not an instance of the class (e.g. `no new`) because it needs to be multiplied for each note, so that splits work correctly.
-*   Since the `class` is exported instead of an instance, the `parentWidget` getter must be `static`, otherwise the widget is ignored.
+*   Виджет должен экспортировать `class`, а не экземпляр класса (то есть без `new`), поскольку его необходимо создавать отдельно для каждой заметки, чтобы разделение экрана работало корректно.
+*   Поскольку экспортируется `class`, а не экземпляр, геттер `parentWidget` должен быть `static`, иначе виджет будет проигнорирован.
 
-## Example displaying the current note title
+## Пример отображения заголовка текущей заметки
 
-This is a note context-aware widget that simply displays the name the current note. 
+Это виджет с отслеживанием контекста заметки, который просто отображает название текущей заметки.
 
-### Classic example
+### Классический пример
 
 ```
 class HelloNoteDetail extends api.NoteContextAwareWidget {

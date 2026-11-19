@@ -1,13 +1,13 @@
-# Using Kubernetes
-As Trilium can be run in Docker it also can be deployed in Kubernetes. You can either use our Helm chart, a community Helm chart, or roll your own Kubernetes deployment.
+# Использование Kubernetes
+Поскольку Trilium можно запускать в Docker, его также можно развернуть в Kubernetes. Вы можете использовать наш Helm-чарт, неофициальный Helm-чарт от сообщества или создать собственное развёртывание Kubernetes.
 
-The recommended way is to use a Helm chart.
+Рекомендуемый способ — использовать Helm-чарт.
 
-## Root privileges
+## Права root
 
-By default, the Trilium container starts as root, gives the data directory to UID and GID `1000:1000` and then runs Trilium with those reduced privileges, so no init container is needed to fix the permissions. To use a different UID and GID, set the `USER_UID` and `USER_GID` environment variables.
+По умолчанию контейнер Trilium запускается от имени root, передаёт каталог данных пользователю и группе с UID и GID `1000:1000`, а затем запускает Trilium с этими пониженными правами, поэтому init-контейнер для исправления прав доступа не требуется. Чтобы использовать другие UID и GID, задайте переменные окружения `USER_UID` и `USER_GID`.
 
-Starting with v0.107.0, the container can also run without root, which a `restricted` Pod Security Standard requires. Set the user in the pod's security context, and `fsGroup` so that Kubernetes gives the volume to that group:
+Начиная с версии v0.107.0, контейнер также может запускаться без прав root, что требуется стандартом безопасности подов `restricted` (Pod Security Standard). Задайте пользователя в `securityContext` пода, а также `fsGroup`, чтобы Kubernetes передал том этой группе:
 
 ```yaml
 securityContext:
@@ -17,27 +17,27 @@ securityContext:
   fsGroup: 1000
 ```
 
-In that mode `USER_UID` and `USER_GID` are ignored. See the section on running as a non-root user in <a class="reference-link" href="Using%20Docker.md">Using Docker</a> for what the data directory needs.
+В этом режиме `USER_UID` и `USER_GID` игнорируются. Подробнее о требованиях к каталогу данных см. в разделе о запуске от имени обычного пользователя в <a class="reference-link" href="Using%20Docker.md">Использование Docker</a>.
 
-## Helm Charts
+## Helm-чарты
 
-[Official Helm chart](https://github.com/TriliumNext/helm-charts) from TriliumNext Unofficial helm chart by [ohdearaugustin](https://github.com/ohdearaugustin): [https://github.com/ohdearaugustin/charts](https://github.com/ohdearaugustin/charts)
+[Официальный Helm-чарт](https://github.com/TriliumNext/helm-charts) от TriliumNext Неофициальный Helm-чарт от [ohdearaugustin](https://github.com/ohdearaugustin): [https://github.com/ohdearaugustin/charts](https://github.com/ohdearaugustin/charts)
 
-## Adding a Helm repository
+## Добавление репозитория Helm
 
-Below is an example of how
+Ниже приведён пример того, как это сделать:
 
 ```
 helm repo add trilium https://triliumnext.github.io/helm-charts
 "trilium" has been added to your repositories
 ```
 
-## How to install a chart
+## Установка чарта
 
-After reviewing the [`values.yaml`](https://github.com/TriliumNext/helm-charts/blob/main/charts/trilium/values.yaml) from the Helm chart, modifying as required and then creating your own:
+После изучения файла [`values.yaml`](https://github.com/TriliumNext/helm-charts/blob/main/charts/trilium/values.yaml) из Helm-чарта, внесения необходимых изменений и создания собственного файла выполните:
 
 ```
 helm install --create-namespace --namespace trilium trilium trilium/trilium -f values.yaml
 ```
 
-For more information on using Helm, please refer to the Helm documentation, or create a Discussion in the TriliumNext GitHub Organization.
+Для получения дополнительной информации об использовании Helm обратитесь к документации Helm или создайте обсуждение (Discussion) в организации TriliumNext на GitHub.

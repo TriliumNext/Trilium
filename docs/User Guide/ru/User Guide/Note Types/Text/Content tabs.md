@@ -1,122 +1,122 @@
-# Content tabs
-Content tabs group several titled panels of content into one block that shows a single panel at a time. They suit content that comes in variants (such as installation steps for each operating system or the same snippet in several programming languages).
+# Вкладки содержимого
+Вкладки содержимого объединяют несколько озаглавленных панелей в один блок, который отображает по одной панели за раз. Они хорошо подходят для содержимого в нескольких вариантах (например, инструкций по установке для разных операционных систем или одного и того же фрагмента кода на разных языках программирования).
 
-A tabs block consists of:
+Блок вкладок состоит из:
 
-*   **A single row of tab titles**, above the panel or, when the tabs are aligned at the bottom, below it. The title of the panel that is showing is highlighted.
-*   **The panel of the active tab.** A panel can hold any kind of content (including nested tabs blocks).
+*   **Одной строки заголовков вкладок** над панелью или, при выравнивании вкладок снизу, под ней. Заголовок отображаемой в данный момент панели выделен.
+*   **Панели активной вкладки.** Панель может содержать любое содержимое (включая вложенные блоки вкладок).
 
-## Inserting a tabs block
+## Вставка блока вкладок
 
-*   In the formatting bar, go to _Insert_ → _Tabs_.
-*   Alternatively, type `/tabs` and press <kbd>Enter</kbd>, as described in <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>.
+*   На панели форматирования перейдите в _Insert_ → _Tabs_.
+*   Либо введите `/tabs` и нажмите <kbd>Enter</kbd>, как описано в разделе <a class="reference-link" href="Slash%20Commands.md">Слэш-команды</a>.
 
-A new block contains two tabs, named “Tab 1” and “Tab 2”. Any content that was selected prior to inserting the tabs will be moved into the first tab. The title of the first tab is selected, so typing replaces it.
+Новый блок содержит две вкладки с названиями «Tab 1» и «Tab 2». Любое содержимое, выделенное перед вставкой вкладок, будет перемещено в первую вкладку. Заголовок первой вкладки выделен, поэтому ввод текста сразу заменит его.
 
-## Scrolling through the titles
+## Прокрутка заголовков
 
-When the titles of a block do not fit on their row, a <span class="tn-icon bx bx-chevron-left"></span> button and a <span class="tn-icon bx bx-chevron-right"></span> button appear at its ends:
+Когда заголовки блока не помещаются в одну строку, по её краям появляются кнопки <span class="tn-icon bx bx-chevron-left"></span> и <span class="tn-icon bx bx-chevron-right"></span>:
 
-*   To scroll the titles, click one of the buttons. Holding a button down scrolls the titles continuously until it is released.
-*   On a touch screen, the titles can also be swiped sideways.
+*   Чтобы прокрутить заголовки, нажмите на одну из кнопок. Удерживание кнопки непрерывно прокручивает заголовки, пока вы её не отпустите.
+*   На сенсорном экране заголовки также можно пролистывать свайпом вбок.
 
-Whenever another tab is shown (for example by clicking its title, by moving the cursor into it or by following a link to it), the row scrolls so that its whole title is visible. This works the same while editing, in read-only notes and on shared pages.
+Всякий раз при переключении на другую вкладку (например, при нажатии на её заголовок, перемещении курсора в неё или переходе по ссылке) строка прокручивается так, чтобы заголовок был виден полностью. Это работает одинаково при редактировании, в заметках только для чтения и на опубликованных страницах.
 
-## Editing tabs
+## Редактирование вкладок
 
-*   To show a tab, click its title or move the cursor into it.
-*   To move from a title into its panel, press <kbd>Enter</kbd>.
-*   The label of a tab can be formatted just like normal text, including support for <a class="reference-link" href="Insert%20buttons/Icons.md">Icons</a>.
+*   Чтобы открыть вкладку, нажмите на её заголовок или переместите курсор внутрь неё.
+*   Чтобы перейти из заголовка вкладки в её панель, нажмите <kbd>Enter</kbd>.
+*   Заголовок вкладки можно форматировать как обычный текст, включая поддержку <a class="reference-link" href="Insert%20buttons/Icons.md">значков</a>.
 
-While the cursor is inside a tabs block, a toolbar appears above it with the following buttons:
+Пока курсор находится внутри блока вкладок, над ним отображается панель инструментов со следующими кнопками:
 
-*   <span class="tn-icon cke cke-plus"></span> _(Add tab)_ inserts a tab after the current one and selects its title.
-*   <span class="tn-icon cke cke-remove"></span> _(Remove tab)_ removes the current tab. Removing the last tab removes the whole block.
-*   <span class="tn-icon cke cke-chevron-right bx-flip-horizontal"></span> _(Move tab left)_ and <span class="tn-icon cke cke-chevron-right"></span> (_Move tab right)_ change the order of the tabs.
-*   <span class="tn-icon cke cke-three-vertical-dots"></span> _(More actions)_ opens a menu with the actions of the toolbar and a few more.
+*   <span class="tn-icon cke cke-plus"></span> _(Add tab)_ вставляет вкладку после текущей и выделяет её заголовок.
+*   <span class="tn-icon cke cke-remove"></span> _(Remove tab)_ удаляет текущую вкладку. Удаление последней вкладки удаляет весь блок.
+*   <span class="tn-icon cke cke-chevron-right bx-flip-horizontal"></span> _(Move tab left)_ и <span class="tn-icon cke cke-chevron-right"></span> _(Move tab right)_ изменяют порядок вкладок.
+*   <span class="tn-icon cke cke-three-vertical-dots"></span> _(More actions)_ открывает меню с действиями панели инструментов и несколькими дополнительными пунктами.
 
-The <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu has the following entries:
+Меню <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ содержит следующие пункты:
 
-*   _Add new tab_ inserts a tab after the current one, like the <span class="tn-icon cke cke-plus"></span> button.
-*   _Copy reference to this tab_ copies a link to the current tab, as described below.
-*   _Move tab right_ and _Move tab left_ change the order of the tabs.
-*   _Tab alignment_ places the tab titles above the panel (_Align tabs at top_, the default) or below it (_Align tabs at bottom_).
-*   _Delete tab_ removes the current tab, like the <span class="tn-icon cke cke-remove"></span> button.
-*   _Delete all tabs_ removes the whole tabs block and leaves an empty paragraph in its place. In a tabs block nested inside another, only the inner block is removed.
+*   _Add new tab_ вставляет вкладку после текущей, как кнопка <span class="tn-icon cke cke-plus"></span>.
+*   _Copy reference to this tab_ копирует ссылку на текущую вкладку, как описано ниже.
+*   _Move tab right_ и _Move tab left_ изменяют порядок вкладок.
+*   _Tab alignment_ размещает заголовки вкладок над панелью (_Align tabs at top_, по умолчанию) или под ней (_Align tabs at bottom_).
+*   _Delete tab_ удаляет текущую вкладку, как кнопка <span class="tn-icon cke cke-remove"></span>.
+*   _Delete all tabs_ удаляет весь блок вкладок и оставляет на его месте пустой абзац. В блоке вкладок, вложенном в другой блок, удаляется только внутренний блок.
 
-The tab that is showing is not saved with the note: every tabs block opens on its first tab.
+Активная вкладка не сохраняется вместе с заметкой: каждый блок вкладок всегда открывается на первой вкладке.
 
-### Adding tabs
+### Добавление вкладок
 
-While the cursor is in a tab, either in its title or in its panel, you can use these key combinations:
+Пока курсор находится во вкладке (в её заголовке или в панели), можно использовать следующие сочетания клавиш:
 
-*   <kbd>Ctrl</kbd> + <kbd>Enter</kbd>: Add a tab after the current one.
-*   <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd>: Add a tab before the current one.
+*   <kbd>Ctrl</kbd> + <kbd>Enter</kbd>: добавить вкладку после текущей.
+*   <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd>: добавить вкладку перед текущей.
 
-The new tab is shown and its title is selected, so typing replaces it.
+Новая вкладка открывается, а её заголовок выделяется, чтобы ввод текста сразу заменил его.
 
-<kbd>Ctrl</kbd> + <kbd>Enter</kbd> keeps its usual function on a link, in a to-do item and in the title of a collapsible block, and <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd> in a to-do item.
+Сочетание <kbd>Ctrl</kbd> + <kbd>Enter</kbd> сохраняет своё обычное действие на ссылке, в пункте списка задач и в заголовке сворачиваемого блока, а <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd> — в пункте списка задач.
 
-### Reordering tabs
+### Изменение порядка вкладок
 
-While the cursor is in a tab, either in its title or in its panel, you can use these key combinations:
+Пока курсор находится во вкладке (в её заголовке или в панели), можно использовать следующие сочетания клавиш:
 
-*   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Right</kbd>: Move the tab to the right.
-*   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Left</kbd>: Move the tab to the left.
-*   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Home</kbd>: Make it the first tab.
-*   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>End</kbd>: Make it the last tab.
+*   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Right</kbd>: переместить вкладку вправо.
+*   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Left</kbd>: переместить вкладку влево.
+*   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Home</kbd>: сделать вкладку первой.
+*   <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>End</kbd>: сделать вкладку последней.
 
-## Moving content between tabs
+## Перемещение содержимого между вкладками
 
-To move content to another tab, select it in the panel, and then use these key combinations:
+Чтобы переместить содержимое на другую вкладку, выделите его в панели и используйте следующие сочетания клавиш:
 
-*   <kbd>Ctrl</kbd> + <kbd>Right</kbd>: Move to the tab on the right.
-*   <kbd>Ctrl</kbd> + <kbd>Left</kbd>: Move to the tab on the left.
-*   <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>End</kbd>: Move to the last tab.
-*   <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Home</kbd>: Move to the first tab.
+*   <kbd>Ctrl</kbd> + <kbd>Right</kbd>: переместить во вкладку справа.
+*   <kbd>Ctrl</kbd> + <kbd>Left</kbd>: переместить во вкладку слева.
+*   <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>End</kbd>: переместить в последнюю вкладку.
+*   <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Home</kbd>: переместить в первую вкладку.
 
-The tab that receives the content is shown, with the content still selected, so pressing the key again moves it on to the next tab. Paragraphs, list items, tables and other blocks move whole, even when only part of them is selected. Content moved to a tab on the left goes to the end of that tab, and content moved to a tab on the right goes to its start, so it keeps its place in the reading order.
+Вкладка, в которую перемещено содержимое, открывается, а содержимое остаётся выделенным, поэтому повторное нажатие клавиш переместит его дальше, в следующую вкладку. Абзацы, пункты списков, таблицы и другие блоки перемещаются целиком, даже если выделена только их часть. Содержимое, перемещённое во вкладку слева, попадает в её конец, а перемещённое во вкладку справа — в её начало, благодаря чему сохраняется порядок чтения.
 
-Without a selection, or with a selection in a tab title, these keys keep their usual function: moving the cursor by word, or selecting up to the start or end of the tab.
+Без выделения или при выделении в заголовке вкладки эти клавиши сохраняют своё обычное действие: перемещение курсора по словам или выделение до начала/конца заголовка вкладки.
 
-When a tabs block and a <a class="reference-link" href="Multicolumn%20layout.md">Multicolumn layout</a> are nested in one another, the key combinations act on the one closest to the cursor.
+Если блок вкладок и <a class="reference-link" href="Multicolumn%20layout.md">многоколоночная разметка</a> вложены друг в друга, сочетания клавиш действуют на ближайший к курсору элемент.
 
-## Reading tabs
+## Чтение вкладок
 
-In <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">Read-Only Notes</a> and on <a class="reference-link" href="../../Advanced%20Usage/Sharing.md">Sharing</a>, tabs blocks work as tabs as well:
+В <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">заметках только для чтения</a> и при <a class="reference-link" href="../../Advanced%20Usage/Sharing.md">публикации</a> блоки вкладок также работают как вкладки:
 
-*   To show a tab, click its title, or focus it and press <kbd>Enter</kbd> or <kbd>Space</kbd>.
-*   To move between the titles of a block, use the arrow keys, <kbd>Home</kbd> and <kbd>End</kbd>.
+*   Чтобы открыть вкладку, нажмите на её заголовок или переведите на него фокус и нажмите <kbd>Enter</kbd> или <kbd>Space</kbd>.
+*   Для перемещения между заголовками блока используйте клавиши со стрелками, <kbd>Home</kbd> и <kbd>End</kbd>.
 
-A tab without a title shows “Tab title” in place of one.
+Вкладка без заголовка отображает вместо него «Tab title».
 
-In read-only notes, a title too long for its tab fades out where it is cut off. To read the rest of it, swipe it sideways or drag it with the mouse.
+В заметках только для чтения слишком длинный заголовок плавно затухает в месте обрезки. Чтобы прочитать его остаток, проведите по нему вбок или перетащите мышью.
 
-## Linking to a tab
+## Ссылки на вкладку
 
-A link can point to a single tab, much like a link to a block (see <a class="reference-link" href="Block%20references.md">Block references</a>):
+Ссылка может указывать на отдельную вкладку — аналогично ссылке на блок (см. <a class="reference-link" href="Block%20references.md">Ссылки на блоки</a>):
 
-1.  Place the cursor in the tab, either in its title or in its panel.
-2.  In the toolbar of the tabs block, open the <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu and select _Copy reference to this tab_. Alternatively, right-click the text and select _Copy_ → _Copy link to this tab_. The tab flashes briefly.
-3.  Go to the note where to insert the link and press <kbd>Ctrl</kbd>+<kbd>V</kbd>.
+1.  Поместите курсор во вкладку (в её заголовок или в панель).
+2.  На панели инструментов блока вкладок откройте меню <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ и выберите _Copy reference to this tab_. Либо нажмите правой кнопкой мыши по тексту и выберите _Copy_ → _Copy link to this tab_. Вкладка кратковременно подсветится.
+3.  Перейдите в заметку, куда нужно вставить ссылку, и нажмите <kbd>Ctrl</kbd>+<kbd>V</kbd>.
 
-The link shows the title of the note, followed by the title of the tab. Clicking it opens the note, shows the tab and flashes it. As with any block reference, the link can be turned into an <a class="reference-link" href="Include%20Note.md">Include Note</a> that shows only that tab.
+Ссылка отображает название заметки, за которым следует заголовок вкладки. Нажатие на неё открывает заметку, переключает на нужную вкладку и подсвечивает её. Как и любую ссылку на блок, её можно преобразовать во <a class="reference-link" href="Include%20Note.md">включение заметки</a>, которое отображает только эту вкладку.
 
-Links to a tab can be copied only from a note being edited. On a [shared page](../../Advanced%20Usage/Sharing.md), such a link opens the whole note.
+Ссылки на вкладку можно копировать только из редактируемой заметки. На [опубликованной странице](../../Advanced%20Usage/Sharing.md) такая ссылка открывает всю заметку целиком.
 
-## Content in hidden tabs
+## Содержимое скрытых вкладок
 
-Content inside a tab that is not showing is still reachable (both while editing and while reading). The tab that holds it is shown when:
+Содержимое внутри неактивной вкладки остаётся доступным (как при редактировании, так и при чтении). Содержащая его вкладка автоматически открывается, когда:
 
-*   searching the note with <kbd>Ctrl</kbd>+<kbd>F</kbd> highlights a match inside it;
-*   a link points to an anchor or a block inside it (see <a class="reference-link" href="Anchors.md">Anchors</a> and <a class="reference-link" href="Block%20references.md">Block references</a>);
-*   an entry of the <a class="reference-link" href="Table%20of%20contents.md">Table of contents</a> or the <a class="reference-link" href="Highlights%20list.md">Highlights list</a> points inside it;
-*   on a shared page, the address of the page points to a heading or an anchor inside it.
+*   поиск по заметке с помощью <kbd>Ctrl</kbd>+<kbd>F</kbd> находит совпадение внутри неё;
+*   ссылка указывает на якорь или блок внутри неё (см. <a class="reference-link" href="Anchors.md">Якоря</a> и <a class="reference-link" href="Block%20references.md">Ссылки на блоки</a>);
+*   пункт <a class="reference-link" href="Table%20of%20contents.md">Оглавления</a> или <a class="reference-link" href="Highlights%20list.md">Списка выделений</a> указывает на содержимое внутри неё;
+*   на опубликованной странице адрес страницы указывает на заголовок или якорь внутри неё.
 
-Tab titles are not headings, so they do not appear in the table of contents; headings inside a panel do.
+Заголовки вкладок не являются заголовками документа, поэтому они не попадают в оглавление; заголовки внутри панелей вкладок в него попадают.
 
-## Printing and exporting
+## Печать и экспорт
 
-*   When printing or [exporting to PDF](../../Basic%20Concepts%20and%20Features/Notes/Printing%20%26%20Exporting%20as%20PDF.md), every tab is printed, one after another, each with its title above its panel, whatever the tab alignment.
-*   Markdown export and import write tabs blocks in the content tabs syntax of Material for MkDocs, described in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown/Supported%20syntax.md">Supported syntax</a>. <a class="reference-link" href="../Markdown.md">Markdown</a> notes use the same syntax, show the blocks as tabs in their preview and insert them with `/tabs`. That syntax has no tab alignment, so tabs aligned at the bottom are exported as regular tabs.
-*   Anywhere the tabs cannot work as tabs (such as an HTML export opened elsewhere), a tabs block reads as a sequence of titled sections.
+*   При печати или [экспорте в PDF](../../Basic%20Concepts%20and%20Features/Notes/Printing%20%26%20Exporting%20as%20PDF.md) печатается каждая вкладка по очереди, с заголовком над её панелью, независимо от выравнивания вкладок.
+*   При экспорте и импорте Markdown блоки вкладок записываются в синтаксисе вкладок содержимого Material for MkDocs, описанном в разделе <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown/Supported%20syntax.md">Поддерживаемый синтаксис</a>. Заметки <a class="reference-link" href="../Markdown.md">Markdown</a> используют тот же синтаксис, отображают блоки в виде вкладок при предпросмотре и вставляют их командой `/tabs`. В этом синтаксисе нет выравнивания вкладок, поэтому вкладки, выровненные снизу, экспортируются как обычные.
+*   Везде, где вкладки не могут работать интерактивно (например, в HTML-экспорте, открытом вне Trilium), блок вкладок отображается как последовательность озаглавленных разделов.

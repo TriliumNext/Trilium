@@ -1,24 +1,24 @@
-# Custom AI quick actions
-_Quick actions_ are a feature of the <a class="reference-link" href="../In-editor%20AI%20assistant.md">In-editor AI assistant</a> for <a class="reference-link" href="../../Text.md">Text</a> notes which automatically triggers an LLM suggestion based on a defined prompt. The built-in quick actions come with a predefined prompt, but it is also possible to define your own quick actions.
+# Пользовательские быстрые действия ИИ
+_Быстрые действия_ — это функция <a class="reference-link" href="../In-editor%20AI%20assistant.md">встроенного ИИ-помощника</a> для <a class="reference-link" href="../../Text.md">текстовых</a> заметок, которая автоматически запускает предложение LLM на основе заданного промпта. Встроенные быстрые действия имеют заранее заданные промпты, но вы также можете создавать собственные.
 
-## Creating a custom quick action
+## Создание пользовательского быстрого действия
 
-In the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>: 
+В <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">дереве заметок</a>: 
 
-1.  Right-click the note where you want to place the quick action.
-2.  Select _Insert child note_.
-3.  Select _More_ → _AI Quick Action_. The entry appears only when AI is enabled.
+1.  Нажмите правой кнопкой мыши на заметку, в которой хотите разместить быстрое действие.
+2.  Выберите _Insert child note_.
+3.  Выберите _More_ → _AI Quick Action_. Этот пункт отображается только при включённом ИИ.
 
-Afterwards, simply type in the content of the note the desired prompt. The text can be formatted in the same manner as a normal text note and it will be passed to the LLM as Markdown.
+После этого просто введите нужный промпт в содержимом заметки. Текст можно форматировать так же, как в обычной текстовой заметке — он будет передан в LLM в формате Markdown.
 
-The title of the note will become the title of the quick action.
+Название заметки станет названием быстрого действия.
 
-Of note:
+Обратите внимание:
 
-*   <a class="reference-link" href="../../Code.md">Code</a> notes work too.
-*   An empty note is ignored.
-*   <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Notes/Archived%20Notes.md">Archived Notes</a> are also excluded.
+*   Заметки типа <a class="reference-link" href="../../Code.md">Код</a> также поддерживаются.
+*   Пустая заметка игнорируется.
+*   <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Notes/Archived%20Notes.md">Архивные заметки</a> также исключаются.
 
-## Using a quick action
+## Использование быстрого действия
 
-Once a quick action is defined, the action will appear under the _Quick Actions_ dropdown in a group called _Custom_.
+После создания быстрого действия оно появится в выпадающем меню _Quick Actions_ в группе _Custom_.

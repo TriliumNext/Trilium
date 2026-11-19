@@ -1,29 +1,29 @@
-# Backend scripts
-Unlike [front-end scripts](Frontend%20Basics.md) which run on the client / browser-side, back-end scripts run directly on the Node.js environment of the Trilium server.
+# Бэкенд-скрипты
+В отличие от [фронтенд-скриптов](Frontend%20Basics.md), которые выполняются на стороне клиента/браузера, бэкенд-скрипты выполняются непосредственно в среде Node.js сервера Trilium.
 
-Back-end scripts can be used both on a <a class="reference-link" href="../Installation%20%26%20Setup/Server%20Installation.md">Server Installation</a> (where it will run on the device the server is running on), or on the <a class="reference-link" href="../Installation%20%26%20Setup/Desktop%20Installation.md">Desktop Installation</a> (where it will run on the PC).
+Бэкенд-скрипты можно использовать как в <a class="reference-link" href="../Installation%20%26%20Setup/Server%20Installation.md">серверной установке</a> (где они выполняются на устройстве, на котором запущен сервер), так и в <a class="reference-link" href="../Installation%20%26%20Setup/Desktop%20Installation.md">настольной установке</a> (где они выполняются на ПК).
 
 > [!IMPORTANT]
-> Starting with v0.104.0, backend scripts are disabled by default to reduce the attack surface. See <a class="reference-link" href="Security.md">Security</a> for more information.
+> Начиная с версии v0.104.0, бэкенд-скрипты по умолчанию отключены для уменьшения поверхности атаки. Подробнее см. в разделе <a class="reference-link" href="Security.md">Безопасность</a>.
 
-## Advantages of backend scripts
+## Преимущества бэкенд-скриптов
 
-The benefit of backend scripts is that they can be pretty powerful, for example to have access to the underlying system, for example it can read files or execute processes.
+Преимущество бэкенд-скриптов заключается в их широких возможностях: например, они имеют доступ к базовой операционной системе и могут читать файлы или запускать процессы.
 
-However, the main benefit of backend scripts is that they have easier access to the notes since the information about them is already loaded in memory. Whereas on the client, notes have to be manually loaded first.
+Однако главное преимущество бэкенд-скриптов — более простой доступ к заметкам, поскольку информация о них уже загружена в память. На клиенте же заметки приходится сначала загружать вручную.
 
-## Creating a backend script
+## Создание бэкенд-скрипта
 
-Create a new <a class="reference-link" href="../Note%20Types/Code.md">Code</a> note and select the language _JavaScript (Trilium backend)_, or choose _Insert child note_ → _Code_ → _Backend script_ in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree/Note%20tree%20contextual%20menu.md">Note tree contextual menu</a>, which does both in one step.
+Создайте новую <a class="reference-link" href="../Note%20Types/Code.md">заметку с кодом</a> и выберите язык _JavaScript (Trilium backend)_ либо выберите _Вставить подзаметку_ → _Код_ → _Бэкенд-скрипт_ в <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree/Note%20tree%20contextual%20menu.md">контекстном меню дерева заметок</a>, что выполнит оба действия за один шаг.
 
-## Running backend scripts
+## Запуск бэкенд-скриптов
 
-Backend scripts can be either run manually (via the Execute button on the script page), or they can be triggered on certain events.
+Бэкенд-скрипты можно запускать вручную (с помощью кнопки «Выполнить» на странице скрипта) или автоматически при наступлении определённых событий.
 
-When a script run manually or from a launcher throws an error, Trilium shows a _Scripting error_ notification with the error message and a link to the note that failed. If the error comes from a child note the script requires, the link points to that child note. Changes the script made to notes before the error are rolled back.
+Если скрипт, запущенный вручную или с панели запуска, выбрасывает ошибку, Trilium показывает уведомление _Ошибка скрипта_ с текстом ошибки и ссылкой на заметку, в которой произошёл сбой. Если ошибка возникла в подзаметке, которую подключает скрипт, ссылка указывает на эту подзаметку. Изменения, внесённые скриптом в заметки до возникновения ошибки, откатываются.
 
-In addition, scripts can be run automatically when the server starts up, on a fixed time interval or when a certain event occurs (such as an attribute being modified). For more information, see the dedicated <a class="reference-link" href="Backend%20scripts/Backend%20Events.md">Events</a> page.
+Кроме того, скрипты могут запускаться автоматически при старте сервера, через заданные интервалы времени или при наступлении определённого события (например, при изменении атрибута). Подробнее см. на странице <a class="reference-link" href="Backend%20scripts/Backend%20Events.md">События</a>.
 
-## Script API
+## API скриптов
 
-Trilium exposes a set of APIs that can be directly consumed by scripts, under the `api` object. For a reference of this API, see <a class="reference-link" href="Script%20API/Backend%20API.md">Backend API</a>.
+Trilium предоставляет набор API, доступных напрямую из скриптов через объект `api`. Справочник по этому API см. в разделе <a class="reference-link" href="Script%20API/Backend%20API.md">Backend API</a>.

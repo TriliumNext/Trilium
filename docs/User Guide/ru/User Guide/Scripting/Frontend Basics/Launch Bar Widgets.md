@@ -1,23 +1,23 @@
-# Launch Bar Widgets
-Launch bar widgets are a subset of <a class="reference-link" href="Custom%20Widgets.md">Custom Widgets</a> that can be used to render custom buttons and widgets inside the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>.
+# Виджеты панели запуска
+Виджеты панели запуска — это разновидность <a class="reference-link" href="Custom%20Widgets.md">пользовательских виджетов</a>, которые позволяют отображать собственные кнопки и виджеты внутри <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">панели запуска</a>.
 
-## Creating a launch bar widget for the desktop layout
+## Создание виджета панели запуска для десктопной компоновки
 
-Unlike <a class="reference-link" href="Custom%20Widgets.md">Custom Widgets</a>, the process of setting up a launch bar widget is slightly different:
+В отличие от <a class="reference-link" href="Custom%20Widgets.md">пользовательских виджетов</a>, процесс настройки виджета панели запуска немного отличается:
 
-1.  Create a Code note of type _JavaScript (front-end)_ or JSX (for Preact-based widgets).
-    *   The script itself uses the same concepts as <a class="reference-link" href="Custom%20Widgets.md">Custom Widgets</a>, including the use of a `NoteContextAwareWidget` or a `BasicWidget` (according to needs).
-    *   As examples in both legacy and Preact format, see <a class="reference-link" href="Launch%20Bar%20Widgets/Note%20Title%20Widget.md">Note Title Widget</a> and <a class="reference-link" href="Launch%20Bar%20Widgets/Analog%20Watch.md">Analog Watch</a>.
-2.  Don't set `#widget`, as that attribute is reserved for <a class="reference-link" href="Custom%20Widgets.md">Custom Widgets</a>.
-3.  In the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>, select _Configure launchbar_.
-4.  In the _Visible Launchers_ section, select _Add a custom widget_.
-5.  Give the newly created launcher a name (and optionally a name).
-6.  In the <a class="reference-link" href="../../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> section, modify the _widget_ field to point to the newly created note.
-7.  [Refresh](../../Troubleshooting/Refreshing%20the%20application.md) the UI.
+1.  Создайте заметку типа «Код» с языком _JavaScript (front-end)_ или JSX (для виджетов на базе Preact).
+    *   Сам скрипт использует те же концепции, что и <a class="reference-link" href="Custom%20Widgets.md">пользовательские виджеты</a>, включая использование `NoteContextAwareWidget` или `BasicWidget` (в зависимости от задачи).
+    *   Примеры в устаревшем формате и в формате Preact см. на страницах <a class="reference-link" href="Launch%20Bar%20Widgets/Note%20Title%20Widget.md">Виджет заголовка заметки</a> и <a class="reference-link" href="Launch%20Bar%20Widgets/Analog%20Watch.md">Аналоговые часы</a>.
+2.  Не добавляйте `#widget`, так как этот атрибут зарезервирован для <a class="reference-link" href="Custom%20Widgets.md">пользовательских виджетов</a>.
+3.  В <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">глобальном меню</a> выберите _Configure launchbar_ (Настроить панель запуска).
+4.  В разделе _Visible Launchers_ (Видимые элементы запуска) выберите _Add a custom widget_ (Добавить пользовательский виджет).
+5.  Задайте новому элементу панели запуска название.
+6.  В разделе <a class="reference-link" href="../../Advanced%20Usage/Attributes/Promoted%20Attributes.md">продвигаемых атрибутов</a> измените поле _widget_, чтобы оно указывало на созданную заметку.
+7.  [Обновите](../../Troubleshooting/Refreshing%20the%20application.md) интерфейс.
 
-## Mobile layout
+## Мобильная компоновка
 
-Custom launch bar widgets are also supported on the <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>. To do so:
+Пользовательские виджеты панели запуска также поддерживаются в <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">мобильном интерфейсе</a>. Чтобы настроить их:
 
-1.  Go to <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a> → _Advanced_ → _Hidden notes_.
-2.  Look for _Mobile Launch Bar_ and follow the same creation mechanism as in the previous section.
+1.  Перейдите в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">глобальное меню</a> → _Advanced_ (Дополнительно) → _Hidden notes_ (Скрытые заметки).
+2.  Найдите _Mobile Launch Bar_ (Мобильная панель запуска) и выполните те же действия по созданию, что описаны в предыдущем разделе.

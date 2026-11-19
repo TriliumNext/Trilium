@@ -1,10 +1,10 @@
-# Cut to subnote
+# Вырезать в подзаметку
 <figure class="image image_resized image-style-align-right" style="width:64.63%;"><img style="aspect-ratio:812/585;" src="Cut to subnote_cut-to-subnote.gif" width="812" height="585"></figure>
 
-When editing a document that becomes too large, you can split it into sub-notes:
+Когда редактируемый документ становится слишком большим, его можно разбить на подзаметки:
 
-1.  Select the desired text and cut it to the clipboard.
-2.  Create a new sub-note and name it.
-3.  Paste the content from the clipboard into the sub-note.
+1.  Выделите нужный текст и вырежьте его в буфер обмена.
+2.  Создайте новую подзаметку и дайте ей название.
+3.  Вставьте содержимое из буфера обмена в подзаметку.
 
-Trilium can automate this process. Select some text within the note, and in the selection toolbar, click the scissors icon for the "cut & pasted selection to sub-note" action. The heading is automatically detected and the new sub-note is named accordingly. You can also assign a keyboard shortcut for this action. This functionality is available through the block toolbar icon. On a phone, the scissors are at the end of the text formatting row, which shows as you select text.
+Trilium позволяет автоматизировать этот процесс. Выделите часть текста в заметке и на панели выделения нажмите значок ножниц для действия «вырезать и вставить выделенное в подзаметку». Заголовок определяется автоматически, и новая подзаметка получает соответствующее название. Для этого действия также можно назначить сочетание клавиш. Эта функция доступна и через значок панели инструментов блока. На телефоне значок ножниц находится в конце строки форматирования текста, которая появляется при выделении текста.

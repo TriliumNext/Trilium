@@ -1,19 +1,19 @@
-# Using promoted attributes to configure scripts
-A good use case of promoted attributes is to easily define the various parameters a script might need, for example an input and output note if it's processing data, or a checkbox to define a particular change in behavior for the script.
+# Использование продвигаемых атрибутов для настройки скриптов
+Хороший способ применения продвигаемых атрибутов — удобно задавать различные параметры, которые могут понадобиться скрипту, например входную и выходную заметки при обработке данных или флажок для изменения поведения скрипта.
 
 ![](Using%20promoted%20attributes%20to%20configure%20scripts_image.png)
 
-## Using check boxes to toggle flags
+## Использование флажков для переключения параметров
 
-Instead of asking the user to modify a boolean value in the script, it's much more intuitive to use a checkbox for it as a promoted attribute.
+Вместо того чтобы просить пользователя менять логическое значение в коде скрипта, гораздо интуитивнее использовать для этого флажок в виде продвигаемого атрибута.
 
-To do so, first define the promoted attribute:
+Для этого сначала определите продвигаемый атрибут:
 
 ```
 #label:groupByExtension="promoted,alias=Group by extension,single,boolean"
 ```
 
-Then use it:
+Затем используйте его:
 
 ```javascript
 const byExtension = api.currentNote.getLabelValue("groupByExtension") === "true";
@@ -22,17 +22,17 @@ if (byExtension) {
 }
 ```
 
-This will work equally well in both front-end and back-end scripts.
+Это будет одинаково хорошо работать как во фронтенд-, так и в бэкенд-скриптах.
 
-## Using relations to select notes
+## Использование связей для выбора заметок
 
-One common use case for a script is to read data from another note and perhaps output its result in another note. To do so we need to define the following promoted attributes:
+Распространённый сценарий для скрипта — чтение данных из одной заметки и вывод результата в другую заметку. Для этого нужно определить следующие продвигаемые атрибуты:
 
 ```
 #relation:input="promoted,alias=Input,single" #relation:output="promoted,alias=Output,single"
 ```
 
-Once we have this, we can add some basic error handling to ensure that the fields are completed by the user:
+После этого можно добавить базовую обработку ошибок, чтобы убедиться, что пользователь заполнил поля:
 
 ```javascript
 const inputNoteId = api.currentNote.getRelationValue("input");
@@ -48,9 +48,9 @@ if (!outputNoteId) {
 }
 ```
 
-Note that here we are using `api.showError` which is only available for frontend notes. If you are writing a backend note, simply remove `api.showError` but the user will no feedback on why the script did not execute properly.
+Обратите внимание, что здесь используется `api.showError`, который доступен только для фронтенд-заметок. Если вы пишете бэкенд-заметку, просто уберите `api.showError`, но тогда пользователь не получит уведомления о том, почему скрипт не выполнился корректно.
 
-Afterwards we can simply read the note and do something with it:
+После этого можно просто прочитать заметку и выполнить с ней нужные действия:
 
 ```javascript
 const note = api.getNote(inputNoteId);

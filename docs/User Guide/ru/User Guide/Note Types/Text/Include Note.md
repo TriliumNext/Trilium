@@ -1,207 +1,207 @@
-# Include Note
-Text notes can "include" another note as a read-only widget or an interactive widget, depending on the type of note.
+# Включение заметки
+Текстовые заметки могут «включать» (встраивать) другую заметку в виде виджета только для чтения или интерактивного виджета, в зависимости от типа заметки.
 
-This can be useful for e.g. including a dynamically generated chart (from scripts & "render HTML" note) or other more advanced use cases.
+Это полезно, например, для встраивания динамически генерируемого графика (из скриптов и заметки «render HTML») или других продвинутых сценариев.
 
-## Including a note
+## Как включить заметку
 
-In the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, look for the <span class="tn-icon cke cke-trilium-note"></span> button. There is also a keyboard shortcut defined for it but it is not allocated by default.
+На <a class="reference-link" href="Formatting%20toolbar.md">Панели форматирования</a> найдите кнопку <span class="tn-icon cke cke-trilium-note"></span>. Для этого действия также существует сочетание клавиш, но по умолчанию оно не назначено.
 
-The _Include note_ dialog opens in a popup next to the cursor on desktop, with two rows: _Note_, where you search for the note to include, and _Box size_ (see _Box sizes_ below), a row of buttons each with a small drawing of the size, with a sentence under it describing the size chosen. Once a note is picked, press _Include note_ or <kbd>Enter</kbd> to include it. Typing the title of a note that does not exist offers to create it.
+Диалог _Включить заметку_ на компьютере открывается во всплывающем окне рядом с курсором и состоит из двух строк: _Заметка_, где вы ищете нужную заметку, и _Размер блока_ (см. _Размеры блока_ ниже) — ряд кнопок с небольшими схемами размеров и пояснением выбранного варианта под ними. Выбрав заметку, нажмите _Включить заметку_ или <kbd>Enter</kbd>. Если ввести название несуществующей заметки, появится предложение создать её.
 
-An image note, a <a class="reference-link" href="../Canvas.md">Canvas</a> or a <a class="reference-link" href="../Mermaid%20Diagrams.md">Mermaid Diagrams</a> note picked in the dialog is inserted as an image rather than included, so instead of the size buttons, the _Box size_ row says so. In a text note, the image can be resized once it is in the text, and the dialog reminds you of that, as it reminds you that the size of an include can be changed later.
+Заметка-изображение, <a class="reference-link" href="../Canvas.md">Холст</a> или <a class="reference-link" href="../Mermaid%20Diagrams.md">Диаграмма Mermaid</a>, выбранные в этом диалоге, вставляются как изображение, а не как включённая заметка, о чём сообщается в строке _Размер блока_ вместо кнопок выбора размера. В текстовой заметке размер изображения можно изменить после вставки, о чём диалог напоминает, как и о том, что размер включённой заметки можно изменить позже.
 
-To include a note that is already linked, right-click a reference link to it in a text note being edited and select _Convert link to an included note_, at the end of the menu. The include gets the box size that suits the note, as one added from the button does.
+Чтобы включить заметку, на которую уже есть ссылка, нажмите правой кнопкой мыши по внутренней ссылке на неё в редактируемой текстовой заметке и выберите _Преобразовать ссылку во включённую заметку_ в конце меню. Включённый блок получит подходящий для этой заметки размер, как и при добавлении через кнопку.
 
-An [attachment](../../Basic%20Concepts%20and%20Features/Notes/Attachments.md) can be included the same way, from the context menu of a link to it (see _Embedding an attachment_ there).
+Таким же образом можно встроить [вложение](../../Basic%20Concepts%20and%20Features/Notes/Attachments.md) — из контекстного меню ссылки на него (см. _Встраивание вложения_ в соответствующем разделе).
 
-A link to blocks of a text note is converted the same way, with _Convert link to note excerpt_, and the include then shows only those blocks. See <a class="reference-link" href="Block%20references.md">Block references</a>.
+Ссылка на блоки текстовой заметки преобразуется аналогично через _Преобразовать ссылку в фрагмент заметки_, после чего включённый блок отображает только эти блоки. См. <a class="reference-link" href="Block%20references.md">Ссылки на блоки</a>.
 
-## Box sizes
+## Размеры блока
 
-The box size sets how much of the included note is shown, and whether the box can be resized.
+Размер блока определяет, какая часть включённой заметки отображается и можно ли менять размер блока.
 
-*   _Compact_ shows a single row instead of the content: the note's icon, its title with the path to the note above it, and buttons to act on the note. The included note is never rendered, so wherever the note is shown outside the editor, such as in print, in a tooltip or on a shared page, a _Compact_ include appears as a link to the included note. An included audio file is the exception: its _Compact_ box is a row of player controls, without a title until _Show title_ is turned on.
-*   _Resizable_ shows the content in a box that can be resized to any width and height (see _Resizing_ below). Text scrolls inside the box, while a picture, a diagram or a video is scaled down to fit it. Until it is resized, the box takes the full width of the note and about 20 lines of height.
-*   _Full_ shows the whole content, at the full width of the note.
-*   _Expandable_ shows only the title until its <span class="tn-icon bx bx-chevron-right"></span> arrow is pressed. In a read-only note, a click anywhere on the title row other than its buttons and link expands or collapses it as well. It takes the full width of the note, and its height can be resized once it is expanded.
+*   _Компактный_ показывает одну строку вместо содержимого: значок заметки, её заголовок с путём к заметке сверху и кнопки действий. Включённая заметка при этом не рендерится, поэтому везде за пределами редактора (при печати, во всплывающей подсказке или на опубликованной странице) компактное включение отображается как ссылка на заметку. Исключение — встроенный аудиофайл: его компактный блок представляет собой панель управления плеером без заголовка, пока не включена опция _Показать заголовок_.
+*   _Изменяемый_ показывает содержимое в блоке, ширину и высоту которого можно менять произвольно (см. _Изменение размера_ ниже). Текст прокручивается внутри блока, а изображение, диаграмма или видео масштабируются по его размеру. Пока размер не изменён, блок занимает всю ширину заметки и около 20 строк в высоту.
+*   _Полный_ показывает всё содержимое целиком на всю ширину заметки.
+*   _Раскрываемый_ показывает только заголовок, пока не нажата стрелка <span class="tn-icon bx bx-chevron-right"></span>. В заметке только для чтения клик в любом месте строки заголовка (кроме кнопок и ссылки) также раскрывает или сворачивает блок. Он занимает всю ширину заметки, а после раскрытия можно менять его высоту.
 
 > [!NOTE]
-> Since v0.107.0, the box sizes were reworked: _Small_ and _Medium_ are replaced by _Resizable_. An include saved as _Small_ or _Medium_ by an earlier version opens as _Resizable_, at the height it had.
+> Начиная с версии v0.107.0 размеры блоков были переработаны: _Маленький_ и _Средний_ заменены на _Изменяемый_. Включения, сохранённые как _Маленький_ или _Средний_ в более ранних версиях, открываются как _Изменяемый_ с прежней высотой.
 
-A new include gets the size that suits what it shows:
+Новое включение автоматически получает размер, подходящий для его содержимого:
 
-*   _Compact_ for a note or an attachment that has no preview, such as a relation map or an archive, and for audio.
-*   _Full_ for a code note or a code file, such as a `.js`, `.py` or `.txt` attachment, and for an excerpt of the blocks of a text note.
-*   _Resizable_ for anything else.
+*   _Компактный_ — для заметки или вложения без предпросмотра (например, карты связей или архива) и для аудио.
+*   _Полный_ — для заметки с кодом или файла с кодом (например, вложений `.js`, `.py` или `.txt`), а также для фрагмента блоков текстовой заметки.
+*   _Изменяемый_ — для всего остального.
 
-The _Include note_ dialog selects that size among its _Box size_ buttons once the note is picked, and you can choose another one there. To change the size later, select the include and use the _Box size_ menu in its toolbar, or the _Size_ submenu of its _More actions_ menu. Both have _Default_, which puts the include back at the size it started with, without a resized width or height; it is unavailable while the include is already there. For an included code or Markdown note and an embedded code or Markdown file, the _Box size_ menu is the <span class="tn-icon bx bx-move-vertical"></span> button, whose tooltip names the current size.
+Диалог _Включить заметку_ автоматически выбирает подходящий размер в строке _Размер блока_ после выбора заметки, но вы можете выбрать другой. Чтобы изменить размер позже, выделите включение и воспользуйтесь меню _Размер блока_ на его панели инструментов или подменю _Размер_ в меню _Дополнительные действия_. В обоих есть пункт _По умолчанию_, возвращающий исходный размер без пользовательской ширины и высоты; он неактивен, если блок уже имеет размер по умолчанию. Для включённой заметки с кодом или Markdown и встроенного файла кода или Markdown меню _Размер блока_ представлено кнопкой <span class="tn-icon bx bx-move-vertical"></span>, во всплывающей подсказке которой указан текущий размер.
 
-## Resizing
+## Изменение размера
 
-A _Resizable_ include can be resized to any width and height, and an _Expandable_ include in height. A _Compact_ or _Full_ include always fits its content.
+У включения размера _Изменяемый_ можно менять и ширину, и высоту, а у _Раскрываемого_ — только высоту. _Компактный_ и _Полный_ всегда подстраиваются под содержимое.
 
-*   To resize an include, select it and drag the handle in its bottom-right corner. To change only the width or only the height, drag the middle of its right or bottom edge instead, where a touch screen shows a handle too. In right-to-left text, the handle is in the bottom-left corner and the width changes from the left edge.
-*   Resizing works with a mouse, a pen or a finger.
-*   While the height changes, moving the handle near the top or the bottom of the note scrolls the note.
-*   An include narrower than the note is centered, so changing its width moves both of its sides. An include aligned to the left or the right keeps that side in place and has its handles on the other side (see _Positioning_ below). Making an include as wide as the note returns it to the full width.
-*   To cancel a resize, press <kbd>Esc</kbd> before releasing the handle.
-*   To reset the size, double-click the corner handle, or double-tap it on a touch screen. Double-clicking the right or bottom edge resets only the width or the height.
-*   Choosing _Compact_ or _Full_ removes the resized width and height, and choosing _Expandable_ removes the width, as it takes the full width of the note. _Resizable_ keeps both, and _Default_ removes both.
-*   While an _Expandable_ include is collapsed, it cannot be resized.
+*   Чтобы изменить размер включения, выделите его и потяните за маркер в правом нижнем углу. Чтобы изменить только ширину или только высоту, потяните за середину правой или нижней границы (на сенсорном экране там также отображается маркер). В тексте с направлением справа налево маркер находится в левом нижнем углу, а ширина меняется за левую границу.
+*   Изменение размера работает с помощью мыши, стилуса или пальца.
+*   При изменении высоты перемещение маркера к верхнему или нижнему краю заметки прокручивает её.
+*   Включение уже ширины заметки центрируется, поэтому изменение ширины сдвигает обе его стороны. Включение, выровненное по левому или правому краю, удерживает этот край на месте, а маркеры находятся с противоположной стороны (см. _Позиционирование_ ниже). Растягивание включения до ширины заметки возвращает его к полной ширине.
+*   Чтобы отменить изменение размера, нажмите <kbd>Esc</kbd>, не отпуская маркер.
+*   Чтобы сбросить размер, дважды кликните по угловому маркеру (или дважды коснитесь его на сенсорном экране). Двойной клик по правой или нижней границе сбрасывает только ширину или только высоту.
+*   Выбор _Компактный_ или _Полный_ сбрасывает заданные ширину и высоту, а выбор _Раскрываемый_ сбрасывает ширину, так как он занимает всю ширину заметки. _Изменяемый_ сохраняет оба параметра, а _По умолчанию_ сбрасывает оба.
+*   Свёрнутое _Раскрываемое_ включение нельзя изменять по размеру.
 
-## Positioning
+## Позиционирование
 
-An include can sit on lines of its own or have the text wrap around it, as an [image](Images.md) can.
+Включение может располагаться на отдельных строках или обтекаться текстом, как [изображение](Images.md).
 
-*   To change the position, open the _More actions_ menu of the include in a note being edited (see _Opening an included note_ below) and choose an entry of its _Position_ submenu:
-    *   Under _Break text_, <span class="tn-icon cke cke-object-left"></span> _Align left_, <span class="tn-icon cke cke-object-center"></span> _Align center_ and <span class="tn-icon cke cke-object-right"></span> _Align right_ place the include on lines of its own, at that side of the note. _Align center_ is the default.
-    *   Under _Wrap text_, <span class="tn-icon cke cke-object-inline-left"></span> _Align left_ and <span class="tn-icon cke cke-object-inline-right"></span> _Align right_ place the include at that side and let the text run beside it.
-*   Only a _Resizable_ include can be placed in the text. It takes the full width of the note until it is resized, so a new position shows once it is resized narrower (see _Resizing_ above). An _Expandable_ include takes the full width and offers the _Break text_ positions alone, which align the content inside its box. A _Compact_ or _Full_ include has no _Position_ submenu. A position is kept through a change of box size, and shows again once the include is _Resizable_.
-*   In the mobile layout, an include with a position other than _Align center_ takes the full width, and only its height can be resized.
+*   Чтобы изменить положение, откройте меню _Дополнительные действия_ включения в редактируемой заметке (см. _Открытие включённой заметки_ ниже) и выберите пункт в подменю _Положение_:
+    *   В группе _Разрыв текста_: <span class="tn-icon cke cke-object-left"></span> _По левому краю_, <span class="tn-icon cke cke-object-center"></span> _По центру_ и <span class="tn-icon cke cke-object-right"></span> _По правому краю_ размещают включение на отдельных строках с соответствующей стороны заметки. По умолчанию используется _По центру_.
+    *   В группе _Обтекание текстом_: <span class="tn-icon cke cke-object-inline-left"></span> _По левому краю_ и <span class="tn-icon cke cke-object-inline-right"></span> _По правому краю_ размещают включение сбоку и позволяют тексту обтекать его.
+*   В тексте можно позиционировать только включение размера _Изменяемый_. Пока его размер не уменьшен, оно занимает всю ширину заметки, поэтому новое положение станет заметно после сужения блока (см. _Изменение размера_ выше). _Раскрываемое_ включение занимает всю ширину и предлагает только варианты _Разрыв текста_, выравнивающие содержимое внутри блока. У _Компактного_ и _Полного_ включений подменю _Положение_ нет. Положение сохраняется при смене размера блока и снова применяется при возврате к _Изменяемому_.
+*   В мобильной раскладке включение с положением, отличным от _По центру_, занимает всю ширину, и менять можно только его высоту.
 
-## Caption
+## Подпись
 
-An include can have a caption, shown centered at the bottom of its box. The caption is part of the text note, so it can be formatted like the rest of the text, for example in bold or with a link.
+У включения может быть подпись, отображаемая по центру внизу блока. Подпись является частью текстовой заметки, поэтому её можно форматировать как обычный текст — например, сделать жирной или добавить ссылку.
 
-*   To add a caption, select the include, press the <span class="tn-icon cke cke-caption"></span> _Toggle caption on_ button in its toolbar and type the caption. While the cursor is in the caption, the include stays selected and keeps its toolbar.
-*   To remove the caption, press the same button again. Pressing it once more brings back the text it had, as long as the note stays open.
-*   A _Compact_ include has no caption, unless it is an audio file. Switching an include to _Compact_ removes its caption, and switching it back to a larger size restores the caption, as long as the note stays open.
-*   An _Expandable_ include shows its caption under the title while the content is collapsed, and under the content once it is expanded.
+*   Чтобы добавить подпись, выделите включение, нажмите кнопку <span class="tn-icon cke cke-caption"></span> _Показать подпись_ на его панели инструментов и введите текст. Пока курсор находится в подписи, включение остаётся выделенным и сохраняет свою панель инструментов.
+*   Чтобы удалить подпись, нажмите ту же кнопку снова. Повторное нажатие вернёт прежний текст, пока заметка остаётся открытой.
+*   У _Компактного_ включения подписи нет, кроме случая аудиофайла. Переключение включения в _Компактный_ режим скрывает подпись, а возврат к большему размеру восстанавливает её, пока заметка открыта.
+*   _Раскрываемое_ включение показывает подпись под заголовком в свёрнутом состоянии и под содержимым в раскрытом.
 
-## Title
+## Заголовок
 
-The title row of an include links to the included note and holds its buttons. To show only the content, turn off _Show title_ in the menu of the include, which right-clicking the title row or pressing its <span class="tn-icon bx bx-dots-vertical-rounded"></span> _More actions_ button opens (see _Opening an included note_ below).
+Строка заголовка включения содержит ссылку на включённую заметку и её кнопки. Чтобы показывать только содержимое, отключите _Показать заголовок_ в меню включения, которое открывается правым кликом по заголовку или кнопкой <span class="tn-icon bx bx-dots-vertical-rounded"></span> _Дополнительные действия_ (см. _Открытие включённой заметки_ ниже).
 
-*   While the title is hidden, select the include and press the <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ button in its toolbar to open the same menu, where turning on _Show title_ shows the title again.
-*   A _Compact_ or _Expandable_ include always shows its title, so _Show title_ is unavailable in its menu. An audio file at _Compact_ is the exception: it starts without its title, which _Show title_ shows above its controls.
+*   Когда заголовок скрыт, выделите включение и нажмите кнопку <span class="tn-icon cke cke-three-vertical-dots"></span> _Дополнительные действия_ на его панели инструментов, чтобы открыть то же меню и снова включить _Показать заголовок_.
+*   _Компактное_ и _Раскрываемое_ включения всегда показывают заголовок, поэтому пункт _Показать заголовок_ в их меню недоступен. Исключение — аудиофайл в _Компактном_ режиме: изначально он отображается без заголовка, а опция _Показать заголовок_ выводит его над плеером.
 
-## Opening an included note
+## Открытие включённой заметки
 
-To open an included note in a new tab, press the <span class="tn-icon bx bx-link-external"></span> _Open in new tab_ button at the end of its title. An embedded attachment has the same button.
+Чтобы открыть включённую заметку в новой вкладке, нажмите кнопку <span class="tn-icon bx bx-link-external"></span> _Открыть в новой вкладке_ в конце строки заголовка. У встроенного вложения есть такая же кнопка.
 
-The <span class="tn-icon bx bx-dots-vertical-rounded"></span> _More actions_ button at the end of the title row opens the same menu as right-clicking anywhere on the title row: the other places to open the note in and, for an embedded attachment, the actions on the attachment.
+Кнопка <span class="tn-icon bx bx-dots-vertical-rounded"></span> _Дополнительные действия_ в конце строки заголовка открывает то же меню, что и правый клик в любом месте заголовка: другие способы открытия заметки и, для встроенного вложения, действия с вложением.
 
-In a note being edited, the menu also has the _Size_ submenu, _Show title_ and _Show caption_, each a switch that is on while it is in effect, and the _Position_ submenu after _Size_ (see _Positioning_ above). The menu ends with <span class="tn-icon bx bx-trash"></span> _Delete block_, which removes the include from the note, followed by _Convert to link_. For an embedded attachment, _Delete attachment..._ follows _Delete block_, and _Convert attachment into note..._ follows _Convert to link_. A drawing canvas, a Mermaid diagram, an included text, code or Markdown note and an embedded code or Markdown file also have _Editable_, above _Size_. An included code or Markdown note, an embedded code or Markdown file and a Mermaid diagram also have the _Word wrap_ and _Line numbers_ submenus after _Editable_ (see _Editing an include in place_ below). A Mermaid diagram, an included Markdown note and an embedded Markdown file also have _Source view_, _Split view_ and _Preview_ after these submenus. For an embedded attachment they follow its first group of actions; for an included note, the places to open it in.
+В редактируемой заметке в меню также есть подменю _Размер_, переключатели _Показать заголовок_ и _Показать подпись_, а после _Размер_ — подменю _Положение_ (см. _Позиционирование_ выше). В конце меню находятся <span class="tn-icon bx bx-trash"></span> _Удалить блок_ (удаляет включение из заметки) и _Преобразовать в ссылку_. Для встроенного вложения после _Удалить блок_ идёт _Удалить вложение..._, а после _Преобразовать в ссылку_ — _Преобразовать вложение в заметку..._. У холста для рисования, диаграммы Mermaid, включённой текстовой заметки, заметки с кодом или Markdown и встроенного файла кода или Markdown над _Размер_ также есть пункт _Редактируемый_. У включённой заметки с кодом или Markdown, встроенного файла кода или Markdown и диаграммы Mermaid после _Редактируемый_ также есть подменю _Перенос строк_ и _Номера строк_ (см. _Редактирование включения на месте_ ниже). У диаграммы Mermaid, включённой заметки Markdown и встроенного файла Markdown после этих подменю также есть _Исходный код_, _Разделённый вид_ и _Предпросмотр_. Для встроенного вложения они следуют за первой группой действий; для включённой заметки — за вариантами открытия.
 
-To show an include of size _Resizable_ or _Full_ on the whole screen, press the <span class="tn-icon bx bx-fullscreen"></span> _Fullscreen_ button at the end of its title. An excerpt of the blocks of a note has an <span class="tn-icon bx bx-pencil"></span> _Edit excerpt_ button there instead; see <a class="reference-link" href="Block%20references.md">Block references</a>. To return, press <span class="tn-icon bx bx-exit"></span> _Exit fullscreen_ in the top-right corner, or <kbd>Esc</kbd>.
+Чтобы развернуть включение размера _Изменяемый_ или _Полный_ на весь экран, нажмите кнопку <span class="tn-icon bx bx-fullscreen"></span> _На весь экран_ в конце заголовка. У фрагмента блоков заметки вместо неё находится кнопка <span class="tn-icon bx bx-pencil"></span> _Редактировать фрагмент_; см. <a class="reference-link" href="Block%20references.md">Ссылки на блоки</a>. Чтобы выйти, нажмите <span class="tn-icon bx bx-exit"></span> _Выйти из полноэкранного режима_ в правом верхнем углу или <kbd>Esc</kbd>.
 
-A _Compact_ include has these buttons instead, followed by the same _More actions_ button:
+У _Компактного_ включения вместо этого отображаются следующие кнопки, за которыми следует та же кнопка _Дополнительные действия_:
 
-*   For a note, <span class="tn-icon bx bx-edit"></span> _Quick edit_ opens the note in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a>, and <span class="tn-icon bx bx-link-external"></span> _Open in new tab_ opens it in a new tab.
-*   For an embedded attachment, <span class="tn-icon bx bx-file-find"></span> _Open externally_ opens the file in another application, and <span class="tn-icon bx bx-download"></span> _Download_ downloads it. The size of the file is shown under its title.
+*   Для заметки: <span class="tn-icon bx bx-edit"></span> _Быстрое редактирование_ открывает заметку в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Быстром редактировании</a>, а <span class="tn-icon bx bx-link-external"></span> _Открыть в новой вкладке_ открывает её в новой вкладке.
+*   Для встроенного вложения: <span class="tn-icon bx bx-file-find"></span> _Открыть во внешнем приложении_ открывает файл в другой программе, а <span class="tn-icon bx bx-download"></span> _Скачать_ загружает его. Размер файла отображается под заголовком.
 
-## Converting an include to a link
+## Преобразование включения в ссылку
 
-To replace an include with a link to the included note, choose _Convert to link_ in the last group of its _More actions_ menu. An embedded attachment turns into a link to the attachment the same way.
+Чтобы заменить включение ссылкой на включённую заметку, выберите _Преобразовать в ссылку_ в последней группе меню _Дополнительные действия_. Встроенное вложение таким же образом превращается в ссылку на вложение.
 
-## Includes inside an included note
+## Включения внутри включённой заметки
 
-The includes of an included note show as _Compact_ boxes, whatever their own box size: a row with the icon and title of the note, and buttons to open it, but not its content. This keeps a note that includes notes which include further notes, such as a journal built from templates, quick to open. Opening the included note shows its own includes at the box size they were given.
+Включения внутри включённой заметки отображаются как _Компактные_ блоки независимо от их собственного размера: строка со значком, заголовком и кнопками открытия, без содержимого. Это позволяет быстро открывать заметки с глубокой вложенностью включений (например, дневник на основе шаблонов). При открытии самой включённой заметки её собственные включения отображаются в заданном для них размере.
 
-An include of a note that is already shown around it shows as a link to that note instead. For example, if note _A_ includes note _B_ and _B_ includes _A_, opening _A_ shows _B_ in a box, and inside that box a link back to _A_.
+Включение заметки, которая уже отображается выше по иерархии, показывается как ссылка на эту заметку. Например, если заметка _A_ включает заметку _B_, а _B_ включает _A_, то при открытии _A_ будет показан блок с _B_, а внутри него — ссылка обратно на _A_.
 
-## Missing notes and attachments
+## Отсутствующие заметки и вложения
 
-An include whose note or attachment no longer exists, for example because it was deleted, keeps its size and shows the <span class="tn-icon bx bx-error-alt"></span> icon in place of the content, with the ID of the missing note or attachment. To remove the include, select it and press <kbd>Delete</kbd>.
+Включение, чья заметка или вложение больше не существует (например, было удалено), сохраняет свой размер и показывает значок <span class="tn-icon bx bx-error-alt"></span> вместо содержимого вместе с ID отсутствующей заметки или вложения. Чтобы удалить такое включение, выделите его и нажмите <kbd>Delete</kbd>.
 
-Content added by a newer version of Trilium, which this version cannot show, appears the same way with the <span class="tn-icon bx bx-error"></span> icon. Editing the note keeps that content unchanged, so it shows again once Trilium is updated.
+Контент, добавленный в более новой версии Trilium, который текущая версия не может отобразить, выглядит аналогично со значком <span class="tn-icon bx bx-error"></span>. При редактировании заметки этот контент сохраняется без изменений, поэтому он снова отобразится после обновления Trilium.
 
-## Included notes in the share functionality
+## Включённые заметки при публикации
 
-If a [shared note](../../Advanced%20Usage/Sharing.md) contains one or more included notes, they will be displayed in the content of the note as if they were part of the note itself. An include resized narrower than the note keeps its width and its position. On a narrow screen, an include with a position other than _Align center_ takes the full width. The caption of an include is shown under the included content. An _Expandable_ include shows its title and stays collapsed until it is clicked, with its caption under the title until then. Its headings are left out of the page's table of contents. A _Compact_ include is shown as a link to the included note instead, and so is an include that would show a note already shown around it, such as a note that includes itself. The same goes for a printed or exported note.
+Если [опубликованная заметка](../../Advanced%20Usage/Sharing.md) содержит одну или несколько включённых заметок, они будут отображаться в её содержимом как часть самой заметки. Включение, суженное относительно ширины заметки, сохраняет свою ширину и положение. На узком экране включение с положением, отличным от _По центру_, занимает всю ширину. Подпись включения отображается под встроенным содержимым. _Раскрываемое_ включение показывает заголовок и остаётся свёрнутым до клика, с подписью под заголовком до раскрытия; его заголовки не попадают в оглавление страницы. _Компактное_ включение отображается как ссылка на включённую заметку, как и включение заметки, уже показанной выше (например, самой себя). То же самое относится к печати и экспорту заметки.
 
-An included video or audio file, whether a note or an attachment, plays in the browser's player.
+Включённый видео- или аудиофайл (как заметка, так и вложение) воспроизводится во встроенном плеере браузера.
 
-For this to work, the included notes must also be shared. However, they can still be hidden from the note tree via `#shareHiddenFromTree`.
+Чтобы это работало, включённые заметки также должны быть опубликованы. Однако их можно скрыть из дерева заметок с помощью `#shareHiddenFromTree`.
 
-An include whose note or attachment is missing or not shared shows _This content is not available_ in its place, and so does content added by a newer version of Trilium.
+Включение, чья заметка или вложение отсутствует или не опубликовано, показывает вместо содержимого сообщение _This content is not available_; то же касается контента из более новой версии Trilium.
 
-## Interactive notes
+## Интерактивные заметки
 
-Since v0.104.0, included notes might become interactive depending on their note type:
+Начиная с версии v0.104.0 включённые заметки могут быть интерактивными в зависимости от их типа:
 
-*   <a class="reference-link" href="../../Collections.md">Collections</a> (e.g. <a class="reference-link" href="../../Collections/Geo%20Map.md">Geo Map</a>) will render fully interactive, including creating new notes.
-*   <a class="reference-link" href="../Saved%20Search.md">Saved Search</a> will also display the results.
-*   <a class="reference-link" href="../Web%20View.md">Web View</a> provides an interactive preview of the website.
+*   <a class="reference-link" href="../../Collections.md">Коллекции</a> (например, <a class="reference-link" href="../../Collections/Geo%20Map.md">Геокарта</a>) отображаются полностью интерактивными, включая создание новых заметок.
+*   <a class="reference-link" href="../Saved%20Search.md">Сохранённый поиск</a> также отображает результаты поиска.
+*   <a class="reference-link" href="../Web%20View.md">Веб-просмотр</a> предоставляет интерактивный предпросмотр веб-сайта.
 
-## Included images
+## Включённые изображения
 
-An included image, whether an image note or an image attachment, is shown in the image viewer, which zooms and pans it:
+Включённое изображение (как заметка-изображение, так и вложение) отображается в просмотрщике изображений с поддержкой масштабирования и перемещения:
 
-*   To zoom, press the <span class="tn-icon bx bx-plus-circle"></span> _Zoom in_ and <span class="tn-icon bx bx-minus-circle"></span> _Zoom out_ buttons in the bottom-right corner of the image, or pinch on a touch screen. The percentage between them resets the zoom.
-*   To zoom with the mouse wheel, click the image first. Until then, the mouse wheel scrolls the note.
-*   To pan an image that is zoomed in, drag it. At its fitted size, dragging the image on a touch screen scrolls the note.
-*   To return to the fitted size, double-click the image.
+*   Для масштабирования используйте кнопки <span class="tn-icon bx bx-plus-circle"></span> _Увеличить_ и <span class="tn-icon bx bx-minus-circle"></span> _Уменьшить_ в правом нижнем углу изображения или жест щипка на сенсорном экране. Процент между ними сбрасывает масштаб.
+*   Чтобы масштабировать колесом мыши, сначала кликните по изображению. До этого колесо мыши прокручивает заметку.
+*   Чтобы перемещать увеличенное изображение, перетаскивайте его. При размере по ширине блока перетаскивание на сенсорном экране прокручивает заметку.
+*   Чтобы вернуть исходный масштаб, дважды кликните по изображению.
 
-In a _Resizable_ box, the image is scaled down to fit the height of the box. In fullscreen, it fits the screen.
+В _Изменяемом_ блоке изображение масштабируется по высоте блока. В полноэкранном режиме — по размеру экрана.
 
-## Editing an include in place
+## Редактирование включения на месте
 
-An included text note, an included code note and an embedded code file such as a `.js`, `.py` or `.txt` attachment can be edited without leaving the note that includes them. Until then, a code note or file is shown read-only in the code editor, where its code can be selected and copied, and its blocks folded and unfolded with the arrows in its gutter. Included Markdown can be edited too, see _Included Markdown_ below.
+Включённую текстовую заметку, заметку с кодом и встроенный файл с кодом (например, вложение `.js`, `.py` или `.txt`) можно редактировать, не покидая содержащую их заметку. До включения редактирования заметка или файл с кодом отображаются в редакторе кода только для чтения, где код можно выделять и копировать, а блоки — сворачивать и разворачивать стрелками на полях. Включённый Markdown также можно редактировать, см. _Включённый Markdown_ ниже.
 
-*   To edit, select the include and turn on the <span class="tn-icon bx bx-edit-alt"></span> _Editable_ button at the start of its toolbar, or turn on _Editable_ in its <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu. Turn _Editable_ off to stop editing.
-*   While _Editable_ is on, the arrow keys move the caret into the include and back out, as through the rest of the text. Entering from above or from the left puts the caret at the start of the include, and entering from below or from the right puts it at the end. A collapsed _Expandable_ include is skipped.
-*   While an included text note has the focus, the formatting toolbar applies to it. The notes it includes in turn stay read-only.
-*   Code is edited in the same code editor as a <a class="reference-link" href="../Code.md">Code</a> note, with its theme, indentation and line wrapping settings.
-*   Typing `/` in the code lists the <a class="reference-link" href="../../Advanced%20Usage/Snippets/Code%20Snippets.md">Code Snippets</a> of its language, as in a code note.
-*   The toolbar of an included code note or an embedded code file also has the language and indentation menus of the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a>, between _Editable_ and the <span class="tn-icon bx bx-move-vertical"></span> _Box size_ menu: _Change language mode_, which shows the current language, and _Change tab width_, which shows the current indentation. _Re-indent content to_ converts the indentation of the code itself and saves it to the included note or file, whether _Editable_ is on or off.
-    *   For an included note, the menus change the note, as they do in its own tab.
-    *   For an embedded code file, the language and indentation settings change only how this include shows the file, and are saved with the note that includes it. The language replaces the one that the file name gives, and the _Use default_ entries return to the indentation set in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Code Notes_. These settings leave the file itself unchanged, and other includes of it keep their own settings.
-*   The <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu of an included code or Markdown note, an embedded code or Markdown file and a [Mermaid diagram](Insert%20buttons.md) has two more submenus after _Editable_, each with _Auto_, _On_ and _Off_. They change how the code editor shows the source.
-    *   _Word wrap_ wraps long lines instead of scrolling them. _Auto_ follows the setting in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Code Notes_. For an included note, it sets the `#wrapLines` label of the note, as the _Word wrap_ submenu of its <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> does for a code note. For an embedded file or a Mermaid diagram, it changes only this include.
-    *   _Line numbers_ shows or hides the numbers at the start of each line. _Auto_ follows the setting in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Code Notes_. It changes only this include, for an included note as well.
-*   The changes are saved as you type, to the included note or to the attachment, as they would be in its own tab.
-*   The changes made in the code editor of an include are part of the undo history of the note that includes it, together with the changes to its text, in the order they were made. This includes the source of included Markdown and of a [Mermaid diagram](Insert%20buttons.md), and the changes to a drawing canvas (see below).
-    *   <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes the last change of the note, and <kbd>Ctrl</kbd>+<kbd>Y</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> redoes it, whether the caret is in the text or in an include, and also while _Editable_ is off. The <span class="tn-icon cke cke-undo"></span> _Undo_ and <span class="tn-icon cke cke-redo"></span> _Redo_ buttons of the formatting toolbar do the same. With the Vim key bindings, `u` and <kbd>Ctrl</kbd>+<kbd>R</kbd> in an include do the same too.
-    *   The focus moves to the change that was undone or redone: into the code editor or the drawing canvas of the include, or back to the text.
-    *   Undoing a change of an included note saves the included note again. Once the included note has been changed elsewhere, for example in another tab, its earlier changes can no longer be undone from here, and undo skips them.
-    *   An included text note keeps an undo history of its own.
-*   An include of <a class="reference-link" href="Block%20references.md">Block references</a> edits only the referenced blocks.
-*   Editing is not available in a [read-only note](../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md), for an included note marked `#readOnly`, or for an attachment of another note.
-*   <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Search%20in%20note.md">Search in note</a> finds the text of included text and code notes among the results of the note around them, and replaces it while _Editable_ is on.
+*   Чтобы начать редактирование, выделите включение и включите кнопку <span class="tn-icon bx bx-edit-alt"></span> _Редактируемый_ в начале его панели инструментов или пункт _Редактируемый_ в меню <span class="tn-icon cke cke-three-vertical-dots"></span> _Дополнительные действия_. Отключите _Редактируемый_, чтобы завершить редактирование.
+*   Пока включён режим _Редактируемый_, клавиши со стрелками перемещают курсор внутрь включения и обратно наружу, как по обычному тексту. Вход сверху или слева ставит курсор в начало включения, а снизу или справа — в конец. Свёрнутое _Раскрываемое_ включение пропускается.
+*   Пока фокус находится во включённой текстовой заметке, панель форматирования применяется к ней. Заметки, включённые уже внутри неё, остаются только для чтения.
+*   Код редактируется в том же редакторе, что и заметка типа <a class="reference-link" href="../Code.md">Код</a>, с её настройками темы, отступов и переноса строк.
+*   Ввод `/` в коде открывает список <a class="reference-link" href="../../Advanced%20Usage/Snippets/Code%20Snippets.md">Фрагментов кода</a> для соответствующего языка, как в обычной заметке с кодом.
+*   На панели инструментов включённой заметки с кодом или встроенного файла с кодом между _Редактируемый_ и меню <span class="tn-icon bx bx-move-vertical"></span> _Размер блока_ также находятся меню языка и отступов из <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Строки состояния</a>: _Изменить режим языка_ (показывает текущий язык) и _Изменить ширину табуляции_ (показывает текущий отступ). Пункт _Переформатировать отступы в_ преобразует отступы в самом коде и сохраняет изменения во включённой заметке или файле независимо от того, включён ли режим _Редактируемый_.
+    *   Для включённой заметки эти меню изменяют саму заметку, как в её собственной вкладке.
+    *   Для встроенного файла с кодом настройки языка и отступов меняют только отображение в этом включении и сохраняются вместе с содержащей его заметкой. Выбранный язык переопределяет язык по расширению файла, а пункты _Использовать по умолчанию_ возвращают отступы из <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настроек</a> → _Заметки с кодом_. Сам файл при этом не изменяется, а другие его включения сохраняют свои настройки.
+*   В меню <span class="tn-icon cke cke-three-vertical-dots"></span> _Дополнительные действия_ включённой заметки с кодом или Markdown, встроенного файла кода или Markdown и [диаграммы Mermaid](Insert%20buttons.md) после _Редактируемый_ есть ещё два подменю с вариантами _Авто_, _Вкл_ и _Выкл_. Они управляют отображением исходного кода:
+    *   _Перенос строк_ переносит длинные строки вместо горизонтальной прокрутки. _Авто_ следует настройке в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Заметки с кодом_. Для включённой заметки это задаёт метку `#wrapLines`, как подменю _Перенос строк_ в её <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Меню заметки</a>. Для встроенного файла или диаграммы Mermaid меняется только текущее включение.
+    *   _Номера строк_ показывает или скрывает номера в начале каждой строки. _Авто_ следует настройке в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Заметки с кодом_. Меняет только текущее включение, в том числе для включённой заметки.
+*   Изменения сохраняются по мере ввода во включённой заметке или вложении, как в их собственной вкладке.
+*   Изменения в редакторе кода включения попадают в общую историю отмены (undo) содержащей его заметки вместе с правками её текста в хронологическом порядке. Это относится к исходному коду включённого Markdown, [диаграммы Mermaid](Insert%20buttons.md) и изменениям на холсте для рисования (см. ниже).
+    *   <kbd>Ctrl</kbd>+<kbd>Z</kbd> отменяет последнее изменение заметки, а <kbd>Ctrl</kbd>+<kbd>Y</kbd> или <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> повторяет его — независимо от того, находится ли курсор в тексте или во включении, и даже при выключенном _Редактируемый_. Кнопки <span class="tn-icon cke cke-undo"></span> _Отменить_ и <span class="tn-icon cke cke-redo"></span> _Повторить_ на панели форматирования работают так же. При включённых привязках Vim клавиши `u` и <kbd>Ctrl</kbd>+<kbd>R</kbd> во включении делают то же самое.
+    *   Фокус перемещается к отменённому или повторённому изменению: в редактор кода, на холст для рисования или обратно в текст.
+    *   Отмена изменения включённой заметки снова сохраняет её. Если включённая заметка была изменена в другом месте (например, в другой вкладке), её более ранние изменения отсюда отменить уже нельзя, и отмена их пропускает.
+    *   Включённая текстовая заметка ведёт собственную историю отмены.
+*   Включение <a class="reference-link" href="Block%20references.md">Ссылок на блоки</a> редактирует только указанные блоки.
+*   Редактирование недоступно в [заметке только для чтения](../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md), для включённой заметки с меткой `#readOnly` и для вложения другой заметки.
+*   <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Search%20in%20note.md">Поиск в заметке</a> находит текст во включённых текстовых заметках и заметках с кодом среди результатов основной заметки и заменяет его, когда включён режим _Редактируемый_.
 
-## Included Markdown
+## Включённый Markdown
 
-An included <a class="reference-link" href="../Markdown.md">Markdown</a> note and an embedded Markdown file, such as a `.md` attachment, are shown with the same three views as a Markdown note in its own tab (see <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20types%20with%20split%20view.md">Note types with split view</a>): <span class="tn-icon bx bx-code"></span> _Source view_, <span class="tn-icon bx bxs-dock-left"></span> _Split view_ and <span class="tn-icon bx bx-show"></span> _Preview_.
+Включённая заметка <a class="reference-link" href="../Markdown.md">Markdown</a> и встроенный файл Markdown (например, вложение `.md`) отображаются в тех же трёх режимах, что и заметка Markdown в собственной вкладке (см. <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20types%20with%20split%20view.md">Типы заметок с разделённым видом</a>): <span class="tn-icon bx bx-code"></span> _Исходный код_, <span class="tn-icon bx bxs-dock-left"></span> _Разделённый вид_ и <span class="tn-icon bx bx-show"></span> _Предпросмотр_.
 
-*   To switch the view, press one of the three buttons in the title row of the include. In a note being edited, the toolbar of the include has the same buttons after _Editable_, and its <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu has them as _Source view_, _Split view_ and _Preview_.
-*   Until a view is chosen, the include shows the _Preview_, and the _Split view_ while _Editable_ is on.
-*   To edit the Markdown, turn on _Editable_ (see _Editing an include in place_ above). The source is edited in the code editor of a Markdown note, and the preview follows the changes as you type. While _Editable_ is off, the source can be read and copied but not changed.
-*   The source has the slash commands and the `@` and `[[` note links of a <a class="reference-link" href="../Markdown.md">Markdown</a> note. A note created from the `@` or `[[` list goes under the included note, or for an embedded file under the note that includes it, and `/image` uploads the image to that same note.
-*   The _Word wrap_ and _Line numbers_ submenus of the _More actions_ menu change how the source shows, as for code (see _Editing an include in place_ above).
-*   As in a Markdown note, the preview scrolls along with the source and highlights the block where the cursor is, and <kbd>Ctrl</kbd>+<kbd>B</kbd>, <kbd>Ctrl</kbd>+<kbd>I</kbd>, <kbd>Ctrl</kbd>+<kbd>M</kbd> and <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> format the selection.
-*   In a note being edited, the view is saved with the include, so two includes of the same note can show different views. In a [read-only note](../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md), the view can be changed too, until the note is opened again.
-*   While the source shows, and wherever the Markdown can be edited, the include has the height of its box size, or the height it was resized to, so turning _Editable_ on or off keeps its size. Otherwise, as in a read-only note, the preview fits its text up to that height. A _Full_ include fits its content instead.
-*   <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Search%20in%20note.md">Search in note</a> searches the source while it shows, and the preview otherwise.
+*   Для переключения режима нажмите одну из трёх кнопок в строке заголовка включения. В редактируемой заметке те же кнопки есть на панели инструментов включения после _Редактируемый_, а также в меню <span class="tn-icon cke cke-three-vertical-dots"></span> _Дополнительные действия_.
+*   Пока режим не выбран, включение показывает _Предпросмотр_, а при включённом _Редактируемый_ — _Разделённый вид_.
+*   Чтобы редактировать Markdown, включите _Редактируемый_ (см. _Редактирование включения на месте_ выше). Исходный код редактируется в редакторе Markdown, а предпросмотр обновляется по мере ввода. Пока _Редактируемый_ выключен, исходный код можно читать и копировать, но нельзя изменять.
+*   В исходном коде работают слэш-команды и ссылки на заметки через `@` и `[[`, как в заметке <a class="reference-link" href="../Markdown.md">Markdown</a>. Заметка, созданная из списка `@` или `[[`, помещается под включённой заметкой (или под содержащей её заметкой для встроенного файла), а `/image` загружает изображение в ту же заметку.
+*   Подменю _Перенос строк_ и _Номера строк_ в меню _Дополнительные действия_ управляют отображением исходного кода, как для заметок с кодом (см. _Редактирование включения на месте_ выше).
+*   Как и в заметке Markdown, предпросмотр прокручивается синхронно с исходным кодом и подсвечивает блок, в котором находится курсор, а <kbd>Ctrl</kbd>+<kbd>B</kbd>, <kbd>Ctrl</kbd>+<kbd>I</kbd>, <kbd>Ctrl</kbd>+<kbd>M</kbd> и <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> форматируют выделенный текст.
+*   В редактируемой заметке выбранный режим сохраняется для конкретного включения, поэтому два включения одной и той же заметки могут отображаться по-разному. В [заметке только для чтения](../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) режим тоже можно переключать до повторного открытия заметки.
+*   Пока отображается исходный код и везде, где Markdown можно редактировать, включение имеет высоту своего размера блока или заданную пользователем высоту, поэтому переключение _Редактируемый_ не меняет его размер. В остальных случаях (как в заметке только для чтения) предпросмотр подстраивается под высоту текста в пределах этого размера. _Полное_ включение подстраивается под всё содержимое.
+*   <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Search%20in%20note.md">Поиск в заметке</a> ищет в исходном коде, когда он отображается, и в предпросмотре в остальных случаях.
 
-## Drawing canvases
+## Холсты для рисования
 
-A drawing canvas is an Excalidraw canvas, like the one of a <a class="reference-link" href="../Canvas.md">Canvas</a> note, drawn directly in the text note. It is not a note of its own: the drawing is kept in a `Canvas.excalidraw` [attachment](../../Basic%20Concepts%20and%20Features/Notes/Attachments.md) of the text note and is saved together with the text.
+Холст для рисования — это холст Excalidraw, как в заметке типа <a class="reference-link" href="../Canvas.md">Холст</a>, расположенный прямо внутри текстовой заметки. Это не отдельная заметка: рисунок хранится во [вложении](../../Basic%20Concepts%20and%20Features/Notes/Attachments.md) `Canvas.excalidraw` текстовой заметки и сохраняется вместе с текстом.
 
-*   To insert a drawing canvas, open the <span class="tn-icon cke cke-plus"></span> _Insert_ menu of the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a> and choose <span class="tn-icon bx bx-pen"></span> _Drawing canvas_, above _Mermaid diagram_. It is also available as _Drawing canvas_ in the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>. The canvas is added empty and editable, in a _Resizable_ box with its title hidden, and takes the focus, ready for drawing.
-*   To draw or write over an image, select the image and press the <span class="tn-icon bx bxs-pen"></span> _Convert image to a drawing canvas_ button of its toolbar. The image is replaced by an editable drawing canvas in a _Resizable_ box, with its title hidden and the focus in it. The image sits at its original size in the middle of the canvas, zoomed so that all of it shows, and is locked so that it cannot be selected or moved by accident. While it is locked, the canvas can be zoomed in on the image but not zoomed out past it or scrolled beyond its edges. To move or resize the image anyway, right-click it and choose _Unlock_. The caption of the image is kept, but not its alignment or link. Only an image on its own line can be converted, not one inside a paragraph. Undo brings the image back.
-*   An Excalidraw file (`.excalidraw`) attached with _Attach and embed file_, under the <span class="tn-icon cke cke-paper-clip"></span>_Attach file_ button, becomes a drawing canvas too, in a _Resizable_ box titled with the file name. It starts with _Editable_ off, so the drawing shows but cannot be changed until _Editable_ is turned on (see below).
-*   To draw on a canvas that does not have the focus, click it first. The canvas then has the tools, menus and keyboard shortcuts of a Canvas note. The toolbars, the menus and the properties of the selected shapes show only while the canvas has the focus, so elsewhere the drawing reads like a picture in the text.
-*   The mouse wheel and the touchpad scroll the note over a canvas too, as over the text. To zoom, use the zoom buttons of the canvas toolbar. The percentage between them opens a menu with _Zoom to fit_, which shows the whole drawing, and _Reset zoom_. To move around the drawing, use the <span class="tn-icon bx bxs-hand"></span> _Hand_ tool. The zoom and position are saved with the drawing, so the canvas opens again where it was left, wherever the note is shown. In fullscreen, the mouse wheel moves and zooms the drawing instead.
-*   The canvas keeps the size it was drawn at. In a narrower note, for example on a phone, it shrinks down to three quarters of that size, then scrolls sideways instead. The resize handle shows more or less of the drawing at the same zoom, and _Full_ widens it across the note. Fullscreen has a zoom and position of its own and leaves those of the canvas as they were.
-*   The <span class="tn-icon bx bx-block"></span> _No tool_ button, first among the tools of the canvas toolbar, leaves the drawing alone: the mouse does nothing on it, and a touch gesture over it scrolls the note instead of drawing on, selecting or moving the drawing. In the mobile layout, a canvas starts with no tool and returns to it whenever it loses the focus, so that the note scrolls over its drawings until a tool is picked. Fullscreen has no use for it: a canvas with no tool switches to the _Selection_ tool as it goes fullscreen.
-*   The canvas toolbar replaces the Excalidraw menu: _Export image_, _Find on canvas_, _Library_ and _Help_ are at the end of its <span class="tn-icon bx bx-category"></span> _More tools_ menu. In fullscreen, the Excalidraw menu shows again. In the mobile layout, the canvas toolbar is in the formatting toolbar at the bottom of the screen, behind the _Canvas ›_ button.
-*   <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Search%20in%20note.md">Search in note</a> finds the text of the drawing among the results of the note and highlights each result on the canvas, which moves only to show a result outside its view. Inside a canvas, the shortcut of the search, <kbd>Ctrl</kbd>+<kbd>F</kbd> on desktop, opens it instead of the Excalidraw search, which stays available as _Find on canvas_.
-*   The changes to the drawing are part of the undo history of the text note (see _Editing an include in place_ above). <kbd>Ctrl</kbd>+<kbd>Z</kbd>, <kbd>Ctrl</kbd>+<kbd>Y</kbd> and the <span class="tn-icon bx bx-undo"></span> _Undo_ and <span class="tn-icon bx bx-redo"></span> _Redo_ buttons of the canvas toolbar undo and redo the last change of the note, in the drawing or in the text.
-*   A new drawing has the background color of the note. A background chosen from the Excalidraw menu replaces it.
-*   To protect a finished drawing from accidental changes, select it and turn off _Editable_ in its <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu. The drawing then shows as a still picture, at the zoom and position it had, and can no longer be changed, zoomed or moved. To draw again, turn on the <span class="tn-icon bx bx-edit-alt"></span> _Editable_ button at the start of its toolbar, which shows only while _Editable_ is off, or turn _Editable_ back on in the menu.
-*   The box sizes, resizing, the caption and the title work as for an included note, but the toolbar of a drawing leaves the box size and the position to its _More actions_ menu (see _Positioning_ above). A _Compact_ drawing canvas shows its title row alone, without the drawing.
-*   In the desktop layout, Excalidraw keeps its desktop interface however small the box is. In the mobile layout, a narrow or short box switches it to a compact interface. For more room, choose _Full_, or show the title and press <span class="tn-icon bx bx-fullscreen"></span> _Fullscreen_.
-*   In the compact interface, the buttons for the selection are on a rail at the side of the screen while the canvas has the focus, so they stay in reach wherever the canvas is scrolled: <span class="tn-icon bx bx-palette"></span> _Edit_ opens the properties of the selected shapes or of the chosen tool in a panel at the bottom of the screen, above the formatting toolbar, <span class="tn-icon bx bx-duplicate"></span> _Duplicate_ and <span class="tn-icon bx bx-trash"></span> _Delete_ act on the selected shapes, and <span class="tn-icon bx bx-check"></span> _Done_ finishes a line or an arrow drawn point by point. The rail shows only the buttons that apply, and leaves when none does. The properties close when the selection is cleared, and open again only with _Edit_. In fullscreen, these buttons are at the bottom of the canvas instead.
-*   Pictures added to the drawing are stored in the same attachment. A converted image is kept as an image attachment of the note instead, named with a generated code.
-*   In a [read-only note](../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md), the drawing shows as a still picture too, with a gray box in its place until it is drawn.
-*   On a [shared page](../../Advanced%20Usage/Sharing.md), the drawing is shown as the same picture, in light or dark colors to match the page. Each change to the drawing saves this picture as an SVG image attachment of the note, also named with a generated code, which the list of attachments shows under _Generated by Trilium_.
+*   Чтобы вставить холст для рисования, откройте меню <span class="tn-icon cke cke-plus"></span> _Вставить_ на <a class="reference-link" href="Formatting%20toolbar.md">Панели форматирования</a> и выберите <span class="tn-icon bx bx-pen"></span> _Холст для рисования_ над пунктом _Диаграмма Mermaid_. Он также доступен как _Drawing canvas_ в <a class="reference-link" href="Slash%20Commands.md">Слэш-командах</a>. Холст добавляется пустым и редактируемым в _Изменяемом_ блоке со скрытым заголовком и сразу получает фокус.
+*   Чтобы рисовать или писать поверх изображения, выделите его и нажмите кнопку <span class="tn-icon bx bxs-pen"></span> _Преобразовать изображение в холст для рисования_ на его панели инструментов. Изображение заменяется редактируемым холстом в _Изменяемом_ блоке со скрытым заголовком и активным фокусом. Изображение располагается в исходном размере по центру холста, масштабируется так, чтобы поместиться целиком, и блокируется от случайного выделения или перемещения. Пока оно заблокировано, холст можно приближать, но нельзя отдалять дальше границ изображения или прокручивать за его пределы. Чтобы всё же переместить или изменить размер изображения, нажмите по нему правой кнопкой мыши и выберите _Разблокировать_. Подпись изображения сохраняется, а выравнивание и ссылка — нет. Преобразовать можно только изображение на отдельной строке, но не встроенное в абзац. Отмена (Undo) возвращает исходное изображение.
+*   Файл Excalidraw (`.excalidraw`), прикреплённый через _Прикрепить и встроить файл_ под кнопкой <span class="tn-icon cke cke-paper-clip"></span> _Прикрепить файл_, также становится холстом для рисования в _Изменяемом_ блоке с именем файла в заголовке. Изначально режим _Редактируемый_ выключен, поэтому рисунок отображается, но не редактируется до включения _Редактируемый_ (см. ниже).
+*   Чтобы рисовать на холсте без фокуса, сначала кликните по нему. После этого доступны инструменты, меню и сочетания клавиш заметки типа Холст. Панели инструментов, меню и свойства выделенных фигур отображаются только при наличии фокуса, так что в остальное время рисунок выглядит как обычная картинка в тексте.
+*   Колесо мыши и тачпад прокручивают заметку даже поверх холста. Для масштабирования используйте кнопки масштаба на панели инструментов холста. Процент между ними открывает меню с пунктами _По размеру содержимого_ и _Сбросить масштаб_. Для перемещения по рисунку используйте инструмент <span class="tn-icon bx bxs-hand"></span> _Рука_. Масштаб и положение сохраняются вместе с рисунком, поэтому холст всегда открывается в том же виде. В полноэкранном режиме колесо мыши перемещает и масштабирует сам рисунок.
+*   Холст сохраняет размер, в котором был нарисован. В более узкой заметке (например, на телефоне) он уменьшается до трёх четвертей этого размера, а затем прокручивается по горизонтали. Маркер изменения размера показывает большую или меньшую область рисунка при том же масштабе, а _Полный_ расширяет его на всю ширину заметки. Полноэкранный режим имеет собственные масштаб и положение, не меняя сохранённые на холсте.
+*   Кнопка <span class="tn-icon bx bx-block"></span> _Без инструмента_ (первая на панели инструментов холста) отключает взаимодействие с рисунком: мышь ничего не делает, а жест касания прокручивает заметку вместо рисования, выделения или перемещения. В мобильной раскладке холст открывается без инструмента и возвращается к этому состоянию при потере фокуса, чтобы можно было свободно прокручивать заметку поверх рисунков. В полноэкранном режиме это не нужно, поэтому при переходе в него автоматически выбирается инструмент _Выделение_.
+*   Панель инструментов холста заменяет меню Excalidraw: _Экспорт изображения_, _Найти на холсте_, _Библиотека_ и _Справка_ находятся в конце её меню <span class="tn-icon bx bx-category"></span> _Другие инструменты_. В полноэкранном режиме меню Excalidraw снова отображается. В мобильной раскладке панель инструментов холста находится в панели форматирования внизу экрана за кнопкой _Canvas ›_.
+*   <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Search%20in%20note.md">Поиск в заметке</a> находит текст на рисунке среди результатов заметки и подсвечивает каждое совпадение на холсте, сдвигая вид только если результат за пределами экрана. Внутри холста сочетание <kbd>Ctrl</kbd>+<kbd>F</kbd> на компьютере открывает поиск по заметке вместо поиска Excalidraw, который остаётся доступен через _Найти на холсте_.
+*   Изменения рисунка входят в историю отмены текстовой заметки (см. _Редактирование включения на месте_ выше). <kbd>Ctrl</kbd>+<kbd>Z</kbd>, <kbd>Ctrl</kbd>+<kbd>Y</kbd> и кнопки <span class="tn-icon bx bx-undo"></span> _Отменить_ и <span class="tn-icon bx bx-redo"></span> _Повторить_ на панели холста отменяют и повторяют последнее изменение заметки — на рисунке или в тексте.
+*   Новый рисунок имеет цвет фона заметки. Фон, выбранный в меню Excalidraw, заменяет его.
+*   Чтобы защитить готовый рисунок от случайных правок, выделите его и отключите _Редактируемый_ в меню <span class="tn-icon cke cke-three-vertical-dots"></span> _Дополнительные действия_. Рисунок будет отображаться как статичное изображение с сохранённым масштабом и положением, его нельзя будет изменять, масштабировать или двигать. Чтобы снова рисовать, включите кнопку <span class="tn-icon bx bx-edit-alt"></span> _Редактируемый_ в начале панели инструментов (она видна только при выключенном редактировании) или включите _Редактируемый_ в меню.
+*   Размеры блока, изменение размера, подпись и заголовок работают как для включённой заметки, но панель инструментов холста оставляет выбор размера и положения в меню _Дополнительные действия_ (см. _Позиционирование_ выше). _Компактный_ холст показывает только строку заголовка без рисунка.
+*   В настольной раскладке Excalidraw сохраняет настольный интерфейс независимо от размера блока. В мобильной раскладке узкий или невысокий блок переключает его в компактный интерфейс. Для большего пространства выберите _Полный_ или покажите заголовок и нажмите <span class="tn-icon bx bx-fullscreen"></span> _На весь экран_.
+*   В компактном интерфейсе кнопки для выделения находятся на боковой панели с краю экрана, пока холст в фокусе, чтобы оставаться под рукой при прокрутке: <span class="tn-icon bx bx-palette"></span> _Изменить_ открывает свойства выделенных фигур или выбранного инструмента в панели внизу экрана над панелью форматирования, <span class="tn-icon bx bx-duplicate"></span> _Дублировать_ и <span class="tn-icon bx bx-trash"></span> _Удалить_ действуют на выделенные фигуры, а <span class="tn-icon bx bx-check"></span> _Готово_ завершает рисование линии или стрелки по точкам. Боковая панель показывает только применимые кнопки и скрывается, когда их нет. Панель свойств закрывается при снятии выделения и снова открывается только кнопкой _Изменить_. В полноэкранном режиме эти кнопки располагаются внизу холста.
+*   Изображения, добавленные на рисунок, хранятся в том же вложении. Преобразованное изображение хранится как отдельное вложение-изображение заметки со сгенерированным именем.
+*   В [заметке только для чтения](../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) рисунок также отображается как статичная картинка (или серый прямоугольник, пока ничего не нарисовано).
+*   На [опубликованной странице](../../Advanced%20Usage/Sharing.md) рисунок отображается как та же картинка в светлых или тёмных цветах под тему страницы. При каждом изменении рисунка эта картинка сохраняется как SVG-вложение заметки со сгенерированным именем, которое в списке вложений отображается в разделе _Создано Trilium_.
 
-### Limitations
+### Ограничения
 
-*   The Excalidraw shape library is not saved for a drawing canvas.
-*   Outside the editor, for example in a tooltip, when printing or in the list of attachments, the drawing is shown as a picture.
-*   A drawing has no picture for shared pages until its first change, except one converted from an image. Until then, for example for an attached `.excalidraw` file, a shared page shows a link to download the drawing instead.
-*   In Safari, the picture of a drawing on a shared page follows the light or dark appearance of the system rather than the theme chosen on the page.
-*   A copy of a drawing canvas pasted in the same note shares the drawing with the original, zoom and position included. A copy pasted in another note gets a drawing of its own.
+*   Библиотека фигур Excalidraw не сохраняется для холста для рисования.
+*   За пределами редактора (например, во всплывающей подсказке, при печати или в списке вложений) рисунок отображается как картинка.
+*   У рисунка нет картинки для опубликованных страниц до первого изменения (кроме рисунка, преобразованного из изображения). До этого, например для прикреплённого файла `.excalidraw`, на опубликованной странице отображается ссылка на скачивание рисунка.
+*   В Safari картинка рисунка на опубликованной странице следует системной светлой или тёмной теме, а не теме, выбранной на странице.
+*   Копия холста для рисования, вставленная в ту же заметку, делит рисунок с оригиналом (включая масштаб и положение). Копия, вставленная в другую заметку, получает собственный независимый рисунок.

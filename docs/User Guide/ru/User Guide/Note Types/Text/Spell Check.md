@@ -1,71 +1,71 @@
-# Spell Check
-Trilium supports spell checking for your notes. How it works depends on whether you're using the **desktop application** (Electron) or accessing Trilium through a **web browser**.
+# Проверка орфографии
+Trilium поддерживает проверку орфографии в ваших заметках. То, как она работает, зависит от того, используете ли вы **настольное приложение** (Electron) или открываете Trilium через **веб-браузер**.
 
-## Desktop
+## Настольное приложение
 
-The desktop app uses Chromium's built-in spellchecker. You can configure it from _Options_ → _Spell Check_.
+Настольное приложение использует встроенную проверку орфографии Chromium. Вы можете настроить её в разделе _Настройки_ → _Проверка орфографии_.
 
-### Enabling spell check
+### Включение проверки орфографии
 
-Toggle _Check spelling_ to enable or disable the spellchecker. A restart is required for changes to take effect — use the restart button at the bottom of the section.
+Переключите параметр _Проверять орфографию_, чтобы включить или отключить проверку. Для вступления изменений в силу требуется перезапуск — используйте кнопку перезапуска в нижней части раздела.
 
-### Choosing languages
+### Выбор языков
 
-When spell check is enabled, a _Spell Check Languages_ section appears listing all languages available on your system. Select one or more languages by checking the boxes. The spellchecker will accept words that are valid in _any_ of the selected languages.
+Когда проверка орфографии включена, появляется раздел _Языки проверки орфографии_ со списком всех языков, доступных в вашей системе. Выберите один или несколько языков, отметив флажки. Проверка орфографии будет считать правильными слова, допустимые в _любом_ из выбранных языков.
 
-The available languages depend on your operating system's installed language packs. For example, on Windows you can add languages through _Options_ → _Time & Language_ → _Language & Region_ → _Add a language_.
+Доступные языки зависят от языковых пакетов, установленных в вашей операционной системе. Например, в Windows вы можете добавить языки через _Параметры_ → _Время и язык_ → _Язык и регион_ → _Добавить язык_.
 
 > [!NOTE]
-> The changes take effect only after restarting the application.
+> Изменения вступают в силу только после перезапуска приложения.
 
-### Custom dictionary
+### Пользовательский словарь
 
 > [!TIP]
-> This function is available starting with Trilium v0.103.0.
+> Эта функция доступна начиная с Trilium v0.103.0.
 
-Words you add to the dictionary (e.g. via the right-click context menu → "Add to dictionary") are stored in a **synced note** inside Trilium. This means your custom dictionary automatically syncs across all your devices.
+Слова, которые вы добавляете в словарь (например, через контекстное меню по правой кнопке мыши → «Добавить в словарь»), сохраняются в **синхронизируемой заметке** внутри Trilium. Это означает, что ваш пользовательский словарь автоматически синхронизируется между всеми вашими устройствами.
 
-You can view and edit the dictionary directly from _Settings_ → _Spell Check_ → _Custom Dictionary_ → _Edit dictionary_. This opens the underlying note, which contains one word per line. You can add, remove, or modify entries as you like.
+Вы можете просматривать и редактировать словарь напрямую через _Настройки_ → _Проверка орфографии_ → _Пользовательский словарь_ → _Редактировать словарь_. Это откроет соответствующую заметку, содержащую по одному слову на строку. Вы можете добавлять, удалять или изменять записи по своему усмотрению.
 
 > [!NOTE]
-> Changes to the custom dictionary (whether from the editor or the context menu) take effect after restarting the application.
+> Изменения в пользовательском словаре (внесённые как через редактор, так и через контекстное меню) вступают в силу после перезапуска приложения.
 
-#### How the custom dictionary works
+#### Как работает пользовательский словарь
 
-*   When you right-click a misspelled word and choose "Add to dictionary", the word is saved both to Electron's local spellchecker and to the synced dictionary note.
-*   On startup, Trilium loads all words from the dictionary note into the spellchecker session.
-*   If Trilium detects words in Electron's local dictionary but the dictionary note is empty (e.g. on first use), it performs a **one-time import** of those words into the note.
-*   Words that are in Electron's local dictionary but _not_ in the note (e.g. you removed them manually) are cleaned up from the local dictionary on startup.
+*   Когда вы нажимаете правой кнопкой мыши на слово с ошибкой и выбираете «Добавить в словарь», слово сохраняется как в локальном словаре проверки орфографии Electron, так и в синхронизируемой заметке словаря.
+*   При запуске Trilium загружает все слова из заметки словаря в сеанс проверки орфографии.
+*   Если Trilium обнаруживает слова в локальном словаре Electron, а заметка словаря пуста (например, при первом использовании), выполняется **однократный импорт** этих слов в заметку.
+*   Слова, которые есть в локальном словаре Electron, но _отсутствуют_ в заметке (например, вы удалили их вручную), удаляются из локального словаря при запуске.
 
-#### Known limitations
+#### Известные ограничения
 
-On Windows and macOS, Electron delegates "Add to dictionary" to the operating system's user dictionary. This means:
+В Windows и macOS Electron делегирует действие «Добавить в словарь» пользовательскому словарю операционной системы. Это означает:
 
-*   Words added via the context menu are also written to the OS-level dictionary (e.g. `%APPDATA%\Microsoft\Spelling\<language>\default.dic` on Windows).
-*   **Removing a word** from the Trilium dictionary note prevents it from being loaded into the spellchecker on next startup, but does _not_ remove it from the OS dictionary. The word may still be accepted by the OS spellchecker until you remove it from the OS dictionary manually.
+*   Слова, добавленные через контекстное меню, также записываются в словарь уровня ОС (например, `%APPDATA%\Microsoft\Spelling\<language>\default.dic` в Windows).
+*   **Удаление слова** из заметки словаря Trilium предотвращает его загрузку в проверку орфографии при следующем запуске, но _не_ удаляет его из словаря ОС. Слово может по-прежнему приниматься проверкой орфографии ОС, пока вы не удалите его из словаря ОС вручную.
 
-## Web browser
+## Веб-браузер
 
-When accessing Trilium through a web browser, spell checking is handled entirely by the browser itself. Trilium does not control the browser's spellchecker — language selection, dictionaries, and all other settings are managed through your browser's preferences.
+При работе с Trilium через веб-браузер проверка орфографии полностью выполняется самим браузером. Trilium не управляет проверкой орфографии браузера — выбор языка, словари и все остальные параметры настраиваются в настройках вашего браузера.
 
-The <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20contextual%20menu.md">Note contextual menu</a> has a special behavior in which a right-clicked word (without selection) shows the browser's default contextual menu which allows the spellcheck to function.
+<a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20contextual%20menu.md">Контекстное меню заметки</a> имеет особое поведение: при нажатии правой кнопкой мыши на слово (без выделения) отображается стандартное контекстное меню браузера, что позволяет использовать проверку орфографии.
 
-The Spell Check settings page in Trilium will indicate that these options apply only to desktop builds.
+На странице настроек проверки орфографии в Trilium будет указано, что эти параметры применимы только к настольным сборкам.
 
-## Frequently asked questions
+## Часто задаваемые вопросы
 
-### Do I need to restart after every change?
+### Нужно ли перезапускать приложение после каждого изменения?
 
-Yes. Spell check language selection and the custom dictionary are loaded once at startup. Any changes require a restart to take effect.
+Да. Выбор языков проверки орфографии и пользовательский словарь загружаются один раз при запуске. Для применения любых изменений требуется перезапуск.
 
-### Can I use multiple spell check languages at the same time?
+### Можно ли использовать несколько языков проверки орфографии одновременно?
 
-Yes. Select as many languages as you need from the checklist. The spellchecker will accept words from any of the selected languages.
+Да. Отметьте в списке столько языков, сколько вам нужно. Проверка орфографии будет принимать слова из любого из выбранных языков.
 
-### My custom words disappeared after syncing to a new device — what happened?
+### Мои добавленные слова исчезли после синхронизации с новым устройством — что произошло?
 
-On the first launch of a new device, Trilium may import existing local dictionary words into the note. If the note already has words from another device (via sync), those are preserved. Make sure sync completes before restarting the application on a new device.
+При первом запуске на новом устройстве Trilium может импортировать существующие слова локального словаря в заметку. Если в заметке уже есть слова с другого устройства (полученные через синхронизацию), они сохраняются. Убедитесь, что синхронизация завершилась, прежде чем перезапускать приложение на новом устройстве.
 
-### I removed a word from the dictionary note but it's still accepted
+### Я удалил слово из заметки словаря, но оно всё равно считается правильным
 
-This is likely due to the OS-level dictionary retaining the word (see [Known limitations](#known-limitations) above). You can manually remove it from your operating system's user dictionary.
+Вероятно, это связано с тем, что слово сохранилось в словаре уровня ОС (см. [Известные ограничения](#known-limitations) выше). Вы можете вручную удалить его из пользовательского словаря вашей операционной системы.

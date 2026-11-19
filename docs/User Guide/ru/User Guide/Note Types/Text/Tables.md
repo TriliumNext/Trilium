@@ -1,280 +1,280 @@
-# Tables
-Tables are a powerful feature for <a class="reference-link" href="../Text.md">Text</a> notes, since editing them is generally easy.
+# Таблицы
+Таблицы — это мощная функция <a class="reference-link" href="../Text.md">текстовых</a> заметок, поскольку их легко редактировать.
 
 <figure class="image image-style-align-right"><img style="aspect-ratio:176/204;" src="2_Tables_image.png" width="176" height="204"></figure>
 
-To create a table, simply press the table button and select with the mouse the desired amount of columns and rows, as indicated in the adjacent figure.
+Чтобы создать таблицу, просто нажмите кнопку таблицы и выберите мышью нужное количество столбцов и строк, как показано на рисунке рядом.
 
-Since v0.107.0, the same menu starts with an _Insert table…_ item, for a table larger than the grid or to type its size instead:
+Начиная с версии v0.107.0, это же меню начинается с пункта _Вставить таблицу…_, который позволяет создать таблицу больше размера сетки или ввести её размеры вручную:
 
-1.  Click the <span class="tn-icon cke cke-table"></span> button and select _Insert table…_. A small form opens at the cursor.
-2.  Enter the number of _Columns_ (up to 100) and _Rows_ (up to 1000). The table can have at most 5000 cells in total, for example 1000 rows of 5 columns.
-3.  Optionally, turn on _Use headers_ and enter the number of _Header columns_ and _Header rows_. A table cannot have more header columns or rows than it has columns or rows.
-4.  Press _Insert_ or <kbd>Enter</kbd>.
+1.  Нажмите кнопку <span class="tn-icon cke cke-table"></span> и выберите _Вставить таблицу…_. В позиции курсора откроется небольшая форма.
+2.  Введите количество _Столбцов_ (до 100) и _Строк_ (до 1000). Всего таблица может содержать не более 5000 ячеек, например 1000 строк по 5 столбцов.
+3.  При необходимости включите _Использовать заголовки_ и укажите количество _Столбцов заголовка_ и _Строк заголовка_. Количество столбцов или строк заголовка не может превышать общее число столбцов или строк.
+4.  Нажмите _Вставить_ или <kbd>Enter</kbd>.
 
-To close the form without inserting a table, press <kbd>Esc</kbd> or click outside it. From the keyboard, <kbd>Tab</kbd> moves between _Insert table…_ and the grid while the menu is open.
+Чтобы закрыть форму без вставки таблицы, нажмите <kbd>Esc</kbd> или щёлкните за её пределами. С клавиатуры клавиша <kbd>Tab</kbd> переключает фокус между пунктом _Вставить таблицу…_ и сеткой, пока меню открыто.
 
-On the <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>, the table is inserted from the <span class="tn-icon cke cke-plus"></span> button of the formatting toolbar: its _Insert table_ tile lists common sizes, from 2 × 2 to 3 × 4 (rows × columns). Tap one to insert a table of that size; to make it larger, insert rows and columns afterwards.
+В <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">мобильном интерфейсе</a> таблица вставляется через кнопку <span class="tn-icon cke cke-plus"></span> на панели форматирования: в её плитке _Вставить таблицу_ перечислены популярные размеры от 2 × 2 до 3 × 4 (строки × столбцы). Нажмите на один из них, чтобы вставить таблицу этого размера; чтобы увеличить её, добавьте строки и столбцы позже.
 
-## Formatting toolbar
+## Панель форматирования
 
-When a table is selected, a special formatting toolbar will appear:
+Когда выбрана таблица, появляется специальная панель форматирования:
 
 <img src="3_Tables_image.png" width="384" height="100">
 
-On the <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>, the toolbar does not float over the table. Instead, press the <span class="tn-icon cke cke-table"></span> button after _Undo_ and _Redo_ in the formatting toolbar at the bottom of the screen to show the table's toolbar there.
+В <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">мобильном интерфейсе</a> панель инструментов не всплывает над таблицей. Вместо этого нажмите кнопку <span class="tn-icon cke cke-table"></span> после _Отменить_ и _Повторить_ на панели форматирования в нижней части экрана, чтобы отобразить там панель инструментов таблицы.
 
-## Context menu
+## Контекстное меню
 
-Since v0.106.0, right-clicking anywhere inside a table opens a context menu with the most common table operations:
+Начиная с версии v0.106.0, нажатие правой кнопкой мыши в любом месте таблицы открывает контекстное меню с наиболее частыми операциями над таблицей:
 
-*   _Insert row above_ and _Insert row below_ insert a blank row next to the row of the current cell. When the selection spans multiple rows, the same number of rows is inserted.
-*   _Insert column to the left_ and _Insert column to the right_ work the same way for columns.
-*   Since v0.107.0, _Set as header_ or _Set header up to this row_, depending on the selection, turns rows into header rows, which always start at the top of the table:
-    *   _Set as header_ shows when the selection starts at the first row, and makes every selected row a header row.
-    *   _Set header up to this row_ shows when the selection is in a single row below the first, and makes that row and every row above it header rows.
-    *   Neither shows when the selection spans several rows below the first.
-    *   A check mark shows that the rows are already header rows. Choosing the item again turns them, and every header row below them, back into regular rows. For example, in a table with five header rows, choosing _Set header up to this row_ on the third row leaves only the first two as header rows.
-*   _Merge cells_ merges the selected cells into one. The selected cells must form a rectangle.
-*   _Split cell_ splits each selected cell in two, either _Vertically_ or _Horizontally_. _Unmerge cells_, in the same submenu, turns each merged cell in the selection back into the single cells it covers, keeping its content in the top-left one; cells that are not merged stay as they are.
-*   _Distribute columns evenly_ splits the combined width of the columns the selection touches equally between them. The other columns and the width of the table stay as they are. It needs a selection spanning at least two columns; a merged cell counts for every column it covers.
-*   _Cut_, _Copy_ and _Copy as Markdown_ act on the selected cells. Since v0.107.0, _Copy_ and _Paste_ open submenus with their variants, such as _Copy as Markdown_ and _Paste as plain text_; clicking _Copy_ or _Paste_ itself still copies or pastes:
-    *   Cutting or copying produces a smaller table holding just the selected cells. Pasting it over a cell selection replaces those cells; pasting elsewhere inserts it as a table of its own. Cutting clears the cells without removing rows or columns.
-    *   _Copy as Markdown_ converts the selected cells to a Markdown table. A selected header row becomes the Markdown header; without one, an empty header row is emitted, since Markdown tables require one.
-*   Since v0.107.0, _Paste rows above_ and _Paste rows below_, in the _Paste_ submenu, paste the clipboard as new rows next to the row of the current cell, instead of over the cells from the cursor on. They show only when the selection is in a single row, and, like _Paste_, only where the clipboard can be read:
-    *   A copied table becomes one new row for each of its rows, filled from the first column. When it has more columns than the table, the table gains columns, as with a regular paste. Other content goes in the first cell of a single new row.
-    *   The new rows are selected afterwards.
-    *   When merged cells join the row to others, the new rows go above or below that whole block of rows.
-*   _Sort_, below the clipboard section, sorts the rows by the column of the current cell, in _Ascending_ or _Descending_ order. See [Sorting rows](#sorting-rows).
-*   _Delete row_ and _Delete column_, below _Sort_, remove every row or column the selection touches, even when only some of their cells are selected.
-*   _Delete table_ removes the whole table and leaves an empty paragraph in its place. In a table nested inside another, only the inner table is removed.
-*   Since v0.107.0, _Select_, below _Delete table_, selects the cells of every row (_Row_) or column (_Column_) the selection touches, or every cell of the table (_Table_). Unlike the <span class="tn-icon cke cke-drag-handle"></span> button, which selects the table as a whole, _Table_ selects its cells, so cell operations such as _Merge cells_ apply to all of them. In a table nested inside another, _Table_ selects only the cells of the inner table.
+*   _Вставить строку выше_ и _Вставить строку ниже_ вставляют пустую строку рядом со строкой текущей ячейки. Если выделение охватывает несколько строк, вставляется такое же количество строк.
+*   _Вставить столбец слева_ и _Вставить столбец справа_ работают аналогично для столбцов.
+*   Начиная с v0.107.0, пункты _Сделать заголовком_ или _Сделать заголовком до этой строки_ (в зависимости от выделения) превращают строки в строки заголовка, которые всегда начинаются с верха таблицы:
+    *   _Сделать заголовком_ отображается, когда выделение начинается с первой строки, и делает каждую выделенную строку строкой заголовка.
+    *   _Сделать заголовком до этой строки_ отображается, когда выделение находится в одной строке ниже первой, и делает эту строку и все строки выше неё строками заголовка.
+    *   Ни один из пунктов не отображается, когда выделение охватывает несколько строк ниже первой.
+    *   Галочка показывает, что строки уже являются строками заголовка. Повторный выбор пункта превращает их и все строки заголовка ниже них обратно в обычные строки. Например, в таблице с пятью строками заголовка выбор _Сделать заголовком до этой строки_ на третьей строке оставит строками заголовка только первые две.
+*   _Объединить ячейки_ объединяет выделенные ячейки в одну. Выделенные ячейки должны образовывать прямоугольник.
+*   _Разделить ячейку_ делит каждую выделенную ячейку на две: _По вертикали_ или _По горизонтали_. Пункт _Отменить объединение ячеек_ в том же подменю возвращает каждую объединённую ячейку в выделении к отдельным ячейкам, которые она занимает, сохраняя содержимое в верхней левой ячейке; необъединённые ячейки остаются без изменений.
+*   _Выровнять ширину столбцов_ распределяет суммарную ширину столбцов, затронутых выделением, поровну между ними. Остальные столбцы и общая ширина таблицы не меняются. Требуется выделение, охватывающее не менее двух столбцов; объединённая ячейка учитывается для каждого столбца, который она занимает.
+*   _Вырезать_, _Копировать_ и _Копировать как Markdown_ применяются к выделенным ячейкам. Начиная с v0.107.0, _Копировать_ и _Вставить_ открывают подменю со своими вариантами, такими как _Копировать как Markdown_ и _Вставить как обычный текст_; нажатие на сами пункты _Копировать_ или _Вставить_ по-прежнему копирует или вставляет:
+    *   Вырезание или копирование создаёт меньшую таблицу, содержащую только выделенные ячейки. Вставка поверх выделенных ячеек заменяет их; вставка в другое место вставляет её как отдельную таблицу. Вырезание очищает ячейки без удаления строк или столбцов.
+    *   _Копировать как Markdown_ преобразует выделенные ячейки в таблицу Markdown. Выделенная строка заголовка становится заголовком Markdown; без неё добавляется пустая строка заголовка, так как таблицы Markdown требуют её наличия.
+*   Начиная с v0.107.0, пункты _Вставить строки выше_ и _Вставить строки ниже_ в подменю _Вставить_ вставляют содержимое буфера обмена как новые строки рядом со строкой текущей ячейки, а не поверх ячеек начиная с курсора. Они отображаются только тогда, когда выделение находится в одной строке, и, как и _Вставить_, только там, где доступен буфер обмена:
+    *   Скопированная таблица превращается в новую строку для каждой своей строки, заполняясь с первого столбца. Если в ней больше столбцов, чем в текущей таблице, в таблицу добавляются столбцы, как при обычной вставке. Другое содержимое помещается в первую ячейку одной новой строки.
+    *   Новые строки после вставки остаются выделенными.
+    *   Если объединённые ячейки связывают строку с другими, новые строки вставляются выше или ниже всего этого блока строк.
+*   _Сортировать_ (под разделом буфера обмена) сортирует строки по столбцу текущей ячейки — _По возрастанию_ или _По убыванию_. См. [Сортировка строк](#sorting-rows).
+*   _Удалить строку_ и _Удалить столбец_ (под _Сортировать_) удаляют каждую строку или столбец, затронутые выделением, даже если выделена лишь часть их ячеек.
+*   _Удалить таблицу_ удаляет всю таблицу и оставляет на её месте пустой абзац. В таблице, вложенной в другую, удаляется только внутренняя таблица.
+*   Начиная с v0.107.0, пункт _Выделить_ (под _Удалить таблицу_) выделяет ячейки каждой строки (_Строка_) или столбца (_Столбец_), затронутых выделением, либо все ячейки таблицы (_Таблица_). В отличие от кнопки <span class="tn-icon cke cke-drag-handle"></span>, которая выделяет таблицу целиком как объект, _Таблица_ выделяет именно её ячейки, поэтому операции с ячейками (например, _Объединить ячейки_) применяются ко всем ним. Во вложенной таблице _Таблица_ выделяет только ячейки внутренней таблицы.
 
-Right-clicking a cell that is not part of the current selection moves the cursor there first, so the menu always applies to the cell under the pointer.
+Нажатие правой кнопкой мыши на ячейку, не входящую в текущее выделение, сначала перемещает курсор в неё, поэтому меню всегда применяется к ячейке под указателем.
 
 > [!NOTE]
-> In the browser, Trilium's menu replaces the browser's own context menu inside tables. To reach the browser's menu (for example for its spell checking suggestions), hold <kbd>Shift</kbd> while right-clicking. The desktop application is unaffected, since its menu already includes the spelling suggestions. In the browser, the menu also offers _Paste_ only when the page can read the clipboard, which requires a secure (HTTPS) context and your permission; otherwise, paste with <kbd>Ctrl</kbd>+<kbd>V</kbd>.
+> В браузере меню Trilium заменяет собственное контекстное меню браузера внутри таблиц. Чтобы открыть меню браузера (например, для подсказок проверки орфографии), удерживайте <kbd>Shift</kbd> при нажатии правой кнопкой мыши. Настольного приложения это не касается, так как его меню уже включает подсказки орфографии. В браузере меню также предлагает _Вставить_ только тогда, когда страница может читать буфер обмена, что требует защищённого соединения (HTTPS) и вашего разрешения; в противном случае вставляйте с помощью <kbd>Ctrl</kbd>+<kbd>V</kbd>.
 
-## Navigating a table
+## Навигация по таблице
 
-*   Using the mouse:
-    *   Click on a cell to focus it.
-    *   Click the <span class="tn-icon cke cke-return-arrow"></span> button at the top or the bottom of a table to insert an empty paragraph near it.
-    *   Click the <span style="--tn-color:hsl(0,0%,60%);color:hsl(0,0%,60%);"><span class="tn-icon cke cke-drag-handle"></span></span> button at the top-left of the table to select it entirely (for easy copy-pasting or cutting) or drag and drop it to relocate the table.
-*   Using the keyboard:
-    *   Use the arrow keys on the keyboard to easily navigate between cells.
-    *   It's also possible to use <kbd>Tab</kbd> to go to the next cell and Shift+Tab to go to the previous cell.
-    *   Unlike arrow keys, pressing <kbd>Tab</kbd> at the end of the table (last row, last column) will create a new row automatically.
-    *   To select multiple cells, hold <kbd>Shift</kbd> while using the arrow keys.
-*   Using touch:
-    *   Since v0.107.0, touching a table outlines the cell with the cursor, or the selected cells, and shows a handle at each corner of the outline.
-    *   To select multiple cells, drag one of the handles across the table. The cell at the opposite corner stays selected, so the selection grows or shrinks as the finger moves. The note and wide tables scroll when the handle reaches the edge of the screen.
+*   С помощью мыши:
+    *   Нажмите на ячейку, чтобы перевести фокус на неё.
+    *   Нажмите кнопку <span class="tn-icon cke cke-return-arrow"></span> вверху или внизу таблицы, чтобы вставить пустой абзац рядом с ней.
+    *   Нажмите кнопку <span style="--tn-color:hsl(0,0%,60%);color:hsl(0,0%,60%);"><span class="tn-icon cke cke-drag-handle"></span></span> в левом верхнем углу таблицы, чтобы выделить её целиком (для удобного копирования, вставки или вырезания), либо перетащите её, чтобы переместить таблицу.
+*   С помощью клавиатуры:
+    *   Используйте клавиши со стрелками для удобной навигации между ячейками.
+    *   Также можно использовать <kbd>Tab</kbd> для перехода к следующей ячейке и Shift+Tab для перехода к предыдущей.
+    *   В отличие от клавиш со стрелками, нажатие <kbd>Tab</kbd> в конце таблицы (последняя строка, последний столбец) автоматически создаст новую строку.
+    *   Чтобы выделить несколько ячеек, удерживайте <kbd>Shift</kbd> при использовании клавиш со стрелками.
+*   С помощью сенсорного экрана:
+    *   Начиная с v0.107.0, касание таблицы обводит ячейку с курсором (или выделенные ячейки) и отображает маркер в каждом углу рамки.
+    *   Чтобы выделить несколько ячеек, потяните один из маркеров по таблице. Ячейка в противоположном углу остаётся выделенной, поэтому выделение расширяется или сужается по мере движения пальца. Заметка и широкие таблицы прокручиваются, когда маркер достигает края экрана.
 
-## Resizing cells
+## Изменение размера ячеек
 
-*   Columns can be resized by hovering the mouse over the border of two adjacent cells and dragging it.
-*   To give several columns the same width, select cells across them and choose _Distribute columns evenly_ from the <span class="tn-icon cke cke-table-column"></span> button of the formatting toolbar or from the [context menu](#context-menu).
-*   By default, the row height is not adjustable using the mouse, but it can be configured from the cell settings (see below).
-*   To adjust exactly the width (in pixels or percentages) of a cell, select the <span class="tn-icon cke cke-table-cell-properties"></span> button.
+*   Ширину столбцов можно изменить, наведя указатель мыши на границу между двумя соседними ячейками и перетащив её.
+*   Чтобы задать нескольким столбцам одинаковую ширину, выделите ячейки в этих столбцах и выберите _Выровнять ширину столбцов_ в меню кнопки <span class="tn-icon cke cke-table-column"></span> на панели форматирования или в [контекстном меню](#context-menu).
+*   По умолчанию высоту строк нельзя изменять мышью, но её можно задать в свойствах ячейки (см. ниже).
+*   Чтобы точно настроить ширину (в пикселях или процентах) ячейки, нажмите кнопку <span class="tn-icon cke cke-table-cell-properties"></span>.
 
-### Resizing with touch
+### Изменение размера на сенсорном экране
 
-Since v0.107.0, touching a table shows a bar at the bottom of the note, above the formatting toolbar on mobile. The bar has a segment for each column of the table, with a divider at the end of each column. Only the divider of the column with the cursor is a handle that resizes; the other dividers only mark where the columns meet, so a swipe across them scrolls instead. When several cells are selected, each column they cover has a handle.
+Начиная с v0.107.0, при касании таблицы в нижней части заметки (над панелью форматирования на мобильных устройствах) появляется специальная полоса. Она содержит сегмент для каждого столбца таблицы с разделителем в конце каждого столбца. Только разделитель столбца с курсором является маркером изменения размера; остальные разделители просто отмечают границы столбцов, поэтому свайп по ним прокручивает таблицу. Когда выделено несколько ячеек, маркер есть у каждого охваченного ими столбца.
 
-*   To resize a column, place the cursor in one of its cells or tap its segment, then drag its handle. The table grows or shrinks with the column, and scrolls when the handle reaches the edge of the screen. The column snaps to its starting width and to the widths of the columns beside it.
-*   To cancel a resize, drag the handle back to where it started, or touch the screen with a second finger.
-*   To give a column and the next one the same width, double-tap the handle between them.
-*   To select a column, tap its segment. To open the column menu, touch and hold the segment.
-*   To scroll a wide table sideways, swipe along the bar.
+*   Чтобы изменить ширину столбца, поместите курсор в одну из его ячеек или нажмите на его сегмент, затем перетащите маркер. Таблица увеличивается или уменьшается вместе со столбцом и прокручивается, когда маркер достигает края экрана. Столбец прилипает к своей исходной ширине и к ширине соседних столбцов.
+*   Чтобы отменить изменение размера, верните маркер в исходное положение или коснитесь экрана вторым пальцем.
+*   Чтобы сделать ширину столбца и следующего за ним одинаковой, дважды нажмите на маркер между ними.
+*   Чтобы выделить столбец, нажмите на его сегмент. Чтобы открыть меню столбца, нажмите и удерживайте сегмент.
+*   Чтобы прокрутить широкую таблицу по горизонтали, проведите пальцем вдоль полосы.
 
-A wide table scrolls a little past its end, so the handle of its last column stays away from the edge of the screen, where a swipe navigates back.
+Широкая таблица прокручивается немного дальше своего конца, чтобы маркер последнего столбца не оказывался у самого края экрана, где свайп выполняет переход назад.
 
-## Wide tables
+## Широкие таблицы
 
-Since v0.107.0, a table can be wider than the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Content%20width.md">Content width</a>. Such a table scrolls sideways, while the rest of the note keeps its width.
+Начиная с v0.107.0, таблица может быть шире, чем <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Content%20width.md">ширина содержимого</a>. Такая таблица прокручивается по горизонтали, в то время как остальная часть заметки сохраняет свою ширину.
 
-*   A new table is as wide as the content. To make it wider, drag the right border of its last column past the edge of the content. The border snaps to the edge and holds there briefly, so the table is easy to bring back to the width of the content.
-*   To set an exact width, enter a percentage above `100%` or a width in pixels in the <span class="tn-icon cke cke-table-properties"></span> [table properties](#table-properties).
-*   A table whose content needs more room than the note, such as a pasted table with many columns, also scrolls instead of stretching the note.
-*   Wide tables scroll the same way in read-only notes and on shared pages.
-*   When printing or exporting to PDF, a wide table is shrunk to fit the page.
+*   Новая таблица имеет ширину содержимого. Чтобы сделать её шире, перетащите правую границу последнего столбца за край области содержимого. Граница слегка прилипает к краю, поэтому таблицу легко вернуть к ширине содержимого.
+*   Чтобы задать точную ширину, введите значение в процентах больше `100%` или ширину в пикселях в <span class="tn-icon cke cke-table-properties"></span> [свойствах таблицы](#table-properties).
+*   Таблица, содержимому которой требуется больше места, чем ширина заметки (например, вставленная таблица со множеством столбцов), также прокручивается, а не растягивает заметку.
+*   Широкие таблицы прокручиваются точно так же в заметках только для чтения и на опубликованных страницах.
+*   При печати или экспорте в PDF широкая таблица уменьшается, чтобы поместиться на странице.
 
-Tables inside other blocks, such as block quotes, admonitions, collapsible blocks, columns or tabs, are limited to the width of their block and do not scroll.
+Таблицы внутри других блоков — таких как цитаты, выноски, сворачиваемые блоки, колонки или вкладки — ограничены шириной своего блока и не прокручиваются.
 
-### Mobile support
+### Поддержка мобильных устройств
 
-On the <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>, a table keeps the width it has on a desktop and scrolls sideways, instead of squeezing its columns into the width of the screen. The full width of a table is the _Max content width_ set in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Appearance_ → _Content Width_ on the mobile device, 1200 pixels by default. For example, a table set to `50%` is 600 pixels wide.
+В <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">мобильном интерфейсе</a> таблица сохраняет ширину, которую она имеет на настольном компьютере, и прокручивается по горизонтали, вместо того чтобы сжимать столбцы под ширину экрана. Полная ширина таблицы соответствует параметру _Максимальная ширина содержимого_, заданному в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Внешний вид_ → _Ширина содержимого_ на мобильном устройстве (по умолчанию 1200 пикселей). Например, таблица с шириной `50%` будет иметь ширину 600 пикселей.
 
-To resize columns on mobile, use the bar described in [Resizing with touch](#resizing-with-touch).
+Чтобы изменять ширину столбцов на мобильных устройствах, используйте полосу, описанную в разделе [Изменение размера на сенсорном экране](#resizing-with-touch).
 
-## Long tables
+## Длинные таблицы
 
-Since v0.107.0, the header rows of a table stay visible at the top of the note while you scroll through the rest of the table, and leave with the end of the table. This also works in read-only notes, on shared pages and in wide tables.
+Начиная с v0.107.0, строки заголовка таблицы остаются видимыми в верхней части заметки при прокрутке остальной части таблицы и уходят вместе с её концом. Это также работает в заметках только для чтения, на опубликованных страницах и в широких таблицах.
 
-To turn rows into header rows, use _Set as header_ in the [context menu](#context-menu), or _Header row_ in the <span class="tn-icon cke cke-table-row"></span> button of the formatting toolbar.
+Чтобы превратить строки в строки заголовка, используйте _Сделать заголовком_ в [контекстном меню](#context-menu) или _Строка заголовка_ в меню кнопки <span class="tn-icon cke cke-table-row"></span> на панели форматирования.
 
-To let header rows scroll away with the rest of the table, turn off <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ → _Features_ → _Use sticky header rows for tables_. The setting applies to the current device only, and shared pages keep their sticky header rows.
+Чтобы строки заголовка прокручивались вместе с остальной таблицей, отключите параметр <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Текстовые заметки_ → _Функции_ → _Use sticky header rows for tables_. Эта настройка применяется только к текущему устройству, а опубликованные страницы сохраняют закреплённые строки заголовка.
 
-## Inserting new rows and new columns
+## Вставка новых строк и столбцов
 
-*   To insert a new column, click on a desired location, then press the <span class="tn-icon cke cke-table-column"></span> button from the formatting toolbar and select _Insert column left or right._
-*   To insert a new row, click on a desired location, then press the <span class="tn-icon cke cke-table-row"></span> button and select _Insert row above_ or _below_.
-    *   A quicker alternative to creating a new row while at the end of the table is to press the <kbd>Tab</kbd> key.
-*   Both operations are also available in the [context menu](#context-menu), which inserts as many rows or columns as the selection spans.
-*   The menu of the block handle beside a cell, described in <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, also has _Insert row above_ and _Insert row below_.
-*   After an insertion, the caret moves into the new row and stays in its column, or into the new column and stays in its row.
+*   Чтобы вставить новый столбец, нажмите в нужном месте, затем нажмите кнопку <span class="tn-icon cke cke-table-column"></span> на панели форматирования и выберите _Вставить столбец слева_ или _справа_.
+*   Чтобы вставить новую строку, нажмите в нужном месте, затем нажмите кнопку <span class="tn-icon cke cke-table-row"></span> и выберите _Вставить строку выше_ или _ниже_.
+    *   Более быстрый способ создать новую строку, находясь в конце таблицы, — нажать клавишу <kbd>Tab</kbd>.
+*   Обе операции также доступны в [контекстном меню](#context-menu), которое вставляет столько строк или столбцов, сколько охватывает выделение.
+*   Меню маркера блока рядом с ячейкой, описанное в разделе <a class="reference-link" href="Formatting%20toolbar.md">Панель форматирования</a>, также содержит пункты _Вставить строку выше_ и _Вставить строку ниже_.
+*   После вставки курсор перемещается в новую строку (оставаясь в своём столбце) или в новый столбец (оставаясь в своей строке).
 
-## Moving rows and columns
+## Перемещение строк и столбцов
 
-Since v0.106.0, rows and columns can be reordered with the keyboard:
+Начиная с версии v0.106.0, порядок строк и столбцов можно менять с помощью клавиатуры:
 
-*   <kbd>Alt</kbd>+<kbd>Up</kbd> and <kbd>Alt</kbd>+<kbd>Down</kbd> move the rows touched by the selection up or down.
-*   <kbd>Alt</kbd>+<kbd>Left</kbd> and <kbd>Alt</kbd>+<kbd>Right</kbd> move the columns touched by the selection left or right.
+*   <kbd>Alt</kbd>+<kbd>Up</kbd> и <kbd>Alt</kbd>+<kbd>Down</kbd> перемещают строки, затронутые выделением, вверх или вниз.
+*   <kbd>Alt</kbd>+<kbd>Left</kbd> и <kbd>Alt</kbd>+<kbd>Right</kbd> перемещают столбцы, затронутые выделением, влево или вправо.
 
-Merged cells are never split by a move. The rows or columns held together by a merged cell travel as one block, and moving toward such a block jumps over it entirely.
+Объединённые ячейки никогда не разбиваются при перемещении. Строки или столбцы, связанные объединённой ячейкой, перемещаются как единый блок, а перемещение в сторону такого блока перескакивает через него целиком.
 
-When the table has a header row, a header row moved below the header area becomes a regular row, and a regular row moved into the header area becomes a header row. Header columns behave the same way.
+Если в таблице есть строка заголовка, то при перемещении ниже области заголовка она становится обычной строкой, а обычная строка, перемещённая в область заголовка, становится строкой заголовка. Столбцы заголовка ведут себя так же.
 
-Outside of tables, <kbd>Alt</kbd>+<kbd>Left</kbd> and <kbd>Alt</kbd>+<kbd>Right</kbd> keep navigating the note history, and <kbd>Alt</kbd>+<kbd>Up</kbd> and <kbd>Alt</kbd>+<kbd>Down</kbd> keep moving the current paragraph.
+Вне таблиц <kbd>Alt</kbd>+<kbd>Left</kbd> и <kbd>Alt</kbd>+<kbd>Right</kbd> по-прежнему служат для навигации по истории заметок, а <kbd>Alt</kbd>+<kbd>Up</kbd> и <kbd>Alt</kbd>+<kbd>Down</kbd> — для перемещения текущего абзаца.
 
-## Sorting rows
+## Сортировка строк
 
-Since v0.107.0, the rows of a table can be sorted by the values of one column:
+Начиная с версии v0.107.0, строки таблицы можно сортировать по значениям одного столбца:
 
-*   To sort all the rows, place the cursor in any cell of the column to sort by, then select _Sort_ → _Ascending_ or _Descending_ from the [context menu](#context-menu). The same items are in the <span class="tn-icon bx bx-sort-alt-2"></span> button of the formatting toolbar.
-*   To sort only some of the rows, select their cells in the column to sort by, then sort the same way. Sorting is not available while the selection spans more than one column.
+*   Чтобы отсортировать все строки, поместите курсор в любую ячейку нужного столбца, затем выберите _Сортировать_ → _По возрастанию_ или _По убыванию_ в [контекстном меню](#context-menu). Те же пункты есть в кнопке <span class="tn-icon bx bx-sort-alt-2"></span> на панели форматирования.
+*   Чтобы отсортировать только часть строк, выделите их ячейки в нужном столбце и выполните сортировку тем же способом. Сортировка недоступна, если выделение охватывает более одного столбца.
 
-Header rows always stay at the top of the table and are never sorted. A sort can be undone with <kbd>Ctrl</kbd>+<kbd>Z</kbd>.
+Строки заголовка всегда остаются вверху таблицы и никогда не сортируются. Сортировку можно отменить с помощью <kbd>Ctrl</kbd>+<kbd>Z</kbd>.
 
-### How values are compared
+### Как сравниваются значения
 
-Each cell is read as plain text, so formatting does not affect the order. Trilium then detects what kind of value the cell holds:
+Каждая ячейка читается как обычный текст, поэтому форматирование не влияет на порядок. Затем Trilium определяет тип значения в ячейке:
 
-| Kind | Examples | Compared by |
+| Тип | Примеры | Как сравнивается |
 | --- | --- | --- |
-| Time | `15:02`, `15:02:38`, `3:02 PM` | The time of day. |
-| Date | `2026-09-30`, `2026-09-30 15:02`, `30 September 2026`, `Wednesday, 30 September 2026`, `2026-09-30T15:02:38+03:00` | The date and time. |
-| Number | `12`, `-3.5`, `1,234.56`, `$ 12.04`, `21 RON`, `24.5m` | The numeric value. |
-| Text | Anything else. | Alphabetically, ignoring case, with numbers inside the text in numeric order (`Item 9` before `Item 10`). Accents count, so `a` and `á` differ. |
-| Empty | An empty cell, or one holding only spaces. | Not compared. Empty cells always go last. |
+| Время | `15:02`, `15:02:38`, `3:02 PM` | По времени суток. |
+| Дата | `2026-09-30`, `2026-09-30 15:02`, `30 September 2026`, `Wednesday, 30 September 2026`, `2026-09-30T15:02:38+03:00` | По дате и времени. |
+| Число | `12`, `-3.5`, `1,234.56`, `$ 12.04`, `21 RON`, `24.5m` | По числовому значению. |
+| Текст | Всё остальное. | По алфавиту без учёта регистра, с числами внутри текста в числовом порядке (`Item 9` перед `Item 10`). Диакритические знаки учитываются, поэтому `a` и `á` различаются. |
+| Пусто | Пустая ячейка или содержащая только пробелы. | Не сравнивается. Пустые ячейки всегда идут последними. |
 
-Ascending order puts times first, then dates, numbers and text. Descending order reverses it. Empty cells go last in both directions.
+При сортировке по возрастанию сначала идут значения времени, затем даты, числа и текст. При сортировке по убыванию порядок обратный. Пустые ячейки идут последними в обоих направлениях.
 
-Numbers, dates and times with the same value are ordered by their text, so `5 apples` comes before `5 pears`. Rows whose cells hold the same text, ignoring case, keep their relative order.
+Числа, даты и время с одинаковым значением упорядочиваются по их тексту, поэтому `5 apples` идёт перед `5 pears`. Строки, ячейки которых содержат одинаковый текст (без учёта регистра), сохраняют свой исходный взаимный порядок.
 
-*   Dates are also recognized in the formats of the note's language, such as `30.09.2026` or `30. September 2026` for German, and in the format chosen in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ → _Editor_ → _Date/time format_ for [inserting the date and time](Insert%20buttons.md).
-*   A number can start with a currency symbol, such as `$`, `€` or `£`. Whatever follows the number, such as a unit, is ignored, so units are not converted: `1 km` sorts before `500 m`. A cell that starts with letters, such as `RON 21`, is text.
-*   The decimal separator follows the language of the note: `1.500` is one and a half in English, but one thousand five hundred in German. A comma or period that is not followed by exactly three digits is always read as a decimal separator, so `1,5` is one and a half in either language.
-*   The language of the note set in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a> via the <span class="tn-icon bx bx-globe"></span> icon, or else the default content language. See <a class="reference-link" href="Content%20language%20%26%20Right-to-left%20support.md">Content language &amp; Right-to-left support</a>.
+*   Даты также распознаются в форматах языка заметки (например, `30.09.2026` или `30. September 2026` для немецкого) и в формате, выбранном в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Текстовые заметки_ → _Редактор_ → _Формат даты/времени_ для [вставки даты и времени](Insert%20buttons.md).
+*   Число может начинаться с символа валюты, например `$`, `€` или `£`. Всё, что следует за числом (например, единица измерения), игнорируется, поэтому единицы не конвертируются: `1 km` окажется перед `500 m`. Ячейка, начинающаяся с букв (например, `RON 21`), считается текстом.
+*   Десятичный разделитель зависит от языка заметки: `1.500` — это полтора в английском, но тысяча пятьсот в немецком. Запятая или точка, за которой следует не ровно три цифры, всегда читается как десятичный разделитель, поэтому `1,5` означает полтора в любом языке.
+*   Язык заметки задаётся в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">строке состояния</a> через значок <span class="tn-icon bx bx-globe"></span>, иначе используется язык содержимого по умолчанию. См. <a class="reference-link" href="Content%20language%20%26%20Right-to-left%20support.md">Язык содержимого и поддержка письма справа налево</a>.
 
-### Merged cells
+### Объединённые ячейки
 
-Rows joined by a merged cell are kept together and move as one block. The block is sorted by the value in its first row. When the block has more than one cell in the sorted column, the other cells do not affect the order, and a message says so: _Some rows were sorted together because merged cells tie them to each other_.
+Строки, связанные объединённой ячейкой, держатся вместе и перемещаются как единый блок. Блок сортируется по значению в его первой строке. Если в блоке больше одной ячейки в сортируемом столбце, остальные ячейки не влияют на порядок, и появляется сообщение: _Some rows were sorted together because merged cells tie them to each other_.
 
-When the selection covers only part of such a block, the whole block is sorted.
+Если выделение охватывает лишь часть такого блока, сортируется весь блок целиком.
 
-## Merging cells
+## Объединение ячеек
 
-To merge two or more cells together, simply select them via drag & drop and press the <span class="tn-icon cke cke-table-merge-cell"></span> button from the formatting toolbar.
+Чтобы объединить две или более ячеек, просто выделите их перетаскиванием и нажмите кнопку <span class="tn-icon cke cke-table-merge-cell"></span> на панели форматирования.
 
-More options are available by pressing the arrow next to it:
+Дополнительные параметры доступны при нажатии на стрелку рядом с ней:
 
-*   Click on a single cell and select Merge cell up/down/right/left to merge with an adjacent cell.
-*   Select _Merge selected cells_ to merge the selected cells, the same as pressing the button itself.
-*   Select _Split cell vertically_ or _horizontally_, to split a cell into multiple cells (can also be used to undo a merge).
-*   Select _Unmerge cells_ to turn each merged cell in the selection back into the single cells it covers, keeping its content in the top-left one.
+*   Нажмите на одну ячейку и выберите объединение вверх/вниз/вправо/влево, чтобы объединить её с соседней ячейкой.
+*   Выберите _Объединить выделенные ячейки_, чтобы объединить выделенные ячейки (то же самое, что нажать саму кнопку).
+*   Выберите _Разделить ячейку по вертикали_ или _по горизонтали_, чтобы разбить ячейку на несколько (также можно использовать для отмены объединения).
+*   Выберите _Отменить объединение ячеек_, чтобы вернуть каждую объединённую ячейку в выделении к отдельным ячейкам, сохранив содержимое в верхней левой.
 
-_Merge selected cells_ and _Unmerge cells_ are available since v0.107.0. Merging and splitting are also available by right-clicking the selected cells, via the [context menu](#context-menu), where _Unmerge cells_ is in the _Split cell_ submenu.
+Пункты _Объединить выделенные ячейки_ и _Отменить объединение ячеек_ доступны начиная с v0.107.0. Объединение и разделение также доступны по правому клику на выделенных ячейках через [контекстное меню](#context-menu), где _Отменить объединение ячеек_ находится в подменю _Разделить ячейку_.
 
-## Table properties
+## Свойства таблицы
 
 <figure class="image image-style-align-right"><img style="aspect-ratio:312/311;" src="Tables_image.png" width="312" height="311"></figure>
 
-The table properties can be accessed via the <span class="tn-icon cke cke-table-properties"></span> button and allows for the following adjustments:
+Свойства таблицы открываются кнопкой <span class="tn-icon cke cke-table-properties"></span> и позволяют настроить следующее:
 
-*   Border (not the border of the cells, but the outer rim of the table), which includes the style (single, double), color and width.
-*   The background color, with none set by default.
-*   The width and height of the table in percentage (must end with `%`) or pixels (must end with `px`).
-*   The alignment of the table.
-    *   Left or right-aligned, case in which the text will flow next to it.
-    *   Centered, case in which text will avoid the table, regardless of the table width.
+*   Граница (не границы ячеек, а внешняя рамка таблицы): стиль (одинарная, двойная), цвет и толщина.
+*   Цвет фона (по умолчанию не задан).
+*   Ширина и высота таблицы в процентах (должно заканчиваться на `%`) или пикселях (должно заканчиваться на `px`).
+*   Выравнивание таблицы:
+    *   По левому или правому краю — в этом случае текст обтекает таблицу.
+    *   По центру — в этом случае текст не обтекает таблицу независимо от её ширины.
 
-The table will immediately update to reflect the changes, but the _Save_ button must be pressed for the changes to persist.
+Таблица сразу обновится, чтобы показать изменения, но для их сохранения необходимо нажать кнопку _Сохранить_.
 
-## Cell properties
+## Свойства ячейки
 
 <figure class="image image-style-align-right"><img style="aspect-ratio:320/386;" src="1_Tables_image.png" width="320" height="386"></figure>
 
-Similarly to table properties, the <span class="tn-icon cke cke-table-cell-properties"></span> button opens a popup which adjusts the styling of one or more cells (based on the user's selection).
+Аналогично свойствам таблицы, кнопка <span class="tn-icon cke cke-table-cell-properties"></span> открывает всплывающее окно для настройки стиля одной или нескольких ячеек (в зависимости от выделения).
 
-The following options can be adjusted:
+Можно настроить следующие параметры:
 
-*   The border style, color and width (same as table properties), but applying to the current cell only.
-*   The background color, with none set by default.
-*   The width and height of the cell in percentage (must end with `%`) or pixels (must end with `px`).
-*   The padding (the distance of the text compared to the cell's borders).
-*   The alignment of the text, both horizontally (left, centered, right, justified) and vertically (top, middle or bottom).
-    *   In a centered or right-aligned cell, each item of a bulleted, numbered or to-do list moves together with its bullet, number or checkbox.
+*   Стиль, цвет и толщину границы (как в свойствах таблицы), но применяемые только к текущей ячейке.
+*   Цвет фона (по умолчанию не задан).
+*   Ширину и высоту ячейки в процентах (должно заканчиваться на `%`) или пикселях (должно заканчиваться на `px`).
+*   Внутренние отступы (расстояние от текста до границ ячейки).
+*   Выравнивание текста: по горизонтали (по левому краю, по центру, по правому краю, по ширине) и по вертикали (по верхнему краю, по середине, по нижнему краю).
+    *   В ячейке с выравниванием по центру или по правому краю каждый элемент маркированного, нумерованного списка или списка задач смещается вместе со своим маркером, номером или флажком.
 
-The cell will immediately update to reflect the changes, but the _Save_ button must be pressed for the changes to persist.
+Ячейка сразу обновится, чтобы показать изменения, но для их сохранения необходимо нажать кнопку _Сохранить_.
 
-## Border and background colors
+## Цвета границ и фона
 
-The border and background colors of tables and cells adapt to the [theme](../../Basic%20Concepts%20and%20Features/Themes.md), the same way as [text colors](General%20formatting.md) do. A color picked from the palette, chosen with the color picker or typed in is shown in a lighter or darker shade that suits the current theme, so borders stay visible and text stays readable on the background. The hue stays the same, and the table keeps the color as it was picked.
+Цвета границ и фона таблиц и ячеек адаптируются к [теме](../../Basic%20Concepts%20and%20Features/Themes.md) так же, как и [цвета текста](General%20formatting.md). Цвет, выбранный из палитры, пипеткой или введённый вручную, отображается в более светлом или тёмном оттенке, подходящем к текущей теме, чтобы границы оставались видимыми, а текст — читаемым на фоне. Оттенок (тон) остаётся прежним, и таблица сохраняет исходно выбранный цвет.
 
-Colors applied with older versions of Trilium are shown exactly as they were picked, until the note is next edited.
+Цвета, применённые в более старых версиях Trilium, отображаются точно так, как были выбраны, до следующего редактирования заметки.
 
-Older browsers that can't adapt colors show them exactly as they were picked.
+Старые браузеры, которые не умеют адаптировать цвета, отображают их точно так, как они были выбраны.
 
-Header cells are shaded to suit the current theme. To change their background in every table, set the `--text-note-table-header-background` variable in a [custom theme](../../Theme%20development/Creating%20a%20custom%20theme.md) or in [custom app-wide CSS](../../Theme%20development/Custom%20app-wide%20CSS.md), for example `:root { --text-note-table-header-background: #8882; }`. A background picked for a cell still takes precedence.
+Ячейки заголовка затеняются под текущую тему. Чтобы изменить их фон во всех таблицах, задайте переменную `--text-note-table-header-background` в [пользовательской теме](../../Theme%20development/Creating%20a%20custom%20theme.md) или в [пользовательском CSS для всего приложения](../../Theme%20development/Custom%20app-wide%20CSS.md), например `:root { --text-note-table-header-background: #8882; }`. Фон, выбранный для конкретной ячейки, по-прежнему имеет приоритет.
 
-## Caption
+## Подпись
 
-Press the <span class="tn-icon cke cke-caption"></span> button to insert a caption or a text description of the table, which is going to be displayed above the table.
+Нажмите кнопку <span class="tn-icon cke cke-caption"></span>, чтобы вставить подпись или текстовое описание таблицы, которое будет отображаться над ней.
 
-## Table borders
+## Границы таблицы
 
-By default, tables come with a gray border that is lighter or darker to suit the current [theme](../../Basic%20Concepts%20and%20Features/Themes.md), so it stays discreet on a dark background.
+По умолчанию таблицы имеют серую границу, которая становится светлее или темнее в зависимости от текущей [темы](../../Basic%20Concepts%20and%20Features/Themes.md), чтобы оставаться ненавязчивой на тёмном фоне.
 
-To change the default border of every table, set the `--text-note-table-border-color` variable in a [custom theme](../../Theme%20development/Creating%20a%20custom%20theme.md) or in [custom app-wide CSS](../../Theme%20development/Custom%20app-wide%20CSS.md), for example `:root { --text-note-table-border-color: #555; }`. Set it to `transparent` to hide the borders of all the tables that don't have a border of their own.
+Чтобы изменить границу по умолчанию для всех таблиц, задайте переменную `--text-note-table-border-color` в [пользовательской теме](../../Theme%20development/Creating%20a%20custom%20theme.md) или в [пользовательском CSS для всего приложения](../../Theme%20development/Custom%20app-wide%20CSS.md), например `:root { --text-note-table-border-color: #555; }`. Задайте значение `transparent`, чтобы скрыть границы всех таблиц, у которых не задана собственная граница.
 
-To adjust the borders, follow these steps:
+Чтобы настроить границы, выполните следующие шаги:
 
-1.  Select the table.
-2.  In the floating panel, select the _Table properties_ option (<span class="tn-icon cke cke-table-properties"></span>).
-    1.  Look for the _Border_ section at the top of the newly opened panel.
-    2.  This will control the outer borders of the table.
-    3.  Select a style for the border. Generally _Single_ is the desirable option.
-    4.  Select a color for the border.
-    5.  Select a width for the border, expressed in pixels.
-3.  Select all the cells of the table and then press the _Cell properties_ option (<span class="tn-icon cke cke-table-cell-properties"></span>).
-    1.  This will control the inner borders of the table, at cell level.
-    2.  Note that it's possible to change the borders individually by selecting one or more cells, case in which it will only change the borders that intersect these cells.
-    3.  Repeat the same steps as from step (2).
+1.  Выделите таблицу.
+2.  На плавающей панели выберите _Свойства таблицы_ (<span class="tn-icon cke cke-table-properties"></span>).
+    1.  Найдите раздел _Граница_ в верхней части открывшейся панели.
+    2.  Он управляет внешними границами таблицы.
+    3.  Выберите стиль границы. Обычно желаемым вариантом является _Одинарная_.
+    4.  Выберите цвет границы.
+    5.  Выберите толщину границы в пикселях.
+3.  Выделите все ячейки таблицы и нажмите _Свойства ячейки_ (<span class="tn-icon cke cke-table-cell-properties"></span>).
+    1.  Это управляет внутренними границами таблицы на уровне ячеек.
+    2.  Обратите внимание, что можно изменять границы индивидуально, выделив одну или несколько ячеек — в этом случае изменятся только границы, относящиеся к этим ячейкам.
+    3.  Повторите те же шаги, что и в пункте (2).
 
-### Tables with invisible borders
+### Таблицы с невидимыми границами
 
-Tables can be set to have invisible borders in order to allow for basic layouts (columns, grids) of text or [images](Images.md) without the distraction of their border:
+Таблицам можно задать невидимые границы, чтобы создавать простые макеты (колонки, сетки) из текста или [изображений](Images.md) без отвлекающих рамок:
 
-1.  First insert a table with the desired number of columns and rows.
-2.  Select the entire table.
-3.  In _Table properties_, set:
-    1.  _Style_ to _Single_
-    2.  _Color_ to `transparent`
-    3.  Width to `1px`.
-4.  In Cell Properties, set the same as on the previous step.
+1.  Сначала вставьте таблицу с нужным количеством столбцов и строк.
+2.  Выделите всю таблицу.
+3.  В _Свойствах таблицы_ задайте:
+    1.  _Стиль_: _Одинарная_
+    2.  _Цвет_: `transparent`
+    3.  _Толщина_: `1px`.
+4.  В _Свойствах ячейки_ задайте то же самое, что и на предыдущем шаге.
 
-## Table indentation
+## Отступ таблицы
 
-Since v0.104.1, tables can be indented as a block (the whole table moves, rather than just the content of a cell).
+Начиная с версии v0.104.1, таблицам можно задавать отступ как целому блоку (смещается вся таблица, а не только содержимое ячейки).
 
-1.  Click the <span style="--tn-color:hsl(0,0%,60%);color:hsl(0,0%,60%);"><span class="tn-icon cke cke-drag-handle"></span></span> button to select the entire table. Otherwise, the indentation applies only to the current cell's content.
-2.  Press <kbd>Tab</kbd> to increase the indent, or <kbd>Shift</kbd>+<kbd>Tab</kbd> to decrease it. Alternatively, use the indentation buttons in the formatting toolbar.
+1.  Нажмите кнопку <span style="--tn-color:hsl(0,0%,60%);color:hsl(0,0%,60%);"><span class="tn-icon cke cke-drag-handle"></span></span>, чтобы выделить всю таблицу. В противном случае отступ применится только к содержимому текущей ячейки.
+2.  Нажмите <kbd>Tab</kbd> для увеличения отступа или <kbd>Shift</kbd>+<kbd>Tab</kbd> для его уменьшения. Также можно использовать кнопки отступа на панели форматирования.
 
-Markdown does not support indented tables, so the indentation is lost when converting to Markdown.
+Markdown не поддерживает таблицы с отступом, поэтому при преобразовании в Markdown отступ теряется.
 
-## Markdown import/export
+## Импорт и экспорт Markdown
 
-Simple tables are exported in GitHub-flavored Markdown format (e.g. a series of `|` items). If the table is found to be more complex (it contains HTML elements, has custom sizes or images), the table is converted to a HTML one instead.
+Простые таблицы экспортируются в формате GitHub-flavored Markdown (например, набор элементов с `|`). Если таблица оказывается более сложной (содержит HTML-элементы, нестандартные размеры или изображения), она преобразуется в HTML-таблицу.
 
-Generally formatting loss should be minimal when exported to Markdown due to the fallback to HTML formatting.
+Как правило, потери форматирования при экспорте в Markdown минимальны благодаря переходу к HTML-форматированию.

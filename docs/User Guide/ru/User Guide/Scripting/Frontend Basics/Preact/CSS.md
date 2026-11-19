@@ -1,5 +1,5 @@
 # CSS
-## Inline styles
+## Встроенные стили
 
 ```jsx
 <div style={{
@@ -12,6 +12,6 @@
 }}>/* [...] */</div>
 ```
 
-## Custom CSS file
+## Пользовательский CSS-файл
 
-Simply create a <a class="reference-link" href="../../../Theme%20development/Custom%20app-wide%20CSS.md">Custom app-wide CSS</a>. Make sure the class names are unique enough to not intersect with other UI elements, consider adding a prefix (e.g. `x-mywidget-`).
+Просто создайте <a class="reference-link" href="../../../Theme%20development/Custom%20app-wide%20CSS.md">пользовательский CSS для всего приложения</a>. Убедитесь, что имена классов достаточно уникальны и не пересекаются с другими элементами интерфейса — рекомендуется добавлять префикс (например, `x-mywidget-`).

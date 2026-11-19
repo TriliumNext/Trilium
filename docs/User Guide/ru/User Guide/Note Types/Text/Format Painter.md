@@ -1,19 +1,19 @@
-# Format Painter
+# Копирование формата
 <figure class="image image-style-align-right"><img style="aspect-ratio:220/76;" src="Format Painter_image.png" width="220" height="76"></figure>
 
-The Format Painter is a feature in text notes that allows users to copy the formatting of text (such as **bold**, _italic_, ~~Strikethrough~~, etc.) and apply it to other parts of the document. It helps maintain consistent formatting and accelerates the creation of rich content.
+Инструмент «Копирование формата» (Format Painter) в текстовых заметках позволяет копировать форматирование текста (например, **полужирный**, _курсив_, ~~зачёркнутый~~ и т. д.) и применять его к другим частям документа. Он помогает поддерживать единообразие оформления и ускоряет создание форматированного содержимого.
 
-## Usage Instructions
+## Инструкция по использованию
 
-Click the text that you want to copy the formatting from and use the _Copy formatting_ toolbar button (<span class="tn-icon cke cke-paint-roller"></span>) to copy the style. Then select the target text with your mouse, or click a word, to apply the formatting.
+Нажмите на текст, форматирование которого хотите скопировать, и нажмите кнопку _Copy formatting_ (<span class="tn-icon cke cke-paint-roller"></span>) на панели инструментов. Затем выделите целевой текст мышью или нажмите на слово, чтобы применить форматирование.
 
-*   **To copy the formatting**: Place the cursor inside text with some formatting and click the _Copy formatting_ toolbar button. The mouse cursor changes to indicate the painter is armed.
-*   **To paint with the copied formatting**: Select the target text with your mouse. The formatting is applied when you release the button, and the painter disarms — the cursor returns to normal. Clicking or tapping a word applies it to the whole word.
-*   **To paint a selection made otherwise**, such as with the keyboard or the selection handles of a touch screen: select the target text, then use the toolbar button again, which reads _Apply formatting_ once the selection has moved. On a phone, the formatting row stays open while the painter is armed, so the button stays in reach.
-*   **To cancel without painting**: Click the toolbar button again before selecting other text, or press <kbd>Escape</kbd>.
+*   **Чтобы скопировать форматирование**: поместите курсор внутрь отформатированного текста и нажмите кнопку _Copy formatting_ на панели инструментов. Курсор мыши изменится, показывая, что инструмент активен.
+*   **Чтобы применить скопированное форматирование**: выделите целевой текст мышью. Форматирование применится при отпускании кнопки мыши, после чего инструмент отключится, а курсор вернётся к обычному виду. Щелчок или касание по слову применяет форматирование ко всему слову целиком.
+*   **Чтобы применить формат к выделению, сделанному другим способом** (например, с клавиатуры или с помощью маркеров выделения на сенсорном экране): выделите целевой текст, затем снова нажмите кнопку на панели инструментов — после перемещения выделения она будет называться _Apply formatting_. На телефоне строка форматирования остаётся открытой, пока инструмент активен, поэтому кнопка всегда под рукой.
+*   **Чтобы отменить без применения**: нажмите кнопку на панели инструментов ещё раз до выделения другого текста или нажмите <kbd>Escape</kbd>.
 
-## Limitations
+## Ограничения
 
-1.  Painting with block-level formatting (like headings or image styles) is not supported yet. This is because, in <a class="reference-link" href="../../Advanced%20Usage/Technologies%20used/CKEditor.md">CKEditor</a>, they are considered a part of the content rather than text formatting.
-2.  A click outside a word, such as between two spaces or at the end of a line, only primes the caret, so text you type there takes the copied formatting.
-3.  The painter is one-shot; each paint requires copying the formatting again.
+1.  Копирование блочного форматирования (например, заголовков или стилей изображений) пока не поддерживается. Это связано с тем, что в <a class="reference-link" href="../../Advanced%20Usage/Technologies%20used/CKEditor.md">CKEditor</a> они считаются частью содержимого, а не форматированием текста.
+2.  Щелчок вне слова (например, между двумя пробелами или в конце строки) лишь подготавливает курсор, так что вводимый в этом месте текст получит скопированное форматирование.
+3.  Инструмент срабатывает однократно; для каждого нового применения форматирование нужно скопировать заново.

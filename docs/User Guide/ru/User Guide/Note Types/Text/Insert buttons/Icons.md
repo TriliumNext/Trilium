@@ -1,41 +1,41 @@
-# Icons
-Icons just like the [note icons](Icons.md) can be inserted in the content of a note, including from any other [custom icon packs](../../../Basic%20Concepts%20and%20Features/Themes/Icon%20Packs.md).
+# Значки
+Значки, такие же как [значки заметок](Icons.md), можно вставлять прямо в содержимое заметки, в том числе из любых [пользовательских наборов значков](../../../Basic%20Concepts%20and%20Features/Themes/Icon%20Packs.md).
 
-## Features
+## Возможности
 
-*   The icon can be formatted through the<a class="reference-link" href="../General%20formatting.md">General formatting</a> tools of the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a>:
-    *   Foreground/icon color
-    *   Background color/highlight
-    *   Font size
-*   Custom <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Themes/Icon%20Packs.md">Icon Packs</a> are also supported.
-    *   For emojis, prefer the Emoji functionality from <a class="reference-link" href="../Insert%20buttons.md">Insert buttons</a>.
-*   When an icon is clicked a floating toolbar appears with the following functions:
-    *   <span class="tn-icon bx bx-sticker"></span> which changes the icon.
-    *   <span class="tn-icon bx bx-reflect-horizontal"></span> which applies transforms: rotate (90 / 180 / 270) and flip horizontal/vertical. Only one transform can be used per icon.
+*   Значок можно форматировать с помощью инструментов <a class="reference-link" href="../General%20formatting.md">Общего форматирования</a> на <a class="reference-link" href="../Formatting%20toolbar.md">Панели форматирования</a>:
+    *   Цвет переднего плана / значка
+    *   Цвет фона / выделения
+    *   Размер шрифта
+*   Также поддерживаются пользовательские <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Themes/Icon%20Packs.md">Наборы значков</a>.
+    *   Для эмодзи лучше использовать функцию эмодзи из раздела <a class="reference-link" href="../Insert%20buttons.md">Кнопки вставки</a>.
+*   При клике по значку появляется всплывающая панель инструментов со следующими функциями:
+    *   <span class="tn-icon bx bx-sticker"></span> — смена значка.
+    *   <span class="tn-icon bx bx-reflect-horizontal"></span> — применение трансформаций: поворот (90 / 180 / 270) и отражение по горизонтали/вертикали. Для одного значка можно применить только одну трансформацию.
 
-## Usage
+## Применение
 
-*   The in-app help/user guide makes use of these icons in order to illustrate buttons in the UI.
-*   The <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Importing%20data%20from%20other%20applications/Microsoft%20OneNote.md">Microsoft OneNote</a> importer also makes use of them for the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Importing%20data%20from%20other%20applications/Microsoft%20OneNote/Tags.md">Tags</a>.
+*   Встроенная справка и руководство пользователя используют эти значки для иллюстрации кнопок интерфейса.
+*   Импортер <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Importing%20data%20from%20other%20applications/Microsoft%20OneNote.md">Microsoft OneNote</a> также использует их для <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Importing%20data%20from%20other%20applications/Microsoft%20OneNote/Tags.md">тегов</a>.
 
-## Inserting an icon
+## Вставка значка
 
-There are two ways to insert an icon:
+Вставить значок можно двумя способами:
 
-*   Via the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a> look for the <span class="tn-icon bx bx-plus"></span> icon and then the <span class="tn-icon bx bx-sticker"></span> icon.
-*   Via <a class="reference-link" href="../Slash%20Commands.md">Slash Commands</a>, type `/icon`.
+*   Через <a class="reference-link" href="../Formatting%20toolbar.md">Панель форматирования</a>: найдите кнопку <span class="tn-icon bx bx-plus"></span>, а затем значок <span class="tn-icon bx bx-sticker"></span>.
+*   Через <a class="reference-link" href="../Slash%20Commands.md">Слэш-команды</a>: введите `/icon`.
 
-An icon picker will appear, search for an icon and click it to insert it in the document.
+Появится окно выбора значка — найдите нужный и кликните по нему, чтобы вставить в документ.
 
-## Finding notes by their icons
+## Поиск заметок по значкам
 
-An icon can be [searched](../../../Basic%20Concepts%20and%20Features/Navigation/Search.md). A note containing a <span class="tn-icon bx bx-star"></span> icon can be found by searching for `star`, or its `iconClass` (`bx-star`).
+По значкам можно выполнять [поиск](../../../Basic%20Concepts%20and%20Features/Navigation/Search.md). Заметку со значком <span class="tn-icon bx bx-star"></span> можно найти по запросу `star` или по её `iconClass` (`bx-star`).
 
-To find the name of the icon, hover the mouse over an icon while in the icon picker.
+Чтобы узнать название значка, наведите на него курсор мыши в окне выбора значков.
 
-## Markdown rendering
+## Экспорт в Markdown
 
-When exporting to <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown.md">Markdown</a>, the item will render as raw HTML representation of the icon as is used by Trilium:
+При экспорте в <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown.md">Markdown</a> элемент будет представлен в виде исходного HTML-кода значка, используемого в Trilium:
 
 ```html
 <span class="tn-icon bx bx-star"></span>

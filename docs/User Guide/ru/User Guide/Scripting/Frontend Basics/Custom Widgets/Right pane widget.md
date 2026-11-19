@@ -1,7 +1,7 @@
-# Right pane widget
-### Title widget
+# Виджет правой панели
+### Виджет заголовка
 
-This is an example of a context-aware widget which displays the title of the current note:
+Это пример виджета с отслеживанием контекста, который отображает заголовок текущей заметки:
 
 ```
 class NoteTitleWidget extends api.RightPanelWidget {
@@ -24,9 +24,9 @@ class NoteTitleWidget extends api.RightPanelWidget {
 module.exports = new NoteTitleWidget();
 ```
 
-### Clock
+### Часы
 
-A simple widget which will show the current time, as an example on how to dynamically change the content of the widget periodically.
+Простой виджет, показывающий текущее время, в качестве примера периодического динамического обновления содержимого виджета.
 
 === "<span class="tn-icon bx bxl-react"></span> Preact"
 
@@ -77,11 +77,11 @@ A simple widget which will show the current time, as an example on how to dynami
     module.exports = new ToDoListWidget();
     ```
 
-## Altering the position within the sidebar
+## Изменение позиции на боковой панели
 
-By default, the sidebar items are displayed in the order they are found by the application when searching for `#widget` notes.
+По умолчанию элементы боковой панели отображаются в том порядке, в котором приложение находит заметки с меткой `#widget`.
 
-It is possible to make a widget appear higher or lower up, by adjusting its `position` property:
+Можно разместить виджет выше или ниже, настроив его свойство `position`:
 
 === "<span class="tn-icon bx bxl-react"></span> Preact"
 
@@ -107,11 +107,11 @@ It is possible to make a widget appear higher or lower up, by adjusting its `pos
     }
     ```
 
-Generally the default position starts from 10 and increases by 10 with each item, including the default Table of Contents and Highlights list.
+Как правило, позиция по умолчанию начинается с 10 и увеличивается на 10 для каждого элемента, включая стандартное Оглавление и Список выделений.
 
-## Key highlights for legacy widgets
+## Ключевые особенности устаревших виджетов
 
-*   `doRender` must not be overridden, instead `doRenderBody()` has to be overridden.
-    *   `doRenderBody` can optionally be `async`.
-*   `parentWidget()` must be set to `“rightPane”`.
-*   `widgetTitle()` getter can optionally be overriden, otherwise the widget will be displayed as “Untitled widget”.
+*   Метод `doRender` переопределять нельзя — вместо него нужно переопределять `doRenderBody()`.
+    *   `doRenderBody` может быть `async`.
+*   `parentWidget()` должен возвращать `“rightPane”`.
+*   Геттер `widgetTitle()` можно переопределить; в противном случае виджет будет отображаться как «Untitled widget».

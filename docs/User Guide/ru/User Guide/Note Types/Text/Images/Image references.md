@@ -1,21 +1,21 @@
-# Image references
+# Ссылки на изображения
 <figure class="image image-style-align-right image_resized" style="width:50.47%;"><img style="aspect-ratio:880/553;" src="Image references_image.png" width="880" height="553"></figure>
 
-Image references are an easy way to embed the preview of another note type into a <a class="reference-link" href="../../Text.md">Text</a> note.
+Ссылки на изображения — это простой способ встроить предпросмотр заметки другого типа в <a class="reference-link" href="../../Text.md">текстовую</a> заметку.
 
-## Supported note types
+## Поддерживаемые типы заметок
 
-*   <a class="reference-link" href="../../Canvas.md">Canvas</a>
-*   <a class="reference-link" href="../../Mermaid%20Diagrams.md">Mermaid Diagrams</a>
-*   <a class="reference-link" href="../../Mind%20Map.md">Mind Map</a>
+*   <a class="reference-link" href="../../Canvas.md">Холст</a>
+*   <a class="reference-link" href="../../Mermaid%20Diagrams.md">Диаграммы Mermaid</a>
+*   <a class="reference-link" href="../../Mind%20Map.md">Интеллект-карта</a>
 
-## Steps
+## Порядок действий
 
-1.  Go to one of the supported notes (listed above) and look for the <span class="tn-icon bx bx-copy"></span> button in the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> area.
-2.  Go to a <a class="reference-link" href="../../Text.md">Text</a> note and use the Paste function to insert the reference to that note.
+1.  Откройте одну из поддерживаемых заметок (перечисленных выше) и найдите кнопку <span class="tn-icon bx bx-copy"></span> в области <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">кнопок заметки</a>.
+2.  Перейдите в <a class="reference-link" href="../../Text.md">текстовую</a> заметку и вставьте скопированную ссылку на эту заметку.
 
-## Interaction
+## Взаимодействие
 
-*   Double-clicking an image reference from a text note will automatically open the target note.
-*   Clicking an image reference while <kbd>Ctrl</kbd> is pressed will open the target note in a new tab.
-*   Modifying the target note should also update the image reference. If that doesn't happen, consider <a class="reference-link" href="../../../Troubleshooting/Refreshing%20the%20application.md">Refreshing the application</a>.
+*   Двойной щелчок по ссылке на изображение в текстовой заметке автоматически открывает целевую заметку.
+*   Щелчок по ссылке на изображение с зажатой клавишей <kbd>Ctrl</kbd> открывает целевую заметку в новой вкладке.
+*   Изменение целевой заметки должно автоматически обновлять ссылку на изображение. Если этого не происходит, попробуйте <a class="reference-link" href="../../../Troubleshooting/Refreshing%20the%20application.md">перезагрузить приложение</a>.

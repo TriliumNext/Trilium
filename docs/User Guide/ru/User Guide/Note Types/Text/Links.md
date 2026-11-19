@@ -1,16 +1,16 @@
-# Links
-There are two types of links:
+# Ссылки
+Существует два типа ссылок:
 
-*   <a class="reference-link" href="Links/External%20links.md">External links</a>, for standard hyperlinks to websites or other resources.
-*   <a class="reference-link" href="Links/Internal%20(reference)%20links.md">Internal (reference) links</a> for links to other notes within Trilium.
-    *   The list of notes that refer to a particular note is called <a class="reference-link" href="Links/Backlinks.md">Backlinks</a>.
+*   <a class="reference-link" href="Links/External%20links.md">Внешние ссылки</a> — стандартные гиперссылки на веб-сайты или другие ресурсы.
+*   <a class="reference-link" href="Links/Internal%20(reference)%20links.md">Внутренние (ссылочные) ссылки</a> — ссылки на другие заметки внутри Trilium.
+    *   Список заметок, ссылающихся на конкретную заметку, называется <a class="reference-link" href="Links/Backlinks.md">Обратные ссылки</a>.
 
-## The link dialog
+## Диалог добавления ссылки
 
-The _Add link_ dialog has a page for each kind of link, selected at its top: _Web page_, _Note_ and, in a text note, _Heading / anchor_. Each page keeps what you entered on it while you look at another one. _Insert link_ (_Save link_ when changing a link) creates only the link of the page shown.
+В диалоге _Добавить ссылку_ есть вкладка для каждого типа ссылок в верхней части: _Веб-страница_, _Заметка_ и (в текстовой заметке) _Заголовок / якорь_. Каждая вкладка сохраняет введённые данные при переключении на другую. Кнопка _Вставить ссылку_ (_Сохранить ссылку_ при редактировании) создаёт ссылку только с открытой вкладки.
 
-On the _Note_ page, the headings and anchors of the note picked are listed below the _Link title_, so that the link can point at one of them. _Link to the whole note_, checked at first, links to the note itself. See [Linking to a heading](Block%20references.md) and <a class="reference-link" href="Anchors.md">Anchors</a>.
+На вкладке _Заметка_ под полем _Заголовок ссылки_ перечислены заголовки и якоря выбранной заметки, чтобы можно было сослаться на конкретный из них. Пункт _Ссылка на всю заметку_ (выбран по умолчанию) ссылается на саму заметку. См. [Ссылки на заголовки](Block%20references.md) и <a class="reference-link" href="Anchors.md">Якоря</a>.
 
-## Note map
+## Карта заметок
 
-Trilium provides a visualization of incoming and outgoing links for a particular note. See [note map](../../Advanced%20Usage/Note%20Map%20\(Link%20map%2C%20Tree%20map\).md) for details.
+Trilium предоставляет визуализацию входящих и исходящих ссылок для конкретной заметки. Подробнее см. в разделе [Карта заметок](../../Advanced%20Usage/Note%20Map%20\(Link%20map%2C%20Tree%20map\).md).

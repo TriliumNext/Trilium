@@ -1,19 +1,19 @@
 # HTTPS (TLS)
-Configuring TLS is essential for [server installation](../Server%20Installation.md) in Trilium. This guide details the steps to set up TLS within Trilium itself.
+Настройка TLS крайне важна для [установки сервера](../Server%20Installation.md) Trilium. В этом руководстве описаны шаги по настройке TLS непосредственно в самом Trilium.
 
 > [!TIP]
-> While Trilium supports HTTPS on its own, it's generally a good idea to use a [reverse proxy](2.%20Reverse%20proxy.md) instead with TLS termination. You can follow a [guide like this](https://www.digitalocean.com/community/tutorials/how-to-secure-nginx-with-let-s-encrypt-on-ubuntu-20-04) for such setups.
+> Хотя Trilium поддерживает HTTPS самостоятельно, обычно рекомендуется использовать [обратный прокси](2.%20Reverse%20proxy.md) с терминацией TLS. Вы можете воспользоваться [подобным руководством](https://www.digitalocean.com/community/tutorials/how-to-secure-nginx-with-let-s-encrypt-on-ubuntu-20-04) для такой настройки.
 
-## Obtaining a TLS Certificate
+## Получение сертификата TLS
 
-You have two options for obtaining a TLS certificate:
+У вас есть два варианта получения сертификата TLS:
 
-*   **Recommended**: Obtain a TLS certificate signed by a root certificate authority. For personal use, [Let's Encrypt](https://letsencrypt.org) is an excellent choice. It is free, automated, and straightforward. Certbot can facilitate automatic TLS setup.
-*   Generate a self-signed certificate. This option is not recommended due to the additional complexity of importing the certificate into all machines connecting to the server.
+*   **Рекомендуется**: получить сертификат TLS, подписанный корневым центром сертификации. Для личного использования отличным выбором является [Let's Encrypt](https://letsencrypt.org) — он бесплатный, автоматизированный и простой в настройке. Утилита Certbot поможет автоматизировать настройку TLS.
+*   Сгенерировать самоподписанный сертификат. Этот вариант не рекомендуется из-за дополнительной сложности, связанной с импортом сертификата на все устройства, подключающиеся к серверу.
 
-## Modifying `config.ini`
+## Изменение `config.ini`
 
-Once you have your certificate, modify the `config.ini` file in the [data directory](../Data%20directory.md) to configure Trilium to use it:
+После получения сертификата отредактируйте файл `config.ini` в [каталоге данных](../Data%20directory.md), чтобы настроить Trilium на его использование:
 
 ```
 [Network]
@@ -26,7 +26,7 @@ certPath=/[username]/.acme.sh/[hostname]/fullchain.cer
 keyPath=/[username]/.acme.sh/[hostname]/example.com.key
 ```
 
-You can also review the [configuration](../../Advanced%20Usage/Configuration%20\(config.ini%20or%20environment%20variables\).md) file to provide all `config.ini` values as environment variables instead. For example, you can configure TLS using environment variables:
+Вы также можете ознакомиться с разделом [конфигурации](../../Advanced%20Usage/Configuration%20\(config.ini%20or%20environment%20variables\).md), чтобы передавать все значения `config.ini` через переменные окружения. Например, TLS можно настроить с помощью переменных окружения:
 
 ```
 export TRILIUM_NETWORK_HTTPS=true
@@ -34,21 +34,21 @@ export TRILIUM_NETWORK_CERTPATH=/path/to/cert.pem
 export TRILIUM_NETWORK_KEYPATH=/path/to/key.pem
 ```
 
-The above example shows how this is set up in an environment where the certificate was generated using Let's Encrypt's ACME utility. Your paths may differ. For Docker installations, ensure these paths are within a volume or another directory accessible by the Docker container, such as `/home/node/trilium-data/[DIR IN DATA DIRECTORY]`.
+В примере выше показано, как это настраивается в среде, где сертификат был сгенерирован с помощью утилиты ACME от Let's Encrypt. Ваши пути могут отличаться. Для установок в Docker убедитесь, что эти пути находятся внутри тома или другого каталога, доступного контейнеру Docker, например `/home/node/trilium-data/[DIR IN DATA DIRECTORY]`.
 
-After configuring `config.ini`, restart Trilium and access the hostname using "https".
+После настройки `config.ini` перезапустите Trilium и откройте сервер по протоколу `https`.
 
-## Self-Signed Certificate
+## Самоподписанный сертификат
 
-If you opt to use a self-signed certificate for your server instance, note that the desktop instance will not trust it by default.
+Если вы решите использовать самоподписанный сертификат для серверного экземпляра, учтите, что настольное приложение по умолчанию не будет ему доверять.
 
-To bypass this, disable certificate validation by setting the following environment variable (for Linux):
+Чтобы обойти это, отключите проверку сертификатов, задав следующую переменную окружения (для Linux):
 
 ```
 export NODE_TLS_REJECT_UNAUTHORIZED=0
 trilium
 ```
 
-Trilium provides scripts to start in this mode, such as `trilium-no-cert-check.bat` for Windows.
+В Trilium предусмотрены скрипты для запуска в этом режиме, например `trilium-no-cert-check.bat` для Windows.
 
-**Warning**: Disabling TLS certificate validation is insecure. Proceed only if you fully understand the implications.
+**Предупреждение**: отключение проверки сертификатов TLS небезопасно. Используйте этот способ, только если вы полностью понимаете последствия.

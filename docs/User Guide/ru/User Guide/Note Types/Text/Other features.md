@@ -1,37 +1,37 @@
-# Other features
-## Indentation
+# Другие функции
+## Отступы
 
 <figure class="image image-style-align-right"><img style="aspect-ratio:201/124;" src="1_Other features_image.png" width="201" height="124"></figure>
 
-Paragraphs can be indented using the following buttons from the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>:
+Для абзацев можно задавать отступы с помощью следующих кнопок на <a class="reference-link" href="Formatting%20toolbar.md">Панели форматирования</a>:
 
-*   Press <span class="tn-icon cke cke-indent"></span> to increase the indentation of the current paragraph by one. Can be pressed multiple times if needed.
-*   Press <span class="tn-icon cke cke-outdent"></span> to decrease the indentation of a current paragraph. The button will be disabled if it is already at the minimum indentation level.
-*   For convenience, keyboard shortcuts are also available. Press <kbd>Tab</kbd> to indent or <kbd>Shift</kbd>+<kbd>Tab</kbd> to decrease the indentation. These shortcuts work even if the cursor is not at the beginning of a paragraph or a list.
-*   Apart from paragraphs, the indent button is also enabled in <a class="reference-link" href="Lists.md">Lists</a> (for nesting) and <a class="reference-link" href="Tables.md">Tables</a>.
+*   Нажмите <span class="tn-icon cke cke-indent"></span>, чтобы увеличить отступ текущего абзаца на один уровень. Можно нажимать несколько раз.
+*   Нажмите <span class="tn-icon cke cke-outdent"></span>, чтобы уменьшить отступ текущего абзаца. Кнопка неактивна, если уже достигнут минимальный уровень отступа.
+*   Для удобства доступны сочетания клавиш: нажмите <kbd>Tab</kbd> для увеличения отступа или <kbd>Shift</kbd>+<kbd>Tab</kbd> для уменьшения. Они работают, даже если курсор находится не в начале абзаца или списка.
+*   Помимо абзацев, кнопка отступа также работает в <a class="reference-link" href="Lists.md">Списках</a> (для вложенности) и <a class="reference-link" href="Tables.md">Таблицах</a>.
 
-When indented paragraphs or headings are copied and pasted as plain text, for example into a <a class="reference-link" href="../Code.md">Code</a> note or another application, each indentation level becomes a tab at the start of the line. A copy that stays within a single paragraph contains only its text, without the indentation.
+При копировании абзацев или заголовков с отступами и вставке их как обычного текста (например, в заметку типа <a class="reference-link" href="../Code.md">Код</a> или другое приложение) каждый уровень отступа превращается в символ табуляции в начале строки. Копирование фрагмента внутри одного абзаца содержит только его текст без отступа.
 
-The reverse also works: when plain text is pasted into a text note, each paragraph whose lines all start with tabs is indented by one level per tab. Pasting into a code block keeps the tabs as they are.
+Обратное также работает: при вставке обычного текста в текстовую заметку каждый абзац, все строки которого начинаются с табуляции, получает отступ на один уровень за каждую табуляцию. При вставке в блок кода символы табуляции сохраняются без изменений.
 
-## Markdown import
+## Импорт из Markdown
 
-If the clipboard contains Markdown text, it can be easily imported into text notes. Simply copy a Markdown-formatted text and press the <span class="tn-icon cke cke-trilium-markdown-mark"></span> to insert its visual representation.
+Если в буфере обмена находится текст в формате Markdown, его можно легко импортировать в текстовые заметки. Просто скопируйте текст с разметкой Markdown и нажмите кнопку <span class="tn-icon cke cke-trilium-markdown-mark"></span>, чтобы вставить его в отформатированном виде.
 
-Note that this only works with raw Markdown (e.g. `# Heading 1` to generate a heading) and not the visual representation of the Markdown (e.g. as in the preview pane of an application). In that case, simply use the paste function which already accepts HTML-formatted content.
+Обратите внимание, что это работает только с исходным Markdown (например, `# Heading 1` для создания заголовка), а не с уже отрендеренным представлением (например, из панели предпросмотра другого приложения). В последнем случае достаточно обычной вставки, которая уже поддерживает HTML-форматирование.
 
-This is mostly useful for snippets of text, for entire Markdown documents use the dedicated <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown.md">Markdown</a> import/export function.
+Эта функция удобна в основном для небольших фрагментов текста; для целых документов Markdown используйте специальную функцию импорта/экспорта <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown.md">Markdown</a>.
 
-If accessing Trilium with a web browser, the Markdown import action will ask for the content to be inserted into a dedicated screen since it does not have access to the clipboard.
+При работе с Trilium через веб-браузер действие импорта Markdown откроет отдельное окно для вставки содержимого, так как браузер не предоставляет прямой доступ к буферу обмена.
 
-## Cut to subnote
+## Вырезать в подзаметку
 
-The <span class="tn-icon cke cke-trilium-scissors"></span> button will create a child note with the selected text. For more information, see <a class="reference-link" href="Cut%20to%20subnote.md">Cut to subnote</a>.
+Кнопка <span class="tn-icon cke cke-trilium-scissors"></span> создаёт дочернюю заметку с выделенным текстом. Подробнее см. в разделе <a class="reference-link" href="Cut%20to%20subnote.md">Вырезать в подзаметку</a>.
 
-## Find and replace
+## Найти и заменить
 
 <figure class="image image-style-align-right"><img style="aspect-ratio:394/203;" src="Other features_image.png" width="394" height="203"></figure>
 
-The <span class="tn-icon cke cke-find-replace"></span> button will open the editor's dedicated search and replace functionality.
+Кнопка <span class="tn-icon cke cke-find-replace"></span> открывает встроенный инструмент поиска и замены в редакторе.
 
-Alternatively, the <kbd>Ctrl</kbd>+<kbd>F</kbd> combination can be pressed to show the dialog.
+Диалог также можно открыть сочетанием клавиш <kbd>Ctrl</kbd>+<kbd>F</kbd>.

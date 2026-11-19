@@ -1,38 +1,38 @@
-# Aside blocks
-An aside block sets content apart from the main text of a note, in a box that the main text can wrap around. It can hold any kind of content, such as formatted text, lists, tables or images, except another aside block.
+# Боковые блоки (Aside)
+Боковой блок (aside) выделяет содержимое отдельно от основного текста заметки — в рамке, которую основной текст может обтекать. Внутри него может находиться любой контент, например форматированный текст, списки, таблицы или изображения, за исключением другого бокового блока.
 
-## Inserting an aside block
+## Вставка бокового блока
 
-*   In the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, go to _Insert_ → <span class="tn-icon cke cke-trilium-aside"></span> _Aside_.
-*   Alternatively, type `/aside` and press <kbd>Enter</kbd>, as described in <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>.
+*   На <a class="reference-link" href="Formatting%20toolbar.md">панели форматирования</a> перейдите в _Insert_ → <span class="tn-icon cke cke-trilium-aside"></span> _Aside_.
+*   Либо введите `/aside` и нажмите <kbd>Enter</kbd>, как описано в разделе <a class="reference-link" href="Slash%20Commands.md">Слэш-команды</a>.
 
-If you select content before inserting an aside, that content is relocated into the newly created block.
+Если выделить содержимое перед вставкой бокового блока, оно будет перенесено внутрь созданного блока.
 
-## Color
+## Цвет
 
-A new aside block has a gray background, _Dim grey_ in the palette. To change it, put the cursor inside the block and click the <span class="tn-icon bx bx-color-fill"></span> _Background color_ button in the toolbar that appears above it. It offers the palette and the color picker (<span class="tn-icon cke cke-color-palette"></span>) of the text background color, described in <a class="reference-link" href="General%20formatting.md">General formatting</a>. _Remove color_ makes the block transparent.
+Новый боковой блок имеет серый фон (_Dim grey_ в палитре). Чтобы изменить его, поместите курсор внутрь блока и нажмите кнопку <span class="tn-icon bx bx-color-fill"></span> _Background color_ на панели инструментов, появляющейся над ним. Она предлагает палитру и выбор цвета (<span class="tn-icon cke cke-color-palette"></span>) фона текста, описанные в разделе <a class="reference-link" href="General%20formatting.md">Общее форматирование</a>. Кнопка _Remove color_ делает блок прозрачным.
 
-Like the colors of text, the background color adapts to the [theme](../../Basic%20Concepts%20and%20Features/Themes.md): Trilium shows it in a lighter or darker shade, so the text stays readable in both light and dark themes.
+Как и цвета текста, цвет фона адаптируется к [теме](../../Basic%20Concepts%20and%20Features/Themes.md): Trilium отображает его в более светлом или более тёмном оттенке, чтобы текст оставался читаемым как в светлой, так и в тёмной теме.
 
-The _Background color_ button is not available in the mobile layout.
+Кнопка _Background color_ недоступна в мобильном интерфейсе.
 
-## Positioning
+## Позиционирование
 
-A new aside block sits at the right, with the main text wrapping around it. To place it elsewhere, put the cursor inside it and use the _Box position_ button in the toolbar that appears above it. The menu has two groups:
+Новый боковой блок располагается справа, а основной текст обтекает его. Чтобы разместить его иначе, поместите курсор внутрь блока и воспользуйтесь кнопкой _Box position_ на панели инструментов над ним. В меню есть две группы:
 
-*   _Wrap text_ keeps the block at the side of the note, with the text flowing beside it: <span class="tn-icon cke cke-object-inline-left"></span> _Align left_ or <span class="tn-icon cke cke-object-inline-right"></span> _Align right_.
-*   _Break text_ gives the block lines of its own, so the text continues only above and below it. Besides <span class="tn-icon cke cke-object-left"></span> _Align left_ and <span class="tn-icon cke cke-object-right"></span> _Align right_, this group can also center the block (<span class="tn-icon cke cke-object-center"></span> _Align center_).
+*   _Wrap text_ (Обтекание текстом) удерживает блок сбоку заметки, позволяя тексту располагаться рядом с ним: <span class="tn-icon cke cke-object-inline-left"></span> _Align left_ (по левому краю) или <span class="tn-icon cke cke-object-inline-right"></span> _Align right_ (по правому краю).
+*   _Break text_ (Разрыв текста) отводит блоку собственные строки, так что текст продолжается только выше и ниже него. Помимо <span class="tn-icon cke cke-object-left"></span> _Align left_ и <span class="tn-icon cke cke-object-right"></span> _Align right_, эта группа также позволяет выровнять блок по центру (<span class="tn-icon cke cke-object-center"></span> _Align center_).
 
-In the mobile layout, an aside block takes the full width of the note, so the text does not wrap around it and the block cannot be resized.
+В мобильном интерфейсе боковой блок занимает всю ширину заметки, поэтому текст его не обтекает, а размер блока нельзя изменить.
 
-## Resizing
+## Изменение размера
 
-To change the width of an aside block, put the cursor inside it and drag the handle at its bottom corner. The height adjusts automatically.
+Чтобы изменить ширину бокового блока, поместите курсор внутрь него и потяните за маркер в нижнем углу. Высота подстраивается автоматически.
 
-## Removing an aside block
+## Удаление бокового блока
 
-To delete the aside along with everything in it, click the handle at its top-left corner and press <kbd>Delete</kbd>.
+Чтобы удалить боковой блок вместе со всем его содержимым, нажмите на маркер в его левом верхнем углу и нажмите <kbd>Delete</kbd>.
 
 ## Markdown
 
-Aside blocks are kept when a note is exported to Markdown and imported back. For writing them by hand, see the aside section of <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown/Supported%20syntax.md">Supported syntax</a>.
+Боковые блоки сохраняются при экспорте заметки в Markdown и обратном импорте. Чтобы писать их вручную, см. раздел о боковых блоках на странице <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown/Supported%20syntax.md">Поддерживаемый синтаксис</a>.

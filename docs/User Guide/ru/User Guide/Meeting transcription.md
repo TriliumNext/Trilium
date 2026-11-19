@@ -1,86 +1,86 @@
-# Meeting transcription
+# Расшифровка встреч
 > [!IMPORTANT]
-> **Meeting transcription is in beta**
+> **Расшифровка встреч находится в стадии бета-тестирования**
 > 
-> Meeting transcription is a new feature and is still in beta. It has not been tested on every operating system, audio setup and meeting application, so it might fail to capture the audio, miss part of a meeting or behave differently from what this page describes. Before relying on it for an important meeting, try it on a short call first.
+> Расшифровка встреч — это новая функция, которая всё ещё находится в стадии бета-тестирования. Она не проверялась на всех операционных системах, аудиоконфигурациях и приложениях для видеосвязи, поэтому может не захватить звук, пропустить часть встречи или вести себя иначе, чем описано на этой странице. Прежде чем полагаться на неё на важной встрече, сначала протестируйте её на коротком звонке.
 > 
-> If something does not work, please [report the issue](Troubleshooting/Reporting%20issues.md), mentioning your operating system and the meeting application you used. The _Keep recordings for troubleshooting_ option described below keeps what is needed to reproduce a problem.
+> Если что-то не работает, пожалуйста, [сообщите о проблеме](Troubleshooting/Reporting%20issues.md), указав вашу операционную систему и использованное приложение для встреч. Описанная ниже опция _Keep recordings for troubleshooting_ сохраняет всё необходимое для воспроизведения проблемы.
 
-Meeting transcription turns a meeting into text while it happens: Trilium listens to your microphone and to what the other participants say through your speakers, and writes down who said what in a new note. Recognition runs entirely on your device, so no audio leaves it (see _Privacy_ below).
+Расшифровка встреч превращает встречу в текст прямо во время её проведения: Trilium слушает ваш микрофон и то, что говорят другие участники через ваши динамики, и записывает, кто что сказал, в новую заметку. Распознавание выполняется полностью на вашем устройстве, поэтому аудио никуда не передаётся (см. раздел _Конфиденциальность_ ниже).
 
-Meeting transcription is available only in the desktop application. It is not available when Trilium is accessed through a browser, nor in the mobile application.
+Расшифровка встреч доступна только в настольном приложении. Она недоступна при работе с Trilium через браузер и в мобильном приложении.
 
-## Enabling meeting transcription
+## Включение расшифровки встреч
 
-Meeting transcription is off by default. To turn it on, go to <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Transcription_ and turn on _Meeting transcription_. This adds the <span class="tn-icon bx bx-microphone"></span> _Transcribe meeting_ button to the <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>, marked with a _Beta_ badge.
+По умолчанию расшифровка встреч выключена. Чтобы включить её, перейдите в <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Transcription_ и включите _Meeting transcription_. Это добавит кнопку <span class="tn-icon bx bx-microphone"></span> _Transcribe meeting_ на <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">панель запуска</a> с пометкой _Beta_.
 
-The speech recognition models are not part of Trilium. The first time you transcribe a meeting, Trilium asks to download them; see <a class="reference-link" href="Installation%20%26%20Setup/Downloaded%20resources.md">Downloaded resources</a> for the sizes and how to manage them. Each device downloads its own copy.
+Модели распознавания речи не входят в состав Trilium. При первом запуске расшифровки встречи Trilium предложит скачать их; подробнее о размерах и управлении моделями см. в разделе <a class="reference-link" href="Installation%20%26%20Setup/Downloaded%20resources.md">Загруженные ресурсы</a>. Каждое устройство скачивает собственную копию.
 
-## Transcribing a meeting
+## Расшифровка встречи
 
-1.  Press the <span class="tn-icon bx bx-microphone"></span> _Transcribe meeting_ button in the <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>.
-2.  If the models are not downloaded yet, confirm the download and wait for it to finish.
-3.  Trilium creates a text note titled with the current date and time (for example _Meeting 2026-10-15 14:30_) in the <a class="reference-link" href="Basic%20Concepts%20and%20Features/Notes/Note%20Inbox.md">Note Inbox</a>, opens it and starts transcribing. While it transcribes, the button turns into a <span class="tn-icon bx bx-stop-circle"></span> _Stop transcribing_ button and shows the time elapsed. Beside it, a reminder asks you to let everyone in the meeting know that it is being transcribed and to ask for their consent; it closes by itself after 10 seconds, or when you click it.
-4.  To end the transcription, press the <span class="tn-icon bx bx-stop-circle"></span> _Stop transcribing_ button. Trilium finishes transcribing what was already said before it stops.
+1.  Нажмите кнопку <span class="tn-icon bx bx-microphone"></span> _Transcribe meeting_ на <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">панели запуска</a>.
+2.  Если модели ещё не скачаны, подтвердите загрузку и дождитесь её завершения.
+3.  Trilium создаст текстовую заметку с текущей датой и временем в заголовке (например, _Meeting 2026-10-15 14:30_) во <a class="reference-link" href="Basic%20Concepts%20and%20Features/Notes/Note%20Inbox.md">входящих заметках</a>, откроет её и начнёт расшифровку. Во время расшифровки кнопка превращается в <span class="tn-icon bx bx-stop-circle"></span> _Stop transcribing_ и показывает прошедшее время. Рядом появляется напоминание о том, что нужно предупредить всех участников встречи о расшифровке и получить их согласие; оно закрывается само через 10 секунд или по клику.
+4.  Чтобы завершить расшифровку, нажмите кнопку <span class="tn-icon bx bx-stop-circle"></span> _Stop transcribing_. Перед остановкой Trilium завершит расшифровку уже сказанного.
 
-Only one meeting can be transcribed at a time. The note itself is an ordinary text note: you can take notes in it during the meeting, rename it or move it anywhere in the tree. It carries the `#meetingRecording` label.
+Одновременно можно расшифровывать только одну встречу. Сама заметка — это обычная текстовая заметка: вы можете делать в ней записи во время встречи, переименовывать её или перемещать в любое место дерева заметок. Она помечена меткой `#meetingRecording`.
 
-Trilium tells you when your microphone or the meeting's audio is not being transcribed. It shows a message saying which one and why, the time on the button turns red and the button's tooltip says that some audio is not being transcribed:
+Trilium предупреждает, если ваш микрофон или звук встречи не расшифровывается. Появляется сообщение с указанием источника и причины, время на кнопке становится красным, а всплывающая подсказка кнопки сообщает, что часть звука не расшифровывается:
 
-*   **Not captured**: the transcription started without that audio, for example because there is no microphone or because Trilium was not allowed to record the screen and its audio. Connect the microphone or allow the recording, then stop the transcription and start it again.
-*   **No audio**: nothing has arrived from it for 10 seconds, as when its capture hangs. Stop the transcription and start it again; what was transcribed until then is kept.
-*   **Only silence**: it has delivered nothing but silence, for 15 seconds from your microphone or for a minute from the meeting. A microphone muted in your system's settings, or with a mute button of its own, does this. A meeting nobody speaks in for a minute does it too, so this message can be ignored when the others are just quiet.
+*   **Not captured** (Не захвачен): расшифровка началась без этого источника звука, например, из-за отсутствия микрофона или потому, что Trilium не получил разрешение на запись экрана и его звука. Подключите микрофон или разрешите запись, затем остановите расшифровку и запустите её снова.
+*   **No audio** (Нет звука): от источника ничего не поступало в течение 10 секунд, например, при зависании захвата. Остановите расшифровку и запустите её снова; всё, что было расшифровано до этого момента, сохранится.
+*   **Only silence** (Только тишина): источник передаёт только тишину — в течение 15 секунд с вашего микрофона или в течение минуты со встречи. Это происходит, если микрофон отключён в системных настройках или собственной кнопкой. То же самое произойдёт, если на встрече никто не говорит в течение минуты, поэтому это сообщение можно игнорировать, когда собеседники просто молчат.
 
-Each message shows once. _No audio_ and _Only silence_ clear by themselves once sound arrives again.
+Каждое сообщение показывается один раз. Состояния _No audio_ и _Only silence_ сбрасываются автоматически, как только снова появляется звук.
 
-If the transcription stops on its own, for example because the audio could no longer be captured, Trilium shows a message and keeps everything transcribed until then. Closing Trilium during a meeting waits for the transcription to finish first.
+Если расшифровка остановилась сама собой (например, из-за невозможности продолжать захват звука), Trilium покажет сообщение и сохранит всё расшифрованное до этого момента. При закрытии Trilium во время встречи приложение сначала дождётся завершения расшифровки.
 
-## The transcript
+## Расшифровка (стенограмма)
 
-The transcript is stored as an [attachment](Basic%20Concepts%20and%20Features/Notes/Attachments.md) of the meeting note and is shown in a collapsible _Transcript_ section above the note's content. It updates as the meeting goes on, one paragraph per speaker turn, each with the time it started. While the meeting is being transcribed, the header of the _Transcript_ section shows the level of your microphone (_Me_) and of the meeting's audio (_Others_), so you can tell that both are being heard, even while the section is collapsed; a source that is not being transcribed is marked _Not captured_, _No audio_ or _Only silence_. While someone is talking, _Speaking…_ shows under their name until their words are transcribed. If you are reading the end of the transcript, it scrolls to follow new text.
+Расшифровка хранится как [вложение](Basic%20Concepts%20and%20Features/Notes/Attachments.md) заметки о встрече и отображается в сворачиваемом разделе _Transcript_ над содержимым заметки. Она обновляется по ходу встречи: по одному абзацу на каждую реплику говорящего с указанием времени начала. Во время расшифровки заголовок раздела _Transcript_ показывает уровень громкости вашего микрофона (_Me_) и звука встречи (_Others_), чтобы вы видели, что оба источника слышны, даже если раздел свёрнут; источник, который не расшифровывается, помечается как _Not captured_, _No audio_ или _Only silence_. Пока кто-то говорит, под его именем отображается _Speaking…_, пока слова не будут распознаны. Если вы находитесь в конце расшифровки, она автоматически прокручивается за новым текстом.
 
-The _Transcript_ section is expanded each time the note is opened. To collapse it, click its header; it stays collapsed only until the note is opened again.
+Раздел _Transcript_ разворачивается при каждом открытии заметки. Чтобы свернуть его, нажмите на его заголовок; он остаётся свёрнутым только до повторного открытия заметки.
 
-The transcript is also listed among the note's attachments, under _Generated by Trilium_. Opening it from there shows the same view of the transcript. Deleting the attachment deletes the transcript, and the section disappears from the note.
+Расшифровка также отображается в списке вложений заметки в категории _Generated by Trilium_. Открытие оттуда показывает тот же просмотр расшифровки. Удаление вложения удаляет расшифровку, и раздел исчезает из заметки.
 
-*   What you say into your microphone is labeled _Me_.
-*   What the other participants say is labeled _Speaker 1_, _Speaker 2_ and so on, while _Identify speakers_ is on; otherwise it is labeled _Others_.
-*   To name a speaker, click their name, type the new name and press <kbd>Enter</kbd>. The name changes on every turn of that speaker. Press <kbd>Esc</kbd> to cancel, or clear the name to restore the default one.
-*   To show the transcript with or without hesitations such as "uh", "um" and stuttered words, press the <span class="tn-icon bx bx-eraser"></span> _Hide filler words_ button above it, which shows as pressed while they are hidden. While they are shown, they are grayed out, so you can see what hiding them would remove. This affects only what is shown; the stored transcript keeps every word.
-*   To copy the transcript as plain text, press the <span class="tn-icon bx bx-copy"></span> _Copy transcript_ button above it. Each turn is copied with the speaker's name and the time it started, as shown, so the copy leaves out filler words while they are hidden.
+*   То, что вы говорите в микрофон, помечается как _Me_.
+*   То, что говорят другие участники, помечается как _Speaker 1_, _Speaker 2_ и так далее, если включена опция _Identify speakers_; иначе — как _Others_.
+*   Чтобы задать имя говорящего, нажмите на его текущее имя, введите новое и нажмите <kbd>Enter</kbd>. Имя изменится во всех репликах этого участника. Нажмите <kbd>Esc</kbd> для отмены или очистите поле, чтобы вернуть имя по умолчанию.
+*   Чтобы показывать расшифровку с паузами-заполнителями вроде «uh», «um» и заиканиями или без них, нажмите кнопку <span class="tn-icon bx bx-eraser"></span> _Hide filler words_ над расшифровкой (она остаётся нажатой, пока они скрыты). Когда они показаны, они выделены серым цветом, чтобы было видно, что именно будет скрыто. Это влияет только на отображение; в сохранённой расшифровке остаются все слова.
+*   Чтобы скопировать расшифровку как обычный текст, нажмите кнопку <span class="tn-icon bx bx-copy"></span> _Copy transcript_ над ней. Каждая реплика копируется с именем говорящего и временем начала в том виде, как она отображается (то есть без слов-паразитов, если они скрыты).
 
-If the meeting note is [protected](Basic%20Concepts%20and%20Features/Notes/Protected%20Notes.md) and the protected session is locked during the meeting, the transcript cannot be saved. Trilium keeps it in memory and saves it once you enter the protected session again, as long as Trilium stays open.
+Если заметка о встрече является [защищённой](Basic%20Concepts%20and%20Features/Notes/Protected%20Notes.md) и защищённая сессия заблокировалась во время встречи, расшифровку нельзя сохранить сразу. Trilium держит её в памяти и сохраняет, как только вы снова войдёте в защищённую сессию (пока Trilium остаётся открытым).
 
-## Configuration
+## Настройка
 
-The settings are in <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Transcription_, and are shown once _Meeting transcription_ is on.
+Параметры находятся в <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Transcription_ и становятся видны после включения _Meeting transcription_.
 
-| Option | Description |
+| Параметр | Описание |
 | --- | --- |
-| _European languages_ | The speech recognition model. Both are versions of NVIDIA's Parakeet TDT 0.6B v3 model and recognize 25 European languages and work out which one is spoken. _Standard_ is a smaller download and runs well on most computers. _High accuracy_ makes fewer mistakes, but is a larger download and needs about 1.6 GB more memory while transcribing. A model is downloaded the first time you transcribe with it. |
-| _Identify speakers_ | Tells the other participants apart and labels each of them separately, using the TitaNet model. Voices are compared only during the meeting: nothing about a voice is stored, and no one is recognized from one meeting to the next. Turn it off if it mixes up voices. The change applies from the next meeting. |
-| _Keep recordings for troubleshooting_ | Keeps the audio of the meeting, the settings used and the transcript as it was produced, so that a problem can be reported and reproduced. It takes about 230 MB per hour of meeting and is never deleted automatically. The folder where they are kept is shown below the option. |
+| _European languages_ | Модель распознавания речи. Обе являются версиями модели NVIDIA Parakeet TDT 0.6B v3, распознают 25 европейских языков и автоматически определяют язык речи. _Standard_ меньше по размеру и хорошо работает на большинстве компьютеров. _High accuracy_ допускает меньше ошибок, но требует большей загрузки и около 1,6 ГБ дополнительной памяти во время расшифровки. Модель скачивается при первом использовании. |
+| _Identify speakers_ | Различает других участников и помечает каждого отдельно с помощью модели TitaNet. Голоса сравниваются только в рамках текущей встречи: никакие данные о голосах не сохраняются, и участники не распознаются между разными встречами. Отключите, если модель путает голоса. Изменение вступает в силу со следующей встречи. |
+| _Keep recordings for troubleshooting_ | Сохраняет аудиозапись встречи, использованные настройки и исходную расшифровку, чтобы можно было сообщить о проблеме и воспроизвести её. Занимает около 230 МБ на час встречи и никогда не удаляется автоматически. Папка хранения указана под этим параметром. |
 
 > [!WARNING]
-> Before turning on _Keep recordings for troubleshooting_, ask everyone in the meeting to agree to being recorded. In several countries and US states, recording a conversation without everyone's consent is a criminal offense. The audio is stored unencrypted, even for protected notes. While the option is on, the tooltip of the _Transcribe meeting_ button says so, and the reminder shown when the transcription starts mentions that the audio is kept.
+> Прежде чем включать _Keep recordings for troubleshooting_, получите согласие всех участников встречи на запись. В ряде стран и штатов США запись разговора без согласия всех участников является уголовным преступлением. Аудио хранится в незашифрованном виде даже для защищённых заметок. Когда опция включена, об этом предупреждает подсказка кнопки _Transcribe meeting_ и напоминание при запуске расшифровки.
 
-The sizes and licenses of the models are listed in <a class="reference-link" href="Installation%20%26%20Setup/Downloaded%20resources.md">Downloaded resources</a>.
+Размеры и лицензии моделей перечислены на странице <a class="reference-link" href="Installation%20%26%20Setup/Downloaded%20resources.md">Загруженные ресурсы</a>.
 
-## Privacy
+## Конфиденциальность
 
-Meeting transcription does not use any online service:
+Расшифровка встреч не использует никаких онлайн-сервисов:
 
-*   The audio is recognized on your device by the open-source sherpa-onnx engine. Trilium does not send the audio or the transcript to any online service, and no account or API key is needed.
-*   An Internet connection is needed only to download the models, from Hugging Face and from the sherpa-onnx project on GitHub. Once they are downloaded, meeting transcription works offline.
-*   Speaker identification compares voices only during the meeting. Nothing about a voice is stored.
-*   The audio is not kept, unless _Keep recordings for troubleshooting_ is on. Those recordings stay in a folder on your device and are never synchronized.
+*   Звук распознаётся локально на вашем устройстве с помощью открытого движка sherpa-onnx. Trilium не отправляет аудио или текст расшифровки ни на какие онлайн-сервисы; учётная запись или API-ключ не требуются.
+*   Подключение к интернету нужно только для загрузки моделей с Hugging Face и из проекта sherpa-onnx на GitHub. После загрузки расшифровка встреч работает полностью офлайн.
+*   Идентификация говорящих сравнивает голоса только во время встречи. Никакие сведения о голосах не сохраняются.
+*   Аудио не сохраняется, если не включена опция _Keep recordings for troubleshooting_. Эти записи остаются в папке на вашем устройстве и никогда не синхронизируются.
 
-The transcript itself is an attachment of the meeting note, so it is handled like the rest of your notes. If you use <a class="reference-link" href="Installation%20%26%20Setup/Synchronization.md">Synchronization</a>, it is synchronized to your sync server and your other devices. To keep it encrypted, transcribe into a [protected](Basic%20Concepts%20and%20Features/Notes/Protected%20Notes.md) note: the transcript of a protected note is protected too.
+Сама расшифровка является вложением заметки о встрече, поэтому с ней обращаются так же, как с остальными вашими заметками. Если вы используете <a class="reference-link" href="Installation%20%26%20Setup/Synchronization.md">синхронизацию</a>, она синхронизируется с вашим сервером синхронизации и другими устройствами. Чтобы хранить её в зашифрованном виде, расшифровывайте в [защищённую](Basic%20Concepts%20and%20Features/Notes/Protected%20Notes.md) заметку: расшифровка защищённой заметки также защищена.
 
-## Limitations
+## Ограничения
 
-*   Meeting transcription needs a speech recognition engine that does not load on every computer, for example on Linux distributions older than Ubuntu 22.04 or Debian 12. Where it does not load, the _Transcribe meeting_ button does not appear, the _Transcription_ options say so, and the log records why.
-*   The transcript is made from the audio played by your device. A participant whose voice does not come out of your speakers or headphones, for example someone in the same room, is transcribed only as far as your microphone picks them up, and is labeled _Me_.
-*   Speaker identification works best with a few clearly distinct voices. Similar voices, many participants or poor call quality can lead to speakers being merged or split.
-*   Accuracy is lower for languages other than English, and the model can switch to the wrong language for short passages.
-*   Transcribing uses a noticeable amount of processor time and memory, especially with the _High accuracy_ model.
+*   Для расшифровки встреч требуется движок распознавания речи, который загружается не на каждом компьютере (например, не работает на дистрибутивах Linux старше Ubuntu 22.04 или Debian 12). Если движок не загрузился, кнопка _Transcribe meeting_ не отображается, в настройках _Transcription_ указывается причина, а подробности записываются в журнал.
+*   Расшифровка выполняется на основе звука, воспроизводимого вашим устройством. Участник, чей голос не идёт через ваши динамики или наушники (например, человек в той же комнате), будет распознан только в той мере, в какой его улавливает ваш микрофон, и будет помечен как _Me_.
+*   Идентификация говорящих лучше всего работает при небольшом количестве чётко различающихся голосов. Похожие голоса, большое число участников или плохое качество связи могут приводить к объединению или разделению говорящих.
+*   Точность ниже для языков, отличных от английского, и на коротких фрагментах модель может переключиться на неверный язык.
+*   Расшифровка потребляет заметное количество процессорного времени и памяти, особенно с моделью _High accuracy_.

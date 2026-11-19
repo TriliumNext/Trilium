@@ -1,21 +1,21 @@
-# Error logs
-It's important to provide all available error logs together with bug reports.
+# Журналы ошибок
+Важно прилагать все доступные журналы ошибок к отчётам об ошибках.
 
-There are two types of error logs, both of which are useful when reporting bugs.
+Существует два типа журналов ошибок, и оба полезны при сообщении о неполадках.
 
-*   <a class="reference-link" href="Error%20logs/Backend%20(server)%20logs.md">Backend (server) logs</a>
-*   <a class="reference-link" href="Error%20logs/Frontend%20logs.md">Frontend logs</a>
+*   <a class="reference-link" href="Error%20logs/Backend%20(server)%20logs.md">Журналы бэкенда (сервера)</a>
+*   <a class="reference-link" href="Error%20logs/Frontend%20logs.md">Журналы фронтенда</a>
 
-## Providing sensitive data
+## Передача конфиденциальных данных
 
-If you don't feel comfortable attaching the logs or anything sensitive to the public GitHub issues, feel free to contact the devs in our Matrix [support channel](https://github.com/TriliumNext/Trilium#-discuss-with-us).
+Если вы не хотите прикреплять журналы или какие-либо конфиденциальные данные к публичным задачам на GitHub, свяжитесь с разработчиками в нашем [канале поддержки](https://github.com/TriliumNext/Trilium#-discuss-with-us) в Matrix.
 
-Use this email to also provide anything which could assist in analysing the bug - e.g. files/images/ZIPs being imported or [anonymized database](Anonymized%20Database.md).
+Через него также можно передать любые материалы, способные помочь в анализе ошибки — например, импортируемые файлы/изображения/ZIP-архивы или [анонимизированную базу данных](Anonymized%20Database.md).
 
-### Exporting note subtree for reproduction
+### Экспорт поддерева заметок для воспроизведения
 
-Often times, bugs manifest themselves in specific notes and having them would greatly ease reproduction and fixing.
+Часто ошибки проявляются в конкретных заметках, и их наличие значительно упрощает воспроизведение и исправление проблемы.
 
-In such case, please export the relevant note subtree by right-clicking it on the left tree, choosing Export - HTML as ZIP:
+В таком случае экспортируйте соответствующее поддерево заметок, щёлкнув по нему правой кнопкой мыши в дереве слева и выбрав «Экспорт — HTML в ZIP» (Export - HTML as ZIP):
 
 ![](Error%20logs_error-logs-export-subtree.png)

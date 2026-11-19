@@ -1,46 +1,46 @@
-# Office documents
-Since v0.105.0, office documents stored in Trilium display an inline preview of their content, without the need to download them or open them in an external application.
+# Офисные документы
+Начиная с версии v0.105.0, офисные документы, хранящиеся в Trilium, отображают встроенный предпросмотр своего содержимого без необходимости скачивать их или открывать во внешнем приложении.
 
-## Supported formats
+## Поддерживаемые форматы
 
-*   Microsoft Office formats: Word (`.docx`), Excel (`.xlsx`) and PowerPoint (`.pptx`).
-*   The OpenDocument alternatives to the previous formats (Text, Spreadsheet, Presentation), created by editors such as LibreOffice and OpenOffice.
+*   Форматы Microsoft Office: Word (`.docx`), Excel (`.xlsx`) и PowerPoint (`.pptx`).
+*   Альтернативные форматы OpenDocument (Text, Spreadsheet, Presentation), создаваемые редакторами вроде LibreOffice и OpenOffice.
 *   [Rich Text Format (RTF)](https://en.wikipedia.org/wiki/Rich_Text_Format).
-*   [EPUB](https://en.wikipedia.org/wiki/EPUB) e-books.
+*   Электронные книги [EPUB](https://en.wikipedia.org/wiki/EPUB).
 
 > [!NOTE]
-> Older Microsoft Office formats (`.doc`, `.xls`, `.ppt`) are not supported.
+> Устаревшие форматы Microsoft Office (`.doc`, `.xls`, `.ppt`) не поддерживаются.
 
-## How it works
+## Как это работает
 
-The document is converted to a simplified representation on the server and rendered as read-only content, similar to a <a class="reference-link" href="../Text.md">Text</a> note.
+Документ преобразуется в упрощённое представление на сервере и отображается в режиме «только для чтения», аналогично <a class="reference-link" href="../Text.md">текстовой</a> заметке.
 
-The preview generally preserves:
+Предпросмотр обычно сохраняет:
 
-*   Headings, paragraphs and text alignment.
-*   Text formatting: bold, italic, underline, strikethrough, subscript/superscript, text and highlight colors, fonts and font sizes.
-*   Bulleted and numbered lists.
-*   Tables, including merged cells and cell background colors.
-*   Embedded images.
-*   Links and footnotes.
+*   Заголовки, абзацы и выравнивание текста.
+*   Форматирование текста: полужирный, курсив, подчёркивание, зачёркивание, надстрочный/подстрочный индекс, цвет текста и выделения, шрифты и размеры шрифтов.
+*   Маркированные и нумерованные списки.
+*   Таблицы, включая объединённые ячейки и цвет фона ячеек.
+*   Встроенные изображения.
+*   Ссылки и сноски.
 
-To keep links readable regardless of the theme, the default hyperlink color applied automatically by word processors is ignored; links that were deliberately given a custom color by the author keep it.
+Чтобы ссылки оставались читаемыми независимо от темы оформления, стандартный цвет гиперссылок, автоматически применяемый текстовыми процессорами, игнорируется; ссылки, которым автор намеренно задал собственный цвет, сохраняют его.
 
-### Excel workbooks
+### Книги Excel
 
-A File note holding an Excel workbook (`.xlsx`) opens in a read-only spreadsheet, the same view as a <a class="reference-link" href="../Spreadsheets.md">Spreadsheet</a> note that cannot be edited: the sheets are listed in tabs at the bottom, and the grid scrolls in both directions however large the workbook is. Like a Spreadsheet note, it always takes the full width of the window, whatever the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Content%20width.md">Content width</a>.
+Файловая заметка, содержащая книгу Excel (`.xlsx`), открывается в виде таблицы только для чтения — в том же представлении, что и заметка типа <a class="reference-link" href="../Spreadsheets.md">Таблица</a>, но без возможности редактирования: листы перечислены во вкладках внизу, а сетка прокручивается в обоих направлениях независимо от размера книги. Как и заметка-таблица, она всегда занимает всю ширину окна вне зависимости от настройки <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Content%20width.md">ширины содержимого</a>.
 
-A workbook stored as an <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Attachments.md">attachment</a> opens the same way once the attachment is opened on its own. If the file cannot be read as a workbook, the simplified preview described above is shown instead.
+Книга, сохранённая как <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Attachments.md">вложение</a>, открывается таким же образом при отдельном открытии вложения. Если файл не удаётся прочитать как книгу, вместо этого отображается упрощённый предпросмотр, описанный выше.
 
-## Limitations
+## Ограничения
 
-*   The preview is read-only. To edit the document, download it or open it in an external application; the content of the note is not affected by the preview. Alternatively copy and paste it into a text note.
-*   The preview is a simplified rendering: complex layouts (columns, text boxes, headers and footers), charts and the precise styling of table borders are not reproduced.
-*   Documents larger than 20 MB are not previewed, to keep the server responsive. A message says the document is too large to preview, and the usual download and open actions remain available.
-*   If the document cannot be converted, a notice is displayed instead and the file can still be downloaded or opened externally.
+*   Предпросмотр доступен только для чтения. Чтобы отредактировать документ, скачайте его или откройте во внешнем приложении; предпросмотр не изменяет содержимое заметки. В качестве альтернативы можно скопировать содержимое и вставить его в текстовую заметку.
+*   Предпросмотр является упрощённым отображением: сложная вёрстка (колонки, текстовые поля, колонтитулы), диаграммы и точное оформление границ таблиц не воспроизводятся.
+*   Документы размером более 20 МБ не имеют предпросмотра, чтобы не перегружать сервер. Отображается сообщение о том, что документ слишком велик для предпросмотра, при этом обычные действия скачивания и открытия остаются доступными.
+*   Если документ не удаётся преобразовать, вместо предпросмотра отображается уведомление, а файл по-прежнему можно скачать или открыть во внешнем приложении.
 
-## Relation with other features
+## Связь с другими функциями
 
-*   The same preview is used when an office document is displayed in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Note List</a> or embedded in a text note via <a class="reference-link" href="../Text/Include%20Note.md">Include Note</a>, as well as for office documents stored as <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Attachments.md">Attachments</a>. For a spreadsheet, the Note List and the list of attachments show only the top-left corner of its first sheet (20 rows by 15 columns); open the note or the attachment to see all of it in the read-only spreadsheet.
-*   Independently of the preview, the text content of office documents is also extracted in the background so that it can be found with <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Search.md">Search</a> via <a class="reference-link" href="../../Advanced%20Usage/Text%20Extraction%20(OCR).md">Text Extraction (OCR)</a>.
-*   `.csv` and `.xlsx` files can be converted to <a class="reference-link" href="../Spreadsheets.md">Spreadsheets</a> via the [import](../../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md) function.
+*   Тот же предпросмотр используется при отображении офисного документа в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Note%20List.md">списке заметок</a> или при встраивании в текстовую заметку через <a class="reference-link" href="../Text/Include%20Note.md">включение заметки</a>, а также для офисных документов, хранящихся как <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Attachments.md">вложения</a>. Для электронных таблиц список заметок и список вложений показывают только верхний левый угол первого листа (20 строк на 15 столбцов); откройте заметку или вложение, чтобы увидеть всю таблицу в режиме только для чтения.
+*   Независимо от предпросмотра текстовое содержимое офисных документов также извлекается в фоновом режиме, чтобы его можно было находить через <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Search.md">поиск</a> с помощью <a class="reference-link" href="../../Advanced%20Usage/Text%20Extraction%20(OCR).md">извлечения текста (OCR)</a>.
+*   Файлы `.csv` и `.xlsx` можно преобразовать в <a class="reference-link" href="../Spreadsheets.md">таблицы</a> с помощью функции [импорта](../../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md).

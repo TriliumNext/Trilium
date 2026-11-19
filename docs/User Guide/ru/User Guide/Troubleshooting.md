@@ -1,48 +1,48 @@
-# Troubleshooting
-While Trilium is actively maintained and stable, encountering bugs is possible.
+# Устранение неполадок
+Хотя Trilium активно поддерживается и работает стабильно, столкновение с ошибками возможно.
 
-## General Quick Fix
+## Общее быстрое решение
 
-The first step in troubleshooting is often a restart.
+Первым шагом при устранении неполадок часто является перезапуск.
 
-If you experience an UI issue, the frontend may have entered an inconsistent state. Reload the application by pressing <kbd>Ctrl</kbd> + <kbd>R</kbd>. This will reload the frontend.
+Если вы столкнулись с проблемой интерфейса, фронтенд мог перейти в несогласованное состояние. Перезагрузите приложение, нажав <kbd>Ctrl</kbd> + <kbd>R</kbd>. Это перезагрузит фронтенд.
 
-If the issue persists or appears to be a backend problem, restart the entire application. For the desktop (Electron) build, simply close and reopen the window. If you're using a Docker build, restart the container.
+Если проблема сохраняется или, по всей видимости, связана с бэкендом, перезапустите приложение полностью. В настольной версии (Electron) просто закройте и снова откройте окно. Если вы используете Docker, перезапустите контейнер.
 
-## Reporting Bugs
+## Сообщение об ошибках
 
-Reporting bugs is highly valuable. Here are some tips:
+Сообщения об ошибках очень ценны. Несколько советов:
 
-*   Use GitHub issues for reporting: [https://github.com/TriliumNext/Trilium/issues](https://github.com/TriliumNext/Trilium/issues)
-*   Refer to the [error logs](Troubleshooting/Error%20logs.md) page for information on providing necessary details.
+*   Используйте GitHub Issues для отправки отчётов: [https://github.com/TriliumNext/Trilium/issues](https://github.com/TriliumNext/Trilium/issues)
+*   Обратитесь к странице [Журналы ошибок](Troubleshooting/Error%20logs.md), чтобы узнать, какие данные необходимо предоставить.
 
 <details open="">
-    <summary>Broken Note Crashes Trilium</summary>
-    <p>Certain problems, such as rendering a note with a faulty script, can cause Trilium to crash. If Trilium attempts to reload the problematic note upon restart, it will continue to crash.</p>
-    <p>To resolve this, use the <code>TRILIUM_START_NOTE_ID</code> environment variable to reset the open tabs to a single specified note ID (e.g., <code>root</code>). In Linux, you can set it as follows:</p>
+    <summary>Повреждённая заметка вызывает сбой Trilium</summary>
+    <p>Некоторые проблемы, например отрисовка заметки с неисправным скриптом, могут приводить к сбою Trilium. Если при перезапуске Trilium попытается снова открыть проблемную заметку, сбой будет повторяться.</p>
+    <p>Чтобы решить эту проблему, используйте переменную окружения <code>TRILIUM_START_NOTE_ID</code> для сброса открытых вкладок к одной указанной заметке (например, <code>root</code>). В Linux её можно задать следующим образом:</p>
     <pre><code class="language-text-x-trilium-auto">TRILIUM_START_NOTE_ID=root ./trilium</code></pre>
 </details>
 
 <details open="">
-    <summary>Broken Script Prevents Application Startup</summary>
-    <p>If a custom script causes Trilium to crash, and it is set as a startup script or in an active <a href="Scripting/Frontend%20Basics/Custom%20Widgets.md">custom widget</a>, start Triliumin "safe mode" to prevent any custom scripts from executing:</p>
+    <summary>Неисправный скрипт мешает запуску приложения</summary>
+    <p>Если пользовательский скрипт вызывает сбой Trilium и при этом настроен на запуск при старте или используется в активном <a href="Scripting/Frontend%20Basics/Custom%20Widgets.md">пользовательском виджете</a>, запустите Trilium в «безопасном режиме» (safe mode), чтобы предотвратить выполнение любых пользовательских скриптов:</p>
     <pre><code class="language-text-x-trilium-auto">TRILIUM_SAFE_MODE=true ./trilium</code></pre>
-    <p>Depending on your Trilium distribution, you may have pre-made scripts available: <code>trilium-safe-mode.bat</code> and <code>trilium-safe-mode.sh</code>.</p>
-    <p>Once Trilium starts, locate and fix or delete the problematic note.</p>
+    <p>В зависимости от вашего дистрибутива Trilium могут быть доступны готовые скрипты: <code>trilium-safe-mode.bat</code> и <code>trilium-safe-mode.sh</code>.</p>
+    <p>После запуска Trilium найдите и исправьте либо удалите проблемную заметку.</p>
 </details>
 
 <details open="">
-    <summary>Sync and Consistency Checks</summary>
-    <p>Trilium periodically verifies the logical consistency of the database (e.g., ensuring every note has a parent). If inconsistencies are detected, you will be notified via the UI.</p>
-    <p>In such cases, file a bug report and attach an <a href="Troubleshooting/Anonymized%20Database.md">anonymized database</a> if necessary.</p>
+    <summary>Синхронизация и проверки целостности</summary>
+    <p>Trilium периодически проверяет логическую целостность базы данных (например, наличие родителя у каждой заметки). При обнаружении несоответствий вы получите уведомление в интерфейсе.</p>
+    <p>В таких случаях создайте отчёт об ошибке и при необходимости приложите <a href="Troubleshooting/Anonymized%20Database.md">анонимизированную базу данных</a>.</p>
 </details>
 
 <details open="">
-    <summary>Restoring Backup</summary>
-    <p>Trilium makes regular automatic backups. If issues become severe, you can <a href="Installation%20%26%20Setup/Backup.md">restore from a backup</a>.</p>
+    <summary>Восстановление из резервной копии</summary>
+    <p>Trilium регулярно создаёт автоматические резервные копии. При серьёзных проблемах вы можете <a href="Installation%20%26%20Setup/Backup.md">восстановиться из резервной копии</a>.</p>
 </details>
 
 <details open="">
-    <summary>Forgotten Password</summary>
-    <p>See&nbsp;<a class="reference-link" href="Installation%20%26%20Setup/Server%20Installation/Authentication/Resetting%20your%20password.md">Resetting your password</a>.</p>
+    <summary>Забытый пароль</summary>
+    <p>См.&nbsp;<a class="reference-link" href="Installation%20%26%20Setup/Server%20Installation/Authentication/Resetting%20your%20password.md">Сброс пароля</a>.</p>
 </details>

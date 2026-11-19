@@ -1,13 +1,13 @@
-# On NixOS
-This page describes configuring the Trilium module included in NixOS.
+# На NixOS
+На этой странице описана настройка модуля Trilium, входящего в состав NixOS.
 
-## Requirements
+## Требования
 
-[NixOS](https://nixos.org/) installation.
+Установленная [NixOS](https://nixos.org/).
 
-## Configuration
+## Настройка
 
-Add this to your `configuration.nix`:
+Добавьте следующий фрагмент в ваш `configuration.nix`:
 
 ```
 services.trilium-server.enable = true;
@@ -20,6 +20,6 @@ services.trilium-server.enable = true;
 #services.trilium-server.port = 12783;
 ```
 
-Uncomment any option you would like to change.
+Раскомментируйте любые параметры, которые хотите изменить.
 
-See the [NixOS options list](https://search.nixos.org/options?channel=unstable&from=0&size=50&sort=relevance&type=packages&query=trilium-server) for more options (including nginx reverse proxy configuration).
+Дополнительные параметры (включая настройку обратного прокси nginx) см. в [списке параметров NixOS](https://search.nixos.org/options?channel=unstable&from=0&size=50&sort=relevance&type=packages&query=trilium-server).

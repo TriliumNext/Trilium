@@ -1,25 +1,25 @@
-# Resetting your password
+# Сброс пароля
 > [!IMPORTANT]
-> If you forget your password:
+> Если вы забыли свой пароль:
 > 
-> *   Protected notes are irretrievable without the password.
-> *   Unprotected notes can be recovered.
+> *   Защищённые заметки невозможно восстановить без пароля.
+> *   Незащищённые заметки можно восстановить.
 
-There are two options, both involving access to the device that is running your server.
+Существует два способа, и оба требуют доступа к устройству, на котором запущен ваш сервер.
 
-### By disabling authentication
+### Через отключение аутентификации
 
-1.  See <a class="reference-link" href="../Authentication.md">Authentication</a> on how to disable the authentication.
-2.  Restart the server.
-3.  Go to <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → Password → Reset password.
-4.  Re-enable authentication by following step (1) in reverse.
-5.  Restart the server.
-6.  Log in with the new password.
+1.  Ознакомьтесь с разделом <a class="reference-link" href="../Authentication.md">Аутентификация</a>, чтобы узнать, как отключить аутентификацию.
+2.  Перезапустите сервер.
+3.  Перейдите в <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Пароль_ → _Сбросить пароль_.
+4.  Снова включите аутентификацию, выполнив шаг (1) в обратном порядке.
+5.  Перезапустите сервер.
+6.  Войдите в систему с новым паролем.
 
-### By altering the database
+### Через изменение базы данных
 
-1.  Access the [database](../../../Advanced%20Usage/Database.md) file in the [data directory](../../Data%20directory.md). Open the `document.db` file with an SQLite client (e.g., [DB Browser](https://sqlitebrowser.org/)).
-2.  Execute the following queries:
+1.  Откройте файл [базы данных](../../../Advanced%20Usage/Database.md) в [каталоге данных](../../Data%20directory.md). Откройте файл `document.db` с помощью клиента SQLite (например, [DB Browser](https://sqlitebrowser.org/)).
+2.  Выполните следующие запросы:
     
     ```
     UPDATE options SET value = '77/twC5O00cuQgNC63VK32qOKKYwj21ev3jZDXoytVU=' WHERE name = 'passwordVerificationSalt';
@@ -27,11 +27,11 @@ There are two options, both involving access to the device that is running your 
     UPDATE options SET value = 'Eb8af1/T57b89lCRuS97tPEl4CwxsAWAU7YNJ77oY+s=' WHERE name = 'passwordVerificationHash';
     UPDATE options SET value = 'QpC8XoiYYeqHPtHKRtbNxfTHsk+pEBqVBODYp0FkPBa22tlBBKBMigdLu5GNX8Uu' WHERE name = 'encryptedDataKey';
     ```
-3.  After executing the changes, commit/write the changes. **This sets the password to** `**password**`**, allowing you to log in again.**
-4.  Go to <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Password_ → _Change password_ and replace the unsafe password.
+3.  После выполнения запросов сохраните/зафиксируйте изменения. **Это установит пароль** `**password**`**, что позволит вам снова войти в систему.**
+4.  Перейдите в <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Пароль_ → _Изменить пароль_ и замените небезопасный пароль.
 
-## Handling protected notes
+## Работа с защищёнными заметками
 
-When the password is reset, the protected notes are permanently lost due to the fact that they are encrypted with your password so there is no way for Trilium to recover them.
+При сбросе пароля защищённые заметки безвозвратно теряются, поскольку они зашифрованы вашим паролем и у Trilium нет способа их расшифровать.
 
-For pre-existing protected notes (now unrecoverable), consider deleting them or exporting the unprotected notes. Then, delete `document.db` and start fresh.
+Для ранее существовавших защищённых заметок (которые теперь невозможно восстановить) рекомендуется удалить их или экспортировать незащищённые заметки. Затем удалите `document.db` и начните с чистой базы.

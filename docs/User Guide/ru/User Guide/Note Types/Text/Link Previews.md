@@ -1,152 +1,152 @@
-# Link Previews
-Link previews turn a pasted URL into a rich, metadata-aware widget that can be displayed in three visual modes:
+# Предпросмотр ссылок
+Предпросмотр ссылок превращает вставленный URL в информативный виджет с метаданными, который может отображаться в трёх визуальных режимах:
 
-## Link display modes
+## Режимы отображения ссылок
 
-A link preview can be displayed in one of three link display modes:
+Предпросмотр ссылки может отображаться в одном из трёх режимов:
 
-*   **Icon & text** — a link showing the site's favicon and page title (quite similar to <a class="reference-link" href="Links/Internal%20(reference)%20links.md">Internal (reference) links</a>). Use this when you want the link to flow with the surrounding paragraph.
-*   **Card** — a block-level preview with thumbnail, title, description, and site name. Use this when the link is the focus of a paragraph.
-*   **Embed** — a block-level player.
-    *   Supported for YouTube videos, which play in the YouTube player, and for audio and video files at a web address, which play in the media player of Trilium.
-    *   To prevent unwanted remote requests, nothing is loaded from the site until you click play. Until then, a video shows its thumbnail with a play button, and an audio file its controls.
-    *   The player can be resized and aligned (see _Audio and video_ below).
+*   **Значок и текст** — ссылка со значком сайта (favicon) и заголовком страницы (похоже на <a class="reference-link" href="Links/Internal%20(reference)%20links.md">Внутренние (ссылочные) ссылки</a>). Используйте этот режим, когда ссылка должна органично вписываться в абзац.
+*   **Карточка** — блочный предпросмотр с миниатюрой, заголовком, описанием и названием сайта. Используйте его, когда ссылка является главным элементом абзаца.
+*   **Встраивание** — блочный плеер.
+    *   Поддерживается для видео YouTube (воспроизводятся в плеере YouTube) и для аудио- и видеофайлов по веб-адресу (воспроизводятся в медиаплеере Trilium).
+    *   Чтобы избежать нежелательных сетевых запросов, ничего не загружается с сайта до нажатия кнопки воспроизведения. До этого видео показывает миниатюру с кнопкой воспроизведения, а аудиофайл — элементы управления.
+    *   Размер и выравнивание плеера можно изменять (см. _Аудио и видео_ ниже).
 
-A fourth link display mode, **Text**, inserts an ordinary link without a preview.
+Четвёртый режим отображения, **Текст**, вставляет обычную ссылку без предпросмотра.
 
 > [!NOTE]
-> Since v0.107.0, _Display as_ and the _Display_ menu show _Text_ instead of _Plain link_, and _Icon & text_ instead of _Inline_.
+> Начиная с версии v0.107.0 в _Отображать как_ и меню _Отображение_ используется _Текст_ вместо _Обычная ссылка_ и _Значок и текст_ вместо _Встроенная_.
 
 <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1-1">
 <div class="trilium-multicolumn-column">
 
-<figure class="image image_resized" style="width:100%;"><img style="aspect-ratio:251/42;" src="Link Previews_image.png" width="251" height="42"><figcaption><em>Icon &amp; text</em> link preview</figcaption></figure>
+<figure class="image image_resized" style="width:100%;"><img style="aspect-ratio:251/42;" src="Link Previews_image.png" width="251" height="42"><figcaption>Предпросмотр ссылки <em>Значок и текст</em></figcaption></figure>
 
 </div>
 <div class="trilium-multicolumn-column">
 
-<figure class="image image_resized" style="width:100%;"><img style="aspect-ratio:1217/196;" src="2_Link Previews_image.png" width="1217" height="196"><figcaption><em>Card</em> link preview</figcaption></figure>
+<figure class="image image_resized" style="width:100%;"><img style="aspect-ratio:1217/196;" src="2_Link Previews_image.png" width="1217" height="196"><figcaption>Предпросмотр ссылки <em>Карточка</em></figcaption></figure>
 
 </div>
 <div class="trilium-multicolumn-column">
 
-<figure class="image image_resized" style="width:100%;"><img style="aspect-ratio:994/563;" src="1_Link Previews_image.png" width="994" height="563"><figcaption><em>Embed</em> link preview</figcaption></figure>
+<figure class="image image_resized" style="width:100%;"><img style="aspect-ratio:994/563;" src="1_Link Previews_image.png" width="994" height="563"><figcaption>Предпросмотр ссылки <em>Встраивание</em></figcaption></figure>
 
 </div>
 </div>
 
-## Inserting a link preview
+## Вставка предпросмотра ссылки
 
-There are four ways to create one:
+Создать предпросмотр ссылки можно четырьмя способами:
 
-### 1\. By pasting a URL
+### 1\. Вставка URL
 
-A link preview is automatically created:
+Предпросмотр ссылки создаётся автоматически:
 
-*   By pasting the URL and pressing <kbd>Space</kbd>. This will create an _Icon & text_ link preview.
-*   When at the start of a new paragraph, pressing <kbd>Enter</kbd> will create a _card_, or an _embed_ for a YouTube video or an audio or video file.
+*   При вставке URL и нажатии <kbd>Space</kbd> — создаётся предпросмотр _Значок и текст_.
+*   В начале нового абзаца нажатие <kbd>Enter</kbd> создаёт _карточку_, либо _встраивание_ для видео YouTube или аудио-/видеофайла.
 
-To undo an automatic link preview, press <kbd>Ctrl</kbd>+<kbd>Z</kbd> immediately afterwards which keeps it as a text link instead. Alternatively, once a link preview was created, click on the link and select _Text_ from the link preview toolbar, which makes a link that reads as the title of the page.
+Чтобы отменить автоматическое создание предпросмотра, сразу нажмите <kbd>Ctrl</kbd>+<kbd>Z</kbd> — ссылка останется обычной текстовой. Либо кликните по уже созданному предпросмотру и выберите _Текст_ на его панели инструментов, чтобы превратить его в текстовую ссылку с заголовком страницы.
 
-This automatic conversion can be disabled by going to <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ and unchecking _Autogenerate link previews_ from the _Features_ section.
+Автоматическое преобразование можно отключить в <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройках</a> → _Текстовые заметки_, сняв флажок _Автоматически создавать предпросмотр ссылок_ в разделе _Функции_.
 
-If the link is not accessible to the Trilium server (or the network request fails for any other reason), it will not be converted to a link preview. The address of an audio or video file whose name ends in a known extension, such as `.mp4`, `.webm`, `.mp3` or `.flac`, becomes an _embed_ all the same.
+Если ссылка недоступна серверу Trilium (или сетевой запрос завершился ошибкой по другой причине), предпросмотр создан не будет. Адрес аудио- или видеофайла с известным расширением (например, `.mp4`, `.webm`, `.mp3` или `.flac`) всё равно станет _встраиванием_.
 
 > [!NOTE]
-> A URL is only auto-converted when the pasted text _is_ the URL. Links with a display name (e.g. [Trilium Notes website](https://triliumnotes.org)) are left as text links.
+> Автоматическое преобразование работает только тогда, когда вставляемый текст _является_ URL. Ссылки с отображаемым текстом (например, [сайт Trilium Notes](https://triliumnotes.org)) остаются текстовыми ссылками.
 
-### 2\. From the link dialog
+### 2\. Через диалог добавления ссылки
 
-Since v0.107.0, a link preview is created from the same _Add link_ dialog as any other link (see <a class="reference-link" href="Links/External%20links.md">External links</a>):
+Начиная с версии v0.107.0 предпросмотр ссылки создаётся из того же диалога _Добавить ссылку_, что и любая другая ссылка (см. <a class="reference-link" href="Links/External%20links.md">Внешние ссылки</a>):
 
-*   Press <span class="tn-icon cke cke-link"></span> in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, or press <kbd>Ctrl</kbd>+<kbd>K</kbd>, to open the dialog on _Web page_.
-*   Type or paste the address, then pick the preview in _Display as_: _Icon & text_, _Card_ or, for a YouTube video or the address of an audio or video file, _Embed_. _Text_ inserts an ordinary link. _Display as_ is not shown when text is selected, since the link then keeps the selected text.
-*   Optionally, type a _Link title_ to show instead of the page's own title. A _Card_ also offers a _Description_ to show instead of the page's own description.
-*   When you leave the address field, or paste the address with the <span class="tn-icon bx bx-paste"></span> _Paste_ button, Trilium reads the page and fills an empty _Link title_, and the empty _Description_ of a card, with the page's own. A spinner at the end of a field shows that its value is loading; once you type in the field, what you type is kept. Switching _Display as_ to _Card_ fills the _Description_ the same way, without reading the page again.
-*   Press <kbd>Enter</kbd> or _Insert link_ to confirm. The link appears right away and turns into the preview once Trilium has read the page.
+*   Нажмите <span class="tn-icon cke cke-link"></span> на <a class="reference-link" href="Formatting%20toolbar.md">Панели форматирования</a> или <kbd>Ctrl</kbd>+<kbd>K</kbd>, чтобы открыть диалог на вкладке _Веб-страница_.
+*   Введите или вставьте адрес, затем выберите вариант в _Отображать как_: _Значок и текст_, _Карточка_ или, для видео YouTube и аудио-/видеофайлов, _Встраивание_. _Текст_ вставляет обычную ссылку. Поле _Отображать как_ не отображается, если выделен текст, так как ссылка сохраняет выделенный текст.
+*   При желании введите _Заголовок ссылки_, чтобы показать его вместо заголовка страницы. Для _Карточки_ также доступно поле _Описание_, заменяющее описание страницы.
+*   Когда вы покидаете поле адреса или вставляете адрес кнопкой <span class="tn-icon bx bx-paste"></span> _Вставить_, Trilium считывает страницу и заполняет пустой _Заголовок ссылки_ (и пустое _Описание_ карточки) данными страницы. Индикатор загрузки в конце поля показывает, что данные загружаются; если вы начали вводить текст вручную, он сохраняется. Переключение _Отображать как_ на _Карточка_ заполняет _Описание_ аналогичным образом без повторного запроса к странице.
+*   Нажмите <kbd>Enter</kbd> или _Вставить ссылку_ для подтверждения. Ссылка появляется сразу и превращается в предпросмотр, как только Trilium получит данные страницы.
 
-To keep the dialog from reading the page, go to <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ and, in the _Features_ section, turn off _Automatically retrieve titles for text links_ (for _Text_) or _Automatically retrieve title and description for icon & text links and cards_ (for _Icon & text_ and _Card_). Both are on by default. While they are on, Trilium contacts the page as soon as you leave the address field, also for a text link. Inserting an _Icon & text_ link or a _Card_ reads the page either way, since the preview is built from it.
+Чтобы диалог не обращался к странице, откройте <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Настройки</a> → _Текстовые заметки_ и в разделе _Функции_ отключите _Автоматически получать заголовки для текстовых ссылок_ (для _Текст_) или _Автоматически получать заголовок и описание для ссылок со значком и карточек_ (для _Значок и текст_ и _Карточка_). Обе опции включены по умолчанию. Пока они активны, Trilium обращается к странице сразу после выхода из поля адреса, в том числе для текстовых ссылок. Вставка _Значок и текст_ или _Карточки_ в любом случае считывает страницу для построения предпросмотра.
 
-Alternatively, use <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a> and choose _Link to a web page (with icon)_ or _Link to a web page (as a card)_ (both are also found by _link preview_). Each opens the same dialog on _Web page_, with _Icon & text_ or _Card_ already picked.
+Также можно воспользоваться <a class="reference-link" href="Slash%20Commands.md">Слэш-командами</a> и выбрать _Link to a web page (with icon)_ или _Link to a web page (as a card)_ (обе также находятся по запросу _link preview_). Они открывают тот же диалог на вкладке _Веб-страница_ с уже выбранным режимом _Значок и текст_ или _Карточка_.
 
-To turn an existing link into a preview, open its _Edit link_ dialog and change _Display as_, or pick a display in the _Display_ menu of the link's toolbar. Either way, a link whose text differs from its address keeps that text as the title of the preview.
+Чтобы превратить существующую ссылку в предпросмотр, откройте её диалог _Изменить ссылку_ и поменяйте _Отображать как_, либо выберите режим в меню _Отображение_ на панели инструментов ссылки. В обоих случаях, если текст ссылки отличался от адреса, он сохранится как заголовок предпросмотра.
 
-### 3\. From the Insert menu, for audio and video
+### 3\. Через меню «Вставить» для аудио и видео
 
-Choose <span class="tn-icon bx bx-movie-play"></span> _Audio/video embed_ from the <a class="reference-link" href="Insert%20buttons.md">Insert buttons</a> menu or the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>. Paste the address of a YouTube video, or of an audio or video file, and press _Insert media_ or <kbd>Enter</kbd> to insert it as an _Embed_. The <span class="tn-icon bx bx-paste"></span> _Paste_ button at the end of the field replaces its text with the text on the clipboard. This button is shown only where Trilium can read the clipboard: in the desktop app, and in a browser over HTTPS unless access to the clipboard was blocked.
+Выберите <span class="tn-icon bx bx-movie-play"></span> _Встраивание аудио/видео_ в меню <a class="reference-link" href="Insert%20buttons.md">Кнопки вставки</a> или в <a class="reference-link" href="Slash%20Commands.md">Слэш-командах</a>. Вставьте адрес видео YouTube либо аудио-/видеофайла и нажмите _Вставить медиа_ или <kbd>Enter</kbd>, чтобы вставить его в режиме _Встраивание_. Кнопка <span class="tn-icon bx bx-paste"></span> _Вставить_ в конце поля заменяет его содержимое текстом из буфера обмена. Эта кнопка отображается только там, где Trilium имеет доступ к буферу обмена: в настольном приложении и в браузере по HTTPS (если доступ не заблокирован).
 
-The media is inserted once Trilium has read the address, which can take a few seconds: the title and thumbnail of a YouTube video, or whether a file is audio or video. When the address cannot be read, or is that of a web page rather than of a YouTube video or a media file, an error is shown and the prompt stays open. Opening another note in the meantime cancels the insertion.
+Медиа вставляется после того, как Trilium проверит адрес (это может занять несколько секунд): получит заголовок и миниатюру видео YouTube или определит, является ли файл аудио или видео. Если адрес не удаётся прочитать или он ведёт на обычную веб-страницу, а не на видео YouTube или медиафайл, отображается ошибка и окно остаётся открытым. Переход к другой заметке во время загрузки отменяет вставку.
 
-### 4\. By saving browser tabs from the Web Clipper
+### 4\. Сохранение вкладок браузера через Web Clipper
 
-When the <a class="reference-link" href="../../Installation%20%26%20Setup/Web%20Clipper.md">Web Clipper</a> saves the tabs of a window, each tab becomes an _Icon & text_ link preview showing the title and favicon the browser displays for it. Because this data comes from the browser, pages behind a login keep their real title, and the Trilium server does not contact the saved pages.
+Когда <a class="reference-link" href="../../Installation%20%26%20Setup/Web%20Clipper.md">Web Clipper</a> сохраняет вкладки окна, каждая вкладка становится предпросмотром _Значок и текст_ с заголовком и значком из браузера. Поскольку эти данные поступают из браузера, страницы за экраном входа сохраняют свои настоящие заголовки, а сервер Trilium не обращается к сохранённым страницам.
 
-When _Autogenerate link previews_ is turned off, the tabs are saved as a list of text links instead.
+Если опция _Автоматически создавать предпросмотр ссылок_ отключена, вкладки сохраняются как список обычных текстовых ссылок.
 
-## Altering an existing link preview
+## Изменение существующего предпросмотра ссылки
 
-Click on an inserted _Icon & text_ or _Card_ link preview to select it, and a small toolbar will appear with the following options:
+Кликните по вставленному предпросмотру _Значок и текст_ или _Карточка_, чтобы выделить его — появится небольшая панель инструментов со следующими параметрами:
 
-*   _Open link_, which opens the page in a new tab, and <span class="tn-icon cke cke-trilium-copy"></span> _Copy address (URL)_.
-*   The <span class="tn-icon cke cke-pencil"></span> _Edit link_ button, which opens the _Edit link_ dialog on the link preview, as does pressing <kbd>Ctrl</kbd>+<kbd>K</kbd> while it is selected. The dialog changes its address, its _Link title_ (especially useful if the title is hidden behind a login screen), the _Description_ of a card and how it is displayed. A new address shows the title and description of the new page, unless you type your own.
-*   The _Display_ menu, which converts the preview to a normal link that reads as its title (_Text_) or switches it to another display mode (_Icon & text_, _Card_ or _Embed_).
-    *   The Embed option is only shown for a YouTube video or an audio or video file. A _Card_ of a file whose address does not end in a known extension, such as `.mp4` or `.mp3`, no longer offers it.
-*   The <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu, with <span class="tn-icon cke cke-web"></span> _Open link_, <span class="tn-icon cke cke-pencil"></span> _Edit link_, <span class="tn-icon cke cke-trilium-copy"></span> _Copy address (URL)_, the same display modes under <span class="tn-icon cke cke-trilium-link-preview"></span> _Display as_, and <span class="tn-icon cke cke-unlink"></span> _Unlink_, which replaces the preview with its address as plain text.
+*   _Открыть ссылку_ — открывает страницу в новой вкладке, и <span class="tn-icon cke cke-trilium-copy"></span> _Копировать адрес (URL)_.
+*   Кнопка <span class="tn-icon cke cke-pencil"></span> _Изменить ссылку_ — открывает диалог _Изменить ссылку_ (как и нажатие <kbd>Ctrl</kbd>+<kbd>K</kbd> при выделенном предпросмотре). В диалоге можно изменить адрес, _Заголовок ссылки_ (особенно полезно, если заголовок скрыт за экраном входа), _Описание_ карточки и режим отображения. При смене адреса подтягиваются заголовок и описание новой страницы, если вы не ввели свои.
+*   Меню _Отображение_ — преобразует предпросмотр в обычную ссылку с заголовком (_Текст_) или переключает на другой режим (_Значок и текст_, _Карточка_ или _Встраивание_).
+    *   Вариант _Встраивание_ доступен только для видео YouTube и аудио-/видеофайлов. У _Карточки_ файла, чей адрес не оканчивается на известное расширение (например, `.mp4` или `.mp3`), этот вариант больше не предлагается.
+*   Меню <span class="tn-icon cke cke-three-vertical-dots"></span> _Дополнительные действия_: <span class="tn-icon cke cke-web"></span> _Открыть ссылку_, <span class="tn-icon cke cke-pencil"></span> _Изменить ссылку_, <span class="tn-icon cke cke-trilium-copy"></span> _Копировать адрес (URL)_, те же режимы отображения в подменю <span class="tn-icon cke cke-trilium-link-preview"></span> _Отображать как_ и <span class="tn-icon cke cke-unlink"></span> _Удалить ссылку_ (заменяет предпросмотр его адресом в виде обычного текста).
 
-Right-clicking a link preview selects it and opens its _More actions_ menu.
+Правый клик по предпросмотру ссылки выделяет его и открывает меню _Дополнительные действия_.
 
-To color a link preview, select it and pick a color with the <span class="tn-icon cke cke-font-color"></span> font color or <span class="tn-icon cke cke-font-background"></span> background color button, as for text. The font color applies to the title of an _Icon & text_ link and to the text of a _Card_; the background color fills the whole preview. A preview keeps its colors when its display mode changes, except for an _Embed_, which cannot be colored.
+Чтобы изменить цвет предпросмотра ссылки, выделите его и выберите цвет кнопками <span class="tn-icon cke cke-font-color"></span> цвета шрифта или <span class="tn-icon cke cke-font-background"></span> цвета фона, как для обычного текста. Цвет шрифта применяется к заголовку _Значок и текст_ и тексту _Карточки_; цвет фона заливает весь предпросмотр. Цвета сохраняются при смене режима отображения, кроме _Встраивания_, которое нельзя окрашивать.
 
-### Audio and video
+### Аудио и видео
 
-A YouTube video, a video file or an audio file shown as an _Embed_ has a size, a position, a title and a caption, like an <a class="reference-link" href="Include%20Note.md">Include Note</a>. A video keeps its shape, so a YouTube Short stands upright and an older video can be 4:3. A YouTube video inserted in an earlier version is 16:9 until it is inserted again. In the editor, a click on the video both plays it and selects it, and so does a later click on the player.
+Видео YouTube, видеофайл или аудиофайл в режиме _Встраивание_ имеют размер, положение, заголовок и подпись, как <a class="reference-link" href="Include%20Note.md">Включение заметки</a>. Видео сохраняет пропорции, поэтому YouTube Shorts отображается вертикально, а старые видео могут быть 4:3. Видео YouTube, вставленное в более ранней версии, имеет формат 16:9 до повторной вставки. В редакторе клик по видео одновременно запускает воспроизведение и выделяет его, как и последующие клики по плееру.
 
-A video file or an audio file plays in the media player of Trilium, the one of <a class="reference-link" href="../File.md">File</a> notes, with its play button, seek bar and volume. A video file shows a picture of one of its frames, taken when it is inserted (see _Where the preview data comes from_ below), and a <span class="tn-icon bx bx-movie"></span> icon when it has none. An audio file shows a row of controls. When a file cannot be played, a message takes the place of the player, at the size of the video. Under it is the error that the site answered, if any, such as _HTTP 404: Not found_ for a file that is no longer there.
+Видео- или аудиофайл воспроизводится во встроенном медиаплеере Trilium (как в заметках типа <a class="reference-link" href="../File.md">Файл</a>) с кнопкой воспроизведения, полосой перемотки и громкостью. Видеофайл показывает кадр из видео, снятый при вставке (см. _Откуда берутся данные предпросмотра_ ниже), или значок <span class="tn-icon bx bx-movie"></span>, если кадра нет. Аудиофайл показывает панель управления. Если файл не удаётся воспроизвести, на месте плеера отображается сообщение того же размера и ошибка, возвращённая сайтом (например, _HTTP 404: Not found_ для удалённого файла).
 
-The toolbar of a selected embed offers:
+Панель инструментов выделенного встраивания предлагает:
 
-*   <span class="tn-icon cke cke-trilium-copy"></span> _Copy address (URL)_.
-*   The _Display_ menu, which turns the embed into an _Icon & text_ or _Card_ link preview with its title, or a _Text_ link that reads as its title. The text of its caption stays, as a paragraph after it.
-*   The <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu:
-    *   <span class="tn-icon bx bx-link-external"></span> _Open externally_ opens the media outside Trilium: in the browser, or in the app that handles the link, such as the YouTube app on Android.
-    *   <span class="tn-icon cke cke-pencil"></span> _Edit..._ opens the _Edit link_ dialog with only the _Address (URL)_ and the _Link title_ of the media, as does pressing <kbd>Ctrl</kbd>+<kbd>K</kbd> while the embed is selected. With another address, the embed plays the new media and keeps its size, position, title and caption. It takes the thumbnail and the shape of the new media, and a video file gets a picture of one of its frames, as when it is inserted. A video at its first size takes the first size of the new video, and an audio file in place of a video, or a video in place of an audio file, takes the size of new media. A new address shows the title of the new media, unless you type your own. When the address is not that of a YouTube video, an audio or a video file, the embed stays as it was and Trilium shows an error.
-    *   <span class="tn-icon cke cke-trilium-copy"></span> _Copy address (URL)_.
-    *   The display modes of the _Display_ menu under <span class="tn-icon cke cke-trilium-link-preview"></span> _Display as_.
-    *   _Size_: a _Resizable_ video can be resized and placed in the text, a _Full_ video takes the width of the note, or less when it would be taller than most of the window, and a _Compact_ video is a row with its title alone. A new video is _Resizable_. A YouTube video inserted in an earlier version is _Full_. An audio file is _Compact_, a row of controls, or _Resizable_, a box with the controls under the visualizer, whose width can be resized. _Default_ returns the media to the size it was inserted at.
-    *   _Position_: under _Break text_, <span class="tn-icon cke cke-object-left"></span> _Align left_, <span class="tn-icon cke cke-object-center"></span> _Align center_ and <span class="tn-icon cke cke-object-right"></span> _Align right_ place the video on lines of its own, at that side of the note. Under _Wrap text_, <span class="tn-icon cke cke-object-inline-left"></span> _Align left_ and <span class="tn-icon cke cke-object-inline-right"></span> _Align right_ place it at that side and let the text run beside it. _Align center_ is the default. Only a _Resizable_ video or audio file can be positioned.
-    *   _Show title_ shows the title of the media above it, as a link to the media. New media is inserted without its title. The <span class="tn-icon bx bx-dots-vertical-rounded"></span> button of the title opens this same menu.
-    *   _Show caption_ adds a caption under the video, centered, and puts the cursor in it. The caption is part of the text note, so it can be formatted like the rest of the text. While the cursor is in the caption, the video stays selected and keeps its toolbar. Choosing _Show caption_ again removes the caption.
-    *   <span class="tn-icon bx bx-trash"></span> _Delete block_ removes the video from the note.
+*   <span class="tn-icon cke cke-trilium-copy"></span> _Копировать адрес (URL)_.
+*   Меню _Отображение_ — превращает встраивание в предпросмотр _Значок и текст_, _Карточку_ с его заголовком или текстовую ссылку (_Текст_) с тем же заголовком. Текст подписи сохраняется в виде абзаца после ссылки.
+*   Меню <span class="tn-icon cke cke-three-vertical-dots"></span> _Дополнительные действия_:
+    *   <span class="tn-icon bx bx-link-external"></span> _Открыть во внешнем приложении_ — открывает медиа за пределами Trilium: в браузере или в приложении-обработчике ссылки (например, в приложении YouTube на Android).
+    *   <span class="tn-icon cke cke-pencil"></span> _Изменить..._ — открывает диалог _Изменить ссылку_ только с полями _Адрес (URL)_ и _Заголовок ссылки_ (как и <kbd>Ctrl</kbd>+<kbd>K</kbd> при выделенном встраивании). При смене адреса встраивание воспроизводит новый медиафайл, сохраняя размер, положение, заголовок и подпись, но обновляя миниатюру и пропорции (для видеофайла снова снимается кадр). Видео в исходном размере принимает исходный размер нового видео, а замена видео на аудио (и наоборот) задаёт размер для нового типа медиа. Новый адрес подтягивает заголовок нового медиа, если не задан свой. Если адрес не ведёт на видео YouTube или аудио-/видеофайл, встраивание остаётся прежним и Trilium показывает ошибку.
+    *   <span class="tn-icon cke cke-trilium-copy"></span> _Копировать адрес (URL)_.
+    *   Режимы отображения из меню _Отображение_ в подменю <span class="tn-icon cke cke-trilium-link-preview"></span> _Отображать как_.
+    *   _Размер_: _Изменяемый_ позволяет менять размер и позиционировать видео в тексте, _Полный_ занимает всю ширину заметки (или меньше, если высота превышает большую часть окна), а _Компактный_ показывает только строку с заголовком. Новое видео создаётся _Изменяемым_, видео YouTube из ранних версий — _Полным_. Аудиофайл может быть _Компактным_ (строка управления) или _Изменяемым_ (блок с управлением под визуализатором, ширину которого можно менять). _По умолчанию_ возвращает размер при вставке.
+    *   _Положение_: в группе _Разрыв текста_ пункты <span class="tn-icon cke cke-object-left"></span> _По левому краю_, <span class="tn-icon cke cke-object-center"></span> _По центру_ и <span class="tn-icon cke cke-object-right"></span> _По правому краю_ размещают видео на отдельных строках; в группе _Обтекание текстом_ пункты <span class="tn-icon cke cke-object-inline-left"></span> _По левому краю_ и <span class="tn-icon cke cke-object-inline-right"></span> _По правому краю_ позволяют тексту обтекать блок. По умолчанию используется _По центру_. Позиционировать можно только _Изменяемые_ видео и аудиофайлы.
+    *   _Показать заголовок_ — показывает заголовок медиа над ним в виде ссылки. Новые медиа вставляются без заголовка. Кнопка <span class="tn-icon bx bx-dots-vertical-rounded"></span> в заголовке открывает это же меню.
+    *   _Показать подпись_ — добавляет центрированную подпись под видео и ставит туда курсор. Подпись является частью текста и поддерживает форматирование. Пока курсор в подписи, видео остаётся выделенным со своей панелью инструментов. Повторный выбор _Показать подпись_ удаляет её.
+    *   <span class="tn-icon bx bx-trash"></span> _Удалить блок_ — удаляет видео из заметки.
 
-Right-clicking a video file or an audio file opens the same _More actions_ menu. So does right-clicking a YouTube video, but only until it plays: from then on, the right-click goes to YouTube's player, which shows its own menu.
+Правый клик по видео- или аудиофайлу открывает то же меню _Дополнительные действия_. То же касается видео YouTube до начала воспроизведения: после запуска правый клик переходит к плееру YouTube с его собственным меню.
 
-To resize a _Resizable_ video or audio file, select it and drag the handle in its bottom-right corner, or its bottom-left corner for one aligned to the right. The height of a video follows the width. _Default_ in the _Size_ submenu returns a video to its first size.
+Чтобы изменить размер _Изменяемого_ видео- или аудиофайла, выделите его и потяните за маркер в правом нижнем углу (или в левом нижнем, если блок выровнен по правому краю). Высота видео меняется пропорционально ширине. Пункт _По умолчанию_ в подменю _Размер_ возвращает исходный размер.
 
-On a [shared page](../../Advanced%20Usage/Sharing.md), the media keeps its width, position and caption, but not its title. A video or audio file plays in the browser's own player once the visitor clicks it. In the mobile layout, media with a position other than _Align center_ takes the full width.
+На [опубликованной странице](../../Advanced%20Usage/Sharing.md) медиа сохраняет ширину, положение и подпись, но не заголовок. Видео- или аудиофайл воспроизводится в плеере браузера после клика посетителя. В мобильной раскладке медиа с положением, отличным от _По центру_, занимает всю ширину.
 
-## Where the preview data comes from
+## Откуда берутся данные предпросмотра
 
-When you insert a link preview, Trilium fetches metadata once and stores it with the note:
+При вставке предпросмотра ссылки Trilium однократно загружает метаданные и сохраняет их вместе с заметкой:
 
-*   **YouTube URLs**: the title, the channel name and the shape of the video are fetched via YouTube's public oEmbed endpoint, and the video's thumbnail is downloaded at up to 1280×720.
-*   **Audio and video files**: Trilium reads the start of the file, enough to tell audio from video and, for most MP4 and WebM files, the shape of the video. The rest of the file is not downloaded, and the file is not copied into Trilium. Once a video file is inserted, the editor takes a picture of a frame a few seconds into it as its thumbnail. The frame is read through the Trilium server, so the site of the file sees the server and not your browser. The standalone (browser) and mobile versions have no such server: they read the frame from the site directly, and a video whose site does not let other sites read it has no thumbnail.
-*   **All other URLs**: Trilium fetches the page and reads OpenGraph tags (`og:title`, `og:description`, `og:image`, `og:site_name`), falling back to the page's `<title>` and `<meta name="description">`. The site's favicon and the page's image are downloaded as well.
+*   **URL YouTube**: заголовок, название канала и пропорции видео получаются через публичный endpoint oEmbed YouTube, а миниатюра скачивается в разрешении до 1280×720.
+*   **Аудио- и видеофайлы**: Trilium читает начало файла — достаточно, чтобы отличить аудио от видео и (для большинства MP4 и WebM) определить пропорции. Остальная часть файла не скачивается и не копируется в Trilium. После вставки видеофайла редактор снимает кадр через несколько секунд от начала в качестве миниатюры. Кадр читается через сервер Trilium, поэтому сайт видит сервер, а не ваш браузер. В автономной (браузерной) и мобильной версиях такого сервера нет: они читают кадр напрямую с сайта, и у видео с сайта, запрещающего чтение с других доменов, миниатюры не будет.
+*   **Все остальные URL**: Trilium загружает страницу и читает теги OpenGraph (`og:title`, `og:description`, `og:image`, `og:site_name`), а при их отсутствии — `<title>` и `<meta name="description">`. Значок сайта (favicon) и изображение страницы также скачиваются.
 
-The text is kept in the note's HTML. The images are kept as system <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Attachments.md">Attachments</a> of the note, listed under _Generated by Trilium_.
+Текст хранится в HTML заметки. Изображения сохраняются как системные <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Attachments.md">вложения</a> заметки в разделе _Создано Trilium_.
 
-Because the data is stored in the note itself, link previews continue to render correctly when you reopen the note, share/publish it, or export to HTML — without any further network requests.
+Поскольку данные хранятся в самой заметке, предпросмотры ссылок корректно отображаются при повторном открытии заметки, публикации или экспорте в HTML — без дополнительных сетевых запросов.
 
-The metadata is captured **at insertion time** and is not automatically refreshed. If the linked page later changes its title or thumbnail, you'll need to re-insert the link to pick up the new values. To refresh a link, simply create it again.
+Метаданные захватываются **в момент вставки** и не обновляются автоматически. Если на странице позже изменились заголовок или миниатюра, нужно вставить ссылку заново, чтобы обновить предпросмотр.
 
-A YouTube embed inserted before v0.107.0 keeps its smaller thumbnail, shown blurred, until the link is inserted again.
+Встраивание YouTube, созданное до версии v0.107.0, сохраняет свою уменьшенную размытую миниатюру до повторной вставки ссылки.
 
-When accessing a <a class="reference-link" href="../../Installation%20%26%20Setup/Server%20Installation.md">Server Installation</a>, the data is fetched from the remote URL by the server and not the client.
+При работе с <a class="reference-link" href="../../Installation%20%26%20Setup/Server%20Installation.md">серверной установкой</a> данные по удалённому URL загружаются сервером, а не клиентом.
 
-## Known limitations
+## Известные ограничения
 
-*   The Embed display mode supports YouTube and audio and video files. Pages of other video and media platforms fall back to a Card preview.
-*   An audio or video file plays from its address: it needs that address to be reachable, and stops playing when the file is moved or deleted. It plays only in a format that the browser, or the desktop app, supports.
-*   A file served over plain `http://` might not play in the desktop app or from a Trilium server reached over `https://`.
-*   An audio file shows no visualizer and no waveform, unlike an audio <a class="reference-link" href="../File.md">File</a> note, since the site of the file does not generally let Trilium read its sound.
-*   Pages that block automated fetches may produce a minimal preview (hostname only).
-*   Link previews require the Trilium server to reach the target URL, so they won't generate previews for pages on networks the server can't see.
+*   Режим _Встраивание_ поддерживает YouTube, а также аудио- и видеофайлы. Страницы других видео- и медиаплатформ отображаются как _Карточка_.
+*   Аудио- или видеофайл воспроизводится по своему адресу: он должен быть доступен, и воспроизведение прекратится, если файл переместить или удалить. Поддерживаются только форматы, которые умеет воспроизводить браузер или настольное приложение.
+*   Файл, отдаваемый по обычному `http://`, может не воспроизводиться в настольном приложении или с сервера Trilium, открытого по `https://`.
+*   Аудиофайл не показывает визуализатор и осциллограмму, в отличие от аудиозаметки типа <a class="reference-link" href="../File.md">Файл</a>, так как сайт файла обычно не разрешает Trilium считывать аудиопоток.
+*   Страницы, блокирующие автоматические запросы, могут создавать минимальный предпросмотр (только имя хоста).
+*   Для создания предпросмотра ссылок сервер Trilium должен иметь доступ к целевому URL, поэтому предпросмотры не создаются для страниц в сетях, недоступных серверу.
