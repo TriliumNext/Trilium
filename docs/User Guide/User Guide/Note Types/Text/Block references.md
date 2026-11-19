@@ -37,7 +37,7 @@ The link is a block reference to the heading, so it keeps working when the headi
 
 Since v0.108.0, a link can point at a heading of another note too:
 
-*   In the _Add link_ dialog, pick the note on the _Note_ page. Its headings and anchors are listed below the _Link title_, after _Link to the whole note_.
+*   In the _Add link_ dialog, pick the note on the _Note_ page. Its headings and anchors are listed below the _Link title_, after _Link to the note (default)_.
 *   Under _Link to a heading_, click the desired heading to check it, then press <kbd>Enter</kbd> or _Insert link_. The link can be inserted before the list appears; it then links to the note itself.
 *   Alternatively, type `@` and pick the note: the menu then lists the same headings, and the text typed next narrows them down. See [In-place linking](Links/Internal%20\(reference\)%20links.md).
 

@@ -223,10 +223,10 @@ The search runs on everything typed after the `@`, spaces included, so a title s
 
 You can also start typing the link directly: `[[` opens the same list, and closing the brackets yourself dismisses it. To change where an existing link points, place the cursor inside it and pick another note.
 
-Since v0.108.0, the note is linked as soon as it is picked. A ¶ then follows the link, and the list shows where in the note the link can point: _Link to the whole note_, its headings and its anchors.
+Since v0.108.0, the note is linked as soon as it is picked. A ¶ then follows the link, and the list shows where in the note the link can point: _Link to the note (default)_, its headings and its anchors.
 
 *   To point the link at a heading or an anchor, type part of its name after the ¶ and press <kbd>Enter</kbd> or <kbd>Tab</kbd>. The link then carries its target after the note ID, such as `[[noteId?block=a1b2c3d4]]`.
-*   To keep the link to the whole note, press <kbd>Enter</kbd> on _Link to the whole note_, or press <kbd>Esc</kbd>. Pressing <kbd>Backspace</kbd> or typing a space right after the ¶ does the same.
+*   To keep the link to the whole note, press <kbd>Enter</kbd> on _Link to the note (default)_, or press <kbd>Esc</kbd>. Pressing <kbd>Backspace</kbd> or typing a space right after the ¶ does the same.
 *   The ¶ is not part of the note. Text typed after it stays, unless a heading or an anchor is picked.
 
 You can link to headings and anchors in text and Markdown notes. A note created from the list is linked without this step. To skip it for every note, turn off _Suggest headings and anchors to link to_ under _Note auto-completion_ in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ → _Features_.
