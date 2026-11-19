@@ -229,6 +229,8 @@ export function useNoteSaver<T extends SaveData>(editor: NoteSaverEditor<T>) {
             return componentIdRef.current;
         },
         getLatestData: (noteId) => editorRef.current.getLatestData(noteId),
+        getLatestAttachment: (noteId, attachmentId) =>
+            editorRef.current.getLatestAttachment?.(noteId, attachmentId),
         loadVersion: (noteId, version) => editorRef.current.loadVersion(noteId, version),
         loadBlocks: (noteId, content) => editorRef.current.loadBlocks?.(noteId, content),
         onPaused: () => editorRef.current.onPaused?.(),

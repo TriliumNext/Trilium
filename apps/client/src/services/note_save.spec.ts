@@ -1,4 +1,4 @@
-import type { SaveConflictResponse } from "@triliumnext/commons";
+import type { SaveConflictResponse, SavedAttachmentRow } from "@triliumnext/commons";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type FAttachment from "../entities/fattachment";
@@ -36,6 +36,9 @@ describe("NoteSaver", () => {
         return {
             componentId: "editor",
             getLatestData: vi.fn<(noteId: string) => SaveData | undefined>(() => undefined),
+            getLatestAttachment: vi.fn<
+                (noteId: string, attachmentId: string) => SavedAttachmentRow | undefined
+            >(() => undefined),
             loadVersion: vi.fn(),
             loadBlocks: vi.fn(),
             onPaused: vi.fn(),
@@ -164,6 +167,43 @@ describe("NoteSaver", () => {
         expect(new Set(post.mock.calls.map(([ , request ]) => request.revisionId)).size).toBe(3);
         expect(editor.loadVersion).toHaveBeenCalledExactlyOnceWith(
             note.noteId, { blobId: "theirs", content: "<p>theirs</p>" });
+        expect(editor.loadVersion.mock.invocationCallOrder[0])
+            .toBeGreaterThan(post.mock.invocationCallOrder[2]);
+    });
+
+    it("keeps the strokes drawn while asked as drafts of the attachment", async () => {
+        const note = buildNote({ title: "Drawn during the question" });
+        const { saver, editor } = createSaver(note);
+        const row = {
+            attachmentId: "drawing1", blobId: "read", role: "file",
+            mime: "application/vnd.excalidraw+json", title: "Canvas.excalidraw"
+        };
+        const draw = (content: string) =>
+            editor.getLatestAttachment.mockReturnValue({ ...row, content });
+        post.mockRejectedValueOnce(JSON.stringify({
+            reason: "version", message: "", blobId: "noteBlob", type: "text", mime: "text/html",
+            isVersioned: true
+        })).mockImplementationOnce(async () => {
+            draw("stroke 3");
+            return { revisionId: "kept", isKept: true, isFragment: false };
+        });
+        get.mockResolvedValue({ blobId: "noteBlob", content: "<p>note</p>" });
+
+        const saving = saver.saveAttachment(note, { ...row, content: "stroke 1" });
+        await vi.waitFor(() => expect(getQuestion()).toBeDefined());
+        draw("stroke 2");
+        await answer(1);
+        expect(await saving).toBeUndefined();
+        expect(post.mock.calls.slice(1).map(([ url, { content, attachments } ]) =>
+            [ url, content, attachments ])).toStrictEqual([
+            [ `notes/${note.noteId}/revisions/draft`, "<p>note</p>",
+                [ { ...row, content: "stroke 2" } ] ],
+            [ `notes/${note.noteId}/revisions/draft`, "<p>note</p>",
+                [ { ...row, content: "stroke 3" } ] ]
+        ]);
+        expect(editor.getLatestAttachment).toHaveBeenCalledWith(note.noteId, "drawing1");
+        expect(editor.loadVersion).toHaveBeenCalledExactlyOnceWith(
+            note.noteId, { blobId: "noteBlob", content: "<p>note</p>" });
         expect(editor.loadVersion.mock.invocationCallOrder[0])
             .toBeGreaterThan(post.mock.invocationCallOrder[2]);
     });

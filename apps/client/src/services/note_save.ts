@@ -39,6 +39,11 @@ export interface SavingEditor<T extends SaveData> {
     componentId?: string;
     /** The data that the editor shows for `noteId`, or `undefined` once it shows another note. */
     getLatestData(noteId: string): Promise<T | undefined> | T | undefined;
+    /**
+     * The row of the attachment `attachmentId` of the note `noteId` that the editor holds now, or
+     * `undefined` when it holds no change to it.
+     */
+    getLatestAttachment?(noteId: string, attachmentId: string): SavedAttachmentRow | undefined;
     /** Shows `version` of the note `noteId`, the one that the user chose over the editor's. */
     loadVersion(noteId: string, version: CurrentVersion): void | Promise<void>;
     /** Shows the blocks `content` of the note `noteId`, the ones that the user chose. */
@@ -80,6 +85,8 @@ interface PendingDraft {
     cause: DraftCause;
     /** The changes that the draft holds, to tell changes made since from a repeated save. */
     data: SaveData;
+    /** Reads the changes that the editor holds now, in place of `SavingEditor.getLatestData()`. */
+    getLatest?: () => SaveData | undefined;
     /**
      * Shows the version that the user chose, once the draft is kept. Runs `keepNewerChanges`
      * right before the editor shows it.
@@ -320,6 +327,9 @@ export class NoteSaver<T extends SaveData> {
             return undefined;
         }
 
+        const getLatest = () => (row.attachmentId
+            ? this.editor.getLatestAttachment?.(noteId, row.attachmentId)
+            : undefined);
         return await this.sendUntilSaved(note, row, {
             send: async (saved, isKeepingOther) => {
                 const [ sent ] = await this.getAttachmentRows(note, [ saved ]) ?? [ saved ];
@@ -337,10 +347,15 @@ export class NoteSaver<T extends SaveData> {
                     isVersioned: conflict.isVersioned, attachments: conflict.attachments
                 };
             },
-            getLatest: () => undefined,
+            getLatest,
             createDraft: async (saved, cause) => {
                 const { content } = await readCurrentVersion(noteId);
-                return this.createDraft(note, { content, attachments: [ saved ] }, cause);
+                const draft = this.createDraft(note, { content, attachments: [ saved ] }, cause);
+                draft.getLatest = () => {
+                    const latest = getLatest();
+                    return latest && { content, attachments: [ latest ] };
+                };
+                return draft;
             },
             loadOther: (keepNewerChanges) => this.loadCurrentVersion(note, keepNewerChanges)
         });
@@ -459,7 +474,7 @@ export class NoteSaver<T extends SaveData> {
     private async keepChangesSince(noteId: string, draft: PendingDraft) {
         let kept = draft;
         for (;;) {
-            const latest = await this.editor.getLatestData(noteId);
+            const latest = await this.readLatest(noteId, kept);
             if (!latest || isSameData(latest, kept.data)) {
                 return;
             }
@@ -473,12 +488,17 @@ export class NoteSaver<T extends SaveData> {
      * the editor holds since, `data` or newer, as a draft of their own after it.
      */
     private async resumeDraft(noteId: string, pending: PendingDraft, data: SaveData) {
-        const latest = await this.editor.getLatestData(noteId) ?? data;
+        const latest = await this.readLatest(noteId, pending) ?? data;
         const hasNewChanges = !isSameData(latest, pending.data);
         await this.keepDraft(noteId, pending, hasNewChanges);
         if (hasNewChanges) {
             await this.keepDraft(noteId, withData(pending, latest));
         }
+    }
+
+    /** The changes that the editor holds now for the note `noteId`, read as `draft` reads them. */
+    private async readLatest(noteId: string, draft: PendingDraft) {
+        return draft.getLatest ? draft.getLatest() : await this.editor.getLatestData(noteId);
     }
 
     /** Asks which version to keep, until the user chooses or the editor goes away. */

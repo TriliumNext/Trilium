@@ -406,6 +406,36 @@ describe("Attachments API (core)", () => {
             expect(await readContent()).toBe("v4");
         });
 
+        it("checks the blob of a save by title, and creates one without an ID", async () => {
+            const { noteId } = await createTextNote(api, { title: "Conflict by title" });
+            const original = await saveAttachment(noteId, { title: "Drawing", content: "v1" });
+            const url = `/api/notes/${noteId}/attachments`;
+            const row = { role: "file", mime: "text/plain", title: "Drawing" };
+            const byTitle = { matchBy: "title" };
+
+            const refused = await api.post<SaveConflictResponse>(url, {
+                query: byTitle, body: { ...row, content: "v2", blobId: "stale" }
+            });
+            expect(refused.status).toBe(409);
+            const saved = await api.post<SavedAttachmentBase>(url, {
+                query: byTitle, body: { ...row, content: "v2", blobId: original.blobId }
+            });
+            expect(saved.status).toBe(200);
+            expect(saved.body.attachmentId).toBe(original.attachmentId);
+
+            const created = await api.post<SavedAttachmentBase>(url, {
+                body: { ...row, content: "v3", blobId: "any" }
+            });
+            expect(created.status).toBe(200);
+            expect(created.body.attachmentId).not.toBe(original.attachmentId);
+
+            const invalid = await api.post(url, { body: { ...row, content: "v4", blobId: 42 } });
+            expect(invalid.status).toBe(400);
+            const list = await api.get<AttachmentPojo[]>(`/api/notes/${noteId}/attachments`);
+            expect(list.body.map((a) => a.attachmentId).toSorted()).toStrictEqual(
+                [ original.attachmentId, created.body.attachmentId ].toSorted());
+        });
+
         it("404s when saving an attachment on a missing note", async () => {
             const res = await api.post("/api/notes/missingNote123/attachments", {
                 body: { role: "file", mime: "text/plain", title: "x", content: "y" }

@@ -432,8 +432,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         // Rewrite markdown-style links for code notes with markdown MIME.
         // These notes store content as markdown (not HTML), so the HTML-based
         // rewriteLinks in the providers won't match their link syntax.
-        if (noteMeta.type === "code" && isMarkdownMime(noteMeta.mime ?? "")
-            && typeof content === "string") {
+        if (note?.type === "code" && isMarkdownMime(note.mime) && typeof content === "string") {
             content = rewriteMarkdownContentLinks(
                 content, noteMeta, getNoteTargetUrl, getAttachmentTargetUrl);
         }

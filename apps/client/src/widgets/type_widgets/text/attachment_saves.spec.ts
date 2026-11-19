@@ -332,17 +332,20 @@ describe("useAttachmentEditor", () => {
         const versionLoaded = vi.fn();
         editor?.subscribeVersionLoaded?.(versionLoaded);
 
-        editor?.scheduleSave({ ...drawing, blobId: "read" } as FAttachment, () => "mine");
+        const read = { ...drawing, blobId: "read" } as FAttachment;
+        editor?.scheduleSave(read, () => "mine");
         void component.handleEvent("beforeNoteSwitch", { noteContext } as never);
         await vi.waitFor(() => expect(showPersistent).toHaveBeenCalled());
         expect(versionLoaded).not.toHaveBeenCalled();
+        editor?.scheduleSave(read, () => "drawn while asked");
         await act(async () => {
             showPersistent.mock.calls[0][0].buttons?.[1].onClick({ dismissToast: () => {} });
             await vi.waitFor(() => expect(serverPost).toHaveBeenCalledTimes(2));
         });
         expect(serverPost).toHaveBeenLastCalledWith("notes/note1/revisions/draft",
             expect.objectContaining({
-                content: "<p>note</p>", attachments: [ savedRequest("mine", { blobId: "read" })[1] ]
+                content: "<p>note</p>",
+                attachments: [ savedRequest("drawn while asked", { blobId: "read" })[1] ]
             }), component.componentId);
         await vi.waitFor(() => expect(editor?.getUnsavedContent("drawing1")).toBeUndefined());
         expect(versionLoaded).toHaveBeenCalledOnce();

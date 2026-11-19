@@ -217,9 +217,13 @@ export default class AttachmentSaves
      * that its changes are based on.
      */
     collect(): SavedAttachments {
-        return this.collectItems((attachmentId, { role, mime, title }, content, blobId) => (
-            { attachmentId, role, mime, title, content, ...(blobId ? { blobId } : {}) }
-        ));
+        return this.collectItems(toAttachmentRow);
+    }
+
+    /** The row that {@link collect} reads for the attachment `attachmentId`, if it changed. */
+    getLatestRow(attachmentId: string) {
+        const save = this.pending.get(attachmentId);
+        return save && toAttachmentRow(attachmentId, save.entity, readContent(save), save.readAt);
     }
 }
 
@@ -390,6 +394,7 @@ export function useAttachmentEditor(
     noteContextRef.current = noteContext;
     const saver = useNoteSaver<SaveData>({
         getLatestData: () => undefined,
+        getLatestAttachment: (_noteId, attachmentId) => saves.getLatestRow(attachmentId),
         loadVersion(noteId) {
             // A revision keeps the changes, as the user chose the version of another writer.
             spacedUpdate.discard(noteId);
@@ -528,4 +533,14 @@ function takeContent<T>(save: PendingSave<T>) {
     const content = readContent(save);
     save.hooks?.onDataTaken();
     return content;
+}
+
+/** The row that saves `content` as the attachment `attachmentId`, based on the blob `blobId`. */
+function toAttachmentRow(
+    attachmentId: string,
+    { role, mime, title }: FAttachment,
+    content: string,
+    blobId: string | undefined
+): SavedAttachments[number] {
+    return { attachmentId, role, mime, title, content, ...(blobId ? { blobId } : {}) };
 }

@@ -230,6 +230,14 @@ describe("addHeadingReference", () => {
         expect(createId).not.toHaveBeenCalled();
     });
 
+    it("adds no id when each id drawn is in the content already", () => {
+        const createId = vi.fn(() => "Taken");
+
+        expect(addHeadingReference("<h2>Taken</h2>", { index: 0, title: "Taken" }, createId))
+            .toBeNull();
+        expect(createId).toHaveBeenCalled();
+    });
+
     it("puts a new id in front of an invalid one, and the new one is read", () => {
         const attributes = [
             `data-trilium-block-id=""`, "data-trilium-block-id", `data-trilium-block-id="a:b"`
