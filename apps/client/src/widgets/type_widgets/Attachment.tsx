@@ -6,10 +6,11 @@ import {
 } from "@triliumnext/commons/src/lib/attachment_roles.js";
 import { CANVAS_ATTACHMENT_MIME } from "@triliumnext/commons/src/lib/notes.js";
 import { XLSX_MIME } from "@triliumnext/commons/src/lib/office.js";
+import { findTocFormatName, TOC_HEADING_ATTRIBUTE } from "@triliumnext/commons/src/lib/toc.js";
 import { t } from "i18next";
 import { Fragment } from "preact";
 import { lazy, Suspense } from "preact/compat";
-import { useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import type NoteContext from "../../components/note_context";
 import FAttachment from "../../entities/fattachment";
@@ -22,15 +23,17 @@ import {
 } from "../../services/attachment_actions";
 import { partitionAttachmentsByGroup } from "../../services/attachment_groups";
 import { attachmentRoleLabel } from "../../services/attachment_role_names";
+import { findDocumentTarget } from "../../services/bookmark_jump";
 import content_renderer, {
-    type ContentLinkTarget, hasRenderedPreview
+    type ContentLandingOptions, type ContentLinkTarget, hasRenderedPreview,
+    type RenderedDocumentState
 } from "../../services/content_renderer";
 import froca from "../../services/froca";
 import image from "../../services/image";
 import { getAttachmentImageUrl } from "../../services/image_urls";
 import importService from "../../services/import";
-import { type ViewScope } from "../../services/link";
-import { takeLinkTarget } from "../../services/link_targets";
+import { getTocUrl, type ViewScope } from "../../services/link";
+import { takeLinkTarget, toLandingTarget } from "../../services/link_targets";
 import options from "../../services/options";
 import protected_session_holder from "../../services/protected_session_holder";
 import utils from "../../services/utils";
@@ -42,6 +45,8 @@ import { ExternallyControlledCollapsible } from "../react/Collapsible";
 import Dropdown from "../react/Dropdown";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
 import HelpButton from "../react/HelpButton";
+import type { ClientTocBuild, TocDocumentState } from "../sidebar/CachedToCProvider";
+import { useActiveHeading } from "../react/hooks/dom";
 import { useTriliumEvent } from "../react/hooks/events";
 import { useAttachments } from "../react/hooks/note";
 import { useLinkTargetLanding } from "../react/hooks/note_context";
@@ -287,11 +292,17 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
     const rendersItself = isZoomableImage || isPlayableMedia || isEditableDrawing || isTranscript || isWorkbook;
     const imageSrc = getAttachmentImageUrl(attachment.attachmentId, attachment.title, modified);
     /** Shows the content of the latest render at the place that a link names. */
-    const showTargetRef = useRef<((target: ContentLinkTarget) => void) | null>(null);
+    const showTargetRef = useRef<
+        ((target: ContentLinkTarget, options?: ContentLandingOptions) => void) | null
+    >(null);
     /** Counts the renders of `refresh()`: only the content of the latest one is shown. */
     const renderGenerationRef = useRef(0);
     /** Whether a render has started whose content is not in place yet. */
     const isRenderingRef = useRef(false);
+    const tocDocument = useAttachmentTocDocument({
+        attachment, noteContext, contentWrapper, renderGenerationRef, isRenderingRef, showTargetRef,
+        isEnabled: !!isFullDetail && !!findTocFormatName(attachment.role, attachment.mime)
+    });
 
     /**
      * Shows the place that the latest link names, once the content of the latest render is in
@@ -321,12 +332,13 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
         if (!rendersItself) {
             // The full-detail view has a pane to itself, so it gets the pdf.js toolbar and the whole
             // document; a list-view preview stays bare and shows only the corner of a workbook.
+            const generation = ++renderGenerationRef.current;
             const renderOptions = {
                 pdfToolbar: !!isFullDetail,
                 buildsPdfToc: !!isFullDetail,
-                trim: !isFullDetail
+                trim: !isFullDetail,
+                ...tocDocument.getRenderOptions(generation)
             };
-            const generation = ++renderGenerationRef.current;
             isRenderingRef.current = true;
             content_renderer.getRenderedContent(attachment, renderOptions)
                 .then(({ $renderedContent, showTarget }) => {
@@ -338,6 +350,7 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
                     contentWrapper.current?.replaceChildren(...$renderedContent);
                     showTargetRef.current = showTarget ?? null;
                     isRenderingRef.current = false;
+                    tocDocument.place(generation);
                     showLinkTarget();
                 });
         }
@@ -358,6 +371,7 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
             renderGenerationRef.current++;
             isRenderingRef.current = false;
             showTargetRef.current = null;
+            tocDocument.clear();
             disposeContent();
         };
     }, [ attachment, rendersItself ]);
@@ -573,4 +587,159 @@ function AttachmentActions({ attachment, copyAttachmentReferenceToClipboard }: {
             </Dropdown>
         </div>
     );
+}
+
+interface AttachmentTocDocumentOptions {
+    attachment: FAttachment;
+    noteContext: NoteContext | undefined;
+    contentWrapper: { current: HTMLDivElement | null };
+    renderGenerationRef: { current: number };
+    isRenderingRef: { current: boolean };
+    showTargetRef: {
+        current: ((target: ContentLinkTarget, options?: ContentLandingOptions) => void) | null;
+    };
+    /** Whether the attachment is a document whose outline comes from its ToC cache. */
+    isEnabled: boolean;
+}
+
+/** What a render of an attachment reported for the outline. */
+interface RenderedTocDocument {
+    generation: number;
+    state?: RenderedDocumentState;
+    /** Whether the content of the render is in place. */
+    isPlaced: boolean;
+    build?: ClientTocBuild;
+}
+
+/**
+ * Publishes `tocDocument` for the attachment that the full-detail view shows: `rendering` while a
+ * render puts the content in place, then the blob that the render reported. Each state belongs to
+ * a render generation, and is published only while the view scope names this attachment.
+ */
+function useAttachmentTocDocument({
+    attachment, noteContext, contentWrapper, renderGenerationRef, isRenderingRef, showTargetRef,
+    isEnabled
+}: AttachmentTocDocumentOptions) {
+    const renderedRef = useRef<RenderedTocDocument>({ generation: 0, isPlaced: false });
+    const [ marks, setMarks ] = useState<{
+        headings: { id: string; element: HTMLElement }[];
+        scrollingContainer: HTMLElement | null;
+    }>({ headings: [], scrollingContainer: null });
+    const getHeadingElement = useCallback(
+        (heading: { element: HTMLElement }) => heading.element, []);
+    const activeHeadingId = useActiveHeading({ ...marks, getHeadingElement });
+    const activeHeadingRef = useRef(activeHeadingId);
+    activeHeadingRef.current = activeHeadingId;
+    const { attachmentId } = attachment;
+
+    function isInScope() {
+        return isEnabled && noteContext?.viewScope?.attachmentId === attachmentId;
+    }
+
+    /** Lands on `params` while the render `generation` is the latest and in place. */
+    function showTarget(generation: number, params: Record<string, string>) {
+        const show = showTargetRef.current;
+        if (generation !== renderGenerationRef.current || isRenderingRef.current || !show
+            || !isInScope()) {
+            return false;
+        }
+        const target = toLandingTarget(params);
+        const body = contentWrapper.current?.querySelector(".office-preview-body");
+        if (body && !findDocumentTarget(body, target)) {
+            return false;
+        }
+        show(target, { isFallbackToTop: false });
+        return true;
+    }
+
+    function toState(): TocDocumentState {
+        const { generation, state, isPlaced, build } = renderedRef.current;
+        if (state?.status === "unavailable") {
+            return { status: "unavailable", attachmentId };
+        }
+        if (!isPlaced || state?.status !== "shown") {
+            return { status: "rendering", attachmentId };
+        }
+        const notePath = noteContext?.notePath ?? attachment.ownerId;
+        return {
+            status: "shown",
+            attachmentId,
+            tocUrl: getTocUrl("attachments", attachmentId),
+            renderedBlobId: state.blobId,
+            ownerNoteId: attachment.ownerId,
+            linkPath: `${notePath}?viewMode=attachments&attachmentId=${attachmentId}`,
+            title: attachment.title,
+            showTarget: (params) => showTarget(generation, params),
+            findActiveHeading: () => activeHeadingRef.current,
+            clientBuild: build
+        };
+    }
+
+    function publish() {
+        if (isInScope()) {
+            noteContext?.setContextData("tocDocument", toState());
+        }
+    }
+
+    /** Reads the headings that the server marked in a preview, for the active heading. */
+    function readMarks() {
+        const wrapper = contentWrapper.current;
+        const elements = wrapper?.querySelectorAll<HTMLElement>(`[${TOC_HEADING_ATTRIBUTE}]`) ?? [];
+        setMarks({
+            // Entries that land on one element share it; the deepest is the last of its ids.
+            headings: Array.from(elements, (element) => ({
+                id: element.getAttribute(TOC_HEADING_ATTRIBUTE)?.split(" ").at(-1) ?? "",
+                element
+            })),
+            scrollingContainer:
+                wrapper?.querySelector<HTMLElement>(".office-preview-scroll") ?? null
+        });
+    }
+
+    useEffect(() => {
+        if (renderedRef.current.isPlaced) {
+            publish();
+        }
+    }, [ activeHeadingId ]);
+
+    return {
+        /** The options that report the render `generation` to the outline. */
+        getRenderOptions(generation: number) {
+            if (!isEnabled) {
+                return {};
+            }
+            renderedRef.current = { generation, isPlaced: false };
+            publish();
+            const isCurrent = () => renderedRef.current.generation === generation;
+            return {
+                onDocumentState(state: RenderedDocumentState) {
+                    if (isCurrent()) {
+                        renderedRef.current.state = state;
+                        publish();
+                    }
+                },
+                onTocBuild(build: ClientTocBuild) {
+                    if (isCurrent()) {
+                        renderedRef.current.build = build;
+                        publish();
+                    }
+                }
+            };
+        },
+        /** The content of the render `generation` is in place. */
+        place(generation: number) {
+            if (!isEnabled || renderedRef.current.generation !== generation) {
+                return;
+            }
+            renderedRef.current.isPlaced = true;
+            readMarks();
+            publish();
+        },
+        clear() {
+            const current = noteContext?.getContextData("tocDocument");
+            if (isEnabled && current?.attachmentId === attachmentId) {
+                noteContext?.clearContextData("tocDocument");
+            }
+        }
+    };
 }

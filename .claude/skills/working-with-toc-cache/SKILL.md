@@ -76,7 +76,8 @@ Do not use one for:
 | Routes | `packages/trilium-core/src/routes/api/toc.ts` | `GET`/`PUT /api/notes/:noteId/toc` and `/api/attachments/:attachmentId/toc`, `GET /api/attachments/:attachmentId/references` |
 | Reference bridge | `packages/trilium-core/src/services/references/toc.ts` | `tocReferences` provider, `toTargets()` |
 | Preview marking | `packages/trilium-core/src/routes/api/files.ts` | `sendOfficePreview()` calls `markTocHeadings()` |
-| Client build | `apps/client/src/widgets/type_widgets/file/toc_build.ts` | `useTocBuild()`: asks the viewer, saves its answer with `PUT` |
+| Client build | `apps/client/src/widgets/type_widgets/file/toc_build.ts` | `useTocBuild()`: the coordinator of the viewer's build (`ClientTocBuild`); `refreshBlobId()` |
+| Outline | `apps/client/src/widgets/sidebar/CachedToCProvider.tsx` | The outline of every document with a format: reads `GET .../toc`, builds with `POST .../toc/build` or the viewer's build, from the `tocDocument` entry of the type widget |
 | Client landing | `apps/client/src/services/bookmark_jump.ts`, `link_targets.ts` | `showDocumentTarget()`; `takeLinkTarget()` reads the target out of the view scope |
 | Client labels | `apps/client/src/services/link.ts` | `getTocUrl()`, `rememberHeadingTitles()`, `loadLinkTargetLabel()`, the `headingTitles` memo |
 | Contract fixtures | `packages/trilium-core/src/services/toc/fixtures/` | `toc_contract.*` and their JSON, written by `generate-toc-contract.mts` and `generate-office-toc-contract.mts` through the formats' own generators, with `buildContract()` and `writeContract()` of `contract.mts`; `epub_books.ts` builds the books of the EPUB specs |
@@ -111,6 +112,14 @@ Do not use one for:
 
 A document whose note cannot keep a cache (an attachment of a revision, a virtual note such as a
 help page) is built on every request and never saved.
+
+`buildToc()` (the `POST .../toc/build` route) answers the cache as `getToc()` finds or builds it,
+or as `readCachedToc()` does where only a viewer reads the format. Both routes send each heading
+with the `params` of a link to it (`format.getLinkParams()`), absent when no link can reach it, and
+answer `{ status: "unavailable" }` for a gone document or content outside a protected session
+(`answerUnavailable()` in `routes/helpers.ts`, from `NotFoundError` and
+`ContentNotAvailableError`), since a client cannot read the status of a failed request. The
+services keep throwing, so the reference routes still answer 404 and 400.
 
 `readCachedToc()` (the `GET .../toc` route) never builds: it answers `ready`, `stale` (the newest
 cache of an earlier blob, for labels), `missing` or `none`, and adds `pendingToc` where the viewer
@@ -181,7 +190,6 @@ other identifiers next to it; each kind of identifier has one place:
 | A locator the renderer can open without the outline | A field of the heading type, sent in `params` next to the id as a fallback | PDF `page`: `?page=5&heading=<id>` |
 | A name the author gave, unique in the document | Another target kind from `getOtherTargets()`, with its own parameter, kept in the format's properties | DOCX and ODT bookmarks, `?bookmark=<name>` |
 | Entries the renderer cannot show | Kept in the cache with a field that `getLinkParams()` answers `undefined` for | EPUB `isShown: false` |
-| A position that is only valid in one session | A key the viewer keeps to itself, never written into a link or the cache | PDF sidebar `outline-<n>` |
 
 Rules for heading fields:
 
@@ -325,7 +333,8 @@ Pick where it runs:
   `useTocBuild()` is written for the PDF viewer's iframe messages (`trilium-build-toc`,
   `pdfjs-viewer-toc-build`); another viewer needs its own request and answer, but the same rules:
   ask `GET .../toc` first and build only on `pendingToc`, save only the answer to the latest
-  request, treat a 409 as "the document changed" and let the next load build again.
+  request, treat a 409 as "the document changed", and publish the build as `clientBuild` so the
+  outline can ask for it and wait.
 
 ## Renderers: resolving an id
 
@@ -376,8 +385,21 @@ the heading's own destination, the page it inherits from the first heading below
 parameter of the link, nothing. This is why a format with a cheap locator puts it in `params` next
 to the id.
 
-The viewer's own sidebar names headings by position (`outline-<n>`), which never leaves the
-viewer.
+The viewer also accepts the blob tag of a save of its document (`trilium-saved-revision`), so a
+bound heading of the cache built from the save resolves without a reload.
+
+### The outline
+
+`CachedToCProvider` shows the cache of the document that the type widget publishes as
+`tocDocument` (`TocDocumentState`): `rendering`, `unavailable`, or `shown` with the `tocUrl`, the
+`renderedBlobId` the widget confirmed, `showTarget(params)` (the link landing, bound to the load or
+render that published it, answering `false` for a stale one), `findActiveHeading(headings)` and,
+for a viewer-built format, `clientBuild`. Rows apply only for `renderedBlobId`: a preview asks for
+its blob (`?blobId=`, 409 for another), a PDF viewer asks for it in its file URL and confirms it at
+`documentloaded`. A new format gets an outline by adding its name to `SERVED_FORMATS` and having
+its widget publish the entry; `findTocFormatName()` in commons is the gate, and the formats'
+`isFor()` call it, so the client and the server agree. An attachment's entry carries its
+`attachmentId`, published by `AttachmentInfo` through the renderer's `onDocumentState`.
 
 ### Labels and lists
 
@@ -422,7 +444,8 @@ viewer.
 | A format's reader and marking against the contract fixtures | `toc/office.spec.ts`, `toc/office_headings.spec.ts`, `toc/epub.spec.ts` |
 | The EPUB pass, landings and marking; a book's package and navigation | `toc/epub_pass.spec.ts`, `toc/epub_package.spec.ts` |
 | The shared marking and levels; ZIP parts | `toc/preview_marks.spec.ts`, `createLevelTracker` in `toc/index.spec.ts`, `services/utils/zip_records.spec.ts` |
-| The routes | `packages/trilium-core/src/routes/api/toc.spec.ts` |
+| The routes | `packages/trilium-core/src/routes/api/toc.spec.ts`, `routes/helpers.spec.ts` |
+| The outline | `apps/client/src/widgets/sidebar/CachedToCProvider.spec.tsx`, `type_widgets/file/Office.spec.tsx`, `Pdf.spec.tsx`, `type_widgets/Attachment.spec.tsx` |
 | Targets from a cache | `packages/trilium-core/src/services/references/toc.spec.ts` |
 | A server generator | `apps/server/src/services/toc/pdf.spec.ts` |
 | The standalone platform (no PDF generator, `whenDatabaseFree`) | `apps/standalone/src/lightweight/platform_provider.spec.ts` |

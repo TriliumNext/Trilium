@@ -85,6 +85,76 @@ export function useWhenShown(ref: RefObject<Element | null> | undefined) {
     }, [ ref ]);
 }
 
+/**
+ * The id of the heading of `headings`, in document order, that is being read: the last one whose
+ * element starts above a line 100 px below the top of `scrollingContainer`.
+ */
+export function useActiveHeading<T extends { id: string }>({
+    headings, scrollingContainer, getHeadingElement
+}: {
+    headings: T[];
+    scrollingContainer: HTMLElement | null;
+    getHeadingElement: (heading: T) => HTMLElement | null
+}) {
+    const headingsRef = useRef(headings);
+    const [activeHeadingId, setActiveHeadingId] = useState<string | null>(null);
+
+    useEffect(() => {
+        headingsRef.current = headings;
+    }, [headings]);
+
+    useEffect(() => {
+        if (!scrollingContainer) {
+            setActiveHeadingId(null);
+            return;
+        }
+
+        const activeLineY = scrollingContainer.getBoundingClientRect().top + 100;
+        let timeoutId: number | undefined;
+
+        function updateActiveHeading() {
+            let activeHeading: T | null = null;
+
+            for (const heading of headingsRef.current) {
+                const headingEl = getHeadingElement(heading);
+                // A heading in a collapsed section has no place on the page.
+                if (headingEl && !headingEl.checkVisibility({ visibilityProperty: true })) {
+                    continue;
+                }
+
+                if (headingEl && headingEl.getBoundingClientRect().top <= activeLineY) {
+                    activeHeading = heading;
+                } else {
+                    break;
+                }
+            }
+
+            setActiveHeadingId(prev =>
+                prev === activeHeading?.id ? prev : activeHeading?.id ?? null
+            );
+        }
+
+        function handleScroll() {
+            window.clearTimeout(timeoutId);
+            timeoutId = window.setTimeout(updateActiveHeading, 100);
+        }
+
+        scrollingContainer.addEventListener("scroll", handleScroll);
+
+        updateActiveHeading();
+
+        return () => {
+            window.clearTimeout(timeoutId);
+            scrollingContainer.removeEventListener("scroll", handleScroll);
+        };
+        // getHeadingElement must re-subscribe the listener: when a rebuild replaces the editor,
+        // .scrolling-container is an ancestor of the editor root and stays the same element, so
+        // scrollingContainer alone would keep the listener mapping through the destroyed editor.
+    }, [scrollingContainer, getHeadingElement]);
+
+    return activeHeadingId;
+}
+
 /** Whether `element` is laid out, or not in the page yet. */
 function isShown(element: Element) {
     return !element.isConnected || element.checkVisibility();

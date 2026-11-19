@@ -882,9 +882,11 @@ paths:
         The table of contents that the ToC cache of a note holds, such as the outline of a PDF
         file, the headings of a DOCX or ODT file or the entries of an EPUB e-book's table of
         contents, without building it or writing anything. `ready` is a cache of the note as it is,
-        `stale` one of an earlier blob, `missing` a note without a cache that can be read, and
-        `none` a note that has no table of contents. `pendingToc` tells that the viewer of the
-        document builds the cache, since the server cannot read the format.
+        `stale` one of an earlier blob, `missing` a note without a cache that can be read,
+        `unavailable` a note that is gone or protected without a protected session, and `none` a
+        note that has no table of contents. `pendingToc` tells that the viewer of the document
+        builds the cache, since the server cannot read the format. Each heading carries the
+        `params` of a link to it.
       operationId: getNoteToc
       parameters:
         - $ref: '#/components/parameters/noteId'
@@ -895,10 +897,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CachedToc'
-        '400':
-          description: A protected note without a protected session
-        '404':
-          description: Note not found
     put:
       tags: [Notes]
       summary: Save the table of contents that the viewer read
@@ -931,6 +929,28 @@ paths:
           description: Note not found
         '409':
           description: The note has another blob than the one the viewer read (reason `changed`)
+
+  /api/notes/{noteId}/toc/build:
+    post:
+      tags: [Notes]
+      summary: Build the ToC cache of a note
+      description: >-
+        Answers the ToC cache of a note, and builds and saves it first when it is not valid and
+        the server can read the format. Where only the viewer can read it (PDF on standalone and
+        mobile), answers as `GET /api/notes/{noteId}/toc` does, with `pendingToc`. `unreadable` is
+        a file whose table of contents cannot be read.
+      operationId: buildNoteToc
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: The table of contents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CachedToc'
+        '409':
+          description: The note changed during two builds in a row
 
   /api/notes/{noteId}/title:
     put:
@@ -1154,8 +1174,12 @@ paths:
                   type: string
                   format: binary
       responses:
-        '204':
+        '200':
           description: File uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileUploaded'
           
   /api/notes/{noteId}/open:
     get:
@@ -1164,6 +1188,7 @@ paths:
       operationId: openFileNote
       parameters:
         - $ref: '#/components/parameters/noteId'
+        - $ref: '#/components/parameters/expectedBlobId'
       responses:
         '200':
           description: File content
@@ -1172,6 +1197,8 @@ paths:
               schema:
                 type: string
                 format: binary
+        '409':
+          description: The note holds another blob than `blobId`
                 
   /api/notes/download/{noteId}:
     get:
@@ -2069,10 +2096,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CachedToc'
-        '400':
-          description: A protected attachment without a protected session
-        '404':
-          description: Attachment not found
     put:
       tags: [Attachments]
       summary: Save the table of contents that the viewer of an attachment read
@@ -2103,6 +2126,28 @@ paths:
           description: Attachment not found
         '409':
           description: The attachment has another blob than the one the viewer read (reason `changed`)
+
+  /api/attachments/{attachmentId}/toc/build:
+    post:
+      tags: [Attachments]
+      summary: Build the ToC cache of an attachment
+      description: The twin of `POST /api/notes/{noteId}/toc/build` for an attachment.
+      operationId: buildAttachmentToc
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The table of contents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CachedToc'
+        '409':
+          description: The attachment changed during two builds in a row
 
   /api/attachments/{attachmentId}/rename:
     put:
@@ -2170,8 +2215,12 @@ paths:
                   type: string
                   format: binary
       responses:
-        '204':
+        '200':
           description: Attachment file updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileUploaded'
           
   /api/attachments/{attachmentId}/open:
     get:
@@ -2184,6 +2233,7 @@ paths:
           required: true
           schema:
             type: string
+        - $ref: '#/components/parameters/expectedBlobId'
       responses:
         '200':
           description: Attachment content
@@ -2192,6 +2242,8 @@ paths:
               schema:
                 type: string
                 format: binary
+        '409':
+          description: The attachment holds another blob than `blobId`
                 
   /api/attachments/download/{attachmentId}:
     get:
@@ -5343,6 +5395,15 @@ components:
       schema:
         type: string
       description: 12-character note ID
+    expectedBlobId:
+      name: blobId
+      in: query
+      required: false
+      schema:
+        type: string
+      description: >-
+        The blob that the caller expects. When the content holds another one, the route answers
+        409 without the content.
       
   schemas:
     Note:
@@ -5638,6 +5699,12 @@ components:
           type: integer
           minimum: 1
           example: 1
+        params:
+          type: object
+          additionalProperties:
+            type: string
+          description: The parameters of a link to the heading; absent when no link can reach it
+          example: { page: "4", heading: 0k3x9aa1h7q2mz }
 
     CachedToc:
       type: object
@@ -5645,7 +5712,7 @@ components:
       properties:
         status:
           type: string
-          enum: [ready, stale, missing, none]
+          enum: [ready, stale, missing, unreadable, unavailable, none]
         blobId:
           type: string
           description: For `ready` and `stale`, the blob that the headings were read from
@@ -5685,6 +5752,19 @@ components:
           type: number
           minimum: 0
           description: How long the viewer took, for the log
+
+    FileUploaded:
+      type: object
+      required: [uploaded]
+      properties:
+        uploaded:
+          type: boolean
+        blobId:
+          type: string
+          description: The blob that the upload wrote
+        message:
+          type: string
+          description: Why nothing was uploaded
 
     NoteSaveBase:
       type: object

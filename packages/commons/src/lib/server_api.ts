@@ -373,14 +373,27 @@ export interface NoteReferencesResponse {
     pendingToc?: PendingToc;
 }
 
-/** The answer of `GET /api/notes/:noteId/toc`, which reads the ToC cache and never builds it. */
+/** A heading of a ToC cache as the ToC routes send it, with the fields of its format. */
+export interface TocOutlineHeading extends TocHeading {
+    /** The parameters of a link to the heading. Absent when no link can reach it. */
+    params?: ReferenceParams;
+}
+
+/**
+ * The answer of `GET /api/notes/:noteId/toc`, which reads the ToC cache and never builds it, and of
+ * `POST /api/notes/:noteId/toc/build`, which builds it.
+ */
 export type CachedTocResponse =
     /** A cache of the document as it is. `blobId` is its `targetBlobHash`. */
-    | { status: "ready"; blobId: string; headings: TocHeading[] }
+    | { status: "ready"; blobId: string; headings: TocOutlineHeading[] }
     /** A cache of an earlier blob of the document. */
-    | { status: "stale"; blobId: string; headings: TocHeading[]; pendingToc?: PendingToc }
+    | { status: "stale"; blobId: string; headings: TocOutlineHeading[]; pendingToc?: PendingToc }
     /** A document with a table of contents format, and no cache to read. */
     | { status: "missing"; pendingToc?: PendingToc }
+    /** The document has a format, and its table of contents could not be read. */
+    | { status: "unreadable" }
+    /** The document is gone, or its content is not available outside a protected session. */
+    | { status: "unavailable" }
     /** A document without a table of contents format. */
     | { status: "none" };
 

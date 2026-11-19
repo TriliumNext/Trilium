@@ -18,10 +18,12 @@ import { downloadData, downloadNoteInt } from "../helpers";
 import { serveContentWithRanges } from "../partial_content";
 
 const downloadFile = (req: Request<{ noteId: string }>, res: Response) => downloadNoteInt(req.params.noteId, res, true);
-const openFile = (req: Request<{ noteId: string }>, res: Response) => downloadNoteInt(req.params.noteId, res, false);
+const openFile = (req: Request<{ noteId: string }>, res: Response) =>
+    downloadNoteInt(req.params.noteId, res, false, getExpectedBlobId(req));
 
 const downloadAttachment = (req: Request<{ attachmentId: string }>, res: Response) => downloadAttachmentInt(req.params.attachmentId, res, true);
-const openAttachment = (req: Request<{ attachmentId: string }>, res: Response) => downloadAttachmentInt(req.params.attachmentId, res, false);
+const openAttachment = (req: Request<{ attachmentId: string }>, res: Response) =>
+    downloadAttachmentInt(req.params.attachmentId, res, false, getExpectedBlobId(req));
 
 /**
  * Serves a note's content with byte-range support, which is what an `<audio>`/`<video>` element
@@ -78,7 +80,8 @@ function updateFile(req: Request<{ noteId: string }>) {
     void noteService.asyncPostProcessContent(note, file.buffer);
 
     return {
-        uploaded: true
+        uploaded: true,
+        blobId: note.blobId
     };
 }
 
@@ -108,7 +111,8 @@ function updateAttachment(req: Request<{ attachmentId: string }>) {
     }
 
     return {
-        uploaded: true
+        uploaded: true,
+        blobId: attachment.blobId
     };
 }
 
@@ -157,11 +161,18 @@ async function sendWorkbook(req: Request, res: Response, entity: BNote | BAttach
  * Sends the preview of an office document, with the ids of its headings written in when its ToC
  * format reads them. The format depends on the note's type or the attachment's role as well as on
  * the MIME type, so the variant names it. A preview whose ToC pass failed is sent uncached, since
- * the next request can mark it.
+ * the next request can mark it. With `?blobId=`, responds with 409 `{ reason: "changed" }` without
+ * converting anything when the document has another blob.
  */
 async function sendOfficePreview(req: Request, res: Response, entity: BNote | BAttachment) {
     const trim = isTrimmed(req);
     const source = takeSnapshot(entity);
+    const expectedBlobId = getExpectedBlobId(req);
+    if (expectedBlobId !== undefined && expectedBlobId !== source.blobId) {
+        const message = "The document changed since its blob was read.";
+        res.status(409).send({ reason: "changed", message });
+        return;
+    }
     const format = getTocFormatOf(entity);
     const variant = [ trim ? "trim" : "full", format?.name ].filter(Boolean).join("-");
     await sendConversion(req, res, source, variant, "text/html; charset=utf-8", async (content) => {
@@ -275,6 +286,12 @@ function isTrimmed(req: Request): boolean {
     return req.query.trim === "1";
 }
 
+/** The blob that the caller requests with `?blobId=`, if any. */
+function getExpectedBlobId(req: Request) {
+    const { blobId } = req.query;
+    return typeof blobId === "string" ? blobId : undefined;
+}
+
 /** The most a `bytes=N-` request for media is answered with in standalone. */
 const STANDALONE_OPEN_RANGE_LENGTH = 8 * 1024 * 1024;
 
@@ -295,14 +312,16 @@ function openPartialInt(noteOrAttachment: BNote | BAttachment, req: Request, res
     });
 }
 
-function downloadAttachmentInt(attachmentId: string, res: Response, contentDisposition = true) {
+function downloadAttachmentInt(
+    attachmentId: string, res: Response, contentDisposition = true, expectedBlobId?: string
+) {
     const attachment = becca.getAttachment(attachmentId);
 
     if (!attachment) {
         return res.setHeader("Content-Type", "text/plain").status(404).send(`Attachment '${attachmentId}' doesn't exist.`);
     }
 
-    return downloadData(attachment, res, contentDisposition);
+    return downloadData(attachment, res, contentDisposition, expectedBlobId);
 }
 
 export default {

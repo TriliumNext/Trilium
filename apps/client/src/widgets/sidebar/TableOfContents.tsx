@@ -3,6 +3,7 @@ import "./TableOfContents.css";
 import type { CKTextEditor, ModelElement, ModelNode } from "@triliumnext/ckeditor5";
 import { resolveBlockReference } from "@triliumnext/commons/src/lib/block_reference.js";
 import clsx from "clsx";
+import { memo } from "preact/compat";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import type FNote from "../../entities/fnote";
@@ -10,7 +11,7 @@ import { revealElement } from "../../services/bookmark_jump";
 import { t } from "../../services/i18n";
 import type { LinkTarget } from "../../services/link_targets";
 import { randomString } from "../../services/utils";
-import { useLongPressContextMenu } from "../react/hooks/dom";
+import { useActiveHeading, useLongPressContextMenu } from "../react/hooks/dom";
 import { useNoteProperty } from "../react/hooks/note";
 import { useContentElement, useIsNoteReadOnly, useTextEditor } from "../react/hooks/note_context";
 import { useActiveNoteContext, useGetContextData } from "../react/hooks/tree";
@@ -18,6 +19,7 @@ import { useMathRendering } from "../react/hooks/content";
 import Icon from "../react/Icon";
 import { getEditorNoteId } from "../react/NoteStore";
 import RawHtml from "../react/RawHtml";
+import { CachedToCProvider, isServedTocFormat } from "./CachedToCProvider";
 import RightPanelWidget, { NavigatedInNote } from "./RightPanelWidget";
 
 //#region Generic impl.
@@ -25,6 +27,8 @@ export interface RawHeading {
     id: string;
     level: number;
     text: string;
+    /** Whether no link can reach the heading: its row is muted, without click or menu. */
+    isDisabled?: boolean;
 }
 
 interface HeadingsWithNesting extends RawHeading {
@@ -34,7 +38,8 @@ interface HeadingsWithNesting extends RawHeading {
 }
 
 export interface HeadingContext {
-    scrollToHeading(heading: RawHeading): void;
+    /** Shows `heading`. `false` tells that it showed nothing, so the pane stays where it is. */
+    scrollToHeading(heading: RawHeading): boolean | void;
     headings: RawHeading[];
     activeHeadingId?: string | null;
     /** Links to the headings, for their context menu. Absent where headings cannot be linked. */
@@ -51,6 +56,8 @@ export interface HeadingLinks {
     getTarget(heading: RawHeading): Promise<LinkTarget | null>;
     /** Whether the shared page of the note lands on the targets, which reach it by `block`. */
     hasPublicLinks: boolean;
+    /** The title that a copied reference starts with, when it is not the note's. */
+    title?: string;
 }
 
 export default function TableOfContents() {
@@ -58,14 +65,18 @@ export default function TableOfContents() {
     const noteType = useNoteProperty(note, "type");
     const noteMime = useNoteProperty(note, "mime");
     const { isReadOnly } = useIsNoteReadOnly(note, noteContext);
+    const isCached = !!noteType && !!noteMime && isServedTocFormat(noteType, noteMime);
+    // The attachment that the attachments view shows, whose outline comes from its ToC cache.
+    const isAttachment = noteContext?.viewScope?.viewMode === "attachments";
 
     return (
         <RightPanelWidget id="toc" title={t("toc.table_of_contents")} grow>
-            {noteType === "text" && isReadOnly && <ReadOnlyTextTableOfContents />}
-            {noteType === "text" && !isReadOnly && <EditableTextTableOfContents />}
-            {noteType === "file" && noteMime === "application/pdf" && <ContextDataTableOfContents />}
-            {noteType === "llmChat" && <ContextDataTableOfContents />}
-            {note?.isMarkdown() && <ContextDataTableOfContents />}
+            {isAttachment && noteContext?.viewScope?.attachmentId && <CachedToCProvider />}
+            {!isAttachment && noteType === "text" && isReadOnly && <ReadOnlyTextTableOfContents />}
+            {!isAttachment && noteType === "text" && !isReadOnly && <EditableTextTableOfContents />}
+            {!isAttachment && isCached && <CachedToCProvider />}
+            {!isAttachment && noteType === "llmChat" && <ContextDataTableOfContents />}
+            {!isAttachment && note?.isMarkdown() && <ContextDataTableOfContents />}
         </RightPanelWidget>
     );
 }
@@ -85,20 +96,27 @@ function ContextDataTableOfContents() {
     );
 }
 
-interface AbstractTableOfContentsProps<T extends RawHeading> {
+export interface AbstractTableOfContentsProps<T extends RawHeading> {
     headings: T[];
-    scrollToHeading(heading: T): void;
+    /** Shows `heading`. `false` tells that it showed nothing, so the pane stays where it is. */
+    scrollToHeading(heading: T): boolean | void;
     activeHeadingId?: string | null;
     /** The note of the headings, which names the links that the menu copies. */
     note?: FNote | null;
     headingLinks?: HeadingLinks;
+    /** Whether no row can be clicked or opens a menu, while nothing shows the headings. */
+    isInert?: boolean;
 }
 
-function AbstractTableOfContents<T extends RawHeading>({
-    headings, scrollToHeading, activeHeadingId, note, headingLinks
+/** The outline of `headings`, a flat list in document order. */
+export const AbstractTableOfContents = memo(AbstractTableOfContentsList) as
+    typeof AbstractTableOfContentsList;
+
+function AbstractTableOfContentsList<T extends RawHeading>({
+    headings, scrollToHeading, activeHeadingId, note, headingLinks, isInert
 }: AbstractTableOfContentsProps<T>) {
     const tocRef = useRef<HTMLSpanElement>(null);
-    const nestedHeadings = buildHeadingTree(headings);
+    const nestedHeadings = useMemo(() => buildHeadingTree(headings), [ headings ]);
     const openMenu = useMemo(() => (note && headingLinks
         ? (e: MouseEvent, heading: RawHeading) => openHeadingMenu(e, heading, note, headingLinks)
         : undefined), [ note, headingLinks ]);
@@ -111,16 +129,16 @@ function AbstractTableOfContents<T extends RawHeading>({
     }, [activeHeadingId]);
 
     return (
-        <span ref={tocRef} className="toc">
+        <span ref={tocRef} className={clsx("toc", isInert && "inert")}>
             {nestedHeadings.length > 0 ? (
                 <ol>
                     {nestedHeadings.map(heading => (
                         <TableOfContentsHeading
                             key={heading.id}
                             heading={heading}
-                            scrollToHeading={scrollToHeading}
+                            scrollToHeading={isInert ? undefined : scrollToHeading}
                             activeHeadingId={activeHeadingId}
-                            openMenu={openMenu}
+                            openMenu={isInert ? undefined : openMenu}
                         />
                     ))}
                 </ol>
@@ -133,7 +151,8 @@ function AbstractTableOfContents<T extends RawHeading>({
 
 interface TableOfContentsHeadingProps {
     heading: HeadingsWithNesting;
-    scrollToHeading(heading: RawHeading): void;
+    /** Shows a heading. Absent while the rows are inert. */
+    scrollToHeading?(heading: RawHeading): boolean | void;
     activeHeadingId?: string | null;
     /** Opens the menu of a published heading. Absent where headings cannot be linked. */
     openMenu?(e: MouseEvent, heading: RawHeading): void;
@@ -149,14 +168,16 @@ function TableOfContentsHeading({
     const menuProps = useLongPressContextMenu(useCallback((e: MouseEvent) => {
         openMenu?.(e, heading.source);
     }, [ openMenu, heading.source ]));
+    const isClickable = !!scrollToHeading && !heading.isDisabled;
 
     useMathRendering(contentRef, [heading.text]);
 
     return (
         <>
             <li
-                className={clsx(collapsed && "collapsed", isActive && "active")}
-                {...(openMenu ? menuProps : {})}
+                className={clsx(collapsed && "collapsed", isActive && "active",
+                    heading.isDisabled && "disabled")}
+                {...(openMenu && !heading.isDisabled ? menuProps : {})}
             >
                 {heading.children.length > 0 && (
                     <Icon
@@ -168,10 +189,11 @@ function TableOfContentsHeading({
                 <RawHtml
                     containerRef={contentRef}
                     className="item-content"
-                    onClick={() => {
-                        scrollToHeading(heading);
-                        onNavigated?.();
-                    }}
+                    onClick={isClickable ? () => {
+                        if (scrollToHeading?.(heading) !== false) {
+                            onNavigated?.();
+                        }
+                    } : undefined}
                     html={heading.text}
                 />
             </li>
@@ -201,7 +223,8 @@ function openHeadingMenu(
         showTargetReferenceMenu(e, {
             note,
             getTarget: () => headingLinks.getTarget(heading),
-            hasPublicLinks: headingLinks.hasPublicLinks
+            hasPublicLinks: headingLinks.hasPublicLinks,
+            title: headingLinks.title
         });
     });
 }
@@ -229,69 +252,6 @@ function buildHeadingTree(headings: RawHeading[]): HeadingsWithNesting[] {
     return root.children;
 }
 
-export function useActiveHeading<T extends RawHeading>({ headings, scrollingContainer, getHeadingElement }: {
-    headings: T[];
-    scrollingContainer: HTMLElement | null;
-    getHeadingElement: (heading: T) => HTMLElement | null
-}) {
-    const headingsRef = useRef(headings);
-    const [activeHeadingId, setActiveHeadingId] = useState<string | null>(null);
-
-    useEffect(() => {
-        headingsRef.current = headings;
-    }, [headings]);
-
-    useEffect(() => {
-        if (!scrollingContainer) {
-            setActiveHeadingId(null);
-            return;
-        }
-
-        const activeLineY = scrollingContainer.getBoundingClientRect().top + 100;
-        let timeoutId: number | undefined;
-
-        function updateActiveHeading() {
-            let activeHeading: T | null = null;
-
-            for (const heading of headingsRef.current) {
-                const headingEl = getHeadingElement(heading);
-                // A heading in a collapsed section has no place on the page.
-                if (headingEl && !headingEl.checkVisibility({ visibilityProperty: true })) {
-                    continue;
-                }
-
-                if (headingEl && headingEl.getBoundingClientRect().top <= activeLineY) {
-                    activeHeading = heading;
-                } else {
-                    break;
-                }
-            }
-
-            setActiveHeadingId(prev =>
-                prev === activeHeading?.id ? prev : activeHeading?.id ?? null
-            );
-        }
-
-        function handleScroll() {
-            window.clearTimeout(timeoutId);
-            timeoutId = window.setTimeout(updateActiveHeading, 100);
-        }
-
-        scrollingContainer.addEventListener("scroll", handleScroll);
-
-        updateActiveHeading();
-
-        return () => {
-            window.clearTimeout(timeoutId);
-            scrollingContainer.removeEventListener("scroll", handleScroll);
-        };
-        // getHeadingElement must re-subscribe the listener: when a rebuild replaces the editor,
-        // .scrolling-container is an ancestor of the editor root and stays the same element, so
-        // scrollingContainer alone would keep the listener mapping through the destroyed editor.
-    }, [scrollingContainer, getHeadingElement]);
-
-    return activeHeadingId;
-}
 //#endregion
 
 //#region Editable text (CKEditor)

@@ -51,12 +51,12 @@ async function getWithSilentNotFound<T>(url: string, componentId?: string) {
 
 /**
  * @param raw if `true`, the value will be returned as a string instead of a JavaScript object if JSON, XMLDocument if XML, etc.
- * @param silence suppresses the error toast for a 400 or a 404, for a caller that shows the failure
- * itself.
+ * @param silence suppresses the error toast for a 400, a 404 or a 409, for a caller that shows the
+ * failure itself.
  */
 async function get<T>(
     url: string, componentId?: string, raw?: boolean,
-    silence?: Pick<CallOptions, "silentBadRequest" | "silentNotFound">
+    silence?: Pick<CallOptions, "silentBadRequest" | "silentNotFound" | "silentConflict">
 ) {
     return await call<T>("GET", url, componentId, { raw, ...silence });
 }

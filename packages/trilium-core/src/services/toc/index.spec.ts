@@ -3,8 +3,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import {
-    assignHeadingIds, DOCX_MIME, EPUB_MIME_TYPES, getBlobTag, MAX_TOC_HEADINGS, ODT_MIME,
-    OFFICE_PREVIEW_TOO_LARGE_MESSAGE, PDF_TOC_READER, type TocCache
+    assignHeadingIds, DOCX_MIME, EPUB_MIME_TYPES, findTocFormatName, getBlobTag, MAX_TOC_HEADINGS,
+    ODT_MIME, OFFICE_MIME_TYPES, OFFICE_PREVIEW_TOO_LARGE_MESSAGE, PDF_TOC_READER, type TocCache
 } from "@triliumnext/commons";
 import { OfficeConverter } from "officeparser";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -12,7 +12,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import becca from "../../becca/becca.js";
 import BAttachment from "../../becca/entities/battachment.js";
 import type BNote from "../../becca/entities/bnote.js";
-import { ConflictError, DetailedConflictError, NotFoundError, ValidationError } from "../../errors.js";
+import {
+    ConflictError, ContentNotAvailableError, DetailedConflictError, NotFoundError, ValidationError
+} from "../../errors.js";
 import { getContext } from "../context.js";
 import { getLog } from "../log.js";
 import noteService from "../notes.js";
@@ -22,7 +24,7 @@ import TaskContext from "../task_context.js";
 import { decodeUtf8, encodeUtf8 } from "../utils/binary.js";
 import { EPUB_TOC_READER } from "./epub.js";
 import {
-    createLevelTracker, findTocFormat, type GeneratedToc, getToc, readCachedToc,
+    buildToc, createLevelTracker, findTocFormat, type GeneratedToc, getToc, readCachedToc,
     registerTocGenerator, saveClientToc, TOC_CACHE_ROLE, type TocDocumentRef, type TocGenerator,
     unregisterTocGenerator
 } from "./index.js";
@@ -195,7 +197,8 @@ describe("getToc", () => {
         expect(caches(note)[0].isProtected).toBe(true);
 
         protectedSessionService.resetDataKey();
-        await expect(toc(noteRef(note))).rejects.toThrow(ValidationError);
+        await expect(toc(noteRef(note))).rejects.toThrow(ContentNotAvailableError);
+        expect(() => readCachedToc(noteRef(note))).toThrow(ContentNotAvailableError);
     });
 
     it("keeps the cache of an attachment on its note, under the attachment's id", async () => {
@@ -584,17 +587,38 @@ describe("saveClientToc", () => {
             status: "ready",
             blobId,
             headings: [
-                { id: ids[0], title: "Chapter 1", level: 1, page: 1 },
-                { id: ids[1], title: "Summary", level: 2, page: 2 },
+                {
+                    id: ids[0], title: "Chapter 1", level: 1, page: 1,
+                    params: { page: "1", heading: ids[0] }
+                },
+                {
+                    id: ids[1], title: "Summary", level: 2, page: 2,
+                    params: { page: "2", heading: ids[1] }
+                },
                 { id: ids[2], title: "Summary", level: 2 }
             ]
         });
         expect(readJson(caches(note)[0])).toStrictEqual({
-            version: 1, targetBlobHash: blobId, headings: response.status === "ready" && response.headings,
+            version: 1, targetBlobHash: blobId, headings: [
+                { id: ids[0], title: "Chapter 1", level: 1, page: 1 },
+                { id: ids[1], title: "Summary", level: 2, page: 2 },
+                { id: ids[2], title: "Summary", level: 2 }
+            ],
             pdf: PROPERTIES
         });
         expect(info).toHaveBeenCalledWith(
             `Created ToC cache for note '${note.noteId}'. Found 3 headings in 42 ms.`);
+    });
+
+    it("keeps where each PDF heading starts on its page", () => {
+        const note = createPdf("Alpha");
+        const anchored = [ { title: "Chapter 1", level: 1, page: 1, left: 72, top: -0.5 } ];
+
+        const response = save(noteRef(note), request(note, { headings: anchored }));
+
+        expect(response)
+            .toMatchObject({ status: "ready", headings: [ { page: 1, left: 72, top: -0.5 } ] });
+        expect(readJson(caches(note)[0]).headings[0]).toMatchObject({ left: 72, top: -0.5 });
     });
 
     it("binds every heading of a table of contents that the viewer cut", () => {
@@ -674,6 +698,8 @@ describe("saveClientToc", () => {
             request(note, { headings: [ { title: "x", level: 1, page: 0 } ] }),
             request(note, { headings: [ { title: "x", level: 1, page: "3" } ] }),
             request(note, { headings: [ { title: "x", level: 1, page: 2.5 } ] }),
+            request(note, { headings: [ { title: "x", level: 1, page: 1, top: "700" } ] }),
+            request(note, { headings: [ { title: "x", level: 1, page: 1, left: null } ] }),
             request(note, { properties: undefined }),
             request(note, { properties: { reader: PDF_TOC_READER, failed: true } }),
             request(note, { properties: { reader: PDF_TOC_READER + 1 } })
@@ -717,12 +743,31 @@ describe("readCachedToc", () => {
         expect(readCachedToc(noteRef(note))).toStrictEqual({ status: "missing" });
 
         const cache = readyCache(await toc(noteRef(note)));
-        expect(readCachedToc(noteRef(note))).toStrictEqual({ status: "ready", blobId: note.blobId, headings: cache.headings });
+        const headings = withPdfParams(cache);
+        expect(readCachedToc(noteRef(note)))
+            .toStrictEqual({ status: "ready", blobId: note.blobId, headings });
 
         setContent(note, "Beta");
-        expect(readCachedToc(noteRef(note))).toStrictEqual({ status: "stale", blobId: cache.targetBlobHash, headings: cache.headings });
+        expect(readCachedToc(noteRef(note)))
+            .toStrictEqual({ status: "stale", blobId: cache.targetBlobHash, headings });
         expect(generator).toHaveBeenCalledTimes(1);
         expect(caches(note)).toHaveLength(1);
+    });
+
+    it("sends the link parameters of each PDF heading, and none for a heading without a page",
+        async () => {
+        register();
+        const note = createPdf("Alpha");
+        const cache = readyCache(await toc(noteRef(note)));
+
+        const answer = readCachedToc(noteRef(note));
+
+        const [ alpha, summary, pageless ] = cache.headings;
+        expect(answer).toStrictEqual({ status: "ready", blobId: note.blobId, headings: [
+            { ...alpha, params: { page: "1", heading: alpha.id } },
+            { ...summary, params: { page: "2", heading: summary.id } },
+            pageless
+        ] });
     });
 
     it("adds that the viewer builds on a platform without a generator", () => {
@@ -819,6 +864,23 @@ describe("EPUB e-books", () => {
         }
     });
 
+    it("send a link to the entries that the preview shows, and none to the others", async () => {
+        const note = createDocument(bytes, EPUB_MIME_TYPES[0]);
+        await toc(noteRef(note));
+
+        const answer = readCachedToc(noteRef(note));
+
+        if (answer.status !== "ready") {
+            throw new Error(`Expected a ready answer, got ${answer.status}`);
+        }
+        const isShown = (contract.headings as { isShown?: false }[])
+            .map(({ isShown }) => isShown !== false);
+        expect(isShown).toContain(false);
+        expect(answer.headings.map(({ id, params }) => params ?? id)).toStrictEqual(
+            contract.ids.map((id: string, index: number) =>
+                (isShown[index] ? { heading: id } : id)));
+    });
+
     it("store nothing after a pass that fails once, and build at the next request", async () => {
         const note = createDocument(bytes, EPUB_MIME_TYPES[0]);
         const convert = OfficeConverter.convert.bind(OfficeConverter);
@@ -871,6 +933,73 @@ describe("findTocFormat", () => {
     });
 });
 
+describe("findTocFormatName", () => {
+    it("names the format that findTocFormat() finds, for every office type and PDF", () => {
+        const mimes = [ "application/pdf", ...OFFICE_MIME_TYPES, "application/zip", "text/html" ];
+        for (const type of [ "file", "text", "image" ]) {
+            for (const mime of mimes) {
+                expect(findTocFormatName(type, mime), `${type} ${mime}`)
+                    .toBe(findTocFormat(type, mime)?.name);
+            }
+        }
+        expect(findTocFormatName("file", DOCX_MIME)).toBe("docx");
+    });
+});
+
+describe("buildToc", () => {
+    it("builds and saves the cache once, then answers it without the generator", async () => {
+        const generator = register();
+        const note = createPdf("Alpha");
+
+        const built = await build(noteRef(note));
+
+        expect(caches(note)).toHaveLength(1);
+        const cache = readJson(caches(note)[0]) as TocCache;
+        expect(built).toStrictEqual(
+            { status: "ready", blobId: note.blobId, headings: withPdfParams(cache) });
+        unregisterTocGenerator("pdf");
+        expect(await build(noteRef(note))).toStrictEqual(built);
+        expect(generator).toHaveBeenCalledTimes(1);
+    });
+
+    it("answers none, unreadable, and the stale cache that a viewer rebuilds", async () => {
+        const { note: text } = getContext().init(() => noteService.createNewNote({
+            parentNoteId: "root", title: "Not a PDF", type: "text", content: "<p>x</p>"
+        }));
+        expect(await build(noteRef(text))).toStrictEqual({ status: "none" });
+
+        const viewerBuilt = createPdf("Alpha");
+        save(noteRef(viewerBuilt), {
+            targetBlobHash: viewerBuilt.blobId, headings: [ { title: "Alpha", level: 1, page: 1 } ],
+            properties: PROPERTIES, elapsedMs: 3
+        });
+        const blobId = viewerBuilt.blobId;
+        setContent(viewerBuilt, "Beta");
+        expect(await build(noteRef(viewerBuilt))).toStrictEqual({
+            status: "stale", blobId, headings: [ expect.objectContaining({ title: "Alpha" }) ],
+            pendingToc: { format: "pdf" }
+        });
+
+        register(() => Promise.reject(namedError("InvalidPDFException")));
+        expect(await build(noteRef(createPdf("Broken")))).toStrictEqual({ status: "unreadable" });
+    });
+
+    it("answers for the newer blob of a document that changes during the build", async () => {
+        const held = holdGenerator();
+        const note = createPdf("Alpha");
+
+        const request = build(noteRef(note));
+        setContent(note, "Beta");
+        held.release("Alpha");
+        await vi.waitFor(() => expect(held.generator).toHaveBeenCalledTimes(2));
+        held.release("Beta");
+
+        expect(await request).toMatchObject({
+            status: "ready", blobId: note.blobId, headings: [ { title: "Beta" }, {}, {} ]
+        });
+    });
+});
+
 describe("createLevelTracker", () => {
     it("nests each depth under the nearest smaller depth passed before it", () => {
         const toLevel = createLevelTracker();
@@ -883,6 +1012,19 @@ describe("createLevelTracker", () => {
 /** `getToc()` in a request context, as the routes call it. */
 function toc(ref: TocDocumentRef) {
     return getContext().init(() => getToc(ref));
+}
+
+/** `buildToc()` in a request context, as the route calls it. */
+function build(ref: TocDocumentRef) {
+    return getContext().init(() => buildToc(ref));
+}
+
+/** The headings of the PDF `cache` as the routes send them, with their link parameters. */
+function withPdfParams(cache: TocCache) {
+    return (cache.headings as { id: string; page?: number }[]).map((heading) =>
+        heading.page === undefined
+            ? heading
+            : { ...heading, params: { page: String(heading.page), heading: heading.id } });
 }
 
 /** `saveClientToc()` in a request context, as the route calls it. */

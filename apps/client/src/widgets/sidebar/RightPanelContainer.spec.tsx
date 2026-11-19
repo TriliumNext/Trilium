@@ -162,6 +162,26 @@ describe("RightPanelContainer", () => {
         expect(activeTabIcon()).toBe(icon("outline"));
     });
 
+    it("offers the outline of a Word document, and none of a presentation", async () => {
+        options.set("rightPaneSelectedTab", "outline");
+        shownNote.current = buildNote({
+            title: "Manual", type: "file",
+            mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        });
+        renderContainer();
+        await vi.waitFor(() => expect(container.querySelector("[role=tab]")).not.toBeNull());
+        expect(container.querySelector(".toc-stub")).not.toBeNull();
+
+        render(null, container);
+        shownNote.current = buildNote({
+            title: "Slides", type: "file",
+            mime: "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        });
+        renderContainer();
+        await vi.waitFor(() => expect(container.querySelector("[role=tab]")).not.toBeNull());
+        expect(container.querySelector(".toc-stub")).toBeNull();
+    });
+
     function renderContainer() {
         eventHandlers = new Map();
         const parent = {

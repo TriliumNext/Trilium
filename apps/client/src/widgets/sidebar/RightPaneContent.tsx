@@ -20,6 +20,7 @@ import type LegacyRightPanelWidget from "../right_panel_widget";
 import AttributeList from "./AttributeList";
 import Backlinks from "./Backlinks";
 import BoardColumns from "./BoardColumns";
+import { isServedTocFormat } from "./CachedToCProvider";
 import ChatHighlightsList from "./ChatHighlightsList";
 import HighlightsList from "./HighlightsList";
 import NoteMap from "./NoteMap";
@@ -164,7 +165,9 @@ export function RightPaneTabBodies({ tabs, activeTabId, expandRequest, flat, hea
  * false. Shared by the desktop pane and the mobile note panel.
  */
 export function useRightPaneTabs(rightPaneVisible: boolean, widgetsByParent: WidgetsByParent | undefined): RightPaneTabContents[] {
-    const { note } = useActiveNoteContext();
+    const { note, noteContext } = useActiveNoteContext();
+    // Published by the attachment detail for a document whose outline comes from its ToC cache.
+    const tocDocument = useGetContextData("tocDocument");
     const noteType = useNoteProperty(note, "type");
     const noteMime = useNoteProperty(note, "mime");
     const [ highlightsList ] = useTriliumOptionJson<string[]>("highlightsList");
@@ -176,6 +179,11 @@ export function useRightPaneTabs(rightPaneVisible: boolean, widgetsByParent: Wid
     // Subscribe to the AI toggle so the LLM chat is added/removed reactively without a page reload.
     const [ aiEnabled ] = useTriliumOptionBool("aiEnabled");
     const isPdf = noteType === "file" && noteMime === "application/pdf";
+    const hasCachedToc = !!noteType && !!noteMime && isServedTocFormat(noteType, noteMime);
+    const viewScope = noteContext?.viewScope;
+    const isAttachmentView = viewScope?.viewMode === "attachments";
+    const hasAttachmentToc = isAttachmentView && !!viewScope.attachmentId
+        && tocDocument?.attachmentId === viewScope.attachmentId;
 
     if (!rightPaneVisible) return [];
     const definitions: RightPanelWidgetDefinition[] = [
@@ -210,7 +218,10 @@ export function useRightPaneTabs(rightPaneVisible: boolean, widgetsByParent: Wid
         },
         {
             el: <TableOfContents />,
-            enabled: (noteType === "text" || isPdf || noteType === "llmChat" || !!note?.isMarkdown()),
+            enabled: isAttachmentView
+                ? hasAttachmentToc
+                : noteType === "text" || isPdf || hasCachedToc || noteType === "llmChat"
+                    || !!note?.isMarkdown(),
             tab: "outline"
         },
         {

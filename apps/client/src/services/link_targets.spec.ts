@@ -10,7 +10,7 @@ import {
     createLinkedTarget, createSavedHeadingTarget, findMarkedIndex, findTarget,
     getAttachmentLinkTargets, getLinkTargets, getMarkedHeadings, getNoTargetsText,
     getParentTargets, getTargetAncestors, isTextHeadingId, LINK_TARGET_KINDS, type LinkTarget,
-    nestTargets, splitTargetParameters, StaleListingError, takeLinkTarget
+    nestTargets, splitTargetParameters, StaleListingError, takeLinkTarget, toLandingTarget
 } from "./link_targets";
 import type { ViewScope } from "./navigation_state";
 import server from "./server";
@@ -454,6 +454,14 @@ describe("the parameters of a link to a target", () => {
         expect(takeLinkTarget(empty, [ "heading", "bookmark" ])).toBeUndefined();
         expect(empty).toStrictEqual({ block: "b1" });
         expect(takeLinkTarget(undefined, [ "heading" ])).toBeUndefined();
+    });
+
+    it("parses the page of the parameters of a heading the same way", () => {
+        expect(toLandingTarget({ page: "5", heading: "h1" }))
+            .toStrictEqual({ page: 5, heading: "h1" });
+        expect(toLandingTarget({ heading: "h1" })).toStrictEqual({ heading: "h1" });
+        expect(toLandingTarget({ page: "0", annotation: "12R" }))
+            .toStrictEqual({ page: undefined, annotation: "12R" });
     });
 });
 

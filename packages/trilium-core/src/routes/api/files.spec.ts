@@ -65,6 +65,22 @@ describe("Files API (core)", () => {
             expect(res.headers["Content-Disposition"]).toBeUndefined();
         });
 
+        it("opens only the blob that the caller asks for, and any without one", async () => {
+            const { noteId } = await createTextNote(api, { content: "<p>current</p>" });
+            const { blobId } = becca.getNoteOrThrow(noteId);
+
+            const other = await api.get<string>(`/api/notes/${noteId}/open?blobId=anotherBlob`);
+            const expected = await api.get<string>(`/api/notes/${noteId}/open?blobId=${blobId}`);
+            const any = await api.get<string>(`/api/notes/${noteId}/open`);
+
+            expect(other.status).toBe(409);
+            expect(other.body).not.toContain("current");
+            expect(expected.status).toBe(200);
+            expect(expected.body).toContain("current");
+            expect(any.status).toBe(200);
+            expect(any.body).toContain("current");
+        });
+
         it("supports the legacy /api/notes/download/:noteId path", async () => {
             const { noteId } = await createTextNote(api, { content: "<p>legacy</p>" });
 
@@ -132,6 +148,20 @@ describe("Files API (core)", () => {
             expect(res.status).toBe(200);
             expect(res.body).toContain("attachment payload");
             expect(res.headers["Content-Disposition"]).toBeUndefined();
+        });
+
+        it("opens only the blob of an attachment that the caller asks for", async () => {
+            const { attachmentId } = await createAttachment();
+            const { blobId } = becca.getAttachmentOrThrow(attachmentId);
+
+            const other = await api.get<string>(`/api/attachments/${attachmentId}/open?blobId=x`);
+            const expected = await api.get<string>(
+                `/api/attachments/${attachmentId}/open?blobId=${blobId}`);
+
+            expect(other.status).toBe(409);
+            expect(other.body).not.toContain("attachment payload");
+            expect(expected.status).toBe(200);
+            expect(expected.body).toContain("attachment payload");
         });
 
         it("downloads and opens a canvas drawing with the images it refers to inside", async () => {
@@ -319,7 +349,8 @@ describe("Files API (core)", () => {
 
             const res = await api.put(`/api/notes/${noteId}/file`, { file: upload("replaced", "TEXT/Plain") });
             expect(res.status).toBe(200);
-            expect(res.body).toEqual({ uploaded: true });
+            expect(res.body)
+                .toEqual({ uploaded: true, blobId: becca.getNoteOrThrow(noteId).blobId });
 
             const note = becca.getNoteOrThrow(noteId);
             expect(note.getContent().toString()).toBe("replaced");
@@ -350,7 +381,9 @@ describe("Files API (core)", () => {
             const { attachmentId } = list.body[0];
 
             const res = await api.put(`/api/attachments/${attachmentId}/file`, { file: upload("new-att") });
-            expect(res.body).toEqual({ uploaded: true });
+            expect(res.body).toEqual({
+                uploaded: true, blobId: becca.getAttachmentOrThrow(attachmentId).blobId
+            });
             expect(becca.getAttachmentOrThrow(attachmentId).getContent().toString()).toBe("new-att");
             expect(await revisionCount(noteId)).toBe(1);
 
@@ -538,6 +571,23 @@ describe("Files API (core)", () => {
             expect(res.body).toContain("World");
             // fragment mode — no full standalone document wrapper
             expect(res.body).not.toContain("<html");
+        });
+
+        it("answers 409 without converting for a blob that the note does not hold", async () => {
+            const noteId = await createRtfNote();
+            const { blobId } = becca.getNoteOrThrow(noteId);
+            const convert = vi.spyOn(OfficeConverter, "convert");
+
+            const refused = await api.get(`/api/notes/${noteId}/office-preview?blobId=another`);
+
+            expect(refused.status).toBe(409);
+            expect(refused.body).toMatchObject({ reason: "changed" });
+            expect(convert).not.toHaveBeenCalled();
+            const preview = await api.get<string>(
+                `/api/notes/${noteId}/office-preview?blobId=${blobId}`);
+            expect(preview.status).toBe(200);
+            expect(preview.body).toContain("Hello");
+            convert.mockRestore();
         });
 
         it("converts an RTF attachment to an embeddable HTML fragment", async () => {

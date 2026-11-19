@@ -2,13 +2,15 @@ import {
     assignHeadingIds, type CachedTocResponse, getBlobTag, getTocCacheTitle, MAX_TOC_HEADINGS,
     MAX_TOC_TITLE_LENGTH, normalizeTocTitle, type PendingToc, type ReferenceParams,
     type ReferenceTarget, TOC_CACHE_TITLE, TOC_CACHE_VERSION, type TocCache,
-    type TocConflictResponse, type TocHeading, type TocOutlineItem
+    type TocConflictResponse, type TocHeading, type TocOutlineHeading, type TocOutlineItem
 } from "@triliumnext/commons";
 
 import becca from "../../becca/becca.js";
 import BAttachment from "../../becca/entities/battachment.js";
 import type BNote from "../../becca/entities/bnote.js";
-import { ConflictError, DetailedConflictError, ValidationError } from "../../errors.js";
+import {
+    ConflictError, ContentNotAvailableError, DetailedConflictError, ValidationError
+} from "../../errors.js";
 import { getContext } from "../context.js";
 import { getLog } from "../log.js";
 import { whenDatabaseFree } from "../platform.js";
@@ -154,8 +156,8 @@ export async function markTocHeadings(
 
 /**
  * The table of contents of the document `ref`: from its cache when the cache is valid, else read
- * and saved. Throws `NotFoundError` when the document is gone, `ValidationError` when its content
- * is not available, and `ConflictError` when it changed during two builds in a row.
+ * and saved. Throws `NotFoundError` when the document is gone, `ContentNotAvailableError` when its
+ * content is not available, and `ConflictError` when it changed during two builds in a row.
  *
  * Never call it inside a transaction that stays open across an `await`, such as an `asyncRoute`
  * on standalone: the save of a build waits for that transaction to end.
@@ -168,6 +170,26 @@ export async function getToc(ref: TocDocumentRef): Promise<TocResult> {
         }
     }
     throw new ConflictError(`The ${describe(ref)} changed while its table of contents was read.`);
+}
+
+/**
+ * The ToC cache of the document `ref`, built when this platform can read its format. Throws as
+ * `getToc()` does.
+ */
+export async function buildToc(ref: TocDocumentRef): Promise<CachedTocResponse> {
+    const result = await getToc(ref);
+    if (!result) {
+        return { status: "none" };
+    }
+    switch (result.status) {
+        case "ready":
+            return toReadyResponse(result.cache, result.format);
+        case "client":
+            // Only a viewer can read the format here: `pendingToc`, with the stale cache.
+            return readCachedToc(ref);
+        case "unreadable":
+            return { status: "unreadable" };
+    }
 }
 
 /**
@@ -195,7 +217,7 @@ export function saveClientToc(ref: TocDocumentRef, request: unknown): CachedTocR
 
     const { attachments, valid } = findCacheAttachment(document);
     if (valid) {
-        return toReadyResponse(valid.cache);
+        return toReadyResponse(valid.cache, document.format);
     }
 
     const cache = assembleCache(document, targetBlobHash, headings, properties, isCut);
@@ -203,7 +225,7 @@ export function saveClientToc(ref: TocDocumentRef, request: unknown): CachedTocR
         throw new ValidationError(`The table of contents of the ${describe(ref)} is not valid.`);
     }
     saveCache(document, cache, attachments[0], elapsedMs);
-    return toReadyResponse(cache);
+    return toReadyResponse(cache, document.format);
 }
 
 /** The ToC cache of the document `ref` as it is, without building or saving anything. */
@@ -216,16 +238,18 @@ export function readCachedToc(ref: TocDocumentRef): CachedTocResponse {
 
     const { attachments, valid } = findCacheAttachment(document);
     if (valid) {
-        return toReadyResponse(valid.cache);
+        return toReadyResponse(valid.cache, document.format);
     }
 
     const pending: { pendingToc?: PendingToc } = getGenerator(document.format)
         ? {}
         : { pendingToc: { format: document.format.name } };
     const stale = findNewestCache(attachments, document.format);
-    return stale
-        ? { status: "stale", blobId: stale.targetBlobHash, headings: stale.headings, ...pending }
-        : { status: "missing", ...pending };
+    if (!stale) {
+        return { status: "missing", ...pending };
+    }
+    const headings = toOutlineHeadings(stale.headings, document.format);
+    return { status: "stale", blobId: stale.targetBlobHash, headings, ...pending };
 }
 
 /** A document of a ToC format, as read from the database. */
@@ -385,7 +409,7 @@ function resolveLiveDocument(ref: TocDocumentRef) {
 
 function requireContent({ ref, entity }: TocDocument) {
     if (!entity.isContentAvailable()) {
-        throw new ValidationError(`The ${describe(ref)} has no content available.`);
+        throw new ContentNotAvailableError(`The ${describe(ref)} has no content available.`);
     }
 }
 
@@ -541,8 +565,17 @@ function parseClientRequest(request: unknown) {
     return { targetBlobHash, headings, properties, isCut: isCut === true, elapsedMs };
 }
 
-function toReadyResponse(cache: TocCache): CachedTocResponse {
-    return { status: "ready", blobId: cache.targetBlobHash, headings: cache.headings };
+function toReadyResponse(cache: TocCache, format: TocFormat): CachedTocResponse {
+    const headings = toOutlineHeadings(cache.headings, format);
+    return { status: "ready", blobId: cache.targetBlobHash, headings };
+}
+
+/** `headings` with the parameters of a link to each, for those that a link can reach. */
+function toOutlineHeadings(headings: TocHeading[], format: TocFormat): TocOutlineHeading[] {
+    return headings.map((heading) => {
+        const params = format.getLinkParams(heading);
+        return params ? { ...heading, params } : heading;
+    });
 }
 
 /** Names the document in a log line or an error message: its kind and id, never its title. */

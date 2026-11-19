@@ -1103,7 +1103,7 @@ For a read-only view of a text note, which parses the content otherwise than the
 
 `GET /api/notes/{noteId}/toc` · `getNoteToc`
 
-The table of contents that the ToC cache of a note holds, such as the outline of a PDF file, the headings of a DOCX or ODT file or the entries of an EPUB e-book's table of contents, without building it or writing anything. `ready` is a cache of the note as it is, `stale` one of an earlier blob, `missing` a note without a cache that can be read, and `none` a note that has no table of contents. `pendingToc` tells that the viewer of the document builds the cache, since the server cannot read the format.
+The table of contents that the ToC cache of a note holds, such as the outline of a PDF file, the headings of a DOCX or ODT file or the entries of an EPUB e-book's table of contents, without building it or writing anything. `ready` is a cache of the note as it is, `stale` one of an earlier blob, `missing` a note without a cache that can be read, `unavailable` a note that is gone or protected without a protected session, and `none` a note that has no table of contents. `pendingToc` tells that the viewer of the document builds the cache, since the server cannot read the format. Each heading carries the `params` of a link to it.
 
 **Authorization**: `sessionAuth` or `tokenAuth`
 
@@ -1124,7 +1124,7 @@ The table of contents that the ToC cache of a note holds, such as the outline of
 
     | Property | Description |
     | --- | --- |
-    | `status`  <br>_required_ | `string`  <br>One of `ready`, `stale`, `missing`, `none`. |
+    | `status`  <br>_required_ | `string`  <br>One of `ready`, `stale`, `missing`, `unreadable`, `unavailable`, `none`. |
     | `blobId` | `string`  <br>For `ready` and `stale`, the blob that the headings were read from |
     | `headings` | array of [`TocHeading`](#schema-TocHeading) |
     | `pendingToc` | [`PendingToc`](#schema-PendingToc)  <br>A table of contents that the viewer of the document builds |
@@ -1140,7 +1140,11 @@ The table of contents that the ToC cache of a note holds, such as the outline of
             {
                 "id": "0k3x9aa1h7q2mz",
                 "title": "Installation",
-                "level": 1
+                "level": 1,
+                "params": {
+                    "page": "4",
+                    "heading": "0k3x9aa1h7q2mz"
+                }
             }
         ],
         "pendingToc": {
@@ -1151,14 +1155,6 @@ The table of contents that the ToC cache of a note holds, such as the outline of
 
     </div>
     </div>
-
-=== "400: A protected note without a protected session"
-
-    No content.
-
-=== "404: Note not found"
-
-    No content.
 
 ### Save the table of contents that the viewer read
 
@@ -1218,7 +1214,7 @@ Saves the table of contents that the viewer of a document read, where the server
 
     | Property | Description |
     | --- | --- |
-    | `status`  <br>_required_ | `string`  <br>One of `ready`, `stale`, `missing`, `none`. |
+    | `status`  <br>_required_ | `string`  <br>One of `ready`, `stale`, `missing`, `unreadable`, `unavailable`, `none`. |
     | `blobId` | `string`  <br>For `ready` and `stale`, the blob that the headings were read from |
     | `headings` | array of [`TocHeading`](#schema-TocHeading) |
     | `pendingToc` | [`PendingToc`](#schema-PendingToc)  <br>A table of contents that the viewer of the document builds |
@@ -1234,7 +1230,11 @@ Saves the table of contents that the viewer of a document read, where the server
             {
                 "id": "0k3x9aa1h7q2mz",
                 "title": "Installation",
-                "level": 1
+                "level": 1,
+                "params": {
+                    "page": "4",
+                    "heading": "0k3x9aa1h7q2mz"
+                }
             }
         ],
         "pendingToc": {
@@ -1255,6 +1255,67 @@ Saves the table of contents that the viewer of a document read, where the server
     No content.
 
 === "409: The note has another blob than the one the viewer read (reason `changed`)"
+
+    No content.
+
+### Build the ToC cache of a note
+
+`POST /api/notes/{noteId}/toc/build` · `buildNoteToc`
+
+Answers the ToC cache of a note, and builds and saves it first when it is not valid and the server can read the format. Where only the viewer can read it (PDF on standalone and mobile), answers as `GET /api/notes/{noteId}/toc` does, with `pendingToc`. `unreadable` is a file whose table of contents cannot be read.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `noteId`  <br>_required_ | `string`  <br>12-character note ID |
+
+**Responses**
+
+=== "200: The table of contents"
+
+    *   `application/json`: [`CachedToc`](#schema-CachedToc)
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `status`  <br>_required_ | `string`  <br>One of `ready`, `stale`, `missing`, `unreadable`, `unavailable`, `none`. |
+    | `blobId` | `string`  <br>For `ready` and `stale`, the blob that the headings were read from |
+    | `headings` | array of [`TocHeading`](#schema-TocHeading) |
+    | `pendingToc` | [`PendingToc`](#schema-PendingToc)  <br>A table of contents that the viewer of the document builds |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "status": "ready",
+        "blobId": "string",
+        "headings": [
+            {
+                "id": "0k3x9aa1h7q2mz",
+                "title": "Installation",
+                "level": 1,
+                "params": {
+                    "page": "4",
+                    "heading": "0k3x9aa1h7q2mz"
+                }
+            }
+        ],
+        "pendingToc": {
+            "format": "pdf"
+        }
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "409: The note changed during two builds in a row"
 
     No content.
 
@@ -1733,9 +1794,32 @@ Saves the table of contents that the viewer of a document read, where the server
 
 **Responses**
 
-=== "204: File uploaded"
+=== "200: File uploaded"
 
-    No content.
+    *   `application/json`: [`FileUploaded`](#schema-FileUploaded)
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `uploaded`  <br>_required_ | `boolean` |
+    | `blobId` | `string`  <br>The blob that the upload wrote |
+    | `message` | `string`  <br>Why nothing was uploaded |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "uploaded": true,
+        "blobId": "string",
+        "message": "string"
+    }
+    ```
+
+    </div>
+    </div>
 
 ### Open file note
 
@@ -1749,11 +1833,21 @@ Saves the table of contents that the viewer of a document read, where the server
 | --- | --- |
 | `noteId`  <br>_required_ | `string`  <br>12-character note ID |
 
+**Query parameters**
+
+| Name | Description |
+| --- | --- |
+| `blobId` | `string`  <br>The blob that the caller expects. When the content holds another one, the route answers 409 without the content. |
+
 **Responses**
 
 === "200: File content"
 
     *   `application/octet-stream`: `string (binary)`
+
+=== "409: The note holds another blob than `blobId`"
+
+    No content.
 
 ### Download file note
 
@@ -3509,7 +3603,7 @@ The twin of `GET /api/notes/{noteId}/toc` for an attachment.
 
     | Property | Description |
     | --- | --- |
-    | `status`  <br>_required_ | `string`  <br>One of `ready`, `stale`, `missing`, `none`. |
+    | `status`  <br>_required_ | `string`  <br>One of `ready`, `stale`, `missing`, `unreadable`, `unavailable`, `none`. |
     | `blobId` | `string`  <br>For `ready` and `stale`, the blob that the headings were read from |
     | `headings` | array of [`TocHeading`](#schema-TocHeading) |
     | `pendingToc` | [`PendingToc`](#schema-PendingToc)  <br>A table of contents that the viewer of the document builds |
@@ -3525,7 +3619,11 @@ The twin of `GET /api/notes/{noteId}/toc` for an attachment.
             {
                 "id": "0k3x9aa1h7q2mz",
                 "title": "Installation",
-                "level": 1
+                "level": 1,
+                "params": {
+                    "page": "4",
+                    "heading": "0k3x9aa1h7q2mz"
+                }
             }
         ],
         "pendingToc": {
@@ -3536,14 +3634,6 @@ The twin of `GET /api/notes/{noteId}/toc` for an attachment.
 
     </div>
     </div>
-
-=== "400: A protected attachment without a protected session"
-
-    No content.
-
-=== "404: Attachment not found"
-
-    No content.
 
 ### Save the table of contents that the viewer of an attachment read
 
@@ -3603,7 +3693,7 @@ The twin of `PUT /api/notes/{noteId}/toc` for an attachment.
 
     | Property | Description |
     | --- | --- |
-    | `status`  <br>_required_ | `string`  <br>One of `ready`, `stale`, `missing`, `none`. |
+    | `status`  <br>_required_ | `string`  <br>One of `ready`, `stale`, `missing`, `unreadable`, `unavailable`, `none`. |
     | `blobId` | `string`  <br>For `ready` and `stale`, the blob that the headings were read from |
     | `headings` | array of [`TocHeading`](#schema-TocHeading) |
     | `pendingToc` | [`PendingToc`](#schema-PendingToc)  <br>A table of contents that the viewer of the document builds |
@@ -3619,7 +3709,11 @@ The twin of `PUT /api/notes/{noteId}/toc` for an attachment.
             {
                 "id": "0k3x9aa1h7q2mz",
                 "title": "Installation",
-                "level": 1
+                "level": 1,
+                "params": {
+                    "page": "4",
+                    "heading": "0k3x9aa1h7q2mz"
+                }
             }
         ],
         "pendingToc": {
@@ -3640,6 +3734,67 @@ The twin of `PUT /api/notes/{noteId}/toc` for an attachment.
     No content.
 
 === "409: The attachment has another blob than the one the viewer read (reason `changed`)"
+
+    No content.
+
+### Build the ToC cache of an attachment
+
+`POST /api/attachments/{attachmentId}/toc/build` · `buildAttachmentToc`
+
+The twin of `POST /api/notes/{noteId}/toc/build` for an attachment.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `attachmentId`  <br>_required_ | `string` |
+
+**Responses**
+
+=== "200: The table of contents"
+
+    *   `application/json`: [`CachedToc`](#schema-CachedToc)
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `status`  <br>_required_ | `string`  <br>One of `ready`, `stale`, `missing`, `unreadable`, `unavailable`, `none`. |
+    | `blobId` | `string`  <br>For `ready` and `stale`, the blob that the headings were read from |
+    | `headings` | array of [`TocHeading`](#schema-TocHeading) |
+    | `pendingToc` | [`PendingToc`](#schema-PendingToc)  <br>A table of contents that the viewer of the document builds |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "status": "ready",
+        "blobId": "string",
+        "headings": [
+            {
+                "id": "0k3x9aa1h7q2mz",
+                "title": "Installation",
+                "level": 1,
+                "params": {
+                    "page": "4",
+                    "heading": "0k3x9aa1h7q2mz"
+                }
+            }
+        ],
+        "pendingToc": {
+            "format": "pdf"
+        }
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "409: The attachment changed during two builds in a row"
 
     No content.
 
@@ -3761,9 +3916,32 @@ The twin of `PUT /api/notes/{noteId}/toc` for an attachment.
 
 **Responses**
 
-=== "204: Attachment file updated"
+=== "200: Attachment file updated"
 
-    No content.
+    *   `application/json`: [`FileUploaded`](#schema-FileUploaded)
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `uploaded`  <br>_required_ | `boolean` |
+    | `blobId` | `string`  <br>The blob that the upload wrote |
+    | `message` | `string`  <br>Why nothing was uploaded |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "uploaded": true,
+        "blobId": "string",
+        "message": "string"
+    }
+    ```
+
+    </div>
+    </div>
 
 ### Open attachment
 
@@ -3777,11 +3955,21 @@ The twin of `PUT /api/notes/{noteId}/toc` for an attachment.
 | --- | --- |
 | `attachmentId`  <br>_required_ | `string` |
 
+**Query parameters**
+
+| Name | Description |
+| --- | --- |
+| `blobId` | `string`  <br>The blob that the caller expects. When the content holds another one, the route answers 409 without the content. |
+
 **Responses**
 
 === "200: Attachment content"
 
     *   `application/octet-stream`: `string (binary)`
+
+=== "409: The attachment holds another blob than `blobId`"
+
+    No content.
 
 ### Download attachment
 
@@ -8802,12 +8990,13 @@ A heading of a table of contents, with the fields of its format, such as `page`
 | `id`  <br>_required_ | `string`  <br>Names the heading in its document, for the `heading` link parameter |
 | `title`  <br>_required_ | `string`  <br>Plain text, never HTML |
 | `level`  <br>_required_ | `integer` |
+| `params` | `object`  <br>The parameters of a link to the heading; absent when no link can reach it |
 
 ### <a id="schema-CachedToc"></a>`CachedToc`
 
 | Property | Description |
 | --- | --- |
-| `status`  <br>_required_ | `string`  <br>One of `ready`, `stale`, `missing`, `none`. |
+| `status`  <br>_required_ | `string`  <br>One of `ready`, `stale`, `missing`, `unreadable`, `unavailable`, `none`. |
 | `blobId` | `string`  <br>For `ready` and `stale`, the blob that the headings were read from |
 | `headings` | array of [`TocHeading`](#schema-TocHeading) |
 | `pendingToc` | [`PendingToc`](#schema-PendingToc)  <br>A table of contents that the viewer of the document builds |
@@ -8821,6 +9010,14 @@ A heading of a table of contents, with the fields of its format, such as `page`
 | `properties` | `object`  <br>The properties of the format, such as `{ "reader": 2 }` |
 | `isCut` | `boolean`  <br>Whether the viewer stopped reading at 20,000 headings, before another one. The ids of every heading of a cut table of contents are bound to the blob. |
 | `elapsedMs`  <br>_required_ | `number`  <br>How long the viewer took, for the log |
+
+### <a id="schema-FileUploaded"></a>`FileUploaded`
+
+| Property | Description |
+| --- | --- |
+| `uploaded`  <br>_required_ | `boolean` |
+| `blobId` | `string`  <br>The blob that the upload wrote |
+| `message` | `string`  <br>Why nothing was uploaded |
 
 ### <a id="schema-NoteSaveBase"></a>`NoteSaveBase`
 

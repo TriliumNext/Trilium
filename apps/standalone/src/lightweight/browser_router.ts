@@ -3,7 +3,7 @@
  * Supports path parameters (e.g., /api/notes/:noteId) and query strings.
  */
 
-import { routes } from "@triliumnext/core";
+import { HttpError, NotFoundError, routes, ValidationError } from "@triliumnext/core";
 
 export interface UploadedFile {
     originalname: string;
@@ -350,23 +350,23 @@ export class BrowserRouter {
     private formatError(error: unknown, context: string): BrowserResponse {
         console.error('[Router] Handler error:', context, error);
 
-        // Check for known error types
-        if (error && typeof error === 'object') {
-            const err = error as { constructor?: { name?: string }; message?: string };
-
-            if (err.constructor?.name === 'NotFoundError') {
-                return jsonResponse({ message: err.message || 'Not found' }, 404);
-            }
-
-            if (err.constructor?.name === 'ValidationError') {
-                return jsonResponse({ message: err.message || 'Validation error' }, 400);
-            }
+        if (error instanceof HttpError) {
+            const message = error.message || getDefaultMessage(error);
+            return jsonResponse({ message }, error.statusCode);
         }
 
         // Generic error
         const message = error instanceof Error ? error.message : String(error);
         return jsonResponse({ message }, 500);
     }
+}
+
+/** The message of an `HttpError` thrown without one. */
+function getDefaultMessage(error: HttpError) {
+    if (error instanceof NotFoundError) {
+        return "Not found";
+    }
+    return error instanceof ValidationError ? "Validation error" : "";
 }
 
 /**

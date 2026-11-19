@@ -1,4 +1,7 @@
-import { getContext } from "@triliumnext/core";
+import {
+    ConflictError, ContentNotAvailableError, ForbiddenError, getContext, NotFoundError,
+    ValidationError
+} from "@triliumnext/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { type BrowserRequest, BrowserRouter, createRouter, type UploadedFile } from "./browser_router.js";
@@ -279,50 +282,37 @@ describe("BrowserRouter result formatting", () => {
 });
 
 describe("BrowserRouter error formatting", () => {
-    class NotFoundError extends Error {}
-    class ValidationError extends Error {}
-
-    it("maps NotFoundError to 404", async () => {
+    async function dispatchThrowing(error: unknown) {
         vi.spyOn(console, "error").mockImplementation(() => {});
         const router = new BrowserRouter();
-        router.get("/nf", () => { throw new NotFoundError("gone"); });
-        const res = await router.dispatch("GET", "http://localhost/nf");
-        expect(res.status).toBe(404);
-        expect(JSON.parse(decodeBody(res.body))).toEqual({ message: "gone" });
-    });
+        router.get("/throws", () => { throw error; });
+        const res = await router.dispatch("GET", "http://localhost/throws");
+        return { status: res.status, body: JSON.parse(decodeBody(res.body)) };
+    }
 
-    it("maps ValidationError to 400", async () => {
-        vi.spyOn(console, "error").mockImplementation(() => {});
-        const router = new BrowserRouter();
-        router.get("/ve", () => { throw new ValidationError("bad"); });
-        const res = await router.dispatch("GET", "http://localhost/ve");
-        expect(res.status).toBe(400);
-        expect(JSON.parse(decodeBody(res.body))).toEqual({ message: "bad" });
+    it("answers the status code of every HttpError, subclasses included", async () => {
+        expect(await dispatchThrowing(new NotFoundError("gone")))
+            .toStrictEqual({ status: 404, body: { message: "gone" } });
+        expect(await dispatchThrowing(new ValidationError("bad")))
+            .toStrictEqual({ status: 400, body: { message: "bad" } });
+        expect(await dispatchThrowing(new ContentNotAvailableError("locked")))
+            .toStrictEqual({ status: 400, body: { message: "locked" } });
+        expect(await dispatchThrowing(new ConflictError("changed")))
+            .toStrictEqual({ status: 409, body: { message: "changed" } });
+        expect(await dispatchThrowing(new ForbiddenError("denied")))
+            .toStrictEqual({ status: 403, body: { message: "denied" } });
     });
 
     it("maps an unknown error to 500", async () => {
-        vi.spyOn(console, "error").mockImplementation(() => {});
-        const router = new BrowserRouter();
-        router.get("/boom", () => { throw new Error("kaput"); });
-        const res = await router.dispatch("GET", "http://localhost/boom");
-        expect(res.status).toBe(500);
-        expect(JSON.parse(decodeBody(res.body))).toEqual({ message: "kaput" });
+        expect(await dispatchThrowing(new Error("kaput")))
+            .toStrictEqual({ status: 500, body: { message: "kaput" } });
     });
 
-    it("falls back to a default message for NotFoundError without a message", async () => {
-        vi.spyOn(console, "error").mockImplementation(() => {});
-        const router = new BrowserRouter();
-        router.get("/nf2", () => { throw new NotFoundError(); });
-        const res = await router.dispatch("GET", "http://localhost/nf2");
-        expect(JSON.parse(decodeBody(res.body))).toEqual({ message: "Not found" });
-    });
-
-    it("falls back to a default message for ValidationError without a message", async () => {
-        vi.spyOn(console, "error").mockImplementation(() => {});
-        const router = new BrowserRouter();
-        router.get("/ve2", () => { throw new ValidationError(); });
-        const res = await router.dispatch("GET", "http://localhost/ve2");
-        expect(JSON.parse(decodeBody(res.body))).toEqual({ message: "Validation error" });
+    it("falls back to a default message for an HttpError without one", async () => {
+        expect(await dispatchThrowing(new NotFoundError("")))
+            .toStrictEqual({ status: 404, body: { message: "Not found" } });
+        expect(await dispatchThrowing(new ValidationError("")))
+            .toStrictEqual({ status: 400, body: { message: "Validation error" } });
     });
 
     it("stringifies a thrown non-Error value", async () => {

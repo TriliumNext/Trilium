@@ -14,6 +14,8 @@ export interface TargetReferenceSource {
     getTarget(): Promise<LinkTarget | null>;
     /** Whether the shared page of the note lands on the target, which it reaches by `block`. */
     hasPublicLinks: boolean;
+    /** The title that the link starts with, such as an attachment's: the note's when absent. */
+    title?: string;
 }
 
 /**
@@ -49,7 +51,8 @@ function copyTargetReference(source: TargetReferenceSource) {
             return null;
         }
         const href = `#${target.createLinkPath()}`;
-        const text = target.title ? `${source.note.title} - ${target.title}` : source.note.title;
+        const title = source.title ?? source.note.title;
+        const text = target.title ? `${title} - ${target.title}` : title;
         return { html: toReferenceLinkHtml(href, text), text: href };
     });
     void copyWhenReady(content, { isHtml: true });

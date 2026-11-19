@@ -538,18 +538,27 @@ export async function getExtendedWidgetType(note: FNote | null | undefined, note
     // note is gone — don't fetch a blob for a note that no longer exists. (The 404 that surfaced this is
     // actually issued by the still-cached modal-close render racing the delete; froca.getBlob's
     // silentNotFound handling is what keeps that one quiet. This check just avoids the redundant later fetch.)
-    if (BLOB_BACKED_TYPES.has(resultingType) && froca.getNoteFromCache(note.noteId)) {
+    const reason = await getUnavailableReason(note, BLOB_BACKED_TYPES.has(resultingType));
+    return reason ?? resultingType;
+}
+
+/**
+ * Why the content of `note` cannot be shown on this device: a protected note outside a protected
+ * session, or, when `isBlobBacked`, a blob that the sync server withheld. `null` when it can.
+ */
+export async function getUnavailableReason(
+    note: FNote, isBlobBacked = true
+): Promise<"protectedSession" | "blobStub" | null> {
+    if (note.isProtected && !protected_session_holder.isProtectedSessionAvailable()) {
+        return "protectedSession";
+    }
+    if (isBlobBacked && froca.getNoteFromCache(note.noteId)) {
         const blob = await note.getBlob();
         if (blob?.isStubbed) {
-            resultingType = "blobStub";
+            return "blobStub";
         }
     }
-
-    if (note.isProtected && !protected_session_holder.isProtectedSessionAvailable()) {
-        resultingType = "protectedSession";
-    }
-
-    return resultingType;
+    return null;
 }
 
 // Extended note types that render or edit a note's blob content, and so must fall back to the

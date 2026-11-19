@@ -12,6 +12,7 @@ import { shouldRedirectPinnedNavigation } from "../services/tab_pinning.js";
 import treeService from "../services/tree.js";
 import utils from "../services/utils.js";
 import type { ReactWrappedWidget } from "../widgets/basic_widget.js";
+import type { TocDocumentState } from "../widgets/sidebar/CachedToCProvider.js";
 import type { HighlightContext } from "../widgets/sidebar/HighlightsList.js";
 import type { HeadingContext } from "../widgets/sidebar/TableOfContents.js";
 import type { ChatHighlightsContext } from "../widgets/type_widgets/llm_chat/chat_highlights.js";
@@ -68,6 +69,8 @@ const VIEW_STATE_KEYS: string[] = [ "isReadOnly", "readOnlyTemporarilyDisabled" 
 
 export interface NoteContextDataMap {
     toc: HeadingContext;
+    /** Published by the type widget of a document whose outline comes from its ToC cache. */
+    tocDocument: TocDocumentState;
     highlights: HighlightContext;
     chatHighlights: ChatHighlightsContext;
     pdfPages: {

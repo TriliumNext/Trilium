@@ -489,10 +489,24 @@ export function takeLinkTarget(
         return undefined;
     }
 
-    const target: LandingTarget = {};
+    const params: Partial<Record<LinkTargetParam, string | undefined>> = {};
     for (const name of names) {
-        const value = viewScope[name];
+        params[name] = viewScope[name];
         viewScope[name] = undefined;
+    }
+    return toLandingTarget(params);
+}
+
+/** The place that the link parameters `params` name, with the page parsed. */
+export function toLandingTarget(
+    params: Partial<Record<LinkTargetParam, string | undefined>>
+): LandingTarget {
+    const target: LandingTarget = {};
+    for (const name of LINK_TARGET_PARAMS) {
+        if (!(name in params)) {
+            continue;
+        }
+        const value = params[name];
         if (name === "page") {
             const page = Number.parseInt(value ?? "", 10);
             target.page = page >= 1 ? page : undefined;

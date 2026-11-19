@@ -1,5 +1,5 @@
 import { isSvgMime } from "@triliumnext/commons";
-import { DetailedConflictError } from "../errors";
+import { ContentNotAvailableError, DetailedConflictError, NotFoundError } from "../errors";
 import { Response } from "../http_interface";
 import becca from "../becca/becca";
 import BNote from "../becca/entities/bnote";
@@ -21,19 +21,59 @@ export function answerConflict<T>(fn: () => T): T | [number, object] {
     }
 }
 
-export function downloadNoteInt(noteId: string, res: Response, contentDisposition = true) {
+/**
+ * The result of `read`, or `{ status: "unavailable" }` when it throws `NotFoundError` or
+ * `ContentNotAvailableError`. A client cannot read the status of a failed request.
+ */
+export function answerUnavailable<T>(read: () => Promise<T>): Promise<T | UnavailableAnswer>;
+export function answerUnavailable<T>(read: () => T): T | UnavailableAnswer;
+export function answerUnavailable<T>(read: () => T | Promise<T>) {
+    try {
+        const result = read();
+        return result instanceof Promise ? result.catch(toUnavailable) : result;
+    } catch (e) {
+        return toUnavailable(e);
+    }
+}
+
+/** What `answerUnavailable()` returns for a document that is gone or not available. */
+export interface UnavailableAnswer {
+    status: "unavailable";
+}
+
+function toUnavailable(e: unknown): UnavailableAnswer {
+    if (e instanceof NotFoundError || e instanceof ContentNotAvailableError) {
+        return { status: "unavailable" };
+    }
+    throw e;
+}
+
+export function downloadNoteInt(
+    noteId: string, res: Response, contentDisposition = true, expectedBlobId?: string
+) {
     const note = becca.getNote(noteId);
 
     if (!note) {
         return res.setHeader("Content-Type", "text/plain").status(404).send(`Note '${noteId}' doesn't exist.`);
     }
 
-    return downloadData(note, res, contentDisposition);
+    return downloadData(note, res, contentDisposition, expectedBlobId);
 }
 
-export function downloadData(noteOrAttachment: BNote | BAttachment, res: Response, contentDisposition: boolean) {
+/**
+ * Sends the content of a note or attachment. With `expectedBlobId`, responds with 409 without the
+ * content when the entity has another blob, so a viewer never shows bytes it did not request.
+ */
+export function downloadData(
+    noteOrAttachment: BNote | BAttachment, res: Response, contentDisposition: boolean,
+    expectedBlobId?: string
+) {
     if (noteOrAttachment.isProtected && !protected_session.isProtectedSessionAvailable()) {
         return res.status(401).send("Protected session not available");
+    }
+
+    if (expectedBlobId !== undefined && noteOrAttachment.blobId !== expectedBlobId) {
+        return res.setHeader("Content-Type", "text/plain").status(409).send("The content changed.");
     }
 
     if (contentDisposition) {

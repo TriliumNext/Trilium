@@ -14,12 +14,11 @@ import server from "../../services/server";
 import toast from "../../services/toast";
 import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
+import { useActiveHeading } from "../react/hooks/dom";
 import { setEditorNoteId } from "../react/NoteStore";
 import { ParentComponent } from "../react/react_utils";
 import { NavigatedInNote } from "./RightPanelWidget";
-import TableOfContents, {
-    type HeadingContext, type HeadingLinks, useActiveHeading
-} from "./TableOfContents";
+import TableOfContents, { type HeadingContext, type HeadingLinks } from "./TableOfContents";
 
 const { showMenu, getHeadings, assignBlockId } = vi.hoisted(() => ({
     showMenu: vi.fn(),

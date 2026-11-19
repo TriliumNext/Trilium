@@ -1,5 +1,8 @@
-import { escapeHtml } from "@triliumnext/commons/src/lib/utils.js";
-import { useEffect, useRef } from "preact/hooks";
+import type { ReferenceParams } from "@triliumnext/commons";
+import {
+    findActivePdfHeading, type PdfReadingPosition, type PdfTocHeading
+} from "@triliumnext/commons/src/lib/pdf_toc.js";
+import { useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
 import type NoteContext from "../../../components/note_context";
@@ -8,15 +11,18 @@ import FBlob from "../../../entities/fblob";
 import FNote from "../../../entities/fnote";
 import { copyReferenceWithToast } from "../../../services/clipboard_ext";
 import { getTocUrl } from "../../../services/link";
-import { takeLinkTarget } from "../../../services/link_targets";
+import {
+    type LandingTarget, takeLinkTarget, toLandingTarget
+} from "../../../services/link_targets";
 import open from "../../../services/open";
 import options from "../../../services/options";
 import { useViewModeConfig } from "../../collections/NoteList";
 import { useTriliumEvent } from "../../react/hooks/events";
 import { useEffectiveReadOnly, useLinkTargetLanding } from "../../react/hooks/note_context";
 import { useBlobEditorSpacedUpdate } from "../../react/hooks/editor";
-import PdfViewer, { getPdfUrl } from "./PdfViewer";
-import { useTocBuild } from "./toc_build";
+import type { TocDocumentState } from "../../sidebar/CachedToCProvider";
+import PdfViewer, { getPdfUrl, nextPdfLoadToken } from "./PdfViewer";
+import { refreshBlobId, useTocBuild } from "./toc_build";
 
 /**
  * How long annotating is left to settle before a save. Longer than the second an editor of text
@@ -31,7 +37,29 @@ const SAVE_INTERVAL = 5_000;
  */
 const STORED_ANNOTATION_ID = /^\d+R\d*$/;
 
-type PdfContextDataKey = "toc" | "pdfPages" | "pdfAttachments" | "pdfAnnotations" | "pdfLayers";
+/** How many loads in a row can fail before the viewer gives the document up. */
+const MAX_FAILED_LOADS = 3;
+
+type PdfContextDataKey =
+    "tocDocument" | "pdfPages" | "pdfAttachments" | "pdfAnnotations" | "pdfLayers";
+
+/** One navigation of the viewer's frame. */
+interface PdfLoad {
+    /** Names the navigation; every message of the load includes it. */
+    token: string;
+    noteId: string;
+    /** The blob that the open route serves to the load, or refuses with 409 for another. */
+    blobId: string;
+    /** Whether the viewer reported that the document loaded. */
+    isConfirmed: boolean;
+    /** Whether the viewer cannot show the document. */
+    isUnavailable: boolean;
+    /** The blob that the viewer shows: the load's, then the blob of each own save. */
+    renderedBlobId: string;
+    position: PdfReadingPosition | null;
+    /** The effective rotation of each page, by page index. */
+    rotations: number[];
+}
 
 export default function PdfPreview({ note, blob, componentId, noteContext, isVisible = true }: {
     note: FNote;
@@ -52,10 +80,17 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
      * not send its data again on the way back.
      */
     const publishedRef = useRef(new Map<PdfContextDataKey, unknown>());
-    /** How many times the iframe has loaded a viewer. */
-    const loadCountRef = useRef(0);
-    /** The load count when the viewer was asked for the bytes of each save. */
-    const saveLoadsRef = useRef(new WeakMap<Blob, number>());
+    /** The current load; a note of its own starts one. */
+    const loadRef = useRef<PdfLoad | null>(null);
+    if (!loadRef.current || loadRef.current.noteId !== note.noteId) {
+        loadRef.current = createLoad(note.noteId, note.blobId);
+    }
+    const load = loadRef.current;
+    const [ , setLoadCount ] = useState(0);
+    /** The blobs of the loads that failed in a row. */
+    const failedLoadsRef = useRef<string[]>([]);
+    /** The token of the load when the viewer was asked for the bytes of each save. */
+    const saveLoadsRef = useRef(new WeakMap<Blob, string>());
     const tocBuild = useTocBuild(iframeRef, getTocUrl("notes", note.noteId), !!note.isProtected);
 
     function publish<K extends PdfContextDataKey>(key: K, value: NoteContextDataMap[K]) {
@@ -85,13 +120,91 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
     function revealLinkTarget() {
         if (!isShown() || !publishedRef.current.has("pdfAnnotations")) return;
         const target = takeLinkTarget(noteContext.viewScope, [ "page", "annotation", "heading" ]);
-        if (!target) return;
+        if (target) {
+            landOn(target);
+        }
+    }
 
-        const { page, annotation: annotationId, heading: headingId } = target;
+    /** Posts `target` to the viewer. Returns whether it names a place to show. */
+    function landOn({ page, annotation: annotationId, heading: headingId }: LandingTarget) {
         if (headingId) {
             postToViewer({ type: "trilium-scroll-to-heading", headingId, pageNumber: page });
-        } else if (page) {
+            return true;
+        }
+        if (page) {
             postToViewer({ type: "trilium-scroll-to-annotation", annotationId, pageNumber: page });
+            return true;
+        }
+        return false;
+    }
+
+    /** Navigates the frame to a new load of the blob `blobId`. */
+    function startLoad(blobId: string) {
+        loadRef.current = createLoad(note.noteId, blobId);
+        publishedRef.current.clear();
+        setLoadCount((count) => count + 1);
+    }
+
+    /** Lands on `params` for the outline, while `shownLoad` is the current, confirmed load. */
+    function showTarget(shownLoad: PdfLoad, params: ReferenceParams) {
+        if (loadRef.current !== shownLoad || !shownLoad.isConfirmed) {
+            return false;
+        }
+        return landOn(toLandingTarget(params));
+    }
+
+    /** What the outline needs to know about the current load. */
+    function getTocDocument(): TocDocumentState {
+        const current = loadRef.current;
+        if (!current || current.isUnavailable) {
+            return { status: "unavailable" };
+        }
+        if (!current.isConfirmed) {
+            return { status: "rendering" };
+        }
+        return {
+            status: "shown",
+            tocUrl: getTocUrl("notes", note.noteId),
+            renderedBlobId: current.renderedBlobId,
+            ownerNoteId: note.noteId,
+            linkPath: noteContext.notePath ?? note.noteId,
+            title: note.title,
+            showTarget: (params) => showTarget(current, params),
+            findActiveHeading: (headings) => (current.position
+                ? findActivePdfHeading(headings as PdfTocHeading[], current.position,
+                    current.rotations)
+                : null),
+            clientBuild: tocBuild.clientBuild
+        };
+    }
+
+    function publishTocDocument() {
+        publish("tocDocument", getTocDocument());
+    }
+
+    /**
+     * Loads the current blob again after the load `failedLoad` failed: pdf.js reports a refused
+     * fetch and a file it cannot open alike. Two failures in a row for one blob, or three in all,
+     * make the document unavailable.
+     */
+    async function recoverFromLoadError(failedLoad: PdfLoad) {
+        tocBuild.onLoadError();
+        const failed = failedLoadsRef.current;
+        const isRepeated = failed.at(-1) === failedLoad.blobId;
+        failed.push(failedLoad.blobId);
+        let blobId: string | null = null;
+        if (!isRepeated && failed.length < MAX_FAILED_LOADS) {
+            blobId = await refreshBlobId({ kind: "note", noteId: failedLoad.noteId })
+                .catch(() => null);
+        }
+        if (loadRef.current !== failedLoad) {
+            return;
+        }
+        if (blobId) {
+            startLoad(blobId);
+        } else {
+            failedLoad.isUnavailable = true;
+            publishTocDocument();
         }
     }
 
@@ -112,12 +225,12 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
                     reject(new Error("Timeout while waiting for blob response"));
                 }, 10_000);
 
-                const loadCount = loadCountRef.current;
+                const loadToken = loadRef.current?.token ?? "";
                 const onMessageReceived = (event: PdfMessageEvent) => {
                     if (event.data.type !== "pdfjs-viewer-blob") return;
                     if (event.data.noteId !== note.noteId || event.data.ntxId !== noteContext.ntxId) return;
                     const blob = new Blob([event.data.data as Uint8Array<ArrayBuffer>], { type: note.mime });
-                    saveLoadsRef.current.set(blob, loadCount);
+                    saveLoadsRef.current.set(blob, loadToken);
 
                     clearTimeout(timeout);
                     window.removeEventListener("message", onMessageReceived);
@@ -130,17 +243,28 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
                 }, window.location.origin);
             });
         },
-        onContentChange() {
-            if (iframeRef.current?.contentWindow) {
-                publishedRef.current.clear();
-                iframeRef.current.contentWindow.location.reload();
+        onContentChange(newBlob) {
+            const current = loadRef.current;
+            if (newBlob.blobId === current?.blobId || newBlob.blobId === current?.renderedBlobId) {
+                return;
             }
+            failedLoadsRef.current = [];
+            startLoad(newBlob.blobId);
         },
-        dataSaved(savedData) {
-            // A save that completes after the viewer loaded another document starts nothing.
-            if (saveLoadsRef.current.get(savedData) !== loadCountRef.current) return;
-            void savedData.arrayBuffer()
-                .then((buffer) => tocBuild.requestBuild(new Uint8Array(buffer)));
+        dataSaved(savedData, answer) {
+            // A save that completes after the viewer loaded another document changes nothing.
+            const current = loadRef.current;
+            if (!current || saveLoadsRef.current.get(savedData) !== current.token) return;
+            tocBuild.onSave(savedData);
+            if (answer?.blobId) {
+                // The viewer made these bytes: the frame stays, and accepts the save's tag.
+                current.renderedBlobId = answer.blobId;
+                postToViewer({
+                    type: "trilium-saved-revision", loadToken: current.token,
+                    blobId: answer.blobId, isProtected: !!note.isProtected
+                });
+                publishTocDocument();
+            }
         },
         replaceWithoutRevision: true
     });
@@ -173,38 +297,7 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
                 void tocBuild.saveBuild(event.data);
             }
 
-            if (event.data.type === "pdfjs-viewer-toc") {
-                if (event.data.data) {
-                    // Convert PDF outline to HeadingContext format
-                    const headings = convertPdfOutlineToHeadings(event.data.data);
-                    publish("toc", {
-                        headings,
-                        activeHeadingId: null,
-                        scrollToHeading: (heading) => {
-                            postToViewer({
-                                type: "trilium-scroll-to-heading", headingKey: heading.id
-                            });
-                        }
-                    });
-                } else {
-                    // No ToC available, use empty headings
-                    publish("toc", {
-                        headings: [],
-                        activeHeadingId: null,
-                        scrollToHeading: () => {}
-                    });
-                }
-            }
-
-            if (event.data.type === "pdfjs-viewer-active-heading") {
-                const currentToc = getPublished("toc");
-                if (currentToc) {
-                    publish("toc", {
-                        ...currentToc,
-                        activeHeadingId: event.data.headingId
-                    });
-                }
-            }
+            handleLoadMessage(event.data);
 
             if (event.data.type === "pdfjs-viewer-page-info") {
                 publish("pdfPages", {
@@ -299,6 +392,32 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
             return noteContext.notePath ?? note.noteId;
         }
 
+        /** Follows the messages of the current load; those of an earlier one are dropped. */
+        function handleLoadMessage(data: PdfMessageEvent["data"]) {
+            const current = loadRef.current;
+            if (!current || !("loadToken" in data) || data.loadToken !== current.token) return;
+
+            switch (data.type) {
+                case "pdfjs-viewer-document-loaded":
+                    current.isConfirmed = true;
+                    failedLoadsRef.current = [];
+                    break;
+                case "pdfjs-viewer-document-error":
+                    void recoverFromLoadError(current);
+                    return;
+                case "pdfjs-viewer-position":
+                    current.position = { pageNumber: data.pageNumber, x: data.x, y: data.y };
+                    break;
+                case "pdfjs-viewer-rotations":
+                    current.rotations = [ ...data.rotations ];
+                    break;
+                case "pdfjs-viewer-page-rotation":
+                    current.rotations[data.pageNumber - 1] = data.rotation;
+                    break;
+            }
+            publishTocDocument();
+        }
+
         window.addEventListener("message", handleMessage);
         return () => {
             window.removeEventListener("message", handleMessage);
@@ -307,6 +426,8 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
 
     // A different PDF reloads the viewer, which sends everything again.
     useEffect(() => () => publishedRef.current.clear(), [ note.noteId ]);
+
+    useEffect(publishTocDocument, [ load.token, tocBuild.version ]);
 
     useEffect(() => {
         if (!isShown()) return;
@@ -354,10 +475,10 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
         <PdfViewer
             iframeRef={iframeRef}
             tabIndex={300}
-            pdfUrl={getPdfUrl(`notes/${note.noteId}/open`)}
+            pdfUrl={`${getPdfUrl(`notes/${note.noteId}/open`)}?blobId=${load.blobId}`}
+            loadToken={load.token}
             onLoad={() => {
-                loadCountRef.current++;
-                void tocBuild.requestBuild();
+                tocBuild.onLoad();
                 const win = iframeRef.current?.contentWindow;
                 if (win) {
                     win.TRILIUM_VIEW_HISTORY_STORE = historyConfig.config;
@@ -389,18 +510,9 @@ function pdfReference(notePath: string, pageNumber: number, annotationId?: strin
     return reference;
 }
 
-interface PdfHeading {
-    level: number;
-    /** HTML, as the sidebar renders the headings of every note type. */
-    text: string;
-    /** The key of the heading in the viewer. */
-    id: string;
-    element: null;
-}
-
-/** The headings of the sidebar. The titles of a PDF are plain text, so they are escaped. */
-function convertPdfOutlineToHeadings(outline: PdfOutlineItem[]): PdfHeading[] {
-    return outline.map(({ id, title, level }) => ({
-        id, level, text: escapeHtml(title), element: null
-    }));
+function createLoad(noteId: string, blobId: string): PdfLoad {
+    return {
+        token: nextPdfLoadToken(), noteId, blobId, isConfirmed: false, isUnavailable: false,
+        renderedBlobId: blobId, position: null, rotations: []
+    };
 }

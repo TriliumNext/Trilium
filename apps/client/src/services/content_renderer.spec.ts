@@ -82,6 +82,12 @@ vi.mock("./bookmark_jump.js", async (importOriginal) => ({
     showDocumentTarget
 }));
 
+const refreshBlobId = vi.fn<(ref: object) => Promise<string | null>>();
+vi.mock("../widgets/type_widgets/file/toc_build.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("../widgets/type_widgets/file/toc_build.js")>(),
+    refreshBlobId: (ref: object) => refreshBlobId(ref)
+}));
+
 const mermaidRender = vi.fn(async (..._args: any[]) => ({ svg: "<g/>" }));
 vi.mock("mermaid", () => ({
     default: {
@@ -874,6 +880,54 @@ describe("getRenderedContent file rendering", () => {
         expect(openNoteExternally).toHaveBeenCalledWith(note.noteId, note.mime);
     });
 
+    it("asks for the blob of a PDF attachment, and loads the current one after a failed load",
+        async () => {
+        const att = buildAttachment({ role: "file", mime: "application/pdf", blobId: "blobA" });
+        const onDocumentState = vi.fn();
+        await getRenderedContent(att, { onDocumentState });
+        const first = pdfViewerComponent.mock.calls.at(-1)?.[0];
+        expect(first.pdfUrl).toBe(`/api/attachments/${att.attachmentId}/open?blobId=blobA`);
+
+        first.onDocumentLoaded();
+        expect(onDocumentState).toHaveBeenLastCalledWith({ status: "shown", blobId: "blobA" });
+
+        refreshBlobId.mockResolvedValueOnce("blobB");
+        first.onDocumentError();
+        await vi.waitFor(() => expect(pdfViewerComponent.mock.calls.at(-1)?.[0].pdfUrl)
+            .toBe(`/api/attachments/${att.attachmentId}/open?blobId=blobB`));
+        const second = pdfViewerComponent.mock.calls.at(-1)?.[0];
+        expect(second.loadToken).not.toBe(first.loadToken);
+        expect(onDocumentState).toHaveBeenLastCalledWith({ status: "rendering" });
+
+        // A report of the earlier load changes nothing; one of the current load shows its blob.
+        first.onDocumentLoaded();
+        expect(onDocumentState).toHaveBeenLastCalledWith({ status: "rendering" });
+        second.onDocumentLoaded();
+        expect(onDocumentState).toHaveBeenLastCalledWith({ status: "shown", blobId: "blobB" });
+
+        // Without the report, a viewer requests no blob.
+        await getRenderedContent(att);
+        expect(pdfViewerComponent.mock.calls.at(-1)?.[0].pdfUrl)
+            .toBe(`/api/attachments/${att.attachmentId}/open`);
+    });
+
+    it("gives up on a PDF attachment whose blob fails to load twice", async () => {
+        const att = buildAttachment({ role: "file", mime: "application/pdf", blobId: "blobA" });
+        const onDocumentState = vi.fn();
+        refreshBlobId.mockResolvedValue("blobA");
+        await getRenderedContent(att, { onDocumentState });
+
+        pdfViewerComponent.mock.calls.at(-1)?.[0].onDocumentError();
+        await vi.waitFor(() => expect(onDocumentState)
+            .toHaveBeenCalledWith({ status: "rendering" }));
+        pdfViewerComponent.mock.calls.at(-1)?.[0].onDocumentError();
+
+        await vi.waitFor(() => expect(onDocumentState)
+            .toHaveBeenLastCalledWith({ status: "unavailable" }));
+        expect(refreshBlobId).toHaveBeenCalledOnce();
+        refreshBlobId.mockReset();
+    });
+
     it("opens a PDF attachment at each target in one viewer, and lets it build a cache", async () => {
         const att = buildAttachment({ role: "file", mime: "application/pdf" });
         const { showTarget } = await getRenderedContent(att, { buildsPdfToc: true });
@@ -1013,10 +1067,57 @@ describe("getRenderedContent office rendering", () => {
 
         const body = $renderedContent.find(".office-preview-body")[0];
         await vi.waitFor(() => expect(showDocumentTarget)
-            .toHaveBeenCalledExactlyOnceWith(body, { heading: "h1" }));
+            .toHaveBeenCalledExactlyOnceWith(body, { heading: "h1" }, undefined));
 
         renderOfficeToHtml.mockRejectedValueOnce(new Error("bad zip"));
         expect((await getRenderedContent(note)).showTarget).toBeUndefined();
+    });
+
+    it("previews the blob an attachment holds, reading it again after the server refused another",
+        async () => {
+        const { OfficePreviewChangedError } = await import("./office_renderer.js");
+        const att = buildAttachment({ role: "file", mime: DOCX, blobId: "blobA" });
+        const onDocumentState = vi.fn();
+        renderOfficeToHtml.mockRejectedValueOnce(new OfficePreviewChangedError());
+        refreshBlobId.mockResolvedValueOnce("blobB");
+
+        const { showTarget } = await getRenderedContent(att, { onDocumentState });
+
+        expect(renderOfficeToHtml.mock.calls.map(([ , , options ]) => options.blobId))
+            .toStrictEqual([ "blobA", "blobB" ]);
+        expect(refreshBlobId).toHaveBeenCalledWith(
+            { kind: "attachment", attachmentId: att.attachmentId, ownerId: att.ownerId });
+        expect(onDocumentState)
+            .toHaveBeenCalledExactlyOnceWith({ status: "shown", blobId: "blobB" });
+
+        showTarget?.({ heading: "gone" }, { isFallbackToTop: false });
+        await vi.waitFor(() => expect(showDocumentTarget).toHaveBeenCalledWith(
+            expect.anything(), { heading: "gone" }, { isFallbackToTop: false }));
+    });
+
+    it("reports a removed attachment, and three refusals in a row, as unavailable", async () => {
+        const { OfficePreviewChangedError } = await import("./office_renderer.js");
+        vi.spyOn(console, "warn").mockImplementation(() => {});
+        const att = buildAttachment({ role: "file", mime: DOCX, blobId: "blobA" });
+        const onDocumentState = vi.fn();
+        renderOfficeToHtml.mockRejectedValueOnce(new OfficePreviewChangedError());
+        refreshBlobId.mockResolvedValueOnce(null);
+        await getRenderedContent(att, { onDocumentState });
+        expect(onDocumentState).toHaveBeenLastCalledWith({ status: "unavailable" });
+
+        renderOfficeToHtml.mockClear();
+        renderOfficeToHtml.mockRejectedValue(new OfficePreviewChangedError());
+        refreshBlobId.mockResolvedValue("blobN");
+        try {
+            await getRenderedContent(att, { onDocumentState });
+            expect(renderOfficeToHtml).toHaveBeenCalledTimes(3);
+            expect(onDocumentState).toHaveBeenLastCalledWith({ status: "unavailable" });
+        } finally {
+            renderOfficeToHtml.mockReset();
+            renderOfficeToHtml.mockImplementation(async () => (
+                { css: "", html: `<div class="office-doc">converted</div>` }));
+            refreshBlobId.mockReset();
+        }
     });
 
     it("attaches a spreadsheet's stylesheet inside the preview body, as an element", async () => {

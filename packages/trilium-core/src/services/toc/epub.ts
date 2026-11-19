@@ -1,4 +1,4 @@
-import { EPUB_MIME_TYPES, type TocHeading } from "@triliumnext/commons";
+import { findTocFormatName, type TocHeading } from "@triliumnext/commons";
 
 import type { ZipFailure } from "../utils/zip_records.js";
 import type { TocFormat } from "./index.js";
@@ -73,7 +73,7 @@ export class TocPassRefusal extends Error {
  */
 export const epubTocFormat: TocFormat<EpubTocHeading> = {
     name: "epub",
-    isFor: (type, mime) => type === "file" && (EPUB_MIME_TYPES as readonly string[]).includes(mime),
+    isFor: (type, mime) => findTocFormatName(type, mime) === "epub",
     // Exactly the properties of the current reader: anything else rebuilds the cache.
     isCurrent: ({ epub }) => typeof epub === "object" && epub !== null
         && Object.keys(epub).length === 1

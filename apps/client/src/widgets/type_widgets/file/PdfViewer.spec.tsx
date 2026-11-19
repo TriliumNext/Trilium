@@ -9,7 +9,9 @@ import server from "../../../services/server";
 import PdfViewer, { getFontFaceCss, getPdfUrl, type PdfLinkTarget, type PdfTocDocument } from "./PdfViewer";
 
 describe("PdfViewer", () => {
-    function viewerUrl(props: { noteId?: string; ntxId?: string | null }) {
+    function viewerUrl(props: {
+        noteId?: string; ntxId?: string | null; loadToken?: string; pdfUrl?: string
+    }) {
         const container = document.createElement("div");
         render(<PdfViewer pdfUrl="/api/notes/abc123/open" {...props} />, container);
         const src = container.querySelector("iframe")?.getAttribute("src");
@@ -26,6 +28,13 @@ describe("PdfViewer", () => {
         // A viewer outside a note (print preview, lightbox, revisions) reports to no one.
         expect(viewerUrl({}).has("noteId")).toBe(false);
         expect(viewerUrl({ noteId: "abc123", ntxId: null }).has("ntxId")).toBe(false);
+    });
+
+    it("names its load and the blob it asks for in its URL", () => {
+        const params = viewerUrl({ pdfUrl: "/api/notes/abc123/open?blobId=blobA", loadToken: "7" });
+        expect(params.get("file")).toBe("/api/notes/abc123/open?blobId=blobA");
+        expect(params.get("loadToken")).toBe("7");
+        expect(viewerUrl({}).has("loadToken")).toBe(false);
     });
 
     it("hides pdf.js' own sidebar, since the right panel lists the document's contents", () => {
@@ -85,7 +94,8 @@ describe("PdfViewer for a document of its own", () => {
     it("builds the ToC cache of its document, and saves only the answers of its own frame", async () => {
         container = document.createElement("div");
         document.body.append(container);
-        vi.spyOn(server, "get").mockResolvedValue({ status: "missing", pendingToc: { format: "pdf" } });
+        vi.spyOn(server, "getWithSilentErrors")
+            .mockResolvedValue({ status: "missing", pendingToc: { format: "pdf" } });
         const put = vi.spyOn(server, "put").mockResolvedValue({ status: "ready", blobId: "b", headings: [] });
         const { iframe, posted } = show(undefined, { tocUrl: "attachments/att1/toc", isProtected: true });
 
@@ -110,7 +120,7 @@ describe("PdfViewer for a document of its own", () => {
     it("builds nothing without a document to build for", async () => {
         container = document.createElement("div");
         document.body.append(container);
-        const get = vi.spyOn(server, "get");
+        const get = vi.spyOn(server, "getWithSilentErrors");
         const { iframe } = show();
 
         load(iframe);

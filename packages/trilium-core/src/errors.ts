@@ -83,3 +83,13 @@ export class ValidationError extends HttpError {
     }
 
 }
+
+/** The content of a note or attachment is not available, such as outside a protected session. */
+export class ContentNotAvailableError extends ValidationError {
+
+    constructor(message: string) {
+        super(message);
+        this.name = "ContentNotAvailableError";
+    }
+
+}
