@@ -98,13 +98,16 @@ export default class StandaloneInAppHelpProvider extends InAppHelpProvider {
 
     /** The languages the shipped assets carry a translation for (`help_locales.json`). */
     private async loadLocales(): Promise<string[]> {
-        const response = await fetch(`/${HELP_ASSETS}/help_locales.json`);
-        if (!response.ok) {
-            // Assets built before localized help existed: English only.
-            await this.loadLocale("en");
-            return [];
+        try {
+            const response = await fetch(`/${HELP_ASSETS}/help_locales.json`);
+            if (!response.ok || response.headers.get("content-type")?.includes("text/html")) {
+                return [ "en" ];
+            }
+            const parsed = await response.json();
+            return Array.isArray(parsed) && parsed.length > 0 ? parsed as string[] : [ "en" ];
+        } catch {
+            return [ "en" ];
         }
-        return await response.json() as string[];
     }
 
     private async loadLocale(locale: string): Promise<void> {

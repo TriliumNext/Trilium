@@ -18,24 +18,24 @@ export default class NodejsInAppHelpProvider extends InAppHelpProvider {
     private helpContent = new Map<string, HelpBundle>();
 
     getHelpHiddenSubtreeData(locale?: string): HiddenSubtreeItem[] {
-        const key = locale ?? "en";
-        const cached = this.helpMeta.get(key);
+        const fileName = localizedHelpFile("help_meta", locale ?? "en");
+        const cached = this.helpMeta.get(fileName);
         if (cached) {
             return cached;
         }
-        const loaded = readHelpFile<HiddenSubtreeItem[]>(localizedHelpFile("help_meta", key)) ?? [];
-        this.helpMeta.set(key, loaded);
+        const loaded = readHelpFile<HiddenSubtreeItem[]>(fileName) ?? [];
+        this.helpMeta.set(fileName, loaded);
         return loaded;
     }
 
     getHelpContent(locale?: string): HelpBundle {
-        const key = locale ?? "en";
-        const cached = this.helpContent.get(key);
+        const fileName = localizedHelpFile("help_content", locale ?? "en");
+        const cached = this.helpContent.get(fileName);
         if (cached) {
             return cached;
         }
-        const loaded = readHelpFile<HelpBundle>(localizedHelpFile("help_content", key)) ?? {};
-        this.helpContent.set(key, loaded);
+        const loaded = readHelpFile<HelpBundle>(fileName) ?? {};
+        this.helpContent.set(fileName, loaded);
         return loaded;
     }
 

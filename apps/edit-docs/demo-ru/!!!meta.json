@@ -3755,7 +3755,7 @@
                                 "rvaX6hEaQlmk",
                                 "Zl2So0VN2bPq"
                             ],
-                            "title": "Стальной синий",
+                            "title": "Steel Blue",
                             "notePosition": 160,
                             "prefix": null,
                             "isExpanded": false,
@@ -4747,7 +4747,7 @@
                                                         "zzbGZzlK1UnU",
                                                         "o6dIpDqmk9Mk"
                                                     ],
-                                                    "title": "изменение атрибута",
+                                                    "title": "attribute changed",
                                                     "notePosition": 0,
                                                     "prefix": null,
                                                     "isExpanded": false,
@@ -4770,7 +4770,7 @@
                                                                 "o6dIpDqmk9Mk",
                                                                 "AkYrzb1oFJLM"
                                                             ],
-                                                            "title": "синхронизация назначений",
+                                                            "title": "reconcileAssignments",
                                                             "notePosition": 0,
                                                             "prefix": null,
                                                             "isExpanded": false,
@@ -4901,7 +4901,7 @@
                                                         "zzbGZzlK1UnU",
                                                         "B8r8cR1CgOXC"
                                                     ],
-                                                    "title": "создание новой задачи",
+                                                    "title": "createNewTask",
                                                     "notePosition": 40,
                                                     "prefix": null,
                                                     "isExpanded": false,
@@ -5163,7 +5163,7 @@
                                                 "JwXAb88VP2wn",
                                                 "REYFb3PQQ7Uu"
                                             ],
-                                            "title": "Создать ярлык запуска",
+                                            "title": "Create Launcher",
                                             "notePosition": 60,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -5213,7 +5213,7 @@
                                         "KZVWidxicAfn",
                                         "mJJ4HfInuU8m"
                                     ],
-                                    "title": "Виджет подсчёта слов",
+                                    "title": "Word count widget",
                                     "notePosition": 20,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -5289,7 +5289,7 @@
                                                 "AoV6PijRs3ZU",
                                                 "A32WDOAEaJ6M"
                                             ],
-                                            "title": "Реализация",
+                                            "title": "Implementation",
                                             "notePosition": 0,
                                             "prefix": null,
                                             "isExpanded": false,
@@ -5311,7 +5311,7 @@
                                                         "A32WDOAEaJ6M",
                                                         "tq1IEPNTcEwE"
                                                     ],
-                                                    "title": "Код JavaScript",
+                                                    "title": "JS code",
                                                     "notePosition": 0,
                                                     "prefix": null,
                                                     "isExpanded": false,
@@ -5416,7 +5416,7 @@
                                                         "GXUcReLM6dSe",
                                                         "oLPbgCo7djD7"
                                                     ],
-                                                    "title": "Шаблон",
+                                                    "title": "template",
                                                     "notePosition": 0,
                                                     "prefix": null,
                                                     "isExpanded": false,
@@ -5439,7 +5439,7 @@
                                                                 "oLPbgCo7djD7",
                                                                 "AlL9eFopYuHg"
                                                             ],
-                                                            "title": "JavaScript",
+                                                            "title": "js",
                                                             "notePosition": 0,
                                                             "prefix": null,
                                                             "isExpanded": false,
@@ -5463,7 +5463,7 @@
                                                                         "AlL9eFopYuHg",
                                                                         "9GZB2MeW51xv"
                                                                     ],
-                                                                    "title": "Построение круговой диаграммы",
+                                                                    "title": "renderPieChart",
                                                                     "notePosition": 0,
                                                                     "prefix": null,
                                                                     "isExpanded": false,
@@ -5542,7 +5542,7 @@
                                                                         "AlL9eFopYuHg",
                                                                         "gp03dlXCFkJf"
                                                                     ],
-                                                                    "title": "Построение таблицы",
+                                                                    "title": "renderTable",
                                                                     "notePosition": 10,
                                                                     "prefix": null,
                                                                     "isExpanded": false,
@@ -5597,7 +5597,7 @@
                                                         "SsesNR9Q4LMV",
                                                         "GYJZOEJXBEJ1"
                                                     ],
-                                                    "title": "Шаблон",
+                                                    "title": "template",
                                                     "notePosition": 10,
                                                     "prefix": null,
                                                     "isExpanded": false,
@@ -5620,7 +5620,7 @@
                                                                 "GYJZOEJXBEJ1",
                                                                 "BcqIQhG3eQbo"
                                                             ],
-                                                            "title": "JavaScript",
+                                                            "title": "js",
                                                             "notePosition": 0,
                                                             "prefix": null,
                                                             "isExpanded": false,
@@ -5673,7 +5673,7 @@
                                                         "LpuRqz4YOvPH",
                                                         "RpSdzJ8YtGCh"
                                                     ],
-                                                    "title": "Шаблон",
+                                                    "title": "template",
                                                     "notePosition": 0,
                                                     "prefix": null,
                                                     "isExpanded": false,
@@ -5696,7 +5696,7 @@
                                                                 "RpSdzJ8YtGCh",
                                                                 "xANbepYCI3MM"
                                                             ],
-                                                            "title": "JavaScript",
+                                                            "title": "js",
                                                             "notePosition": 0,
                                                             "prefix": null,
                                                             "isExpanded": false,
@@ -5749,7 +5749,7 @@
                                                         "3Pqm2PAdIDoR",
                                                         "A9AEOknGTXH7"
                                                     ],
-                                                    "title": "Шаблон",
+                                                    "title": "template",
                                                     "notePosition": 0,
                                                     "prefix": null,
                                                     "isExpanded": false,
@@ -5772,7 +5772,7 @@
                                                                 "A9AEOknGTXH7",
                                                                 "qPHo4bcTNQRc"
                                                             ],
-                                                            "title": "JavaScript",
+                                                            "title": "js",
                                                             "notePosition": 0,
                                                             "prefix": null,
                                                             "isExpanded": false,
@@ -5825,7 +5825,7 @@
                                                         "zaJv5dTikOST",
                                                         "pT0x9fitYGkt"
                                                     ],
-                                                    "title": "Шаблон",
+                                                    "title": "template",
                                                     "notePosition": 0,
                                                     "prefix": null,
                                                     "isExpanded": false,
@@ -5848,7 +5848,7 @@
                                                                 "pT0x9fitYGkt",
                                                                 "svjnZ2JM3B3M"
                                                             ],
-                                                            "title": "JavaScript",
+                                                            "title": "js",
                                                             "notePosition": 0,
                                                             "prefix": null,
                                                             "isExpanded": false,
@@ -5872,7 +5872,7 @@
                                                                         "svjnZ2JM3B3M",
                                                                         "xwOPidcKMYFp"
                                                                     ],
-                                                                    "title": "Построение таблицы",
+                                                                    "title": "renderTable",
                                                                     "notePosition": 0,
                                                                     "prefix": null,
                                                                     "isExpanded": false,
@@ -5947,7 +5947,7 @@
                                                         "60hC06fQDFbz",
                                                         "PpBDHBshEH8H"
                                                     ],
-                                                    "title": "Шаблон",
+                                                    "title": "template",
                                                     "notePosition": 0,
                                                     "prefix": null,
                                                     "isExpanded": false,
@@ -5970,7 +5970,7 @@
                                                                 "PpBDHBshEH8H",
                                                                 "kPuAKFW2XFXq"
                                                             ],
-                                                            "title": "JavaScript",
+                                                            "title": "js",
                                                             "notePosition": 0,
                                                             "prefix": null,
                                                             "isExpanded": false,
@@ -5995,7 +5995,7 @@
                                         "KZVWidxicAfn",
                                         "sh460UeSCkDG"
                                     ],
-                                    "title": "Пользовательский обработчик запросов",
+                                    "title": "Custom request handler",
                                     "notePosition": 90,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -6086,7 +6086,7 @@
                                                         "xzqr5J1V4YwY",
                                                         "mqDw6BebfE58"
                                                     ],
-                                                    "title": "Элементы формы",
+                                                    "title": "FormElements",
                                                     "notePosition": 10,
                                                     "prefix": null,
                                                     "isExpanded": false,
