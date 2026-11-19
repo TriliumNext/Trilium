@@ -167,7 +167,7 @@ async function createInitialDatabase(skipDemoDb?: boolean, locale?: string) {
 
         rootNote = new BNote({
             noteId: "root",
-            title: "root",
+            title: i18next.language?.toLowerCase().startsWith("ru") ? "Главная" : "root",
             type: "text",
             mime: "text/html"
         }).save();
