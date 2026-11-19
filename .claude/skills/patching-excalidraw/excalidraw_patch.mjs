@@ -36,7 +36,7 @@ import {
     writeFileSync
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, dirname, join, relative, resolve, sep } from "node:path";
+import { basename, dirname, join, posix, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
 
@@ -164,8 +164,14 @@ async function add() {
     const version = readActiveVersion();
     const repo = repoDir(version);
     const state = readState(repo);
-    const paths = [ ...new Set(positional) ].filter((path) => !state.files.includes(path));
+    const paths = [
+        ...new Set(positional.map((path) => posix.normalize(path.replaceAll("\\", "/"))))
+    ];
     if (!paths.length) fail("Name release files that the scratch repo does not hold yet.");
+    const held = paths.filter((path) => state.files.includes(path) || existsSync(join(repo, path)));
+    if (held.length) {
+        fail(`The scratch repo already holds ${held.join(", ")}: \`add\` would replace its edits.`);
+    }
     const release = await fetchRelease(version);
     const missing = paths.filter((path) => !existsSync(join(release, path)));
     if (missing.length) fail(`${version} has no ${missing.join(", ")}.`);
