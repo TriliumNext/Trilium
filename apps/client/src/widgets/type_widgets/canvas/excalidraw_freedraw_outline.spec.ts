@@ -34,11 +34,8 @@ const BLOCK_END =
 const NO_BLOCK = "var triliumFreedrawOutline = { getGrowingStrokePath: () => null };";
 
 /**
- * Guards the incremental outline of the Excalidraw patch (hunk 9 in the `patching-excalidraw`
- * skill): `getFreeDrawSvgPath()` outlines a stroke that grows, as the one being drawn does, from
- * where its last outline stopped, with the block `triliumFreedrawOutline`. These tests run the dev
- * bundle's own `getFreeDrawSvgPath()` with the block of each bundle against the same function
- * without it, as random strokes grow: the SVG paths must be the same, character for character.
+ * Hunk 9 of the Excalidraw patch: with the `triliumFreedrawOutline` block of either bundle,
+ * `getFreeDrawSvgPath()` returns the same SVG paths as without it while random strokes grow.
  */
 describe("Excalidraw outline of a growing freedraw stroke (Trilium patch)", () => {
     // Vitest resolves the `development` export, so both folders come from `dist`.
