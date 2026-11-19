@@ -13,6 +13,8 @@ The link shows the title of the note, followed by the beginning of the reference
 
 If the note is [shared](../../Advanced%20Usage/Sharing.md), the menu of the block handle also offers _Copy public link_. It copies the web address of the shared page with the reference added, to send to people who read the note outside Trilium. Opening the address scrolls the shared page to the referenced blocks and flashes them. On a shared page, a link to blocks of another shared note does the same.
 
+To reference a heading, you can also right-click it in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar/Outline%20tab.md">Outline tab</a> and select _Copy reference_ or _Copy public link_. This also works in a read-only note.
+
 The _Paste_ submenu of the context menu offers two more ways to insert a copied reference:
 
 *   _Paste reference as a link_ inserts only the link, even when the reference was copied as plain text or along with other content.

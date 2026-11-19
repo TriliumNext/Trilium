@@ -1,8 +1,12 @@
 import type {
-    CreateReferenceRequest, CreateReferenceResponse, NoteReferencesResponse,
-    ReferenceConflictResponse, ReferenceKind, ReferenceParams, ReferenceTarget
+    CreateReferenceRequest, CreateReferenceResponse, MarkedHeadingsResponse,
+    NoteReferencesResponse, ReferenceConflictResponse, ReferenceKind, ReferenceLocator,
+    ReferenceParams, ReferenceTarget
 } from "@triliumnext/commons";
-import { encodeBlockParameter } from "@triliumnext/commons/src/lib/block_reference.js";
+import {
+    encodeBlockParameter, resolveBlockReference
+} from "@triliumnext/commons/src/lib/block_reference.js";
+import { HEADING_INDEX_ATTRIBUTE } from "@triliumnext/commons/src/lib/reference_targets.js";
 import { LINK_TARGET_PARAMS } from "@triliumnext/commons/src/lib/server_api.js";
 
 import appContext from "../components/app_context";
@@ -169,21 +173,28 @@ function createNoteTarget(
             // An editor with unsaved changes skips the content the server writes, and its next
             // save would drop the reference.
             await appContext.triggerEvent("saveNoteChanges", { noteId });
-            const request: CreateReferenceRequest = { kind, index, title, blobId };
-            try {
-                const response = await server.postWithSilentErrors<CreateReferenceResponse>(
-                    `notes/${noteId}/references`, request
-                );
-                target.params = response.params;
-            } catch (e) {
-                if (parseConflict<ReferenceConflictResponse>(e)?.reason === "listing") {
-                    throw new StaleListingError(`The targets of note '${noteId}' changed.`);
-                }
-                throw e;
-            }
+            target.params = await postReference(noteId, { kind, index, title, blobId });
         }
     };
     return target;
+}
+
+/**
+ * Requests a reference for the target that `request` names, and returns the link
+ * parameters. Rejects with `StaleListingError` when the note is no longer at `request.blobId`.
+ */
+async function postReference(noteId: string, request: CreateReferenceRequest) {
+    try {
+        const response = await server.postWithSilentErrors<CreateReferenceResponse>(
+            `notes/${noteId}/references`, request
+        );
+        return response.params;
+    } catch (e) {
+        if (parseConflict<ReferenceConflictResponse>(e)?.reason === "listing") {
+            throw new StaleListingError(`The targets of note '${noteId}' changed.`);
+        }
+        throw e;
+    }
 }
 
 /** A heading of the document in a text editor, as the editor lists it. */
@@ -224,6 +235,138 @@ export function createAnchorTargets(names: string[], notePath: string): LinkTarg
             createLinkPath: () => addParameters(notePath, params)
         };
     });
+}
+
+/** A heading in an editor of a note, for `createEditorTarget()`. */
+export interface EditorTargetOptions {
+    noteId: string;
+    notePath: string;
+    title: string;
+    level: number;
+    /** The id of the heading, which the editor gives it first if it has none; `null` if gone. */
+    assignId(): string | null | undefined;
+    /** Whether `id` resolves to a heading in `content`, the saved content of the note. */
+    isSaved(content: string, id: string): boolean;
+}
+
+/**
+ * A heading of the document in an editor of the note, for a link from outside the editor.
+ * `createReference()` takes the id that `assignId()` returns, saves the note, reads the note as
+ * saved on the server, and resolves once `isSaved()` finds the id there.
+ */
+export function createEditorTarget(options: EditorTargetOptions): LinkTarget {
+    const { noteId, notePath, title, level } = options;
+    const target: LinkTarget = {
+        kind: "heading",
+        title,
+        level,
+        createLinkPath: () => addParameters(notePath, target.params),
+        async createReference() {
+            const id = options.assignId();
+            if (!id) {
+                throw new Error(`The editor of note '${noteId}' no longer shows the heading.`);
+            }
+
+            await appContext.triggerEvent("saveNoteChanges", { noteId });
+            // Not `froca.getBlob()`: its cache can answer with the blob from before the save.
+            const { content } = await server.getWithSilentErrors<{ content: unknown }>(
+                `notes/${noteId}/blob`
+            );
+            if (typeof content !== "string" || !options.isSaved(content, id)) {
+                throw new Error(`The saved content of note '${noteId}' lacks the heading's id.`);
+            }
+            target.params = { block: id };
+        }
+    };
+    return target;
+}
+
+/** A heading of one version of a note: its locator and its title, in the blob `blobId`. */
+export type SavedHeadingRequest = { title: string } & ReferenceLocator & { blobId: string };
+
+/**
+ * The heading that `request` names in the blob `request.blobId` of the note `noteId`.
+ * `createReference()` saves the editors of the note, then requests a reference, and rejects
+ * with `StaleListingError` when the note is no longer at that blob.
+ */
+export function createSavedHeadingTarget(
+    noteId: string, notePath: string, request: SavedHeadingRequest
+): LinkTarget {
+    const target: LinkTarget = {
+        kind: "heading",
+        title: request.title,
+        createLinkPath: () => addParameters(notePath, target.params),
+        async createReference() {
+            if (target.params) return;
+            await appContext.triggerEvent("saveNoteChanges", { noteId });
+            target.params = await postReference(noteId, { kind: "heading", ...request });
+        }
+    };
+    return target;
+}
+
+/** A heading whose link parameters are in the saved note already, such as an owned block id. */
+export function createLinkedTarget(
+    notePath: string, title: string, params: ReferenceParams
+): LinkTarget {
+    return {
+        kind: "heading",
+        title,
+        params,
+        createLinkPath: () => addParameters(notePath, params)
+    };
+}
+
+/** The headings of the note `noteId` as saved on the server now, with the marked content. */
+export function getMarkedHeadings(noteId: string) {
+    return server.getWithSilentErrors<MarkedHeadingsResponse>(
+        `notes/${noteId}/references/marked`
+    );
+}
+
+/**
+ * The position that `marked` gives `element`, one of `shown`: the headings of a page showing the
+ * same blob, in document order. `null` when the parse of the marked content does not show the
+ * same headings one for one, or the heading has no mark of this listing.
+ */
+export function findMarkedIndex(
+    marked: MarkedHeadingsResponse, shown: Element[], element: Element
+): number | null {
+    const parsed = Array.from(parseAsPage(marked.markedContent).querySelectorAll(HEADING_TAGS))
+        .filter((heading) => !heading.closest(".include-note"));
+    const position = shown.indexOf(element);
+    const isSameHeadings = parsed.length === shown.length
+        && parsed.every((heading, index) => heading.tagName === shown[index].tagName);
+    if (position < 0 || !isSameHeadings) {
+        return null;
+    }
+
+    const prefix = `${marked.markToken}.`;
+    const value = parsed[position].getAttribute(HEADING_INDEX_ATTRIBUTE) ?? "";
+    const digits = value.slice(prefix.length);
+    const index = Number(digits);
+    return value.startsWith(prefix) && /^(?:0|[1-9]\d*)$/.test(digits)
+        && Number.isSafeInteger(index)
+        ? index
+        : null;
+}
+
+/** Whether `id` resolves to a heading in `content`, the HTML of a text note. */
+export function isTextHeadingId(content: string, id: string) {
+    const { start } = resolveBlockReference(parseAsPage(content), id);
+    return !!start?.tagName && /^H[1-6]$/i.test(start.tagName);
+}
+
+const HEADING_TAGS = "h1,h2,h3,h4,h5,h6";
+
+/**
+ * `html` parsed into a template, by the rules that a page's `<div>` parses its `innerHTML` by. A
+ * template starts in its own rules for table parts; a leading `<wbr>` switches it to the page's.
+ */
+function parseAsPage(html: string) {
+    const template = document.createElement("template");
+    template.innerHTML = `<wbr>${html}`;
+    return template.content;
 }
 
 /**

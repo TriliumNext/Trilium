@@ -20,6 +20,7 @@ The following note types are supported:
 *   Clicking on a heading will scroll the document to the position of the heading.
 *   As the document is scrolled, the heading being read is highlighted and the list scrolls to keep it in view. If that heading is hidden inside a collapsed section, the collapsed heading is highlighted instead.
 *   Nested items can be collapsed by pressing the corresponding <span class="tn-icon bx bx-chevron-down"></span> button.
+*   For a text or Markdown note, right-clicking a heading shows _Copy reference_, which copies a link that opens the note at that heading (see <a class="reference-link" href="../../../Note%20Types/Text/Block%20references.md">Block references</a>). If the note is [shared](../../../Advanced%20Usage/Sharing.md), _Copy public link_ copies the link to that heading on the shared page.
 
 ## Highlights
 

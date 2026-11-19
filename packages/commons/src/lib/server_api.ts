@@ -404,19 +404,29 @@ export interface TocConflictResponse {
     message: string;
 }
 
-/** Names a target without `params` for `POST /api/notes/:noteId/references`. */
-export interface CreateReferenceRequest {
-    kind: ReferenceKind;
-    /** The position of the target among the `targets` of its kind. */
-    index: number;
-    /** Its `title` there. */
-    title: string;
+/**
+ * Where a target is, in the version of the note that `blobId` names. On another blob the target
+ * is refused with 409, reason `listing`.
+ */
+export type ReferenceLocator =
     /**
-     * The `blobId` of the listing that the target was picked from. On another blob the target is
-     * refused with 409, reason `listing`. Without it, the target is found as in any listing.
+     * The position of the target among the `targets` of its kind. Without `blobId`, the target is
+     * found as in any listing.
      */
-    blobId?: string;
-}
+    | { index: number; line?: undefined; blobId?: string }
+    /**
+     * The 1-based source line where the block of the target starts, for a provider that reads a
+     * source of its own (Markdown). A line names a block of one version only, so `blobId` is
+     * required.
+     */
+    | { line: number; index?: undefined; blobId: string };
+
+/** Names a target without `params` for `POST /api/notes/:noteId/references`. */
+export type CreateReferenceRequest = {
+    kind: ReferenceKind;
+    /** The `title` of the target. */
+    title: string;
+} & ReferenceLocator;
 
 export interface CreateReferenceResponse {
     /** The link parameters that point at the target. */
@@ -427,6 +437,22 @@ export interface CreateReferenceResponse {
 export interface ReferenceConflictResponse {
     reason: "listing";
     message: string;
+}
+
+/** The answer of `GET /api/notes/:noteId/references/marked`. */
+export interface MarkedHeadingsResponse {
+    /** The blob that the headings and the content were read from, absent for a note without one. */
+    blobId?: string;
+    /** The heading targets, as `GET .../references` lists them, before any filtering. */
+    headings: ReferenceTarget[];
+    /**
+     * The content, with `HEADING_INDEX_ATTRIBUTE` on the opening tag of each of `headings`, valued
+     * `<markToken>.<position>`. The position is the `index` that `POST .../references` takes.
+     * Never saved.
+     */
+    markedContent: string;
+    /** Drawn for this answer and found nowhere in the content. Only marks with it count. */
+    markToken: string;
 }
 
 /** What a save of the content of a note is based on: the blob the editor read, and its format. */

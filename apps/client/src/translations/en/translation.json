@@ -3042,7 +3042,9 @@
     "copy_failed": "Cannot copy to clipboard due to permission issues.",
     "copy_success": "Copied to clipboard.",
     "paste_notes": "Paste note(s)",
-    "paste_failed": "The clipboard could not be read."
+    "paste_failed": "The clipboard could not be read.",
+    "copy_ready": "The link is ready to copy.",
+    "copy_button": "Copy"
   },
   "entrypoints": {
     "note-revision-created": "Note revision has been created.",

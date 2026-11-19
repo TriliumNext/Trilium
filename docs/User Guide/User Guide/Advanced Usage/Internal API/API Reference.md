@@ -957,7 +957,7 @@ The targets of a note, such as the headings and anchors of a text note, in the o
 
 `POST /api/notes/{noteId}/references` · `createNoteReference`
 
-Gives a target that `GET /api/notes/{noteId}/references` lists without `params` a reference, unless it has one, and returns the link parameters that point at it. The target is the one at `index` among the targets of its `kind` while its title is still `title`, otherwise the only target of that kind with that title. A request that names the `blobId` of its listing is refused with 409, reason `listing`, when the note has another blob: the targets are then listed again. For a heading of a text note, the reference is a block id. Read-only notes get the reference too. It is the only change to the content, and no revision is saved.
+Gives a target that `GET /api/notes/{noteId}/references` lists without `params` a reference, unless it has one, and returns the link parameters that point at it. A request names the target by exactly one of `index` and `line`. By `index`, the target is the one at that position among the targets of its `kind` while its title is still `title`, otherwise the only target of that kind with that title. By `line`, which only Markdown notes take, it is the only heading whose block starts on that source line, while its title is `title`. A request that names the `blobId` of its listing is refused with 409, reason `listing`, when the note has another blob: the targets are then listed again. For a heading of a text note, the reference is a block id. Read-only notes get the reference too. It is the only change to the content, and no revision is saved.
 
 **Authorization**: `sessionAuth` or `tokenAuth`
 
@@ -977,9 +977,10 @@ Gives a target that `GET /api/notes/{noteId}/references` lists without `params` 
 | Property | Description |
 | --- | --- |
 | `kind`  <br>_required_ | [`ReferenceKind`](#schema-ReferenceKind)  <br>The kind of a target, which sets how the link lists show it. One of `heading`, `anchor`. |
-| `index`  <br>_required_ | `integer`  <br>The position of the target among the targets of its kind |
-| `title`  <br>_required_ | `string`  <br>The title of the target at that position |
-| `blobId` | `string`  <br>The `blobId` of the listing that the target was picked from |
+| `index` | `integer`  <br>The position of the target among the targets of its kind. Not sent with `line`. |
+| `line` | `integer`  <br>The 1-based source line where the block of a heading of a Markdown note starts, in the blob `blobId`. Not sent with `index`, and requires `blobId`. |
+| `title`  <br>_required_ | `string`  <br>The title of the target there |
+| `blobId` | `string`  <br>The `blobId` of the listing that the target was picked from. Required with `line`. |
 
 </div>
 <div class="trilium-multicolumn-column">
@@ -988,6 +989,7 @@ Gives a target that `GET /api/notes/{noteId}/references` lists without `params` 
 {
     "kind": "heading",
     "index": 0,
+    "line": 12,
     "title": "Installation",
     "blobId": "string"
 }
@@ -1023,7 +1025,7 @@ Gives a target that `GET /api/notes/{noteId}/references` lists without `params` 
     </div>
     </div>
 
-=== "400: A malformed request, a note whose targets take no reference, a protected note without a protected session, or a note whose content cannot be changed, such as a help page"
+=== "400: A malformed request, a note whose targets take no reference, a `line` for a note that is not Markdown, a protected note without a protected session, or a note whose content cannot be changed, such as a help page"
 
     No content.
 
@@ -1032,6 +1034,68 @@ Gives a target that `GET /api/notes/{noteId}/references` lists without `params` 
     No content.
 
 === "409: No target matches, because the targets changed since they were listed, or the listing was read from another blob (reason `listing`)"
+
+    No content.
+
+### List the headings of a text note with its content marked by their positions
+
+`GET /api/notes/{noteId}/references/marked` · `getMarkedNoteHeadings`
+
+For a read-only view of a text note, which parses the content otherwise than the server. Answers the heading targets as `GET /api/notes/{noteId}/references` lists them, before any filtering, and the content with `data-trilium-heading-index` on the opening tag of each of them, valued `<markToken>.<position>`. The position is the `index` that `POST /api/notes/{noteId}/references` takes. `markToken` is drawn for each answer and occurs nowhere in the content. Writes nothing.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `noteId`  <br>_required_ | `string`  <br>12-character note ID |
+
+**Responses**
+
+=== "200: The headings and the marked content"
+
+    *   `application/json`: `object`
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `blobId` | `string`  <br>The blob that the headings and the content were read from, absent for a note without one |
+    | `headings`  <br>_required_ | array of [`ReferenceTarget`](#schema-ReferenceTarget) |
+    | `markedContent`  <br>_required_ | `string`  <br>The content with each heading marked; never saved |
+    | `markToken`  <br>_required_ | `string`  <br>The token that every mark of this answer starts with |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "blobId": "string",
+        "headings": [
+            {
+                "kind": "heading",
+                "title": "Installation",
+                "level": 2,
+                "params": {
+                    "block": "eaJkN47U8kI4"
+                }
+            }
+        ],
+        "markedContent": "string",
+        "markToken": "Xb2kQ9pLm4Rt"
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "400: A note that is not a text note, or a protected note without a protected session"
+
+    No content.
+
+=== "404: Note not found"
 
     No content.
 

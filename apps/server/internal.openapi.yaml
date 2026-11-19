@@ -760,13 +760,15 @@ paths:
       summary: Give a target a reference
       description: >-
         Gives a target that `GET /api/notes/{noteId}/references` lists without `params` a
-        reference, unless it has one, and returns the link parameters that point at it. The
-        target is the one at `index` among the targets of its `kind` while its title is still
-        `title`, otherwise the only target of that kind with that title. A request that names the
-        `blobId` of its listing is refused with 409, reason `listing`, when the note has another
-        blob: the targets are then listed again. For a heading of a text note, the reference is a
-        block id. Read-only notes get the reference too. It is the only change to the content, and
-        no revision is saved.
+        reference, unless it has one, and returns the link parameters that point at it. A request
+        names the target by exactly one of `index` and `line`. By `index`, the target is the one
+        at that position among the targets of its `kind` while its title is still `title`,
+        otherwise the only target of that kind with that title. By `line`, which only Markdown
+        notes take, it is the only heading whose block starts on that source line, while its
+        title is `title`. A request that names the `blobId` of its listing is refused with 409,
+        reason `listing`, when the note has another blob: the targets are then listed again. For a
+        heading of a text note, the reference is a block id. Read-only notes get the reference
+        too. It is the only change to the content, and no revision is saved.
       operationId: createNoteReference
       parameters:
         - $ref: '#/components/parameters/noteId'
@@ -776,23 +778,34 @@ paths:
           application/json:
             schema:
               type: object
-              required: [kind, index, title]
+              required: [kind, title]
               properties:
                 kind:
                   $ref: '#/components/schemas/ReferenceKind'
                 index:
                   type: integer
                   minimum: 0
-                  description: The position of the target among the targets of its kind
+                  description: >-
+                    The position of the target among the targets of its kind. Not sent with
+                    `line`.
                   example: 0
+                line:
+                  type: integer
+                  minimum: 1
+                  description: >-
+                    The 1-based source line where the block of a heading of a Markdown note
+                    starts, in the blob `blobId`. Not sent with `index`, and requires `blobId`.
+                  example: 12
                 title:
                   type: string
                   minLength: 1
-                  description: The title of the target at that position
+                  description: The title of the target there
                   example: Installation
                 blobId:
                   type: string
-                  description: The `blobId` of the listing that the target was picked from
+                  description: >-
+                    The `blobId` of the listing that the target was picked from. Required with
+                    `line`.
       responses:
         '200':
           description: The link parameters of the target
@@ -806,14 +819,60 @@ paths:
                     $ref: '#/components/schemas/ReferenceParams'
         '400':
           description: >-
-            A malformed request, a note whose targets take no reference, a protected note without
-            a protected session, or a note whose content cannot be changed, such as a help page
+            A malformed request, a note whose targets take no reference, a `line` for a note
+            that is not Markdown, a protected note without a protected session, or a note whose
+            content cannot be changed, such as a help page
         '404':
           description: Note not found
         '409':
           description: >-
             No target matches, because the targets changed since they were listed, or the listing
             was read from another blob (reason `listing`)
+
+  /api/notes/{noteId}/references/marked:
+    get:
+      tags: [Notes]
+      summary: List the headings of a text note with its content marked by their positions
+      description: >-
+        For a read-only view of a text note, which parses the content otherwise than the server.
+        Answers the heading targets as `GET /api/notes/{noteId}/references` lists them, before
+        any filtering, and the content with `data-trilium-heading-index` on the opening tag of
+        each of them, valued `<markToken>.<position>`. The position is the `index` that
+        `POST /api/notes/{noteId}/references` takes. `markToken` is drawn for each answer and
+        occurs nowhere in the content. Writes nothing.
+      operationId: getMarkedNoteHeadings
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: The headings and the marked content
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [headings, markedContent, markToken]
+                properties:
+                  blobId:
+                    type: string
+                    description: >-
+                      The blob that the headings and the content were read from, absent for a
+                      note without one
+                  headings:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ReferenceTarget'
+                  markedContent:
+                    type: string
+                    description: The content with each heading marked; never saved
+                  markToken:
+                    type: string
+                    description: The token that every mark of this answer starts with
+                    example: Xb2kQ9pLm4Rt
+        '400':
+          description: >-
+            A note that is not a text note, or a protected note without a protected session
+        '404':
+          description: Note not found
 
   /api/notes/{noteId}/toc:
     get:

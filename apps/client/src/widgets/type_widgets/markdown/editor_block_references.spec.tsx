@@ -16,12 +16,14 @@ import { copyHtmlWithToast } from "../../../services/clipboard_ext";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import type { ChangeRecordHooks } from "../../../services/note_save";
+import server from "../../../services/server";
 import toast from "../../../services/toast";
 import { buildNote } from "../../../test/easy-froca";
 import type { EditLinkOpts } from "../../dialogs/edit_link";
 import { noteSavedDataStore } from "../../react/NoteStore";
 import {
-    copyMarkdownReference, getMarkdownReferenceSource, getSelectedBlocks,
+    copyMarkdownReference, getMarkdownHeadingTarget, getMarkdownReferenceSource,
+    getSavedMarkdownHeadingTarget, getSelectedBlocks, isMarkdownHeadingId,
     type MarkdownReferenceSource, PREVIEW_BLOCK_HOST, revealInSource, useBlockMarkers
 } from "./editor_block_references";
 import { buildMarkdownReferenceMenuItems } from "./block_reference_menu";
@@ -35,7 +37,10 @@ vi.mock("../../../services/i18n", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../../services/i18n")>(),
     t: vi.fn((key: string) => key)
 }));
-vi.mock("../../../services/clipboard_ext", () => ({ copyHtmlWithToast: vi.fn() }));
+vi.mock("../../../services/clipboard_ext", async (importOriginal) => {
+    const original = await importOriginal<typeof import("../../../services/clipboard_ext")>();
+    return { toReferenceLinkHtml: original.toReferenceLinkHtml, copyHtmlWithToast: vi.fn() };
+});
 vi.mock("@triliumnext/commons/src/lib/block_reference.js", async (importOriginal) => {
     const original =
         await importOriginal<typeof import("@triliumnext/commons/src/lib/block_reference.js")>();
@@ -447,6 +452,88 @@ describe("copyMarkdownReference", () => {
         expect(save).toHaveBeenCalledTimes(2);
         expect(toast.showError).toHaveBeenCalledWith("block_reference.copy_failed");
         expect(copyHtmlWithToast).toHaveBeenCalledOnce();
+    });
+});
+
+describe("getMarkdownHeadingTarget", () => {
+    /** Mocks the read of the live note: `content`, or a function of the document of `view`. */
+    function answerLiveNote(content: string | ((doc: string) => string), view: VanillaCodeMirror) {
+        vi.spyOn(appContext, "triggerEvent").mockResolvedValue(undefined);
+        return vi.spyOn(server, "getWithSilentErrors").mockImplementation(async () => ({
+            blobId: "b",
+            content: typeof content === "string" ? content : content(view.state.doc.toString())
+        }));
+    }
+
+    it("gives a heading a marker outside the history, once the saved note holds it", async () => {
+        const view = await createEditor("# Title\n\n## Setup");
+        view.clearHistory();
+        const read = answerLiveNote((doc) => doc, view);
+
+        const target = getMarkdownHeadingTarget(view, 3, "root/n", "n");
+        expect(target).toMatchObject({ kind: "heading", title: "Setup", level: 2 });
+        expect(view.state.doc.toString()).toBe("# Title\n\n## Setup");
+        await target?.createReference?.();
+        const id = target?.params?.block ?? "";
+        expect(id).toMatch(ID);
+        expect(view.state.doc.toString()).toBe(`# Title\n\n## Setup ${marker(id)}`);
+        view.contentDOM.dispatchEvent(new KeyboardEvent("keydown", {
+            key: "z", ctrlKey: true, bubbles: true, cancelable: true
+        }));
+        expect(view.state.doc.toString()).toBe(`# Title\n\n## Setup ${marker(id)}`);
+        expect(read).toHaveBeenCalledExactlyOnceWith("notes/n/blob");
+        expect(target?.createLinkPath()).toBe(`root/n?block=${id}`);
+
+        // An owned id goes through the same check.
+        const owned = getMarkdownHeadingTarget(view, 3, "root/n", "n");
+        await owned?.createReference?.();
+        expect(owned?.params).toStrictEqual({ block: id });
+        expect(read).toHaveBeenCalledTimes(2);
+    });
+
+    it("copies nothing for an id the live note lacks, or a document that changed", async () => {
+        const view = await createEditor(`## Owned ${marker("o")}\n\n## Setup`);
+        answerLiveNote("## Owned\n\n## Setup", view);
+
+        const owned = getMarkdownHeadingTarget(view, 1, "root/n", "n");
+        await expect(owned?.createReference?.()).rejects.toThrow();
+        expect(owned?.params).toBeUndefined();
+
+        const setup = getMarkdownHeadingTarget(view, 3, "root/n", "n");
+        view.dispatch({ changes: { from: 0, insert: "Intro\n\n" } });
+        const changed = view.state.doc.toString();
+        await expect(setup?.createReference?.()).rejects.toThrow();
+        expect(view.state.doc.toString()).toBe(changed);
+    });
+
+    it("has no target for a line without a heading, or a heading that takes no id", async () => {
+        const view = await createEditor("Text\n\n<h2>Raw</h2>\n\n## Setup");
+
+        expect(getMarkdownHeadingTarget(view, 1, "root/n", "n")).toBeNull();
+        expect(getMarkdownHeadingTarget(view, 3, "root/n", "n")).toBeNull();
+        expect(getMarkdownHeadingTarget(view, 4, "root/n", "n")).toBeNull();
+        expect(isMarkdownHeadingId(`## A ${marker("a")}\n\nB ${marker("b")}`, "a")).toBe(true);
+        expect(isMarkdownHeadingId(`## A ${marker("a")}\n\nB ${marker("b")}`, "b")).toBe(false);
+    });
+});
+
+describe("getSavedMarkdownHeadingTarget", () => {
+    it("posts the line and the title of the heading picked, in the blob shown", async () => {
+        const content = "## Install\n\nText\n\n## Install";
+        vi.spyOn(appContext, "triggerEvent").mockResolvedValue(undefined);
+        const post = vi.spyOn(server, "postWithSilentErrors")
+            .mockResolvedValue({ params: { block: "second" } });
+
+        const target = getSavedMarkdownHeadingTarget("n", "root/n", content, 5, "shown");
+        expect(target).toMatchObject({ kind: "heading", title: "Install" });
+        await target?.createReference?.();
+        expect(post).toHaveBeenCalledExactlyOnceWith("notes/n/references", {
+            kind: "heading", line: 5, title: "Install", blobId: "shown"
+        });
+        expect(target?.createLinkPath()).toBe("root/n?block=second");
+
+        expect(getSavedMarkdownHeadingTarget("n", "root/n", content, 3, "shown")).toBeNull();
+        expect(getSavedMarkdownHeadingTarget("n", "root/n", content, 4, "shown")).toBeNull();
     });
 });
 

@@ -6,8 +6,7 @@ import {
 } from "@triliumnext/ckeditor5/src/plugins/block_reference/block_reference_read_only.js";
 import type { BlockRange } from "@triliumnext/commons";
 import {
-    encodeBlockParameter, formatBlockRange, parseBlockRange, resolveBlockRange,
-    resolveBlockReference
+    formatBlockRange, parseBlockRange, resolveBlockRange, resolveBlockReference
 } from "@triliumnext/commons/src/lib/block_reference.js";
 import { EXCERPT_BOX_SIZE } from "@triliumnext/commons/src/lib/content_embeds.js";
 import {
@@ -25,13 +24,15 @@ import {
     getTextEditorContaining, keepEditorFocused
 } from "../menus/text_editor_context_menu.js";
 import { getBlockExcerpt } from "./block_excerpts.js";
-import { copyHtml, copyHtmlWithToast, copyTextWithToast } from "./clipboard_ext.js";
+import {
+    copyHtml, copyHtmlWithToast, copyTextWithToast, toReferenceLinkHtml
+} from "./clipboard_ext.js";
 import { revealElement } from "./bookmark_jump.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import { byBlockType } from "./in_app_help.js";
 import { calculateHash, parseNavigationStateFromUrl, type ViewScope } from "./link.js";
-import { getNoteShareLink } from "./share_link.js";
+import { getNoteShareLink, getSharedPageLink } from "./share_link.js";
 import toast from "./toast.js";
 
 const HIGHLIGHT_CLASS = "block-reference-highlight";
@@ -299,7 +300,7 @@ export function copyBlockShareLink(editor: CKTextEditor, shareLink: string) {
         return;
     }
 
-    copyTextWithToast(`${shareLink}?block=${encodeBlockParameter(formatBlockRange(target))}`);
+    void copyTextWithToast(getSharedPageLink(shareLink, formatBlockRange(target)));
 }
 
 /**
@@ -313,11 +314,8 @@ export async function copyReferenceLink(
     blocks: { start: Element; end: Element }
 ) {
     const href = calculateHash({ notePath, viewScope: { block: formatBlockRange(target) } });
-    const link = document.createElement("a");
-    link.className = "reference-link";
-    link.setAttribute("href", href);
-    link.textContent = `${noteTitle} - ${getBlockExcerpt(blocks.start, blocks.end)}`;
-    await copyHtmlWithToast(link.outerHTML, href);
+    const text = `${noteTitle} - ${getBlockExcerpt(blocks.start, blocks.end)}`;
+    await copyHtmlWithToast(toReferenceLinkHtml(href, text), href);
 }
 
 /**

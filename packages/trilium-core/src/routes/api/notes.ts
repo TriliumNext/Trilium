@@ -23,7 +23,9 @@ import type BNote from "../../becca/entities/bnote.js";
 import { getLog } from "../../services/log.js";
 import noteFormatConversionService from "../../services/note_format_conversion.js";
 import noteService from "../../services/notes.js";
-import { createReference, findReferenceTargets } from "../../services/references/index.js";
+import {
+    createReference, findMarkedHeadings, findReferenceTargets
+} from "../../services/references/index.js";
 import { getSql } from "../../services/sql/index";
 import TaskContext from "../../services/task_context.js";
 import treeService from "../../services/tree.js";
@@ -264,14 +266,28 @@ function createNoteReference(req: Request<{ noteId: string }>) {
     ));
 }
 
+/** The headings of a note with the content marked by their positions, for a read-only view. */
+function getMarkedNoteHeadings(req: Request<{ noteId: string }>) {
+    return findMarkedHeadings(becca.getNoteOrThrow(req.params.noteId));
+}
+
 function parseReferenceRequest(body: unknown): CreateReferenceRequest {
-    const { kind, index, title, blobId } = (body ?? {}) as Record<string, unknown>;
-    if (!isReferenceKind(kind) || typeof index !== "number" || !Number.isSafeInteger(index)
-        || index < 0 || typeof title !== "string" || !title
-        || (blobId !== undefined && typeof blobId !== "string")) {
-        throw new ValidationError("Expected the 'kind', the 'index' and the 'title' of a target.");
+    const { kind, index, line, title, blobId } = (body ?? {}) as Record<string, unknown>;
+    if (isReferenceKind(kind) && typeof title === "string" && title) {
+        if (isIntegerFrom(index, 0) && line === undefined
+            && (blobId === undefined || typeof blobId === "string")) {
+            return { kind, index, title, blobId };
+        }
+        if (isIntegerFrom(line, 1) && index === undefined && typeof blobId === "string" && blobId) {
+            return { kind, line, title, blobId };
+        }
     }
-    return { kind, index, title, blobId };
+    throw new ValidationError("Expected the 'kind' and the 'title' of a target, and either its "
+        + "'index' or its 'line' and 'blobId'.");
+}
+
+function isIntegerFrom(value: unknown, min: number): value is number {
+    return typeof value === "number" && Number.isSafeInteger(value) && value >= min;
 }
 
 function isSaveBase(base: unknown): base is NoteSaveBase {
@@ -616,6 +632,7 @@ export default {
     updateNoteBlocks,
     getNoteReferences,
     createNoteReference,
+    getMarkedNoteHeadings,
     deleteNote,
     undeleteNote,
     createNote,

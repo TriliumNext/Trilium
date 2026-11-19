@@ -1,6 +1,6 @@
 import type {
-    CreateReferenceRequest, NoteReferencesResponse, PendingToc, ReferenceConflictResponse,
-    ReferenceParams, ReferenceTarget
+    CreateReferenceRequest, MarkedHeadingsResponse, NoteReferencesResponse, PendingToc,
+    ReferenceConflictResponse, ReferenceParams, ReferenceTarget
 } from "@triliumnext/commons";
 
 import BAttachment from "../../becca/entities/battachment.js";
@@ -41,6 +41,13 @@ export interface ReferenceProvider {
     createReference?(
         content: string | Uint8Array, request: CreateReferenceRequest
     ): CreatedReference | null;
+    /** Whether `createReference()` finds a target by `request.line`, in a source of its own. */
+    acceptsLine?: boolean;
+    /**
+     * The heading targets of `content`, and `content` with each of them marked with its position.
+     * HTML only. `null` when the content cannot be marked.
+     */
+    markHeadings?(content: string | Uint8Array): Omit<MarkedHeadingsResponse, "blobId"> | null;
 }
 
 export interface CreatedReference {
@@ -102,6 +109,9 @@ export function createReference(note: BNote, request: CreateReferenceRequest) {
     if (!note.isContentWritable()) {
         throw new ValidationError(`The content of note '${note.noteId}' cannot be changed.`);
     }
+    if (request.line !== undefined && !provider.acceptsLine) {
+        throw new ValidationError(`The targets of note '${note.noteId}' are not found by line.`);
+    }
     if (request.blobId !== undefined && request.blobId !== note.blobId) {
         const message = `The targets of note '${note.noteId}' changed since they were listed.`;
         throw new DetailedConflictError<ReferenceConflictResponse>(message, {
@@ -113,8 +123,9 @@ export function createReference(note: BNote, request: CreateReferenceRequest) {
     const created = provider.createReference(content, request);
     // The message leaves the title out: it reaches the log, and it can come from a protected note.
     if (!created) {
+        const place = request.line === undefined ? request.index : `at line ${request.line}`;
         throw new ConflictError(`The targets of note '${note.noteId}' changed: `
-            + `${request.kind} ${request.index} was not found.`);
+            + `${request.kind} ${place} was not found.`);
     }
 
     // A plain save: a reference is invisible, so it takes no revision and changes no link.
@@ -122,6 +133,24 @@ export function createReference(note: BNote, request: CreateReferenceRequest) {
         note.setContent(created.content);
     }
     return created.params;
+}
+
+/**
+ * The heading targets of `note` before any filtering, its content with each of them marked with
+ * its position, and the blob both were read from. Writes nothing.
+ */
+export function findMarkedHeadings(note: BNote): MarkedHeadingsResponse {
+    const provider = getProvider(note);
+    if (!provider?.markHeadings) {
+        throw new ValidationError(`The headings of note '${note.noteId}' cannot be marked.`);
+    }
+
+    const { blobId } = note;
+    const marked = provider.markHeadings(readContent(note));
+    if (!marked) {
+        throw new ValidationError(`The headings of note '${note.noteId}' cannot be marked.`);
+    }
+    return { blobId, ...marked };
 }
 
 /**

@@ -1,4 +1,5 @@
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
+import type { ReferenceTarget } from "@triliumnext/commons";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -6,20 +7,38 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import appContext from "../../components/app_context";
 import Component from "../../components/component";
 import NoteContext from "../../components/note_context";
+import type { MenuCommandItem } from "../../menus/context_menu";
+import froca from "../../services/froca";
 import options from "../../services/options";
+import server from "../../services/server";
+import toast from "../../services/toast";
 import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import { setEditorNoteId } from "../react/NoteStore";
 import { ParentComponent } from "../react/react_utils";
 import { NavigatedInNote } from "./RightPanelWidget";
-import TableOfContents, { useActiveHeading } from "./TableOfContents";
+import TableOfContents, {
+    type HeadingContext, type HeadingLinks, useActiveHeading
+} from "./TableOfContents";
 
+const { showMenu, getHeadings, assignBlockId } = vi.hoisted(() => ({
+    showMenu: vi.fn(),
+    getHeadings: vi.fn(),
+    assignBlockId: vi.fn()
+}));
 // `TableOfContents` loads `attributeChangeAffectsHeading` through a lazy `import()`. Pulling the
 // real module in loads the whole editor package from source, which takes longer than these tests
 // run and leaves the load in flight once happy-dom is torn down. Every change the fake editor
 // below reports is an insert, which the widget acts on without consulting the helper.
 vi.mock("@triliumnext/ckeditor5", () => ({
-    attributeChangeAffectsHeading: () => false
+    attributeChangeAffectsHeading: () => false,
+    getHeadings,
+    assignBlockId
+}));
+vi.mock("../../menus/context_menu", () => ({ default: { show: showMenu } }));
+vi.mock("../../services/i18n", async (importOriginal) => ({
+    ...await importOriginal<typeof import("../../services/i18n")>(),
+    t: (key: string) => key
 }));
 
 const HEADINGS = [
@@ -220,6 +239,415 @@ describe("TableOfContents in a host that covers the note", () => {
     });
 });
 
+describe("the menu of an outline heading", () => {
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+        restoreClipboard();
+    });
+
+    it("opens on a right click and a long press, with the published heading", async () => {
+        vi.spyOn(console, "warn").mockImplementation(() => {});
+        const headings = [
+            { id: "a", level: 2, text: "Alpha" }, { id: "b", level: 3, text: "Beta" }
+        ];
+        const getTarget = vi.fn(async (_heading: object) => null);
+        const toc = await renderContextOutline(headings, { getTarget, hasPublicLinks: true });
+        const [ , second ] = toc.rows();
+
+        const items = await openRowMenu(second);
+        expect(items.map((item) => item.title)).toStrictEqual([ "block_reference.copy_reference" ]);
+        expect(getTarget).not.toHaveBeenCalled();
+        stubClipboard();
+        pick(items, 0);
+        await settle();
+        expect(getTarget).toHaveBeenCalledTimes(1);
+        expect(getTarget.mock.calls[0][0]).toBe(headings[1]);
+
+        showMenu.mockClear();
+        vi.useFakeTimers();
+        const press = new Event("touchstart", { bubbles: true });
+        Object.defineProperty(press, "touches", { value: [ { pageX: 1, pageY: 2 } ] });
+        act(() => {
+            second.dispatchEvent(press);
+            vi.advanceTimersByTime(400);
+        });
+        vi.useRealTimers();
+        await settle();
+        expect(showMenu).toHaveBeenCalledTimes(1);
+    });
+
+    it("leaves the browser's menu to a source whose headings cannot be linked", async () => {
+        const toc = await renderContextOutline([ { id: "a", level: 2, text: "Alpha" } ]);
+        const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+
+        act(() => { toc.rows()[0].dispatchEvent(event); });
+        await settle();
+        expect(event.defaultPrevented).toBe(false);
+        expect(showMenu).not.toHaveBeenCalled();
+    });
+});
+
+describe("copying a reference from a read-only text note", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+        restoreClipboard();
+    });
+
+    it("links a heading that owns an id after the marked listing alone", async () => {
+        const toc = await renderReadOnlyOutline(
+            `<h2>Intro</h2><h2 data-trilium-block-id="kept">Setup</h2>`
+        );
+        const get = answerMarked(toc.blobId, [ heading("Intro"), heading("Setup", "kept") ],
+            `<h2 ${mark(0)}>Intro</h2><h2 data-trilium-block-id="kept" ${mark(1)}>Setup</h2>`);
+        const post = vi.spyOn(server, "postWithSilentErrors");
+
+        expect(await copyFromRow(toc.rows()[1])).toStrictEqual({
+            "text/plain": `#${toc.noteId}?block=kept`,
+            "text/html":
+                `<a class="reference-link" href="#${toc.noteId}?block=kept">Guide - Setup</a>`
+        });
+        expect(get).toHaveBeenCalledExactlyOnceWith(`notes/${toc.noteId}/references/marked`);
+        expect(post).not.toHaveBeenCalled();
+    });
+
+    it("tells two headings of one title apart by their marks, with ids and without", async () => {
+        // The page as the browser repairs it: the heading that stood in the table comes first.
+        const repaired = (first: string, second: string) => `<h2${first}>Install</h2><table><tbody>`
+            + `<tr><td><h2${second}>Install</h2></td></tr></tbody></table>`;
+        const toc = await renderReadOnlyOutline(repaired("", ""));
+        answerMarked(toc.blobId, [ heading("Install"), heading("Install") ],
+            repaired(` ${mark(1)}`, ` ${mark(0)}`));
+        const post = vi.spyOn(server, "postWithSilentErrors")
+            .mockResolvedValue({ params: { block: "New" } });
+
+        expect((await copyFromRow(toc.rows()[0]))?.["text/plain"]).toBe(`#${toc.noteId}?block=New`);
+        expect(post).toHaveBeenLastCalledWith(`notes/${toc.noteId}/references`,
+            { kind: "heading", index: 1, title: "Install", blobId: toc.blobId });
+        await copyFromRow(toc.rows()[1]);
+        expect(post).toHaveBeenLastCalledWith(`notes/${toc.noteId}/references`,
+            { kind: "heading", index: 0, title: "Install", blobId: toc.blobId });
+
+        const ids = ` data-trilium-block-id="moved"`;
+        const cellIds = ` data-trilium-block-id="cell"`;
+        const withIds = await renderReadOnlyOutline(repaired(ids, cellIds));
+        answerMarked(withIds.blobId, [ heading("Install", "cell"), heading("Install", "moved") ],
+            repaired(`${ids} ${mark(1)}`, `${cellIds} ${mark(0)}`));
+        expect((await copyFromRow(withIds.rows()[0]))?.["text/plain"])
+            .toBe(`#${withIds.noteId}?block=moved`);
+        expect((await copyFromRow(withIds.rows()[1]))?.["text/plain"])
+            .toBe(`#${withIds.noteId}?block=cell`);
+        expect(post).toHaveBeenCalledTimes(2);
+    });
+
+    it("posts the title that the server lists, not the label on the page", async () => {
+        const toc = await renderReadOnlyOutline(
+            `<h2><a class="reference-link" href="#root/other">Install</a></h2>`
+        );
+        answerMarked(toc.blobId, [ heading("Old title") ],
+            `<h2 ${mark(0)}><a class="reference-link" href="#root/other">Old title</a></h2>`);
+        const post = vi.spyOn(server, "postWithSilentErrors")
+            .mockResolvedValue({ params: { block: "New" } });
+
+        expect((await copyFromRow(toc.rows()[0]))?.["text/html"]).toContain("Guide - Old title");
+        expect(post).toHaveBeenCalledExactlyOnceWith(`notes/${toc.noteId}/references`,
+            { kind: "heading", index: 0, title: "Old title", blobId: toc.blobId });
+    });
+
+    it("copies nothing for a heading that it cannot tell apart, with one toast", async () => {
+        const cases: {
+            page: string; marked: string; headings: ReferenceTarget[];
+            blobId?: string | null; isStale?: boolean; prepare?(toc: ReadOnlyOutline): void;
+        }[] = [
+            // A heading that the server does not list.
+            { page: "<h2>A</h2>", marked: "<h2>A</h2>", headings: [] },
+            // An empty heading that stores an index in range of the listing.
+            {
+                page: `<h2 data-trilium-heading-index="0"></h2><h2>A</h2>`,
+                marked: `<h2 data-trilium-heading-index="0"></h2><h2 ${mark(0)}>A</h2>`,
+                headings: [ heading("A") ]
+            },
+            // A page whose headings are not those of the marked content.
+            {
+                page: "<h2>A</h2><h3>B</h3>", marked: `<h2 ${mark(0)}>A</h2>`,
+                headings: [ heading("A") ]
+            },
+            // A listed id that the page resolves to an earlier element.
+            {
+                page: `<p data-trilium-block-id="dup">P</p><h2 data-trilium-block-id="dup">A</h2>`,
+                marked: `<p data-trilium-block-id="dup">P</p><h2 ${mark(0)}>A</h2>`,
+                headings: [ heading("A", "dup") ]
+            },
+            // A heading that left the content after the menu opened.
+            {
+                page: "<h2>A</h2>", marked: `<h2 ${mark(0)}>A</h2>`, headings: [ heading("A") ],
+                prepare: (toc) => toc.contentEl.querySelector("h2")?.remove()
+            },
+            // A page that names no blob.
+            {
+                page: "<h2>A</h2>", marked: `<h2 ${mark(0)}>A</h2>`, headings: [ heading("A") ],
+                blobId: null
+            },
+            // A listing of a blob newer than the one on screen, with and without an id, while
+            // froca's cache still has the blob of the page.
+            {
+                page: "<h2>A</h2>", marked: `<h2 ${mark(0)}>A</h2>`, headings: [ heading("A") ],
+                isStale: true
+            },
+            {
+                page: `<h2 data-trilium-block-id="a">A</h2>`,
+                marked: `<h2 data-trilium-block-id="a" ${mark(0)}>A</h2>`,
+                headings: [ heading("A", "a") ],
+                isStale: true
+            }
+        ];
+
+        for (const { page, marked, headings, blobId, isStale, prepare } of cases) {
+            vi.spyOn(console, "warn").mockImplementation(() => {});
+            const toc = await renderReadOnlyOutline(page, blobId);
+            answerMarked(isStale ? "newer" : toc.blobId, headings, marked);
+            if (isStale) {
+                vi.spyOn(froca, "getBlob").mockResolvedValue({ blobId: toc.blobId } as never);
+            }
+            const post = vi.spyOn(server, "postWithSilentErrors");
+            const showError = vi.spyOn(toast, "showError").mockImplementation(() => {});
+            const items = await openRowMenu(toc.rows()[0]);
+            prepare?.(toc);
+
+            expect(await pickAndRead(items, 0)).toBeNull();
+            expect(post).not.toHaveBeenCalled();
+            expect(showError).toHaveBeenCalledExactlyOnceWith("block_reference.copy_failed");
+            vi.restoreAllMocks();
+        }
+    });
+
+    it("offers no menu on a help page", async () => {
+        const toc = await renderReadOnlyOutline("<h2>A</h2>", undefined, "_help_page");
+        const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+
+        act(() => { toc.rows()[0].dispatchEvent(event); });
+        await settle();
+        expect(event.defaultPrevented).toBe(false);
+        expect(showMenu).not.toHaveBeenCalled();
+    });
+});
+
+describe("copying a reference from an editable text note", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+        restoreClipboard();
+    });
+
+    /** The outline of the editor holding the note, and its first heading as the editor lists it. */
+    async function renderEditableOutline() {
+        const toc = await setupUnlockScenario();
+        await toc.unlock();
+        await toc.editor.loadNote(toc.noteId, [ [ 2, "Current" ] ]);
+        const [ item ] = toc.editor.items();
+        getHeadings.mockReturnValue([ { element: item, text: "Current", level: 2 } ]);
+        assignBlockId.mockReturnValue("New");
+        return { ...toc, item };
+    }
+
+    function answerLiveNote(content: string | null) {
+        return vi.spyOn(server, "getWithSilentErrors").mockResolvedValue({ blobId: "b", content });
+    }
+
+    it("copies the id the editor gives the heading, once it is in the saved note", async () => {
+        const toc = await renderEditableOutline();
+        const trigger = vi.spyOn(appContext, "triggerEvent");
+        const read = answerLiveNote(`<h2 data-trilium-block-id="New">Current</h2>`);
+
+        expect(await copyFromRow(toc.rows()[0])).toStrictEqual({
+            "text/plain": `#${toc.noteId}?block=New`,
+            "text/html": `<a class="reference-link" href="#${toc.noteId}?block=New">`
+                + "Big note - Current</a>"
+        });
+        expect(assignBlockId).toHaveBeenCalledExactlyOnceWith(toc.editor.editor.model, toc.item);
+        expect(trigger).toHaveBeenCalledWith("saveNoteChanges", { noteId: toc.noteId });
+        expect(read).toHaveBeenCalledExactlyOnceWith(`notes/${toc.noteId}/blob`);
+    });
+
+    it("copies nothing when the editor lost the heading, or the save lost the id", async () => {
+        const cases: ((toc: Awaited<ReturnType<typeof renderEditableOutline>>) => void)[] = [
+            (toc) => setEditorNoteId(toc.editor.editor, "othernote"),
+            (toc) => { (toc.editor.editor as { isReadOnly: boolean }).isReadOnly = true; },
+            (toc) => { toc.item.isAttached = () => false; },
+            () => {}
+        ];
+
+        for (const prepare of cases) {
+            vi.spyOn(console, "warn").mockImplementation(() => {});
+            const toc = await renderEditableOutline();
+            answerLiveNote("<h2>Current</h2>");
+            const showError = vi.spyOn(toast, "showError").mockImplementation(() => {});
+            const items = await openRowMenu(toc.rows()[0]);
+            prepare(toc);
+
+            expect(await pickAndRead(items, 0)).toBeNull();
+            expect(showError).toHaveBeenCalledExactlyOnceWith("block_reference.copy_failed");
+            vi.restoreAllMocks();
+        }
+    });
+});
+
+interface ReadOnlyOutline {
+    noteId: string;
+    blobId: string;
+    contentEl: HTMLElement;
+    rows(): HTMLElement[];
+}
+
+/**
+ * Renders the outline of a read-only text note whose page shows `html`, rendered from the blob
+ * `blobId`; `null` leaves the blob unnamed.
+ */
+async function renderReadOnlyOutline(
+    html: string, blobId: string | null = "shown", noteId?: string
+): Promise<ReadOnlyOutline> {
+    options.load({ rightPaneCollapsedItems: "[]" } as Parameters<typeof options.load>[0]);
+    showMenu.mockClear();
+    const note = buildNote({
+        ...(noteId ? { id: noteId } : {}), title: "Guide", type: "text", content: html
+    });
+    const noteContext = new NoteContext("toc-read-only-ntx");
+    noteContext.noteId = note.noteId;
+    noteContext.notePath = note.noteId;
+    noteContext.viewScope = { viewMode: "default", isReadOnly: true };
+    Object.defineProperty(noteContext, "note", { get: () => note });
+    appContext.tabManager = { getActiveContext: () => noteContext } as typeof appContext.tabManager;
+
+    const contentEl = document.createElement("div");
+    contentEl.innerHTML = html;
+    if (blobId !== null) {
+        contentEl.dataset.blobId = blobId;
+    }
+    document.body.appendChild(contentEl);
+    vi.spyOn(noteContext, "getContentElement").mockResolvedValue($(contentEl));
+
+    const parent = new Component();
+    appContext.child(parent);
+    let container!: HTMLElement;
+    await act(async () => {
+        container = renderInto(
+            <ParentComponent.Provider value={parent}>
+                <TableOfContents />
+            </ParentComponent.Provider>
+        );
+    });
+    await settle();
+    return {
+        noteId: note.noteId,
+        blobId: blobId ?? "",
+        contentEl,
+        rows: () => [ ...container.querySelectorAll<HTMLElement>(".toc li") ]
+    };
+}
+
+function heading(title: string, block?: string): ReferenceTarget {
+    return block
+        ? { kind: "heading", title, level: 2, params: { block } }
+        : { kind: "heading", title, level: 2 };
+}
+
+/** The mark of the heading at `index`, with the token `Tok`. */
+function mark(index: number) {
+    return `data-trilium-heading-index="Tok.${index}"`;
+}
+
+/** Mocks the marked listing of the note: `headings` and `markedContent`, read from `blobId`. */
+function answerMarked(blobId: string, headings: ReferenceTarget[], markedContent: string) {
+    return vi.spyOn(server, "getWithSilentErrors")
+        .mockResolvedValue({ blobId, headings, markedContent, markToken: "Tok" });
+}
+
+/** Copies a reference to the heading of `row`, and returns what the clipboard got, or `null`. */
+async function copyFromRow(row: HTMLElement) {
+    return await pickAndRead(await openRowMenu(row), 0);
+}
+
+/** Picks the row at `index` and returns what the clipboard got, or `null` for a failed write. */
+async function pickAndRead(items: MenuCommandItem<string>[], index: number) {
+    const writes = stubClipboard();
+    pick(items, index);
+    const written = await writes[0]?.catch(() => null);
+    await settle();
+    return written ?? null;
+}
+
+/** Renders the outline of a Markdown note that publishes `headings` and `headingLinks`. */
+async function renderContextOutline(
+    headings: HeadingContext["headings"], headingLinks?: HeadingLinks
+) {
+    options.load({ rightPaneCollapsedItems: "[]" } as Parameters<typeof options.load>[0]);
+    showMenu.mockClear();
+    const note = buildNote({ title: "Guide", type: "code", mime: "text/x-markdown" });
+    const noteContext = new NoteContext("toc-context-ntx");
+    noteContext.noteId = note.noteId;
+    noteContext.notePath = note.noteId;
+    Object.defineProperty(noteContext, "note", { get: () => note });
+    appContext.tabManager = { getActiveContext: () => noteContext } as typeof appContext.tabManager;
+    noteContext.setContextData("toc", { headings, scrollToHeading: () => {}, headingLinks });
+
+    const parent = new Component();
+    appContext.child(parent);
+    let container!: HTMLElement;
+    await act(async () => {
+        container = renderInto(
+            <ParentComponent.Provider value={parent}>
+                <TableOfContents />
+            </ParentComponent.Provider>
+        );
+    });
+    await settle();
+    return { note, rows: () => [ ...container.querySelectorAll<HTMLElement>(".toc li") ] };
+}
+
+/** Right-clicks `row` and returns the rows of the menu that opens. */
+async function openRowMenu(row: HTMLElement) {
+    showMenu.mockClear();
+    const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+    act(() => { row.dispatchEvent(event); });
+    expect(event.defaultPrevented).toBe(true);
+    await vi.waitFor(() => expect(showMenu).toHaveBeenCalledTimes(1));
+    return showMenu.mock.calls[0][0].items as MenuCommandItem<string>[];
+}
+
+/** Picks the row at `index`, as the context menu does. */
+function pick(items: MenuCommandItem<string>[], index: number) {
+    items[index].handler?.(items[index], new MouseEvent("click"));
+}
+
+const originalClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+
+/** A clipboard whose writes read their data, as a browser does; returns the written data. */
+function stubClipboard() {
+    const writes: Promise<Record<string, string>>[] = [];
+    (globalThis as any).ClipboardItem = class {
+        constructor(public readonly data: Record<string, Promise<Blob>>) {}
+    };
+    Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: {
+            write: vi.fn((items: { data: Record<string, Promise<Blob>> }[]) => {
+                const entries = Object.entries(items[0].data).map(async ([ type, blob ]) =>
+                    [ type, await (await blob).text() ] as const);
+                const written = Promise.all(entries).then(Object.fromEntries);
+                writes.push(written);
+                return written.then(() => undefined);
+            })
+        }
+    });
+    return writes;
+}
+
+function restoreClipboard() {
+    delete (globalThis as any).ClipboardItem;
+    if (originalClipboard) {
+        Object.defineProperty(navigator, "clipboard", originalClipboard);
+    }
+}
+
 async function setupUnlockScenario({ onNavigated }: { onNavigated?: () => void } = {}) {
     options.load({ rightPaneCollapsedItems: "[]" } as Parameters<typeof options.load>[0]);
 
@@ -265,7 +693,7 @@ async function setupUnlockScenario({ onNavigated }: { onNavigated?: () => void }
         editor,
         container,
         headings: () => [ ...container.querySelectorAll(".toc .item-content") ].map((el) => el.textContent),
-        rows: () => [ ...container.querySelectorAll(".toc li") ],
+        rows: () => [ ...container.querySelectorAll<HTMLElement>(".toc li") ],
         async unlock({ rounds }: { rounds?: number } = {}) {
             await act(async () => {
                 if (noteContext.viewScope) noteContext.viewScope.readOnlyTemporarilyDisabled = true;
@@ -292,6 +720,7 @@ function fakeTextEditor() {
     let items: FakeHeadingItem[] = [];
 
     const editor = {
+        isReadOnly: false,
         model: {
             document: {
                 getRoot: () => ({}),
@@ -320,7 +749,9 @@ function fakeTextEditor() {
             await notify(changes);
         },
         /** Reports a change that leaves the headings as they are. */
-        notify
+        notify,
+        /** The heading elements of the model. */
+        items: () => items
     };
 
     async function notify(changes = 1) {
@@ -338,6 +769,7 @@ interface FakeHeadingItem {
     el: HTMLElement;
     is(type: string, name?: string): boolean;
     getChildren(): never[];
+    isAttached(): boolean;
 }
 
 function fakeHeadingItem(level: number, text: string): FakeHeadingItem {
@@ -348,6 +780,7 @@ function fakeHeadingItem(level: number, text: string): FakeHeadingItem {
         name: `heading${level}`,
         el,
         is: (type, name) => type === "element" && (!name || name === `heading${level}`),
-        getChildren: () => []
+        getChildren: () => [],
+        isAttached: () => true
     };
 }

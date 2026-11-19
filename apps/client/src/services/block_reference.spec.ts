@@ -51,13 +51,21 @@ vi.mock("../menus/text_editor_context_menu.js", async (importOriginal) => ({
     ...await importOriginal<typeof import("../menus/text_editor_context_menu.js")>(),
     buildSortSelectionMenuItem, buildAiAssistantMenuItem, getTextEditorContaining
 }));
-vi.mock("./clipboard_ext.js", () => ({ copyHtml, copyHtmlWithToast, copyTextWithToast }));
+vi.mock("./clipboard_ext.js", async (importOriginal) => ({
+    toReferenceLinkHtml:
+        (await importOriginal<typeof import("./clipboard_ext.js")>()).toReferenceLinkHtml,
+    copyHtml, copyHtmlWithToast, copyTextWithToast
+}));
 vi.mock("./froca.js", () => ({ default: { getNote, attachments } }));
 vi.mock("./content_renderer.js", () => ({
     getEmbedBoxSize: () => "medium"
 }));
 
-vi.mock("./share_link.js", () => ({ getNoteShareLink }));
+vi.mock("./share_link.js", async (importOriginal) => ({
+    getSharedPageLink:
+        (await importOriginal<typeof import("./share_link.js")>()).getSharedPageLink,
+    getNoteShareLink
+}));
 
 const scrollBy = vi.fn();
 

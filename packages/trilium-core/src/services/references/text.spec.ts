@@ -3,7 +3,9 @@ import { parse } from "node-html-parser";
 import { describe, expect, it, vi } from "vitest";
 
 import type { ReferenceSource } from "./index";
-import textReferences, { addHeadingReference, findTextTargets, insertBlockId } from "./text";
+import textReferences, {
+    addHeadingReference, findTextTargets, insertBlockId, markTextHeadings
+} from "./text";
 
 /** A heading as `findTextTargets()` lists it. */
 function heading(title: string, level: number, block?: string): ReferenceTarget {
@@ -48,6 +50,9 @@ describe("textReferences", () => {
         )).toBeNull();
         expect(textReferences.createReference?.(
             new Uint8Array(), { kind: "heading", index: 0, title: "Intro" }
+        )).toBeNull();
+        expect(textReferences.createReference?.(
+            content, { kind: "heading", line: 1, title: "Intro", blobId: "blob" }
         )).toBeNull();
     });
 });
@@ -278,6 +283,60 @@ describe("addHeadingReference", () => {
                 params: { block: "Free" }
             });
         expect(createId).toHaveBeenCalledTimes(3);
+    });
+});
+
+describe("markTextHeadings", () => {
+    /** The mark of the heading at `index`, with the token `Tok`. */
+    const mark = (index: number) => ` data-trilium-heading-index="Tok.${index}"`;
+
+    it("marks each listed heading first in its opening tag, and keeps every other byte", () => {
+        const parts = [
+            "<h2", ">Start</h2><p class=\"a\\b\">Text</p><h3", " class=\"x\\y\">Same</h3><h3",
+            ">Same</h3><h2></h2><pre><h2>Code</h2></pre><textarea><h2",
+            ">Raw</h2></textarea><h2", ">Outer<h3", ">Inner</h3></h2><h4",
+            " data-trilium-heading-index=\"0\">End</h4>"
+        ];
+        const content = parts.join("");
+        const createToken = vi.fn().mockReturnValueOnce("Start").mockReturnValue("Tok");
+
+        const result = markTextHeadings(content, createToken);
+        expect(createToken).toHaveBeenCalledTimes(2);
+        expect(result).toStrictEqual({
+            headings: [
+                heading("Start", 2), heading("Same", 3), heading("Same", 3), heading("Raw", 2),
+                heading("Outer", 2), heading("Inner", 3), heading("End", 4)
+            ],
+            markedContent: parts.map((part, index) =>
+                (index < parts.length - 1 ? `${part}${mark(index)}` : part)).join(""),
+            markToken: "Tok"
+        });
+
+        // Each mark is on the heading that a request for its position gives an id.
+        for (const [ index, { title } ] of (result?.headings ?? []).entries()) {
+            const expected = (result?.markedContent ?? "")
+                .replace(mark(index), ` data-trilium-block-id="Id"`)
+                .replace(/ data-trilium-heading-index="Tok\.\d+"/g, "");
+            expect(addHeadingReference(content, { index, title }, () => "Id")?.content)
+                .toBe(expected);
+        }
+    });
+
+    it("marks headings at both ends of the content and next to each other", () => {
+        expect(markTextHeadings("<h2>A</h2><h3>B</h3>", () => "Tok")?.markedContent)
+            .toBe(`<h2${mark(0)}>A</h2><h3${mark(1)}>B</h3>`);
+        expect(markTextHeadings("<p>x</p>", () => "Tok"))
+            .toStrictEqual({ headings: [], markedContent: "<p>x</p>", markToken: "Tok" });
+        expect(markTextHeadings("<h2>Tok</h2>", () => "Tok")).toBeNull();
+    });
+
+    it("marks the headings of a text note only", () => {
+        const marked = textReferences.markHeadings?.("<h2>A</h2>");
+        expect(marked?.markedContent).toBe(
+            `<h2 data-trilium-heading-index="${marked?.markToken}.0">A</h2>`
+        );
+        expect(marked?.markToken).toMatch(/^[A-Za-z0-9]{12}$/);
+        expect(textReferences.markHeadings?.(new Uint8Array())).toBeNull();
     });
 });
 

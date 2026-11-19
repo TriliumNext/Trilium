@@ -34,10 +34,13 @@ import { useLinkTargetLanding } from "../../react/hooks/note_context";
 import {
     extractHighlightsFromStaticHtml, type RawHighlight
 } from "../../sidebar/highlights_extract";
+import type { HeadingLinks } from "../../sidebar/TableOfContents";
 import SplitEditor from "../helpers/SplitEditor";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText";
 import { TypeWidgetProps } from "../type_widget";
-import { revealInSource, useBlockMarkers } from "./editor_block_references";
+import {
+    getMarkdownHeadingTarget, getSavedMarkdownHeadingTarget, revealInSource, useBlockMarkers
+} from "./editor_block_references";
 import {
     insertDateTime, insertText, replaceSelection, resolveWikilinkChip, showEditLinkDialog,
     showIncludeNoteDialog, uploadImageAndInsert
@@ -82,6 +85,15 @@ export interface MarkdownHighlight extends RawHighlight {
     line: number;
 }
 
+/** The content last loaded into the widget. */
+interface LoadedContent {
+    /** The note of `content`, absent before any content loads. */
+    noteId?: string;
+    content: string;
+    /** The blob of `content`, when it was read from the note rather than edited. */
+    blobId?: string;
+}
+
 interface MarkdownContextValue {
     html: string;
     headings: MarkdownTocHeading[];
@@ -104,9 +116,9 @@ export default function Markdown(props: TypeWidgetProps) {
     const { html, headings, highlights } = useMemo(() => renderWithSourceLines(content), [ content ]);
     // The note whose content `content` is: an editor reused for another note keeps the content
     // of the previous one until the new one loads.
-    const contentNoteIdRef = useRef<string | undefined>(undefined);
-    const onContentChanged = useCallback((text: string) => {
-        contentNoteIdRef.current = props.note.noteId;
+    const loadedRef = useRef<LoadedContent>({ content: "" });
+    const onContentChanged = useCallback((text: string, blobId?: string) => {
+        loadedRef.current = { noteId: props.note.noteId, content: text, blobId };
         setContent(text);
     }, [ props.note.noteId ]);
     const recordHooks = useBlockMarkers(editorView, {
@@ -114,7 +126,8 @@ export default function Markdown(props: TypeWidgetProps) {
         getNotePath: () => props.noteContext?.notePath,
         getPreview: () => previewEl
     });
-    useRevealLinkTarget(props, editorView, previewEl, html, contentNoteIdRef);
+    useRevealLinkTarget(props, editorView, previewEl, html, loadedRef);
+    const headingLinks = useHeadingLinks(props, editorView, content, loadedRef);
 
     // Bind text-detail shortcuts (e.g. Ctrl+L for the edit link dialog) to CodeMirror's contentDOM,
     // since the outer `dom` only receives events after CodeMirror has already handled them.
@@ -133,7 +146,7 @@ export default function Markdown(props: TypeWidgetProps) {
 
     useSyncedScrolling(editorView, previewEl);
     useSyncedHighlight(editorView, previewEl, html);
-    usePublishToc(props.noteContext, editorView, previewEl, headings, props.note);
+    usePublishToc(props.noteContext, editorView, previewEl, headings, props.note, headingLinks);
     usePublishHighlights(props.noteContext, editorView, previewEl, highlights, props.note);
     useImageDrop(props.note, editorView);
     useTextCommands(editorView, () => ({
@@ -191,12 +204,12 @@ function useRevealLinkTarget(
     editorView: VanillaCodeMirror | null,
     previewEl: HTMLDivElement | null,
     html: string,
-    contentNoteIdRef: RefObject<string | undefined>
+    loadedRef: RefObject<LoadedContent>
 ) {
     const reveal = useCallback(() => {
         const viewScope = noteContext?.viewScope;
         if (!viewScope || (!viewScope.block && !viewScope.bookmark)
-            || contentNoteIdRef.current !== note.noteId) {
+            || loadedRef.current?.noteId !== note.noteId) {
             return;
         }
 
@@ -212,9 +225,41 @@ function useRevealLinkTarget(
                 consumeBlockReference(previewEl, viewScope);
             });
         }
-    }, [ editorView, previewEl, noteContext, note.noteId, contentNoteIdRef ]);
+    }, [ editorView, previewEl, noteContext, note.noteId, loadedRef ]);
 
     useLinkTargetLanding({ note, ntxId, isVisible }, reveal, [ html, reveal ]);
+}
+
+/**
+ * Links to the headings of `content`, for the outline. The note path is the one of the render that
+ * lists the headings. A target is `null` once the note, its content or the document of the editor
+ * changed since: the outline then lists the headings again.
+ */
+function useHeadingLinks(
+    { note, noteContext }: TypeWidgetProps,
+    editorView: VanillaCodeMirror | null,
+    content: string,
+    loadedRef: RefObject<LoadedContent>
+) {
+    const notePath = noteContext?.notePath ?? note.getBestNotePathString();
+    return useMemo<HeadingLinks>(() => ({
+        async getTarget(heading) {
+            const { line } = heading as MarkdownTocHeading;
+            const loaded = loadedRef.current;
+            if (loaded?.noteId !== note.noteId || loaded.content !== content) return null;
+
+            // `ReadOnlyCode` passes its view too, which is read-only and takes no marker.
+            if (editorView && !editorView.state.readOnly) {
+                return editorView.state.doc.toString() === content
+                    ? getMarkdownHeadingTarget(editorView, line, notePath, note.noteId)
+                    : null;
+            }
+            return loaded.blobId
+                ? getSavedMarkdownHeadingTarget(note.noteId, notePath, content, line, loaded.blobId)
+                : null;
+        },
+        hasPublicLinks: true
+    }), [ note, notePath, editorView, content, loadedRef ]);
 }
 //#endregion
 
@@ -229,7 +274,8 @@ function usePublishToc(
     editorView: VanillaCodeMirror | null,
     previewEl: HTMLDivElement | null,
     headings: MarkdownTocHeading[],
-    note: FNote
+    note: FNote,
+    headingLinks: HeadingLinks
 ) {
     const publish = useCallback(() => {
         if (!noteContext || noteContext.noteId !== note.noteId) return;
@@ -238,9 +284,10 @@ function usePublishToc(
             scrollToHeading(heading) {
                 const mdHeading = headings.find(h => h.id === heading.id);
                 if (mdHeading) scrollToSourceLine(editorView, previewEl, mdHeading.line);
-            }
+            },
+            headingLinks
         });
-    }, [ noteContext, headings, editorView, previewEl, note.noteId ]);
+    }, [ noteContext, headings, editorView, previewEl, note.noteId, headingLinks ]);
 
     // Publish when headings or editor change.
     useEffect(() => { publish(); }, [ publish ]);

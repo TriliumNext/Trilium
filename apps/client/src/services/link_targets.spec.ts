@@ -3,12 +3,14 @@ import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import appContext from "../components/app_context";
 import { buildNote } from "../test/easy-froca";
+import froca from "./froca";
 import linkService from "./link";
 import {
-    addParameters, createAnchorTargets, createEditorHeadings, findTarget,
-    getAttachmentLinkTargets, getLinkTargets, getNoTargetsText, getParentTargets,
-    getTargetAncestors, LINK_TARGET_KINDS, type LinkTarget, nestTargets, splitTargetParameters,
-    StaleListingError, takeLinkTarget
+    addParameters, createAnchorTargets, createEditorHeadings, createEditorTarget,
+    createLinkedTarget, createSavedHeadingTarget, findMarkedIndex, findTarget,
+    getAttachmentLinkTargets, getLinkTargets, getMarkedHeadings, getNoTargetsText,
+    getParentTargets, getTargetAncestors, isTextHeadingId, LINK_TARGET_KINDS, type LinkTarget,
+    nestTargets, splitTargetParameters, StaleListingError, takeLinkTarget
 } from "./link_targets";
 import type { ViewScope } from "./navigation_state";
 import server from "./server";
@@ -200,6 +202,171 @@ describe("the targets of the document in an editor", () => {
         expect(top).toMatchObject({ kind: "anchor", title: "a b", params: { bookmark: "a b" } });
         expect(top.level).toBeUndefined();
         expect(top.createLinkPath()).toBe("root/abc?bookmark=a%20b");
+    });
+});
+
+describe("the targets of one heading", () => {
+    beforeEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("posts a heading of one version by its locator, and refuses a stale one", async () => {
+        const trigger = vi.spyOn(appContext, "triggerEvent").mockResolvedValue(undefined);
+        const post = vi.spyOn(server, "postWithSilentErrors")
+            .mockResolvedValue({ params: { block: "New" } } satisfies CreateReferenceResponse);
+        const byLine = createSavedHeadingTarget("abc", "root/abc", {
+            line: 5, title: "Install", blobId: "shown"
+        });
+
+        expect(byLine).toMatchObject({ kind: "heading", title: "Install" });
+        expect(byLine.params).toBeUndefined();
+        expect(byLine.createLinkPath()).toBe("root/abc");
+        await byLine.createReference?.();
+        expect(trigger).toHaveBeenCalledExactlyOnceWith("saveNoteChanges", { noteId: "abc" });
+        expect(trigger.mock.invocationCallOrder[0]).toBeLessThan(post.mock.invocationCallOrder[0]);
+        expect(post).toHaveBeenCalledExactlyOnceWith("notes/abc/references", {
+            kind: "heading", line: 5, title: "Install", blobId: "shown"
+        });
+        expect(byLine.createLinkPath()).toBe("root/abc?block=New");
+
+        const byIndex = createSavedHeadingTarget("abc", "root/abc", {
+            index: 1, title: "Install", blobId: "shown"
+        });
+        post.mockRejectedValueOnce(JSON.stringify({ reason: "listing", message: "Changed" }));
+        await expect(byIndex.createReference?.()).rejects.toBeInstanceOf(StaleListingError);
+        expect(post).toHaveBeenLastCalledWith("notes/abc/references", {
+            kind: "heading", index: 1, title: "Install", blobId: "shown"
+        });
+        expect(byIndex.params).toBeUndefined();
+
+        // @ts-expect-error A heading is named by its index or its line, not both.
+        createSavedHeadingTarget("abc", "root/abc", { index: 1, line: 5, title: "A", blobId: "b" });
+        // @ts-expect-error A heading needs a locator.
+        createSavedHeadingTarget("abc", "root/abc", { title: "A", blobId: "b" });
+        // @ts-expect-error A heading of one version needs that version.
+        createSavedHeadingTarget("abc", "root/abc", { index: 1, title: "A" });
+    });
+
+    it("links a target that the saved note holds, without a request", async () => {
+        const post = vi.spyOn(server, "postWithSilentErrors");
+        const target = createLinkedTarget("root/abc", "Intro", { block: "a b" });
+
+        expect(target).toMatchObject({ kind: "heading", title: "Intro", params: { block: "a b" } });
+        expect(target.createReference).toBeUndefined();
+        expect(target.createLinkPath()).toBe("root/abc?block=a%20b");
+        expect(post).not.toHaveBeenCalled();
+    });
+
+    it("confirms an editor's id in the note as the server holds it after the save", async () => {
+        const trigger = vi.spyOn(appContext, "triggerEvent").mockResolvedValue(undefined);
+        const read = vi.spyOn(server, "getWithSilentErrors")
+            .mockResolvedValue({
+                blobId: "saved", content: `<h2 data-trilium-block-id="a">A</h2>`
+            });
+        const getBlob = vi.spyOn(froca, "getBlob");
+        const assignId = vi.fn<() => string | null>(() => "a");
+        const target = createEditorTarget({
+            noteId: "abc", notePath: "root/abc", title: "Intro", level: 2,
+            assignId, isSaved: isTextHeadingId
+        });
+
+        expect(target).toMatchObject({ kind: "heading", title: "Intro", level: 2 });
+        expect(assignId).not.toHaveBeenCalled();
+        await target.createReference?.();
+        expect(assignId).toHaveBeenCalledTimes(1);
+        expect(assignId.mock.invocationCallOrder[0])
+            .toBeLessThan(trigger.mock.invocationCallOrder[0]);
+        expect(trigger).toHaveBeenCalledExactlyOnceWith("saveNoteChanges", { noteId: "abc" });
+        expect(read).toHaveBeenCalledExactlyOnceWith("notes/abc/blob");
+        expect(trigger.mock.invocationCallOrder[0]).toBeLessThan(read.mock.invocationCallOrder[0]);
+        expect(getBlob).not.toHaveBeenCalled();
+        expect(target.createLinkPath()).toBe("root/abc?block=a");
+
+        // An id that the live note lacks, which the heading had before, is not copied.
+        const lacking = createEditorTarget({
+            noteId: "abc", notePath: "root/abc", title: "Intro", level: 2,
+            assignId: () => "gone", isSaved: isTextHeadingId
+        });
+        await expect(lacking.createReference?.()).rejects.toThrow();
+        expect(lacking.params).toBeUndefined();
+        read.mockResolvedValueOnce({ blobId: "saved", content: null });
+        await expect(target.createReference?.()).rejects.toThrow();
+
+        const detached = createEditorTarget({
+            noteId: "abc", notePath: "root/abc", title: "Intro", level: 2,
+            assignId: () => null, isSaved: isTextHeadingId
+        });
+        await expect(detached.createReference?.()).rejects.toThrow();
+        expect(read).toHaveBeenCalledTimes(3);
+    });
+
+    it("reads the marked headings from the server, never from a cache", async () => {
+        const marked = { blobId: "b", headings: [], markedContent: "", markToken: "Tok" };
+        const read = vi.spyOn(server, "getWithSilentErrors").mockResolvedValue(marked);
+
+        expect(await getMarkedHeadings("abc")).toBe(marked);
+        expect(read).toHaveBeenCalledExactlyOnceWith("notes/abc/references/marked");
+    });
+
+    it("finds a heading of a text note by the id that resolves to it", () => {
+        const content = `<p data-trilium-block-id="p">P</p><h3 data-trilium-block-id="h">H</h3>`
+            + `<h2 data-trilium-block-id="p">Late</h2>`;
+
+        expect(isTextHeadingId(content, "h")).toBe(true);
+        expect(isTextHeadingId(content, "p")).toBe(false);
+        expect(isTextHeadingId(content, "missing")).toBe(false);
+    });
+});
+
+describe("findMarkedIndex", () => {
+    const mark = (index: number | string, token = "Tok") =>
+        `data-trilium-heading-index="${token}.${index}"`;
+
+    /** The headings of `html` as a page shows them: a `<div>` whose `innerHTML` is the content. */
+    function render(html: string) {
+        const page = document.createElement("div");
+        page.innerHTML = html;
+        return Array.from(page.querySelectorAll("h1,h2,h3,h4,h5,h6"))
+            .filter((heading) => !heading.closest(".include-note"));
+    }
+
+    function marked(markedContent: string) {
+        return { blobId: "b", headings: [], markedContent, markToken: "Tok" };
+    }
+
+    it("gives the position of the mark on the heading at the same place", () => {
+        const shown = render(`<h2>A</h2><section class="include-note"><h2>X</h2></section>`
+            + `<h3>B</h3><h2>A</h2>`);
+        const listing = marked(`<h2 ${mark(0)}>A</h2><section class="include-note"></section>`
+            + `<h3 ${mark(1)}>B</h3><h2 ${mark(2)}>A</h2>`);
+
+        expect(shown.map((heading) => findMarkedIndex(listing, shown, heading)))
+            .toStrictEqual([ 0, 1, 2 ]);
+        expect(findMarkedIndex(listing, shown, document.createElement("h2"))).toBeNull();
+    });
+
+    it("answers nothing when the parses disagree, or the mark is not of this listing", () => {
+        const shown = render("<h2>A</h2><h3>B</h3>");
+        const [ first, second ] = shown;
+
+        expect(findMarkedIndex(marked(`<h2 ${mark(0)}>A</h2>`), shown, first)).toBeNull();
+        expect(findMarkedIndex(marked(`<h2 ${mark(0)}>A</h2><h4 ${mark(1)}>B</h4>`), shown, first))
+            .toBeNull();
+        const cases = [
+            `<h3>B</h3>`, `<h3 ${mark(1, "Other")}>B</h3>`, `<h3 ${mark("1.5")}>B</h3>`,
+            `<h3 ${mark("99999999999999999999")}>B</h3>`, `<h3 ${mark("01")}>B</h3>`,
+            `<h3 data-trilium-heading-index="1">B</h3>`
+        ];
+        for (const secondHeading of cases) {
+            expect(findMarkedIndex(marked(`<h2 ${mark(0)}>A</h2>${secondHeading}`), shown, second))
+                .toBeNull();
+        }
+
+        // An empty heading that the server skipped keeps a stored in-range value.
+        const withSkipped = render("<h2></h2><h2>A</h2>");
+        const skipped = marked(`<h2 data-trilium-heading-index="0"></h2><h2 ${mark(0)}>A</h2>`);
+        expect(findMarkedIndex(skipped, withSkipped, withSkipped[0])).toBeNull();
+        expect(findMarkedIndex(skipped, withSkipped, withSkipped[1])).toBe(0);
     });
 });
 
