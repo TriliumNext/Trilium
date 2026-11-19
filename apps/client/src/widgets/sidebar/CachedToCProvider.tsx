@@ -18,7 +18,7 @@ import Button from "../react/Button";
 import { useWhenShown } from "../react/hooks/dom";
 import { useTriliumEvent } from "../react/hooks/events";
 import { useActiveNoteContext, useGetContextData } from "../react/hooks/tree";
-import LoadingSpinner from "../react/LoadingSpinner";
+import Icon from "../react/Icon";
 import NoItems from "../react/NoItems";
 import { AbstractTableOfContents, type HeadingLinks, type RawHeading } from "./TableOfContents";
 
@@ -132,8 +132,10 @@ export function CachedToCProvider() {
             )}
             {!isUnavailable && !rows && !isReady && phase !== "none" && phase !== "failed" && (
                 <div className="cached-toc-waiting">
-                    <LoadingSpinner />
-                    {phase === "building" && <span>{t("toc.building")}</span>}
+                    <Icon icon="bx bx-loader-alt bx-spin" />
+                    {phase === "building" && (
+                        <span className="cached-toc-waiting-text">{t("toc.building")}</span>
+                    )}
                 </div>
             )}
         </div>

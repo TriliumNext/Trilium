@@ -150,10 +150,29 @@
     }
 }
 
-.cached-toc .cached-toc-waiting {
+.cached-toc {
     display: flex;
-    align-items: center;
-    gap: 0.5em;
-    padding: 4px 7px;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.cached-toc .cached-toc-waiting {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
+    flex-grow: 1;
+    justify-items: center;
+    min-height: 8em;
     color: var(--toc-waiting-color);
+    text-align: center;
+
+    > .bx-loader-alt {
+        grid-row: 2;
+        font-size: 2em;
+    }
+
+    > .cached-toc-waiting-text {
+        grid-row: 3;
+        margin-top: 0.75em;
+        font-size: 0.85em;
+    }
 }
