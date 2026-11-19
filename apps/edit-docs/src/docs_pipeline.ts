@@ -487,10 +487,10 @@ async function loadOutdatedBannerStrings(locale: string): Promise<{ title: strin
         try {
             const p = path.resolve(import.meta.dirname, "../../server/src/assets/translations", loc, "server.json");
             const data = JSON.parse(await fs.readFile(p, "utf-8")) as {
-                hidden_subtree?: { "help-outdated-title"?: string; "help-outdated-link"?: string };
+                "hidden-subtree"?: { "help-outdated-title"?: string; "help-outdated-link"?: string };
             };
-            const title = data.hidden_subtree?.["help-outdated-title"];
-            const link = data.hidden_subtree?.["help-outdated-link"];
+            const title = data["hidden-subtree"]?.["help-outdated-title"];
+            const link = data["hidden-subtree"]?.["help-outdated-link"];
             if (title && link) return { title, link };
         } catch {
             // Try next locale fallback.
