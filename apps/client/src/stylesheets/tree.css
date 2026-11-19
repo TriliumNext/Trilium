@@ -256,23 +256,9 @@ span.fancytree-node.archived {
     display: inline-block;
 }
 
-.tn-icon.tree-item-button {
-    display: none;
-    font-size: 120%;
-    cursor: pointer;
-    margin-inline-start: 8px;
-    padding: 1px;
-    border: 1px solid transparent;
-    border-radius: 5px;
-}
-
 .unhoist-button.tn-icon.tree-item-button {
     margin-inline-start: 0; /* unhoist button is on the left and doesn't need more margin */
     display: block; /* keep always visible */
-}
-
-.tree-item-button:hover {
-    border: 1px dotted var(--main-text-color);
 }
 
 .add-note-button {

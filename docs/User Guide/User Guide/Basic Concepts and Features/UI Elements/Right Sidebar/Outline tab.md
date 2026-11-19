@@ -25,6 +25,7 @@ The table of contents of a PDF, Word, OpenDocument Text or EPUB file also appear
 *   Nested items can be collapsed by pressing the corresponding <span class="tn-icon bx bx-chevron-down"></span> button.
 *   For a text or Markdown note, right-clicking a heading shows _Copy reference_, which copies a link that opens the note at that heading (see <a class="reference-link" href="../../../Note%20Types/Text/Block%20references.md">Block references</a>). If the note is [shared](../../../Advanced%20Usage/Sharing.md), _Copy public link_ copies the link to that heading on the shared page.
 *   For a PDF, Word, OpenDocument Text or EPUB file, right-clicking a heading shows _Copy reference_ as well, without _Copy public link_.
+*   Hovering over a heading that can be linked shows a <span class="tn-icon bx bx-copy"></span> button at its end, which does the same as _Copy reference_.
 *   An entry that no link can reach, such as an entry of a PDF outline that leads to no page, or an entry of an EPUB table of contents whose part of the book cannot be shown, is dimmed and cannot be clicked.
 
 ## Highlights

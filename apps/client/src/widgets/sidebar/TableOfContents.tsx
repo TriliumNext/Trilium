@@ -9,6 +9,9 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "p
 import type FNote from "../../entities/fnote";
 import { revealElement } from "../../services/bookmark_jump";
 import { t } from "../../services/i18n";
+import {
+    copyTargetReference, showTargetReferenceMenu, type TargetReferenceSource
+} from "../../services/link_target_copy";
 import type { LinkTarget } from "../../services/link_targets";
 import { randomString } from "../../services/utils";
 import { useActiveHeading, useLongPressContextMenu } from "../react/hooks/dom";
@@ -117,8 +120,13 @@ function AbstractTableOfContentsList<T extends RawHeading>({
 }: AbstractTableOfContentsProps<T>) {
     const tocRef = useRef<HTMLSpanElement>(null);
     const nestedHeadings = useMemo(() => buildHeadingTree(headings), [ headings ]);
-    const openMenu = useMemo(() => (note && headingLinks
-        ? (e: MouseEvent, heading: RawHeading) => openHeadingMenu(e, heading, note, headingLinks)
+    const getReferenceSource = useMemo(() => (note && headingLinks
+        ? (heading: RawHeading): TargetReferenceSource => ({
+            note,
+            getTarget: () => headingLinks.getTarget(heading),
+            hasPublicLinks: headingLinks.hasPublicLinks,
+            title: headingLinks.title
+        })
         : undefined), [ note, headingLinks ]);
 
     useEffect(() => {
@@ -138,7 +146,7 @@ function AbstractTableOfContentsList<T extends RawHeading>({
                             heading={heading}
                             scrollToHeading={isInert ? undefined : scrollToHeading}
                             activeHeadingId={activeHeadingId}
-                            openMenu={isInert ? undefined : openMenu}
+                            getReferenceSource={isInert ? undefined : getReferenceSource}
                         />
                     ))}
                 </ol>
@@ -154,20 +162,23 @@ interface TableOfContentsHeadingProps {
     /** Shows a heading. Absent while the rows are inert. */
     scrollToHeading?(heading: RawHeading): boolean | void;
     activeHeadingId?: string | null;
-    /** Opens the menu of a published heading. Absent where headings cannot be linked. */
-    openMenu?(e: MouseEvent, heading: RawHeading): void;
+    /** The links to a published heading. Absent where headings cannot be linked. */
+    getReferenceSource?(heading: RawHeading): TargetReferenceSource;
 }
 
 function TableOfContentsHeading({
-    heading, scrollToHeading, activeHeadingId, openMenu
+    heading, scrollToHeading, activeHeadingId, getReferenceSource
 }: TableOfContentsHeadingProps) {
     const [ collapsed, setCollapsed ] = useState(false);
     const onNavigated = useContext(NavigatedInNote);
     const isActive = heading.id === activeHeadingId;
     const contentRef = useRef<HTMLElement>(null);
+    const getSource = heading.isDisabled ? undefined : getReferenceSource;
     const menuProps = useLongPressContextMenu(useCallback((e: MouseEvent) => {
-        openMenu?.(e, heading.source);
-    }, [ openMenu, heading.source ]));
+        if (!getSource) return;
+        e.preventDefault();
+        showTargetReferenceMenu(e, getSource(heading.source));
+    }, [ getSource, heading.source ]));
     const isClickable = !!scrollToHeading && !heading.isDisabled;
 
     useMathRendering(contentRef, [heading.text]);
@@ -176,8 +187,8 @@ function TableOfContentsHeading({
         <>
             <li
                 className={clsx(collapsed && "collapsed", isActive && "active",
-                    heading.isDisabled && "disabled")}
-                {...(openMenu && !heading.isDisabled ? menuProps : {})}
+                    heading.isDisabled && "disabled", getSource && "linkable")}
+                {...(getSource ? menuProps : {})}
             >
                 {heading.children.length > 0 && (
                     <Icon
@@ -196,6 +207,14 @@ function TableOfContentsHeading({
                     } : undefined}
                     html={heading.text}
                 />
+                {getSource && (
+                    <Icon
+                        className="tree-item-button"
+                        icon="bx bx-copy"
+                        title={t("block_reference.copy_reference")}
+                        onClick={() => copyTargetReference(getSource(heading.source))}
+                    />
+                )}
             </li>
             {heading.children.length > 0 && (
                 <ol>
@@ -205,28 +224,13 @@ function TableOfContentsHeading({
                             heading={heading}
                             scrollToHeading={scrollToHeading}
                             activeHeadingId={activeHeadingId}
-                            openMenu={openMenu}
+                            getReferenceSource={getReferenceSource}
                         />
                     ))}
                 </ol>
             )}
         </>
     );
-}
-
-/** Opens the menu that copies links to `heading`, loading its commands on first use. */
-function openHeadingMenu(
-    e: MouseEvent, heading: RawHeading, note: FNote, headingLinks: HeadingLinks
-) {
-    e.preventDefault();
-    void import("../../services/link_target_copy").then(({ showTargetReferenceMenu }) => {
-        showTargetReferenceMenu(e, {
-            note,
-            getTarget: () => headingLinks.getTarget(heading),
-            hasPublicLinks: headingLinks.hasPublicLinks,
-            title: headingLinks.title
-        });
-    });
 }
 
 function buildHeadingTree(headings: RawHeading[]): HeadingsWithNesting[] {

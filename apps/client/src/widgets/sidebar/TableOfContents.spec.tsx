@@ -18,7 +18,9 @@ import { useActiveHeading } from "../react/hooks/dom";
 import { setEditorNoteId } from "../react/NoteStore";
 import { ParentComponent } from "../react/react_utils";
 import { NavigatedInNote } from "./RightPanelWidget";
-import TableOfContents, { type HeadingContext, type HeadingLinks } from "./TableOfContents";
+import TableOfContents, {
+    AbstractTableOfContents, type HeadingContext, type HeadingLinks
+} from "./TableOfContents";
 
 const { showMenu, getHeadings, assignBlockId } = vi.hoisted(() => ({
     showMenu: vi.fn(),
@@ -284,6 +286,64 @@ describe("the menu of an outline heading", () => {
         await settle();
         expect(event.defaultPrevented).toBe(false);
         expect(showMenu).not.toHaveBeenCalled();
+    });
+});
+
+describe("the copy button of an outline heading", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+        restoreClipboard();
+    });
+
+    it("copies a reference to its heading, writing the clipboard within the click", async () => {
+        const headings = [
+            { id: "a", level: 2, text: "Alpha" }, { id: "b", level: 3, text: "Beta" }
+        ];
+        const getTarget = vi.fn(async (heading: { id: string; text: string }) => ({
+            kind: "heading" as const,
+            title: heading.text,
+            params: { block: heading.id },
+            createLinkPath: () => `guide?block=${heading.id}`
+        }));
+        const toc = await renderContextOutline(headings, { getTarget, hasPublicLinks: true });
+        const button = toc.rows()[1].querySelector<HTMLElement>(".tree-item-button.bx-copy");
+        expect(button?.title).toBe("block_reference.copy_reference");
+
+        const writes = stubClipboard();
+        act(() => { button?.click(); });
+        expect(navigator.clipboard.write).toHaveBeenCalledOnce();
+        expect(await writes[0]).toStrictEqual({
+            "text/plain": "#guide?block=b",
+            "text/html": `<a class="reference-link" href="#guide?block=b">Guide - Beta</a>`
+        });
+        await settle();
+        expect(getTarget).toHaveBeenCalledOnce();
+        expect(getTarget.mock.calls[0][0]).toBe(headings[1]);
+        expect(showMenu).not.toHaveBeenCalled();
+    });
+
+    it("is left out where a heading cannot be linked", async () => {
+        const headingLinks = { getTarget: async () => null, hasPublicLinks: false };
+        const unlinked = await renderContextOutline([ { id: "a", level: 2, text: "Alpha" } ]);
+        const disabled = await renderContextOutline([
+            { id: "a", level: 2, text: "Alpha", isDisabled: true },
+            { id: "b", level: 2, text: "Beta" }
+        ], headingLinks);
+        const inert = renderInto(
+            <AbstractTableOfContents
+                headings={[ { id: "a", level: 2, text: "Alpha" } ]}
+                scrollToHeading={() => {}}
+                note={buildNote({ title: "Inert" })}
+                headingLinks={headingLinks}
+                isInert
+            />
+        );
+
+        expect(unlinked.rows()[0].querySelector(".tree-item-button")).toBeNull();
+        expect(disabled.rows().map((row) => !!row.querySelector(".tree-item-button")))
+            .toStrictEqual([ false, true ]);
+        expect(inert.querySelector(".toc li")).not.toBeNull();
+        expect(inert.querySelector(".tree-item-button")).toBeNull();
     });
 });
 

@@ -606,7 +606,7 @@ body[dir=rtl] :is(#left-pane, .tree-popup-sidebar) span.fancytree-node.protected
     opacity: 0.5;
 }
 
-:is(#left-pane, .tree-popup-sidebar) .tree-item-button,
+:is(#left-pane, .tree-popup-sidebar, .toc) .tree-item-button,
 :is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-selected .fancytree-custom-icon {
     margin-inline-end: 6px;
     border: unset;
@@ -618,7 +618,7 @@ body[dir=rtl] :is(#left-pane, .tree-popup-sidebar) span.fancytree-node.protected
         box-shadow 200ms ease-out;
 }
 
-:is(#left-pane, .tree-popup-sidebar) .tree-item-button:hover,
+:is(#left-pane, .tree-popup-sidebar, .toc) .tree-item-button:hover,
 :is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-selected .fancytree-custom-icon:hover {
     background: var(--left-pane-item-action-button-hover-background);
     box-shadow: var(--left-pane-item-action-button-hover-shadow);

@@ -87,6 +87,48 @@
     margin-inline-start: 4px;
 }
 
+.toc li.linkable {
+    /* Width of the button below and end margin of the Next theme's `.tree-item-button`. */
+    --toc-item-button-space: calc(0.9em + 12px);
+    --toc-item-button-fade: 1.5em;
+    --toc-item-fade-direction: to left;
+
+    &:dir(rtl) {
+        --toc-item-fade-direction: to right;
+    }
+
+    > .tree-item-button {
+        position: absolute;
+        top: 50%;
+        inset-inline-end: 0;
+        translate: 0 -50%;
+        padding: 3px;
+        font-size: 0.9em;
+
+        &::before {
+            display: block;
+        }
+
+        &:active::before {
+            transform: scale(0.85);
+        }
+    }
+
+    &:hover {
+        > .tree-item-button {
+            display: block;
+        }
+
+        > .item-content {
+            mask-image: linear-gradient(
+                var(--toc-item-fade-direction),
+                transparent var(--toc-item-button-space),
+                black calc(var(--toc-item-button-space) + var(--toc-item-button-fade))
+            );
+        }
+    }
+}
+
 .toc li:hover {
     font-weight: bold;
 }

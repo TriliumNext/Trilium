@@ -44,8 +44,11 @@ export function showTargetReferenceMenu(e: MouseEvent, source: TargetReferenceSo
     });
 }
 
-/** Gives the target a reference where it needs one, and copies a reference link to it. */
-function copyTargetReference(source: TargetReferenceSource) {
+/**
+ * Gives the target a reference where it needs one, and copies a reference link to it. Call it
+ * synchronously from the user's action, which allows the clipboard write.
+ */
+export function copyTargetReference(source: TargetReferenceSource) {
     const content = linkToTarget(source).then((target) => {
         if (!target) {
             return null;
