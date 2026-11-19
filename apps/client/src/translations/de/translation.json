@@ -74,7 +74,11 @@
     "display_card": "Karte",
     "description": "Beschreibung",
     "retrieving_from_page": "Webseite wird ausgelesen...",
-    "top_of_note": "Link zur kompletten Notiz"
+    "top_of_note": "Link zur kompletten Notiz",
+    "page_description": "Beschreibung der Webseite",
+    "anchors": "Überschrift",
+    "headings": "Überschriften",
+    "page_title": "Title der Website"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Zweigpräfix bearbeiten",
