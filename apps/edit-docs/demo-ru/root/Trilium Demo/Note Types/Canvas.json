@@ -26,7 +26,10 @@
       "boundElements": [],
       "updated": 1743367114827,
       "link": null,
-      "index": "a0"
+      "index": "a0",
+      "frameId": null,
+      "roundness": null,
+      "locked": false
     },
     {
       "type": "arrow",
@@ -65,7 +68,14 @@
           46
         ]
       ],
-      "index": "a1"
+      "index": "a1",
+      "frameId": null,
+      "roundness": {
+        "type": 2
+      },
+      "locked": false,
+      "startBinding": null,
+      "endBinding": null
     },
     {
       "type": "ellipse",
@@ -91,7 +101,10 @@
       "boundElements": [],
       "updated": 1743367114827,
       "link": null,
-      "index": "a2"
+      "index": "a2",
+      "frameId": null,
+      "roundness": null,
+      "locked": false
     },
     {
       "type": "text",
@@ -109,8 +122,7 @@
       "y": 20,
       "strokeColor": "#000000",
       "backgroundColor": "#228be6",
-      "width": 71.75,
-      "height": 29,
+      "width": 147,
       "seed": 317664926,
       "groupIds": [],
       "strokeSharpness": "sharp",
@@ -118,14 +130,20 @@
       "updated": 1743367114827,
       "link": null,
       "fontSize": 20,
-      "fontFamily": 2,
+      "fontFamily": 6,
       "text": "преобразовать",
       "baseline": 18,
       "textAlign": "left",
       "verticalAlign": "top",
       "containerId": null,
       "originalText": "преобразовать",
-      "index": "a3"
+      "index": "a3",
+      "lineHeight": 1.25,
+      "autoResize": true,
+      "frameId": null,
+      "roundness": null,
+      "locked": false,
+      "height": 29
     },
     {
       "type": "diamond",
@@ -151,7 +169,10 @@
       "boundElements": [],
       "updated": 1743367114827,
       "link": null,
-      "index": "a4"
+      "index": "a4",
+      "frameId": null,
+      "roundness": null,
+      "locked": false
     },
     {
       "type": "line",
@@ -190,7 +211,14 @@
           113
         ]
       ],
-      "index": "a5"
+      "index": "a5",
+      "frameId": null,
+      "roundness": {
+        "type": 2
+      },
+      "locked": false,
+      "startBinding": null,
+      "endBinding": null
     },
     {
       "type": "rectangle",
@@ -216,7 +244,10 @@
       "boundElements": [],
       "updated": 1743367114827,
       "link": null,
-      "index": "a6"
+      "index": "a6",
+      "frameId": null,
+      "roundness": null,
+      "locked": false
     },
     {
       "type": "text",
@@ -234,8 +265,7 @@
       "y": 247,
       "strokeColor": "#2b8a3e",
       "backgroundColor": "#228be6",
-      "width": 53.36666488647461,
-      "height": 87,
+      "width": 81,
       "seed": 146698370,
       "groupIds": [],
       "strokeSharpness": "sharp",
@@ -243,14 +273,20 @@
       "updated": 1743367114827,
       "link": null,
       "fontSize": 20,
-      "fontFamily": 2,
+      "fontFamily": 6,
       "text": "Список:\n- один\n- два",
       "baseline": 70,
       "textAlign": "left",
       "verticalAlign": "top",
       "containerId": null,
       "originalText": "Список:\n- один\n- два",
-      "index": "a7"
+      "index": "a7",
+      "lineHeight": 1.25,
+      "autoResize": true,
+      "frameId": null,
+      "roundness": null,
+      "locked": false,
+      "height": 79
     },
     {
       "type": "diamond",
@@ -276,7 +312,10 @@
       "boundElements": [],
       "updated": 1743367114827,
       "link": null,
-      "index": "a8"
+      "index": "a8",
+      "frameId": null,
+      "roundness": null,
+      "locked": false
     },
     {
       "type": "rectangle",
@@ -302,7 +341,10 @@
       "boundElements": [],
       "updated": 1743367114827,
       "link": null,
-      "index": "a9"
+      "index": "a9",
+      "frameId": null,
+      "roundness": null,
+      "locked": false
     },
     {
       "type": "diamond",
@@ -328,7 +370,10 @@
       "boundElements": [],
       "updated": 1743367114827,
       "link": null,
-      "index": "aA"
+      "index": "aA",
+      "frameId": null,
+      "roundness": null,
+      "locked": false
     },
     {
       "type": "rectangle",
@@ -354,7 +399,10 @@
       "boundElements": [],
       "updated": 1743367114827,
       "link": null,
-      "index": "aB"
+      "index": "aB",
+      "frameId": null,
+      "roundness": null,
+      "locked": false
     },
     {
       "type": "line",
@@ -409,7 +457,12 @@
           80
         ]
       ],
-      "index": "aC"
+      "index": "aC",
+      "frameId": null,
+      "roundness": null,
+      "locked": false,
+      "startBinding": null,
+      "endBinding": null
     },
     {
       "type": "line",
@@ -500,7 +553,12 @@
           -4
         ]
       ],
-      "index": "aD"
+      "index": "aD",
+      "frameId": null,
+      "roundness": null,
+      "locked": false,
+      "startBinding": null,
+      "endBinding": null
     },
     {
       "type": "rectangle",
@@ -526,7 +584,10 @@
       "boundElements": [],
       "updated": 1743367114827,
       "link": null,
-      "index": "aE"
+      "index": "aE",
+      "frameId": null,
+      "roundness": null,
+      "locked": false
     },
     {
       "type": "diamond",
@@ -552,7 +613,10 @@
       "boundElements": [],
       "updated": 1743367114827,
       "link": null,
-      "index": "aF"
+      "index": "aF",
+      "frameId": null,
+      "roundness": null,
+      "locked": false
     },
     {
       "type": "text",
@@ -570,8 +634,7 @@
       "y": 386.2393022458574,
       "strokeColor": "#d9480f",
       "backgroundColor": "#4c6ef5",
-      "width": 106.3499984741211,
-      "height": 29,
+      "width": 176,
       "seed": 152285754,
       "groupIds": [],
       "strokeSharpness": "sharp",
@@ -579,14 +642,20 @@
       "updated": 1743367114827,
       "link": null,
       "fontSize": 20,
-      "fontFamily": 2,
+      "fontFamily": 6,
       "text": "Повернутый текст",
       "baseline": 23,
       "textAlign": "left",
       "verticalAlign": "top",
       "containerId": null,
       "originalText": "Повернутый текст",
-      "index": "aG"
+      "index": "aG",
+      "lineHeight": 1.25,
+      "autoResize": true,
+      "frameId": null,
+      "roundness": null,
+      "locked": false,
+      "height": 29
     },
     {
       "type": "arrow",
@@ -625,7 +694,14 @@
           75.30428366219626
         ]
       ],
-      "index": "aH"
+      "index": "aH",
+      "frameId": null,
+      "roundness": {
+        "type": 2
+      },
+      "locked": false,
+      "startBinding": null,
+      "endBinding": null
     },
     {
       "type": "text",
@@ -643,8 +719,7 @@
       "y": 392,
       "strokeColor": "#000000",
       "backgroundColor": "#4c6ef5",
-      "width": 128.88333129882812,
-      "height": 29,
+      "width": 189,
       "seed": 1839996922,
       "groupIds": [],
       "strokeSharpness": "sharp",
@@ -659,7 +734,13 @@
       "verticalAlign": "top",
       "containerId": null,
       "originalText": "> фрагмент кода",
-      "index": "aI"
+      "index": "aI",
+      "lineHeight": 1.25,
+      "autoResize": true,
+      "frameId": null,
+      "roundness": null,
+      "locked": false,
+      "height": 29
     },
     {
       "type": "text",
@@ -677,8 +758,7 @@
       "y": 31.00810810810811,
       "strokeColor": "#c92a2a",
       "backgroundColor": "#228be6",
-      "width": 165.3333282470703,
-      "height": 57,
+      "width": 271,
       "seed": 168503609,
       "groupIds": [],
       "strokeSharpness": "sharp",
@@ -686,14 +766,20 @@
       "updated": 1743367114827,
       "link": null,
       "fontSize": 39.25486991656494,
-      "fontFamily": 2,
+      "fontFamily": 6,
       "text": "Крупный текст",
       "baseline": 35,
       "textAlign": "left",
       "verticalAlign": "top",
       "containerId": null,
       "originalText": "Крупный текст",
-      "index": "aJ"
+      "index": "aJ",
+      "lineHeight": 1.25,
+      "autoResize": true,
+      "frameId": null,
+      "roundness": null,
+      "locked": false,
+      "height": 54
     },
     {
       "type": "ellipse",
@@ -719,7 +805,10 @@
       "boundElements": [],
       "updated": 1743367114827,
       "link": null,
-      "index": "aK"
+      "index": "aK",
+      "frameId": null,
+      "roundness": null,
+      "locked": false
     }
   ],
   "files": {},
