@@ -10,6 +10,7 @@ import { serverImageProvider } from "@triliumnext/server/src/services/image_prov
 import BetterSqlite3Provider from "@triliumnext/server/src/sql_provider.js";
 import NodejsZipProvider from "@triliumnext/server/src/zip_provider.js";
 import { type Archiver, ZipArchive } from "archiver";
+import { createHash } from "crypto";
 import { createWriteStream, readFileSync, type WriteStream } from "fs";
 import fs from "fs/promises";
 import { load } from "js-yaml";
@@ -178,8 +179,8 @@ export async function initializeDocsCore(messaging?: MessagingProvider) {
     });
 }
 
-export async function importData(path: string) {
-    const buffer = await createImportZip(path);
+export async function importData(dirPath: string, excludeDirs: string[] = []) {
+    const buffer = await createImportZip(dirPath, excludeDirs);
     const { zipImportService, TaskContext, becca } = (await import("@triliumnext/core"));
     const context = new TaskContext("no-progress-reporting", "importNotes", null);
 
@@ -197,7 +198,7 @@ export async function importMappings(mappings: NoteMapping[]) {
     for (const mapping of mappings) {
         if (!mapping.exportOnly) {
             await writeGeneratedPages(mapping);
-            await importData(mapping.path);
+            await importData(mapping.path, Object.values(mapping.helpLocales ?? {}).map((l) => l.path));
         }
     }
 }
@@ -309,9 +310,14 @@ export async function exportData(mapping: NoteMapping, baseUrl: string) {
 
     // Localized help: each locale's export directory yields its own pair of help artifacts.
     if (mapping.helpLocales) {
+        const generatedNoteIds = [
+            ...(mapping.openApiPages ?? []).map((p) => p.noteId),
+            ...(mapping.typeDocPages ?? []).map((p) => p.noteId)
+        ];
         for (const [ locale, localeMapping ] of Object.entries(mapping.helpLocales)) {
+            await syncGeneratedPagesToLocale(outputPath, localeMapping.path, generatedNoteIds);
             console.log(`Building in-app help for locale '${locale}'...`);
-            await writeHelpArtifacts(localeMapping.path, localeMapping.helpMeta, localeMapping.helpContent, baseUrl);
+            await writeHelpArtifacts(localeMapping.path, localeMapping.helpMeta, localeMapping.helpContent, baseUrl, outputPath);
         }
         await writeHelpLocalesIndex(mapping);
     }
@@ -384,7 +390,13 @@ async function cleanUpMeta(outputPath: string, mapping: NoteMapping, baseUrl: st
  * Derives the in-app help tree and its rendered content from a markdown export directory
  * (the freshly exported User Guide, or one of its localized variants).
  */
-async function writeHelpArtifacts(exportDir: string, helpMetaPath?: string, helpContentPath?: string, baseUrl?: string) {
+export async function writeHelpArtifacts(
+    exportDir: string,
+    helpMetaPath?: string,
+    helpContentPath?: string,
+    baseUrl?: string,
+    englishDir?: string
+) {
     const meta = JSON.parse(await fs.readFile(path.join(exportDir, "!!!meta.json"), "utf-8")) as NoteMetaFile;
     const { meta: helpMeta, sources } = buildHelpMeta(meta, baseUrl);
 
@@ -407,8 +419,61 @@ async function writeHelpArtifacts(exportDir: string, helpMetaPath?: string, help
             (markdown, title) => markdownImportService.renderToHtml(markdown, title)
         );
 
+        if (englishDir) {
+            await markOutdatedTranslations(bundle, helpMeta, sources, exportDir, englishDir);
+        }
+
         // One page per line: the bundle is a flat map from note ID to HTML.
         await writeArtifact(helpContentPath, JSON.stringify(bundle, null, 4));
+    }
+}
+
+/**
+ * Prepends a per-page warning banner with an in-app English switch link when the English
+ * source file has changed since the translation hash recorded in `.translation-hashes.json`.
+ */
+async function markOutdatedTranslations(
+    bundle: Record<string, string>,
+    items: ReturnType<typeof buildHelpMeta>["meta"],
+    sources: ReturnType<typeof buildHelpMeta>["sources"],
+    exportDir: string,
+    englishDir: string
+) {
+    let savedHashes: Record<string, string>;
+    try {
+        savedHashes = JSON.parse(await fs.readFile(path.join(exportDir, ".translation-hashes.json"), "utf-8")) as Record<string, string>;
+    } catch {
+        return;
+    }
+
+    const typesById = new Map<string, string>();
+    const collectTypes = (nodes: typeof items) => {
+        for (const node of nodes) {
+            typesById.set(node.id, node.type);
+            if (node.children) collectTypes(node.children);
+        }
+    };
+    collectTypes(items);
+
+    for (const [ itemId, { source } ] of Object.entries(sources)) {
+        if (!source || typesById.get(itemId) === "code" || !(itemId in bundle)) {
+            continue;
+        }
+        const key = source.replaceAll("\\", "/");
+        const expectedHash = savedHashes[key];
+        if (!expectedHash) {
+            continue;
+        }
+        let currentHash: string;
+        try {
+            const raw = readFileSync(path.join(englishDir, source)).toString("utf-8").replaceAll("\r\n", "\n");
+            currentHash = createHash("sha256").update(raw, "utf-8").digest("hex");
+        } catch {
+            continue;
+        }
+        if (currentHash !== expectedHash) {
+            bundle[itemId] = `<blockquote class="help-outdated-banner"><p><strong>Данная информация устарела.</strong> Актуальная версия доступна на <a href="#help-locale:${itemId}:en">английском языке</a>.</p></blockquote>\n${bundle[itemId]}`;
+        }
     }
 }
 
@@ -418,13 +483,54 @@ async function writeArtifact(filePath: string, content: string) {
     await fs.writeFile(filePath, content);
 }
 
-async function createImportZip(path: string) {
+/** Copies freshly generated OpenAPI/TypeDoc pages from the English export into a localized tree. */
+async function syncGeneratedPagesToLocale(englishDir: string, localeDir: string, noteIds: string[]) {
+    if (noteIds.length === 0) return;
+    let meta: NoteMetaFile;
+    try {
+        meta = JSON.parse(await fs.readFile(path.join(englishDir, "!!!meta.json"), "utf-8")) as NoteMetaFile;
+    } catch {
+        return;
+    }
+    for (const noteId of noteIds) {
+        const found = findDataFile(meta.files, noteId, englishDir);
+        if (!found) continue;
+        const rel = path.relative(englishDir, found.dataFile);
+        const dest = path.join(localeDir, rel);
+        try {
+            await fs.mkdir(path.dirname(dest), { recursive: true });
+            await fs.copyFile(found.dataFile, dest);
+        } catch {
+            // Skip if the English generated page is missing.
+        }
+    }
+}
+
+async function createImportZip(dirPath: string, excludeDirs: string[] = []) {
     const inputFile = "input.zip";
     const archive = new ZipArchive({
         zlib: { level: 0 }
     });
 
-    archive.directory(path, "/");
+    const resolvedDir = path.resolve(dirPath);
+    const excludedPrefixes = excludeDirs
+        .map((d) => path.resolve(d))
+        .filter((d) => d.startsWith(resolvedDir + path.sep))
+        .map((d) => path.relative(resolvedDir, d).replaceAll("\\", "/"));
+
+    if (excludedPrefixes.length === 0) {
+        archive.directory(dirPath, "/");
+    } else {
+        const entries = await fs.readdir(resolvedDir, { withFileTypes: true, recursive: true });
+        for (const entry of entries) {
+            if (!entry.isFile()) continue;
+            const fullPath = path.join(entry.parentPath, entry.name);
+            const rel = path.relative(resolvedDir, fullPath).replaceAll("\\", "/");
+            if (!excludedPrefixes.some((p) => rel === p || rel.startsWith(`${p}/`))) {
+                archive.file(fullPath, { name: rel });
+            }
+        }
+    }
 
     const outputStream = createWriteStream(inputFile);
     archive.pipe(outputStream);
