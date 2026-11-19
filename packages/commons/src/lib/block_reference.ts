@@ -60,6 +60,20 @@ export function generateBlockId() {
     return characters.join("");
 }
 
+/**
+ * A valid id from `createId` that `content` does not hold anywhere, so no other block has it, or
+ * `null` when none of `MAX_ID_DRAWS` draws is one.
+ */
+export function drawBlockId(content: string, createId: () => string) {
+    for (let attempt = 0; attempt < MAX_ID_DRAWS; attempt++) {
+        const id = createId();
+        if (isValidBlockId(id) && !content.includes(id)) {
+            return id;
+        }
+    }
+    return null;
+}
+
 /** Parses the value of the `block` link parameter, `id` or `startId:endId`. */
 export function parseBlockRange(value: string | null | undefined): BlockRange | null {
     const ids = value?.split(":") ?? [];
@@ -88,23 +102,12 @@ export interface FoundBlockId {
     id: string | null;
 }
 
-/** The block marker of `id`, a valid block id. */
+/**
+ * The block marker of `id`, a valid block id. Every character of `id` outside `[A-Za-z0-9_.-]` is
+ * written as a numeric character reference, so that no Markdown syntax can take it.
+ */
 export function formatBlockMarker(id: string) {
     return `<a ${BLOCK_ID_ATTRIBUTE}="${encodeBlockMarkerId(id)}"></a>`;
-}
-
-/**
- * Writes `id` for a marker: every character outside `[A-Za-z0-9_.-]` becomes a numeric character
- * reference, so that no Markdown syntax can take it.
- */
-export function encodeBlockMarkerId(id: string) {
-    let encoded = "";
-    for (const character of id) {
-        encoded += /^[\w.-]$/.test(character)
-            ? character
-            : `&#${character.codePointAt(0)};`;
-    }
-    return encoded;
 }
 
 /**
@@ -332,6 +335,8 @@ export function getListItemNumber(list: BlockNode, index: number) {
 
 const BLOCK_ID_LENGTH = 12;
 const BLOCK_ID_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+/** A random id almost never needs a second draw; the bound stops a `createId` that repeats. */
+const MAX_ID_DRAWS = 16;
 
 /** A block marker in any spelling: other white space, line breaks, an unquoted value. */
 const LENIENT_BLOCK_MARKER = String.raw`<a\s+data-trilium-block-id\s*=\s*`
@@ -344,6 +349,16 @@ const BLOCK_ID_ATTRIBUTE_VALUE =
 const RUN_CONTAINERS = new Set([
     "ASIDE", "BLOCKQUOTE", "DETAILS", "DIV", "LI", "OL", "SECTION", "UL"
 ]);
+
+function encodeBlockMarkerId(id: string) {
+    let encoded = "";
+    for (const character of id) {
+        encoded += /^[\w.-]$/.test(character)
+            ? character
+            : `&#${character.codePointAt(0)};`;
+    }
+    return encoded;
+}
 
 function getPath<T extends BlockNode>(node: T, root: BlockNode) {
     const path: T[] = [];

@@ -1,10 +1,14 @@
 import { isSameBlockKey, isSameBlockShape } from "./block_keys.js";
 import {
-    BLOCK_ID_ATTRIBUTE, type BlockNode, formatBlockMarker, isValidBlockId
+    BLOCK_ID_ATTRIBUTE, type BlockNode, drawBlockId, formatBlockMarker, isValidBlockId
 } from "./block_reference.js";
 import {
     type BlockIndexHost, type IndexedBlock, indexMarkdownBlocks, type MarkdownBlockIndex
 } from "./markdown_block_index.js";
+import { CONTAINER_PREFIX_SOURCE, countLineBreaks } from "./markdown_source.js";
+import {
+    findRequestedHeading, getHeadingLevel, getHeadingText, type HeadingTarget, toReferenceTargets
+} from "./reference_targets.js";
 import type { CreateReferenceRequest, ReferenceParams, ReferenceTarget } from "./server_api.js";
 
 /** An edit of a source: the text from `from` to `to` replaced by `insert`. */
@@ -27,35 +31,15 @@ export interface PlacedMarker {
  */
 export type NewBlockId = { kind: "draw"; createId: () => string } | { kind: "given"; id: string };
 
-/** A heading of a Markdown note that a link can point at. */
-export interface MarkdownHeading {
+/** A heading of a Markdown note that a link can point at, and the block that renders it. */
+export interface MarkdownHeading extends HeadingTarget {
     block: IndexedBlock;
-    /** Its plain text. */
-    title: string;
-    /** 1 for `<h1>`, up to 6. */
-    level: number;
-    /** The id that the heading owns. */
-    id?: string;
 }
 
 /**
- * The edit that gives the block on `line`, 1-indexed, of `source` an id that resolves to it, or
- * the id that the block has. `null` when the block cannot take one.
- */
-export function placeBlockMarker(
-    source: string,
-    line: number,
-    newId: NewBlockId,
-    host: BlockIndexHost
-): PlacedMarker | null {
-    const index = indexMarkdownBlocks(source, host);
-    const block = index.blockAt(line);
-    return block ? placeMarkerOnBlock(source, index, block, newId, host) : null;
-}
-
-/**
- * {@link placeBlockMarker} for `block` of `index`, the index of `source`. The edit is kept only if
- * the renderer gives the new id to that block and leaves every other block as it was.
+ * The edit that gives `block` of `index`, the index of `source`, an id that resolves to it, or the
+ * id that the block has. The edit is kept only if the renderer gives the new id to that block and
+ * leaves every other block as it was. `null` when the block cannot take an id.
  */
 export function placeMarkerOnBlock(
     source: string,
@@ -106,7 +90,7 @@ export function findMarkdownHeadings(index: MarkdownBlockIndex): MarkdownHeading
         const id = block.id !== undefined && index.resolve(block.id) === block
             ? block.id
             : undefined;
-        const title = getHeadingTitle(block.node);
+        const title = getHeadingText(block.node);
         if (title && (id !== undefined || block.isWritable)) {
             const level = block.depth ?? getHeadingLevel(block.node);
             headings.push({ block, title, level, id });
@@ -118,15 +102,9 @@ export function findMarkdownHeadings(index: MarkdownBlockIndex): MarkdownHeading
 /** The headings that have text, in document order, then the anchors, by name. */
 export function findMarkdownTargets(source: string, host: BlockIndexHost): ReferenceTarget[] {
     const index = indexMarkdownBlocks(source, host);
-    const headings = findMarkdownHeadings(index).map(({ title, level, id }): ReferenceTarget =>
-        (id === undefined
-            ? { kind: "heading", title, level }
-            : { kind: "heading", title, level, params: { block: id } }));
-    const names = [ ...new Set(index.anchors.map((anchor) => anchor.name)) ]
-        .sort((a, b) => a.localeCompare(b));
-    const anchors = names.map((name): ReferenceTarget =>
-        ({ kind: "anchor", title: name, params: { bookmark: name } }));
-    return [ ...headings, ...anchors ];
+    return toReferenceTargets(
+        findMarkdownHeadings(index), index.anchors.map((anchor) => anchor.name)
+    );
 }
 
 /**
@@ -142,7 +120,7 @@ export function addMarkdownHeadingReference(
     host: BlockIndexHost
 ): { content: string; params: ReferenceParams } | null {
     const index = indexMarkdownBlocks(source, host);
-    const heading = findHeading(findMarkdownHeadings(index), request);
+    const heading = findRequestedHeading(findMarkdownHeadings(index), request);
     const placed = heading
         ? placeMarkerOnBlock(source, index, heading.block, { kind: "draw", createId }, host)
         : null;
@@ -253,18 +231,11 @@ export function insertHtmlBlock(
         : null;
 }
 
-/** How often a drawn id is drawn again while the source holds it. */
-const MAX_DRAWS = 16;
-/** Quote markers, list markers and indentation in front of the content of a line. */
-const CONTAINER_PREFIX = /^(?:[ \t]*(?:>|[-*+](?=[ \t])|\d{1,9}[.)](?=[ \t])))*[ \t]*/;
+const CONTAINER_PREFIX = new RegExp(`^${CONTAINER_PREFIX_SOURCE}`);
 const LIST_MARKER = /[-*+]|\d{1,9}[.)]/g;
 const FENCE = /`{3,}|~{3,}/;
 const RULE = /([-*_])(?:[ \t]*\1){2,}[ \t]*$/;
 const ATX_CLOSING_SEQUENCE = /[ \t]+#+[ \t]*$/;
-const HEADING_TAG = /^H([1-6])$/i;
-/** The elements that the text editor reads as a space in a heading. */
-const SPACE_TAGS = new Set([ "BR", "IMG" ]);
-const COMMENT_NODE = 8;
 
 interface SourceLine {
     /** The offset of the line in the source. */
@@ -277,14 +248,7 @@ function pickId(source: string, index: MarkdownBlockIndex, newId: NewBlockId) {
     if (newId.kind === "given") {
         return isValidBlockId(newId.id) && !isIdInUse(index, newId.id) ? newId.id : null;
     }
-    // A random id almost never needs a second draw; the search errs on the safe side.
-    for (let attempt = 0; attempt < MAX_DRAWS; attempt++) {
-        const id = newId.createId();
-        if (isValidBlockId(id) && !source.includes(id)) {
-            return id;
-        }
-    }
-    return null;
+    return drawBlockId(source, newId.createId);
 }
 
 /** Whether a marker or an element of the rendered note holds `id`. */
@@ -433,49 +397,6 @@ function getOwnerPosition(index: MarkdownBlockIndex, id: string) {
     return owner ? index.blocks.indexOf(owner) : -1;
 }
 
-/** The heading at `index` while its text is `title`, else the only heading with that text. */
-function findHeading(
-    headings: MarkdownHeading[],
-    { index, title }: Pick<CreateReferenceRequest, "index" | "title">
-) {
-    if (headings[index]?.title === title) {
-        return headings[index];
-    }
-    const matches = headings.filter((heading) => heading.title === title);
-    return matches.length === 1 ? matches[0] : null;
-}
-
-/**
- * The text of a rendered heading as the text editor lists it: line breaks, images, formulas and
- * anchors read as a space, and white space is collapsed.
- */
-function getHeadingTitle(heading: BlockNode) {
-    let text = "";
-    const stack = Array.from(heading.childNodes).reverse();
-    for (let node = stack.pop(); node; node = stack.pop()) {
-        if (!node.tagName) {
-            text += node.nodeType === COMMENT_NODE ? "" : node.textContent as string;
-            continue;
-        }
-        const element = node as Required<BlockNode>;
-        const tag = element.tagName.toUpperCase();
-        const isFormula = /(?:^|\s)math-tex(?:\s|$)/.test(element.getAttribute("class") ?? "");
-        const isAnchor = tag === "A" && !element.getAttribute("href");
-        if (isFormula || isAnchor || SPACE_TAGS.has(tag)) {
-            text += " ";
-        }
-        if (!isFormula) {
-            stack.push(...Array.from(node.childNodes).reverse());
-        }
-    }
-    return text.replace(/\s+/g, " ").trim();
-}
-
-/** The level of `heading`, an `<h1>` to `<h6>`. */
-function getHeadingLevel(heading: BlockNode) {
-    return Number((HEADING_TAG.exec(heading.tagName as string) as RegExpExecArray)[1]);
-}
-
 /** The line of `source` that holds `offset`. */
 function getLine(source: string, offset: number): SourceLine {
     let start = offset;
@@ -526,8 +447,4 @@ function countElementsOutsideParagraphs(root: BlockNode, tag: string) {
         }
     }
     return count;
-}
-
-function countLineBreaks(text: string) {
-    return (text.match(/\r\n?|\n/g) ?? []).length;
 }

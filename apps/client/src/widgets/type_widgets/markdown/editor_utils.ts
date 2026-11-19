@@ -8,11 +8,10 @@ import type { SourceChange } from "@triliumnext/commons/src/lib/markdown_referen
 
 import appContext from "../../../components/app_context";
 import type FNote from "../../../entities/fnote";
-import { loadBlockReferenceLabel } from "../../../services/block_excerpts";
 import { formatCustomDateTime } from "../../../services/dayjs";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
-import { loadPdfReferenceLabel } from "../../../services/link";
+import { LABELED_TARGET_PARAMS, loadLinkTargetLabel } from "../../../services/link";
 import { createAnchorTargets, type LinkTarget } from "../../../services/link_targets";
 import { parseNavigationStateFromUrl } from "../../../services/navigation_state";
 import options from "../../../services/options";
@@ -198,22 +197,20 @@ export function toWikilink(notePath: string) {
 
 /**
  * The chip of a `[[noteId]]` link in the Markdown editor: the icon and title of the note, then the
- * heading, anchor or PDF page that `params`, the query of the link, point at.
+ * blocks, heading, anchor or PDF page that `params`, the query of the link, point at.
  */
 export function resolveWikilinkChip(
     noteId: string, params?: string
 ): NoteChip | Promise<NoteChip | null> | null {
     const { viewScope = {} } = parseNavigationStateFromUrl(`#root/${noteId}?${params ?? ""}`);
-    const { block, bookmark, page, heading } = viewScope;
-    if (!block && !bookmark && !page && !heading) return resolveNoteChip(noteId);
+    if (!LABELED_TARGET_PARAMS.some((param) => viewScope[param])) return resolveNoteChip(noteId);
 
     return froca.getNote(noteId, true).then(async (note) => {
         if (!note) return null;
         // A broken reference names the note alone, as the text of a reference link does.
-        const blockLabel = block ? await loadBlockReferenceLabel(note, block) : null;
-        const label = bookmark ?? (blockLabel?.isBroken ? null : blockLabel?.text)
-            ?? await loadPdfReferenceLabel(note, viewScope);
-        return { title: label ? `${note.title} - ${label}` : note.title, icon: note.getIcon() };
+        const label = await loadLinkTargetLabel(note, viewScope);
+        const title = label && !label.isBroken ? `${note.title} - ${label.text}` : note.title;
+        return { title, icon: note.getIcon() };
     });
 }
 

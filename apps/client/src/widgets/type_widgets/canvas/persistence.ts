@@ -688,6 +688,9 @@ export function useCanvasDrawingPersistence(
             void loadSavedDrawing();
         }
     });
+    // A save made elsewhere while changes waited shows once the user picks its version.
+    useEffect(() => editor?.subscribeVersionLoaded?.(() => void loadSavedDrawing()),
+        [ editor, attachment ]);
 
     return {
         initialData,

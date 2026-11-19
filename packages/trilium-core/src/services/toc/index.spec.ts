@@ -20,11 +20,13 @@ import protectedSessionService from "../protected_session.js";
 import { getSql } from "../sql/index.js";
 import TaskContext from "../task_context.js";
 import { decodeUtf8, encodeUtf8 } from "../utils/binary.js";
+import { EPUB_TOC_READER } from "./epub.js";
 import {
-    findTocFormat, type GeneratedToc, getToc, readCachedToc, registerTocGenerator, saveClientToc,
-    TOC_CACHE_ROLE, type TocDocumentRef, type TocGenerator, unregisterTocGenerator
+    createLevelTracker, findTocFormat, type GeneratedToc, getToc, readCachedToc,
+    registerTocGenerator, saveClientToc, TOC_CACHE_ROLE, type TocDocumentRef, type TocGenerator,
+    unregisterTocGenerator
 } from "./index.js";
-import { DOCX_TOC_READER, EPUB_TOC_READER, ODT_TOC_READER } from "./office.js";
+import { DOCX_TOC_READER, ODT_TOC_READER } from "./office.js";
 
 const PROPERTIES = { reader: PDF_TOC_READER };
 const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures");
@@ -812,7 +814,7 @@ describe("EPUB e-books", () => {
                 const shown = (headings: unknown[]) =>
                     (headings as { isShown?: false }[]).map(({ isShown }) => isShown);
                 expect(shown(cache.headings)).toStrictEqual(shown(contract.headings));
-                expect(cache.epub).toStrictEqual({ reader: EPUB_TOC_READER, bookmarks: [] });
+                expect(cache.epub).toStrictEqual({ reader: EPUB_TOC_READER });
             }
         }
     });
@@ -866,6 +868,15 @@ describe("findTocFormat", () => {
         expect(findTocFormat("file", "application/rtf")).toBeUndefined();
         expect(findTocFormat("file", "application/zip")).toBeUndefined();
         expect(findTocFormat("text", "application/pdf")).toBeUndefined();
+    });
+});
+
+describe("createLevelTracker", () => {
+    it("nests each depth under the nearest smaller depth passed before it", () => {
+        const toLevel = createLevelTracker();
+
+        expect([ 2, 1, 3, 2, 6, 6, 4, 1 ].map((depth) => toLevel(depth)))
+            .toStrictEqual([ 1, 1, 2, 2, 3, 3, 3, 1 ]);
     });
 });
 

@@ -11,7 +11,9 @@ import { t } from "i18next";
 import type { Request } from "../../http_interface";
 
 import blobService from "../../services/blob";
-import { getBlockRangeContent, replaceBlockRangeContent } from "../../services/block_ranges";
+import {
+    getBlockRangeContent, replaceBlockRangeContent, replaceBlockRangeOnBase
+} from "../../services/block_ranges";
 import eraseService from "../../services/erase.js";
 import { DetailedConflictError, NotFoundError, ValidationError } from "../../errors.js";
 import { answerConflict } from "../helpers.js";
@@ -194,26 +196,24 @@ function saveBlocksOnBase(note: BNote, block: string, save: {
     if (note.type !== "text") {
         throw gone("format");
     }
-    const content = getTextContent(note);
-    const current = getBlockRangeContent(content, block);
-    const newContent = current === null
-        ? null
-        : replaceBlockRangeContent(content, block, save.blocks);
-    if (current === null || newContent === null) {
+    const replacement =
+        replaceBlockRangeOnBase(getTextContent(note), block, save.blocks, save.hash);
+    if (replacement.status === "missing") {
         throw gone("range");
     }
 
+    const { hash } = replacement;
     const rows = save.attachments ?? [];
     const changed = (message: string, attachments: SavedAttachmentBase[]) =>
         new DetailedConflictError<BlocksConflictResponse>(message, {
-            reason: "version", message, hash: hashedBlobId(current), attachments,
-            isVersioned: note.isVersioned()
+            reason: "version", message, hash, attachments, isVersioned: note.isVersioned()
         });
-    if (hashedBlobId(current) !== save.hash) {
+    if (replacement.status === "changed") {
         const message =
             `Blocks '${block}' of note '${note.noteId}' have changed since they were read.`;
         throw changed(message, noteService.getNamedAttachments(note, rows));
     }
+    const newContent = replacement.content;
 
     // A change outside the blocks goes through: the precondition is the note as it is now, which
     // still checks the attachment rows.

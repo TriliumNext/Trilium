@@ -11,7 +11,6 @@ import {
 import { ValidationError } from "../errors.js";
 import type { TocPassOutcome } from "./toc/epub.js";
 import { wrapStringOrBuffer } from "./utils/binary.js";
-import { getZipProvider } from "./zip_provider.js";
 
 /**
  * Conversion is CPU-bound and runs on the main thread (or the standalone service worker),
@@ -43,9 +42,9 @@ export interface OfficePreviewOptions {
  * `trim` reaches the spreadsheet pipeline only; the other formats convert whole, since none of
  * them turns a page of content into the megabytes a workbook can.
  *
- * An EPUB is converted from an archive in which the ToC pass of `toc/epub.ts` placed a marker at
- * each entry of the book's table of contents. Whatever fails in the pass, the original bytes are
- * converted instead, and `onTocPass` tells which.
+ * An EPUB is converted from an archive in which the ToC pass of `toc/epub_pass.ts` placed a marker
+ * at each entry of the book's table of contents. Whatever fails in the pass, the original bytes
+ * are converted instead, and `onTocPass` tells which.
  */
 export async function convertOfficeToHtml(content: string | Uint8Array, mime: string, options: OfficePreviewOptions = {}): Promise<string> {
     if (!isOfficeMimeType(mime)) {
@@ -99,15 +98,12 @@ export async function convertXlsxToWorkbook(content: string | Uint8Array, mime: 
  * workbook from. Only the central directory is read; no entry is decompressed.
  */
 async function isSpreadsheetPackage(buffer: Uint8Array): Promise<boolean> {
-    let hasWorkbook = false;
     try {
-        await getZipProvider().readZipFile(buffer, async ({ fileName }) => {
-            hasWorkbook ||= fileName === "xl/workbook.xml";
-        });
+        const { readZipIndex } = await import("./utils/zip_records.js");
+        return (await readZipIndex(buffer)).records.has("xl/workbook.xml");
     } catch {
         return false;
     }
-    return hasWorkbook;
 }
 
 /**
@@ -140,7 +136,7 @@ async function convertEpub(
 ) {
     let outcome: TocPassOutcome;
     try {
-        const { convertMarkedEpub } = await import("./toc/epub.js");
+        const { convertMarkedEpub } = await import("./toc/epub_pass.js");
         const marked = await convertMarkedEpub(buffer, convert);
         if (marked.html !== undefined) {
             onTocPass?.(marked.outcome);

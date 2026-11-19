@@ -8,7 +8,9 @@ import type NoteContext from "../../../components/note_context";
 import type FBlob from "../../../entities/fblob";
 import type FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
-import { type CurrentVersion, NoteSaver, type SaveData } from "../../../services/note_save";
+import {
+    type CurrentVersion, NoteSaver, type SaveData, type SavingEditor
+} from "../../../services/note_save";
 import protected_session_holder from "../../../services/protected_session_holder";
 import server from "../../../services/server";
 import SpacedUpdate, { type StateCallback } from "../../../services/spaced_update";
@@ -82,19 +84,8 @@ export function useEditorSpacedUpdate({
         return getData();
     }, [ note, getData ]);
 
-    const callbacksRef = useRef({
-        prepare, onContentChange, resolveConflict, discardChanges, parentComponent
-    });
-    callbacksRef.current = {
-        prepare, onContentChange, resolveConflict, discardChanges, parentComponent
-    };
-    const [ saver ] = useState(() => new NoteSaver<SavedData>({
-        get componentId() {
-            return callbacksRef.current.parentComponent?.componentId;
-        },
-        getLatestData: (noteId) => (loadedNoteIdRef.current === noteId
-            ? callbacksRef.current.prepare()
-            : undefined),
+    const saver = useNoteSaver<SavedData>({
+        getLatestData: (noteId) => (loadedNoteIdRef.current === noteId ? prepare() : undefined),
         loadVersion(noteId, { content }) {
             if (block === undefined) {
                 noteSavedDataStore.set(noteId, content);
@@ -103,10 +94,13 @@ export function useEditorSpacedUpdate({
         },
         loadBlocks: loadChosenVersion,
         onPaused: () => spacedUpdate.onStateChanged("unsaved"),
-        resolveConflict: (_noteId, current) => (
-            callbacksRef.current.resolveConflict?.(current) ?? false
-        )
-    }));
+        resolveConflict: (_noteId, current) => resolveConflict?.(current) ?? false,
+        async saveChanges(noteId) {
+            if (noteId === note?.noteId) {
+                await spacedUpdate.updateNowIfNecessary();
+            }
+        }
+    });
 
     /**
      * Shows `content`, the version of the note `noteId` that the user chose, and drops the queued
@@ -115,10 +109,8 @@ export function useEditorSpacedUpdate({
     function loadChosenVersion(noteId: string, content: string) {
         spacedUpdate.discard(noteId);
         if (loadedNoteIdRef.current === noteId) {
-            callbacksRef.current.discardChanges?.();
-            void spacedUpdate.allowUpdateWithoutChange(
-                () => callbacksRef.current.onContentChange(content)
-            );
+            discardChanges?.();
+            void spacedUpdate.allowUpdateWithoutChange(() => onContentChange(content));
         }
     }
 
@@ -199,7 +191,6 @@ export function useEditorSpacedUpdate({
     useEffect(() => {
         saver.abandon(note?.noteId);
     }, [ note?.noteId ]);
-    useEffect(() => () => saver.abandon(), [ saver ]);
 
     // React to update interval changes.
     useEffect(() => {
@@ -209,13 +200,50 @@ export function useEditorSpacedUpdate({
 
     useSaveBeforeLeaving(spacedUpdate, noteContext, saver);
 
+    return spacedUpdate;
+}
+
+/** The editor that {@link useNoteSaver} saves for. */
+export interface NoteSaverEditor<T extends SaveData> extends Omit<SavingEditor<T>, "componentId"> {
+    /**
+     * Saves the changes to the note `noteId` now, where the editor holds any, as the
+     * `saveNoteChanges` event asks.
+     */
+    saveChanges?(noteId: string): Promise<void>;
+}
+
+/**
+ * A {@link NoteSaver} that saves for `editor`, calling the callbacks of its latest render, and
+ * sends the ID of the component that it runs in. It answers `saveNoteChanges` for a note whose save
+ * does not wait for the user, and keeps the changes of a save that waits as a revision once the
+ * component unmounts.
+ */
+export function useNoteSaver<T extends SaveData>(editor: NoteSaverEditor<T>) {
+    const parentComponent = useContext(ParentComponent);
+    const editorRef = useRef(editor);
+    editorRef.current = editor;
+    const componentIdRef = useRef(parentComponent?.componentId);
+    componentIdRef.current = parentComponent?.componentId;
+    const [ saver ] = useState(() => new NoteSaver<T>({
+        get componentId() {
+            return componentIdRef.current;
+        },
+        getLatestData: (noteId) => editorRef.current.getLatestData(noteId),
+        loadVersion: (noteId, version) => editorRef.current.loadVersion(noteId, version),
+        loadBlocks: (noteId, content) => editorRef.current.loadBlocks?.(noteId, content),
+        onPaused: () => editorRef.current.onPaused?.(),
+        resolveConflict: (noteId, current) =>
+            editorRef.current.resolveConflict?.(noteId, current) ?? false
+    }));
+
     useTriliumEvent("saveNoteChanges", async ({ noteId }) => {
-        if (noteId === note?.noteId && !saver.isPaused(noteId)) {
-            await spacedUpdate.updateNowIfNecessary();
+        if (!saver.isPaused(noteId)) {
+            await editorRef.current.saveChanges?.(noteId);
         }
     });
+    useEffect(() => () => saver.abandon(), [ saver ]);
 
-    return spacedUpdate;
+    return saver;
 }
 
 /**

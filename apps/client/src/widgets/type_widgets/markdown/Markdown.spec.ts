@@ -8,7 +8,7 @@ import { HIGHLIGHT_STYLE } from "@triliumnext/commons/src/lib/marked_extensions.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-    findActiveBlock, placeBlockMarker, renderWithSourceLines, revealTabAtLine, scrollToSourceLine
+    findActiveBlock, placePreviewMarker, renderWithSourceLines, revealTabAtLine, scrollToSourceLine
 } from "./Markdown.js";
 
 describe("renderWithSourceLines", () => {
@@ -408,7 +408,7 @@ describe("findActiveBlock", () => {
     });
 });
 
-describe("placeBlockMarker", () => {
+describe("placePreviewMarker", () => {
     /** A block of the preview with the given tag and class, laid out at `left` and `top`. */
     function block(tagName: string, className: string, left: number, top: number) {
         const el = document.createElement(tagName);
@@ -426,17 +426,17 @@ describe("placeBlockMarker", () => {
         const marker = () => [ "left", "top", "height" ]
             .map((name) => preview.style.getPropertyValue(`--markdown-preview-marker-${name}`));
 
-        placeBlockMarker(preview, block("aside", "", 400, 50));
+        placePreviewMarker(preview, block("aside", "", 400, 50));
         expect(marker()).toEqual([ "400px", "50px", "30px" ]);
 
-        placeBlockMarker(preview, block("p", "", 16, 90));
+        placePreviewMarker(preview, block("p", "", 16, 90));
         expect(marker()).toEqual([ "", "90px", "30px" ]);
 
-        placeBlockMarker(preview, block("aside", "admonition note", 16, 130));
+        placePreviewMarker(preview, block("aside", "admonition note", 16, 130));
         expect(marker()).toEqual([ "", "130px", "30px" ]);
 
-        placeBlockMarker(preview, block("aside", "", 400, 50));
-        placeBlockMarker(preview, null);
+        placePreviewMarker(preview, block("aside", "", 400, 50));
+        placePreviewMarker(preview, null);
         expect(marker()).toEqual([ "", "0px", "0px" ]);
     });
 });

@@ -3,6 +3,8 @@ import {
 } from "@triliumnext/commons";
 import { HTMLElement, Node, parse } from "node-html-parser";
 
+import { hashedBlobId } from "./utils/index.js";
+
 /**
  * The HTML of the blocks of `content` that `block`, a `block` link parameter, points at, to edit
  * apart from the rest: list items come inside a copy of their list. `null` when the blocks cannot
@@ -69,6 +71,35 @@ export function replaceBlockRangeContent(content: string, block: string, fragmen
     );
     return splice(content, list.range[0], list.range[1], `${before}${edited.toString()}${after}`);
 }
+
+/**
+ * `content` with `fragment` in place of the blocks that `block` points at, as
+ * `replaceBlockRangeContent()` makes it, only while those blocks are as they were read:
+ * `baseHash` is the `hashedBlobId()` of what `getBlockRangeContent()` returned then.
+ */
+export function replaceBlockRangeOnBase(
+    content: string, block: string, fragment: string, baseHash: string
+): BlockRangeReplacement {
+    const current = getBlockRangeContent(content, block);
+    const replaced = current === null ? null : replaceBlockRangeContent(content, block, fragment);
+    if (current === null || replaced === null) {
+        return { status: "missing" };
+    }
+
+    const hash = hashedBlobId(current);
+    return hash === baseHash
+        ? { status: "replaced", hash, content: replaced }
+        : { status: "changed", hash };
+}
+
+/**
+ * What `replaceBlockRangeOnBase()` finds: no blocks to replace, blocks that changed since they were
+ * read, or the content with the blocks replaced. `hash` names the blocks as they are now.
+ */
+export type BlockRangeReplacement =
+    | { status: "missing" }
+    | { status: "changed"; hash: string }
+    | { status: "replaced"; hash: string; content: string };
 
 function isList(node: HTMLElement) {
     return isTag(node, "UL") || isTag(node, "OL");

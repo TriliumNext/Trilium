@@ -1,5 +1,6 @@
+import { indexMarkdownBlocks } from "@triliumnext/commons/src/lib/markdown_block_index.js";
 import {
-    applySourceChange, placeBlockMarker
+    applySourceChange, placeMarkerOnBlock
 } from "@triliumnext/commons/src/lib/markdown_references.js";
 import { describe, expect, it } from "vitest";
 
@@ -59,8 +60,10 @@ describe("markdownReferences", () => {
         ];
 
         for (const [ source, line, expected ] of cases) {
-            const placed = placeBlockMarker(
-                source, line, { kind: "draw", createId: () => "new" }, serverBlockHost
+            const index = indexMarkdownBlocks(source, serverBlockHost);
+            const block = index.blockAt(line);
+            const placed = block && placeMarkerOnBlock(
+                source, index, block, { kind: "draw", createId: () => "new" }, serverBlockHost
             );
             expect(placed?.change, source).toBeDefined();
             expect(applySourceChange(source, placed?.change), source).toBe(expected);

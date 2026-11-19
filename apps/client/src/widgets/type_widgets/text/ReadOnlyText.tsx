@@ -34,8 +34,7 @@ import { useTriliumEvent } from "../../react/hooks/events";
 import { useSyncedRef } from "../../react/hooks/dom";
 import { useNoteBlob, useNoteLabel } from "../../react/hooks/note";
 import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
-import { useSameNoteSwitch } from "../../react/hooks/note_context";
-import { useSearchTermsConsumer } from "../../react/hooks/note_context";
+import { useLinkTargetLanding, useSearchTermsConsumer } from "../../react/hooks/note_context";
 import { RawHtmlBlock } from "../../react/RawHtml";
 import { mountScrollableLabel } from "../../react/ScrollableLabel";
 import { TypeWidgetProps } from "../type_widget";
@@ -59,24 +58,16 @@ export default function ReadOnlyText({ note, noteContext, ntxId, parentComponent
     const { isRtl } = useNoteLanguage(note);
     const renderedNoteIdRef = usePreactRef<string | undefined>(undefined);
 
-    // Scroll to the bookmark or the blocks a link points at. The blob gate skips the mount run,
-    // which fires against an empty container while the content is still loading.
+    // The blob of the previous note stays until the blob of the next one loads.
     useEffect(() => {
-        if (!blob) return;
-        renderedNoteIdRef.current = note.noteId;
-        revealLinkTarget();
+        if (blob) renderedNoteIdRef.current = note.noteId;
     }, [blob]);
-    // A hidden widget leaves the link target to the one on display.
-    useSameNoteSwitch(note, ntxId, () => {
-        if (isVisible !== false && renderedNoteIdRef.current === note.noteId) {
-            revealLinkTarget();
-        }
-    });
-
-    function revealLinkTarget() {
+    // Scroll to the bookmark or the blocks a link points at, once the content of the note renders.
+    useLinkTargetLanding({ note, ntxId, isVisible }, () => {
+        if (!blob || renderedNoteIdRef.current !== note.noteId) return;
         consumeBookmark(readOnlyContentRef.current, noteContext?.viewScope);
         consumeBlockReference(readOnlyContentRef.current, noteContext?.viewScope);
-    }
+    }, [blob]);
 
     // Jump to the first search match when navigated from search results.
     useEffect(() => {

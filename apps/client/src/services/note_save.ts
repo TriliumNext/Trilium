@@ -52,6 +52,19 @@ export interface SavingEditor<T extends SaveData> {
     resolveConflict?(noteId: string, current: CurrentVersion): Promise<boolean> | boolean;
 }
 
+/**
+ * The hooks of an editor that records its changes since the version that it is based on, which
+ * let a save refused over a version that another writer saved bring those changes onto it.
+ */
+export interface ChangeRecordHooks {
+    /** Runs each time the content is read for a save, before it is sent. */
+    onDataTaken(): void;
+    /** Runs once the content read last is saved. */
+    dataSaved(): void;
+    /** As {@link SavingEditor.resolveConflict}, for the note of the editor. */
+    resolveConflict(current: CurrentVersion): boolean;
+}
+
 /** What the user chose after a conflict, or `abandon` when the editor went away first. */
 type Decision = "keep" | "load" | "abandon";
 
@@ -82,9 +95,37 @@ interface BlockBase {
     note?: string;
 }
 
+/** A version conflict that the user decides, as read from the answer of a 409. */
+interface VersionConflict {
+    isVersioned: boolean;
+    /** As {@link SaveConflictResponse.attachments}. */
+    attachments?: SavedAttachmentBase[];
+    /** Bases the save that keeps its version on the version that the conflict names. */
+    keepOther?(): void;
+}
+
+/** How {@link NoteSaver} sends one kind of save `D` until it is saved, or kept as a draft. */
+interface SaveRequest<D> {
+    /** Sends `data`, over the version that a conflict named when `isKeepingOther`. */
+    send(data: D, isKeepingOther: boolean): Promise<void>;
+    /**
+     * Reads a rejection of `send()`: the cause of a draft that keeps the changes at once, a
+     * version conflict that the user decides, or `null` for any other failure.
+     */
+    readConflict(e: unknown): DraftCause | VersionConflict | null;
+    /** The data that the editor holds now, which replaces the data that was refused. */
+    getLatest(): Promise<D | undefined> | D | undefined;
+    /** Tries to bring the changes onto the version that the server holds, before asking. */
+    resolve?(): Promise<boolean>;
+    createDraft(data: D, cause: DraftCause): Promise<PendingDraft> | PendingDraft;
+    /** Shows the version that the user chose over the draft, as {@link PendingDraft.load}. */
+    loadOther(keepNewerChanges: () => Promise<void>): Promise<void>;
+}
+
 /**
- * Saves the content of an editor, each save based on the version that the editor read: the server
- * refuses a save over a version that the editor has not seen. A version conflict pauses the save
+ * Saves the content of an editor, or the attachments that it changes, each save based on the
+ * version that the editor read: the server refuses a save over a version that the editor has not
+ * seen. A version conflict pauses the save
  * until the user chooses a version, and a format conflict keeps the editor's changes as a revision.
  * A save leaves the queue of its spaced update only once it is saved, or its draft is kept.
  */
@@ -152,71 +193,60 @@ export class NoteSaver<T extends SaveData> {
             return undefined;
         }
 
-        let base = this.bases.get(noteId);
-        if (!base) {
+        const readBase = this.bases.get(noteId);
+        if (!readBase) {
             await server.put(`notes/${noteId}/data`, data, this.editor.componentId);
             return data;
         }
-        if (getContentFormat(note.type, note.mime) !== getContentFormat(base.type, base.mime)) {
-            await this.keepDraft(noteId, this.createDraft(base, data, "conversion"));
+        if (getContentFormat(note.type, note.mime)
+            !== getContentFormat(readBase.type, readBase.mime)) {
+            await this.keepDraft(noteId, this.createDraft(readBase, data, "conversion"));
             return undefined;
         }
 
-        let saved = data;
-        let isKeepingOther = false;
-        for (;;) {
-            try {
+        let base = readBase;
+        return await this.sendUntilSaved(note, data, {
+            send: async (saved, isKeepingOther) => {
                 const attachments = await this.getAttachmentRows(note, saved.attachments);
-                const url = `notes/${noteId}/data`;
-                const answer = await server.put<SaveNoteDataResponse | undefined>(url, {
-                    content: saved.content,
-                    attachments,
-                    base: { blobId: base.blobId, type: base.type, mime: base.mime },
-                    keepOther: isKeepingOther || undefined
-                }, this.editor.componentId, { silentConflict: true });
+                const answer = await server.put<SaveNoteDataResponse | undefined>(
+                    `notes/${noteId}/data`, {
+                        content: saved.content,
+                        attachments,
+                        base: { blobId: base.blobId, type: base.type, mime: base.mime },
+                        keepOther: isKeepingOther || undefined
+                    }, this.editor.componentId, { silentConflict: true });
                 if (answer?.blobId) {
                     this.advance(base, saved, answer);
                     this.takeAttachments(noteId, answer.attachments ?? [], attachments);
                 }
-                return saved;
-            } catch (e) {
+            },
+            readConflict: (e) => {
                 const conflict = parseConflict<SaveConflictResponse>(e);
-                if (!conflict) {
-                    throw e;
+                if (conflict?.reason === "format") {
+                    return "conversion";
                 }
-                if (conflict.reason === "format") {
-                    await this.keepDraft(noteId, this.createDraft(base, saved, "conversion"));
-                    return undefined;
-                }
-
+                return conflict && {
+                    isVersioned: conflict.isVersioned,
+                    attachments: conflict.attachments,
+                    keepOther() {
+                        // Saved over the version of the note and of its attachments that it was
+                        // shown.
+                        base = { ...base, blobId: conflict.blobId };
+                    }
+                };
+            },
+            getLatest: () => this.editor.getLatestData(noteId),
+            resolve: async () => {
                 const current = await this.tryToResolve(noteId);
                 if (current) {
                     base = { ...base, blobId: current.blobId, content: current.content };
                     this.bases.set(noteId, base);
-                    saved = await this.editor.getLatestData(noteId) ?? saved;
-                    isKeepingOther = false;
-                    continue;
                 }
-
-                const decision = await this.ask(note, conflict.isVersioned);
-                saved = await this.editor.getLatestData(noteId) ?? saved;
-                if (decision === "keep") {
-                    // Saved over the version of the note and of its attachments that it was shown.
-                    base = { ...base, blobId: conflict.blobId };
-                    this.takeAttachments(noteId, conflict.attachments ?? []);
-                    isKeepingOther = true;
-                    continue;
-                }
-
-                const draft = this.createDraft(base, saved, "conflict");
-                if (decision === "load") {
-                    draft.load = (keepNewerChanges) =>
-                        this.loadCurrentVersion(note, keepNewerChanges);
-                }
-                await this.keepDraft(noteId, draft);
-                return undefined;
-            }
-        }
+                return !!current;
+            },
+            createDraft: (saved, cause) => this.createDraft(base, saved, cause),
+            loadOther: (keepNewerChanges) => this.loadCurrentVersion(note, keepNewerChanges)
+        });
     }
 
     /**
@@ -242,11 +272,8 @@ export class NoteSaver<T extends SaveData> {
 
         const url = `notes/${noteId}/blocks?block=${encodeURIComponent(block)}`;
         let hash = this.blockBases.get(noteId)?.hash;
-        let saved = data;
-        let isKeepingOther = false;
-        for (;;) {
-            const { block: savedBlock, ...blocks } = saved;
-            try {
+        return await this.sendUntilSaved(note, data, {
+            send: async ({ block: savedBlock, ...blocks }, isKeepingOther) => {
                 const attachments = await this.getAttachmentRows(note, blocks.attachments);
                 const answer = await server.put<SaveNoteBlocksResponse | undefined>(url, {
                     ...blocks,
@@ -257,32 +284,111 @@ export class NoteSaver<T extends SaveData> {
                 }, this.editor.componentId, { silentConflict: true });
                 this.setBlockBase(noteId, answer?.hash ?? null, answer?.note);
                 this.takeAttachments(noteId, answer?.attachments ?? [], attachments);
+            },
+            readConflict: (e) => {
+                const conflict = parseConflict<BlocksConflictResponse>(e);
+                if (conflict && conflict.reason !== "version") {
+                    return conflict.reason === "format" ? "conversion" : "blocksGone";
+                }
+                return conflict && {
+                    isVersioned: conflict.isVersioned,
+                    attachments: conflict.attachments,
+                    keepOther() {
+                        hash = conflict.hash;
+                    }
+                };
+            },
+            getLatest: async () =>
+                await this.editor.getLatestData(noteId) as typeof data | undefined,
+            createDraft: (saved, cause) => this.createFragmentDraft(noteId, block, saved, cause),
+            loadOther: (keepNewerChanges) => this.loadCurrentBlocks(note, block, keepNewerChanges)
+        });
+    }
+
+    /**
+     * Saves `row` as an attachment of `note`, based on the blob that the row names: a version
+     * conflict asks the user, as one of the note does, and a draft keeps the note as it is with
+     * the attachment of the row. Resolves to the row that was saved, or as {@link saveNote} does.
+     */
+    async saveAttachment(
+        note: FNote, row: SavedAttachmentRow
+    ): Promise<SavedAttachmentRow | undefined> {
+        const { noteId } = note;
+        const pending = this.drafts.get(noteId);
+        if (pending) {
+            await this.resumeDraft(noteId, pending, pending.data);
+            return undefined;
+        }
+
+        return await this.sendUntilSaved(note, row, {
+            send: async (saved, isKeepingOther) => {
+                const [ sent ] = await this.getAttachmentRows(note, [ saved ]) ?? [ saved ];
+                const answer = await server.post<SavedAttachmentBase | undefined>(
+                    `notes/${noteId}/attachments`,
+                    isKeepingOther ? { ...sent, keepOther: true } : sent,
+                    this.editor.componentId,
+                    { silentConflict: true }
+                );
+                this.takeAttachments(noteId, answer ? [ answer ] : [], [ sent ]);
+            },
+            readConflict: (e) => {
+                const conflict = parseConflict<SaveConflictResponse>(e);
+                return conflict && {
+                    isVersioned: conflict.isVersioned, attachments: conflict.attachments
+                };
+            },
+            getLatest: () => undefined,
+            createDraft: async (saved, cause) => {
+                const { content } = await readCurrentVersion(noteId);
+                return this.createDraft(note, { content, attachments: [ saved ] }, cause);
+            },
+            loadOther: (keepNewerChanges) => this.loadCurrentVersion(note, keepNewerChanges)
+        });
+    }
+
+    /**
+     * Sends `data` with `request` until it is saved, or its changes are kept as a draft. A version
+     * conflict asks the user which version to keep, unless `request.resolve()` brings the changes
+     * onto the other version first. Resolves as {@link saveNote} does.
+     */
+    private async sendUntilSaved<D>(
+        note: FNote, data: D, request: SaveRequest<D>
+    ): Promise<D | undefined> {
+        const { noteId } = note;
+        let saved = data;
+        let isKeepingOther = false;
+        for (;;) {
+            try {
+                await request.send(saved, isKeepingOther);
                 return saved;
             } catch (e) {
-                const conflict = parseConflict<BlocksConflictResponse>(e);
+                const conflict = request.readConflict(e);
                 if (!conflict) {
                     throw e;
                 }
-                if (conflict.reason !== "version") {
-                    const cause = conflict.reason === "format" ? "conversion" : "blocksGone";
-                    const draft = this.createFragmentDraft(noteId, block, saved, cause);
-                    await this.keepDraft(noteId, draft);
+                if (typeof conflict === "string") {
+                    await this.keepDraft(noteId, await request.createDraft(saved, conflict));
                     return undefined;
                 }
 
+                if (await request.resolve?.()) {
+                    saved = await request.getLatest() ?? saved;
+                    isKeepingOther = false;
+                    continue;
+                }
+
                 const decision = await this.ask(note, conflict.isVersioned);
-                saved = await this.editor.getLatestData(noteId) as typeof data | undefined ?? saved;
+                saved = await request.getLatest() ?? saved;
                 if (decision === "keep") {
-                    hash = conflict.hash;
-                    this.takeAttachments(noteId, conflict.attachments);
+                    conflict.keepOther?.();
+                    this.takeAttachments(noteId, conflict.attachments ?? []);
                     isKeepingOther = true;
                     continue;
                 }
 
-                const draft = this.createFragmentDraft(noteId, block, saved, "conflict");
+                const draft = await request.createDraft(saved, "conflict");
                 if (decision === "load") {
-                    draft.load = (keepNewerChanges) =>
-                        this.loadCurrentBlocks(note, block, keepNewerChanges);
+                    draft.load = (keepNewerChanges) => request.loadOther(keepNewerChanges);
                 }
                 await this.keepDraft(noteId, draft);
                 return undefined;
@@ -295,7 +401,7 @@ export class NoteSaver<T extends SaveData> {
      * points at, based on the note that they were read from.
      */
     private createFragmentDraft(
-        noteId: string, block: string, data: T, cause: DraftCause
+        noteId: string, block: string, data: SaveData, cause: DraftCause
     ): PendingDraft {
         const { hash, note } = this.blockBases.get(noteId) ?? {};
         const base = typeof hash === "string" && note !== undefined ? { note, hash } : undefined;
@@ -312,7 +418,10 @@ export class NoteSaver<T extends SaveData> {
         };
     }
 
-    private createDraft(base: NoteBase, data: T, cause: DraftCause): PendingDraft {
+    /** A draft of `data`, of the type and the format of `base`. */
+    private createDraft(
+        base: Pick<NoteBase, "type" | "mime">, data: SaveData, cause: DraftCause
+    ): PendingDraft {
         return {
             request: {
                 revisionId: randomString(12),
@@ -363,7 +472,7 @@ export class NoteSaver<T extends SaveData> {
      * Keeps `pending`, the draft of a save that has not reached the server, and the changes that
      * the editor holds since, `data` or newer, as a draft of their own after it.
      */
-    private async resumeDraft(noteId: string, pending: PendingDraft, data: T) {
+    private async resumeDraft(noteId: string, pending: PendingDraft, data: SaveData) {
         const latest = await this.editor.getLatestData(noteId) ?? data;
         const hasNewChanges = !isSameData(latest, pending.data);
         await this.keepDraft(noteId, pending, hasNewChanges);

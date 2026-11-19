@@ -26,6 +26,8 @@ vi.mock("../../../services/i18n", async (importOriginal) => ({
 }));
 // The `/` list of the source loads the task states from the `_taskStates` subtree.
 vi.mock("../../../services/task_states", () => ({ getTaskStateDefinitions: async () => [] }));
+// Under happy-dom, DOMPurify leaves the block markers without effect; a browser keeps them.
+vi.mock("dompurify", () => ({ default: { sanitize: (html: string) => html, addHook: () => {} } }));
 
 // `CodeEditor` reads the theme as a string.
 options.set("codeNoteTheme", "");
@@ -99,6 +101,19 @@ describe("MarkdownEmbed", () => {
         pressCtrl(view, "b");
         expect(view.state.doc.toString()).toBe("a");
         expect(editor.scheduleSave).not.toHaveBeenCalled();
+    });
+
+    it("saves the source with the ids that another writer gave its blocks meanwhile", async () => {
+        const editor = buildEditor();
+        const { figure } = await mount(buildMarkdownNote("Alpha"), editor, { isEditable: true });
+        const view = await findView(figure);
+        act(() => view.dispatch({ changes: { from: 5, insert: " and Omega" } }));
+        const hooks = vi.mocked(editor.scheduleSave).mock.calls[0][2];
+
+        hooks?.onDataTaken();
+        const marker = `<a data-trilium-block-id="x"></a>`;
+        expect(hooks?.resolveConflict({ blobId: "b", content: `Alpha ${marker}` })).toBe(true);
+        expect(view.state.doc.toString()).toBe(`Alpha and Omega ${marker}`);
     });
 
     it("edits in split view while Editable is on, and previews the edits", async () => {

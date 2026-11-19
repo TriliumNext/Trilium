@@ -10,6 +10,7 @@ import { stripBlockMarkers } from "@triliumnext/commons/src/lib/block_reference"
 import {
     CustomMarkdownRenderer, renderToHtml
 } from "@triliumnext/commons/src/lib/markdown_renderer";
+import { countLineBreaks, walkBlockTokens } from "@triliumnext/commons/src/lib/markdown_source";
 import {
     createBlockMarkerExtensions, createLiteralTildeExtension, createTabsExtensions
 } from "@triliumnext/commons/src/lib/marked_extensions";
@@ -29,14 +30,14 @@ import { removeIndividualBinding } from "../../../services/shortcuts";
 import { isDesktop } from "../../../services/utils";
 import { useTriliumEvent } from "../../react/hooks/events";
 import { useLegacyImperativeHandlers } from "../../react/hooks/legacy";
-import { useSameNoteSwitch } from "../../react/hooks/note_context";
+import { useLinkTargetLanding } from "../../react/hooks/note_context";
 import {
     extractHighlightsFromStaticHtml, type RawHighlight
 } from "../../sidebar/highlights_extract";
 import SplitEditor from "../helpers/SplitEditor";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText";
 import { TypeWidgetProps } from "../type_widget";
-import { revealInSource, useBlockMarkers } from "./block_markers";
+import { revealInSource, useBlockMarkers } from "./editor_block_references";
 import {
     insertDateTime, insertText, replaceSelection, resolveWikilinkChip, showEditLinkDialog,
     showIncludeNoteDialog, uploadImageAndInsert
@@ -69,7 +70,7 @@ class MarkdownPreviewRenderer extends CustomMarkdownRenderer {
     }
 }
 
-export interface MarkdownHeading {
+export interface MarkdownTocHeading {
     id: string;
     level: number;
     text: string;
@@ -83,7 +84,7 @@ export interface MarkdownHighlight extends RawHighlight {
 
 interface MarkdownContextValue {
     html: string;
-    headings: MarkdownHeading[];
+    headings: MarkdownTocHeading[];
     setEditorView: (view: VanillaCodeMirror | null) => void;
     setPreviewEl: (el: HTMLDivElement | null) => void;
 }
@@ -213,11 +214,7 @@ function useRevealLinkTarget(
         }
     }, [ editorView, previewEl, noteContext, note.noteId, contentNoteIdRef ]);
 
-    useEffect(reveal, [ html, reveal ]);
-    // A hidden widget leaves the link target to the one on display.
-    useSameNoteSwitch(note, ntxId, () => {
-        if (isVisible !== false) reveal();
-    });
+    useLinkTargetLanding({ note, ntxId, isVisible }, reveal, [ html, reveal ]);
 }
 //#endregion
 
@@ -231,7 +228,7 @@ function usePublishToc(
     noteContext: NoteContext | undefined,
     editorView: VanillaCodeMirror | null,
     previewEl: HTMLDivElement | null,
-    headings: MarkdownHeading[],
+    headings: MarkdownTocHeading[],
     note: FNote
 ) {
     const publish = useCallback(() => {
@@ -396,7 +393,7 @@ export function useSyncedHighlight(view: VanillaCodeMirror | null, preview: HTML
             const moving = !!current && !!match && current !== match;
             preview.classList.toggle("markdown-preview-marker-moving", moving);
             current = match;
-            placeBlockMarker(preview, match);
+            placePreviewMarker(preview, match);
         }
 
         // A resize leaves the tabs alone, so a tab picked in the preview stays shown.
@@ -416,7 +413,7 @@ export function useSyncedHighlight(view: VanillaCodeMirror | null, preview: HTML
 }
 
 /** Writes the geometry of the marker of `block`, the active block, for `Markdown.css` to draw. */
-export function placeBlockMarker(preview: HTMLElement, block: HTMLElement | null) {
+export function placePreviewMarker(preview: HTMLElement, block: HTMLElement | null) {
     // `offsetTop` and the marker's containing block are both the preview's padding box.
     preview.style.setProperty("--markdown-preview-marker-top", `${block?.offsetTop ?? 0}px`);
     preview.style.setProperty("--markdown-preview-marker-height", `${block?.offsetHeight ?? 0}px`);
@@ -703,15 +700,19 @@ const NON_RENDERED_TOKENS = new Set([ "space", "def", "blockMarkerLine" ]);
  * with the matching lexer token's start line. Marked does not emit source
  * positions (markedjs/marked#1267) so we count newlines in `raw` ourselves.
  */
-export function renderWithSourceLines(src: string): { html: string; headings: MarkdownHeading[]; highlights: MarkdownHighlight[] } {
+export function renderWithSourceLines(src: string): {
+    html: string;
+    headings: MarkdownTocHeading[];
+    highlights: MarkdownHighlight[];
+} {
     const tokens = marked.lexer(src);
     const lines = getBlockLines(tokens);
-    const headings: MarkdownHeading[] = [];
+    const headings: MarkdownTocHeading[] = [];
     let line = 1;
     let headingIdx = 0;
     for (const token of tokens) {
         const startLine = line;
-        line += countNewlines(token.raw);
+        line += countLineBreaks(token.raw);
         if (token.type === "heading") {
             const rawText = token.text ?? "";
             const inlineHtml = DOMPurify.sanitize(marked.parseInline(rawText) as string).trim();
@@ -745,7 +746,7 @@ export function renderWithSourceLines(src: string): { html: string; headings: Ma
 
     // A separate attribute: the scroll sync and the active-line marker measure every
     // `[data-source-line]` element, and a hidden tab has no geometry.
-    const tabLines = collectTabLines(tokens, 1);
+    const tabLines = collectTabLines(tokens);
     const tabs = container.querySelectorAll<HTMLElement>("section.trilium-tab");
     if (tabs.length === tabLines.length) {
         for (const [ index, tab ] of tabs.entries()) {
@@ -770,7 +771,7 @@ function getBlockLines(tokens: Token[]): number[] {
             const block = token.type === "html" ? token.raw : "<p></p>";
             outline += `<div ${LINE_MARKER}="${line}"></div>${block}`;
         }
-        line += countNewlines(token.raw);
+        line += countLineBreaks(token.raw);
     }
 
     // A template parses its content without loading the images of the raw HTML.
@@ -796,34 +797,12 @@ const LINE_MARKER = "data-line-marker";
  * Returns the 1-indexed line of every tab header, in the order of the rendered
  * `section.trilium-tab` elements; inside a list or a block quote the lines are approximate.
  */
-function collectTabLines(tokens: Token[], firstLine: number): number[] {
+function collectTabLines(tokens: Token[]): number[] {
     const lines: number[] = [];
-    let line = firstLine;
-    for (const token of tokens) {
-        if (token.type === "tabs") {
-            let tabLine = line;
-            for (const tab of (token as Tokens.Generic).tokens ?? []) {
-                lines.push(tabLine);
-                // The panel starts below the `=== "Title"` line.
-                lines.push(...collectTabLines((tab as Tokens.Generic).tokens ?? [], tabLine + 1));
-                tabLine += countNewlines(tab.raw);
-            }
-        } else if (token.type === "list") {
-            let itemLine = line;
-            for (const item of (token as Tokens.List).items) {
-                lines.push(...collectTabLines(item.tokens, itemLine));
-                itemLine += countNewlines(item.raw);
-            }
-        } else if (token.type === "blockquote") {
-            lines.push(...collectTabLines((token as Tokens.Blockquote).tokens, line));
-        }
-        line += countNewlines(token.raw);
-    }
+    walkBlockTokens(tokens, (token, line) => {
+        if (token.type === "tab") lines.push(line);
+    });
     return lines;
-}
-
-function countNewlines(text: string) {
-    return (text.match(/\n/g) ?? []).length;
 }
 
 /**

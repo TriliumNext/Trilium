@@ -1,4 +1,4 @@
-import { type AttachmentRow, attachmentRoleTraits, type AttributeRow, type BranchRow, CANVAS_ATTACHMENT_MIME, CONTENT_EMBED_KIND_ATTRIBUTE, dayjs, getDrawingPictureTitle, isDerivedAttachmentRole, isEmbeddedAttachmentRole, isImageAttachmentRole, type NoteRow, NOTE_TYPE_IMAGE_ATTACHMENTS, type NoteType, parseMindMapNoteLink } from "@triliumnext/commons";
+import { type AttachmentRow, attachmentRoleTraits, type AttributeRow, type BranchRow, CANVAS_ATTACHMENT_MIME, CONTENT_EMBED_KIND_ATTRIBUTE, dayjs, getDrawingPictureTitle, isEmbeddedAttachmentRole, isImageAttachmentRole, type NoteRow, NOTE_TYPE_IMAGE_ATTACHMENTS, type NoteType, parseMindMapNoteLink } from "@triliumnext/commons";
 import {
     getContentFormat, isNoteEmbed, type NoteSaveBase, type SaveConflictReason,
     type SaveConflictResponse, type SavedAttachmentBase, type SavedAttachmentRow,
@@ -151,9 +151,9 @@ function copyChildAttributes(parentNote: BNote, childNote: BNote, isTypeDefaulte
 }
 
 function copyAttachments(origNote: BNote, newNote: BNote) {
-    for (const attachment of origNote.getAttachments()) {
-        // Pictures are handled by `checkImageAttachments`, derived attachments are rebuilt.
-        if (isImageAttachmentRole(attachment.role) || isDerivedAttachmentRole(attachment.role)) {
+    for (const attachment of origNote.getPortableAttachments()) {
+        // Pictures are handled by `checkImageAttachments`.
+        if (isImageAttachmentRole(attachment.role)) {
             continue;
         }
 

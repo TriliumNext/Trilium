@@ -85,7 +85,7 @@ These were chosen by the maintainer. Do not re-propose them; change them only on
 
 | File | Role |
 |---|---|
-| `packages/commons/src/lib/block_reference.ts` | `BLOCK_ID_ATTRIBUTE`, `generateBlockId()`, `isValidBlockId()`, `parseBlockRange()`, `formatBlockRange()`, `encodeBlockParameter()`, `resolveBlockRange()`, `resolveBlockReference()`, `sliceToBlockReference()`, `getListItemNumber()`, `getEditableBlockRun()`; written against `BlockNode` so one implementation serves the DOM and `node-html-parser` |
+| `packages/commons/src/lib/block_reference.ts` | `BLOCK_ID_ATTRIBUTE`, `generateBlockId()`, `drawBlockId()`, `isValidBlockId()`, `parseBlockRange()`, `formatBlockRange()`, `encodeBlockParameter()`, `resolveBlockRange()`, `resolveBlockReference()`, `sliceToBlockReference()`, `getListItemNumber()`, `getEditableBlockRun()`; written against `BlockNode` so one implementation serves the DOM and `node-html-parser` |
 | `packages/commons/src/lib/content_embeds.ts` | `EXCERPT_BOX_SIZE`, `getEmbedKey()`, `resolveContentEmbed()`, `getNestedEmbedOptions()`, `getNoteEmbedHref()` |
 | `packages/ckeditor5/src/plugins/block_reference/block_reference_editing.ts` | Schema, conversion, `removeDuplicateBlockIds()` post-fixer, `assignBlockReference` command, `assignBlockId()`, `getReferenceBlocks()`, range editor mode (`editRange()`, `giveIdsToEdgeBlocks()`, `getRange()`), `linkedBlockChanged` |
 | `packages/ckeditor5/src/plugins/block_reference/block_reference.ts` | The block handle: opens the host's menu; the `blockReference` editor config type |
@@ -268,7 +268,10 @@ the header names the section, the reference points at the heading.
 them, build the href with `calculateHash()`, copy `text/html` (a reference link labeled from the
 editing DOM, since the ids are not saved yet) and `text/plain` (the bare href, for code and
 Markdown notes), then `source.save()` so the ids reach the server before the link is pasted
-elsewhere. If an id is not in the editing DOM, nothing is copied and nothing is said.
+elsewhere. If an id is not in the editing DOM, nothing is copied and nothing is said. The flash
+(`flashBlockRange()`) and the link (`copyReferenceLink()`) are shared with
+`copyMarkdownReference()` in `markdown/editor_block_references.ts`, which flashes the preview of a Markdown
+note and labels the link from its parsed blocks.
 
 **Copy public link** (`copyBlockShareLink()`): `getNoteShareLink()` is read when the menu opens; it
 is `null` for a note that is not shared and in the `export-only` scope. It copies plain text
@@ -280,11 +283,15 @@ block only after the next sync.
 a link_ and _Paste reference as an excerpt_ (`pasteBlockReference()`):
 
 1. `editor.capturePasteTarget()` pins the target before the clipboard read, which can prompt.
-2. `getClipboardBlockReference()`: the first block link in `text/html`, else `text/plain`. A full
-   URL counts when it has the `/#root` form, whatever its host.
+2. `pasteClipboardReference()` reads the clipboard with `getClipboardBlockReference()`: the first
+   block link in `text/html`, else `text/plain`. A full URL counts when it has the `/#root` form,
+   whatever its host.
 3. `froca.getNote()` must find the note, so a reference from another instance pastes nothing.
 4. The link, or an excerpt at `EXCERPT_BOX_SIZE`, goes through `target.paste()`: the clipboard
    pipeline, so a selection is replaced and the paste is one undo step.
+
+The Markdown editor's _Paste_ rows (`markdown/block_reference_menu.ts`) go through the same
+`pasteClipboardReference()` and insert a Wikilink or an excerpt block into the source.
 
 ## Following a link
 
@@ -297,9 +304,9 @@ a link_ and _Paste reference as an excerpt_ (`pasteBlockReference()`):
 | Shared page | `?block=` in the page URL; same-page links | `showLinkedBlocks()` (waits for the Mermaid drawings), `content/in_page_links.ts` (a fragment wins over `block`) |
 
 **Consuming on navigation** follows the rules of the `adding-link-targets` skill, "Landing on the
-target": wait for the content (`revealLinkTargetWhenReady()` in `EditableText`, the blob effect in
-`ReadOnlyText`), handle a link to the open note with `useSameNoteSwitch()`, and check that the
-widget is visible and shows that note. Clear `viewScope.block` once used: `setNote()` returns early
+target": wait for the content (`revealLinkTargetWhenReady()` in `EditableText`, the blob of
+`ReadOnlyText`), land through `useLinkTargetLanding()`, which also handles a link to the open note
+and leaves a hidden widget out, and check that the widget shows that note. Clear `viewScope.block` once used: `setNote()` returns early
 when the path and the view scope are unchanged, so a consumer that leaves `block` set makes the
 next click on the same link do nothing.
 

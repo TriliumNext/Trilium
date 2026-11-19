@@ -6,7 +6,7 @@ import {
 } from "./markdown_block_index.js";
 import {
     addMarkdownHeadingReference, applySourceChange, findMarkdownTargets, insertHtmlBlock,
-    type NewBlockId, placeBlockMarker, placeMarkerOnBlock, replayBlockIds
+    type NewBlockId, placeMarkerOnBlock, replayBlockIds
 } from "./markdown_references.js";
 
 const parse = (html: string) => {
@@ -26,13 +26,20 @@ const NEW = marker("new");
 const draw = (...ids: string[]): NewBlockId =>
     ({ kind: "draw", createId: () => ids.shift() ?? "spare" });
 
+/** What `placeMarkerOnBlock()` answers for the block on `line` of `source`. */
+function placeAt(source: string, line: number, newId: NewBlockId, testHost = host) {
+    const index = indexMarkdownBlocks(source, testHost);
+    const block = index.blockAt(line);
+    return block ? placeMarkerOnBlock(source, index, block, newId, testHost) : null;
+}
+
 /** The id of the block on `line` of `source`, and the source with its marker. */
 function place(source: string, line: number, newId = draw("new"), testHost = host) {
-    const placed = placeBlockMarker(source, line, newId, testHost);
+    const placed = placeAt(source, line, newId, testHost);
     return placed && { id: placed.id, source: applySourceChange(source, placed.change) };
 }
 
-describe("placeBlockMarker", () => {
+describe("placeMarkerOnBlock", () => {
     it("writes the marker of each kind of leaf block where the exporter writes it", () => {
         const fence = "```";
         const cases: [ string, number, string ][] = [
@@ -81,11 +88,10 @@ describe("placeBlockMarker", () => {
         const source = `Text ${marker("own")}\n\n<details data-trilium-block-id="raw">\n\n`
             + "<summary>Raw</summary>\n\n</details>";
 
-        expect(placeBlockMarker(source, 1, draw(), host)).toEqual({ id: "own" });
-        expect(placeBlockMarker(source, 1, { kind: "given", id: "own" }, host))
-            .toEqual({ id: "own" });
-        expect(placeBlockMarker(source, 1, { kind: "given", id: "other" }, host)).toBeNull();
-        expect(placeBlockMarker(source, 3, draw(), host)).toEqual({ id: "raw" });
+        expect(placeAt(source, 1, draw())).toEqual({ id: "own" });
+        expect(placeAt(source, 1, { kind: "given", id: "own" })).toEqual({ id: "own" });
+        expect(placeAt(source, 1, { kind: "given", id: "other" })).toBeNull();
+        expect(placeAt(source, 3, draw())).toEqual({ id: "raw" });
     });
 
     it("gives nothing an id where no block can take one", () => {
@@ -237,7 +243,8 @@ describe("findMarkdownTargets", () => {
             "",
             "<h2 data-trilium-block-id=\"r\">Raw <!-- note --> owned</h2>",
             "",
-            "Text <a id=\"b\"></a> and <a id=\"a\"></a> <a id=\"b\"></a>",
+            "Text <a id=\"b\"></a> and <a id=\"a\"></a> <a id=\"b\"></a>"
+                + " <a href=\"\" id=\"e\"></a>",
             "",
             "```",
             "<a id=\"c\"></a>",

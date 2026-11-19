@@ -20,7 +20,7 @@ import { remapAttachmentReferences } from "../../becca/entities/bnote.js";
 import type BRevision from "../../becca/entities/brevision.js";
 import { ValidationError } from "../../errors.js";
 import blobService from "../../services/blob.js";
-import { getBlockRangeContent, replaceBlockRangeContent } from "../../services/block_ranges.js";
+import { replaceBlockRangeOnBase } from "../../services/block_ranges.js";
 import eraseService from "../../services/erase.js";
 import { saveLinks } from "../../services/notes.js";
 import { NotePojo } from "../../becca/becca-interface.js";
@@ -28,9 +28,7 @@ import becca_service from "../../becca/becca_service.js";
 import * as cls from "../../services/context.js";
 import { getSql } from "../../services/sql/index.js";
 import * as binary_utils from "../../services/utils/binary.js";
-import {
-    formatDownloadTitle, getContentDisposition, hashedBlobId
-} from "../../services/utils/index.js";
+import { formatDownloadTitle, getContentDisposition } from "../../services/utils/index.js";
 import { extname } from "../../services/utils/path.js";
 
 interface NotePath {
@@ -284,13 +282,12 @@ function getDraftContent(draft: ParsedDraft) {
     }
 
     const { content: fragment, block, base } = draft.fragment;
-    const read = base ? getBlockRangeContent(base.note, block) : null;
-    const content = base && read !== null && hashedBlobId(read) === base.hash
-        ? replaceBlockRangeContent(base.note, block, fragment)
+    const replacement = base
+        ? replaceBlockRangeOnBase(base.note, block, fragment, base.hash)
         : null;
-    return content === null
-        ? { content: fragment, isFragment: true }
-        : { content, isFragment: false };
+    return replacement?.status === "replaced"
+        ? { content: replacement.content, isFragment: false }
+        : { content: fragment, isFragment: true };
 }
 
 /** A draft that {@link parseDraftRequest} accepts: one with either its content or its fragment. */

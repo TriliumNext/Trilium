@@ -22,7 +22,6 @@ import {
 } from "../../services/attachment_actions";
 import { partitionAttachmentsByGroup } from "../../services/attachment_groups";
 import { attachmentRoleLabel } from "../../services/attachment_role_names";
-import { takeDocumentTarget } from "../../services/bookmark_jump";
 import content_renderer, {
     type ContentLinkTarget, hasRenderedPreview
 } from "../../services/content_renderer";
@@ -31,6 +30,7 @@ import image from "../../services/image";
 import { getAttachmentImageUrl } from "../../services/image_urls";
 import importService from "../../services/import";
 import { type ViewScope } from "../../services/link";
+import { takeLinkTarget } from "../../services/link_targets";
 import options from "../../services/options";
 import protected_session_holder from "../../services/protected_session_holder";
 import utils from "../../services/utils";
@@ -44,7 +44,7 @@ import { FormDropdownDivider, FormListItem } from "../react/FormList";
 import HelpButton from "../react/HelpButton";
 import { useTriliumEvent } from "../react/hooks/events";
 import { useAttachments } from "../react/hooks/note";
-import { useSameNoteSwitch } from "../react/hooks/note_context";
+import { useLinkTargetLanding } from "../react/hooks/note_context";
 import { useFileDrop } from "../react/hooks/drag";
 import Icon from "../react/Icon";
 import ImageViewer from "../react/ImageViewer";
@@ -293,22 +293,18 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
     /** Whether a render has started whose content is not in place yet. */
     const isRenderingRef = useRef(false);
 
-    /** The place that a link opened the attachment at, taken once from the view scope. */
-    function takeLinkTarget() {
-        const scope = noteContext?.viewScope;
-        return isFullDetail && scope?.attachmentId === attachment.attachmentId
-            ? takeContentTarget(scope)
-            : undefined;
-    }
-
     /**
      * Shows the place that the latest link names, once the content of the latest render is in
      * place. Until then the view scope holds it, and the render that completes shows it.
      */
     function showLinkTarget() {
         const showTarget = showTargetRef.current;
-        if (!showTarget || isRenderingRef.current) return;
-        const target = takeLinkTarget();
+        const scope = noteContext?.viewScope;
+        if (!showTarget || isRenderingRef.current || !isFullDetail
+            || scope?.attachmentId !== attachment.attachmentId) {
+            return;
+        }
+        const target = takeLinkTarget(scope, [ "page", "annotation", "heading", "bookmark" ]);
         if (target) {
             showTarget(target);
         }
@@ -372,7 +368,7 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
         }
     });
     // A link to the attachment the pane shows keeps its viewer, which opens the link's place.
-    useSameNoteSwitch(ownerNote, noteContext?.ntxId, showLinkTarget);
+    useLinkTargetLanding({ note: ownerNote, ntxId: noteContext?.ntxId }, showLinkTarget);
 
     // Electron right-click menu (copy image / reference) for the interactive image viewer.
     useEffect(() => {
@@ -577,23 +573,4 @@ function AttachmentActions({ attachment, copyAttachmentReferenceToClipboard }: {
             </Dropdown>
         </div>
     );
-}
-
-/**
- * The place in a PDF that `viewScope` names, taken out of it so that a link opens it once: the
- * heading or the annotation, and the page.
- */
-/**
- * Takes the place that a link names out of `viewScope`: a page, heading or annotation of a PDF, or
- * a heading or bookmark of a document's preview. Leaves a view scope without one as it is.
- */
-function takeContentTarget(viewScope: ViewScope): ContentLinkTarget | undefined {
-    const { page, annotation } = viewScope;
-    const document = takeDocumentTarget(viewScope);
-    if (!page && !document) return undefined;
-
-    viewScope.page = undefined;
-    viewScope.annotation = undefined;
-    const pageNumber = Number.parseInt(page ?? "", 10);
-    return { page: pageNumber >= 1 ? pageNumber : undefined, annotation, ...document };
 }

@@ -1,7 +1,9 @@
 import { MAX_TOC_DEPTH, type ReferenceTarget, type TocCache } from "@triliumnext/commons";
 
 import BAttachment from "../../becca/entities/battachment.js";
-import { findTocFormat, getToc, type TocDocumentRef, type TocFormat } from "../toc/index.js";
+import {
+    createLevelTracker, findTocFormat, getToc, type TocDocumentRef, type TocFormat
+} from "../toc/index.js";
 import type { ReferenceProvider, ReferenceSource } from "./index.js";
 
 /**
@@ -34,26 +36,19 @@ export function toTocRef(source: ReferenceSource): TocDocumentRef {
 
 /**
  * The headings of `cache` that a link can point at, as targets, then the other targets of its
- * format. A target's level is one more than the number of its ancestors that are targets, so a
- * target under a heading without a link is listed at that heading's place. Levels past
- * `MAX_TOC_DEPTH` are shown at that depth.
+ * format. A heading without a link is left out as if absent, so the targets under it nest under
+ * the target before it (`createLevelTracker()`). Levels past `MAX_TOC_DEPTH` are shown at that
+ * depth.
  */
 export function toTargets(cache: TocCache, format: TocFormat): ReferenceTarget[] {
     const targets: ReferenceTarget[] = [];
-    // The ancestors of the next heading, outermost first, and how many of them are targets.
-    const ancestors: { level: number; isTarget: boolean }[] = [];
-    let targetAncestors = 0;
+    const toLevel = createLevelTracker();
     for (const heading of cache.headings) {
-        while ((ancestors.at(-1)?.level ?? -Infinity) >= heading.level) {
-            targetAncestors -= ancestors.pop()?.isTarget ? 1 : 0;
-        }
         const params = format.getLinkParams(heading);
         if (params) {
-            const level = Math.min(targetAncestors + 1, MAX_TOC_DEPTH);
+            const level = Math.min(toLevel(heading.level), MAX_TOC_DEPTH);
             targets.push({ kind: "heading", title: heading.title, level, params });
         }
-        ancestors.push({ level: heading.level, isTarget: !!params });
-        targetAncestors += params ? 1 : 0;
     }
     targets.push(...format.getOtherTargets?.(cache) ?? []);
     return targets;

@@ -7,11 +7,13 @@ import type { NoteContextDataMap } from "../../../components/note_context";
 import FBlob from "../../../entities/fblob";
 import FNote from "../../../entities/fnote";
 import { copyReferenceWithToast } from "../../../services/clipboard_ext";
+import { getTocUrl } from "../../../services/link";
+import { takeLinkTarget } from "../../../services/link_targets";
 import open from "../../../services/open";
 import options from "../../../services/options";
 import { useViewModeConfig } from "../../collections/NoteList";
 import { useTriliumEvent } from "../../react/hooks/events";
-import { useEffectiveReadOnly } from "../../react/hooks/note_context";
+import { useEffectiveReadOnly, useLinkTargetLanding } from "../../react/hooks/note_context";
 import { useBlobEditorSpacedUpdate } from "../../react/hooks/editor";
 import PdfViewer, { getPdfUrl } from "./PdfViewer";
 import { useTocBuild } from "./toc_build";
@@ -54,7 +56,7 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
     const loadCountRef = useRef(0);
     /** The load count when the viewer was asked for the bytes of each save. */
     const saveLoadsRef = useRef(new WeakMap<Blob, number>());
-    const tocBuild = useTocBuild(iframeRef, `notes/${note.noteId}/toc`, !!note.isProtected);
+    const tocBuild = useTocBuild(iframeRef, getTocUrl("notes", note.noteId), !!note.isProtected);
 
     function publish<K extends PdfContextDataKey>(key: K, value: NoteContextDataMap[K]) {
         publishedRef.current.set(key, value);
@@ -81,17 +83,11 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
      * shown and has listed its annotations, which it does once it can scroll to one.
      */
     function revealLinkTarget() {
-        const viewScope = noteContext.viewScope;
-        const isReady = isShown() && publishedRef.current.has("pdfAnnotations");
-        if (!isReady || !(viewScope?.page || viewScope?.heading)) return;
+        if (!isShown() || !publishedRef.current.has("pdfAnnotations")) return;
+        const target = takeLinkTarget(noteContext.viewScope, [ "page", "annotation", "heading" ]);
+        if (!target) return;
 
-        const pageNumber = Number.parseInt(viewScope.page ?? "", 10);
-        const { annotation: annotationId, heading: headingId } = viewScope;
-        viewScope.page = undefined;
-        viewScope.annotation = undefined;
-        viewScope.heading = undefined;
-
-        const page = pageNumber >= 1 ? pageNumber : undefined;
+        const { page, annotation: annotationId, heading: headingId } = target;
         if (headingId) {
             postToViewer({ type: "trilium-scroll-to-heading", headingId, pageNumber: page });
         } else if (page) {
@@ -317,7 +313,6 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
         for (const key of publishedRef.current.keys()) {
             republish(key);
         }
-        revealLinkTarget();
     }, [ isVisible ]);
 
     function republish<K extends PdfContextDataKey>(key: K) {
@@ -327,12 +322,7 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
         }
     }
 
-    // A link to the PDF this pane already shows changes no content, so nothing else re-reads it.
-    useTriliumEvent("noteSwitched", ({ noteContext: switchedContext }) => {
-        if (switchedContext.ntxId !== noteContext.ntxId) return;
-        if (switchedContext.note?.noteId !== note.noteId) return;
-        revealLinkTarget();
-    });
+    useLinkTargetLanding({ note, ntxId: noteContext.ntxId, isVisible }, revealLinkTarget);
 
     useTriliumEvent("customDownload", async ({ ntxId }) => {
         if (ntxId !== noteContext.ntxId) return;
@@ -391,7 +381,7 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
  * The link that opens a PDF note at `pageNumber`, and at the annotation `annotationId` on it when
  * the document already stores that annotation.
  */
-export function pdfReference(notePath: string, pageNumber: number, annotationId?: string) {
+function pdfReference(notePath: string, pageNumber: number, annotationId?: string) {
     let reference = `#${notePath}?page=${pageNumber}`;
     if (annotationId && STORED_ANNOTATION_ID.test(annotationId)) {
         reference += `&annotation=${encodeURIComponent(annotationId)}`;

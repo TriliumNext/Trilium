@@ -1,11 +1,12 @@
 import {
-    decodeHtmlEntities, DOCX_MIME, escapeHtml, MAX_TOC_HEADINGS, normalizeTocTitle, ODT_MIME
+    decodeHtmlEntities, DOCX_MIME, MAX_TOC_HEADINGS, normalizeTocTitle, ODT_MIME
 } from "@triliumnext/commons";
 import { HTMLElement, type Node, parse } from "node-html-parser";
 
 import { decodeUtf8, wrapStringOrBuffer } from "../utils/binary.js";
-import { getZipProvider } from "../zip_provider.js";
-import { getHeadingIds, type TocPreviewSource } from "./index.js";
+import { readZipPart } from "../utils/zip_records.js";
+import { createLevelTracker, getHeadingIds, type TocPreviewSource } from "./index.js";
+import { indexElementIds, writePreviewMarks } from "./preview_marks.js";
 
 /** A heading of an office document's preview, as its table of contents reads it. */
 export interface PreviewHeading {
@@ -24,10 +25,13 @@ export interface PreviewHeading {
 const HEADING_START = /<h([1-6])(?=[\s>])/g;
 /** The length of `<h2`, after which a heading's start tag takes an attribute. */
 const TAG_NAME_END = 3;
-/** A start tag with an `id`: its tag name and the escaped value of the id. */
-const ELEMENT_ID = /<([a-zA-Z][a-zA-Z0-9]*)\b[^>]*?\sid="([^"]*)"/g;
 /** The form of the ids that `officeparser` gives notes and their marks. */
 const NOTE_ID = /^footnote-/;
+/**
+ * The most bytes that the main part of a document can declare. Matches the `maxUncompressedBytes`
+ * of `officeparser`, which refuses to preview a document whose parts inflate to more.
+ */
+const MAX_MAIN_PART_BYTES = 512 * 1024 * 1024;
 
 /**
  * Where the bookmarks of a format are, by MIME type: the main part, the attribute that names a
@@ -48,13 +52,12 @@ const BOOKMARK_SOURCES: Record<string, { part: string; bookmarks: RegExp; otherI
 
 /**
  * The headings of `html`, the preview of an office document, in document order: every `h1` to
- * `h6` with a title, at most `MAX_TOC_HEADINGS`. `isCut` tells whether a heading with a title
- * follows the last one kept.
+ * `h6` with a title, at most `MAX_TOC_HEADINGS`, nested by the number of their tag. `isCut` tells
+ * whether a heading with a title follows the last one kept.
  */
 export function readPreviewHeadings(html: string): { headings: PreviewHeading[]; isCut: boolean } {
     const headings: PreviewHeading[] = [];
-    // The kept headings that can be the parent of the next one, by the number of their tag.
-    const path: { tagLevel: number; level: number }[] = [];
+    const toLevel = createLevelTracker();
     for (const match of html.matchAll(HEADING_START)) {
         const tagOffset = match.index;
         const tagLevel = Number(match[1]);
@@ -71,13 +74,7 @@ export function readPreviewHeadings(html: string): { headings: PreviewHeading[];
         if (headings.length === MAX_TOC_HEADINGS) {
             return { headings, isCut: true };
         }
-
-        while (path.length > 0 && path[path.length - 1].tagLevel >= tagLevel) {
-            path.pop();
-        }
-        const level = (path.at(-1)?.level ?? 0) + 1;
-        path.push({ tagLevel, level });
-        headings.push({ title, level, tagOffset });
+        headings.push({ title, level: toLevel(tagLevel), tagOffset });
     }
     return { headings, isCut: false };
 }
@@ -97,18 +94,7 @@ export interface PreviewBookmark {
  * one is the bookmark.
  */
 export function readPreviewBookmarks(html: string, names: string[]): PreviewBookmark[] {
-    const elements = new Map<string, { tagOffset: number; tagNameEnd: number; count: number }>();
-    for (const match of html.matchAll(ELEMENT_ID)) {
-        const id = decodeHtmlEntities(match[2]);
-        const element = elements.get(id);
-        if (element) {
-            element.count++;
-        } else {
-            const tagNameEnd = match.index + 1 + match[1].length;
-            elements.set(id, { tagOffset: match.index, tagNameEnd, count: 1 });
-        }
-    }
-
+    const elements = indexElementIds(html, new Set(names));
     const bookmarks: PreviewBookmark[] = [];
     for (const name of names) {
         const element = elements.get(name);
@@ -133,12 +119,9 @@ export async function readBookmarkNames(content: Uint8Array | string, mime: stri
 
     let xml = "";
     try {
-        await getZipProvider().readZipFile(wrapStringOrBuffer(content),
-            async ({ fileName }, readContent) => {
-                if (fileName === source.part) {
-                    xml = decodeUtf8(await readContent());
-                }
-            });
+        const part = await readZipPart(
+            wrapStringOrBuffer(content), source.part, MAX_MAIN_PART_BYTES);
+        xml = part ? decodeUtf8(part) : "";
     } catch {
         return [];
     }
@@ -158,9 +141,8 @@ export async function readBookmarkNames(content: Uint8Array | string, mime: stri
 
 /**
  * `html`, the preview of an office document read from the blob of `source`, with the id of each
- * heading in its start tag as `data-toc-heading`, and the name of each of `bookmarkNames` that
- * `readPreviewBookmarks()` finds in the start tag of its element as `data-toc-bookmark`. Every
- * other byte stays as it is.
+ * heading in its start tag, and the name of each of `bookmarkNames` that `readPreviewBookmarks()`
+ * finds in the start tag of its element (`writePreviewMarks()`).
  */
 export function markOfficePreview(
     html: string,
@@ -169,29 +151,10 @@ export function markOfficePreview(
 ) {
     const { headings, isCut } = readPreviewHeadings(html);
     const ids = getHeadingIds(headings, blobId, isProtected, isCut);
-    // A heading's mark stays before the mark of its bookmark.
-    return spliceInsertions(html, [
-        ...headings.map(({ tagOffset }, index) =>
-            ({ at: tagOffset + TAG_NAME_END, text: ` data-toc-heading="${ids[index]}"` })),
-        ...readPreviewBookmarks(html, bookmarkNames).map(({ name, tagNameEnd }) =>
-            ({ at: tagNameEnd, text: ` data-toc-bookmark="${escapeHtml(name)}"` }))
-    ]);
-}
-
-/**
- * `text` with each insertion's text at its offset `at`. Insertions at one offset keep their order
- * in `insertions`; every other character stays as it is.
- */
-export function spliceInsertions(text: string, insertions: { at: number; text: string }[]) {
-    const sorted = insertions.toSorted((a, b) => a.at - b.at);
-    const parts: string[] = [];
-    let copied = 0;
-    for (const insertion of sorted) {
-        parts.push(text.slice(copied, insertion.at), insertion.text);
-        copied = insertion.at;
-    }
-    parts.push(text.slice(copied));
-    return parts.join("");
+    return writePreviewMarks(html,
+        headings.map(({ tagOffset }, index) => ({ at: tagOffset + TAG_NAME_END, id: ids[index] })),
+        readPreviewBookmarks(html, bookmarkNames).map(({ name, tagNameEnd }) =>
+            ({ at: tagNameEnd, name })));
 }
 
 /**

@@ -2,6 +2,7 @@ import { Marked, type MarkedOptions, Renderer, type Token, type Tokens } from "m
 import markedFootnote from "marked-footnote";
 
 import { BLOCK_ID_ATTRIBUTE, removeBlockMarkers, stripBlockMarkers } from "./block_reference.js";
+import { CONTAINER_PREFIX_SOURCE, walkBlockTokens } from "./markdown_source.js";
 import { DEFAULT_TASK_STATES, type TaskStateDef } from "./task_states.js";
 import { decodeHtmlEntities, escapeHtml } from "./utils.js";
 
@@ -478,10 +479,11 @@ function getLines(text: string) {
     return lines;
 }
 
-/** The prefixes of the quotes and list items that hold an opening fence. */
-const OPENING_FENCE_PREFIX = String.raw`(?:[ \t]*(?:>|[-*+](?=[ \t])|\d{1,9}[.)](?=[ \t])))*[ \t]*`;
-/** A line that opens a fence. The info string of a backtick fence holds no backtick. */
-const OPENING_FENCE = new RegExp(`^(${OPENING_FENCE_PREFIX})(\`{3,}(?=[^\`]*$)|~{3,})`);
+/**
+ * A line that opens a fence, after the prefixes of the quotes and list items that hold it. The
+ * info string of a backtick fence holds no backtick.
+ */
+const OPENING_FENCE = new RegExp(`^(${CONTAINER_PREFIX_SOURCE})(\`{3,}(?=[^\`]*$)|~{3,})`);
 /** A line that can close a fence: indentation, quote markers, then the run of the fence alone. */
 const CLOSING_FENCE = /^[ \t]*(?:>[ \t]*)*(`{3,}|~{3,})[ \t]*\r?$/;
 /** A quote marker at the start of a line, after its indentation. */
@@ -887,7 +889,8 @@ type BlockToken = Token & BlockIdFields & { tokens?: Token[] };
 
 /**
  * Gives each block token the id of the marker that marks it: the marker line above it, else the
- * first valid marker in its own text. Ids of markers that mark nothing are left out.
+ * first valid marker in its own text. Ids of markers that mark nothing are left out. A marker line
+ * marks only a sibling, so each list of siblings is walked by a call of its own.
  */
 function assignBlockIds(tokens: Token[]) {
     let pending: BlockMarkerToken | undefined;
@@ -1009,7 +1012,7 @@ function numberBlocks(tokens: Token[], indexed: BlockToken[], formulaMap: Map<st
         indexed.push(token);
     };
 
-    for (const token of tokens as BlockToken[]) {
+    walkBlockTokens(tokens, (token) => {
         switch (token.type) {
             case "paragraph":
             case "heading":
@@ -1017,29 +1020,16 @@ function numberBlocks(tokens: Token[], indexed: BlockToken[], formulaMap: Map<st
             case "code":
             case "table":
             case "hr":
-                add(token);
-                break;
             case "blockquote":
-                add(token);
-                numberBlocks((token as Tokens.Blockquote).tokens, indexed, formulaMap);
-                break;
-            case "list":
-                for (const item of (token as Tokens.List).items) {
-                    numberBlocks(item.tokens, indexed, formulaMap);
-                }
-                break;
             case "tabs":
-                add(token);
-                for (const tab of token.tokens as Tokens.Generic[]) {
-                    add(tab as BlockToken);
-                    numberBlocks(tab.tokens as Token[], indexed, formulaMap);
-                }
+            case "tab":
+                add(token as BlockToken);
                 break;
             case "html": {
                 const key = (token as Tokens.HTML).text.trim();
                 const formula = formulaMap.get(key);
                 if (formula) {
-                    add(token);
+                    add(token as BlockToken);
                     const attribute = ` ${SOURCE_BLOCK_ATTRIBUTE}="${token.blockIndex}"`;
                     const indexed = formula.replace(/^<span class="math-tex"/, `$&${attribute}`);
                     formulaMap.set(key, indexed);
@@ -1047,7 +1037,7 @@ function numberBlocks(tokens: Token[], indexed: BlockToken[], formulaMap: Map<st
                 break;
             }
         }
-    }
+    });
 }
 
 /** `html`, an element, with `attributes` added to its opening tag. */

@@ -2,12 +2,6 @@ import { LINK_TARGET_PARAMS } from "@triliumnext/commons";
 
 import { NoteMeta } from "../../meta";
 
-const MARKDOWN_MIMES = new Set(["text/x-markdown", "text/markdown", "text/x-gfm"]);
-
-export function isMarkdownCodeNote(mime: string | undefined): boolean {
-    return !!mime && MARKDOWN_MIMES.has(mime);
-}
-
 /**
  * Rewrites Trilium-internal links in markdown content to use relative file paths
  * suitable for export. This handles code notes with markdown MIME type, where
@@ -58,24 +52,19 @@ export function rewriteMarkdownContentLinks(
     return content;
 }
 
-/** Where an archived link is written: an HTML attribute, Markdown, or a page of the share theme. */
-export type ArchivedLinkContext = "attribute" | "markdown" | "share";
+/** Where an archived link is written: an HTML attribute or Markdown. */
+export type ArchivedLinkContext = "attribute" | "markdown";
 
-/** The separator between the parameters of a query, in each context that writes one. */
-const QUERY_SEPARATORS = { attribute: "&amp;", markdown: "&" } as const;
+/** The separator between the parameters of a query, in each context. */
+const QUERY_SEPARATORS: Record<ArchivedLinkContext, string> = { attribute: "&amp;", markdown: "&" };
 
 /**
  * The query an archive writes after the file of a link: the `LINK_TARGET_PARAMS` of `suffix`, in
- * order and as written; in `share`, the block, and the bookmark as a fragment the theme reveals.
+ * order and as written.
  */
 export function getArchivedLinkSuffix(suffix: string, context: ArchivedLinkContext) {
-    const values = readLinkTargetValues(suffix);
-    if (context === "share") {
-        const block = values.get("block");
-        const bookmark = values.get("bookmark");
-        return (block ? `?block=${block}` : "") + (bookmark ? `#${bookmark}` : "");
-    }
-    const parameters = Array.from(values, ([ name, value ]) => `${name}=${value}`);
+    const parameters = Array.from(readLinkTargetValues(suffix),
+        ([ name, value ]) => `${name}=${value}`);
     return parameters.length ? `?${parameters.join(QUERY_SEPARATORS[context])}` : "";
 }
 
@@ -83,7 +72,7 @@ export function getArchivedLinkSuffix(suffix: string, context: ArchivedLinkConte
  * The `LINK_TARGET_PARAMS` of `suffix` as {@link getArchivedLinkSuffix} reads them, each after the
  * separator of `context`, to append to a query that has begun.
  */
-export function getLinkTargetParameters(suffix: string, context: keyof typeof QUERY_SEPARATORS) {
+export function getLinkTargetParameters(suffix: string, context: ArchivedLinkContext) {
     return Array.from(readLinkTargetValues(suffix),
         ([ name, value ]) => `${QUERY_SEPARATORS[context]}${name}=${value}`).join("");
 }

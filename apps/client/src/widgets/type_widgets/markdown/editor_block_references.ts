@@ -1,5 +1,5 @@
 import {
-    flashBlocks, getBlockRangeElements
+    FLASH_DURATION_MS, MIN_TOP_GAP
 } from "@triliumnext/ckeditor5/src/plugins/block_reference/block_reference_read_only.js";
 import type VanillaCodeMirror from "@triliumnext/codemirror";
 import {
@@ -8,9 +8,7 @@ import {
 } from "@triliumnext/codemirror/src/extensions/block_markers";
 import type { FoundBlockId } from "@triliumnext/commons";
 import { isSameBlockKey } from "@triliumnext/commons/src/lib/block_keys.js";
-import {
-    formatBlockRange, generateBlockId, parseBlockRange, resolveBlockRange
-} from "@triliumnext/commons/src/lib/block_reference.js";
+import { generateBlockId, parseBlockRange } from "@triliumnext/commons/src/lib/block_reference.js";
 import {
     type BlockIndexHost, type IndexedBlock, indexMarkdownBlocks, type MarkdownBlockIndex
 } from "@triliumnext/commons/src/lib/markdown_block_index.js";
@@ -18,18 +16,18 @@ import {
     applySourceChange, findMarkdownHeadings, type MarkdownHeading, placeMarkerOnBlock,
     replayBlockIds, type SourceChange
 } from "@triliumnext/commons/src/lib/markdown_references.js";
+import { sortAnchorNames } from "@triliumnext/commons/src/lib/reference_targets.js";
 import DOMPurify from "dompurify";
-import { useEffect, useMemo, useRef } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 
 import appContext, { type CommandNames } from "../../../components/app_context";
 import type FNote from "../../../entities/fnote";
 import contextMenu from "../../../menus/context_menu";
-import { getBlockExcerpt } from "../../../services/block_excerpts";
-import { copyHtmlWithToast } from "../../../services/clipboard_ext";
+import { copyReferenceLink, flashBlockRange } from "../../../services/block_reference";
 import { t } from "../../../services/i18n";
-import { calculateHash, type ViewScope } from "../../../services/link";
+import type { ViewScope } from "../../../services/link";
 import { addParameters, type LinkTarget } from "../../../services/link_targets";
-import type { CurrentVersion } from "../../../services/note_save";
+import type { ChangeRecordHooks, CurrentVersion } from "../../../services/note_save";
 import toast from "../../../services/toast";
 import { noteSavedDataStore } from "../../react/NoteStore";
 import { type OwnLinkTargets, registerOwnLinkTargets } from "./editor_utils";
@@ -57,18 +55,11 @@ export interface MarkdownReferenceSource {
     save?(): Promise<string | undefined>;
 }
 
-/** The hooks of the saves of `EditableCode` that keep the record of the changes since the base. */
-export interface ChangeRecordHooks {
-    onDataTaken(): void;
-    dataSaved(): void;
-    resolveConflict(current: CurrentVersion): boolean;
-}
-
 /**
  * Draws the block markers of `view` as chips and keeps them whole, as `blockMarkers()` does, and
  * lists the headings and anchors of its document for links to it. With `source`, the menus copy
  * references to its blocks, and the returned hooks, given to the saves of its editor, take over
- * the ids that another writer gave its blocks meanwhile.
+ * the ids that another writer gave its blocks meanwhile. The hooks act on the latest `view`.
  */
 export function useBlockMarkers(
     view: VanillaCodeMirror | null,
@@ -76,6 +67,8 @@ export function useBlockMarkers(
 ): ChangeRecordHooks {
     const sourceRef = useRef(source);
     sourceRef.current = source;
+    const viewRef = useRef(view);
+    viewRef.current = view;
     const inFlightRef = useRef<InFlight | null>(null);
 
     useEffect(() => {
@@ -112,23 +105,25 @@ export function useBlockMarkers(
         };
     }, [ view ]);
 
-    return useMemo(() => ({
+    const [ hooks ] = useState<ChangeRecordHooks>(() => ({
         onDataTaken() {
-            if (view) {
-                inFlightRef.current = takeRecord(view, inFlightRef.current);
+            if (viewRef.current) {
+                inFlightRef.current = takeRecord(viewRef.current, inFlightRef.current);
             }
         },
         dataSaved() {
             inFlightRef.current = null;
         },
         resolveConflict(current: CurrentVersion) {
-            if (!view || !takeOverBlockIds(view, inFlightRef.current, current)) {
+            const shown = viewRef.current;
+            if (!shown || !takeOverBlockIds(shown, inFlightRef.current, current)) {
                 return false;
             }
             inFlightRef.current = null;
             return true;
         }
-    }), [ view ]);
+    }));
+    return hooks;
 }
 
 /** The source that `useBlockMarkers()` registered for `view`, an editor of a Markdown note. */
@@ -218,20 +213,14 @@ export async function copyMarkdownReference(
         return;
     }
 
-    flashLines(view, startOwner.startLine, endOwner.endLine, FLASH_DURATION);
+    flashLines(view, startOwner.startLine, endOwner.endLine, FLASH_DURATION_MS);
     const preview = source.getPreview();
-    const shown = preview?.clientHeight ? resolveBlockRange<HTMLElement>(preview, range) : null;
-    if (shown?.start && shown.end) {
-        flashBlocks(getBlockRangeElements(shown.start, shown.end));
+    if (preview?.clientHeight) {
+        flashBlockRange(preview, range);
     }
-
-    const href = calculateHash({ notePath, viewScope: { block: formatBlockRange(range) } });
-    const link = document.createElement("a");
-    link.className = "reference-link";
-    link.setAttribute("href", href);
-    link.textContent = `${note.title} - `
-        + getBlockExcerpt(startOwner.node as Element, endOwner.node as Element);
-    await copyHtmlWithToast(link.outerHTML, href);
+    await copyReferenceLink(notePath, note.title, range, {
+        start: startOwner.node as Element, end: endOwner.node as Element
+    });
 }
 
 /**
@@ -267,7 +256,7 @@ export function revealInSource(
         const { top } = view.lineBlockAt(line.from);
         view.scrollDOM.scrollTop = Math.max(0, top - view.scrollDOM.clientHeight * MIN_TOP_GAP);
         if (isFlashed) {
-            flashLines(view, lines.from, lines.to, FLASH_DURATION);
+            flashLines(view, lines.from, lines.to, FLASH_DURATION_MS);
         }
     }
     if (isConsumed) {
@@ -278,11 +267,6 @@ export function revealInSource(
         viewScope.bookmark = undefined;
     }
 }
-
-/** The duration of the flash of the blocks of a reference, as the text notes show it. */
-const FLASH_DURATION = 1500;
-/** The part of the height of the editor that stays above a revealed block. */
-const MIN_TOP_GAP = 0.15;
 
 const sources = new WeakMap<object, MarkdownReferenceSource>();
 const markdownEditors = new WeakSet<object>();
@@ -458,11 +442,9 @@ function readOwnLinkTargets(
             return id ? addParameters(notePath, { block: id }) : notePath;
         }
     }));
-    const names = [ ...new Set(index.anchors.map(({ name }) => name)) ]
-        .sort((a, b) => a.localeCompare(b));
     return {
         headings: headingTargets,
-        anchors: names,
+        anchors: sortAnchorNames(index.anchors.map(({ name }) => name)),
         getRange() {
             const positions = readPositions();
             return range && positions ? { from: positions[0], to: positions[1] } : null;

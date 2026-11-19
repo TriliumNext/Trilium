@@ -72,8 +72,11 @@ async function getWithSilentUnauthorized<T>(url: string, componentId?: string) {
     return await call<T>("GET", url, componentId, { silentUnauthorized: true });
 }
 
-async function post<T>(url: string, data?: unknown, componentId?: string) {
-    return await call<T>("POST", url, componentId, { data });
+/** @param silence suppresses the error toast for a 409, for a caller that handles the conflict. */
+async function post<T>(
+    url: string, data?: unknown, componentId?: string, silence?: Pick<CallOptions, "silentConflict">
+) {
+    return await call<T>("POST", url, componentId, { data, ...silence });
 }
 
 async function postWithSilentInternalServerError<T>(url: string, data?: unknown, componentId?: string) {

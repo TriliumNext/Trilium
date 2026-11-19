@@ -21,7 +21,9 @@ import AttachmentSaves, {
 const serverPost = vi.hoisted(() => vi.fn(async () => undefined));
 const serverPut = vi.hoisted(() => vi.fn(async () => undefined));
 vi.mock("../../../services/server", () => ({
-    default: { get: async () => [], post: serverPost, put: serverPut }
+    default: {
+        get: async () => [], post: serverPost, postWithSilentErrors: serverPost, put: serverPut
+    }
 }));
 
 const frocaNotes = vi.hoisted((): Record<string, unknown> => ({}));
@@ -182,14 +184,15 @@ describe("useAttachmentEditor", () => {
     const note = { noteId: "note1", isProtected: false } as FNote;
     const noteContext = { ntxId: "ntx1", setContextData: vi.fn() } as unknown as NoteContext;
 
-    function savedRequest(content: string) {
+    function savedRequest(content: string, base: { blobId?: string; keepOther?: boolean } = {}) {
         return [ "notes/note1/attachments", {
             attachmentId: "drawing1",
             role: "file",
             mime: "application/vnd.excalidraw+json",
             title: "Canvas.excalidraw",
-            content
-        }, component.componentId ];
+            content,
+            ...base
+        }, component.componentId, { silentConflict: true } ] as const;
     }
 
     let component: Component;
@@ -280,6 +283,82 @@ describe("useAttachmentEditor", () => {
 
         await act(() => render(null, container));
     });
+
+    it("asks on a conflict, keeps this version, and bases the next save on its own", async () => {
+        component = new Component();
+        const container = document.createElement("div");
+        await act(() => {
+            render(h(ParentComponent.Provider, { value: component }, h(Probe, {})), container);
+        });
+        const read = { ...drawing, blobId: "read" } as FAttachment;
+        rejectWithConflict();
+        serverPost.mockResolvedValueOnce(
+            { attachmentId: "drawing1", title: "Canvas.excalidraw", blobId: "mine" } as never);
+        const showPersistent = vi.spyOn(toast, "showPersistent");
+
+        editor?.scheduleSave(read, () => "first");
+        void component.handleEvent("beforeNoteSwitch", { noteContext } as never);
+        await vi.waitFor(() => expect(showPersistent).toHaveBeenCalled());
+        expect(serverPost).toHaveBeenCalledExactlyOnceWith(
+            ...savedRequest("first", { blobId: "read" }));
+        await act(async () => {
+            showPersistent.mock.calls[0][0].buttons?.[0].onClick({ dismissToast: () => {} });
+            await vi.waitFor(() => expect(editor?.getUnsavedContent("drawing1")).toBeUndefined());
+        });
+        expect(serverPost).toHaveBeenLastCalledWith(
+            ...savedRequest("first", { blobId: "theirs", keepOther: true }));
+
+        // `froca` still holds the blob that the change was read at.
+        editor?.scheduleSave(read, () => "second");
+        await act(async () => {
+            await component.handleEvent("beforeNoteSwitch", { noteContext } as never);
+        });
+        expect(serverPost).toHaveBeenLastCalledWith(
+            ...savedRequest("second", { blobId: "mine" }));
+        await act(() => render(null, container));
+    });
+
+    it("keeps its version as a revision when the user loads the other one", async () => {
+        component = new Component();
+        const container = document.createElement("div");
+        await act(() => {
+            render(h(ParentComponent.Provider, { value: component }, h(Probe, {})), container);
+        });
+        rejectWithConflict();
+        server.get = vi.fn(async () => ({ blobId: "noteBlob", content: "<p>note</p>" })) as
+            typeof server.get;
+        serverPost.mockResolvedValueOnce({ revisionId: "r", isKept: true } as never);
+        const showPersistent = vi.spyOn(toast, "showPersistent");
+        const versionLoaded = vi.fn();
+        editor?.subscribeVersionLoaded?.(versionLoaded);
+
+        editor?.scheduleSave({ ...drawing, blobId: "read" } as FAttachment, () => "mine");
+        void component.handleEvent("beforeNoteSwitch", { noteContext } as never);
+        await vi.waitFor(() => expect(showPersistent).toHaveBeenCalled());
+        expect(versionLoaded).not.toHaveBeenCalled();
+        await act(async () => {
+            showPersistent.mock.calls[0][0].buttons?.[1].onClick({ dismissToast: () => {} });
+            await vi.waitFor(() => expect(serverPost).toHaveBeenCalledTimes(2));
+        });
+        expect(serverPost).toHaveBeenLastCalledWith("notes/note1/revisions/draft",
+            expect.objectContaining({
+                content: "<p>note</p>", attachments: [ savedRequest("mine", { blobId: "read" })[1] ]
+            }), component.componentId);
+        await vi.waitFor(() => expect(editor?.getUnsavedContent("drawing1")).toBeUndefined());
+        expect(versionLoaded).toHaveBeenCalledOnce();
+        await act(() => render(null, container));
+    });
+
+    /** Rejects the next save of an attachment, which another writer saved at the blob `theirs`. */
+    function rejectWithConflict() {
+        serverPost.mockRejectedValueOnce(JSON.stringify({
+            reason: "version", message: "", blobId: "noteBlob", type: "text", mime: "text/html",
+            isVersioned: true,
+            attachments: [
+                { attachmentId: "drawing1", title: "Canvas.excalidraw", blobId: "theirs" }
+            ]
+        }) as never);
+    }
 });
 
 describe("NoteSaves", () => {
@@ -529,6 +608,64 @@ describe("useNoteEditor", () => {
         editor?.scheduleSave(note, () => "again");
         expect(await saveNow()).toBeUndefined();
         expect(savedBase()).toMatchObject({ base: { blobId: "loaded" } });
+        await act(() => render(null, container));
+    });
+
+    it("saves the changes to a note that `saveNoteChanges` names", async () => {
+        component = new Component();
+        const container = document.createElement("div");
+        await act(() => {
+            render(h(ParentComponent.Provider, { value: component }, h(Probe, {})), container);
+        });
+
+        editor?.scheduleSave(code, () => "first");
+        await act(async () => {
+            await component.handleEvent("saveNoteChanges", { noteId: "other" });
+        });
+        expect(serverPut).not.toHaveBeenCalled();
+        await act(async () => {
+            await component.handleEvent("saveNoteChanges", { noteId: "code1" });
+        });
+        expect(serverPut).toHaveBeenCalledExactlyOnceWith(
+            "notes/code1/data", { content: "first" }, component.componentId);
+        expect(editor?.getUnsavedContent("code1")).toBeUndefined();
+        await act(() => render(null, container));
+    });
+
+    it("lets the editor of a note bring its changes onto another writer's version", async () => {
+        component = new Component();
+        const container = document.createElement("div");
+        await act(() => {
+            render(h(ParentComponent.Provider, { value: component }, h(Probe, {})), container);
+        });
+        const note = {
+            noteId: "code1", type: "code", mime: "text/plain", blobId: "first", isProtected: false
+        } as FNote;
+        serverPut.mockRejectedValueOnce(JSON.stringify({
+            reason: "version", message: "", blobId: "theirs", type: "code", mime: "text/plain",
+            isVersioned: true
+        }) as never);
+        server.get = vi.fn(async () => ({ blobId: "theirs", content: "theirs" })) as
+            typeof server.get;
+        const showPersistent = vi.spyOn(toast, "showPersistent");
+        const hooks = {
+            onDataTaken: vi.fn(), dataSaved: vi.fn(), resolveConflict: vi.fn(() => true)
+        };
+
+        editor?.scheduleSave(note, () => "mine", undefined, hooks);
+        await act(async () => {
+            await editor?.saveNow?.("code1");
+        });
+        expect(hooks.resolveConflict).toHaveBeenCalledExactlyOnceWith(
+            { blobId: "theirs", content: "theirs" });
+        expect(showPersistent).not.toHaveBeenCalled();
+        expect(serverPut).toHaveBeenLastCalledWith("notes/code1/data", expect.objectContaining({
+            content: "mine", base: { blobId: "theirs", type: "code", mime: "text/plain" }
+        }), component.componentId, { silentConflict: true });
+        // Read for the first save and for the one sent again.
+        expect(hooks.onDataTaken).toHaveBeenCalledTimes(2);
+        expect(hooks.dataSaved).toHaveBeenCalledOnce();
+        expect(editor?.getUnsavedContent("code1")).toBeUndefined();
         await act(() => render(null, container));
     });
 

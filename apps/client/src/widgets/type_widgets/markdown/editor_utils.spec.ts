@@ -5,6 +5,7 @@ import appContext from "../../../components/app_context.js";
 import type FNote from "../../../entities/fnote";
 import froca from "../../../services/froca.js";
 import { t } from "../../../services/i18n.js";
+import { getTocUrl, rememberHeadingTitles } from "../../../services/link.js";
 import server from "../../../services/server.js";
 import toast from "../../../services/toast.js";
 import type { EditLinkOpts } from "../../dialogs/edit_link.js";
@@ -20,14 +21,6 @@ const { loadBlockReferenceLabel } = vi.hoisted(() => ({
         }
         return block === "h1" ? { text: "Install", isBroken: false, isHeading: true } : null;
     })
-}));
-const { loadPdfReferenceLabel } = vi.hoisted(() => ({
-    loadPdfReferenceLabel: vi.fn(async (_note: FNote, { heading }: { heading?: string }) =>
-        (heading ? "Methods" : null))
-}));
-vi.mock("../../../services/link.js", async (importOriginal) => ({
-    ...await importOriginal<typeof import("../../../services/link.js")>(),
-    loadPdfReferenceLabel
 }));
 vi.mock("../../../services/block_excerpts.js", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../../services/block_excerpts.js")>(),
@@ -96,9 +89,14 @@ describe("toWikilink", () => {
 
 describe("resolveWikilinkChip", () => {
     it("draws a link as the note, followed by the heading or anchor it points at", async () => {
-        const guide = { noteId: "abc123", title: "Guide", getIcon: () => "bx bx-book" } as FNote;
+        const guide = {
+            noteId: "abc123", blobId: "blob1", title: "Guide", getIcon: () => "bx bx-book"
+        } as FNote;
         vi.spyOn(froca, "getNoteFromCache").mockReturnValue(guide);
         vi.spyOn(froca, "getNote").mockResolvedValue(guide);
+        rememberHeadingTitles(getTocUrl("notes", guide.noteId), "blob1", [
+            { id: "h9", title: "Methods" }
+        ]);
 
         expect(resolveWikilinkChip("abc123")).toEqual({ title: "Guide", icon: "bx bx-book" });
         await expect(resolveWikilinkChip("abc123", "block=h1"))
@@ -113,10 +111,9 @@ describe("resolveWikilinkChip", () => {
         await expect(resolveWikilinkChip("abc123", "block=broken"))
             .resolves.toEqual({ title: "Guide", icon: "bx bx-book" });
         expect(resolveWikilinkChip("abc123", "ntxId=x")).toEqual({ title: "Guide", icon: "bx bx-book" });
-        // A link into a PDF names its heading, else its page.
+        // A link into a PDF names its heading, before its page.
         await expect(resolveWikilinkChip("abc123", "page=3&heading=h9"))
             .resolves.toEqual({ title: "Guide - Methods", icon: "bx bx-book" });
-        expect(loadPdfReferenceLabel).toHaveBeenLastCalledWith(guide, expect.objectContaining({ page: "3", heading: "h9" }));
 
         vi.spyOn(froca, "getNote").mockResolvedValue(null);
         await expect(resolveWikilinkChip("gone", "block=h1")).resolves.toBeNull();

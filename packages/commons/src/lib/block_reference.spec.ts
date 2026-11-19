@@ -1,10 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
     BLOCK_ID_ATTRIBUTE,
     type BlockNode,
     decodeBlockMarkerId,
-    encodeBlockMarkerId,
+    drawBlockId,
     encodeBlockParameter,
     findBlockIdAttributes,
     findBlockMarkers,
@@ -78,6 +78,23 @@ describe("generateBlockId", () => {
             expect(id).toMatch(/^[A-Za-z0-9]{12}$/);
             expect(isValidBlockId(id)).toBe(true);
         }
+    });
+});
+
+describe("drawBlockId", () => {
+    it("draws again while the id is invalid or the content holds it, sixteen times at most", () => {
+        const createId = vi.fn()
+            .mockReturnValueOnce("Taken")
+            .mockReturnValueOnce("a:b")
+            .mockReturnValueOnce("")
+            .mockReturnValue("Free");
+
+        expect(drawBlockId("<p>Taken</p>", createId)).toBe("Free");
+        expect(createId).toHaveBeenCalledTimes(4);
+
+        const repeating = vi.fn(() => "Taken");
+        expect(drawBlockId("<p>Taken</p>", repeating)).toBeNull();
+        expect(repeating).toHaveBeenCalledTimes(16);
     });
 });
 
@@ -331,10 +348,10 @@ describe("getEditableBlockRun", () => {
 describe("block markers", () => {
     it("writes a marker with every character outside [A-Za-z0-9_.-] as a reference", () => {
         expect(formatBlockMarker("aB3_.-z")).toBe(`<a data-trilium-block-id="aB3_.-z"></a>`);
-        expect(encodeBlockMarkerId("a b|$`\"&<\u{1F600}")).toBe(
-            "a&#32;b&#124;&#36;&#96;&#34;&#38;&#60;&#128512;");
+        expect(formatBlockMarker("a b|$`\"&<\u{1F600}")).toBe(`<a data-trilium-block-id="`
+            + `a&#32;b&#124;&#36;&#96;&#34;&#38;&#60;&#128512;"></a>`);
         for (const id of [ "a b|$`\"&<\u{1F600}", "plain", "é" ]) {
-            expect(decodeBlockMarkerId(encodeBlockMarkerId(id))).toBe(id);
+            expect(findBlockMarkers(formatBlockMarker(id))[0]?.id).toBe(id);
         }
     });
 

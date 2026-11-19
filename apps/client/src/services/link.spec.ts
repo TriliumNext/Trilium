@@ -72,8 +72,9 @@ import treeService from "./tree.js";
 import linkService, {
     calculateExtraWindowUrl,
     calculateHash,
+    getTocUrl,
     goToLinkExt,
-    loadPdfReferenceLabel,
+    loadLinkTargetLabel,
     parseNavigationStateFromUrl,
     rememberHeadingTitles,
     setupLinkHandlers
@@ -1269,11 +1270,34 @@ describe("the labels of links to PDF headings", () => {
 
     it("gives the label that the Markdown chips show", async () => {
         const pdf = buildNote({ title: "Paper" });
-        rememberHeadingTitles(`notes/${pdf.noteId}/toc`, pdf.blobId, headings);
+        rememberHeadingTitles(getTocUrl("notes", pdf.noteId), pdf.blobId, headings);
 
-        expect(await loadPdfReferenceLabel(pdf, { heading: "h1", page: "3" })).toBe("Methods");
-        expect(await loadPdfReferenceLabel(pdf, { page: "3", annotation: "12R" })).toBe("pdf.annotation_reference");
-        expect(await loadPdfReferenceLabel(pdf, {})).toBeNull();
+        expect(await loadLinkTargetLabel(pdf, { heading: "h1", page: "3" }))
+            .toStrictEqual({ text: "Methods", icon: "bx bx-heading", isBroken: false });
+        expect(await loadLinkTargetLabel(pdf, { page: "3", annotation: "12R" })).toStrictEqual({
+            text: "pdf.annotation_reference", icon: "bx bx-comment-detail", isBroken: false
+        });
+        expect(await loadLinkTargetLabel(pdf, {})).toBeNull();
+    });
+
+    it("names the most specific place a link points at, in every label", async () => {
+        const note = buildNote({
+            title: "Doc", content: "<p data-trilium-block-id=\"b1\">First block</p>"
+        });
+        rememberHeadingTitles(getTocUrl("notes", note.noteId), note.blobId, headings);
+        const cases: [ Record<string, string>, string ][] = [
+            [ { block: "b1", bookmark: "Intro", page: "3" }, "First block" ],
+            [ { heading: "h1", bookmark: "Intro", page: "3" }, "Methods" ],
+            [ { heading: "gone", bookmark: "Intro", page: "3" }, "Intro" ],
+            [ { heading: "gone", page: "3" }, "pdf.page_reference" ]
+        ];
+
+        for (const [ params, text ] of cases) {
+            const href = `#root/${note.noteId}?${new URLSearchParams(params)}`;
+            const $small = (await label(href)).find("small");
+            expect([ $small.length, $small.text() ]).toStrictEqual([ 1, text ]);
+            expect(linkService.getReferenceLinkTitleSync(href)).toBe(`Doc - ${text}`);
+        }
     });
 
     it("keeps the titles of the last documents it read", () => {

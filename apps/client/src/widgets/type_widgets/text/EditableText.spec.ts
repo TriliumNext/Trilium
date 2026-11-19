@@ -89,7 +89,7 @@ vi.mock("../../react/hooks/options", async (importOriginal) => ({
 }));
 vi.mock("../../react/hooks/note_context", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../react/hooks/note_context")>()),
-    useSameNoteSwitch: () => {}
+    useLinkTargetLanding: () => {}
 }));
 vi.mock("../../react/hooks/editor", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../react/hooks/editor")>()),

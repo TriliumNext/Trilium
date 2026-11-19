@@ -40,6 +40,10 @@ export const MAX_TOC_DEPTH = 32;
 export const MAX_TOC_HEADINGS = 20_000;
 /** The longest title of a heading, in UTF-16 code units. */
 export const MAX_TOC_TITLE_LENGTH = 500;
+/** Marks the element of a document preview where headings start: their ids, space-separated. */
+export const TOC_HEADING_ATTRIBUTE = "data-toc-heading";
+/** Marks the element of a document preview that holds a bookmark: its name. */
+export const TOC_BOOKMARK_ATTRIBUTE = "data-toc-bookmark";
 
 const BLOB_TAG_LENGTH = 10;
 /** Joins the titles of a heading's path in its hash source. No normalized title holds it. */

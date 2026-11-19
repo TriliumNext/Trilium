@@ -12,7 +12,8 @@ description: >-
   `apps/client/src/services/link_targets.ts` (`LinkTarget`, `LINK_TARGET_KINDS`, `LINK_TARGET_PARAMS`,
   `getLinkTargets()`), the lists that show targets (`LinkTargetList`, `LinkMentionList`, the
   dialog), and the navigation side (`ViewScope`, `VIEW_SCOPE_PARAMS`, `calculateHash()`, the type
-  widget that scrolls to the target, `useSameNoteSwitch()`, `EmbeddedNotePane`'s link takeover,
+  widget that scrolls to the target, `takeLinkTarget()`, `useLinkTargetLanding()`,
+  `EmbeddedNotePane`'s link takeover,
   reference link labels, link parameters on shared pages). Also load it before changing any of
   those files.
 ---
@@ -44,17 +45,19 @@ note provider builds on: the `developing-block-references` skill.
 | Shared types | `packages/commons/src/lib/server_api.ts` | `REFERENCE_KINDS`, `ReferenceKind`, `ReferenceParams`, `ReferenceTarget`, `NoteReferencesResponse`, `CreateReferenceRequest`, `CreateReferenceResponse` |
 | Registry and routes | `packages/trilium-core/src/services/references/index.ts` | `ReferenceProvider`, `findReferenceTargets()`, `createReference()`, `registerReferenceProvider()` |
 | Text note provider | `packages/trilium-core/src/services/references/text.ts` | Headings (`?block=`, ids written by `createReference`) and anchors (`?bookmark=`) |
+| Markdown note provider | `packages/trilium-core/src/services/references/markdown.ts` | The same targets read from the rendered note, through commons `markdown_references.ts` (`findMarkdownTargets()`, `addMarkdownHeadingReference()`) |
+| Heading targets | `packages/commons/src/lib/reference_targets.ts` | What both providers share, on `BlockNode`: `getHeadingText()`, `getHeadingLevel()`, `isAnchor()`, `findRequestedHeading()`, `toReferenceTargets()`; ids are drawn with `drawBlockId()` of `block_reference.ts` |
 | Route handlers | `packages/trilium-core/src/routes/api/notes.ts` | `getNoteReferences` (`asyncApiRoute`), `createNoteReference` (`apiRoute`), body validation |
 | API document | `apps/server/internal.openapi.yaml` | `ReferenceKind` enum and the two operations; the API Reference page is generated from it |
-| Client model | `apps/client/src/services/link_targets.ts` | `LinkTarget`, `LINK_TARGET_KINDS`, `getLinkTargets()` and its attachment twin `getAttachmentLinkTargets()`, `createEditorHeadings()`, `createAnchorTargets()`, `nestTargets()`, `findTarget()`, `addParameters()` |
+| Client model | `apps/client/src/services/link_targets.ts` | `LinkTarget`, `LINK_TARGET_KINDS`, `getLinkTargets()` and its attachment twin `getAttachmentLinkTargets()`, `createEditorHeadings()`, `createAnchorTargets()`, `nestTargets()`, `findTarget()`, `addParameters()`, `takeLinkTarget()` (reads and clears the target of a view scope, the page parsed) |
 | ToC cache | `packages/trilium-core/src/services/toc/` | `TocFormat`, `getToc()`, `saveClientToc()`, `readCachedToc()`, `registerTocGenerator()`; the PDF format in `toc/pdf.ts`, the bridge provider in `references/toc.ts` (see "ToC formats") |
 | Card list | `apps/client/src/widgets/react/LinkTargetList.tsx` | One card per kind, nesting by `level`; `useLinkDestinationKeys()` for a host that keeps the focus |
 | `@` list | `apps/client/src/widgets/react/LinkMentionList.tsx` | Second page of the note list: a menu header per kind, filtering by title |
 | Link dialog | `apps/client/src/widgets/dialogs/edit_link.tsx` | Note page (targets of the note picked) and Heading / anchor page (the editor's own document) |
 | Navigation | `apps/client/src/services/navigation_state.ts` | `ViewScope` fields and `VIEW_SCOPE_PARAMS`, which a link parameter must be part of; `calculateHash()` |
-| Landing | `apps/client/src/widgets/react/hooks/note_context.ts` | `useSameNoteSwitch()`, for a link to the note a widget already shows |
+| Landing | `apps/client/src/widgets/react/hooks/note_context.ts` | `useLinkTargetLanding()`: runs a widget's landing once its content is ready, when it is shown and on a link to the note it already shows (`useSameNoteSwitch()`) |
 | Note panes of views | `apps/client/src/widgets/EmbeddedNotePane.tsx` | `useFollowLinksWithin()`, which leaves links with a target parameter to normal navigation |
-| Link labels | `apps/client/src/services/link.ts` | `loadReferenceLinkTitle()` (the label on screen), `getReferenceLinkTitleSync()` (the text saved in the `<a>`) |
+| Link labels | `apps/client/src/services/link.ts` | `loadReferenceLinkTitle()` (the label on screen), `getReferenceLinkTitleSync()` (the text saved in the `<a>`), both through `LABELED_TARGET_PARAMS` and `loadLinkTargetLabel()`; `getTocUrl()` |
 | Shared pages | `packages/trilium-core/src/share/content_renderer.ts` | `handleAttachmentLink()` (link hrefs), `getLinkedHeadingText()` (labels) |
 
 ## How a target travels
@@ -139,8 +142,9 @@ Rules:
 - **`createReference` is synchronous**: the POST route reads and writes in one transaction. It
   finds the target from `request.kind`, `request.index` (the position among the targets of that
   kind, as `findTargets` lists them) and `request.title`, and returns `null` when nothing matches
-  (409). Match like `findHeading()` in `text.ts`: the target at `index` while its title is still
-  `title`, otherwise the only target of that kind with that title.
+  (409). Match as `findRequestedHeading()` (commons `reference_targets.ts`) does for the text and
+  Markdown providers: the target at `index` while its title is still `title`, otherwise the only
+  target of that kind with that title.
 - **A target that has a reference already gets it back.** The list the client shows can be older
   than the content: another window or a sync can have given the target a reference since. Return
   its `params` with the same `content`, as `createReference` in `text.ts` returns the id a heading
@@ -151,8 +155,9 @@ Rules:
 - **A reference counts only where it first occurs**, since the view scrolls to the first match.
   List a target whose reference an earlier one also carries without `params`, and let
   `createReference` give it a new one in front of the old (`takenIds` in `text.ts`): the first of
-  two equal attributes wins in browsers, in CKEditor and in `node-html-parser`. Draw a new id
-  again while it occurs anywhere in the content.
+  two equal attributes wins in browsers, in CKEditor and in `node-html-parser`. Draw the new id
+  with `drawBlockId()` (commons `block_reference.ts`), which draws again while it occurs anywhere
+  in the content, 16 times at most, and answers `null` after that.
 - **Change only the bytes you mean to.** `node-html-parser` rewrites every attribute of an element
   it modifies and corrupts backslashes in them; splice the stored string at `range` offsets, as
   `insertBlockId()` does.
@@ -223,12 +228,13 @@ gives parameters into a target of kind `heading`.
   such as the bookmarks of a document.
 - **A format whose headings are a table of contents that the document stores**, not read from its
   preview, as the EPUB format's: the preview must still show where each heading is. The ToC pass
-  of `toc/epub.ts` runs inside `convertOfficeToHtml()`, places a marker at each entry's target and
-  hands the route its record through `onTocPass` (`TocPreviewSource.tocPass`), which the marking
-  reads instead of the document. The cache keeps the whole authored outline, so ids never depend on
-  what the preview shows; an entry the preview lacks is kept with a field of the format
-  (`isShown: false`) for which `getLinkParams()` answers nothing, and `toTargets()` lists a target
-  at the depth of its ancestors that are targets.
+  of `toc/epub_pass.ts` runs inside `convertOfficeToHtml()`, places a marker at each entry's
+  target and hands the route its record through `onTocPass` (`TocPreviewSource.tocPass`), which
+  the marking reads instead of the document. The cache keeps the whole authored outline, so ids
+  never depend on what the preview shows; an entry the preview lacks is kept with a field of the
+  format (`isShown: false`) for which `getLinkParams()` answers nothing, and `toTargets()` leaves
+  it out as if absent (`createLevelTracker()`), so the targets under it nest under the target
+  before it.
 - **Ids** come from `assignHeadingIds()` in commons `toc.ts`, a hash of the title path; the
   server computes them (`getHeadingIds()`, shared by the cache and the marking of a preview), the
   viewer resolves them with `findHeading()`. Never trust an id that a client sends. A reader that
@@ -246,11 +252,12 @@ gives parameters into a target of kind `heading`.
   `pendingToc`; the viewer reads the outline and the digest of its bytes and the client saves it
   with `PUT .../toc` (`useTocBuild()` in `type_widgets/file/toc_build.ts`). The `PUT` is a plain
   `apiRoute`: no write may follow an `await` in an `asyncApiRoute` on standalone.
-- **Labels** read `GET .../toc`, which never builds, through `loadPdfReferenceLabel()` and the
-  heading memo of `services/link.ts` (`rememberHeadingTitles()`). A link without a page falls
-  back to the note title alone.
+- **Labels** read `GET .../toc` (`getTocUrl()`), which never builds, through
+  `loadLinkTargetLabel()` and the heading memo of `services/link.ts` (`rememberHeadingTitles()`).
+  A link without a page falls back to the note title alone.
 - **Landing in an office preview**: the server marks each heading's start tag with
-  `data-toc-heading` and each bookmark's element with `data-toc-bookmark`; the client finds the
+  `data-toc-heading` and each bookmark's element with `data-toc-bookmark` (`TOC_HEADING_ATTRIBUTE`
+  and `TOC_BOOKMARK_ATTRIBUTE` in commons `toc.ts`); the client finds the
   heading as one of the space-separated ids of `data-toc-heading` (several EPUB entries can land on
   one element) and the bookmark exactly (`showDocumentTarget()` in `services/bookmark_jump.ts`),
   and scrolls the preview to its top when no element has it.
@@ -287,17 +294,22 @@ gives parameters into a target of kind `heading`.
 ### `isTitleMirrored` and reference link titles
 
 A link without a text of its own is a reference link: its text follows the note title, and a
-parameter can add to it. Each surface that shows such a link labels it on its own:
+parameter can add to it. The client labels it in one order, `LABELED_TARGET_PARAMS` in
+`services/link.ts`: `block`, `heading`, `bookmark`, `page` (with its `annotation`), the most
+specific first, as the views land on them. The first parameter whose label resolves names the
+target; a heading whose title is not known falls back to the page.
 
 | Function | Where | Labels today |
 |---|---|---|
-| `loadReferenceLinkTitle()` | `services/link.ts`: the label on screen, in editors and read-only views | The note title, then a `<small>` with the anchor name (`bookmark`) or the excerpt of the blocks (`block`) |
-| `getReferenceLinkTitleSync()` | `services/link.ts`: the text saved inside the `<a>` in the note content | `Title - anchor`, `Title - excerpt` once the excerpt is cached |
-| `resolveWikilinkChip()` | `type_widgets/markdown/editor_utils.ts`: the chip of a Markdown Wikilink | `block` and `bookmark` |
+| `loadReferenceLinkTitle()` | `services/link.ts`: the label on screen, in editors and read-only views | The note title, then a `<small>` with the label of `loadLinkTargetLabel()`, marked broken for missing blocks |
+| `getReferenceLinkTitleSync()` | `services/link.ts`: the text saved inside the `<a>` in the note content | `Title - label`, from what is loaded already (the excerpt once cached, the heading memo) |
+| `resolveWikilinkChip()` | `type_widgets/markdown/editor_utils.ts`: the chip of a Markdown Wikilink | `Title - label` through `loadLinkTargetLabel()` |
 | `getLinkedHeadingText()` | core `share/content_renderer.ts`: shared pages | The heading text, for a `block` link to a heading of the same note |
 
-A parameter that should show in the label needs a branch in each. A link to blocks of the note it
-is in shows only the excerpt, without the note title: callers pass that note as `hostNoteId`.
+A parameter that should show in the label needs a place in `LABELED_TARGET_PARAMS` and a case in
+`loadParamLabel()` and `getCachedParamLabel()`; the three client surfaces then follow, and shared
+pages need their own. A link to blocks of the note it is in shows only the excerpt, without the
+note title: callers pass that note as `hostNoteId`.
 
 `isTitleMirrored: true` tells the dialog that a link to the kind shows the target's title: the
 title field's placeholder says so, and a selection without text gets the target's title. Set it to
@@ -358,11 +370,12 @@ A link parameter does nothing until the note view reads it:
    survives the tab state, popups and detached windows until the widget consumes it: `block`,
    `page`, `annotation` and `heading` are written there, `bookmark` is not. Values go through
    `encodeURIComponent()`; `block` uses `encodeBlockParameter()` to keep its colon readable.
-2. In the type widget, read it from `noteContext.viewScope`, scroll to the target, then clear it,
-   as `revealLinkTarget()` in `type_widgets/file/Pdf.tsx`, `EditableText.tsx` and
-   `ReadOnlyText.tsx` do (the text widgets through `consumeBookmark()` in
-   `services/bookmark_jump.ts` and `consumeBlockReference()` in `services/block_reference.ts`).
-   See "Landing on the target" below.
+2. In the type widget, take it out of `noteContext.viewScope` with `takeLinkTarget()`
+   (`services/link_targets.ts`), which clears the parameters it is asked for and parses `page`,
+   then scroll to the target, as `revealLinkTarget()` in `type_widgets/file/Pdf.tsx` and
+   `file/Office.tsx` do. The text widgets read one parameter each through `consumeBookmark()` in
+   `services/bookmark_jump.ts` and `consumeBlockReference()` in `services/block_reference.ts`.
+   Run that landing through `useLinkTargetLanding()`. See "Landing on the target" below.
 3. Add the parameter to the check in `useFollowLinksWithin()` (`widgets/EmbeddedNotePane.tsx`).
    The note pane of the geo map, calendar and other views takes over a plain link to a note the
    view can show, and opens the note in the pane without its parameters. A link with
@@ -371,7 +384,7 @@ A link parameter does nothing until the note view reads it:
 4. Backlinks need nothing: `findInternalLinks()` and `findMarkdownInternalLinks()` in core's
    `services/notes.ts` take links with any query.
 5. Markdown keeps the query in Wikilinks (`toWikilink()` writes `[[noteId?page=3]]`), and its
-   chips label `block`, `bookmark`, `heading` and `page` (`resolveWikilinkChip()`).
+   chips label every parameter of `LABELED_TARGET_PARAMS` (`resolveWikilinkChip()`).
 6. Shared pages keep only `block`. `handleAttachmentLink()` in core's `share/content_renderer.ts`
    rewrites a link in shared content to the share link of its note and carries `?block=` over;
    every other parameter is dropped, so such a link opens the top of the shared page. The page
@@ -391,16 +404,20 @@ A link parameter does nothing until the note view reads it:
   generation so that a late one is disposed unseen, and the content renderer gives each kind of
   content its `showTarget()` (`RenderedContent`). `AttachmentDetail` shows the lookup of the
   latest navigation only, and keys `AttachmentInfo` by the attachment id.
-- **A link to the note that is already open** changes the view scope but not the content, so code
-  that runs when the content loads does not run again. Listen to `noteSwitched` for the same note
-  context and the same note: `useSameNoteSwitch()` in `widgets/react/hooks/note_context.ts`, or
-  `useTriliumEvent("noteSwitched", …)` as `Pdf.tsx` does.
+- **`useLinkTargetLanding()`** in `widgets/react/hooks/note_context.ts` runs the widget's landing
+  callback after a render that changes its `contentDeps` (the blob, the preview, the rendered
+  HTML) or shows the widget, and on a `noteSwitched` of the same note context to the same note
+  (`useSameNoteSwitch()`): a link to the note that is already open changes the view scope but not
+  the content, so code that runs when the content loads does not run again. A widget whose
+  content arrives in a callback (a viewer message, a render promise, the editor's content change)
+  calls its landing there too.
 - **Check that the widget shows that note and is visible** before taking the parameter. A switch
   from note A to note B can reach the widget before B's content has arrived; the search then runs
   on A's content, reports a broken target and clears the parameter. And `NoteDetail` can keep two
   widgets of one note mounted (`EditableText` and `ReadOnlyText`, once `#readOnly` has been
-  toggled): both get the event, and the hidden one must leave it. `EditableText` checks
-  `isVisible !== false && contentNoteIdRef.current === note.noteId`.
+  toggled): both get the event, and the hidden one must leave it. The hook leaves a hidden widget
+  (`isVisible === false`) out; the landing callback checks the content, as `EditableText` checks
+  `contentNoteIdRef.current === note.noteId`.
 - **Show the start of the target.** `scrollIntoView({ block: "center" })` hides the start of a
   tall target. `scrollToBlocks()` in ckeditor5's `block_reference/block_reference_read_only.ts`
   centers the target but keeps at least 15% of the viewport above it (`MIN_TOP_GAP`). Open what
@@ -455,7 +472,8 @@ that registers a provider unregisters it in `afterAll` (`unregisterReferenceProv
   matches the exact set, so a page target `{ page: "5" }` and an annotation target on that page
   stay apart.
 - **Two editors of one note**: `createReference()` on the client triggers `saveNoteChanges` before
-  the POST. An editor in another window with unsaved changes can still overwrite the reference;
+  the POST, which every editor built on `useNoteSaver()` answers, the embeds of a text note
+  included. An editor in another window with unsaved changes can still overwrite the reference;
   the link then shows as broken, as a deleted block does.
 - **Sync replaces whole blobs**: a reference written here and an edit made elsewhere before sync
   can lose the reference.

@@ -523,7 +523,7 @@ describe("getRenderedContent editable code", () => {
         expect(props.editor.canEdit()).toBe(true);
         expect(noteEditor.canEdit).toHaveBeenCalledWith(note);
         expect(noteEditor.getUnsavedContent).toHaveBeenCalledWith(note.noteId);
-        expect(noteEditor.scheduleSave).toHaveBeenCalledWith(note, getContent, onSaved);
+        expect(noteEditor.scheduleSave).toHaveBeenCalledWith(note, getContent, onSaved, undefined);
         expect(noteEditor.release).toHaveBeenCalledWith(note.noteId);
         const listener = () => {};
         expect(props.editor.getSaveState()).toBe("saving");
@@ -554,8 +554,9 @@ describe("getRenderedContent editable code", () => {
             expect.objectContaining({ hasDisplayModes: true }));
         expect(renderToHtml).not.toHaveBeenCalled();
         const getContent = () => "edited";
-        props.editor.scheduleSave(getContent);
-        expect(noteEditor.scheduleSave).toHaveBeenCalledWith(note, getContent, undefined);
+        const hooks = { onDataTaken: vi.fn(), dataSaved: vi.fn(), resolveConflict: vi.fn() };
+        props.editor.scheduleSave(getContent, undefined, hooks);
+        expect(noteEditor.scheduleSave).toHaveBeenCalledWith(note, getContent, undefined, hooks);
 
         // Other Markdown renders the same way, and none shows the children of the note.
         expect((await props.renderPreview("edited")).innerHTML).toBe("<p>edited</p>");

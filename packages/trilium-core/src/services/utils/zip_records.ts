@@ -1,5 +1,7 @@
 import { deflateSync, Inflate } from "fflate";
 
+import { decodeUtf8 } from "./binary.js";
+
 /** Random access to the bytes of an archive, whether they are in memory or behind a `Blob`. */
 export interface ByteSource {
     size: number;
@@ -40,10 +42,17 @@ export interface ZipDirectory {
     isZip64: boolean;
 }
 
+/** The central directory of an archive, and its records by name. */
+export interface ZipIndex {
+    directory: ZipDirectory;
+    /** The first record of each name, named as `fflate` names entries. */
+    records: Map<string, ZipRecord>;
+}
+
 /** Why an archive or one of its entries cannot be read or rewritten. */
 export type ZipFailure =
     | "DIRECTORY" | "ZIP64" | "ENCRYPTED_ENTRY" | "METHOD" | "LENGTH" | "DEFLATE" | "CRC"
-    | "ENTRY_ORDER" | "OUTPUT_TOO_LARGE";
+    | "ENTRY_ORDER" | "OUTPUT_TOO_LARGE" | "ENTRY_TOO_LARGE";
 
 /** A failure to read or rewrite an archive, with its `reason`. The same bytes fail the same way. */
 export class ZipRecordError extends Error {
@@ -230,6 +239,39 @@ export async function readEntryContent(source: ByteSource, record: ZipRecord): P
             "Corrupt ZIP: an entry's checksum is not the declared one.");
     }
     return content;
+}
+
+/**
+ * Reads the central directory of the archive `bytes` and names its records as `fflate` does:
+ * UTF-8 when flagged, else one character per byte. A repeated name keeps its first record.
+ */
+export async function readZipIndex(bytes: Uint8Array): Promise<ZipIndex> {
+    const directory = await readCentralDirectory(byteSourceOf(bytes));
+    const records = new Map<string, ZipRecord>();
+    for (const record of directory.records) {
+        const name = decodeName(record);
+        if (!records.has(name)) {
+            records.set(name, record);
+        }
+    }
+    return { directory, records };
+}
+
+/**
+ * The content of the entry `name` of the archive `bytes`, or `undefined` when it has none. Throws
+ * a `ZipRecordError` when the archive or the entry cannot be read, a wrong checksum included, and
+ * for an entry declared longer than `maxLength`, before anything is allocated for it.
+ */
+export async function readZipPart(bytes: Uint8Array, name: string, maxLength: number) {
+    const record = (await readZipIndex(bytes)).records.get(name);
+    if (!record) {
+        return undefined;
+    }
+    if (record.uncompressedSize > maxLength) {
+        throw new ZipRecordError("ENTRY_TOO_LARGE",
+            `A ZIP entry declares more than ${maxLength} bytes.`);
+    }
+    return await readEntryContent(byteSourceOf(bytes), record);
 }
 
 /**
@@ -422,6 +464,18 @@ function inflateExactly(data: Uint8Array, length: number) {
         throw lengthError();
     }
     return content;
+}
+
+/** The name of `record`: UTF-8 when flagged, else one character per byte. */
+function decodeName(record: ZipRecord) {
+    if (record.isUtf8Flagged) {
+        return decodeUtf8(record.rawName);
+    }
+    let name = "";
+    for (const byte of record.rawName) {
+        name += String.fromCharCode(byte);
+    }
+    return name;
 }
 
 function lengthError() {

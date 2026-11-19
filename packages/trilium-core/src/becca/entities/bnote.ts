@@ -1023,6 +1023,15 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return getSql().getRows<AttachmentRow>(query, [this.noteId]).map((row) => new BAttachment(row));
     }
 
+    /**
+     * The attachments that revisions, copies and exports of the note carry: all but those of a
+     * derived role, which the note rebuilds (`isDerivedAttachmentRole()`).
+     */
+    getPortableAttachments() {
+        return this.getAttachments()
+            .filter((attachment) => !isDerivedAttachmentRole(attachment.role));
+    }
+
     getAttachmentById(attachmentId: string) {
         const query = /*sql*/`\
             SELECT attachments.*, LENGTH(blobs.content) AS contentLength
@@ -1398,10 +1407,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
     private copyAttachments(ownerId: string, edits: SavedAttachmentRow[]) {
         const attachmentIds = new Map<string, string>();
         const usedEdits = new Set<SavedAttachmentRow>();
-        for (const noteAttachment of this.getAttachments()) {
-            if (isDerivedAttachmentRole(noteAttachment.role)) {
-                continue;
-            }
+        for (const noteAttachment of this.getPortableAttachments()) {
             const edit = edits.find((row) => row.attachmentId
                 ? row.attachmentId === noteAttachment.attachmentId
                 : row.title === noteAttachment.title);

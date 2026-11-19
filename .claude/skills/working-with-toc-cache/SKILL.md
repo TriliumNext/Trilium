@@ -64,18 +64,22 @@ Do not use one for:
 |---|---|---|
 | Cache types and ids | `packages/commons/src/lib/toc.ts` | `TocHeading`, `TocCache`, `TOC_CACHE_VERSION`, `MAX_TOC_*`, `getTocCacheTitle()`, `getBlobTag()`, `normalizeTocTitle()`, `assignHeadingIds()`, `findHeading()`, `headingSource()` |
 | API types | `packages/commons/src/lib/server_api.ts` | `CachedTocResponse`, `ClientTocRequest`, `TocConflictResponse`, `PendingToc` |
-| Role | `packages/commons/src/lib/attachment_roles.ts` | `tocCache`: `derived: true`, so revisions, ZIP exports, templates and copies leave it out |
-| Service | `packages/trilium-core/src/services/toc/index.ts` | `TocFormat`, `TocGenerator`, `GeneratedToc`, `getToc()`, `readCachedToc()`, `saveClientToc()`, `registerTocGenerator()`, `findTocFormat()`, `getTocFormatOf()`, `getHeadingIds()`, `markTocHeadings()`, the `formats` list |
-| Formats | `toc/pdf.ts`, `toc/office.ts`, `toc/office_headings.ts`, `toc/epub.ts` | PDF outline; DOCX, ODT and EPUB, with the marking of their previews |
+| Role | `packages/commons/src/lib/attachment_roles.ts` | `tocCache`: `derived: true`, so revisions, ZIP and share-theme exports, templates and copies leave it out, through `BNote.getPortableAttachments()` |
+| Service | `packages/trilium-core/src/services/toc/index.ts` | `TocFormat`, `TocGenerator`, `GeneratedToc`, `getToc()`, `readCachedToc()`, `saveClientToc()`, `registerTocGenerator()`, `findTocFormat()`, `getTocFormatOf()`, `getHeadingIds()`, `createLevelTracker()`, `markTocHeadings()`, the `formats` list |
+| Formats | `toc/pdf.ts`, `toc/office.ts`, `toc/epub.ts` | PDF outline; DOCX and ODT (`createOfficeTocFormat()`); EPUB (`epubTocFormat`, `EPUB_TOC_READER`, the types of the ToC pass, `TocPassRefusal`). The office and EPUB formats load their readers with `await import()` |
+| Office reader | `toc/office_headings.ts` | `readPreviewHeadings()`, `readPreviewBookmarks()`, `readBookmarkNames()`, `markOfficePreview()` |
+| EPUB reader | `toc/epub_pass.ts`, `toc/epub_package.ts`, `toc/xml.ts` | The ToC pass (`runTocPass()`, `convertMarkedEpub()`), `readEpubToc()`, `findLandings()`, `markEpubPreview()`; the package, navigation and NCX of a book (`readBookToc()`); the XML tokenizer (`readTokens()`, `parseXml()`) |
+| Preview marks | `toc/preview_marks.ts` | `writePreviewMarks()`, `indexElementIds()`, `spliceInsertions()`: shared by the office and EPUB markings |
+| ZIP parts | `packages/trilium-core/src/services/utils/zip_records.ts` | `readZipPart()`, `readZipIndex()`: the DOCX and ODT bookmarks and the EPUB pass read archives here, not through the platform's `ZipProvider` |
 | PDF reader | `packages/commons/src/lib/pdf_toc.ts` | `readPdfOutline()`, `toPdfTocHeadings()`, `PdfTocHeading`, `PDF_TOC_READER`; shared by the server and the viewer |
 | Server generator | `apps/server/src/services/toc/pdf.ts` | `registerPdfTocGenerator()`, called from `apps/server/src/www.ts` |
 | Routes | `packages/trilium-core/src/routes/api/toc.ts` | `GET`/`PUT /api/notes/:noteId/toc` and `/api/attachments/:attachmentId/toc`, `GET /api/attachments/:attachmentId/references` |
 | Reference bridge | `packages/trilium-core/src/services/references/toc.ts` | `tocReferences` provider, `toTargets()` |
 | Preview marking | `packages/trilium-core/src/routes/api/files.ts` | `sendOfficePreview()` calls `markTocHeadings()` |
 | Client build | `apps/client/src/widgets/type_widgets/file/toc_build.ts` | `useTocBuild()`: asks the viewer, saves its answer with `PUT` |
-| Client landing | `apps/client/src/services/bookmark_jump.ts` | `takeDocumentTarget()`, `showDocumentTarget()` |
-| Client labels | `apps/client/src/services/link.ts` | `rememberHeadingTitles()`, `loadPdfReferenceLabel()`, the `headingTitles` memo |
-| Contract fixtures | `packages/trilium-core/src/services/toc/fixtures/` | `toc_contract.*` and their JSON, written by `generate-toc-contract.mts` and `generate-office-toc-contract.mts` |
+| Client landing | `apps/client/src/services/bookmark_jump.ts`, `link_targets.ts` | `showDocumentTarget()`; `takeLinkTarget()` reads the target out of the view scope |
+| Client labels | `apps/client/src/services/link.ts` | `getTocUrl()`, `rememberHeadingTitles()`, `loadLinkTargetLabel()`, the `headingTitles` memo |
+| Contract fixtures | `packages/trilium-core/src/services/toc/fixtures/` | `toc_contract.*` and their JSON, written by `generate-toc-contract.mts` and `generate-office-toc-contract.mts` through the formats' own generators, with `buildContract()` and `writeContract()` of `contract.mts`; `epub_books.ts` builds the books of the EPUB specs |
 
 ## How a cache is read and built
 
@@ -185,8 +189,12 @@ The routes, the reference provider, the lists and the labels need no change. A n
    (`PDF_TOC_READER`, `DOCX_TOC_READER`) from commons when the viewer reads it, else from the
    format's module.
 3. **The `TocFormat`**, in `packages/trilium-core/src/services/toc/<format>.ts` (or `office.ts`
-   for another office type), added to `formats` in `toc/index.ts`. `findTocFormat()` takes the
-   first match, so `isFor()` of two formats must never both accept a document.
+   for another office type whose preview gives the headings and bookmarks), added to `formats` in
+   `toc/index.ts`. `index.ts` imports every format at startup, so the format's module stays light
+   and loads its reader with `await import()`, as `epub.ts` loads `epub_pass.ts`. Build a format
+   on its own object rather than spreading another's: a property that only satisfies the other
+   format's `isCurrent()` ends up in every cache. `findTocFormat()` takes the first match, so
+   `isFor()` of two formats must never both accept a document.
 
 ```ts
 import type { TocHeading } from "@triliumnext/commons";
@@ -234,7 +242,8 @@ const slidesTocFormat: TocFormat<SlideTocHeading> = {
    - `parseHeadingFields()` checks each field and returns only them; `null` refuses the whole
      cache. Never spread `raw` into the result.
    - `getLinkParams()` returns `undefined` for a heading that a link cannot reach; `toTargets()`
-     then lists its children at its depth.
+     then leaves it out as if absent (`createLevelTracker()`), so its children nest under the
+     target before it.
    - `isPermanentFailure()` is `true` only for errors the same bytes always meet (a corrupt file,
      a password). `describeFailure()` names the error for the log without its message, which can
      quote the file.
@@ -260,7 +269,10 @@ write. It returns:
     (it is idempotent), but refuses the whole cache when a raw title is longer than
     `MAX_TOC_TITLE_LENGTH`, and the renderer must see the same titles as the cache.
   - **Levels are depths**: 1 at the top, never more than one deeper than the heading before.
-    Convert tag levels as `readPreviewHeadings()` does: an `<h4>` under an `<h2>` is level 2.
+    Convert tag levels or nesting with `createLevelTracker()`, passing only the headings that are
+    kept: an `<h4>` under an `<h2>` is level 2, and an untitled heading is left out as if absent,
+    so after `<h1>A</h1><h1></h1><h2>B</h2>` B is level 2 under A, as Word's navigation pane
+    shows it. `readPreviewHeadings()`, `readBookToc()` and `toTargets()` all use it.
   - At most `MAX_TOC_HEADINGS`. A reader that stops there before another heading with a title
     sets `isCut`, which binds every id.
 - `properties`: the format's own, at least `{ reader: <version> }`; stored under the format's name.
@@ -301,9 +313,11 @@ trusting anything but its own reading of the document. There are two patterns.
    `format.markPreview()`.
 2. The marking reads the outline from the **same HTML** (or the same EPUB pass record) the
    generator read, computes the ids with `getHeadingIds()` for the blob being previewed, and
-   splices `data-toc-heading="<id>"` into each heading's start tag and `data-toc-bookmark="<name>"`
-   into each bookmark's (`spliceInsertions()`: every other byte stays as it was). Several entries
-   that land on one element share one attribute, ids separated by spaces.
+   `writePreviewMarks()` (`toc/preview_marks.ts`) splices `TOC_HEADING_ATTRIBUTE`
+   (`data-toc-heading="<id>"`) into each heading's start tag and `TOC_BOOKMARK_ATTRIBUTE`
+   (`data-toc-bookmark="<name>"`) into each bookmark's: every other byte stays as it was. Several
+   entries that land on one element share one attribute, ids separated by spaces. Both markings
+   find elements by id with `indexElementIds()`.
 3. The client sanitizes the preview (data attributes survive DOMPurify, `id` attributes that
    clobber document properties do not) and lands with `showDocumentTarget()`: the first element
    whose `data-toc-heading` holds the id as one of its words, else whose `data-toc-bookmark` is the
@@ -377,6 +391,8 @@ viewer.
 | A shared reader | `packages/commons/src/lib/pdf_toc.spec.ts` |
 | Read, build, save, sweep, failures, stale builds, client saves | `packages/trilium-core/src/services/toc/index.spec.ts` |
 | A format's reader and marking against the contract fixtures | `toc/office.spec.ts`, `toc/office_headings.spec.ts`, `toc/epub.spec.ts` |
+| The EPUB pass, landings and marking; a book's package and navigation | `toc/epub_pass.spec.ts`, `toc/epub_package.spec.ts` |
+| The shared marking and levels; ZIP parts | `toc/preview_marks.spec.ts`, `createLevelTracker` in `toc/index.spec.ts`, `services/utils/zip_records.spec.ts` |
 | The routes | `packages/trilium-core/src/routes/api/toc.spec.ts` |
 | Targets from a cache | `packages/trilium-core/src/services/references/toc.spec.ts` |
 | A server generator | `apps/server/src/services/toc/pdf.spec.ts` |

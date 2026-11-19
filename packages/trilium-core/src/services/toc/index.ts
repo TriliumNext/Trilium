@@ -14,8 +14,8 @@ import { getLog } from "../log.js";
 import { whenDatabaseFree } from "../platform.js";
 import { getSql } from "../sql/index.js";
 import { decodeUtf8 } from "../utils/binary.js";
-import type { TocPassOutcome } from "./epub.js";
-import { docxTocFormat, epubTocFormat, odtTocFormat } from "./office.js";
+import { epubTocFormat, type TocPassOutcome } from "./epub.js";
+import { docxTocFormat, odtTocFormat } from "./office.js";
 import pdfTocFormat from "./pdf.js";
 
 /** Names a document whose table of contents is kept: a note, or an attachment of a note. */
@@ -126,6 +126,23 @@ export function getHeadingIds(
     outline: TocOutlineItem[], blobId: string, isProtected: boolean, isCut: boolean
 ) {
     return assignHeadingIds(outline, getBlobTag(blobId), isProtected, { isCut });
+}
+
+/**
+ * Turns the nesting depths of the entries that an outline keeps, passed in document order, into
+ * levels: an entry is one level below the nearest kept entry before it with a smaller depth. An
+ * entry that is not kept is never passed, so the entries under it nest as if it were absent. The
+ * generators and the reference listing compute levels alike.
+ */
+export function createLevelTracker() {
+    const depths: number[] = [];
+    return (depth: number) => {
+        while ((depths.at(-1) ?? -Infinity) >= depth) {
+            depths.pop();
+        }
+        depths.push(depth);
+        return depths.length;
+    };
 }
 
 /** `html`, the preview of a document of `format`, with the ids of its headings when it has any. */

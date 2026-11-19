@@ -1,94 +1,44 @@
 # Worked sketches
 
-Each sketch names the decisions of SKILL.md ("Decide first") for one kind of content, and the
-places that change. They are starting points, not settled designs: the link parameter of each
-one is the decision to confirm with the maintainer first.
+Each section names the decisions of SKILL.md ("Decide first") for one kind of content, and the
+places that change. A section marked "(built)" says what the shipped design took, as a pattern for
+the next one. The others are starting points, not settled designs: the link parameter of each one
+is the decision to confirm with the maintainer first.
 
-## Markdown headings
+## Markdown headings and anchors (built)
 
-Markdown notes are `type === "code"` notes with `isMarkdownMime(mime)` (`@triliumnext/commons`).
-Their headings are of kind `heading`, so `LINK_TARGET_KINDS`, the cards and the `@` list need no
-change.
+Markdown notes (`type === "code"` with `isMarkdownMime(mime)`) list their headings as `heading`
+targets and their anchors (an `<a id>` without `href`) as `anchor` targets, as text notes do. What
+it took:
 
-### The link parameter
-
-| | Slug, no reference | Id written into the source |
-|---|---|---|
-| Link | `?bookmark=installation` or a new `?heading=installation` | `?block=<id>` |
-| Source | Unchanged | `## Installation {#<id>}`, the attribute syntax of Pandoc and markdown-it-attrs |
-| `createReference` | None, every target has `params` | Appends ` {#<id>}` to the heading line, as `insertBlockId()` splices |
-| Rename of the heading | Breaks the link | Keeps the link |
-| Duplicate titles | Suffixes (`setup-1`), which depend on the order | No issue |
-| The view | Computes the same slugs to find the heading | The renderer reads `{#id}`, strips it and puts the id on the heading |
-
-With `bookmark`, `consumeBookmark()` finds the heading by `id` in a rendered preview if the
-renderer gives headings slug ids. With a new parameter, add it to `TARGET_PARAMS` and follow the
-steps of SKILL.md, "Navigation" (`ViewScope`, `VIEW_SCOPE_PARAMS`, `calculateHash()`,
-`useFollowLinksWithin()`). With `block`, `loadReferenceLinkTitle()`, `getReferenceLinkTitleSync()`
-and the block excerpt code read text note HTML and need a Markdown branch before
-`isTitleMirrored` holds for these links.
-
-With ids in the source, the same id can occur twice (a heading copied with its `{#id}`). Read it as
-`text.ts` does: the id counts on the first heading only, a later heading with it is listed without
-`params`, and `createReference` writes a new `{#id}` for it. The renderer must keep the first one
-too, or links land on the wrong heading.
-
-### The provider
-
-Lex with `marked`, which commons depends on and which `markdown_renderer.ts` (import, share pages,
-backlink excerpts) and the Markdown view use. It skips code fences and reads setext headings as
-the preview does, which a regular expression over lines gets wrong.
-
-```ts
-// packages/trilium-core/src/services/references/markdown.ts
-import { isMarkdownMime, type ReferenceTarget } from "@triliumnext/commons";
-import { Lexer, type Token } from "marked";
-
-import type { ReferenceProvider } from "./index.js";
-
-/** The headings of Markdown notes. */
-const markdownReferences: ReferenceProvider = {
-    isFor: (type, mime) => type === "code" && isMarkdownMime(mime),
-    findTargets: (content) => typeof content === "string" ? findMarkdownTargets(content) : []
-};
-
-export default markdownReferences;
-
-/** The headings that have text, in document order. */
-export function findMarkdownTargets(content: string): ReferenceTarget[] {
-    const targets: ReferenceTarget[] = [];
-    for (const token of new Lexer().lex(content)) {
-        if (token.type !== "heading") continue;
-
-        const title = getPlainText(token.tokens ?? []);
-        if (title) {
-            targets.push({
-                kind: "heading", title, level: token.depth, params: { /* the parameter */ }
-            });
-        }
-    }
-    return targets;
-}
-```
-
-- `getPlainText()` joins the `text` of inline tokens and drops markup, links and HTML, so a title
-  is never HTML. Collapse white space as `getHeadingText()` in `text.ts` does.
-- Headings nested in lists or block quotes are child tokens: walk `token.tokens` with a stack if
-  they count, as `getElements()` in `text.ts` walks HTML.
-- Front matter: check how `services/import/frontmatter.ts` splits it before lexing.
-- Add the provider to `providers` in `references/index.ts`, and a spec next to it.
-
-### The editor side
-
-- The Markdown `@` list (`createCompletionList()` in `type_widgets/code/editor_completions.tsx`)
-  renders `LinkMentionList` without `getOwnTargets`, so a link to the note being edited lists its
-  saved headings. Pass `getOwnTargets` built from the CodeMirror document to list unsaved ones.
-- The Markdown link dialog (`showEditLinkDialog()` in `type_widgets/markdown/editor_utils.ts`)
-  passes no `noteId` and no `headings`. Pass them to show the note's own headings on the note
-  page, and to open the Heading / anchor page.
-- The Markdown view (`type_widgets/markdown/Markdown.tsx`) reads the parameter from
-  `noteContext.viewScope` and scrolls the source or the preview to the heading.
-- The chip of a Wikilink (`resolveWikilinkChip()`) labels `block` and `bookmark` only.
+- **The link parameter**: `?block=<id>`, as for text notes. A heading links once it owns a block
+  id, which the source holds as a block marker, `<a data-trilium-block-id="<id>"></a>`
+  (`formatBlockMarker()` in commons `block_reference.ts`), so a renamed heading keeps its links.
+  An anchor links with `?bookmark=<name>`.
+- **The index**: `indexMarkdownBlocks()` (commons `markdown_block_index.ts`) renders the source
+  as the readers of the runtime render it and maps each block to its source lines, with the
+  markers and anchors. It takes a `BlockIndexHost`: `serverBlockHost` (core
+  `import/markdown.ts`) on the server, `PREVIEW_BLOCK_HOST` in the client.
+- **The provider**: `references/markdown.ts` in core lists the targets with
+  `findMarkdownTargets()` and answers `createReference` with `addMarkdownHeadingReference()`
+  (commons `markdown_references.ts`), which places a marker on the heading's block through
+  `placeMarkerOnBlock()`.
+- **Shared with text notes**: `toReferenceTargets()`, `getHeadingText()`, `isAnchor()`,
+  `findRequestedHeading()` and `sortAnchorNames()` (commons `reference_targets.ts`), and
+  `drawBlockId()` (commons `block_reference.ts`). The text and Markdown providers read headings
+  and anchors by the same rules, so a change to a rule goes there, not into one provider.
+- **The editor**: `useBlockMarkers()` (`type_widgets/markdown/editor_block_references.ts`) draws
+  the markers as chips through the CodeMirror extension `blockMarkers()`
+  (`packages/codemirror/src/extensions/block_markers.ts`), and registers the targets of the
+  document being edited for the `@` list and the link dialog (`registerOwnLinkTargets()` in
+  `editor_utils.ts`). Picking a heading without an id inserts its marker. The hooks it returns go
+  to the saver, so the ids that another writer gave the blocks meanwhile are taken over instead of
+  ending in a conflict.
+- **The view**: `useRevealLinkTarget()` in `Markdown.tsx` lands through `useLinkTargetLanding()`:
+  `revealInSource()` in the source pane, `consumeBlockReference()` and `consumeBookmark()` in the
+  preview.
+- **Labels**: the chip of a Wikilink (`resolveWikilinkChip()`) labels what reference links label,
+  in the order of `LABELED_TARGET_PARAMS` (`loadLinkTargetLabel()`).
 
 ## PDF outline entries (built)
 
@@ -120,17 +70,20 @@ ToC cache (SKILL.md, "ToC formats"). What it took, as a pattern for the next for
   headings or bookmarks; the contract fixture of the format fails until then.
 - **Reader**: the headings are the `h1` to `h6` of the HTML that `convertOfficeToHtml()` writes
   for the preview (`readPreviewHeadings()` in `services/toc/office_headings.ts`), with levels made
-  into depths, note marks left out and `<br>` read as a space. The cache and the marking of the
-  preview read the same HTML, so their ids agree by construction.
-- **Bookmarks**: the names from the document's main part, without those an editor makes (`_…`),
-  those that another source of ids in the preview gives (ODT `xml:id`, `text:id`, `table:name`,
-  `draw:name`, note ids `footnote-…`), and those that more than one element has as id. The
-  preview has no slug ids (`generateIds: false`), which could equal a bookmark's name. Stored in
-  the format's properties, listed as anchors with `?bookmark=`.
+  into depths by `createLevelTracker()` (an empty heading is left out as if absent), note marks
+  left out and `<br>` read as a space. The cache and the marking of the preview read the same
+  HTML, so their ids agree by construction.
+- **Bookmarks**: the names from the document's main part (`readZipPart()` of
+  `services/utils/zip_records.ts`, so a part with a wrong CRC-32 gives none), without those an
+  editor makes (`_…`), those that another source of ids in the preview gives (ODT `xml:id`,
+  `text:id`, `table:name`, `draw:name`, note ids `footnote-…`), and those that more than one
+  element has as id. The preview has no slug ids (`generateIds: false`), which could equal a
+  bookmark's name. Stored in the format's properties, listed as anchors with `?bookmark=`.
 - **Parameter**: `?heading=<id>` alone; a reflowed preview has no page. An id that no element has
   opens the top of the preview.
 - **The view**: the preview route marks the start tags (`data-toc-heading`, `data-toc-bookmark`);
-  `OfficePreview` and the attachment view land with `showDocumentTarget()`.
+  `OfficePreview` and the attachment view take the target with `takeLinkTarget()` and land with
+  `showDocumentTarget()`.
 - **Contract**: `toc/fixtures/toc_contract.docx`, `toc_contract.odt` and their JSON, written by
   `generate-office-toc-contract.mts`; `office.spec.ts` runs them through the real `officeparser`
   under both runners.
@@ -139,27 +92,32 @@ ToC cache (SKILL.md, "ToC formats"). What it took, as a pattern for the next for
 
 - **Notes**: `type === "file"` with either EPUB MIME type (`EPUB_MIME_TYPES`), and attachments of
   role `file`.
-- **Format**: `epubTocFormat` in `services/toc/office.ts`, the office factory with its own
-  generator and marking (`EPUB_TOC_READER`). Bump it when the reading of a table of contents, the
-  placing of markers or an upgrade of `officeparser` changes the entries or which are shown.
+- **Format**: `epubTocFormat` in `services/toc/epub.ts`, an object of its own whose properties are
+  `{ reader }` only (`EPUB_TOC_READER`); it loads the pass, the reader and the marking from
+  `epub_pass.ts` with `await import()`. Bump the reader when the reading of a table of contents,
+  the placing of markers or an upgrade of `officeparser` changes the entries, their levels or which
+  are shown.
 - **Reader**: the entries of the book's own table of contents, the EPUB 3 navigation's
-  `epub:type="toc"`, else the EPUB 2 NCX (`readBookToc()` in `services/toc/epub.ts`), not the
-  preview's headings: `officeparser` keeps nothing of where a chapter starts.
-- **The pass**: `convertOfficeToHtml()` runs `runTocPass()` before converting an EPUB. It inflates
-  only the text parts (128 MiB budget, declared sizes checked first, length and CRC-32 proved by
-  `readEntryContent()` of `services/utils/zip_records.ts`), places one empty anchor
-  `<a id="trilium_toc_<n>">` per destination by the kind of its target (before an outermost `<a>`,
-  in a table row's first cell, before an empty element, else after the start tag; the chapter's
-  `<body>` for a whole chapter), and rewrites the archive with `rewriteZip()`, copying every other
-  entry compressed. Its outcome (`marked`, `none`, `refused`, `failed`) reaches the route through
+  `epub:type="toc"`, else the EPUB 2 NCX (`readBookToc()` in `services/toc/epub_package.ts`, over
+  the XML tokenizer of `toc/xml.ts`), not the preview's headings: `officeparser` keeps nothing of
+  where a chapter starts. An entry without a title is left out as if absent
+  (`createLevelTracker()`), as the DOCX and ODT readers leave out an empty heading.
+- **The pass**: `convertOfficeToHtml()` runs `runTocPass()` (`toc/epub_pass.ts`) before converting
+  an EPUB. It inflates only the text parts (128 MiB budget, declared sizes checked first, length
+  and CRC-32 proved by `readEntryContent()` of `services/utils/zip_records.ts`), places one empty
+  anchor `<a id="trilium_toc_<n>">` per destination by the kind of its target (before an outermost
+  `<a>`, in a table row's first cell, before an empty element, else after the start tag; the
+  chapter's `<body>` for a whole chapter), and rewrites the archive with `rewriteZip()`, copying
+  every other entry compressed. Its outcome (`marked`, `none`, `refused`, `failed`) reaches the route through
   `onTocPass`; a `failed` preview is sent uncached, a `refused` book is a permanent failure.
 - **Landing**: `findLandings()` finds each marker in the preview, resolves the converter's empty
   `<a id name>` to the element after it, and checks it against the book's own id when only the
   target can give that id; an entry without a place of its own lands where the first entry of its
-  subtree does. Several entries on one element share its `data-toc-heading`.
+  subtree does. Several entries on one element share its `data-toc-heading`
+  (`writePreviewMarks()` of `toc/preview_marks.ts`, which the DOCX and ODT marking uses too).
 - **The preview has no slug ids**: EPUB is in `NO_GENERATED_IDS` of `office_preview.ts`.
 - **Contract**: `toc/fixtures/toc_contract.epub`, `toc_contract_ncx.epub`, `toc_contract_ids.epub`
-  and their JSON, written by `generate-office-toc-contract.mts`; `office.spec.ts` runs them through
+  and their JSON, written by `generate-office-toc-contract.mts`; `epub.spec.ts` runs them through
   the real pass and `officeparser` under both runners.
 
 ## Spreadsheet sheets

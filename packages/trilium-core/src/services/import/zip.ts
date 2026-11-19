@@ -1,6 +1,6 @@
 import {
-    CANVAS_ATTACHMENT_MIME, getDrawingPictureTitle, getImageAttachmentTitle, isNoteType,
-    type NoteType
+    CANVAS_ATTACHMENT_MIME, getAttachmentEmbedHref, getDrawingPictureTitle,
+    getImageAttachmentTitle, isMarkdownMime, isNoteType, type NoteType
 } from "@triliumnext/commons";
 import {
     renderToHtml as renderMarkdownToHtml
@@ -29,9 +29,7 @@ import markdownService from "./markdown.js";
 import mimeService from "./mime.js";
 import { importedAttributeName } from "./utils.js";
 import { AttachmentMeta, AttributeMeta, NoteMeta } from "../../meta.js";
-import {
-    getArchivedLinkSuffix, getLinkTargetParameters, isMarkdownCodeNote
-} from "../export/rewrite_links.js";
+import { getArchivedLinkSuffix, getLinkTargetParameters } from "../export/rewrite_links.js";
 import { sanitizeHtml } from "../sanitizer.js";
 import { extractFrontmatter, type FrontmatterAttribute } from "./frontmatter.js";
 
@@ -533,8 +531,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             const target = getEntityIdFromRelativeUrl(filePathOfLink, filePath);
 
             if (target.attachmentId) {
-                return `href="#root/${target.noteId}?viewMode=attachments`
-                    + `&attachmentId=${target.attachmentId}`
+                return `href="${getAttachmentEmbedHref(target.noteId, target.attachmentId)}`
                     + `${getLinkTargetParameters(suffix, "attribute")}"`;
             }
             return `href="#root/${target.noteId}${getArchivedLinkSuffix(suffix, "attribute")}"`;
@@ -567,7 +564,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             content = processTextNoteContent(content, noteTitle, filePath);
         }
 
-        if (type === "code" && isMarkdownCodeNote(mime) && typeof content === "string") {
+        if (type === "code" && isMarkdownMime(mime) && typeof content === "string") {
             content = processMarkdownCodeNoteContent(content, filePath);
         }
 
@@ -649,8 +646,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             const target = getEntityIdFromRelativeUrl(filePathOfLink, filePath);
 
             if (target.attachmentId) {
-                return `[${text}](#root/${target.noteId}?viewMode=attachments`
-                    + `&attachmentId=${target.attachmentId}`
+                return `[${text}](${getAttachmentEmbedHref(target.noteId, target.attachmentId)}`
                     + `${getLinkTargetParameters(suffix, "markdown")})`;
             }
             return `[${text}](#root/${target.noteId}${getArchivedLinkSuffix(suffix, "markdown")})`;

@@ -953,6 +953,31 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
         expect(paperMeta?.attachments?.map(({ role }) => role)).toStrictEqual([ "file" ]);
     });
 
+    it("leaves the ToC cache of a PDF out of the data of a share-theme export", async () => {
+        const board =
+            createNote("root", { title: "TocCacheShare", type: "book", content: "" }).note;
+        const pdfNote = createNote(board.noteId, {
+            title: "SharedPaper", type: "file", mime: "application/pdf", content: "%PDF-1.7"
+        }).note;
+        const kept = getContext().init(() => {
+            board.setLabel("viewType", "board");
+            pdfNote.saveAttachment({
+                role: "tocCache", mime: "application/json", title: "toc-cache.json", content: "{}"
+            });
+            return pdfNote.saveAttachment({
+                role: "file", mime: "text/plain", title: "notes.txt", content: "kept"
+            });
+        });
+
+        const { entries } = await exportSubtree(board.getParentBranches()[0], "share");
+
+        const rows = JSON.parse(entries["data/rows.json"].toString("utf-8"));
+        expect(rows.attachments[pdfNote.noteId].map(({ role }: { role: string }) => role))
+            .toStrictEqual([ "file" ]);
+        expect(Object.keys(entries).filter((name) => name.startsWith("data/blobs/attachments/")))
+            .toStrictEqual([ `data/blobs/attachments/${kept.attachmentId}.json` ]);
+    });
+
     describe("links into PDF files", () => {
         // A bound heading id of a protected PDF, which the import keeps whatever protection it
         // gives the file.

@@ -1,10 +1,11 @@
 /**
  * Writes `toc_contract.docx` and `toc_contract.odt`, the documents whose headings the DOCX and
- * ODT formats must read, and `toc_contract_docx.json` and `toc_contract_odt.json`, their headings
- * and ids as the reader of the preview reads them. Writes the books `toc_contract.epub`,
- * `toc_contract_ncx.epub` and `toc_contract_ids.epub`, whose tables of contents the EPUB format
- * must read and place, and `toc_contract_epub.json`, `toc_contract_ncx_epub.json` and
- * `toc_contract_ids_epub.json`, their entries, which of them the preview shows, and their ids.
+ * ODT formats must read, and `toc_contract_docx.json` and `toc_contract_odt.json`, their headings,
+ * bookmarks and ids as the generators of the formats read them. Writes the books
+ * `toc_contract.epub`, `toc_contract_ncx.epub` and `toc_contract_ids.epub`, whose tables of
+ * contents the EPUB format must read and place, and `toc_contract_epub.json`,
+ * `toc_contract_ncx_epub.json` and `toc_contract_ids_epub.json`, their entries, which of them the
+ * preview shows, and their ids.
  * Run it after a change of the readers, of the ToC pass, of the ids or of `officeparser`, from
  * the repository root:
  *
@@ -12,32 +13,17 @@
  *
  * Check the JSON by hand before it is committed: the specs compare the formats with it.
  */
-import { createHash } from "node:crypto";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { strToU8, unzipSync, zipSync, type Zippable } from "fflate";
+import { strToU8, zipSync, type Zippable } from "fflate";
 
-import { DOCX_MIME, EPUB_MIME_TYPES, ODT_MIME } from "../../../../../commons/src/lib/office.js";
-import { assignHeadingIds, getBlobTag } from "../../../../../commons/src/lib/toc.js";
-import { blobIdFromDigest, PROTECTED_BLOB_PREFIX } from "../../../../../commons/src/lib/utils.js";
-import { convertOfficeToHtml } from "../../office_preview.js";
-import { initZipProvider, type ZipProvider } from "../../zip_provider.js";
-import { readEpubToc } from "../epub.js";
-import {
-    readBookmarkNames, readPreviewBookmarks, readPreviewHeadings
-} from "../office_headings.js";
+import { EPUB_MIME_TYPES, ODT_MIME } from "../../../../../commons/src/lib/office.js";
+import { epubTocFormat } from "../epub.js";
+import type { TocFormat } from "../index.js";
+import { docxTocFormat, odtTocFormat } from "../office.js";
+import { buildContract, fixturesDir, writeContract } from "./contract.mjs";
 
-// The reader of bookmarks opens the archive through the zip provider, which the app sets up.
-initZipProvider({
-    async readZipFile(source, processEntry) {
-        for (const [ fileName, bytes ] of Object.entries(unzipSync(source as Uint8Array))) {
-            await processEntry({ fileName }, async () => bytes);
-        }
-    }
-} as Pick<ZipProvider, "readZipFile"> as ZipProvider);
-
-const fixturesDir = import.meta.dirname;
 /** A fixed date for the entries of the archives, so that the same script writes the same bytes. */
 const MTIME = new Date("2026-01-01T00:00:00Z");
 /** The container of an EPUB, which names its package document. */
@@ -46,31 +32,21 @@ const CONTAINER = "<?xml version=\"1.0\"?><container version=\"1.0\" "
     + "<rootfile full-path=\"OEBPS/content.opf\" media-type=\"application/oebps-package+xml\"/>"
     + "</rootfiles></container>";
 
-await writeContract("docx", DOCX_MIME, buildContractDocx());
-await writeContract("odt", ODT_MIME, buildContractOdt());
+await writeOfficeContract("docx", docxTocFormat, buildContractDocx());
+await writeOfficeContract("odt", odtTocFormat, buildContractOdt());
 await writeEpubContract("toc_contract", buildContractEpub());
 await writeEpubContract("toc_contract_ncx", buildContractNcxEpub());
 await writeEpubContract("toc_contract_ids", buildContractIdsEpub());
 
-async function writeContract(name: string, mime: string, bytes: Uint8Array) {
+/**
+ * Writes the document `toc_contract.<name>` and `toc_contract_<name>.json`: its headings and
+ * bookmarks as the generator of `format` reads them, and the ids of the headings.
+ */
+async function writeOfficeContract(name: string, format: TocFormat, bytes: Uint8Array) {
     writeFileSync(join(fixturesDir, `toc_contract.${name}`), bytes);
-    const html = await convertOfficeToHtml(bytes, mime);
-    const { headings, isCut } = readPreviewHeadings(html);
-    const outline = headings.map(({ title, level }) => ({ title, level }));
-    const bookmarks = readPreviewBookmarks(html, await readBookmarkNames(bytes, mime));
-    const blobId = digest(bytes);
-    const protectedBlobId = digest(Buffer.concat([ Buffer.from(PROTECTED_BLOB_PREFIX), bytes ]));
-    const contract = {
-        blobId,
-        protectedBlobId,
-        headings: outline,
-        isCut,
-        bookmarks: bookmarks.map(({ name }) => name),
-        ids: assignHeadingIds(outline, getBlobTag(blobId), false, { isCut }),
-        protectedIds: assignHeadingIds(outline, getBlobTag(protectedBlobId), true, { isCut })
-    };
-    writeFileSync(join(fixturesDir, `toc_contract_${name}.json`),
-        `${JSON.stringify(contract, null, 4)}\n`);
+    const { headings, isCut, bookmarks } = await generate(format, bytes);
+    writeContract(`toc_contract_${name}.json`,
+        buildContract(bytes, headings, isCut, { headings, isCut, bookmarks }));
 }
 
 /**
@@ -79,24 +55,24 @@ async function writeContract(name: string, mime: string, bytes: Uint8Array) {
  */
 async function writeEpubContract(name: string, bytes: Uint8Array) {
     writeFileSync(join(fixturesDir, `${name}.epub`), bytes);
-    const { headings, isCut = false } = await readEpubToc(bytes);
-    const outline = headings.map(({ title, level }) =>
-        ({ title: String(title), level: Number(level) }));
-    const blobId = digest(bytes);
-    const protectedBlobId = digest(Buffer.concat([ Buffer.from(PROTECTED_BLOB_PREFIX), bytes ]));
-    const contract = {
-        blobId,
-        protectedBlobId,
-        headings,
-        isCut,
-        ids: assignHeadingIds(outline, getBlobTag(blobId), false, { isCut }),
-        protectedIds: assignHeadingIds(outline, getBlobTag(protectedBlobId), true, { isCut })
-    };
-    writeFileSync(join(fixturesDir, `${name}_epub.json`), `${JSON.stringify(contract, null, 4)}\n`);
+    const { raw, headings, isCut } = await generate(epubTocFormat as TocFormat, bytes);
+    writeContract(`${name}_epub.json`,
+        buildContract(bytes, headings, isCut, { headings: raw, isCut }));
 }
 
-function digest(content: Uint8Array) {
-    return blobIdFromDigest(new Uint8Array(createHash("sha512").update(content).digest()));
+/**
+ * What the generator of `format` reads from `bytes`: the headings as it writes them (`raw`), their
+ * titles and levels, and the bookmarks of an office format.
+ */
+async function generate(format: TocFormat, bytes: Uint8Array) {
+    if (!format.generator) {
+        throw new Error(`The format '${format.name}' has no generator.`);
+    }
+    const { headings: raw, isCut = false, properties } = await format.generator(bytes);
+    const headings = raw.map(({ title, level }) =>
+        ({ title: String(title), level: Number(level) }));
+    const { bookmarks } = properties ?? {};
+    return { raw, headings, isCut, bookmarks: Array.isArray(bookmarks) ? bookmarks : [] };
 }
 
 function zip(files: Record<string, string | Uint8Array>, storedFirst?: string) {
@@ -119,12 +95,12 @@ function zip(files: Record<string, string | Uint8Array>, storedFirst?: string) {
  * `landmarks` navigation that are no entries. Its table of contents: a part without a target over
  * a whole chapter and its places (a heading, a section whose id the parser drops, two "Summary"
  * entries, a span in a paragraph, a fragment that is not there), "Exercises" in two chapters, an
- * entry titled by an image, an empty label whose child moves up, an entry and its child in a
- * chapter that `encryption.xml` lists, a chapter without a heading, endnotes, a part whose first
- * chapter is encrypted, a table with a cell that two entries name, a row and the table itself, and
- * the targets of review #5: an image, a rule, a hyperlink, a span in a hyperlink and a page break.
- * Its chapters hold `<h2` as text in `<pre>`, `<script>`, `<style>` and a comment, and a deflated
- * picture is in the archive.
+ * entry titled by an image, an empty label whose child nests under the entry before it, an entry
+ * and its child in a chapter that `encryption.xml` lists, a chapter without a heading, endnotes, a
+ * part whose first chapter is encrypted, a table with a cell that two entries name, a row and the
+ * table itself, and the targets of review #5: an image, a rule, a hyperlink, a span in a hyperlink
+ * and a page break. Its chapters hold `<h2` as text in `<pre>`, `<script>`, `<style>` and a
+ * comment, and a deflated picture is in the archive.
  */
 function buildContractEpub() {
     const nav = navItems([

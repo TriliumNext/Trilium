@@ -9,7 +9,7 @@ like these, checks this list. Grep `BLOCK_ID_ATTRIBUTE`, `blockId`, `data-triliu
 
 | Place | Does |
 |---|---|
-| `block_reference.ts` | The format, lookups, slicing, list numbers, editable runs, `generateBlockId()` |
+| `block_reference.ts` | The format, lookups, slicing, list numbers, editable runs, `generateBlockId()`, `drawBlockId()` |
 | `content_embeds.ts` | `EXCERPT_BOX_SIZE`; `getEmbedKey()` (cycle keys); `resolveContentEmbed()` reads `data-block` (an empty value means the whole note); `getNestedEmbedOptions()`; `getNoteEmbedHref()` builds `?block=` |
 
 ## Text editor (`packages/ckeditor5/src/plugins/`)
@@ -56,7 +56,7 @@ like these, checks this list. Grep `BLOCK_ID_ATTRIBUTE`, `blockId`, `data-triliu
 |---|---|
 | `services/notes.ts` | `findInternalLinks()` and `findMarkdownInternalLinks()` (also `[[id?…]]`) make `internalLink` relations for links with a query; `findIncludeNoteLinks()` makes `includeNoteLink` for excerpts without recording the range |
 | `services/block_ranges.ts`, `routes/api/notes.ts` | `GET`/`PUT /api/notes/:noteId/blocks` |
-| `services/references/text.ts` | Reads the first valid id of each heading; splices a new one in (`adding-link-targets` skill) |
+| `services/references/text.ts` | Reads the first valid id of each heading; splices a new one in, drawn with `drawBlockId()` (`adding-link-targets` skill) |
 | `services/sanitizer.ts` | Keeps `data-*` on every element, so safe import keeps ids |
 | `share/content_renderer.ts` | `renderText()` slices; the embed loop renders excerpts; `replaceWithUnavailable()` keeps the id; `handleAttachmentLink()` keeps `?block=` on share links; `getLinkedHeadingText()`; `preparePageContent()` adds slug ids and table-of-contents anchors beside block ids |
 | `services/export/single.ts` | Leaves links and ids as they are |

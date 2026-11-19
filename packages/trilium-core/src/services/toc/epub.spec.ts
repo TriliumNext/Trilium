@@ -1,712 +1,176 @@
-import { EPUB_MIME_TYPES, MAX_TOC_HEADINGS } from "@triliumnext/commons";
-import { strFromU8, strToU8, unzipSync, type Zippable, zipSync } from "fflate";
-import { OfficeConverter } from "officeparser";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+import { DOCX_MIME, EPUB_MIME_TYPES, ODT_MIME } from "@triliumnext/commons";
+import { strToU8, unzipSync, zipSync } from "fflate";
+import { describe, expect, it } from "vitest";
 
 import { convertOfficeToHtml } from "../office_preview.js";
-import {
-    findLandings, markEpubPreview, readBookToc, readEpubToc, runTocPass, type TocPassOutcome,
-    type TocPassRecord
-} from "./epub.js";
-import { getHeadingIds } from "./index.js";
-import { TocPassRefusal } from "./office.js";
+import { EPUB_TOC_READER, epubTocFormat, type TocPassOutcome, TocPassRefusal } from "./epub.js";
+import { getHeadingIds, type TocFormat } from "./index.js";
+import { docxTocFormat, getOfficeIssueCode, odtTocFormat } from "./office.js";
 
-const EPUB_MIME = EPUB_MIME_TYPES[0];
-const MTIME = new Date("2026-01-01T00:00:00Z");
-const SOURCE = { blobId: "blob0123456789", isProtected: false };
+const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures");
 
-afterEach(() => {
-    vi.restoreAllMocks();
-});
+/**
+ * Reads the contract books through the real ToC pass and `officeparser`. Under the standalone
+ * runner, this proves that the worker reads, rewrites and converts them as the server does.
+ */
+describe.each([
+    { book: "toc_contract" }, { book: "toc_contract_ncx" }, { book: "toc_contract_ids" }
+])("the EPUB contract $book", ({ book }) => {
+    const bytes = readFixture(`${book}.epub`);
+    const contract = JSON.parse(new TextDecoder().decode(readFixture(`${book}_epub.json`)));
 
-describe("readBookToc", () => {
-    it("reads the navigation's entries, levels from nesting, and ignores its other lists",
-        async () => {
-        const toc = await readToc({
-            "OEBPS/text/nav.xhtml": navDocument(`<li><span>Part</span><ol>
-                <li><a href="ch%201.xhtml">Chapter &amp; one</a><ol>
-                    <li><a href="ch%201.xhtml#sec%20a">Section</a></li></ol></li>
-                <li><a href="../other/ch2.xhtml#b">Chapter two</a></li></ol></li>`)
-                + "<nav epub:type=\"landmarks\" hidden=\"\">"
-                + "<ol><li><a href=\"x.xhtml\">Guide</a></li></ol></nav>"
-                + "<nav epub:type=\"page-list\">"
-                + "<ol><li><a href=\"x.xhtml#p1\">1</a></li></ol></nav>"
-        }, { navPath: "text/nav.xhtml" });
+    it("reads the entries, which of them the preview shows, and their ids", async () => {
+        const toc = await generate(epubTocFormat as TocFormat, bytes);
 
-        expect(toc?.entries).toStrictEqual([
-            { title: "Part", level: 1 },
-            { title: "Chapter & one", level: 2,
-                target: { path: "OEBPS/text/ch 1.xhtml", fragment: "" } },
-            { title: "Section", level: 3,
-                target: { path: "OEBPS/text/ch 1.xhtml", fragment: "sec a" } },
-            { title: "Chapter two", level: 2,
-                target: { path: "OEBPS/other/ch2.xhtml", fragment: "b" } }
-        ]);
-        expect(toc?.isCut).toBe(false);
-    });
-
-    it("reads the NCX of a book without a navigation document, and prefers the navigation",
-        async () => {
-        const ncx = ncxDocument(navPoint("Chapter 1", "ch1.xhtml",
-            navPoint("Section &lt;1&gt;", "ch1.xhtml#s1")) + navPoint("Chapter 2", "ch2.xhtml"));
-
-        expect((await readToc({ "OEBPS/toc.ncx": ncx }, { ncxPath: "toc.ncx" }))?.entries)
-            .toStrictEqual([
-                { title: "Chapter 1", level: 1, target: { path: "OEBPS/ch1.xhtml", fragment: "" } },
-                { title: "Section <1>", level: 2,
-                    target: { path: "OEBPS/ch1.xhtml", fragment: "s1" } },
-                { title: "Chapter 2", level: 1, target: { path: "OEBPS/ch2.xhtml", fragment: "" } }
-            ]);
-        const both = await readToc({
-            "OEBPS/toc.ncx": ncx,
-            "OEBPS/nav.xhtml": navDocument("<li><a href=\"ch1.xhtml\">From the navigation</a></li>")
-        }, { ncxPath: "toc.ncx", navPath: "nav.xhtml" });
-        expect(both?.entries.map(({ title }) => title)).toStrictEqual([ "From the navigation" ]);
-        expect(await readToc({}, {})).toBeNull();
-    });
-
-    it("finds the navigation's list by the namespace of its type, whatever the prefix",
-        async () => {
-        const typed = (namespace: string) => readToc({
-            "OEBPS/nav.xhtml": "<html xmlns=\"http://www.w3.org/1999/xhtml\" "
-                + `xmlns:OPS="${namespace}"><body><nav OPS:type="toc"><ol>`
-                + "<li><a href=\"a.xhtml\">Declared</a></li></ol></nav></body></html>"
-        }, { navPath: "nav.xhtml" });
-
-        expect((await typed("http://www.idpf.org/2007/ops"))?.entries)
-            .toStrictEqual([ { title: "Declared", level: 1,
-                target: { path: "OEBPS/a.xhtml", fragment: "" } } ]);
-        expect(await typed("urn:other")).toBeNull();
-    });
-
-    it("finds a package without a usable container, and skips the parts it cannot use",
-        async () => {
-        const manifest = "<item id=\"nav\" href=\"gone.xhtml\" properties=\"nav\"/>"
-            + "<item href=\"no-id.xhtml\" media-type=\"application/xhtml+xml\"/>"
-            + "<item id=\"ncx\" href=\"toc.ncx\" media-type=\"application/x-dtbncx+xml\"/>"
-            + "<item id=\"c\" href=\"c.xhtml\" media-type=\"application/xhtml+xml\"/>"
-            + "<item id=\"img\" href=\"i.png\" media-type=\"image/png\"/>";
-        const spine = "<itemref/><itemref idref=\"img\"/><itemref idref=\"c\"/>";
-        const opf = packageDocument(manifest, " toc=\"ncx\"", spine);
-        const ncx = ncxDocument(navPoint("Chapter", "c.xhtml"));
-        const readFiles = (files: Record<string, string>) =>
-            readBookToc(Object.keys(files), (path) => Promise.resolve(files[path]));
-
-        const expected = {
-            entries: [ { title: "Chapter", level: 1, target: { path: "c.xhtml", fragment: "" } } ],
-            isCut: false,
-            chapters: [ "c.xhtml" ]
-        };
-        expect(await readFiles({ "book.opf": opf, "toc.ncx": ncx })).toStrictEqual(expected);
-        expect(await readFiles({ "META-INF/container.xml": CONTAINER, "book.opf": opf,
-            "toc.ncx": ncx })).toStrictEqual(expected);
-        expect(await readFiles({ "book.opf": opf })).toBeNull();
-    });
-
-    it("reads a navigation without a list, an NCX without a navMap, and unlabeled entries",
-        async () => {
-        const ncx = ncxDocument("<navPoint><content src=\"a.xhtml\"/>"
-            + `${navPoint("Child", "a.xhtml#c")}</navPoint>`
-            + "<navPoint><navLabel><text>No target</text></navLabel></navPoint>"
-            + "<navPoint><navLabel/></navPoint>");
-        const noList = xhtml("<nav epub:type=\"toc\"><h1>Contents</h1></nav>");
-
-        expect((await readToc({ "OEBPS/toc.ncx": ncx }, { ncxPath: "toc.ncx" }))?.entries)
-            .toStrictEqual([
-                { title: "Child", level: 1, target: { path: "OEBPS/a.xhtml", fragment: "c" } },
-                { title: "No target", level: 1 }
-            ]);
-        expect((await readToc({ "OEBPS/toc.ncx": "<ncx><head/></ncx>" }, { ncxPath: "toc.ncx" }))
-            ?.entries).toStrictEqual([]);
-        expect((await readToc({ "OEBPS/nav.xhtml": noList }, { navPath: "nav.xhtml" }))?.entries)
-            .toStrictEqual([]);
-    });
-
-    it("reads a navigation whatever quirks its markup has, up to where it ends", async () => {
-        const items = [
-            "<li><a href=#top>Same file</a></li>",
-            "<li><a href=\"./sub/../ch%201.xhtml\">Dot path</a></li>",
-            "<li><a href=\"ch.xhtml#%E0%A4%A\">Bad escape</a></li>",
-            "<li><a href=\"ch.xhtml#m\"><img src=\"x.png\"/>Area <math><mi>x</mi></math>"
-                + "<br/>two</a></li>",
-            "<li><a href=\"ch.xhtml#c\"><![CDATA[a < b]]> &amp; 1 < 2</a></li>",
-            "<li>No label<ol><li><a href=\"ch.xhtml#n\">Nested</a></li></ol></li>"
-        ].join("");
-        const nav = "<?xml version=\"1.0\"?><html xmlns=\"http://www.w3.org/1999/xhtml\" "
-            + "xmlns:epub=\"http://www.idpf.org/2007/ops\"><head>"
-            + "<script>if (a < b && c > d) {}</script></head><body></div>"
-            + "<nav / =\"x\" hidden epub:type=toc epub:type=\"landmarks\">"
-            + `<ol>${items}</ol></nav></body></html>`;
-        const target = (path: string, fragment: string) => ({ path: `OEBPS/${path}`, fragment });
-        const expected = [
-            { title: "Same file", level: 1, target: target("nav.xhtml", "top") },
-            { title: "Dot path", level: 1, target: target("ch 1.xhtml", "") },
-            { title: "Bad escape", level: 1, target: target("ch.xhtml", "%E0%A4%A") },
-            { title: "Area x two", level: 1, target: target("ch.xhtml", "m") },
-            { title: "a < b & 1 < 2", level: 1, target: target("ch.xhtml", "c") },
-            { title: "Nested", level: 1, target: target("ch.xhtml", "n") }
-        ];
-
-        const unclosed = [
-            "", "text after the document", "<!-- comment", "<![CDATA[ section", "<?instruction",
-            "<p title=\"value", "<p id=value", "<script>code"
-        ];
-        for (const tail of unclosed) {
-            const toc = await readToc({ "OEBPS/nav.xhtml": nav + tail }, { navPath: "nav.xhtml" });
-            expect(toc?.entries).toStrictEqual(expected);
-        }
-    });
-
-    it("titles a label by its text, an image's alt, a formula's alttext, else its title",
-        async () => {
-        const toc = await readToc({
-            "OEBPS/nav.xhtml": navDocument([
-                "<li><a href=\"a.xhtml\"><b>Bold</b> &#8212; <i>text</i></a></li>",
-                "<li><a href=\"a.xhtml#f\"><img src=\"f.png\" alt=\"Figure one\"/></a></li>",
-                "<li><a href=\"a.xhtml#m\">Area <math alttext=\"x^2\"><mi>x</mi></math></a></li>",
-                "<li><a href=\"a.xhtml#t\" title=\"By its title\"> </a></li>",
-                "<li><a href=\"a.xhtml#e\"></a>"
-                    + "<ol><li><a href=\"a.xhtml#c\">Moved up</a></li></ol></li>"
-            ].join(""))
-        }, { navPath: "nav.xhtml" });
-
-        expect(toc?.entries.map(({ title, level }) => [ title, level ])).toStrictEqual([
-            [ "Bold — text", 1 ], [ "Figure one", 1 ], [ "Area x^2", 1 ], [ "By its title", 1 ],
-            [ "Moved up", 1 ]
-        ]);
-    });
-
-    it("keeps MAX_TOC_HEADINGS entries and tells whether another one follows", async () => {
-        const items = (count: number) => Array.from({ length: count },
-            (_, index) => `<li><a href="a.xhtml#e${index}">Entry ${index}</a></li>`).join("");
-
-        const full = await readToc({ "OEBPS/nav.xhtml": navDocument(items(MAX_TOC_HEADINGS)) },
-            { navPath: "nav.xhtml" });
-        const cut = await readToc({ "OEBPS/nav.xhtml": navDocument(items(MAX_TOC_HEADINGS + 1)) },
-            { navPath: "nav.xhtml" });
-
-        expect([ full?.entries.length, full?.isCut ]).toStrictEqual([ MAX_TOC_HEADINGS, false ]);
-        expect([ cut?.entries.length, cut?.isCut ]).toStrictEqual([ MAX_TOC_HEADINGS, true ]);
-    });
-});
-
-describe("runTocPass", () => {
-    it("places one marker per destination by the kind of its target, and changes nothing else",
-        async () => {
-        const chapter = [
-            "<!-- <p id='scope'>a comment</p> --><![CDATA[ <p id=\"scope\"> ]]>",
-            "<h2 id='scope'>Scope</h2>",
-            "<p>See <a id=\"ref\" href=\"#x\">a <span id=\"inner\">link</span></a>.</p>",
-            "<img id=\"cover\" src=\"c.png\" alt=\"\"/><hr id=\"rule\"></hr>",
-            "<p>Page <span id=\"p45\" epub:type=\"pagebreak\"/>break</p>",
-            "<div><p>Unclosed</div>",
-            "<table><tr id=\"row\"><td>Cell</td></tr><tr id=\"empty\"></tr></table>",
-            "<p><a name=\"legacy\"></a>Named</p><a name=\"both\"></a><p id=\"both\">By id</p>"
-        ].join("");
-        const nav = [
-            [ "Whole", "c.xhtml" ], [ "Scope", "c.xhtml#scope" ],
-            [ "Scope again", "c.xhtml#scope" ],
-            [ "Link", "c.xhtml#ref" ], [ "Inner", "c.xhtml#inner" ], [ "Cover", "c.xhtml#cover" ],
-            [ "Rule", "c.xhtml#rule" ], [ "Page", "c.xhtml#p45" ], [ "Row", "c.xhtml#row" ],
-            [ "Empty row", "c.xhtml#empty" ], [ "Legacy", "c.xhtml#legacy" ],
-            [ "Both", "c.xhtml#both" ], [ "Missing", "c.xhtml#missing" ]
-        ].map(([ title, href ]) => `<li><a href="${href}">${title}</a></li>`).join("")
-            + "<li><span>Group</span></li>";
-        const bytes = buildEpub({ "c.xhtml": chapter }, { nav });
-
-        const outcome = await runTocPass(bytes);
-        const marked = readMarked(outcome);
-
-        const m = (n: number) => `<a id="trilium_toc_${n}"></a>`;
-        expect(readChapter(marked.bytes, "c.xhtml")).toBe(xhtml([
-            "<!-- <p id='scope'>a comment</p> --><![CDATA[ <p id=\"scope\"> ]]>",
-            `<h2 id='scope'>${m(1)}Scope</h2>`,
-            `<p>See ${m(2)}${m(3)}<a id="ref" href="#x">a <span id="inner">link</span></a>.</p>`,
-            `${m(4)}<img id="cover" src="c.png" alt=""/>${m(5)}<hr id="rule"></hr>`,
-            `<p>Page ${m(6)}<span id="p45" epub:type="pagebreak"/>break</p>`,
-            "<div><p>Unclosed</div>",
-            `<table><tr id="row"><td>${m(7)}Cell</td></tr><tr id="empty"></tr></table>`,
-            `<p>${m(8)}<a name="legacy"></a>Named</p>`
-                + `<a name="both"></a><p id="both">${m(9)}By id</p>`
-        ].join(""), m(0) + m(10)));
-        expect(marked.record.entries.map(({ title, destination }) => [ title, destination ]))
-            .toStrictEqual([
-                [ "Whole", 0 ], [ "Scope", 1 ], [ "Scope again", 1 ], [ "Link", 2 ], [ "Inner", 3 ],
-                [ "Cover", 4 ], [ "Rule", 5 ], [ "Page", 6 ], [ "Row", 7 ], [ "Empty row", -1 ],
-                [ "Legacy", 8 ], [ "Both", 9 ], [ "Missing", 10 ], [ "Group", undefined ]
-            ]);
-        // Every other entry of the archive is the same, and so is the archive the next time.
-        const before = unzipSync(bytes);
-        const after = unzipSync(marked.bytes);
-        delete before["OEBPS/c.xhtml"];
-        delete after["OEBPS/c.xhtml"];
-        expect(after).toStrictEqual(before);
-        expect(readMarked(await runTocPass(bytes)).bytes).toStrictEqual(marked.bytes);
-    });
-
-    it("chooses a prefix that no id or name of the book starts with", async () => {
-        const bytes = buildEpub({
-            "a.xhtml": "<p id=\"trilium_toc_0\">Taken</p>",
-            "b.xhtml": "<p><a name=\"trilium_toc_x\"></a>Taken too</p>"
-        }, { nav: "<li><a href=\"a.xhtml\">A</a></li>" });
-
-        const marked = readMarked(await runTocPass(bytes));
-
-        expect(marked.record.prefix).toBe("trilium_toc2_");
-        expect(marked.record.destinations).toStrictEqual([ { marker: "trilium_toc2_0" } ]);
-    });
-
-    it("tells the outcomes of a book apart", async () => {
-        expect(await runTocPass(buildEpub({ "a.xhtml": "<p>A</p>" })))
-            .toStrictEqual({ status: "none" });
-        expect(await runTocPass(buildEpub({ "a.xhtml": "<p>A</p>" }, { nav: "" })))
-            .toStrictEqual({ status: "none" });
-
-        const nav = "<li><a href=\"a.xhtml\">A</a></li>";
-        const encrypted = patchCentral(buildEpub({ "a.xhtml": "<p>A</p>" }, { nav }),
-            "OEBPS/a.xhtml",
-            (view, at) => view.setUint16(at + 8, view.getUint16(at + 8, true) | 1, true));
-        const methods = patchCentral(buildEpub({ "a.xhtml": "<p>A</p>" }, { nav }), "OEBPS/a.xhtml",
-            (view, at) => view.setUint16(at + 10, 12, true));
-        const altered = patchCentral(buildEpub({ "a.xhtml": "<p>A</p>" }, { nav }), "OEBPS/a.xhtml",
-            (view, at) => view.setUint32(at + 16, 1, true));
-        expect(await runTocPass(encrypted))
-            .toStrictEqual({ status: "refused", reason: "ENCRYPTED_ENTRY" });
-        expect(await runTocPass(methods)).toStrictEqual({ status: "refused", reason: "METHOD" });
-        expect(await runTocPass(altered)).toStrictEqual({ status: "refused", reason: "CRC" });
-        expect(await runTocPass(new Uint8Array(64)))
-            .toStrictEqual({ status: "refused", reason: "DIRECTORY" });
-
-        const failure = new RangeError("Out of memory");
-        const failing = Object.assign(buildEpub({ "a.xhtml": "<p>A</p>" }, { nav }), {
-            subarray: () => {
-                throw failure;
-            }
+        expect(toc).toStrictEqual({
+            headings: contract.headings,
+            isCut: contract.isCut,
+            properties: { reader: EPUB_TOC_READER }
         });
-        await expect(runTocPass(failing)).rejects.toBe(failure);
+        expect(getHeadingIds(contract.headings, contract.blobId, false, false))
+            .toStrictEqual(contract.ids);
+        expect(getHeadingIds(contract.headings, contract.protectedBlobId, true, false))
+            .toStrictEqual(contract.protectedIds);
     });
 
-    it("reads the first entry of a name, and marks only the chapters it can read as text",
-        async () => {
-        const invalid = new Uint8Array([ ...strToU8(xhtml("<p id=\"i\">Invalid</p>")), 0xff ]);
-        const bytes = buildEpub({
-            "café.xhtml": "<table><tr id=\"head\"><th>Head</th></tr></table>",
-            "nul.xhtml": "<p id=\"n\">\0</p>",
-            "invalid.xhtml": invalid,
-            "a1.xhtml": "<p id=\"f\">First</p>",
-            "a2.xhtml": "<p id=\"s\">Second</p>"
-        }, { nav: navList([
-            [ "Head", "café.xhtml#head" ], [ "Nul", "nul.xhtml#n" ],
-            [ "Invalid", "invalid.xhtml#i" ], [ "First", "a1.xhtml#f" ],
-            [ "Second", "a2.xhtml#s" ], [ "Navigation", "nav.xhtml" ]
-        ]) });
-        // Renames the entry `a2.xhtml` to `a1.xhtml`, after the real one.
-        patchCentral(bytes, "OEBPS/a2.xhtml", (view, at) =>
-            view.setUint8(at + 46 + "OEBPS/a".length, "1".charCodeAt(0)));
+    it("marks the preview with the ids of the shown entries, protected or not", async () => {
+        for (const mime of EPUB_MIME_TYPES) {
+            let tocPass: TocPassOutcome | undefined;
+            const html = await convertOfficeToHtml(bytes, mime, {
+                onTocPass: (outcome) => {
+                    tocPass = outcome;
+                }
+            });
+            // EPUB previews give headings no slug ids.
+            expect(html).not.toMatch(/ id="(?:after-the-cover|chapter-1|heading-of-chapter-1)"/);
 
-        const marked = readMarked(await runTocPass(bytes));
-
-        expect(marked.record.entries.map(({ title, destination }) => [ title, destination ]))
-            .toStrictEqual([
-                [ "Head", 0 ], [ "Nul", -1 ], [ "Invalid", -1 ], [ "First", 1 ],
-                [ "Second", undefined ], [ "Navigation", -1 ]
-            ]);
-        expect(marked.record.destinations).toStrictEqual([
-            { marker: "trilium_toc_0", bookId: "head" }, { marker: "trilium_toc_1", bookId: "f" }
-        ]);
-        expect(readChapter(marked.bytes, "café.xhtml"))
-            .toContain("<th><a id=\"trilium_toc_0\"></a>Head</th>");
-
-        const unplaced = buildEpub({ "a.xhtml": "<p>A</p>" },
-            { nav: navList([ [ "Navigation", "nav.xhtml" ] ]) });
-        expect(readMarked(await runTocPass(unplaced)).bytes).toBe(unplaced);
-    });
-
-    it("refuses a part declared past what remains of the budget, before inflating it", async () => {
-        const bytes = buildEpub({ "a.xhtml": "<p>A</p>" },
-            { nav: "<li><a href=\"a.xhtml\">A</a></li>" });
-        const declared = Object.values(unzipSync(bytes))
-            .reduce((total, part) => total + part.length, 0)
-            - "application/epub+zip".length;
-        const marker = "<a id=\"trilium_toc_0\"></a>".length;
-
-        expect(await runTocPass(bytes, declared + marker)).toMatchObject({ status: "marked" });
-        expect(await runTocPass(bytes, declared + marker - 1))
-            .toStrictEqual({ status: "refused", reason: "TEXT_TOO_LARGE" });
-        expect(await runTocPass(bytes, declared - 1))
-            .toStrictEqual({ status: "refused", reason: "TEXT_TOO_LARGE" });
-    });
-
-    it("places 10,000 markers for 10,000 nested groups over 10,000 leaves, without recursion",
-        async () => {
-        const count = MAX_TOC_HEADINGS / 2;
-        const leaves = Array.from({ length: count },
-            (_, index) => `<li><a href="a.xhtml#p${index}">Leaf ${index}</a></li>`).join("");
-        const nav = "<li><span>Group</span><ol>".repeat(count - 1) + "<li><span>Group</span><ol>"
-            + leaves + "</ol></li>" + "</ol></li>".repeat(count - 1);
-        const chapter = Array.from({ length: count },
-            (_, index) => `<p id="p${index}">${index}</p>`)
-            .join("");
-        const bytes = buildEpub({ "a.xhtml": chapter }, { nav });
-
-        const marked = readMarked(await runTocPass(bytes));
-        expect(marked.record.entries).toHaveLength(MAX_TOC_HEADINGS);
-        expect(marked.record.isCut).toBe(false);
-        expect(marked.record.destinations).toHaveLength(count);
-
-        const html = await convertOfficeToHtml(marked.bytes, EPUB_MIME);
-        const preview = markEpubPreview(html, marked.record, SOURCE);
-        const marks = readMarks(preview);
-        expect(marks).toHaveLength(count);
-        expect(marks[0].split(" ")).toHaveLength(count + 1);
-    });
-});
-
-describe("the landings of a converted book", () => {
-    it("lands an entry on the element its marker stands for, whatever the kind of target",
-        async () => {
-        const { landed } = await convertBook({
-            "c.xhtml": "<p>Intro</p><img id=\"cover\" src=\"c.png\" alt=\"A cover\"/>"
-                + "<h2>After the cover</h2>"
-                + "<p>See <a id=\"ref\" href=\"#dest\">a link</a>.</p>"
-                + "<p>Go <a href=\"#dest\">to <span id=\"inner\">here</span></a>.</p>"
-                + "<hr id=\"rule\"/><p>After the rule</p>"
-                + "<p>Page <span id=\"p45\" epub:type=\"pagebreak\" title=\"45\"/>break</p>"
-                + "<h2><a id=\"chap01\"></a>CHAPTER I.</h2>"
-                + "<table id=\"table\"><tr><td>One</td></tr><tr><td id=\"cell\">Two</td></tr>"
-                + "<tr id=\"row3\"><td>Three</td></tr>"
-                + "<tr id=\"row4\"><td id=\"cell4\">Four</td></tr>"
-                + "</table><p id=\"dest\">Destination</p>"
-        }, [
-            [ "Cover", "c.xhtml#cover" ], [ "Link", "c.xhtml#ref" ], [ "Inner", "c.xhtml#inner" ],
-            [ "Rule", "c.xhtml#rule" ], [ "Page", "c.xhtml#p45" ],
-            [ "Chapter I", "c.xhtml#chap01" ], [ "Table", "c.xhtml#table" ],
-            [ "Cell", "c.xhtml#cell" ], [ "Cell again", "c.xhtml#cell" ],
-            [ "Row three", "c.xhtml#row3" ], [ "Row four", "c.xhtml#row4" ]
-        ]);
-
-        expect(landed).toStrictEqual([
-            [ "Cover", "<div>" ], [ "Link", "<p>See <a href=\"#dest\"" ],
-            [ "Inner", "<p>Go <a href=\"#dest\"" ], [ "Rule", "<hr id=\"rule\">" ],
-            [ "Page", "<p>Page" ],
-            [ "Chapter I", "<h2>CHAPTER I." ], [ "Table", "<div class=\"table-container\">" ],
-            [ "Cell", "<td id=\"cell\">Two" ], [ "Cell again", "<td id=\"cell\">Two" ],
-            [ "Row three", "<td>Three" ], [ "Row four", "<td id=\"cell4\">Four" ]
-        ]);
-    });
-
-    it("lands a group where its first shown part does, and leaves out entries it cannot show",
-        async () => {
-        const { landed, preview } = await convertBook({
-            "locked.xhtml": "<h2 id=\"part\">Locked</h2>",
-            "open.xhtml": "<h2>Open</h2><p id=\"part\">Part</p>"
-        }, [
-            [ "Group", null,
-                [ [ "Locked first", "locked.xhtml" ], [ "Open second", "open.xhtml" ] ] ],
-            [ "Own place", "locked.xhtml#part", [ [ "Readable child", "open.xhtml#part" ] ] ],
-            [ "Not in the book", "gone.xhtml" ]
-        ], { encrypted: [ "OEBPS/locked.xhtml" ] });
-
-        expect(landed).toStrictEqual([
-            [ "Group", "<h2>Open" ], [ "Locked first", undefined ], [ "Open second", "<h2>Open" ],
-            [ "Own place", undefined ], [ "Readable child", "<p id=\"part\">Part" ],
-            [ "Not in the book", undefined ]
-        ]);
-        // The group shares the element of its part, in one attribute, in the order of the entries.
-        expect(readMarks(preview).map((value) => value.split(" ").length)).toStrictEqual([ 2, 1 ]);
-    });
-
-    it("checks a landing against the book's own id only when nothing else can give that id",
-        async () => {
-        const { landed, record } = await convertBook({
-            "c1.xhtml": "<section id=\"sec\"><h2>First chapter</h2></section>"
-                + "<section id=\"introduction\"><p>An epigraph</p><h2>Introduction</h2></section>"
-                + "<section id=\"legacy\"><h2>Legacy</h2></section>"
-                + "<p id=\"footnote-1\">Named like a note</p>",
-            "c2.xhtml": "<h2 id=\"sec\">Another chapter</h2>",
-            "c3.xhtml": "<a name=\"legacy\"></a><p>A named anchor</p>",
-            "c4.xhtml": "<p>Before</p><h2><a id=\"chap01\" name=\"chap01\"></a>CHAPTER I.</h2>"
-                + "<p>Before</p><h2><a name=\"chap02\"></a>CHAPTER II.</h2>"
-        }, [
-            [ "Sec", "c1.xhtml#sec" ], [ "Introduction", "c1.xhtml#introduction" ],
-            [ "Legacy", "c1.xhtml#legacy" ], [ "Note", "c1.xhtml#footnote-1" ],
-            [ "Chapter I", "c4.xhtml#chap01" ], [ "Chapter II", "c4.xhtml#chap02" ]
-        ]);
-
-        expect(landed).toStrictEqual([
-            [ "Sec", "<h2>First chapter" ], [ "Introduction", "<p>An epigraph" ],
-            [ "Legacy", "<h2>Legacy" ], [ "Note", "<p id=\"footnote-1\">Named" ],
-            [ "Chapter I", "<h2>CHAPTER I." ], [ "Chapter II", "<h2>CHAPTER II." ]
-        ]);
-        expect(record.destinations.map(({ bookId }) => bookId)).toStrictEqual([
-            undefined, "introduction", undefined, undefined, "chap01", "chap02"
-        ]);
-    });
-
-    it("finds no destination where the book's own id stands for another element", () => {
-        const record: TocPassRecord = {
-            prefix: "trilium_toc_",
-            entries: [ { title: "Cover", level: 1, destination: 0 } ],
-            isCut: false,
-            destinations: [ { marker: "trilium_toc_0", bookId: "cover" } ]
-        };
-        const image = "<div><div class=\"image-container\">"
-            + "<img id=\"cover\" src=\"c.png\"></div></div>";
-
-        const onHeading = `${image}<h2 id="trilium_toc_0">Unrelated</h2>`;
-        const onWrapper = `<a id="trilium_toc_0" name="trilium_toc_0"></a>`
-            + `${image}<h2>Unrelated</h2>`;
-        expect(findLandings(onHeading, record)).toStrictEqual([ undefined ]);
-        expect(findLandings(onWrapper, record)).toStrictEqual([ onWrapper.indexOf("<div>") + 4 ]);
-        // Without the book's id, or with it twice, the marker stands.
-        expect(findLandings(onHeading.replace(" id=\"cover\"", ""), record))
-            .not.toStrictEqual([ undefined ]);
-        expect(findLandings(onHeading + image, record)).not.toStrictEqual([ undefined ]);
-        // A run of the converter's anchors with no start tag after it stands for nothing.
-        const dangling = "<p>Text</p><a id=\"trilium_toc_0\" name=\"trilium_toc_0\"></a></div>";
-        expect(findLandings(dangling, { ...record, destinations: [ { marker: "trilium_toc_0" } ] }))
-            .toStrictEqual([ undefined ]);
-    });
-});
-
-describe("readEpubToc and markEpubPreview", () => {
-    it("binds sibling entries of one title by the authored outline, whichever of them shows",
-        async () => {
-        const nav = navList([
-            [ "Summary", "a.xhtml#s1" ], [ "Summary", "b.xhtml#s2" ], [ "Part", "locked.xhtml",
-                [ [ "Scope", "a.xhtml#scope" ] ] ]
-        ]);
-        const first = buildEpub({
-            "a.xhtml": "<h2 id=\"s1\">Summary</h2><h3 id=\"scope\">Scope</h3>",
-            "b.xhtml": "<p>B</p>",
-            "locked.xhtml": "<p>Locked</p>"
-        }, { nav, encrypted: [ "OEBPS/locked.xhtml" ] });
-        const second = buildEpub({
-            "a.xhtml": "<p>A</p><h3 id=\"scope\">Scope</h3>",
-            "b.xhtml": "<h2 id=\"s2\">Summary</h2>",
-            "locked.xhtml": "<p>Locked</p>"
-        }, { nav, encrypted: [ "OEBPS/locked.xhtml" ] });
-
-        const firstToc = await readEpubToc(first);
-        const secondToc = await readEpubToc(second);
-
-        expect(firstToc.headings).toStrictEqual([
-            { title: "Summary", level: 1 }, { title: "Summary", level: 1 },
-            { title: "Part", level: 1, isShown: false }, { title: "Scope", level: 2 }
-        ]);
-        expect(secondToc.headings.map(({ isShown }) => isShown))
-            .toStrictEqual([ undefined, undefined, false, undefined ]);
-        const outline = firstToc.headings as { title: string; level: number }[];
-        const ids = getHeadingIds(outline, "blob1", false, false);
-        expect(ids[0]).not.toBe(ids[1]);
-        expect(ids[0]).toContain(".blob1");
-        expect(getHeadingIds(outline, "blob2", false, false)[0]).not.toBe(ids[0]);
-        expect(firstToc.properties).toStrictEqual({ reader: 1, bookmarks: [] });
-    });
-
-    it("marks nothing for an entry of a chapter it cannot read, whatever the preview's ids",
-        async () => {
-        const bytes = buildEpub({
-            "locked.xhtml": "<p>Locked</p>",
-            "open.xhtml": "<h2>Trilium Toc 0</h2><h2 id=\"x\">trilium_toc_0</h2>"
-        }, { nav: navList([ [ "Locked", "locked.xhtml" ] ]), encrypted: [ "OEBPS/locked.xhtml" ] });
-
-        const toc = await readEpubToc(bytes);
-        const outcome = await runTocPass(bytes);
-        const html = await convertOfficeToHtml(readMarked(outcome).bytes, EPUB_MIME);
-
-        expect(toc.headings).toStrictEqual([ { title: "Locked", level: 1, isShown: false } ]);
-        expect(readMarks(markEpubPreview(html, readMarked(outcome).record, SOURCE)))
-            .toStrictEqual([]);
-    });
-
-    it("throws a refusal and rethrows a failure, and reads a book without a table of contents",
-        async () => {
-        const nav = navList([ [ "A", "a.xhtml" ] ]);
-        const altered = patchCentral(buildEpub({ "a.xhtml": "<p>A</p>" }, { nav }), "OEBPS/a.xhtml",
-            (view, at) => view.setUint32(at + 16, 1, true));
-        await expect(readEpubToc(altered)).rejects.toThrow(TocPassRefusal);
-        expect(await readEpubToc(buildEpub({ "a.xhtml": "<p>A</p>" })))
-            .toStrictEqual({ headings: [], properties: { reader: 1, bookmarks: [] } });
-
-        const failure = new RangeError("Out of memory");
-        const convert = OfficeConverter.convert.bind(OfficeConverter);
-        vi.spyOn(OfficeConverter, "convert").mockImplementationOnce(() => Promise.reject(failure))
-            .mockImplementation(convert);
-        await expect(readEpubToc(buildEpub({ "a.xhtml": "<p>A</p>" }, { nav })))
-            .rejects.toBe(failure);
-    });
-});
-
-type NavItem = [ title: string, href: string | null, children?: NavItem[] ];
-
-/** The `<li>` items of a navigation of `items`, nested. */
-function navList(items: NavItem[]): string {
-    return items.map(([ title, href, children ]) => {
-        const label = href === null ? `<span>${title}</span>` : `<a href="${href}">${title}</a>`;
-        return `<li>${label}${children ? `<ol>${navList(children)}</ol>` : ""}</li>`;
-    }).join("");
-}
-
-/**
- * Converts the book of `chapters` and the navigation `items`, and answers where each entry lands:
- * the start of the landing element's markup in the unmarked preview, or `undefined`.
- */
-async function convertBook(
-    chapters: Record<string, string>, items: NavItem[], options: { encrypted?: string[] } = {}
-) {
-    let outcome: TocPassOutcome | undefined;
-    const bytes = buildEpub(chapters, { nav: navList(items), ...options });
-    const html = await convertOfficeToHtml(bytes, EPUB_MIME, {
-        onTocPass: (passed) => {
-            outcome = passed;
-        }
-    });
-    const marked = readMarked(outcome);
-    const landings = findLandings(html, marked.record);
-    // The markup from the landing element on, without the markers.
-    const landed = marked.record.entries.map(({ title }, index) => {
-        const at = landings[index];
-        const markup = at === undefined ? undefined : html.slice(html.lastIndexOf("<", at))
-            .replace(/<a id="trilium_toc_\d+" name="trilium_toc_\d+"><\/a>/g, "")
-            .replace(/ id="trilium_toc_\d+"/g, "");
-        return [ title, markup && prefixOf(markup, LANDED_PREFIXES) ];
-    });
-    return { record: marked.record, preview: markEpubPreview(html, marked.record, SOURCE), landed };
-}
-
-/** The starts of the landing elements that the specs name. */
-const LANDED_PREFIXES = [
-    "<div class=\"table-container\">", "<p>See <a href=\"#dest\"", "<p>Go <a href=\"#dest\"",
-    "<td id=\"cell\">Two", "<td id=\"cell4\">Four", "<p id=\"footnote-1\">Named", "<h2>CHAPTER II.",
-    "<h2>First chapter", "<h2>CHAPTER I.", "<p>An epigraph", "<td>Three", "<h2>Legacy", "<h2>Open",
-    "<p>Page", "<p id=\"part\">Part", "<div>", "<hr id=\"rule\">"
-];
-
-function prefixOf(markup: string, prefixes: string[]) {
-    return prefixes.find((prefix) => markup.startsWith(prefix)) ?? markup.slice(0, 40);
-}
-
-function readMarked(outcome: TocPassOutcome | undefined) {
-    if (outcome?.status !== "marked") {
-        throw new Error(`The pass did not mark the book: ${JSON.stringify(outcome)}`);
-    }
-    return outcome;
-}
-
-/** The values of `data-toc-heading` in `html`, in document order. */
-function readMarks(html: string) {
-    return Array.from(html.matchAll(/data-toc-heading="([^"]*)"/g), ([ , value ]) => value);
-}
-
-async function readToc(files: Record<string, string>, { navPath, ncxPath }: {
-    navPath?: string; ncxPath?: string;
-}) {
-    const manifest = [
-        navPath ? `<item id="nav" href="${navPath}" media-type="application/xhtml+xml"`
-            + " properties=\"nav\"/>" : "",
-        ncxPath ? `<item id="ncx" href="${ncxPath}" media-type="application/x-dtbncx+xml"/>` : ""
-    ].join("");
-    const all: Record<string, string> = {
-        "META-INF/container.xml": CONTAINER,
-        "OEBPS/content.opf": packageDocument(manifest, ncxPath ? " toc=\"ncx\"" : "", ""),
-        ...files
-    };
-    return readBookToc(Object.keys(all), (path) => Promise.resolve(all[path]));
-}
-
-function readChapter(bytes: Uint8Array, name: string) {
-    return strFromU8(unzipSync(bytes)[`OEBPS/${name}`]);
-}
-
-const CONTAINER = "<?xml version=\"1.0\"?><container version=\"1.0\" "
-    + "xmlns=\"urn:oasis:names:tc:opendocument:xmlns:container\"><rootfiles>"
-    + "<rootfile full-path=\"OEBPS/content.opf\" media-type=\"application/oebps-package+xml\"/>"
-    + "</rootfiles></container>";
-
-function packageDocument(manifest: string, spineAttributes: string, spine: string) {
-    return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        + "<package xmlns=\"http://www.idpf.org/2007/opf\" version=\"3.0\" "
-        + "unique-identifier=\"id\"><metadata xmlns:dc=\"http://purl.org/dc/elements/1.1/\">"
-        + "<dc:identifier id=\"id\">book</dc:identifier><dc:title>Book</dc:title></metadata>"
-        + `<manifest>${manifest}</manifest><spine${spineAttributes}>${spine}</spine></package>`;
-}
-
-function navDocument(items: string) {
-    return xhtml(`<nav epub:type="toc"><h1>Contents</h1><ol>${items}</ol></nav>`);
-}
-
-function ncxDocument(points: string) {
-    return "<?xml version=\"1.0\"?>"
-        + "<ncx xmlns=\"http://www.daisy.org/z3986/2005/ncx/\" version=\"2005-1\">"
-        + `<head/><docTitle><text>Book</text></docTitle><navMap>${points}</navMap></ncx>`;
-}
-
-function navPoint(title: string, src: string, children = "") {
-    return `<navPoint id="${src}"><navLabel><text>${title}</text></navLabel><content src="${src}"/>`
-        + `${children}</navPoint>`;
-}
-
-function xhtml(body: string, bodyStart = "") {
-    return "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE html>"
-        + "<html xmlns=\"http://www.w3.org/1999/xhtml\" "
-        + "xmlns:epub=\"http://www.idpf.org/2007/ops\">"
-        + `<head><title>Chapter</title></head><body>${bodyStart}${body}</body></html>`;
-}
-
-/**
- * An EPUB 3 of `chapters`, by file name in `OEBPS/`, in that order in the spine, with the
- * navigation `nav` (its `<li>` items) when given. A text chapter is a body, and a byte chapter is
- * the whole file. `encrypted` lists the chapters that `encryption.xml` names.
- */
-function buildEpub(chapters: Record<string, string | Uint8Array>, { nav, encrypted = [] }: {
-    nav?: string; encrypted?: string[];
-} = {}) {
-    const files: Zippable = { mimetype: [ strToU8(EPUB_MIME), { level: 0, mtime: MTIME } ] };
-    const add = (path: string, content: string | Uint8Array) => {
-        const bytes = typeof content === "string" ? strToU8(content) : content;
-        files[path] = [ bytes, { mtime: MTIME } ];
-    };
-    add("META-INF/container.xml", CONTAINER);
-    if (encrypted.length > 0) {
-        add("META-INF/encryption.xml",
-            "<encryption xmlns=\"urn:oasis:names:tc:opendocument:xmlns:container\" "
-            + "xmlns:enc=\"http://www.w3.org/2001/04/xmlenc#\">" + encrypted.map((path) =>
-            "<enc:EncryptedData><enc:EncryptionMethod "
-                + "Algorithm=\"http://www.w3.org/2001/04/xmlenc#aes256-cbc\"/>"
-                + `<enc:CipherData><enc:CipherReference URI="${path}"/></enc:CipherData>`
-                + "</enc:EncryptedData>")
-            .join("") + "</encryption>");
-    }
-    const names = Object.keys(chapters);
-    const manifest = names.map((name, index) =>
-        `<item id="c${index}" href="${name}" media-type="application/xhtml+xml"/>`).join("")
-        + (nav === undefined ? "" : "<item id=\"nav\" href=\"nav.xhtml\" "
-            + "media-type=\"application/xhtml+xml\" properties=\"nav\"/>");
-    const spine = names.map((_, index) => `<itemref idref="c${index}"/>`).join("");
-    add("OEBPS/content.opf", packageDocument(manifest, "", spine));
-    if (nav !== undefined) {
-        add("OEBPS/nav.xhtml", nav === "" ? xhtml("<p>No navigation</p>") : navDocument(nav));
-    }
-    for (const [ name, body ] of Object.entries(chapters)) {
-        add(`OEBPS/${name}`, typeof body === "string" ? xhtml(body) : body);
-    }
-    return zipSync(files);
-}
-
-/** Applies `patch` to the central directory header of the entry `name` of `zip`. */
-function patchCentral(
-    zip: Uint8Array, name: string, patch: (view: DataView, offset: number) => void
-) {
-    const view = new DataView(zip.buffer, zip.byteOffset, zip.byteLength);
-    for (let at = 0; at + 46 <= zip.length; at++) {
-        if (view.getUint32(at, true) === 0x02014b50) {
-            const nameLength = view.getUint16(at + 28, true);
-            if (strFromU8(zip.subarray(at + 46, at + 46 + nameLength)) === name) {
-                patch(view, at);
-                return zip;
+            for (const [ blobId, isProtected, ids ] of [
+                [ contract.blobId, false, contract.ids ],
+                [ contract.protectedBlobId, true, contract.protectedIds ]
+            ] as const) {
+                const shown = (ids as string[]).filter((_, index) =>
+                    contract.headings[index].isShown !== false);
+                const source = { blobId, isProtected, content: bytes, tocPass };
+                const marked = await epubTocFormat.markPreview?.(html, source) ?? "";
+                expect(readMarks(marked, "data-toc-heading").flatMap((value) => value.split(" "))
+                    .toSorted()).toStrictEqual(shown.toSorted());
+                expect(marked.replace(/ data-toc-heading="[^"]*"/g, "")).toBe(html);
             }
         }
+    });
+});
+
+describe("the EPUB format", () => {
+    it("is the format of file notes and attachments of either EPUB MIME type", () => {
+        for (const mime of EPUB_MIME_TYPES) {
+            expect(epubTocFormat.isFor("file", mime)).toBe(true);
+            expect(epubTocFormat.isFor("code", mime)).toBe(false);
+            expect(docxTocFormat.isFor("file", mime)).toBe(false);
+            expect(odtTocFormat.isFor("file", mime)).toBe(false);
+        }
+        expect(epubTocFormat.isFor("file", DOCX_MIME)).toBe(false);
+        expect(epubTocFormat.isFor("file", ODT_MIME)).toBe(false);
+    });
+
+    it("accepts its own reader only, and links only the entries that the preview shows", () => {
+        const cache = { version: 1, targetBlobHash: "abc", headings: [] };
+        const current = { reader: EPUB_TOC_READER };
+        const isCurrent = (epub: unknown) => epubTocFormat.isCurrent({ ...cache, epub });
+
+        expect(isCurrent(current)).toBe(true);
+        expect(epubTocFormat.isCurrent({ ...cache, docx: current })).toBe(false);
+        expect(isCurrent({ reader: EPUB_TOC_READER - 1 })).toBe(false);
+        expect(isCurrent({ ...current, bookmarks: [] })).toBe(false);
+        expect(isCurrent(null)).toBe(false);
+        expect(docxTocFormat.isCurrent({ ...cache, epub: current })).toBe(false);
+        const heading = { id: "0k3x9aa1h7q2mz", title: "A", level: 1 };
+        expect(epubTocFormat.getLinkParams(heading)).toStrictEqual({ heading: heading.id });
+        expect(epubTocFormat.getLinkParams({ ...heading, isShown: false })).toBeUndefined();
+        expect(epubTocFormat.parseHeadingFields({ isShown: false }))
+            .toStrictEqual({ isShown: false });
+        expect(epubTocFormat.parseHeadingFields({})).toStrictEqual({});
+        expect(epubTocFormat.parseHeadingFields({ isShown: true })).toBeNull();
+        expect(epubTocFormat.getOtherTargets).toBeUndefined();
+    });
+
+    it("remembers a refusal of the ToC pass and logs its reason", () => {
+        const refusal = new TocPassRefusal("CRC");
+
+        expect(epubTocFormat.isPermanentFailure(refusal)).toBe(true);
+        expect(epubTocFormat.isPermanentFailure(issue("DOCUMENT_DECRYPTION_FAILED"))).toBe(true);
+        expect(epubTocFormat.isPermanentFailure(new RangeError("Out of memory"))).toBe(false);
+        expect(epubTocFormat.describeFailure?.(refusal)).toBe("CRC");
+        expect(epubTocFormat.describeFailure?.(issue("ZIP_TRUNCATED"))).toBe("ZIP_TRUNCATED");
+        expect(epubTocFormat.describeFailure?.(new Error("[OfficeParser]: Secret"))).toBe("Error");
+    });
+
+    it("leaves a preview unmarked unless the pass marked the archive it was converted from",
+        async () => {
+        const html = "<h2 id=\"trilium_toc_0\">Chapter</h2>";
+        const source = { blobId: "abc", isProtected: false, content: new Uint8Array(0) };
+
+        for (const tocPass of [
+            undefined, { status: "none" }, { status: "refused", reason: "CRC" },
+            { status: "failed", error: new Error("Failed") }
+        ] as (TocPassOutcome | undefined)[]) {
+            expect(await epubTocFormat.markPreview?.(html, { ...source, tocPass })).toBe(html);
+        }
+    });
+
+    it("refuses a book whose every chapter is encrypted, or that has no package document",
+        async () => {
+        const book = readFixture("toc_contract_ids.epub");
+        const files = unzipSync(book);
+        // The navigation document is in the spine too.
+        const chapters = Object.keys(files).filter((name) => /\/(?:c\d|nav)\.xhtml$/.test(name));
+        const encrypted = zipSync({
+            ...files,
+            "META-INF/encryption.xml": strToU8(
+                "<encryption xmlns=\"urn:oasis:names:tc:opendocument:"
+                + "xmlns:container\" xmlns:enc=\"http://www.w3.org/2001/04/xmlenc#\">"
+                + chapters.map((name) => "<enc:EncryptedData><enc:EncryptionMethod Algorithm=\""
+                    + "http://www.w3.org/2001/04/xmlenc#aes256-cbc\"/><enc:CipherData>"
+                    + `<enc:CipherReference URI="${name}"/></enc:CipherData></enc:EncryptedData>`)
+                    .join("") + "</encryption>")
+        });
+        const { "OEBPS/content.opf": _package, ...withoutPackage } = files;
+
+        const errors = await Promise.all([ encrypted, zipSync(withoutPackage) ].map((bytes) =>
+            failureOf(generate(epubTocFormat as TocFormat, bytes))));
+
+        expect(errors.map(getOfficeIssueCode))
+            .toStrictEqual([ "DOCUMENT_DECRYPTION_FAILED", "REQUIRED_PART_MISSING" ]);
+        expect(errors.map((error) => epubTocFormat.isPermanentFailure(error)))
+            .toStrictEqual([ true, true ]);
+    });
+});
+
+async function generate(format: TocFormat, bytes: Uint8Array) {
+    if (!format.generator) {
+        throw new Error(`The format '${format.name}' has no generator.`);
     }
-    throw new Error(`No entry '${name}'.`);
+    return format.generator(bytes);
+}
+
+/** What `read` rejects with, `null` when it resolves. */
+function failureOf(read: Promise<unknown>) {
+    return read.then(() => null, (error: unknown) => error);
+}
+
+function readFixture(fileName: string) {
+    return new Uint8Array(fs.readFileSync(path.join(FIXTURES, fileName)));
+}
+
+/** The values of the attribute `name` in `html`, in document order. */
+function readMarks(html: string, name: string) {
+    return Array.from(html.matchAll(new RegExp(`${name}="([^"]*)"`, "g")), ([ , value ]) => value);
+}
+
+/** An error of `officeparser` with the code `code`. */
+function issue(code: string) {
+    return Object.assign(new Error(`[OfficeParser]: ${code}`), { officeIssue: { code } });
 }

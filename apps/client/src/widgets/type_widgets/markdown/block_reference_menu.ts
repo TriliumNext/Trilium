@@ -7,15 +7,15 @@ import type { CommandNames } from "../../../components/app_context";
 import type { MenuItem } from "../../../menus/context_menu";
 import type { ClipboardAccess } from "../../../menus/table_context_menu";
 import {
-    type BlockReferenceMenuItems, getClipboardBlockReference, getExcerptHtml
+    type BlockReferenceMenuItems, type ClipboardBlockReference, getExcerptHtml,
+    pasteClipboardReference
 } from "../../../services/block_reference";
-import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import toast from "../../../services/toast";
 import {
     copyMarkdownReference, getMarkdownReferenceSource, getSelectedBlocks, isMarkdownEditor,
     PREVIEW_BLOCK_HOST
-} from "./block_markers";
+} from "./editor_block_references";
 import { replaceSelection, toWikilink } from "./editor_utils";
 
 /**
@@ -42,7 +42,11 @@ export async function buildMarkdownReferenceMenuItems(
         uiIcon,
         enabled: clipboard?.enabled,
         handler: () => {
-            if (clipboard) void pasteReference(view, clipboard, isExcerpt);
+            if (clipboard) {
+                void pasteClipboardReference(clipboard, (reference) => {
+                    insertReference(view, reference, isExcerpt);
+                });
+            }
         }
     });
     return {
@@ -62,44 +66,27 @@ export async function buildMarkdownReferenceMenuItems(
 }
 
 /**
- * Reads the clipboard and puts the block reference on it at the selection of `view`: as a
- * Wikilink, or as an excerpt, a block of its own after the block of the caret. In code, the
- * excerpt goes at the caret as it is. Pastes nothing for a reference to a note that `froca`
- * cannot find, as one copied from another Trilium instance.
+ * Puts `reference` at the selection of `view`: as a Wikilink, or as an excerpt, a block of its own
+ * after the block of the caret. In code, the excerpt goes at the caret as it is.
  */
-async function pasteReference(view: CodeMirror, clipboard: ClipboardAccess, isExcerpt: boolean) {
-    try {
-        const reference = getClipboardBlockReference(await clipboard.read());
-        if (!reference) {
-            toast.showMessage(t("block_reference.no_reference_on_clipboard"), 3000,
-                "bx bx-info-circle");
-            return;
-        }
-        if (!await froca.getNote(reference.noteId, true)) {
-            toast.showError(t("block_reference.not_found"));
-            return;
-        }
-
-        const { from, to } = view.state.selection.main;
-        if (!isExcerpt) {
-            replaceSelection(view, toWikilink(reference.href), from, to);
-            return;
-        }
-        const excerpt = getExcerptHtml(reference);
-        if (isInCode(view.state, from)) {
-            replaceSelection(view, excerpt, from, to);
-            return;
-        }
-
-        const line = view.state.doc.lineAt(from).number;
-        const source = view.state.doc.toString();
-        const change = insertHtmlBlock(source, line, excerpt, PREVIEW_BLOCK_HOST);
-        if (!change) {
-            toast.showError(t("block_reference.paste_failed"));
-            return;
-        }
-        view.dispatch({ changes: change, userEvent: "input.paste" });
-    } catch (error) {
-        console.warn("Failed to paste a block reference:", error);
+function insertReference(view: CodeMirror, reference: ClipboardBlockReference, isExcerpt: boolean) {
+    const { from, to } = view.state.selection.main;
+    if (!isExcerpt) {
+        replaceSelection(view, toWikilink(reference.href), from, to);
+        return;
     }
+    const excerpt = getExcerptHtml(reference);
+    if (isInCode(view.state, from)) {
+        replaceSelection(view, excerpt, from, to);
+        return;
+    }
+
+    const line = view.state.doc.lineAt(from).number;
+    const source = view.state.doc.toString();
+    const change = insertHtmlBlock(source, line, excerpt, PREVIEW_BLOCK_HOST);
+    if (!change) {
+        toast.showError(t("block_reference.paste_failed"));
+        return;
+    }
+    view.dispatch({ changes: change, userEvent: "input.paste" });
 }

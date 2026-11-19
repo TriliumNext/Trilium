@@ -1,9 +1,7 @@
 import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-    consumeBookmark, revealElement, showDocumentTarget, takeDocumentTarget
-} from "./bookmark_jump.js";
+import { consumeBookmark, revealElement, showDocumentTarget } from "./bookmark_jump.js";
 import type { ViewScope } from "./link.js";
 
 const { showAnchorElement, scroller } = vi.hoisted(() => ({
@@ -134,20 +132,6 @@ describe("revealElement", () => {
 
         expect(container.querySelector("details")?.open).toBe(true);
         expect(container.querySelector(".trilium-tab-title--active")?.textContent).toBe("B");
-    });
-});
-
-describe("takeDocumentTarget", () => {
-    it("takes a heading and a bookmark out of the view scope, and leaves one without them", () => {
-        const viewScope: ViewScope = { heading: "h1", bookmark: "Intro", attachmentId: "a1" };
-        expect(takeDocumentTarget(viewScope)).toStrictEqual({ heading: "h1", bookmark: "Intro" });
-        expect(viewScope)
-            .toStrictEqual({ heading: undefined, bookmark: undefined, attachmentId: "a1" });
-
-        const empty: ViewScope = { page: "3" };
-        expect(takeDocumentTarget(empty)).toBeUndefined();
-        expect(empty).toStrictEqual({ page: "3" });
-        expect(takeDocumentTarget(undefined)).toBeUndefined();
     });
 });
 

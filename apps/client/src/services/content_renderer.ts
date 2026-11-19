@@ -35,6 +35,8 @@ import renderText, {
 } from "./content_renderer_text.js";
 import renderDoc from "./doc_renderer.js";
 import { getAttachmentImageUrl, getNoteImageUrl } from "./image_urls.js";
+import { getTocUrl } from "./link.js";
+import type { ChangeRecordHooks } from "./note_save.js";
 import { OfficePreviewTooLargeError, renderOfficeToHtml } from "./office_renderer.js";
 import openService from "./open.js";
 import { waitForPendingRenders } from "./pending_renders.js";
@@ -177,6 +179,11 @@ export interface AttachmentEditor {
     postponeSave(): void;
     /** Reads the unsaved content of the attachment now, before its editor unmounts. */
     release(attachmentId: string): void;
+    /**
+     * Calls `listener` once the unsaved changes are dropped for the version of another writer,
+     * until the returned call.
+     */
+    subscribeVersionLoaded?(listener: () => void): () => void;
 }
 
 /** Saves the changes that rendered content makes to the notes it shows. */
@@ -187,9 +194,15 @@ export interface NoteEditor {
     getUnsavedContent(noteId: string): string | undefined;
     /**
      * Schedules a save of `note`. The save reads the content from `getContent`, and runs `onSaved`
-     * with it once it saves, unless a newer change waits by then.
+     * with it once it saves, unless a newer change waits by then. With `hooks`, the save brings
+     * the changes onto a version that another writer saved, where they allow it.
      */
-    scheduleSave(note: FNote, getContent: () => string, onSaved?: (content: string) => void): void;
+    scheduleSave(
+        note: FNote,
+        getContent: () => string,
+        onSaved?: (content: string) => void,
+        hooks?: ChangeRecordHooks
+    ): void;
     /** Reads the unsaved content of the note now, before its editor unmounts. */
     release(noteId: string): void;
     /** How the saving of the note goes, or `undefined` before its first change. */
@@ -633,7 +646,12 @@ export interface ContentEditor {
     /** Whether the rendered content can change the note or attachment. */
     canEdit(): boolean;
     getUnsavedContent(): string | undefined;
-    scheduleSave(getContent: () => string, onSaved?: (content: string) => void): void;
+    /** As {@link NoteEditor.scheduleSave}; the editor of an attachment ignores `hooks`. */
+    scheduleSave(
+        getContent: () => string,
+        onSaved?: (content: string) => void,
+        hooks?: ChangeRecordHooks
+    ): void;
     /** Postpones the scheduled save by its interval, as `AttachmentEditor.postponeSave()` does. */
     postponeSave?(): void;
     release(): void;
@@ -650,6 +668,8 @@ export interface ContentEditor {
     setLoadedVersion?(blobId: string, content: string): void;
     /** As {@link NoteEditor.saveNow}, for content that shows a note. */
     saveNow?(): Promise<string | undefined>;
+    /** As {@link AttachmentEditor.subscribeVersionLoaded}, for content that shows an attachment. */
+    subscribeVersionLoaded?(listener: () => void): () => void;
 }
 
 /** `editor`, saving the changes to `attachment`. */
@@ -663,7 +683,8 @@ export function bindAttachmentEditor(
         getUnsavedContent: () => editor.getUnsavedContent(attachment.attachmentId),
         scheduleSave: (getContent, onSaved) => editor.scheduleSave(attachment, getContent, onSaved),
         postponeSave: () => editor.postponeSave(),
-        release: () => editor.release(attachment.attachmentId)
+        release: () => editor.release(attachment.attachmentId),
+        subscribeVersionLoaded: editor.subscribeVersionLoaded?.bind(editor)
     };
 }
 
@@ -686,7 +707,8 @@ function getContentEditor(
     return editor && EDITABLE_NOTE_TYPES.has(entity.type) ? {
         canEdit: () => editor.canEdit(entity),
         getUnsavedContent: () => editor.getUnsavedContent(entity.noteId),
-        scheduleSave: (getContent, onSaved) => editor.scheduleSave(entity, getContent, onSaved),
+        scheduleSave: (getContent, onSaved, hooks) =>
+            editor.scheduleSave(entity, getContent, onSaved, hooks),
         release: () => editor.release(entity.noteId),
         getSaveState: () => editor.getSaveState(entity.noteId),
         subscribeSaveState: (listener) => editor.subscribeSaveState(listener),
@@ -863,7 +885,8 @@ async function renderFile(entity: FNote | FAttachment, type: string, $renderedCo
         const { default: PdfViewer, getPdfUrl } = await CONTENT_RENDERERS.file.pdf();
         const url = getPdfUrl(`${entityType}/${entityId}/open`);
         const tocDocument = options.buildsPdfToc && entity instanceof FAttachment ? {
-            tocUrl: `attachments/${entity.attachmentId}/toc`, isProtected: !!entity.isProtected
+            tocUrl: getTocUrl("attachments", entity.attachmentId),
+            isProtected: !!entity.isProtected
         } : undefined;
         const props = {
             pdfUrl: url, editable: false, toolbar: options.pdfToolbar ?? false, tocDocument

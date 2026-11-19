@@ -1,13 +1,14 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 
 import type NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
-import { showDocumentTarget, takeDocumentTarget } from "../../../services/bookmark_jump";
+import { showDocumentTarget } from "../../../services/bookmark_jump";
 import { t } from "../../../services/i18n";
+import { takeLinkTarget } from "../../../services/link_targets";
 import {
     type OfficePreview, OfficePreviewTooLargeError, renderOfficeToHtml
 } from "../../../services/office_renderer";
-import { useSameNoteSwitch } from "../../react/hooks/note_context";
+import { useLinkTargetLanding } from "../../react/hooks/note_context";
 import LoadingSpinner from "../../react/LoadingSpinner";
 import NoItems from "../../react/NoItems";
 
@@ -35,8 +36,6 @@ export default function OfficePreview({ note, noteContext, isVisible }: {
     const [preview, setPreview] = useState<RenderedPreview | null>(null);
     const [failure, setFailure] = useState<"too-large" | "error" | null>(null);
     const bodyRef = useRef<HTMLDivElement>(null);
-    const isVisibleRef = useRef(isVisible);
-    isVisibleRef.current = isVisible;
     const previewRef = useRef(preview);
     previewRef.current = preview;
 
@@ -61,26 +60,23 @@ export default function OfficePreview({ note, noteContext, isVisible }: {
         };
     }, [note.noteId, note.blobId]);
 
+    useLinkTargetLanding(
+        { note, ntxId: noteContext?.ntxId, isVisible }, revealLinkTarget, [preview]);
+
     /** Lands on the target of the latest link, once the preview of the shown blob is in place. */
     function revealLinkTarget() {
         const body = bodyRef.current;
         const rendered = previewRef.current;
         const shown = noteContext?.note;
-        if (!body || !rendered || isVisibleRef.current === false
-            || rendered.noteId !== shown?.noteId || rendered.blobId !== shown.blobId) {
+        if (!body || !rendered || rendered.noteId !== shown?.noteId
+            || rendered.blobId !== shown.blobId) {
             return;
         }
-        const target = takeDocumentTarget(noteContext?.viewScope);
+        const target = takeLinkTarget(noteContext?.viewScope, [ "heading", "bookmark" ]);
         if (target) {
             void showDocumentTarget(body, target);
         }
     }
-
-    useLayoutEffect(revealLinkTarget, [preview]);
-    useEffect(() => {
-        if (isVisible !== false) revealLinkTarget();
-    }, [isVisible]);
-    useSameNoteSwitch(note, noteContext?.ntxId, revealLinkTarget);
 
     if (failure) {
         const tooLarge = failure === "too-large";

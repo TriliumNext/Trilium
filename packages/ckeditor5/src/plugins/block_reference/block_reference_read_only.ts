@@ -8,10 +8,13 @@ import { CLASSES as TAB_CLASSES } from "../tabs/constants.js";
 import { getTabTitle, revealTab } from "../tabs/tabs_read_only.js";
 
 const FLASH_CLASS = "block-reference-flash";
-/** The duration of the `block-reference-flash` animation in `block_reference.css`. */
-const FLASH_DURATION_MS = 1500;
+/**
+ * The duration of the `block-reference-flash` animation in `block_reference.css`, which the
+ * source of a Markdown note flashes the lines of a reference for as well.
+ */
+export const FLASH_DURATION_MS = 1500;
 /** The smallest gap above the shown blocks, as a share of the height of their scroll container. */
-const MIN_TOP_GAP = 0.15;
+export const MIN_TOP_GAP = 0.15;
 /** The elements that `showAnchor()` flashes when they hold the anchor. */
 const ANCHOR_BLOCKS = "p, h1, h2, h3, h4, h5, h6, li, dt, dd, pre, blockquote, figure, td, th";
 

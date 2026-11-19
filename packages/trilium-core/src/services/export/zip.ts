@@ -1,6 +1,5 @@
 import {
-    getImageAttachmentTitle, imageMimeForExtension, isAcceptedImageMime, isDerivedAttachmentRole,
-    NoteType
+    getImageAttachmentTitle, imageMimeForExtension, isAcceptedImageMime, isMarkdownMime, NoteType
 } from "@triliumnext/commons";
 import mimeTypes from "mime-types";
 import sanitize from "sanitize-filename";
@@ -25,7 +24,7 @@ import { ValidationError } from "../../errors";
 import { extname } from "../utils/path";
 import { truncateUtf8Bytes } from "../utils/binary";
 import {
-    getArchivedLinkSuffix, getLinkAttachmentId, isMarkdownCodeNote, rewriteMarkdownContentLinks
+    getArchivedLinkSuffix, getLinkAttachmentId, rewriteMarkdownContentLinks
 } from "./rewrite_links.js";
 import { stripListItemIds } from "./strip_list_item_ids.js";
 import { getVirtualNoteAssets, referenceAssetsAsAttachments, type VirtualNoteAsset } from "../virtual_notes.js";
@@ -225,8 +224,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             meta.dataFileName = getDataFileName(note.type, note.mime, baseFileName, existingFileNames);
         }
 
-        const attachments = note.getAttachments().filter((attachment) =>
-            isReadable(attachment) && !isDerivedAttachmentRole(attachment.role));
+        const attachments = note.getPortableAttachments().filter(isReadable);
         meta.attachments = attachments
             .toSorted((a, b) => String(a.attachmentId).localeCompare(String(b.attachmentId), "en"))
             .map((attachment) => {
@@ -369,16 +367,19 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             return url ? `${attrName}="${url}"` : match;
         });
 
-        // The last note of the path of a link to an attachment is the owner of the attachment.
+        // The last note of the path of a link to an attachment is the owner of the attachment. A
+        // shared page keeps the query and the fragment that `renderNoteForExport()` wrote.
         const link = /href="[^"]*#root[a-zA-Z0-9_\/]*\/([a-zA-Z0-9_]+)([^"]*)"/g;
         content = content.replace(link, (match, targetNoteId, suffix) => {
             const attachmentId = getLinkAttachmentId(suffix);
             const url = attachmentId
                 ? getAttachmentTargetUrl(targetNoteId, attachmentId, noteMeta)
                 : getNoteTargetUrl(targetNoteId, noteMeta);
-            const context = format === "share" ? "share" : "attribute";
+            const linkSuffix = format === "share"
+                ? suffix
+                : getArchivedLinkSuffix(suffix, "attribute");
 
-            return url ? `href="${url}${getArchivedLinkSuffix(suffix, context)}"` : match;
+            return url ? `href="${url}${linkSuffix}"` : match;
         });
 
         if (format === "share") {
@@ -431,7 +432,8 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         // Rewrite markdown-style links for code notes with markdown MIME.
         // These notes store content as markdown (not HTML), so the HTML-based
         // rewriteLinks in the providers won't match their link syntax.
-        if (noteMeta.type === "code" && isMarkdownCodeNote(noteMeta.mime) && typeof content === "string") {
+        if (noteMeta.type === "code" && isMarkdownMime(noteMeta.mime ?? "")
+            && typeof content === "string") {
             content = rewriteMarkdownContentLinks(
                 content, noteMeta, getNoteTargetUrl, getAttachmentTargetUrl);
         }

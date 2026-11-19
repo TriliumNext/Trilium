@@ -28,6 +28,8 @@ describe("readPreviewHeadings", () => {
         expect(titlesAndLevels(html)).toStrictEqual([
             [ "Chapter", 1 ], [ "Section", 2 ], [ "Next", 2 ]
         ]);
+        expect(titlesAndLevels("<h1>A</h1><h1><br></h1><h2>B</h2>"))
+            .toStrictEqual([ [ "A", 1 ], [ "B", 2 ] ]);
     });
 
     it("leaves note marks out, counts a break as a space, and decodes entities to text", () => {

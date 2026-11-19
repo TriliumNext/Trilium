@@ -7,15 +7,12 @@
  *
  * Check the JSON by hand before it is committed: the specs compare every reader with it.
  */
-import { createHash } from "node:crypto";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { readPdfOutline, toPdfTocHeadings } from "../../../../../commons/src/lib/pdf_toc.js";
-import { assignHeadingIds, getBlobTag } from "../../../../../commons/src/lib/toc.js";
-import { blobIdFromDigest, PROTECTED_BLOB_PREFIX } from "../../../../../commons/src/lib/utils.js";
+import { buildContract, fixturesDir, writeContract } from "./contract.mjs";
 
-const fixturesDir = import.meta.dirname;
 const bytes = buildContractPdf();
 writeFileSync(join(fixturesDir, "toc_contract.pdf"), bytes);
 
@@ -24,20 +21,7 @@ const pdf = await getDocumentProxy(new Uint8Array(bytes));
 const headings = toPdfTocHeadings((await readPdfOutline(pdf)).headings);
 await pdf.loadingTask.destroy();
 
-const blobId = digest(bytes);
-const protectedBlobId = digest(Buffer.concat([ Buffer.from(PROTECTED_BLOB_PREFIX), bytes ]));
-const contract = {
-    blobId,
-    protectedBlobId,
-    headings,
-    ids: assignHeadingIds(headings, getBlobTag(blobId), false),
-    protectedIds: assignHeadingIds(headings, getBlobTag(protectedBlobId), true)
-};
-writeFileSync(join(fixturesDir, "toc_contract.json"), `${JSON.stringify(contract, null, 4)}\n`);
-
-function digest(content: Uint8Array) {
-    return blobIdFromDigest(new Uint8Array(createHash("sha512").update(content).digest()));
-}
+writeContract("toc_contract.json", buildContract(bytes, headings, false, { headings }));
 
 /**
  * Three pages, and an outline with every shape of destination, titles in UTF-16 and in

@@ -39,10 +39,9 @@ import { EditLinkBalloon, type EditLinkOpts } from "../../dialogs/edit_link";
 import { useTriliumEvent } from "../../react/hooks/events";
 import { useNoteLabel } from "../../react/hooks/note";
 import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
-import { useSameNoteSwitch } from "../../react/hooks/note_context";
 import { useEditorSpacedUpdate } from "../../react/hooks/editor";
 import { useLegacyImperativeHandlers } from "../../react/hooks/legacy";
-import { useSearchTermsConsumer } from "../../react/hooks/note_context";
+import { useLinkTargetLanding, useSearchTermsConsumer } from "../../react/hooks/note_context";
 import { setEditorNoteId } from "../../react/NoteStore";
 import { TypeWidgetProps } from "../type_widget";
 import AttachmentSaves, { InlineSourceSaves, useNoteEditor } from "./attachment_saves";
@@ -186,11 +185,8 @@ export default function EditableText({
     }
 
     useSearchTermsConsumer(note, noteContext, ntxId);
-    // A hidden widget leaves the link target to the one on display.
-    useSameNoteSwitch(note, ntxId, () => {
-        if (isVisible !== false && contentNoteIdRef.current === note?.noteId) {
-            revealLinkTarget();
-        }
+    useLinkTargetLanding({ note, ntxId, isVisible }, () => {
+        if (contentNoteIdRef.current === note?.noteId) revealLinkTarget();
     });
 
     function revealLinkTarget() {

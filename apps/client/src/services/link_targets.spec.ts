@@ -8,8 +8,9 @@ import {
     addParameters, createAnchorTargets, createEditorHeadings, findTarget,
     getAttachmentLinkTargets, getLinkTargets, getNoTargetsText, getParentTargets,
     getTargetAncestors, LINK_TARGET_KINDS, type LinkTarget, nestTargets, splitTargetParameters,
-    StaleListingError
+    StaleListingError, takeLinkTarget
 } from "./link_targets";
+import type { ViewScope } from "./navigation_state";
 import server from "./server";
 
 vi.mock("./i18n", () => ({ t: (key: string) => key }));
@@ -261,6 +262,31 @@ describe("the parameters of a link to a target", () => {
             .toStrictEqual({ path: "root/a", params: { block: "x:y" } });
         expect(splitTargetParameters("root/a?block=x&viewMode=y&bookmark=a%20b"))
             .toStrictEqual({ path: "root/a?viewMode=y", params: { block: "x", bookmark: "a b" } });
+    });
+
+    it("takes the ones asked for out of a view scope once, with the page parsed", () => {
+        const viewScope: ViewScope = {
+            heading: "h1", page: "12", bookmark: "Intro", attachmentId: "a1"
+        };
+        expect(takeLinkTarget(viewScope, [ "page", "annotation", "heading" ]))
+            .toStrictEqual({ page: 12, annotation: undefined, heading: "h1" });
+        expect(viewScope).toStrictEqual({
+            heading: undefined, page: undefined, annotation: undefined, bookmark: "Intro",
+            attachmentId: "a1"
+        });
+        expect(takeLinkTarget(viewScope, [ "heading" ])).toBeUndefined();
+
+        // A page that is not one leads nowhere, and is taken all the same.
+        for (const page of [ "0", "x" ]) {
+            const scope: ViewScope = { page };
+            expect(takeLinkTarget(scope, [ "page" ])).toStrictEqual({ page: undefined });
+            expect(scope.page).toBeUndefined();
+        }
+
+        const empty: ViewScope = { block: "b1" };
+        expect(takeLinkTarget(empty, [ "heading", "bookmark" ])).toBeUndefined();
+        expect(empty).toStrictEqual({ block: "b1" });
+        expect(takeLinkTarget(undefined, [ "heading" ])).toBeUndefined();
     });
 });
 

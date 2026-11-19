@@ -20,7 +20,7 @@ import { resolveDisplayMode } from "../helpers/split_editor_mode";
 import { SplitLayout, useMountedPanes } from "../helpers/SplitEditor";
 import { registerContentEmbedTools, useContentEmbedDisplayMode } from "../text/content_embed_tools";
 import { EmbedPreview, useEditableEmbed, useEmbedPreview } from "../text/editable_embed";
-import { useBlockMarkers } from "./block_markers";
+import { useBlockMarkers } from "./editor_block_references";
 import {
     renderWithSourceLines, useMarkdownKeymap, useNoteLinkChips, useSyncedHighlight,
     useSyncedScrolling
@@ -74,7 +74,7 @@ export default function MarkdownEmbed({
     useSyncedScrolling(shownView, previewElement);
     useSyncedHighlight(shownView, previewElement, renderedContent);
     useNoteLinkChips(shownView);
-    useBlockMarkers(shownView, useMemo(() => (note && editor
+    const recordHooks = useBlockMarkers(shownView, useMemo(() => (note && editor
         ? {
             getNote: () => note,
             getNotePath: () => note.getBestNotePathString(),
@@ -82,6 +82,12 @@ export default function MarkdownEmbed({
             save: async () => await editor.saveNow?.()
         }
         : undefined), [ note, editor ]));
+    // The saves of the source take over the ids that another writer gave its blocks meanwhile.
+    const sourceEditor = useMemo(() => editor && {
+        ...editor,
+        scheduleSave: (getContent: () => string, onSaved?: (content: string) => void) =>
+            editor.scheduleSave(getContent, onSaved, recordHooks)
+    }, [ editor, recordHooks ]);
     useMarkdownKeymap(isEditing ? shownView : null);
 
     return (
@@ -104,7 +110,7 @@ export default function MarkdownEmbed({
                         isSourceShown={isSourceShown}
                         note={note}
                         ownerNote={entity instanceof FNote ? entity : entity.getNote()}
-                        editor={editor}
+                        editor={sourceEditor}
                         content={content}
                         mime={MARKDOWN_MIME}
                         tabWidth={tabWidth}

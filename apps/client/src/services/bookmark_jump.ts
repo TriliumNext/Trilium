@@ -3,6 +3,9 @@ import {
 } from "@triliumnext/ckeditor5/src/plugins/collapsible_headings/collapsible_headings_read_only.js";
 import { revealTab } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import { findOwnElementById } from "@triliumnext/commons/src/lib/block_reference.js";
+import {
+    TOC_BOOKMARK_ATTRIBUTE, TOC_HEADING_ATTRIBUTE
+} from "@triliumnext/commons/src/lib/toc.js";
 
 import { expandAncestorDetails } from "./collapsible.js";
 import type { ViewScope } from "./link.js";
@@ -41,31 +44,17 @@ export interface DocumentTarget {
 }
 
 /**
- * Takes the `heading` and `bookmark` link parameters out of `viewScope`, or returns `undefined`
- * and leaves it as it is when it holds neither.
- */
-export function takeDocumentTarget(viewScope: ViewScope | null | undefined): DocumentTarget | undefined {
-    const { heading, bookmark } = viewScope ?? {};
-    if (!viewScope || (!heading && !bookmark)) {
-        return undefined;
-    }
-    viewScope.heading = undefined;
-    viewScope.bookmark = undefined;
-    return { heading, bookmark };
-}
-
-/**
  * Scrolls `container`, the preview of a document that the server marked, to the element whose
- * `data-toc-heading` holds the target's heading as one of its space-separated ids, or else whose
- * `data-toc-bookmark` is its bookmark, and flashes it. When no element has it, scrolls the preview
- * to its top, so that it never stays where an earlier link left it.
+ * `TOC_HEADING_ATTRIBUTE` holds the target's heading as one of its space-separated ids, or else
+ * whose `TOC_BOOKMARK_ATTRIBUTE` is its bookmark, and flashes it. When no element has it, scrolls
+ * the preview to its top, so that it never stays where an earlier link left it.
  */
 export async function showDocumentTarget(container: Element, { heading, bookmark }: DocumentTarget) {
     const { getScrollContainer, showAnchorElement } = await import(
         "@triliumnext/ckeditor5/src/plugins/block_reference/block_reference_read_only.js");
-    const element = (heading && findByAttribute(container, "data-toc-heading",
+    const element = (heading && findByAttribute(container, TOC_HEADING_ATTRIBUTE,
         (value) => value.split(" ").includes(heading)))
-        || (bookmark && findByAttribute(container, "data-toc-bookmark",
+        || (bookmark && findByAttribute(container, TOC_BOOKMARK_ATTRIBUTE,
             (value) => value === bookmark));
     if (element) {
         showAnchorElement(element);

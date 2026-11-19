@@ -5,7 +5,9 @@ import {
     BLOCK_ID_ATTRIBUTE, type BlockNode, findBlockIdAttributes, findBlockMarkers, walkOwnContent
 } from "./block_reference.js";
 import { runMarkdownPass } from "./markdown_renderer.js";
+import { countLineBreaks, walkBlockTokens } from "./markdown_source.js";
 import { type BlockMarkerToken, SOURCE_BLOCK_ATTRIBUTE } from "./marked_extensions.js";
+import { isAnchor } from "./reference_targets.js";
 import { decodeHtmlEntities } from "./utils.js";
 
 /** The sanitizer and the HTML parser of the caller's runtime. */
@@ -77,8 +79,7 @@ export function indexMarkdownBlocks(source: string, host: BlockIndexHost): Markd
     const pass = runMarkdownPass(source, "", { sanitize: host.sanitize, demoteH1: false }, true);
     const text = new SourceLines(source);
     const restore = (raw: string) => restoreFormulas(raw, pass.formulaSources);
-    const lines = new Map<object, LineSpan>();
-    measureLines(pass.tokens, 1, restore, lines);
+    const lines = measureLines(pass.tokens, restore);
     const scan = scanMarkers(pass.tokens, lines, text, restore);
 
     const markers = new Map<BlockMarkerToken, SourceMarker>();
@@ -245,44 +246,15 @@ function restoreFormulas(raw: string, sources: Map<string, string>) {
     return restored;
 }
 
-/**
- * Records the lines of each token. Marked has no positions, so they are counted: a token starts
- * after the newlines of the tokens before it, and the children of an item, a quote or a tab panel
- * after those of their earlier siblings, which marked lexes line for line without their prefix.
- */
-function measureLines(
-    tokens: Token[],
-    firstLine: number,
-    restore: Restore,
-    lines: Map<object, LineSpan>
-) {
-    const spanOf = (start: number, raw: string) =>
-        ({ start, end: start + countNewlines(raw.replace(/\n+$/, "")) });
-
-    let line = firstLine;
-    for (const token of tokens as Tokens.Generic[]) {
-        const raw = restore(token.raw);
-        lines.set(token, spanOf(line, raw));
-        if (token.type === "list") {
-            let itemLine = line;
-            for (const item of (token as Tokens.List).items) {
-                measureLines(item.tokens, itemLine, restore, lines);
-                itemLine += countNewlines(restore(item.raw));
-            }
-        } else if (token.type === "blockquote") {
-            measureLines((token as Tokens.Blockquote).tokens, line, restore, lines);
-        } else if (token.type === "tabs") {
-            let tabLine = line;
-            for (const tab of token.tokens as Tokens.Generic[]) {
-                const tabRaw = restore(tab.raw);
-                lines.set(tab, spanOf(tabLine, tabRaw));
-                // The panel starts on the line after the title.
-                measureLines(tab.tokens as Token[], tabLine + 1, restore, lines);
-                tabLine += countNewlines(tabRaw);
-            }
-        }
-        line += countNewlines(raw);
-    }
+/** The lines of each block token, counted in the source text that `restore` gives back. */
+function measureLines(tokens: Token[], restore: Restore) {
+    const lines = new Map<object, LineSpan>();
+    const getRaw = (token: Token) => restore(token.raw);
+    walkBlockTokens(tokens, (token, line) => {
+        const raw = getRaw(token).replace(/\n+$/, "");
+        lines.set(token, { start: line, end: line + countLineBreaks(raw) });
+    }, { getRaw });
+    return lines;
 }
 
 interface MarkerScan {
@@ -309,66 +281,51 @@ function scanMarkers(
         }
     };
 
-    const visit = (list: Token[]) => {
-        for (const token of list as Tokens.Generic[]) {
-            const span = lines.get(token) as LineSpan;
-            switch (token.type) {
-                case "paragraph":
-                case "text":
-                    addInline(token.tokens as Token[], span.start, findLineEnd);
-                    break;
-                case "heading":
-                    addInline(token.tokens as Token[], span.start, findHeadingText);
-                    break;
-                case "table": {
-                    const { header, rows } = token as Tokens.Table;
-                    for (const [ index, row ] of [ header, ...rows ].entries()) {
-                        // The delimiter row is the second line.
-                        const rowLine = span.start + (index === 0 ? 0 : index + 1);
-                        let start = 0;
-                        for (const cell of row) {
-                            const cellStart = start;
-                            addInline(cell.tokens, rowLine, (sourceLine, textLine) => {
-                                const column = sourceLine.indexOf(textLine, cellStart);
-                                start = column < 0 ? start : column + textLine.length;
-                                return column;
-                            });
-                        }
+    walkBlockTokens(tokens, (token) => {
+        const span = lines.get(token) as LineSpan;
+        switch (token.type) {
+            case "paragraph":
+            case "text":
+                addInline(token.tokens as Token[], span.start, findLineEnd);
+                break;
+            case "heading":
+                addInline(token.tokens as Token[], span.start, findHeadingText);
+                break;
+            case "table": {
+                const { header, rows } = token as Tokens.Table;
+                for (const [ index, row ] of [ header, ...rows ].entries()) {
+                    // The delimiter row is the second line.
+                    const rowLine = span.start + (index === 0 ? 0 : index + 1);
+                    let start = 0;
+                    for (const cell of row) {
+                        const cellStart = start;
+                        addInline(cell.tokens, rowLine, (sourceLine, textLine) => {
+                            const column = sourceLine.indexOf(textLine, cellStart);
+                            start = column < 0 ? start : column + textLine.length;
+                            return column;
+                        });
                     }
-                    break;
                 }
-                case "blockMarkerLine": {
-                    // A marker line is the only marker on its line.
-                    const [ found ] = findMarkersInLines(span, text);
-                    scan.spans.set(token as unknown as BlockMarkerToken, found);
-                    break;
-                }
-                case "html": {
-                    const raw = restore(token.raw);
-                    const ids = findBlockIdAttributes(raw).flatMap((found) => found.id ?? []);
-                    scan.htmlBlocks.push({ ...span, raw, ids });
-                    scan.rawMarkers.push(...findMarkersInLines(span, text));
-                    break;
-                }
-                case "list":
-                    for (const item of (token as Tokens.List).items) {
-                        visit(item.tokens);
-                    }
-                    break;
-                case "blockquote":
-                    visit((token as Tokens.Blockquote).tokens);
-                    break;
-                case "tabs":
-                    for (const tab of token.tokens as Tokens.Generic[]) {
-                        const titleLine = (lines.get(tab) as LineSpan).start;
-                        addInline(tab.titleTokens, titleLine, findTabTitle);
-                        visit(tab.tokens as Token[]);
-                    }
-                    break;
+                break;
             }
+            case "blockMarkerLine": {
+                // A marker line is the only marker on its line.
+                const [ found ] = findMarkersInLines(span, text);
+                scan.spans.set(token as unknown as BlockMarkerToken, found);
+                break;
+            }
+            case "html": {
+                const raw = restore(token.raw);
+                const ids = findBlockIdAttributes(raw).flatMap((found) => found.id ?? []);
+                scan.htmlBlocks.push({ ...span, raw, ids });
+                scan.rawMarkers.push(...findMarkersInLines(span, text));
+                break;
+            }
+            case "tab":
+                addInline(token.titleTokens, span.start, findTabTitle);
+                break;
         }
-    };
-    visit(tokens);
+    });
     return scan;
 }
 
@@ -494,7 +451,7 @@ function findAnchors(
     const anchors: { name: string; line: number }[] = [];
     for (const node of walkOwnContent(root)) {
         const name = node.getAttribute?.("id");
-        if (node.tagName?.toUpperCase() !== "A" || !name || node.getAttribute?.("href")) {
+        if (!name || !isAnchor(node)) {
             continue;
         }
 
@@ -507,8 +464,4 @@ function findAnchors(
         anchors.push({ name, line: span?.start ?? 1 });
     }
     return anchors;
-}
-
-function countNewlines(text: string) {
-    return (text.match(/\n/g) ?? []).length;
 }

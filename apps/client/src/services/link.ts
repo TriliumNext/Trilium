@@ -8,7 +8,8 @@ import appContext from "../components/app_context.js";
 import { openInCurrentNoteContext } from "../components/note_context.js";
 import type FNote from "../entities/fnote.js";
 import {
-    getBlockReferenceLabel, getCachedBlockReferenceLabel, loadBlockReferenceLabel
+    type BlockReferenceLabel, getBlockReferenceLabel, getCachedBlockReferenceLabel,
+    loadBlockReferenceLabel
 } from "./block_excerpts.js";
 import cssClassManager from "./css_class_manager.js";
 import froca from "./froca.js";
@@ -27,6 +28,12 @@ const DEFAULT_COLUMN_REFERENCE_ICON = "bx bx-columns";
 const MISSING_NOTE_TITLE = "[missing note]";
 /** How many documents the heading titles are kept for. */
 const MAX_CACHED_TOCS = 20;
+/**
+ * The link parameters that the label of a reference link names, the most specific first, in the
+ * order the views land on them: blocks before an anchor in a Markdown note, a heading before a
+ * bookmark in a document preview and before the page in a PDF. The first with a label names it.
+ */
+export const LABELED_TARGET_PARAMS = [ "block", "heading", "bookmark", "page" ] as const;
 
 /** The heading titles of each document by heading id, by its ToC route, with their blob. */
 const headingTitles = new Map<string, { blobId: string; titles: Map<string, string> }>();
@@ -511,38 +518,14 @@ async function loadReferenceLinkTitle(
     // A column reference renders as "<board>: <column>", the column in a `<small>` below.
     $el.text(viewScope?.columnTitle ? `${title}:` : title);
 
-    if (viewScope?.bookmark) {
-        $el.append($("<small>").append(
-            $("<span>").addClass("bx bx-bookmark"),
-            document.createTextNode(viewScope.bookmark)
-        ));
-    }
-
-    if (viewScope?.block) {
-        const label = await loadBlockReferenceLabel(note, viewScope.block);
-        if (label) {
-            $el.append($("<small>")
-                .toggleClass("block-reference-broken", label.isBroken)
-                .append(
-                    $("<span>").addClass("bx bx-paragraph"),
-                    document.createTextNode(label.text)
-                ));
-        }
-    }
-
-    const headingTitle = viewScope?.heading
-        ? await loadLinkedHeadingTitle(note, viewScope, viewScope.heading)
-        : null;
-    if (headingTitle) {
-        $el.append($("<small>").append(
-            $("<span>").addClass("bx bx-heading"),
-            document.createTextNode(headingTitle)
-        ));
-    } else if (viewScope?.page) {
-        $el.append($("<small>").append(
-            $("<span>").addClass(viewScope.annotation ? "bx bx-comment-detail" : "bx bx-file"),
-            document.createTextNode(getPdfReferenceLabel(viewScope.page, viewScope.annotation))
-        ));
+    const targetLabel = viewScope ? await loadLinkTargetLabel(note, viewScope) : null;
+    if (targetLabel) {
+        $el.append($("<small>")
+            .toggleClass("block-reference-broken", targetLabel.isBroken)
+            .append(
+                $("<span>").addClass(targetLabel.icon),
+                document.createTextNode(targetLabel.text)
+            ));
     }
 
     if (viewScope?.columnTitle) {
@@ -623,54 +606,109 @@ function getReferenceLinkTitleSync(
         return `${note.title}: ${viewScope.columnTitle}`;
     }
 
-    if (viewScope?.bookmark) {
-        return `${note.title} - ${viewScope.bookmark}`;
-    }
-
-    const blockLabel = viewScope?.block
-        ? getCachedBlockReferenceLabel(note, viewScope.block)
-        : null;
-    if (blockLabel && !blockLabel.isBroken) {
-        return `${note.title} - ${blockLabel.text}`;
-    }
-
-    const headingTitle = viewScope?.heading
-        ? getCachedHeadingTitle(`notes/${note.noteId}/toc`, note.blobId, viewScope.heading)
-        : null;
-    if (headingTitle) {
-        return `${note.title} - ${headingTitle}`;
-    }
-
-    if (viewScope?.page) {
-        return `${note.title} - ${getPdfReferenceLabel(viewScope.page, viewScope.annotation)}`;
-    }
-
-    return note.title;
+    const targetLabel = viewScope ? getCachedLinkTargetLabel(note, viewScope) : null;
+    // A broken reference names the note alone.
+    return targetLabel && !targetLabel.isBroken
+        ? `${note.title} - ${targetLabel.text}`
+        : note.title;
 }
 
-/** What a reference to a PDF says after the title: the page, or the annotation on it. */
-function getPdfReferenceLabel(pageNumber: string, annotation: string | undefined) {
-    return t(annotation ? "pdf.annotation_reference" : "pdf.page_reference", { pageNumber });
+/** What a reference link shows after the note title for the place in the note it points at. */
+export interface LinkTargetLabel {
+    text: string;
+    /** The icon, with its `bx` prefix. */
+    icon: string;
+    /** Whether the blocks that the link points at are missing from the note. */
+    isBroken: boolean;
+}
+
+type LabeledTargetParam = (typeof LABELED_TARGET_PARAMS)[number];
+
+/**
+ * The label of the place in `note`, or in its attachment, that `viewScope` points at: blocks, a
+ * heading of a document, an anchor or a page of a PDF, the first of {@link LABELED_TARGET_PARAMS}
+ * that has one. `null` for a link to the whole note.
+ */
+export async function loadLinkTargetLabel(note: FNote, viewScope: ViewScope) {
+    for (const param of LABELED_TARGET_PARAMS) {
+        const value = viewScope[param];
+        const label = value ? await loadParamLabel(note, viewScope, param, value) : null;
+        if (label) {
+            return label;
+        }
+    }
+    return null;
 }
 
 /**
- * The label after the note title of a link to a place in a PDF: the title of its heading, else its
- * page or its annotation, else nothing.
+ * {@link loadLinkTargetLabel} for a link to a note, from the content and the heading titles that
+ * are loaded already.
  */
-export async function loadPdfReferenceLabel(note: FNote, viewScope: ViewScope) {
-    const headingTitle = viewScope.heading
-        ? await loadLinkedHeadingTitle(note, viewScope, viewScope.heading)
-        : null;
-    if (headingTitle) {
-        return headingTitle;
+function getCachedLinkTargetLabel(note: FNote, viewScope: ViewScope) {
+    for (const param of LABELED_TARGET_PARAMS) {
+        const value = viewScope[param];
+        const label = value ? getCachedParamLabel(note, viewScope, param, value) : null;
+        if (label) {
+            return label;
+        }
     }
-    return viewScope.page ? getPdfReferenceLabel(viewScope.page, viewScope.annotation) : null;
+    return null;
+}
+
+/** The label of the link parameter `param` whose value is `value`, read from the saved note. */
+async function loadParamLabel(
+    note: FNote, viewScope: ViewScope, param: LabeledTargetParam, value: string
+) {
+    if (param === "block") {
+        return toBlockLabel(await loadBlockReferenceLabel(note, value));
+    }
+    if (param === "heading") {
+        return toHeadingLabel(await loadLinkedHeadingTitle(note, viewScope, value));
+    }
+    return getCachedParamLabel(note, viewScope, param, value);
+}
+
+/** The label of the link parameter `param` whose value is `value`, from what is loaded already. */
+function getCachedParamLabel(
+    note: FNote, viewScope: ViewScope, param: LabeledTargetParam, value: string
+): LinkTargetLabel | null {
+    switch (param) {
+        case "block":
+            return toBlockLabel(getCachedBlockReferenceLabel(note, value));
+        case "heading":
+            return toHeadingLabel(
+                getCachedHeadingTitle(getTocUrl("notes", note.noteId), note.blobId, value));
+        case "bookmark":
+            return { text: value, icon: "bx bx-bookmark", isBroken: false };
+        case "page": {
+            const { annotation } = viewScope;
+            return {
+                text: t(annotation ? "pdf.annotation_reference" : "pdf.page_reference",
+                    { pageNumber: value }),
+                icon: annotation ? "bx bx-comment-detail" : "bx bx-file",
+                isBroken: false
+            };
+        }
+    }
+}
+
+function toBlockLabel(label: BlockReferenceLabel | null): LinkTargetLabel | null {
+    return label && { text: label.text, icon: "bx bx-paragraph", isBroken: label.isBroken };
+}
+
+function toHeadingLabel(title: string | null): LinkTargetLabel | null {
+    return title ? { text: title, icon: "bx bx-heading", isBroken: false } : null;
+}
+
+/** The ToC route of a note or an attachment, such as `notes/abc/toc`. */
+export function getTocUrl(entityType: "notes" | "attachments", entityId: string) {
+    return `${entityType}/${entityId}/toc`;
 }
 
 /**
  * Remembers the titles of the headings that the ToC cache of a document lists for its blob
  * `blobId`, so that the labels of links to them need no request. `tocUrl` is the ToC route of the
- * document, such as `notes/abc/toc`.
+ * document, from {@link getTocUrl}.
  */
 export function rememberHeadingTitles(
     tocUrl: string, blobId: string, headings: { id: string; title: string }[]
@@ -697,10 +735,10 @@ function getCachedHeadingTitle(tocUrl: string, blobId: string | undefined, headi
 async function loadLinkedHeadingTitle(note: FNote, viewScope: ViewScope, headingId: string) {
     if (viewScope.viewMode === "attachments" && viewScope.attachmentId) {
         const attachment = await froca.getAttachmentOfNote(note.noteId, viewScope.attachmentId);
-        const tocUrl = `attachments/${viewScope.attachmentId}/toc`;
+        const tocUrl = getTocUrl("attachments", viewScope.attachmentId);
         return attachment ? loadHeadingTitle(tocUrl, attachment.blobId, headingId) : null;
     }
-    return loadHeadingTitle(`notes/${note.noteId}/toc`, note.blobId, headingId);
+    return loadHeadingTitle(getTocUrl("notes", note.noteId), note.blobId, headingId);
 }
 
 /**

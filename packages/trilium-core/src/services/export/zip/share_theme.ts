@@ -14,7 +14,6 @@ import { readShareTemplate, renderNoteForExport } from "../../../share/index.js"
 import * as iconPackService from "../../icon_packs.js";
 import { getLog } from "../../log.js";
 import options from "../../options.js";
-import { getArchivedLinkSuffix } from "../rewrite_links.js";
 import { ZipExportProvider, type ZipExportProviderData } from "./abstract_provider.js";
 import { buildShareData, getViewTypeOf, isHostedNote } from "./share_data.js";
 
@@ -95,11 +94,11 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
                     return match;
                 });
 
-                // Rewrite note links, keeping the blocks and the bookmark that a link points at.
+                // Rewrite note links, keeping the blocks and the bookmark that
+                // `renderNoteForExport()` wrote after each.
                 const noteLink = /href="[^"]*\.\/([a-zA-Z0-9_\/]{12})([^"]*)"/g;
-                content = content.replace(noteLink, (match, id, rest) => {
+                content = content.replace(noteLink, (match, id, suffix) => {
                     if (match.includes("/assets/")) return match;
-                    const suffix = getArchivedLinkSuffix(rest, "share");
                     if (id === this.rootMeta?.noteId) {
                         return `href="${basePath}${suffix}"`;
                     }

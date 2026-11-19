@@ -4,8 +4,8 @@ import {
 import { describe, expect, it, vi } from "vitest";
 
 import {
-    byteSourceOf, crc32, readCentralDirectory, readEntryContent, rewriteZip, type ZipDirectory,
-    type ZipRecord, ZipRecordError
+    byteSourceOf, crc32, readCentralDirectory, readEntryContent, readZipIndex, readZipPart,
+    rewriteZip, type ZipDirectory, type ZipRecord, ZipRecordError
 } from "./zip_records.js";
 
 const MiB = 1024 * 1024;
@@ -126,6 +126,41 @@ describe("readEntryContent", () => {
         const [ record ] = (await readCentralDirectory(source)).records;
 
         await expect(readEntryContent(source, record)).rejects.toMatchObject({ reason: "LENGTH" });
+    });
+});
+
+describe("readZipIndex and readZipPart", () => {
+    it("name each record once, by its first, and decode only a flagged name as UTF-8", async () => {
+        const zip = zipSync({
+            "café.txt": strToU8("c"), "a.txt": strToU8("first"), "b.txt": strToU8("second")
+        });
+        const directory = await readCentralDirectory(byteSourceOf(zip));
+        const cafe = findRecord(directory, "café.txt");
+        expect([ ...(await readZipIndex(zip)).records.keys() ])
+            .toStrictEqual([ "café.txt", "a.txt", "b.txt" ]);
+
+        viewOf(zip).setUint16(cafe.centralOffset + 8, cafe.flags & ~0x800, true);
+        // Renames `b.txt` to `a.txt`, after the real one.
+        zip[findRecord(directory, "b.txt").centralOffset + 46] = "a".charCodeAt(0);
+        const index = await readZipIndex(zip);
+
+        expect([ ...index.records.keys() ]).toStrictEqual([ "caf\u{c3}\u{a9}.txt", "a.txt" ]);
+        expect(index.directory.records).toHaveLength(3);
+        const part = await readZipPart(zip, "a.txt", MiB);
+        expect(strFromU8(part ?? new Uint8Array(0))).toBe("first");
+    });
+
+    it("read nothing for a missing part, and refuse a long, altered or broken one", async () => {
+        const zip = zipSync({ "a.txt": [ strToU8("text"), { level: 0 } ] });
+        expect(await readZipPart(zip, "b.txt", MiB)).toBeUndefined();
+        await expect(readZipPart(zip, "a.txt", 3))
+            .rejects.toMatchObject({ reason: "ENTRY_TOO_LARGE" });
+        expect(await readZipPart(zip, "a.txt", 4)).toBeDefined();
+
+        zip[readDataStart(zip)] ^= 1;
+        await expect(readZipPart(zip, "a.txt", MiB)).rejects.toMatchObject({ reason: "CRC" });
+        await expect(readZipPart(new Uint8Array(64), "a.txt", MiB))
+            .rejects.toMatchObject({ reason: "DIRECTORY" });
     });
 });
 

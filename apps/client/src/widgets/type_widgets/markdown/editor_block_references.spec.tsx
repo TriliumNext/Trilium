@@ -10,14 +10,15 @@ import type FNote from "../../../entities/fnote";
 import contextMenu, { type MenuItem } from "../../../menus/context_menu";
 import { copyHtmlWithToast } from "../../../services/clipboard_ext";
 import froca from "../../../services/froca";
+import type { ChangeRecordHooks } from "../../../services/note_save";
 import toast from "../../../services/toast";
 import { buildNote } from "../../../test/easy-froca";
 import type { EditLinkOpts } from "../../dialogs/edit_link";
 import { noteSavedDataStore } from "../../react/NoteStore";
 import {
-    type ChangeRecordHooks, copyMarkdownReference, getMarkdownReferenceSource, getSelectedBlocks,
+    copyMarkdownReference, getMarkdownReferenceSource, getSelectedBlocks,
     type MarkdownReferenceSource, PREVIEW_BLOCK_HOST, revealInSource, useBlockMarkers
-} from "./block_markers";
+} from "./editor_block_references";
 import { buildMarkdownReferenceMenuItems } from "./block_reference_menu";
 import {
     getOwnLinkTargets, insertWithMarker, showEditLinkDialog, takePendingMarker

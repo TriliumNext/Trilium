@@ -8,7 +8,7 @@ import { LINK_TARGET_PARAMS } from "@triliumnext/commons/src/lib/server_api.js";
 import appContext from "../components/app_context";
 import froca from "./froca";
 import { t } from "./i18n";
-import { rememberHeadingTitles } from "./link";
+import { getTocUrl, rememberHeadingTitles, type ViewScope } from "./link";
 import { parseConflict } from "./note_save";
 import server from "./server";
 
@@ -85,7 +85,7 @@ export async function getLinkTargets(noteId: string, notePath: string): Promise<
         const { targets, blobId, pendingToc } = await server.get<NoteReferencesResponse>(
             `notes/${noteId}/references`, undefined, false, { silentBadRequest: true }
         );
-        rememberLinkedHeadings(`notes/${noteId}/toc`, blobId, targets);
+        rememberLinkedHeadings(getTocUrl("notes", noteId), blobId, targets);
         const counts = new Map<ReferenceKind, number>();
         const noteTargets = targets.map((target) => {
             const index = counts.get(target.kind) ?? 0;
@@ -115,7 +115,7 @@ export async function getAttachmentLinkTargets(
             `attachments/${attachmentId}/references`, undefined, false,
             { silentBadRequest: true, silentNotFound: true }
         );
-        rememberLinkedHeadings(`attachments/${attachmentId}/toc`, blobId, targets);
+        rememberLinkedHeadings(getTocUrl("attachments", attachmentId), blobId, targets);
         const attachmentTargets = targets.map(({ kind, title, level, params }): LinkTarget => ({
             kind, title, level, params, createLinkPath: () => addParameters(linkPath, params)
         }));
@@ -319,4 +319,43 @@ export function addParameters(notePath: string, params: ReferenceParams = {}) {
         path = `${path}${path.includes("?") ? "&" : "?"}${name}=${encoded}`;
     }
     return path;
+}
+
+/** A parameter of a link that points inside a note, such as `block` or `page`. */
+export type LinkTargetParam = (typeof LINK_TARGET_PARAMS)[number];
+
+/** The place that a link opens a note at, as {@link takeLinkTarget} reads it from a view scope. */
+export interface LandingTarget {
+    block?: string;
+    bookmark?: string;
+    /** The page number, absent unless the `page` parameter is a whole number of at least 1. */
+    page?: number;
+    annotation?: string;
+    heading?: string;
+}
+
+/**
+ * Takes the link parameters `names` out of `viewScope`, setting them to `undefined` so that a link
+ * lands once, and returns them with the page parsed. Returns `undefined` and leaves `viewScope` as
+ * it is when it holds none of them.
+ */
+export function takeLinkTarget(
+    viewScope: ViewScope | null | undefined, names: readonly LinkTargetParam[]
+): LandingTarget | undefined {
+    if (!viewScope || !names.some((name) => viewScope[name])) {
+        return undefined;
+    }
+
+    const target: LandingTarget = {};
+    for (const name of names) {
+        const value = viewScope[name];
+        viewScope[name] = undefined;
+        if (name === "page") {
+            const page = Number.parseInt(value ?? "", 10);
+            target.page = page >= 1 ? page : undefined;
+        } else {
+            target[name] = value;
+        }
+    }
+    return target;
 }

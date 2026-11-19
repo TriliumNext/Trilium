@@ -7,7 +7,8 @@ import pdfTocFormat from "../toc/pdf.js";
 import { toTargets } from "./toc.js";
 
 describe("toTargets", () => {
-    it("lists a target under a heading without a link at that heading's level", () => {
+    it("leaves a heading without a link out, so its targets nest under the target before it",
+        () => {
         const format = {
             ...docxTocFormat,
             getLinkParams: ({ id }: TocHeading) =>
@@ -16,11 +17,11 @@ describe("toTargets", () => {
 
         const targets = toTargets(cacheOf([
             [ "a", 1 ], [ "x1", 2 ], [ "b", 3 ], [ "c", 4 ], [ "x2", 2 ], [ "x3", 3 ], [ "d", 4 ],
-            [ "e", 2 ]
+            [ "e", 2 ], [ "f", 1 ], [ "x4", 1 ], [ "g", 2 ]
         ]), format);
 
         expect(targets.map(({ params, level }) => [ params?.heading, level ])).toStrictEqual([
-            [ "a", 1 ], [ "b", 2 ], [ "c", 3 ], [ "d", 2 ], [ "e", 2 ]
+            [ "a", 1 ], [ "b", 2 ], [ "c", 3 ], [ "d", 3 ], [ "e", 2 ], [ "f", 1 ], [ "g", 2 ]
         ]);
     });
 

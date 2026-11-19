@@ -31,12 +31,11 @@ describe("getArchivedLinkSuffix", () => {
     const suffix = "?heading=h%201&viewMode=attachments&amp;annotation=12R&ntxId=x&page=3"
         + "&bookmark=Set%20up&block=a:b";
 
-    it("keeps the link target parameters in their order as written, and a shared page two", () => {
+    it("keeps the link target parameters in their order as written", () => {
         expect(getArchivedLinkSuffix(suffix, "attribute")).toBe(
             "?block=a:b&amp;bookmark=Set%20up&amp;page=3&amp;annotation=12R&amp;heading=h%201");
         expect(getArchivedLinkSuffix(suffix, "markdown"))
             .toBe("?block=a:b&bookmark=Set%20up&page=3&annotation=12R&heading=h%201");
-        expect(getArchivedLinkSuffix(suffix, "share")).toBe("?block=a:b#Set%20up");
     });
 
     it("reads the fragment as the bookmark and the first value of a parameter that has one", () => {
@@ -45,7 +44,7 @@ describe("getArchivedLinkSuffix", () => {
         expect(getArchivedLinkSuffix("?bookmark=query#fragment", "markdown"))
             .toBe("?bookmark=fragment");
         expect(getArchivedLinkSuffix("?viewMode=source", "attribute")).toBe("");
-        expect(getArchivedLinkSuffix("", "share")).toBe("");
+        expect(getArchivedLinkSuffix("", "markdown")).toBe("");
     });
 });
 

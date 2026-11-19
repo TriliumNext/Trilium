@@ -6,11 +6,12 @@ import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
 import type { AttachmentEditor, NoteEditor } from "../../../services/content_renderer";
 import froca from "../../../services/froca";
-import { getLatestBlob, NoteSaver, type SaveData } from "../../../services/note_save";
+import {
+    type ChangeRecordHooks, type CurrentVersion, getLatestBlob, type SaveData
+} from "../../../services/note_save";
 import protected_session_holder from "../../../services/protected_session_holder";
-import server from "../../../services/server";
 import SpacedUpdate from "../../../services/spaced_update";
-import { type SavedData, useSaveBeforeLeaving } from "../../react/hooks/editor";
+import { type SavedData, useNoteSaver, useSaveBeforeLeaving } from "../../react/hooks/editor";
 import { ParentComponent } from "../../react/react_utils";
 
 type SavedAttachments = NonNullable<SavedData["attachments"]>;
@@ -38,6 +39,8 @@ interface PendingSave<T> {
     revision: number;
     /** The blob that the entity had when the first of the unsaved changes was made. */
     readAt?: string;
+    /** The hooks of the mounted editor that records its changes since its base. */
+    hooks?: ChangeRecordHooks;
 }
 
 /** A change that a save sent. */
@@ -46,6 +49,7 @@ interface SentRevision {
     revision: number;
     content: string;
     onSaved?: (content: string) => void;
+    hooks?: ChangeRecordHooks;
 }
 
 /**
@@ -64,11 +68,26 @@ abstract class PendingSaves<T, I extends object> {
         return save ? readContent(save) : undefined;
     }
 
+    /** Whether a change of the entity `id` waits for a save. */
+    hasChanges(id: string) {
+        return this.pending.has(id);
+    }
+
+    /**
+     * As {@link getUnsavedContent}, read for a save: the editor of the entity records its changes
+     * since this content apart.
+     */
+    takeUnsavedContent(id: string) {
+        const save = this.pending.get(id);
+        return save ? takeContent(save) : undefined;
+    }
+
     release(id: string) {
         const save = this.pending.get(id);
         if (save?.getContent) {
             save.content = save.getContent();
             save.getContent = undefined;
+            save.hooks = undefined;
         }
     }
 
@@ -79,6 +98,7 @@ abstract class PendingSaves<T, I extends object> {
     markSaved(items: I[] | undefined) {
         for (const item of items ?? []) {
             const sent = this.sentRevisions.get(item);
+            sent?.hooks?.dataSaved();
             if (sent && this.latestRevisions.get(sent.id) === sent.revision) {
                 this.pending.delete(sent.id);
                 this.latestRevisions.delete(sent.id);
@@ -95,27 +115,27 @@ abstract class PendingSaves<T, I extends object> {
         id: string,
         entity: T,
         getContent: () => string,
-        onSaved?: (content: string) => void,
-        readAt?: string
+        { onSaved, readAt, hooks }: Pick<PendingSave<T>, "onSaved" | "readAt" | "hooks"> = {}
     ) {
         const revision = ++this.lastRevision;
         const previous = this.pending.get(id);
         this.pending.set(id, {
-            entity, getContent, onSaved, revision, readAt: previous ? previous.readAt : readAt
+            entity, getContent, onSaved, revision, readAt: previous ? previous.readAt : readAt,
+            hooks
         });
         this.latestRevisions.set(id, revision);
     }
 
-    /** One item for each change, with the content read at the time of the call. */
+    /** One item for each change, with the content read for the save at the time of the call. */
     protected collectItems(
         toItem: (id: string, entity: T, content: string, readAt: string | undefined) => I
     ) {
         const items: I[] = [];
         for (const [ id, save ] of this.pending) {
-            const content = readContent(save);
+            const content = takeContent(save);
             const item = toItem(id, save.entity, content, save.readAt);
             this.sentRevisions.set(item, {
-                id, revision: save.revision, content, onSaved: save.onSaved
+                id, revision: save.revision, content, onSaved: save.onSaved, hooks: save.hooks
             });
             items.push(item);
         }
@@ -132,6 +152,7 @@ export default class AttachmentSaves
     extends PendingSaves<FAttachment, SavedAttachments[number]>
     implements AttachmentEditor {
     private noteId: string | undefined;
+    private versionListeners = new Set<() => void>();
 
     /**
      * @param getUpdate returns the spaced update that saves the note.
@@ -154,6 +175,24 @@ export default class AttachmentSaves
         this.pending.clear();
     }
 
+    /**
+     * Drops the changes that wait for a save, as the user chose the version of another writer,
+     * and calls the listeners of `subscribeVersionLoaded()` to show that version.
+     */
+    loadOtherVersion() {
+        this.discard();
+        for (const listener of this.versionListeners) {
+            listener();
+        }
+    }
+
+    subscribeVersionLoaded(listener: () => void) {
+        this.versionListeners.add(listener);
+        return () => {
+            this.versionListeners.delete(listener);
+        };
+    }
+
     canEdit(attachment: FAttachment) {
         return !!this.noteId && attachment.ownerId === this.noteId;
     }
@@ -164,7 +203,7 @@ export default class AttachmentSaves
         onSaved?: (content: string) => void
     ) {
         this.schedule(
-            attachment.attachmentId, attachment, getContent, onSaved, attachment.blobId
+            attachment.attachmentId, attachment, getContent, { onSaved, readAt: attachment.blobId }
         );
         this.getUpdate().scheduleUpdate();
     }
@@ -220,13 +259,26 @@ export class NoteSaves extends PendingSaves<FNote, SavedNote> implements NoteEdi
         return note.noteId !== this.getHostNoteId() && note.isContentAvailable();
     }
 
-    scheduleSave(note: FNote, getContent: () => string, onSaved?: (content: string) => void) {
+    scheduleSave(
+        note: FNote,
+        getContent: () => string,
+        onSaved?: (content: string) => void,
+        hooks?: ChangeRecordHooks
+    ) {
         if (!this.pending.has(note.noteId)) {
             this.onFirstChange?.(note, this.loadedVersions.get(note.noteId)?.blobId);
         }
-        this.schedule(note.noteId, note, getContent, onSaved);
+        this.schedule(note.noteId, note, getContent, { onSaved, hooks });
         this.setSaveState(note.noteId, "unsaved");
         this.scheduleUpdate();
+    }
+
+    /**
+     * Lets the editor of the note `noteId` bring its changes onto `current`, as
+     * `SavingEditor.resolveConflict()` does. `false` without an editor that records its changes.
+     */
+    resolveConflict(noteId: string, current: CurrentVersion) {
+        return this.pending.get(noteId)?.hooks?.resolveConflict(current) ?? false;
     }
 
     setLoadedVersion(noteId: string, blobId: string, content: string) {
@@ -336,6 +388,14 @@ export function useAttachmentEditor(
     });
     const noteContextRef = useRef(noteContext);
     noteContextRef.current = noteContext;
+    const saver = useNoteSaver<SaveData>({
+        getLatestData: () => undefined,
+        loadVersion(noteId) {
+            // A revision keeps the changes, as the user chose the version of another writer.
+            spacedUpdate.discard(noteId);
+            saves.loadOtherVersion();
+        }
+    });
 
     const prepare = useCallback(() => saves.collect(), [ saves ]);
     const commit = useCallback(async (attachments: SavedAttachments) => {
@@ -346,14 +406,11 @@ export function useAttachmentEditor(
         }
         protected_session_holder.touchProtectedSessionIfNecessary(note);
         for (const attachment of attachments) {
-            await server.post(
-                `notes/${note.noteId}/attachments`,
-                attachment,
-                parentComponent?.componentId
-            );
+            // Once a revision keeps the changes instead, the rows left are not sent.
+            if (!await saver.saveAttachment(note, attachment)) break;
         }
         saves.markSaved(attachments);
-    }, [ note, parentComponent, saves ]);
+    }, [ note, saver, saves ]);
 
     const [ spacedUpdate ] = useState(() => new SpacedUpdate<SavedAttachments>(
         { key: note.noteId, prepare, commit },
@@ -367,7 +424,7 @@ export function useAttachmentEditor(
         saves.setNoteId(note.noteId);
     });
 
-    useSaveBeforeLeaving(spacedUpdate, noteContext);
+    useSaveBeforeLeaving(spacedUpdate, noteContext, saver);
     useSaveOnUnmount(spacedUpdate);
 
     return saves;
@@ -381,43 +438,48 @@ export function useNoteEditor(noteContext: NoteContext | null | undefined): Note
     const parentComponent = useContext(ParentComponent);
     const noteContextRef = useRef(noteContext);
     noteContextRef.current = noteContext;
-    const [ saves ] = useState(() => new NoteSaves(
-        () => spacedUpdate.scheduleUpdate(),
-        parentComponent?.componentId,
-        () => noteContextRef.current?.noteId ?? undefined
-    ));
-    const [ saver ] = useState(() => {
-        const noteSaver = new NoteSaver<SaveData>({
-            componentId: saves.componentId,
-            getLatestData(noteId) {
-                const content = saves.getUnsavedContent(noteId);
-                return content === undefined ? undefined : { content };
-            },
-            loadVersion(noteId) {
-                saves.discard(noteId);
-                // A queued save can still hold the discarded change, so the next save collects
-                // the remaining changes again.
-                spacedUpdate.discard(null);
-                spacedUpdate.scheduleUpdate();
-                // The embeds render again once the save that asked has finished.
-                setTimeout(() => void appContext.triggerEvent("refreshEmbeddedNote", { noteId }));
-            }
-        });
+    const [ saves ] = useState(() => {
+        const noteSaves = new NoteSaves(
+            () => spacedUpdate.scheduleUpdate(),
+            parentComponent?.componentId,
+            () => noteContextRef.current?.noteId ?? undefined
+        );
         // A change is based on the version that the embeds show. Without it, on the blob that
         // `froca` holds, as this client's own saves left it.
-        saves.onFirstChange = (note, loadedBlobId) => {
+        noteSaves.onFirstChange = (note, loadedBlobId) => {
             const blobId = loadedBlobId ?? (note.blobId && getLatestBlob(note.noteId, note.blobId));
             if (blobId) {
                 const { noteId, type, mime } = note;
-                noteSaver.setBase({ noteId, blobId, type, mime });
+                saver.setBase({ noteId, blobId, type, mime });
             }
         };
-        saves.flush = async (noteId) => {
-            if (!noteSaver.isPaused(noteId)) {
+        noteSaves.flush = async (noteId) => {
+            if (!saver.isPaused(noteId)) {
                 await spacedUpdate.updateNowIfNecessary();
             }
         };
-        return noteSaver;
+        return noteSaves;
+    });
+    const saver = useNoteSaver<SaveData>({
+        getLatestData(noteId) {
+            const content = saves.takeUnsavedContent(noteId);
+            return content === undefined ? undefined : { content };
+        },
+        loadVersion(noteId) {
+            saves.discard(noteId);
+            // A queued save can still hold the discarded change, so the next save collects the
+            // remaining changes again.
+            spacedUpdate.discard(null);
+            spacedUpdate.scheduleUpdate();
+            // The embeds render again once the save that asked has finished.
+            setTimeout(() => void appContext.triggerEvent("refreshEmbeddedNote", { noteId }));
+        },
+        resolveConflict: (noteId, current) => saves.resolveConflict(noteId, current),
+        async saveChanges(noteId) {
+            if (saves.hasChanges(noteId)) {
+                await spacedUpdate.updateNowIfNecessary();
+            }
+        }
     });
 
     const [ spacedUpdate ] = useState(() => new SpacedUpdate<SavedNote[]>({
@@ -440,21 +502,30 @@ export function useNoteEditor(noteContext: NoteContext | null | undefined): Note
         saver.abandon();
     }, [ saver, hostNoteId ]);
     useSaveBeforeLeaving(spacedUpdate, noteContext, saver);
-    useSaveOnUnmount(spacedUpdate, saver);
+    useSaveOnUnmount(spacedUpdate);
 
     return saves;
 }
 
-/** Saves what is left once the content goes away, and keeps a save that waits as a revision. */
-function useSaveOnUnmount<T>(spacedUpdate: SpacedUpdate<T>, saver?: { abandon(): void }) {
+/**
+ * Saves what is left once the content goes away. `useNoteSaver()`, called before, has kept a save
+ * that waits for the user as a revision by then.
+ */
+function useSaveOnUnmount<T>(spacedUpdate: SpacedUpdate<T>) {
     useEffect(() => () => {
-        saver?.abandon();
         spacedUpdate.updateNowIfNecessary().catch(() => {
             // Failures are logged by `SpacedUpdate` and retried.
         });
-    }, [ spacedUpdate, saver ]);
+    }, [ spacedUpdate ]);
 }
 
 function readContent<T>(save: PendingSave<T>) {
     return save.getContent ? save.getContent() : save.content ?? "";
+}
+
+/** The content of `save`, read for a save: its editor records the changes since apart. */
+function takeContent<T>(save: PendingSave<T>) {
+    const content = readContent(save);
+    save.hooks?.onDataTaken();
+    return content;
 }
