@@ -340,16 +340,19 @@ async function switchHelpNoteLocale(hrefLink: string, $link: JQuery<HTMLElement>
             froca.getNote(noteId),
             import("./content_renderer_text.js")
         ]);
-        const $container = $link.closest(".ck-content").parent();
-        if (!note || !$container.length) {
+        const $ckContent = $link.closest(".ck-content");
+        if (!note || !$ckContent.length) {
             return;
         }
         let content = typeof blob?.content === "string" ? blob.content : "";
         if (targetLocale === "en") {
-            content = `<blockquote class="help-outdated-banner"><p><a href="#help-locale:${noteId}:">Вернуться к переводу</a></p></blockquote>\n${content}`;
+            const returnLabel = t("help_outdated_return", { defaultValue: "Return to translation" });
+            content = `<blockquote class="help-outdated-banner"><p><a href="#help-locale:${noteId}:">${returnLabel}</a></p></blockquote>\n${content}`;
         }
-        $container.empty();
-        await renderTextContent(note, content, $container);
+        const $tmp = $("<div>");
+        await renderTextContent(note, content, $tmp);
+        // Replace only children so Preact keeps its .ck-content root across help navigation.
+        $ckContent.empty().append($tmp.find(".ck-content").contents());
     } catch (e) {
         logError(`Failed to switch help note locale for '${noteId}': ${e instanceof Error ? e.message : String(e)}`);
     }

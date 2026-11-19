@@ -5502,5 +5502,6 @@
     "draft_discarded_after_conversion": "The note was converted while you were editing it, and keeps no revisions, so your unsaved changes were discarded.",
     "draft_kept_blocks_gone": "The blocks that you were editing were changed elsewhere and can no longer be edited here. Your unsaved changes were kept as a revision.",
     "draft_discarded_blocks_gone": "The blocks that you were editing were changed elsewhere and can no longer be edited here. The note keeps no revisions, so your unsaved changes were discarded."
-  }
+  },
+  "help_outdated_return": "Return to translation"
 }
