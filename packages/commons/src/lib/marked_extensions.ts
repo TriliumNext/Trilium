@@ -1,6 +1,105 @@
 import type { Token, TokenizerAndRendererExtension } from "marked";
 
+import { BLOCK_ID_ATTRIBUTE, BLOCK_MARKER_SOURCE, decodeBlockMarkerId } from "./block_reference.js";
 import { escapeHtml } from "./utils.js";
+
+/** The attribute with which the block index finds the element of each block token. */
+export const SOURCE_BLOCK_ATTRIBUTE = "data-trilium-source-block";
+
+/** A token of a block marker, inline or alone on its line. */
+export interface BlockMarkerToken {
+    type: "blockMarker" | "blockMarkerLine";
+    raw: string;
+    /** The decoded value of the marker. */
+    value: string;
+    /** The block id, `null` when the value is not a valid one. */
+    id: string | null;
+}
+
+/** The fields that the block id pass sets on a block token. */
+export interface BlockIdFields {
+    blockId?: string;
+    /** The marker that gave the token its id. */
+    blockMarker?: BlockMarkerToken;
+    /** The position of the token in the block index, which only the index sets. */
+    blockIndex?: number;
+}
+
+/**
+ * Creates the extensions for block markers: an inline marker, which marks the block that holds it,
+ * and a marker alone on its line, which marks the block after it. Both render nothing.
+ */
+export function createBlockMarkerExtensions(): TokenizerAndRendererExtension[] {
+    return [
+        {
+            name: "blockMarkerLine",
+            level: "block",
+
+            start(src: string) {
+                // Marked passes the source without its first character, so a line starts after a
+                // newline.
+                const match = MARKER_LINE_START.exec(src);
+                return match ? match.index + 1 : undefined;
+            },
+
+            tokenizer(src) {
+                const match = MARKER_LINE.exec(src);
+                return match ? createMarkerToken("blockMarkerLine", match) : undefined;
+            },
+
+            renderer: () => ""
+        },
+        {
+            name: "blockMarker",
+            level: "inline",
+
+            start(src: string) {
+                const index = src.search(MARKER_ANYWHERE);
+                return index < 0 ? undefined : index;
+            },
+
+            tokenizer(src) {
+                const match = MARKER_AT_START.exec(src);
+                return match ? createMarkerToken("blockMarker", match) : undefined;
+            },
+
+            renderer: () => ""
+        }
+    ];
+}
+
+/** The attributes of the element of a block token: its block id and its place in the index. */
+export function getBlockAttributes(token: object) {
+    const { blockId, blockIndex } = token as BlockIdFields;
+    let attributes = "";
+    if (blockId !== undefined) {
+        attributes += ` ${BLOCK_ID_ATTRIBUTE}="${escapeHtml(blockId)}"`;
+    }
+    if (blockIndex !== undefined) {
+        attributes += ` ${SOURCE_BLOCK_ATTRIBUTE}="${blockIndex}"`;
+    }
+    return attributes;
+}
+
+/** Whether the element of a block token carries a block id, or is indexed. */
+export function isReferencedBlock(token: object) {
+    const { blockId, blockIndex } = token as BlockIdFields;
+    return blockId !== undefined || blockIndex !== undefined;
+}
+
+function createMarkerToken(
+    type: BlockMarkerToken["type"],
+    match: RegExpExecArray
+): BlockMarkerToken {
+    const value = match[1] ?? match[2];
+    return { type, raw: match[0], value, id: decodeBlockMarkerId(value) };
+}
+
+const MARKER_AT_START = new RegExp(`^${BLOCK_MARKER_SOURCE}`, "i");
+const MARKER_ANYWHERE = new RegExp(BLOCK_MARKER_SOURCE, "i");
+const MARKER_LINE = new RegExp(String.raw`^ {0,3}${BLOCK_MARKER_SOURCE}[ \t]*(?:\n|$)`, "i");
+const MARKER_LINE_START =
+    new RegExp(String.raw`\n {0,3}${BLOCK_MARKER_SOURCE}[ \t]*(?=\n|$)`, "i");
 
 export interface WikiLinkOptions {
     /** Format the href for the link. Defaults to `/${noteId}` */
@@ -258,7 +357,8 @@ export function createTabsExtensions(): TokenizerAndRendererExtension[] {
             },
 
             renderer(token) {
-                return `<div class="trilium-tabs">${this.parser.parse(token.tokens as Token[])}</div>`;
+                const panels = this.parser.parse(token.tokens as Token[]);
+                return `<div class="trilium-tabs"${getBlockAttributes(token)}>${panels}</div>`;
             }
         },
         {
@@ -266,8 +366,9 @@ export function createTabsExtensions(): TokenizerAndRendererExtension[] {
             renderer(token) {
                 const title = this.parser.parseInline(token.titleTokens as Token[]) || "&nbsp;";
                 const panel = this.parser.parse(token.tokens as Token[]).trim() || "<p>&nbsp;</p>";
-                return `<section class="trilium-tab"><p class="trilium-tab-title">${title}</p>` +
-                    `<div class="trilium-tab-panel">${panel}</div></section>`;
+                return `<section class="trilium-tab"${getBlockAttributes(token)}>`
+                    + `<p class="trilium-tab-title">${title}</p>`
+                    + `<div class="trilium-tab-panel">${panel}</div></section>`;
             }
         }
     ];

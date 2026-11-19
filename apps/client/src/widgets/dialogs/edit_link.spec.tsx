@@ -75,9 +75,9 @@ beforeEach(() => {
 
     noteReferences.clear();
     vi.spyOn(server, "get").mockImplementation((async (url: string) => {
-        const noteId = /^notes\/(\w+)\/references$/.exec(url)?.[1];
-        if (!noteId) return serverGet(url);
-        return noteReferences.get(noteId) ?? { targets: [] };
+        const id = /^(?:notes|attachments)\/(\w+)\/references$/.exec(url)?.[1];
+        if (!id) return serverGet(url);
+        return noteReferences.get(id) ?? { targets: [] };
     }) as typeof server.get);
     createHeadingReference = vi.spyOn(server, "postWithSilentErrors")
         .mockResolvedValue({ params: { block: "NewId" } } satisfies CreateReferenceResponse);
@@ -475,7 +475,7 @@ describe("EditLinkDialog", () => {
         expect(addLink).toHaveBeenLastCalledWith("https://example.com", "Example", true);
     });
 
-    it("edits only the title of an attachment link, mirroring the attachment's title", async () => {
+    it("edits the title of an attachment link, and lists the headings of the attachment", async () => {
         const note = buildNote({ title: "Owner" });
         await open({ currentLink: { notePath: `root/${note.noteId}` } });
         await settle();
@@ -484,8 +484,12 @@ describe("EditLinkDialog", () => {
         vi.mocked(server.get).mockClear();
 
         const path = `root/${note.noteId}?viewMode=attachments&attachmentId=abc123`;
+        noteReferences.set("abc123", { targets: [
+            { kind: "heading", title: "Appendix", level: 1, params: { page: "9", heading: "h1" } }
+        ] });
         await reopen({
-            currentLink: { notePath: path }, currentTitle: "The file", anchors: [ "x" ]
+            currentLink: { notePath: path }, currentTitle: "The file", anchors: [ "x" ],
+            noteId: note.noteId
         });
         await act(async () => {
             container.querySelector(".modal")?.dispatchEvent(new Event("shown.bs.modal"));
@@ -493,8 +497,11 @@ describe("EditLinkDialog", () => {
         });
         expect(choice()).toStrictEqual([]);
         expect(container.querySelector(".note-autocomplete")).toBeNull();
-        expect(noteTargets()).toBeNull();
-        expect(server.get).not.toHaveBeenCalled();
+        await settle();
+        // The targets of the attachment, never those of the document being edited.
+        expect(noteChoices()).toStrictEqual([ "*add_link.top_of_note", "Appendix" ]);
+        expect(server.get).toHaveBeenCalledExactlyOnceWith("attachments/abc123/references",
+            undefined, false, { silentBadRequest: true, silentNotFound: true });
         expect(field("text")?.value).toBe("The file");
         expect(field("text")?.placeholder).toBe("add_link.title_from_attachment");
         expect(document.activeElement).toBe(field("text"));
@@ -506,6 +513,13 @@ describe("EditLinkDialog", () => {
         await type(field("text"), "");
         await submit();
         expect(addLink).toHaveBeenLastCalledWith(path, null);
+
+        // A heading of the attachment adds its parameters after those of the attachment.
+        await reopen({ currentLink: { notePath: path }, currentTitle: "The file" });
+        await settle();
+        await checkNoteChoice("Appendix");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(`${path}&page=9&heading=h1`, "The file");
     });
 
     it("moves a URL typed or pasted on the note side over to the web link side", async () => {
@@ -1248,6 +1262,71 @@ describe("EditLinkDialog", () => {
         expect(createHeadingReference).toHaveBeenCalledOnce();
     });
 
+    it("lists the note again when a heading was picked from a listing of another blob", async () => {
+        const showError = vi.spyOn(toast, "showError").mockImplementation(() => {});
+        onTestFinished(() => showError.mockRestore());
+        const note = buildNote({ title: "Target" });
+        const path = `root/${note.noteId}`;
+        noteReferences.set(note.noteId, {
+            targets: [ headingTarget("Status", 2) ], blobId: "listed"
+        });
+
+        await open();
+        await pickNote(path);
+        await checkNoteChoice("Status");
+        noteReferences.set(note.noteId, {
+            targets: [ headingTarget("Moved", 2), headingTarget("Status", 2) ], blobId: "now"
+        });
+        createHeadingReference.mockRejectedValueOnce(
+            JSON.stringify({ reason: "listing", message: "Changed" }));
+        await requestSubmit();
+        await settle();
+
+        expect(createHeadingReference).toHaveBeenCalledExactlyOnceWith(
+            `notes/${note.noteId}/references`,
+            { kind: "heading", index: 0, title: "Status", blobId: "listed" }
+        );
+        expect(showError).toHaveBeenCalledExactlyOnceWith("add_link.listing_changed");
+        expect(addLink).not.toHaveBeenCalled();
+        expect(noteChoices().map((choice) => choice.replace(/^\*/, "")))
+            .toStrictEqual([ "add_link.top_of_note", "Moved", "Status" ]);
+    });
+
+    it("keeps the note page for a listing that arrives once the dialog closes", async () => {
+        const showError = vi.spyOn(toast, "showError").mockImplementation(() => {});
+        onTestFinished(() => showError.mockRestore());
+        const note = buildNote({ title: "Target" });
+        const referencesUrl = `notes/${note.noteId}/references`;
+        noteReferences.set(note.noteId, {
+            targets: [ headingTarget("Status", 2) ], blobId: "listed"
+        });
+
+        await open();
+        await pickNote(`root/${note.noteId}`);
+        await checkNoteChoice("Status");
+        const relisted = deferred<NoteReferencesResponse>();
+        noteReferences.set(note.noteId, relisted.promise);
+        createHeadingReference.mockRejectedValueOnce(
+            JSON.stringify({ reason: "listing", message: "Changed" }));
+        await requestSubmit();
+        expect(showError).toHaveBeenCalledExactlyOnceWith("add_link.listing_changed");
+        expect(vi.mocked(server.get).mock.calls.filter(([ url ]) => url === referencesUrl))
+            .toHaveLength(2);
+
+        const modal = container.querySelector(".modal");
+        expect(modal).not.toBeNull();
+        await act(async () => {
+            modal?.dispatchEvent(new Event("hide.bs.modal"));
+        });
+        relisted.resolve({
+            targets: [ headingTarget("Moved", 2), headingTarget("Status", 2) ], blobId: "now"
+        });
+        await settle();
+
+        expect(noteChoices()).toStrictEqual([ "add_link.top_of_note", "*Status" ]);
+        expect(addLink).not.toHaveBeenCalled();
+    });
+
     it("stays open with a toast when the heading's block id cannot be created", async () => {
         const showError = vi.spyOn(toast, "showError").mockImplementation(() => {});
         const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -1332,17 +1411,23 @@ describe("EditLinkDialog", () => {
         });
         const saved = deferred<void>();
         const { triggerEvent } = appContext;
+        let saveCount = 0;
         const trigger = vi.spyOn(appContext, "triggerEvent").mockImplementation(((name, data) => {
-            if (name === "saveNoteChanges") return saved.promise;
+            // The editors save before the listing, and again before the reference.
+            if (name === "saveNoteChanges") {
+                return ++saveCount === 1 ? Promise.resolve() : saved.promise;
+            }
             return triggerEvent.call(appContext, name, data);
         }) as typeof appContext.triggerEvent);
         onTestFinished(() => trigger.mockRestore());
 
         await open();
         await pickNote(path);
+        expect(trigger).toHaveBeenCalledWith("saveNoteChanges", { noteId: note.noteId });
+        expect(saveCount).toBe(1);
         await checkNoteChoice("Setup");
         await requestSubmit();
-        expect(trigger).toHaveBeenCalledWith("saveNoteChanges", { noteId: note.noteId });
+        expect(saveCount).toBe(2);
         expect(createHeadingReference).not.toHaveBeenCalled();
 
         saved.resolve();
@@ -1650,6 +1735,12 @@ describe("EditLinkBalloon", () => {
             return form;
         }
 
+        async function close(form: HTMLFormElement) {
+            const container = form.parentElement;
+            if (!container) throw new Error("The balloon is not rendered.");
+            await act(async () => render(null, container));
+        }
+
         const form = await showOnHeading();
         const created = deferred<CreateReferenceResponse>();
         createHeadingReference.mockReturnValueOnce(created.promise);
@@ -1668,12 +1759,29 @@ describe("EditLinkBalloon", () => {
         const late = deferred<CreateReferenceResponse>();
         createHeadingReference.mockReturnValueOnce(late.promise);
         await submit(closed);
-        const container = closed.parentElement;
-        if (!container) throw new Error("The balloon is not rendered.");
-        await act(async () => render(null, container));
+        await close(closed);
         late.resolve({ params: { block: "Late" } });
         await settle();
         expect(onClose).toHaveBeenCalledOnce();
+        expect(addLink).toHaveBeenCalledOnce();
+
+        // A server that fails once the balloon is closed shows no error.
+        const showError = vi.spyOn(toast, "showError").mockImplementation(() => {});
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+        onTestFinished(() => {
+            showError.mockRestore();
+            consoleError.mockRestore();
+        });
+        const failing = await showOnHeading();
+        const failed = deferred<CreateReferenceResponse>();
+        createHeadingReference.mockReturnValueOnce(failed.promise);
+        await submit(failing);
+        await close(failing);
+        failed.reject("{\"message\":\"Gone\"}");
+        await settle();
+        expect(createHeadingReference).toHaveBeenCalledTimes(3);
+        expect(showError).not.toHaveBeenCalled();
+        expect(consoleError).not.toHaveBeenCalled();
         expect(addLink).toHaveBeenCalledOnce();
     });
 

@@ -6,7 +6,7 @@
 import {
     isRightToLeftLanguage, resolveContentLanguage, toLanguageTag
 } from "@triliumnext/commons/src/lib/i18n.js";
-import { isFullWidthNoteType } from "@triliumnext/commons/src/lib/notes.js";
+import { isFullWidthNoteType, isMarkdownMime } from "@triliumnext/commons/src/lib/notes.js";
 
 /** The parts of a note the page model reads; core's `SNote` and `BNote` both provide them. */
 export interface ShareNote {
@@ -355,7 +355,7 @@ export function getContentClasses(
     { isAppView = false, isFullHeight = false }: { isAppView?: boolean; isFullHeight?: boolean } = {}
 ) {
     const isEditorContent = note.type === "text"
-        || (note.type === "code" && note.mime === "text/x-markdown");
+        || (note.type === "code" && isMarkdownMime(note.mime));
     const isFullWidth = (!isEditorContent && isFullWidthNoteType(note.type, note.mime))
         || note.isLabelTruthy("fullContentWidth") || isFullHeight;
     return [

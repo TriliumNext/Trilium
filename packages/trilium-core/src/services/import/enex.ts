@@ -1,4 +1,4 @@
-import type { AttributeType } from "@triliumnext/commons";
+import { type AttributeType, getAttachmentEmbedHref } from "@triliumnext/commons";
 
 import type BNote from "../../becca/entities/bnote.js";
 import * as cls from "../context.js";
@@ -341,7 +341,10 @@ async function importEnex(taskContext: TaskContext<"importNotes">, file: File, p
                     content: resource.content ?? ""
                 });
 
-                const attachmentLink = `<a class="reference-link" href="#root/${noteEntity.noteId}?viewMode=attachments&attachmentId=${attachment.attachmentId}">${escapeHtml(resource.title)}</a>`;
+                const href =
+                    getAttachmentEmbedHref(noteEntity.noteId, attachment.attachmentId as string);
+                const attachmentLink =
+                    `<a class="reference-link" href="${href}">${escapeHtml(resource.title)}</a>`;
 
                 /* v8 ignore next -- saveNote rejects an empty content above, so the "" fallback is unreachable */
                 content = (content || "").replace(mediaRegex, attachmentLink);

@@ -225,6 +225,20 @@ describe("applyTabs", () => {
         container.remove();
     });
 
+    it("reveals a fragment of the note's own content before one in an embed", () => {
+        const container = document.createElement("div");
+        container.innerHTML = "<figure class=\"include-note\" data-note-id=\"other\">"
+            + "<p id=\"set up\">embedded</p><p id=\"inner\">inner</p></figure>"
+            + "<p id=\"set up\">own</p>";
+        document.body.append(container);
+
+        expect(revealFragment("#set%20up")?.textContent).toBe("own");
+        const embed = container.querySelector("figure") as Element;
+        expect(revealFragment("#set%20up", embed)?.textContent).toBe("embedded");
+        expect(revealFragment("#inner")?.textContent).toBe("inner");
+        container.remove();
+    });
+
     it("leaves an editor without the tabs plugin alone", async () => {
         const domElement = document.createElement("div");
         document.body.appendChild(domElement);

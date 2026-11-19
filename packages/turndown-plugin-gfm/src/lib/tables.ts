@@ -48,11 +48,34 @@ function getColumnAlignment(table: HTMLTableElement, columnIndex: number): strin
   return align;
 }
 
+/**
+ * What a table keeps of its block id in Markdown: the marker that ends its first heading cell, and
+ * the opening tag of the figure written around it when it stays HTML.
+ */
+export interface TableBlockId {
+  marker: string;
+  figure: string;
+}
+
+/** The option `tableBlockId`: the block id that a table keeps, or `null`. */
+export type TableBlockIdOption = (table: HTMLTableElement) => TableBlockId | null;
+
+function getTableBlockId(table: HTMLTableElement, options: TurnishOptions): TableBlockId | null {
+  const option = options.tableBlockId as TableBlockIdOption | undefined;
+  return option ? option(table) : null;
+}
+
 rules.tableCell = {
   filter: ['th', 'td'],
-  replacement: function (content: string, node) {
-    if (tableShouldBeSkipped(nodeParentTable(node))) return content;
-    return cell(content, node)
+  replacement: function (content: string, node, options: TurnishOptions) {
+    const table = nodeParentTable(node);
+    if (!table || tableShouldBeSkipped(table)) return content;
+
+    // The marker of the table's id ends its first heading cell, where it stays with the table.
+    const isFirstHeadingCell = isHeadingRow(node.parentNode as Node)
+      && indexOf.call((node.parentNode as Node).childNodes, node) === 0;
+    const blockId = isFirstHeadingCell ? getTableBlockId(table, options) : null;
+    return cell(blockId ? `${content.trim()}${blockId.marker}` : content, node)
   }
 }
 
@@ -87,7 +110,10 @@ rules.table = {
     // Only convert tables that can result in valid Markdown
     // Other tables are kept as HTML using `keep` (see below).
     if (tableShouldBeHtml(node, options)) {
-      return prettyPrintTable(node);
+      // A table kept as HTML keeps its id on the figure that the text editor writes around it.
+      const blockId = getTableBlockId(node, options);
+      const table = prettyPrintTable(node);
+      return blockId ? `${blockId.figure}${table}</figure>` : table;
     } else {
       if (tableShouldBeSkipped(node)) return content;
 

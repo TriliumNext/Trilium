@@ -571,6 +571,22 @@ describe("Nested embeds (single-level display vs recursive print)", () => {
         expect(contentEl.querySelector("a.reference-link")?.getAttribute("href")).toContain("nestC");
     });
 
+    it("keeps the block id of an embed it renders as a reference link", async () => {
+        const target = buildNote({ id: "linkedTarget", title: "Target", content: "<p>body</p>" });
+        const note = buildNote({
+            id: "linkedHost",
+            title: "Host",
+            content: `<figure class="include-note" data-note-id="${target.noteId}" `
+                + `data-trilium-block-id="embed1"></figure>`
+        });
+        const contentEl = document.createElement("div");
+        await renderText(note, $(contentEl), { embedsAsReferenceLinks: true });
+
+        const link = contentEl.querySelector("a.reference-link");
+        expect(link?.getAttribute("href")).toBe(`#root/${target.noteId}`);
+        expect(link?.getAttribute("data-trilium-block-id")).toBe("embed1");
+    });
+
     it("leaves include-note sections with a missing or invalid note ID untouched when degrading to reference links", async () => {
         const note = buildNote({
             id: "badRefHost",

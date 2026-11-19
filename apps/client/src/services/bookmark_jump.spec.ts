@@ -1,8 +1,18 @@
 import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { consumeBookmark, revealElement } from "./bookmark_jump.js";
+import { consumeBookmark, revealElement, showDocumentTarget } from "./bookmark_jump.js";
 import type { ViewScope } from "./link.js";
+
+const { showAnchorElement, scroller } = vi.hoisted(() => ({
+    showAnchorElement: vi.fn(),
+    scroller: { scrollTo: vi.fn() }
+}));
+// happy-dom lays nothing out, so the scroll itself is not observable.
+vi.mock("@triliumnext/ckeditor5/src/plugins/block_reference/block_reference_read_only.js", () => ({
+    showAnchorElement,
+    getScrollContainer: () => scroller
+}));
 
 function buildContainer(html: string) {
     const container = document.createElement("div");
@@ -33,6 +43,35 @@ describe("consumeBookmark", () => {
         }
         expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "center" });
         expect(viewScope.bookmark).toBeUndefined();
+    });
+
+    it("scrolls to the anchor of the note's own content before one of an embed above it", () => {
+        const container = buildContainer(`<figure class="include-note" data-note-id="other">`
+            + `<p><a id="dup"></a>embedded</p></figure><p><a id="dup"></a>own</p>`);
+        const scrolled: Element[] = [];
+        scrollIntoView.mockImplementation(function (this: Element) {
+            scrolled.push(this);
+        });
+
+        consumeBookmark(container, { bookmark: "dup" });
+        expect(scrolled.map((anchor) => anchor.parentElement?.textContent)).toEqual([ "own" ]);
+        scrollIntoView.mockReset();
+    });
+
+    it("scrolls to the anchor of an embed when the note's own content has none", () => {
+        const container = buildContainer(`<p><a id="own"></a>own</p>`
+            + `<figure class="include-note" data-note-id="other">`
+            + `<p><a id="only"></a>embedded</p></figure>`);
+        const scrolled: Element[] = [];
+        scrollIntoView.mockImplementation(function (this: Element) {
+            scrolled.push(this);
+        });
+        const viewScope: ViewScope = { bookmark: "only" };
+
+        consumeBookmark(container, viewScope);
+        expect(scrolled.map((anchor) => anchor.parentElement?.textContent)).toEqual([ "embedded" ]);
+        expect(viewScope.bookmark).toBeUndefined();
+        scrollIntoView.mockReset();
     });
 
     it("shows the tab that holds the target", () => {
@@ -109,5 +148,45 @@ describe("revealElement", () => {
 
         expect(container.querySelector("details")?.open).toBe(true);
         expect(container.querySelector(".trilium-tab-title--active")?.textContent).toBe("B");
+    });
+});
+
+describe("showDocumentTarget", () => {
+    beforeEach(() => {
+        showAnchorElement.mockClear();
+        scroller.scrollTo.mockClear();
+    });
+
+    it("shows the element whose marking is the target, a heading before a bookmark", async () => {
+        const container = buildContainer("<h2 data-toc-heading=\"h1.x\">Near</h2>"
+            + "<h2 data-toc-heading=\"h1\">One</h2>"
+            + `<p data-toc-bookmark='say "hi"]'>Quoted</p>`);
+
+        await showDocumentTarget(container, { heading: "h1", bookmark: 'say "hi"]' });
+        expect(showAnchorElement).toHaveBeenLastCalledWith(container.querySelectorAll("h2")[1]);
+
+        await showDocumentTarget(container, { bookmark: 'say "hi"]' });
+        expect(showAnchorElement).toHaveBeenLastCalledWith(container.querySelector("p"));
+        expect(scroller.scrollTo).not.toHaveBeenCalled();
+    });
+
+    it("finds a bookmark by its marking where the sanitizer removed its id", async () => {
+        // What DOMPurify leaves of `<p data-toc-bookmark="title" id="title">` in a browser: the id
+        // names a property of `document`. happy-dom drops the whole element instead.
+        const container = buildContainer(
+            "<p data-toc-bookmark=\"title\">Named like a property of the document</p>");
+
+        await showDocumentTarget(container, { bookmark: "title" });
+
+        expect(showAnchorElement).toHaveBeenCalledExactlyOnceWith(container.querySelector("p"));
+    });
+
+    it("scrolls the preview to its top when no element has the target", async () => {
+        const container = buildContainer(`<h2 data-toc-heading="h1">One</h2>`);
+
+        await showDocumentTarget(container, { heading: "gone", bookmark: "gone" });
+
+        expect(showAnchorElement).not.toHaveBeenCalled();
+        expect(scroller.scrollTo).toHaveBeenCalledExactlyOnceWith({ top: 0 });
     });
 });

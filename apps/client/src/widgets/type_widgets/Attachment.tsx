@@ -22,12 +22,15 @@ import {
 } from "../../services/attachment_actions";
 import { partitionAttachmentsByGroup } from "../../services/attachment_groups";
 import { attachmentRoleLabel } from "../../services/attachment_role_names";
-import content_renderer, { hasRenderedPreview } from "../../services/content_renderer";
+import content_renderer, {
+    type ContentLinkTarget, hasRenderedPreview
+} from "../../services/content_renderer";
 import froca from "../../services/froca";
 import image from "../../services/image";
 import { getAttachmentImageUrl } from "../../services/image_urls";
 import importService from "../../services/import";
 import { type ViewScope } from "../../services/link";
+import { takeLinkTarget } from "../../services/link_targets";
 import options from "../../services/options";
 import protected_session_holder from "../../services/protected_session_holder";
 import utils from "../../services/utils";
@@ -41,6 +44,7 @@ import { FormDropdownDivider, FormListItem } from "../react/FormList";
 import HelpButton from "../react/HelpButton";
 import { useTriliumEvent } from "../react/hooks/events";
 import { useAttachments } from "../react/hooks/note";
+import { useLinkTargetLanding } from "../react/hooks/note_context";
 import { useFileDrop } from "../react/hooks/drag";
 import Icon from "../react/Icon";
 import ImageViewer from "../react/ImageViewer";
@@ -193,9 +197,19 @@ function AttachmentListHeader({ noteId }: { noteId: string }) {
 export function AttachmentDetail({ note, viewScope, noteContext }: TypeWidgetProps) {
     const [ attachment, setAttachment ] = useState<FAttachment | null | undefined>(undefined);
 
+    // Only the lookup of the latest navigation is shown, whichever lookup resolves last.
     useEffect(() => {
-        if (!viewScope?.attachmentId) return;
-        froca.getAttachment(viewScope.attachmentId).then(setAttachment);
+        const attachmentId = viewScope?.attachmentId;
+        if (!attachmentId) return;
+        let isLatest = true;
+        froca.getAttachment(attachmentId).then((found) => {
+            if (isLatest && viewScope.attachmentId === attachmentId) {
+                setAttachment(found);
+            }
+        });
+        return () => {
+            isLatest = false;
+        };
     }, [ viewScope ]);
 
     return (
@@ -217,7 +231,16 @@ export function AttachmentDetail({ note, viewScope, noteContext }: TypeWidgetPro
 
             <div className="attachment-wrapper">
                 {attachment !== null ? (
-                    attachment && <AttachmentInfo attachment={attachment} isFullDetail ownerNote={note} noteContext={noteContext} viewScope={viewScope} />
+                    attachment && (
+                        <AttachmentInfo
+                            key={attachment.attachmentId}
+                            attachment={attachment}
+                            isFullDetail
+                            ownerNote={note}
+                            noteContext={noteContext}
+                            viewScope={viewScope}
+                        />
+                    )
                 ) : (
                     <strong>{t("attachment_detail.attachment_deleted")}</strong>
                 )}
@@ -263,6 +286,29 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
         && workbookFailedFor !== workbookKey;
     const rendersItself = isZoomableImage || isPlayableMedia || isEditableDrawing || isTranscript || isWorkbook;
     const imageSrc = getAttachmentImageUrl(attachment.attachmentId, attachment.title, modified);
+    /** Shows the content of the latest render at the place that a link names. */
+    const showTargetRef = useRef<((target: ContentLinkTarget) => void) | null>(null);
+    /** Counts the renders of `refresh()`: only the content of the latest one is shown. */
+    const renderGenerationRef = useRef(0);
+    /** Whether a render has started whose content is not in place yet. */
+    const isRenderingRef = useRef(false);
+
+    /**
+     * Shows the place that the latest link names, once the content of the latest render is in
+     * place. Until then the view scope holds it, and the render that completes shows it.
+     */
+    function showLinkTarget() {
+        const showTarget = showTargetRef.current;
+        const scope = noteContext?.viewScope;
+        if (!showTarget || isRenderingRef.current || !isFullDetail
+            || scope?.attachmentId !== attachment.attachmentId) {
+            return;
+        }
+        const target = takeLinkTarget(scope, [ "page", "annotation", "heading", "bookmark" ]);
+        if (target) {
+            showTarget(target);
+        }
+    }
 
     /** Unmounts whatever the content renderer previously mounted here (a media player), so that replacing
      *  or discarding the content doesn't leak its Preact root — or leave its audio playing. */
@@ -275,10 +321,24 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
         if (!rendersItself) {
             // The full-detail view has a pane to itself, so it gets the pdf.js toolbar and the whole
             // document; a list-view preview stays bare and shows only the corner of a workbook.
-            content_renderer.getRenderedContent(attachment, { pdfToolbar: !!isFullDetail, trim: !isFullDetail })
-                .then(({ $renderedContent }) => {
+            const renderOptions = {
+                pdfToolbar: !!isFullDetail,
+                buildsPdfToc: !!isFullDetail,
+                trim: !isFullDetail
+            };
+            const generation = ++renderGenerationRef.current;
+            isRenderingRef.current = true;
+            content_renderer.getRenderedContent(attachment, renderOptions)
+                .then(({ $renderedContent, showTarget }) => {
+                    if (generation !== renderGenerationRef.current) {
+                        content_renderer.disposeInteractiveContent($renderedContent);
+                        return;
+                    }
                     disposeContent();
                     contentWrapper.current?.replaceChildren(...$renderedContent);
+                    showTargetRef.current = showTarget ?? null;
+                    isRenderingRef.current = false;
+                    showLinkTarget();
                 });
         }
 
@@ -293,7 +353,13 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
 
     useEffect(() => {
         refresh();
-        return disposeContent;
+        return () => {
+            // A render that resolves after this is disposed unseen.
+            renderGenerationRef.current++;
+            isRenderingRef.current = false;
+            showTargetRef.current = null;
+            disposeContent();
+        };
     }, [ attachment, rendersItself ]);
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         const isThis = (row: AttachmentRow) => row.attachmentId === attachment.attachmentId;
@@ -301,6 +367,8 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
             refresh();
         }
     });
+    // A link to the attachment the pane shows keeps its viewer, which opens the link's place.
+    useLinkTargetLanding({ note: ownerNote, ntxId: noteContext?.ntxId }, showLinkTarget);
 
     // Electron right-click menu (copy image / reference) for the interactive image viewer.
     useEffect(() => {

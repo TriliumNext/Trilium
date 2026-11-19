@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
     getMarkdownNameFromCKEditorLanguage, getMimeTypeFromCKEditorLanguage, getMimeTypeFromFileName,
-    getMimeTypeFromMarkdownName, MIME_TYPE_AUTO, MIME_TYPES_DICT,
+    getMimeTypeFromMarkdownName, getSyntaxHighlightEnd, MIME_TYPE_AUTO, MIME_TYPES_DICT,
     normalizeMimeTypeForCKEditor, resolveEnabledMimeTypes, shouldSyntaxHighlight
 } from "./mime_type.js";
 
@@ -223,5 +223,18 @@ describe("shouldSyntaxHighlight", () => {
     it("allows code up to 50,000 characters, however few lines it has", () => {
         expect(shouldSyntaxHighlight("x".repeat(50_000))).toBe(true);
         expect(shouldSyntaxHighlight("x".repeat(50_001))).toBe(false);
+    });
+});
+
+describe("getSyntaxHighlightEnd", () => {
+    it("ends the head at the end of line 500 or at 50,000 characters, whichever comes first", () => {
+        const lines = (count: number, line = "x") => Array(count).fill(line).join("\n");
+
+        expect(getSyntaxHighlightEnd("")).toBe(0);
+        expect(getSyntaxHighlightEnd(lines(500))).toBe(lines(500).length);
+        expect(getSyntaxHighlightEnd(lines(501))).toBe(lines(500).length);
+        expect(getSyntaxHighlightEnd(`${lines(500)}\n`)).toBe(lines(500).length);
+        expect(getSyntaxHighlightEnd("x".repeat(60_000))).toBe(50_000);
+        expect(getSyntaxHighlightEnd(lines(400, "x".repeat(200)))).toBe(50_000);
     });
 });

@@ -196,6 +196,7 @@ export function useFollowLinksWithin(paneRef: RefObject<HTMLElement | null>, onF
             const { noteId, ntxId, viewScope, openInPopup } = link.parseNavigationStateFromUrl(href);
             if (!noteId || ntxId || openInPopup || viewScope?.viewMode !== "default"
                 || viewScope.attachmentId || viewScope.bookmark || viewScope.block
+                || viewScope.page || viewScope.annotation || viewScope.heading
                 || !onFollowLink(noteId)) return;
 
             e.preventDefault();

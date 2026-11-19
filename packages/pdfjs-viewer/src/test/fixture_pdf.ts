@@ -142,3 +142,27 @@ export function barePdf(): Uint8Array {
         "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>"
     ]);
 }
+
+/**
+ * Three pages, and an outline of `entryCount` entries at the top level: "Section <n>" without a
+ * destination, except for entry `summaryIndex`, "Summary", which leads to page 3.
+ */
+export function longOutlinePdf(entryCount: number, summaryIndex: number): Uint8Array {
+    const first = 7;
+    const last = first + entryCount - 1;
+    const entries = Array.from({ length: entryCount }, (_, index) => {
+        const next = index < entryCount - 1 ? ` /Next ${first + index + 1} 0 R` : "";
+        return index === summaryIndex
+            ? `<< /Title (Summary) /Parent 6 0 R /Dest [5 0 R /XYZ 0 600 0]${next} >>`
+            : `<< /Title (Section ${index}) /Parent 6 0 R${next} >>`;
+    });
+    return buildPdf([
+        "<< /Type /Catalog /Pages 2 0 R /Outlines 6 0 R >>",
+        "<< /Type /Pages /Kids [3 0 R 4 0 R 5 0 R] /Count 3 >>",
+        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+        `<< /Type /Outlines /First ${first} 0 R /Last ${last} 0 R /Count ${entryCount} >>`,
+        ...entries
+    ]);
+}

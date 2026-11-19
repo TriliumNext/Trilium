@@ -39,10 +39,9 @@ import { EditLinkBalloon, type EditLinkOpts } from "../../dialogs/edit_link";
 import { useTriliumEvent } from "../../react/hooks/events";
 import { useNoteLabel } from "../../react/hooks/note";
 import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
-import { useSameNoteSwitch } from "../../react/hooks/note_context";
 import { useEditorSpacedUpdate } from "../../react/hooks/editor";
 import { useLegacyImperativeHandlers } from "../../react/hooks/legacy";
-import { useSearchTermsConsumer } from "../../react/hooks/note_context";
+import { useLinkTargetLanding, useSearchTermsConsumer } from "../../react/hooks/note_context";
 import { setEditorNoteId } from "../../react/NoteStore";
 import { TypeWidgetProps } from "../type_widget";
 import AttachmentSaves, { InlineSourceSaves, useNoteEditor } from "./attachment_saves";
@@ -139,13 +138,7 @@ export default function EditableText({
                 return { ...getBlockData(editor, block), ...savedAttachments };
             }
 
-            const content = editor.getData() ?? "";
-            // if content is only tags/whitespace (typically <p>&nbsp;</p>), then just make it empty,
-            // this is important when setting a new note to code
-            return {
-                content: utils.isHtmlEmpty(content) ? "" : content,
-                ...savedAttachments
-            };
+            return { content: getNoteData(editor), ...savedAttachments };
         },
         onContentChange(newContent) {
             attachmentSaves.setNoteId(note?.noteId);
@@ -176,7 +169,8 @@ export default function EditableText({
             contentRef.current = savedData.content;
             contentNoteIdRef.current = note?.noteId;
             attachmentSaves.markSaved(savedData.attachments);
-        }
+        },
+        discardChanges: () => attachmentSaves.discard()
     });
     const templates = useTemplates();
     const [ editorRebuildKey, setEditorRebuildKey ] = useState(0);
@@ -191,11 +185,8 @@ export default function EditableText({
     }
 
     useSearchTermsConsumer(note, noteContext, ntxId);
-    // A hidden widget leaves the link target to the one on display.
-    useSameNoteSwitch(note, ntxId, () => {
-        if (isVisible !== false && contentNoteIdRef.current === note?.noteId) {
-            revealLinkTarget();
-        }
+    useLinkTargetLanding({ note, ntxId, isVisible }, () => {
+        if (contentNoteIdRef.current === note?.noteId) revealLinkTarget();
     });
 
     function revealLinkTarget() {
@@ -752,6 +743,16 @@ export function getBlockData(editor: CKTextEditor, block: string) {
         content: editor.getData({ trim: "none" }),
         block: getEditorBlocks(editor, block)
     };
+}
+
+/**
+ * The content of the whole note in `editor`, or `""` when it holds only empty blocks without ids,
+ * which matters when the note becomes a code note. Read untrimmed: CKEditor drops a sole empty
+ * paragraph, which is content when it has a block id.
+ */
+export function getNoteData(editor: CKTextEditor) {
+    const content = editor.getData({ trim: "none" });
+    return utils.isHtmlEmpty(content) ? "" : content;
 }
 
 /**

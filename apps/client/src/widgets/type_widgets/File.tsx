@@ -42,7 +42,7 @@ export default function FileTypeWidget({ note, parentComponent, noteContext, isV
             </Suspense>
         );
     } else if (isOffice) {
-        return <OfficePreview note={note} />;
+        return <OfficePreview note={note} noteContext={noteContext} isVisible={isVisible} />;
     } else if (note.mime === GPX_MIME) {
         return <GpxPreview note={note} blob={blob} />;
     } else if (blob?.content) {

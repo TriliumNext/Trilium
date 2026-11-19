@@ -956,6 +956,39 @@ describe("useCanvasDrawingPersistence", () => {
         expect(updateScene).not.toHaveBeenCalled();
     });
 
+    it("shows a save made elsewhere once the user picks it over the waiting changes", async () => {
+        const loaded = [ { id: "r1", type: "rectangle", version: 3, versionNonce: 1 } ];
+        const { attachment, getBlob } = buildAttachment({ elements: loaded });
+        const listeners = new Set<() => void>();
+        const editor = {
+            ...buildEditor(),
+            subscribeVersionLoaded: (listener: () => void) => {
+                listeners.add(listener);
+                return () => listeners.delete(listener);
+            }
+        };
+        showUpdatedElements();
+        await mount(attachment, editor, { rootRef: { current: document.createElement("div") } });
+        change();
+        sceneElements = loaded;
+        change();
+
+        const saved = [ { ...loaded[0], version: 4, versionNonce: 2 } ];
+        getBlob.mockResolvedValue({ content: JSON.stringify({ elements: saved }) });
+        editor.getUnsavedContent.mockReturnValue(JSON.stringify({ elements: loaded }));
+        await reportSave();
+        expect(updateScene).not.toHaveBeenCalled();
+
+        editor.getUnsavedContent.mockReturnValue(undefined);
+        expect(listeners.size).toBe(1);
+        await act(async () => {
+            for (const listener of listeners) listener();
+            await new Promise((resolve) => setTimeout(resolve));
+        });
+        expect(updateScene).toHaveBeenCalledExactlyOnceWith(
+            expect.objectContaining({ elements: saved }));
+    });
+
     it("shows a save made elsewhere once it shows, as in a tab in the background", async () => {
         const resizeCallbacks: (() => void)[] = [];
         const { ResizeObserver } = globalThis;

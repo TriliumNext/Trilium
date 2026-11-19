@@ -1,4 +1,5 @@
 import { isFontMimeType } from "@triliumnext/commons/src/lib/font_mimes.js";
+import { blobIdFromDigest } from "@triliumnext/commons/src/lib/utils.js";
 import { CANVAS_ATTACHMENT_MIME } from "@triliumnext/commons/src/lib/notes.js";
 
 import { getCrypto } from "../encryption/crypto";
@@ -67,13 +68,7 @@ export function hashedBlobId(content: string | Uint8Array) {
     }
 
     // sha512 is faster than sha256
-    const base64Hash = encodeBase64(getCrypto().createHash("sha512", content));
-
-    // we don't want such + and / in the IDs
-    const kindaBase62Hash = base64Hash.replaceAll("+", "X").replaceAll("/", "Y");
-
-    // 20 characters of base62 gives us ~120 bit of entropy which is plenty enough
-    return kindaBase62Hash.substr(0, 20);
+    return blobIdFromDigest(getCrypto().createHash("sha512", content));
 }
 
 export function quoteRegex(url: string) {

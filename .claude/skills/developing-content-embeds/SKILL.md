@@ -322,7 +322,10 @@ A change to a storage form reaches every reader, most of them outside the client
 ## The content component contract
 
 A content component receives the content and an optional `ContentEditor`
-(`canEdit()`, `getUnsavedContent()`, `scheduleSave()`, `release()`; no editor = read-only). Source
+(`canEdit()`, `getUnsavedContent()`, `scheduleSave()`, `release()`; no editor = read-only). Content
+that records its changes since its base passes `ChangeRecordHooks` (`services/note_save.ts`) as the
+third argument of `scheduleSave()`, as `MarkdownEmbed` does with those of `useBlockMarkers()`, and
+the saves of the note bring its changes onto another writer's version before asking. Source
 embeds receive `SourceEmbedProps` (`content`, `editor`) whichever storage the source has:
 `InlineSourceEmbed` and `AttachmentSourceEmbed` in `text/SourceEmbed.tsx` adapt the two.
 
@@ -606,7 +609,8 @@ An included text note is edited in place by a real `EditableText` (`TextEmbed.ts
    `editable`, `focusEmbed`).
 3. Persistence through the `ContentEditor` (`useAttachmentEditor()` in `text/attachment_saves.ts`
    and `bindAttachmentEditor()` in `services/content_renderer.ts` batch and retry the saves, and
-   flush them before leaving). If other
+   flush them before leaving). Each row saves through `NoteSaver.saveAttachment()` with the blob
+   it was read at, so a save over another writer's change asks the user, as a note does. If other
    places need a picture without loading the editor (share pages, previews), save one as an image
    attachment beside the content, as `persistence.ts` does under `getDrawingPictureTitle()`.
 4. An attachment detail view reusing the same editor (`CanvasDrawingDetail` in `Attachment.tsx`).

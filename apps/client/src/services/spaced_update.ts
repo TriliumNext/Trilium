@@ -55,6 +55,8 @@ export default class SpacedUpdate<T = void> {
     private pendingCommits = new Map<string | null, PendingCommit<T>>();
     /** Snapshots whose asynchronous `prepare` is still running — captured but not yet queued. */
     private pendingSnapshots = new Set<Promise<void>>();
+    /** How often `discard()` dropped the changes to each key, which voids older snapshots. */
+    private discardCounts = new Map<string | null, number>();
     private drainPromise: Promise<void> | null = null;
     private debounceTimer?: ReturnType<typeof setTimeout>;
     private retryTimer?: ReturnType<typeof setTimeout>;
@@ -134,6 +136,18 @@ export default class SpacedUpdate<T = void> {
             }
             await this.drain();
         } while (this.changed);
+    }
+
+    /**
+     * Drops the changes to `key` that are not saved yet, a snapshot still being taken included,
+     * once a revision keeps them instead.
+     */
+    discard(key: string | null) {
+        this.pendingCommits.delete(key);
+        this.discardCounts.set(key, (this.discardCounts.get(key) ?? 0) + 1);
+        if (key === this.bindingKey) {
+            this.changed = false;
+        }
     }
 
     /** Whether a change made under the current binding is not saved yet. */
@@ -267,12 +281,15 @@ export default class SpacedUpdate<T = void> {
         }
 
         if (result instanceof Promise) {
+            const discardCount = this.discardCounts.get(bindingKey);
             // Track the in-flight snapshot so drain() and isAllSavedAndTriggerUpdate() don't
             // consider everything saved before the snapshot has been queued for commit.
             const snapshot: Promise<void> = result
                 .then(
                     (data) => {
-                        this.pendingCommits.set(bindingKey, { data, commit });
+                        if (this.discardCounts.get(bindingKey) === discardCount) {
+                            this.pendingCommits.set(bindingKey, { data, commit });
+                        }
                     },
                     restoreOnError
                 )

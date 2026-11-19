@@ -51,9 +51,13 @@ async function getWithSilentNotFound<T>(url: string, componentId?: string) {
 
 /**
  * @param raw if `true`, the value will be returned as a string instead of a JavaScript object if JSON, XMLDocument if XML, etc.
- * @param silence suppresses the error toast for a 400, for a caller that shows the failure itself.
+ * @param silence suppresses the error toast for a 400 or a 404, for a caller that shows the failure
+ * itself.
  */
-async function get<T>(url: string, componentId?: string, raw?: boolean, silence?: Pick<CallOptions, "silentBadRequest">) {
+async function get<T>(
+    url: string, componentId?: string, raw?: boolean,
+    silence?: Pick<CallOptions, "silentBadRequest" | "silentNotFound">
+) {
     return await call<T>("GET", url, componentId, { raw, ...silence });
 }
 
@@ -68,8 +72,11 @@ async function getWithSilentUnauthorized<T>(url: string, componentId?: string) {
     return await call<T>("GET", url, componentId, { silentUnauthorized: true });
 }
 
-async function post<T>(url: string, data?: unknown, componentId?: string) {
-    return await call<T>("POST", url, componentId, { data });
+/** @param silence suppresses the error toast for a 409, for a caller that handles the conflict. */
+async function post<T>(
+    url: string, data?: unknown, componentId?: string, silence?: Pick<CallOptions, "silentConflict">
+) {
+    return await call<T>("POST", url, componentId, { data, ...silence });
 }
 
 async function postWithSilentInternalServerError<T>(url: string, data?: unknown, componentId?: string) {
@@ -103,8 +110,11 @@ async function postWithTimeout<T>(url: string, timeoutMs: number, data?: unknown
     return await call<T>("POST", url, componentId, { data, timeoutMs, ...silence });
 }
 
-async function put<T>(url: string, data?: unknown, componentId?: string) {
-    return await call<T>("PUT", url, componentId, { data });
+/** @param silence suppresses the error toast for a 409, for a caller that handles the conflict. */
+async function put<T>(
+    url: string, data?: unknown, componentId?: string, silence?: Pick<CallOptions, "silentConflict">
+) {
+    return await call<T>("PUT", url, componentId, { data, ...silence });
 }
 
 async function patch<T>(url: string, data: unknown, componentId?: string) {

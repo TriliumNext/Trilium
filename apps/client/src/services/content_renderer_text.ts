@@ -370,11 +370,18 @@ export function replaceWithEmbedBox(element: Element, box: HTMLElement) {
     figure.replaceWith(box);
 }
 
-/** Replaces `embedEl` with an empty reference link to `href`, and returns the link. */
+/**
+ * Replaces `embedEl` with an empty reference link to `href`, and returns the link. The link keeps
+ * the block id of the embed, which is a block of the note around it.
+ */
 export function replaceWithReferenceLink(embedEl: Element, href: string) {
     const referenceLink = document.createElement("a");
     referenceLink.className = "reference-link";
     referenceLink.setAttribute("href", href);
+    const blockId = embedEl.getAttribute(BLOCK_ID_ATTRIBUTE);
+    if (blockId !== null) {
+        referenceLink.setAttribute(BLOCK_ID_ATTRIBUTE, blockId);
+    }
     embedEl.replaceWith(referenceLink);
     return referenceLink;
 }

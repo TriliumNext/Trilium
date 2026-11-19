@@ -1,4 +1,6 @@
-import { resolveBlockReference } from "@triliumnext/commons/src/lib/block_reference.js";
+import {
+    findOwnElementById, resolveBlockReference
+} from "@triliumnext/commons/src/lib/block_reference.js";
 
 import "../../theme/block_reference.css";
 import { revealCollapsedHeadings } from "../collapsible_headings/collapsible_headings_read_only.js";
@@ -6,10 +8,13 @@ import { CLASSES as TAB_CLASSES } from "../tabs/constants.js";
 import { getTabTitle, revealTab } from "../tabs/tabs_read_only.js";
 
 const FLASH_CLASS = "block-reference-flash";
-/** The duration of the `block-reference-flash` animation in `block_reference.css`. */
-const FLASH_DURATION_MS = 1500;
+/**
+ * The duration of the `block-reference-flash` animation in `block_reference.css`, which the
+ * source of a Markdown note flashes the lines of a reference for as well.
+ */
+export const FLASH_DURATION_MS = 1500;
 /** The smallest gap above the shown blocks, as a share of the height of their scroll container. */
-const MIN_TOP_GAP = 0.15;
+export const MIN_TOP_GAP = 0.15;
 /** The elements that `showAnchor()` flashes when they hold the anchor. */
 const ANCHOR_BLOCKS = "p, h1, h2, h3, h4, h5, h6, li, dt, dd, pre, blockquote, figure, td, th";
 
@@ -44,12 +49,14 @@ export function showBlocks(first: Element, last: Element) {
 
 /**
  * Scrolls to the element whose `id` is `name` in `container`, such as an anchor, and flashes the
- * block that holds it, as {@link showBlockReference} does. Returns `false` when it is missing.
+ * block that holds it, as {@link showBlockReference} does. One in the content of the note of
+ * `container` comes before one in the content of a note that it embeds. Returns `false` when it is
+ * missing.
  */
 export function showAnchor(container: Element, name: string) {
     // Exact comparison: an anchor name can hold characters that a CSS selector does not allow.
-    const anchor = Array.from(container.querySelectorAll("[id]"))
-        .find((element) => element.id === name);
+    const anchor = findOwnElementById<Element>(container, name)
+        ?? Array.from(container.querySelectorAll("[id]")).find((element) => element.id === name);
     if (anchor) {
         showAnchorElement(anchor);
     }
@@ -110,7 +117,7 @@ function scrollToBlocks(first: Element, last: Element) {
 }
 
 /** The nearest ancestor of `element` that scrolls vertically, else the document's scroller. */
-function getScrollContainer(element: Element) {
+export function getScrollContainer(element: Element) {
     for (let parent = element.parentElement; parent; parent = parent.parentElement) {
         const { overflowY } = getComputedStyle(parent);
         if ([ "auto", "scroll" ].includes(overflowY) && parent.scrollHeight > parent.clientHeight) {

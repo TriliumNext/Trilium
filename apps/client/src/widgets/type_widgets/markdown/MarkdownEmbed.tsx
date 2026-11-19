@@ -4,7 +4,7 @@ import type VanillaCodeMirror from "@triliumnext/codemirror";
 import moveVerticalIcon from "boxicons/svg/regular/bx-move-vertical.svg?raw";
 import clsx from "clsx";
 import type { RefObject } from "preact";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import type { CommandNames } from "../../../components/app_context";
 import type FAttachment from "../../../entities/fattachment";
@@ -20,6 +20,7 @@ import { resolveDisplayMode } from "../helpers/split_editor_mode";
 import { SplitLayout, useMountedPanes } from "../helpers/SplitEditor";
 import { registerContentEmbedTools, useContentEmbedDisplayMode } from "../text/content_embed_tools";
 import { EmbedPreview, useEditableEmbed, useEmbedPreview } from "../text/editable_embed";
+import { useBlockMarkers } from "./editor_block_references";
 import {
     renderWithSourceLines, useMarkdownKeymap, useNoteLinkChips, useSyncedHighlight,
     useSyncedScrolling
@@ -68,9 +69,25 @@ export default function MarkdownEmbed({
 
     const shownView = isSourceShown ? view : null;
     const previewElement = shownPreview instanceof HTMLDivElement ? shownPreview : null;
+    const previewRef = useRef(previewElement);
+    previewRef.current = previewElement;
     useSyncedScrolling(shownView, previewElement);
     useSyncedHighlight(shownView, previewElement, renderedContent);
     useNoteLinkChips(shownView);
+    const recordHooks = useBlockMarkers(shownView, useMemo(() => (note && editor
+        ? {
+            getNote: () => note,
+            getNotePath: () => note.getBestNotePathString(),
+            getPreview: () => previewRef.current,
+            save: async () => await editor.saveNow?.()
+        }
+        : undefined), [ note, editor ]));
+    // The saves of the source take over the ids that another writer gave its blocks meanwhile.
+    const sourceEditor = useMemo(() => editor && {
+        ...editor,
+        scheduleSave: (getContent: () => string, onSaved?: (content: string) => void) =>
+            editor.scheduleSave(getContent, onSaved, recordHooks)
+    }, [ editor, recordHooks ]);
     useMarkdownKeymap(isEditing ? shownView : null);
 
     return (
@@ -93,7 +110,7 @@ export default function MarkdownEmbed({
                         isSourceShown={isSourceShown}
                         note={note}
                         ownerNote={entity instanceof FNote ? entity : entity.getNote()}
-                        editor={editor}
+                        editor={sourceEditor}
                         content={content}
                         mime={MARKDOWN_MIME}
                         tabWidth={tabWidth}

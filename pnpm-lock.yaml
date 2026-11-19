@@ -1310,6 +1310,9 @@ importers:
 
   packages/pdfjs-viewer:
     dependencies:
+      '@noble/hashes':
+        specifier: 2.4.0
+        version: 2.4.0
       '@triliumnext/commons':
         specifier: workspace:*
         version: link:../commons
@@ -1432,6 +1435,9 @@ importers:
       ejs:
         specifier: 7.0.2
         version: 7.0.2
+      fflate:
+        specifier: 0.8.3
+        version: 0.8.3
       i18next:
         specifier: 27.1.1
         version: 27.1.1(typescript@6.0.3)

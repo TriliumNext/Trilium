@@ -33,6 +33,7 @@ let isContentHeld = false;
 /** The text editor, which has a spec of its own. It listens for what a real editor listens for. */
 vi.mock("./EditableText", () => ({
     getBlockData: () => ({ content: editorData }),
+    getNoteData: () => editorData,
     default: (props: TypeWidgetProps & { onContentShown?: () => void }) => {
         const isNested = useContext(NestedEmbedContext);
         const hostVimMode = useContext(HostVimModeContext);

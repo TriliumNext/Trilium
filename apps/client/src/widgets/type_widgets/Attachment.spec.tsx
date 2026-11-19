@@ -1,6 +1,7 @@
+import { render } from "preact";
 import { useEffect } from "preact/hooks";
 import { act } from "preact/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import Component from "../../components/component";
 import FAttachment from "../../entities/fattachment";
@@ -12,8 +13,13 @@ import { ParentComponent } from "../react/react_utils";
 
 const CANVAS_MIME = "application/vnd.excalidraw+json";
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-const { getRenderedContent, drawingMounts, uploadFiles } = vi.hoisted(() => ({
-    getRenderedContent: vi.fn(async () => ({ $renderedContent: [] })),
+const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+const {
+    getRenderedContent, disposeInteractiveContent, drawingMounts, uploadFiles
+} = vi.hoisted(() => ({
+    getRenderedContent: vi.fn(
+        async (..._args: unknown[]): Promise<unknown> => ({ $renderedContent: [] })),
+    disposeInteractiveContent: vi.fn(),
     drawingMounts: vi.fn(),
     uploadFiles: vi.fn(async () => {})
 }));
@@ -32,7 +38,7 @@ vi.mock("i18next", () => {
 vi.mock("../../services/content_renderer", () => ({
     default: {
         getRenderedContent,
-        disposeInteractiveContent: () => {}
+        disposeInteractiveContent
     },
     hasRenderedPreview: (attachment: FAttachment) => attachment.mime === CANVAS_MIME
 }));
@@ -209,6 +215,12 @@ describe("AttachmentList", () => {
 });
 
 describe("AttachmentDetail", () => {
+    afterEach(() => {
+        getRenderedContent.mockReset();
+        getRenderedContent.mockImplementation(async () => ({ $renderedContent: [] }));
+        disposeInteractiveContent.mockClear();
+    });
+
     it("edits a canvas drawing in an editor that stays mounted through every save", async () => {
         const drawing = { ...role("file"), mime: CANVAS_MIME } as FAttachment;
         vi.spyOn(froca, "getAttachment").mockResolvedValue(drawing);
@@ -236,6 +248,142 @@ describe("AttachmentDetail", () => {
         await reloadAttachment(component, "otherAttachment", "otherComponent");
         expect(drawingMounts).toHaveBeenCalledOnce();
         expect(getRenderedContent).not.toHaveBeenCalled();
+    });
+
+    describe.each([
+        {
+            name: "a PDF", mime: "application/pdf",
+            first: { page: "3", heading: "h1" }, second: { page: "5", annotation: "12R" },
+            firstTarget: { page: 3, heading: "h1", annotation: undefined, bookmark: undefined },
+            secondTarget: { page: 5, heading: undefined, annotation: "12R", bookmark: undefined }
+        },
+        {
+            name: "a Word document", mime: DOCX_MIME,
+            first: { heading: "h1" }, second: { bookmark: "Appendix" },
+            firstTarget: {
+                page: undefined, heading: "h1", annotation: undefined, bookmark: undefined
+            },
+            secondTarget: {
+                page: undefined, heading: undefined, annotation: undefined, bookmark: "Appendix"
+            }
+        }
+    ])("the place in $name that a link names", ({ mime, first, second, ...targets }) => {
+        const { firstTarget, secondTarget } = targets;
+
+        it("is shown once the content is in place, and that of each later link at once", async () => {
+            const { attachment, renders, follow, viewScope } = await openDetail(mime, first);
+
+            expect(getRenderedContent).toHaveBeenCalledWith(attachment,
+                { pdfToolbar: true, buildsPdfToc: true, trim: false });
+            expect(viewScope).toMatchObject(first);
+            const content = await renders.finish(0);
+            expect(content.showTarget).toHaveBeenCalledExactlyOnceWith(firstTarget);
+            expect(viewScope)
+                .toMatchObject({ page: undefined, heading: undefined, annotation: undefined });
+
+            await follow(second);
+            expect(content.showTarget).toHaveBeenLastCalledWith(secondTarget);
+
+            // A link without a place, or to another attachment, moves nothing.
+            await follow({});
+            await follow({ attachmentId: "other", heading: "h2" });
+            expect(content.showTarget).toHaveBeenCalledTimes(2);
+            expect(getRenderedContent).toHaveBeenCalledOnce();
+        });
+
+        it("of the latest link is shown, once, when links follow during a render", async () => {
+            const { attachment, renders, follow } = await openDetail(mime, first);
+
+            await follow(second);
+            const content = await renders.finish(0);
+            expect(content.showTarget).toHaveBeenCalledExactlyOnceWith(secondTarget);
+
+            // During a render after a change of the content, the link goes to the new content.
+            await reloadAttachment(renders.component, attachment.attachmentId, "otherComponent");
+            await follow(first);
+            expect(content.showTarget).toHaveBeenCalledOnce();
+            const changed = await renders.finish(1);
+            expect(changed.showTarget).toHaveBeenCalledExactlyOnceWith(firstTarget);
+            expect(content.showTarget).toHaveBeenCalledOnce();
+        });
+
+        it("comes from the latest render when two resolve out of order", async () => {
+            const { attachment, renders, follow, container } = await openDetail(mime, {});
+            await reloadAttachment(renders.component, attachment.attachmentId, "otherComponent");
+            await follow(first);
+
+            const latest = await renders.finish(1);
+            const superseded = await renders.finish(0);
+
+            expect(container.contains(latest.element)).toBe(true);
+            expect(container.contains(superseded.element)).toBe(false);
+            expect(disposeInteractiveContent).toHaveBeenCalledWith([ superseded.element ]);
+            expect(superseded.showTarget).not.toHaveBeenCalled();
+            expect(latest.showTarget).toHaveBeenCalledExactlyOnceWith(firstTarget);
+        });
+    });
+
+    it("shows the attachment of the latest navigation, whichever lookup ends last", async () => {
+        const older = { ...role("file"), mime: DOCX_MIME } as FAttachment;
+        const newer = { ...role("file"), mime: DOCX_MIME } as FAttachment;
+        const lookups = new Map<string, (attachment: FAttachment) => void>();
+        vi.spyOn(froca, "getAttachment").mockImplementation((attachmentId) =>
+            new Promise((resolve) => lookups.set(attachmentId, resolve)));
+        const renders = holdRenders();
+        const noteContext = { ntxId: "ntx1", viewScope: {} as Record<string, string | undefined> };
+        const container = document.createElement("div");
+        document.body.append(container);
+        async function navigate(attachment: FAttachment, heading: string) {
+            noteContext.viewScope = {
+                viewMode: "attachments", attachmentId: attachment.attachmentId, heading
+            };
+            const props = {
+                note: { noteId: "note1" }, viewScope: noteContext.viewScope, noteContext
+            } as unknown as Parameters<typeof AttachmentDetail>[0];
+            await act(async () => {
+                render(
+                    <ParentComponent.Provider value={renders.component}>
+                        <AttachmentDetail {...props} />
+                    </ParentComponent.Provider>, container);
+            });
+        }
+
+        await navigate(older, "a");
+        await navigate(newer, "b");
+        await act(async () => lookups.get(newer.attachmentId)?.(newer));
+        await act(async () => lookups.get(older.attachmentId)?.(older));
+        const content = await renders.finish(0);
+
+        expect(getRenderedContent).toHaveBeenCalledExactlyOnceWith(newer, expect.anything());
+        expect(content.showTarget)
+            .toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ heading: "b" }));
+        await act(async () => render(null, container));
+        container.remove();
+    });
+
+    it("looks nothing up while the view scope names no attachment", async () => {
+        const getAttachment = vi.spyOn(froca, "getAttachment").mockResolvedValue(null);
+        const component = new Component();
+        const container = document.createElement("div");
+        document.body.append(container);
+        async function show(viewScope: Record<string, string>) {
+            const props = { note: { noteId: "note1" }, viewScope } as unknown as
+                Parameters<typeof AttachmentDetail>[0];
+            await act(async () => {
+                render(
+                    <ParentComponent.Provider value={component}>
+                        <AttachmentDetail {...props} />
+                    </ParentComponent.Provider>, container);
+            });
+        }
+
+        await show({ viewMode: "attachments" });
+        expect(getAttachment).not.toHaveBeenCalled();
+
+        await show({ viewMode: "attachments", attachmentId: "att1" });
+        expect(getAttachment).toHaveBeenCalledExactlyOnceWith("att1");
+        await act(async () => render(null, container));
+        container.remove();
     });
 
     it("shows a workbook opened on its own in the read-only spreadsheet, else its whole preview until it changes", async () => {
@@ -269,6 +417,58 @@ describe("AttachmentDetail", () => {
         await vi.waitFor(() => expect(container.querySelector(".attachment-spreadsheet .spreadsheet-file-stub")).not.toBeNull());
     });
 });
+
+/**
+ * Opens the full detail of a file attachment of `mime` from a link whose view scope holds `scope`.
+ * Its renders wait until `renders.finish()`.
+ */
+async function openDetail(mime: string, scope: Record<string, string | undefined>) {
+    const attachment = { ...role("file"), mime } as FAttachment;
+    vi.spyOn(froca, "getAttachment").mockResolvedValue(attachment);
+    const renders = holdRenders();
+    const viewScope: Record<string, string | undefined> = {
+        viewMode: "attachments", attachmentId: attachment.attachmentId, ...scope
+    };
+    const noteContext = { ntxId: "ntx1", viewScope };
+    const props = { note: { noteId: "note1" }, viewScope, noteContext } as unknown as
+        Parameters<typeof AttachmentDetail>[0];
+    const container = renderInto(
+        <ParentComponent.Provider value={renders.component}>
+            <AttachmentDetail {...props} />
+        </ParentComponent.Provider>
+    );
+    await vi.waitFor(() => expect(getRenderedContent).toHaveBeenCalledOnce());
+
+    /** Follows a link to the attachment the pane shows, with `changes` to the view scope. */
+    async function follow(changes: Record<string, string | undefined>) {
+        for (const key of [ "page", "heading", "annotation", "bookmark" ]) {
+            viewScope[key] = undefined;
+        }
+        Object.assign(viewScope, changes);
+        await act(async () => {
+            await renders.component.handleEvent("noteSwitched",
+                { noteContext: { ntxId: "ntx1", note: { noteId: "note1" } } } as never);
+        });
+    }
+    return { attachment, renders, follow, viewScope, container };
+}
+
+/** Holds each call of `getRenderedContent()` until `finish()` gives it content. */
+function holdRenders() {
+    const pending: ((content: unknown) => void)[] = [];
+    getRenderedContent.mockReset();
+    getRenderedContent.mockImplementation(() => new Promise((resolve) => pending.push(resolve)));
+    return {
+        component: new Component(),
+        /** Completes the render that started `index`-th, with an element and a `showTarget()`. */
+        async finish(index: number) {
+            const element = document.createElement("div");
+            const showTarget = vi.fn();
+            await act(async () => pending[index]?.({ $renderedContent: [ element ], showTarget }));
+            return { element, showTarget };
+        }
+    };
+}
 
 /** Reports a saved change to an attachment, as the server does after a save from `componentId`. */
 async function reloadAttachment(component: Component, attachmentId: string, componentId: string) {

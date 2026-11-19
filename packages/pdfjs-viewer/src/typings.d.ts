@@ -1,4 +1,4 @@
-import type { PDFDocumentProxy } from "pdfjs-dist";
+import type { PDFDocumentLoadingTask, PDFDocumentProxy } from "pdfjs-dist";
 import type { OptionalContentConfig } from "pdfjs-dist/types/src/display/optional_content_config";
 
 declare global {
@@ -29,6 +29,11 @@ declare global {
                 pagesPromise: Promise<void>;
                 /** Works out the visible pages and records the scroll position. */
                 update(): void;
+                /** Puts `destArray` of the page at the top of the view, or the page itself. */
+                scrollPageIntoView(params: {
+                    pageNumber: number;
+                    destArray?: unknown[] | null;
+                }): void;
                 /**
                  * pdf.js' own type, rather than a local restatement of it — the previous
                  * hand-written shape declared the config object directly and omitted the
@@ -59,5 +64,9 @@ declare global {
             store: ViewHistory;
         };
         PDFViewerApplicationOptions?: { set(name: string, value: any): void; }
+        /** The pdf.js library that the viewer loads. */
+        pdfjsLib: {
+            getDocument(src: { data: Uint8Array }): PDFDocumentLoadingTask;
+        };
     }
 }

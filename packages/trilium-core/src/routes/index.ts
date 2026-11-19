@@ -3,6 +3,7 @@ import treeApiRoute from "./api/tree";
 import keysApiRoute from "./api/keys";
 import notesApiRoute from "./api/notes";
 import attachmentsApiRoute from "./api/attachments";
+import tocApiRoute from "./api/toc";
 import noteMapRoute from "./api/note_map";
 import recentNotesRoute from "./api/recent_notes";
 import otherRoute from "./api/others";
@@ -110,6 +111,8 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     apiRoute(PUT, "/api/notes/:noteId/blocks", notesApiRoute.updateNoteBlocks);
     asyncApiRoute(GET, "/api/notes/:noteId/references", notesApiRoute.getNoteReferences);
     apiRoute(PST, "/api/notes/:noteId/references", notesApiRoute.createNoteReference);
+    apiRoute(GET, "/api/notes/:noteId/toc", tocApiRoute.getNoteToc);
+    apiRoute(PUT, "/api/notes/:noteId/toc", tocApiRoute.saveNoteToc);
     apiRoute(DEL, "/api/notes/:noteId", notesApiRoute.deleteNote);
     apiRoute(PUT, "/api/notes/:noteId/undelete", notesApiRoute.undeleteNote);
     apiRoute(PST, "/api/notes/:noteId/revision", notesApiRoute.forceSaveRevision);
@@ -132,6 +135,10 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     apiRoute(DEL, "/api/attachments/:attachmentId", attachmentsApiRoute.deleteAttachment);
     apiRoute(PUT, "/api/attachments/:attachmentId/rename", attachmentsApiRoute.renameAttachment);
     apiRoute(GET, "/api/attachments/:attachmentId/blob", attachmentsApiRoute.getAttachmentBlob);
+    asyncApiRoute(GET, "/api/attachments/:attachmentId/references",
+        tocApiRoute.getAttachmentReferences);
+    apiRoute(GET, "/api/attachments/:attachmentId/toc", tocApiRoute.getAttachmentToc);
+    apiRoute(PUT, "/api/attachments/:attachmentId/toc", tocApiRoute.saveAttachmentToc);
 
     apiRoute(GET, "/api/notes/:noteId/attributes", attributesRoute.getEffectiveNoteAttributes);
     apiRoute(PST, "/api/notes/:noteId/attributes", attributesRoute.addNoteAttribute);
@@ -146,6 +153,7 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
 
     apiRoute(GET, "/api/notes/:noteId/revisions", revisionsApiRoute.getRevisions);
     apiRoute(DEL, "/api/notes/:noteId/revisions", revisionsApiRoute.eraseAllRevisions);
+    apiRoute(PST, "/api/notes/:noteId/revisions/draft", revisionsApiRoute.saveDraftRevision);
     apiRoute(PST, "/api/revisions/erase-all-excess-revisions", revisionsApiRoute.eraseAllExcessRevisions);
     apiRoute(GET, "/api/revisions/:revisionId", revisionsApiRoute.getRevision);
     apiRoute(GET, "/api/revisions/:revisionId/blob", revisionsApiRoute.getRevisionBlob);
