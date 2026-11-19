@@ -325,6 +325,17 @@ describe("Excalidraw contract of the canvas drawing", () => {
         expect(unpatched).toEqual([]);
     });
 
+    it("tells the Undo and Redo buttons when the history is cleared, as the Trilium patch does", () => {
+        // `loadData()` clears the history when the canvas shows another note. Without the event,
+        // the buttons keep the state of the note shown before (#12613).
+        const unpatched = [ productionDir, developmentDir ].filter((dir) => {
+            const source = readBundle(dir, [ ".js" ]).replace(/\s+/g, "");
+            const clear = source.split("clear(){this.undoStack.length=0")[1]?.split("}")[0] ?? "";
+            return !clear.includes("this.onHistoryChangedEmitter.trigger(new");
+        });
+        expect(unpatched).toEqual([]);
+    });
+
     it("rules out a pen stroke by its bounds, and copies no element for the pen or eraser", () => {
         const unpatched = [ productionDir, developmentDir ].flatMap((dir) => {
             const source = readBundle(dir, [ ".js" ]).replace(/\s+/g, "");
