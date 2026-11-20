@@ -22,7 +22,6 @@ export default function PdfLayers() {
     const layersData = useGetContextData("pdfLayers");
     const tokens = useFilterState()?.tokens;
     const ready = layersData?.status === "ready" ? layersData : undefined;
-    // A toggle is no place in the note, so Enter never runs one.
     const matches = useOutlineFilter(ready?.layers ?? null, {
         section: "pdf-layers",
         getText: (layer) => layer.name

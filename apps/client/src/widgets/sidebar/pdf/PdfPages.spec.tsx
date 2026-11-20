@@ -104,6 +104,21 @@ describe("PdfPages while filtering", () => {
         expect(scrollToRow).toHaveBeenLastCalledWith({ index: 0 });
     });
 
+    it("keeps its place when the viewer moves to another page", () => {
+        const pages = readyPages({ totalPages: 130, currentPage: 1 });
+        shown.pages = pages;
+        renderPanel("12");
+        scrollToRow.mockClear();
+
+        // Pdf.tsx publishes a copy of the data with the new current page.
+        shown.pages = { ...pages, currentPage: 112 };
+        renderPanel("12");
+
+        expect(container.querySelector(".pdf-page-item.active .pdf-page-number")?.textContent)
+            .toBe("112");
+        expect(scrollToRow).not.toHaveBeenCalled();
+    });
+
     it("asks for no thumbnail it already has, whatever the query", () => {
         const requestThumbnail = vi.fn();
         shown.pages = {
@@ -128,7 +143,7 @@ describe("PdfPages while filtering", () => {
 /** The pages of the viewer load `loadToken`, as Pdf.tsx publishes them. */
 function readyPages({ totalPages, currentPage, loadToken = "1" }: {
     totalPages: number; currentPage: number; loadToken?: string;
-}): NoteContextDataMap["pdfPages"] {
+}): Extract<NoteContextDataMap["pdfPages"], { status: "ready" }> {
     return {
         status: "ready", loadToken, totalPages, currentPage,
         scrollToPage: vi.fn(), requestThumbnail: vi.fn(), copyReference: vi.fn()

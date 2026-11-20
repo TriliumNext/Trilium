@@ -26,10 +26,11 @@ export default function PdfPages() {
     const onNavigated = useContext(NavigatedInNote);
     const filter = useFilterState();
     const ready = pagesData?.status === "ready" ? pagesData : undefined;
+    const isReady = !!ready;
     const totalPages = ready?.totalPages ?? 0;
     // Page numbers exist only while filtering, as the list counts the pages otherwise.
-    const pages = useMemo(() => (filter && ready ? findPages(totalPages, filter.tokens) : null),
-        [ filter, ready, totalPages ]);
+    const pages = useMemo(() => (filter && isReady ? findPages(totalPages, filter.tokens) : null),
+        [ filter, isReady, totalPages ]);
 
     const firstPage = pages?.[0];
     const scrollToPage = ready?.scrollToPage;

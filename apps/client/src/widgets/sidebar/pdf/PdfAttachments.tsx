@@ -23,7 +23,6 @@ export default function PdfAttachments() {
     const attachmentsData = useGetContextData("pdfAttachments");
     const tokens = useFilterState()?.tokens;
     const ready = attachmentsData?.status === "ready" ? attachmentsData : undefined;
-    // A download is no place in the note, so Enter never runs one.
     const matches = useOutlineFilter(ready?.attachments ?? null, {
         section: "pdf-attachments",
         getText: (attachment) => attachment.filename
