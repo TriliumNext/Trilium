@@ -204,6 +204,16 @@ describe("extraction from a real document", () => {
         expect(viewer.lastMessageOfType("pdfjs-viewer-annotations").annotations).toEqual(EXPECTED);
     });
 
+    it("names the load of its frame in the list", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        window.TRILIUM_LOAD_TOKEN = "load-7";
+
+        await setupPdfAnnotations();
+
+        expect(viewer.lastMessageOfType("pdfjs-viewer-annotations"))
+            .toMatchObject({ loadToken: "load-7" });
+    });
+
     it("lets editor state override the colour and comment of a stored annotation", async () => {
         viewer = await installViewerApp(allFeaturesPdf());
         // getEditor() is pinned as existing by the contract spec; its return is stubbed here

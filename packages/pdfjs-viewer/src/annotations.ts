@@ -209,7 +209,8 @@ function sendAnnotations(annotations: PdfAnnotationInfo[]) {
         type: "pdfjs-viewer-annotations",
         annotations,
         ntxId: window.TRILIUM_NTX_ID,
-        noteId: window.TRILIUM_NOTE_ID
+        noteId: window.TRILIUM_NOTE_ID,
+        loadToken: window.TRILIUM_LOAD_TOKEN
     } satisfies PdfViewerAnnotationsMessage, window.location.origin);
 }
 

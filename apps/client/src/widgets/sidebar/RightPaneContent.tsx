@@ -2,15 +2,19 @@ import "./RightPaneContent.css";
 
 import clsx from "clsx";
 import type { RefObject, VNode } from "preact";
-import { useLayoutEffect, useRef } from "preact/hooks";
+import { useSyncExternalStore } from "preact/compat";
+import { useLayoutEffect, useMemo, useRef } from "preact/hooks";
 
 import appContext from "../../components/app_context";
 import type { WidgetsByParent } from "../../services/bundle";
 import { t } from "../../services/i18n";
 import ActionButton from "../react/ActionButton";
 import Button from "../react/Button";
+import { FilterProvider, filterTokens } from "../react/filter";
+import { FilterField } from "../react/FormList";
 import { useLegacyWidget } from "../react/hooks/legacy";
 import { useNoteProperty } from "../react/hooks/note";
+import { useDocumentState } from "../react/hooks/note_context";
 import { useTriliumOptionBool, useTriliumOptionJson } from "../react/hooks/options";
 import { useActiveNoteContext, useGetContextData } from "../react/hooks/tree";
 import LazyComponent from "../react/LazyComponent";
@@ -25,6 +29,7 @@ import ChatHighlightsList from "./ChatHighlightsList";
 import HighlightsList from "./HighlightsList";
 import NoteMap from "./NoteMap";
 import NotePaths from "./NotePaths";
+import { OutlineResults, OutlineResultsContext } from "./outline_filter";
 import PdfAnnotations from "./pdf/PdfAnnotations";
 import PdfAttachments from "./pdf/PdfAttachments";
 import PdfLayers from "./pdf/PdfLayers";
@@ -133,31 +138,149 @@ export function RightPaneTabBodies({ tabs, activeTabId, expandRequest, flat, hea
     if (activeTabId) {
         openedTabs.current.add(activeTabId);
     }
+    const documentKey = useDocumentKey();
 
     return tabs.filter((tab) => openedTabs.current.has(tab.id)).map((tab) => (
-        <div
+        <RightPaneTabBody
             key={tab.id}
+            tab={tab}
+            isActive={tab.id === activeTabId}
+            expandRequest={expandRequest}
+            flat={flat}
+            headerSlot={headerSlots?.[tab.id] ?? null}
+            documentKey={documentKey}
+        />
+    ));
+}
+
+interface RightPaneTabBodyProps {
+    tab: RightPaneTabContents;
+    isActive: boolean;
+    expandRequest?: ExpandWidgetRequest | null;
+    flat?: boolean;
+    headerSlot: HTMLElement | null;
+    /** The split and the document it shows, which the query of a filterable tab belongs to. */
+    documentKey: string;
+}
+
+/** A pending Enter of the filter field, with the query and the document it was pressed for. */
+interface PendingEnter {
+    query: string;
+    documentKey: string;
+}
+
+/**
+ * The body of one tab. A `filterable` tab with items has a field at its top: its sections filter
+ * their items by it and report to the tab's `OutlineResults`, which decides the empty state and
+ * what Enter runs.
+ */
+function RightPaneTabBody({
+    tab, isActive, expandRequest, flat, headerSlot, documentKey
+}: RightPaneTabBodyProps) {
+    const isFilterable = !!tab.filterable;
+    const store = useMemo(() => new OutlineResults(), []);
+    const [ storedQuery, setQuery ] = useDocumentState(documentKey, "");
+    const query = isFilterable ? storedQuery : "";
+    const isFiltering = filterTokens(query).length > 0;
+    const bodyRef = useRef<HTMLDivElement>(null);
+    const pendingEnterRef = useRef<PendingEnter | null>(null);
+    useSyncExternalStore(store.subscribe, store.getVersion);
+
+    /** Runs the pending Enter, unless a section before its result is still loading. */
+    function walkPendingEnter() {
+        const pending = pendingEnterRef.current;
+        if (!pending) return;
+        if (pending.query !== query || pending.documentKey !== documentKey) {
+            pendingEnterRef.current = null;
+            return;
+        }
+
+        const cardIds = [ ...bodyRef.current?.children ?? [] ]
+            .map((element) => element.id)
+            .filter((id) => id.length > 0);
+        const result = store.walk(cardIds);
+        if (result === "wait") return;
+        pendingEnterRef.current = null;
+        result?.action();
+    }
+
+    // After every render, so that a store change is read once its whole commit is done.
+    useLayoutEffect(walkPendingEnter);
+
+    function onKeyDown(e: KeyboardEvent) {
+        if (e.key === "Escape") {
+            // An empty field leaves Escape to the pane, which closes a peek.
+            if (!query) return;
+            e.preventDefault();
+            pendingEnterRef.current = null;
+            setQuery(() => "");
+            return;
+        }
+        if (e.key !== "Enter" || e.isComposing || e.repeat) return;
+        e.preventDefault();
+        if (!isFiltering) return;
+        pendingEnterRef.current = { query, documentKey };
+        walkPendingEnter();
+    }
+
+    return (
+        <div
+            ref={bodyRef}
             role="tabpanel"
             data-tab-id={tab.id}
-            class={clsx(flat ? "right-pane-flat-tab-body" : "right-pane-tab-body", tab.id !== activeTabId && "hidden-ext")}
+            class={clsx(
+                flat ? "right-pane-flat-tab-body" : "right-pane-tab-body",
+                !isActive && "hidden-ext"
+            )}
         >
-            {/* Collapsing the only widget of a tab would leave the tab empty, so a tab of one offers
-                no collapsing at all. */}
-            <CollapsibleWidgets.Provider value={!flat && tab.items.length > 1}>
-                <StackedWidgets.Provider value={!!flat && tab.items.length > 1}>
-                    <ExpandWidgetRequests.Provider value={expandRequest ?? null}>
-                        <TabHeaderSlot.Provider value={headerSlots?.[tab.id] ?? null}>
-                            {tab.items.length > 0 ? tab.items : (
-                                // A tab that stays for a note it has nothing to show
-                                // (see RightPaneTabDefinition.alwaysShown) says so.
-                                <NoItems icon={tab.icon} text={t("right_pane.empty_message")} />
-                            )}
-                        </TabHeaderSlot.Provider>
-                    </ExpandWidgetRequests.Provider>
-                </StackedWidgets.Provider>
-            </CollapsibleWidgets.Provider>
+            {isFilterable && tab.items.length > 0 && (
+                <div className="right-pane-filter">
+                    <FilterField
+                        value={query}
+                        onChange={(text) => setQuery(() => text)}
+                        onKeyDown={onKeyDown}
+                        onBlur={() => {
+                            pendingEnterRef.current = null;
+                        }}
+                    />
+                </div>
+            )}
+            {/* Rendered for every tab and every query, so that typing never remounts a section. */}
+            <FilterProvider query={query}>
+                <OutlineResultsContext.Provider value={isFilterable ? store : null}>
+                    {/* Collapsing the only widget of a tab would leave the tab empty, so a tab of
+                        one offers no collapsing at all. */}
+                    <CollapsibleWidgets.Provider value={!flat && tab.items.length > 1}>
+                        <StackedWidgets.Provider value={!!flat && tab.items.length > 1}>
+                            <ExpandWidgetRequests.Provider value={expandRequest ?? null}>
+                                <TabHeaderSlot.Provider value={headerSlot}>
+                                    {tab.items.length > 0 ? tab.items : (
+                                        // A tab that stays for a note it has nothing to show
+                                        // (see RightPaneTabDefinition.alwaysShown) says so.
+                                        <NoItems
+                                            icon={tab.icon}
+                                            text={t("right_pane.empty_message")}
+                                        />
+                                    )}
+                                </TabHeaderSlot.Provider>
+                            </ExpandWidgetRequests.Provider>
+                        </StackedWidgets.Provider>
+                    </CollapsibleWidgets.Provider>
+                </OutlineResultsContext.Provider>
+            </FilterProvider>
+            {isFiltering && store.isEmpty() && (
+                <NoItems icon="bx bx-search" text={t("menu.no_matches")} />
+            )}
         </div>
-    ));
+    );
+}
+
+/** The split in front and the document it shows: its note, and the attachment in view. */
+function useDocumentKey() {
+    const { noteContext } = useActiveNoteContext();
+    const viewScope = noteContext?.viewScope;
+    const attachmentId = viewScope?.viewMode === "attachments" ? viewScope.attachmentId : undefined;
+    return `${noteContext?.ntxId}:${noteContext?.noteId}:${attachmentId ?? ""}`;
 }
 
 /**

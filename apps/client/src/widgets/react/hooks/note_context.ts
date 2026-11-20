@@ -1,5 +1,7 @@
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
-import { useCallback, useContext, useDebugValue, useEffect, useRef, useState } from "preact/hooks";
+import {
+    useCallback, useContext, useDebugValue, useEffect, useLayoutEffect, useRef, useState
+} from "preact/hooks";
 
 import appContext from "../../../components/app_context";
 import type NoteContext from "../../../components/note_context";
@@ -238,14 +240,57 @@ async function isNoteReadOnly(note: FNote, noteContext: NoteContext) {
     return true;
 }
 
+/**
+ * State of the document `documentKey`, such as the note a context shows: `initialValue` from the
+ * render where the key changes, and the value of an earlier key is discarded, so coming back to
+ * that document does not bring it back. `initialValue` must keep its identity across renders.
+ */
+export function useDocumentState<T>(
+    documentKey: string, initialValue: T
+): [ T, (update: (previous: T) => T) => void ] {
+    const [ state, setState ] = useState({ documentKey, value: initialValue });
+    const value = state.documentKey === documentKey ? state.value : initialValue;
+
+    useLayoutEffect(() => {
+        setState((previous) => (previous.documentKey === documentKey
+            ? previous
+            : { documentKey, value: initialValue }));
+    }, [ documentKey, initialValue ]);
+
+    const update = useCallback((updater: (previous: T) => T) => {
+        setState((previous) => ({
+            documentKey,
+            value: updater(previous.documentKey === documentKey ? previous.value : initialValue)
+        }));
+    }, [ documentKey, initialValue ]);
+
+    return [ value, update ];
+}
+
+/** A value looked up for a note context, kept with that context. */
+interface ResolvedValue<T> {
+    noteContext: NoteContext | null | undefined;
+    value: T;
+}
+
+/** `previous` when `next` holds the same, so that setting it does not re-render. */
+function keepIfSame<T>(previous: ResolvedValue<T>, next: ResolvedValue<T>) {
+    return previous.noteContext === next.noteContext && previous.value === next.value
+        ? previous
+        : next;
+}
+
+/** The text editor of `noteContext`, or `null` while it is looked up. */
 export function useTextEditor(noteContext: NoteContext | null | undefined) {
-    const [ textEditor, setTextEditor ] = useState<CKTextEditor | null>(null);
+    const [ resolved, setResolved ] = useState<ResolvedValue<CKTextEditor | null>>({
+        noteContext, value: null
+    });
     const requestIdRef = useRef(0);
 
     // React to note context change and initial state.
     useEffect(() => {
         if (!noteContext) {
-            setTextEditor(null);
+            setResolved((previous) => keepIfSame(previous, { noteContext, value: null }));
             return;
         }
 
@@ -253,42 +298,44 @@ export function useTextEditor(noteContext: NoteContext | null | undefined) {
         noteContext.getTextEditor((textEditor) => {
             // Prevent stale async.
             if (requestId !== requestIdRef.current) return;
-            setTextEditor(textEditor);
+            setResolved((previous) => keepIfSame(previous, { noteContext, value: textEditor }));
         });
     }, [ noteContext ]);
 
     // React to editor initializing.
     useTriliumEvent("textEditorRefreshed", ({ ntxId: eventNtxId, editor }) => {
         if (eventNtxId !== noteContext?.ntxId) return;
-        setTextEditor(editor);
+        setResolved((previous) => keepIfSame(previous, { noteContext, value: editor }));
     });
 
-    return textEditor;
+    // An editor of another context, such as the previous split, is never returned.
+    return resolved.noteContext === noteContext ? resolved.value : null;
 }
 
+/** The content element of `noteContext`, or `null` while it is looked up. */
 export function useContentElement(noteContext: NoteContext | null | undefined) {
-    const [ contentElement, setContentElement ] = useState<HTMLElement | null>(null);
+    const [ resolved, setResolved ] = useState<ResolvedValue<HTMLElement | null>>({
+        noteContext, value: null
+    });
     const requestIdRef = useRef(0);
-    const [, forceUpdate] = useState(0);
 
     useEffect(() => {
         const requestId = ++requestIdRef.current;
         noteContext?.getContentElement().then(contentElement => {
             // Prevent stale async.
             if (!contentElement || requestId !== requestIdRef.current) return;
-            setContentElement(contentElement?.[0] ?? null);
-            forceUpdate(v => v + 1);
+            setResolved({ noteContext, value: contentElement?.[0] ?? null });
         });
     }, [ noteContext ]);
 
-    // React to content changes initializing.
+    // React to content changes initializing. A new object re-renders for the same element too.
     useTriliumEvent("contentElRefreshed", ({ ntxId: eventNtxId, contentEl }) => {
         if (eventNtxId !== noteContext?.ntxId) return;
-        setContentElement(contentEl);
-        forceUpdate(v => v + 1);
+        setResolved({ noteContext, value: contentEl });
     });
 
-    return contentElement;
+    // An element of another context, such as the previous split, is never returned.
+    return resolved.noteContext === noteContext ? resolved.value : null;
 }
 
 /**
@@ -337,21 +384,24 @@ export function useGetContextDataFrom<K extends keyof NoteContextDataMap>(
     noteContext: NoteContext | null | undefined,
     key: K
 ): NoteContextDataMap[K] | undefined {
-    const [data, setData] = useState<NoteContextDataMap[K] | undefined>(() =>
-        noteContext?.getContextData(key)
-    );
+    const [data, setData] = useState<ResolvedValue<NoteContextDataMap[K] | undefined>>(() => ({
+        noteContext, value: noteContext?.getContextData(key)
+    }));
 
     // Update initial value when noteContext changes
     useEffect(() => {
-        setData(noteContext?.getContextData(key));
+        const value = noteContext?.getContextData(key);
+        setData((previous) => keepIfSame(previous, { noteContext, value }));
     }, [noteContext, key]);
 
     // Subscribe to changes via Trilium event system
     useTriliumEvent("contextDataChanged", ({ noteContext: eventNoteContext, key: changedKey, value }) => {
         if (eventNoteContext === noteContext && changedKey === key) {
-            setData(value as NoteContextDataMap[K]);
+            const next = { noteContext, value: value as NoteContextDataMap[K] };
+            setData((previous) => keepIfSame(previous, next));
         }
     });
 
-    return data;
+    // The state is set by an effect, so the first render with another context reads that context.
+    return data.noteContext === noteContext ? data.value : noteContext?.getContextData(key);
 }

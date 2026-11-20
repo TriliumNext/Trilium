@@ -1,6 +1,19 @@
 :where(:root) {
     --toc-disabled-row-color: var(--muted-text-color);
     --toc-waiting-color: var(--muted-text-color);
+    --toc-path-color: var(--muted-text-color);
+}
+
+.toc .toc-matches li .item-content {
+    display: flex;
+    flex-direction: column;
+    margin-inline-start: 4px;
+
+    .item-path {
+        font-size: 0.85em;
+        font-weight: normal;
+        color: var(--toc-path-color);
+    }
 }
 
 .toc ol {

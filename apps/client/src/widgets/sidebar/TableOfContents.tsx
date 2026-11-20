@@ -2,7 +2,9 @@ import "./TableOfContents.css";
 
 import type { CKTextEditor, ModelElement, ModelNode } from "@triliumnext/ckeditor5";
 import { resolveBlockReference } from "@triliumnext/commons/src/lib/block_reference.js";
+import { getHeadingAncestors } from "@triliumnext/commons/src/lib/toc.js";
 import clsx from "clsx";
+import { createContext } from "preact";
 import { memo } from "preact/compat";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
@@ -14,15 +16,19 @@ import {
 } from "../../services/link_target_copy";
 import type { LinkTarget } from "../../services/link_targets";
 import { randomString } from "../../services/utils";
+import { useFilterState } from "../react/filter";
 import { useActiveHeading, useLongPressContextMenu } from "../react/hooks/dom";
 import { useNoteProperty } from "../react/hooks/note";
-import { useContentElement, useIsNoteReadOnly, useTextEditor } from "../react/hooks/note_context";
+import {
+    useContentElement, useDocumentState, useIsNoteReadOnly, useTextEditor
+} from "../react/hooks/note_context";
 import { useActiveNoteContext, useGetContextData } from "../react/hooks/tree";
 import { useMathRendering } from "../react/hooks/content";
 import Icon from "../react/Icon";
 import { getEditorNoteId } from "../react/NoteStore";
-import RawHtml from "../react/RawHtml";
+import RawHtml, { HighlightedHtml } from "../react/RawHtml";
 import { CachedToCProvider, isServedTocFormat } from "./CachedToCProvider";
+import { useOutlineFilter } from "./outline_filter";
 import RightPanelWidget, { NavigatedInNote } from "./RightPanelWidget";
 
 //#region Generic impl.
@@ -71,17 +77,52 @@ export default function TableOfContents() {
     const isCached = !!noteType && !!noteMime && isServedTocFormat(noteType, noteMime);
     // The attachment that the attachments view shows, whose outline comes from its ToC cache.
     const isAttachment = noteContext?.viewScope?.viewMode === "attachments";
+    const attachmentId = isAttachment ? noteContext?.viewScope?.attachmentId : undefined;
+    const collapsedHeadings = useCollapsedHeadings(`${note?.noteId}:${attachmentId ?? ""}`);
 
     return (
-        <RightPanelWidget id="toc" title={t("toc.table_of_contents")} grow>
-            {isAttachment && noteContext?.viewScope?.attachmentId && <CachedToCProvider />}
-            {!isAttachment && noteType === "text" && isReadOnly && <ReadOnlyTextTableOfContents />}
-            {!isAttachment && noteType === "text" && !isReadOnly && <EditableTextTableOfContents />}
-            {!isAttachment && isCached && <CachedToCProvider />}
-            {!isAttachment && noteType === "llmChat" && <ContextDataTableOfContents />}
-            {!isAttachment && note?.isMarkdown() && <ContextDataTableOfContents />}
-        </RightPanelWidget>
+        <CollapsedHeadingsContext.Provider value={collapsedHeadings}>
+            <RightPanelWidget id="toc" title={t("toc.table_of_contents")} grow>
+                {attachmentId && <CachedToCProvider />}
+                {!isAttachment && noteType === "text" && isReadOnly && (
+                    <ReadOnlyTextTableOfContents />
+                )}
+                {!isAttachment && noteType === "text" && !isReadOnly && (
+                    <EditableTextTableOfContents />
+                )}
+                {!isAttachment && isCached && <CachedToCProvider />}
+                {!isAttachment && noteType === "llmChat" && <ContextDataTableOfContents />}
+                {!isAttachment && note?.isMarkdown() && <ContextDataTableOfContents />}
+            </RightPanelWidget>
+        </CollapsedHeadingsContext.Provider>
     );
+}
+
+/** The ids of the headings that the user collapsed in the outline, and how to toggle one. */
+interface CollapsedHeadings {
+    ids: ReadonlySet<string>;
+    toggle(id: string): void;
+}
+
+/** Provided by `TableOfContents` above the card body, so a collapse of the card keeps it. */
+const CollapsedHeadingsContext = createContext<CollapsedHeadings | null>(null);
+
+const NO_IDS: ReadonlySet<string> = new Set();
+
+/** The headings collapsed in the outline of the document `documentKey`, none for a new one. */
+function useCollapsedHeadings(documentKey: string): CollapsedHeadings {
+    const [ ids, setIds ] = useDocumentState(documentKey, NO_IDS);
+    const toggle = useCallback((id: string) => {
+        setIds((previous) => {
+            const next = new Set(previous);
+            if (!next.delete(id)) {
+                next.add(id);
+            }
+            return next;
+        });
+    }, [ setIds ]);
+
+    return useMemo(() => ({ ids, toggle }), [ ids, toggle ]);
 }
 
 function ContextDataTableOfContents() {
@@ -90,7 +131,7 @@ function ContextDataTableOfContents() {
 
     return (
         <AbstractTableOfContents
-            headings={data?.headings || []}
+            headings={data?.headings ?? NO_HEADINGS}
             scrollToHeading={data?.scrollToHeading || (() => {})}
             activeHeadingId={data?.activeHeadingId}
             note={note}
@@ -100,7 +141,8 @@ function ContextDataTableOfContents() {
 }
 
 export interface AbstractTableOfContentsProps<T extends RawHeading> {
-    headings: T[];
+    /** The headings in document order, `null` while they are not read yet. */
+    headings: T[] | null;
     /** Shows `heading`. `false` tells that it showed nothing, so the pane stays where it is. */
     scrollToHeading(heading: T): boolean | void;
     activeHeadingId?: string | null;
@@ -109,17 +151,43 @@ export interface AbstractTableOfContentsProps<T extends RawHeading> {
     headingLinks?: HeadingLinks;
     /** Whether no row can be clicked or opens a menu, while nothing shows the headings. */
     isInert?: boolean;
+    /** Whether the headings are not the document's yet, so that a filter waits for them. */
+    isLoading?: boolean;
 }
 
-/** The outline of `headings`, a flat list in document order. */
+const NO_HEADINGS: never[] = [];
+
+/**
+ * The outline of `headings`, a tree by level. While its tab filters, a flat list of the
+ * matching headings, each with the headings it nests under.
+ */
 export const AbstractTableOfContents = memo(AbstractTableOfContentsList) as
     typeof AbstractTableOfContentsList;
 
 function AbstractTableOfContentsList<T extends RawHeading>({
-    headings, scrollToHeading, activeHeadingId, note, headingLinks, isInert
+    headings, scrollToHeading, activeHeadingId, note, headingLinks, isInert, isLoading
 }: AbstractTableOfContentsProps<T>) {
     const tocRef = useRef<HTMLSpanElement>(null);
-    const nestedHeadings = useMemo(() => buildHeadingTree(headings), [ headings ]);
+    const onNavigated = useContext(NavigatedInNote);
+    const activate = useCallback((heading: T) => {
+        if (scrollToHeading(heading) !== false) {
+            onNavigated?.();
+        }
+    }, [ scrollToHeading, onNavigated ]);
+    const matches = useOutlineFilter(headings, {
+        section: "toc",
+        getHtml: (heading) => heading.text,
+        getLevel: (heading) => heading.level,
+        activate,
+        canActivate: (heading) => !heading.isDisabled,
+        isLoading: isLoading || isInert
+    });
+    const tokens = useFilterState()?.tokens;
+    const isFiltered = matches !== null;
+    const nestedHeadings = useMemo(() => (isFiltered ? [] : buildHeadingTree(headings ?? [])),
+        [ headings, isFiltered ]);
+    const ownCollapsedHeadings = useCollapsedHeadings("");
+    const collapsedHeadings = useContext(CollapsedHeadingsContext) ?? ownCollapsedHeadings;
     const getReferenceSource = useMemo(() => (note && headingLinks
         ? (heading: RawHeading): TargetReferenceSource => ({
             note,
@@ -136,21 +204,39 @@ function AbstractTableOfContentsList<T extends RawHeading>({
         });
     }, [activeHeadingId]);
 
+    const rowActivate = isInert ? undefined : activate;
+    const rowReferenceSource = isInert ? undefined : getReferenceSource;
     return (
         <span ref={tocRef} className={clsx("toc", isInert && "inert")}>
-            {nestedHeadings.length > 0 ? (
+            {matches && matches.length > 0 && (
+                <ol className="toc-matches">
+                    {matches.map(({ item, parentTexts }) => (
+                        <HeadingRow
+                            key={item.id}
+                            heading={item}
+                            activate={rowActivate}
+                            isActive={item.id === activeHeadingId}
+                            getReferenceSource={rowReferenceSource}
+                            match={{ path: parentTexts.join(" / "), tokens: tokens ?? [] }}
+                        />
+                    ))}
+                </ol>
+            )}
+            {!isFiltered && nestedHeadings.length > 0 && (
                 <ol>
                     {nestedHeadings.map(heading => (
                         <TableOfContentsHeading
                             key={heading.id}
                             heading={heading}
-                            scrollToHeading={isInert ? undefined : scrollToHeading}
+                            activate={rowActivate}
                             activeHeadingId={activeHeadingId}
-                            getReferenceSource={isInert ? undefined : getReferenceSource}
+                            getReferenceSource={rowReferenceSource}
+                            collapsedHeadings={collapsedHeadings}
                         />
                     ))}
                 </ol>
-            ) : (
+            )}
+            {!isFiltered && nestedHeadings.length === 0 && (
                 <div className="no-headings">{t("toc.no_headings")}</div>
             )}
         </span>
@@ -160,71 +246,40 @@ function AbstractTableOfContentsList<T extends RawHeading>({
 interface TableOfContentsHeadingProps {
     heading: HeadingsWithNesting;
     /** Shows a heading. Absent while the rows are inert. */
-    scrollToHeading?(heading: RawHeading): boolean | void;
+    activate?(heading: RawHeading): void;
     activeHeadingId?: string | null;
     /** The links to a published heading. Absent where headings cannot be linked. */
     getReferenceSource?(heading: RawHeading): TargetReferenceSource;
+    collapsedHeadings: CollapsedHeadings;
 }
 
 function TableOfContentsHeading({
-    heading, scrollToHeading, activeHeadingId, getReferenceSource
+    heading, activate, activeHeadingId, getReferenceSource, collapsedHeadings
 }: TableOfContentsHeadingProps) {
-    const [ collapsed, setCollapsed ] = useState(false);
-    const onNavigated = useContext(NavigatedInNote);
-    const isActive = heading.id === activeHeadingId;
-    const contentRef = useRef<HTMLElement>(null);
-    const getSource = heading.isDisabled ? undefined : getReferenceSource;
-    const menuProps = useLongPressContextMenu(useCallback((e: MouseEvent) => {
-        if (!getSource) return;
-        e.preventDefault();
-        showTargetReferenceMenu(e, getSource(heading.source));
-    }, [ getSource, heading.source ]));
-    const isClickable = !!scrollToHeading && !heading.isDisabled;
-
-    useMathRendering(contentRef, [heading.text]);
+    const hasChildren = heading.children.length > 0;
 
     return (
         <>
-            <li
-                className={clsx(collapsed && "collapsed", isActive && "active",
-                    heading.isDisabled && "disabled", getSource && "linkable")}
-                {...(getSource ? menuProps : {})}
-            >
-                {heading.children.length > 0 && (
-                    <Icon
-                        className="collapse-button"
-                        icon="bx bx-chevron-down"
-                        onClick={() => setCollapsed(!collapsed)}
-                    />
-                )}
-                <RawHtml
-                    containerRef={contentRef}
-                    className="item-content"
-                    onClick={isClickable ? () => {
-                        if (scrollToHeading?.(heading) !== false) {
-                            onNavigated?.();
-                        }
-                    } : undefined}
-                    html={heading.text}
-                />
-                {getSource && (
-                    <Icon
-                        className="tree-item-button"
-                        icon="bx bx-copy"
-                        title={t("block_reference.copy_reference")}
-                        onClick={() => copyTargetReference(getSource(heading.source))}
-                    />
-                )}
-            </li>
-            {heading.children.length > 0 && (
+            <HeadingRow
+                heading={heading.source}
+                activate={activate}
+                isActive={heading.id === activeHeadingId}
+                getReferenceSource={getReferenceSource}
+                collapse={hasChildren ? {
+                    isCollapsed: collapsedHeadings.ids.has(heading.id),
+                    toggle: () => collapsedHeadings.toggle(heading.id)
+                } : undefined}
+            />
+            {hasChildren && (
                 <ol>
                     {heading.children.map(heading => (
                         <TableOfContentsHeading
                             key={heading.id}
                             heading={heading}
-                            scrollToHeading={scrollToHeading}
+                            activate={activate}
                             activeHeadingId={activeHeadingId}
                             getReferenceSource={getReferenceSource}
+                            collapsedHeadings={collapsedHeadings}
                         />
                     ))}
                 </ol>
@@ -233,27 +288,90 @@ function TableOfContentsHeading({
     );
 }
 
+interface HeadingRowProps {
+    /** The heading as its source published it. */
+    heading: RawHeading;
+    /** Shows the heading. Absent while the rows are inert. */
+    activate?(heading: RawHeading): void;
+    isActive: boolean;
+    /** The links to a published heading. Absent where headings cannot be linked. */
+    getReferenceSource?(heading: RawHeading): TargetReferenceSource;
+    /** In the tree, the collapse of a heading with children. */
+    collapse?: { isCollapsed: boolean; toggle(): void };
+    /** In the list of matches, the titles of the headings above it and the terms to paint. */
+    match?: { path: string; tokens: string[] };
+}
+
+/** The row of a heading, in the tree or in the list of matches. */
+function HeadingRow({
+    heading, activate, isActive, getReferenceSource, collapse, match
+}: HeadingRowProps) {
+    const contentRef = useRef<HTMLElement>(null);
+    const getSource = heading.isDisabled ? undefined : getReferenceSource;
+    const menuProps = useLongPressContextMenu(useCallback((e: MouseEvent) => {
+        if (!getSource) return;
+        e.preventDefault();
+        showTargetReferenceMenu(e, getSource(heading));
+    }, [ getSource, heading ]));
+    const onClick = activate && !heading.isDisabled ? () => activate(heading) : undefined;
+
+    useMathRendering(contentRef, [heading.text]);
+
+    return (
+        <li
+            className={clsx(collapse?.isCollapsed && "collapsed", isActive && "active",
+                heading.isDisabled && "disabled", getSource && "linkable")}
+            {...(getSource ? menuProps : {})}
+        >
+            {collapse && (
+                <Icon
+                    className="collapse-button"
+                    icon="bx bx-chevron-down"
+                    onClick={collapse.toggle}
+                />
+            )}
+            {match ? (
+                <span className="item-content" onClick={onClick}>
+                    <HighlightedHtml
+                        containerRef={contentRef}
+                        className="item-title"
+                        html={heading.text}
+                        highlightedTokens={match.tokens}
+                    />
+                    {match.path && <span className="item-path">{match.path}</span>}
+                </span>
+            ) : (
+                <RawHtml
+                    containerRef={contentRef}
+                    className="item-content"
+                    onClick={onClick}
+                    html={heading.text}
+                />
+            )}
+            {getSource && (
+                <Icon
+                    className="tree-item-button"
+                    icon="bx bx-copy"
+                    title={t("block_reference.copy_reference")}
+                    onClick={() => copyTargetReference(getSource(heading))}
+                />
+            )}
+        </li>
+    );
+}
+
 function buildHeadingTree(headings: RawHeading[]): HeadingsWithNesting[] {
-    const rootHeading: RawHeading = { level: 0, text: "", id: "_root" };
-    const root: HeadingsWithNesting = { ...rootHeading, source: rootHeading, children: [] };
-    const stack: HeadingsWithNesting[] = [root];
-
-    for (const h of headings) {
-        const node: HeadingsWithNesting = { ...h, source: h, children: [] };
-
-        // Pop until we find a parent with lower level
-        while (stack.length > 1 && stack[stack.length - 1].level >= h.level) {
-            stack.pop();
-        }
-
-        // Attach to current parent
-        stack[stack.length - 1].children.push(node);
-
-        // This node becomes the new parent
-        stack.push(node);
+    const ancestors = getHeadingAncestors(headings, (heading) => heading.level);
+    const nodes = new Map<RawHeading, HeadingsWithNesting>();
+    const roots: HeadingsWithNesting[] = [];
+    for (const [ index, heading ] of headings.entries()) {
+        const node: HeadingsWithNesting = { ...heading, source: heading, children: [] };
+        nodes.set(heading, node);
+        const parent = ancestors[index].at(-1);
+        const siblings = parent ? nodes.get(parent)?.children : roots;
+        siblings?.push(node);
     }
-
-    return root.children;
+    return roots;
 }
 
 //#endregion
@@ -266,11 +384,24 @@ interface CKHeading extends RawHeading {
     element: ModelElement;
 }
 
+/** Items read from a note's content, with the split they were read in and the content's owner. */
+export interface ContentSnapshot<T> {
+    items: T[];
+    ntxId: string | null | undefined;
+    /** The note whose content the editor held, or the blob that the page showed. */
+    source: string | undefined;
+}
+
 function EditableTextTableOfContents() {
     const { note, noteContext } = useActiveNoteContext();
     const textEditor = useTextEditor(noteContext);
-    const [ headings, setHeadings ] = useState<CKHeading[]>([]);
+    const ntxId = noteContext?.ntxId;
+    const [ snapshot, setSnapshot ] = useState<ContentSnapshot<CKHeading> | null>(null);
     const [ scrollingContainer, setScrollingContainer ] = useState<HTMLElement | null>(null);
+    // Headings read in another split or from another note's content are not this note's.
+    const headings = snapshot && snapshot.ntxId === ntxId && snapshot.source === note?.noteId
+        ? snapshot.items
+        : null;
 
     // The CKEditor instance is reused across note switches within a tab and across the
     // read-only ↔ editable switch: the note detail keeps it mounted behind the read-only view
@@ -280,11 +411,17 @@ function EditableTextTableOfContents() {
     useEffect(() => {
         if (!textEditor) return;
 
+        const read = () => setSnapshot({
+            items: extractTocFromTextEditor(textEditor),
+            ntxId,
+            source: getEditorNoteId(textEditor)
+        });
+
         // `getEditorNoteId()` says whose content is in the editor. Extracting from another note's
         // would put its headings in the sidebar; the listener below picks this note's up as soon
         // as `setData()` lands.
         if (getEditorNoteId(textEditor) === note?.noteId) {
-            setHeadings(extractTocFromTextEditor(textEditor));
+            read();
         }
 
         // Attached synchronously so no `setData()` can slip past it. Only the attribute check
@@ -310,7 +447,7 @@ function EditableTextTableOfContents() {
             if (affectsHeadings && frame === undefined) {
                 frame = requestAnimationFrame(() => {
                     frame = undefined;
-                    setHeadings(extractTocFromTextEditor(textEditor));
+                    read();
                 });
             }
         };
@@ -323,7 +460,7 @@ function EditableTextTableOfContents() {
                 cancelAnimationFrame(frame);
             }
         };
-    }, [ textEditor, note?.noteId ]);
+    }, [ textEditor, note?.noteId, ntxId ]);
 
     useEffect(() => {
         if (!textEditor) {
@@ -345,7 +482,9 @@ function EditableTextTableOfContents() {
         return domEl ?? null;
     }, [textEditor]);
 
-    const activeHeadingId = useActiveHeading({ headings, scrollingContainer, getHeadingElement });
+    const activeHeadingId = useActiveHeading({
+        headings: headings ?? NO_HEADINGS, scrollingContainer, getHeadingElement
+    });
 
     const scrollToHeading = useCallback((heading: CKHeading) => {
         if (!textEditor) return;
@@ -474,21 +613,28 @@ interface DomHeading extends RawHeading {
 function ReadOnlyTextTableOfContents() {
     const { note, noteContext } = useActiveNoteContext();
     const contentEl = useContentElement(noteContext);
-    const [ headings, setHeadings ] = useState<DomHeading[]>([]);
+    const ntxId = noteContext?.ntxId;
+    const [ snapshot, setSnapshot ] = useState<ContentSnapshot<DomHeading> | null>(null);
     const [ scrollingContainer, setScrollingContainer ] = useState<HTMLElement | null>(null);
+    // Headings read in another split or from another blob are not this note's.
+    const headings = snapshot && snapshot.ntxId === ntxId && isPageOfNote(snapshot.source, note)
+        ? snapshot.items
+        : null;
 
     useEffect(() => {
         if (!contentEl) return;
-        setHeadings(extractTocFromStaticHtml(contentEl));
-
-        const observer = new MutationObserver(() => {
-            setHeadings(extractTocFromStaticHtml(contentEl));
+        const read = () => setSnapshot({
+            items: extractTocFromStaticHtml(contentEl),
+            ntxId,
+            source: contentEl.dataset.blobId
         });
+        read();
 
+        const observer = new MutationObserver(read);
         observer.observe(contentEl, { childList: true });
 
         return () => observer.disconnect();
-    }, [contentEl]);
+    }, [ contentEl, ntxId ]);
 
     const scrollToHeading = useCallback((heading: DomHeading) => {
         revealElement(heading.element);
@@ -507,7 +653,9 @@ function ReadOnlyTextTableOfContents() {
 
     const getHeadingElement = useCallback((heading: DomHeading) => heading.element, []);
 
-    const activeHeadingId = useActiveHeading({ headings, scrollingContainer, getHeadingElement });
+    const activeHeadingId = useActiveHeading({
+        headings: headings ?? NO_HEADINGS, scrollingContainer, getHeadingElement
+    });
 
     // Help pages take no ids and are never shared.
     const notePath = noteContext?.notePath;
@@ -561,6 +709,14 @@ function getPageHeadingLinks(
         },
         hasPublicLinks: true
     };
+}
+
+/**
+ * Whether a page that shows the blob `blobId` shows the content of `note`. A page that names no
+ * blob is taken as the note's.
+ */
+export function isPageOfNote(blobId: string | undefined, note: FNote | null | undefined) {
+    return blobId === undefined || blobId === note?.blobId;
 }
 
 function extractTocFromStaticHtml(el: HTMLElement | null) {

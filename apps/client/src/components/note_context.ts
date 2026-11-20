@@ -67,34 +67,42 @@ const READ_ONLY_CAPABLE_VIEW_TYPES: string[] = [
 /** View scope keys that hold the context's own state rather than what a navigation asks for. */
 const VIEW_STATE_KEYS: string[] = [ "isReadOnly", "readOnlyTemporarilyDisabled" ];
 
+/**
+ * A section of the PDF sidebar for the viewer load `loadToken`: `loading` until the viewer of that
+ * load sends it, then `ready` with its data.
+ */
+export type PdfSectionData<T> =
+    | { status: "loading"; loadToken: string }
+    | ({ status: "ready"; loadToken: string } & T);
+
 export interface NoteContextDataMap {
     toc: HeadingContext;
     /** Published by the type widget of a document whose outline comes from its ToC cache. */
     tocDocument: TocDocumentState;
     highlights: HighlightContext;
     chatHighlights: ChatHighlightsContext;
-    pdfPages: {
+    pdfPages: PdfSectionData<{
         totalPages: number;
         currentPage: number;
         scrollToPage(page: number): void;
         requestThumbnail(page: number): void;
         /** Copies a reference that opens the PDF at `page`. */
         copyReference(page: number): void;
-    };
-    pdfAttachments: {
+    }>;
+    pdfAttachments: PdfSectionData<{
         attachments: PdfAttachment[];
         downloadAttachment(id: string): void;
-    };
-    pdfLayers: {
+    }>;
+    pdfLayers: PdfSectionData<{
         layers: PdfLayer[];
         toggleLayer(layerId: string, visible: boolean): void;
-    };
-    pdfAnnotations: {
+    }>;
+    pdfAnnotations: PdfSectionData<{
         annotations: PdfAnnotationInfo[];
         scrollToAnnotation(annotationId: string, pageNumber: number): void;
         /** Copies a reference that opens the PDF at the annotation. */
         copyReference(annotationId: string, pageNumber: number): void;
-    };
+    }>;
     /** Published by a board, so the right pane can list its columns and scroll the board to one. */
     boardColumns: {
         /** The columns in the order the board draws them. */

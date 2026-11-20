@@ -79,6 +79,16 @@ describe("against a real document", () => {
         expect(viewer.lastMessageOfType("pdfjs-viewer-attachments").attachments).toEqual([]);
     });
 
+    it("names the load of its frame in the list", async () => {
+        viewer = await installViewerApp(barePdf());
+        window.TRILIUM_LOAD_TOKEN = "load-7";
+
+        await setupPdfAttachments();
+
+        expect(viewer.lastMessageOfType("pdfjs-viewer-attachments"))
+            .toMatchObject({ loadToken: "load-7" });
+    });
+
     it("still reports, with an empty list, when extraction throws", async () => {
         viewer = await installViewerApp(allFeaturesPdf());
         vi.spyOn(console, "error").mockImplementation(() => {});

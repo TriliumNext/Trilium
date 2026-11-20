@@ -4,7 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { DOCX_MIME, EPUB_MIME_TYPES, ODT_MIME } from "./office.js";
 import {
-    assignHeadingIds, findHeading, findTocFormatName, getBlobTag, getTocCacheTitle,
+    assignHeadingIds, findHeading, findTocFormatName, getBlobTag, getHeadingAncestors,
+    getTocCacheTitle,
     hashHeadingSource, headingSource, MAX_TOC_HEADINGS, MAX_TOC_TITLE_LENGTH, normalizeTocTitle,
     type TocOutlineItem
 } from "./toc.js";
@@ -360,6 +361,51 @@ describe("a table of contents cut at MAX_TOC_HEADINGS", () => {
         expect(await findHeading(freeId, inserted, isOwnTag)).toBe(100);
         expect(await findHeading(freeId, kept, isOwnTag, { isCut: true })).toBe(-1);
         expect(isOwnTag).not.toHaveBeenCalled();
+    });
+});
+
+describe("getHeadingAncestors", () => {
+    interface Item { title: string; level?: number; group?: string }
+    const titlesOf = (ancestors: readonly (readonly Item[])[]) =>
+        ancestors.map((items) => items.map((item) => item.title).join(" > "));
+
+    it("nests each item under the closest earlier item of a lower level", () => {
+        const items = outline("Intro", "Setup", "  Linux", "    Kernel", "  Windows", "Usage");
+
+        expect(titlesOf(getHeadingAncestors(items, (item) => item.level))).toStrictEqual([
+            "", "", "Setup", "Setup > Linux", "Setup", ""
+        ]);
+    });
+
+    it("nests an item without a level under nothing, and keeps the items around it nested", () => {
+        const items: Item[] = [
+            { title: "Setup", level: 1 },
+            { title: "Anchor" },
+            { title: "Linux", level: 2 }
+        ];
+
+        expect(titlesOf(getHeadingAncestors(items, (item) => item.level)))
+            .toStrictEqual([ "", "", "Setup" ]);
+    });
+
+    it("keeps one stack per group", () => {
+        const items: Item[] = [
+            { title: "Chapter", level: 1, group: "heading" },
+            { title: "Top", level: 1, group: "anchor" },
+            { title: "Section", level: 2, group: "heading" },
+            { title: "Inner", level: 2, group: "anchor" }
+        ];
+
+        expect(titlesOf(getHeadingAncestors(items, (item) => item.level, (item) => item.group)))
+            .toStrictEqual([ "", "", "Chapter", "Top" ]);
+    });
+
+    it("skips levels and closes deeper items at a shallower one", () => {
+        const items = outline("A", "    Deep", "  B", "C");
+
+        expect(titlesOf(getHeadingAncestors(items, (item) => item.level)))
+            .toStrictEqual([ "", "A", "A", "" ]);
+        expect(getHeadingAncestors([], () => 1)).toStrictEqual([]);
     });
 });
 

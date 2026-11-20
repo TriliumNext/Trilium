@@ -62,12 +62,18 @@ ls -l --time-style=+%H:%M packages/pdfjs-viewer/dist/web/custom.mjs
   in its file URL (`open?blobId=`, which answers 409 for another blob). Every viewer posts
   `pdfjs-viewer-document-loaded` and `pdfjs-viewer-document-error` with its token; a viewer addressed
   to a note also posts `pdfjs-viewer-position` and the page rotations (`pdfjs-viewer-rotations`,
-  `pdfjs-viewer-page-rotation`, `position.ts`). `Pdf.tsx` drops a message of another token, and
-  `PdfViewer` takes its reports by frame and token (`onDocumentLoaded`, `onDocumentError`). A
-  reload is a new URL, never `location.reload()`. After a load error the widget reads the current
+  `pdfjs-viewer-page-rotation`, `position.ts`), and the sidebar messages (page info, current
+  page, thumbnails, attachments, layers, annotations) carry the token too. `Pdf.tsx` drops a
+  message of another token, and `PdfViewer` takes its reports by frame and token
+  (`onDocumentLoaded`, `onDocumentError`). A load is a blob in a mode: a new note, a new blob and a
+  switch between read-only and editable each start one, with a new token, so the frame navigates
+  once. Each `pdf*` section is `{ status: "loading", loadToken }` from the start of the load (the
+  ones the load reports: Annotations always, Pages, Attachments and Layers only when editable; the
+  others are cleared) until its message makes it `ready`, an empty list included. A link lands
+  only on a `ready` Annotations entry. A reload is a new URL, never `location.reload()`. After a load error the widget reads the current
   blob (`refreshBlobId()`) and loads it, even the same blob, since pdf.js reports a refused fetch
   and a broken file alike; two errors in a row for one blob, or three in all, make it
-  unavailable. An own save keeps the frame: the upload answers the new `blobId`, and
+  unavailable, which clears every section. An own save keeps the frame: the upload answers the new `blobId`, and
   `trilium-saved-revision` (`{ loadToken, blobId, isProtected }`) tells the viewer its tag.
 - **Every request that moves the view goes through one listener**, `setupNavigation()` in
   `navigation.ts`, registered before the first `await` of `main()`, for every viewer:
@@ -105,8 +111,9 @@ type, so a PDF → text note → same PDF round trip reuses the iframe with its 
 consequences:
 
 - `NoteContext.setNote()` clears the context data on the way out, and the viewer never sends it
-  again. `Pdf.tsx` keeps what it last received per key and republishes it when `isVisible` turns
-  true; anything new published while hidden is recorded, not written.
+  again. Each load keeps what it published (`PdfLoad.published`), and `syncSidebar()` writes that
+  map back when `isVisible` turns true and clears the sections it lacks, never `tocDocument`;
+  anything new published while hidden is recorded, not written.
 - Anything that scrolls must wait for `isVisible`: a hidden viewer throws "offsetParent is not set
   -- cannot scroll" and the scroll is lost. `noteSwitched` reaches the hidden viewer before it is
   shown.

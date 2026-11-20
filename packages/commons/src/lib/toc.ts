@@ -178,6 +178,42 @@ export function headingSource(headings: TocOutlineItem[], index: number) {
     return `${titles.join(PATH_SEPARATOR)}:${ordinals[index]}`;
 }
 
+/**
+ * The items that each item of `items` nests under, the outermost first, by index. An item nests
+ * under the closest earlier item of its group with a lower level. An item without a level nests
+ * under nothing and closes nothing. Items with the same ancestors can share one array.
+ */
+export function getHeadingAncestors<T>(
+    items: readonly T[],
+    getLevel: (item: T) => number | undefined,
+    getGroup?: (item: T) => unknown
+): (readonly T[])[] {
+    const result: (readonly T[])[] = [];
+    // The items that the next item of each group can nest under, and their levels.
+    const openByGroup = new Map<unknown, { items: readonly T[]; levels: readonly number[] }>();
+    for (const item of items) {
+        const level = getLevel(item);
+        if (level === undefined) {
+            result.push([]);
+            continue;
+        }
+
+        const group = getGroup?.(item);
+        const open = openByGroup.get(group) ?? { items: [], levels: [] };
+        let depth = open.levels.length;
+        while (depth > 0 && open.levels[depth - 1] >= level) {
+            depth--;
+        }
+        const ancestors = depth === open.items.length ? open.items : open.items.slice(0, depth);
+        result.push(ancestors);
+        openByGroup.set(group, {
+            items: [ ...ancestors, item ],
+            levels: [ ...open.levels.slice(0, depth), level ]
+        });
+    }
+    return result;
+}
+
 /** The hash of a source that `headingSource()` gives: 14 characters of `[0-9a-z]`. */
 export function hashHeadingSource(source: string) {
     return formatHash(updateHash(INITIAL_STATE, source));

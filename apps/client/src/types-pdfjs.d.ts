@@ -137,18 +137,18 @@ type PdfViewerTocBuildMessage = WithContext & {
     elapsedMs: number;
 });
 
-interface PdfViewerPageInfoMessage extends WithContext {
+interface PdfViewerPageInfoMessage extends WithLoad {
     type: "pdfjs-viewer-page-info";
     totalPages: number;
     currentPage: number;
 }
 
-interface PdfViewerCurrentPageMessage extends WithContext {
+interface PdfViewerCurrentPageMessage extends WithLoad {
     type: "pdfjs-viewer-current-page";
     currentPage: number;
 }
 
-interface PdfViewerThumbnailMessage extends WithContext {
+interface PdfViewerThumbnailMessage extends WithLoad {
     type: "pdfjs-viewer-thumbnail";
     pageNumber: number;
     dataUrl: string;
@@ -161,7 +161,7 @@ interface PdfAttachment {
     size: number;
 }
 
-interface PdfViewerAttachmentsMessage extends WithContext {
+interface PdfViewerAttachmentsMessage extends WithLoad {
     type: "pdfjs-viewer-attachments";
     attachments: PdfAttachment[];
     downloadAttachment?: (id: string) => void;
@@ -173,7 +173,7 @@ interface PdfLayer {
     visible: boolean;
 }
 
-interface PdfViewerLayersMessage extends WithContext {
+interface PdfViewerLayersMessage extends WithLoad {
     type: "pdfjs-viewer-layers";
     layers: PdfLayer[];
     toggleLayer?: (layerId: string, visible: boolean) => void;
@@ -191,7 +191,7 @@ interface PdfAnnotationInfo {
     modificationDate: string | null;
 }
 
-interface PdfViewerAnnotationsMessage extends WithContext {
+interface PdfViewerAnnotationsMessage extends WithLoad {
     type: "pdfjs-viewer-annotations";
     annotations: PdfAnnotationInfo[];
 }
