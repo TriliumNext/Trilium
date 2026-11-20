@@ -1,7 +1,7 @@
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import FindReveal from "@triliumnext/ckeditor5/src/plugins/find_reveal.js";
 import {
-    ClassicEditor, type Editor, Essentials, FindAndReplaceEditing, Paragraph
+    ClassicEditor, type Editor, Essentials, FindAndReplaceEditing, Paragraph, toWidgetEditable
 } from "ckeditor5";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -107,6 +107,8 @@ describe("TextEditorFindTarget", () => {
         const spanTexts = (targets: unknown[]) =>
             targets.map((span) => (span as HTMLElement | null)?.textContent ?? null);
 
+        expect(root?.querySelector("figcaption")?.classList.contains("ck-editor__nested-editable"))
+            .toBe(true);
         expect(spanTexts(target.getMatchTargets({ isStale: false })))
             .toEqual([ "needle", "needle", "needle" ]);
         const [ first ] = target.getMatchTargets({ isStale: false });
@@ -260,7 +262,10 @@ describe("FindInText", () => {
     });
 });
 
-/** A `contentEmbed` with a caption, as the editor saves an embed. */
+/**
+ * A `contentEmbed` with a caption, as the editor saves an embed. The caption is a nested editable,
+ * as captions and table cells are in the app.
+ */
 function EmbedSchema(target: Editor) {
     target.model.schema.register("contentEmbed", { inheritAllFrom: "$blockObject" });
     target.model.schema.register("caption", {
@@ -269,7 +274,15 @@ function EmbedSchema(target: Editor) {
     target.conversion.elementToElement({
         model: "contentEmbed", view: { name: "figure", classes: "include-note" }
     });
-    target.conversion.elementToElement({ model: "caption", view: "figcaption" });
+    target.conversion.for("upcast").elementToElement({ model: "caption", view: "figcaption" });
+    target.conversion.for("dataDowncast").elementToElement({
+        model: "caption", view: "figcaption"
+    });
+    target.conversion.for("editingDowncast").elementToElement({
+        model: "caption",
+        view: (_element, { writer }) =>
+            toWidgetEditable(writer.createEditableElement("figcaption"), writer)
+    });
 }
 
 /** Lets a fake target with `count` matches search the embed of the editor. */

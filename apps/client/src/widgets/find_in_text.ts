@@ -9,6 +9,7 @@ import MergedFind, {
 } from "./merged_find";
 import type { ScrollRailTarget } from "./scroll_rail_markers";
 import { watchEmbedFindTargets } from "./type_widgets/text/content_embed_tools";
+import { EDITOR_ROOT_SELECTOR } from "./type_widgets/text/nested_editor";
 
 /** "Search in note" in an editable text note, with the content of its embeds. */
 export default class FindInText {
@@ -213,9 +214,10 @@ export class TextEditorFindTarget implements HostFindTarget {
         for (const span of root.querySelectorAll<HTMLElement>(
             "span.ck-find-result[data-find-result]"
         )) {
-            // The spans of a nested editor belong to the target of its embed.
+            // The spans of a nested editor belong to the target of its embed. Table cells and
+            // captions are nested editables of this editor.
             const id = span.dataset.findResult;
-            if (id && !spans.has(id) && span.closest(".ck-editor__editable") === root) {
+            if (id && !spans.has(id) && span.closest(EDITOR_ROOT_SELECTOR) === root) {
                 spans.set(id, span);
             }
         }
