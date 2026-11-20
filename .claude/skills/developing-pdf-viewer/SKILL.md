@@ -76,8 +76,8 @@ ls -l --time-style=+%H:%M packages/pdfjs-viewer/dist/web/custom.mjs
   for the document and its initial view; only the latest one moves the view, synchronously, with
   `scrollPageIntoView()` or the rectangle of an annotation, then `update()`. A page past the end
   opens the last page. The embedded viewer has no `pdfHistory`.
-- **Headings**: the viewer sends no outline. The outline of the sidebar is the ToC cache
-  (`CachedToCProvider`, the `working-with-toc-cache` skill), which `Pdf.tsx` serves through its
+- **Headings**: the viewer sends no outline. The sidebar shows the ToC cache (`CachedToCProvider`,
+  the `working-with-toc-cache` skill, "The outline"), which `Pdf.tsx` serves through its
   `tocDocument` entry: `showTarget()` posts the request a link posts, and `findActiveHeading()`
   compares the reading position with each heading's `left`/`top` (`findActivePdfHeading()` in
   commons `pdf_toc.ts`, along the axis that runs down the screen at each page's rotation). The
