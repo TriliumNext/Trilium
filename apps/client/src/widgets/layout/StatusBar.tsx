@@ -3,11 +3,12 @@ import "./StatusBar.css";
 import type { Tooltip } from "bootstrap";
 import clsx from "clsx";
 import { createPortal } from "preact";
-import { useContext, useEffect, useRef, useState } from "preact/hooks";
+import { useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import type { CommandNames } from "../../components/app_context";
 import type NoteContext from "../../components/note_context";
 import type FNote from "../../entities/fnote";
+import { partitionAttachmentsByGroup } from "../../services/attachment_groups";
 import attributes from "../../services/attributes";
 import { t } from "../../services/i18n";
 import type { ViewScope } from "../../services/link";
@@ -329,8 +330,7 @@ function BacklinksBadge({ note, viewScope }: StatusBarContext) {
 
 //#region Attachment count
 function AttachmentCount({ note }: StatusBarContext) {
-    const attachments = useAttachments(note);
-    const count = attachments.length;
+    const count = useUserAttachmentCount(note);
 
     return (note && count > 0 &&
         <StatusBarButton
@@ -341,6 +341,14 @@ function AttachmentCount({ note }: StatusBarContext) {
             triggerCommand="showAttachments"
         />
     );
+}
+
+/** The number of attachments placed on the note, leaving out the ones Trilium generates. */
+export function useUserAttachmentCount(note: FNote) {
+    const attachments = useAttachments(note);
+    return useMemo(
+        () => partitionAttachmentsByGroup(attachments, note.type).user.length,
+        [ attachments, note.type ]);
 }
 //#endregion
 

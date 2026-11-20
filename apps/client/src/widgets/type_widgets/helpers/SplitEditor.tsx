@@ -63,7 +63,7 @@ export default function SplitEditor({ note, noteContext, error, previewStale, sp
     useEffect(() => { onContentChangedRef.current = editorProps.onContentChanged; });
     useEffect(() => {
         if (!editorPropagatesContent && fallbackBlob) {
-            onContentChangedRef.current?.(fallbackBlob.content ?? "");
+            onContentChangedRef.current?.(fallbackBlob.content ?? "", fallbackBlob.blobId);
         }
     }, [ fallbackBlob, editorPropagatesContent ]);
 

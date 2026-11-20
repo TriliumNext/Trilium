@@ -1,3 +1,4 @@
+import { DOCX_MIME, EPUB_MIME_TYPES, ODT_MIME } from "./office.js";
 import { FNV1A_OFFSET_BASIS, fnv1aUpdate } from "./utils.js";
 
 /** A heading of a document, as every table of contents of the app lists it. */
@@ -54,6 +55,26 @@ const SECOND_OFFSET_BASIS = 0x5bd1e995;
 const CONTROL_CHARACTERS = /[\u0000-\u0008\u000e-\u001f\u007f]/g;
 /** A hash, then for a bound heading an optional ordinal, the blob tag and `.p` when protected. */
 const HEADING_ID = /^[0-9a-z]{14}(?:(?:\.[1-9][0-9]*)?\.([0-9A-Za-z]{10})(\.p)?)?$/;
+
+/** The name of a ToC format, the key of its properties in a cache. */
+export type TocFormatName = "pdf" | "docx" | "odt" | "epub";
+
+/** The name of the ToC format of the documents of `type` and `mime`, if they have one. */
+export function findTocFormatName(type: string, mime: string): TocFormatName | undefined {
+    if (type !== "file") {
+        return undefined;
+    }
+    if (mime === "application/pdf") {
+        return "pdf";
+    }
+    if (mime === DOCX_MIME) {
+        return "docx";
+    }
+    if (mime === ODT_MIME) {
+        return "odt";
+    }
+    return (EPUB_MIME_TYPES as readonly string[]).includes(mime) ? "epub" : undefined;
+}
 
 /** The title of the ToC cache of a note, or of its attachment `attachmentId`. */
 export function getTocCacheTitle(attachmentId?: string) {

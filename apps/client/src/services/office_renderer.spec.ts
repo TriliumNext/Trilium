@@ -11,10 +11,12 @@ vi.mock("./server.js", () => ({
 const sanitizeNoteContentHtml = vi.fn((s: string) => `SANITIZED:${s}`);
 vi.mock("./sanitize_content.js", () => ({ sanitizeNoteContentHtml: (s: string) => sanitizeNoteContentHtml(s) }));
 
-import { OfficePreviewTooLargeError, renderOfficeToHtml } from "./office_renderer.js";
+import {
+    OfficePreviewChangedError, OfficePreviewTooLargeError, renderOfficeToHtml
+} from "./office_renderer.js";
 
 // The preview shows its own placeholder for a refusal, so the request raises no error toast.
-const SILENT = { silentBadRequest: true };
+const SILENT = { silentBadRequest: true, silentConflict: true };
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -37,6 +39,22 @@ describe("renderOfficeToHtml", () => {
 
         serverGet.mockRejectedValueOnce("<html>not json</html>");
         await expect(renderOfficeToHtml("notes", "n1")).rejects.toBe("<html>not json</html>");
+    });
+
+    it("asks for a blob, and turns the refusal of another one into an OfficePreviewChangedError",
+        async () => {
+        await renderOfficeToHtml("notes", "n1", { trim: true, blobId: "blob1" });
+        expect(serverGet).toHaveBeenCalledWith(
+            "notes/n1/office-preview?trim=1&blobId=blob1", undefined, true, SILENT);
+
+        serverGet.mockRejectedValueOnce(JSON.stringify({ reason: "changed", message: "Changed." }));
+        await expect(renderOfficeToHtml("notes", "n1", { blobId: "blob1" }))
+            .rejects.toBeInstanceOf(OfficePreviewChangedError);
+
+        // Another refusal with a body keeps its own failure.
+        const conflict = JSON.stringify({ reason: "listing" });
+        serverGet.mockRejectedValueOnce(conflict);
+        await expect(renderOfficeToHtml("notes", "n1", { blobId: "blob1" })).rejects.toBe(conflict);
     });
 
     it("builds the attachment URL variant", async () => {

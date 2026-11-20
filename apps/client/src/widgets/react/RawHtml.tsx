@@ -12,6 +12,8 @@ interface RawHtmlProps extends Pick<HTMLAttributes<HTMLElement>, "tabindex" | "d
     html?: HTMLElementLike;
     style?: CSSProperties;
     onClick?: (e: MouseEvent) => void;
+    /** The blob that `html` renders, written as `data-blob-id` in the same render as `html`. */
+    blobId?: string;
 }
 
 export default function RawHtml({containerRef, ...props}: RawHtmlProps & { containerRef?: RefObject<HTMLSpanElement | null>}) {
@@ -22,14 +24,15 @@ export function RawHtmlBlock({containerRef, ...props}: RawHtmlProps & { containe
     return <div ref={containerRef} {...getProps(props)} />;
 }
 
-function getProps({ className, html, style, onClick, dir, tabindex }: RawHtmlProps) {
+function getProps({ className, html, style, onClick, dir, tabindex, blobId }: RawHtmlProps) {
     return {
         className,
         dangerouslySetInnerHTML: getHtml(html ?? ""),
         style,
         onClick,
         dir,
-        tabindex
+        tabindex,
+        "data-blob-id": blobId
     };
 }
 

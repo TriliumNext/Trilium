@@ -1,11 +1,13 @@
 import "./PdfViewer.css";
 
+import type { PdfReadingPosition } from "@triliumnext/commons/src/lib/pdf_toc.js";
 import type { HTMLAttributes, RefObject } from "preact";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
 import { onEffectiveThemeStyleChange } from "../../../services/theme";
 import { useSyncedRef } from "../../react/hooks/dom";
 import { useTriliumOption } from "../../react/hooks/options";
+import type { ClientTocBuild } from "../../sidebar/CachedToCProvider";
 import { useTocBuild } from "./toc_build";
 
 interface FontDefinition {
@@ -24,6 +26,13 @@ export interface PdfLinkTarget {
     /** The id of a heading of the ToC cache. */
     heading?: string;
     annotation?: string;
+}
+
+/** Where a viewer reads: its reading position and the effective rotation of each page. */
+export interface PdfReading {
+    position: PdfReadingPosition | null;
+    /** The effective rotation of each page, by page index. */
+    rotations: number[];
 }
 
 /** The ToC cache of the document that a viewer builds where the server cannot read PDFs. */
@@ -59,6 +68,16 @@ interface PdfViewerProps extends Pick<HTMLAttributes<HTMLIFrameElement>, "tabInd
      */
     noteId?: string;
     ntxId?: string | null;
+    /** Names the navigation of the frame: every message of the load includes it. */
+    loadToken?: string;
+    /** Called when the viewer of the load `loadToken` has loaded its document. */
+    onDocumentLoaded?(): void;
+    /** Called when the viewer of the load `loadToken` cannot load its document. */
+    onDocumentError?(): void;
+    /** Called with the build of `tocDocument` whenever its status or its ready cache changes. */
+    onTocBuild?(build: ClientTocBuild): void;
+    /** Called with where the viewer of the load `loadToken` reads, as it changes. */
+    onReadingChange?(reading: PdfReading): void;
     /**
      * The place that the viewer opens at. Each target object is posted once: when the frame has
      * loaded, or at once for a target given later.
@@ -73,23 +92,39 @@ interface PdfViewerProps extends Pick<HTMLAttributes<HTMLIFrameElement>, "tabInd
  */
 export default function PdfViewer({
     iframeRef: externalIframeRef, pdfUrl, onLoad, editable, toolbar = true, disableSelection,
-    minPixelRatio, noteId, ntxId, target, tocDocument
+    minPixelRatio, noteId, ntxId, loadToken, target, tocDocument, onDocumentLoaded,
+    onDocumentError, onTocBuild, onReadingChange
 }: PdfViewerProps) {
     const iframeRef = useSyncedRef(externalIframeRef, null);
     const [ locale ] = useTriliumOption("locale");
     const injectStyles = useStyleInjection(iframeRef, disableSelection);
     const showTarget = useTargetPosting(iframeRef, target);
-    const requestTocBuild = useOwnTocBuild(iframeRef, tocDocument);
+    const tocBuild = useOwnTocBuild(iframeRef, tocDocument, onTocBuild);
+    useLoadReports(iframeRef, loadToken, {
+        onDocumentLoaded,
+        onDocumentError() {
+            tocBuild.onLoadError();
+            onDocumentError?.();
+        },
+        onReadingChange
+    });
+
+    const src = `pdfjs/web/viewer.html?v=${glob.triliumVersion}&file=${pdfUrl}&locale=${locale}`
+        + `&sidebar=0&editable=${editable ? "1" : "0"}&toolbar=${toolbar ? "1" : "0"}`
+        + (minPixelRatio ? `&minPixelRatio=${minPixelRatio}` : "")
+        + (noteId ? getAddressParams(noteId, ntxId) : "")
+        + (onReadingChange ? "&position=1" : "")
+        + (loadToken ? `&loadToken=${encodeURIComponent(loadToken)}` : "");
 
     return (
         <iframe
             ref={iframeRef}
             class="pdf-preview"
-            src={`pdfjs/web/viewer.html?v=${glob.triliumVersion}&file=${pdfUrl}&locale=${locale}&sidebar=0&editable=${editable ? "1" : "0"}&toolbar=${toolbar ? "1" : "0"}${minPixelRatio ? `&minPixelRatio=${minPixelRatio}` : ""}${noteId ? getAddressParams(noteId, ntxId) : ""}`}
+            src={src}
             onLoad={() => {
                 injectStyles();
                 showTarget();
-                requestTocBuild();
+                tocBuild.requestBuild();
                 onLoad?.();
             }}
         />
@@ -126,13 +161,15 @@ function useTargetPosting(
 
 /**
  * Builds the ToC cache of `tocDocument` when the viewer has loaded it, and saves the answers that
- * this frame sends. Returns what the frame calls when it loads.
+ * this frame sends. `onTocBuild` receives the build as it changes. Returns what the frame calls
+ * when it loads, and when its document fails to load.
  */
 function useOwnTocBuild(
-    iframeRef: RefObject<HTMLIFrameElement | null>, tocDocument: PdfTocDocument | undefined
+    iframeRef: RefObject<HTMLIFrameElement | null>, tocDocument: PdfTocDocument | undefined,
+    onTocBuild: ((build: ClientTocBuild) => void) | undefined
 ) {
-    const { requestBuild, saveBuild } = useTocBuild(iframeRef, tocDocument?.tocUrl ?? "",
-        tocDocument?.isProtected ?? false);
+    const { clientBuild, version, onLoad, onLoadError, saveBuild } = useTocBuild(iframeRef,
+        tocDocument?.tocUrl ?? "", tocDocument?.isProtected ?? false);
 
     useEffect(() => {
         if (!tocDocument) return;
@@ -145,9 +182,82 @@ function useOwnTocBuild(
         return () => window.removeEventListener("message", onMessage);
     }, [ tocDocument ]);
 
-    return () => {
-        if (tocDocument) void requestBuild();
+    useEffect(() => {
+        if (tocDocument) {
+            onTocBuild?.(clientBuild);
+        }
+    }, [ version, tocDocument ]);
+
+    return {
+        requestBuild() {
+            if (tocDocument) onLoad();
+        },
+        onLoadError() {
+            if (tocDocument) onLoadError();
+        }
     };
+}
+
+/**
+ * Calls `onDocumentLoaded`, `onDocumentError` and `onReadingChange` for the messages of the load
+ * `loadToken` that the frame in `iframeRef` posts.
+ */
+function useLoadReports(
+    iframeRef: RefObject<HTMLIFrameElement | null>, loadToken: string | undefined,
+    reports: {
+        onDocumentLoaded?(): void;
+        onDocumentError(): void;
+        onReadingChange?(reading: PdfReading): void;
+    }
+) {
+    const reportsRef = useRef(reports);
+    reportsRef.current = reports;
+
+    useEffect(() => {
+        if (!loadToken) return;
+        const reading: PdfReading = { position: null, rotations: [] };
+        function onMessage(event: MessageEvent) {
+            if (event.source !== iframeRef.current?.contentWindow
+                || event.data?.loadToken !== loadToken) {
+                return;
+            }
+            if (event.data.type === "pdfjs-viewer-document-loaded") {
+                reportsRef.current.onDocumentLoaded?.();
+            } else if (event.data.type === "pdfjs-viewer-document-error") {
+                reportsRef.current.onDocumentError();
+            } else if (applyReadingMessage(reading, event.data)) {
+                reportsRef.current.onReadingChange?.({
+                    position: reading.position, rotations: [ ...reading.rotations ]
+                });
+            }
+        }
+        window.addEventListener("message", onMessage);
+        return () => window.removeEventListener("message", onMessage);
+    }, [ loadToken ]);
+}
+
+/** Applies the message `data` to `reading`, and returns whether it is a reading message. */
+export function applyReadingMessage(reading: PdfReading, data: PdfMessageEvent["data"]) {
+    switch (data.type) {
+        case "pdfjs-viewer-position":
+            reading.position = { pageNumber: data.pageNumber, x: data.x, y: data.y };
+            return true;
+        case "pdfjs-viewer-rotations":
+            reading.rotations = [ ...data.rotations ];
+            return true;
+        case "pdfjs-viewer-page-rotation":
+            reading.rotations[data.pageNumber - 1] = data.rotation;
+            return true;
+        default:
+            return false;
+    }
+}
+
+let loadCounter = 0;
+
+/** A token for a new navigation of a viewer's frame, which no other load of the page has. */
+export function nextPdfLoadToken() {
+    return String(++loadCounter);
 }
 
 function getAddressParams(noteId: string, ntxId: string | null | undefined) {

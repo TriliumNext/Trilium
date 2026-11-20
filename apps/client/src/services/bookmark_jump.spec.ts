@@ -1,7 +1,9 @@
 import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { consumeBookmark, revealElement, showDocumentTarget } from "./bookmark_jump.js";
+import {
+    consumeBookmark, findDocumentTarget, revealElement, showDocumentTarget
+} from "./bookmark_jump.js";
 import type { ViewScope } from "./link.js";
 
 const { showAnchorElement, scroller } = vi.hoisted(() => ({
@@ -188,5 +190,29 @@ describe("showDocumentTarget", () => {
 
         expect(showAnchorElement).not.toHaveBeenCalled();
         expect(scroller.scrollTo).toHaveBeenCalledExactlyOnceWith({ top: 0 });
+    });
+
+    it("stays where it is for a target that no element has, when asked not to scroll", async () => {
+        const container = buildContainer(`<h2 data-toc-heading="h1">One</h2>`);
+
+        await showDocumentTarget(container, { heading: "gone" }, { isFallbackToTop: false });
+        await showDocumentTarget(container, { heading: "h1" }, { isFallbackToTop: false });
+
+        expect(scroller.scrollTo).not.toHaveBeenCalled();
+        expect(showAnchorElement).toHaveBeenCalledExactlyOnceWith(container.querySelector("h2"));
+    });
+});
+
+describe("findDocumentTarget", () => {
+    it("finds a heading by one of its ids and a bookmark by its whole name, at once", () => {
+        const container = buildContainer("<h2 data-toc-heading=\"a b\">Shared</h2>"
+            + "<p data-toc-bookmark=\"Intro\">Intro</p>");
+
+        expect(findDocumentTarget(container, { heading: "b" })).toBe(container.querySelector("h2"));
+        expect(findDocumentTarget(container, { bookmark: "Intro" }))
+            .toBe(container.querySelector("p"));
+        expect(findDocumentTarget(container, { bookmark: "Int" })).toBeUndefined();
+        expect(findDocumentTarget(container, { heading: "a b" })).toBeUndefined();
+        expect(findDocumentTarget(container, {})).toBeUndefined();
     });
 });

@@ -79,6 +79,7 @@ export default function ReadOnlyText({ note, noteContext, ntxId, parentComponent
         <>
             <ReadOnlyTextContent
                 html={blob?.content ?? ""}
+                blobId={blob?.blobId}
                 noteId={note.noteId}
                 ntxId={ntxId}
                 dir={isRtl ? "rtl" : "ltr"}
@@ -92,6 +93,8 @@ export default function ReadOnlyText({ note, noteContext, ntxId, parentComponent
 interface ReadOnlyTextContentProps {
     /** CKEditor-compatible HTML to render. */
     html: string;
+    /** The blob that `html` is the content of, which the outline links headings of. */
+    blobId?: string;
     /** The note `html` belongs to. Reference links to its own blocks show only their text. */
     noteId?: string;
     /** Note context id — enables `contentElRefreshed` / `executeWithContentElement` integrations when provided. */
@@ -120,8 +123,8 @@ interface ReadOnlyTextContentProps {
  * whenever `html` changes.
  */
 export function ReadOnlyTextContent({
-    html, noteId, ntxId, dir, className, contentRef: externalContentRef, isChanging = false,
-    canCollapseHeadings = false
+    html, blobId, noteId, ntxId, dir, className, contentRef: externalContentRef,
+    isChanging = false, canCollapseHeadings = false
 }: ReadOnlyTextContentProps) {
     const hasEmbedBoxes = hasSourceEmbedBoxes(isChanging);
     const contentRef = useSyncedRef(externalContentRef);
@@ -221,6 +224,7 @@ export function ReadOnlyTextContent({
             tabindex={100}
             dir={dir}
             html={html}
+            blobId={blobId}
         />
     );
 }

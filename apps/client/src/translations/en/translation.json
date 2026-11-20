@@ -85,7 +85,7 @@
     "title_from_heading": "If not set, will always reflect the heading's text",
     "retrieving_from_page": "Retrieving from the web page...",
     "title_from_attachment": "If not set, will always reflect the attachment's title",
-    "top_of_note": "Link to the whole note",
+    "top_of_note": "Link to the note (default)",
     "select_note_for_targets": "Select a note to show the headings and anchors you can link to.",
     "inspecting_note": "Inspecting note structure",
     "heading_reference_failed": "Unable to create reference to the given heading",
@@ -3014,7 +3014,11 @@
   },
   "toc": {
     "table_of_contents": "Table of Contents",
-    "no_headings": "No headings."
+    "no_headings": "No headings.",
+    "building": "Building the table of contents…",
+    "build_failed": "The table of contents could not be read.",
+    "unavailable": "The table of contents is not available.",
+    "retry": "Try again"
   },
   "watched_file_update_status": {
     "title": "File changed outside Trilium",
@@ -3042,7 +3046,9 @@
     "copy_failed": "Cannot copy to clipboard due to permission issues.",
     "copy_success": "Copied to clipboard.",
     "paste_notes": "Paste note(s)",
-    "paste_failed": "The clipboard could not be read."
+    "paste_failed": "The clipboard could not be read.",
+    "copy_ready": "The link is ready to copy.",
+    "copy_button": "Copy"
   },
   "entrypoints": {
     "note-revision-created": "Note revision has been created.",

@@ -35,8 +35,12 @@ export interface EditableCodeProps extends TypeWidgetProps {
     lineWrapping?: boolean;
     updateInterval?: number;
     noteType?: NoteType;
-    /** Invoked when the content of the note is changed, such as a different revision or a note switch. */
-    onContentChanged?: (content: string) => void;
+    /**
+     * Invoked when the content of the note is changed, such as a different revision or a note
+     * switch. `blobId` names the blob of `content` when it was read from the note rather than
+     * edited.
+     */
+    onContentChanged?: (content: string, blobId?: string) => void;
     /** Invoked after the content of the note has been uploaded to the server, using a spaced update. */
     dataSaved?: () => void;
     /** Invoked each time the content is read for a save, before it is sent. */

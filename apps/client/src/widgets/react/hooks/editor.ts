@@ -294,7 +294,8 @@ export function useBlobEditorSpacedUpdate({ note, noteType, noteContext, getData
     noteContext: NoteContext | null | undefined,
     getData: () => Promise<Blob | undefined> | Blob | undefined,
     onContentChange: (newBlob: FBlob) => void,
-    dataSaved?: (savedData: Blob) => void,
+    /** Called after a save with the bytes sent and the answer of the upload, its new `blobId`. */
+    dataSaved?: (savedData: Blob, answer: { blobId?: string } | undefined) => void,
     updateInterval?: number;
     /** If set to true, then the blob is replaced directly without saving a revision before. */
     replaceWithoutRevision?: boolean;
@@ -316,8 +317,10 @@ export function useBlobEditorSpacedUpdate({ note, noteType, noteContext, getData
         if (data === undefined || note.type !== noteType || !(note.noteId in froca.notes)) return;
 
         protected_session_holder.touchProtectedSessionIfNecessary(note);
-        await server.upload(`notes/${note.noteId}/file?replace=${replaceWithoutRevision ? "1" : "0"}`, new File([ data ], note.title, { type: note.mime }), parentComponent?.componentId);
-        dataSaved?.(data);
+        const answer = await server.upload(
+            `notes/${note.noteId}/file?replace=${replaceWithoutRevision ? "1" : "0"}`,
+            new File([ data ], note.title, { type: note.mime }), parentComponent?.componentId);
+        dataSaved?.(data, answer);
     }, [ note, dataSaved, noteType, parentComponent, replaceWithoutRevision ]);
 
     const stateCallback = useCallback<StateCallback>((state) => {

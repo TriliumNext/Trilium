@@ -10,6 +10,16 @@ export const PDF_TOC_READER = 2;
 export interface PdfTocHeading extends TocHeading {
     /** The page that a link to the heading opens, 1 for the first. Absent when it leads nowhere. */
     page?: number;
+    /** Where the heading starts on its page, in PDF user space; absent when the file gives none. */
+    left?: number;
+    top?: number;
+}
+
+/** The reading position that the PDF viewer reports, in the user space of its page. */
+export interface PdfReadingPosition {
+    pageNumber: number;
+    x: number;
+    y: number;
 }
 
 /** The part of a pdf.js document that {@link readPdfOutline} reads. */
@@ -35,6 +45,9 @@ export interface PdfOutlineHeading {
     page?: number;
     /** The explicit destination of the entry, only with `page`. */
     dest?: unknown[];
+    /** Where the entry's own destination starts on its page, only with `page`. */
+    left?: number;
+    top?: number;
     /** Without `page`: the page of the first entry below it that has one. */
     inheritedPage?: number;
 }
@@ -71,13 +84,44 @@ export async function readPdfOutline(pdf: PdfOutlineSource): Promise<PdfOutline>
 
 /**
  * The headings of `outline` as a ToC cache stores them, without ids: each with the page that a
- * link to it opens, its own or the one it inherits.
+ * link to it opens, its own or the one it inherits, and the anchors of its own destination.
  */
 export function toPdfTocHeadings(outline: PdfOutlineHeading[]): Omit<PdfTocHeading, "id">[] {
-    return outline.map(({ title, level, page, inheritedPage }) => {
-        const linkPage = page ?? inheritedPage;
-        return linkPage === undefined ? { title, level } : { title, level, page: linkPage };
+    return outline.map(({ title, level, page, inheritedPage, left, top }) => {
+        if (page !== undefined) {
+            return { title, level, page, ...anchorsOf(left, top) };
+        }
+        return inheritedPage === undefined
+            ? { title, level }
+            : { title, level, page: inheritedPage };
     });
+}
+
+/**
+ * The id of the heading of `headings` at `position`: of those that start at or above it on the
+ * screen, the nearest. `rotations` is the effective rotation of each page, a multiple of 90,
+ * by page index. A heading without the anchor that runs down the screen starts at the top of its
+ * page; one without a page is never active. Of several at one place, the last in document order.
+ */
+export function findActivePdfHeading(
+    headings: PdfTocHeading[], position: PdfReadingPosition, rotations: readonly number[]
+): string | null {
+    const rotationOf = (pageNumber: number) => rotations[pageNumber - 1] ?? 0;
+    const readingDepth = getPointDepth(rotationOf(position.pageNumber), position.x, position.y);
+    let active: { page: number; depth: number; id: string } | null = null;
+    for (const { id, page, left, top } of headings) {
+        if (page === undefined || page > position.pageNumber) {
+            continue;
+        }
+        const depth = getPointDepth(rotationOf(page), left, top);
+        if (page === position.pageNumber && depth > readingDepth) {
+            continue;
+        }
+        if (!active || page > active.page || (page === active.page && depth >= active.depth)) {
+            active = { page, depth, id };
+        }
+    }
+    return active?.id ?? null;
 }
 
 /** Pushes `entries` at `level` onto `stack`, so that the first one comes off first. */
@@ -87,6 +131,35 @@ function pushEntries(
     for (let index = entries.length - 1; index >= 0; index--) {
         stack.push({ entry: entries[index], level });
     }
+}
+
+/**
+ * How far down the screen the point `x`, `y` of a page turned by `rotation` is: the PDF axis that
+ * runs down the screen, as in pdf.js' `PageViewport`. A missing coordinate is the top of the page.
+ */
+function getPointDepth(rotation: number, x: number | undefined, y: number | undefined) {
+    switch (((rotation % 360) + 360) % 360) {
+        case 90:
+            return x ?? -Infinity;
+        case 180:
+            return y ?? -Infinity;
+        case 270:
+            return x === undefined ? -Infinity : -x;
+        default:
+            return y === undefined ? -Infinity : -y;
+    }
+}
+
+/** The anchors that are finite numbers, as fields of a heading. */
+function anchorsOf(left: unknown, top: unknown) {
+    return {
+        ...(isFiniteNumber(left) ? { left } : {}),
+        ...(isFiniteNumber(top) ? { top } : {})
+    };
+}
+
+function isFiniteNumber(value: unknown): value is number {
+    return typeof value === "number" && Number.isFinite(value);
 }
 
 /** The page of `dest` and its explicit form, or nothing when it leads to no page of `pdf`. */
@@ -103,11 +176,33 @@ async function resolveDestination(pdf: PdfOutlineSource, dest: PdfOutlineEntry["
             : target !== null && typeof target === "object" ? await pdf.getPageIndex(target) : NaN;
         const page = pageIndex + 1;
         return Number.isInteger(page) && page >= 1 && page <= pdf.numPages
-            ? { page, dest: explicit }
+            ? { page, dest: explicit, ...readAnchors(explicit) }
             : {};
     } catch {
         // A reference that names no page.
         return {};
+    }
+}
+
+/** Where the explicit destination `dest` starts on its page, from the arguments of its mode. */
+function readAnchors(dest: unknown[]) {
+    const mode = dest[1];
+    const name = mode !== null && typeof mode === "object"
+        ? (mode as { name?: unknown }).name
+        : null;
+    switch (name) {
+        case "XYZ":
+            return anchorsOf(dest[2], dest[3]);
+        case "FitH":
+        case "FitBH":
+            return anchorsOf(undefined, dest[2]);
+        case "FitV":
+        case "FitBV":
+            return anchorsOf(dest[2], undefined);
+        case "FitR":
+            return anchorsOf(dest[2], dest[5]);
+        default:
+            return {};
     }
 }
 

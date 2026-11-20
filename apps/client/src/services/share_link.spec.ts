@@ -3,7 +3,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildNote } from "../test/easy-froca";
 import froca from "./froca";
 import options from "./options";
-import { buildShareLink, getNoteShareLink, getShareScope } from "./share_link";
+import {
+    buildShareLink, getNoteShareLink, getSharedPageLink, getShareScope
+} from "./share_link";
 
 describe("buildShareLink", () => {
     const originalGlob = window.glob;
@@ -154,5 +156,12 @@ describe("getShareScope", () => {
         expect(getShareScope({ ...platform, isStandalone: true, syncServerHost })).toBe("public");
         expect(getShareScope({ ...platform, isStandalone: true, isMobileApp: true, syncServerHost: "" })).toBe("export-only");
         expect(getShareScope({ ...platform, isStandalone: true, isMobileApp: true, syncServerHost })).toBe("public");
+    });
+});
+
+describe("getSharedPageLink", () => {
+    it("adds the block parameter, encoded as a link to blocks is", () => {
+        expect(getSharedPageLink("https://notes.example.com/share/abc", "a b:c/d"))
+            .toBe("https://notes.example.com/share/abc?block=a%20b:c%2Fd");
     });
 });

@@ -10,6 +10,8 @@ import LoadResults from "../../services/load_results";
 import options from "../../services/options";
 import { renderInto } from "../../test/render";
 import { ParentComponent } from "../react/react_utils";
+import type { TocDocumentContext } from "../sidebar/CachedToCProvider";
+import type { PdfReading } from "./file/PdfViewer";
 
 const CANVAS_MIME = "application/vnd.excalidraw+json";
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -273,8 +275,8 @@ describe("AttachmentDetail", () => {
         it("is shown once the content is in place, and that of each later link at once", async () => {
             const { attachment, renders, follow, viewScope } = await openDetail(mime, first);
 
-            expect(getRenderedContent).toHaveBeenCalledWith(attachment,
-                { pdfToolbar: true, buildsPdfToc: true, trim: false });
+            expect(getRenderedContent).toHaveBeenCalledWith(attachment, expect.objectContaining(
+                { pdfToolbar: true, buildsPdfToc: true, trim: false }));
             expect(viewScope).toMatchObject(first);
             const content = await renders.finish(0);
             expect(content.showTarget).toHaveBeenCalledExactlyOnceWith(firstTarget);
@@ -330,7 +332,9 @@ describe("AttachmentDetail", () => {
         vi.spyOn(froca, "getAttachment").mockImplementation((attachmentId) =>
             new Promise((resolve) => lookups.set(attachmentId, resolve)));
         const renders = holdRenders();
-        const noteContext = { ntxId: "ntx1", viewScope: {} as Record<string, string | undefined> };
+        const noteContext = {
+            ...recordingContext(), viewScope: {} as Record<string, string | undefined>
+        };
         const container = document.createElement("div");
         document.body.append(container);
         async function navigate(attachment: FAttachment, heading: string) {
@@ -359,6 +363,166 @@ describe("AttachmentDetail", () => {
             .toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ heading: "b" }));
         await act(async () => render(null, container));
         container.remove();
+    });
+
+    describe("and the outline", () => {
+        const PREVIEW = "<div class=\"office-preview-scroll\"><div class=\"office-preview-body\">"
+            + "<h2 data-toc-heading=\"a b\">A</h2></div></div>";
+
+        /** The options of the latest render, which report its document to the outline. */
+        function reports() {
+            return getRenderedContent.mock.calls.at(-1)?.[1] as {
+                onDocumentState(state: object): void;
+                onReadingChange(reading: PdfReading): void;
+            };
+        }
+
+        it("publishes rendering, then the blob the render reports once the content is in place",
+            async () => {
+            const { attachment, renders, noteContext } = await openDetail(DOCX_MIME, {});
+            const { attachmentId } = attachment;
+            expect(noteContext.contextData.get("tocDocument"))
+                .toStrictEqual({ status: "rendering", attachmentId });
+
+            reports().onDocumentState({ status: "shown", blobId: "blob1" });
+            expect(noteContext.contextData.get("tocDocument"))
+                .toStrictEqual({ status: "rendering", attachmentId });
+            await renders.finish(0, PREVIEW);
+
+            expect(noteContext.contextData.get("tocDocument")).toMatchObject({
+                status: "shown", attachmentId, tocUrl: `attachments/${attachmentId}/toc`,
+                renderedBlobId: "blob1", ownerNoteId: "note1", title: attachment.title,
+                linkPath: `note1?viewMode=attachments&attachmentId=${attachmentId}`
+            });
+            const shown = noteContext.contextData.get("tocDocument") as TocDocumentContext;
+            expect(shown.findActiveHeading([])).toBe("b");
+
+            reports().onDocumentState({ status: "unavailable" });
+            expect(noteContext.contextData.get("tocDocument"))
+                .toStrictEqual({ status: "unavailable", attachmentId });
+        });
+
+        it("lands a click through the latest render, the page as a number, refusing an older one",
+            async () => {
+            const { attachment, renders, noteContext, viewScope } =
+                await openDetail("application/pdf", {});
+            const content = await renders.finish(0);
+            reports().onDocumentState({ status: "shown", blobId: "blob1" });
+            const older = noteContext.contextData.get("tocDocument") as TocDocumentContext;
+
+            expect(older.showTarget({ page: "3", heading: "gone" })).toBe(true);
+            expect(content.showTarget).toHaveBeenCalledExactlyOnceWith(
+                { page: 3, heading: "gone" }, { isFallbackToTop: false });
+
+            // Another attachment in the scope, and another render, refuse the callback.
+            viewScope.attachmentId = "other";
+            expect(older.showTarget({ page: "4" })).toBe(false);
+            viewScope.attachmentId = attachment.attachmentId;
+            await reloadAttachment(renders.component, attachment.attachmentId, "otherComponent");
+            expect(older.showTarget({ page: "4" })).toBe(false);
+            expect(content.showTarget).toHaveBeenCalledOnce();
+            expect(noteContext.contextData.get("tocDocument"))
+                .toStrictEqual({ status: "rendering", attachmentId: attachment.attachmentId });
+        });
+
+        it("tells the heading being read in a PDF from where its viewer reads", async () => {
+            const { renders, noteContext } = await openDetail("application/pdf", {});
+            await renders.finish(0);
+            reports().onDocumentState({ status: "shown", blobId: "blob1" });
+            const shown = () => noteContext.contextData.get("tocDocument") as TocDocumentContext;
+            const headings = [
+                { id: "p1", title: "A", level: 1, page: 1, top: 700 },
+                { id: "p2", title: "B", level: 1, page: 2, top: 700 }
+            ];
+            const before = shown();
+            expect(before.findActiveHeading(headings)).toBeNull();
+
+            // Each report publishes again, so the outline reads the heading once more.
+            reports().onReadingChange({
+                position: { pageNumber: 2, x: 0, y: 600 }, rotations: [ 0, 0 ]
+            });
+            expect(shown()).not.toBe(before);
+            expect(shown().findActiveHeading(headings)).toBe("p2");
+            reports().onReadingChange({
+                position: { pageNumber: 2, x: 0, y: 750 }, rotations: [ 0, 0 ]
+            });
+            expect(shown().findActiveHeading(headings)).toBe("p1");
+        });
+
+        it("stays where it is for a heading that the preview does not mark", async () => {
+            const { renders, noteContext } = await openDetail(DOCX_MIME, {});
+            reports().onDocumentState({ status: "shown", blobId: "blob1" });
+            const content = await renders.finish(0, PREVIEW);
+            const shown = noteContext.contextData.get("tocDocument") as TocDocumentContext;
+
+            expect(shown.showTarget({ heading: "missing" })).toBe(false);
+            expect(content.showTarget).not.toHaveBeenCalled();
+            expect(shown.showTarget({ heading: "b" })).toBe(true);
+            expect(content.showTarget).toHaveBeenCalledOnce();
+        });
+
+        it("publishes nothing while the scope names another attachment, and clears its own entry",
+            async () => {
+            const { attachment, renders, noteContext, viewScope, container } =
+                await openDetail(DOCX_MIME, {});
+            viewScope.attachmentId = "other";
+            noteContext.contextData.clear();
+            reports().onDocumentState({ status: "shown", blobId: "blob1" });
+            await renders.finish(0, PREVIEW);
+            expect(noteContext.contextData.has("tocDocument")).toBe(false);
+
+            viewScope.attachmentId = attachment.attachmentId;
+            await reloadAttachment(renders.component, attachment.attachmentId, "otherComponent");
+            expect(noteContext.contextData.get("tocDocument"))
+                .toMatchObject({ status: "rendering" });
+            await act(async () => render(null, container));
+            expect(noteContext.contextData.has("tocDocument")).toBe(false);
+        });
+
+        it("publishes the document again when the pane shows the attachment again", async () => {
+            const { attachment, renders, noteContext, hide, show, unmount } =
+                await openHideableDetail(DOCX_MIME);
+            reports().onDocumentState({ status: "shown", blobId: "blob1" });
+            await renders.finish(0, PREVIEW);
+            expect(noteContext.contextData.get("tocDocument"))
+                .toMatchObject({ status: "shown", renderedBlobId: "blob1" });
+
+            await hide();
+            expect(noteContext.contextData.has("tocDocument")).toBe(false);
+
+            await show();
+            expect(noteContext.contextData.get("tocDocument")).toMatchObject({
+                status: "shown", attachmentId: attachment.attachmentId, renderedBlobId: "blob1"
+            });
+            expect(getRenderedContent).toHaveBeenCalledOnce();
+            await unmount();
+        });
+
+        it("publishes what a render started while the pane was hidden reports once it shows",
+            async () => {
+            const { attachment, renders, noteContext, hide, show, unmount } =
+                await openHideableDetail("application/pdf");
+            const { attachmentId } = attachment;
+            const published = () =>
+                noteContext.contextData.get("tocDocument") as TocDocumentContext | undefined;
+            await renders.finish(0);
+            await hide();
+            await reloadAttachment(renders.component, attachmentId, "otherComponent");
+            expect(getRenderedContent).toHaveBeenCalledTimes(2);
+            expect(published()).toBeUndefined();
+
+            await show();
+            await renders.finish(1);
+            expect(published()).toStrictEqual({ status: "rendering", attachmentId });
+            reports().onDocumentState({ status: "shown", blobId: "blob2" });
+            expect(published()).toMatchObject({ status: "shown", renderedBlobId: "blob2" });
+            const before = published();
+            reports().onReadingChange({
+                position: { pageNumber: 1, x: 0, y: 600 }, rotations: [ 0 ]
+            });
+            expect(published()).not.toBe(before);
+            await unmount();
+        });
     });
 
     it("looks nothing up while the view scope names no attachment", async () => {
@@ -429,7 +593,7 @@ async function openDetail(mime: string, scope: Record<string, string | undefined
     const viewScope: Record<string, string | undefined> = {
         viewMode: "attachments", attachmentId: attachment.attachmentId, ...scope
     };
-    const noteContext = { ntxId: "ntx1", viewScope };
+    const noteContext = { ...recordingContext(), viewScope };
     const props = { note: { noteId: "note1" }, viewScope, noteContext } as unknown as
         Parameters<typeof AttachmentDetail>[0];
     const container = renderInto(
@@ -450,7 +614,67 @@ async function openDetail(mime: string, scope: Record<string, string | undefined
                 { noteContext: { ntxId: "ntx1", note: { noteId: "note1" } } } as never);
         });
     }
-    return { attachment, renders, follow, viewScope, container };
+    return { attachment, renders, follow, viewScope, container, noteContext };
+}
+
+/**
+ * Opens the full detail of a file attachment of `mime` in a pane that `hide()` hides and `show()`
+ * shows again. Its renders wait until `renders.finish()`.
+ */
+async function openHideableDetail(mime: string) {
+    const attachment = { ...role("file"), mime } as FAttachment;
+    vi.spyOn(froca, "getAttachment").mockResolvedValue(attachment);
+    const renders = holdRenders();
+    const scope = () => ({ viewMode: "attachments", attachmentId: attachment.attachmentId });
+    const noteContext = {
+        ...recordingContext(), viewScope: scope() as Record<string, string | undefined>
+    };
+    let paneScope: object = noteContext.viewScope;
+    const container = document.createElement("div");
+    document.body.append(container);
+    async function renderPane(isVisible: boolean) {
+        const props = { note: { noteId: "note1" }, viewScope: paneScope, noteContext, isVisible } as
+            unknown as Parameters<typeof AttachmentDetail>[0];
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={renders.component}>
+                    <AttachmentDetail {...props} />
+                </ParentComponent.Provider>, container);
+        });
+    }
+    await renderPane(true);
+    await vi.waitFor(() => expect(getRenderedContent).toHaveBeenCalledOnce());
+
+    return {
+        attachment, renders, noteContext,
+        /** Another note clears the context data, and `NoteDetailWrapper` keeps the props. */
+        async hide() {
+            noteContext.viewScope = { viewMode: "default" };
+            noteContext.contextData.clear();
+            await renderPane(false);
+        },
+        async show() {
+            noteContext.viewScope = scope();
+            paneScope = noteContext.viewScope;
+            await renderPane(true);
+        },
+        async unmount() {
+            await act(async () => render(null, container));
+            container.remove();
+        }
+    };
+}
+
+/** The context data methods of a note context, which record what is published. */
+function recordingContext() {
+    const data = new Map<string, unknown>();
+    return {
+        ntxId: "ntx1",
+        contextData: data,
+        setContextData: (key: string, value: unknown) => data.set(key, value),
+        getContextData: (key: string) => data.get(key),
+        clearContextData: (key: string) => data.delete(key)
+    };
 }
 
 /** Holds each call of `getRenderedContent()` until `finish()` gives it content. */
@@ -461,8 +685,9 @@ function holdRenders() {
     return {
         component: new Component(),
         /** Completes the render that started `index`-th, with an element and a `showTarget()`. */
-        async finish(index: number) {
+        async finish(index: number, html = "") {
             const element = document.createElement("div");
+            element.innerHTML = html;
             const showTarget = vi.fn();
             await act(async () => pending[index]?.({ $renderedContent: [ element ], showTarget }));
             return { element, showTarget };

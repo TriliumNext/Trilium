@@ -14,7 +14,7 @@ On the right side, specific sections will show depending on the type of the curr
     2.  While <a class="reference-link" href="../../Note%20Types/Text/Vim%20mode.md">Vim mode</a> is turned on in the options, a _Vim_ badge turns it on or off for the note, followed by the current mode of Vim.
 3.  If a note is placed in multiple places in the tree (cloned), the number of the note paths will be displayed.
     1.  Clicking it opens a popup with the full list of note paths, from which the note can also be cloned to a new location. The same list is available in the sidebar's <a class="reference-link" href="Right%20Sidebar/Connections%20tab.md">Connections tab</a>.
-4.  If a note has attachments, their number will be displayed.
+4.  If a note has attachments, their number will be displayed. System attachments, which Trilium generates for itself (see <a class="reference-link" href="../Notes/Attachments.md">Attachments</a>), are not counted.
     1.  Clicking on it will reveal the list of attachments in a new tab.
 5.  If a note is linked from other text notes (backlinks), the number of backlinks will be displayed.
     1.  Clicking on it opens a popup with the list of notes that link to this note, as well as an excerpt of where the note is referenced. The same list is available in the sidebar's <a class="reference-link" href="Right%20Sidebar/Connections%20tab.md">Connections tab</a>.

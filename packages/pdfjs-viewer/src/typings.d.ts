@@ -43,9 +43,18 @@ declare global {
                 getPageView(pageIndex: number): {
                     div: HTMLDivElement;
                     viewport: {
+                        /** The size of the page in CSS pixels, at the zoom and rotation. */
+                        width: number;
+                        height: number;
                         /** Maps a point in PDF units to CSS pixels on the page. */
                         convertToViewportPoint(x: number, y: number): number[];
+                        /** Maps a point in CSS pixels on the page to PDF units. */
+                        convertToPdfPoint(x: number, y: number): number[];
                     };
+                    /** The rotation of the view, which every page shares. */
+                    rotation: number;
+                    /** The page's own rotation, the first page's until pdf.js reads the page. */
+                    pdfPageRotate: number;
                 } | undefined;
                 container: HTMLElement;
             };

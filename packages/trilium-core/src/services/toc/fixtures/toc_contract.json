@@ -5,7 +5,9 @@
         {
             "title": "Chapter 1",
             "level": 1,
-            "page": 1
+            "page": 1,
+            "left": 0,
+            "top": 750
         },
         {
             "title": "Section <b>1.1</b> & more",
@@ -15,7 +17,9 @@
         {
             "title": "Named",
             "level": 1,
-            "page": 2
+            "page": 2,
+            "left": 0,
+            "top": 792
         },
         {
             "title": "Missing",

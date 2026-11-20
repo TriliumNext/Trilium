@@ -23,7 +23,8 @@ import FNote from "../entities/fnote.js";
 import imageContextMenuService from "../menus/image_context_menu.js";
 import { t } from "../services/i18n.js";
 import { type MediaEnvironment, showsFileActions } from "../widgets/type_widgets/file/media_environment.js";
-import type { PdfLinkTarget } from "../widgets/type_widgets/file/PdfViewer.js";
+import type { ClientTocBuild } from "../widgets/sidebar/CachedToCProvider.js";
+import type { PdfLinkTarget, PdfReading } from "../widgets/type_widgets/file/PdfViewer.js";
 import type { DocumentTarget } from "./bookmark_jump.js";
 import type { LlmChatContent, StoredMessage } from "../widgets/type_widgets/llm_chat/llm_chat_types.js";
 import type {
@@ -37,7 +38,9 @@ import renderDoc from "./doc_renderer.js";
 import { getAttachmentImageUrl, getNoteImageUrl } from "./image_urls.js";
 import { getTocUrl } from "./link.js";
 import type { ChangeRecordHooks } from "./note_save.js";
-import { OfficePreviewTooLargeError, renderOfficeToHtml } from "./office_renderer.js";
+import {
+    OfficePreviewChangedError, OfficePreviewTooLargeError, renderOfficeToHtml
+} from "./office_renderer.js";
 import openService from "./open.js";
 import { waitForPendingRenders } from "./pending_renders.js";
 import protectedSessionService from "./protected_session.js";
@@ -139,6 +142,16 @@ export interface RenderOptions {
      * as the viewer of a PDF note does.
      */
     buildsPdfToc?: boolean;
+    /** Receives the ToC build of the viewer of a PDF attachment, with `buildsPdfToc`. */
+    onTocBuild?(build: ClientTocBuild): void;
+    /** Receives where the viewer of a PDF reads, as it changes. */
+    onReadingChange?(reading: PdfReading): void;
+    /**
+     * Reports which blob of a PDF or an office document the content shows. With it, the content is
+     * of the blob the attachment has: a fetch that meets another blob reads the current one and
+     * renders it.
+     */
+    onDocumentState?(state: RenderedDocumentState): void;
     /**
      * Saves the changes that interactive content makes to an attachment, such as a canvas drawing.
      * Without it, that content is read-only.
@@ -253,6 +266,21 @@ const SELF_UPDATING_TYPES = new Set([ "canvasDrawing", "code", "markdown" ]);
 /** A place inside rendered content that a link names: in a PDF, or in the preview of a document. */
 export interface ContentLinkTarget extends PdfLinkTarget, DocumentTarget {}
 
+/** How a link lands in rendered content. */
+export interface ContentLandingOptions {
+    /** Whether a preview without the target scrolls to its top, as a followed link does. */
+    isFallbackToTop?: boolean;
+}
+
+/** Which blob of a document rendered content shows, for {@link RenderOptions.onDocumentState}. */
+export type RenderedDocumentState =
+    | { status: "rendering" }
+    | { status: "shown"; blobId: string }
+    | { status: "unavailable" };
+
+/** How many times a document reads its current blob again after a load or a fetch failed. */
+const MAX_DOCUMENT_ROUNDS = 3;
+
 /** What {@link getRenderedContent} renders. */
 export interface RenderedContent {
     $renderedContent: JQuery<HTMLElement>;
@@ -261,7 +289,7 @@ export interface RenderedContent {
      * Shows the rendered PDF or office preview at the place that a link names, once the content is
      * in the document. Absent for content without such places.
      */
-    showTarget?: (target: ContentLinkTarget) => void;
+    showTarget?: (target: ContentLinkTarget, options?: ContentLandingOptions) => void;
 }
 
 export async function getRenderedContent(
@@ -882,22 +910,8 @@ async function renderFile(entity: FNote | FAttachment, type: string, $renderedCo
 
     if (type === "pdf") {
         const $viewer = $(`<div style="height: 100%">`);
-        const { default: PdfViewer, getPdfUrl } = await CONTENT_RENDERERS.file.pdf();
-        const url = getPdfUrl(`${entityType}/${entityId}/open`);
-        const tocDocument = options.buildsPdfToc && entity instanceof FAttachment ? {
-            tocUrl: getTocUrl("attachments", entity.attachmentId),
-            isProtected: !!entity.isProtected
-        } : undefined;
-        const props = {
-            pdfUrl: url, editable: false, toolbar: options.pdfToolbar ?? false, tocDocument
-        };
         const viewer = $viewer.get(0)!;
-        render(h(PdfViewer, props), viewer);
-        // Rendering the same viewer again keeps its frame, whose address does not change. The
-        // viewer holds a target given before its document loads.
-        contentTargets.set($renderedContent[0], ({ page, heading, annotation }) =>
-            render(h(PdfViewer, { ...props, target: { page, heading, annotation } }), viewer));
-
+        contentTargets.set($renderedContent[0], await mountPdfViewer(entity, viewer, options));
         $content.append($viewer);
 
 
@@ -929,14 +943,124 @@ async function renderFile(entity: FNote | FAttachment, type: string, $renderedCo
 }
 
 /**
+ * Mounts the viewer of the PDF `entity` in `viewer`, and returns what shows it at a link's place.
+ * With `options.onDocumentState`, each load requests the blob of the attachment, and a load that
+ * fails reads the current blob and loads that, as the viewer of a PDF note does.
+ */
+async function mountPdfViewer(
+    entity: FNote | FAttachment, viewer: HTMLElement, options: RenderOptions
+) {
+    const { default: PdfViewer, getPdfUrl, nextPdfLoadToken } = await CONTENT_RENDERERS.file.pdf();
+    const { entityType, entityId } = getEntityTypeAndId(entity);
+    const { onDocumentState } = options;
+    const tocDocument = options.buildsPdfToc && entity instanceof FAttachment ? {
+        tocUrl: getTocUrl("attachments", entity.attachmentId),
+        isProtected: !!entity.isProtected
+    } : undefined;
+    /** The blobs of the loads that failed in a row. */
+    const failedLoads: (string | undefined)[] = [];
+    let load = { token: nextPdfLoadToken(), blobId: entity.blobId };
+    let target: PdfLinkTarget | undefined;
+
+    function draw() {
+        const current = load;
+        const url = getPdfUrl(`${entityType}/${entityId}/open`);
+        // Rendering the same viewer again keeps its frame; a new URL navigates it.
+        render(h(PdfViewer, {
+            pdfUrl: onDocumentState && current.blobId ? `${url}?blobId=${current.blobId}` : url,
+            editable: false, toolbar: options.pdfToolbar ?? false, tocDocument, target,
+            loadToken: current.token,
+            onTocBuild: options.onTocBuild,
+            onReadingChange: options.onReadingChange,
+            onDocumentLoaded() {
+                if (current === load && current.blobId) {
+                    failedLoads.length = 0;
+                    onDocumentState?.({ status: "shown", blobId: current.blobId });
+                }
+            },
+            onDocumentError() {
+                void recover(current);
+            }
+        }), viewer);
+    }
+
+    async function recover(failedLoad: typeof load) {
+        if (failedLoad !== load || !onDocumentState) {
+            return;
+        }
+        const isRepeated = failedLoads.at(-1) === failedLoad.blobId;
+        failedLoads.push(failedLoad.blobId);
+        let blobId: string | null = null;
+        if (!isRepeated && failedLoads.length < MAX_DOCUMENT_ROUNDS) {
+            blobId = await readCurrentBlobId(entity).catch(() => null);
+        }
+        if (failedLoad !== load) {
+            return;
+        }
+        if (blobId) {
+            load = { token: nextPdfLoadToken(), blobId };
+            onDocumentState({ status: "rendering" });
+            draw();
+        } else {
+            onDocumentState({ status: "unavailable" });
+        }
+    }
+
+    draw();
+    // The viewer holds a target given before its document loads.
+    return ({ page, heading, annotation }: ContentLinkTarget) => {
+        target = { page, heading, annotation };
+        draw();
+    };
+}
+
+/** The current blob of `entity`, read from the server; `null` for a removed attachment. */
+async function readCurrentBlobId(entity: FNote | FAttachment) {
+    const { refreshBlobId } = await import("../widgets/type_widgets/file/toc_build.js");
+    return entity instanceof FAttachment
+        ? refreshBlobId({
+            kind: "attachment", attachmentId: entity.attachmentId, ownerId: entity.ownerId
+        })
+        : refreshBlobId({ kind: "note", noteId: entity.noteId });
+}
+
+/**
+ * The preview of the office document `entity`. With `options.onDocumentState`, of the blob that
+ * the entity has, read again after the server refused another, and the blob it is of.
+ */
+async function renderOfficePreviewOf(entity: FNote | FAttachment, options: RenderOptions) {
+    const { entityType, entityId } = getEntityTypeAndId(entity);
+    if (!options.onDocumentState) {
+        const preview = await renderOfficeToHtml(entityType, entityId, { trim: options.trim });
+        return { ...preview, blobId: undefined };
+    }
+
+    let blobId = entity.blobId;
+    for (let round = 1; ; round++) {
+        try {
+            const preview = await renderOfficeToHtml(
+                entityType, entityId, { trim: options.trim, blobId });
+            return { ...preview, blobId };
+        } catch (e) {
+            if (!(e instanceof OfficePreviewChangedError) || round >= MAX_DOCUMENT_ROUNDS) {
+                throw e;
+            }
+            const next = await readCurrentBlobId(entity);
+            if (!next) {
+                throw e;
+            }
+            blobId = next;
+        }
+    }
+}
+
+/**
  * Renders an inline preview of an office document (DOCX/XLSX/PPTX, ODT/ODS/ODP, RTF and
  * EPUB) by fetching the server-rendered HTML preview and sanitizing it. On failure it
  * falls back to a notice plus the usual download/open actions, so the file is never left
  * unreachable. `options.trim` asks for the corner of a workbook rather than all of it.
  */
 async function renderOffice(entity: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>, options: RenderOptions) {
-    const { entityType, entityId } = getEntityTypeAndId(entity);
-
     // The scroll host is a separate, unpadded element (like the note view's .scrolling-container)
     // so the body's padding scrolls with the document instead of sitting on the scroller itself.
     const $content = $('<div class="office-preview">');
@@ -950,11 +1074,15 @@ async function renderOffice(entity: FNote | FAttachment, $renderedContent: JQuer
     try {
         // A note list asks for a trimmed render: a card shows a few rows, and a workbook that
         // fills one runs to megabytes the browser would parse and lay out to display none of.
-        const { css, html } = await renderOfficeToHtml(entityType, entityId, { trim: options.trim });
+        const { css, html, blobId } = await renderOfficePreviewOf(entity, options);
         $body.html(html);
         const body = $body[0];
-        contentTargets.set($renderedContent[0], (target) => void import("./bookmark_jump.js")
-            .then(({ showDocumentTarget }) => showDocumentTarget(body, target)));
+        contentTargets.set($renderedContent[0], (target, landing) => void import(
+            "./bookmark_jump.js"
+        ).then(({ showDocumentTarget }) => showDocumentTarget(body, target, landing)));
+        if (blobId) {
+            options.onDocumentState?.({ status: "shown", blobId });
+        }
         if (css) {
             // Built as an element with its text set, never parsed as markup, so a cell's styling
             // cannot escape the rule it belongs to. It sits inside the preview body, so the
@@ -967,6 +1095,7 @@ async function renderOffice(entity: FNote | FAttachment, $renderedContent: JQuer
             console.warn("Failed to render office document preview:", getErrorMessage(e));
         }
         const message = tooLarge ? "content_renderer.office_too_large" : "content_renderer.office_render_error";
+        options.onDocumentState?.({ status: "unavailable" });
         $scroll.remove();
         $content.prepend($("<div>").addClass("admonition caution").text(t(message)));
     }
@@ -1219,7 +1348,9 @@ const DISPOSER_ATTR = "data-content-disposer";
 
 const contentDisposers = new WeakMap<Element, (() => void)[]>();
 /** Shows rendered content at the place that a link names, by the rendered content. */
-const contentTargets = new WeakMap<Element, (target: ContentLinkTarget) => void>();
+const contentTargets = new WeakMap<
+    Element, (target: ContentLinkTarget, options?: ContentLandingOptions) => void
+>();
 
 /**
  * Mounts a collection — a book or a saved search — as the live {@link EmbeddedNoteList}, the same

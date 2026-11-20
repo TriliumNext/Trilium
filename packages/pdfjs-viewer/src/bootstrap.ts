@@ -1,5 +1,6 @@
 import interceptPersistence from "./persistence";
-import { extractAndSendToc, setupActiveHeadingTracking, setupTocBuild } from "./toc";
+import { setupPositionTracking } from "./position";
+import { setupTocBuild } from "./toc";
 import { setupPdfPages } from "./pages";
 import { setupPdfAttachments } from "./attachments";
 import { setupPdfLayers } from "./layers";
@@ -18,6 +19,8 @@ export async function main() {
         window.TRILIUM_NOTE_ID = noteId;
         window.TRILIUM_NTX_ID = urlParams.get("ntxId");
     }
+    // Every navigation of the frame has its own token, so the parent tells loads apart.
+    window.TRILIUM_LOAD_TOKEN = urlParams.get("loadToken");
 
     applyMinPixelRatio(urlParams);
 
@@ -58,15 +61,19 @@ export async function main() {
         setAnnotationEditorUIManager(uiManager);
     });
 
+    const tracksPosition = !!window.TRILIUM_NOTE_ID || urlParams.get("position") === "1";
     app.eventBus.on("documentloaded", () => {
+        postLoadState("pdfjs-viewer-document-loaded");
         setupPdfAnnotations();
+        if (tracksPosition) {
+            setupPositionTracking(app);
+        }
     });
+    app.eventBus.on("documenterror", () => postLoadState("pdfjs-viewer-document-error"));
 
     if (isEditable) {
         app.eventBus.on("documentloaded", () => {
             manageSave();
-            void extractAndSendToc();
-            setupActiveHeadingTracking();
             setupPdfPages();
             setupPdfAttachments();
             setupPdfLayers();
@@ -76,6 +83,17 @@ export async function main() {
     }
     await app.initializedPromise;
 };
+
+/** Tells the parent that the document of this load loaded, or that pdf.js could not load it. */
+function postLoadState(type: "pdfjs-viewer-document-loaded" | "pdfjs-viewer-document-error") {
+    window.parent.postMessage({
+        type,
+        loadToken: window.TRILIUM_LOAD_TOKEN,
+        ntxId: window.TRILIUM_NTX_ID,
+        noteId: window.TRILIUM_NOTE_ID
+    } satisfies PdfViewerDocumentLoadedMessage | PdfViewerDocumentErrorMessage,
+    window.location.origin);
+}
 
 /**
  * Forces a minimum device-pixel-ratio for canvas rasterization. PDF.js sizes each page's

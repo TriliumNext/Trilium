@@ -18,8 +18,10 @@ import { consumeBlockReference } from "../../../services/block_reference";
 import { consumeBookmark } from "../../../services/bookmark_jump";
 import type { ViewScope } from "../../../services/link";
 import note_create from "../../../services/note_create";
+import server from "../../../services/server";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
+import type { HeadingContext } from "../../sidebar/TableOfContents";
 import type { SplitEditorProps } from "../helpers/SplitEditor";
 import { getMarkdownReferenceSource, revealInSource } from "./editor_block_references";
 import { showEditLinkDialog } from "./editor_utils";
@@ -815,6 +817,116 @@ describe("Markdown", () => {
             appContext.tabManager = tabManager;
         }
     });
+
+    describe("links to the headings of the outline", () => {
+        const owned = (id: string) => `<a data-trilium-block-id="${id}"></a>`;
+
+        /** The outline that the split last published, with the context it published to. */
+        function publishedToc(context: Partial<NoteContext>) {
+            const calls = vi.mocked(context.setContextData as (key: string, value: unknown) => void)
+                .mock.calls.filter(([ key ]) => key === "toc");
+            const toc = calls.at(-1)?.[1] as HeadingContext | undefined;
+            if (!toc?.headingLinks) throw new Error("No outline with links was published.");
+            return { headings: toc.headings, headingLinks: toc.headingLinks };
+        }
+
+        it("gives a heading of the editor a marker, confirmed in the saved note", async () => {
+            const note = buildMarkdownNote();
+            const context = contextOf(note, {});
+            const split = mountMarkdown(note, context);
+            const view = createView(400);
+            const content = "# Title\n\n## Setup";
+            setDoc(view, content);
+            split.showEditor(view);
+            split.loadContent(content);
+            vi.spyOn(appContext, "triggerEvent").mockResolvedValue(undefined);
+            vi.spyOn(server, "getWithSilentErrors").mockImplementation(async () => ({
+                blobId: "b", content: view.state.doc.toString()
+            }));
+
+            const { headings, headingLinks } = publishedToc(context);
+            expect(headingLinks.hasPublicLinks).toBe(true);
+            // The link goes to the path that the rows were published for.
+            context.notePath = "root/elsewhere";
+            const target = await headingLinks.getTarget(headings[1]);
+            await target?.createReference?.();
+            const id = target?.params?.block ?? "";
+            expect(view.state.doc.toString()).toBe(`${content} ${owned(id)}`);
+            expect(target?.createLinkPath()).toBe(`root/docs/readme?block=${id}`);
+        });
+
+        it("posts the line of a saved heading, without a writable editor", async () => {
+            const note = buildMarkdownNote();
+            // The first heading has no text in the browser, and some on the server.
+            const content = "## <template>Hidden</template>\n\n"
+                + `## Install ${owned("first")}\n\n## Install ${owned("second")}`;
+            vi.spyOn(appContext, "triggerEvent").mockResolvedValue(undefined);
+            const post = vi.spyOn(server, "postWithSilentErrors")
+                .mockResolvedValue({ params: { block: "second" } });
+
+            for (const readOnlyView of [ null, createView(400, true) ]) {
+                const context = contextOf(note, {});
+                const split = mountMarkdown(note, context);
+                if (readOnlyView) {
+                    setDoc(readOnlyView, content);
+                    split.showEditor(readOnlyView);
+                }
+                split.loadContent(content, "shown");
+
+                const { headings, headingLinks } = publishedToc(context);
+                expect(headings).toHaveLength(3);
+                const target = await headingLinks.getTarget(headings[2]);
+                await target?.createReference?.();
+                expect(post).toHaveBeenLastCalledWith(`notes/${note.noteId}/references`, {
+                    kind: "heading", line: 5, title: "Install", blobId: "shown"
+                });
+                expect(target?.createLinkPath()).toBe("root/docs/readme?block=second");
+                expect(readOnlyView?.state.doc.toString() ?? content).toBe(content);
+            }
+
+            // Content that the editor typed has no blob to post against.
+            const context = contextOf(note, {});
+            const split = mountMarkdown(note, context);
+            split.loadContent(content);
+            const { headings, headingLinks } = publishedToc(context);
+            expect(await headingLinks.getTarget(headings[2])).toBeNull();
+            expect(post).toHaveBeenCalledTimes(2);
+        });
+
+        it("has no target for rows of an earlier content or of another note", async () => {
+            const note = buildMarkdownNote();
+            const context = contextOf(note, {});
+            const split = mountMarkdown(note, context);
+            const view = createView(400);
+            setDoc(view, "## Setup");
+            split.showEditor(view);
+            split.loadContent("## Setup");
+            const first = publishedToc(context);
+
+            // The line moved: the rows published before no longer match.
+            setDoc(view, "Intro\n\n## Setup");
+            split.loadContent("Intro\n\n## Setup");
+            expect(await first.headingLinks.getTarget(first.headings[0])).toBeNull();
+
+            // The editor is reused for another note.
+            const second = publishedToc(context);
+            const other = buildMarkdownNote();
+            split.show(other, contextOf(other, {}));
+            split.loadContent("Intro\n\n## Setup");
+            expect(await second.headingLinks.getTarget(second.headings[0])).toBeNull();
+
+            // A document that the editor changed since the rows were published.
+            const thirdContext = contextOf(note, {});
+            const third = mountMarkdown(note, thirdContext);
+            const thirdView = createView(400);
+            setDoc(thirdView, "## Setup");
+            third.showEditor(thirdView);
+            third.loadContent("## Setup");
+            const rows = publishedToc(thirdContext);
+            setDoc(thirdView, "## Setup!");
+            expect(await rows.headingLinks.getTarget(rows.headings[0])).toBeNull();
+        });
+    });
 });
 
 /** The commands of the text editor that `Markdown` handles for its parent component. */
@@ -869,23 +981,29 @@ function mountMarkdown(note: FNote, noteContext?: Partial<NoteContext>, isPrevie
                 editorRef(view);
             });
         },
-        loadContent(content: string) {
+        /** Loads `content`, read from the blob `blobId` unless an editor typed it. */
+        loadContent(content: string, blobId?: string) {
             const { onContentChanged } = getSplit();
-            act(() => onContentChanged?.(content));
+            act(() => onContentChanged?.(content, blobId));
         }
     };
 }
 
 /** A CodeMirror editor whose scroller is `clientHeight` pixels tall, 0 while it is hidden. */
-function createView(clientHeight: number) {
+function createView(clientHeight: number, readOnly = false) {
     const parent = document.body.appendChild(document.createElement("div"));
-    const view = new VanillaCodeMirror({ parent });
+    const view = new VanillaCodeMirror({ parent, readOnly });
     setClientHeight(view.scrollDOM, clientHeight);
     cleanups.push(() => {
         view.destroy();
         parent.remove();
     });
     return view;
+}
+
+/** Replaces the document of `view`: `setText()` calls `checkVisibility()`, which jsdom lacks. */
+function setDoc(view: VanillaCodeMirror, doc: string) {
+    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: doc } });
 }
 
 function setClientHeight(element: HTMLElement | null, clientHeight: number) {

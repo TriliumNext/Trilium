@@ -1,3 +1,4 @@
+import { becca } from "@triliumnext/core";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import {
@@ -63,11 +64,14 @@ describe("Core routes over Express", () => {
             .expect(200);
         const noteId = create.body.note.noteId as string;
 
-        await ctx.agent
+        const upload = await ctx.agent
             .put(`/api/notes/${noteId}/file?replace=1`)
             .set("x-csrf-token", ctx.csrfToken)
             .attach("upload", Buffer.from("uploaded"), { filename: "notes.txt", contentType: "text/plain" })
-            .expect(200, { uploaded: true });
+            .expect(200);
+        expect(upload.body).toStrictEqual({
+            uploaded: true, blobId: becca.getNoteOrThrow(noteId).blobId
+        });
 
         await ctx.agent.get(`/api/notes/${noteId}/open`).expect(200, "uploaded");
     });

@@ -26,7 +26,9 @@ import contextMenu from "../../../menus/context_menu";
 import { copyReferenceLink, flashBlockRange } from "../../../services/block_reference";
 import { t } from "../../../services/i18n";
 import type { ViewScope } from "../../../services/link";
-import { addParameters, type LinkTarget } from "../../../services/link_targets";
+import {
+    addParameters, createEditorTarget, createSavedHeadingTarget, type LinkTarget
+} from "../../../services/link_targets";
 import type { ChangeRecordHooks, CurrentVersion } from "../../../services/note_save";
 import toast from "../../../services/toast";
 import { noteSavedDataStore } from "../../react/NoteStore";
@@ -174,40 +176,13 @@ export async function copyMarkdownReference(
     const notePath = source?.getNotePath();
     if (!source || !note || !notePath) return;
 
-    const doc = view.state.doc.toString();
-    const index = indexMarkdownBlocks(doc, PREVIEW_BLOCK_HOST);
-    const startBlock = findSameBlock(index, start);
-    const endBlock = findSameBlock(index, end);
-    const startMarker = startBlock && placeMarkerOnBlock(doc, index, startBlock, {
-        kind: "draw", createId: generateBlockId
-    }, PREVIEW_BLOCK_HOST);
-    const endMarker = startMarker && endBlock && endBlock !== startBlock
-        ? placeMarkerOnBlock(doc, index, endBlock, {
-            kind: "draw", createId: () => drawAnotherId(startMarker.id)
-        }, PREVIEW_BLOCK_HOST)
-        : startMarker;
-    if (!startMarker || !endMarker) {
+    const placed = placeMarkdownBlockIds(view, start, end, { isUndoable: true });
+    if (!placed) {
         toast.showError(t("block_reference.copy_failed"));
         return;
     }
 
-    // Both edits are on one document, and the two blocks are apart, so neither moves the other.
-    const changes = [ startMarker.change, endMarker.change ]
-        .filter((change, position, all): change is SourceChange =>
-            !!change && all.indexOf(change) === position);
-    const after = indexMarkdownBlocks(applyChanges(doc, changes), PREVIEW_BLOCK_HOST);
-    const startOwner = after.resolve(startMarker.id);
-    const endOwner = after.resolve(endMarker.id);
-    if (!startOwner || !endOwner
-        || after.blocks.indexOf(startOwner) > after.blocks.indexOf(endOwner)) {
-        toast.showError(t("block_reference.copy_failed"));
-        return;
-    }
-    if (changes.length) {
-        view.dispatch({ changes });
-    }
-
-    const range = { startId: startMarker.id, endId: endMarker.id };
+    const { range, startOwner, endOwner } = placed;
     if (!await saveIds(source, note.noteId, range)) {
         toast.showError(t("block_reference.copy_failed"));
         return;
@@ -221,6 +196,108 @@ export async function copyMarkdownReference(
     await copyReferenceLink(notePath, note.title, range, {
         start: startOwner.node as Element, end: endOwner.node as Element
     });
+}
+
+/**
+ * Gives the blocks `start` and `end` of the document of `view` ids where they have none. With
+ * `isUndoable`, the markers are one undo step, else they stay out of the history. Returns the ids
+ * and the blocks that own them, or `null` when the blocks cannot take ids.
+ */
+export function placeMarkdownBlockIds(
+    view: VanillaCodeMirror,
+    start: IndexedBlock,
+    end: IndexedBlock,
+    { isUndoable }: { isUndoable: boolean }
+) {
+    const doc = view.state.doc.toString();
+    const index = indexMarkdownBlocks(doc, PREVIEW_BLOCK_HOST);
+    const startBlock = findSameBlock(index, start);
+    const endBlock = findSameBlock(index, end);
+    const startMarker = startBlock && placeMarkerOnBlock(doc, index, startBlock, {
+        kind: "draw", createId: generateBlockId
+    }, PREVIEW_BLOCK_HOST);
+    const endMarker = startMarker && endBlock && endBlock !== startBlock
+        ? placeMarkerOnBlock(doc, index, endBlock, {
+            kind: "draw", createId: () => drawAnotherId(startMarker.id)
+        }, PREVIEW_BLOCK_HOST)
+        : startMarker;
+    if (!startMarker || !endMarker) {
+        return null;
+    }
+
+    // Both edits are on one document, and the two blocks are apart, so neither moves the other.
+    const changes = [ startMarker.change, endMarker.change ]
+        .filter((change, position, all): change is SourceChange =>
+            !!change && all.indexOf(change) === position);
+    const after = indexMarkdownBlocks(applyChanges(doc, changes), PREVIEW_BLOCK_HOST);
+    const startOwner = after.resolve(startMarker.id);
+    const endOwner = after.resolve(endMarker.id);
+    if (!startOwner || !endOwner
+        || after.blocks.indexOf(startOwner) > after.blocks.indexOf(endOwner)) {
+        return null;
+    }
+    if (changes.length && isUndoable) {
+        view.dispatch({ changes });
+    } else if (changes.length) {
+        applyOutsideHistory(view, changes);
+    }
+
+    return { range: { startId: startMarker.id, endId: endMarker.id }, startOwner, endOwner };
+}
+
+/**
+ * The heading of the document of `view` whose block starts on `line`, for a link from outside the
+ * editor, or `null` when no heading there can be linked. The target places its marker outside the
+ * undo history, only while the document is the one read here, and confirms the id in the note as
+ * saved on the server.
+ */
+export function getMarkdownHeadingTarget(
+    view: VanillaCodeMirror,
+    line: number,
+    notePath: string,
+    noteId: string
+): LinkTarget | null {
+    const { doc } = view.state;
+    const heading = findHeadingOnLine(doc.toString(), line);
+    if (!heading) return null;
+
+    return createEditorTarget({
+        noteId,
+        notePath,
+        title: heading.title,
+        level: heading.level,
+        assignId() {
+            if (view.state.doc !== doc) return null;
+            const placed = placeMarkdownBlockIds(view, heading.block, heading.block, {
+                isUndoable: false
+            });
+            return placed?.range.startId;
+        },
+        isSaved: isMarkdownHeadingId
+    });
+}
+
+/**
+ * The heading whose block starts on `line` of `content`, the blob `blobId` of the note `noteId`,
+ * for a view without an editor, or `null` when no heading there can be linked. The server finds
+ * the heading by the same line in its own index of that blob.
+ */
+export function getSavedMarkdownHeadingTarget(
+    noteId: string,
+    notePath: string,
+    content: string,
+    line: number,
+    blobId: string
+): LinkTarget | null {
+    const heading = findHeadingOnLine(content, line);
+    return heading
+        ? createSavedHeadingTarget(noteId, notePath, { line, title: heading.title, blobId })
+        : null;
+}
+
+/** Whether `id` resolves to a heading in `content`, the source of a Markdown note. */
+export function isMarkdownHeadingId(content: string, id: string) {
+    return indexMarkdownBlocks(content, PREVIEW_BLOCK_HOST).resolve(id)?.key.kind === "heading";
 }
 
 /**
@@ -563,6 +640,13 @@ function removeMarker(view: VanillaCodeMirror, marker: FoundBlockId) {
     view.dispatch({ changes: { from: removedFrom, to: removedTo }, userEvent: "delete" });
 }
 //#endregion
+
+/** The only heading of `source` that can be linked and whose block starts on `line`. */
+function findHeadingOnLine(source: string, line: number) {
+    const onLine = findMarkdownHeadings(indexMarkdownBlocks(source, PREVIEW_BLOCK_HOST))
+        .filter(({ block }) => block.startLine === line);
+    return onLine.length === 1 ? onLine[0] : null;
+}
 
 /** The block of `index` at the place of `block`, a block of an index of the same document. */
 function findSameBlock(index: MarkdownBlockIndex, block: IndexedBlock) {

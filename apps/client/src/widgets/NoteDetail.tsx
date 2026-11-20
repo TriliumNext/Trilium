@@ -9,6 +9,7 @@ import {
 import appContext, { type EventData, type EventNames } from "../components/app_context";
 import Component from "../components/component";
 import NoteContext from "../components/note_context";
+import type FAttachment from "../entities/fattachment";
 import FNote from "../entities/fnote";
 import type { PrintReport } from "../print";
 import attributes from "../services/attributes";
@@ -538,18 +539,29 @@ export async function getExtendedWidgetType(note: FNote | null | undefined, note
     // note is gone — don't fetch a blob for a note that no longer exists. (The 404 that surfaced this is
     // actually issued by the still-cached modal-close render racing the delete; froca.getBlob's
     // silentNotFound handling is what keeps that one quiet. This check just avoids the redundant later fetch.)
-    if (BLOB_BACKED_TYPES.has(resultingType) && froca.getNoteFromCache(note.noteId)) {
-        const blob = await note.getBlob();
+    const reason = await getUnavailableReason(note, BLOB_BACKED_TYPES.has(resultingType));
+    return reason ?? resultingType;
+}
+
+/**
+ * Why the content of `entity` cannot be shown on this device: a protected note or attachment
+ * outside a protected session, or, when `isBlobBacked`, a blob that the sync server withheld.
+ * `null` when it can.
+ */
+export async function getUnavailableReason(
+    entity: FNote | FAttachment, isBlobBacked = true
+): Promise<"protectedSession" | "blobStub" | null> {
+    if (entity.isProtected && !protected_session_holder.isProtectedSessionAvailable()) {
+        return "protectedSession";
+    }
+    const isCached = "attachmentId" in entity || !!froca.getNoteFromCache(entity.noteId);
+    if (isBlobBacked && isCached) {
+        const blob = await entity.getBlob();
         if (blob?.isStubbed) {
-            resultingType = "blobStub";
+            return "blobStub";
         }
     }
-
-    if (note.isProtected && !protected_session_holder.isProtectedSessionAvailable()) {
-        resultingType = "protectedSession";
-    }
-
-    return resultingType;
+    return null;
 }
 
 // Extended note types that render or edit a note's blob content, and so must fall back to the

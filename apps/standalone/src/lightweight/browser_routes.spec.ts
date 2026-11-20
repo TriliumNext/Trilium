@@ -1,4 +1,6 @@
-import { cls, consistency_checks, getConfig, getSql, note_service as noteService, routes, sql_init } from "@triliumnext/core";
+import {
+    becca, cls, consistency_checks, getConfig, getSql, note_service as noteService, routes, sql_init
+} from "@triliumnext/core";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { BrowserRouter } from "./browser_router.js";
@@ -128,7 +130,8 @@ describe("registerRoutes (real wiring)", () => {
         });
 
         expect(res.status).toBe(200);
-        expect(parseJson(res.body)).toEqual({ uploaded: true });
+        expect(parseJson(res.body))
+            .toStrictEqual({ uploaded: true, blobId: becca.getNoteOrThrow(noteId).blobId });
         expect(text((await router.dispatch("GET", `http://localhost/api/notes/${noteId}/open`)).body)).toBe("uploaded");
     });
 

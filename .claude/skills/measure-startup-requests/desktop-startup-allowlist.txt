@@ -42,7 +42,6 @@
 /api/keyboard-shortcuts-for-notes
 /api/note-map/*/backlink-count
 /api/notes/*/attachments
-/api/notes/*/blob
 /api/notes/*/metadata
 /api/script/startup
 /api/script/widgets
@@ -104,6 +103,7 @@
 /src/menus/browser_context_menu.ts
 /src/menus/context_menu.ts
 /src/services/appearance.ts
+/src/services/attachment_groups.ts
 /src/services/attributes.ts
 /src/services/backend_scripting.ts
 /src/services/block_excerpts.ts
@@ -374,6 +374,7 @@ ws://*/
 ? /api/attachments/*/image/*
 ? /api/attachments/download/*
 ? /api/branches/*/expanded/*
+? /api/notes/*/blob
 ? /api/notes/download/*
 ? /api/recent-notes
 ? /api/search-templates

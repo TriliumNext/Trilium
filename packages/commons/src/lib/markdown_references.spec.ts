@@ -296,6 +296,22 @@ describe("addMarkdownHeadingReference", () => {
             .toBeNull();
     });
 
+    it("finds the heading by the line its block starts on, while its title matches", () => {
+        const source = "## A\n\n## B\n\n> ## B";
+        const add = (line: number, title: string) =>
+            addMarkdownHeadingReference(source, { line, title }, createId, host);
+
+        expect(add(3, "B")).toEqual({
+            content: `## A\n\n## B ${NEW}\n\n> ## B`, params: { block: "new" }
+        });
+        expect(add(5, "B")).toEqual({
+            content: `## A\n\n## B\n\n> ## B ${NEW}`, params: { block: "new" }
+        });
+        expect(add(2, "B")).toBeNull();
+        expect(add(1, "B")).toBeNull();
+        expect(add(9, "B")).toBeNull();
+    });
+
     it("gives a heading an id in a note with a formula in a code block", () => {
         let now = 0;
         const clock = vi.spyOn(Date, "now").mockImplementation(() => now++);

@@ -536,6 +536,21 @@ describe("DOM / clipboard helpers (default export)", () => {
         delete (document as any).execCommand;
     });
 
+    it("copyHtmlToClipboard leaves later copies alone after execCommand throws", () => {
+        (document as any).execCommand = () => {
+            throw new Error("execCommand failed");
+        };
+        expect(() => utils.copyHtmlToClipboard("<b>old</b>")).toThrow("execCommand failed");
+        delete (document as any).execCommand;
+
+        const setData = vi.fn();
+        const later: any = new Event("copy", { cancelable: true });
+        later.clipboardData = { setData };
+        document.dispatchEvent(later);
+        expect(later.defaultPrevented).toBe(false);
+        expect(setData).not.toHaveBeenCalled();
+    });
+
     it("copyHtmlToClipboard tolerates a copy event without clipboardData", () => {
         const execSpy = vi.fn(() => {
             document.dispatchEvent(new Event("copy"));

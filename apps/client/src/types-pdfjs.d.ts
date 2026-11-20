@@ -49,21 +49,56 @@ interface Window {
     TRILIUM_NOTE_ID: string;
 
     TRILIUM_NTX_ID: string | null | undefined;
-}
 
-/** A heading of the outline of a PDF, as the viewer sends it to the sidebar. */
-interface PdfOutlineItem {
-    /** The key of the heading in this viewer, `outline-<n>`, never saved. */
-    id: string;
-    /** Plain text. */
-    title: string;
-    /** From 1, shown at most at `MAX_TOC_DEPTH`. */
-    level: number;
+    /**
+     * The token of the navigation of the frame that loaded this viewer, from the `loadToken` URL
+     * parameter. The messages of one load include it, so the parent tells loads apart.
+     */
+    TRILIUM_LOAD_TOKEN: string | null | undefined;
 }
 
 interface WithContext {
     ntxId: string;
     noteId: string | null | undefined;
+}
+
+/** A message of one load of the viewer. */
+interface WithLoad extends WithContext {
+    loadToken: string | null | undefined;
+}
+
+/** The viewer loaded its document. Posted by every viewer. */
+interface PdfViewerDocumentLoadedMessage extends WithLoad {
+    type: "pdfjs-viewer-document-loaded";
+}
+
+/** pdf.js could not load the document. Posted by every viewer. */
+interface PdfViewerDocumentErrorMessage extends WithLoad {
+    type: "pdfjs-viewer-document-error";
+}
+
+/**
+ * Where the reading line is: on the page `pageNumber`, at `x`, `y` in its PDF user space. Posted
+ * by a viewer addressed to a note or opened with `position=1`, as it changes.
+ */
+interface PdfViewerPositionMessage extends WithLoad {
+    type: "pdfjs-viewer-position";
+    pageNumber: number;
+    x: number;
+    y: number;
+}
+
+/** The effective rotation of every page, by page index: a multiple of 90. */
+interface PdfViewerRotationsMessage extends WithLoad {
+    type: "pdfjs-viewer-rotations";
+    rotations: number[];
+}
+
+/** The effective rotation of one page, which pdf.js read after it posted the whole list. */
+interface PdfViewerPageRotationMessage extends WithLoad {
+    type: "pdfjs-viewer-page-rotation";
+    pageNumber: number;
+    rotation: number;
 }
 
 interface PdfDocumentModifiedMessage extends WithContext {
@@ -86,12 +121,6 @@ interface PdfSaveSignaturesMessage extends WithContext {
     data: string;
 }
 
-interface PdfViewerTocMessage extends WithContext {
-    type: "pdfjs-viewer-toc";
-    /** In document order, `null` for a document without an outline. */
-    data: PdfOutlineItem[] | null;
-}
-
 /** The answer to `trilium-build-toc`: the table of contents that the viewer read, or a failure. */
 type PdfViewerTocBuildMessage = WithContext & {
     type: "pdfjs-viewer-toc-build";
@@ -107,11 +136,6 @@ type PdfViewerTocBuildMessage = WithContext & {
     properties: Record<string, unknown>;
     elapsedMs: number;
 });
-
-interface PdfViewerActiveHeadingMessage extends WithContext {
-    type: "pdfjs-viewer-active-heading";
-    headingId: string;
-}
 
 interface PdfViewerPageInfoMessage extends WithContext {
     type: "pdfjs-viewer-page-info";
@@ -176,8 +200,11 @@ type PdfMessageEvent = MessageEvent<
     PdfDocumentModifiedMessage
     | PdfSaveViewHistoryMessage
     | PdfSaveSignaturesMessage
-    | PdfViewerTocMessage
-    | PdfViewerActiveHeadingMessage
+    | PdfViewerDocumentLoadedMessage
+    | PdfViewerDocumentErrorMessage
+    | PdfViewerPositionMessage
+    | PdfViewerRotationsMessage
+    | PdfViewerPageRotationMessage
     | PdfViewerPageInfoMessage
     | PdfViewerCurrentPageMessage
     | PdfViewerThumbnailMessage

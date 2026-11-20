@@ -5,13 +5,17 @@ description: >-
   when wiring a new content type to it (a `TocFormat`, its generator, its heading type and
   fields, its reader version), when choosing how the headings of a format are identified (the
   hashed `heading` id, free or bound to a blob, next to native locators such as a PDF page or a
-  DOCX bookmark), or when making a renderer resolve those ids (the `data-toc-heading` marks of a
-  server preview, `findHeading()` in a viewer that reads the document itself, link labels). Covers
-  `packages/trilium-core/src/services/toc/` (`getToc()`, `readCachedToc()`, `saveClientToc()`,
-  `registerTocGenerator()`, the PDF, DOCX, ODT and EPUB formats), commons `toc.ts`
-  (`assignHeadingIds()`, `findHeading()`, `normalizeTocTitle()`, `TocCache`), the
-  `GET`/`PUT .../toc` routes, the `tocCache` attachment role, the viewer-built cache of standalone
-  (`useTocBuild()`), and the contract fixtures. Also load it before changing any of those files.
+  DOCX bookmark), when making a renderer resolve those ids (the `data-toc-heading` marks of a
+  server preview, `findHeading()` in a viewer that reads the document itself, link labels), or
+  when changing the Outline tab of a PDF, DOCX, ODT or EPUB note or attachment
+  (`CachedToCProvider`, the `tocDocument` context data that `Pdf.tsx`, `Office.tsx` and
+  `Attachment.tsx` publish, the outline's build, active heading and Copy reference). Covers
+  `packages/trilium-core/src/services/toc/` (`getToc()`, `readCachedToc()`, `buildToc()`,
+  `saveClientToc()`, `registerTocGenerator()`, the PDF, DOCX, ODT and EPUB formats), commons
+  `toc.ts` (`assignHeadingIds()`, `findHeading()`, `normalizeTocTitle()`, `TocCache`), the
+  `GET`/`PUT .../toc` and `POST .../toc/build` routes, the `tocCache` attachment role, the
+  viewer-built cache of standalone (`useTocBuild()`), and the contract fixtures. Also load it
+  before changing any of those files.
 ---
 
 # Working with the ToC cache
@@ -73,10 +77,12 @@ Do not use one for:
 | ZIP parts | `packages/trilium-core/src/services/utils/zip_records.ts` | `readZipPart()`, `readZipIndex()`: the DOCX and ODT bookmarks and the EPUB pass read archives here, not through the platform's `ZipProvider` |
 | PDF reader | `packages/commons/src/lib/pdf_toc.ts` | `readPdfOutline()`, `toPdfTocHeadings()`, `PdfTocHeading`, `PDF_TOC_READER`; shared by the server and the viewer |
 | Server generator | `apps/server/src/services/toc/pdf.ts` | `registerPdfTocGenerator()`, called from `apps/server/src/www.ts` |
-| Routes | `packages/trilium-core/src/routes/api/toc.ts` | `GET`/`PUT /api/notes/:noteId/toc` and `/api/attachments/:attachmentId/toc`, `GET /api/attachments/:attachmentId/references` |
+| Routes | `packages/trilium-core/src/routes/api/toc.ts` | `GET`/`PUT /api/notes/:noteId/toc` and `/api/attachments/:attachmentId/toc`, `POST .../toc/build` of both, `GET /api/attachments/:attachmentId/references` |
 | Reference bridge | `packages/trilium-core/src/services/references/toc.ts` | `tocReferences` provider, `toTargets()` |
 | Preview marking | `packages/trilium-core/src/routes/api/files.ts` | `sendOfficePreview()` calls `markTocHeadings()` |
-| Client build | `apps/client/src/widgets/type_widgets/file/toc_build.ts` | `useTocBuild()`: asks the viewer, saves its answer with `PUT` |
+| Client build | `apps/client/src/widgets/type_widgets/file/toc_build.ts` | `useTocBuild()`: the coordinator of the viewer's build (`ClientTocBuild`); `refreshBlobId()` |
+| Outline | `apps/client/src/widgets/sidebar/CachedToCProvider.tsx` | `CachedToCProvider`, `useCachedToc()`, `TocDocumentState`, `ClientTocBuild`, `SERVED_FORMATS`, `isServedTocFormat()`; mounted by `TableOfContents.tsx`, enabled by `RightPaneContent.tsx` (see "The outline") |
+| Outline publishers | `type_widgets/file/Pdf.tsx`, `file/Office.tsx`, `type_widgets/Attachment.tsx`, `services/content_renderer.ts` | Publish `tocDocument`; an attachment's through `onDocumentState` and `onTocBuild` |
 | Client landing | `apps/client/src/services/bookmark_jump.ts`, `link_targets.ts` | `showDocumentTarget()`; `takeLinkTarget()` reads the target out of the view scope |
 | Client labels | `apps/client/src/services/link.ts` | `getTocUrl()`, `rememberHeadingTitles()`, `loadLinkTargetLabel()`, the `headingTitles` memo |
 | Contract fixtures | `packages/trilium-core/src/services/toc/fixtures/` | `toc_contract.*` and their JSON, written by `generate-toc-contract.mts` and `generate-office-toc-contract.mts` through the formats' own generators, with `buildContract()` and `writeContract()` of `contract.mts`; `epub_books.ts` builds the books of the EPUB specs |
@@ -112,6 +118,14 @@ Do not use one for:
 A document whose note cannot keep a cache (an attachment of a revision, a virtual note such as a
 help page) is built on every request and never saved.
 
+`buildToc()` (the `POST .../toc/build` route) answers the cache as `getToc()` finds or builds it,
+or as `readCachedToc()` does where only a viewer reads the format. Both routes send each heading
+with the `params` of a link to it (`format.getLinkParams()`), absent when no link can reach it, and
+answer `{ status: "unavailable" }` for a gone document or content outside a protected session
+(`answerUnavailable()` in `routes/helpers.ts`, from `NotFoundError` and
+`ContentNotAvailableError`), since a client cannot read the status of a failed request. The
+services keep throwing, so the reference routes still answer 404 and 400.
+
 `readCachedToc()` (the `GET .../toc` route) never builds: it answers `ready`, `stale` (the newest
 cache of an earlier blob, for labels), `missing` or `none`, and adds `pendingToc` where the viewer
 must build. `saveClientToc()` (the `PUT`) takes what a viewer read, refuses it with a 409
@@ -119,6 +133,31 @@ must build. `saveClientToc()` (the `PUT`) takes what a viewer read, refuses it w
 exists already, and otherwise assembles and saves it exactly as a server build does.
 
 ## Heading identifiers
+
+### What an id must survive
+
+An id ties an entry of the cache to one heading of the content, and every later reader (a link, a
+label, a marked preview, a viewer) finds the heading again by it. The tie must hold, wherever the
+content allows, when the content changes and when its headings are reordered: a link to "Results"
+still lands on "Results" after a paragraph is added above it, a section is deleted or two chapters
+swap places. So an id names a heading by what it is, not by where it sits. Prefer, in this order:
+
+1. **A stable name the content gives the heading**: a bookmark, an anchor or element `id`, a named
+   destination. It survives edits, reordering and a new title. Only names the author keeps count:
+   names an editor rewrites on save (Word's `_Toc…` and `_Ref…` bookmarks) are positions in
+   disguise, which is why `readBookmarkNames()` drops names that start with `_`.
+2. **A hash of the heading itself**: the free cache id, from its title path. It survives edits
+   elsewhere and a reorder of its siblings, and changes only when the heading or an ancestor is
+   retitled or moved under another parent.
+3. **A position** (the nth heading, the nth of several equal titles, an offset) only when nothing
+   else tells two headings apart. Bind it to the blob, as the bound cache id does, so that in
+   another version it resolves to nothing instead of to whichever heading sits there now.
+
+The same rule holds for resolving an id. A renderer reads its own copy of the content, computes or
+reads the identifiers there and compares them with the link's; it never takes the nth heading of
+its reading for the nth entry of the cache, or of a reading of another version. Pairing by index
+within one reading is fine: `markOfficePreview()` pairs `headings[index]` with `ids[index]` because
+both come from the same `readPreviewHeadings()` list.
 
 ### The cache id
 
@@ -156,7 +195,6 @@ other identifiers next to it; each kind of identifier has one place:
 | A locator the renderer can open without the outline | A field of the heading type, sent in `params` next to the id as a fallback | PDF `page`: `?page=5&heading=<id>` |
 | A name the author gave, unique in the document | Another target kind from `getOtherTargets()`, with its own parameter, kept in the format's properties | DOCX and ODT bookmarks, `?bookmark=<name>` |
 | Entries the renderer cannot show | Kept in the cache with a field that `getLinkParams()` answers `undefined` for | EPUB `isShown: false` |
-| A position that is only valid in one session | A key the viewer keeps to itself, never written into a link or the cache | PDF sidebar `outline-<n>` |
 
 Rules for heading fields:
 
@@ -181,7 +219,8 @@ needs `LINK_TARGET_PARAMS`, `ViewScope`, `VIEW_SCOPE_PARAMS`, `calculateHash()` 
 
 The routes, the reference provider, the lists and the labels need no change. A new format is:
 
-1. **Decide** where the structure is read and how its headings are identified (above). If the
+1. **Decide** where the structure is read and how its headings are identified, in the order of
+   "What an id must survive": a stable name first, a position last and bound to the blob. If the
    structure is the document's own table of contents and not something read from its preview, see
    the EPUB format: the cache keeps the whole authored outline, and the preview is marked from a
    record of where each entry landed.
@@ -299,7 +338,8 @@ Pick where it runs:
   `useTocBuild()` is written for the PDF viewer's iframe messages (`trilium-build-toc`,
   `pdfjs-viewer-toc-build`); another viewer needs its own request and answer, but the same rules:
   ask `GET .../toc` first and build only on `pendingToc`, save only the answer to the latest
-  request, treat a 409 as "the document changed" and let the next load build again.
+  request, treat a 409 as "the document changed", and publish the build as `clientBuild` so the
+  outline can ask for it and wait.
 
 ## Renderers: resolving an id
 
@@ -350,8 +390,8 @@ the heading's own destination, the page it inherits from the first heading below
 parameter of the link, nothing. This is why a format with a cheap locator puts it in `params` next
 to the id.
 
-The viewer's own sidebar names headings by position (`outline-<n>`), which never leaves the
-viewer.
+The viewer also accepts the blob tag of a save of its document (`trilium-saved-revision`), so a
+bound heading of the cache built from the save resolves without a reload.
 
 ### Labels and lists
 
@@ -363,11 +403,113 @@ viewer.
   read. A link whose id is not in the cache falls back to the page label, then to the note title.
 - Shared pages keep only `?block=`; a `heading` link opens the top of the shared page.
 
+## The outline
+
+The Outline tab of the right sidebar shows the cache of a PDF, DOCX, ODT or EPUB document, as a
+note and as an attachment in the attachments view, through `CachedToCProvider`
+(`apps/client/src/widgets/sidebar/CachedToCProvider.tsx`). Text, Markdown and AI chat notes have
+providers of their own in `TableOfContents.tsx` and read no cache.
+
+### Which documents get it
+
+Three gates must agree:
+
+- `TableOfContents()` mounts `CachedToCProvider` for a note when `isServedTocFormat(type, mime)`
+  is true, and for every attachment in the attachments view.
+- `useRightPaneTabs()` (`RightPaneContent.tsx`) enables the outline for the same notes, and for an
+  attachment only once a `tocDocument` entry names that attachment.
+- The type widget publishes `tocDocument` only for a document with a format, from
+  `findTocFormatName()` in commons, the function the formats' `isFor()` call.
+
+A new format gets an outline by adding its name to `SERVED_FORMATS` and publishing `tocDocument`
+from its widget. A format shown by the server preview of `Office.tsx` and `Attachment.tsx` needs
+only the name in the set.
+
+### Publishing `tocDocument`
+
+The widget writes a `TocDocumentState` into the context data of its note context:
+
+| Status | When |
+|---|---|
+| `rendering` | A load or a render has started and its content is not in place yet |
+| `unavailable` | The widget cannot show the document: a preview too large or not converted, a PDF that keeps failing to load |
+| `shown` | The content is in place |
+
+A `shown` entry has:
+
+- `tocUrl` from `getTocUrl()`, and `ownerNoteId`, the note that keeps the cache attachment: its
+  `tocCache` rows in `entitiesReloaded` reload the outline.
+- `renderedBlobId`, the blob whose bytes are on screen. The rows apply only for it. It is the blob
+  that a load or a fetch confirmed, never `note.blobId` read when publishing: a preview requests
+  its blob with `?blobId=`, gets a 409 for another (`OfficePreviewChangedError`), reads the current
+  blob with `refreshBlobId()` and renders again; the PDF viewer requests it in its file URL and
+  confirms it at `documentloaded` under the token of its load.
+- `linkPath` and `title`, from which _Copy reference_ builds its link (an attachment's path ends
+  in `?viewMode=attachments&attachmentId=<id>`).
+- `showTarget(params)`, which lands on a heading as a followed link does. Bind it to the load or
+  render that published it: it returns `false` once that one is not the current one, or when the
+  target is not found, and the outline then leaves the pane where it is.
+- `findActiveHeading(headings)`, the id of the heading being read. The provider calls it on each
+  render, so the widget publishes again when the reading position changes (`useActiveHeading()`
+  in `Office.tsx` and `Attachment.tsx`, `pdfjs-viewer-position` in `Pdf.tsx`).
+- `clientBuild`, only where the viewer builds the cache (PDF on standalone and mobile): the
+  `ClientTocBuild` of `useTocBuild()`.
+
+Every status has `attachmentId` for an attachment. The provider ignores an entry whose
+`attachmentId` is not the one in the view scope: it is a late publish of another attachment.
+
+A publisher (`useTocDocumentPublisher()` in `Office.tsx`, `useAttachmentTocDocument()` in
+`Attachment.tsx`, `getTocDocument()` in `Pdf.tsx`) also:
+
+- records what it publishes while hidden and writes it again when shown: `NoteDetailWrapper`
+  keeps the widget mounted while the pane shows another note, and `NoteContext.setNote()` clears
+  the context data;
+- clears the entry on unmount only while it is still the one it wrote;
+- for an attachment, publishes only while the view scope names it, through the renderer's
+  `onDocumentState` and `onTocBuild` (`RenderOptions` in `content_renderer.ts`), each tied to a
+  render generation.
+
+### Loading and building
+
+`useCachedToc()` loads once per `tocUrl` and `renderedBlobId`, when the outline is visible
+(`useWhenShown()`):
+
+1. `GET .../toc`. `ready` for the rendered blob shows the rows and feeds
+   `rememberHeadingTitles()`; `ready` for another blob waits until the widget shows that blob.
+2. `stale` or `missing` without `pendingToc`: this platform can build, so the provider sends
+   `POST .../toc/build` (`buildToc()` in core), which returns the same response type.
+3. With `pendingToc`: it waits for `clientBuild`, calls `request()` once per load while the
+   build is `idle`, and takes `ready` once its `blobId` is the rendered one. Without a
+   `clientBuild` the load fails.
+4. `unreadable`, a failed request and a failed client build show _Try again_ (`retry()`, which
+   requests a client build again and reloads). `unavailable` (a gone document, or one locked
+   outside a protected session, from `answerUnavailable()` on the server) and
+   `getUnavailableReason()` on the client show the unavailable placeholder. `none` shows the
+   outline's empty state.
+
+While a new blob loads or builds, the outline keeps the earlier rows of the same document rather
+than the spinner, so a save of a PDF does not flash it. The spinner shows only without rows, with
+_Building the table of contents…_ while a build runs. A heading without `params`
+(`TocFormat.getLinkParams()` returned `undefined`) is a disabled row.
+
+### Outline traps
+
+- **Never publish an unconfirmed `note.blobId` as `renderedBlobId`.** A save in another tab
+  changes the note before the widget shows the new bytes, and the rows of the new cache would
+  then point into the old document.
+- **`useActiveHeading()` needs the element that scrolls**: `.note-detail-file` for the office
+  preview of a note, `.office-preview-scroll` for an attachment's.
+- **`Pdf.spec.tsx` loads `@preact/signals`** (through `froca`, imported by `toc_build.ts`), which
+  skips a second render with the same props: mount afresh in a spec instead.
+
 ## Traps
 
 - **Do not call `getToc()` inside a transaction that stays open across an `await`** (an
   `asyncRoute` on standalone): the save waits for `whenDatabaseFree()`, which waits for its own
   caller. The `PUT` routes are plain `apiRoute`s for the same reason.
+- **Never match a cached heading to the content by its index.** A cache built from one version and
+  a reading of another agree on titles long after they disagree on positions; an index tie sends a
+  link to whichever heading moved into the slot. Compare ids, or names the content carries.
 - **A heading field is not part of the id.** Fixing a page number needs no reader bump; changing
   which entries are kept, their titles or their nesting does.
 - **Reader drift is silent without the contract fixture.** The server and the viewer use the same
@@ -393,7 +535,8 @@ viewer.
 | A format's reader and marking against the contract fixtures | `toc/office.spec.ts`, `toc/office_headings.spec.ts`, `toc/epub.spec.ts` |
 | The EPUB pass, landings and marking; a book's package and navigation | `toc/epub_pass.spec.ts`, `toc/epub_package.spec.ts` |
 | The shared marking and levels; ZIP parts | `toc/preview_marks.spec.ts`, `createLevelTracker` in `toc/index.spec.ts`, `services/utils/zip_records.spec.ts` |
-| The routes | `packages/trilium-core/src/routes/api/toc.spec.ts` |
+| The routes | `packages/trilium-core/src/routes/api/toc.spec.ts`, `routes/helpers.spec.ts` |
+| The outline | `apps/client/src/widgets/sidebar/CachedToCProvider.spec.tsx`, `sidebar/RightPanelContainer.spec.tsx` (the gate), `type_widgets/file/Office.spec.tsx`, `Pdf.spec.tsx`, `type_widgets/Attachment.spec.tsx`, `services/content_renderer.spec.ts` |
 | Targets from a cache | `packages/trilium-core/src/services/references/toc.spec.ts` |
 | A server generator | `apps/server/src/services/toc/pdf.spec.ts` |
 | The standalone platform (no PDF generator, `whenDatabaseFree`) | `apps/standalone/src/lightweight/platform_provider.spec.ts` |
@@ -408,6 +551,7 @@ pnpm --filter server test trilium-core/src/services/toc trilium-core/src/service
 pnpm --filter standalone test trilium-core/src/services/toc trilium-core/src/services/references/toc trilium-core/src/routes/api/toc
 pnpm --filter @triliumnext/commons test src/lib/toc src/lib/pdf_toc
 pnpm --filter client test src/services/bookmark_jump src/services/link
+pnpm --filter client test src/widgets/sidebar/CachedToCProvider src/widgets/sidebar/RightPanelContainer src/widgets/type_widgets/file/Office src/widgets/type_widgets/file/Pdf src/widgets/type_widgets/Attachment src/services/content_renderer
 pnpm --filter @triliumnext/pdfjs-viewer test src/toc src/navigation src/digest
 ```
 

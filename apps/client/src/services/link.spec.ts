@@ -1203,6 +1203,19 @@ describe("the labels of links to PDF headings", () => {
         get.mockRestore();
     });
 
+    it("shows the page for a document whose cache is unavailable, and asks again later",
+        async () => {
+        const pdf = buildNote({ title: "Paper" });
+        const get = answerToc(
+            { status: "unavailable" }, { status: "ready", blobId: pdf.blobId, headings });
+        const href = `#root/${pdf.noteId}?page=12&heading=h1`;
+
+        expect((await label(href)).text()).toBe("Paperpdf.page_reference");
+        expect((await label(href)).text()).toBe("PaperMethods");
+        expect(get).toHaveBeenCalledTimes(2);
+        get.mockRestore();
+    });
+
     it("shows the title from a stale cache without remembering it", async () => {
         const pdf = buildNote({ title: "Paper" });
         const get = answerToc({ status: "stale", blobId: "older", headings },

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
-    type PdfOutlineEntry, type PdfOutlineSource, readPdfOutline, toPdfTocHeadings
+    findActivePdfHeading, type PdfOutlineEntry, type PdfOutlineSource, type PdfTocHeading,
+    readPdfOutline, toPdfTocHeadings
 } from "./pdf_toc.js";
 import { MAX_TOC_HEADINGS } from "./toc.js";
 
@@ -22,9 +23,12 @@ describe("readPdfOutline", () => {
         ], { "chapter-2": [ ref(1), { name: "XYZ" }, 0, 0, null ] });
 
         expect((await readPdfOutline(pdf)).headings).toStrictEqual([
-            { title: "Chapter 1", level: 1, page: 1, dest: xyz },
+            { title: "Chapter 1", level: 1, page: 1, dest: xyz, left: 72, top: 700 },
             { title: "Section <b>1.1</b> & more", level: 2, page: 1, dest: [ ref(0), { name: "Fit" } ] },
-            { title: "Named", level: 1, page: 2, dest: [ ref(1), { name: "XYZ" }, 0, 0, null ] },
+            {
+                title: "Named", level: 1, page: 2, dest: [ ref(1), { name: "XYZ" }, 0, 0, null ],
+                left: 0, top: 0
+            },
             { title: "Missing", level: 1 },
             { title: "Spaced out", level: 1, page: 2, dest: [ 1, { name: "Fit" } ] },
             { title: "Link", level: 1 },
@@ -33,6 +37,33 @@ describe("readPdfOutline", () => {
             { title: "Bad reference", level: 1 },
             { title: "No target", level: 1 },
             { title: "Text target", level: 1 }
+        ]);
+    });
+
+    it("reads where each explicit destination starts on its page", async () => {
+        const { headings } = await readPdfOutline(fakePdf([
+            entry("XYZ", [ ref(0), { name: "XYZ" }, 72, 700, 1.5 ]),
+            entry("XYZ without top", [ ref(0), { name: "XYZ" }, 72, null, null ]),
+            entry("FitH", [ ref(1), { name: "FitH" }, 500 ]),
+            entry("FitBH", [ ref(1), { name: "FitBH" }, 400 ]),
+            entry("FitV", [ ref(1), { name: "FitV" }, 30 ]),
+            entry("FitBV", [ ref(1), { name: "FitBV" }, 40 ]),
+            entry("FitR", [ ref(2), { name: "FitR" }, 10, 20, 300, 600 ]),
+            entry("Fit", [ ref(2), { name: "Fit" } ]),
+            entry("Not finite", [ ref(2), { name: "XYZ" }, Infinity, Number.NaN, null ]),
+            entry("Inherits", null, [ entry("Child", [ ref(3), { name: "XYZ" }, 5, 6, null ]) ])
+        ]));
+
+        expect(headings.map(({ title, left, top }) => [ title, left, top ])).toStrictEqual([
+            [ "XYZ", 72, 700 ], [ "XYZ without top", 72, undefined ],
+            [ "FitH", undefined, 500 ], [ "FitBH", undefined, 400 ],
+            [ "FitV", 30, undefined ], [ "FitBV", 40, undefined ], [ "FitR", 10, 600 ],
+            [ "Fit", undefined, undefined ], [ "Not finite", undefined, undefined ],
+            [ "Inherits", undefined, undefined ], [ "Child", 5, 6 ]
+        ]);
+        expect(toPdfTocHeadings(headings).slice(-2)).toStrictEqual([
+            { title: "Inherits", level: 1, page: 4 },
+            { title: "Child", level: 2, page: 4, left: 5, top: 6 }
         ]);
     });
 
@@ -109,15 +140,86 @@ describe("readPdfOutline", () => {
 describe("toPdfTocHeadings", () => {
     it("gives each heading the page its own destination or its first descendant leads to", () => {
         expect(toPdfTocHeadings([
-            { title: "Own", level: 1, page: 3, dest: [ ref(2) ] },
+            { title: "Own", level: 1, page: 3, dest: [ ref(2) ], left: 10, top: 20 },
             { title: "Inherited", level: 1, inheritedPage: 5 },
             { title: "Nowhere", level: 2 }
         ])).toStrictEqual([
-            { title: "Own", level: 1, page: 3 },
+            { title: "Own", level: 1, page: 3, left: 10, top: 20 },
             { title: "Inherited", level: 1, page: 5 },
             { title: "Nowhere", level: 2 }
         ]);
     });
+});
+
+describe("findActivePdfHeading", () => {
+    it("takes the nearest heading at or above the reading point of an upright page", () => {
+        const headings = [ at("a", 1, 0, 700), at("b", 1, 0, 400), at("c", 2, 0, 700) ];
+
+        expect(find(headings, 1, 300, 500)).toBe("a");
+        expect(find(headings, 1, 300, 400)).toBe("b");
+        // A reading line in the gap below page 1 is clamped to its bottom.
+        expect(find(headings, 1, 300, 0)).toBe("b");
+        expect(find(headings, 2, 300, 750)).toBe("b");
+        expect(find(headings, 1, 300, 750)).toBeNull();
+    });
+
+    it("compares along the PDF axis that runs down the screen at each rotation", () => {
+        const sameTop = [ at("near", 1, 100, 500), at("far", 1, 400, 500) ];
+        expect(find(sameTop, 1, 200, 0, [ 90 ])).toBe("near");
+        expect(find(sameTop, 1, 450, 0, [ 90 ])).toBe("far");
+        expect(find(sameTop, 1, 200, 0, [ 270 ])).toBe("far");
+        expect(find(sameTop, 1, 50, 0, [ 270 ])).toBe("near");
+
+        const stacked = [ at("high", 1, 0, 700), at("low", 1, 0, 400) ];
+        expect(find(stacked, 1, 0, 500)).toBe("high");
+        expect(find(stacked, 1, 0, 500, [ 180 ])).toBe("low");
+        expect(find(stacked, 1, 0, 750, [ 180 ])).toBe("high");
+    });
+
+    it("orders an earlier page by its own rotation", () => {
+        const headings = [ at("p1a", 1, 0, 100), at("p1b", 1, 0, 600), at("p2", 2, 0, 700) ];
+
+        expect(find(headings, 2, 0, 750, [ 180, 0 ])).toBe("p1b");
+        expect(find(headings, 2, 0, 750, [ 0, 0 ])).toBe("p1a");
+    });
+
+    it("starts a heading without the anchor of the axis at the top of its page", () => {
+        const headings = [ at("noLeft", 1, undefined, 500), at("withLeft", 1, 100, 500) ];
+
+        expect(find(headings, 1, 50, 0, [ 90 ])).toBe("noLeft");
+        expect(find(headings, 1, 200, 0, [ 270 ])).toBe("noLeft");
+        const noTop = [ at("noTop", 1, 100, undefined), at("withTop", 1, 100, 500) ];
+        expect(find(noTop, 1, 0, 400, [ 180 ])).toBe("noTop");
+        expect(find([ at("noAnchor", 2) ], 2, 0, 790)).toBe("noAnchor");
+    });
+
+    it("takes the last of several at one place, and compares places, not the outline's order",
+        () => {
+        expect(find([ at("first", 1, 0, 500), at("second", 1, 0, 500) ], 1, 0, 400)).toBe("second");
+
+        const outOfOrder = [ at("late", 3, 0, 700), at("early", 1, 0, 700) ];
+        expect(find(outOfOrder, 2, 0, 400)).toBe("early");
+        expect(find(outOfOrder, 3, 0, 600)).toBe("late");
+        expect(find([ at("pageless", undefined), at("early", 1, 0, 700) ], 1, 0, 10)).toBe("early");
+        expect(find([ at("pageless", undefined) ], 5, 0, 0)).toBeNull();
+    });
+
+    /** A heading `id` on `page`, starting at `left` and `top` when given. */
+    function at(id: string, page?: number, left?: number, top?: number): PdfTocHeading {
+        return {
+            id, title: id, level: 1,
+            ...(page === undefined ? {} : { page }),
+            ...(left === undefined ? {} : { left }),
+            ...(top === undefined ? {} : { top })
+        };
+    }
+
+    function find(
+        headings: PdfTocHeading[], pageNumber: number, x: number, y: number,
+        rotations: number[] = []
+    ) {
+        return findActivePdfHeading(headings, { pageNumber, x, y }, rotations);
+    }
 });
 
 function entry(title: string, dest: PdfOutlineEntry["dest"], items: PdfOutlineEntry[] = []): PdfOutlineEntry {

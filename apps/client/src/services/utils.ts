@@ -705,9 +705,11 @@ function copyHtmlToClipboard(html: string, plainText: string = html) {
         e.preventDefault();
     }
     document.addEventListener("copy", listener);
-    const ok = document.execCommand("copy");
-    document.removeEventListener("copy", listener);
-    return ok;
+    try {
+        return document.execCommand("copy");
+    } finally {
+        document.removeEventListener("copy", listener);
+    }
 }
 
 export function createImageSrcUrl(note: FNote) {

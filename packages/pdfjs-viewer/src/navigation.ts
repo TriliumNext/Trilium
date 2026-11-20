@@ -24,11 +24,17 @@ let isDocumentLoaded = false;
 let initialViewApplied: Promise<void> = Promise.resolve();
 /** The number of the latest request, the only one that may move the view. */
 let latestRequest = 0;
+/**
+ * The blob tags of the saves of each loaded document, with `.p` for the protected form. The parent
+ * reports them, since the viewer digests only the bytes it loaded.
+ */
+const savedRevisions = new WeakMap<object, Set<string>>();
 
 /**
- * Registers the one listener for the requests that move the view: a heading, from a link or from
- * the sidebar, and a page or an annotation. Runs before the first `await` of `main()`, so that a
- * request posted as soon as the frame loads is not missed.
+ * Registers the one listener for the requests that move the view: a heading or a page and an
+ * annotation, from a link or the outline. It also records the revisions that the parent saved
+ * from this load. Runs before the first `await` of `main()`, so that a request posted as soon as
+ * the frame loads is not missed.
  */
 export function setupNavigation() {
     window.addEventListener("message", (event) => {
@@ -39,6 +45,8 @@ export function setupNavigation() {
             void navigate((app) => resolveHeading(app, data));
         } else if (data?.type === "trilium-scroll-to-annotation") {
             void navigate((app) => resolveAnnotation(app, data));
+        } else if (data?.type === "trilium-saved-revision") {
+            recordSavedRevision(data);
         }
     });
 }
@@ -71,6 +79,11 @@ export function whenDocumentLoaded(): Promise<ViewerApp> {
     return documentLoaded;
 }
 
+/** Settles once pdf.js has applied the initial view of the document. */
+export function whenInitialViewApplied(): Promise<void> {
+    return initialViewApplied;
+}
+
 /**
  * Moves the view to the target that `resolveTarget` finds, unless a newer request arrived while
  * it waited. The move itself is synchronous, so nothing can come between the last check and it.
@@ -89,21 +102,20 @@ async function navigate(resolveTarget: (app: ViewerApp) => Promise<Target | null
 /**
  * The place of a heading request, the first that applies: the heading's own destination, the
  * page it inherits from the first heading below it, the page of the request, or nothing. The
- * sidebar names a heading by its key; a link by its saved id, which needs a digest of the
- * document only when it is bound to a blob.
+ * heading is named by its saved id, which needs a digest of the document only when it is bound
+ * to a blob that is not one of the document's saved revisions.
  */
 async function resolveHeading(
-    app: ViewerApp, { headingId, headingKey, pageNumber }: Record<string, unknown>
+    app: ViewerApp, { headingId, pageNumber }: Record<string, unknown>
 ): Promise<Target | null> {
     const pdf = app.pdfDocument;
     const { headings: outline, isCut } = await ensureOutline(pdf)
         .catch(() => ({ headings: [], isCut: false }));
     let index = -1;
-    if (typeof headingKey === "string") {
-        index = parseHeadingKey(headingKey);
-    } else if (typeof headingId === "string") {
+    if (typeof headingId === "string") {
         index = await findHeading(headingId, outline, async (blobTag, isProtected) =>
-            getBlobTag(await getDocumentBlobId(pdf, isProtected)) === blobTag, { isCut });
+            isSavedRevision(pdf, blobTag, isProtected)
+            || getBlobTag(await getDocumentBlobId(pdf, isProtected)) === blobTag, { isCut });
     }
 
     const heading = index >= 0 ? outline[index] : undefined;
@@ -194,10 +206,28 @@ function toPageTarget(pageNumber: unknown, pagesCount: number): Target | null {
     return { pageNumber: Math.min(pageNumber, pagesCount) };
 }
 
-/** The index in the outline of the heading that a sidebar key such as `outline-3` names. */
-function parseHeadingKey(key: string) {
-    const match = /^outline-(\d+)$/.exec(key);
-    return match ? Number(match[1]) : -1;
+/**
+ * Records a revision that the parent saved from the bytes of this load, so that the ids that a
+ * cache of it binds to its blob resolve in the loaded document. Ignored for another load.
+ */
+function recordSavedRevision({ loadToken, blobId, isProtected }: Record<string, unknown>) {
+    const pdf = window.PDFViewerApplication?.pdfDocument;
+    const isOwnLoad = typeof loadToken === "string" && loadToken === window.TRILIUM_LOAD_TOKEN;
+    if (!pdf || !isOwnLoad || typeof blobId !== "string") {
+        return;
+    }
+    const tags = savedRevisions.get(pdf) ?? new Set<string>();
+    savedRevisions.set(pdf, tags);
+    tags.add(toRevisionKey(getBlobTag(blobId), isProtected === true));
+}
+
+/** Whether `blobTag`, in the protection form `isProtected`, is a saved revision of `pdf`. */
+function isSavedRevision(pdf: object, blobTag: string, isProtected: boolean) {
+    return savedRevisions.get(pdf)?.has(toRevisionKey(blobTag, isProtected)) ?? false;
+}
+
+function toRevisionKey(blobTag: string, isProtected: boolean) {
+    return isProtected ? `${blobTag}.p` : blobTag;
 }
 
 /** Whether `dest` is an explicit destination that `scrollPageIntoView()` can read. */

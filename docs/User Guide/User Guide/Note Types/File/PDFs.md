@@ -74,6 +74,8 @@ Since v0.108.0, a link can point at a heading of a PDF: an entry of the outline 
 *   In the _Add link_ dialog, pick the PDF on the _Note_ page. Its headings are listed below the _Link title_, under _Link to a heading_. Check one, then press <kbd>Enter</kbd> or _Insert link_.
 *   Alternatively, type `@` and pick the PDF: the menu then lists the same headings.
 
+To copy a link to a heading while reading the PDF, right-click the heading in the table of contents of the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar/Outline%20tab.md">Outline tab</a> and select _Copy reference_.
+
 The link shows the title of the PDF followed by the title of the heading, and opens the PDF at the heading. It also carries the page of the heading, which the PDF opens at when the heading cannot be found, for example once the outline of the file has changed. A heading whose title is repeated among the headings beside it is found only in the very same file, so once the PDF is saved again, for example with new annotations, a link to it opens its page.
 
 To link to a heading of a PDF attachment, edit a link to the attachment: the dialog lists the headings of the attachment.

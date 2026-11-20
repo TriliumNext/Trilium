@@ -1,10 +1,10 @@
 import {
-    BLOCK_ID_ATTRIBUTE, type CreateReferenceRequest, drawBlockId, generateBlockId, isValidBlockId,
+    BLOCK_ID_ATTRIBUTE, drawBlockId, generateBlockId, isValidBlockId, type MarkedHeadingsResponse,
     type ReferenceTarget
 } from "@triliumnext/commons";
 import {
-    findRequestedHeading, getHeadingLevel, getHeadingText, type HeadingTarget, isAnchor,
-    toReferenceTargets
+    findRequestedHeading, getHeadingLevel, getHeadingText, HEADING_INDEX_ATTRIBUTE,
+    type HeadingTarget, isAnchor, toReferenceTargets
 } from "@triliumnext/commons/src/lib/reference_targets.js";
 import { HTMLElement, type Node, parse } from "node-html-parser";
 
@@ -21,10 +21,14 @@ const textReferences: ReferenceProvider = {
         return typeof content === "string" ? findTextTargets(content) : [];
     },
     createReference(content, request) {
-        if (typeof content !== "string" || request.kind !== "heading") {
+        if (typeof content !== "string" || request.kind !== "heading"
+            || request.index === undefined) {
             return null;
         }
         return addHeadingReference(content, request, generateBlockId);
+    },
+    markHeadings(content) {
+        return typeof content === "string" ? markTextHeadings(content, generateBlockId) : null;
     }
 };
 
@@ -37,13 +41,44 @@ export function findTextTargets(content: string): ReferenceTarget[] {
 }
 
 /**
+ * The heading targets of `content`, and `content` with `HEADING_INDEX_ATTRIBUTE` as the first
+ * attribute of each of them, valued `<token>.<position>`. The token comes from `createToken` and
+ * occurs nowhere in `content`. `null` when no draw gives such a token.
+ */
+export function markTextHeadings(
+    content: string, createToken: () => string
+): Omit<MarkedHeadingsResponse, "blobId"> | null {
+    const markToken = drawBlockId(content, createToken);
+    if (!markToken) {
+        return null;
+    }
+
+    // One pass and one join: splicing each mark into the whole content is quadratic.
+    const { headings } = collectReferences(content);
+    const parts: string[] = [];
+    let offset = 0;
+    for (const [ position, { element } ] of headings.entries()) {
+        const tagNameEnd = getTagNameEnd(content, element);
+        /* v8 ignore next 3 -- node-html-parser lists elements in source order */
+        if (tagNameEnd < offset) {
+            throw new Error(`The heading at offset ${tagNameEnd} is out of document order.`);
+        }
+        parts.push(content.slice(offset, tagNameEnd),
+            ` ${HEADING_INDEX_ATTRIBUTE}="${markToken}.${position}"`);
+        offset = tagNameEnd;
+    }
+    parts.push(content.slice(offset));
+    return { headings: toReferenceTargets(headings, []), markedContent: parts.join(""), markToken };
+}
+
+/**
  * `content` with a block id on the heading that `request` names, and the link parameters of the
  * heading. That heading is the one at `request.index` while its text is `request.title`, else the
  * only heading with that text. The content comes back unchanged when the heading has an id
  * already, and `null` when no heading matches or `createId` draws no free id.
  */
 export function addHeadingReference(
-    content: string, request: Pick<CreateReferenceRequest, "index" | "title">,
+    content: string, request: { index: number; title: string },
     createId: () => string
 ) {
     const heading = findRequestedHeading(collectReferences(content).headings, request);
@@ -68,15 +103,19 @@ export function addHeadingReference(
  * Exported for testing.
  */
 export function insertBlockId(content: string, element: HTMLElement, blockId: string) {
+    const position = getTagNameEnd(content, element);
+    const attribute = ` ${BLOCK_ID_ATTRIBUTE}="${blockId}"`;
+    return `${content.slice(0, position)}${attribute}${content.slice(position)}`;
+}
+
+/** The offset right after the tag name of `element`, which `content` was parsed into. */
+function getTagNameEnd(content: string, element: HTMLElement) {
     const openingTag = `<${element.rawTagName}`;
     const start = element.range[0];
     if (!content.startsWith(openingTag, start)) {
         throw new Error(`Expected the opening tag of a heading at offset ${start}.`);
     }
-
-    const position = start + openingTag.length;
-    const attribute = ` ${BLOCK_ID_ATTRIBUTE}="${blockId}"`;
-    return `${content.slice(0, position)}${attribute}${content.slice(position)}`;
+    return start + openingTag.length;
 }
 
 /** An opening tag of a heading or of a link. Content without one holds no references. */

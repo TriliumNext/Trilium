@@ -1,5 +1,5 @@
 import {
-    DOCX_MIME, ODT_MIME, OFFICE_PREVIEW_TOO_LARGE_MESSAGE, type ReferenceTarget
+    DOCX_MIME, findTocFormatName, ODT_MIME, OFFICE_PREVIEW_TOO_LARGE_MESSAGE, type ReferenceTarget
 } from "@triliumnext/commons";
 
 import { ValidationError } from "../../errors.js";
@@ -70,7 +70,7 @@ export function describeOfficeFailure(error: unknown) {
 function createOfficeTocFormat(name: "docx" | "odt", mime: string, reader: number): TocFormat {
     return {
         name,
-        isFor: (type, documentMime) => type === "file" && documentMime === mime,
+        isFor: (type, documentMime) => findTocFormatName(type, documentMime) === name,
         isCurrent: (cache) => !!readProperties(cache[name], reader),
         getLinkParams: ({ id }) => ({ heading: id }),
         getOtherTargets(cache) {

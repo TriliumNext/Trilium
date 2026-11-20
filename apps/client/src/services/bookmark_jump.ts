@@ -44,23 +44,37 @@ export interface DocumentTarget {
 }
 
 /**
- * Scrolls `container`, the preview of a document that the server marked, to the element whose
- * `TOC_HEADING_ATTRIBUTE` holds the target's heading as one of its space-separated ids, or else
- * whose `TOC_BOOKMARK_ATTRIBUTE` is its bookmark, and flashes it. When no element has it, scrolls
- * the preview to its top, so that it never stays where an earlier link left it.
+ * Scrolls `container`, the preview of a document that the server marked, to the element of
+ * {@link findDocumentTarget}, and flashes it. When no element has it, scrolls the preview to its
+ * top, so that it never stays where an earlier link left it, unless `isFallbackToTop` is `false`.
  */
-export async function showDocumentTarget(container: Element, { heading, bookmark }: DocumentTarget) {
+export async function showDocumentTarget(
+    container: Element, target: DocumentTarget, { isFallbackToTop = true } = {}
+) {
+    const element = findDocumentTarget(container, target);
+    if (!element && !isFallbackToTop) {
+        return;
+    }
     const { getScrollContainer, showAnchorElement } = await import(
         "@triliumnext/ckeditor5/src/plugins/block_reference/block_reference_read_only.js");
-    const element = (heading && findByAttribute(container, TOC_HEADING_ATTRIBUTE,
-        (value) => value.split(" ").includes(heading)))
-        || (bookmark && findByAttribute(container, TOC_BOOKMARK_ATTRIBUTE,
-            (value) => value === bookmark));
     if (element) {
         showAnchorElement(element);
     } else {
         getScrollContainer(container).scrollTo({ top: 0 });
     }
+}
+
+/**
+ * The element of `container`, the preview of a document that the server marked, whose
+ * `TOC_HEADING_ATTRIBUTE` holds the target's heading as one of its space-separated ids, or else
+ * whose `TOC_BOOKMARK_ATTRIBUTE` is its bookmark.
+ */
+export function findDocumentTarget(container: Element, { heading, bookmark }: DocumentTarget) {
+    return (heading && findByAttribute(container, TOC_HEADING_ATTRIBUTE,
+        (value) => value.split(" ").includes(heading)))
+        || (bookmark && findByAttribute(container, TOC_BOOKMARK_ATTRIBUTE,
+            (value) => value === bookmark))
+        || undefined;
 }
 
 /**

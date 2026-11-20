@@ -1,3 +1,5 @@
+import { encodeBlockParameter } from "@triliumnext/commons/src/lib/block_reference.js";
+
 import type FNote from "../entities/fnote.js";
 import options from "./options.js";
 import { isElectron, isMobileApp, isStandalone } from "./utils.js";
@@ -48,6 +50,11 @@ export function getNoteShareLink(note: FNote): string | null {
     }
 
     return buildShareLink(getShareId(note), syncServerHost);
+}
+
+/** The link to the blocks `block`, a `block` link parameter, on the shared page `shareLink`. */
+export function getSharedPageLink(shareLink: string, block: string) {
+    return `${shareLink}?block=${encodeBlockParameter(block)}`;
 }
 
 /**

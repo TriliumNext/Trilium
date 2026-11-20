@@ -9,7 +9,9 @@ import server from "../../../services/server";
 import PdfViewer, { getFontFaceCss, getPdfUrl, type PdfLinkTarget, type PdfTocDocument } from "./PdfViewer";
 
 describe("PdfViewer", () => {
-    function viewerUrl(props: { noteId?: string; ntxId?: string | null }) {
+    function viewerUrl(props: {
+        noteId?: string; ntxId?: string | null; loadToken?: string; pdfUrl?: string
+    }) {
         const container = document.createElement("div");
         render(<PdfViewer pdfUrl="/api/notes/abc123/open" {...props} />, container);
         const src = container.querySelector("iframe")?.getAttribute("src");
@@ -25,7 +27,15 @@ describe("PdfViewer", () => {
 
         // A viewer outside a note (print preview, lightbox, revisions) reports to no one.
         expect(viewerUrl({}).has("noteId")).toBe(false);
+        expect(viewerUrl({}).has("position")).toBe(false);
         expect(viewerUrl({ noteId: "abc123", ntxId: null }).has("ntxId")).toBe(false);
+    });
+
+    it("names its load and the blob it asks for in its URL", () => {
+        const params = viewerUrl({ pdfUrl: "/api/notes/abc123/open?blobId=blobA", loadToken: "7" });
+        expect(params.get("file")).toBe("/api/notes/abc123/open?blobId=blobA");
+        expect(params.get("loadToken")).toBe("7");
+        expect(viewerUrl({}).has("loadToken")).toBe(false);
     });
 
     it("hides pdf.js' own sidebar, since the right panel lists the document's contents", () => {
@@ -85,7 +95,8 @@ describe("PdfViewer for a document of its own", () => {
     it("builds the ToC cache of its document, and saves only the answers of its own frame", async () => {
         container = document.createElement("div");
         document.body.append(container);
-        vi.spyOn(server, "get").mockResolvedValue({ status: "missing", pendingToc: { format: "pdf" } });
+        vi.spyOn(server, "getWithSilentErrors")
+            .mockResolvedValue({ status: "missing", pendingToc: { format: "pdf" } });
         const put = vi.spyOn(server, "put").mockResolvedValue({ status: "ready", blobId: "b", headings: [] });
         const { iframe, posted } = show(undefined, { tocUrl: "attachments/att1/toc", isProtected: true });
 
@@ -107,10 +118,45 @@ describe("PdfViewer for a document of its own", () => {
         }, undefined, { silentConflict: true }));
     });
 
+    it("asks its frame where it reads, and reports each reading of its own load", () => {
+        container = document.createElement("div");
+        document.body.append(container);
+        const onReadingChange = vi.fn();
+        act(() => render(
+            <PdfViewer pdfUrl="/api/attachments/att1/open" loadToken="5"
+                onReadingChange={onReadingChange} />,
+            container));
+        const iframe = container.querySelector("iframe") as HTMLIFrameElement;
+        const frameWindow = new EventTarget();
+        Object.defineProperty(iframe, "contentWindow", { value: frameWindow });
+        const src = new URL(iframe.getAttribute("src") ?? "", "http://localhost");
+        expect(src.searchParams.get("position")).toBe("1");
+
+        function fromFrame(data: object, source: unknown = frameWindow) {
+            window.dispatchEvent(new MessageEvent("message", {
+                data: { loadToken: "5", ...data }, source: source as MessageEventSource
+            }));
+        }
+        fromFrame({ type: "pdfjs-viewer-rotations", rotations: [ 0, 90 ] });
+        fromFrame({ type: "pdfjs-viewer-position", pageNumber: 2, x: 10, y: 20 });
+        fromFrame({ type: "pdfjs-viewer-page-rotation", pageNumber: 1, rotation: 180 });
+        expect(onReadingChange.mock.calls.map(([ reading ]) => reading)).toStrictEqual([
+            { position: null, rotations: [ 0, 90 ] },
+            { position: { pageNumber: 2, x: 10, y: 20 }, rotations: [ 0, 90 ] },
+            { position: { pageNumber: 2, x: 10, y: 20 }, rotations: [ 180, 90 ] }
+        ]);
+
+        // Another load, another frame and another message report nothing.
+        fromFrame({ type: "pdfjs-viewer-position", pageNumber: 1, x: 0, y: 0, loadToken: "4" });
+        fromFrame({ type: "pdfjs-viewer-position", pageNumber: 1, x: 0, y: 0 }, window);
+        fromFrame({ type: "pdfjs-viewer-current-page", currentPage: 1 });
+        expect(onReadingChange).toHaveBeenCalledTimes(3);
+    });
+
     it("builds nothing without a document to build for", async () => {
         container = document.createElement("div");
         document.body.append(container);
-        const get = vi.spyOn(server, "get");
+        const get = vi.spyOn(server, "getWithSilentErrors");
         const { iframe } = show();
 
         load(iframe);

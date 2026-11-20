@@ -760,13 +760,15 @@ paths:
       summary: Give a target a reference
       description: >-
         Gives a target that `GET /api/notes/{noteId}/references` lists without `params` a
-        reference, unless it has one, and returns the link parameters that point at it. The
-        target is the one at `index` among the targets of its `kind` while its title is still
-        `title`, otherwise the only target of that kind with that title. A request that names the
-        `blobId` of its listing is refused with 409, reason `listing`, when the note has another
-        blob: the targets are then listed again. For a heading of a text note, the reference is a
-        block id. Read-only notes get the reference too. It is the only change to the content, and
-        no revision is saved.
+        reference, unless it has one, and returns the link parameters that point at it. A request
+        names the target by exactly one of `index` and `line`. By `index`, the target is the one
+        at that position among the targets of its `kind` while its title is still `title`,
+        otherwise the only target of that kind with that title. By `line`, which only Markdown
+        notes take, it is the only heading whose block starts on that source line, while its
+        title is `title`. A request that names the `blobId` of its listing is refused with 409,
+        reason `listing`, when the note has another blob: the targets are then listed again. For a
+        heading of a text note, the reference is a block id. Read-only notes get the reference
+        too. It is the only change to the content, and no revision is saved.
       operationId: createNoteReference
       parameters:
         - $ref: '#/components/parameters/noteId'
@@ -776,23 +778,34 @@ paths:
           application/json:
             schema:
               type: object
-              required: [kind, index, title]
+              required: [kind, title]
               properties:
                 kind:
                   $ref: '#/components/schemas/ReferenceKind'
                 index:
                   type: integer
                   minimum: 0
-                  description: The position of the target among the targets of its kind
+                  description: >-
+                    The position of the target among the targets of its kind. Not sent with
+                    `line`.
                   example: 0
+                line:
+                  type: integer
+                  minimum: 1
+                  description: >-
+                    The 1-based source line where the block of a heading of a Markdown note
+                    starts, in the blob `blobId`. Not sent with `index`, and requires `blobId`.
+                  example: 12
                 title:
                   type: string
                   minLength: 1
-                  description: The title of the target at that position
+                  description: The title of the target there
                   example: Installation
                 blobId:
                   type: string
-                  description: The `blobId` of the listing that the target was picked from
+                  description: >-
+                    The `blobId` of the listing that the target was picked from. Required with
+                    `line`.
       responses:
         '200':
           description: The link parameters of the target
@@ -806,14 +819,60 @@ paths:
                     $ref: '#/components/schemas/ReferenceParams'
         '400':
           description: >-
-            A malformed request, a note whose targets take no reference, a protected note without
-            a protected session, or a note whose content cannot be changed, such as a help page
+            A malformed request, a note whose targets take no reference, a `line` for a note
+            that is not Markdown, a protected note without a protected session, or a note whose
+            content cannot be changed, such as a help page
         '404':
           description: Note not found
         '409':
           description: >-
             No target matches, because the targets changed since they were listed, or the listing
             was read from another blob (reason `listing`)
+
+  /api/notes/{noteId}/references/marked:
+    get:
+      tags: [Notes]
+      summary: List the headings of a text note with its content marked by their positions
+      description: >-
+        For a read-only view of a text note, which parses the content otherwise than the server.
+        Answers the heading targets as `GET /api/notes/{noteId}/references` lists them, before
+        any filtering, and the content with `data-trilium-heading-index` on the opening tag of
+        each of them, valued `<markToken>.<position>`. The position is the `index` that
+        `POST /api/notes/{noteId}/references` takes. `markToken` is drawn for each answer and
+        occurs nowhere in the content. Writes nothing.
+      operationId: getMarkedNoteHeadings
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: The headings and the marked content
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [headings, markedContent, markToken]
+                properties:
+                  blobId:
+                    type: string
+                    description: >-
+                      The blob that the headings and the content were read from, absent for a
+                      note without one
+                  headings:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ReferenceTarget'
+                  markedContent:
+                    type: string
+                    description: The content with each heading marked; never saved
+                  markToken:
+                    type: string
+                    description: The token that every mark of this answer starts with
+                    example: Xb2kQ9pLm4Rt
+        '400':
+          description: >-
+            A note that is not a text note, or a protected note without a protected session
+        '404':
+          description: Note not found
 
   /api/notes/{noteId}/toc:
     get:
@@ -823,9 +882,11 @@ paths:
         The table of contents that the ToC cache of a note holds, such as the outline of a PDF
         file, the headings of a DOCX or ODT file or the entries of an EPUB e-book's table of
         contents, without building it or writing anything. `ready` is a cache of the note as it is,
-        `stale` one of an earlier blob, `missing` a note without a cache that can be read, and
-        `none` a note that has no table of contents. `pendingToc` tells that the viewer of the
-        document builds the cache, since the server cannot read the format.
+        `stale` one of an earlier blob, `missing` a note without a cache that can be read,
+        `unavailable` a note that is gone or protected without a protected session, and `none` a
+        note that has no table of contents. `pendingToc` tells that the viewer of the document
+        builds the cache, since the server cannot read the format. Each heading carries the
+        `params` of a link to it.
       operationId: getNoteToc
       parameters:
         - $ref: '#/components/parameters/noteId'
@@ -836,10 +897,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CachedToc'
-        '400':
-          description: A protected note without a protected session
-        '404':
-          description: Note not found
     put:
       tags: [Notes]
       summary: Save the table of contents that the viewer read
@@ -872,6 +929,28 @@ paths:
           description: Note not found
         '409':
           description: The note has another blob than the one the viewer read (reason `changed`)
+
+  /api/notes/{noteId}/toc/build:
+    post:
+      tags: [Notes]
+      summary: Build the ToC cache of a note
+      description: >-
+        Answers the ToC cache of a note, and builds and saves it first when it is not valid and
+        the server can read the format. Where only the viewer can read it (PDF on standalone and
+        mobile), answers as `GET /api/notes/{noteId}/toc` does, with `pendingToc`. `unreadable` is
+        a file whose table of contents cannot be read.
+      operationId: buildNoteToc
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: The table of contents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CachedToc'
+        '409':
+          description: The note changed during two builds in a row
 
   /api/notes/{noteId}/title:
     put:
@@ -1095,8 +1174,12 @@ paths:
                   type: string
                   format: binary
       responses:
-        '204':
+        '200':
           description: File uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileUploaded'
           
   /api/notes/{noteId}/open:
     get:
@@ -1105,6 +1188,7 @@ paths:
       operationId: openFileNote
       parameters:
         - $ref: '#/components/parameters/noteId'
+        - $ref: '#/components/parameters/expectedBlobId'
       responses:
         '200':
           description: File content
@@ -1113,6 +1197,8 @@ paths:
               schema:
                 type: string
                 format: binary
+        '409':
+          description: The note holds another blob than `blobId`
                 
   /api/notes/download/{noteId}:
     get:
@@ -2010,10 +2096,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CachedToc'
-        '400':
-          description: A protected attachment without a protected session
-        '404':
-          description: Attachment not found
     put:
       tags: [Attachments]
       summary: Save the table of contents that the viewer of an attachment read
@@ -2044,6 +2126,28 @@ paths:
           description: Attachment not found
         '409':
           description: The attachment has another blob than the one the viewer read (reason `changed`)
+
+  /api/attachments/{attachmentId}/toc/build:
+    post:
+      tags: [Attachments]
+      summary: Build the ToC cache of an attachment
+      description: The twin of `POST /api/notes/{noteId}/toc/build` for an attachment.
+      operationId: buildAttachmentToc
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The table of contents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CachedToc'
+        '409':
+          description: The attachment changed during two builds in a row
 
   /api/attachments/{attachmentId}/rename:
     put:
@@ -2111,8 +2215,12 @@ paths:
                   type: string
                   format: binary
       responses:
-        '204':
+        '200':
           description: Attachment file updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileUploaded'
           
   /api/attachments/{attachmentId}/open:
     get:
@@ -2125,6 +2233,7 @@ paths:
           required: true
           schema:
             type: string
+        - $ref: '#/components/parameters/expectedBlobId'
       responses:
         '200':
           description: Attachment content
@@ -2133,6 +2242,8 @@ paths:
               schema:
                 type: string
                 format: binary
+        '409':
+          description: The attachment holds another blob than `blobId`
                 
   /api/attachments/download/{attachmentId}:
     get:
@@ -5284,6 +5395,15 @@ components:
       schema:
         type: string
       description: 12-character note ID
+    expectedBlobId:
+      name: blobId
+      in: query
+      required: false
+      schema:
+        type: string
+      description: >-
+        The blob that the caller expects. When the content holds another one, the route answers
+        409 without the content.
       
   schemas:
     Note:
@@ -5579,6 +5699,12 @@ components:
           type: integer
           minimum: 1
           example: 1
+        params:
+          type: object
+          additionalProperties:
+            type: string
+          description: The parameters of a link to the heading; absent when no link can reach it
+          example: { page: "4", heading: 0k3x9aa1h7q2mz }
 
     CachedToc:
       type: object
@@ -5586,7 +5712,7 @@ components:
       properties:
         status:
           type: string
-          enum: [ready, stale, missing, none]
+          enum: [ready, stale, missing, unreadable, unavailable, none]
         blobId:
           type: string
           description: For `ready` and `stale`, the blob that the headings were read from
@@ -5626,6 +5752,19 @@ components:
           type: number
           minimum: 0
           description: How long the viewer took, for the log
+
+    FileUploaded:
+      type: object
+      required: [uploaded]
+      properties:
+        uploaded:
+          type: boolean
+        blobId:
+          type: string
+          description: The blob that the upload wrote
+        message:
+          type: string
+          description: Why nothing was uploaded
 
     NoteSaveBase:
       type: object

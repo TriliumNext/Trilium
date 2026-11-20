@@ -111,8 +111,10 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     apiRoute(PUT, "/api/notes/:noteId/blocks", notesApiRoute.updateNoteBlocks);
     asyncApiRoute(GET, "/api/notes/:noteId/references", notesApiRoute.getNoteReferences);
     apiRoute(PST, "/api/notes/:noteId/references", notesApiRoute.createNoteReference);
+    apiRoute(GET, "/api/notes/:noteId/references/marked", notesApiRoute.getMarkedNoteHeadings);
     apiRoute(GET, "/api/notes/:noteId/toc", tocApiRoute.getNoteToc);
     apiRoute(PUT, "/api/notes/:noteId/toc", tocApiRoute.saveNoteToc);
+    asyncApiRoute(PST, "/api/notes/:noteId/toc/build", tocApiRoute.buildNoteToc);
     apiRoute(DEL, "/api/notes/:noteId", notesApiRoute.deleteNote);
     apiRoute(PUT, "/api/notes/:noteId/undelete", notesApiRoute.undeleteNote);
     apiRoute(PST, "/api/notes/:noteId/revision", notesApiRoute.forceSaveRevision);
@@ -139,6 +141,8 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
         tocApiRoute.getAttachmentReferences);
     apiRoute(GET, "/api/attachments/:attachmentId/toc", tocApiRoute.getAttachmentToc);
     apiRoute(PUT, "/api/attachments/:attachmentId/toc", tocApiRoute.saveAttachmentToc);
+    asyncApiRoute(PST, "/api/attachments/:attachmentId/toc/build",
+        tocApiRoute.buildAttachmentToc);
 
     apiRoute(GET, "/api/notes/:noteId/attributes", attributesRoute.getEffectiveNoteAttributes);
     apiRoute(PST, "/api/notes/:noteId/attributes", attributesRoute.addNoteAttribute);

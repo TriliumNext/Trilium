@@ -1,3 +1,8 @@
+:where(:root) {
+    --toc-disabled-row-color: var(--muted-text-color);
+    --toc-waiting-color: var(--muted-text-color);
+}
+
 .toc ol {
     position: relative;
     overflow: hidden;
@@ -82,6 +87,92 @@
     margin-inline-start: 4px;
 }
 
+.toc li.linkable {
+    /* Width of the button below and end margin of the Next theme's `.tree-item-button`. */
+    --toc-item-button-space: calc(0.9em + 12px);
+    --toc-item-button-fade: 1.5em;
+    --toc-item-fade-direction: to left;
+
+    &:dir(rtl) {
+        --toc-item-fade-direction: to right;
+    }
+
+    > .tree-item-button {
+        position: absolute;
+        top: 50%;
+        inset-inline-end: 0;
+        translate: 0 -50%;
+        padding: 3px;
+        font-size: 0.9em;
+
+        &::before {
+            display: block;
+        }
+
+        &:active::before {
+            transform: scale(0.85);
+        }
+    }
+
+    &:hover {
+        > .tree-item-button {
+            display: block;
+        }
+
+        > .item-content {
+            mask-image: linear-gradient(
+                var(--toc-item-fade-direction),
+                transparent var(--toc-item-button-space),
+                black calc(var(--toc-item-button-space) + var(--toc-item-button-fade))
+            );
+        }
+    }
+}
+
 .toc li:hover {
     font-weight: bold;
+}
+
+.toc li.disabled {
+    cursor: default;
+    color: var(--toc-disabled-row-color);
+
+    &:hover {
+        font-weight: normal;
+    }
+}
+
+.toc.inert li {
+    cursor: default;
+
+    &:hover {
+        font-weight: normal;
+    }
+}
+
+.cached-toc {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.cached-toc .cached-toc-waiting {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
+    flex-grow: 1;
+    justify-items: center;
+    min-height: 8em;
+    color: var(--toc-waiting-color);
+    text-align: center;
+
+    > .bx-loader-alt {
+        grid-row: 2;
+        font-size: 2em;
+    }
+
+    > .cached-toc-waiting-text {
+        grid-row: 3;
+        margin-top: 0.75em;
+        font-size: 0.85em;
+    }
 }

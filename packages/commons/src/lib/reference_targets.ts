@@ -1,5 +1,12 @@
 import type { BlockNode } from "./block_reference.js";
-import type { CreateReferenceRequest, ReferenceTarget } from "./server_api.js";
+import type { ReferenceTarget } from "./server_api.js";
+
+/** The attribute that marks a heading with its position in `MarkedHeadingsResponse`. */
+export const HEADING_INDEX_ATTRIBUTE = "data-trilium-heading-index";
+
+/** A heading that a request names: its title, and its position or its source line. */
+export type HeadingRequest = { title: string }
+    & ({ index: number; line?: undefined } | { line: number; index?: undefined });
 
 /** A heading of a note that a link can point at. */
 export interface HeadingTarget {
@@ -41,7 +48,7 @@ export function sortAnchorNames(anchorNames: Iterable<string>) {
  */
 export function findRequestedHeading<T extends HeadingTarget>(
     headings: T[],
-    { index, title }: Pick<CreateReferenceRequest, "index" | "title">
+    { index, title }: { index: number; title: string }
 ): T | null {
     if (headings[index]?.title === title) {
         return headings[index];

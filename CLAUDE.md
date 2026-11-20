@@ -165,6 +165,9 @@ Shared components live in `apps/client/src/widgets/react/` — **always** reuse 
 ### PDF viewer
 PDF notes render in Mozilla's PDF.js viewer plus Trilium's code from `packages/pdfjs-viewer`, which every app serves from the built `dist` — **rebuild it (`pnpm --filter @triliumnext/pdfjs-viewer build`) after every viewer change**, since no `*:start` script does; load the **`developing-pdf-viewer` skill** before touching the viewer, `Pdf.tsx` or the PDF sidebar panels.
 
+### Outline (right sidebar)
+The Outline tab (`apps/client/src/widgets/sidebar/TableOfContents.tsx`) picks a provider by note type: text notes read the editor or the rendered content, Markdown and AI chat notes publish `toc` context data, and PDF, DOCX, ODT and EPUB files, as notes or as attachments, go through `CachedToCProvider`, which shows the ToC cache of the document their type widget publishes as `tocDocument`. Load the **`working-with-toc-cache` skill** before touching `CachedToCProvider`, a `tocDocument` publisher (`Pdf.tsx`, `Office.tsx`, `Attachment.tsx`) or the outline of a new file format.
+
 ### Vim mode in text notes
 Text notes have an optional Vim mode: the Vim engine of code notes (`@replit/codemirror-vim-core`) drives CKEditor through an adapter in `packages/ckeditor5/src/plugins/vim/`, which reads the note as a list of lines. **A new block, widget or container in the text editor has to work as lines too**, and the engine's quirks are answered by wrappers that look removable and are not. Load the **`developing-vim-mode` skill** before touching the plugin, `text/vim_mode.ts`, `layout/VimStatus.tsx` or the structure of the text editor's model. The skill also holds the tools for testing Vim mode in the running app (`live.mjs`, `simulate.mjs`) and the plan of a simulation round.
 

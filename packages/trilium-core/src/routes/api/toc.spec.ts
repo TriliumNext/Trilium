@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import {
-    type CachedTocResponse, MAX_TOC_DEPTH, type NoteReferencesResponse, PDF_TOC_READER
+    type CachedTocResponse, DOCX_MIME, MAX_TOC_DEPTH, type NoteReferencesResponse, PDF_TOC_READER
 } from "@triliumnext/commons";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -176,6 +176,129 @@ describe("the ToC cache routes", () => {
     });
 });
 
+describe("the ToC build routes", () => {
+    it("build the cache of a note and of an attachment, with the link parameters", async () => {
+        registerTocGenerator("pdf", fixedGenerator("Built"));
+        const note = createPdf();
+        const attachment = saveAttachment(note);
+
+        const forNote = await api.post<CachedTocResponse>(`/api/notes/${note.noteId}/toc/build`);
+        const forAttachment = await api.post<CachedTocResponse>(
+            `/api/attachments/${attachment.attachmentId}/toc/build`);
+
+        const [ heading ] = readCache(note).headings;
+        expect(forNote).toMatchObject({ status: 200, body: {
+            status: "ready", blobId: note.blobId,
+            headings: [ { ...heading, page: 1, params: { page: "1", heading: heading.id } } ]
+        } });
+        expect(forAttachment).toMatchObject({ status: 200, body: {
+            status: "ready", blobId: attachment.blobId, headings: [ { title: "Built" } ]
+        } });
+        expect((await api.get(`/api/notes/${note.noteId}/toc`)).body).toStrictEqual(forNote.body);
+    });
+
+    it("answer unavailable for a document that is gone or locked, with the GET and the POST",
+        async () => {
+        registerTocGenerator("pdf", fixedGenerator("Built"));
+        const deletedNote = createPdf();
+        const deletedAttachment = saveAttachment(createPdf());
+        getContext().init(() => {
+            deletedNote.deleteNote();
+            deletedAttachment.markAsDeleted();
+        });
+        const locked = createPdf();
+        const lockedAttachment = saveAttachment(locked);
+        protect(locked);
+        protectedSessionService.resetDataKey();
+
+        for (const url of [
+            `/api/notes/${deletedNote.noteId}/toc`, "/api/notes/doesNotExist/toc",
+            `/api/attachments/${deletedAttachment.attachmentId}/toc`,
+            `/api/notes/${locked.noteId}/toc`,
+            `/api/attachments/${lockedAttachment.attachmentId}/toc`
+        ]) {
+            expect(await api.get(url), url)
+                .toMatchObject({ status: 200, body: { status: "unavailable" } });
+            expect(await api.post(`${url}/build`), url)
+                .toMatchObject({ status: 200, body: { status: "unavailable" } });
+        }
+        expect(locked.getAttachmentsByRole(TOC_CACHE_ROLE)).toHaveLength(0);
+    });
+
+    it("answer unavailable for a build of a document deleted or locked after the GET", async () => {
+        const deleted = createPdf();
+        const locked = createPdf();
+        protect(locked);
+        for (const note of [ deleted, locked ]) {
+            expect((await api.get(`/api/notes/${note.noteId}/toc`)).body)
+                .toStrictEqual({ status: "missing", pendingToc: { format: "pdf" } });
+        }
+        getContext().init(() => deleted.deleteNote());
+        protectedSessionService.resetDataKey();
+        registerTocGenerator("pdf", fixedGenerator("Built"));
+
+        for (const note of [ deleted, locked ]) {
+            expect(await api.post(`/api/notes/${note.noteId}/toc/build`))
+                .toMatchObject({ status: 200, body: { status: "unavailable" } });
+        }
+    });
+
+    it("answer unreadable for a file that cannot be read, and none for a note without a format",
+        async () => {
+        const docx = getContext().init(() => noteService.createNewNote({
+            parentNoteId: "root", title: "Broken", type: "file", mime: DOCX_MIME,
+            content: "not a document"
+        })).note;
+
+        expect((await api.post(`/api/notes/${docx.noteId}/toc/build`)).body)
+            .toStrictEqual({ status: "unreadable" });
+        expect((await api.post("/api/notes/root/toc/build")).body)
+            .toStrictEqual({ status: "none" });
+    });
+
+    it("answer 409 when the document changes during both builds", async () => {
+        const note = createPdf();
+        let version = 0;
+        registerTocGenerator("pdf", async () => {
+            version++;
+            getContext().init(() => note.setContent(`%PDF changed ${version}`));
+            return { headings: [ { title: "Moving", level: 1, page: 1 } ], properties: PROPERTIES };
+        });
+
+        expect((await api.post(`/api/notes/${note.noteId}/toc/build`)).status).toBe(409);
+        expect(version).toBe(2);
+    });
+});
+
+describe("the references routes of a locked or gone document", () => {
+    it("keep answering 400 for a locked one and 404 for a gone one", async () => {
+        registerTocGenerator("pdf", fixedGenerator("Built"));
+        const locked = createPdf();
+        const lockedAttachment = saveAttachment(locked);
+        protect(locked);
+        protectedSessionService.resetDataKey();
+        const deleted = createPdf();
+        const deletedAttachment = saveAttachment(createPdf());
+        getContext().init(() => {
+            deleted.deleteNote();
+            deletedAttachment.markAsDeleted();
+        });
+
+        expect((await api.get(`/api/notes/${locked.noteId}/references`)).status).toBe(400);
+        const lockedUrl = `/api/attachments/${lockedAttachment.attachmentId}/references`;
+        expect((await api.get(lockedUrl)).status).toBe(400);
+        expect((await api.get(`/api/notes/${deleted.noteId}/references`)).status).toBe(404);
+        const deletedUrl = `/api/attachments/${deletedAttachment.attachmentId}/references`;
+        expect((await api.get(deletedUrl)).status).toBe(404);
+
+        unregisterTocGenerator("pdf");
+        const body = {
+            targetBlobHash: locked.blobId, headings: [], properties: PROPERTIES, elapsedMs: 1
+        };
+        expect((await api.put(`/api/notes/${locked.noteId}/toc`, { body })).status).toBe(400);
+    });
+});
+
 describe("the contract between the readers", () => {
     const contractPdf = new Uint8Array(fs.readFileSync(path.join(FIXTURES, "toc_contract.pdf")));
     const contract = JSON.parse(fs.readFileSync(path.join(FIXTURES, "toc_contract.json"), "utf-8"));
@@ -211,6 +334,20 @@ function createPdf(content: string | Uint8Array = `%PDF ${counter + 1}`): BNote 
         parentNoteId: "root", title: `toc-routes-${counter}`, type: "file", mime: "application/pdf",
         content
     })).note;
+}
+
+function saveAttachment(note: BNote) {
+    return getContext().init(() => note.saveAttachment({
+        role: "file", mime: "application/pdf", title: "attached.pdf",
+        content: `%PDF attached ${counter}`
+    }));
+}
+
+/** Protects `note` and its attachments, and leaves the protected session open. */
+function protect(note: BNote) {
+    protectedSessionService.setDataKey(encodeUtf8("0123456789abcdef"));
+    getContext().init(() => noteService.protectNoteRecursively(note, true, false,
+        new TaskContext("toc-routes", "protectNotes", { protect: true })));
 }
 
 function fixedGenerator(title: string): TocGenerator {

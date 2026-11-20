@@ -1,7 +1,7 @@
 import type {
-    BlocksConflictResponse, CreateReferenceResponse, NoteBlocksResponse, NoteReferencesResponse,
-    NoteSaveBase, SaveConflictResponse, SavedAttachmentRow, SaveNoteBlocksResponse,
-    SaveNoteDataRequest, SaveNoteDataResponse
+    BlocksConflictResponse, CreateReferenceResponse, MarkedHeadingsResponse, NoteBlocksResponse,
+    NoteReferencesResponse, NoteSaveBase, SaveConflictResponse, SavedAttachmentRow,
+    SaveNoteBlocksResponse, SaveNoteDataRequest, SaveNoteDataResponse
 } from "@triliumnext/commons";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -655,6 +655,168 @@ describe("Notes API (core)", () => {
             expect(taken.status).toBe(200);
             expect(note.getContent())
                 .toContain(`<h2 data-trilium-block-id="${taken.body.params.block}">`);
+        });
+
+        it("refuses a pick by position once headings of one title were reordered", async () => {
+            const listedContent = `<h2 data-trilium-block-id="kept">Same</h2><h2>Same</h2>`;
+            const { noteId } = await createTextNote(api, { content: listedContent });
+            const note = becca.getNoteOrThrow(noteId);
+            const { blobId } = (await listReferences(noteId)).body;
+
+            const reordered = `<h2>Same</h2><h2 data-trilium-block-id="kept">Same</h2>`;
+            getContext().init(() => note.setContent(reordered));
+            const refused = await addReference(noteId, { ...heading(1, "Same"), blobId });
+            expect(refused.status).toBe(409);
+            expect(note.getContent()).toBe(reordered);
+        });
+
+        it("refuses a save based on the blob before a reference was written", async () => {
+            const { noteId } = await createTextNote(api, { content });
+            const note = becca.getNoteOrThrow(noteId);
+            const base = { blobId: note.blobId ?? "", type: note.type, mime: note.mime };
+
+            expect((await addReference(noteId, heading(0, "Intro"))).status).toBe(200);
+            const withId = note.getContent();
+            const save = await api.put(`/api/notes/${noteId}/data`, {
+                body: { content: `${content}<p>Edit</p>`, base }
+            });
+            expect(save.status).toBe(409);
+            expect(note.getContent()).toBe(withId);
+        });
+
+        it("finds a Markdown heading by the line its block starts on", async () => {
+            const markdown = "## <template>Hidden</template>\n\n"
+                + "## Install <a data-trilium-block-id=\"first\"></a>\n\n"
+                + "## Install <a data-trilium-block-id=\"second\"></a>";
+            const res = await api.post<{ note: { noteId: string } }>(
+                "/api/notes/root/children?target=into",
+                { body: { title: "Markdown", type: "code", mime: "text/x-markdown", content: "" } }
+            );
+            const note = becca.getNoteOrThrow(res.body.note.noteId);
+            getContext().init(() => note.setContent(markdown));
+            const blobId = note.blobId ?? "";
+            const byLine = (line: number, title: string, body: object = { blobId }) =>
+                addReference(note.noteId, { kind: "heading", line, title, ...body });
+
+            const found = await byLine(5, "Install");
+            expect(found.status).toBe(200);
+            expect(found.body).toStrictEqual({ params: { block: "second" } });
+            expect((await byLine(4, "Install")).status).toBe(409);
+            expect((await byLine(5, "Other")).status).toBe(409);
+            const stale = await byLine(5, "Install", { blobId: "stale" });
+            expect(stale.status).toBe(409);
+            expect(stale.body).toMatchObject({ reason: "listing" });
+            expect((await byLine(5, "Install", {})).status).toBe(400);
+            expect((await byLine(5, "Install", { blobId: "" })).status).toBe(400);
+            expect((await byLine(0, "Install")).status).toBe(400);
+            expect((await byLine(5, "Install", { blobId, index: 2 })).status).toBe(400);
+            expect(note.getContent()).toBe(markdown);
+
+            // A text note finds its headings by position only.
+            const text = await createTextNote(api, { content });
+            const textBlobId = becca.getNoteOrThrow(text.noteId).blobId;
+            expect((await addReference(text.noteId, {
+                kind: "heading", line: 1, title: "Intro", blobId: textBlobId
+            })).status).toBe(400);
+        });
+
+        describe("marked", () => {
+            function listMarked(noteId: string) {
+                return api.get<MarkedHeadingsResponse>(`/api/notes/${noteId}/references/marked`);
+            }
+
+            /** The position that `markedContent` gives the heading whose opening tag ends it. */
+            function findPosition(marked: MarkedHeadingsResponse, before: string) {
+                const pattern = new RegExp(`data-trilium-heading-index="${marked.markToken}\\.`
+                    + `(\\d+)"${before}`);
+                return Number(pattern.exec(marked.markedContent)?.[1]);
+            }
+
+            it("marks the headings of the blob it reads, and saves nothing", async () => {
+                const { noteId } = await createTextNote(api, { content });
+                const note = becca.getNoteOrThrow(noteId);
+                const { blobId } = note;
+
+                const res = await listMarked(noteId);
+                expect(res.status).toBe(200);
+                const { markToken } = res.body;
+                expect(res.body).toStrictEqual({
+                    blobId,
+                    headings: [
+                        { kind: "heading", title: "Intro", level: 2 },
+                        { kind: "heading", title: "Details", level: 3, params: { block: "kept1" } }
+                    ],
+                    markedContent: content
+                        .replace("<h2", `<h2 data-trilium-heading-index="${markToken}.0"`)
+                        .replace("<h3", `<h3 data-trilium-heading-index="${markToken}.1"`),
+                    markToken: expect.stringMatching(/^[A-Za-z0-9]{12}$/)
+                });
+                expect(content).not.toContain(markToken);
+                expect(note.getContent()).toBe(content);
+                expect(note.blobId).toBe(blobId);
+            });
+
+            it("gives an id to the heading at the marked position alone", async () => {
+                const twins = `<h2>Same</h2><p>a\\b</p><h2>Same</h2>`;
+                const { noteId } = await createTextNote(api, { content: twins });
+                const note = becca.getNoteOrThrow(noteId);
+                const marked = (await listMarked(noteId)).body;
+                const position = findPosition(marked, `>Same</h2>$`);
+                expect(position).toBe(1);
+
+                const created = await addReference(noteId, {
+                    ...heading(position, "Same"), blobId: marked.blobId
+                });
+                const id = created.body.params.block;
+                expect(note.getContent())
+                    .toBe(`<h2>Same</h2><p>a\\b</p><h2 data-trilium-block-id="${id}">Same</h2>`);
+
+                // Table rows without a table: the server reads A, B, C in source order.
+                const rows = `<tr><td><h2>A</h2></td></tr><tr><h2>B</h2><td><h2>C</h2></td></tr>`;
+                getContext().init(() => note.setContent(rows));
+                const markedRows = (await listMarked(noteId)).body;
+                const positionOfB = findPosition(markedRows, ">B</h2>");
+                const createdB = await addReference(noteId, {
+                    ...heading(positionOfB, "B"), blobId: markedRows.blobId
+                });
+                expect(note.getContent()).toBe(rows.replace(
+                    "<h2>B", `<h2 data-trilium-block-id="${createdB.body.params.block}">B`
+                ));
+            });
+
+            it("lists the headings that take no id on a read-only virtual note", async () => {
+                registerVirtualNoteProvider({
+                    namespace: "_vmark",
+                    parentNoteId: "_hidden",
+                    getSubtree: () => [ { id: "_vmarkPage", title: "Page", type: "text" } ],
+                    getContent: () => "<h2>Shipped</h2>"
+                });
+                getContext().init(() => load());
+                try {
+                    expect((await listMarked("_vmarkPage")).body.headings)
+                        .toStrictEqual([ { kind: "heading", title: "Shipped", level: 2 } ]);
+                } finally {
+                    unregisterVirtualNoteProvider("_vmark");
+                    getContext().init(() => load());
+                }
+            });
+
+            it("refuses notes whose headings it cannot mark", async () => {
+                const markdownId = await createNoteOfType("code", "text/x-markdown");
+                expect((await listMarked(markdownId)).status).toBe(400);
+                const pdfId = await createNoteOfType("file", "application/pdf");
+                expect((await listMarked(pdfId)).status).toBe(400);
+                expect((await listMarked("missingNote")).status).toBe(404);
+
+                const { noteId } = await createTextNote(api, { content });
+                const note = becca.getNoteOrThrow(noteId);
+                note.isProtected = true;
+                try {
+                    expect((await listMarked(noteId)).status).toBe(400);
+                } finally {
+                    note.isProtected = false;
+                }
+            });
         });
 
         it("gives a heading of a read-only note a block id once, without a revision", async () => {

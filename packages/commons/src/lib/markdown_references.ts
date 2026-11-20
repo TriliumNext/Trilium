@@ -7,9 +7,10 @@ import {
 } from "./markdown_block_index.js";
 import { CONTAINER_PREFIX_SOURCE, countLineBreaks } from "./markdown_source.js";
 import {
-    findRequestedHeading, getHeadingLevel, getHeadingText, type HeadingTarget, toReferenceTargets
+    findRequestedHeading, getHeadingLevel, getHeadingText, type HeadingRequest, type HeadingTarget,
+    toReferenceTargets
 } from "./reference_targets.js";
-import type { CreateReferenceRequest, ReferenceParams, ReferenceTarget } from "./server_api.js";
+import type { ReferenceParams, ReferenceTarget } from "./server_api.js";
 
 /** An edit of a source: the text from `from` to `to` replaced by `insert`. */
 export interface SourceChange {
@@ -109,18 +110,22 @@ export function findMarkdownTargets(source: string, host: BlockIndexHost): Refer
 
 /**
  * `source` with an id on the heading that `request` names, and the link parameters of the
- * heading. That heading is the one at `request.index` while its text is `request.title`, else the
- * only heading with that text. The source comes back unchanged when the heading owns an id, and
- * `null` when no heading matches or the heading cannot take an id.
+ * heading. By `request.line`, that heading is the only one whose block starts on that line, while
+ * its text is `request.title`. By `request.index`, it is the one at that index while its text is
+ * `request.title`, else the only heading with that text. The source comes back unchanged when the
+ * heading owns an id, and `null` when no heading matches or the heading cannot take an id.
  */
 export function addMarkdownHeadingReference(
     source: string,
-    request: Pick<CreateReferenceRequest, "index" | "title">,
+    request: HeadingRequest,
     createId: () => string,
     host: BlockIndexHost
 ): { content: string; params: ReferenceParams } | null {
     const index = indexMarkdownBlocks(source, host);
-    const heading = findRequestedHeading(findMarkdownHeadings(index), request);
+    const headings = findMarkdownHeadings(index);
+    const heading = request.line === undefined
+        ? findRequestedHeading(headings, request)
+        : findHeadingOnLine(headings, request.line, request.title);
     const placed = heading
         ? placeMarkerOnBlock(source, index, heading.block, { kind: "draw", createId }, host)
         : null;
@@ -247,6 +252,12 @@ interface SourceLine {
     start: number;
     /** The line without its line ending. */
     text: string;
+}
+
+/** The only heading of `headings` whose block starts on `line`, if its title is `title`. */
+function findHeadingOnLine(headings: MarkdownHeading[], line: number, title: string) {
+    const onLine = headings.filter((heading) => heading.block.startLine === line);
+    return onLine.length === 1 && onLine[0].title === title ? onLine[0] : null;
 }
 
 function pickId(source: string, index: MarkdownBlockIndex, newId: NewBlockId) {

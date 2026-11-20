@@ -5,6 +5,7 @@ import { render, type VNode } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type FAttachment from "../../entities/fattachment";
 import FNote from "../../entities/fnote";
 
 // The bar follows whichever note is being read; the tests hand it one directly, along with the tab it
@@ -60,7 +61,7 @@ import options from "../../services/options";
 import server from "../../services/server";
 import { buildNote } from "../../test/easy-froca";
 import { ParentComponent } from "../react/react_utils";
-import StatusBar, { useAttributeCount } from "./StatusBar";
+import StatusBar, { useAttributeCount, useUserAttachmentCount } from "./StatusBar";
 
 describe("StatusBar panels", () => {
     let container: HTMLElement;
@@ -79,6 +80,7 @@ describe("StatusBar panels", () => {
         render(null, container);
         container.remove();
         contextData.clear();
+        vi.restoreAllMocks();
     });
 
     it("opens the similar notes panel on the keyboard action, and puts it away on a second press", async () => {
@@ -330,6 +332,35 @@ describe("StatusBar panels", () => {
         const parent = { registerHandler: () => {}, removeHandler: () => {} } as unknown as Component;
         act(() => render(<ParentComponent.Provider value={parent}><Count /></ParentComponent.Provider>, container));
         expect(container.querySelector(".count")?.textContent).toBe("2");
+    });
+
+    it("counts only the attachments placed on the note, and hides the button without one", async () => {
+        const withRoles = (...roles: string[]) => roles.map((role) => (
+            { attachmentId: role, role, mime: "image/png", title: `${role}.png` } as FAttachment
+        ));
+        const getAttachments = vi.spyOn(FNote.prototype, "getAttachments");
+
+        getAttachments.mockResolvedValue(
+            withRoles("image", "favicon", "file", "tocCache", "viewConfig"));
+        const note = buildNote({ title: "Counted" });
+        function Count() {
+            return <span className="count">{useUserAttachmentCount(note)}</span>;
+        }
+        const parent = { registerHandler: () => {}, removeHandler: () => {} } as unknown as Component;
+        act(() => render(
+            <ParentComponent.Provider value={parent}><Count /></ParentComponent.Provider>,
+            container
+        ));
+        await vi.waitFor(() => expect(container.querySelector(".count")?.textContent).not.toBe("0"));
+        expect(container.querySelector(".count")?.textContent).toBe("2");
+        act(() => render(null, container));
+
+        getAttachments.mockResolvedValue(withRoles("favicon", "coverImage", "tocCache"));
+        renderBar();
+        await act(async () => {
+            await getAttachments.mock.results.at(-1)?.value;
+        });
+        expect(container.querySelector(".attachment-count-button")).toBeNull();
     });
 
     /** Hands the bar one of the keyboard actions it listens for, as the app's event bus would. */

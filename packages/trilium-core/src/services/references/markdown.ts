@@ -21,7 +21,8 @@ const markdownReferences: ReferenceProvider = {
             return null;
         }
         return addMarkdownHeadingReference(content, request, generateBlockId, serverBlockHost);
-    }
+    },
+    acceptsLine: true
 };
 
 export default markdownReferences;

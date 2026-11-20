@@ -237,6 +237,21 @@ describe("ReadOnlyText reacting to content changes (#10575)", () => {
         }
     });
 
+    it("names the blob it renders on the content element", async () => {
+        const harness = setupHarness({ isVisible: true });
+        cleanupContainer = harness.container;
+        harness.getBlobSpy.mockResolvedValue({ blobId: "first", content: "<p>hello</p>" } as never);
+        await harness.mount();
+        const content = () => harness.container.querySelector<HTMLElement>(".ck-content");
+        expect(content()?.dataset.blobId).toBe("first");
+
+        harness.getBlobSpy
+            .mockResolvedValue({ blobId: "second", content: "<p>changed</p>" } as never);
+        await harness.fireContentChange("ReactWrappedWidget-remote");
+        expect(content()?.textContent).toBe("changed");
+        expect(content()?.dataset.blobId).toBe("second");
+    });
+
     it("catches up on skipped own-component changes when displayed again, but only then", async () => {
         const harness = setupHarness({ isVisible: false });
         cleanupContainer = harness.container;

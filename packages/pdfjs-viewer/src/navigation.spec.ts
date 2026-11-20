@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 /**
  * Drives the navigation scheduler against real pdf.js documents: links to headings by saved id,
- * sidebar keys, pages and annotations, posted before and after the document loads.
+ * pages and annotations, posted before and after the document loads, and the revisions that the
+ * parent saved from a load.
  */
 import { createHash } from "node:crypto";
 
@@ -28,8 +29,9 @@ afterEach(() => {
 
 describe("requests before the document is ready", () => {
     it("applies a request posted before the document loads, once it has", async () => {
+        const ids = await idsOf(allFeaturesPdf());
         const requests = [
-            { type: "trilium-scroll-to-heading", headingKey: "outline-2" },
+            { type: "trilium-scroll-to-heading", headingId: ids[2], pageNumber: 1 },
             { type: "trilium-scroll-to-annotation", pageNumber: 2 },
             { type: "trilium-scroll-to-annotation", annotationId: "18R", pageNumber: 2 }
         ];
@@ -92,7 +94,7 @@ describe("requests before the document is ready", () => {
 
         for (const data of [
             { type: "trilium-scroll-to-annotation", annotationId: "5R", pageNumber: 2 },
-            { type: "trilium-scroll-to-heading", headingKey: "outline-2" }
+            { type: "trilium-scroll-to-heading", headingId: "0k3x9aa1h7q2mz", pageNumber: 2 }
         ]) {
             window.dispatchEvent(new MessageEvent("message", { data, origin: "https://evil.example" }));
         }
@@ -133,10 +135,15 @@ describe("headings", () => {
         viewer.sendFromParent({ type: "trilium-scroll-to-heading", headingId: ids[2], pageNumber: 2 });
         await vi.waitFor(() => expect(app.pdfViewer.currentPageNumber).toBe(3));
 
-        // The same from the sidebar, and for a named destination that resolves to nothing.
-        viewer.sendFromParent({ type: "trilium-scroll-to-heading", headingKey: "outline-4" });
+        // The same for a named destination that resolves to nothing, and with the current ids.
+        const current = await idsOf(bytes);
+        viewer.sendFromParent({
+            type: "trilium-scroll-to-heading", headingId: current[4], pageNumber: 1
+        });
         await vi.waitFor(() => expect(app.pdfViewer.currentPageNumber).toBe(2));
-        viewer.sendFromParent({ type: "trilium-scroll-to-heading", headingKey: "outline-2" });
+        viewer.sendFromParent({
+            type: "trilium-scroll-to-heading", headingId: current[2], pageNumber: 1
+        });
         await vi.waitFor(() => expect(app.pdfViewer.currentPageNumber).toBe(3));
         expect(viewer.scrollPageIntoView).not.toHaveBeenCalled();
     });
@@ -156,8 +163,10 @@ describe("headings", () => {
 
         // Without a page there is nowhere to go.
         viewer.sendFromParent({ type: "trilium-scroll-to-heading", headingId: ids[6] });
-        viewer.sendFromParent({ type: "trilium-scroll-to-heading", headingKey: "outline-99", pageNumber: 0 });
-        viewer.sendFromParent({ type: "trilium-scroll-to-heading", headingKey: "elsewhere" });
+        viewer.sendFromParent({
+            type: "trilium-scroll-to-heading", headingId: "outline-99", pageNumber: 0
+        });
+        viewer.sendFromParent({ type: "trilium-scroll-to-heading", headingId: "elsewhere" });
         await settle();
         expect(app.pdfViewer.currentPageNumber).toBe(3);
         expect(app.pdfViewer.update).toHaveBeenCalledTimes(2);
@@ -181,7 +190,7 @@ describe("headings", () => {
         vi.spyOn(viewer.pdfDocument, "getOutline").mockRejectedValue(new Error("Bad outline"));
 
         viewer.sendFromParent({
-            type: "trilium-scroll-to-heading", headingKey: "outline-0", pageNumber: 3
+            type: "trilium-scroll-to-heading", headingId: "0k3x9aa1h7q2mz", pageNumber: 3
         });
 
         await vi.waitFor(() => expect(app.pdfViewer.currentPageNumber).toBe(3));
@@ -203,20 +212,6 @@ describe("headings", () => {
         expect(error).not.toHaveBeenCalled();
     });
 
-    it("lands each of two sibling headings from the sidebar, without a digest", async () => {
-        viewer = await installViewerApp(outlinePdf());
-        const app = startTracking();
-        loadDocument();
-        const getData = vi.spyOn(viewer.pdfDocument, "getData");
-
-        viewer.sendFromParent({ type: "trilium-scroll-to-heading", headingKey: "outline-1" });
-        await vi.waitFor(() => expect(app.pdfViewer.currentPageNumber).toBe(3));
-        viewer.sendFromParent({ type: "trilium-scroll-to-heading", headingKey: "outline-0" });
-        await vi.waitFor(() => expect(app.pdfViewer.currentPageNumber).toBe(2));
-
-        expect(getData).not.toHaveBeenCalled();
-    });
-
     it("turns to the page of a heading whose destination scrollPageIntoView() cannot read", async () => {
         viewer = await installViewerApp(outlinePdf());
         const app = startTracking();
@@ -225,8 +220,11 @@ describe("headings", () => {
         vi.spyOn(viewer.pdfDocument, "getOutline").mockResolvedValue([
             { title: "Bare", dest: [ { num: 4, gen: 0 } ], items: [] }
         ] as any);
+        const [ bareId ] = assignHeadingIds([ { title: "Bare", level: 1 } ], "", false);
 
-        viewer.sendFromParent({ type: "trilium-scroll-to-heading", headingKey: "outline-0" });
+        viewer.sendFromParent({
+            type: "trilium-scroll-to-heading", headingId: bareId, pageNumber: 1
+        });
 
         await vi.waitFor(() => expect(app.pdfViewer.currentPageNumber).toBe(2));
         expect(viewer.scrollPageIntoView).not.toHaveBeenCalled();
@@ -238,8 +236,11 @@ describe("headings", () => {
         const app = startTracking();
         loadDocument();
         viewer.scrollPageIntoView.mockImplementation(() => {});
+        const ids = await idsOf(bytes);
 
-        viewer.sendFromParent({ type: "trilium-scroll-to-heading", headingKey: "outline-0" });
+        viewer.sendFromParent({
+            type: "trilium-scroll-to-heading", headingId: ids[0], pageNumber: 1
+        });
 
         await vi.waitFor(() => expect(app.pdfViewer.currentPageNumber).toBe(2));
         expect(viewer.scrollPageIntoView).toHaveBeenCalledOnce();
@@ -366,6 +367,84 @@ describe("headings bound to the bytes", () => {
         await vi.waitFor(() => expect(app.pdfViewer.currentPageNumber).toBe(2));
         expect(viewer.scrollPageIntoView).not.toHaveBeenCalled();
     });
+});
+
+describe("headings of a saved revision", () => {
+    /** A blob that the parent saved from the loaded bytes, such as after an annotation. */
+    const SAVED_BLOB_ID = "SavedBlob0123456789x";
+
+    it("lands a heading bound to a save that the parent reported for this load", async () => {
+        window.TRILIUM_LOAD_TOKEN = "load-1";
+        const bytes = introductionPdf();
+        viewer = await installViewerApp(bytes.slice());
+        const app = startTracking();
+        loadDocument();
+        const savedIds = await idsOf(bytes, false, { blobId: SAVED_BLOB_ID });
+        expect(savedIds[1]).toMatch(/\.SavedBlob0$/);
+        const request = {
+            type: "trilium-scroll-to-heading", headingId: savedIds[1], pageNumber: 1
+        };
+
+        viewer.sendFromParent(request);
+        await vi.waitFor(() => expect(app.pdfViewer.update).toHaveBeenCalledTimes(1));
+        viewer.sendFromParent({
+            type: "trilium-saved-revision", loadToken: "load-2", blobId: SAVED_BLOB_ID
+        });
+        viewer.sendFromParent({
+            type: "trilium-saved-revision", loadToken: "load-1", blobId: SAVED_BLOB_ID,
+            isProtected: true
+        });
+        viewer.sendFromParent(request);
+        await vi.waitFor(() => expect(app.pdfViewer.update).toHaveBeenCalledTimes(2));
+        expect(viewer.scrollPageIntoView).not.toHaveBeenCalled();
+        expect(app.pdfViewer.currentPageNumber).toBe(1);
+
+        viewer.sendFromParent({
+            type: "trilium-saved-revision", loadToken: "load-1", blobId: SAVED_BLOB_ID,
+            isProtected: false
+        });
+        viewer.sendFromParent(request);
+
+        await vi.waitFor(() => expect(viewer.scrollPageIntoView).toHaveBeenCalledExactlyOnceWith({
+            pageNumber: 2, destArray: [ expect.anything(), { name: "XYZ" }, 0, 300, 0 ]
+        }));
+    });
+
+    it("drops the revisions of a document when another one loads", async () => {
+        window.TRILIUM_LOAD_TOKEN = "load-1";
+        const bytes = introductionPdf();
+        viewer = await installViewerApp(bytes.slice());
+        startTracking();
+        loadDocument();
+        viewer.sendFromParent({
+            type: "trilium-saved-revision", loadToken: "load-1", blobId: SAVED_BLOB_ID
+        });
+        uninstallViewerApp();
+
+        viewer = await installViewerApp(bytes.slice());
+        const app = startTracking();
+        loadDocument();
+        const savedIds = await idsOf(bytes, false, { blobId: SAVED_BLOB_ID });
+        viewer.sendFromParent({
+            type: "trilium-scroll-to-heading", headingId: savedIds[1], pageNumber: 1
+        });
+
+        await vi.waitFor(() => expect(app.pdfViewer.update).toHaveBeenCalledOnce());
+        expect(viewer.scrollPageIntoView).not.toHaveBeenCalled();
+    });
+
+    /** Two pages, and two sibling "Introduction" entries on page 2, at the tops 700 and 300. */
+    function introductionPdf() {
+        return buildPdf([
+            "<< /Type /Catalog /Pages 2 0 R /Outlines 5 0 R >>",
+            "<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+            "<< /Type /Outlines /First 6 0 R /Last 7 0 R /Count 2 >>",
+            "<< /Title (Introduction) /Parent 5 0 R /Dest [4 0 R /XYZ 0 700 0] /Next 7 0 R >>",
+            "<< /Title (Introduction) /Parent 5 0 R /Dest [4 0 R /XYZ 0 300 0] /Prev 6 0 R >>"
+        ]);
+    }
 });
 
 describe("annotations", () => {
@@ -506,10 +585,14 @@ function loadDocument() {
 }
 
 /**
- * The saved ids of the outline of `bytes`, as the server computes them for its blob. With
- * `isCutIgnored`, the ids of a cut outline as the reader of version 1 gave them.
+ * The saved ids of the outline of `bytes`, as the server computes them for its blob, or for
+ * `blobId` when given. With `isCutIgnored`, the ids of a cut outline as the reader of version 1
+ * gave them.
  */
-async function idsOf(bytes: Uint8Array, isProtected = false, { isCutIgnored = false } = {}) {
+async function idsOf(
+    bytes: Uint8Array, isProtected = false,
+    { isCutIgnored = false, blobId: givenBlobId }: { isCutIgnored?: boolean; blobId?: string } = {}
+) {
     const { getDocument } = await import("pdfjs-dist/legacy/build/pdf.mjs");
     const task = getDocument({ data: bytes.slice() });
     const { headings: outline, isCut } = await readPdfOutline(await task.promise);
@@ -517,7 +600,8 @@ async function idsOf(bytes: Uint8Array, isProtected = false, { isCutIgnored = fa
     const content = isProtected
         ? Buffer.concat([ Buffer.from(PROTECTED_BLOB_PREFIX), bytes ])
         : Buffer.from(bytes);
-    const blobId = blobIdFromDigest(new Uint8Array(createHash("sha512").update(content).digest()));
+    const blobId = givenBlobId
+        ?? blobIdFromDigest(new Uint8Array(createHash("sha512").update(content).digest()));
     return assignHeadingIds(outline, getBlobTag(blobId), isProtected,
         { isCut: isCut && !isCutIgnored });
 }

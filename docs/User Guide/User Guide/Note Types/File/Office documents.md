@@ -39,6 +39,8 @@ Since v0.108.0, a link can point at a heading of a Word (`.docx`) or OpenDocumen
 *   In the _Add link_ dialog, pick the document on the _Note_ page. Its headings are listed below the _Link title_, under _Link to a heading_, and its bookmarks under _Link to an anchor_. Check one, then press <kbd>Enter</kbd> or _Insert link_.
 *   Alternatively, type `@` and pick the document: the menu then lists the same headings and bookmarks.
 
+The headings are also listed in the table of contents of the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar/Outline%20tab.md">Outline tab</a>, which highlights the heading being read. Clicking a heading scrolls the preview to it, and right-clicking it and selecting _Copy reference_ copies a link to it.
+
 The link shows the title of the document followed by the title of the heading, and opens the preview at the heading or the bookmark. When it cannot be found, for example once a new version of the file renamed the heading, the link opens the top of the document. A heading whose title is repeated among the headings beside it is found only in the very same file, so once a new version of the file is uploaded, a link to it opens the top of the document.
 
 To link to a heading of a document stored as an attachment, edit a link to the attachment: the dialog lists the headings of the attachment.
