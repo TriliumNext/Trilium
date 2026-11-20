@@ -261,6 +261,10 @@ describe("FindWidget requests", () => {
         await bar.search("b");
         expect(error).toHaveBeenCalledOnce();
         expect(bar.counters()[1]).toBe("?");
+        await bar.press("Enter");
+        await bar.settle();
+        expect(bar.handler.log.filter((entry) => entry === "search b")).toHaveLength(2);
+        expect(bar.counters()).toEqual([ "1", "2" ]);
         await bar.widget.closeSearch();
         expect(bar.handler.closeGuards).toEqual([ false, true ]);
         await bar.reopen();
@@ -285,8 +289,10 @@ describe("FindWidget requests", () => {
         // A search that fails leaves its write nothing to replace in either.
         const error = vi.spyOn(console, "error").mockImplementation(() => {});
         bar.handler.fail("b");
+        const releaseFailing = bar.handler.hold("b");
         await bar.searchWithoutWaiting("b");
         await bar.click(".replace-widget-replaceall-button");
+        releaseFailing();
         await bar.settle();
         expect(bar.handler.replaceAll).not.toHaveBeenCalled();
         expect(toast.showMessage).toHaveBeenCalledTimes(2);

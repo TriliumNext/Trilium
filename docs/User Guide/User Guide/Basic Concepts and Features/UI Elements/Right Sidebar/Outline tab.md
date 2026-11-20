@@ -32,7 +32,7 @@ The table of contents of a PDF, Word, OpenDocument Text or EPUB file also appear
 ### Interaction
 
 *   Clicking on a heading will scroll the document to the position of the heading.
-*   For a text note, resting the mouse on the table of contents shows where its headings are in the note: each heading gets a line on the scrollbar of the note, described in <a class="reference-link" href="../../Navigation/Search%20in%20note.md">Search in note</a>, and the heading under the pointer gets a thicker one. While the table of contents is filtered, only the matching headings get a line.
+*   In a text note, resting the mouse on the scrollbar of the note shows a dot where each heading is, larger for higher levels. Headings of included notes get no dot. The dots show in the desktop layout only, and only when the note is long enough to scroll.
 *   As the document is scrolled, the heading being read is highlighted and the list scrolls to keep it in view. If that heading is hidden inside a collapsed section, the collapsed heading is highlighted instead.
 *   Nested items can be collapsed by pressing the corresponding <span class="tn-icon bx bx-chevron-down"></span> button.
 *   For a text or Markdown note, right-clicking a heading shows _Copy reference_, which copies a link that opens the note at that heading (see <a class="reference-link" href="../../../Note%20Types/Text/Block%20references.md">Block references</a>). If the note is [shared](../../../Advanced%20Usage/Sharing.md), _Copy public link_ copies the link to that heading on the shared page.

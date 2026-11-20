@@ -519,19 +519,25 @@ export default class FindWidget extends NoteContextAwareWidget {
         const check = () => this.isOpen(session)
             && this.latestSearch === number && this.queryVersion === queryVersion;
         return this.enqueue(() => this.runOperation(async () => {
-            if (check()) {
-                session.layer?.retire();
-                const found = await session.handler.performFind(term, matchCase, wholeWord, check);
-                if (found && check()) {
-                    this.showResult(session, found, number, queryVersion);
-                    await onCommit?.(found, check);
-                    return true;
+            try {
+                if (check()) {
+                    session.layer?.retire();
+                    const found = await session.handler.performFind(
+                        term, matchCase, wholeWord, check
+                    );
+                    if (found && check()) {
+                        this.showResult(session, found, number, queryVersion);
+                        await onCommit?.(found, check);
+                        return true;
+                    }
+                }
+                return false;
+            } finally {
+                // A failed search leaves no pending one, so the next Enter searches again.
+                if (this.pendingSearch?.number === number) {
+                    this.pendingSearch = null;
                 }
             }
-            if (this.pendingSearch?.number === number) {
-                this.pendingSearch = null;
-            }
-            return false;
         }));
     }
 
