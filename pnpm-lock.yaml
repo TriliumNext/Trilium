@@ -765,8 +765,8 @@ importers:
         specifier: 7.0.0
         version: 7.0.0
       is-animated:
-        specifier: 3.0.20
-        version: 3.0.20
+        specifier: 3.0.21
+        version: 3.0.21
       is-svg:
         specifier: 6.1.0
         version: 6.1.0
@@ -7990,8 +7990,8 @@ packages:
   is-alphanumerical@2.0.1:
     resolution: {integrity: sha512-hmbYhX/9MUMF5uh7tOXyK/n0ZvWpad5caBA17GsC6vyuCqaWliRG5K1qS9inmUhEMaOBIW7/whAnSwveW/LtZw==}
 
-  is-animated@3.0.20:
-    resolution: {integrity: sha512-HYvuR9b4kuVZBGI3cA691gXlWsHsXZU8iRE9LdqNIB8iwSzxGBnRxXlrY3DAYzrzfxlSMZU5G6++1jVvnCiq6Q==}
+  is-animated@3.0.21:
+    resolution: {integrity: sha512-dXfhRODXdjUq1RAF9EnxO3SHSVq+1KWBWjZ/wLSw+XUQnnybP9RsMiAOAZTuOmJzRr8ivWTdqXqt8N+L3HtZqg==}
     engines: {node: '>=20.0.0'}
 
   is-array-buffer@3.0.5:
@@ -19985,7 +19985,7 @@ snapshots:
       is-alphabetical: 2.0.1
       is-decimal: 2.0.1
 
-  is-animated@3.0.20: {}
+  is-animated@3.0.21: {}
 
   is-array-buffer@3.0.5:
     dependencies:
