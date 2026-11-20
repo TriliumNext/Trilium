@@ -6,14 +6,8 @@ import { t } from "../../../services/i18n";
 import { showError } from "../../../services/toast";
 
 /**
- * Opens `file:` hyperlinks of the workbook in the application that handles the file.
- *
- * Univer navigates a hyperlink through `SheetsHyperLinkResolverService.navigateToOtherWebsite()`,
- * which drops every URL that `isSafeUrl()` does not list (http, https, mailto) before the preset's
- * `urlHandler` runs, so a `file:` link does nothing on desktop. Overriding the method on the
- * resolver instance hands `file:` URLs to the desktop bridge that text-note links use, which
- * rejects UNC paths and confirms executables (`validateOpenFileUrl`). Every other URL goes back
- * to Univer unchanged.
+ * Sends the `file:` hyperlinks of the workbook to the desktop bridge that text-note links use:
+ * Univer drops them in `isSafeUrl()` before its `urlHandler` runs.
  */
 export function installFileLinkHandler(univerAPI: FUniver) {
     const injector = (univerAPI as unknown as { _injector: Injector })._injector;
