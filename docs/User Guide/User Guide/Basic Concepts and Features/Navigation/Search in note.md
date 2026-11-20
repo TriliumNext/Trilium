@@ -29,12 +29,12 @@ Local search allows you to search within the currently displayed note. 
     *   _Case sensitive_ – the search will distinguish upper case characters from lower case (e.g. searching for Hello will not match `hello`).
     *   _Match words_ - the search will find only exact word matches (e.g. searching for `Java` will not match `JavaScript`).
 
-## Results beside the scrollbar
+## Results on the scrollbar
 
-In a <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> note, a narrow strip beside the scrollbar marks with a line where each result is, as long as the search has results. The line of the current result is thicker. The strip shows in the desktop layout only.
+In a <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> note, the scrollbar marks with a line where each result is, as long as the search has results, also when the note is short enough not to scroll. The line of the current result is thicker. The lines show in the desktop layout only.
 
 *   Clicking a line goes to that result and makes it the current one. While the results are out of date, as after an edit of the note, the click only goes to that result, and the next <kbd>Enter</kbd> searches again.
-*   In a note longer than the window, a box on the strip shows the part of the note on screen. Dragging the box, with the mouse or a finger, scrolls the note, and clicking beside it brings that part of the note into view.
+*   The handle of the scrollbar shows the part of the note on screen, so the lines of the results on screen are under it. <kbd>Shift</kbd>+clicking the scrollbar brings that part of the note into view.
 
 ## Included notes
 

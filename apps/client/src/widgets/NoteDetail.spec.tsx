@@ -1,16 +1,99 @@
 import { render } from "preact";
 import { useEffect } from "preact/hooks";
 import { act } from "preact/test-utils";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import Component from "../components/component";
 import type NoteContext from "../components/note_context";
 import type FNote from "../entities/fnote";
 import { buildNote } from "../test/easy-froca";
-import { NoteDetailWrapper } from "./NoteDetail";
+import NoteDetail, { NoteDetailWrapper } from "./NoteDetail";
 import type { ExtendedNoteType } from "./note_types";
-import { ParentComponent } from "./react/react_utils";
+import { NoteContextContext, ParentComponent } from "./react/react_utils";
 import type { TypeWidgetProps } from "./type_widgets/type_widget";
+
+// The type widgets render nothing, so no editor loads.
+vi.mock("./note_types", async (importOriginal) => {
+    const original = await importOriginal<typeof import("./note_types")>();
+    const mappings = Object.entries(original.TYPE_MAPPINGS)
+        .map(([ type, mapping ]) => [ type, { ...mapping, view: () => () => null } ]);
+    return { ...original, TYPE_MAPPINGS: Object.fromEntries(mappings) };
+});
+
+describe("NoteDetail", () => {
+    it("marks the scroller while it shows a type laid out in flow with an end margin", async () => {
+        const scroller = document.body.appendChild(document.createElement("div"));
+        const parentComponent = new Component();
+        const noteContext = {
+            ntxId: "ntx-margin",
+            hoistedNoteId: "root",
+            viewScope: {},
+            note: fakeNote("text"),
+            notePath: "root/text",
+            isReadOnly: async () => false,
+            hasNoteList: () => false,
+            isActive: () => false,
+            isCommandTarget: () => false,
+            getContextData: () => undefined,
+            setContextData: () => {}
+        };
+        await act(async () => render(
+            <ParentComponent.Provider value={parentComponent}>
+                <NoteContextContext.Provider value={noteContext as unknown as NoteContext}>
+                    <NoteDetail />
+                </NoteContextContext.Provider>
+            </ParentComponent.Provider>,
+            scroller
+        ));
+        const showNote = async (note: FNote | null) => {
+            noteContext.note = note;
+            noteContext.notePath = note ? `root/${note.noteId}` : "";
+            await act(async () => {
+                await parentComponent.handleEventInChildren("noteSwitched", {
+                    noteContext: noteContext as unknown as NoteContext,
+                    notePath: noteContext.notePath
+                });
+            });
+        };
+        const hasEndMargin = () => scroller.classList.contains("detail-has-end-margin");
+
+        await vi.waitFor(() => expect(hasEndMargin()).toBe(true));
+        await showNote(fakeNote("render"));
+        await vi.waitFor(() => expect(hasEndMargin()).toBe(false));
+        await showNote(fakeNote("text"));
+        await vi.waitFor(() => expect(hasEndMargin()).toBe(true));
+        // A code note fills the pane, and an empty tab shows no note.
+        await showNote(fakeNote("code"));
+        await vi.waitFor(() => expect(hasEndMargin()).toBe(false));
+        await showNote(fakeNote("book"));
+        await vi.waitFor(() => expect(hasEndMargin()).toBe(true));
+        // A book with no children fills the pane to center its message.
+        await showNote(fakeNote("book", false));
+        await vi.waitFor(() => expect(hasEndMargin()).toBe(false));
+        await showNote(null);
+        await vi.waitFor(() => expect(scroller.querySelector(".note-detail-empty")).not.toBeNull());
+        expect(hasEndMargin()).toBe(false);
+
+        await act(async () => render(null, scroller));
+        scroller.remove();
+    });
+
+    /** A note that is not in froca, so that its type is resolved without fetching its blob. */
+    function fakeNote(type: string, hasChildren = true) {
+        return {
+            noteId: `${type}-note-${hasChildren}`,
+            type,
+            mime: "text/html",
+            isProtected: false,
+            isTriliumSqlite: () => false,
+            isMarkdown: () => false,
+            isIconPack: () => false,
+            hasChildren: () => hasChildren,
+            getLabelValue: () => null,
+            getOwnedLabelValue: () => null
+        } as unknown as FNote;
+    }
+});
 
 describe("NoteDetailWrapper", () => {
     let container: HTMLElement | undefined;

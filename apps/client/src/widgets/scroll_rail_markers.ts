@@ -1,5 +1,6 @@
 import { revealElement } from "../services/bookmark_jump";
 import { scrollRectIntoView } from "../services/highlight_matches";
+import type { RailMetrics } from "./scroll_rail";
 
 /**
  * A place `offset` px down the scrolled content of `within`, for content with no element per line.
@@ -88,13 +89,6 @@ export class ScrollRailLayer {
 
 }
 
-/** Sizes of the rail and of its scroller, in CSS px. */
-export interface RailMetrics {
-    railHeight: number;
-    clientHeight: number;
-    scrollHeight: number;
-}
-
 /** The rows of a layer's lines on the rail. */
 export interface RowSet {
     /** One per row with a line, sorted by `y`, with the first marker that lands on it. */
@@ -112,37 +106,11 @@ export interface DrawnLayer {
 
 /** Above this many targets, a `Range` is measured by the element that contains its start. */
 export const RANGE_MEASURE_LIMIT = 500;
-export const MIN_BOX_HEIGHT = 24;
 /** Line thickness, and the inset of a line from each side of the rail, in CSS px. */
-export const LINE_SIZE = { thin: 2, thick: 4, inset: 3 };
+export const LINE_SIZE = { thin: 2, thick: 4, inset: 1 };
 
 /**
- * The viewport box at scroll position `scrollTop`: its top and height on the rail, and how far it
- * moves from the top of the rail to the bottom.
- */
-export function getViewportBox(
-    { railHeight, clientHeight, scrollHeight }: RailMetrics, scrollTop: number
-) {
-    const height = Math.min(railHeight,
-        Math.max(MIN_BOX_HEIGHT, railHeight * clientHeight / Math.max(scrollHeight, 1)));
-    const travel = railHeight - height;
-    const maxScroll = scrollHeight - clientHeight;
-    const top = maxScroll > 0 ? Math.min(Math.max(scrollTop / maxScroll, 0), 1) * travel : 0;
-    return { top, height, travel };
-}
-
-/**
- * The scroll position at which the viewport box has its top at `boxTop`, within the scroll range.
- */
-export function toScrollTop(boxTop: number, metrics: RailMetrics) {
-    const { travel } = getViewportBox(metrics, 0);
-    const maxScroll = Math.max(metrics.scrollHeight - metrics.clientHeight, 0);
-    if (travel <= 0) return 0;
-    return Math.min(Math.max(boxTop / travel * maxScroll, 0), maxScroll);
-}
-
-/**
- * The row of the place `offset` px down the scroller's content, in CSS px from the top of the rail.
+ * The row of the place `offset` px down the scroller's content, in CSS px down the track.
  */
 export function toRow(offset: number, { railHeight, scrollHeight }: RailMetrics) {
     const row = Math.round(offset / Math.max(scrollHeight, 1) * railHeight);

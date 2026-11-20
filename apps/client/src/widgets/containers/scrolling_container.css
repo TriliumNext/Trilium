@@ -17,15 +17,6 @@
     > .note-detail > .note-detail-editable-text > .note-detail-editable-text-editor {
         overflow: unset;
     }
-
-    > .scroll-rail-host {
-        position: sticky;
-        top: 0;
-        z-index: 3;
-        flex-shrink: 0;
-        height: 0;
-        overflow-anchor: none;
-    }
 }
 
 body.mobile .scrolling-container {

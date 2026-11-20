@@ -2,9 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { revealElement } from "../services/bookmark_jump";
 import { rectReads, resetLayoutRecords, scrollCalls, stubBox } from "../test/layout_stubs";
+import type { RailMetrics } from "./scroll_rail";
 import {
-    drawRows, findRow, getViewportBox, goToTarget, mapIntoClip, type RailMetrics,
-    ScrollRailLayer, ScrollRailLocator, toRow, toRows, toScrollTop
+    drawRows, findRow, goToTarget, mapIntoClip, ScrollRailLayer, ScrollRailLocator, toRow, toRows
 } from "./scroll_rail_markers";
 
 vi.mock("../services/bookmark_jump", () => ({ revealElement: vi.fn() }));
@@ -46,43 +46,6 @@ describe("rows", () => {
     });
 });
 
-describe("viewport box", () => {
-    const tall: RailMetrics = { railHeight: 400, clientHeight: 400, scrollHeight: 4000 };
-    const veryTall: RailMetrics = { railHeight: 400, clientHeight: 400, scrollHeight: 400_000 };
-
-    it("keeps its minimum height", () => {
-        expect(getViewportBox(tall, 0).height).toBe(40);
-        expect(getViewportBox(veryTall, 0).height).toBe(24);
-        expect(getViewportBox(veryTall, 399_600)).toEqual({ top: 376, height: 24, travel: 376 });
-    });
-
-    it("holds the line of every target on screen, at the start, the middle and the end", () => {
-        for (const metrics of [ tall, veryTall ]) {
-            const maxScroll = metrics.scrollHeight - metrics.clientHeight;
-            for (const scrollTop of [ 0, maxScroll / 2, maxScroll ]) {
-                const box = getViewportBox(metrics, scrollTop);
-                for (const offset of [ scrollTop, scrollTop + 200, scrollTop + 399 ]) {
-                    const row = toRow(offset, metrics);
-                    expect(row).toBeGreaterThanOrEqual(Math.floor(box.top));
-                    expect(row).toBeLessThanOrEqual(Math.ceil(box.top + box.height));
-                }
-            }
-        }
-    });
-
-    it("turns a box position into a scroll position, clamped at both ends", () => {
-        expect(toScrollTop(180, tall)).toBe(1800);
-        expect(toScrollTop(-50, tall)).toBe(0);
-        expect(toScrollTop(10_000, tall)).toBe(3600);
-        expect(toScrollTop(100, { railHeight: 400, clientHeight: 400, scrollHeight: 400 })).toBe(0);
-    });
-
-    it("puts each line level with its target while the note fits", () => {
-        const fits: RailMetrics = { railHeight: 400, clientHeight: 400, scrollHeight: 400 };
-        expect([ 0, 123, 399 ].map((offset) => toRow(offset, fits))).toEqual([ 0, 123, 399 ]);
-    });
-});
-
 describe("drawRows", () => {
     it("fills one rectangle snapped to device pixels per row, then thicker lines on top", () => {
         const metrics: RailMetrics = { railHeight: 100, clientHeight: 100, scrollHeight: 1000 };
@@ -95,7 +58,7 @@ describe("drawRows", () => {
             }
         };
 
-        drawRows(context, { width: 20, height: 100, ratio: 1.25 }, [
+        drawRows(context, { width: 12, height: 100, ratio: 1.25 }, [
             {
                 rows: toRows([ 10, 12, 333 ], metrics), emphasized: 1,
                 color: "gray", emphasisColor: "black"
@@ -106,17 +69,17 @@ describe("drawRows", () => {
             }
         ]);
 
-        expect(context.clearRect).toHaveBeenCalledWith(0, 0, 25, 125);
+        expect(context.clearRect).toHaveBeenCalledWith(0, 0, 15, 125);
         expect(calls.map(({ style }) => style)).toEqual([ "gray", "gray", "orange", "black" ]);
         for (const { rect } of calls) {
             for (const value of rect) {
                 expect(Number.isInteger(value)).toBe(true);
             }
         }
-        // Inset 3 px from each side, 2 px thick, and 4 px for the emphasized marker.
-        expect(calls[0].rect).toEqual([ 4, 0, 17, 3 ]);
-        expect(calls[1].rect).toEqual([ 4, 40, 17, 3 ]);
-        expect(calls[3].rect).toEqual([ 4, 0, 17, 5 ]);
+        // Inset 1 px from each side, 2 px thick, and 4 px for the emphasized marker.
+        expect(calls[0].rect).toEqual([ 1, 0, 13, 3 ]);
+        expect(calls[1].rect).toEqual([ 1, 40, 13, 3 ]);
+        expect(calls[3].rect).toEqual([ 1, 0, 13, 5 ]);
     });
 });
 

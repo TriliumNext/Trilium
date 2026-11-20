@@ -272,7 +272,7 @@ describe("DesktopLayout", () => {
         const actions = titleRow?.querySelector(":scope > .note-actions-bar");
         expect(actions).toBeInstanceOf(HTMLElement);
         expect(actions?.previousElementSibling?.classList.contains("spacer")).toBe(true);
-        // The host of the scroll rail starts the scroller, empty while no layer is published.
+        // The host of the scroll rail starts the scroller, empty while the note fits.
         const scroller = split?.querySelector(":scope > .scrolling-container");
         const railHost = scroller?.firstElementChild;
         expect(railHost?.classList.contains("scroll-rail-host")).toBe(true);
