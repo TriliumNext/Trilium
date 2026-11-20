@@ -38,8 +38,9 @@ Trilium supports four different types of providers:
     *   <span class="tn-icon tn-brand tn-brand-anthropic"></span> Anthropic Claude
     *   <span class="tn-icon tn-brand tn-brand-openai"></span> OpenAI GPT
     *   <span class="tn-icon tn-brand tn-brand-gemini"></span> Google Gemini
-    *   <span class="tn-icon tn-brand tn-brand-deepseek"></span> DeepSeek
-    *   <span class="tn-icon tn-brand tn-brand-openrouter"></span> OpenRouter, which reaches the models of most labs with one key
+    *   <span class="tn-icon tn-brand tn-brand-deepseek"></span> DeepSeek
+    *   <span class="tn-icon tn-brand tn-brand-openrouter"></span> OpenRouter, which reaches the models of most labs with one key
+    *   <span class="tn-icon tn-brand tn-brand-mistral"></span> Mistral
 
 === "<span class="tn-icon bx bx-coin"></span> Subscription-based"
 
@@ -57,7 +58,7 @@ Trilium supports four different types of providers:
 
 === "<span class="tn-icon bx bx-code-curly"></span> Custom endpoints"
 
-    For other providers that are not directly supported by Trilium, either local or hosted (e.g. Groq, Mistral, Together).
+    For other providers that are not directly supported by Trilium, either local or hosted (e.g. Groq, Together).
 
 > [!TIP]
 > For more information about each provider, see <a class="reference-link" href="AI/Providers.md">Providers</a>. See the dedicated <a class="reference-link" href="AI/Privacy.md">Privacy</a> to better understand what data is sent to providers.

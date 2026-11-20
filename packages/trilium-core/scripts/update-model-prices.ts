@@ -50,6 +50,9 @@ function classify(key: string, provider: string | undefined): string | null {
     if (/^deepseek-/.test(key) && provider === "deepseek") {
         return "deepseek";
     }
+    if (/^(mistral-|zai-glm-)/.test(key) && provider === "mistral") {
+        return "mistral";
+    }
     return null;
 }
 
@@ -61,7 +64,7 @@ const PER_MILLION = 1_000_000;
  * DeepSeek's floor is low because its catalog genuinely is — a handful of rolling
  * aliases rather than a wall of dated snapshots.
  */
-const SANITY_FLOOR: Record<string, number> = { anthropic: 5, openai: 10, google: 5, deepseek: 2 };
+const SANITY_FLOOR: Record<string, number> = { anthropic: 5, openai: 10, google: 5, deepseek: 2, mistral: 5 };
 
 interface LiteLlmEntry {
     litellm_provider?: string;
