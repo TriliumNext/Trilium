@@ -187,6 +187,9 @@ describe("findActivePdfHeading", () => {
         const headings = [ at("noLeft", 1, undefined, 500), at("withLeft", 1, 100, 500) ];
 
         expect(find(headings, 1, 50, 0, [ 90 ])).toBe("noLeft");
+        expect(find(headings, 1, 200, 0, [ 270 ])).toBe("noLeft");
+        const noTop = [ at("noTop", 1, 100, undefined), at("withTop", 1, 100, 500) ];
+        expect(find(noTop, 1, 0, 400, [ 180 ])).toBe("noTop");
         expect(find([ at("noAnchor", 2) ], 2, 0, 790)).toBe("noAnchor");
     });
 

@@ -2,9 +2,11 @@ import { createHash } from "node:crypto";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { DOCX_MIME, EPUB_MIME_TYPES, ODT_MIME } from "./office.js";
 import {
-    assignHeadingIds, findHeading, getBlobTag, getTocCacheTitle, hashHeadingSource, headingSource,
-    MAX_TOC_HEADINGS, MAX_TOC_TITLE_LENGTH, normalizeTocTitle, type TocOutlineItem
+    assignHeadingIds, findHeading, findTocFormatName, getBlobTag, getTocCacheTitle,
+    hashHeadingSource, headingSource, MAX_TOC_HEADINGS, MAX_TOC_TITLE_LENGTH, normalizeTocTitle,
+    type TocOutlineItem
 } from "./toc.js";
 import { blobIdFromDigest, fnv1aUpdate, PROTECTED_BLOB_PREFIX } from "./utils.js";
 
@@ -22,6 +24,19 @@ const OTHER_TAG = "Zz9yXw8vU7";
 afterEach(() => {
     vi.mocked(fnv1aUpdate).mockImplementation(actualUtils.fnv1aUpdate);
     vi.mocked(fnv1aUpdate).mockClear();
+});
+
+describe("findTocFormatName", () => {
+    it("names the format of each document type of a file, and none for anything else", () => {
+        expect(findTocFormatName("file", "application/pdf")).toBe("pdf");
+        expect(findTocFormatName("file", DOCX_MIME)).toBe("docx");
+        expect(findTocFormatName("file", ODT_MIME)).toBe("odt");
+        for (const mime of EPUB_MIME_TYPES) {
+            expect(findTocFormatName("file", mime)).toBe("epub");
+        }
+        expect(findTocFormatName("file", "application/zip")).toBeUndefined();
+        expect(findTocFormatName("text", "application/pdf")).toBeUndefined();
+    });
 });
 
 describe("getTocCacheTitle", () => {
