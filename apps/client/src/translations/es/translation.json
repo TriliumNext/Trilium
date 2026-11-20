@@ -84,7 +84,16 @@
     "invalid_url": "Esta no es una URL válida.",
     "script_link_not_allowed": "Los enlaces que empiezan por {{scheme}} pueden ejecutar código, así que no están permitidos.",
     "retrieving_from_page": "Obteniendo datos de la página web...",
-    "title_from_attachment": "Si no se indica, reflejará siempre el título del archivo adjunto"
+    "title_from_attachment": "Si no se indica, reflejará siempre el título del archivo adjunto",
+    "top_of_note": "Enlace a la nota (predeterminado)",
+    "select_note_for_targets": "Seleccione una nota para ver los encabezados y las anclas a los que puede enlazar.",
+    "inspecting_note": "Inspeccionando la estructura de la nota",
+    "heading_reference_failed": "No se puede crear una referencia al encabezado indicado",
+    "link_to_heading": "Enlace a un encabezado",
+    "link_to_anchor": "Enlace a un ancla",
+    "no_link_targets": "No hay encabezados ni anclas a los que pueda enlazar.",
+    "open_file_for_targets": "Abra el archivo para ver la lista de sus encabezados.",
+    "listing_changed": "La nota ha cambiado mientras se listaban sus encabezados. Vuelva a seleccionar el encabezado."
   },
   "branch_prefix": {
     "edit_branch_prefix": "Editar prefijo de rama",
@@ -992,7 +1001,8 @@
     "note_attributes_title": "Atributos de la nota",
     "search_in_note_short": "Buscar",
     "note_attachments_short": "Adjuntos",
-    "note_settings": "Configuración de la nota"
+    "note_settings": "Configuración de la nota",
+    "convert_block_references_changed": "Referencias a bloques de esta nota que ya no funcionan: {{lost}} perdidas y {{moved}} que apuntan a otro bloque. La revisión guardada antes de la conversión conserva la nota tal como estaba."
   },
   "onclick_button": {
     "no_click_handler": "El widget de botón '{{componentId}}' no tiene un controlador de clics definido"
@@ -2204,7 +2214,11 @@
   },
   "toc": {
     "table_of_contents": "Tabla de contenido",
-    "no_headings": "Sin encabezados."
+    "no_headings": "Sin encabezados.",
+    "building": "Generando la tabla de contenido…",
+    "build_failed": "No se ha podido leer la tabla de contenido.",
+    "unavailable": "La tabla de contenido no está disponible.",
+    "retry": "Volver a intentar"
   },
   "watched_file_update_status": {
     "upload_modified_file": "Subir",
@@ -2232,7 +2246,9 @@
     "copy_success": "Copiado al portapapeles.",
     "copied_without_links": "La(s) nota(s) se han copiado al portapapeles, pero los enlaces a notas no pudieron colocarse en el portapapeles del sistema.",
     "paste_notes": "Pegar nota(s)",
-    "paste_failed": "No se ha podido leer el portapapeles."
+    "paste_failed": "No se ha podido leer el portapapeles.",
+    "copy_ready": "El enlace está listo para copiar.",
+    "copy_button": "Copiar el enlace"
   },
   "entrypoints": {
     "note-revision-created": "Una revisión de nota ha sido creada.",
@@ -2359,7 +2375,8 @@
     "copy_url": "Copiar dirección (URL)",
     "display_as": "Mostrar como",
     "edit": "Editar...",
-    "include_size_default": "Predeterminado"
+    "include_size_default": "Predeterminado",
+    "tab_width": "Ancho de tabulador"
   },
   "electron_integration": {
     "desktop-application": "Aplicación de escritorio",
@@ -2830,7 +2847,9 @@
     "link_title_retrieval_enabled": "Obtener automáticamente los títulos de los enlaces de texto",
     "link_title_retrieval_description": "En el editor de enlaces, el título vacío de un enlace de texto se rellena con el de la página web.",
     "link_details_retrieval_enabled": "Obtener automáticamente el título y la descripción de los enlaces de icono y texto y de las tarjetas",
-    "link_details_retrieval_description": "En el editor de enlaces, el título o la descripción vacíos de un enlace de icono y texto, o de una tarjeta, se rellenan con los de la página web."
+    "link_details_retrieval_description": "En el editor de enlaces, el título o la descripción vacíos de un enlace de icono y texto, o de una tarjeta, se rellenan con los de la página web.",
+    "note_completion_link_targets_enabled": "Sugerir encabezados y anclas a los que enlazar",
+    "note_completion_link_targets_description": "Después de seleccionar una nota, sugerir también un encabezado o un ancla como destino dentro de la nota seleccionada."
   },
   "command_palette": {
     "tree-action-name": "Árbol:{{name}}",
@@ -3030,7 +3049,11 @@
     "annotation_text_box": "Cuadro de texto en la página {{pageNumber}}",
     "page_reference": "Página {{pageNumber}}",
     "annotation_reference": "Anotación en la página {{pageNumber}}",
-    "copy_reference": "Copiar referencia"
+    "copy_reference": "Copiar referencia",
+    "pages_title": "Páginas",
+    "annotations_title": "Anotaciones",
+    "attachments_title": "Adjuntos",
+    "layers_title": "Capas"
   },
   "experimental_features": {
     "title": "Opciones experimentales",
@@ -3338,7 +3361,11 @@
     "save_revision_tooltip": "Guardar manualmente una instantánea de la nota actual",
     "source_unknown": "Instantánea",
     "back": "Atrás",
-    "diff_identical": "Esta revisión es idéntica al contenido actual de la nota."
+    "diff_identical": "Esta revisión es idéntica al contenido actual de la nota.",
+    "source_description_draft": "Cambios sin guardar, conservados tras modificarse la nota en otro lugar",
+    "source_description_fragment": "Cambios sin guardar en un extracto cuyos bloques ya no existen",
+    "fragment_not_restorable": "Esta revisión solo contiene algunos bloques de la nota, que ya no forman parte de ella. No se puede restaurar, pero sí copiar.",
+    "copy_button": "Copiar revisión"
   },
   "database": {
     "title": "Base de datos",
@@ -3805,7 +3832,16 @@
     "add_model_provider": "Añadir proveedor de modelos",
     "no_model_providers_configured": "Todavía no hay proveedores de modelos configurados.",
     "provider_no_models": "No se ha seleccionado ningún modelo, por lo que no se ofrece en el chat.",
-    "search_provider_unavailable_standalone": "No disponible en la versión para navegador: este servicio rechaza las solicitudes realizadas desde una página web, por lo que solo se puede usar desde la versión de escritorio o de servidor."
+    "search_provider_unavailable_standalone": "No disponible en la versión para navegador: este servicio rechaza las solicitudes realizadas desde una página web, por lo que solo se puede usar desde la versión de escritorio o de servidor.",
+    "search_check_heading": "Búsqueda de prueba",
+    "search_check_running": "Ejecutando una búsqueda de prueba…",
+    "search_check_passed": "El proveedor de búsqueda funciona. Estos son los primeros resultados de una búsqueda de prueba:",
+    "search_check_no_results": "El proveedor de búsqueda ha respondido, pero no ha encontrado nada en una búsqueda de prueba. Es posible que no tenga ningún motor de búsqueda habilitado.",
+    "search_check_failed": "La búsqueda de prueba ha fallado: {{error}}",
+    "search_check_failed_hint": "Aun así, puede añadir el proveedor, por ejemplo para configurarlo antes de que su servicio esté en funcionamiento.",
+    "add_provider_anyway": "Añadir de todos modos",
+    "save_anyway": "Guardar de todos modos",
+    "retry": "Reintentar la búsqueda"
   },
   "common": {
     "save": "Guardar",
@@ -4984,7 +5020,8 @@
     "viewConfig": "Ajustes de vista",
     "canvasLibraryItem": "Biblioteca del lienzo",
     "importSource": "Origen de la importación",
-    "transcript": "Transcripción de la reunión"
+    "transcript": "Transcripción de la reunión",
+    "tocCache": "Caché de la tabla de contenido"
   },
   "compress-images": "Comprimir imágenes",
   "compress-image": "Comprimir imagen",
@@ -5260,7 +5297,11 @@
     "copy_share_link_one": "Copiar enlace público",
     "copy_share_link_many": "Copiar enlace público",
     "copy_share_link_other": "Copiar enlace público",
-    "copy_reference": "Copiar referencia"
+    "copy_reference": "Copiar referencia",
+    "inert_marker": "La referencia {{id}} no marca ningún bloque",
+    "remove_reference": "Quitar referencia",
+    "copy_failed": "No se ha podido crear la referencia.",
+    "paste_failed": "No se ha podido pegar la referencia aquí."
   },
   "split_button": {
     "more_actions": "Más acciones"
@@ -5548,5 +5589,18 @@
     "menu_help": "Ayuda",
     "menu_note_description": "Se aplica solo a esta nota.",
     "menu_note_description_subtree": "Se aplica a esta nota y a las notas situadas debajo."
+  },
+  "note_save": {
+    "conflict_title": "Modificada en otro lugar",
+    "conflict_message": "Esta nota se ha modificado en otro lugar mientras la editaba. Elija la versión que desea conservar; la otra se guardará como una revisión.",
+    "conflict_message_unversioned": "Esta nota se ha modificado en otro lugar mientras la editaba. Elija la versión que desea conservar; como la nota no conserva revisiones, la otra se descartará.",
+    "keep_this_version": "Conservar esta versión",
+    "load_other_version": "Cargar la otra versión",
+    "draft_kept": "Sus cambios sin guardar se han conservado como una revisión de la nota.",
+    "draft_discarded": "Sus cambios sin guardar se han descartado, ya que la nota no conserva revisiones.",
+    "draft_kept_after_conversion": "La nota se ha convertido mientras la editaba. Sus cambios sin guardar se han conservado como una revisión.",
+    "draft_discarded_after_conversion": "La nota se ha convertido mientras la editaba y no conserva revisiones, por lo que sus cambios sin guardar se han descartado.",
+    "draft_kept_blocks_gone": "Los bloques que estaba editando se han modificado en otro lugar y ya no se pueden editar aquí. Sus cambios sin guardar se han conservado como una revisión.",
+    "draft_discarded_blocks_gone": "Los bloques que estaba editando se han modificado en otro lugar y ya no se pueden editar aquí. La nota no conserva revisiones, por lo que sus cambios sin guardar se han descartado."
   }
 }
