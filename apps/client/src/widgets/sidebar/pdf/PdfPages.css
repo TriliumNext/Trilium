@@ -62,7 +62,8 @@
     font-size: .7rem;
 }
 
-.no-pages {
+.no-pages,
+.pdf-pages-loading {
     padding: 16px;
     text-align: center;
     color: var(--muted-text-color);

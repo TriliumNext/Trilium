@@ -40,8 +40,15 @@ const STORED_ANNOTATION_ID = /^\d+R\d*$/;
 /** How many loads in a row can fail before the viewer gives the document up. */
 const MAX_FAILED_LOADS = 3;
 
-type PdfContextDataKey =
-    "tocDocument" | "pdfPages" | "pdfAttachments" | "pdfAnnotations" | "pdfLayers";
+type PdfSectionKey = "pdfPages" | "pdfAttachments" | "pdfAnnotations" | "pdfLayers";
+type PdfContextDataKey = "tocDocument" | PdfSectionKey;
+
+const PDF_SECTION_KEYS: PdfSectionKey[] = [
+    "pdfPages", "pdfAttachments", "pdfLayers", "pdfAnnotations"
+];
+
+/** The sections that only an editable viewer reports (see `bootstrap.ts`). */
+const EDITABLE_SECTION_KEYS: PdfSectionKey[] = [ "pdfPages", "pdfAttachments", "pdfLayers" ];
 
 /** One navigation of the viewer's frame, and where its viewer reads. */
 interface PdfLoad extends PdfReading {
@@ -50,12 +57,20 @@ interface PdfLoad extends PdfReading {
     noteId: string;
     /** The blob that the open route serves to the load, or refuses with 409 for another. */
     blobId: string;
+    /** Whether the frame loads the viewer in editable mode. */
+    isEditable: boolean;
     /** Whether the viewer reported that the document loaded. */
     isConfirmed: boolean;
     /** Whether the viewer cannot show the document. */
     isUnavailable: boolean;
     /** The blob that the viewer shows: the load's, then the blob of each own save. */
     renderedBlobId: string;
+    /**
+     * What the load published for the sidebar. `NoteContext.setNote()` clears the context data
+     * when the pane leaves the note, and a viewer kept mounted does not send its data again, so
+     * the pane gets this map back when it shows the PDF again.
+     */
+    published: Map<PdfContextDataKey, unknown>;
 }
 
 export default function PdfPreview({ note, blob, componentId, noteContext, isVisible = true }: {
@@ -71,16 +86,13 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
     const historyConfig = useViewModeConfig<HistoryData>(note, "pdfHistory");
     const isVisibleRef = useRef(isVisible);
     isVisibleRef.current = isVisible;
-    /**
-     * What the viewer last sent for each sidebar panel. `NoteContext.setNote()` clears the context
-     * data when the pane leaves the note, and a viewer kept mounted has loaded already, so it does
-     * not send its data again on the way back.
-     */
-    const publishedRef = useRef(new Map<PdfContextDataKey, unknown>());
-    /** The current load; a note of its own starts one. */
+    /** The current load; a note of its own starts one, and so does a switch of the mode. */
     const loadRef = useRef<PdfLoad | null>(null);
+    const isEditable = !isReadOnly;
     if (!loadRef.current || loadRef.current.noteId !== note.noteId) {
-        loadRef.current = createLoad(note.noteId, note.blobId);
+        loadRef.current = createLoad(note.noteId, note.blobId, isEditable);
+    } else if (loadRef.current.isEditable !== isEditable) {
+        loadRef.current = createLoad(note.noteId, loadRef.current.renderedBlobId, isEditable);
     }
     const load = loadRef.current;
     const [ , setLoadCount ] = useState(0);
@@ -91,9 +103,26 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
     const tocBuild = useTocBuild(iframeRef, getTocUrl("notes", note.noteId), !!note.isProtected);
 
     function publish<K extends PdfContextDataKey>(key: K, value: NoteContextDataMap[K]) {
-        publishedRef.current.set(key, value);
+        loadRef.current?.published.set(key, value);
         if (isShown()) {
             noteContext.setContextData(key, value);
+        }
+    }
+
+    /**
+     * Writes what the current load published to the note context, and clears each section that
+     * the load lacks. It never clears `tocDocument`, which attachments publish too.
+     */
+    function syncSidebar() {
+        const published = loadRef.current?.published;
+        if (!published) return;
+        for (const [ key, value ] of published) {
+            noteContext.setContextData(key, value as NoteContextDataMap[typeof key]);
+        }
+        for (const key of PDF_SECTION_KEYS) {
+            if (!published.has(key)) {
+                noteContext.clearContextData(key);
+            }
         }
     }
 
@@ -107,15 +136,15 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
     }
 
     function getPublished<K extends PdfContextDataKey>(key: K) {
-        return publishedRef.current.get(key) as NoteContextDataMap[K] | undefined;
+        return loadRef.current?.published.get(key) as NoteContextDataMap[K] | undefined;
     }
 
     /**
      * Scrolls to the heading, page or annotation a link opened the note at, once the viewer is
-     * shown and has listed its annotations, which it does once it can scroll to one.
+     * shown and the current load has listed its annotations, which it does once it can scroll.
      */
     function revealLinkTarget() {
-        if (!isShown() || !publishedRef.current.has("pdfAnnotations")) return;
+        if (!isShown() || getPublished("pdfAnnotations")?.status !== "ready") return;
         const target = takeLinkTarget(noteContext.viewScope, [ "page", "annotation", "heading" ]);
         if (target) {
             landOn(target);
@@ -137,8 +166,8 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
 
     /** Navigates the frame to a new load of the blob `blobId`. */
     function startLoad(blobId: string) {
-        loadRef.current = createLoad(note.noteId, blobId);
-        publishedRef.current.clear();
+        const mode = loadRef.current?.isEditable ?? isEditable;
+        loadRef.current = createLoad(note.noteId, blobId, mode);
         setLoadCount((count) => count + 1);
     }
 
@@ -200,8 +229,15 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
         if (blobId) {
             startLoad(blobId);
         } else {
+            // The viewer of a load given up sends no section.
             failedLoad.isUnavailable = true;
-            publishTocDocument();
+            for (const key of PDF_SECTION_KEYS) {
+                failedLoad.published.delete(key);
+            }
+            failedLoad.published.set("tocDocument", getTocDocument());
+            if (isShown()) {
+                syncSidebar();
+            }
         }
     }
 
@@ -294,11 +330,20 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
             }
 
             handleLoadMessage(event.data);
+            handleSectionMessage(event.data);
+        }
 
-            if (event.data.type === "pdfjs-viewer-page-info") {
+        /** Publishes the sidebar sections that the viewer of the current load sends. */
+        function handleSectionMessage(data: PdfMessageEvent["data"]) {
+            const loadToken = loadRef.current?.token;
+            if (!loadToken || !("loadToken" in data) || data.loadToken !== loadToken) return;
+
+            if (data.type === "pdfjs-viewer-page-info") {
                 publish("pdfPages", {
-                    totalPages: event.data.totalPages,
-                    currentPage: event.data.currentPage,
+                    status: "ready",
+                    loadToken,
+                    totalPages: data.totalPages,
+                    currentPage: data.currentPage,
                     scrollToPage: (page: number) => {
                         iframeRef.current?.contentWindow?.postMessage({
                             type: "trilium-scroll-to-page",
@@ -317,32 +362,35 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
                 });
             }
 
-            if (event.data.type === "pdfjs-viewer-current-page") {
+            if (data.type === "pdfjs-viewer-current-page") {
                 const currentPages = getPublished("pdfPages");
-                if (currentPages) {
+                if (currentPages?.status === "ready") {
                     publish("pdfPages", {
                         ...currentPages,
-                        currentPage: event.data.currentPage
+                        currentPage: data.currentPage
                     });
                 }
             }
 
-            if (event.data.type === "pdfjs-viewer-thumbnail") {
+            if (data.type === "pdfjs-viewer-thumbnail") {
                 // Relayed on the window rather than through context data because thumbnails
-                // arrive one at a time; the page list keys them itself. It carries the context it
-                // was rendered for, since a second viewer relays onto the same window.
+                // arrive one at a time; the page list keys them itself. It carries the context and
+                // the load it was rendered for, since a second viewer relays onto the same window.
                 window.dispatchEvent(new CustomEvent("pdf-thumbnail", {
                     detail: {
                         ntxId: noteContext.ntxId,
-                        pageNumber: event.data.pageNumber,
-                        dataUrl: event.data.dataUrl
+                        loadToken,
+                        pageNumber: data.pageNumber,
+                        dataUrl: data.dataUrl
                     }
                 }));
             }
 
-            if (event.data.type === "pdfjs-viewer-attachments") {
+            if (data.type === "pdfjs-viewer-attachments") {
                 publish("pdfAttachments", {
-                    attachments: event.data.attachments,
+                    status: "ready",
+                    loadToken,
+                    attachments: data.attachments,
                     downloadAttachment: (id: string) => {
                         iframeRef.current?.contentWindow?.postMessage({
                             type: "trilium-download-attachment",
@@ -352,9 +400,11 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
                 });
             }
 
-            if (event.data.type === "pdfjs-viewer-annotations") {
+            if (data.type === "pdfjs-viewer-annotations") {
                 publish("pdfAnnotations", {
-                    annotations: event.data.annotations,
+                    status: "ready",
+                    loadToken,
+                    annotations: data.annotations,
                     scrollToAnnotation: (annotationId: string, pageNumber: number) => {
                         iframeRef.current?.contentWindow?.postMessage({
                             type: "trilium-scroll-to-annotation",
@@ -370,9 +420,11 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
                 revealLinkTarget();
             }
 
-            if (event.data.type === "pdfjs-viewer-layers") {
+            if (data.type === "pdfjs-viewer-layers") {
                 publish("pdfLayers", {
-                    layers: event.data.layers,
+                    status: "ready",
+                    loadToken,
+                    layers: data.layers,
                     toggleLayer: (layerId: string, visible: boolean) => {
                         iframeRef.current?.contentWindow?.postMessage({
                             type: "trilium-toggle-layer",
@@ -402,7 +454,7 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
                     void recoverFromLoadError(current);
                     return;
                 default:
-                    applyReadingMessage(current, data);
+                    if (!applyReadingMessage(current, data)) return;
             }
             publishTocDocument();
         }
@@ -425,24 +477,28 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
         if (window.TRILIUM_PDF_VIEW_HISTORY) delete window.TRILIUM_PDF_VIEW_HISTORY[historyKey];
     }, [ historyKey ]);
 
-    // A different PDF reloads the viewer, which sends everything again.
-    useEffect(() => () => publishedRef.current.clear(), [ note.noteId ]);
+    // Runs before the frame of the load can send anything: the sections that the load reports
+    // wait for its viewer, and the others go.
+    useLayoutEffect(() => {
+        const loading = { status: "loading", loadToken: load.token } as const;
+        load.published.set("pdfAnnotations", loading);
+        if (load.isEditable) {
+            for (const key of EDITABLE_SECTION_KEYS) {
+                load.published.set(key, loading);
+            }
+        }
+        if (isShown()) {
+            syncSidebar();
+        }
+    }, [ load.token ]);
 
     useEffect(publishTocDocument, [ load.token, tocBuild.version ]);
 
     useEffect(() => {
-        if (!isShown()) return;
-        for (const key of publishedRef.current.keys()) {
-            republish(key);
+        if (isShown()) {
+            syncSidebar();
         }
     }, [ isVisible ]);
-
-    function republish<K extends PdfContextDataKey>(key: K) {
-        const value = getPublished(key);
-        if (value) {
-            noteContext.setContextData(key, value);
-        }
-    }
 
     useLinkTargetLanding({ note, ntxId: noteContext.ntxId, isVisible }, revealLinkTarget);
 
@@ -492,7 +548,7 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
                     });
                 }
             }}
-            editable={!isReadOnly}
+            editable={load.isEditable}
             noteId={note.noteId}
             ntxId={noteContext.ntxId}
         />
@@ -511,9 +567,10 @@ function pdfReference(notePath: string, pageNumber: number, annotationId?: strin
     return reference;
 }
 
-function createLoad(noteId: string, blobId: string): PdfLoad {
+function createLoad(noteId: string, blobId: string, isEditable: boolean): PdfLoad {
     return {
-        token: nextPdfLoadToken(), noteId, blobId, isConfirmed: false, isUnavailable: false,
-        renderedBlobId: blobId, position: null, rotations: []
+        token: nextPdfLoadToken(), noteId, blobId, isEditable, isConfirmed: false,
+        isUnavailable: false, renderedBlobId: blobId, position: null, rotations: [],
+        published: new Map()
     };
 }

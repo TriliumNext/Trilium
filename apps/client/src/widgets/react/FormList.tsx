@@ -12,7 +12,7 @@ import { t } from "../../services/i18n";
 import { getActionSync } from "../../services/keyboard_actions";
 import { handleRightToLeftPlacement, isMobile, openInAppHelpFromUrl } from "../../services/utils";
 import ActionButton from "./ActionButton";
-import FormTextBox from "./FormTextBox";
+import FormTextBox, { type FormTextBoxProps } from "./FormTextBox";
 import FormToggle from "./FormToggle";
 import { useSlide, useSyncedRef, useUniqueName } from "./hooks/dom";
 import { useStaticTooltip } from "./hooks/tooltip";
@@ -824,33 +824,66 @@ function MenuFilterInput({ filter }: { filter: MenuFilter }) {
 
     return (
         <div className="tn-menu-filter">
-            {/* A press anywhere in the box, the clear button's included, keeps focus in the input,
-                and a click in it does not close the dropdown. */}
-            <div
-                className="tn-menu-filter-box tn-input-field"
-                onMouseDown={(e) => {
-                    if (e.target === inputRef.current) return;
-                    e.preventDefault();
-                    inputRef.current?.focus({ preventScroll: true });
-                }}
-                onClick={(e) => e.stopPropagation()}
-            >
-                <FormTextBox
-                    inputRef={inputRef} className="tn-menu-filter-input"
-                    data-level={filter.level + 1} currentValue={filter.text}
-                    autoComplete="off" spellcheck={false}
-                    placeholder={t("menu.filter_placeholder")} aria-label={t("menu.filter")}
-                    onChange={(text) => menu.setFilter(text
-                        ? { rowId: filter.rowId, level: filter.level, text }
-                        : undefined)}
+            <FilterField
+                inputRef={inputRef}
+                data-level={filter.level + 1}
+                value={filter.text}
+                onChange={(text) => menu.setFilter(text
+                    ? { rowId: filter.rowId, level: filter.level, text }
+                    : undefined)}
+            />
+        </div>
+    );
+}
+
+export interface FilterFieldProps extends Omit<FormTextBoxProps,
+    "currentValue" | "onChange" | "onBlur" | "inputRef" | "className"> {
+    /** The text typed in the field. */
+    value: string;
+    onChange(text: string): void;
+    onBlur?(text: string): void;
+    inputRef?: RefObject<HTMLInputElement | null>;
+    /** Classes added to the box around the input. */
+    className?: string;
+}
+
+/**
+ * A text box to filter a list by, with a search icon that turns into a clear button once text is
+ * typed. The other props go to the input.
+ */
+export function FilterField({
+    value, onChange, inputRef: externalInputRef, className, ...rest
+}: FilterFieldProps) {
+    const inputRef = useSyncedRef<HTMLInputElement>(externalInputRef, null);
+
+    // A press anywhere in the box, the clear button's included, keeps focus in the input, and a
+    // click in it does not close a dropdown around it.
+    return (
+        <div
+            className={clsx("tn-menu-filter-box tn-input-field", className)}
+            onMouseDown={(e) => {
+                if (e.target === inputRef.current) return;
+                e.preventDefault();
+                inputRef.current?.focus({ preventScroll: true });
+            }}
+            onClick={(e) => e.stopPropagation()}
+        >
+            <FormTextBox
+                inputRef={inputRef} className="tn-menu-filter-input"
+                currentValue={value} onChange={(text) => onChange(text)}
+                autoComplete="off" spellcheck={false}
+                placeholder={t("menu.filter_placeholder")} aria-label={t("menu.filter")}
+                {...rest}
+            />
+            {value
+                ? <ActionButton
+                    className="tn-menu-filter-clear" icon="bx bx-x" text={t("menu.clear_filter")}
+                    onClick={() => {
+                        onChange("");
+                        inputRef.current?.focus({ preventScroll: true });
+                    }}
                 />
-                {filter.text
-                    ? <ActionButton
-                        className="tn-menu-filter-clear" icon="bx bx-x" text={t("menu.clear_filter")}
-                        onClick={() => menu.setFilter(undefined)}
-                    />
-                    : <span className="bx bx-search" aria-hidden="true" />}
-            </div>
+                : <span className="bx bx-search" aria-hidden="true" />}
         </div>
     );
 }

@@ -26,6 +26,7 @@ import type { Suggestion } from "../../services/note_autocomplete";
 import server from "../../services/server";
 import toast from "../../services/toast";
 import { buildNote } from "../../test/easy-froca";
+import { highlightedTexts } from "../../test/highlights";
 import type { AutocompleteListHandle } from "./FormAutocomplete";
 import LinkMentionList, { type LinkMentionListProps } from "./LinkMentionList";
 
@@ -314,8 +315,8 @@ describe("LinkMentionList", () => {
         await draw("u", alphaPath);
         expect(rowNames()).toStrictEqual([ "*Setup", "Linux", "Usage" ]);
         expect(groupTitles()).toStrictEqual([ "add_link.link_to_heading" ]);
-        expect(rows().map((row) => row.querySelector("b")?.textContent))
-            .toStrictEqual([ "u", "u", "U" ]);
+        expect(rows().map((row) => highlightedTexts("search-match", row)))
+            .toStrictEqual([ [ "u" ], [ "u" ], [ "U" ] ]);
         expect(rows().map((row) => row.querySelector(".note-suggestion-path")?.textContent))
             .toStrictEqual([ undefined, "Setup", undefined ]);
         expect(rowNamed("Linux").querySelector("span")?.style.cssText).toBe("");
@@ -330,6 +331,26 @@ describe("LinkMentionList", () => {
         expect(onPick).toHaveBeenCalledExactlyOnceWith(`${alphaPath}?block=U`);
         // The text typed after the link looks up no notes.
         expect(getNoteSuggestions.mock.calls.map(([ term ]) => term)).toStrictEqual([ "al" ]);
+    });
+
+    it("matches words in any order, ignoring accents, and nests headings per kind", async () => {
+        noteReferences.set(alphaPath.split("/")[1], {
+            targets: [
+                headingTarget("Installation", 2), anchorTarget("mid"),
+                headingTarget("Système Linux", 3), headingTarget("Linux usage", 2)
+            ]
+        });
+        const { draw } = await showAlphaLinked();
+
+        await draw("linux systeme", alphaPath);
+        expect(rowNames()).toStrictEqual([ "*Système Linux" ]);
+        // The anchor between them leaves the heading under the one before it.
+        expect(rows()[0].querySelector(".note-suggestion-path")?.textContent)
+            .toBe("Installation");
+        expect(highlightedTexts("search-match", rows()[0])).toStrictEqual([ "Système", "Linux" ]);
+
+        await draw("usage linux", alphaPath);
+        expect(rowNames()).toStrictEqual([ "*Linux usage" ]);
     });
 
     it("opens on the first match, also where a later one is named as the text", async () => {

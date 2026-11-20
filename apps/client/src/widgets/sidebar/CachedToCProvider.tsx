@@ -21,6 +21,7 @@ import { useTriliumEvent } from "../react/hooks/events";
 import { useActiveNoteContext, useGetContextData } from "../react/hooks/tree";
 import Icon from "../react/Icon";
 import NoItems from "../react/NoItems";
+import { type OutlineReport, useOutlineReport } from "./outline_filter";
 import { AbstractTableOfContents, type HeadingLinks, type RawHeading } from "./TableOfContents";
 
 /** What the type widget of a document with a ToC format publishes as `tocDocument`. */
@@ -113,6 +114,10 @@ export function CachedToCProvider() {
 
     const isUnavailable = !!unavailableReason || document?.status === "unavailable"
         || phase === "unavailable";
+    const hasList = !isUnavailable && phase !== "failed" && (!!rows || isReady || phase === "none");
+    // The list reports once it is on show; until then, the provider reports for the section.
+    useOutlineReport("toc", hasList ? null : getWaitingReport(isUnavailable, phase));
+
     return (
         <div ref={containerRef} className="cached-toc">
             {isUnavailable && <NoItems icon="bx bx-block" text={t("toc.unavailable")} />}
@@ -121,7 +126,7 @@ export function CachedToCProvider() {
                     <Button text={t("toc.retry")} onClick={retry} />
                 </NoItems>
             )}
-            {!isUnavailable && phase !== "failed" && (rows || isReady || phase === "none") && (
+            {hasList && (
                 <AbstractTableOfContents
                     headings={headings}
                     scrollToHeading={scrollToHeading}
@@ -129,6 +134,8 @@ export function CachedToCProvider() {
                     note={note}
                     headingLinks={headingLinks}
                     isInert={!shown}
+                    // Rows of another blob stay on show, but a filter waits for the current ones.
+                    isLoading={!isReady && phase !== "none"}
                 />
             )}
             {!isUnavailable && !rows && !isReady && phase !== "none" && phase !== "failed" && (
@@ -141,6 +148,13 @@ export function CachedToCProvider() {
             )}
         </div>
     );
+}
+
+/** What the section reports while the provider shows no list. */
+function getWaitingReport(isUnavailable: boolean, phase: LoadPhase): OutlineReport {
+    if (isUnavailable) return { status: "ready", count: 0 };
+    if (phase === "failed") return { status: "failed" };
+    return { status: "loading", navigates: true };
 }
 
 /** A row of the outline: a heading of the cache. */

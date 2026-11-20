@@ -143,6 +143,27 @@ describe("thumbnail generation", () => {
         expect(viewer.messagesOfType("pdfjs-viewer-thumbnail")).toHaveLength(0);
     });
 
+    it("names the load of its frame in the page info, page changes and thumbnails", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        window.TRILIUM_LOAD_TOKEN = "load-7";
+        stubCanvas();
+        const page = await viewer.pdfDocument.getPage(1);
+        vi.spyOn(page, "render").mockReturnValue({ promise: Promise.resolve() } as never);
+        vi.spyOn(viewer.pdfDocument, "getPage").mockResolvedValue(page);
+        setupPdfPages();
+
+        viewer.eventBus.dispatch("pagechanging", { source: null, pageNumber: 2 });
+        viewer.sendFromParent({ type: "trilium-request-thumbnail", pageNumber: 1 });
+        await vi.waitFor(() => expect(viewer.messagesOfType("pdfjs-viewer-thumbnail"))
+            .toHaveLength(1));
+
+        for (const type of [
+            "pdfjs-viewer-page-info", "pdfjs-viewer-current-page", "pdfjs-viewer-thumbnail"
+        ]) {
+            expect(viewer.lastMessageOfType(type)).toMatchObject({ loadToken: "load-7" });
+        }
+    });
+
     it("logs and sends nothing when the page cannot be loaded", async () => {
         viewer = await installViewerApp(allFeaturesPdf());
         stubCanvas();

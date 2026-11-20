@@ -1,6 +1,7 @@
 import { render } from "preact";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import type { NoteContextDataMap } from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
 import contextMenu from "../../../menus/context_menu";
 import options from "../../../services/options";
@@ -10,11 +11,7 @@ import PdfAnnotations, { isDark } from "./PdfAnnotations";
 // arrive through hooks that need the whole app context, so they are handed over directly here.
 const shown = vi.hoisted(() => ({
     note: null as FNote | null,
-    annotations: null as {
-        annotations: PdfAnnotationInfo[];
-        scrollToAnnotation: (id: string, page: number) => void;
-        copyReference: (id: string, page: number) => void;
-    } | null
+    annotations: null as NoteContextDataMap["pdfAnnotations"] | null
 }));
 // i18next is not initialised for client specs, so t() would render every label as an empty
 // string. Echoing the key and its interpolations instead keeps the assertions about which
@@ -64,7 +61,9 @@ function renderPanel(
     const container = document.createElement("div");
     document.body.append(container);
     shown.note = pdfNote();
-    shown.annotations = { annotations, scrollToAnnotation, copyReference };
+    shown.annotations = {
+        status: "ready", loadToken: "1", annotations, scrollToAnnotation, copyReference
+    };
     render(<PdfAnnotations />, container);
     return container;
 }
@@ -82,9 +81,19 @@ describe("PdfAnnotations", () => {
         const empty = renderPanel([]);
         expect(empty.querySelector("#pdf-annotations, .pdf-annotations-list")).toBeNull();
 
+        // Nor while the viewer load has not listed them yet.
+        shown.annotations = { status: "loading", loadToken: "2" };
+        const loading = document.createElement("div");
+        document.body.append(loading);
+        render(<PdfAnnotations />, loading);
+        expect(loading.querySelector("#pdf-annotations")).toBeNull();
+
         options.set("rightPaneCollapsedItems", JSON.stringify([]));
         shown.note = { type: "text", mime: "text/html" } as unknown as FNote;
-        shown.annotations = { annotations: [ annotation({}) ], scrollToAnnotation: () => {}, copyReference: () => {} };
+        shown.annotations = {
+            status: "ready", loadToken: "1", annotations: [ annotation({}) ],
+            scrollToAnnotation: () => {}, copyReference: () => {}
+        };
         const notPdf = document.createElement("div");
         document.body.append(notPdf);
         render(<PdfAnnotations />, notPdf);
