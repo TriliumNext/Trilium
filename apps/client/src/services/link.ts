@@ -247,6 +247,11 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
     const activate = (isLeftClick && ctrlKey && shiftKey) || (isMiddleClick && shiftKey);
     const openInNewWindow = isLeftClick && evt?.shiftKey && !ctrlKey;
 
+    if (hrefLink?.startsWith("#help-locale:") && $link) {
+        void switchHelpNoteLocale(hrefLink, $link);
+        return true;
+    }
+
     if (hrefLink?.startsWith("#") && !hrefLink.startsWith("#root/") && $link) {
         // The link toolbar jumps to the anchor, and a footnote shows no toolbar.
         if (isPlainLeftClick && isInEditor
@@ -320,6 +325,37 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
     }
 
     return true;
+}
+
+/** Switches an outdated translated help note in place between English and the active locale. */
+async function switchHelpNoteLocale(hrefLink: string, $link: JQuery<HTMLElement>) {
+    const rest = hrefLink.slice("#help-locale:".length);
+    const sepIdx = rest.lastIndexOf(":");
+    const noteId = sepIdx >= 0 ? rest.slice(0, sepIdx) : rest;
+    const targetLocale = sepIdx >= 0 ? rest.slice(sepIdx + 1) : "";
+
+    try {
+        const [ blob, note, { renderTextContent } ] = await Promise.all([
+            server.get<{ content?: string }>(`notes/${encodeURIComponent(noteId)}/blob?locale=${encodeURIComponent(targetLocale)}`),
+            froca.getNote(noteId),
+            import("./content_renderer_text.js")
+        ]);
+        const $ckContent = $link.closest(".ck-content");
+        if (!note || !$ckContent.length) {
+            return;
+        }
+        let content = typeof blob?.content === "string" ? blob.content : "";
+        if (targetLocale === "en") {
+            const returnLabel = t("help_outdated_return", { defaultValue: "Return to translation" });
+            content = `<blockquote class="help-outdated-banner"><p><a href="#help-locale:${noteId}:">${returnLabel}</a></p></blockquote>\n${content}`;
+        }
+        const $tmp = $("<div>");
+        await renderTextContent(note, content, $tmp);
+        // Replace only children so Preact keeps its .ck-content root across help navigation.
+        $ckContent.empty().append($tmp.find(".ck-content").contents());
+    } catch (e) {
+        logError(`Failed to switch help note locale for '${noteId}': ${e instanceof Error ? e.message : String(e)}`);
+    }
 }
 
 /**

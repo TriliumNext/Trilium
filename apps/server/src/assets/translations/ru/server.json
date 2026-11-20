@@ -123,6 +123,8 @@
     "code-notes-title": "Заметки с кодом",
     "visible-launchers-title": "Видимые лаунчеры",
     "user-guide": "Руководство пользователя",
+    "help-outdated-title": "Данная информация могла устареть.",
+    "help-outdated-link": "Открыть актуальную английскую версию",
     "sql-console-history-title": "История консоли SQL",
     "user-hidden-title": "Скрытый пользователь",
     "launch-bar-templates-title": "Шаблоны панели запуска",
@@ -330,6 +332,7 @@
     "llm_chat_prefix": "Чат:"
   },
   "notes": {
+    "root-note": "Главная",
     "duplicate-note-suffix": "(дубликат)",
     "new-note": "Новая заметка",
     "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}",

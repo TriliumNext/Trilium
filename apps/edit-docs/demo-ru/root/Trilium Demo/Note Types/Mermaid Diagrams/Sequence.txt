@@ -1,0 +1,9 @@
+sequenceDiagram
+Alice->>John: Привет, Джон, как дела?
+loop Проверка здоровья
+    John->>John: Борьба с ипохондрией
+end
+Note right of John: Рациональные мысли!
+John-->>Alice: Отлично!
+John->>Bob: А у тебя как?
+Bob-->>John: Всё прекрасно!

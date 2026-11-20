@@ -3,6 +3,7 @@ import sql_init from "./sql_init";
 import options from "./options";
 import i18next from "i18next";
 import hidden_subtree from "./hidden_subtree";
+import { ensureHelpLocale } from "./in_app_help";
 import { getContext } from "./context";
 
 export type TranslationProvider = (i18nextInstance: typeof i18next, locale: LOCALE_IDS) => Promise<void>;
@@ -40,6 +41,7 @@ function getCurrentLanguage(): LOCALE_IDS {
 
 export async function changeLanguage(locale: string) {
     await i18next.changeLanguage(locale);
+    await ensureHelpLocale(locale);
     hidden_subtree.checkHiddenSubtree(true, { restoreNames: true });
 
     // Virtual subtrees (e.g. the in-app help) build their titles with t() at injection time,
@@ -76,6 +78,11 @@ export async function reconcileLanguageAfterDbInit() {
 
     await i18next.changeLanguage(locale);
     await setDayjsLocale(locale);
+    await ensureHelpLocale(locale);
+
+    // Rebuild virtual subtrees (e.g. _help) so their titles match the reconciled language.
+    const { load } = await import("../becca/becca_loader.js");
+    getContext().init(() => load());
 }
 
 export function getCurrentLocale() {

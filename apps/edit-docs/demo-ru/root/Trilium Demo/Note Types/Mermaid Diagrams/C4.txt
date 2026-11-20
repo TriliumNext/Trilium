@@ -1,0 +1,32 @@
+C4Context
+title Контекстная диаграмма системы интернет-банкинга
+
+Person(customerA, "Banking Клиент A", "Клиент банка с личными банковскими счетами.")
+Person(customerB, "Banking Клиент B")
+Person_Ext(customerC, "Banking Клиент C")
+System(SystemAA, "Система интернет-банкинга", "Позволяет клиентам просматривать сведения о банковских счетах и выполнять платежи.")
+
+Person(customerD, "Banking Клиент D", "A customer of the bank, <br/> with personal bank accounts.")
+
+Enterprise_Boundary(b1, "Граница банка") {
+
+  SystemDb_Ext(SystemE, "Банковская мейнфрейм-система", "Хранит основные банковские сведения о клиентах, счетах, транзакциях и т. д.")
+
+  System_Boundary(b2, "Граница банка 2") {
+    System(SystemA, "Банковская система A")
+    System(SystemB, "Банковская система B", "Банковская система с личными счетами клиентов.")
+  }
+
+  System_Ext(SystemC, "Система электронной почты", "Внутренняя почтовая система Microsoft Exchange.")
+  SystemDb(SystemD, "База данных банковской системы D", "Банковская система с личными счетами клиентов.")
+
+  Boundary(b3, "Граница банка 3", "граница") {
+    SystemQueue(SystemF, "Очередь банковской системы F", "Банковская система с личными счетами клиентов.")
+    SystemQueue_Ext(SystemG, "Очередь банковской системы G", "Банковская система с личными счетами клиентов.")
+  }
+}
+
+BiRel(customerA, SystemAA, "Применение")
+BiRel(SystemAA, SystemE, "Применение")
+Rel(SystemAA, SystemC, "Отправляет письма", "SMTP")
+Rel(SystemC, customerA, "Отправляет письма клиенту")

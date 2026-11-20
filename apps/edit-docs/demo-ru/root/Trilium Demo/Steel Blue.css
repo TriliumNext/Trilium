@@ -1,0 +1,101 @@
+/*
+ * Это пример создания собственной темы оформления для Trilium. Активировать её можно, перейдя
+ * в настройки, на первую вкладку «Внешний вид».
+ * 
+ * Подробнее о создании тем оформления: http://github.com/zadam/trilium/wiki/Themes
+ */
+
+@font-face { /* Этот шрифт используется в качестве основного шрифта интерфейса (см. ниже) */
+  font-family: 'Raleway';
+  font-style: normal;
+  font-weight: 400;
+  src: url('../../../custom/fonts/raleway.woff2') format('woff2');
+}
+
+@font-face { /* Этот шрифт используется для основного текста заметок (см. ниже) */
+  font-family: 'Garamond';
+  font-style: normal;
+  font-weight: 400;
+  src: url('../../../custom/fonts/garamond.woff2') format('woff2');
+}
+
+:root {
+    --theme-style: light;
+    
+    --main-font-family: 'Raleway';
+    --main-font-size: normal;
+    
+    --tree-font-family: 'Raleway';
+    --tree-font-size: normal;
+    
+    --detail-font-family: 'Raleway';
+    --detail-font-size: normal;
+    
+    --monospace-font-family: 'Monospace';
+    --monospace-font-size: normal;
+
+    --main-background-color: #404552;
+    --main-text-color: #AFB8C6;
+    --main-border-color: #AFB8C6;
+    
+    --accented-background-color: #383C4A;
+    --more-accented-background-color: #2F343F;
+    
+    --button-text-color: #AFB8C6;
+    --button-background-color: #2F343F;
+    --button-disabled-text-color: #86919F;
+    --button-disabled-background-color: #404552;
+    --button-border-color: #333;
+    --button-border-radius: 2px;
+    
+    --primary-button-background-color: #6c757d;
+    --primary-button-text-color: white;
+    --primary-button-border-color: #6c757d;
+    
+    --muted-text-color: #86919F;
+    
+    --input-text-color: #AFB8C6;
+    --input-background-color: #404552;
+    
+    --hover-item-text-color: white;
+    --hover-item-background-color: #4877B1;
+        
+    --active-item-text-color: white;
+    --active-item-background-color: #4877B1;
+    
+    --menu-text-color: #AFB8C6;
+    --menu-background-color: #383C4A;
+    
+    --modal-background-color: #404552;
+    --modal-backdrop-color: black;
+    
+    --left-pane-background-color: #2F343F;
+    --left-pane-text-color: #AFB8C6;
+
+    --launcher-pane-background-color: #2F343F;
+    --launcher-pane-text-color: #AFB8C6;
+
+    --active-tab-background-color: #2F343F;
+    --active-tab-text-color: #AFB8C6;
+
+    --inactive-tab-background-color: #404552;
+    --inactive-tab-text-color: #AFB8C6;
+    
+    --scrollbar-border-color: rgba(175, 184, 198, 0.5);
+    --tooltip-background-color: #383C4A;
+    --link-color: lightskyblue;
+    
+    --mermaid-theme: forest;
+}
+
+body .global-menu-button {
+    background-image: url("../../../assets/vX/images/icon-grey.png");
+}
+
+body .note-detail-editable-text, body .note-detail-readonly-text {
+    font-size: 120%; /* Шрифт Garamond визуально выглядит немного мельче */
+}
+
+body .CodeMirror {
+    filter: invert(100%) hue-rotate(180deg);
+}

@@ -1,0 +1,350 @@
+{
+  "nodeData": {
+    "id": "me-root",
+    "topic": "Mind Elixir",
+    "root": true,
+    "tags": [
+      "Mind Map Core"
+    ],
+    "children": [
+      {
+        "topic": "Что такое Mind Elixir",
+        "id": "bd4313fbac40284b",
+        "direction": 0,
+        "expanded": true,
+        "children": [
+          {
+            "topic": "Ядро для интеллект-карт",
+            "id": "beeb823afd6d2114"
+          },
+          {
+            "topic": "Бесплатный",
+            "id": "c1f068377de9f3a0"
+          },
+          {
+            "topic": "С открытым исходным кодом",
+            "id": "c1f06d38a09f23ca"
+          },
+          {
+            "topic": "Использование без JavaScript-фреймворка",
+            "id": "c1f06e4cbcf16463",
+            "expanded": true,
+            "children": []
+          },
+          {
+            "topic": "Использование в собственном проекте",
+            "id": "c1f1f11a7fbf7550",
+            "children": [
+              {
+                "topic": "import MindElixir from 'mind-elixir'",
+                "id": "c1f1e245b0a89f9b"
+              },
+              {
+                "topic": "new MindElixir({...}).init(data)",
+                "id": "c1f1ebc7072c8928"
+              }
+            ]
+          },
+          {
+            "topic": "Простота использования",
+            "id": "c1f0723c07b408d7",
+            "expanded": true,
+            "children": [
+              {
+                "topic": "Используйте его, как любое другое приложение для интеллект-карт",
+                "id": "c1f09612fd89920d"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "topic": "Основы",
+        "id": "bd1b66c4b56754d9",
+        "direction": 0,
+        "expanded": true,
+        "children": [
+          {
+            "topic": "Tab — создать дочерний узел",
+            "id": "bd1b6892bcab126a"
+          },
+          {
+            "topic": "Enter — создать соседний узел",
+            "id": "bd1b6b632a434b27"
+          },
+          {
+            "topic": "Del — удалить узел",
+            "id": "bd1b983085187c0a"
+          }
+        ]
+      },
+      {
+        "topic": "Режим фокуса",
+        "id": "bd1b9b94a9a7a913",
+        "direction": 1,
+        "expanded": true,
+        "children": [
+          {
+            "topic": "Щёлкните правой кнопкой мыши и выберите «Режим фокуса»",
+            "id": "bd1bb2ac4bbab458"
+          },
+          {
+            "topic": "Щёлкните правой кнопкой мыши и выберите «Отменить режим фокуса»",
+            "id": "bd1bb4b14d6697c3"
+          }
+        ]
+      },
+      {
+        "topic": "Левое меню",
+        "id": "bd1b9d1816ede134",
+        "direction": 0,
+        "expanded": true,
+        "children": [
+          {
+            "topic": "Расположение узлов",
+            "id": "bd1ba11e620c3c1a",
+            "expanded": true,
+            "children": [
+              {
+                "topic": "Слева",
+                "id": "bd1c1cb51e6745d3"
+              },
+              {
+                "topic": "Справа",
+                "id": "bd1c1e12fd603ff6"
+              },
+              {
+                "topic": "Слева и справа",
+                "id": "bd1c1f03def5c97b"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "topic": "Нижнее меню",
+        "id": "bd1ba66996df4ba4",
+        "direction": 1,
+        "expanded": true,
+        "children": [
+          {
+            "topic": "Полноэкранный режим",
+            "id": "bd1ba81d9bc95a7e"
+          },
+          {
+            "topic": "Вернуться к центру",
+            "id": "bd1babdd5c18a7a2"
+          },
+          {
+            "topic": "Увеличить",
+            "id": "bd1bae68e0ab186e"
+          },
+          {
+            "topic": "Уменьшить",
+            "id": "bd1bb06377439977"
+          }
+        ]
+      },
+      {
+        "topic": "Связь",
+        "id": "bd1beff607711025",
+        "direction": 0,
+        "expanded": true,
+        "children": [
+          {
+            "topic": "Щёлкните правой кнопкой мыши и выберите «Связь»",
+            "id": "bd1bf320da90046a"
+          },
+          {
+            "topic": "Щёлкните целевой узел, с которым нужно установить связь",
+            "id": "bd1bf6f94ff2e642"
+          },
+          {
+            "topic": "Измените связь с помощью контрольных точек",
+            "id": "bd1c0c4a487bd036"
+          }
+        ]
+      },
+      {
+        "topic": "Стиль узла",
+        "id": "bd1c217f9d0b20bd",
+        "direction": 0,
+        "expanded": true,
+        "children": [
+          {
+            "topic": "Размер шрифта",
+            "id": "bd1c24420cd2c2f5",
+            "style": {
+              "fontSize": "32",
+              "color": "#3298db"
+            }
+          },
+          {
+            "topic": "Цвет шрифта",
+            "id": "bd1c2a59b9a2739c",
+            "style": {
+              "color": "#c0392c"
+            }
+          },
+          {
+            "topic": "Цвет фона",
+            "id": "bd1c2de33f057eb4",
+            "style": {
+              "color": "#bdc3c7",
+              "background": "#2c3e50"
+            }
+          },
+          {
+            "topic": "Добавить теги",
+            "id": "bd1cff58364436d0",
+            "tags": [
+              "Завершено"
+            ]
+          },
+          {
+            "topic": "Добавить значки",
+            "id": "bd1d0317f7e8a61a",
+            "icons": [
+              "😂"
+            ],
+            "tags": [
+              "www"
+            ]
+          },
+          {
+            "topic": "Полужирный",
+            "id": "bd41fd4ca32322a4",
+            "style": {
+              "fontWeight": "bold"
+            }
+          },
+          {
+            "topic": "Гиперссылка",
+            "id": "bd41fd4ca32322a5",
+            "hyperLink": "https://github.com/ssshooter/mind-elixir-core"
+          }
+        ]
+      },
+      {
+        "topic": "Перетаскивание узлов",
+        "id": "bd1f03fee1f63bc6",
+        "direction": 1,
+        "expanded": true,
+        "children": [
+          {
+            "topic": "Перетащите узел на другой узел — первый станет дочерним для второго",
+            "id": "bd1f07c598e729dc"
+          }
+        ]
+      },
+      {
+        "topic": "Экспорт данных",
+        "id": "beeb7586973430db",
+        "direction": 1,
+        "expanded": true,
+        "children": [
+          {
+            "topic": "JSON",
+            "id": "beeb784cc189375f"
+          },
+          {
+            "topic": "HTML",
+            "id": "beeb7a6bec2d68f5"
+          },
+          {
+            "topic": "SVG",
+            "id": "beeb7a6bec2d68e6"
+          }
+        ]
+      },
+      {
+        "topic": "Внимание",
+        "id": "bd42dad21aaf6bae",
+        "direction": 0,
+        "style": {
+          "background": "#f1c40e"
+        },
+        "expanded": true,
+        "children": [
+          {
+            "topic": "Сохраняйте только вручную",
+            "id": "bd42e1d0163ebf04",
+            "expanded": true,
+            "children": [
+              {
+                "topic": "Кнопка сохранения в правом верхнем углу",
+                "id": "bd42e619051878b3",
+                "branchColor": "green",
+                "expanded": true,
+                "children": []
+              },
+              {
+                "topic": "ctrl + S",
+                "id": "bd42e97d7ac35e99"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "expanded": true
+  },
+  "arrows": [
+    {
+      "id": "ac5fb1df7345e9c4",
+      "label": "Отобразить",
+      "from": "beeb784cc189375f",
+      "to": "beeb7a6bec2d68f5",
+      "delta1": {
+        "x": 142.8828125,
+        "y": -57
+      },
+      "delta2": {
+        "x": 146.1171875,
+        "y": 45
+      }
+    }
+  ],
+  "summaries": [
+    {
+      "id": "a5e68e6a2ce1b648",
+      "parent": "bd42e1d0163ebf04",
+      "start": 0,
+      "end": 1,
+      "text": "сводка"
+    },
+    {
+      "id": "a5e6978f1bc69f4a",
+      "parent": "bd4313fbac40284b",
+      "start": 3,
+      "end": 5,
+      "text": "сводка"
+    }
+  ],
+  "direction": 0,
+  "theme": {
+    "name": "Dark",
+    "type": "dark",
+    "palette": [
+      "#848FA0",
+      "#748BE9",
+      "#D2F9FE",
+      "#4145A5",
+      "#789AFA",
+      "#706CF4",
+      "#EF987F",
+      "#775DD5",
+      "#FCEECF",
+      "#DA7FBC"
+    ],
+    "cssVar": {
+      "--main-color": "#ffffff",
+      "--main-bgcolor": "#4c4f69",
+      "--color": "#cccccc",
+      "--bgcolor": "#252526",
+      "--panel-color": "#ffffff",
+      "--panel-bgcolor": "#2d3748",
+      "--panel-border-color": "#696969"
+    }
+  }
+}

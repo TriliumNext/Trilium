@@ -336,10 +336,20 @@ async function initialize(): Promise<void> {
                 backup: new StandaloneBackupService(coreModule!.options),
                 translations: translationProvider,
                 schema: schemaModule.default,
-                getDemoArchive: async () => {
-                    const response = await fetch("/server-assets/db/demo.zip");
-                    if (!response.ok) return null;
-                    return new Uint8Array(await response.arrayBuffer());
+                getDemoArchive: async (locale?: string) => {
+                    const readZipResponse = async (res: Response): Promise<Uint8Array | null> => {
+                        if (!res.ok || res.headers.get("content-type")?.includes("text/html")) {
+                            return null;
+                        }
+                        const bytes = new Uint8Array(await res.arrayBuffer());
+                        // Reject HTML/SPA fallbacks that return 200 without a ZIP PK header.
+                        return bytes.length >= 2 && bytes[0] === 0x50 && bytes[1] === 0x4b ? bytes : null;
+                    };
+                    if (locale && locale !== "en") {
+                        const localized = await readZipResponse(await fetch(`/server-assets/db/demo-${locale}.zip`));
+                        if (localized) return localized;
+                    }
+                    return readZipResponse(await fetch("/server-assets/db/demo.zip"));
                 },
                 inAppHelp: inAppHelpProvider,
                 image: (await import("./services/image_provider.js")).standaloneImageProvider,

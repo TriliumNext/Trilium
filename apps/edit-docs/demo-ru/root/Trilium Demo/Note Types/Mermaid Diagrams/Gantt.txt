@@ -1,0 +1,8 @@
+gantt
+section Раздел
+Завершено :done,    des1, 2014-01-06,2014-01-08
+В работе        :active,  des2, 2014-01-07, 3d
+Параллельно 1   :         des3, after des1, 1d
+Параллельно 2   :         des4, after des1, 1d
+Параллельно 3   :         des5, after des3, 1d
+Параллельно 4   :         des6, after des4, 1d

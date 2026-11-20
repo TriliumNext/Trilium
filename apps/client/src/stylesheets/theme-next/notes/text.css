@@ -1405,3 +1405,15 @@ html .note-detail-editable-text > :first-child:not(figure, .include-note, hr) {
 .note-list-widget {
     outline: 0 !important;
 }
+
+.ck-content blockquote.help-outdated-banner {
+    border: 1px solid rgba(229, 57, 53, 0.65);
+    border-left: 4px solid #e53935;
+    background-color: rgba(229, 57, 53, 0.14);
+    color: #ff6b6b;
+}
+
+.ck-content blockquote.help-outdated-banner a {
+    color: #ff8a80;
+    font-weight: 600;
+}

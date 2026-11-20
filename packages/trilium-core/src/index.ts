@@ -205,7 +205,7 @@ export async function initializeCore({ dbConfig, executionContext, crypto, zip, 
     zipExportProviderFactory: ZipExportProviderFactory,
     messaging?: MessagingProvider,
     request?: RequestProvider,
-    getDemoArchive?: () => Promise<Uint8Array | null>,
+    getDemoArchive?: (locale?: string) => Promise<Uint8Array | null>,
     inAppHelp?: InAppHelpProvider,
     extraAppInfo?: {
         nodeVersion: string;

@@ -14,9 +14,13 @@ describe("StandaloneInAppHelpProvider", () => {
         const provider = new StandaloneInAppHelpProvider();
         expect(provider.getHelpContent()).toEqual({});
 
-        const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            new Response(JSON.stringify({ _help_page: "<p>Body</p>" }), { status: 200 })
-        );
+        const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+            const url = String(input);
+            if (url.endsWith("/help_locales.json")) {
+                return new Response(JSON.stringify(["en"]), { status: 200 });
+            }
+            return new Response(JSON.stringify({ _help_page: "<p>Body</p>" }), { status: 200 });
+        });
         await provider.load();
 
         expect(fetchSpy).toHaveBeenCalledWith("/server-assets/help/help_content.json");

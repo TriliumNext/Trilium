@@ -1,0 +1,7 @@
+span.fancytree-node.todo .fancytree-title {
+    color: red !important;
+}
+
+span.fancytree-node.done .fancytree-title {
+    color: green !important;
+}

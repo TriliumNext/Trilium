@@ -1,5 +1,6 @@
 import type { HelpBundle, HiddenSubtreeItem } from "@triliumnext/commons";
 import { InAppHelpProvider } from "@triliumnext/core";
+import i18next from "i18next";
 
 import helpMeta from "../../../server/src/assets/help/help_meta.json";
 
@@ -7,24 +8,41 @@ import helpMeta from "../../../server/src/assets/help/help_meta.json";
 const HELP_ASSETS = "server-assets/help";
 
 /**
- * Standalone in-app help provider, reading the same two artifacts the server does: the note tree
+ * Standalone in-app help provider, reading the same artifacts the server does: the note tree
  * `edit-docs` builds from the User Guide, and the rendered content of its pages.
  *
- * The tree is inlined by the bundler, because the subtree is built synchronously on every becca
- * load. The content is not — it is an order of magnitude larger and only needed once a page is
- * opened or searched — so it is fetched by {@link load} during worker startup. That is also the
- * last moment it can be: by the time anything asks for a page, `getContent` is synchronous.
+ * The default (English) tree is inlined by the bundler, because the subtree is built synchronously
+ * on every becca load. Localized trees and all content bundles are fetched by {@link load} during
+ * worker startup: they are not needed before then, and `getContent`/`getSubtree` are synchronous
+ * by the time anything reads them. Languages without a translation fall back to the English
+ * artifacts.
  */
 export default class StandaloneInAppHelpProvider extends InAppHelpProvider {
 
-    private content: HelpBundle = {};
+    private defaultMeta = helpMeta as HiddenSubtreeItem[];
+    private metaByLocale = new Map<string, HiddenSubtreeItem[]>();
+    private contentByLocale = new Map<string, HelpBundle>();
+    private availableLocales = new Set<string>([ "en" ]);
+    private pendingLoads = new Map<string, Promise<void>>();
 
-    getHelpHiddenSubtreeData(): HiddenSubtreeItem[] {
-        return helpMeta as HiddenSubtreeItem[];
+    getHelpHiddenSubtreeData(locale?: string): HiddenSubtreeItem[] {
+        if (locale) {
+            const localized = this.metaByLocale.get(locale);
+            if (localized) {
+                return localized;
+            }
+        }
+        return this.defaultMeta;
     }
 
-    getHelpContent(): HelpBundle {
-        return this.content;
+    getHelpContent(locale?: string): HelpBundle {
+        if (locale) {
+            const localized = this.contentByLocale.get(locale);
+            if (localized) {
+                return localized;
+            }
+        }
+        return this.contentByLocale.get("en") ?? {};
     }
 
     getHelpAssetBase(): string {
@@ -42,20 +60,70 @@ export default class StandaloneInAppHelpProvider extends InAppHelpProvider {
     }
 
     /**
-     * Loads the page content. Failing costs the pages their bodies while the tree, the titles and
-     * the navigation keep working, so it is logged rather than allowed to fail startup.
+     * Loads the English fallback and the active display language; other shipped languages are
+     * fetched lazily via {@link ensureLocale} when the user switches language.
      */
-    async load(): Promise<void> {
+    async load(preferredLocale = i18next.language || "en"): Promise<void> {
         try {
-            const response = await fetch(`/${HELP_ASSETS}/help_content.json`);
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
+            const locales = await this.loadLocales();
+            this.availableLocales = new Set(locales.length ? locales : [ "en" ]);
+            const toLoad = [ "en" ];
+            if (preferredLocale !== "en" && this.availableLocales.has(preferredLocale)) {
+                toLoad.push(preferredLocale);
             }
-
-            this.content = await response.json() as HelpBundle;
+            await Promise.all(toLoad.map((locale) => this.ensureLocale(locale)));
         } catch (e) {
             console.warn("[Worker] In-app help content could not be loaded:", e);
         }
+    }
+
+    async ensureLocale(locale: string): Promise<void> {
+        if (!this.availableLocales.has(locale) || this.contentByLocale.has(locale)) {
+            return;
+        }
+        const existing = this.pendingLoads.get(locale);
+        if (existing) {
+            return existing;
+        }
+        const task = this.loadLocale(locale)
+            .catch((e) => {
+                console.warn("[Worker] In-app help content could not be loaded:", e);
+            })
+            .finally(() => {
+                this.pendingLoads.delete(locale);
+            });
+        this.pendingLoads.set(locale, task);
+        return task;
+    }
+
+    /** The languages the shipped assets carry a translation for (`help_locales.json`). */
+    private async loadLocales(): Promise<string[]> {
+        try {
+            const response = await fetch(`/${HELP_ASSETS}/help_locales.json`);
+            if (!response.ok || response.headers.get("content-type")?.includes("text/html")) {
+                return [ "en" ];
+            }
+            const parsed = await response.json();
+            return Array.isArray(parsed) && parsed.length > 0 ? parsed as string[] : [ "en" ];
+        } catch {
+            return [ "en" ];
+        }
+    }
+
+    private async loadLocale(locale: string): Promise<void> {
+        const suffix = locale === "en" ? "" : `.${locale}`;
+        const [ metaResponse, contentResponse ] = await Promise.all([
+            fetch(`/${HELP_ASSETS}/help_meta${suffix}.json`),
+            fetch(`/${HELP_ASSETS}/help_content${suffix}.json`)
+        ]);
+
+        if (!contentResponse.ok) {
+            throw new Error(`HTTP ${contentResponse.status}`);
+        }
+
+        if (metaResponse.ok) {
+            this.metaByLocale.set(locale, await metaResponse.json() as HiddenSubtreeItem[]);
+        }
+        this.contentByLocale.set(locale, await contentResponse.json() as HelpBundle);
     }
 }

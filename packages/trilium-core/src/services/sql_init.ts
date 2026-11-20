@@ -19,13 +19,21 @@ import { isSetupRequested, leaveSetupMode } from "./setup_mode";
 export const dbReady = deferred<void>();
 
 let schema: string;
-let getDemoArchive: (() => Promise<Uint8Array | null>) | null = null;
+/**
+ * Resolves the demo archive to import at first start. Receives the display language chosen
+ * during setup so a localized demo (`demo-<locale>.zip`) can be preferred over the default
+ * English `demo.zip`; implementations fall back to the default archive when no localized
+ * variant exists for the locale.
+ */
+export type DemoArchiveProvider = (locale?: string) => Promise<Uint8Array | null>;
+
+let getDemoArchive: DemoArchiveProvider | null = null;
 
 export function initSchema(schemaStr: string) {
     schema = schemaStr;
 }
 
-export function initDemoArchive(fn: () => Promise<Uint8Array | null>) {
+export function initDemoArchive(fn: DemoArchiveProvider) {
     getDemoArchive = fn;
 }
 
@@ -145,6 +153,9 @@ async function createInitialDatabase(skipDemoDb?: boolean, locale?: string) {
     const { initDocumentOptions, initNewDocumentOptions, initNotSyncedOptions, initStartupOptions } = await import("./options_init.js");
     const { load: loadBecca } = await import("../becca/becca_loader.js");
 
+    // Switch i18next before creating the root note and hidden subtree so initial titles use `locale`.
+    await applySetupLanguage(locale);
+
     const sql = getSql();
     const log = getLog();
     sql.transactional(() => {
@@ -159,7 +170,7 @@ async function createInitialDatabase(skipDemoDb?: boolean, locale?: string) {
 
         rootNote = new BNote({
             noteId: "root",
-            title: "root",
+            title: i18next.t("notes.root-note", { defaultValue: "root" }),
             type: "text",
             mime: "text/html"
         }).save();
@@ -187,12 +198,6 @@ async function createInitialDatabase(skipDemoDb?: boolean, locale?: string) {
         passwordService.resetPassword();
     });
 
-    // Persisting the `locale` option above only records the choice in the DB; it does not switch the
-    // active i18next language. Switch it now, before `checkHiddenSubtree` builds the built-in titles,
-    // otherwise every system note (Options, Launch Bar, templates, Help) is created in English regardless
-    // of the language selected during setup.
-    await applySetupLanguage(locale);
-
     // Check hidden subtree.
     // This ensures the existence of system templates, for the demo content.
     console.log("Checking hidden subtree at first start.");
@@ -203,7 +208,7 @@ async function createInitialDatabase(skipDemoDb?: boolean, locale?: string) {
     // Import demo content.
     if (!skipDemoDb && getDemoArchive) {
         log.info("Importing demo content...");
-        const demoFile = await getDemoArchive();
+        const demoFile = await getDemoArchive(locale);
         if (demoFile) {
             const { default: zipImportService } = await import("./import/zip.js");
             const dummyTaskContext = new TaskContext("no-progress-reporting", "importNotes", null);

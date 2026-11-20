@@ -8,6 +8,13 @@ noteMappings:
     # the application injects, and the build renders the page content from the same files.
     helpMeta: "apps/server/src/assets/help/help_meta.json"
     helpContent: "apps/server/src/assets/help/help_content.json"
+    # Localized in-app help: built from a translated markdown export with the same note IDs;
+    # the application serves it to users whose display language is Russian.
+    helpLocales:
+      ru:
+        path: "docs/User Guide/ru"
+        helpMeta: "apps/server/src/assets/help/help_meta.ru.json"
+        helpContent: "apps/server/src/assets/help/help_content.ru.json"
     # Generated from the spec on every import, so edits to these pages are overwritten.
     openApiPages:
       - noteId: "9qPsTWBorUhQ" # ETAPI (REST API) › API Reference

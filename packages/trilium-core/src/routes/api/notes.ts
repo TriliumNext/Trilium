@@ -11,6 +11,7 @@ import { t } from "i18next";
 import type { Request } from "../../http_interface";
 
 import blobService from "../../services/blob";
+import { getHelpNoteContent } from "../../services/in_app_help.js";
 import {
     getBlockRangeContent, replaceBlockRangeContent, replaceBlockRangeOnBase
 } from "../../services/block_ranges";
@@ -36,7 +37,19 @@ function getNote(req: Request<{ noteId: string }>) {
 }
 
 function getNoteBlob(req: Request<{ noteId: string }>) {
-    return blobService.getBlobPojo("notes", req.params.noteId);
+    const { noteId } = req.params;
+    const requestedLocale = typeof req.query?.locale === "string" ? req.query.locale : undefined;
+    if (requestedLocale !== undefined && noteId.startsWith("_help_")) {
+        const pojo = blobService.getBlobPojo("notes", noteId);
+        const content = getHelpNoteContent(noteId, requestedLocale) ?? "";
+        return {
+            ...pojo,
+            content,
+            blobId: hashedBlobId(content),
+            contentLength: content.length
+        };
+    }
+    return blobService.getBlobPojo("notes", noteId);
 }
 
 function getNoteMetadata(req: Request<{ noteId: string }>) {

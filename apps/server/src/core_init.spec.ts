@@ -60,7 +60,7 @@ type CoreInitArgs = {
         onTransactionRollback(): void;
     };
     log: ServerLogService;
-    getDemoArchive(): Promise<Uint8Array>;
+    getDemoArchive(locale?: string): Promise<Uint8Array>;
     [key: string]: unknown;
 };
 
