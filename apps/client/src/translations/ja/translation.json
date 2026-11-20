@@ -3060,7 +3060,11 @@
     "annotation_text_box": "{{pageNumber}} のテキストボックス",
     "copy_reference": "リンクをコピー",
     "page_reference": "{{pageNumber}} ページ",
-    "annotation_reference": "{{pageNumber}} ページの注釈"
+    "annotation_reference": "{{pageNumber}} ページの注釈",
+    "pages_title": "ページ",
+    "annotations_title": "注釈",
+    "attachments_title": "添付ファイル",
+    "layers_title": "レイヤー"
   },
   "platform_indicator": {
     "available_on": "{{platform}} で利用可能"
