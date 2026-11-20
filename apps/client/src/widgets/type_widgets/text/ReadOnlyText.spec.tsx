@@ -84,11 +84,15 @@ vi.mock("@triliumnext/ckeditor5/src/plugins/table_sticky_header_read_only.js", (
 vi.stubGlobal("logError", vi.fn());
 vi.stubGlobal("logInfo", vi.fn());
 
-function setupHarness({ isVisible: initialIsVisible, language }: { isVisible: boolean; language?: string }) {
+function setupHarness({ isVisible: initialIsVisible, language, content = "<p>hello</p>" }: {
+    isVisible: boolean;
+    language?: string;
+    content?: string;
+}) {
     const note = buildNote({
         title: "Big note",
         type: "text",
-        content: "<p>hello</p>",
+        content,
         ...(language ? { "#language": language } : {})
     });
 
@@ -168,6 +172,21 @@ describe("ReadOnlyText reacting to content changes (#10575)", () => {
         expect(harness.getBlobSpy).toHaveBeenCalledTimes(1);
         // The initial fetch is exactly what the loading overlay exists for.
         expect(harness.contentLoadStates).toEqual([ "loading", "loaded" ]);
+    });
+
+    it("publishes its headings for the scroll rail while shown", async () => {
+        const harness = setupHarness({
+            isVisible: true, content: "<h2>Plan</h2><p>hello</p><h3>Detail</h3>"
+        });
+        cleanupContainer = harness.container;
+
+        await harness.mount();
+        const layer = harness.noteContext.getContextData("scrollRailHeadings");
+        expect(layer?.source.readTargets())
+            .toEqual([ ...harness.container.querySelectorAll("h2, h3") ]);
+        expect(layer?.source.readTargets()).toHaveLength(2);
+        await harness.mount(false);
+        expect(harness.noteContext.getContextData("scrollRailHeadings")).toBeUndefined();
     });
 
     it("ignores the echo of a save made by its own component (no refetch, no overlay)", async () => {

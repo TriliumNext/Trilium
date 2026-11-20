@@ -120,7 +120,7 @@ export interface NoteContextDataMap {
     saveState: {
         state: SaveState;
     };
-    /** Published by the Outline while the pointer is over it, for the scroll rail of the split. */
+    /** Published by the shown text view of the note, for the heading dots of the scroll rail. */
     scrollRailHeadings: ScrollRailLayer;
     /** Published by the find bar while a search has matches, for the scroll rail of the split. */
     scrollRailFind: ScrollRailLayer;

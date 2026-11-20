@@ -1,10 +1,14 @@
+import { h, render } from "preact";
+import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type NoteContext from "../components/note_context";
 import { revealElement } from "../services/bookmark_jump";
 import { rectReads, resetLayoutRecords, scrollCalls, stubBox } from "../test/layout_stubs";
 import type { RailMetrics } from "./scroll_rail";
 import {
-    drawRows, findRow, goToTarget, mapIntoClip, ScrollRailLayer, ScrollRailLocator, toRow, toRows
+    DOT_SCALE, drawRows, findRow, getHeadingLevel, goToTarget, mapIntoClip, ScrollRailLayer,
+    ScrollRailLocator, toRow, toRows, useScrollRailHeadings
 } from "./scroll_rail_markers";
 
 vi.mock("../services/bookmark_jump", () => ({ revealElement: vi.fn() }));
@@ -51,8 +55,7 @@ describe("drawRows", () => {
         const metrics: RailMetrics = { railHeight: 100, clientHeight: 100, scrollHeight: 1000 };
         const calls: { style: string; rect: number[] }[] = [];
         const context = {
-            fillStyle: "",
-            clearRect: vi.fn(),
+            ...fakeContext(),
             fillRect(...rect: number[]) {
                 calls.push({ style: String(this.fillStyle), rect });
             }
@@ -81,7 +84,126 @@ describe("drawRows", () => {
         expect(calls[1].rect).toEqual([ 1, 40, 13, 3 ]);
         expect(calls[3].rect).toEqual([ 1, 0, 13, 5 ]);
     });
+
+    it("draws a centered dot per row, sized by its highest heading, inside the canvas", () => {
+        const metrics: RailMetrics = { railHeight: 100, clientHeight: 100, scrollHeight: 1000 };
+        const dots: { style: string; arc: number[] }[] = [];
+        let arc: number[] = [];
+        const context = {
+            ...fakeContext(),
+            arc(x: number, y: number, radius: number, start: number, end: number) {
+                arc = [ x, y, radius, start, end ];
+            },
+            fill() {
+                dots.push({ style: String(this.fillStyle), arc });
+            }
+        };
+
+        drawRows(context, { width: 12, height: 100, ratio: 2 }, [ {
+            rows: toRows([ 0, 500, 503, null, 990 ], metrics), emphasized: null,
+            color: "text", emphasisColor: "text", levels: [ 3, 4, 1, 2, 2 ]
+        } ]);
+
+        // In device px: an H1 dot is 12 across, H2 6 and H3 4.8, in the middle of the rail, and
+        // fully on the canvas at both ends.
+        expect(dots).toEqual([
+            {
+                style: "text",
+                arc: [ 12, expect.closeTo(2.4), expect.closeTo(2.4), 0, 2 * Math.PI ]
+            },
+            { style: "text", arc: [ 12, 100, 6, 0, 2 * Math.PI ] },
+            { style: "text", arc: [ 12, 197, 3, 0, 2 * Math.PI ] }
+        ]);
+        expect(context.fillRect).not.toHaveBeenCalled();
+    });
+
+    it("takes the level of a heading from its tag, and the deepest for any other target", () => {
+        const levels = [ "h1", "h2", "h3", "h4", "h5", "h6", "p" ]
+            .map((tag) => getHeadingLevel(document.createElement(tag)));
+        expect(levels).toEqual([ 1, 2, 3, 4, 5, 6, 6 ]);
+        expect(DOT_SCALE).toEqual([ 1, 0.5, 0.4, 0.3, 0.2, 0.1 ]);
+        expect(getHeadingLevel(document.createRange())).toBe(6);
+        expect(getHeadingLevel(null)).toBe(6);
+    });
 });
+
+describe("useScrollRailHeadings", () => {
+    it("publishes the headings outside included notes while shown, once more for each note",
+        () => {
+            const root = document.body.appendChild(document.createElement("div"));
+            root.innerHTML = "<h2>Plan</h2><p>Text</p>"
+                + "<section class=\"include-note\"><h2>Included</h2></section>"
+                + "<div><h4>Detail</h4></div><h1>End</h1>";
+            const noteContext = recordingContext();
+            const container = document.body.appendChild(document.createElement("div"));
+            const show = (noteId: string, isShown: boolean) => act(() => {
+                render(h(HeadingsProbe, { noteContext, noteId, isShown, root }), container);
+            });
+
+            show("a", false);
+            expect(noteContext.setContextData).not.toHaveBeenCalled();
+            show("a", true);
+            const layer = noteContext.data.get("scrollRailHeadings");
+            expect(layer).toBeInstanceOf(ScrollRailLayer);
+            expect(layer?.source.readTargets()
+                .map((heading) => (heading instanceof Element ? heading.textContent : null)))
+                .toEqual([ "Plan", "Detail", "End" ]);
+
+            // A new note clears the context data.
+            noteContext.data.clear();
+            show("b", true);
+            expect(noteContext.data.get("scrollRailHeadings")).toBe(layer);
+
+            // The other text view of the split published its own layer.
+            const other = new ScrollRailLayer({ readTargets: () => [] });
+            noteContext.data.set("scrollRailHeadings", other);
+            show("b", false);
+            expect(noteContext.data.get("scrollRailHeadings")).toBe(other);
+
+            show("b", true);
+            act(() => render(null, container));
+            expect(noteContext.data.has("scrollRailHeadings")).toBe(false);
+        });
+});
+
+interface HeadingsProbeProps {
+    noteContext: ReturnType<typeof recordingContext>;
+    noteId: string;
+    isShown: boolean;
+    root: Element;
+}
+
+function HeadingsProbe({ noteContext, noteId, isShown, root }: HeadingsProbeProps) {
+    useScrollRailHeadings(noteContext as unknown as NoteContext, noteId, isShown, () => root);
+    return null;
+}
+
+/** A note context that keeps its context data in `data`. */
+function recordingContext() {
+    const data = new Map<string, ScrollRailLayer>();
+    return {
+        data,
+        setContextData: vi.fn((key: string, value: ScrollRailLayer) => {
+            data.set(key, value);
+        }),
+        clearContextData: vi.fn((key: string) => {
+            data.delete(key);
+        }),
+        getContextData: (key: string) => data.get(key)
+    };
+}
+
+/** A canvas context that draws nothing. */
+function fakeContext() {
+    return {
+        fillStyle: "",
+        clearRect: vi.fn(),
+        fillRect: vi.fn(),
+        beginPath: vi.fn(),
+        arc: vi.fn(),
+        fill: vi.fn()
+    };
+}
 
 describe("mapIntoClip", () => {
     it("places a position in a pane by its offset in the pane's content", () => {

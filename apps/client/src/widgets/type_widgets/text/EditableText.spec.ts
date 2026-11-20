@@ -682,9 +682,10 @@ describe("EditableText", () => {
             heading.scrollIntoView = scrollIntoView;
         }
         const viewScope: ViewScope = { bookmark: "intro" };
+        const noteContext = createNoteContext({ notePath: "root/abc", viewScope });
         const show = (isVisible: boolean) => h(EditableText, {
             note: { noteId: "abc" } as FNote,
-            noteContext: { notePath: "root/abc", viewScope } as NoteContext,
+            noteContext,
             viewScope,
             ntxId: "ntx",
             parentComponent: undefined,
@@ -709,6 +710,31 @@ describe("EditableText", () => {
         await showAgain();
         expect(scrollIntoView).toHaveBeenCalledOnce();
         expect(viewScope.bookmark).toBeUndefined();
+    });
+
+    it("publishes the headings of its editor for the scroll rail while shown", async () => {
+        const root = document.createElement("div");
+        root.innerHTML = "<h2>Intro</h2><p>Text</p><h3>Detail</h3>";
+        const noteContext = createNoteContext({ notePath: "root/abc" });
+        const show = (isVisible: boolean) => h(EditableText, {
+            note: { noteId: "abc" } as FNote,
+            noteContext,
+            viewScope: undefined,
+            ntxId: "ntx",
+            parentComponent: undefined,
+            isVisible
+        });
+        const container = renderInto(show(true));
+        await vi.waitFor(() => expect(rendered.editor).toBeDefined());
+        const editorRef = rendered.editor?.editorRef;
+        if (editorRef) {
+            editorRef.current = createTextEditor("", root);
+        }
+
+        const layer = noteContext.getContextData("scrollRailHeadings");
+        expect(layer?.source.readTargets()).toEqual([ ...root.querySelectorAll("h2, h3") ]);
+        await act(() => render(show(false), container));
+        expect(noteContext.getContextData("scrollRailHeadings")).toBeUndefined();
     });
 });
 
@@ -887,6 +913,17 @@ function createApi(
 }
 
 /** A text editor that holds `data`, rendered into `root`. */
+/** A note context with `props` that keeps the data published on it. */
+function createNoteContext(props: Partial<NoteContext>) {
+    const data = new Map<string, unknown>();
+    return {
+        ...props,
+        setContextData: (key: string, value: unknown) => data.set(key, value),
+        getContextData: (key: string) => data.get(key),
+        clearContextData: (key: string) => data.delete(key)
+    } as unknown as NoteContext;
+}
+
 function createTextEditor(data: string, root = document.createElement("div")) {
     return {
         getData: vi.fn(() => data),

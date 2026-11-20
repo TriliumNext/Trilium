@@ -10,8 +10,8 @@ import {
     type ScrollRailBar, type ScrollRailKind
 } from "./scroll_rail";
 import {
-    drawRows, findRow, goToTarget, RANGE_MEASURE_LIMIT, type RowSet, type ScrollRailLayer,
-    ScrollRailLocator, type ScrollRailTarget, toRows
+    drawRows, findRow, getHeadingLevel, goToTarget, RANGE_MEASURE_LIMIT, type RowSet,
+    type ScrollRailLayer, ScrollRailLocator, type ScrollRailTarget, toRows
 } from "./scroll_rail_markers";
 
 /** Delay of a read after the last size signal or `refreshLater()`, in ms. */
@@ -98,6 +98,8 @@ interface LayerState {
     /** The targets of the last read, and the generation of the layer they were read at. */
     targets: ScrollRailTarget[];
     generation: number;
+    /** The heading level of each target, for a kind drawn as dots. */
+    levels: number[];
     places: (number | null)[];
     rows: RowSet;
 }
@@ -111,10 +113,10 @@ interface RailControllerOptions {
 const NO_ROWS: RowSet = { rows: [], markerRows: [] };
 
 /**
- * Reads the targets of the layers of a scroller and draws their lines on the track of `bar`. A
- * read runs after the next paint for `refresh()`, a published layer and a tab change, and 150 ms
- * after the last size signal of the bar, `refreshLater()` or scroll; never while the scroller is
- * hidden.
+ * Reads the targets of the layers of a scroller and draws their lines and dots on the track of
+ * `bar`. A read runs after the next paint for `refresh()`, a published layer and a tab change,
+ * and 150 ms after the last size signal of the bar, `refreshLater()` or scroll; never while the
+ * scroller is hidden.
  */
 export class RailController implements RailLines {
 
@@ -166,6 +168,7 @@ export class RailController implements RailLines {
                 unsubscribe: layer.subscribe((change) => this.onLayerChange(kind.key, change)),
                 targets: [],
                 generation: -1,
+                levels: [],
                 places: [],
                 rows: NO_ROWS
             });
@@ -181,9 +184,9 @@ export class RailController implements RailLines {
         this.draw();
     }
 
-    /** The line at `y` px down the track, within `distance`, or `null`. */
+    /** The line at `y` px down the track, within `distance`, or `null`. A dot is never hit. */
     hitTest(y: number, distance: number): RailHit | null {
-        const states = this.getOrderedStates();
+        const states = this.getOrderedStates().filter(({ kind }) => !kind.isHoverOnly);
         const found = findRow(states.map((state) => ({
             rows: state.rows,
             emphasized: this.getEmphasized(state)
@@ -308,6 +311,7 @@ export class RailController implements RailLines {
             if (!state.layer.isPaused) {
                 state.targets = state.layer.source.readTargets();
                 state.generation = state.layer.generation;
+                state.levels = state.kind.isHoverOnly ? state.targets.map(getHeadingLevel) : [];
             }
             const locator = new ScrollRailLocator(this.scroller,
                 state.targets.length > RANGE_MEASURE_LIMIT);
@@ -327,7 +331,8 @@ export class RailController implements RailLines {
 
     private update() {
         const states = [ ...this.states.values() ];
-        this.options.onLines(states.some((state) => state.rows.rows.length > 0));
+        this.options.onLines(states.some(({ kind, rows }) => !kind.isHoverOnly
+            && rows.rows.length > 0));
         this.draw();
     }
 
@@ -348,6 +353,7 @@ export class RailController implements RailLines {
         drawRows(context, { width, height, ratio }, this.getOrderedStates().map((state) => ({
             rows: state.rows,
             emphasized: this.getEmphasized(state),
+            levels: state.kind.isHoverOnly ? state.levels : undefined,
             ...this.getColors(state.kind, canvas)
         })));
     }
@@ -355,9 +361,10 @@ export class RailController implements RailLines {
     private getColors(kind: ScrollRailKind, probe: HTMLElement) {
         let colors = this.colors.get(kind.key);
         if (!colors) {
+            const color = resolveColor(probe, kind.color);
             colors = {
-                color: resolveColor(probe, kind.color),
-                emphasisColor: resolveColor(probe, kind.emphasisColor)
+                color,
+                emphasisColor: kind.emphasisColor ? resolveColor(probe, kind.emphasisColor) : color
             };
             this.colors.set(kind.key, colors);
         }

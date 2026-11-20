@@ -8,21 +8,32 @@ import { useColorScheme } from "./react/hooks/options";
 import { WithLazyModule } from "./react/LazyComponent";
 import type { ScrollRailLayer, ScrollRailTarget } from "./scroll_rail_markers";
 
-/** The kinds of markers, in drawing order, with the CSS variables of their colors. */
-export const SCROLL_RAIL_KINDS = [
+/** A kind of markers, with the CSS variables of its colors. */
+export interface ScrollRailKind {
+    key: "scrollRailHeadings" | "scrollRailFind";
+    color: string;
+    /** The color of the emphasized marker, else `color`. */
+    emphasisColor?: string;
+    /**
+     * Whether the markers are dots by heading level, drawn only while a mouse or a pen is over the
+     * rail. They take no press, and do not show the rail on a note that fits.
+     */
+    isHoverOnly?: boolean;
+}
+
+/** The kinds of markers, in drawing order. */
+export const SCROLL_RAIL_KINDS: readonly ScrollRailKind[] = [
     {
         key: "scrollRailHeadings",
         color: "--scroll-rail-heading-color",
-        emphasisColor: "--scroll-rail-heading-emphasis-color"
+        isHoverOnly: true
     },
     {
         key: "scrollRailFind",
         color: "--scroll-rail-find-color",
         emphasisColor: "--scroll-rail-find-emphasis-color"
     }
-] as const;
-
-export type ScrollRailKind = typeof SCROLL_RAIL_KINDS[number];
+];
 
 /** A layer that a note context publishes, with its kind. */
 export interface PublishedLayer {
@@ -35,7 +46,8 @@ const loadLines = () => import("./scroll_rail_body");
 /**
  * The scrollbar of a note split, with the markers that the split's note context publishes. Its
  * root is the first child of the scroller. It replaces the scroller's own scrollbar while the
- * scroller has `detail-has-end-margin`, and loads the lines of the markers with the first layer.
+ * scroller has `detail-has-end-margin`, and loads the lines of the markers with the first layer
+ * to draw.
  */
 export default function ScrollRail() {
     const hostRef = useRef<HTMLDivElement>(null);
@@ -50,6 +62,7 @@ export default function ScrollRail() {
     const [ bar, setBar ] = useState<ScrollRailBar | null>(null);
     const [ view, setView ] = useState<BarView>({ isOwned: false, isOverflowing: false });
     const [ hasLines, setHasLines ] = useState(false);
+    const [ isHovered, setIsHovered ] = useState(false);
 
     // The layout moves the host into the scroller after this effect has run, so the bar starts
     // at the first size report of the host.
@@ -83,12 +96,29 @@ export default function ScrollRail() {
         bar?.readTheme();
     }, [ bar, colorScheme ]);
 
-    const isLayered = view.isOwned && layers.length > 0;
+    const drawnLayers = isHovered ? layers : layers.filter(({ kind }) => !kind.isHoverOnly);
+    const isLayered = view.isOwned && drawnLayers.length > 0;
     const isRailShown = view.isOwned && (view.isOverflowing || (isLayered && hasLines));
 
     useLayoutEffect(() => {
         bar?.attach(railRef.current, handleRef.current);
     }, [ bar, isRailShown, view.isOverflowing ]);
+
+    useLayoutEffect(() => {
+        const rail = isRailShown ? railRef.current : null;
+        if (!rail) return;
+
+        // A tap is not a hover.
+        const onEnter = (event: PointerEvent) => setIsHovered(event.pointerType !== "touch");
+        const onLeave = () => setIsHovered(false);
+        rail.addEventListener("pointerenter", onEnter);
+        rail.addEventListener("pointerleave", onLeave);
+        return () => {
+            rail.removeEventListener("pointerenter", onEnter);
+            rail.removeEventListener("pointerleave", onLeave);
+            onLeave();
+        };
+    }, [ isRailShown ]);
 
     return (
         <div ref={hostRef} className="scroll-rail-host">
@@ -103,7 +133,7 @@ export default function ScrollRail() {
                     {({ default: ScrollRailLines }) => (
                         <ScrollRailLines
                             bar={bar}
-                            layers={layers}
+                            layers={drawnLayers}
                             railRef={railRef}
                             canvasRef={canvasRef}
                             isRailShown={isRailShown}
