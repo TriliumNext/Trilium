@@ -4,7 +4,7 @@ import type { Editor } from "ckeditor5";
 import {
     attachScrollableBar, createScrollableBar, type ScrollableBar, type ScrollableBarLabels
 } from "../scrollable_bar.js";
-import { CLASSES } from "./constants.js";
+import { CLASSES, TAB_CHANGE_EVENT } from "./constants.js";
 import type TabsEditing from "./tabs_editing.js";
 
 export interface ApplyTabsOptions {
@@ -122,7 +122,10 @@ export function getEditor(element: Element): Editor | null {
 }
 
 interface TabsBlock {
-    /** Shows the tab of `title` and scrolls the title into view. */
+    /**
+     * Shows the tab of `title` and scrolls the title into view. Fires {@link TAB_CHANGE_EVENT} on
+     * the block when it showed another tab before.
+     */
     activate(title: HTMLElement): void;
     bar: HTMLElement;
     viewport: HTMLElement;
@@ -175,10 +178,13 @@ function setUpBlock(block: HTMLElement, placeholder: string, scrollLabels: Scrol
     block.prepend(bar);
 
     const titles = tabs.map(({ title }) => title);
+    let shownTitle: HTMLElement | null = null;
     const tabsBlock: TabsBlock = {
         bar,
         viewport,
         activate(activeTitle) {
+            const isChange = shownTitle !== null && shownTitle !== activeTitle;
+            shownTitle = activeTitle;
             for (const { section, title } of tabs) {
                 const isActive = title === activeTitle;
                 section.classList.toggle(CLASSES.activeTab, isActive);
@@ -186,6 +192,9 @@ function setUpBlock(block: HTMLElement, placeholder: string, scrollLabels: Scrol
                 title.setAttribute("aria-expanded", String(isActive));
             }
             tabsBlock.scrollableBar?.reveal(activeTitle);
+            if (isChange) {
+                block.dispatchEvent(new Event(TAB_CHANGE_EVENT, { bubbles: true }));
+            }
         }
     };
     tabsBlocks.set(block, tabsBlock);

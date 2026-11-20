@@ -131,6 +131,8 @@ export default class CodeMirror extends EditorView {
     private vimCompartment: Compartment;
     private hasVimKeybindings: boolean;
     private searchPlugin?: SearchHighlighter | null;
+    /** The highlighter that the latest search installed. */
+    private latestSearchHighlighter: ReturnType<typeof createSearchHighlighter> | null = null;
     private sharedHistory: SharedHistory | null = null;
     private namedCompartments = new Map<string, Compartment>();
     /** Named completion sources aggregated into the editor's single autocompletion. */
@@ -575,18 +577,30 @@ export default class CodeMirror extends EditorView {
 
     /**
      * Highlights the matches of `searchTerm`. While `isActivating`, the match nearest the cursor
-     * becomes the active one and scrolls into view.
+     * becomes the active one and scrolls into view. Once `check` fails after the frame that this
+     * waits for, the search paints nothing and removes its highlighter, unless a newer search
+     * replaced it.
      */
     async performFind(
-        searchTerm: string, matchCase: boolean, wholeWord: boolean, isActivating = true
+        searchTerm: string, matchCase: boolean, wholeWord: boolean, isActivating = true,
+        check?: () => boolean
     ) {
         const plugin = createSearchHighlighter();
+        this.latestSearchHighlighter = plugin;
         this.dispatch({
             effects: this.searchHighlightCompartment.reconfigure(plugin)
         });
 
         // Wait for the plugin to activate in the next render cycle
         await new Promise(requestAnimationFrame);
+        if (check && !check()) {
+            if (this.latestSearchHighlighter === plugin) {
+                this.dispatch({ effects: this.searchHighlightCompartment.reconfigure([]) });
+                this.latestSearchHighlighter = null;
+            }
+            this.searchPlugin = null;
+            return { totalFound: 0, currentFound: 0 };
+        }
         const instance = this.plugin(plugin);
         instance?.searchFor(searchTerm, matchCase, wholeWord, isActivating);
         this.searchPlugin = instance;
