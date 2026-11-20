@@ -19,6 +19,8 @@ export interface ScrollRailKind {
     opacity?: number;
     /** Whether the rail reads the layer again after a change of the note's content. */
     isReadOnContentChange?: boolean;
+    /** Whether the rail shows only this layer while it is published. */
+    isExclusive?: boolean;
 }
 
 /** The kinds of markers, in drawing order. */
@@ -32,7 +34,8 @@ export const SCROLL_RAIL_KINDS: readonly ScrollRailKind[] = [
     {
         key: "scrollRailFind",
         color: "--scroll-rail-find-color",
-        emphasisColor: "--scroll-rail-find-emphasis-color"
+        emphasisColor: "--scroll-rail-find-emphasis-color",
+        isExclusive: true
     }
 ];
 
@@ -128,7 +131,7 @@ export default function ScrollRail() {
     );
 }
 
-/** The layers that `noteContext` publishes, in drawing order. */
+/** The layers that `noteContext` publishes, in drawing order, or only the first exclusive one. */
 function usePublishedLayers(noteContext: NoteContext | null | undefined) {
     const layers: PublishedLayer[] = [];
     // The list is constant, so the hooks run in the same order on every render.
@@ -138,7 +141,8 @@ function usePublishedLayers(noteContext: NoteContext | null | undefined) {
             layers.push({ kind, layer });
         }
     }
-    return layers;
+    const exclusive = layers.find(({ kind }) => kind.isExclusive);
+    return exclusive ? [ exclusive ] : layers;
 }
 
 /** A line under the pointer, as the lines' module found it at a press. */

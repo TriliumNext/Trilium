@@ -1066,48 +1066,56 @@ describe("ScrollRail lines", () => {
             expect(revealElement).toHaveBeenLastCalledWith(first, scroller);
         });
 
-    it("draws the highlights in their colors at half opacity, under the find lines", async () => {
-        mountRail();
-        const match = append(content, "p", { top: 100, height: 20 });
-        await publish({ readTargets: () => [ match ] });
-        const highlights = [
-            append(content, "span", { top: 100, height: 20 }),
-            append(content, "span", { top: 250, height: 20 })
-        ];
-        const colors = [ [ "yellow", "red" ], [ "blue" ] ];
-        await publish({
-            readTargets: () => highlights,
-            getColors: (index) => colors[index]
-        }, HIGHLIGHTS);
-        afterPaint();
-
-        expect(drawn.map(([ color, top, height, opacity ]) => [ color, top, height, opacity ]))
-            .toEqual([
-                [ "yellow", 99, 2, 0.5 ],
-                [ "red", 99, 2, 0.5 ],
-                [ "blue", 249, 2, 0.5 ],
-                [ expect.any(String), 99, 2, 1 ]
-            ]);
-
-        // A highlight line jumps to its text; the find line on top takes the shared row.
-        click(250);
-        expect(revealElement).toHaveBeenLastCalledWith(highlights[1], scroller);
-        click(100);
-        expect(revealElement).toHaveBeenLastCalledWith(match, scroller);
-    });
-
-    it("reads the highlights again once the content stops changing, and no other layer",
+    it("draws the highlights in their colors at half opacity, and hides them for the find lines",
         async () => {
             mountRail();
+            const highlights = [
+                append(content, "span", { top: 100, height: 20 }),
+                append(content, "span", { top: 250, height: 20 })
+            ];
+            const colors = [ [ "yellow", "red" ], [ "blue" ] ];
+            const readHighlights = vi.fn(() => highlights);
+            await publish({
+                readTargets: readHighlights,
+                getColors: (index) => colors[index]
+            }, HIGHLIGHTS);
+            afterPaint();
+            const highlightLines = [
+                [ "yellow", 99, 2, 0.5 ],
+                [ "red", 99, 2, 0.5 ],
+                [ "blue", 249, 2, 0.5 ]
+            ];
+            expect(drawn).toEqual(highlightLines);
+            click(250);
+            expect(revealElement).toHaveBeenLastCalledWith(highlights[1], scroller);
+
+            // While the find layer is published, only its lines show and take the presses.
             const match = append(content, "p", { top: 100, height: 20 });
-            const readFind = vi.fn(() => [ match ]);
-            await publish({ readTargets: readFind });
+            await publish({ readTargets: () => [ match ] });
+            afterPaint();
+            expect(drawn).toEqual([ [ expect.any(String), 99, 2, 1 ] ]);
+            vi.mocked(revealElement).mockClear();
+            click(250);
+            expect(revealElement).not.toHaveBeenCalled();
+            click(100);
+            expect(revealElement).toHaveBeenLastCalledWith(match, scroller);
+
+            // Once the find layer goes, the highlights are read again and show.
+            readHighlights.mockClear();
+            act(() => noteContext.clearContextData("scrollRailFind"));
+            afterPaint();
+            expect(readHighlights).toHaveBeenCalledOnce();
+            expect(drawn).toEqual(highlightLines);
+        });
+
+    it("reads the highlights again once the content stops changing, and no hidden layer",
+        async () => {
+            mountRail();
             const highlight = append(content, "span", { top: 200, height: 20 });
             const readHighlights = vi.fn(() => [ highlight ]);
             await publish({ readTargets: readHighlights, getColors: () => [ "yellow" ] },
                 HIGHLIGHTS);
             afterPaint();
-            readFind.mockClear();
             readHighlights.mockClear();
 
             const text = content.appendChild(document.createTextNode("text"));
@@ -1118,12 +1126,23 @@ describe("ScrollRail lines", () => {
             expect(readHighlights).not.toHaveBeenCalled();
             advance(50);
             expect(readHighlights).toHaveBeenCalledOnce();
-            expect(readFind).not.toHaveBeenCalled();
 
             // The bar's own writes in the host change no content.
             act(() => mutate(host, "attributes", "style"));
             advance(READ_DELAY);
             expect(readHighlights).toHaveBeenCalledOnce();
+
+            // The find layer hides the highlights, and is not read on a change of the content.
+            const match = append(content, "p", { top: 100, height: 20 });
+            const readFind = vi.fn(() => [ match ]);
+            await publish({ readTargets: readFind });
+            afterPaint();
+            readFind.mockClear();
+            readHighlights.mockClear();
+            act(() => mutate(text, "characterData"));
+            advance(READ_DELAY);
+            expect(readFind).not.toHaveBeenCalled();
+            expect(readHighlights).not.toHaveBeenCalled();
         });
 
     it("draws the lines under the handle, and gives a press on a line to the lines", async () => {
