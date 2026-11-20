@@ -11,9 +11,8 @@ import { rectReads, resetLayoutRecords, scrollCalls, stubBox } from "../test/lay
 import { ParentComponent } from "./react/react_utils";
 import type { RailMetrics } from "./scroll_rail";
 import {
-    DOT_SCALE, drawRows, findRow, getHeadingLevel, getHighlights, goToTarget, mapIntoClip,
-    ScrollRailLayer, ScrollRailLocator, toRow, toRows, useScrollRailHeadings,
-    useScrollRailHighlights
+    drawRows, findRow, getHighlights, goToTarget, mapIntoClip, ScrollRailLayer, ScrollRailLocator,
+    toRow, toRows, useScrollRailHighlights
 } from "./scroll_rail_markers";
 
 vi.mock("../services/bookmark_jump", () => ({ revealElement: vi.fn() }));
@@ -90,38 +89,6 @@ describe("drawRows", () => {
         expect(calls[3].rect).toEqual([ 1, 0, 13, 5 ]);
     });
 
-    it("draws a centered dot per row, sized by its highest heading, inside the canvas", () => {
-        const metrics: RailMetrics = { railHeight: 100, clientHeight: 100, scrollHeight: 1000 };
-        const dots: { style: string; arc: number[] }[] = [];
-        let arc: number[] = [];
-        const context = {
-            ...fakeContext(),
-            arc(x: number, y: number, radius: number, start: number, end: number) {
-                arc = [ x, y, radius, start, end ];
-            },
-            fill() {
-                dots.push({ style: String(this.fillStyle), arc });
-            }
-        };
-
-        drawRows(context, { width: 12, height: 100, ratio: 2 }, [ {
-            rows: toRows([ 0, 500, 503, null, 990 ], metrics), emphasized: null,
-            color: "text", emphasisColor: "text", levels: [ 3, 4, 1, 2, 2 ]
-        } ]);
-
-        // In device px: an H1 dot is 12 across, H2 6 and H3 4.8, in the middle of the rail, and
-        // fully on the canvas at both ends.
-        expect(dots).toEqual([
-            {
-                style: "text",
-                arc: [ 12, expect.closeTo(2.4), expect.closeTo(2.4), 0, 2 * Math.PI ]
-            },
-            { style: "text", arc: [ 12, 100, 6, 0, 2 * Math.PI ] },
-            { style: "text", arc: [ 12, 197, 3, 0, 2 * Math.PI ] }
-        ]);
-        expect(context.fillRect).not.toHaveBeenCalled();
-    });
-
     it("splits the line of a row into a segment per distinct color, at the layer's opacity", () => {
         const metrics: RailMetrics = { railHeight: 100, clientHeight: 100, scrollHeight: 1000 };
         const calls: { style: string; alpha: number; rect: number[] }[] = [];
@@ -158,54 +125,6 @@ describe("drawRows", () => {
             { style: "red", alpha: 1, rect: [ 1, 28, 10, 4 ] }
         ]);
     });
-
-    it("takes the level of a heading from its tag, and the deepest for any other target", () => {
-        const levels = [ "h1", "h2", "h3", "h4", "h5", "h6", "p" ]
-            .map((tag) => getHeadingLevel(document.createElement(tag)));
-        expect(levels).toEqual([ 1, 2, 3, 4, 5, 6, 6 ]);
-        expect(DOT_SCALE).toEqual([ 1, 0.5, 0.4, 0.3, 0.2, 0.1 ]);
-        expect(getHeadingLevel(document.createRange())).toBe(6);
-        expect(getHeadingLevel(null)).toBe(6);
-    });
-});
-
-describe("useScrollRailHeadings", () => {
-    it("publishes the headings outside included notes while shown, once more for each note",
-        () => {
-            const root = document.body.appendChild(document.createElement("div"));
-            root.innerHTML = "<h2>Plan</h2><p>Text</p>"
-                + "<section class=\"include-note\"><h2>Included</h2></section>"
-                + "<div><h4>Detail</h4></div><h1>End</h1>";
-            const noteContext = recordingContext();
-            const container = document.body.appendChild(document.createElement("div"));
-            const show = (noteId: string, isShown: boolean) => act(() => {
-                render(h(HeadingsProbe, { noteContext, noteId, isShown, root }), container);
-            });
-
-            show("a", false);
-            expect(noteContext.setContextData).not.toHaveBeenCalled();
-            show("a", true);
-            const layer = noteContext.data.get("scrollRailHeadings");
-            expect(layer).toBeInstanceOf(ScrollRailLayer);
-            expect(layer?.source.readTargets()
-                .map((heading) => (heading instanceof Element ? heading.textContent : null)))
-                .toEqual([ "Plan", "Detail", "End" ]);
-
-            // A new note clears the context data.
-            noteContext.data.clear();
-            show("b", true);
-            expect(noteContext.data.get("scrollRailHeadings")).toBe(layer);
-
-            // The other text view of the split published its own layer.
-            const other = new ScrollRailLayer({ readTargets: () => [] });
-            noteContext.data.set("scrollRailHeadings", other);
-            show("b", false);
-            expect(noteContext.data.get("scrollRailHeadings")).toBe(other);
-
-            show("b", true);
-            act(() => render(null, container));
-            expect(noteContext.data.has("scrollRailHeadings")).toBe(false);
-        });
 });
 
 describe("getHighlights", () => {
@@ -285,21 +204,44 @@ describe("useScrollRailHighlights", () => {
             act(() => render(null, container));
             expect(noteContext.data.has("scrollRailHighlights")).toBe(false);
         });
+
+    it("publishes once more for each note, and keeps a layer the other view published since",
+        () => {
+            loadHighlightsList([ "color" ]);
+            const root = document.body.appendChild(document.createElement("div"));
+            const noteContext = recordingContext();
+            const parent = new Component();
+            const container = document.body.appendChild(document.createElement("div"));
+            const show = (noteId: string, isShown: boolean) => act(() => {
+                render(h(ParentComponent.Provider, { value: parent },
+                    h(HighlightsProbe, { noteContext, noteId, isShown, root })), container);
+            });
+
+            show("a", true);
+            const layer = noteContext.data.get("scrollRailHighlights");
+            expect(layer).toBeInstanceOf(ScrollRailLayer);
+
+            // A new note clears the context data.
+            noteContext.data.clear();
+            show("b", true);
+            expect(noteContext.data.get("scrollRailHighlights")).toBe(layer);
+
+            const other = new ScrollRailLayer({ readTargets: () => [] });
+            noteContext.data.set("scrollRailHighlights", other);
+            show("b", false);
+            expect(noteContext.data.get("scrollRailHighlights")).toBe(other);
+            act(() => render(null, container));
+        });
 });
 
-interface HeadingsProbeProps {
+interface HighlightsProbeProps {
     noteContext: ReturnType<typeof recordingContext>;
     noteId: string;
     isShown: boolean;
     root: Element;
 }
 
-function HeadingsProbe({ noteContext, noteId, isShown, root }: HeadingsProbeProps) {
-    useScrollRailHeadings(noteContext as unknown as NoteContext, noteId, isShown, () => root);
-    return null;
-}
-
-function HighlightsProbe({ noteContext, noteId, isShown, root }: HeadingsProbeProps) {
+function HighlightsProbe({ noteContext, noteId, isShown, root }: HighlightsProbeProps) {
     useScrollRailHighlights(noteContext as unknown as NoteContext, noteId, isShown, () => root);
     return null;
 }
@@ -344,10 +286,7 @@ function fakeContext() {
         fillStyle: "",
         globalAlpha: 1,
         clearRect: vi.fn(),
-        fillRect: vi.fn(),
-        beginPath: vi.fn(),
-        arc: vi.fn(),
-        fill: vi.fn()
+        fillRect: vi.fn()
     };
 }
 

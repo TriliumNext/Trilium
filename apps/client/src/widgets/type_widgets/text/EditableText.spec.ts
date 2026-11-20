@@ -713,12 +713,11 @@ describe("EditableText", () => {
         expect(viewScope.bookmark).toBeUndefined();
     });
 
-    it("publishes the headings and highlights of its editor while shown", async () => {
+    it("publishes the highlights of its editor while shown", async () => {
         const getJson = vi.spyOn(options, "getJson").mockReturnValue([ "color" ]);
         onTestFinished(() => getJson.mockRestore());
         const root = document.createElement("div");
-        root.innerHTML = "<h2>Intro</h2><p>Text <span style=\"color:red\">red</span></p>"
-            + "<h3>Detail</h3>";
+        root.innerHTML = "<p>Text <span style=\"color:red\">red</span></p>";
         const noteContext = createNoteContext({ notePath: "root/abc" });
         const show = (isVisible: boolean) => h(EditableText, {
             note: { noteId: "abc" } as FNote,
@@ -735,12 +734,9 @@ describe("EditableText", () => {
             editorRef.current = createTextEditor("", root);
         }
 
-        const layer = noteContext.getContextData("scrollRailHeadings");
-        expect(layer?.source.readTargets()).toEqual([ ...root.querySelectorAll("h2, h3") ]);
         const highlights = noteContext.getContextData("scrollRailHighlights");
         expect(highlights?.source.readTargets()).toEqual([ root.querySelector("span") ]);
         await act(() => render(show(false), container));
-        expect(noteContext.getContextData("scrollRailHeadings")).toBeUndefined();
         expect(noteContext.getContextData("scrollRailHighlights")).toBeUndefined();
     });
 });

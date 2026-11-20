@@ -99,25 +99,6 @@ export class ScrollRailLayer {
 
 }
 
-/**
- * Publishes the headings under the element that `getRoot()` returns, outside included notes, for
- * the heading dots of the scroll rail of `noteContext`, while `isShown`. The rail reads them only
- * while the pointer is over it.
- */
-export function useScrollRailHeadings(
-    noteContext: NoteContext | null | undefined,
-    noteId: string,
-    isShown: boolean,
-    getRoot: () => Element | null | undefined
-) {
-    const getRootRef = useRef(getRoot);
-    getRootRef.current = getRoot;
-    const [ layer ] = useState(() => new ScrollRailLayer({
-        readTargets: () => getHeadingElements(getRootRef.current())
-    }));
-    usePublishedLayer(noteContext, "scrollRailHeadings", layer, noteId, isShown);
-}
-
 /** Whether the text views publish their highlights to the scroll rail. */
 const IS_HIGHLIGHTS_LAYER_ENABLED = true;
 /** Whether the highlight lines take the colors as the theme adapts them, else as picked. */
@@ -150,8 +131,18 @@ export function useScrollRailHighlights(
             getColors: (index) => colors[index] ?? []
         });
     });
-    usePublishedLayer(noteContext, "scrollRailHighlights", layer, noteId,
-        isShown && IS_HIGHLIGHTS_LAYER_ENABLED);
+
+    // Switching notes clears the context data, so each note publishes again.
+    useEffect(() => {
+        if (!noteContext || !isShown || !IS_HIGHLIGHTS_LAYER_ENABLED) return;
+        noteContext.setContextData("scrollRailHighlights", layer);
+        return () => {
+            // The other text view of the split can have published its own layer since.
+            if (noteContext.getContextData("scrollRailHighlights") === layer) {
+                noteContext.clearContextData("scrollRailHighlights");
+            }
+        };
+    }, [ noteContext, noteId, isShown, layer ]);
 
     // Adapted colors change with the theme.
     useEffect(() => {
@@ -192,34 +183,6 @@ export function getHighlights(root: Element | null | undefined, formats: readonl
     return highlights;
 }
 
-/** Publishes `layer` as `key` of `noteContext` while `isShown`, once more for each note. */
-function usePublishedLayer(
-    noteContext: NoteContext | null | undefined,
-    key: "scrollRailHeadings" | "scrollRailHighlights",
-    layer: ScrollRailLayer,
-    noteId: string,
-    isShown: boolean
-) {
-    // Switching notes clears the context data, so each note publishes again.
-    useEffect(() => {
-        if (!noteContext || !isShown) return;
-        noteContext.setContextData(key, layer);
-        return () => {
-            // The other text view of the split can have published its own layer since.
-            if (noteContext.getContextData(key) === layer) {
-                noteContext.clearContextData(key);
-            }
-        };
-    }, [ noteContext, key, noteId, isShown, layer ]);
-}
-
-/** The headings under `root`, in document order, leaving out those of included notes. */
-function getHeadingElements(root: Element | null | undefined) {
-    if (!root) return [];
-    return [ ...root.querySelectorAll("h1, h2, h3, h4, h5, h6") ]
-        .filter((heading) => isOutsideEmbeds(heading, root));
-}
-
 /** Whether `element` is outside the included notes under `root`. */
 function isOutsideEmbeds(element: Element, root: Element) {
     const embed = element.closest(".include-note");
@@ -229,12 +192,6 @@ function isOutsideEmbeds(element: Element, root: Element) {
 /** The values of the `highlightsList` option, as `options.getJson()` returns it. */
 function toFormats(value: unknown): string[] {
     return Array.isArray(value) ? value : [];
-}
-
-/** The level of a heading target, 1 for `h1`. Any other target takes the deepest level. */
-export function getHeadingLevel(target: ScrollRailTarget) {
-    const match = target instanceof Element ? /^H([1-6])$/.exec(target.tagName) : null;
-    return match ? Number(match[1]) : DOT_SCALE.length;
 }
 
 /** The rows of a layer's lines on the rail. */
@@ -256,10 +213,6 @@ export interface DrawnLayer {
 export const RANGE_MEASURE_LIMIT = 500;
 /** Line thickness, and the inset of a line from each side of the rail, in CSS px. */
 export const LINE_SIZE = { thin: 2, thick: 4, inset: 1 };
-/** Diameter of the dot of an H1 heading, in CSS px. */
-export const DOT_SIZE = 6;
-/** Diameter of a heading dot by heading level, from H1 to H6, as a fraction of `DOT_SIZE`. */
-export const DOT_SCALE = [ 1, 0.5, 0.4, 0.3, 0.2, 0.1 ];
 
 /**
  * The row of the place `offset` px down the scroller's content, in CSS px down the track.
@@ -314,10 +267,8 @@ export function mapIntoClip(top: number, box: ClipBox) {
 export interface PaintedLayer extends DrawnLayer {
     color: string;
     emphasisColor: string;
-    /** The opacity of the lines and dots, from 0 to 1. Defaults to 1. */
+    /** The opacity of the lines, from 0 to 1. Defaults to 1. */
     opacity?: number;
-    /** The heading level of each marker, which draws the layer as dots in place of lines. */
-    levels?: number[];
     /**
      * The colors of each marker. The line of a row is split into one segment per distinct color
      * of its markers, and drawn in `color` when they have none.
@@ -326,12 +277,11 @@ export interface PaintedLayer extends DrawnLayer {
 }
 
 /**
- * Draws the lines and dots of `layers` on `context`, whose canvas is `width` by `height` CSS px
- * at `ratio` device pixels per CSS px. Every rectangle is snapped to device pixels.
+ * Draws the lines of `layers` on `context`, whose canvas is `width` by `height` CSS px at
+ * `ratio` device pixels per CSS px. Every rectangle is snapped to device pixels.
  */
 export function drawRows(
-    context: Pick<CanvasRenderingContext2D,
-        "clearRect" | "fillRect" | "fillStyle" | "globalAlpha" | "beginPath" | "arc" | "fill">,
+    context: Pick<CanvasRenderingContext2D, "clearRect" | "fillRect" | "fillStyle" | "globalAlpha">,
     { width, height, ratio }: { width: number; height: number; ratio: number },
     layers: PaintedLayer[]
 ) {
@@ -351,23 +301,12 @@ export function drawRows(
             fillLine(y, LINE_SIZE.thin, toX(index), toX(index + 1));
         }
     };
-    const fillDot = (y: number, size: number) => {
-        const radius = size / 2 * ratio;
-        context.beginPath();
-        context.arc(width * ratio / 2, Math.min(Math.max(y * ratio, radius), deviceHeight - radius),
-            radius, 0, 2 * Math.PI);
-        context.fill();
-    };
 
     context.clearRect(0, 0, Math.round(width * ratio), deviceHeight);
-    for (const { rows, color, opacity = 1, levels, colors } of layers) {
+    for (const { rows, color, opacity = 1, colors } of layers) {
         context.globalAlpha = opacity;
         context.fillStyle = color;
-        if (levels) {
-            for (const [ y, level ] of getRowLevels(rows, levels)) {
-                fillDot(y, DOT_SIZE * DOT_SCALE[level - 1]);
-            }
-        } else if (colors) {
+        if (colors) {
             for (const [ y, rowColors ] of getRowColors(rows, colors)) {
                 fillSegments(y, rowColors.size ? [ ...rowColors ] : [ color ]);
             }
@@ -589,16 +528,6 @@ function isCutOff(element: Element, scroller: Element) {
         if (overflowY === "hidden" || overflowY === "clip") return true;
     }
     return false;
-}
-
-/** The lowest heading level of the markers on each row, which draws that row's dot. */
-function getRowLevels({ markerRows }: RowSet, levels: number[]) {
-    const byRow = new Map<number, number>();
-    for (const [ index, y ] of markerRows.entries()) {
-        if (y === null) continue;
-        byRow.set(y, Math.min(byRow.get(y) ?? levels[index], levels[index]));
-    }
-    return byRow;
 }
 
 /** The distinct colors of the markers on each row, in marker order. */

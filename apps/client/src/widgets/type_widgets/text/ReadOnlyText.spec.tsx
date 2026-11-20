@@ -175,27 +175,21 @@ describe("ReadOnlyText reacting to content changes (#10575)", () => {
         expect(harness.contentLoadStates).toEqual([ "loading", "loaded" ]);
     });
 
-    it("publishes its headings and highlights for the scroll rail while shown", async () => {
+    it("publishes its highlights for the scroll rail while shown", async () => {
         const getJson = vi.spyOn(options, "getJson").mockReturnValue([ "bgColor" ]);
         onTestFinished(() => getJson.mockRestore());
         const harness = setupHarness({
             isVisible: true,
-            content: "<h2>Plan</h2><p>hello <span style=\"background-color:yellow\">hi</span></p>"
-                + "<h3>Detail</h3>"
+            content: "<p>hello <span style=\"background-color:yellow\">hi</span></p>"
         });
         cleanupContainer = harness.container;
 
         await harness.mount();
-        const layer = harness.noteContext.getContextData("scrollRailHeadings");
-        expect(layer?.source.readTargets())
-            .toEqual([ ...harness.container.querySelectorAll("h2, h3") ]);
-        expect(layer?.source.readTargets()).toHaveLength(2);
         const highlights = harness.noteContext.getContextData("scrollRailHighlights");
         expect(highlights?.source.readTargets())
             .toEqual([ harness.container.querySelector("span[style]") ]);
         expect(highlights?.source.readTargets()).toHaveLength(1);
         await harness.mount(false);
-        expect(harness.noteContext.getContextData("scrollRailHeadings")).toBeUndefined();
         expect(harness.noteContext.getContextData("scrollRailHighlights")).toBeUndefined();
     });
 

@@ -20,7 +20,7 @@ import {
 
 vi.mock("../services/bookmark_jump", () => ({ revealElement: vi.fn() }));
 
-const [ HIGHLIGHTS, HEADINGS, FIND ] = SCROLL_RAIL_KINDS;
+const [ HIGHLIGHTS, FIND ] = SCROLL_RAIL_KINDS;
 const OWNED_CLASS = "detail-has-end-margin";
 
 /** A `ResizeObserver` that reports only when a spec calls {@link resize}. */
@@ -102,10 +102,6 @@ class FakeMutationObserver {
 
 /** The lines drawn since the canvas was last cleared, as `[color, top, height, opacity]`. */
 let drawn: [ string, number, number, number ][];
-/** The dots drawn since the canvas was last cleared, as `[center, diameter]`. */
-let dots: [ number, number ][];
-/** What was drawn since the canvas was last cleared, in order. */
-let painted: ("line" | "dot")[];
 let scroller: HTMLElement;
 let scrollerBox: StubbedBox;
 let content: HTMLElement;
@@ -126,28 +122,14 @@ beforeEach(() => {
     supported = new Set();
     vi.stubGlobal("CSS", { supports: (property: string) => supported.has(property) });
     drawn = [];
-    dots = [];
-    painted = [];
-    let dot: [ number, number ] = [ 0, 0 ];
     const context = {
         fillStyle: "",
         globalAlpha: 1,
         clearRect: () => {
             drawn = [];
-            dots = [];
-            painted = [];
         },
         fillRect(_x: number, y: number, _width: number, height: number) {
             drawn.push([ String(this.fillStyle), y, height, this.globalAlpha ]);
-            painted.push("line");
-        },
-        beginPath: () => {},
-        arc: (_x: number, y: number, radius: number) => {
-            dot = [ y, radius * 2 ];
-        },
-        fill() {
-            dots.push(dot);
-            painted.push("dot");
         }
     };
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(context as never);
@@ -1084,77 +1066,6 @@ describe("ScrollRail lines", () => {
             expect(revealElement).toHaveBeenLastCalledWith(first, scroller);
         });
 
-    it("draws the headings as dots sized by level, under the lines, only while a mouse is over it",
-        async () => {
-            scrollerBox.scrollHeight = 4000;
-            mountRail();
-            await publish({
-                readTargets: () => [ append(content, "p", { top: 1000, height: 20 }) ]
-            });
-            const readHeadings = vi.fn(() => [
-                append(content, "h2", { top: 300, height: 20 }),
-                append(content, "h1", { top: 2000, height: 20 })
-            ]);
-            await publish({ readTargets: readHeadings }, HEADINGS);
-            afterPaint();
-            pointer("pointerenter", 0, { pointerType: "touch" });
-            afterPaint();
-            expect(readHeadings).not.toHaveBeenCalled();
-            expect(painted).toEqual([ "line" ]);
-
-            pointer("pointerenter", 0);
-            afterPaint();
-            expect(readHeadings).toHaveBeenCalledOnce();
-            expect(dots).toEqual([ [ 30, 3 ], [ 200, 6 ] ]);
-            expect(painted).toEqual([ "dot", "dot", "line" ]);
-
-            pointer("pointerleave", 0);
-            expect(painted).toEqual([ "line" ]);
-            act(() => resize(content));
-            advance(READ_DELAY);
-            expect(readHeadings).toHaveBeenCalledOnce();
-
-            // Each hover reads the headings anew.
-            pointer("pointerenter", 0);
-            afterPaint();
-            expect(readHeadings).toHaveBeenCalledTimes(2);
-        });
-
-    it("takes no press on a dot, and keeps no rail up on a note that fits", async () => {
-        mountRail();
-        await publish({
-            readTargets: () => [ append(content, "p", { top: 100, height: 20 }) ]
-        });
-        const headings = [
-            append(content, "h2", { top: 200, height: 20 }),
-            append(content, "h2", { top: 2000, height: 20 })
-        ];
-        await publish({ readTargets: () => headings }, HEADINGS);
-        afterPaint();
-        pointer("pointerenter", 0);
-        afterPaint();
-        expect(dots).toHaveLength(2);
-        act(() => noteContext.clearContextData("scrollRailFind"));
-        expect(host.querySelector(".scroll-rail")).toBeNull();
-
-        scrollerBox.scrollHeight = 4000;
-        act(() => resize(scroller));
-        pointer("pointerenter", 0);
-        await act(async () => {
-            await vi.dynamicImportSettled();
-        });
-        afterPaint();
-        // Row 20 is under the handle, row 200 on the track.
-        expect(dots.map(([ y ]) => y)).toEqual([ 20, 200 ]);
-
-        pointer("pointermove", 200);
-        expect(rail().classList.contains("is-over-line")).toBe(false);
-        click(200);
-        advance(1000);
-        expect(revealElement).not.toHaveBeenCalled();
-        expect(scroller.scrollTop).toBe(350);
-    });
-
     it("draws the highlights in their colors at half opacity, under the find lines", async () => {
         mountRail();
         const match = append(content, "p", { top: 100, height: 20 });
@@ -1282,15 +1193,14 @@ describe("ScrollRail lines", () => {
         expect(onClick).not.toHaveBeenCalled();
         expect(revealElement).toHaveBeenLastCalledWith(first, scroller);
 
-        // The layer is unpublished between the press and the release, while the heading dots
-        // keep the lines: nothing.
+        // The layer is unpublished between the press and the release, while the highlights keep
+        // the lines: nothing.
         vi.mocked(revealElement).mockClear();
         scrollerBox.scrollHeight = 4000;
         act(() => resize(scroller));
         await publish({
-            readTargets: () => [ append(content, "h2", { top: 3000, height: 20 }) ]
-        }, HEADINGS);
-        pointer("pointerenter", 0);
+            readTargets: () => [ append(content, "span", { top: 3000, height: 20 }) ]
+        }, HIGHLIGHTS);
         afterPaint();
         pointer("pointerdown", 30);
         act(() => noteContext.clearContextData("scrollRailFind"));
@@ -1298,10 +1208,10 @@ describe("ScrollRail lines", () => {
         expect(onClick).not.toHaveBeenCalled();
         expect(revealElement).not.toHaveBeenCalled();
 
-        // The last layer to draw goes as well, while the bar stays: nothing.
+        // The last layer goes as well, while the bar stays: nothing.
+        act(() => noteContext.clearContextData("scrollRailHighlights"));
         await publish({ readTargets: () => [ second ], onClick });
         afterPaint();
-        pointer("pointerleave", 0);
         pointer("pointerdown", 30);
         act(() => noteContext.clearContextData("scrollRailFind"));
         pointer("pointerup", 30);

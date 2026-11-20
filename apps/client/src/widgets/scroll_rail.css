@@ -14,9 +14,6 @@
     --scroll-rail-handle-color: var(--scrollbar-thumb-color);
     --scroll-rail-handle-hover-color: var(--scrollbar-thumb-hover-color);
 
-    --scroll-rail-heading-color:
-        color-mix(in srgb, var(--main-text-color) 50%, var(--main-background-color));
-
     --scroll-rail-find-color: #d9730d;
     --scroll-rail-find-emphasis-color:
         color-mix(in srgb, var(--scroll-rail-find-color), var(--main-text-color) 35%);

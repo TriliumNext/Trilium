@@ -10,18 +10,13 @@ import type { ScrollRailLayer, ScrollRailTarget } from "./scroll_rail_markers";
 
 /** A kind of markers, with the CSS variables of its colors. */
 export interface ScrollRailKind {
-    key: "scrollRailHighlights" | "scrollRailHeadings" | "scrollRailFind";
+    key: "scrollRailHighlights" | "scrollRailFind";
     /** The color of a marker whose source gives no colors of its own. */
     color: string;
     /** The color of the emphasized marker, else `color`. */
     emphasisColor?: string;
     /** The opacity of the lines, from 0 to 1. Defaults to 1. */
     opacity?: number;
-    /**
-     * Whether the markers are dots by heading level, drawn only while a mouse or a pen is over the
-     * rail. They take no press, and do not show the rail on a note that fits.
-     */
-    isHoverOnly?: boolean;
     /** Whether the rail reads the layer again after a change of the note's content. */
     isReadOnContentChange?: boolean;
 }
@@ -33,11 +28,6 @@ export const SCROLL_RAIL_KINDS: readonly ScrollRailKind[] = [
         color: "--main-text-color",
         opacity: 0.5,
         isReadOnContentChange: true
-    },
-    {
-        key: "scrollRailHeadings",
-        color: "--scroll-rail-heading-color",
-        isHoverOnly: true
     },
     {
         key: "scrollRailFind",
@@ -57,8 +47,7 @@ const loadLines = () => import("./scroll_rail_body");
 /**
  * The scrollbar of a note split, with the markers that the split's note context publishes. Its
  * root is the first child of the scroller. It replaces the scroller's own scrollbar while the
- * scroller has `detail-has-end-margin`, and loads the lines of the markers with the first layer
- * to draw.
+ * scroller has `detail-has-end-margin`, and loads the lines of the markers with the first layer.
  */
 export default function ScrollRail() {
     const hostRef = useRef<HTMLDivElement>(null);
@@ -73,7 +62,6 @@ export default function ScrollRail() {
     const [ bar, setBar ] = useState<ScrollRailBar | null>(null);
     const [ view, setView ] = useState<BarView>({ isOwned: false, isOverflowing: false });
     const [ hasLines, setHasLines ] = useState(false);
-    const [ isHovered, setIsHovered ] = useState(false);
 
     // The layout moves the host into the scroller after this effect has run, so the bar starts
     // at the first size report of the host.
@@ -107,29 +95,12 @@ export default function ScrollRail() {
         bar?.readTheme();
     }, [ bar, colorScheme ]);
 
-    const drawnLayers = isHovered ? layers : layers.filter(({ kind }) => !kind.isHoverOnly);
-    const isLayered = view.isOwned && drawnLayers.length > 0;
+    const isLayered = view.isOwned && layers.length > 0;
     const isRailShown = view.isOwned && (view.isOverflowing || (isLayered && hasLines));
 
     useLayoutEffect(() => {
         bar?.attach(railRef.current, handleRef.current);
     }, [ bar, isRailShown, view.isOverflowing ]);
-
-    useLayoutEffect(() => {
-        const rail = isRailShown ? railRef.current : null;
-        if (!rail) return;
-
-        // A tap is not a hover.
-        const onEnter = (event: PointerEvent) => setIsHovered(event.pointerType !== "touch");
-        const onLeave = () => setIsHovered(false);
-        rail.addEventListener("pointerenter", onEnter);
-        rail.addEventListener("pointerleave", onLeave);
-        return () => {
-            rail.removeEventListener("pointerenter", onEnter);
-            rail.removeEventListener("pointerleave", onLeave);
-            onLeave();
-        };
-    }, [ isRailShown ]);
 
     return (
         <div ref={hostRef} className="scroll-rail-host">
@@ -144,7 +115,7 @@ export default function ScrollRail() {
                     {({ default: ScrollRailLines }) => (
                         <ScrollRailLines
                             bar={bar}
-                            layers={drawnLayers}
+                            layers={layers}
                             railRef={railRef}
                             canvasRef={canvasRef}
                             isRailShown={isRailShown}

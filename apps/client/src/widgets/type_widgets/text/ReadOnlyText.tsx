@@ -37,7 +37,7 @@ import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/option
 import { useLinkTargetLanding, useSearchTermsConsumer } from "../../react/hooks/note_context";
 import { RawHtmlBlock } from "../../react/RawHtml";
 import { mountScrollableLabel } from "../../react/ScrollableLabel";
-import { useScrollRailHeadings, useScrollRailHighlights } from "../../scroll_rail_markers";
+import { useScrollRailHighlights } from "../../scroll_rail_markers";
 import { TypeWidgetProps } from "../type_widget";
 import { hasSourceEmbedBoxes, prepareEmbedBoxes } from "./embed_boxes";
 import { applyReferenceLinks } from "./read_only_helper";
@@ -75,8 +75,6 @@ export default function ReadOnlyText({ note, noteContext, ntxId, parentComponent
         if (blob) consumeSearchTerms(noteContext, ntxId);
     }, [blob]);
     useSearchTermsConsumer(note, noteContext, ntxId);
-    useScrollRailHeadings(noteContext, note.noteId, !!isVisible,
-        () => readOnlyContentRef.current);
     useScrollRailHighlights(noteContext, note.noteId, !!isVisible,
         () => readOnlyContentRef.current);
 

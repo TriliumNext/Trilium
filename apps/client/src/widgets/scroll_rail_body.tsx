@@ -10,8 +10,8 @@ import {
     type ScrollRailBar, type ScrollRailKind
 } from "./scroll_rail";
 import {
-    drawRows, findRow, getHeadingLevel, goToTarget, RANGE_MEASURE_LIMIT, type RowSet,
-    type ScrollRailLayer, ScrollRailLocator, type ScrollRailTarget, toRows
+    drawRows, findRow, goToTarget, RANGE_MEASURE_LIMIT, type RowSet, type ScrollRailLayer,
+    ScrollRailLocator, type ScrollRailTarget, toRows
 } from "./scroll_rail_markers";
 
 /** Delay of a read after the last size signal, content change or `refreshLater()`, in ms. */
@@ -98,8 +98,6 @@ interface LayerState {
     /** The targets of the last read, and the generation of the layer they were read at. */
     targets: ScrollRailTarget[];
     generation: number;
-    /** The heading level of each target, for a kind drawn as dots. */
-    levels: number[];
     /** The colors of each target, for a source that gives them. */
     colors: string[][] | undefined;
     places: (number | null)[];
@@ -115,8 +113,8 @@ interface RailControllerOptions {
 const NO_ROWS: RowSet = { rows: [], markerRows: [] };
 
 /**
- * Reads the targets of the layers of a scroller and draws their lines and dots on the track of
- * `bar`. A read runs after the next paint for `refresh()`, a published layer and a tab change,
+ * Reads the targets of the layers of a scroller and draws their lines on the track of `bar`. A
+ * read runs after the next paint for `refresh()`, a published layer and a tab change,
  * and 150 ms after the last size signal of the bar, `refreshLater()` or scroll, and for some kinds
  * the last content change; never while the scroller is hidden.
  */
@@ -174,7 +172,6 @@ export class RailController implements RailLines {
                 unsubscribe: layer.subscribe((change) => this.onLayerChange(kind.key, change)),
                 targets: [],
                 generation: -1,
-                levels: [],
                 colors: undefined,
                 places: [],
                 rows: NO_ROWS
@@ -191,9 +188,9 @@ export class RailController implements RailLines {
         this.draw();
     }
 
-    /** The line at `y` px down the track, within `distance`, or `null`. A dot is never hit. */
+    /** The line at `y` px down the track, within `distance`, or `null`. */
     hitTest(y: number, distance: number): RailHit | null {
-        const states = this.getOrderedStates().filter(({ kind }) => !kind.isHoverOnly);
+        const states = this.getOrderedStates();
         const found = findRow(states.map((state) => ({
             rows: state.rows,
             emphasized: this.getEmphasized(state)
@@ -330,7 +327,6 @@ export class RailController implements RailLines {
                 const getColors = source.getColors?.bind(source);
                 state.targets = source.readTargets();
                 state.generation = state.layer.generation;
-                state.levels = state.kind.isHoverOnly ? state.targets.map(getHeadingLevel) : [];
                 state.colors = getColors && state.targets.map((_, index) => getColors(index));
             }
             const locator = new ScrollRailLocator(this.scroller,
@@ -351,8 +347,7 @@ export class RailController implements RailLines {
 
     private update() {
         const states = [ ...this.states.values() ];
-        this.options.onLines(states.some(({ kind, rows }) => !kind.isHoverOnly
-            && rows.rows.length > 0));
+        this.options.onLines(states.some(({ rows }) => rows.rows.length > 0));
         this.draw();
     }
 
@@ -374,7 +369,6 @@ export class RailController implements RailLines {
             rows: state.rows,
             emphasized: this.getEmphasized(state),
             opacity: state.kind.opacity,
-            levels: state.kind.isHoverOnly ? state.levels : undefined,
             colors: state.colors,
             ...this.getColors(state.kind, canvas)
         })));
