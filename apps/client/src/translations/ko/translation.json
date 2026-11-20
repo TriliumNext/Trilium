@@ -85,7 +85,7 @@
     "script_link_not_allowed": "{{scheme}}로 시작하는 링크는 코드를 실행할 수 있으므로 허용되지 않습니다.",
     "retrieving_from_page": "웹 페이지에서 정보를 가져오는 중...",
     "title_from_attachment": "설정하지 않으면 항상 첨부 파일의 제목을 반영합니다",
-    "top_of_note": "노트 전체로 연결",
+    "top_of_note": "노트에 연결 (기본값)",
     "select_note_for_targets": "연결할 수 있는 제목과 앵커를 표시하려면 노트를 선택하세요.",
     "inspecting_note": "노트 구조 확인 중",
     "heading_reference_failed": "지정한 제목에 대한 참조를 만들 수 없습니다",
@@ -2819,7 +2819,11 @@
   },
   "toc": {
     "table_of_contents": "목차",
-    "no_headings": "제목이 없습니다."
+    "no_headings": "제목이 없습니다.",
+    "building": "목차를 생성하는 중…",
+    "build_failed": "목차를 읽을 수 없습니다.",
+    "unavailable": "목차를 사용할 수 없습니다.",
+    "retry": "다시 시도"
   },
   "watched_file_update_status": {
     "upload_modified_file": "업로드",
@@ -2847,7 +2851,9 @@
     "copy_success": "클립보드에 복사했습니다.",
     "copied_without_links": "노트가 클립보드에 복사되었지만, 노트 링크를 시스템 클립보드에 넣을 수 없습니다.",
     "paste_notes": "노트 붙여넣기",
-    "paste_failed": "클립보드의 내용을 읽을 수 없습니다."
+    "paste_failed": "클립보드의 내용을 읽을 수 없습니다.",
+    "copy_ready": "링크를 복사할 준비가 되었습니다.",
+    "copy_button": "복사"
   },
   "entrypoints": {
     "note-revision-created": "노트 수정본이 생성되었습니다.",
