@@ -313,6 +313,8 @@ describe("BrowserRouter error formatting", () => {
             .toStrictEqual({ status: 404, body: { message: "Not found" } });
         expect(await dispatchThrowing(new ValidationError("")))
             .toStrictEqual({ status: 400, body: { message: "Validation error" } });
+        expect(await dispatchThrowing(new ConflictError("")))
+            .toStrictEqual({ status: 409, body: { message: "" } });
     });
 
     it("stringifies a thrown non-Error value", async () => {

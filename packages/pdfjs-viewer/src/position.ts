@@ -17,7 +17,7 @@ let postedRotations: number[] = [];
 
 /**
  * Posts where the reading line is and the effective rotation of each page, for the outline of a
- * viewer addressed to a note. Runs at each `documentloaded`.
+ * viewer addressed to a note or opened with `position=1`. Runs at each `documentloaded`.
  */
 export function setupPositionTracking(app: ViewerApp) {
     postedPosition = null;

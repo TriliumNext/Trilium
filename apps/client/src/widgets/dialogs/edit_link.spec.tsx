@@ -1,6 +1,7 @@
 import type {
     CreateReferenceResponse, NoteReferencesResponse, ReferenceTarget
 } from "@triliumnext/commons";
+import { Modal as BootstrapModal } from "bootstrap";
 import { type RefObject, render } from "preact";
 import { act } from "preact/test-utils";
 import { beforeEach, describe, expect, it, type MockInstance, onTestFinished, vi } from "vitest";
@@ -153,6 +154,14 @@ describe("EditLinkDialog", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        // The specs dispatch `shown.bs.modal` and `hidden.bs.modal` themselves. Bootstrap's own
+        // transitions end on timers, and a late `hidden.bs.modal` resets the next dialog opened.
+        const show = vi.spyOn(BootstrapModal.prototype, "show").mockImplementation(() => {});
+        const hide = vi.spyOn(BootstrapModal.prototype, "hide").mockImplementation(() => {});
+        onTestFinished(() => {
+            show.mockRestore();
+            hide.mockRestore();
+        });
         autocomplete.onChange = undefined;
         host = new Component();
         container = renderInto(
@@ -301,19 +310,6 @@ describe("EditLinkDialog", () => {
         await act(async () => {
             container.querySelector(".modal")?.dispatchEvent(new Event("hidden.bs.modal"));
         });
-    }
-
-    /**
-     * Opens the dialog once Bootstrap has run out the transitions of the last one on its timers,
-     * whose late `hidden.bs.modal` would otherwise close the dialog just opened.
-     */
-    async function reopen(opts: Partial<EditLinkOpts> = {}) {
-        await waitForTransitions();
-        await open(opts);
-    }
-
-    function waitForTransitions() {
-        return act(() => new Promise((resolve) => setTimeout(resolve, 50)));
     }
 
     it("inserts a typed web link, titled by its URL unless given a text", async () => {
@@ -487,7 +483,7 @@ describe("EditLinkDialog", () => {
         noteReferences.set("abc123", { targets: [
             { kind: "heading", title: "Appendix", level: 1, params: { page: "9", heading: "h1" } }
         ] });
-        await reopen({
+        await open({
             currentLink: { notePath: path }, currentTitle: "The file", anchors: [ "x" ],
             noteId: note.noteId
         });
@@ -509,13 +505,13 @@ describe("EditLinkDialog", () => {
         await submit();
         expect(addLink).toHaveBeenLastCalledWith(path, "Report");
 
-        await reopen({ currentLink: { notePath: path }, currentTitle: "The file" });
+        await open({ currentLink: { notePath: path }, currentTitle: "The file" });
         await type(field("text"), "");
         await submit();
         expect(addLink).toHaveBeenLastCalledWith(path, null);
 
         // A heading of the attachment adds its parameters after those of the attachment.
-        await reopen({ currentLink: { notePath: path }, currentTitle: "The file" });
+        await open({ currentLink: { notePath: path }, currentTitle: "The file" });
         await settle();
         await checkNoteChoice("Appendix");
         await submit();
@@ -1165,10 +1161,11 @@ describe("EditLinkDialog", () => {
         expect(headingRows().map((row) => row.textContent))
             .toStrictEqual([ "Intro", "Setup", "Linux", "Usage" ]);
         expect(checkedHeading()).toBe("Linux");
-        // Scrolled by `fillAndFocus()`, once Bootstrap reports the dialog shown.
-        await vi.waitFor(() => {
-            expect(container.querySelector(".edit-link-targets")?.scrollTop).toBe(300);
+        // Scrolled by `fillAndFocus()`, once the dialog is reported shown.
+        await act(async () => {
+            container.querySelector(".modal")?.dispatchEvent(new Event("shown.bs.modal"));
         });
+        expect(container.querySelector(".edit-link-targets")?.scrollTop).toBe(300);
     });
 
     it("lists where in the note picked a link can point, from the top of the note", async () => {
@@ -1235,7 +1232,7 @@ describe("EditLinkDialog", () => {
         expect(createHeadingReference).not.toHaveBeenCalled();
         expect(addLink).toHaveBeenLastCalledWith(`${path}?block=U`, null);
 
-        await reopen();
+        await open();
         await pickNote(path);
         await checkNoteChoice("Setup");
         await submitWithReference();
@@ -1245,7 +1242,7 @@ describe("EditLinkDialog", () => {
         );
         expect(addLink).toHaveBeenLastCalledWith(`${path}?block=NewId`, null);
 
-        await reopen();
+        await open();
         await pickNote(path);
         await checkNoteChoice("a b");
         expect(field("text")?.placeholder).toBe("add_link.title_from_note");
@@ -1254,7 +1251,7 @@ describe("EditLinkDialog", () => {
         expect(addLink).toHaveBeenLastCalledWith(`${path}?bookmark=a%20b`, "See there");
 
         // A selection without text of its own takes the heading's.
-        await reopen({ text: "", hasSelection: true });
+        await open({ text: "", hasSelection: true });
         await pickNote(path);
         await checkNoteChoice("Usage");
         await submit();
@@ -1365,14 +1362,13 @@ describe("EditLinkDialog", () => {
         // A dialog closed while the server works applies nothing, then or when it next closes.
         const late = deferred<CreateReferenceResponse>();
         createHeadingReference.mockReturnValueOnce(late.promise);
-        await reopen();
+        await open();
         await pickNote(path);
         await checkNoteChoice("Setup");
         await requestSubmit();
         await act(async () => {
             container.querySelector(".modal")?.dispatchEvent(new Event("hidden.bs.modal"));
         });
-        await waitForTransitions();
         late.resolve({ params: { block: "Late" } });
         await settle();
         await open();
@@ -1386,7 +1382,7 @@ describe("EditLinkDialog", () => {
         // Nor does one whose server answers while it fades out.
         const fading = deferred<CreateReferenceResponse>();
         createHeadingReference.mockReturnValueOnce(fading.promise);
-        await reopen();
+        await open();
         await pickNote(path);
         await checkNoteChoice("Setup");
         await requestSubmit();
@@ -1496,7 +1492,7 @@ describe("EditLinkDialog", () => {
             ]
         });
         // The headings above the heading of the link are expanded.
-        await reopen({ currentLink: { notePath: `${path}?block=L` } });
+        await open({ currentLink: { notePath: `${path}?block=L` } });
         await settle();
         expect(noteChoices())
             .toStrictEqual([ "add_link.top_of_note", "Setup", "*Linux", "Usage", "part" ]);
@@ -1505,7 +1501,7 @@ describe("EditLinkDialog", () => {
         await submit();
         expect(addLink).toHaveBeenLastCalledWith(path, null);
 
-        await reopen({ currentLink: { notePath: path }, currentBookmark: "part" });
+        await open({ currentLink: { notePath: path }, currentBookmark: "part" });
         await settle();
         expect(noteChoices()).toContain("*part");
         await submit();
@@ -1513,7 +1509,7 @@ describe("EditLinkDialog", () => {
 
         // A link to a block that is not a heading, or to a range of blocks, checks nothing.
         for (const block of [ "P", "L:P" ]) {
-            await reopen({ currentLink: { notePath: `${path}?block=${block}` } });
+            await open({ currentLink: { notePath: `${path}?block=${block}` } });
             await settle();
             expect(noteChoices().filter((choice) => choice.startsWith("*"))).toStrictEqual([]);
             await submit();

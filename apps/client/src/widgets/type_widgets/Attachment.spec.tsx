@@ -11,6 +11,7 @@ import options from "../../services/options";
 import { renderInto } from "../../test/render";
 import { ParentComponent } from "../react/react_utils";
 import type { TocDocumentContext } from "../sidebar/CachedToCProvider";
+import type { PdfReading } from "./file/PdfViewer";
 
 const CANVAS_MIME = "application/vnd.excalidraw+json";
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -372,6 +373,7 @@ describe("AttachmentDetail", () => {
         function reports() {
             return getRenderedContent.mock.calls.at(-1)?.[1] as {
                 onDocumentState(state: object): void;
+                onReadingChange(reading: PdfReading): void;
             };
         }
 
@@ -421,6 +423,30 @@ describe("AttachmentDetail", () => {
             expect(content.showTarget).toHaveBeenCalledOnce();
             expect(noteContext.contextData.get("tocDocument"))
                 .toStrictEqual({ status: "rendering", attachmentId: attachment.attachmentId });
+        });
+
+        it("tells the heading being read in a PDF from where its viewer reads", async () => {
+            const { renders, noteContext } = await openDetail("application/pdf", {});
+            await renders.finish(0);
+            reports().onDocumentState({ status: "shown", blobId: "blob1" });
+            const shown = () => noteContext.contextData.get("tocDocument") as TocDocumentContext;
+            const headings = [
+                { id: "p1", title: "A", level: 1, page: 1, top: 700 },
+                { id: "p2", title: "B", level: 1, page: 2, top: 700 }
+            ];
+            const before = shown();
+            expect(before.findActiveHeading(headings)).toBeNull();
+
+            // Each report publishes again, so the outline reads the heading once more.
+            reports().onReadingChange({
+                position: { pageNumber: 2, x: 0, y: 600 }, rotations: [ 0, 0 ]
+            });
+            expect(shown()).not.toBe(before);
+            expect(shown().findActiveHeading(headings)).toBe("p2");
+            reports().onReadingChange({
+                position: { pageNumber: 2, x: 0, y: 750 }, rotations: [ 0, 0 ]
+            });
+            expect(shown().findActiveHeading(headings)).toBe("p1");
         });
 
         it("stays where it is for a heading that the preview does not mark", async () => {

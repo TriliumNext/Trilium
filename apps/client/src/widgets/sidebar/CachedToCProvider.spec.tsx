@@ -5,7 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import appContext from "../../components/app_context";
 import Component from "../../components/component";
 import NoteContext from "../../components/note_context";
+import FAttachment from "../../entities/fattachment";
 import type { MenuCommandItem } from "../../menus/context_menu";
+import froca from "../../services/froca";
 import LoadResults from "../../services/load_results";
 import options from "../../services/options";
 import server from "../../services/server";
@@ -18,7 +20,7 @@ import TableOfContents from "./TableOfContents";
 
 const { showMenu, getUnavailableReason, rawHtmlRenders } = vi.hoisted(() => ({
     showMenu: vi.fn(),
-    getUnavailableReason: vi.fn(async (): Promise<string | null> => null),
+    getUnavailableReason: vi.fn(async (_entity: unknown): Promise<string | null> => null),
     rawHtmlRenders: { count: 0 }
 }));
 vi.mock("../../menus/context_menu", () => ({ default: { show: showMenu } }));
@@ -339,7 +341,17 @@ describe("CachedToCProvider", () => {
 });
 
 describe("the outline of an attachment", () => {
+    /** An attachment of the note that `renderOutline()` builds, in froca. */
+    function buildAttachment(attachmentId: string) {
+        return new FAttachment(froca, {
+            attachmentId, ownerId: "doc", role: "file", mime: DOCX_MIME, title: "Manual.docx",
+            blobId: "blobA", dateModified: "", utcDateModified: "",
+            utcDateScheduledForErasureSince: "", contentLength: 1
+        });
+    }
+
     it("ignores the entry of another attachment than the one in view", async () => {
+        buildAttachment("attB");
         answerToc({ status: "ready", blobId: "blobA", headings: HEADINGS });
         const outline = await renderOutline("text/html",
             { viewMode: "attachments", attachmentId: "attB" });
@@ -351,6 +363,23 @@ describe("the outline of an attachment", () => {
         await outline.publish(shown({ attachmentId: "attB", tocUrl: "attachments/attB/toc" }));
         expect(getToc).toHaveBeenCalledWith("attachments/attB/toc");
         expect(outline.titles()).toHaveLength(3);
+    });
+
+    it("tells whether the attachment in view is available, whatever its owner's blob", async () => {
+        const attachment = buildAttachment("attS");
+        getUnavailableReason.mockImplementation(async (entity) => (
+            entity === attachment ? null : "blobStub"));
+        answerToc({ status: "ready", blobId: "blobA", headings: HEADINGS });
+        const outline = await renderOutline("text/html",
+            { viewMode: "attachments", attachmentId: "attS" });
+        await outline.publish(shown({ attachmentId: "attS", tocUrl: "attachments/attS/toc" }));
+        expect(getUnavailableReason).toHaveBeenCalledWith(attachment);
+        expect(outline.titles()).toHaveLength(3);
+
+        getUnavailableReason.mockImplementation(async (entity) => (
+            entity === attachment ? "blobStub" : null));
+        await outline.publish({ status: "rendering", attachmentId: "attS" });
+        expect(outline.text()).toContain("toc.unavailable");
     });
 });
 

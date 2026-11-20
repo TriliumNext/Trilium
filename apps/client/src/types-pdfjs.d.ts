@@ -79,7 +79,7 @@ interface PdfViewerDocumentErrorMessage extends WithLoad {
 
 /**
  * Where the reading line is: on the page `pageNumber`, at `x`, `y` in its PDF user space. Posted
- * by a viewer addressed to a note, as it changes.
+ * by a viewer addressed to a note or opened with `position=1`, as it changes.
  */
 interface PdfViewerPositionMessage extends WithLoad {
     type: "pdfjs-viewer-position";

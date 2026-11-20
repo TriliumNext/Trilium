@@ -1,5 +1,6 @@
 import "./PdfViewer.css";
 
+import type { PdfReadingPosition } from "@triliumnext/commons/src/lib/pdf_toc.js";
 import type { HTMLAttributes, RefObject } from "preact";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
@@ -25,6 +26,13 @@ export interface PdfLinkTarget {
     /** The id of a heading of the ToC cache. */
     heading?: string;
     annotation?: string;
+}
+
+/** Where a viewer reads: its reading position and the effective rotation of each page. */
+export interface PdfReading {
+    position: PdfReadingPosition | null;
+    /** The effective rotation of each page, by page index. */
+    rotations: number[];
 }
 
 /** The ToC cache of the document that a viewer builds where the server cannot read PDFs. */
@@ -68,6 +76,8 @@ interface PdfViewerProps extends Pick<HTMLAttributes<HTMLIFrameElement>, "tabInd
     onDocumentError?(): void;
     /** Called with the build of `tocDocument` whenever its status or its ready cache changes. */
     onTocBuild?(build: ClientTocBuild): void;
+    /** Called with where the viewer of the load `loadToken` reads, as it changes. */
+    onReadingChange?(reading: PdfReading): void;
     /**
      * The place that the viewer opens at. Each target object is posted once: when the frame has
      * loaded, or at once for a target given later.
@@ -83,7 +93,7 @@ interface PdfViewerProps extends Pick<HTMLAttributes<HTMLIFrameElement>, "tabInd
 export default function PdfViewer({
     iframeRef: externalIframeRef, pdfUrl, onLoad, editable, toolbar = true, disableSelection,
     minPixelRatio, noteId, ntxId, loadToken, target, tocDocument, onDocumentLoaded,
-    onDocumentError, onTocBuild
+    onDocumentError, onTocBuild, onReadingChange
 }: PdfViewerProps) {
     const iframeRef = useSyncedRef(externalIframeRef, null);
     const [ locale ] = useTriliumOption("locale");
@@ -95,13 +105,15 @@ export default function PdfViewer({
         onDocumentError() {
             tocBuild.onLoadError();
             onDocumentError?.();
-        }
+        },
+        onReadingChange
     });
 
     const src = `pdfjs/web/viewer.html?v=${glob.triliumVersion}&file=${pdfUrl}&locale=${locale}`
         + `&sidebar=0&editable=${editable ? "1" : "0"}&toolbar=${toolbar ? "1" : "0"}`
         + (minPixelRatio ? `&minPixelRatio=${minPixelRatio}` : "")
         + (noteId ? getAddressParams(noteId, ntxId) : "")
+        + (onReadingChange ? "&position=1" : "")
         + (loadToken ? `&loadToken=${encodeURIComponent(loadToken)}` : "");
 
     return (
@@ -187,18 +199,23 @@ function useOwnTocBuild(
 }
 
 /**
- * Calls `onDocumentLoaded` and `onDocumentError` for the messages of the load `loadToken` that the
- * frame in `iframeRef` posts.
+ * Calls `onDocumentLoaded`, `onDocumentError` and `onReadingChange` for the messages of the load
+ * `loadToken` that the frame in `iframeRef` posts.
  */
 function useLoadReports(
     iframeRef: RefObject<HTMLIFrameElement | null>, loadToken: string | undefined,
-    reports: { onDocumentLoaded?(): void; onDocumentError(): void }
+    reports: {
+        onDocumentLoaded?(): void;
+        onDocumentError(): void;
+        onReadingChange?(reading: PdfReading): void;
+    }
 ) {
     const reportsRef = useRef(reports);
     reportsRef.current = reports;
 
     useEffect(() => {
         if (!loadToken) return;
+        const reading: PdfReading = { position: null, rotations: [] };
         function onMessage(event: MessageEvent) {
             if (event.source !== iframeRef.current?.contentWindow
                 || event.data?.loadToken !== loadToken) {
@@ -208,11 +225,32 @@ function useLoadReports(
                 reportsRef.current.onDocumentLoaded?.();
             } else if (event.data.type === "pdfjs-viewer-document-error") {
                 reportsRef.current.onDocumentError();
+            } else if (applyReadingMessage(reading, event.data)) {
+                reportsRef.current.onReadingChange?.({
+                    position: reading.position, rotations: [ ...reading.rotations ]
+                });
             }
         }
         window.addEventListener("message", onMessage);
         return () => window.removeEventListener("message", onMessage);
     }, [ loadToken ]);
+}
+
+/** Applies the message `data` to `reading`, and returns whether it is a reading message. */
+export function applyReadingMessage(reading: PdfReading, data: PdfMessageEvent["data"]) {
+    switch (data.type) {
+        case "pdfjs-viewer-position":
+            reading.position = { pageNumber: data.pageNumber, x: data.x, y: data.y };
+            return true;
+        case "pdfjs-viewer-rotations":
+            reading.rotations = [ ...data.rotations ];
+            return true;
+        case "pdfjs-viewer-page-rotation":
+            reading.rotations[data.pageNumber - 1] = data.rotation;
+            return true;
+        default:
+            return false;
+    }
 }
 
 let loadCounter = 0;

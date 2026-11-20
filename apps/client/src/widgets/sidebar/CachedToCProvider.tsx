@@ -9,6 +9,7 @@ import type { RefObject } from "preact";
 import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import type FNote from "../../entities/fnote";
+import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import { rememberHeadingTitles } from "../../services/link";
 import { createLinkedTarget } from "../../services/link_targets";
@@ -81,7 +82,7 @@ export function CachedToCProvider() {
     const viewScope = noteContext?.viewScope;
     const scopeAttachmentId =
         viewScope?.viewMode === "attachments" ? viewScope.attachmentId : undefined;
-    const unavailableReason = useUnavailableReason(note, entry?.status);
+    const unavailableReason = useUnavailableReason(note, scopeAttachmentId, entry?.status);
     // An entry of another attachment than the one in view is a late publish.
     const document = entry && entry.attachmentId === scopeAttachmentId ? entry : undefined;
     const shown = document?.status === "shown" ? document : undefined;
@@ -338,8 +339,14 @@ function useCachedToc(
     };
 }
 
-/** Why the content of `note` cannot be shown here, checked again as its widget comes and goes. */
-function useUnavailableReason(note: FNote | null | undefined, entryStatus: string | undefined) {
+/**
+ * Why the content of `note`, or of its attachment `attachmentId` when the view shows one, cannot
+ * be shown here. Checked again as its widget comes and goes.
+ */
+function useUnavailableReason(
+    note: FNote | null | undefined, attachmentId: string | undefined,
+    entryStatus: string | undefined
+) {
     const [ reason, setReason ] = useState<string | null>(null);
     useEffect(() => {
         if (!note) {
@@ -347,7 +354,7 @@ function useUnavailableReason(note: FNote | null | undefined, entryStatus: strin
             return;
         }
         let isCurrent = true;
-        void getUnavailableReason(note).then((result) => {
+        void readUnavailableReason(note, attachmentId).then((result) => {
             if (isCurrent) {
                 setReason(result);
             }
@@ -355,6 +362,15 @@ function useUnavailableReason(note: FNote | null | undefined, entryStatus: strin
         return () => {
             isCurrent = false;
         };
-    }, [ note, entryStatus ]);
+    }, [ note, attachmentId, entryStatus ]);
     return reason;
+}
+
+/** Why `note` or its attachment `attachmentId` cannot be shown; `null` for a removed attachment. */
+async function readUnavailableReason(note: FNote, attachmentId: string | undefined) {
+    if (!attachmentId) {
+        return await getUnavailableReason(note);
+    }
+    const attachment = await froca.getAttachment(attachmentId, true);
+    return attachment ? await getUnavailableReason(attachment) : null;
 }

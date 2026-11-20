@@ -45,7 +45,8 @@ vi.mock("../../collections/NoteList", () => ({
 // The viewer iframe itself is a separate component with its own spec; here it only has to hand
 // back a frame the messages can be addressed to, and report it loaded. happy-dom does not load
 // iframe pages, so the frame gets a stand-in window from `attachFrameWindow()`.
-vi.mock("./PdfViewer", () => ({
+vi.mock("./PdfViewer", async (importOriginal) => ({
+    applyReadingMessage: (await importOriginal<typeof import("./PdfViewer")>()).applyReadingMessage,
     default: ({ iframeRef, onLoad, noteId, ntxId, pdfUrl, loadToken }: {
         iframeRef: { current: HTMLIFrameElement | null }; onLoad: () => void; noteId?: string;
         ntxId?: string | null; pdfUrl: string; loadToken?: string;
@@ -922,7 +923,7 @@ describe("the document that the outline shows", () => {
         expect(shown().renderedBlobId).toBe("blobA");
     });
 
-    it("advances the shown blob with an own save, without a reload, and reports the revision",
+    it("advances the shown blob with an own save, and reloads once the content goes back",
         async () => {
         const posted = recordPostsToViewer();
         fromThisLoad({ type: "pdfjs-viewer-document-loaded" });
@@ -938,6 +939,16 @@ describe("the document that the outline shows", () => {
         expect(posted).toHaveBeenCalledWith({
             type: "trilium-saved-revision", loadToken, blobId: "blobSaved", isProtected: false
         }, window.location.origin);
+
+        // The saved blob, as froca delivers it, loads nothing.
+        act(() => saveOptions.current?.onContentChange({ blobId: "blobSaved" }));
+        expect(frame().dataset.loadToken).toBe(loadToken);
+
+        // A restore of the first blob, made elsewhere, loads that blob again.
+        act(() => saveOptions.current?.onContentChange({ blobId: "blobA" }));
+        expect(frame().dataset.pdfUrl).toBe("/api/notes/note-1/open?blobId=blobA");
+        expect(frame().dataset.loadToken).not.toBe(loadToken);
+        expect(contextData.tocDocument).toStrictEqual({ status: "rendering" });
     });
 });
 

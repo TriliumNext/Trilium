@@ -6,6 +6,7 @@ import {
 } from "@triliumnext/commons/src/lib/attachment_roles.js";
 import { CANVAS_ATTACHMENT_MIME } from "@triliumnext/commons/src/lib/notes.js";
 import { XLSX_MIME } from "@triliumnext/commons/src/lib/office.js";
+import { findActivePdfHeading, type PdfTocHeading } from "@triliumnext/commons/src/lib/pdf_toc.js";
 import { findTocFormatName, TOC_HEADING_ATTRIBUTE } from "@triliumnext/commons/src/lib/toc.js";
 import { t } from "i18next";
 import { Fragment } from "preact";
@@ -59,6 +60,7 @@ import { ParentComponent, refToJQuerySelector } from "../react/react_utils";
 import SiblingNavigator from "../react/SiblingNavigator";
 import { TextPreview } from "./File";
 import MediaPreview from "./file/MediaPreview";
+import type { PdfReading } from "./file/PdfViewer";
 import TranscriptView from "./transcript/TranscriptView";
 import { TypeWidgetProps } from "./type_widget";
 
@@ -609,6 +611,8 @@ interface RenderedTocDocument {
     /** Whether the content of the render is in place. */
     isPlaced: boolean;
     build?: ClientTocBuild;
+    /** Where the viewer of a PDF reads. */
+    reading?: PdfReading;
 }
 
 /**
@@ -653,7 +657,8 @@ function useAttachmentTocDocument({
     }
 
     function toState(): TocDocumentState {
-        const { generation, state, isPlaced, build } = renderedRef.current;
+        const rendered = renderedRef.current;
+        const { generation, state, isPlaced, build } = rendered;
         if (state?.status === "unavailable") {
             return { status: "unavailable", attachmentId };
         }
@@ -670,7 +675,13 @@ function useAttachmentTocDocument({
             linkPath: `${notePath}?viewMode=attachments&attachmentId=${attachmentId}`,
             title: attachment.title,
             showTarget: (params) => showTarget(generation, params),
-            findActiveHeading: () => activeHeadingRef.current,
+            findActiveHeading: (headings) => {
+                const reading = rendered.reading;
+                return reading?.position
+                    ? findActivePdfHeading(headings as PdfTocHeading[], reading.position,
+                        reading.rotations)
+                    : activeHeadingRef.current;
+            },
             clientBuild: build
         };
     }
@@ -721,6 +732,12 @@ function useAttachmentTocDocument({
                 onTocBuild(build: ClientTocBuild) {
                     if (isCurrent()) {
                         renderedRef.current.build = build;
+                        publish();
+                    }
+                },
+                onReadingChange(reading: PdfReading) {
+                    if (isCurrent()) {
+                        renderedRef.current.reading = reading;
                         publish();
                     }
                 }

@@ -140,13 +140,8 @@ export function createReference(note: BNote, request: CreateReferenceRequest) {
  * its position, and the blob both were read from. Writes nothing.
  */
 export function findMarkedHeadings(note: BNote): MarkedHeadingsResponse {
-    const provider = getProvider(note);
-    if (!provider?.markHeadings) {
-        throw new ValidationError(`The headings of note '${note.noteId}' cannot be marked.`);
-    }
-
     const { blobId } = note;
-    const marked = provider.markHeadings(readContent(note));
+    const marked = getProvider(note)?.markHeadings?.(readContent(note));
     if (!marked) {
         throw new ValidationError(`The headings of note '${note.noteId}' cannot be marked.`);
     }

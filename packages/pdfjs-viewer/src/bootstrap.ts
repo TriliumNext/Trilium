@@ -61,10 +61,11 @@ export async function main() {
         setAnnotationEditorUIManager(uiManager);
     });
 
+    const tracksPosition = !!window.TRILIUM_NOTE_ID || urlParams.get("position") === "1";
     app.eventBus.on("documentloaded", () => {
         postLoadState("pdfjs-viewer-document-loaded");
         setupPdfAnnotations();
-        if (window.TRILIUM_NOTE_ID) {
+        if (tracksPosition) {
             setupPositionTracking(app);
         }
     });

@@ -164,13 +164,16 @@ describe("boot sequence", () => {
             } ]);
     });
 
-    it("reports the position and the rotations of a viewer of a note, read-only too", async () => {
+    it("reports the position and rotations to a note's viewer or one that asks, read-only too",
+        async () => {
         const pages = {
             0: { offsetTop: 0, clientHeight: 792 }, 1: { offsetTop: 1000, clientHeight: 792 }
         };
-        for (const [ query, isAddressed ] of [
-            [ "editable=0&noteId=note-2&ntxId=ntx-2&loadToken=load-1", true ],
-            [ "editable=1&loadToken=load-2", false ]
+        for (const [ query, address ] of [
+            [ "editable=0&noteId=note-2&ntxId=ntx-2&loadToken=load-1",
+                { loadToken: "load-1", noteId: "note-2" } ],
+            [ "editable=0&position=1&loadToken=load-3", { loadToken: "load-3" } ],
+            [ "editable=1&loadToken=load-2", null ]
         ] as const) {
             delete (window as Partial<Window>).TRILIUM_NOTE_ID;
             delete (window as Partial<Window>).TRILIUM_NTX_ID;
@@ -180,11 +183,11 @@ describe("boot sequence", () => {
             viewer.eventBus.dispatch("documentloaded", { source: null });
             viewer.eventBus.dispatch("documentinit", { source: null });
 
-            if (isAddressed) {
+            if (address) {
                 await vi.waitFor(() => expect(viewer.lastMessageOfType("pdfjs-viewer-position"))
-                    .toMatchObject({ loadToken: "load-1", noteId: "note-2", pageNumber: 1 }));
+                    .toMatchObject({ ...address, pageNumber: 1 }));
                 expect(viewer.lastMessageOfType("pdfjs-viewer-rotations"))
-                    .toMatchObject({ loadToken: "load-1", rotations: [ 0, 0 ] });
+                    .toMatchObject({ ...address, rotations: [ 0, 0 ] });
             } else {
                 await new Promise((resolve) => setTimeout(resolve, 150));
                 expect(viewer.messagesOfType("pdfjs-viewer-position")).toHaveLength(0);

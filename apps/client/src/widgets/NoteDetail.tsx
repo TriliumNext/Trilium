@@ -9,6 +9,7 @@ import {
 import appContext, { type EventData, type EventNames } from "../components/app_context";
 import Component from "../components/component";
 import NoteContext from "../components/note_context";
+import type FAttachment from "../entities/fattachment";
 import FNote from "../entities/fnote";
 import type { PrintReport } from "../print";
 import attributes from "../services/attributes";
@@ -543,17 +544,19 @@ export async function getExtendedWidgetType(note: FNote | null | undefined, note
 }
 
 /**
- * Why the content of `note` cannot be shown on this device: a protected note outside a protected
- * session, or, when `isBlobBacked`, a blob that the sync server withheld. `null` when it can.
+ * Why the content of `entity` cannot be shown on this device: a protected note or attachment
+ * outside a protected session, or, when `isBlobBacked`, a blob that the sync server withheld.
+ * `null` when it can.
  */
 export async function getUnavailableReason(
-    note: FNote, isBlobBacked = true
+    entity: FNote | FAttachment, isBlobBacked = true
 ): Promise<"protectedSession" | "blobStub" | null> {
-    if (note.isProtected && !protected_session_holder.isProtectedSessionAvailable()) {
+    if (entity.isProtected && !protected_session_holder.isProtectedSessionAvailable()) {
         return "protectedSession";
     }
-    if (isBlobBacked && froca.getNoteFromCache(note.noteId)) {
-        const blob = await note.getBlob();
+    const isCached = "attachmentId" in entity || !!froca.getNoteFromCache(entity.noteId);
+    if (isBlobBacked && isCached) {
+        const blob = await entity.getBlob();
         if (blob?.isStubbed) {
             return "blobStub";
         }

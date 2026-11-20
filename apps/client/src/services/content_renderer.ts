@@ -24,7 +24,7 @@ import imageContextMenuService from "../menus/image_context_menu.js";
 import { t } from "../services/i18n.js";
 import { type MediaEnvironment, showsFileActions } from "../widgets/type_widgets/file/media_environment.js";
 import type { ClientTocBuild } from "../widgets/sidebar/CachedToCProvider.js";
-import type { PdfLinkTarget } from "../widgets/type_widgets/file/PdfViewer.js";
+import type { PdfLinkTarget, PdfReading } from "../widgets/type_widgets/file/PdfViewer.js";
 import type { DocumentTarget } from "./bookmark_jump.js";
 import type { LlmChatContent, StoredMessage } from "../widgets/type_widgets/llm_chat/llm_chat_types.js";
 import type {
@@ -144,6 +144,8 @@ export interface RenderOptions {
     buildsPdfToc?: boolean;
     /** Receives the ToC build of the viewer of a PDF attachment, with `buildsPdfToc`. */
     onTocBuild?(build: ClientTocBuild): void;
+    /** Receives where the viewer of a PDF reads, as it changes. */
+    onReadingChange?(reading: PdfReading): void;
     /**
      * Reports which blob of a PDF or an office document the content shows. With it, the content is
      * of the blob the attachment has: a fetch that meets another blob reads the current one and
@@ -969,6 +971,7 @@ async function mountPdfViewer(
             editable: false, toolbar: options.pdfToolbar ?? false, tocDocument, target,
             loadToken: current.token,
             onTocBuild: options.onTocBuild,
+            onReadingChange: options.onReadingChange,
             onDocumentLoaded() {
                 if (current === load && current.blobId) {
                     failedLoads.length = 0;

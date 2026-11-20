@@ -930,9 +930,13 @@ describe("getRenderedContent file rendering", () => {
 
     it("opens a PDF attachment at each target in one viewer, and lets it build a cache", async () => {
         const att = buildAttachment({ role: "file", mime: "application/pdf" });
-        const { showTarget } = await getRenderedContent(att, { buildsPdfToc: true });
+        const onReadingChange = vi.fn();
+        const { showTarget } = await getRenderedContent(att, {
+            buildsPdfToc: true, onReadingChange
+        });
         expect(pdfViewerComponent.mock.calls.at(-1)?.[0]).toMatchObject({
-            tocDocument: { tocUrl: `attachments/${att.attachmentId}/toc`, isProtected: false }
+            tocDocument: { tocUrl: `attachments/${att.attachmentId}/toc`, isProtected: false },
+            onReadingChange
         });
         expect(pdfViewerComponent.mock.calls.at(-1)?.[0].target).toBeUndefined();
 

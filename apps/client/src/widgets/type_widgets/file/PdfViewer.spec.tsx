@@ -27,6 +27,7 @@ describe("PdfViewer", () => {
 
         // A viewer outside a note (print preview, lightbox, revisions) reports to no one.
         expect(viewerUrl({}).has("noteId")).toBe(false);
+        expect(viewerUrl({}).has("position")).toBe(false);
         expect(viewerUrl({ noteId: "abc123", ntxId: null }).has("ntxId")).toBe(false);
     });
 
@@ -115,6 +116,41 @@ describe("PdfViewer for a document of its own", () => {
         await vi.waitFor(() => expect(put).toHaveBeenCalledWith("attachments/att1/toc", {
             targetBlobHash: "b", headings: [], properties: {}, elapsedMs: 1
         }, undefined, { silentConflict: true }));
+    });
+
+    it("asks its frame where it reads, and reports each reading of its own load", () => {
+        container = document.createElement("div");
+        document.body.append(container);
+        const onReadingChange = vi.fn();
+        act(() => render(
+            <PdfViewer pdfUrl="/api/attachments/att1/open" loadToken="5"
+                onReadingChange={onReadingChange} />,
+            container));
+        const iframe = container.querySelector("iframe") as HTMLIFrameElement;
+        const frameWindow = new EventTarget();
+        Object.defineProperty(iframe, "contentWindow", { value: frameWindow });
+        const src = new URL(iframe.getAttribute("src") ?? "", "http://localhost");
+        expect(src.searchParams.get("position")).toBe("1");
+
+        function fromFrame(data: object, source: unknown = frameWindow) {
+            window.dispatchEvent(new MessageEvent("message", {
+                data: { loadToken: "5", ...data }, source: source as MessageEventSource
+            }));
+        }
+        fromFrame({ type: "pdfjs-viewer-rotations", rotations: [ 0, 90 ] });
+        fromFrame({ type: "pdfjs-viewer-position", pageNumber: 2, x: 10, y: 20 });
+        fromFrame({ type: "pdfjs-viewer-page-rotation", pageNumber: 1, rotation: 180 });
+        expect(onReadingChange.mock.calls.map(([ reading ]) => reading)).toStrictEqual([
+            { position: null, rotations: [ 0, 90 ] },
+            { position: { pageNumber: 2, x: 10, y: 20 }, rotations: [ 0, 90 ] },
+            { position: { pageNumber: 2, x: 10, y: 20 }, rotations: [ 180, 90 ] }
+        ]);
+
+        // Another load, another frame and another message report nothing.
+        fromFrame({ type: "pdfjs-viewer-position", pageNumber: 1, x: 0, y: 0, loadToken: "4" });
+        fromFrame({ type: "pdfjs-viewer-position", pageNumber: 1, x: 0, y: 0 }, window);
+        fromFrame({ type: "pdfjs-viewer-current-page", currentPage: 1 });
+        expect(onReadingChange).toHaveBeenCalledTimes(3);
     });
 
     it("builds nothing without a document to build for", async () => {

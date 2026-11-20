@@ -1,7 +1,5 @@
 import type { ReferenceParams } from "@triliumnext/commons";
-import {
-    findActivePdfHeading, type PdfReadingPosition, type PdfTocHeading
-} from "@triliumnext/commons/src/lib/pdf_toc.js";
+import { findActivePdfHeading, type PdfTocHeading } from "@triliumnext/commons/src/lib/pdf_toc.js";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
@@ -21,7 +19,9 @@ import { useTriliumEvent } from "../../react/hooks/events";
 import { useEffectiveReadOnly, useLinkTargetLanding } from "../../react/hooks/note_context";
 import { useBlobEditorSpacedUpdate } from "../../react/hooks/editor";
 import type { TocDocumentState } from "../../sidebar/CachedToCProvider";
-import PdfViewer, { getPdfUrl, nextPdfLoadToken } from "./PdfViewer";
+import PdfViewer, {
+    applyReadingMessage, getPdfUrl, nextPdfLoadToken, type PdfReading
+} from "./PdfViewer";
 import { refreshBlobId, useTocBuild } from "./toc_build";
 
 /**
@@ -43,8 +43,8 @@ const MAX_FAILED_LOADS = 3;
 type PdfContextDataKey =
     "tocDocument" | "pdfPages" | "pdfAttachments" | "pdfAnnotations" | "pdfLayers";
 
-/** One navigation of the viewer's frame. */
-interface PdfLoad {
+/** One navigation of the viewer's frame, and where its viewer reads. */
+interface PdfLoad extends PdfReading {
     /** Names the navigation; every message of the load includes it. */
     token: string;
     noteId: string;
@@ -56,9 +56,6 @@ interface PdfLoad {
     isUnavailable: boolean;
     /** The blob that the viewer shows: the load's, then the blob of each own save. */
     renderedBlobId: string;
-    position: PdfReadingPosition | null;
-    /** The effective rotation of each page, by page index. */
-    rotations: number[];
 }
 
 export default function PdfPreview({ note, blob, componentId, noteContext, isVisible = true }: {
@@ -244,8 +241,7 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
             });
         },
         onContentChange(newBlob) {
-            const current = loadRef.current;
-            if (newBlob.blobId === current?.blobId || newBlob.blobId === current?.renderedBlobId) {
+            if (newBlob.blobId === loadRef.current?.renderedBlobId) {
                 return;
             }
             failedLoadsRef.current = [];
@@ -405,15 +401,8 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
                 case "pdfjs-viewer-document-error":
                     void recoverFromLoadError(current);
                     return;
-                case "pdfjs-viewer-position":
-                    current.position = { pageNumber: data.pageNumber, x: data.x, y: data.y };
-                    break;
-                case "pdfjs-viewer-rotations":
-                    current.rotations = [ ...data.rotations ];
-                    break;
-                case "pdfjs-viewer-page-rotation":
-                    current.rotations[data.pageNumber - 1] = data.rotation;
-                    break;
+                default:
+                    applyReadingMessage(current, data);
             }
             publishTocDocument();
         }
