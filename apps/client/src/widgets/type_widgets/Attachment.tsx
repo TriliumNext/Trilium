@@ -201,7 +201,9 @@ function AttachmentListHeader({ noteId }: { noteId: string }) {
 /**
  * Displays information about a single attachment.
  */
-export function AttachmentDetail({ note, viewScope, noteContext }: TypeWidgetProps) {
+export function AttachmentDetail({
+    note, viewScope, noteContext, isVisible = true
+}: TypeWidgetProps) {
     const [ attachment, setAttachment ] = useState<FAttachment | null | undefined>(undefined);
 
     // Only the lookup of the latest navigation is shown, whichever lookup resolves last.
@@ -246,6 +248,7 @@ export function AttachmentDetail({ note, viewScope, noteContext }: TypeWidgetPro
                             ownerNote={note}
                             noteContext={noteContext}
                             viewScope={viewScope}
+                            isVisible={isVisible}
                         />
                     )
                 ) : (
@@ -256,7 +259,12 @@ export function AttachmentDetail({ note, viewScope, noteContext }: TypeWidgetPro
     );
 }
 
-function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, viewScope }: { attachment: FAttachment, isFullDetail?: boolean, ownerNote?: FNote, noteContext?: NoteContext, viewScope?: ViewScope }) {
+function AttachmentInfo({
+    attachment, isFullDetail, ownerNote, noteContext, viewScope, isVisible = true
+}: {
+    attachment: FAttachment, isFullDetail?: boolean, ownerNote?: FNote, noteContext?: NoteContext,
+    viewScope?: ViewScope, isVisible?: boolean
+}) {
     const contentWrapper = useRef<HTMLDivElement>(null);
     const imageViewerWrapper = useRef<HTMLDivElement>(null);
     const [ title, setTitle ] = useState(attachment.title);
@@ -303,7 +311,8 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
     const isRenderingRef = useRef(false);
     const tocDocument = useAttachmentTocDocument({
         attachment, noteContext, contentWrapper, renderGenerationRef, isRenderingRef, showTargetRef,
-        isEnabled: !!isFullDetail && !!findTocFormatName(attachment.role, attachment.mime)
+        isEnabled: !!isFullDetail && !!findTocFormatName(attachment.role, attachment.mime),
+        isVisible
     });
 
     /**
@@ -602,6 +611,8 @@ interface AttachmentTocDocumentOptions {
     };
     /** Whether the attachment is a document whose outline comes from its ToC cache. */
     isEnabled: boolean;
+    /** Whether `NoteDetailWrapper` displays the pane, which stays mounted while hidden. */
+    isVisible: boolean;
 }
 
 /** What a render of an attachment reported for the outline. */
@@ -618,11 +629,12 @@ interface RenderedTocDocument {
 /**
  * Publishes `tocDocument` for the attachment that the full-detail view shows: `rendering` while a
  * render puts the content in place, then the blob that the render reported. Each state belongs to
- * a render generation, and is published only while the view scope names this attachment.
+ * a render generation, and is published only while the pane is visible and its view scope names
+ * this attachment. The state of a placed render is published again when the pane shows it again.
  */
 function useAttachmentTocDocument({
     attachment, noteContext, contentWrapper, renderGenerationRef, isRenderingRef, showTargetRef,
-    isEnabled
+    isEnabled, isVisible
 }: AttachmentTocDocumentOptions) {
     const renderedRef = useRef<RenderedTocDocument>({ generation: 0, isPlaced: false });
     const [ marks, setMarks ] = useState<{
@@ -637,7 +649,7 @@ function useAttachmentTocDocument({
     const { attachmentId } = attachment;
 
     function isInScope() {
-        return isEnabled && noteContext?.viewScope?.attachmentId === attachmentId;
+        return isEnabled && isVisible && noteContext?.viewScope?.attachmentId === attachmentId;
     }
 
     /** Lands on `params` while the render `generation` is the latest and in place. */
@@ -711,7 +723,7 @@ function useAttachmentTocDocument({
         if (renderedRef.current.isPlaced) {
             publish();
         }
-    }, [ activeHeadingId ]);
+    }, [ activeHeadingId, isVisible ]);
 
     return {
         /** The options that report the render `generation` to the outline. */

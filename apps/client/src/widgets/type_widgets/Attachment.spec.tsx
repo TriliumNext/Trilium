@@ -478,6 +478,52 @@ describe("AttachmentDetail", () => {
             await act(async () => render(null, container));
             expect(noteContext.contextData.has("tocDocument")).toBe(false);
         });
+
+        it("publishes the document again when the pane shows the attachment again", async () => {
+            const attachment = { ...role("file"), mime: DOCX_MIME } as FAttachment;
+            vi.spyOn(froca, "getAttachment").mockResolvedValue(attachment);
+            const renders = holdRenders();
+            const { attachmentId } = attachment;
+            const scope = () => ({ viewMode: "attachments", attachmentId });
+            const noteContext = {
+                ...recordingContext(), viewScope: scope() as Record<string, string | undefined>
+            };
+            const container = document.createElement("div");
+            document.body.append(container);
+            async function show(viewScope: object, isVisible: boolean) {
+                const props = { note: { noteId: "note1" }, viewScope, noteContext, isVisible } as
+                    unknown as Parameters<typeof AttachmentDetail>[0];
+                await act(async () => {
+                    render(
+                        <ParentComponent.Provider value={renders.component}>
+                            <AttachmentDetail {...props} />
+                        </ParentComponent.Provider>, container);
+                });
+            }
+            const shownScope = noteContext.viewScope;
+            await show(shownScope, true);
+            await vi.waitFor(() => expect(getRenderedContent).toHaveBeenCalledOnce());
+            reports().onDocumentState({ status: "shown", blobId: "blob1" });
+            await renders.finish(0, PREVIEW);
+            expect(noteContext.contextData.get("tocDocument"))
+                .toMatchObject({ status: "shown", renderedBlobId: "blob1" });
+
+            // Another note clears the context data, and `NoteDetailWrapper` hides the pane with
+            // the props it had.
+            noteContext.viewScope = { viewMode: "default" };
+            noteContext.contextData.clear();
+            await show(shownScope, false);
+            expect(noteContext.contextData.has("tocDocument")).toBe(false);
+
+            noteContext.viewScope = scope();
+            await show(noteContext.viewScope, true);
+            expect(noteContext.contextData.get("tocDocument")).toMatchObject({
+                status: "shown", attachmentId, renderedBlobId: "blob1"
+            });
+            expect(getRenderedContent).toHaveBeenCalledOnce();
+            await act(async () => render(null, container));
+            container.remove();
+        });
     });
 
     it("looks nothing up while the view scope names no attachment", async () => {

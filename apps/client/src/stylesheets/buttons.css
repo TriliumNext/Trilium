@@ -60,10 +60,6 @@
     min-width: unset !important;
 }
 
-/*
- * Tree item buttons, used by the note tree and the outline
- */
-
 .tn-icon.tree-item-button {
     display: none;
     font-size: 120%;
