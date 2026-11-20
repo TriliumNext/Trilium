@@ -189,8 +189,8 @@ export function getHeadingAncestors<T>(
     getGroup?: (item: T) => unknown
 ): (readonly T[])[] {
     const result: (readonly T[])[] = [];
-    // The items that the next item of each group can nest under.
-    const openByGroup = new Map<unknown, readonly T[]>();
+    // The items that the next item of each group can nest under, and their levels.
+    const openByGroup = new Map<unknown, { items: readonly T[]; levels: readonly number[] }>();
     for (const item of items) {
         const level = getLevel(item);
         if (level === undefined) {
@@ -199,14 +199,17 @@ export function getHeadingAncestors<T>(
         }
 
         const group = getGroup?.(item);
-        const open = openByGroup.get(group) ?? [];
-        let depth = open.length;
-        while (depth > 0 && (getLevel(open[depth - 1]) ?? 0) >= level) {
+        const open = openByGroup.get(group) ?? { items: [], levels: [] };
+        let depth = open.levels.length;
+        while (depth > 0 && open.levels[depth - 1] >= level) {
             depth--;
         }
-        const ancestors = depth === open.length ? open : open.slice(0, depth);
+        const ancestors = depth === open.items.length ? open.items : open.items.slice(0, depth);
         result.push(ancestors);
-        openByGroup.set(group, [ ...ancestors, item ]);
+        openByGroup.set(group, {
+            items: [ ...ancestors, item ],
+            levels: [ ...open.levels.slice(0, depth), level ]
+        });
     }
     return result;
 }
