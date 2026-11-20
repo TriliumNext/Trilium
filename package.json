@@ -66,7 +66,7 @@
   "devDependencies": {
     "@fast-csv/parse": "5.0.8",
     "@stylistic/eslint-plugin": "6.0.1",
-    "@playwright/test": "1.65.0",
+    "@playwright/test": "1.65.1",
     "@triliumnext/server": "workspace:*",
     "@types/express": "5.0.6",
     "@types/node": "24.19.2",
@@ -85,7 +85,7 @@
     "http-server": "14.1.1",
     "jiti": "2.7.0",
     "js-yaml": "5.5.0",
-    "playwright": "1.65.0",
+    "playwright": "1.65.1",
     "tslib": "2.9.1",
     "tsx": "4.23.15",
     "typescript": "6.0.3",
