@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import type { NoteContextDataMap } from "../../components/note_context";
 import FNote from "../../entities/fnote";
 import type { PrintReport } from "../../print";
+import froca from "../../services/froca";
 import {
     subscribeToMessages, unsubscribeToMessage as unsubscribeFromMessage
 } from "../../services/ws";
@@ -271,11 +272,21 @@ export function useNoteIds(note: FNote | null | undefined, viewType: ViewTypeOpt
             || loadResults.getBranchRows().some(branch =>
                 branch.parentNoteId === note.noteId
                     || noteIds.includes(branch.parentNoteId ?? ""))
-            || loadResults.getAttributeRows().some(attr => attr.name === "archived" && attr.noteId && noteIds.includes(attr.noteId))
+            || loadResults.getAttributeRows().some(attr => attr.name === "archived" && attr.noteId && isInCollection(note, attr.noteId))
         )) {
             refreshNoteIds();
         }
     });
+
+    // An archived note is missing from noteIds, so it is looked up in the tree instead.
+    function isInCollection(note: FNote, noteId: string) {
+        if (directChildrenOnly) {
+            return note.children.includes(noteId);
+        }
+        const parentNoteIds = froca.getNoteFromCache(noteId)?.parents ?? [];
+        return parentNoteIds.some(parentNoteId =>
+            parentNoteId === note.noteId || noteIds.includes(parentNoteId));
+    }
 
     // Refresh on search.
     useTriliumEvent("searchRefreshed", ({ ntxId: eventNtxId }) => {
