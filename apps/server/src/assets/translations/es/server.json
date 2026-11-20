@@ -621,5 +621,9 @@
     "detail": "{{- path}}\n\nEste archivo puede ejecutar un programa en su ordenador. Ábralo solo si ha creado usted mismo este enlace y confía en el archivo.",
     "cancel": "Cancelar",
     "open": "Abrir"
+  },
+  "revisions": {
+    "draft_description": "Cambios sin guardar",
+    "fragment_description": "Cambios sin guardar en un extracto"
   }
 }
