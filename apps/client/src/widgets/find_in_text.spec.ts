@@ -5,10 +5,16 @@ import {
 } from "ckeditor5";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { scrollRangeIntoView } from "../services/highlight_matches";
 import type FindWidget from "./find";
 import FindInText, { TextEditorFindTarget } from "./find_in_text";
 import MergedFind, { type FindTarget } from "./merged_find";
 import { registerEmbedFindTarget } from "./type_widgets/text/content_embed_tools";
+
+vi.mock("../services/highlight_matches", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../services/highlight_matches")>()),
+    scrollRangeIntoView: vi.fn()
+}));
 
 const OPTIONS = { matchCase: false, wholeWord: false };
 const CONTENT = "<p>needle one</p>"
@@ -45,7 +51,7 @@ describe("TextEditorFindTarget", () => {
         find.highlight(0);
         expect(highlightedText()).toBe("needle one");
         find.highlight(2);
-        expect(embedTarget.highlight).toHaveBeenLastCalledWith(1);
+        expect(embedTarget.highlight).toHaveBeenLastCalledWith(1, undefined);
         expect(highlightedText()).toBeNull();
         expect(editor.plugins.get(FindReveal).position?.path).toEqual([ 1, 0 ]);
         find.highlight(3);
@@ -83,13 +89,118 @@ describe("TextEditorFindTarget", () => {
         // happy-dom has no layout to scroll.
         const scroll = vi.spyOn(editor.editing.view, "scrollToTheSelection")
             .mockImplementation(() => {});
-        expect(target.close(2)).toBe(true);
+        const select = target.close(2);
+        expect(editor.plugins.get(FindAndReplaceEditing).state?.results.length).toBe(0);
+        expect(scroll).not.toHaveBeenCalled();
+        select?.();
         expect(scroll).toHaveBeenCalledOnce();
         const selection = editor.model.document.selection.getFirstRange();
         expect(selection?.start.path).toEqual([ 2, 0 ]);
         expect(selection?.end.path).toEqual([ 2, 3 ]);
+        expect(target.close(null)).toBeNull();
+    });
+
+    it("names each match's first highlight span, and the spans shown now while stale", async () => {
+        const target = new TextEditorFindTarget(asTextEditor(editor));
+        await target.find("needle", OPTIONS);
+        const root = editor.editing.view.getDomRoot();
+        const spanTexts = (targets: unknown[]) =>
+            targets.map((span) => (span as HTMLElement | null)?.textContent ?? null);
+
+        expect(spanTexts(target.getMatchTargets({ isStale: false })))
+            .toEqual([ "needle", "needle", "needle" ]);
+        const [ first ] = target.getMatchTargets({ isStale: false });
+        expect(first).toBe(root?.querySelector("span.ck-find-result"));
+
+        // A nested editor shows the spans of its own target.
+        const nested = root?.appendChild(document.createElement("div"));
+        nested?.classList.add("ck-editor__editable");
+        nested?.insertAdjacentHTML(
+            "beforeend",
+            "<span class=\"ck-find-result\" data-find-result=\"nested\">needle</span>"
+        );
+
+        // An edit gives the matches of its paragraph new results: the old ones have no span left.
+        typeText("needle ");
+        expect(target.getMatchTargets({ isStale: false }).slice(0, 2))
+            .toEqual([ null, expect.any(HTMLElement) ]);
+        expect(spanTexts(target.getMatchTargets({ isStale: true })))
+            .toEqual([ "needle", "needle", "needle", "needle" ]);
+        nested?.remove();
+    });
+
+    it("recounts live matches, which its indices follow, without destroyed markers", async () => {
+        const target = new TextEditorFindTarget(asTextEditor(editor));
+        const find = new MergedFind(target);
+        await find.find("needle", OPTIONS);
+
+        // A new match in the first paragraph, and the match of the last paragraph deleted.
+        typeText("needle ");
+        editor.model.change((writer) => {
+            const last = editor.model.document.getRoot()?.getChild(2);
+            if (!last?.is("element")) throw new Error("Expected a third paragraph.");
+            writer.remove(writer.createRangeIn(last));
+        });
+
+        expect(find.countMatches()).toBe(3);
+        const texts: (string | null)[] = [];
+        for (let index = 0; index < 3; index++) {
+            find.highlight(index);
+            texts.push(highlightedText());
+        }
+        expect(texts).toEqual([ "needle needle one", "needle needle one", "needle caption" ]);
+        expect(() => target.getEmbeds().map((embed) => target.countMatchesBefore(embed)))
+            .not.toThrow();
+    });
+
+    it("keeps its current match through edits, and drops it once an edit removes it", async () => {
+        const target = new TextEditorFindTarget(asTextEditor(editor));
+        await target.find("needle", OPTIONS);
+        const state = editor.plugins.get(FindAndReplaceEditing).state;
+        target.highlight(2);
+        const current = state?.highlightedResult;
+        expect(highlightedText()).toBe("needle two");
+
+        typeText("needle ");
+        expect(state?.results.length).toBe(4);
+        expect(state?.highlightedResult).toBe(current);
+
+        // Typing in its paragraph gives the match a new result, which the plugin makes current.
+        editor.model.change((writer) => {
+            const last = editor.model.document.getRoot()?.getChild(2);
+            if (!last?.is("element")) throw new Error("Expected a third paragraph.");
+            writer.insertText("x", last, 0);
+        });
+        expect(state?.highlightedResult).toBeNull();
+
+        target.close(null);
+        typeText("needle ");
+        expect(state?.results.length).toBe(0);
+    });
+
+    it("stops the find on close even with its current match deleted; selects nothing", async () => {
+        const target = new TextEditorFindTarget(asTextEditor(editor));
+        await target.find("needle", OPTIONS);
+        editor.model.change((writer) => {
+            const first = editor.model.document.getRoot()?.getChild(0);
+            if (!first?.is("element")) throw new Error("Expected a first paragraph.");
+            writer.remove(writer.createRangeIn(first));
+        });
+
+        expect(target.close(0)).toBeNull();
         expect(editor.plugins.get(FindAndReplaceEditing).state?.results.length).toBe(0);
-        expect(target.close(null)).toBe(false);
+        expect(editor.editing.view.getDomRoot()?.querySelector(".ck-find-result")).toBeNull();
+    });
+
+    it("scrolls to the current match at once only for an instant highlight", async () => {
+        const target = new TextEditorFindTarget(asTextEditor(editor));
+        await target.find("needle", OPTIONS);
+
+        target.highlight(1);
+        expect(scrollRangeIntoView).not.toHaveBeenCalled();
+        target.highlight(2, { isInstant: true });
+        expect(highlightedText()).toBe("needle two");
+        expect(scrollRangeIntoView).toHaveBeenCalledWith(expect.anything(), "instant");
     });
 
     it("finds nothing once its editor is destroyed", async () => {
@@ -100,7 +211,9 @@ describe("TextEditorFindTarget", () => {
         expect(target.getEmbeds()).toEqual([]);
         expect(() => target.highlight(0)).not.toThrow();
         expect(() => target.revealEmbed(null)).not.toThrow();
-        expect(target.close(null)).toBe(false);
+        expect(target.close(null)).toBeNull();
+        expect(target.countMatches()).toBe(0);
+        expect(target.getMatchTargets({ isStale: false })).toEqual([]);
     });
 });
 
@@ -123,16 +236,20 @@ describe("FindInText", () => {
         await handler.findNext(1, 1, 3);
         expect(handler.canReplace()).toBe(true);
         expect(parent.invalidateResults).not.toHaveBeenCalled();
-        expect(await handler.replace("pin")).toEqual({ totalFound: 3, currentFound: 1 });
+        expect(await handler.replace("pin")).toEqual({
+            isDropped: false, result: { totalFound: 3, currentFound: 1 }
+        });
         expect(editor.getData()).toContain("<p>pin two</p>");
-        expect(await handler.replaceAll("pin")).toEqual({ totalFound: 1, currentFound: 1 });
+        expect(await handler.replaceAll("pin")).toEqual({
+            isDropped: false, result: { totalFound: 1, currentFound: 1 }
+        });
 
         parent.invalidateResults.mockClear();
         registerEmbedTarget(0);
         changeEmbed();
         typeText("needle");
         expect(parent.invalidateResults).toHaveBeenCalledTimes(3);
-        await handler.findBoxClosed(1, 1);
+        await handler.findBoxClosed();
         registerEmbedTarget(0);
         changeEmbed();
         typeText("needle");
@@ -164,10 +281,12 @@ function registerEmbedTarget(count: number, isEditable = true) {
         find: vi.fn(async () => count),
         highlight: vi.fn((_index: number | null) => {}),
         getFirstMatchBelow: () => null,
+        getMatchTargets: () => Array.from({ length: count }, () => null),
+        countMatches: () => count,
         canReplace: () => isEditable,
         replace: async () => count,
         replaceAll: async () => count,
-        close: () => false,
+        close: () => null,
         watchContent: (callback: () => void) => {
             watchers.add(callback);
             return () => watchers.delete(callback);

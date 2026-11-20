@@ -12,6 +12,7 @@ import { shouldRedirectPinnedNavigation } from "../services/tab_pinning.js";
 import treeService from "../services/tree.js";
 import utils from "../services/utils.js";
 import type { ReactWrappedWidget } from "../widgets/basic_widget.js";
+import type { ScrollRailLayer } from "../widgets/scroll_rail_markers.js";
 import type { TocDocumentState } from "../widgets/sidebar/CachedToCProvider.js";
 import type { HighlightContext } from "../widgets/sidebar/HighlightsList.js";
 import type { HeadingContext } from "../widgets/sidebar/TableOfContents.js";
@@ -119,6 +120,10 @@ export interface NoteContextDataMap {
     saveState: {
         state: SaveState;
     };
+    /** Published by the Outline while the pointer is over it, for the scroll rail of the split. */
+    scrollRailHeadings: ScrollRailLayer;
+    /** Published by the find bar while a search has matches, for the scroll rail of the split. */
+    scrollRailFind: ScrollRailLayer;
     /** Published by the code editor of the note, so the status bar can show the cursor position. */
     codeEditor: CodeMirror;
     /**

@@ -4,8 +4,10 @@ import {
 } from "../services/highlight_matches.js";
 import utils from "../services/utils.js";
 import type FindWidget from "./find.js";
+import type { CloseGuard } from "./find.js";
 import MergedFind, {
-    type FindOptions, type FindTarget, getScrollingContainerTop, type HostFindTarget, toFindResult
+    type FindCheck, type FindOptions, type FindTarget, getScrollingContainerTop,
+    type HighlightOptions, type HostFindTarget, toFindResult
 } from "./merged_find";
 import { watchEmbedFindTargets } from "./type_widgets/text/content_embed_tools";
 
@@ -25,23 +27,37 @@ export default class FindInHtml {
         this.parent = parent;
     }
 
-    async performFind(searchTerm: string, matchCase: boolean, wholeWord: boolean) {
+    /** Searches, or returns `null` without a change once `check` fails after an await. */
+    async performFind(
+        searchTerm: string, matchCase: boolean, wholeWord: boolean, check: FindCheck = () => true
+    ) {
         const $content = await this.parent?.noteContext?.getContentElement();
+        if (!check()) return null;
         const content = $content?.[0];
         if (!content) {
             return toFindResult(0, null);
         }
 
         const find = this.getFind(content);
-        const totalFound = await find.find(searchTerm, { matchCase, wholeWord });
+        const totalFound = await find.find(searchTerm, { matchCase, wholeWord }, check);
+        if (!check()) return null;
         this.current = totalFound ? find.getStartMatch(getScrollingContainerTop(content)) : null;
         find.highlight(this.current);
         return toFindResult(totalFound, this.current);
     }
 
-    async findNext(_direction: -1 | 1, _currentFound: number, nextFound: number) {
+    /** Makes match `nextFound` the current one. Returns whether it did. */
+    async findNext(
+        _direction: number, _currentFound: number, nextFound: number, options?: HighlightOptions
+    ) {
         this.current = nextFound;
-        this.find?.highlight(nextFound);
+        this.find?.highlight(nextFound, options);
+        return true;
+    }
+
+    /** The targets of the matches, for the scroll rail. */
+    getMatchTargets(options: { isStale: boolean }) {
+        return this.find?.getMatchTargets(options) ?? [];
     }
 
     /**
@@ -56,7 +72,8 @@ export default class FindInHtml {
         await this.target?.highlightExtraTokens(tokens);
     }
 
-    async findBoxClosed(_totalFound: number, _currentFound: number) {
+    /** Removes the matches and the watchers. Rendered content takes no selection and no focus. */
+    async findBoxClosed(_guard?: CloseGuard) {
         this.stopWatching?.();
         this.stopWatching = null;
         this.find?.close(null);
@@ -73,7 +90,8 @@ export default class FindInHtml {
             this.find = new MergedFind(this.target);
         }
 
-        this.stopWatching ??= watchEmbedFindTargets(content, () => this.parent.invalidateResults());
+        this.stopWatching ??= watchEmbedFindTargets(content,
+            (reason) => this.parent.invalidateResults(reason));
         return this.find;
     }
 
@@ -109,7 +127,7 @@ export class HtmlFindTarget implements FindTarget {
         return this.matches.length;
     }
 
-    highlight(index: number | null) {
+    highlight(index: number | null, options?: HighlightOptions) {
         if (this.current) {
             removeHighlights("find-result-selected", [ this.current ]);
         }
@@ -124,13 +142,22 @@ export class HtmlFindTarget implements FindTarget {
         if (parent) {
             revealElement(parent, this.root);
         }
-        scrollRangeIntoView(this.current);
+        scrollRangeIntoView(this.current, options?.isInstant ? "instant" : undefined);
         addHighlights("find-result-selected", [ this.current ]);
     }
 
     getFirstMatchBelow(top: number) {
         const index = this.matches.findIndex((match) => match.getBoundingClientRect().top >= top);
         return index >= 0 ? index : null;
+    }
+
+    /** The ranges of the matches. One whose content was written again names nothing. */
+    getMatchTargets() {
+        return [ ...this.matches ];
+    }
+
+    countMatches() {
+        return this.matches.length;
     }
 
     canReplace() {
@@ -147,7 +174,7 @@ export class HtmlFindTarget implements FindTarget {
 
     close() {
         this.unmark();
-        return false;
+        return null;
     }
 
     /**

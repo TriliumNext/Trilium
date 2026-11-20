@@ -251,7 +251,7 @@ describe("DesktopLayout", () => {
         restoreTabManager();
     });
 
-    it("gives each note split a title row, and the inline title, title actions, content, note list, search results and scroll padding in its scroller", async () => {
+    it("gives each note split a title row, and a scroller with its parts in order", async () => {
         options.set("layoutOrientation", "vertical");
         let container: HTMLElement | undefined;
         act(() => { container = renderInto(<Layout />); });
@@ -272,9 +272,13 @@ describe("DesktopLayout", () => {
         const actions = titleRow?.querySelector(":scope > .note-actions-bar");
         expect(actions).toBeInstanceOf(HTMLElement);
         expect(actions?.previousElementSibling?.classList.contains("spacer")).toBe(true);
+        // The host of the scroll rail starts the scroller, empty while no layer is published.
         const scroller = split?.querySelector(":scope > .scrolling-container");
-        expect(scroller?.firstElementChild?.classList.contains("inline-title")).toBe(true);
-        expect(scroller?.children[1]?.classList.contains("title-actions")).toBe(true);
+        const railHost = scroller?.firstElementChild;
+        expect(railHost?.classList.contains("scroll-rail-host")).toBe(true);
+        expect(railHost?.childElementCount).toBe(0);
+        expect(scroller?.children[1]?.classList.contains("inline-title")).toBe(true);
+        expect(scroller?.children[2]?.classList.contains("title-actions")).toBe(true);
         const detail = scroller?.querySelector(":scope > .note-detail");
         expect(detail).toBeInstanceOf(HTMLElement);
         expect(detail?.previousElementSibling?.classList.contains("title-actions")).toBe(true);

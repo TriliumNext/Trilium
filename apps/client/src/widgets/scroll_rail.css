@@ -1,0 +1,80 @@
+:where(:root) {
+    --scroll-rail-width: 20px;
+
+    --scroll-rail-viewport-color: color-mix(in srgb, var(--main-text-color) 8%, transparent);
+    --scroll-rail-viewport-border-color:
+        color-mix(in srgb, var(--main-text-color) 28%, transparent);
+
+    --scroll-rail-heading-color: var(--muted-text-color);
+    --scroll-rail-heading-emphasis-color: var(--main-text-color);
+
+    --scroll-rail-find-color: #d9730d;
+    --scroll-rail-find-emphasis-color:
+        color-mix(in srgb, var(--scroll-rail-find-color), var(--main-text-color) 35%);
+}
+
+.scroll-rail-host > .scroll-rail {
+    position: absolute;
+    top: 0;
+    inset-inline-end: 0;
+    width: var(--scroll-rail-width);
+    height: var(--scroll-rail-height, 0);
+    contain: strict;
+    touch-action: none;
+    user-select: none;
+
+    &.is-over-line {
+        cursor: pointer;
+    }
+
+    > canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+    }
+
+    > .scroll-rail-viewport {
+        position: absolute;
+        top: 0;
+        inset-inline: 0;
+        border: 1px solid var(--scroll-rail-viewport-border-color);
+        border-radius: 3px;
+        box-sizing: border-box;
+        height: var(--scroll-rail-box-height, 0);
+        background-color: var(--scroll-rail-viewport-color);
+        pointer-events: none;
+    }
+}
+
+/* Longhands only: Lightning CSS expands the `animation` shorthand with a `0s` duration, which ends
+   a scroll-driven animation at once. */
+@supports (animation-timeline: scroll()) {
+    .scroll-rail-host > .scroll-rail > .scroll-rail-viewport {
+        animation-name: scroll-rail-viewport;
+        animation-duration: auto;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: scroll(nearest block);
+    }
+
+    /* The box shows the scroll position, so "motion disabled" keeps it. */
+    body#trilium-app.motion-disabled .scroll-rail-host > .scroll-rail > .scroll-rail-viewport {
+        animation-name: scroll-rail-viewport !important;
+        animation-duration: auto !important;
+        animation-timing-function: linear !important;
+        animation-fill-mode: both !important;
+        animation-timeline: scroll(nearest block) !important;
+    }
+}
+
+@keyframes scroll-rail-viewport {
+    from {
+        translate: 0 0;
+    }
+
+    to {
+        translate: 0 var(--scroll-rail-box-travel, 0);
+    }
+}

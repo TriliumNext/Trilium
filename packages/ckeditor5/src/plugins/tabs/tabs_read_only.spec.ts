@@ -1,6 +1,7 @@
 import { ClassicEditor, Essentials, Paragraph } from "ckeditor5";
 import { describe, expect, it } from "vitest";
 
+import { TAB_CHANGE_EVENT } from "./constants.js";
 import { applyTabs, getTabTitle, revealFragment, revealTab } from "./tabs_read_only.js";
 
 const PLACEHOLDER = "Tab title";
@@ -34,6 +35,17 @@ function press(element: HTMLElement, key: string) {
     const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
     element.dispatchEvent(event);
     return event;
+}
+
+/** Records the active title of each block whose tab change event reaches `ancestor`. */
+function recordTabChanges(ancestor: Element) {
+    const changes: (string | null | undefined)[] = [];
+    ancestor.addEventListener(TAB_CHANGE_EVENT, event => {
+        const title = (event.target as Element)
+            .querySelector(":scope > .trilium-tabs-bar .trilium-tab-title--active");
+        changes.push(title?.textContent);
+    });
+    return changes;
 }
 
 describe("applyTabs", () => {
@@ -96,6 +108,27 @@ describe("applyTabs", () => {
 
         expect(press(titleOf(container, "A"), " ").defaultPrevented).toBe(true);
         expect(activeTitles(container)).toEqual(["A"]);
+    });
+
+    it("fires a bubbling tab change event on the block when another tab shows", () => {
+        const inner = `<div class="trilium-tabs">${tab("Inner 1", "")}` +
+            `${tab("Inner 2", "<p id=\"target\">x</p>")}</div>`;
+        const container = document.createElement("div");
+        container.innerHTML =
+            `<div class="trilium-tabs">${tab("A", "")}${tab("B", inner)}${tab("C", "")}</div>`;
+        const changes = recordTabChanges(container);
+        applyTabs(container, OPTIONS);
+        const target = container.querySelector("#target") as Element;
+
+        titleOf(container, "C").click();
+        titleOf(container, "C").click();
+        press(titleOf(container, "C"), "Enter");
+        press(titleOf(container, "C"), "ArrowRight");
+        revealTab(target);
+        revealTab(target);
+
+        // No event for the first tab that `applyTabs()` shows, or for a tab that already shows.
+        expect(changes).toEqual([ "C", "A", "B", "Inner 2" ]);
     });
 
     it("moves between titles with the arrow, Home and End keys", () => {

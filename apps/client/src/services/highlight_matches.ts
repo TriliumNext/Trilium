@@ -116,17 +116,23 @@ export function removeHighlights(name: HighlightName, ranges: Iterable<Range>) {
  * middle. `Element.scrollIntoView()` would center the whole parent element instead, which can be
  * a code block taller than the view.
  */
-export function scrollRangeIntoView(range: Range) {
-    scrollRectIntoView(range.startContainer.parentElement, () => range.getBoundingClientRect());
+export function scrollRangeIntoView(range: Range, behavior?: ScrollBehavior) {
+    scrollRectIntoView(
+        range.startContainer.parentElement,
+        () => range.getBoundingClientRect(),
+        behavior
+    );
 }
 
 /**
  * Scrolls `element` and its ancestors that scroll, innermost first, so that the rectangle that
- * `getRect()` returns in client coordinates sits in the middle of each.
+ * `getRect()` returns in client coordinates sits in the middle of each. Without `behavior`, each
+ * scroll follows the `scroll-behavior` of its box.
  */
 export function scrollRectIntoView(
     element: Element | null,
-    getRect: () => Pick<DOMRectReadOnly, "left" | "top" | "width" | "height">
+    getRect: () => Pick<DOMRectReadOnly, "left" | "top" | "width" | "height">,
+    behavior?: ScrollBehavior
 ) {
     for (let ancestor = element; ancestor; ancestor = ancestor.parentElement) {
         if (!isScrollable(ancestor)) continue;
@@ -135,7 +141,8 @@ export function scrollRectIntoView(
         const box = ancestor.getBoundingClientRect();
         ancestor.scrollBy({
             left: target.left + target.width / 2 - (box.left + box.width / 2),
-            top: target.top + target.height / 2 - (box.top + box.height / 2)
+            top: target.top + target.height / 2 - (box.top + box.height / 2),
+            ...behavior && { behavior }
         });
     }
 }

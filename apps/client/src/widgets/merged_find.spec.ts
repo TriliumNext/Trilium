@@ -1,10 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { scrollRectIntoView } from "../services/highlight_matches";
 import MergedFind, { type FindTarget, type HostFindTarget } from "./merged_find";
 import {
     registerEmbedFindTarget, revealContentEmbed
 } from "./type_widgets/text/content_embed_tools";
 
+vi.mock("../services/highlight_matches", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../services/highlight_matches")>()),
+    scrollRectIntoView: vi.fn()
+}));
 vi.mock("./type_widgets/text/content_embed_tools", async (importOriginal) => ({
     ...(await importOriginal<typeof import("./type_widgets/text/content_embed_tools")>()),
     revealContentEmbed: vi.fn()
@@ -34,8 +39,8 @@ describe("MergedFind", () => {
         const { find, host, targets } = setUp();
 
         expect(await find.find("needle", OPTIONS)).toBe(8);
-        expect(host.find).toHaveBeenCalledWith("needle", OPTIONS);
-        expect(targets.a.find).toHaveBeenCalledWith("needle", OPTIONS);
+        expect(host.find).toHaveBeenCalledWith("needle", OPTIONS, undefined);
+        expect(targets.a.find).toHaveBeenCalledWith("needle", OPTIONS, undefined);
 
         const order: string[] = [];
         for (let index = 0; index < 8; index++) {
@@ -107,11 +112,11 @@ describe("MergedFind", () => {
 
         expect(find.canReplace(5)).toBe(true);
         expect(await find.replace(5, "pin")).toBe(7);
-        expect(host.replace).toHaveBeenCalledWith(2, "pin");
+        expect(host.replace).toHaveBeenCalledWith(2, "pin", undefined);
 
         expect(await find.replaceAll("pin")).toBe(2);
-        expect(host.replaceAll).toHaveBeenCalledWith("pin");
-        expect(targets.c.replaceAll).toHaveBeenCalledWith("pin");
+        expect(host.replaceAll).toHaveBeenCalledWith("pin", undefined);
+        expect(targets.c.replaceAll).toHaveBeenCalledWith("pin", undefined);
         find.highlight(1);
         expect(log.at(-1)).toBe("a.highlight(1)");
     });
@@ -120,9 +125,11 @@ describe("MergedFind", () => {
         const { find, host, targets } = setUp();
         await find.find("needle", OPTIONS);
         find.highlight(3);
-        targets.a.close.mockReturnValue(true);
+        const select = vi.fn();
+        targets.a.close.mockReturnValue(select);
 
-        expect(find.close(3)).toBe(true);
+        expect(find.close(3)).toBe(select);
+        expect(select).not.toHaveBeenCalled();
         expect(targets.a.close).toHaveBeenCalledWith(1);
         expect(targets.c.close).toHaveBeenCalledWith(null);
         expect(host.close).toHaveBeenCalledWith(null);
@@ -140,6 +147,114 @@ describe("MergedFind", () => {
         const callback = vi.fn();
         expect(find.watchContent(callback)).toBe(stop);
         expect(watchContent).toHaveBeenCalledWith(callback);
+    });
+
+    it("passes a search's or a write's check to the host and every embed, nested too", async () => {
+        const { find, host, targets, embeds } = setUp();
+        const innerHost = Object.assign(createTarget("inner", 1), {
+            getEmbeds: () => [], countMatchesBefore: () => 0, revealEmbed: () => {}
+        });
+        register(embeds.b, new MergedFind(innerHost));
+        const check = () => true;
+
+        expect(await find.find("needle", OPTIONS, check)).toBe(9);
+        for (const target of [ host, targets.a, innerHost ]) {
+            expect(target.find).toHaveBeenCalledWith("needle", OPTIONS, check);
+        }
+        await find.replace(0, "pin", check);
+        expect(host.replace).toHaveBeenCalledWith(0, "pin", check);
+        await find.replaceAll("pin", check);
+        for (const target of [ host, targets.a, innerHost ]) {
+            expect(target.replaceAll).toHaveBeenCalledWith("pin", check);
+        }
+    });
+
+    it("recounts every target after a write, so an edit made meanwhile is counted", async () => {
+        const { find, host, targets } = setUp();
+        await find.find("needle", OPTIONS);
+        let resumeA: (count: number) => void = () => {};
+        const aReplaced = new Promise<number>((resolve) => {
+            resumeA = resolve;
+        });
+        targets.a.replaceAll.mockImplementationOnce(
+            () => aReplaced.then((count) => (targets.a.count = count))
+        );
+
+        const replaceAll = find.replaceAll("pin");
+        // A match typed into the host while the embed replaces.
+        host.count = 1;
+        resumeA(0);
+        expect(await replaceAll).toBe(1);
+        expect(host.countMatches).toHaveBeenCalled();
+        find.highlight(0);
+        expect(log.at(-1)).toBe("host.highlight(0)");
+    });
+
+    it("replaces in every embed, even when the bar closes while the host replaces", async () => {
+        const { find, host, targets } = setUp();
+        await find.find("needle", OPTIONS);
+        let resumeHost: (count: number) => void = () => {};
+        const hostReplaced = new Promise<number>((resolve) => {
+            resumeHost = resolve;
+        });
+        host.replaceAll.mockImplementationOnce(
+            () => hostReplaced.then((count) => (host.count = count))
+        );
+
+        const replaceAll = find.replaceAll("pin");
+        find.close(null);
+        resumeHost(0);
+        await replaceAll;
+        expect(targets.a.replaceAll).toHaveBeenCalled();
+        expect(targets.c.replaceAll).toHaveBeenCalled();
+    });
+
+    it("closes every target even after one fails, and resets its state", async () => {
+        const { find, host, targets } = setUp();
+        await find.find("needle", OPTIONS);
+        find.highlight(2);
+        const error = vi.spyOn(console, "error").mockImplementation(() => {});
+        targets.a.close.mockImplementation(() => {
+            throw new Error("a destroyed marker");
+        });
+
+        expect(find.close(2)).toBeNull();
+        expect(targets.c.close).toHaveBeenCalledWith(null);
+        expect(host.close).toHaveBeenCalledWith(null);
+        expect(error).toHaveBeenCalledOnce();
+        expect(find.canReplace(0)).toBe(false);
+        error.mockRestore();
+    });
+
+    it("names match targets in order; while stale, the host's before the embeds'", async () => {
+        const { find, host, targets } = setUp();
+        await find.find("needle", OPTIONS);
+
+        const offsetsOf = (targetList: unknown[]) =>
+            targetList.map((target) => (target as { offset: number }).offset);
+        expect(offsetsOf(find.getMatchTargets({ isStale: false })))
+            .toEqual([ 0, 1, 0, 1, 0, 2, 3, 4 ]);
+        expect(host.getMatchTargets).toHaveBeenCalledTimes(1);
+        expect(targets.a.getMatchTargets).toHaveBeenCalledTimes(1);
+
+        expect(offsetsOf(find.getMatchTargets({ isStale: true })))
+            .toEqual([ 0, 1, 2, 3, 4, 0, 1, 0 ]);
+        expect(host.getMatchTargets).toHaveBeenLastCalledWith({ isStale: true });
+    });
+
+    it("scrolls an embed's box into view before its target highlights, when instant", async () => {
+        const { find, embeds } = setUp();
+        await find.find("needle", OPTIONS);
+        vi.mocked(scrollRectIntoView).mockImplementation((element) => {
+            log.push(`scroll(${element === embeds.a.parentElement})`);
+        });
+
+        find.highlight(2, { isInstant: true });
+        expect(log.slice(-2)).toEqual([ "scroll(true)", "a.highlight(0)" ]);
+        expect(vi.mocked(scrollRectIntoView).mock.calls[0]?.[2]).toBe("instant");
+        log = [];
+        find.highlight(3);
+        expect(log).toEqual([ "a.highlight(1)" ]);
     });
 
     it("closes the targets of embeds that left, and ignores an overtaken search", async () => {
@@ -193,25 +308,32 @@ function setUp({ isAReadOnly = false } = {}) {
     register(embeds.c, targets.c);
     register(embeds.d, targets.d);
 
-    return { find: new MergedFind(host), host, targets, unregisterA };
+    return { find: new MergedFind(host), host, targets, embeds, unregisterA };
 }
 
 function createTarget(name: string, initialCount: number, isEditable = true) {
     const target = {
         count: initialCount,
         firstBelow: null as number | null,
-        find: vi.fn(async (_term: string, _options: typeof OPTIONS) => target.count),
+        find: vi.fn(async (
+            _term: string, _options: typeof OPTIONS, _check?: () => boolean
+        ) => target.count),
         highlight: vi.fn((index: number | null) => {
             log.push(`${name}.highlight(${index})`);
         }),
         getFirstMatchBelow: vi.fn((_top: number) => target.firstBelow),
+        getMatchTargets: vi.fn((_options: { isStale: boolean }) => Array.from(
+            { length: target.count }, (_, index) => ({ within: document.body, offset: index }))),
+        countMatches: vi.fn(() => target.count),
         canReplace: vi.fn((_index: number) => isEditable),
-        replace: vi.fn(async (_index: number, _text: string) => --target.count),
-        replaceAll: vi.fn(async (_text: string) => {
+        replace: vi.fn(async (
+            _index: number, _text: string, _check?: () => boolean
+        ) => --target.count),
+        replaceAll: vi.fn(async (_text: string, _check?: () => boolean) => {
             if (isEditable) target.count = 0;
             return target.count;
         }),
-        close: vi.fn((_index: number | null) => false)
+        close: vi.fn((_index: number | null): (() => void) | null => null)
     } satisfies FindTarget & { count: number; firstBelow: number | null };
     return target;
 }

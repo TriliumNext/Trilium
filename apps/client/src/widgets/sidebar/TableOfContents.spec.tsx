@@ -18,6 +18,7 @@ import { highlightedTexts } from "../../test/highlights";
 import { createFilterableTab } from "../../test/outline_filter";
 import { renderInto } from "../../test/render";
 import { useActiveHeading } from "../react/hooks/dom";
+import { ScrollRailLayer } from "../scroll_rail_markers";
 import { setEditorNoteId } from "../react/NoteStore";
 import { ParentComponent } from "../react/react_utils";
 import { useOutlineReport } from "./outline_filter";
@@ -423,6 +424,196 @@ function markdownContext(ntxId: string, note = buildNote({
     noteContext.viewScope = { viewMode: "default" };
     Object.defineProperty(noteContext, "note", { get: () => note });
     return noteContext;
+}
+
+describe("the scroll rail while the outline is hovered", () => {
+    const HEADINGS = [
+        { id: "a", level: 1, text: "Alpha" },
+        { id: "b", level: 1, text: "Beta" },
+        { id: "c", level: 1, text: "Gamma" }
+    ];
+    let hoverTab: ReturnType<typeof createFilterableTab>;
+    let elements: Map<string, HTMLElement>;
+    /** The id of the row that the pointer rests on, read by `elementFromPoint()`. */
+    let idAtPointer: string | null;
+    const originalElementFromPoint = document.elementFromPoint;
+
+    beforeEach(() => {
+        vi.useFakeTimers({ toFake: [ "setTimeout", "clearTimeout" ] });
+        hoverTab = createFilterableTab();
+        elements = new Map(HEADINGS.map(({ id }) => [ id, document.createElement("h1") ]));
+        idAtPointer = null;
+        document.elementFromPoint = () => (idAtPointer === null
+            ? null
+            : hoverTab.container.querySelector(`li[data-heading-id="${idAtPointer}"]`));
+    });
+
+    afterEach(() => {
+        hoverTab.destroy();
+        document.elementFromPoint = originalElementFromPoint;
+        vi.useRealTimers();
+    });
+
+    it("publishes the headings once a mouse rests; nothing for a crossing or a tap", async () => {
+        const noteContext = railContext();
+        await renderOutline(HEADINGS, noteContext);
+
+        pointer("pointerenter", toc());
+        vi.advanceTimersByTime(100);
+        pointer("pointerleave", toc());
+        vi.advanceTimersByTime(100);
+        pointer("pointerenter", toc(), "touch");
+        pointer("pointerover", row("a"), "touch");
+        vi.advanceTimersByTime(500);
+        expect(noteContext.setContextData).not.toHaveBeenCalled();
+
+        pointer("pointerenter", toc());
+        vi.advanceTimersByTime(120);
+        const layer = publishedLayer(noteContext);
+        expect(layer).toBeInstanceOf(ScrollRailLayer);
+        expect(layer?.source.readTargets()).toEqual([ ...elements.values() ]);
+        expect(layer?.source.onClick).toBeUndefined();
+        expect(layer?.source.getTooltip).toBeUndefined();
+
+        pointer("pointerleave", toc());
+        expect(noteContext.clearContextData).toHaveBeenCalledExactlyOnceWith("scrollRailHeadings");
+    });
+
+    it("draws the hovered row thicker, from before publishing on; none over a gap", async () => {
+        const noteContext = railContext();
+        await renderOutline(HEADINGS, noteContext);
+
+        pointer("pointerenter", toc());
+        pointer("pointerover", row("b"));
+        vi.advanceTimersByTime(120);
+        const layer = publishedLayer(noteContext);
+        expect(layer?.emphasized).toBe(1);
+        pointer("pointerover", row("c"));
+        expect(layer?.emphasized).toBe(2);
+        pointer("pointerover", toc());
+        expect(layer?.emphasized).toBeNull();
+    });
+
+    it("finds the row at a resting pointer in each new list, never by its old index", async () => {
+        const noteContext = railContext();
+        await renderOutline(HEADINGS, noteContext);
+        pointer("pointerenter", toc());
+        pointer("pointerover", row("b"));
+        vi.advanceTimersByTime(120);
+        const layer = publishedLayer(noteContext);
+        if (!layer) throw new Error("No layer was published.");
+        const refresh = vi.spyOn(layer, "refresh");
+
+        // A heading above is removed, and the rows move under the pointer.
+        const [ , beta, gamma ] = HEADINGS;
+        idAtPointer = "b";
+        await renderOutline([ beta, gamma ], noteContext);
+        expect(refresh).toHaveBeenCalledOnce();
+        expect(layer.emphasized).toBe(0);
+        idAtPointer = "c";
+        await renderOutline([ beta, gamma ], noteContext);
+        expect(layer.emphasized).toBe(1);
+
+        // A read-only note gives its headings new ids on every read.
+        elements.set("b2", document.createElement("h1"));
+        elements.set("c2", document.createElement("h1"));
+        idAtPointer = "c2";
+        await renderOutline([ { ...beta, id: "b2" }, { ...gamma, id: "c2" } ], noteContext);
+        expect(layer.emphasized).toBe(1);
+        idAtPointer = null;
+        await renderOutline([ { ...beta, id: "b2" }, { ...gamma, id: "c2" } ], noteContext);
+        expect(layer.emphasized).toBeNull();
+    });
+
+    it("lines up only the matching headings while the outline filters", async () => {
+        const noteContext = railContext();
+        await renderOutline(HEADINGS, noteContext);
+        pointer("pointerenter", toc());
+        vi.advanceTimersByTime(120);
+
+        vi.useRealTimers();
+        await hoverTab.type("beta");
+        expect(publishedLayer(noteContext)?.source.readTargets()).toEqual([ elements.get("b") ]);
+    });
+
+    it("publishes nothing for headings without elements in the note", async () => {
+        const noteContext = railContext();
+        await act(async () => {
+            await hoverTab.render([
+                <AbstractTableOfContents
+                    headings={HEADINGS}
+                    scrollToHeading={() => {}}
+                    noteContext={noteContext as unknown as NoteContext}
+                />
+            ]);
+        });
+        pointer("pointerenter", toc());
+        vi.advanceTimersByTime(500);
+        expect(noteContext.setContextData).not.toHaveBeenCalled();
+    });
+
+    it("moves the layer to another split that becomes active under a resting pointer", async () => {
+        const first = railContext();
+        const second = railContext();
+        await renderOutline(HEADINGS, first);
+        pointer("pointerenter", toc());
+        vi.advanceTimersByTime(120);
+        const layer = publishedLayer(first);
+
+        await renderOutline(HEADINGS, second);
+        expect(first.clearContextData).toHaveBeenCalledWith("scrollRailHeadings");
+        expect(second.setContextData).toHaveBeenCalledWith("scrollRailHeadings", layer);
+    });
+
+    async function renderOutline(
+        headings: RawHeadingList, noteContext: ReturnType<typeof railContext>
+    ) {
+        await act(async () => {
+            await hoverTab.render([
+                <AbstractTableOfContents
+                    headings={headings}
+                    scrollToHeading={() => {}}
+                    getHeadingElement={getHeadingElement}
+                    noteContext={noteContext as unknown as NoteContext}
+                />
+            ]);
+        });
+    }
+
+    function getHeadingElement(heading: { id: string }) {
+        return elements.get(heading.id) ?? null;
+    }
+
+    function toc() {
+        const element = hoverTab.container.querySelector(".toc");
+        if (!element) throw new Error("The outline is not rendered.");
+        return element;
+    }
+
+    function row(id: string) {
+        const element = hoverTab.container.querySelector(`li[data-heading-id="${id}"]`);
+        if (!element) throw new Error(`No row shows the heading ${id}.`);
+        return element;
+    }
+
+    function pointer(type: string, target: Element, pointerType = "mouse") {
+        act(() => {
+            target.dispatchEvent(new PointerEvent(type, {
+                pointerType, clientX: 5, clientY: 5, bubbles: type === "pointerover"
+            }));
+        });
+    }
+});
+
+type RawHeadingList = { id: string; level: number; text: string }[];
+
+/** A note context that records the layers published on it. */
+function railContext() {
+    return { setContextData: vi.fn(), clearContextData: vi.fn() };
+}
+
+function publishedLayer(noteContext: ReturnType<typeof railContext>) {
+    return noteContext.setContextData.mock.calls.at(-1)?.[1] as ScrollRailLayer | undefined;
 }
 
 describe("the menu of an outline heading", () => {

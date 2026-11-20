@@ -2875,7 +2875,8 @@
     "find_placeholder": "Find in text...",
     "replace_placeholder": "Replace with...",
     "replace": "Replace",
-    "replace_all": "Replace all"
+    "replace_all": "Replace all",
+    "nothing_replaced": "Nothing was replaced, because the search did not finish."
   },
   "highlights_list_2": {
     "title_with_count_one": "{{count}} highlight",

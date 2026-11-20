@@ -4,10 +4,13 @@ import type { CKTextEditor, ModelElement, ModelNode } from "@triliumnext/ckedito
 import { resolveBlockReference } from "@triliumnext/commons/src/lib/block_reference.js";
 import { getHeadingAncestors } from "@triliumnext/commons/src/lib/toc.js";
 import clsx from "clsx";
-import { createContext } from "preact";
+import { createContext, type RefObject } from "preact";
 import { memo } from "preact/compat";
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
+import {
+    useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState
+} from "preact/hooks";
 
+import type NoteContext from "../../components/note_context";
 import type FNote from "../../entities/fnote";
 import { revealElement } from "../../services/bookmark_jump";
 import { t } from "../../services/i18n";
@@ -27,6 +30,7 @@ import { useMathRendering } from "../react/hooks/content";
 import Icon from "../react/Icon";
 import { getEditorNoteId } from "../react/NoteStore";
 import RawHtml, { HighlightedHtml } from "../react/RawHtml";
+import { ScrollRailLayer } from "../scroll_rail_markers";
 import { CachedToCProvider, isServedTocFormat } from "./CachedToCProvider";
 import { useOutlineFilter } from "./outline_filter";
 import RightPanelWidget, { NavigatedInNote } from "./RightPanelWidget";
@@ -153,6 +157,12 @@ export interface AbstractTableOfContentsProps<T extends RawHeading> {
     isInert?: boolean;
     /** Whether the headings are not the document's yet, so that a filter waits for them. */
     isLoading?: boolean;
+    /**
+     * The element of a heading in the note, so the scroll rail of `noteContext` shows the headings
+     * while the pointer rests on the outline. Without it, the rail shows nothing.
+     */
+    getHeadingElement?(heading: T): Element | null;
+    noteContext?: NoteContext | null;
 }
 
 const NO_HEADINGS: never[] = [];
@@ -165,7 +175,8 @@ export const AbstractTableOfContents = memo(AbstractTableOfContentsList) as
     typeof AbstractTableOfContentsList;
 
 function AbstractTableOfContentsList<T extends RawHeading>({
-    headings, scrollToHeading, activeHeadingId, note, headingLinks, isInert, isLoading
+    headings, scrollToHeading, activeHeadingId, note, headingLinks, isInert, isLoading,
+    getHeadingElement, noteContext
 }: AbstractTableOfContentsProps<T>) {
     const tocRef = useRef<HTMLSpanElement>(null);
     const onNavigated = useContext(NavigatedInNote);
@@ -184,6 +195,9 @@ function AbstractTableOfContentsList<T extends RawHeading>({
     });
     const tokens = useFilterState()?.tokens;
     const isFiltered = matches !== null;
+    const shownHeadings = useMemo(() => matches?.map(({ item }) => item) ?? headings ?? NO_HEADINGS,
+        [ matches, headings ]);
+    useHeadingRail(tocRef, shownHeadings, noteContext, getHeadingElement);
     const nestedHeadings = useMemo(() => (isFiltered ? [] : buildHeadingTree(headings ?? [])),
         [ headings, isFiltered ]);
     const ownCollapsedHeadings = useCollapsedHeadings("");
@@ -321,6 +335,7 @@ function HeadingRow({
         <li
             className={clsx(collapse?.isCollapsed && "collapsed", isActive && "active",
                 heading.isDisabled && "disabled", getSource && "linkable")}
+            data-heading-id={heading.id}
             {...(getSource ? menuProps : {})}
         >
             {collapse && (
@@ -358,6 +373,141 @@ function HeadingRow({
             )}
         </li>
     );
+}
+
+/**
+ * How long a mouse or a pen rests on the outline before the scroll rail shows the headings, in ms.
+ */
+const RAIL_HOVER_DELAY = 120;
+
+/**
+ * Publishes `headings`, the headings that the rows of `tocRef` show, as a layer of the scroll rail
+ * of `noteContext` while a mouse or a pen rests on the rows. The row under the pointer is drawn
+ * thicker, found by its id, so a new list of headings keeps it.
+ */
+function useHeadingRail<T extends RawHeading>(
+    tocRef: RefObject<HTMLElement | null>,
+    headings: T[],
+    noteContext: NoteContext | null | undefined,
+    getHeadingElement: ((heading: T) => Element | null) | undefined
+) {
+    const headingsRef = useRef(headings);
+    const getElementRef = useRef(getHeadingElement);
+    const noteContextRef = useRef(noteContext);
+    // Changed on every pointer move, so kept out of the state: the list must not render again.
+    const [ rail ] = useState(() => ({
+        layer: null as ScrollRailLayer | null,
+        publishedOn: null as NoteContext | null,
+        hoveredId: null as string | null,
+        pointer: null as { x: number; y: number } | null,
+        timer: undefined as ReturnType<typeof setTimeout> | undefined,
+        isInside: false
+    }));
+    const isEnabled = !!getHeadingElement;
+
+    const emphasize = useCallback(() => {
+        const index = headingsRef.current.findIndex((heading) => heading.id === rail.hoveredId);
+        rail.layer?.emphasize(index >= 0 ? index : null);
+    }, [ rail ]);
+    const publish = useCallback((context: NoteContext) => {
+        rail.layer ??= new ScrollRailLayer({
+            readTargets: () => headingsRef.current.map(
+                (heading) => getElementRef.current?.(heading) ?? null
+            )
+        });
+        context.setContextData("scrollRailHeadings", rail.layer);
+        rail.publishedOn = context;
+        rail.layer.refresh();
+        emphasize();
+    }, [ rail, emphasize ]);
+    const unpublish = useCallback(() => {
+        rail.publishedOn?.clearContextData("scrollRailHeadings");
+        rail.publishedOn = null;
+    }, [ rail ]);
+
+    useEffect(() => {
+        const toc = tocRef.current;
+        if (!toc || !isEnabled) return;
+
+        const onEnter = (event: PointerEvent) => {
+            // A tap is not a hover.
+            if (event.pointerType === "touch") return;
+            rail.isInside = true;
+            rail.pointer = { x: event.clientX, y: event.clientY };
+            clearTimeout(rail.timer);
+            rail.timer = setTimeout(() => {
+                const context = noteContextRef.current;
+                if (rail.isInside && context) {
+                    publish(context);
+                }
+            }, RAIL_HOVER_DELAY);
+        };
+        const onOver = (event: PointerEvent) => {
+            if (event.pointerType === "touch") return;
+            rail.pointer = { x: event.clientX, y: event.clientY };
+            const row = event.target instanceof Element
+                ? event.target.closest<HTMLElement>("li[data-heading-id]")
+                : null;
+            const hoveredId = row?.dataset.headingId ?? null;
+            if (hoveredId !== rail.hoveredId) {
+                rail.hoveredId = hoveredId;
+                emphasize();
+            }
+        };
+        const onMove = (event: PointerEvent) => {
+            if (event.pointerType !== "touch") {
+                rail.pointer = { x: event.clientX, y: event.clientY };
+            }
+        };
+        const onLeave = () => {
+            rail.isInside = false;
+            rail.hoveredId = null;
+            rail.pointer = null;
+            clearTimeout(rail.timer);
+            unpublish();
+        };
+        toc.addEventListener("pointerenter", onEnter);
+        toc.addEventListener("pointerover", onOver);
+        toc.addEventListener("pointermove", onMove);
+        toc.addEventListener("pointerleave", onLeave);
+        return () => {
+            toc.removeEventListener("pointerenter", onEnter);
+            toc.removeEventListener("pointerover", onOver);
+            toc.removeEventListener("pointermove", onMove);
+            toc.removeEventListener("pointerleave", onLeave);
+            onLeave();
+        };
+    }, [ tocRef, isEnabled, rail, emphasize, publish, unpublish ]);
+
+    // Another split became active under a resting pointer.
+    useEffect(() => {
+        noteContextRef.current = noteContext;
+        if (rail.publishedOn && rail.publishedOn !== noteContext) {
+            unpublish();
+            if (noteContext) {
+                publish(noteContext);
+            }
+        }
+    }, [ noteContext, rail, publish, unpublish ]);
+
+    // The rows can have moved under a resting pointer, and a rendered note gives its headings new
+    // ids on every read, so the row at the pointer is found again after every new list.
+    useLayoutEffect(() => {
+        headingsRef.current = headings;
+        getElementRef.current = getHeadingElement;
+        if (!rail.isInside) return;
+
+        const { pointer } = rail;
+        const row = pointer
+            ? document.elementFromPoint(pointer.x, pointer.y)
+                ?.closest<HTMLElement>("li[data-heading-id]")
+            : null;
+        rail.hoveredId = row && tocRef.current?.contains(row)
+            ? row.dataset.headingId ?? null
+            : null;
+        rail.layer?.refresh();
+        emphasize();
+    }, [ headings, getHeadingElement, tocRef, rail, emphasize ]);
 }
 
 function buildHeadingTree(headings: RawHeading[]): HeadingsWithNesting[] {
@@ -510,6 +660,8 @@ function EditableTextTableOfContents() {
         activeHeadingId={activeHeadingId}
         note={note}
         headingLinks={headingLinks}
+        getHeadingElement={getHeadingElement}
+        noteContext={noteContext}
     />;
 }
 
@@ -669,6 +821,8 @@ function ReadOnlyTextTableOfContents() {
         activeHeadingId={activeHeadingId}
         note={note}
         headingLinks={headingLinks}
+        getHeadingElement={getHeadingElement}
+        noteContext={noteContext}
     />;
 }
 
