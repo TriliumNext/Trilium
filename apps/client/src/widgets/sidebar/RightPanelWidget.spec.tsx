@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import options from "../../services/options";
 import server from "../../services/server";
+import { FilterProvider } from "../react/filter";
+import { OutlineResults, OutlineResultsContext } from "./outline_filter";
 import RightPanelWidget, { CollapsibleWidgets, ExpandWidgetRequest, ExpandWidgetRequests } from "./RightPanelWidget";
 
 describe("RightPanelWidget", () => {
@@ -97,6 +99,70 @@ describe("RightPanelWidget", () => {
         await renderWith({ id: "solitary", counter: 4 });
         expect(scrollIntoView).toHaveBeenCalledTimes(2);
         expect(card("solitary")?.className).toContain("highlighted");
+    });
+});
+
+describe("RightPanelWidget while filtering", () => {
+    let container: HTMLElement;
+    let store: OutlineResults;
+
+    beforeEach(() => {
+        options.set("rightPaneCollapsedItems", JSON.stringify([ "closed" ]));
+        server.put = vi.fn(async () => ({})) as typeof server.put;
+        store = new OutlineResults();
+        container = document.createElement("div");
+        document.body.appendChild(container);
+    });
+
+    afterEach(() => {
+        render(null, container);
+        container.remove();
+    });
+
+    async function renderCards(query: string) {
+        await act(async () => render(
+            <FilterProvider query={query}>
+                <OutlineResultsContext.Provider value={store}>
+                    <RightPanelWidget id="closed" title="Closed">closed body</RightPanelWidget>
+                    <RightPanelWidget id="open" title="Open">open body</RightPanelWidget>
+                </OutlineResultsContext.Provider>
+            </FilterProvider>, container));
+    }
+    const card = (id: string) => container.querySelector(`#${id}`);
+    const isFilteredOut = (id: string) => !!card(id)?.classList.contains("right-pane-filtered-out");
+
+    it("leaves a collapsed card as it is, and hides an open one without results", async () => {
+        await renderCards("budget");
+        expect(card("closed")?.className).toContain("collapsed");
+        expect(card("closed")?.querySelector(".card-header > .icon-action")).not.toBeNull();
+        expect(isFilteredOut("closed")).toBe(false);
+        // An open card whose section has not reported is hidden.
+        expect(isFilteredOut("open")).toBe(true);
+
+        await act(async () => store.report("open", {}, { status: "ready", count: 0 }));
+        expect(isFilteredOut("open")).toBe(true);
+        await act(async () => store.report("closed", {}, { status: "ready", count: 0 }));
+        expect(isFilteredOut("closed")).toBe(false);
+
+        await renderCards("");
+        expect(isFilteredOut("open")).toBe(false);
+        expect(server.put).not.toHaveBeenCalled();
+    });
+
+    it("keeps a card opened under the current filter, and saves the opening", async () => {
+        await renderCards("budget");
+
+        await act(async () => {
+            container.querySelector<HTMLElement>("#closed .card-header")?.click();
+        });
+        expect(card("closed")?.className).not.toContain("collapsed");
+        expect(isFilteredOut("closed")).toBe(false);
+        expect(card("closed")?.querySelector(".no-items")).not.toBeNull();
+        expect(server.put).toHaveBeenCalledWith(
+            "options", { rightPaneCollapsedItems: JSON.stringify([]) });
+
+        await renderCards("budge");
+        expect(isFilteredOut("closed")).toBe(true);
     });
 });
 

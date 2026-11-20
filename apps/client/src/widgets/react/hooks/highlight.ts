@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef } from "preact/hooks";
 
 import { expandAncestorDetails } from "../../../services/collapsible";
 import {
-    addHighlights, findRegExpRanges, findTermRanges, removeHighlights
+    addHighlights, findRegExpRanges, findTermRanges, type MatchOptions, removeHighlights
 } from "../../../services/highlight_matches";
 
 /** Longer regex tokens are rejected outright rather than compiled, to avoid pathological patterns. */
@@ -12,8 +12,14 @@ const MAX_REGEX_TOKEN_LENGTH = 1000;
 /** Caps the number of matches a single regex token can wrap. */
 const MAX_REGEX_MATCHES = 500;
 
+/**
+ * Returns a function that paints the matches of `highlightedTokens` under an element.
+ *
+ * @param options how the text under the element is searched, for every token.
+ */
 export function useImperativeSearchHighlighlighting(
-    highlightedTokens: (string | HighlightedTokenInfo)[] | null | undefined
+    highlightedTokens: (string | HighlightedTokenInfo)[] | null | undefined,
+    options: Omit<MatchOptions, "limit"> = {}
 ) {
     const ranges = useRef<Range[]>([]);
     const tokenInfos = useMemo<HighlightedTokenInfo[] | null>(() => {
@@ -39,7 +45,7 @@ export function useImperativeSearchHighlighlighting(
         // strips diacritics before indexing) still highlights "ktorý" (#10616). It matches
         // substrings, so CJK tokens without word boundaries ("笔记" in "我的笔记本") work too.
         const plainTokens = tokenInfos.filter((info) => info.type === "plain").map((info) => info.token);
-        ranges.current.push(...findTermRanges(el, plainTokens));
+        ranges.current.push(...findTermRanges(el, plainTokens, options));
 
         for (const info of tokenInfos) {
             if (info.type !== "regex" || info.token.length > MAX_REGEX_TOKEN_LENGTH) continue;
@@ -52,7 +58,9 @@ export function useImperativeSearchHighlighlighting(
                 continue;
             }
 
-            ranges.current.push(...findRegExpRanges(el, regex, { limit: MAX_REGEX_MATCHES }));
+            ranges.current.push(...findRegExpRanges(el, regex, {
+                ...options, limit: MAX_REGEX_MATCHES
+            }));
         }
 
         addHighlights("search-match", ranges.current);

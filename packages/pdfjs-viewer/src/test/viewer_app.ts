@@ -199,6 +199,7 @@ export async function installViewerApp(data: Uint8Array, pageGeometry: Record<nu
 export function uninstallViewerApp() {
     untrackWindowListeners();
     delete window.PDFViewerApplication;
+    window.TRILIUM_LOAD_TOKEN = undefined;
     document.body.replaceChildren();
     vi.restoreAllMocks();
 }

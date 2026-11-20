@@ -8,6 +8,7 @@ import {
 } from "@triliumnext/commons/src/lib/block_reference.js";
 import { HEADING_INDEX_ATTRIBUTE } from "@triliumnext/commons/src/lib/reference_targets.js";
 import { LINK_TARGET_PARAMS } from "@triliumnext/commons/src/lib/server_api.js";
+import { getHeadingAncestors } from "@triliumnext/commons/src/lib/toc.js";
 
 import appContext from "../components/app_context";
 import froca from "./froca";
@@ -388,26 +389,9 @@ export function nestTargets(targets: LinkTarget[]) {
  * nests them.
  */
 export function getTargetAncestors(targets: LinkTarget[]) {
-    const ancestorsOf = new Map<LinkTarget, LinkTarget[]>();
-    // The targets that the next target of each kind can nest under.
-    const openByKind = new Map<ReferenceKind, LinkTarget[]>();
-    for (const target of targets) {
-        const { level } = target;
-        if (level === undefined) {
-            ancestorsOf.set(target, []);
-            continue;
-        }
-
-        const ancestors = [ ...(openByKind.get(target.kind) ?? []) ];
-        while ((ancestors.at(-1)?.level ?? 0) >= level) {
-            ancestors.pop();
-        }
-
-        ancestorsOf.set(target, ancestors);
-        openByKind.set(target.kind, [ ...ancestors, target ]);
-    }
-
-    return ancestorsOf;
+    const ancestors = getHeadingAncestors(
+        targets, (target) => target.level, (target) => target.kind);
+    return new Map(targets.map((target, index) => [ target, ancestors[index] ]));
 }
 
 /** The targets that `target` nests under in `targetTree`, from its parent up. */

@@ -12,6 +12,7 @@ import {
 } from "../../services/link_targets";
 import { getNoteIdFromUrl } from "../../services/navigation_state";
 import toast from "../../services/toast";
+import { filterOutline, filterTokens, prepareFilterText } from "./filter";
 import {
     type AutocompleteListHandle, useActiveDescendant, useAutocomplete, useForwardedKeys
 } from "./FormAutocomplete";
@@ -19,9 +20,10 @@ import { FormListHeader } from "./FormList";
 import { useSlide } from "./hooks/dom";
 import Icon from "./Icon";
 import {
-    HighlightedText, lookUpNow, type NoteMentionListProps, NoteSuggestionMenu,
-    NoteSuggestionPopup, SuggestionOption, SuggestionRowContent, useNoteMentions
+    lookUpNow, type NoteMentionListProps, NoteSuggestionMenu, NoteSuggestionPopup,
+    SuggestionOption, SuggestionRowContent, useNoteMentions
 } from "./NoteAutocomplete";
+import { HighlightedText } from "./RawHtml";
 
 export interface LinkMentionListProps extends NoteMentionListProps {
     /**
@@ -77,8 +79,11 @@ export default function LinkMentionList({
     const notesQuery = isOnDestinations && picked ? picked.query : query;
     const notes = useNoteMentions({ ...mentions, query: notesQuery, onPickNote: linkNote });
     const destinations = useMemo(() => listDestinations(targets), [ targets ]);
+    const texts = useMemo(() => destinations.map(({ target }) => (
+        prepareFilterText(target?.title ?? ""))), [ destinations ]);
     const source = useCallback(
-        async (text: string) => filterDestinations(destinations, text), [ destinations ]
+        async (text: string) => filterDestinations(destinations, texts, text),
+        [ destinations, texts ]
     );
     const destinationList = useAutocomplete<Destination>({
         query: filter,
@@ -230,7 +235,7 @@ interface Destination {
     /** The position of the target in the targets of the note. */
     index: number;
     /** The targets that the target nests under, the outermost first. */
-    parents: LinkTarget[];
+    parents: readonly LinkTarget[];
 }
 
 const WHOLE_NOTE: Destination = { target: null, index: -1, parents: [] };
@@ -238,7 +243,7 @@ const WHOLE_NOTE: Destination = { target: null, index: -1, parents: [] };
 /**
  * The second page as the rows of a menu: the whole note, then the targets of each kind under a
  * header, each indented under the targets it nests under. With a `filter`, it lists only the
- * targets whose title contains it, each with the targets that it nests under.
+ * targets whose title holds each of its words, each with the targets that it nests under.
  */
 function LinkDestinationMenu({ autocomplete, filter, isLoading, hasTargets, isTocPending }: {
     autocomplete: ReturnType<typeof useAutocomplete<Destination>>;
@@ -304,6 +309,7 @@ function LinkDestinationRow({ destination, filter, isFiltered }: {
     isFiltered: boolean;
 }) {
     const { target, parents } = destination;
+    const tokens = useMemo(() => filterTokens(filter), [ filter ]);
     if (!target) {
         return (
             <span>
@@ -325,7 +331,7 @@ function LinkDestinationRow({ destination, filter, isFiltered }: {
                 icon={<Icon icon={LINK_TARGET_KINDS[target.kind].icon} />}
                 header={<>
                     <span className="search-result-title">
-                        <HighlightedText text={target.title} query={filter} />
+                        <HighlightedText text={target.title} highlightedTokens={tokens} />
                     </span>
                     {isFiltered && parents.length > 0 && (
                         <span className="note-suggestion-path">
@@ -363,14 +369,15 @@ function listDestinations(targets: LinkTarget[] | null): Destination[] {
 }
 
 /**
- * The rows for `filter`: the whole note and every target while it is blank, then the targets
- * whose title contains it, whatever its case.
+ * The rows for `filter`: the whole note and every target while it holds no word, then the
+ * targets whose title holds every word, in any order, ignoring case and accents. `texts` are the
+ * titles of `destinations` prepared by `prepareFilterText()`.
  */
-function filterDestinations(destinations: Destination[], filter: string) {
-    if (!filter.trim()) return [ WHOLE_NOTE, ...destinations ];
+function filterDestinations(destinations: Destination[], texts: string[], filter: string) {
+    const tokens = filterTokens(filter);
+    if (tokens.length === 0) return [ WHOLE_NOTE, ...destinations ];
 
-    const typed = filter.toLowerCase();
-    return destinations.filter(({ target }) => target?.title.toLowerCase().includes(typed));
+    return filterOutline(destinations, tokens, { texts }).map(({ item }) => item);
 }
 
 function getDestinationKey({ target, index }: Destination) {

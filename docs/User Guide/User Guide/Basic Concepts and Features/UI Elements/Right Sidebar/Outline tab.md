@@ -1,6 +1,17 @@
 # Outline tab
 The Outline tab appears in the <a class="reference-link" href="../Right%20Sidebar.md">Right Sidebar</a> and displays the headings and highlights for the current note.
 
+## Filtering
+
+The field at the top of the tab filters all of its sections at once: the table of contents, the highlights, the columns of a board, the highlights of an AI chat and, for a PDF, its pages, annotations, attachments and layers. A section with nothing matching is hidden.
+
+*   The words can be typed in any order; case and accents are ignored. Formulas are not searched.
+*   While filtering, the table of contents becomes a flat list of the matching headings, each showing the headings it sits under.
+*   The pages of a PDF match by their number.
+*   A collapsed section stays collapsed and is not searched. Opening it shows its matches, or _No matches_.
+*   <kbd>Enter</kbd> goes to the first matching heading, page, annotation, highlight or column. <kbd>Esc</kbd> clears the field.
+*   The filter is cleared when another note is opened.
+
 ## Table of contents
 
 The table of contents displays the titles / headings in the current note and allows easy navigation.

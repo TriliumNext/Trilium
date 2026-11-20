@@ -4268,7 +4268,11 @@
     "annotation_text_box": "Text box on page {{pageNumber}}",
     "copy_reference": "Copy reference",
     "page_reference": "Page {{pageNumber}}",
-    "annotation_reference": "Annotation on page {{pageNumber}}"
+    "annotation_reference": "Annotation on page {{pageNumber}}",
+    "pages_title": "Pages",
+    "annotations_title": "Annotations",
+    "attachments_title": "Attachments",
+    "layers_title": "Layers"
   },
   "platform_indicator": {
     "available_on": "Available on {{platform}}"

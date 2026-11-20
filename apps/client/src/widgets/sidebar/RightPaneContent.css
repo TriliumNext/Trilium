@@ -3,6 +3,12 @@
     /* How far a `grow` card may be squeezed by the cards around it — its header, its padding and a
        row or three, so it is still something to read rather than a title. See `.card.grow` below. */
     --right-pane-grow-min-height: 110px;
+
+    --right-pane-filter-background:
+        var(--right-pane-background-color, var(--main-background-color));
+    --right-pane-flat-filter-background:
+        var(--modal-background-color, var(--main-background-color));
+    --right-pane-outline-loading-color: var(--muted-text-color);
 }
 
 #right-pane {
@@ -137,8 +143,33 @@
     }
 
     /* The first card sits right under the header row's border, which separates them already. */
-    .right-pane-tab-body > .card:first-child .card-header {
+    .right-pane-tab-body > .card:first-child .card-header,
+    .right-pane-tab-body > .right-pane-filter + .card .card-header {
         padding-top: 0;
+    }
+
+    .right-pane-filter {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        flex-shrink: 0;
+        padding: 8px;
+        background: var(--right-pane-filter-background);
+    }
+
+    .right-pane-flat-tab-body > .right-pane-filter {
+        background: var(--right-pane-flat-filter-background);
+    }
+
+    .card.right-pane-filtered-out {
+        display: none !important;
+    }
+
+    .right-pane-outline-loading {
+        display: flex;
+        justify-content: center;
+        padding: 8px;
+        color: var(--right-pane-outline-loading-color);
     }
 
     /* The one card of a tab that takes the height the others leave over (see RightPanelWidget.tsx).

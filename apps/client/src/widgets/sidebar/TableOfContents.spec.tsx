@@ -1,6 +1,7 @@
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import type { ReferenceTarget } from "@triliumnext/commons";
 import { render } from "preact";
+import { useState } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -13,11 +14,14 @@ import options from "../../services/options";
 import server from "../../services/server";
 import toast from "../../services/toast";
 import { buildNote } from "../../test/easy-froca";
+import { highlightedTexts } from "../../test/highlights";
+import { createFilterableTab } from "../../test/outline_filter";
 import { renderInto } from "../../test/render";
 import { useActiveHeading } from "../react/hooks/dom";
 import { setEditorNoteId } from "../react/NoteStore";
 import { ParentComponent } from "../react/react_utils";
-import { NavigatedInNote } from "./RightPanelWidget";
+import { useOutlineReport } from "./outline_filter";
+import RightPanelWidget, { NavigatedInNote } from "./RightPanelWidget";
 import TableOfContents, {
     AbstractTableOfContents, type HeadingContext, type HeadingLinks
 } from "./TableOfContents";
@@ -239,6 +243,187 @@ describe("TableOfContents in a host that covers the note", () => {
         expect(onNavigated).toHaveBeenCalledOnce();
     });
 });
+
+describe("the collapsed headings of the outline", () => {
+    it("stay collapsed when the card collapses, and start over for another note", async () => {
+        vi.spyOn(server, "put").mockResolvedValue({});
+        const headings = [
+            { id: "first", level: 1, text: "First" },
+            { id: "inner", level: 2, text: "Inner" },
+            { id: "last", level: 1, text: "Last" }
+        ];
+        const outline = await renderContextOutline(headings);
+        const isCollapsed = () => outline.rows()[0]?.classList.contains("collapsed");
+
+        await act(async () => {
+            outline.rows()[0].querySelector<HTMLElement>(".collapse-button")?.click();
+        });
+        expect(isCollapsed()).toBe(true);
+
+        const header = outline.container.querySelector<HTMLElement>("#toc .card-header");
+        await act(async () => header?.click());
+        expect(outline.rows()).toHaveLength(0);
+        await act(async () => header?.click());
+        expect(outline.rows()).toHaveLength(3);
+        expect(isCollapsed()).toBe(true);
+
+        await outline.switchNote(headings);
+        expect(outline.rows()).toHaveLength(3);
+        expect(isCollapsed()).toBe(false);
+    });
+});
+
+describe("the outline while its tab filters", () => {
+    let tab: ReturnType<typeof createFilterableTab>;
+
+    beforeEach(() => {
+        options.load({ rightPaneCollapsedItems: "[]" } as Parameters<typeof options.load>[0]);
+        vi.spyOn(server, "put").mockResolvedValue({});
+        tab = createFilterableTab();
+    });
+
+    afterEach(() => {
+        tab.destroy();
+        vi.restoreAllMocks();
+    });
+
+    it("lists the matches flat with the headings above them, then the tree again", async () => {
+        const headings = [
+            { id: "setup", level: 1, text: "Setup" },
+            { id: "linux", level: 2, text: "Linux" },
+            { id: "budget", level: 3, text: "<b>Bud</b>get" },
+            { id: "usage", level: 1, text: "Budget usage" }
+        ];
+        const scrollToHeading = vi.fn();
+        const getTarget = vi.fn(async (_heading: object) => null);
+        const noteContext = markdownContext("filter-ntx");
+        noteContext.setContextData("toc", {
+            headings, scrollToHeading, headingLinks: { getTarget, hasPublicLinks: true }
+        });
+        appContext.tabManager = {
+            getActiveContext: () => noteContext
+        } as typeof appContext.tabManager;
+        await tab.render([ <TableOfContents /> ]);
+        const rows = () => [ ...tab.container.querySelectorAll<HTMLElement>(".toc li") ];
+        await act(async () => {
+            rows()[0].querySelector<HTMLElement>(".collapse-button")?.click();
+        });
+
+        await tab.type("budget");
+        expect(rows().map((row) => row.querySelector(".item-title")?.textContent))
+            .toStrictEqual([ "Budget", "Budget usage" ]);
+        expect(rows().map((row) => row.querySelector(".item-path")?.textContent))
+            .toStrictEqual([ "Setup / Linux", undefined ]);
+        expect(tab.container.querySelector(".toc .collapse-button")).toBeNull();
+        // One range across the formatting.
+        expect(highlightedTexts("search-match", rows()[0])).toStrictEqual([ "Budget" ]);
+
+        const items = await openRowMenu(rows()[0]);
+        expect(items.map((item) => item.title)).toStrictEqual([ "block_reference.copy_reference" ]);
+
+        await tab.press("Enter");
+        expect(scrollToHeading).toHaveBeenCalledExactlyOnceWith(headings[2]);
+
+        await tab.type("");
+        expect(rows().map((row) => row.querySelector(".item-content")?.textContent))
+            .toStrictEqual([ "Setup", "Linux", "Budget", "Budget usage" ]);
+        expect(rows()[0].classList.contains("collapsed")).toBe(true);
+    });
+
+    it("waits for the headings of a note whose content the editor does not hold yet", async () => {
+        const first = buildNote({ title: "First", type: "text" });
+        const second = buildNote({ title: "Second", type: "text" });
+        let shownNote = first;
+        const noteContext = new NoteContext("switch-ntx");
+        noteContext.noteId = first.noteId;
+        noteContext.notePath = first.noteId;
+        noteContext.viewScope = { viewMode: "default", isReadOnly: false };
+        Object.defineProperty(noteContext, "note", { get: () => shownNote });
+        appContext.tabManager = {
+            getActiveContext: () => noteContext
+        } as typeof appContext.tabManager;
+        const editor = fakeTextEditor();
+        await editor.loadNote(first.noteId, [ [ 2, "Budget" ] ]);
+        vi.spyOn(noteContext, "getTextEditor").mockImplementation(async (callback) => {
+            callback?.(editor.editor);
+            return editor.editor;
+        });
+        await tab.render([ <TableOfContents /> ]);
+        await settle();
+
+        shownNote = second;
+        noteContext.noteId = second.noteId;
+        noteContext.notePath = second.noteId;
+        await act(async () => {
+            await appContext.triggerEvent("noteSwitched", {
+                noteContext, notePath: second.noteId
+            });
+        });
+        await settle();
+        const scrollIntoView = vi.spyOn(HTMLElement.prototype, "scrollIntoView");
+        await tab.type("budget");
+        await tab.press("Enter");
+        expect(scrollIntoView).not.toHaveBeenCalled();
+
+        await editor.loadNote(second.noteId, [ [ 2, "Budget" ] ]);
+        await settle();
+        expect(scrollIntoView).toHaveBeenCalledOnce();
+        expect(scrollIntoView.mock.contexts[0]).toBe(editor.items()[0].el);
+    });
+
+    it("acts on the split in front, for one note open in two splits", async () => {
+        const note = buildNote({ title: "Guide", type: "code", mime: "text/x-markdown" });
+        const firstSplit = markdownContext("split-1", note);
+        const secondSplit = markdownContext("split-2", note);
+        const firstScroll = vi.fn();
+        const secondScroll = vi.fn();
+        const headings = [ { id: "budget", level: 1, text: "Budget" } ];
+        firstSplit.setContextData("toc", { headings, scrollToHeading: firstScroll });
+        secondSplit.setContextData("toc", { headings, scrollToHeading: secondScroll });
+        let activeContext = firstSplit;
+        appContext.tabManager = {
+            getActiveContext: () => activeContext
+        } as typeof appContext.tabManager;
+        let finishLoading: () => void = () => {};
+        function LoadingSection() {
+            const [ isLoading, setIsLoading ] = useState(true);
+            finishLoading = () => setIsLoading(false);
+            useOutlineReport("loading", isLoading
+                ? { status: "loading", navigates: true }
+                : { status: "ready", count: 0 });
+            return <RightPanelWidget id="loading" title="loading">loading</RightPanelWidget>;
+        }
+        await tab.render([ <LoadingSection />, <TableOfContents /> ]);
+
+        await tab.type("budget");
+        await tab.press("Enter");
+        activeContext = secondSplit;
+        await act(async () => {
+            await appContext.triggerEvent("activeContextChanged", { noteContext: secondSplit });
+        });
+        expect(tab.field()?.value).toBe("");
+        await act(async () => finishLoading());
+        expect(firstScroll).not.toHaveBeenCalled();
+        expect(secondScroll).not.toHaveBeenCalled();
+
+        await tab.type("budget");
+        await tab.press("Enter");
+        expect(secondScroll).toHaveBeenCalledOnce();
+        expect(firstScroll).not.toHaveBeenCalled();
+    });
+});
+
+/** A note context that shows a Markdown note, `note` or a new one. */
+function markdownContext(ntxId: string, note = buildNote({
+    title: "Guide", type: "code", mime: "text/x-markdown"
+})) {
+    const noteContext = new NoteContext(ntxId);
+    noteContext.noteId = note.noteId;
+    noteContext.notePath = note.noteId;
+    noteContext.viewScope = { viewMode: "default" };
+    Object.defineProperty(noteContext, "note", { get: () => note });
+    return noteContext;
+}
 
 describe("the menu of an outline heading", () => {
     afterEach(() => {
@@ -579,6 +764,8 @@ async function renderReadOnlyOutline(
     const contentEl = document.createElement("div");
     contentEl.innerHTML = html;
     if (blobId !== null) {
+        // The page shows the note's own blob.
+        note.blobId = blobId;
         contentEl.dataset.blobId = blobId;
     }
     document.body.appendChild(contentEl);
@@ -640,7 +827,7 @@ async function renderContextOutline(
 ) {
     options.load({ rightPaneCollapsedItems: "[]" } as Parameters<typeof options.load>[0]);
     showMenu.mockClear();
-    const note = buildNote({ title: "Guide", type: "code", mime: "text/x-markdown" });
+    let note = buildNote({ title: "Guide", type: "code", mime: "text/x-markdown" });
     const noteContext = new NoteContext("toc-context-ntx");
     noteContext.noteId = note.noteId;
     noteContext.notePath = note.noteId;
@@ -659,7 +846,26 @@ async function renderContextOutline(
         );
     });
     await settle();
-    return { note, rows: () => [ ...container.querySelectorAll<HTMLElement>(".toc li") ] };
+    return {
+        note,
+        container,
+        rows: () => [ ...container.querySelectorAll<HTMLElement>(".toc li") ],
+        /** Shows another Markdown note in the same context, publishing `newHeadings`. */
+        async switchNote(newHeadings: HeadingContext["headings"]) {
+            note = buildNote({ title: "Other guide", type: "code", mime: "text/x-markdown" });
+            noteContext.noteId = note.noteId;
+            noteContext.notePath = note.noteId;
+            await act(async () => {
+                noteContext.setContextData("toc", {
+                    headings: newHeadings, scrollToHeading: () => {}
+                });
+                await appContext.triggerEvent("noteSwitched", {
+                    noteContext, notePath: note.noteId
+                });
+            });
+            await settle();
+        }
+    };
 }
 
 /** Right-clicks `row` and returns the rows of the menu that opens. */

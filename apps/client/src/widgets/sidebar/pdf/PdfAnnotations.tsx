@@ -5,9 +5,12 @@ import { useContext } from "preact/hooks";
 
 import contextMenu from "../../../menus/context_menu";
 import { t } from "../../../services/i18n";
+import { useFilterState } from "../../react/filter";
 import { useNoteProperty } from "../../react/hooks/note";
 import { useActiveNoteContext, useGetContextData } from "../../react/hooks/tree";
 import Icon from "../../react/Icon";
+import { HighlightedText } from "../../react/RawHtml";
+import { OutlineLoading, useOutlineFilter } from "../outline_filter";
 import RightPanelWidget, { NavigatedInNote } from "../RightPanelWidget";
 
 const TYPE_ICONS: Record<string, string> = {
@@ -22,24 +25,51 @@ export default function PdfAnnotations() {
     const noteType = useNoteProperty(note, "type");
     const noteMime = useNoteProperty(note, "mime");
     const annotationsData = useGetContextData("pdfAnnotations");
+    const onNavigated = useContext(NavigatedInNote);
+    const tokens = useFilterState()?.tokens;
+    const ready = annotationsData?.status === "ready" ? annotationsData : undefined;
 
-    if (noteType !== "file" || noteMime !== "application/pdf") {
+    const activate = (annotation: PdfAnnotationInfo) => {
+        ready?.scrollToAnnotation(annotation.id, annotation.pageNumber);
+        onNavigated?.();
+    };
+    const matches = useOutlineFilter(ready?.annotations ?? null, {
+        section: "pdf-annotations",
+        getText: getAnnotationText,
+        activate
+    });
+
+    if (noteType !== "file" || noteMime !== "application/pdf" || !annotationsData) {
         return null;
     }
 
-    if (!annotationsData || annotationsData.annotations.length === 0) {
+    // A card while the annotations are read only while filtering, which waits for them.
+    if (!ready) {
+        return matches ? (
+            <RightPanelWidget id="pdf-annotations" title={t("pdf.annotations_title")}>
+                <OutlineLoading />
+            </RightPanelWidget>
+        ) : null;
+    }
+
+    if (ready.annotations.length === 0) {
         return null;
     }
 
+    const shown = matches ? matches.map(({ item }) => item) : ready.annotations;
     return (
-        <RightPanelWidget id="pdf-annotations" title={t("pdf.annotations", { count: annotationsData.annotations.length })}>
+        <RightPanelWidget
+            id="pdf-annotations"
+            title={t("pdf.annotations", { count: ready.annotations.length })}
+        >
             <div className="pdf-annotations-list">
-                {annotationsData.annotations.map((annotation) => (
+                {shown.map((annotation) => (
                     <PdfAnnotationItem
                         key={annotation.id}
                         annotation={annotation}
-                        onNavigate={annotationsData.scrollToAnnotation}
-                        onCopyReference={annotationsData.copyReference}
+                        onActivate={activate}
+                        onCopyReference={ready.copyReference}
+                        tokens={tokens}
                     />
                 ))}
             </div>
@@ -49,12 +79,15 @@ export default function PdfAnnotations() {
 
 function PdfAnnotationItem({
     annotation,
-    onNavigate,
-    onCopyReference
+    onActivate,
+    onCopyReference,
+    tokens
 }: {
     annotation: PdfAnnotationInfo;
-    onNavigate: (annotationId: string, pageNumber: number) => void;
+    onActivate: (annotation: PdfAnnotationInfo) => void;
     onCopyReference: (annotationId: string, pageNumber: number) => void;
+    /** The terms of the filter in force, painted in the texts. */
+    tokens?: string[];
 }) {
     // Contents on a highlight or a drawing is a remark somebody attached to it, so the row reads
     // as a comment. A free-text box's contents are the box itself, so it keeps its own icon.
@@ -64,7 +97,6 @@ function PdfAnnotationItem({
     // A drawing has no text of its own, and a highlight only gets one where the page has
     // extractable glyphs under it — name those by what they are so the row stays clickable.
     const hasText = !!(annotation.highlightedText || annotation.contents);
-    const onNavigated = useContext(NavigatedInNote);
 
     return (
         <div
@@ -73,30 +105,54 @@ function PdfAnnotationItem({
                 annotation.color && "tinted",
                 isDark(annotation.color) && "tinted-dark"
             )}
-            onClick={() => {
-                onNavigate(annotation.id, annotation.pageNumber);
-                onNavigated?.();
-            }}
+            onClick={() => onActivate(annotation)}
             onContextMenu={(e) => showCopyReferenceMenu(e, () => onCopyReference(annotation.id, annotation.pageNumber))}
             style={annotation.color ? { backgroundColor: annotation.color } : undefined}
         >
             <Icon icon={icon} />
             <div className="pdf-annotation-info">
                 {!hasText && (
-                    <div className="pdf-annotation-untitled">{describeUntitled(annotation)}</div>
+                    <HighlightedText
+                        className="pdf-annotation-untitled"
+                        text={describeUntitled(annotation)}
+                        highlightedTokens={tokens}
+                    />
                 )}
                 {annotation.highlightedText && (
-                    <div className="pdf-annotation-highlighted-text">{annotation.highlightedText}</div>
+                    <HighlightedText
+                        className="pdf-annotation-highlighted-text"
+                        text={annotation.highlightedText}
+                        highlightedTokens={tokens}
+                    />
                 )}
                 {annotation.contents && (
-                    <div className="pdf-annotation-contents">{annotation.contents}</div>
+                    <HighlightedText
+                        className="pdf-annotation-contents"
+                        text={annotation.contents}
+                        highlightedTokens={tokens}
+                    />
                 )}
                 {annotation.author && (
-                    <div className="pdf-annotation-author">{annotation.author}</div>
+                    <HighlightedText
+                        className="pdf-annotation-author"
+                        text={annotation.author}
+                        highlightedTokens={tokens}
+                    />
                 )}
             </div>
         </div>
     );
+}
+
+/** The text that the row of `annotation` shows, which the filter matches. */
+function getAnnotationText(annotation: PdfAnnotationInfo) {
+    const hasText = !!(annotation.highlightedText || annotation.contents);
+    return [
+        hasText ? "" : describeUntitled(annotation),
+        annotation.highlightedText,
+        annotation.contents,
+        annotation.author
+    ].filter(Boolean).join("\n");
 }
 
 /**

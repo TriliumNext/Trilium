@@ -113,6 +113,22 @@ describe("MobileNotePanel", () => {
         expect(document.body.querySelector(".toc-stub")).not.toBeNull();
     });
 
+    it("puts the filter field at the top of the outline tab", async () => {
+        shownNote.current = buildNote({ title: "Read" });
+        renderPanel();
+
+        act(() => container.querySelector("button")?.click());
+        const outline = await vi.waitFor(() => {
+            const tab = document.body.querySelector(
+                ".right-pane-flat-tab-body[data-tab-id='outline']");
+            expect(tab).toBeInstanceOf(HTMLElement);
+            return tab;
+        });
+
+        expect(outline?.firstElementChild?.classList.contains("right-pane-filter")).toBe(true);
+        expect(outline?.querySelector(".right-pane-filter input")).not.toBeNull();
+    });
+
     it("opens on the attributes tab when the attributes are asked for in its own note context only", async () => {
         shownNote.current = buildNote({ title: "Read" });
         shownContext.current = { isCommandTarget: (ntxId) => ntxId === "ntx1" };

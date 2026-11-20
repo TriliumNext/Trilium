@@ -3,10 +3,14 @@ import { ComponentChildren, createContext, RefObject } from "preact";
 import { useContext, useEffect, useState } from "preact/hooks";
 
 import contextMenu, { MenuItem } from "../../menus/context_menu";
+import { t } from "../../services/i18n";
 import ActionButton from "../react/ActionButton";
+import { type FilterState, useFilterState } from "../react/filter";
 import { useSyncedRef } from "../react/hooks/dom";
 import { useTriliumOptionJson } from "../react/hooks/options";
+import NoItems from "../react/NoItems";
 import { ParentComponent } from "../react/react_utils";
+import { useOutlineCard, useOutlineSection } from "./outline_filter";
 
 /**
  * Whether the widgets below can be collapsed, set by whoever lays them out: collapsing the only widget
@@ -87,6 +91,17 @@ export default function RightPanelWidget({ id, title, buttons, children, contain
     // its tab has, so a collapsed one would leave nothing behind, chevron included, to expand it again.
     const expanded = collapsible ? !collapsedByUser : true;
 
+    // While a filter is in force, an open card shows only if its section has results. A card the
+    // user opened under the current filter stays, with "No matches" if it has none.
+    const filter = useFilterState();
+    const [ openedUnder, setOpenedUnder ] = useState<FilterState | null>(null);
+    const report = useOutlineSection(id);
+    const hasNoResult = !report || (report.status === "ready" && report.count === 0);
+    const isOpenedUnderFilter = !!filter && openedUnder === filter;
+    const showsNoMatches = !!filter && expanded && hasNoResult && isOpenedUnderFilter;
+    const isFilteredOut = !!filter && expanded && hasNoResult && !isOpenedUnderFilter;
+    useOutlineCard(id, { isCollapsed: !expanded, showsNoMatches });
+
     // Being asked for by name (see ExpandWidgetRequests) opens the widget, and is remembered as if the
     // user had opened it themselves — so it is still open the next time its tab is built. Strictly
     // once per request: a collapse of the widget afterwards is the user's and stands.
@@ -122,8 +137,9 @@ export default function RightPanelWidget({ id, title, buttons, children, contain
             className={clsx("card widget", {
                 collapsed: !expanded,
                 "not-collapsible": !collapsible,
-                grow: grow && !stacked,
-                highlighted
+                grow: grow && !stacked && !showsNoMatches,
+                highlighted,
+                "right-pane-filtered-out": isFilteredOut
             })}
             // The flash lasts as long as its animation (see RightPanelContainer.css) rather than a
             // duration kept in step here; a bubbled one from something within the widget is not it.
@@ -135,6 +151,7 @@ export default function RightPanelWidget({ id, title, buttons, children, contain
                 class="card-header"
                 onClick={collapsible ? () => {
                     setCollapsedByUser(expanded);
+                    setOpenedUnder(expanded ? null : filter);
                     const rightPaneCollapsedItemsSet = new Set(rightPaneCollapsedItems);
                     if (expanded) {
                         rightPaneCollapsedItemsSet.add(id);
@@ -172,6 +189,7 @@ export default function RightPanelWidget({ id, title, buttons, children, contain
                     their state and DOM-attached listeners survive a collapse; others unmount as before. */}
                 {(expanded || keepMounted) && <div class={clsx("card-body", { "no-padding": noPadding })} style={!expanded ? { display: "none" } : undefined}>
                     {children}
+                    {showsNoMatches && <NoItems icon="bx bx-search" text={t("menu.no_matches")} />}
                 </div>}
             </div>
         </div>

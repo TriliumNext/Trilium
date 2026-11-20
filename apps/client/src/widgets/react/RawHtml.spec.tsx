@@ -1,9 +1,11 @@
-import { render } from "preact";
+import { createRef, render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { highlightedTexts } from "../../test/highlights";
-import RawHtml, { getHtml, HighlightedText, RawHtmlBlock, SanitizedHtml } from "./RawHtml";
+import RawHtml, {
+    getHtml, getHtmlMatchText, HighlightedHtml, HighlightedText, RawHtmlBlock, SanitizedHtml
+} from "./RawHtml";
 
 let container: HTMLDivElement;
 
@@ -112,5 +114,65 @@ describe("HighlightedText", () => {
 
         expect(container.textContent).toBe("another match here");
         expect(highlightedTexts("search-match", container)).toEqual([ "match" ]);
+    });
+});
+
+describe("HighlightedHtml", () => {
+    const marks = () => highlightedTexts("search-match", container);
+
+    it("renders the markup and marks a match across inline formatting", () => {
+        const ref = createRef<HTMLSpanElement>();
+        act(() => render(
+            <HighlightedHtml
+                className="item-content"
+                containerRef={ref}
+                html="Micro<strong>scope</strong> lens"
+                highlightedTokens={[ "microscope" ]}
+            />,
+            container
+        ));
+
+        const el = container.querySelector("span.item-content");
+        expect(el?.querySelector("strong")?.textContent).toBe("scope");
+        expect(ref.current).toBe(el);
+        expect(marks()).toEqual([ "Microscope" ]);
+    });
+
+    it("leaves math out of the match and of the marks", () => {
+        act(() => render(
+            <HighlightedHtml
+                html={"<span class=\"math-tex\">\\(lens\\)</span> lens"}
+                highlightedTokens={[ "lens" ]}
+            />,
+            container
+        ));
+        expect(marks()).toEqual([ "lens" ]);
+        expect(container.querySelector(".math-tex")?.textContent).toBe("\\(lens\\)");
+    });
+
+    it("marks again when the markup or the tokens change, and clears without tokens", () => {
+        const show = (html: string, tokens: string[] | null) => act(() => render(
+            <HighlightedHtml html={html} highlightedTokens={tokens} />,
+            container
+        ));
+
+        show("<b>one</b> two", [ "one" ]);
+        expect(marks()).toEqual([ "one" ]);
+
+        show("<b>one</b> two", [ "two" ]);
+        expect(marks()).toEqual([ "two" ]);
+
+        show("two <i>t</i>wo", [ "two" ]);
+        expect(marks()).toEqual([ "two", "two" ]);
+
+        show("two <i>t</i>wo", null);
+        expect(marks()).toEqual([]);
+    });
+
+    it("matches on the text that it marks", () => {
+        const html = "Micro<strong>scope</strong><br>Energy "
+            + "<span class=\"math-tex\">\\(E\\)</span> units";
+
+        expect(getHtmlMatchText(html)).toBe("Microscope Energy  units");
     });
 });

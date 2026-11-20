@@ -1,25 +1,29 @@
 import type { CKTextEditor, ModelText } from "@triliumnext/ckeditor5";
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { revealElement } from "../../services/bookmark_jump";
 import { t } from "../../services/i18n";
 import { randomString } from "../../services/utils";
 import Dropdown from "../react/Dropdown";
+import { useFilterState } from "../react/filter";
 import { FormListToggleableItem } from "../react/FormList";
 import { useNoteProperty } from "../react/hooks/note";
 import { useTriliumOptionJson } from "../react/hooks/options";
 import { useContentElement, useIsNoteReadOnly, useTextEditor } from "../react/hooks/note_context";
 import { useActiveNoteContext, useGetContextData } from "../react/hooks/tree";
 import { useMathRendering } from "../react/hooks/content";
-import RawHtml from "../react/RawHtml";
+import { getEditorNoteId } from "../react/NoteStore";
+import { HighlightedHtml } from "../react/RawHtml";
 import {
     HIGHLIGHT_FORMATS, HighlightFormat
 } from "../type_widgets/options/highlights_list_options";
 import {
     extractHighlightsFromStaticHtml, htmlForRun, type DomHighlight, type RawHighlight
 } from "./highlights_extract";
-import RightPanelWidget from "./RightPanelWidget";
+import { useOutlineFilter } from "./outline_filter";
+import RightPanelWidget, { NavigatedInNote } from "./RightPanelWidget";
 import SidebarHelp from "./SidebarHelp";
+import { type ContentSnapshot, isPageOfNote } from "./TableOfContents";
 
 /**
  * Highlights published by a type widget that renders its own content, rather than one the
@@ -49,32 +53,52 @@ function ContextDataHighlightsList() {
     const data = useGetContextData("highlights");
 
     return <AbstractHighlightsList
-        highlights={data?.highlights ?? []}
+        highlights={data?.highlights ?? NO_HIGHLIGHTS}
         scrollToHighlight={data?.scrollToHighlight ?? (() => {})}
     />;
 }
 
+const NO_HIGHLIGHTS: never[] = [];
+
 function AbstractHighlightsList<T extends RawHighlight>({ highlights, scrollToHighlight }: {
-    highlights: T[],
+    /** The highlights in document order, `null` while they are not read yet. */
+    highlights: T[] | null,
     scrollToHighlight(highlight: T): void;
 }) {
     const [ highlightsList, setHighlightsList ] = useTriliumOptionJson<HighlightFormat[]>("highlightsList");
-    const highlightsListSet = new Set(highlightsList || []);
-    const filteredHighlights = highlights.filter(highlight => {
-        const { attrs } = highlight;
-        return (
-            (highlightsListSet.has("bold") && attrs.bold) ||
-            (highlightsListSet.has("italic") && attrs.italic) ||
-            (highlightsListSet.has("underline") && attrs.underline) ||
-            (highlightsListSet.has("color") && !!attrs.color) ||
-            (highlightsListSet.has("bgColor") && !!attrs.background)
-        );
+    const onNavigated = useContext(NavigatedInNote);
+    const tokens = useFilterState()?.tokens;
+
+    function activate(highlight: T) {
+        scrollToHighlight(highlight);
+        onNavigated?.();
+    }
+
+    // The highlights of the formats the `highlightsList` option lists.
+    const shownHighlights = useMemo(() => {
+        const highlightsListSet = new Set(highlightsList || []);
+        return highlights?.filter(highlight => {
+            const { attrs } = highlight;
+            return (
+                (highlightsListSet.has("bold") && attrs.bold) ||
+                (highlightsListSet.has("italic") && attrs.italic) ||
+                (highlightsListSet.has("underline") && attrs.underline) ||
+                (highlightsListSet.has("color") && !!attrs.color) ||
+                (highlightsListSet.has("bgColor") && !!attrs.background)
+            );
+        }) ?? null;
+    }, [ highlights, highlightsList ]);
+    const matches = useOutlineFilter(shownHighlights, {
+        section: "highlights",
+        getHtml: (highlight) => highlight.text,
+        activate
     });
+    const rows = matches ?? shownHighlights?.map((item, index) => ({ item, index })) ?? [];
 
     return (
         <RightPanelWidget
             id="highlights"
-            title={t("highlights_list_2.title_with_count", { count: filteredHighlights.length })}
+            title={t("highlights_list_2.title_with_count", { count: shownHighlights?.length ?? 0 })}
             // What the list counts as a highlight is the question the card raises and the setting that
             // answers it, so the setting sits in the header rather than behind a menu holding nothing
             // else — and as a menu of its own rather than a modal, see HighlightsListMenu.
@@ -84,18 +108,20 @@ function AbstractHighlightsList<T extends RawHighlight>({ highlights, scrollToHi
             </>}
         >
             <span className="highlights-list">
-                {filteredHighlights.length > 0 ? (
+                {rows.length > 0 && (
                     <ol>
                         {/* Keyed by position, so a new extraction updates the items in place. */}
-                        {filteredHighlights.map((highlight, index) => (
+                        {rows.map(({ item, index }) => (
                             <HighlightItem
                                 key={index}
-                                highlight={highlight}
-                                onClick={() => scrollToHighlight(highlight)}
+                                highlight={item}
+                                tokens={tokens}
+                                onClick={() => activate(item)}
                             />
                         ))}
                     </ol>
-                ) : (
+                )}
+                {!matches && rows.length === 0 && (
                     <div className="no-highlights">
                         {t("highlights_list_2.no_highlights")}
                     </div>
@@ -142,8 +168,10 @@ function HighlightsListMenu({ currentValue, onChange }: {
     );
 }
 
-function HighlightItem<T extends RawHighlight>({ highlight, onClick }: {
+function HighlightItem<T extends RawHighlight>({ highlight, tokens, onClick }: {
     highlight: T;
+    /** The terms of the filter in force, painted in the text. */
+    tokens?: string[];
     onClick(): void;
 }) {
     const contentRef = useRef<HTMLElement>(null);
@@ -152,7 +180,8 @@ function HighlightItem<T extends RawHighlight>({ highlight, onClick }: {
 
     return (
         <li onClick={onClick}>
-            <RawHtml
+            <HighlightedHtml
+                highlightedTokens={tokens}
                 containerRef={contentRef}
                 style={{
                     fontWeight: highlight.attrs.bold ? "700" : undefined,
@@ -179,11 +208,25 @@ interface CKHighlight extends RawHighlight {
 function EditableTextHighlightsList() {
     const { note, noteContext } = useActiveNoteContext();
     const textEditor = useTextEditor(noteContext);
-    const [ highlights, setHighlights ] = useState<CKHighlight[]>([]);
+    const ntxId = noteContext?.ntxId;
+    const [ snapshot, setSnapshot ] = useState<ContentSnapshot<CKHighlight> | null>(null);
+    // Highlights read in another split or from another note's content are not this note's.
+    const highlights = snapshot && snapshot.ntxId === ntxId && snapshot.source === note?.noteId
+        ? snapshot.items
+        : null;
 
     useEffect(() => {
         if (!textEditor) return;
-        setHighlights(extractHighlightsFromTextEditor(textEditor));
+        const read = () => setSnapshot({
+            items: extractHighlightsFromTextEditor(textEditor),
+            ntxId,
+            source: getEditorNoteId(textEditor)
+        });
+
+        // The editor can still hold the previous note, until this one's content arrives.
+        if (getEditorNoteId(textEditor) === note?.noteId) {
+            read();
+        }
 
         // React to changes.
         const changeCallback = () => {
@@ -211,13 +254,13 @@ function EditableTextHighlightsList() {
             });
 
             if (affectsHighlights) {
-                setHighlights(extractHighlightsFromTextEditor(textEditor));
+                read();
             }
         };
 
         textEditor.model.document.on("change:data", changeCallback);
         return () => textEditor.model.document.off("change:data", changeCallback);
-    }, [ textEditor, note ]);
+    }, [ textEditor, note?.noteId, ntxId ]);
 
     const scrollToHeading = useCallback((highlight: CKHighlight) => {
         if (!textEditor) return;
@@ -289,9 +332,12 @@ function extractHighlightsFromTextEditor(editor: CKTextEditor) {
 
 //#region Read-only text
 function ReadOnlyTextHighlightsList() {
-    const { noteContext } = useActiveNoteContext();
+    const { note, noteContext } = useActiveNoteContext();
     const contentEl = useContentElement(noteContext);
-    const highlights = extractHighlightsFromStaticHtml(contentEl);
+    // The element is the active split's, but it can still show the previous blob.
+    const highlights = contentEl && isPageOfNote(contentEl.dataset.blobId, note)
+        ? extractHighlightsFromStaticHtml(contentEl)
+        : null;
 
     const scrollToHighlight = useCallback((highlight: DomHighlight) => {
         revealElement(highlight.element);

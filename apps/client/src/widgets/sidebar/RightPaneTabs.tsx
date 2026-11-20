@@ -11,6 +11,8 @@ export interface RightPaneTabDefinition extends TabStripTabDefinition<RightPaneT
      * so that merely moving between notes moves the tabs about under the pointer.
      */
     alwaysShown?: boolean;
+    /** Show a field at the top of the tab that filters the items of its sections. */
+    filterable?: boolean;
 }
 
 /**
@@ -21,7 +23,10 @@ export interface RightPaneTabDefinition extends TabStripTabDefinition<RightPaneT
 export const RIGHT_PANE_TABS: RightPaneTabDefinition[] = [
     // The outline is what a note's type decides the most: a text note has headings, a PDF has pages,
     // an image has neither. It stays put through all of them.
-    { id: "outline", title: t("right_pane.tab_outline"), icon: "bx bx-list-ul", alwaysShown: true },
+    {
+        id: "outline", title: t("right_pane.tab_outline"), icon: "bx bx-list-ul",
+        alwaysShown: true, filterable: true
+    },
     { id: "attributes", title: t("right_pane.tab_attributes"), icon: "bx bx-hash" },
     // How the note relates to the others. Empty for now (its widgets are yet to come), so it leans on
     // alwaysShown to appear in the strip at all; any note can be linked to, so staying put fits it anyway.
