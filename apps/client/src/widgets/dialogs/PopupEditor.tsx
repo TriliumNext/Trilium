@@ -26,6 +26,7 @@ import { useDetachedNoteContext, useNoteContext } from "../react/hooks/note_cont
 import { useFindShortcut } from "../react/hooks/shortcuts";
 import { useLegacyWidget } from "../react/hooks/legacy";
 import { useContainedLinkNavigation } from "../react/hooks/content";
+import { WithLazyModule } from "../react/LazyComponent";
 import Modal from "../react/Modal";
 import { NoteContextContext, ParentComponent, POPUP_EDITOR_NTX_ID } from "../react/react_utils";
 import { BacklinksWidget } from "../sidebar/Backlinks";
@@ -40,6 +41,9 @@ const COVERED_LAYER = 1090;
 /** The `ntxId`s of the popups on show, and of those stacked over another modal, which the page's classes reflect. */
 const shownPopups = new Set<string>();
 const stackedPopups = new Set<string>();
+
+/** The mobile layout has no scroll rail, so phones load none of it. */
+const loadScrollRail = () => import("../scroll_rail");
 
 export default function PopupEditor({ ntxId = POPUP_EDITOR_NTX_ID, openCommand = "openInPopup" }: {
     ntxId?: string;
@@ -241,6 +245,11 @@ export default function PopupEditor({ ntxId = POPUP_EDITOR_NTX_ID, openCommand =
                     stackable
                 >
                     <div className={`popup-editor-scroll${isMobile ? " scroll-edge-fade" : ""}`}>
+                        {!isMobile && (
+                            <WithLazyModule load={loadScrollRail}>
+                                {({ default: ScrollRail }) => <ScrollRail />}
+                            </WithLazyModule>
+                        )}
                         <PromotedAttributes />
 
                         {!isMobile && <FormattingToolbar />}

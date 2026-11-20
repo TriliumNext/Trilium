@@ -37,6 +37,13 @@ export interface ScrollRailSource {
 
 export type ScrollRailChange = "retire" | "refresh" | "refreshLater" | "emphasize";
 
+/**
+ * A bubbling event that content in a note dispatches when its parts move while the note keeps its
+ * size, such as a code editor that measures its lines. The scroll rail then measures its markers
+ * again.
+ */
+export const SCROLL_RAIL_MEASURE_EVENT = "trilium-scroll-rail-measure";
+
 /** A set of markers. Its owner publishes it once as note context data, then drives it here. */
 export class ScrollRailLayer {
 

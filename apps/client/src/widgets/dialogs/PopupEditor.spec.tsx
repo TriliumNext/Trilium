@@ -137,6 +137,7 @@ vi.mock("../layout/NoteTypeSwitcher", () => ({
     default: () => <div className="note-type-switcher-stub" />
 }));
 vi.mock("../layout/FormattingToolbar", () => ({ default: () => null }));
+vi.mock("../scroll_rail", () => ({ default: () => <div className="scroll-rail-stub" /> }));
 vi.mock("../layout/VimStatus", () => ({ VimTitleStatus: () => null }));
 vi.mock("../type_widgets/text/mobile_editor_toolbar", () => ({ default: () => <div className="mobile-toolbar-stub" /> }));
 vi.mock("../note_icon", () => ({ default: () => <div className="note-icon-stub" /> }));
@@ -572,9 +573,14 @@ describe("PopupEditor", () => {
         mocks.contextNote = undefined;
     });
 
-    it("gives mobile its own toolbar and hides the buttons that make no sense in a popup", async () => {
+    it("gives desktop the scroll rail, mobile its own toolbar", async () => {
         expect(container.querySelector(".mobile-toolbar-stub")).toBeNull();
         expect(container.querySelector(".popup-editor-scroll")?.classList.contains("scroll-edge-fade")).toBe(false);
+        // The rail is the scroller's first child, which it takes over.
+        await vi.waitFor(() => {
+            const first = container.querySelector(".popup-editor-scroll")?.firstElementChild;
+            expect(first?.classList.contains("scroll-rail-stub")).toBe(true);
+        });
 
         mocks.isMobile.mockReturnValue(true);
         const mobileContainer = document.body.appendChild(document.createElement("div"));
@@ -596,6 +602,8 @@ describe("PopupEditor", () => {
         expect(toolbar).not.toBeNull();
         expect(scroll?.contains(toolbar)).toBe(false);
         expect(scroll?.nextElementSibling).toBe(toolbar);
+        // The rail's module is loaded by now, so it would render at once.
+        expect(mobileContainer.querySelector(".scroll-rail-stub")).toBeNull();
 
         render(null, mobileContainer);
         mobileContainer.remove();

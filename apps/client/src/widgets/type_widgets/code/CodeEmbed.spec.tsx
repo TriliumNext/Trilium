@@ -24,6 +24,7 @@ import {
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
 import { CodeMirrorFindTarget } from "../../find_in_code";
+import { SCROLL_RAIL_MEASURE_EVENT } from "../../scroll_rail_markers";
 import { NoteSaves } from "../text/attachment_saves";
 import { getContentEmbedTools, getEmbedFindTarget } from "../text/content_embed_tools";
 import EmbedHistories from "../text/embed_history";
@@ -176,7 +177,7 @@ describe("CodeEmbed", () => {
         expect(view.state.doc.toString()).toBe("#print(1)\nlog(2)");
     });
 
-    it("names its matches by line in its scroller; passes the check to each search", async () => {
+    it("names drawn matches by text, others by line; reports heights while searching", async () => {
         const { figure } = await mount(buildCodeNote("print(1)\nprint(2)"), buildEditor(), {
             isEditable: true
         });
@@ -190,15 +191,38 @@ describe("CodeEmbed", () => {
         await target.find("print", options, check);
         expect(performFind).toHaveBeenLastCalledWith("print", false, false, false, check);
         const rects = vi.spyOn(Element.prototype, "getBoundingClientRect");
+        const lines = [ ...figure.querySelectorAll(".cm-line") ];
+        const lineOf = (range: unknown) => range instanceof Range
+            ? lines.findIndex((line) => line.contains(range.startContainer))
+            : null;
+        const drawn = target.getMatchTargets();
+        expect(drawn.map((range) => range instanceof Range && range.toString()))
+            .toEqual([ "print", "print" ]);
+        expect(drawn.map(lineOf)).toEqual([ 0, 1 ]);
+
+        // A match outside the drawn ranges has no text in the page.
+        const visibleRanges = vi.spyOn(view, "visibleRanges", "get")
+            .mockReturnValue([ { from: 0, to: 8 } ]);
         const lineTop = (position: number) =>
             view.lineBlockAt(position).top + view.documentPadding.top;
-        expect(target.getMatchTargets()).toEqual([
-            { within: view.scrollDOM, offset: lineTop(0) },
-            { within: view.scrollDOM, offset: lineTop(9) }
-        ]);
+        const partly = target.getMatchTargets();
+        expect(lineOf(partly[0])).toBe(0);
+        expect(partly[1]).toEqual({ within: view.scrollDOM, offset: lineTop(9) });
         expect(rects).not.toHaveBeenCalled();
         rects.mockRestore();
+        visibleRanges.mockRestore();
         expect(target.countMatches()).toBe(2);
+
+        // While it searches, each change of the editor's heights reaches the scroll rail.
+        const onMeasure = vi.fn();
+        figure.addEventListener(SCROLL_RAIL_MEASURE_EVENT, onMeasure);
+        act(() => view.dispatch({ changes: { from: 0, insert: "\n" } }));
+        expect(onMeasure).toHaveBeenCalledOnce();
+        target.close(null);
+        act(() => view.dispatch({ changes: { from: 0, insert: "\n" } }));
+        expect(onMeasure).toHaveBeenCalledOnce();
+        act(() => view.dispatch({ changes: { from: 0, to: 2 } }));
+        await target.find("print", options, check);
 
         // A write whose check fails in the frame of its search after the edit keeps the edit.
         const isWanted = () => false;

@@ -48,9 +48,10 @@ export interface PublishedLayer {
 const loadLines = () => import("./scroll_rail_body");
 
 /**
- * The scrollbar of a note split, with the markers that the split's note context publishes. Its
- * root is the first child of the scroller. It replaces the scroller's own scrollbar while the
- * scroller has `detail-has-end-margin`, and loads the lines of the markers with the first layer.
+ * The scrollbar of a note split or the quick edit popup, with the markers that its note context
+ * publishes. Its root is the first child of the scroller. It replaces the scroller's own scrollbar
+ * while the scroller has `detail-has-end-margin`, and loads the lines of the markers with the first
+ * layer.
  */
 export default function ScrollRail() {
     const hostRef = useRef<HTMLDivElement>(null);
@@ -224,6 +225,8 @@ interface Paging {
 const OWNED_CLASS = "detail-has-end-margin";
 const ALIVE_CLASS = "has-scroll-rail";
 const HANDLE_CLASS = "shows-scroll-rail-handle";
+/** On the rail while a press holds the handle, whose `:hover` the pointer capture removes. */
+const HELD_CLASS = "is-handle-held";
 /** How far the pointer moves before a press becomes a drag, in CSS px. */
 const DRAG_THRESHOLD = 3;
 /** Delay before a held press on the track repeats, then between repeats, in ms. */
@@ -575,6 +578,9 @@ export class ScrollRailBar {
         };
         this.press = press;
         this.rail.setPointerCapture?.(event.pointerId);
+        if (press.grab !== null) {
+            this.rail.classList.add(HELD_CLASS);
+        }
 
         if (press.hit) {
             press.mode = "line";
@@ -643,7 +649,7 @@ export class ScrollRailBar {
         press.mode = "drag";
         press.hit = null;
         this.endPaging();
-        this.rail?.classList.add("is-dragging");
+        this.rail?.classList.add(HELD_CLASS);
     }
 
     /** Scrolls so that the grab point of the handle, at its length of now, is under the pointer. */
@@ -663,7 +669,7 @@ export class ScrollRailBar {
         if (!press) return;
 
         this.press = null;
-        this.rail?.classList.remove("is-dragging");
+        this.rail?.classList.remove(HELD_CLASS);
         if (this.rail?.hasPointerCapture?.(press.pointerId)) {
             this.rail.releasePointerCapture(press.pointerId);
         }

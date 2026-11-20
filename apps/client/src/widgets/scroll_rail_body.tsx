@@ -10,11 +10,14 @@ import {
     type ScrollRailBar, type ScrollRailKind
 } from "./scroll_rail";
 import {
-    drawRows, findRow, goToTarget, RANGE_MEASURE_LIMIT, type RowSet, type ScrollRailLayer,
-    ScrollRailLocator, type ScrollRailTarget, toRows
+    drawRows, findRow, goToTarget, RANGE_MEASURE_LIMIT, type RowSet, SCROLL_RAIL_MEASURE_EVENT,
+    type ScrollRailLayer, ScrollRailLocator, type ScrollRailTarget, toRows
 } from "./scroll_rail_markers";
 
-/** Delay of a read after the last size signal, content change or `refreshLater()`, in ms. */
+/**
+ * Delay of a read after the last size signal, content change, measure event or `refreshLater()`,
+ * in ms.
+ */
 export const READ_DELAY = 150;
 
 interface ScrollRailLinesProps {
@@ -115,8 +118,9 @@ const NO_ROWS: RowSet = { rows: [], markerRows: [] };
 /**
  * Reads the targets of the layers of a scroller and draws their lines on the track of `bar`. A
  * read runs after the next paint for `refresh()`, a published layer and a tab change,
- * and 150 ms after the last size signal of the bar, `refreshLater()` or scroll, and for some kinds
- * the last content change; never while the scroller is hidden.
+ * and 150 ms after the last size signal of the bar, {@link SCROLL_RAIL_MEASURE_EVENT},
+ * `refreshLater()` or scroll, and for some kinds the last content change; never while the scroller
+ * is hidden.
  */
 export class RailController implements RailLines {
 
@@ -130,6 +134,7 @@ export class RailController implements RailLines {
     private laterTimer: ReturnType<typeof setTimeout> | null = null;
     private readonly unsubscribe: () => void;
     private readonly onTabChange = () => this.requestAfterPaint(this.states.keys());
+    private readonly onMeasure = () => this.requestLater(this.states.keys());
     /** Delays a pending read while the note scrolls: a read of many targets takes tens of ms. */
     private readonly onScroll = () => {
         if (this.laterTimer !== null) this.startLaterTimer();
@@ -151,6 +156,7 @@ export class RailController implements RailLines {
             this.requestLater(this.states.keys());
         });
         this.scroller.addEventListener(TAB_CHANGE_EVENT, this.onTabChange);
+        this.scroller.addEventListener(SCROLL_RAIL_MEASURE_EVENT, this.onMeasure);
         this.scroller.addEventListener("scroll", this.onScroll, { passive: true });
         bar.setLines(this);
     }
@@ -232,6 +238,7 @@ export class RailController implements RailLines {
             this.bar.setLines(null);
         }
         this.scroller.removeEventListener(TAB_CHANGE_EVENT, this.onTabChange);
+        this.scroller.removeEventListener(SCROLL_RAIL_MEASURE_EVENT, this.onMeasure);
         this.scroller.removeEventListener("scroll", this.onScroll);
         if (this.frame !== null) cancelAnimationFrame(this.frame);
         if (this.paintTask !== null) clearTimeout(this.paintTask);

@@ -15,7 +15,7 @@ import ScrollRail, {
 } from "./scroll_rail";
 import { READ_DELAY } from "./scroll_rail_body";
 import {
-    ScrollRailLayer, type ScrollRailSource, type ScrollRailTarget, toRow
+    SCROLL_RAIL_MEASURE_EVENT, ScrollRailLayer, type ScrollRailSource, type ScrollRailTarget, toRow
 } from "./scroll_rail_markers";
 
 vi.mock("../services/bookmark_jump", () => ({ revealElement: vi.fn() }));
@@ -615,7 +615,7 @@ describe("ScrollRail", () => {
         pointer("pointermove", 200);
         expect(scrollCalls).toHaveLength(dragWrites);
         expect(release).toHaveBeenCalledWith(1);
-        expect(rail().classList.contains("is-dragging")).toBe(false);
+        expect(rail().classList.contains("is-handle-held")).toBe(false);
         pointer("pointermove", 250);
         pointer("pointerup", 250);
         expect(scrollCalls).toHaveLength(dragWrites);
@@ -716,7 +716,7 @@ describe("ScrollRail", () => {
             // The handle is 76.8 px long, grabbed 65 px down.
             pointer("pointerdown", 65);
             pointer("pointermove", 70);
-            expect(rail().classList.contains("is-dragging")).toBe(true);
+            expect(rail().classList.contains("is-handle-held")).toBe(true);
             expect(scroller.scrollTop).toBeCloseTo(5 / 307.2 * 1600);
 
             scrollerBox.scrollHeight = 4000;
@@ -727,11 +727,11 @@ describe("ScrollRail", () => {
             expect(handle.top).toBeCloseTo(33.5, 1);
             expect(handle.top + handle.height).toBeCloseTo(71.9, 1);
             pointer("pointerup", 66);
-            expect(rail().classList.contains("is-dragging")).toBe(false);
+            expect(rail().classList.contains("is-handle-held")).toBe(false);
 
             // Shift + press centers the handle on the pointer, and keeps it centered.
             pointer("pointerdown", 300, { shiftKey: true });
-            expect(rail().classList.contains("is-dragging")).toBe(true);
+            expect(rail().classList.contains("is-handle-held")).toBe(true);
             let box = getHandleBox(metrics, scroller.scrollTop);
             expect(box.top + box.height / 2).toBeCloseTo(300);
             scrollerBox.scrollHeight = 8000;
@@ -749,7 +749,7 @@ describe("ScrollRail", () => {
             const draggedRail = rail();
             scrollerBox.scrollHeight = 400;
             act(() => resize(scroller));
-            expect(host.querySelector(".is-dragging")).toBeNull();
+            expect(host.querySelector(".is-handle-held")).toBeNull();
             pointer("pointermove", 100, {}, draggedRail);
             expect(scrollCalls).toHaveLength(writes);
         });
@@ -758,23 +758,29 @@ describe("ScrollRail", () => {
         scrollerBox.scrollHeight = 4000;
         mountRail();
 
-        // The handle is 40 px long, grabbed at its middle.
+        // The handle is 40 px long, grabbed at its middle. It is held from the press on.
         const down = pointer("pointerdown", 20);
         expect(down.defaultPrevented).toBe(true);
+        expect(rail().classList.contains("is-handle-held")).toBe(true);
         pointer("pointermove", 22);
         expect(scrollCalls).toEqual([]);
-        expect(rail().classList.contains("is-dragging")).toBe(false);
+        expect(rail().classList.contains("is-handle-held")).toBe(true);
         pointer("pointermove", 200);
-        expect(rail().classList.contains("is-dragging")).toBe(true);
+        expect(rail().classList.contains("is-handle-held")).toBe(true);
         pointer("pointerup", 200);
         expect(scrollCalls.at(-1)?.options).toEqual({ top: 1800, behavior: "instant" });
-        expect(rail().classList.contains("is-dragging")).toBe(false);
+        expect(rail().classList.contains("is-handle-held")).toBe(false);
 
         // A press on the handle released in place does nothing.
         const writes = scrollCalls.length;
         click(190);
         advance(1000);
         expect(scrollCalls).toHaveLength(writes);
+
+        // A press on the track holds no handle.
+        pointer("pointerdown", 50);
+        expect(rail().classList.contains("is-handle-held")).toBe(false);
+        pointer("pointerup", 50);
     });
 });
 
@@ -820,7 +826,7 @@ describe("ScrollRail lines", () => {
         expect(drawn.map(([ , top ]) => top)).toEqual([ 373 ]);
     });
 
-    it("maps the rows again at a size signal of the bar, and asks for one read", async () => {
+    it("maps rows again and reads at a size signal of the bar or a measure event", async () => {
         mountRail();
         const target = append(content, "p", { top: 100, height: 20 });
         const readTargets = vi.fn(() => [ target ]);
@@ -839,6 +845,13 @@ describe("ScrollRail lines", () => {
         act(() => resize(content));
         advance(READ_DELAY);
         expect(readTargets).toHaveBeenCalledTimes(2);
+
+        // Content that moves its parts with no size change reports it.
+        content.dispatchEvent(new Event(SCROLL_RAIL_MEASURE_EVENT, { bubbles: true }));
+        advance(READ_DELAY - 1);
+        expect(readTargets).toHaveBeenCalledTimes(2);
+        advance(1);
+        expect(readTargets).toHaveBeenCalledTimes(3);
     });
 
     it("puts off a waiting read until the note stops scrolling", async () => {
@@ -1156,8 +1169,11 @@ describe("ScrollRail lines", () => {
         expect([ ...rail().children ].map((child) => child.className || child.tagName))
             .toEqual([ "CANVAS", "scroll-rail-handle" ]);
 
-        // Row 10 is under the handle, row 200 on the track.
-        click(10);
+        // Row 10 is under the handle, row 200 on the track. A press on row 10 holds the handle.
+        pointer("pointerdown", 10);
+        expect(rail().classList.contains("is-handle-held")).toBe(true);
+        pointer("pointerup", 10);
+        expect(rail().classList.contains("is-handle-held")).toBe(false);
         expect(onClick).toHaveBeenLastCalledWith(0);
         click(200);
         advance(1000);
@@ -1184,11 +1200,11 @@ describe("ScrollRail lines", () => {
 
         pointer("pointerdown", 10);
         pointer("pointermove", 20);
-        expect(rail().classList.contains("is-dragging")).toBe(true);
+        expect(rail().classList.contains("is-handle-held")).toBe(true);
         const writes = scrollCalls.length;
         scrollerBox.scrollHeight = 400;
         act(() => resize(scroller));
-        expect(rail().classList.contains("is-dragging")).toBe(false);
+        expect(rail().classList.contains("is-handle-held")).toBe(false);
         pointer("pointermove", 100);
         pointer("pointerup", 100);
         expect(scrollCalls).toHaveLength(writes);

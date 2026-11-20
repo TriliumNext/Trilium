@@ -104,6 +104,10 @@ body.desktop .modal.popup-editor-dialog .classic-toolbar-widget {
     align-items: flex-start;
 }
 
+body.desktop .modal.popup-editor-dialog .has-scroll-rail .classic-toolbar-widget {
+    margin-inline-end: var(--scroll-rail-width);
+}
+
 body.mobile .modal.popup-editor-dialog .modal-content:has(.classic-toolbar-outer-container.visible) .note-type-switcher {
     inset-block-end: calc(12px + var(--mobile-toolbar-height) + 2 * var(--mobile-toolbar-gap));
 }

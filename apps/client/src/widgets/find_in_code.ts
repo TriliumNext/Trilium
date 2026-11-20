@@ -6,6 +6,7 @@ import type VanillaCodeMirror from "@triliumnext/codemirror";
 import type FindWidget from "./find.js";
 import type { CloseGuard, FindChecks, NavigationOptions, WriteOutcome } from "./find.js";
 import type { FindCheck, FindOptions, FindTarget } from "./merged_find";
+import { SCROLL_RAIL_MEASURE_EVENT, type ScrollRailTarget } from "./scroll_rail_markers";
 
 const FIND_RESULT_SELECTED_CSS_CLASSNAME = "ck-find-result_selected";
 const FIND_RESULT_CSS_CLASSNAME = "ck-find-result";
@@ -131,6 +132,8 @@ const DROPPED: WriteOutcome = { isDropped: true, result: null };
 export class CodeMirrorFindTarget implements FindTarget {
 
     private search: { term: string; options: FindOptions } | null = null;
+    /** Removes the listener that reports the editor's height changes to the scroll rail. */
+    private stopReportingHeights: (() => void) | null = null;
 
     constructor(private readonly view: VanillaCodeMirror) {}
 
@@ -140,6 +143,7 @@ export class CodeMirrorFindTarget implements FindTarget {
             return 0;
         }
 
+        this.reportHeights();
         const { totalFound } = await this.view.performFind(
             term, options.matchCase, options.wholeWord, false, check
         );
@@ -166,17 +170,18 @@ export class CodeMirrorFindTarget implements FindTarget {
     }
 
     /**
-     * The top of the line of each match in the content of the editor's scroller, from the height
-     * map, so lines that are not rendered count too and no geometry is read.
+     * The text of each match that the editor draws, else the top of its line in the content of the
+     * editor's scroller, from the height map. Reads no geometry. The height map estimates the lines
+     * that the editor has not measured, which it measures once it is in view.
      */
-    getMatchTargets() {
+    getMatchTargets(): ScrollRailTarget[] {
         if (!this.isAlive()) return [];
         const { view } = this;
         const within = view.scrollDOM;
         const top = view.documentPadding.top;
-        return view.getSearchMatches().map((match) => ({
+        return view.getSearchMatches().map((match) => getDrawnRange(view, match) ?? {
             within, offset: view.lineBlockAt(match.from).top + top
-        }));
+        });
     }
 
     /** The matches of the search follow the edits of the document. */
@@ -206,6 +211,8 @@ export class CodeMirrorFindTarget implements FindTarget {
 
     /** Removes the matches at once. The match to select is taken before the search goes. */
     close(index: number | null) {
+        this.stopReportingHeights?.();
+        this.stopReportingHeights = null;
         if (!this.isAlive()) {
             return null;
         }
@@ -235,9 +242,33 @@ export class CodeMirrorFindTarget implements FindTarget {
         return this.search ? this.find(this.search.term, this.search.options, check) : 0;
     }
 
+    /**
+     * Dispatches {@link SCROLL_RAIL_MEASURE_EVENT} at each change of the editor's heights until
+     * `close()`, as the matches move then without a change of the note's size.
+     */
+    private reportHeights() {
+        this.stopReportingHeights ??= this.view.addUpdateListener((update) => {
+            if (update.heightChanged) {
+                const event = new Event(SCROLL_RAIL_MEASURE_EVENT, { bubbles: true });
+                this.view.dom.dispatchEvent(event);
+            }
+        });
+    }
+
     /** Whether the editor is still in the page, which a destroyed one leaves. */
     private isAlive() {
         return this.view.dom.isConnected;
     }
 
+}
+
+/** The range of the text of `match` while the editor draws it, else `null`. */
+function getDrawnRange(view: VanillaCodeMirror, { from, to }: { from: number; to: number }) {
+    if (!view.visibleRanges.some((drawn) => drawn.from <= from && to <= drawn.to)) return null;
+    const start = view.domAtPos(from);
+    const end = view.domAtPos(to);
+    const range = view.dom.ownerDocument.createRange();
+    range.setStart(start.node, start.offset);
+    range.setEnd(end.node, end.offset);
+    return range.collapsed ? null : range;
 }

@@ -19,25 +19,23 @@
         color-mix(in srgb, var(--scroll-rail-find-color), var(--main-text-color) 35%);
 }
 
-.scrolling-container {
-    > .scroll-rail-host {
-        position: sticky;
-        top: 0;
-        z-index: 3;
-        flex-shrink: 0;
-        height: 0;
-        overflow-anchor: none;
-    }
+.scroll-rail-host {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    flex-shrink: 0;
+    height: 0;
+    overflow-anchor: none;
+}
 
-    &.shows-scroll-rail-handle::-webkit-scrollbar:vertical {
-        display: none;
-    }
+.shows-scroll-rail-handle::-webkit-scrollbar:vertical {
+    display: none;
 }
 
 /* `scrollbar-width` also hides the horizontal bar, so only engines without `::-webkit-scrollbar`
    take it. */
 @supports not (-webkit-box-reflect: below) {
-    .scrolling-container.shows-scroll-rail-handle {
+    .shows-scroll-rail-handle {
         scrollbar-width: none;
     }
 }
@@ -107,7 +105,7 @@
         }
     }
 
-    &.is-dragging > .scroll-rail-handle {
+    &.is-handle-held > .scroll-rail-handle {
         --scroll-rail-stripe-thickness: var(--scroll-rail-handle-hover-thickness);
         --scroll-rail-stripe-color: var(--scroll-rail-handle-hover-color);
     }
