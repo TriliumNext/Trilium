@@ -840,6 +840,24 @@ describe("ScrollRail lines", () => {
         expect(readTargets).toHaveBeenCalledTimes(2);
     });
 
+    it("puts off a waiting read until the note stops scrolling", async () => {
+        mountRail();
+        const target = append(content, "p", { top: 100, height: 20 });
+        const readTargets = vi.fn(() => [ target ]);
+        await publish({ readTargets });
+        afterPaint();
+        readTargets.mockClear();
+
+        act(() => resize(content));
+        for (let index = 0; index < 5; index++) {
+            advance(READ_DELAY - 50);
+            scroller.dispatchEvent(new Event("scroll"));
+        }
+        expect(readTargets).not.toHaveBeenCalled();
+        advance(READ_DELAY);
+        expect(readTargets).toHaveBeenCalledTimes(1);
+    });
+
     it("shows nothing while no target has a place, and shows once a refresh places one",
         async () => {
             mountRail();

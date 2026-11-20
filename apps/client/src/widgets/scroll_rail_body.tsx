@@ -113,7 +113,8 @@ const NO_ROWS: RowSet = { rows: [], markerRows: [] };
 /**
  * Reads the targets of the layers of a scroller and draws their lines on the track of `bar`. A
  * read runs after the next paint for `refresh()`, a published layer and a tab change, and 150 ms
- * after the last size signal of the bar or `refreshLater()`; never while the scroller is hidden.
+ * after the last size signal of the bar, `refreshLater()` or scroll; never while the scroller is
+ * hidden.
  */
 export class RailController implements RailLines {
 
@@ -127,6 +128,10 @@ export class RailController implements RailLines {
     private laterTimer: ReturnType<typeof setTimeout> | null = null;
     private readonly unsubscribe: () => void;
     private readonly onTabChange = () => this.requestAfterPaint(this.states.keys());
+    /** Delays a pending read while the note scrolls: a read of many targets takes tens of ms. */
+    private readonly onScroll = () => {
+        if (this.laterTimer !== null) this.startLaterTimer();
+    };
     private canvas: HTMLCanvasElement | null = null;
     private colors = new Map<string, { color: string; emphasisColor: string }>();
 
@@ -140,6 +145,7 @@ export class RailController implements RailLines {
             this.requestLater(this.states.keys());
         });
         this.scroller.addEventListener(TAB_CHANGE_EVENT, this.onTabChange);
+        this.scroller.addEventListener("scroll", this.onScroll, { passive: true });
         bar.setLines(this);
     }
 
@@ -219,6 +225,7 @@ export class RailController implements RailLines {
             this.bar.setLines(null);
         }
         this.scroller.removeEventListener(TAB_CHANGE_EVENT, this.onTabChange);
+        this.scroller.removeEventListener("scroll", this.onScroll);
         if (this.frame !== null) cancelAnimationFrame(this.frame);
         if (this.paintTask !== null) clearTimeout(this.paintTask);
         if (this.laterTimer !== null) clearTimeout(this.laterTimer);
@@ -263,11 +270,15 @@ export class RailController implements RailLines {
         });
     }
 
-    /** Reads `keys` once no such request has come for {@link READ_DELAY} ms. */
+    /** Reads `keys` once no such request and no scroll has come for {@link READ_DELAY} ms. */
     private requestLater(keys: Iterable<string>) {
         for (const key of keys) {
             this.later.add(key);
         }
+        this.startLaterTimer();
+    }
+
+    private startLaterTimer() {
         if (this.laterTimer !== null) clearTimeout(this.laterTimer);
         this.laterTimer = setTimeout(() => {
             this.laterTimer = null;
