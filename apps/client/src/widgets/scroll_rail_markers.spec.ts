@@ -2,13 +2,18 @@ import { h, render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import Component from "../components/component";
 import type NoteContext from "../components/note_context";
 import { revealElement } from "../services/bookmark_jump";
+import options from "../services/options";
+import { getEffectiveThemeStyle } from "../services/theme";
 import { rectReads, resetLayoutRecords, scrollCalls, stubBox } from "../test/layout_stubs";
+import { ParentComponent } from "./react/react_utils";
 import type { RailMetrics } from "./scroll_rail";
 import {
-    DOT_SCALE, drawRows, findRow, getHeadingLevel, goToTarget, mapIntoClip, ScrollRailLayer,
-    ScrollRailLocator, toRow, toRows, useScrollRailHeadings
+    DOT_SCALE, drawRows, findRow, getHeadingLevel, getHighlights, goToTarget, mapIntoClip,
+    ScrollRailLayer, ScrollRailLocator, toRow, toRows, useScrollRailHeadings,
+    useScrollRailHighlights
 } from "./scroll_rail_markers";
 
 vi.mock("../services/bookmark_jump", () => ({ revealElement: vi.fn() }));
@@ -117,6 +122,43 @@ describe("drawRows", () => {
         expect(context.fillRect).not.toHaveBeenCalled();
     });
 
+    it("splits the line of a row into a segment per distinct color, at the layer's opacity", () => {
+        const metrics: RailMetrics = { railHeight: 100, clientHeight: 100, scrollHeight: 1000 };
+        const calls: { style: string; alpha: number; rect: number[] }[] = [];
+        const context = {
+            ...fakeContext(),
+            fillRect(...rect: number[]) {
+                calls.push({ style: String(this.fillStyle), alpha: this.globalAlpha, rect });
+            }
+        };
+
+        drawRows(context, { width: 12, height: 100, ratio: 1 }, [
+            {
+                rows: toRows([ 300 ], metrics), emphasized: 0,
+                color: "orange", emphasisColor: "red"
+            },
+            {
+                rows: toRows([ 100, 102, 104, null, 500, 900 ], metrics), emphasized: null,
+                color: "text", emphasisColor: "text", opacity: 0.5,
+                colors: [
+                    [ "yellow", "red" ], [ "yellow" ], [ "blue" ], [ "gray" ], [ "green" ], []
+                ]
+            }
+        ]);
+
+        // Three colors share the 10 px between the insets as 3, 4 and 3 px. A marker with no
+        // colors takes the layer's color. The thicker line on top is opaque.
+        expect(calls).toEqual([
+            { style: "orange", alpha: 1, rect: [ 1, 29, 10, 2 ] },
+            { style: "yellow", alpha: 0.5, rect: [ 1, 9, 3, 2 ] },
+            { style: "red", alpha: 0.5, rect: [ 4, 9, 4, 2 ] },
+            { style: "blue", alpha: 0.5, rect: [ 8, 9, 3, 2 ] },
+            { style: "green", alpha: 0.5, rect: [ 1, 49, 10, 2 ] },
+            { style: "text", alpha: 0.5, rect: [ 1, 89, 10, 2 ] },
+            { style: "red", alpha: 1, rect: [ 1, 28, 10, 4 ] }
+        ]);
+    });
+
     it("takes the level of a heading from its tag, and the deepest for any other target", () => {
         const levels = [ "h1", "h2", "h3", "h4", "h5", "h6", "p" ]
             .map((tag) => getHeadingLevel(document.createElement(tag)));
@@ -166,6 +208,85 @@ describe("useScrollRailHeadings", () => {
         });
 });
 
+describe("getHighlights", () => {
+    it("reads the colored text outside included notes, background first, as the formats count it",
+        () => {
+            stubShownColors();
+            const root = document.body.appendChild(document.createElement("div"));
+            root.innerHTML = "<p><span style=\"color:red;background-color:yellow\">Both</span> "
+                + "<span style=\"color:blue\">Font</span><span style=\"color:red\"> </span>"
+                + "<span style=\"border-color:red;--tn-color:red\">Border</span></p>"
+                + "<figure class=\"include-note\">"
+                + "<span style=\"color:red\">Included</span></figure>"
+                + "<p><strong><span style=\"background-color:pink\">Marked</span></strong></p>";
+            const read = (formats: string[]) => getHighlights(root, formats)
+                .map(({ element, colors }) => [ element.textContent, ...colors ]);
+
+            // The colors as picked, not as the theme shows them.
+            expect(read([ "color", "bgColor" ])).toEqual([
+                [ "Both", "yellow", "red" ],
+                [ "Font", "blue" ],
+                [ "Marked", "pink" ]
+            ]);
+            expect(read([ "color", "bold" ])).toEqual([
+                [ "Both", "red" ],
+                [ "Font", "blue" ]
+            ]);
+            expect(read([ "bgColor" ])).toEqual([
+                [ "Both", "yellow" ],
+                [ "Marked", "pink" ]
+            ]);
+            expect(read([ "bold", "italic", "underline" ])).toEqual([]);
+            expect(getHighlights(null, [ "color" ])).toEqual([]);
+        });
+});
+
+describe("useScrollRailHighlights", () => {
+    it("publishes the highlights while shown, and reads them again for new formats or theme",
+        () => {
+            stubShownColors();
+            loadHighlightsList([ "color", "bgColor" ]);
+            const root = document.body.appendChild(document.createElement("div"));
+            root.innerHTML = "<p><span style=\"color:red;background-color:yellow\">Both</span></p>";
+            const noteContext = recordingContext();
+            const parent = new Component();
+            const container = document.body.appendChild(document.createElement("div"));
+            const show = (isShown: boolean) => act(() => {
+                render(h(ParentComponent.Provider, { value: parent },
+                    h(HighlightsProbe, { noteContext, noteId: "a", isShown, root })), container);
+            });
+
+            show(false);
+            expect(noteContext.setContextData).not.toHaveBeenCalled();
+            show(true);
+            const layer = noteContext.data.get("scrollRailHighlights");
+            if (!layer) throw new Error("no layer is published");
+            const refresh = vi.spyOn(layer, "refresh");
+            expect(layer.source.readTargets()).toEqual([ root.querySelector("span") ]);
+            expect(layer.source.getColors?.(0)).toEqual([ "yellow", "red" ]);
+            expect(layer.source.getColors?.(1)).toEqual([]);
+
+            loadHighlightsList([ "color" ]);
+            act(() => {
+                void parent.handleEvent("entitiesReloaded", {
+                    loadResults: { getOptionNames: () => [ "highlightsList" ] }
+                } as never);
+            });
+            expect(refresh).toHaveBeenCalledOnce();
+            layer.source.readTargets();
+            expect(layer.source.getColors?.(0)).toEqual([ "red" ]);
+
+            const themeStyle = getEffectiveThemeStyle() === "dark" ? "light" : "dark";
+            act(() => {
+                void parent.handleEvent("themeChanged", { themeStyle });
+            });
+            expect(refresh).toHaveBeenCalledTimes(2);
+
+            act(() => render(null, container));
+            expect(noteContext.data.has("scrollRailHighlights")).toBe(false);
+        });
+});
+
 interface HeadingsProbeProps {
     noteContext: ReturnType<typeof recordingContext>;
     noteId: string;
@@ -176,6 +297,30 @@ interface HeadingsProbeProps {
 function HeadingsProbe({ noteContext, noteId, isShown, root }: HeadingsProbeProps) {
     useScrollRailHeadings(noteContext as unknown as NoteContext, noteId, isShown, () => root);
     return null;
+}
+
+function HighlightsProbe({ noteContext, noteId, isShown, root }: HeadingsProbeProps) {
+    useScrollRailHighlights(noteContext as unknown as NoteContext, noteId, isShown, () => root);
+    return null;
+}
+
+/**
+ * Makes `getComputedStyle()` give `shown <inline value>` for the colors of a span, as a theme
+ * adapts them, so a spec tells them from the colors as picked.
+ */
+function stubShownColors() {
+    const getStyle = globalThis.getComputedStyle.bind(globalThis);
+    vi.spyOn(globalThis, "getComputedStyle").mockImplementation((element, pseudoElement) => {
+        if (!(element instanceof HTMLSpanElement)) return getStyle(element, pseudoElement);
+        return {
+            color: `shown ${element.style.color}`,
+            backgroundColor: `shown ${element.style.backgroundColor}`
+        } as CSSStyleDeclaration;
+    });
+}
+
+function loadHighlightsList(formats: string[]) {
+    options.load({ highlightsList: JSON.stringify(formats) });
 }
 
 /** A note context that keeps its context data in `data`. */
@@ -197,6 +342,7 @@ function recordingContext() {
 function fakeContext() {
     return {
         fillStyle: "",
+        globalAlpha: 1,
         clearRect: vi.fn(),
         fillRect: vi.fn(),
         beginPath: vi.fn(),

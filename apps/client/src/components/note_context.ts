@@ -122,6 +122,8 @@ export interface NoteContextDataMap {
     };
     /** Published by the shown text view of the note, for the heading dots of the scroll rail. */
     scrollRailHeadings: ScrollRailLayer;
+    /** Published by the shown text view of the note, for the highlight lines of the scroll rail. */
+    scrollRailHighlights: ScrollRailLayer;
     /** Published by the find bar while a search has matches, for the scroll rail of the split. */
     scrollRailFind: ScrollRailLayer;
     /** Published by the code editor of the note, so the status bar can show the cursor position. */

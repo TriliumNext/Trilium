@@ -10,19 +10,30 @@ import type { ScrollRailLayer, ScrollRailTarget } from "./scroll_rail_markers";
 
 /** A kind of markers, with the CSS variables of its colors. */
 export interface ScrollRailKind {
-    key: "scrollRailHeadings" | "scrollRailFind";
+    key: "scrollRailHighlights" | "scrollRailHeadings" | "scrollRailFind";
+    /** The color of a marker whose source gives no colors of its own. */
     color: string;
     /** The color of the emphasized marker, else `color`. */
     emphasisColor?: string;
+    /** The opacity of the lines, from 0 to 1. Defaults to 1. */
+    opacity?: number;
     /**
      * Whether the markers are dots by heading level, drawn only while a mouse or a pen is over the
      * rail. They take no press, and do not show the rail on a note that fits.
      */
     isHoverOnly?: boolean;
+    /** Whether the rail reads the layer again after a change of the note's content. */
+    isReadOnContentChange?: boolean;
 }
 
 /** The kinds of markers, in drawing order. */
 export const SCROLL_RAIL_KINDS: readonly ScrollRailKind[] = [
+    {
+        key: "scrollRailHighlights",
+        color: "--main-text-color",
+        opacity: 0.5,
+        isReadOnContentChange: true
+    },
     {
         key: "scrollRailHeadings",
         color: "--scroll-rail-heading-color",
@@ -178,6 +189,9 @@ export interface RailLines {
     click(hit: RailHit): void;
 }
 
+/** What changed in the scroller, for the subscribers of the bar. */
+export type BarChange = "size" | "content";
+
 /** Whether the bar replaces the scrollbar of its scroller, and whether the note overflows. */
 interface BarView {
     isOwned: boolean;
@@ -270,7 +284,7 @@ export class ScrollRailBar {
     private checkTask: ReturnType<typeof setTimeout> | null = null;
     private resizeObserver: ResizeObserver | null = null;
     private readonly mutationObserver: MutationObserver;
-    private readonly listeners = new Set<() => void>();
+    private readonly listeners = new Set<(change: BarChange) => void>();
 
     constructor(
         private readonly host: HTMLElement,
@@ -302,10 +316,11 @@ export class ScrollRailBar {
     }
 
     /**
-     * Calls `listener` after every size report of the observers, and after every check that
-     * found new sizes, until the returned function is called.
+     * Calls `listener` with `"size"` after every size report of the observers and every check that
+     * found new sizes, and with `"content"` after every change of the DOM of an owned scroller
+     * outside the bar, until the returned function is called.
      */
-    subscribe(listener: () => void) {
+    subscribe(listener: (change: BarChange) => void) {
         this.listeners.add(listener);
         return () => {
             this.listeners.delete(listener);
@@ -422,6 +437,7 @@ export class ScrollRailBar {
         }
         if (isContentChanged) {
             this.requestCheck();
+            this.notify("content");
         }
     }
 
@@ -480,9 +496,13 @@ export class ScrollRailBar {
             this.placeHandle();
         }
         if (isChanged || isReport) {
-            for (const listener of [ ...this.listeners ]) {
-                listener();
-            }
+            this.notify("size");
+        }
+    }
+
+    private notify(change: BarChange) {
+        for (const listener of [ ...this.listeners ]) {
+            listener(change);
         }
     }
 

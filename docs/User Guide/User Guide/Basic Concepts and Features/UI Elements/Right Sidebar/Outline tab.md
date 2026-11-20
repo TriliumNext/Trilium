@@ -59,6 +59,7 @@ Highlighted text is defined as:
 ### Interaction
 
 *   Clicking on a highlighted text will scroll the document to its position.
+*   In a text note, the scrollbar of the note marks each text with a foreground or background color with a faint line in those colors, side by side when a line has several. Clicking a line scrolls to that text. The lines follow the categories chosen below and show in the desktop layout only.
 
 ### Configuration
 

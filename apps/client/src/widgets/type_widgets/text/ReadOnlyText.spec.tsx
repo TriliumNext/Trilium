@@ -21,11 +21,12 @@
  */
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import Component from "../../../components/component";
 import NoteContext from "../../../components/note_context";
 import LoadResults from "../../../services/load_results";
+import options from "../../../services/options";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
 import ReadOnlyText, { ReadOnlyTextContent } from "./ReadOnlyText";
@@ -174,9 +175,13 @@ describe("ReadOnlyText reacting to content changes (#10575)", () => {
         expect(harness.contentLoadStates).toEqual([ "loading", "loaded" ]);
     });
 
-    it("publishes its headings for the scroll rail while shown", async () => {
+    it("publishes its headings and highlights for the scroll rail while shown", async () => {
+        const getJson = vi.spyOn(options, "getJson").mockReturnValue([ "bgColor" ]);
+        onTestFinished(() => getJson.mockRestore());
         const harness = setupHarness({
-            isVisible: true, content: "<h2>Plan</h2><p>hello</p><h3>Detail</h3>"
+            isVisible: true,
+            content: "<h2>Plan</h2><p>hello <span style=\"background-color:yellow\">hi</span></p>"
+                + "<h3>Detail</h3>"
         });
         cleanupContainer = harness.container;
 
@@ -185,8 +190,13 @@ describe("ReadOnlyText reacting to content changes (#10575)", () => {
         expect(layer?.source.readTargets())
             .toEqual([ ...harness.container.querySelectorAll("h2, h3") ]);
         expect(layer?.source.readTargets()).toHaveLength(2);
+        const highlights = harness.noteContext.getContextData("scrollRailHighlights");
+        expect(highlights?.source.readTargets())
+            .toEqual([ harness.container.querySelector("span[style]") ]);
+        expect(highlights?.source.readTargets()).toHaveLength(1);
         await harness.mount(false);
         expect(harness.noteContext.getContextData("scrollRailHeadings")).toBeUndefined();
+        expect(harness.noteContext.getContextData("scrollRailHighlights")).toBeUndefined();
     });
 
     it("ignores the echo of a save made by its own component (no refetch, no overlay)", async () => {

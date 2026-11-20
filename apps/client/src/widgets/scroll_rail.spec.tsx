@@ -20,7 +20,7 @@ import {
 
 vi.mock("../services/bookmark_jump", () => ({ revealElement: vi.fn() }));
 
-const [ HEADINGS, FIND ] = SCROLL_RAIL_KINDS;
+const [ HIGHLIGHTS, HEADINGS, FIND ] = SCROLL_RAIL_KINDS;
 const OWNED_CLASS = "detail-has-end-margin";
 
 /** A `ResizeObserver` that reports only when a spec calls {@link resize}. */
@@ -100,8 +100,8 @@ class FakeMutationObserver {
 
 }
 
-/** The lines drawn since the canvas was last cleared, as `[color, top, height]`. */
-let drawn: [ string, number, number ][];
+/** The lines drawn since the canvas was last cleared, as `[color, top, height, opacity]`. */
+let drawn: [ string, number, number, number ][];
 /** The dots drawn since the canvas was last cleared, as `[center, diameter]`. */
 let dots: [ number, number ][];
 /** What was drawn since the canvas was last cleared, in order. */
@@ -131,13 +131,14 @@ beforeEach(() => {
     let dot: [ number, number ] = [ 0, 0 ];
     const context = {
         fillStyle: "",
+        globalAlpha: 1,
         clearRect: () => {
             drawn = [];
             dots = [];
             painted = [];
         },
         fillRect(_x: number, y: number, _width: number, height: number) {
-            drawn.push([ String(this.fillStyle), y, height ]);
+            drawn.push([ String(this.fillStyle), y, height, this.globalAlpha ]);
             painted.push("line");
         },
         beginPath: () => {},
@@ -1153,6 +1154,66 @@ describe("ScrollRail lines", () => {
         expect(revealElement).not.toHaveBeenCalled();
         expect(scroller.scrollTop).toBe(350);
     });
+
+    it("draws the highlights in their colors at half opacity, under the find lines", async () => {
+        mountRail();
+        const match = append(content, "p", { top: 100, height: 20 });
+        await publish({ readTargets: () => [ match ] });
+        const highlights = [
+            append(content, "span", { top: 100, height: 20 }),
+            append(content, "span", { top: 250, height: 20 })
+        ];
+        const colors = [ [ "yellow", "red" ], [ "blue" ] ];
+        await publish({
+            readTargets: () => highlights,
+            getColors: (index) => colors[index]
+        }, HIGHLIGHTS);
+        afterPaint();
+
+        expect(drawn.map(([ color, top, height, opacity ]) => [ color, top, height, opacity ]))
+            .toEqual([
+                [ "yellow", 99, 2, 0.5 ],
+                [ "red", 99, 2, 0.5 ],
+                [ "blue", 249, 2, 0.5 ],
+                [ expect.any(String), 99, 2, 1 ]
+            ]);
+
+        // A highlight line jumps to its text; the find line on top takes the shared row.
+        click(250);
+        expect(revealElement).toHaveBeenLastCalledWith(highlights[1], scroller);
+        click(100);
+        expect(revealElement).toHaveBeenLastCalledWith(match, scroller);
+    });
+
+    it("reads the highlights again once the content stops changing, and no other layer",
+        async () => {
+            mountRail();
+            const match = append(content, "p", { top: 100, height: 20 });
+            const readFind = vi.fn(() => [ match ]);
+            await publish({ readTargets: readFind });
+            const highlight = append(content, "span", { top: 200, height: 20 });
+            const readHighlights = vi.fn(() => [ highlight ]);
+            await publish({ readTargets: readHighlights, getColors: () => [ "yellow" ] },
+                HIGHLIGHTS);
+            afterPaint();
+            readFind.mockClear();
+            readHighlights.mockClear();
+
+            const text = content.appendChild(document.createTextNode("text"));
+            for (let index = 0; index < 5; index++) {
+                act(() => mutate(text, "characterData"));
+                advance(READ_DELAY - 50);
+            }
+            expect(readHighlights).not.toHaveBeenCalled();
+            advance(50);
+            expect(readHighlights).toHaveBeenCalledOnce();
+            expect(readFind).not.toHaveBeenCalled();
+
+            // The bar's own writes in the host change no content.
+            act(() => mutate(host, "attributes", "style"));
+            advance(READ_DELAY);
+            expect(readHighlights).toHaveBeenCalledOnce();
+        });
 
     it("draws the lines under the handle, and gives a press on a line to the lines", async () => {
         scrollerBox.scrollHeight = 4000;

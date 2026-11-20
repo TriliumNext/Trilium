@@ -11,7 +11,7 @@ import type {
 } from "@triliumnext/ckeditor5";
 import { type ComponentProps, h, render } from "preact";
 import { act } from "preact/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import type NoteContext from "../../../components/note_context";
 import type FAttachment from "../../../entities/fattachment";
@@ -20,6 +20,7 @@ import type { AttachmentEditor } from "../../../services/content_renderer";
 import froca from "../../../services/froca";
 import type { ViewScope } from "../../../services/link";
 import type LoadResults from "../../../services/load_results";
+import options from "../../../services/options";
 import { renderInto } from "../../../test/render";
 import type { ContentEmbedBalloon } from "../../dialogs/content_embed";
 import type { EditLinkBalloon } from "../../dialogs/edit_link";
@@ -712,9 +713,12 @@ describe("EditableText", () => {
         expect(viewScope.bookmark).toBeUndefined();
     });
 
-    it("publishes the headings of its editor for the scroll rail while shown", async () => {
+    it("publishes the headings and highlights of its editor while shown", async () => {
+        const getJson = vi.spyOn(options, "getJson").mockReturnValue([ "color" ]);
+        onTestFinished(() => getJson.mockRestore());
         const root = document.createElement("div");
-        root.innerHTML = "<h2>Intro</h2><p>Text</p><h3>Detail</h3>";
+        root.innerHTML = "<h2>Intro</h2><p>Text <span style=\"color:red\">red</span></p>"
+            + "<h3>Detail</h3>";
         const noteContext = createNoteContext({ notePath: "root/abc" });
         const show = (isVisible: boolean) => h(EditableText, {
             note: { noteId: "abc" } as FNote,
@@ -733,8 +737,11 @@ describe("EditableText", () => {
 
         const layer = noteContext.getContextData("scrollRailHeadings");
         expect(layer?.source.readTargets()).toEqual([ ...root.querySelectorAll("h2, h3") ]);
+        const highlights = noteContext.getContextData("scrollRailHighlights");
+        expect(highlights?.source.readTargets()).toEqual([ root.querySelector("span") ]);
         await act(() => render(show(false), container));
         expect(noteContext.getContextData("scrollRailHeadings")).toBeUndefined();
+        expect(noteContext.getContextData("scrollRailHighlights")).toBeUndefined();
     });
 });
 

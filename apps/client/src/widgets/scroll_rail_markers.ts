@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import type NoteContext from "../components/note_context";
 import { revealElement } from "../services/bookmark_jump";
 import { scrollRectIntoView } from "../services/highlight_matches";
+import options from "../services/options";
+import { useColorScheme, useTriliumOption } from "./react/hooks/options";
 import type { RailMetrics } from "./scroll_rail";
 
 /**
@@ -26,6 +28,11 @@ export interface ScrollRailSource {
     onClick?(index: number): boolean | void;
     /** The tooltip of marker `index`. */
     getTooltip?(index: number): string | undefined;
+    /**
+     * The colors of marker `index`, read right after `readTargets()`. The line of its row shows
+     * them side by side, in place of the color of the layer's kind.
+     */
+    getColors?(index: number): string[];
 }
 
 export type ScrollRailChange = "retire" | "refresh" | "refreshLater" | "emphasize";
@@ -108,27 +115,120 @@ export function useScrollRailHeadings(
     const [ layer ] = useState(() => new ScrollRailLayer({
         readTargets: () => getHeadingElements(getRootRef.current())
     }));
+    usePublishedLayer(noteContext, "scrollRailHeadings", layer, noteId, isShown);
+}
 
+/** Whether the text views publish their highlights to the scroll rail. */
+const IS_HIGHLIGHTS_LAYER_ENABLED = true;
+/** Whether the highlight lines take the colors as the theme adapts them, else as picked. */
+const IS_HIGHLIGHT_COLOR_ADAPTED = false;
+
+/**
+ * Publishes the highlights under the element that `getRoot()` returns, outside included notes, for
+ * the lines of the scroll rail of `noteContext`, while `isShown`. The rail reads them again after
+ * every change of the note's content.
+ */
+export function useScrollRailHighlights(
+    noteContext: NoteContext | null | undefined,
+    noteId: string,
+    isShown: boolean,
+    getRoot: () => Element | null | undefined
+) {
+    const getRootRef = useRef(getRoot);
+    getRootRef.current = getRoot;
+    const [ formats ] = useTriliumOption("highlightsList");
+    const colorScheme = useColorScheme();
+    const [ layer ] = useState(() => {
+        let colors: string[][] = [];
+        return new ScrollRailLayer({
+            readTargets() {
+                const highlights = getHighlights(getRootRef.current(),
+                    toFormats(options.getJson("highlightsList")));
+                colors = highlights.map((highlight) => highlight.colors);
+                return highlights.map((highlight) => highlight.element);
+            },
+            getColors: (index) => colors[index] ?? []
+        });
+    });
+    usePublishedLayer(noteContext, "scrollRailHighlights", layer, noteId,
+        isShown && IS_HIGHLIGHTS_LAYER_ENABLED);
+
+    // Adapted colors change with the theme.
+    useEffect(() => {
+        layer.refresh();
+    }, [ layer, formats, colorScheme ]);
+}
+
+/** A run of text with a font or a background color, and its colors. */
+export interface Highlight {
+    element: HTMLElement;
+    /** The background color, then the font color, of those that `formats` counts. */
+    colors: string[];
+}
+
+/**
+ * The highlights under `root`, in document order, leaving out those of included notes. `formats`
+ * are the values of the `highlightsList` option: `bgColor` counts background colors, `color` font
+ * colors.
+ */
+export function getHighlights(root: Element | null | undefined, formats: readonly string[]) {
+    const isBackgroundCounted = formats.includes("bgColor");
+    const isColorCounted = formats.includes("color");
+    if (!root || (!isBackgroundCounted && !isColorCounted)) return [];
+
+    const highlights: Highlight[] = [];
+    for (const element of root.querySelectorAll<HTMLElement>("span[style*=\"color\"]")) {
+        const hasBackground = isBackgroundCounted && !!element.style.backgroundColor;
+        const hasColor = isColorCounted && !!element.style.color;
+        if ((!hasBackground && !hasColor) || !element.textContent?.trim()
+            || !isOutsideEmbeds(element, root)) continue;
+
+        const style = IS_HIGHLIGHT_COLOR_ADAPTED ? getComputedStyle(element) : element.style;
+        const colors: string[] = [];
+        if (hasBackground) colors.push(style.backgroundColor);
+        if (hasColor) colors.push(style.color);
+        highlights.push({ element, colors });
+    }
+    return highlights;
+}
+
+/** Publishes `layer` as `key` of `noteContext` while `isShown`, once more for each note. */
+function usePublishedLayer(
+    noteContext: NoteContext | null | undefined,
+    key: "scrollRailHeadings" | "scrollRailHighlights",
+    layer: ScrollRailLayer,
+    noteId: string,
+    isShown: boolean
+) {
     // Switching notes clears the context data, so each note publishes again.
     useEffect(() => {
         if (!noteContext || !isShown) return;
-        noteContext.setContextData("scrollRailHeadings", layer);
+        noteContext.setContextData(key, layer);
         return () => {
             // The other text view of the split can have published its own layer since.
-            if (noteContext.getContextData("scrollRailHeadings") === layer) {
-                noteContext.clearContextData("scrollRailHeadings");
+            if (noteContext.getContextData(key) === layer) {
+                noteContext.clearContextData(key);
             }
         };
-    }, [ noteContext, noteId, isShown, layer ]);
+    }, [ noteContext, key, noteId, isShown, layer ]);
 }
 
 /** The headings under `root`, in document order, leaving out those of included notes. */
 function getHeadingElements(root: Element | null | undefined) {
     if (!root) return [];
-    return [ ...root.querySelectorAll("h1, h2, h3, h4, h5, h6") ].filter((heading) => {
-        const embed = heading.closest(".include-note");
-        return !embed || !root.contains(embed);
-    });
+    return [ ...root.querySelectorAll("h1, h2, h3, h4, h5, h6") ]
+        .filter((heading) => isOutsideEmbeds(heading, root));
+}
+
+/** Whether `element` is outside the included notes under `root`. */
+function isOutsideEmbeds(element: Element, root: Element) {
+    const embed = element.closest(".include-note");
+    return !embed || !root.contains(embed);
+}
+
+/** The values of the `highlightsList` option, as `options.getJson()` returns it. */
+function toFormats(value: unknown): string[] {
+    return Array.isArray(value) ? value : [];
 }
 
 /** The level of a heading target, 1 for `h1`. Any other target takes the deepest level. */
@@ -214,8 +314,15 @@ export function mapIntoClip(top: number, box: ClipBox) {
 export interface PaintedLayer extends DrawnLayer {
     color: string;
     emphasisColor: string;
+    /** The opacity of the lines and dots, from 0 to 1. Defaults to 1. */
+    opacity?: number;
     /** The heading level of each marker, which draws the layer as dots in place of lines. */
     levels?: number[];
+    /**
+     * The colors of each marker. The line of a row is split into one segment per distinct color
+     * of its markers, and drawn in `color` when they have none.
+     */
+    colors?: string[][];
 }
 
 /**
@@ -224,18 +331,25 @@ export interface PaintedLayer extends DrawnLayer {
  */
 export function drawRows(
     context: Pick<CanvasRenderingContext2D,
-        "clearRect" | "fillRect" | "fillStyle" | "beginPath" | "arc" | "fill">,
+        "clearRect" | "fillRect" | "fillStyle" | "globalAlpha" | "beginPath" | "arc" | "fill">,
     { width, height, ratio }: { width: number; height: number; ratio: number },
     layers: PaintedLayer[]
 ) {
     const deviceHeight = Math.round(height * ratio);
     const left = Math.round(LINE_SIZE.inset * ratio);
     const right = Math.round((width - LINE_SIZE.inset) * ratio);
-    const fillLine = (y: number, size: number) => {
+    const fillLine = (y: number, size: number, from = left, to = right) => {
         const thickness = Math.max(Math.round(size * ratio), 1);
         const top = Math.round(y * ratio - thickness / 2);
-        context.fillRect(left, Math.min(Math.max(top, 0), deviceHeight - thickness),
-            right - left, thickness);
+        context.fillRect(from, Math.min(Math.max(top, 0), deviceHeight - thickness),
+            to - from, thickness);
+    };
+    const fillSegments = (y: number, colors: string[]) => {
+        const toX = (index: number) => left + Math.round((right - left) * index / colors.length);
+        for (const [ index, color ] of colors.entries()) {
+            context.fillStyle = color;
+            fillLine(y, LINE_SIZE.thin, toX(index), toX(index + 1));
+        }
     };
     const fillDot = (y: number, size: number) => {
         const radius = size / 2 * ratio;
@@ -246,11 +360,16 @@ export function drawRows(
     };
 
     context.clearRect(0, 0, Math.round(width * ratio), deviceHeight);
-    for (const { rows, color, levels } of layers) {
+    for (const { rows, color, opacity = 1, levels, colors } of layers) {
+        context.globalAlpha = opacity;
         context.fillStyle = color;
         if (levels) {
             for (const [ y, level ] of getRowLevels(rows, levels)) {
                 fillDot(y, DOT_SIZE * DOT_SCALE[level - 1]);
+            }
+        } else if (colors) {
+            for (const [ y, rowColors ] of getRowColors(rows, colors)) {
+                fillSegments(y, rowColors.size ? [ ...rowColors ] : [ color ]);
             }
         } else {
             for (const row of rows.rows) {
@@ -258,6 +377,7 @@ export function drawRows(
             }
         }
     }
+    context.globalAlpha = 1;
     for (const { rows, emphasized, emphasisColor } of layers) {
         const y = emphasized === null ? null : rows.markerRows[emphasized] ?? null;
         if (y !== null) {
@@ -477,6 +597,20 @@ function getRowLevels({ markerRows }: RowSet, levels: number[]) {
     for (const [ index, y ] of markerRows.entries()) {
         if (y === null) continue;
         byRow.set(y, Math.min(byRow.get(y) ?? levels[index], levels[index]));
+    }
+    return byRow;
+}
+
+/** The distinct colors of the markers on each row, in marker order. */
+function getRowColors({ markerRows }: RowSet, colors: string[][]) {
+    const byRow = new Map<number, Set<string>>();
+    for (const [ index, y ] of markerRows.entries()) {
+        if (y === null) continue;
+        const rowColors = byRow.get(y) ?? new Set<string>();
+        for (const color of colors[index]) {
+            rowColors.add(color);
+        }
+        byRow.set(y, rowColors);
     }
     return byRow;
 }
