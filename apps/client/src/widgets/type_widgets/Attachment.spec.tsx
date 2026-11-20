@@ -480,49 +480,48 @@ describe("AttachmentDetail", () => {
         });
 
         it("publishes the document again when the pane shows the attachment again", async () => {
-            const attachment = { ...role("file"), mime: DOCX_MIME } as FAttachment;
-            vi.spyOn(froca, "getAttachment").mockResolvedValue(attachment);
-            const renders = holdRenders();
-            const { attachmentId } = attachment;
-            const scope = () => ({ viewMode: "attachments", attachmentId });
-            const noteContext = {
-                ...recordingContext(), viewScope: scope() as Record<string, string | undefined>
-            };
-            const container = document.createElement("div");
-            document.body.append(container);
-            async function show(viewScope: object, isVisible: boolean) {
-                const props = { note: { noteId: "note1" }, viewScope, noteContext, isVisible } as
-                    unknown as Parameters<typeof AttachmentDetail>[0];
-                await act(async () => {
-                    render(
-                        <ParentComponent.Provider value={renders.component}>
-                            <AttachmentDetail {...props} />
-                        </ParentComponent.Provider>, container);
-                });
-            }
-            const shownScope = noteContext.viewScope;
-            await show(shownScope, true);
-            await vi.waitFor(() => expect(getRenderedContent).toHaveBeenCalledOnce());
+            const { attachment, renders, noteContext, hide, show, unmount } =
+                await openHideableDetail(DOCX_MIME);
             reports().onDocumentState({ status: "shown", blobId: "blob1" });
             await renders.finish(0, PREVIEW);
             expect(noteContext.contextData.get("tocDocument"))
                 .toMatchObject({ status: "shown", renderedBlobId: "blob1" });
 
-            // Another note clears the context data, and `NoteDetailWrapper` hides the pane with
-            // the props it had.
-            noteContext.viewScope = { viewMode: "default" };
-            noteContext.contextData.clear();
-            await show(shownScope, false);
+            await hide();
             expect(noteContext.contextData.has("tocDocument")).toBe(false);
 
-            noteContext.viewScope = scope();
-            await show(noteContext.viewScope, true);
+            await show();
             expect(noteContext.contextData.get("tocDocument")).toMatchObject({
-                status: "shown", attachmentId, renderedBlobId: "blob1"
+                status: "shown", attachmentId: attachment.attachmentId, renderedBlobId: "blob1"
             });
             expect(getRenderedContent).toHaveBeenCalledOnce();
-            await act(async () => render(null, container));
-            container.remove();
+            await unmount();
+        });
+
+        it("publishes what a render started while the pane was hidden reports once it shows",
+            async () => {
+            const { attachment, renders, noteContext, hide, show, unmount } =
+                await openHideableDetail("application/pdf");
+            const { attachmentId } = attachment;
+            const published = () =>
+                noteContext.contextData.get("tocDocument") as TocDocumentContext | undefined;
+            await renders.finish(0);
+            await hide();
+            await reloadAttachment(renders.component, attachmentId, "otherComponent");
+            expect(getRenderedContent).toHaveBeenCalledTimes(2);
+            expect(published()).toBeUndefined();
+
+            await show();
+            await renders.finish(1);
+            expect(published()).toStrictEqual({ status: "rendering", attachmentId });
+            reports().onDocumentState({ status: "shown", blobId: "blob2" });
+            expect(published()).toMatchObject({ status: "shown", renderedBlobId: "blob2" });
+            const before = published();
+            reports().onReadingChange({
+                position: { pageNumber: 1, x: 0, y: 600 }, rotations: [ 0 ]
+            });
+            expect(published()).not.toBe(before);
+            await unmount();
         });
     });
 
@@ -616,6 +615,54 @@ async function openDetail(mime: string, scope: Record<string, string | undefined
         });
     }
     return { attachment, renders, follow, viewScope, container, noteContext };
+}
+
+/**
+ * Opens the full detail of a file attachment of `mime` in a pane that `hide()` hides and `show()`
+ * shows again. Its renders wait until `renders.finish()`.
+ */
+async function openHideableDetail(mime: string) {
+    const attachment = { ...role("file"), mime } as FAttachment;
+    vi.spyOn(froca, "getAttachment").mockResolvedValue(attachment);
+    const renders = holdRenders();
+    const scope = () => ({ viewMode: "attachments", attachmentId: attachment.attachmentId });
+    const noteContext = {
+        ...recordingContext(), viewScope: scope() as Record<string, string | undefined>
+    };
+    let paneScope: object = noteContext.viewScope;
+    const container = document.createElement("div");
+    document.body.append(container);
+    async function renderPane(isVisible: boolean) {
+        const props = { note: { noteId: "note1" }, viewScope: paneScope, noteContext, isVisible } as
+            unknown as Parameters<typeof AttachmentDetail>[0];
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={renders.component}>
+                    <AttachmentDetail {...props} />
+                </ParentComponent.Provider>, container);
+        });
+    }
+    await renderPane(true);
+    await vi.waitFor(() => expect(getRenderedContent).toHaveBeenCalledOnce());
+
+    return {
+        attachment, renders, noteContext,
+        /** Another note clears the context data, and `NoteDetailWrapper` keeps the props. */
+        async hide() {
+            noteContext.viewScope = { viewMode: "default" };
+            noteContext.contextData.clear();
+            await renderPane(false);
+        },
+        async show() {
+            noteContext.viewScope = scope();
+            paneScope = noteContext.viewScope;
+            await renderPane(true);
+        },
+        async unmount() {
+            await act(async () => render(null, container));
+            container.remove();
+        }
+    };
 }
 
 /** The context data methods of a note context, which record what is published. */

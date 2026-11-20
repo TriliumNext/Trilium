@@ -646,10 +646,14 @@ function useAttachmentTocDocument({
     const activeHeadingId = useActiveHeading({ ...marks, getHeadingElement });
     const activeHeadingRef = useRef(activeHeadingId);
     activeHeadingRef.current = activeHeadingId;
+    // The callbacks that `refresh()` passes to the content renderer outlive their render.
+    const isVisibleRef = useRef(isVisible);
+    isVisibleRef.current = isVisible;
     const { attachmentId } = attachment;
 
     function isInScope() {
-        return isEnabled && isVisible && noteContext?.viewScope?.attachmentId === attachmentId;
+        return isEnabled && isVisibleRef.current
+            && noteContext?.viewScope?.attachmentId === attachmentId;
     }
 
     /** Lands on `params` while the render `generation` is the latest and in place. */
