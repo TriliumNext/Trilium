@@ -1,0 +1,22 @@
+# Who owes what after the trip
+costs = {
+    "Flights": 640.00,
+    "Car rental": 310.50,
+    "Hotel": 482.00,
+    "Museum": 54.00,
+    "Dinner": 96.40,
+}
+people = ["Ana", "Ben", "Eve"]
+
+
+def split(cost, n):
+    """Each person's share."""
+    return round(cost / n, 2)
+
+
+total = sum(costs.values())
+count = len(people)
+share = split(total, count)
+
+for name in people:
+    print(f"{name}: {share}")

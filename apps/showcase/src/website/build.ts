@@ -4,16 +4,12 @@ import type { Browser, BrowserContext, Page } from "playwright";
 
 import { openApp, openNote, settle } from "../shared/browser.ts";
 import { type BuildOptions, outDir, repoRoot } from "../shared/build.ts";
-import { findNoteId, openDemo, pinNoteDates, seedDocument } from "../shared/demo_server.ts";
+import { findNoteId, openDemo } from "../shared/demo_server.ts";
 import { SCENES, zoomOutMindMap } from "../shared/scenes.ts";
-import {
-    BOOKING_HTML, buildBudgetWorkbook, GETTING_AROUND, PACKING_HTML, PACKING_MARKDOWN, TALK,
-    WEBSITE_SEED
-} from "./seed.ts";
 
 /**
  * The website's screenshots, each of the scene in `SCENES` with the ID `scene` or of the note
- * that `query` finds among those `WEBSITE_SEED` adds, and named after the file in
+ * that `query` finds in the demo document, and named after the file in
  * `apps/website/public` it replaces. `area` is the part of the window kept: `note` is
  * everything right of the note tree, from the tab bar to the status bar, and `tree` is the tree.
  * `prepare(page)` runs after the scene's `desktopPrepare`.
@@ -113,7 +109,7 @@ async function buildWebsite(browser: Browser, options: BuildOptions) {
 }
 
 /**
- * Boots the demo document with `WEBSITE_SEED`, opens a browser window per color scheme at
+ * Boots the demo document with `openDemo()`, opens a browser window per color scheme at
  * `scale`, and hands each shot's PNG to `write()`.
  */
 export async function captureShots<S extends Shot>(browser: Browser, options: BuildOptions,
@@ -123,15 +119,6 @@ export async function captureShots<S extends Shot>(browser: Browser, options: Bu
         write(shot: S, colorScheme: ColorScheme, png: Buffer): Promise<void>;
     }) {
     const server = await openDemo(browser, options);
-    await seedDocument(browser, server.baseUrl, WEBSITE_SEED, [ {
-        markdown: GETTING_AROUND,
-        workbook: buildBudgetWorkbook(),
-        bookingPdf: (await printPdf(browser, BOOKING_HTML)).toString("base64"),
-        packingMarkdown: PACKING_MARKDOWN,
-        packingHtml: PACKING_HTML,
-        talkDeck: TALK
-    } ]);
-    if (!options.url) await pinNoteDates(browser, server.baseUrl);
     const contexts: BrowserContext[] = [];
     try {
         // Both color schemes capture each shot in turn, so that they show the tree expanded alike.
@@ -293,16 +280,6 @@ async function setOptions(page: Page, options: Record<string, string>) {
         return response.status;
     }, options);
     if (status >= 400) throw new Error(`Setting the options failed (${status}).`);
-}
-
-async function printPdf(browser: Browser, html: string) {
-    const page = await browser.newPage();
-    try {
-        await page.setContent(html);
-        return await page.pdf({ format: "A4", printBackground: true });
-    } finally {
-        await page.close();
-    }
 }
 
 /** Encodes a PNG as WebP through a canvas, since Playwright screenshots only as PNG or JPEG. */

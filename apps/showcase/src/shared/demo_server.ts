@@ -5,7 +5,7 @@ import path from "path";
 import type { Browser } from "playwright";
 
 import { type BuildOptions, outDir, repoRoot } from "./build.ts";
-import { ITINERARY, SEED, TRIP_COSTS } from "./scenes.ts";
+import { PACKING_MARKDOWN, SEED } from "./seed.ts";
 
 /** A server holding the demo document. */
 export interface Server {
@@ -29,13 +29,13 @@ export async function openDemo(browser: Browser,
 }
 
 /**
- * Starts a demo server, adds what `SEED` in `scenes.ts` seeds and pins the notes' dates with
+ * Starts a demo server, adds what `SEED` in `seed.ts` seeds and pins the notes' dates with
  * `pinNoteDates()`.
  */
 export async function startSeededServer(browser: Browser, port: number) {
     const server = await startDemoServer({ port, logPath: path.join(outDir, "server.log") });
     try {
-        await seedDocument(browser, server.baseUrl, SEED, [ TRIP_COSTS, ITINERARY ]);
+        await seedDocument(browser, server.baseUrl, SEED, [ PACKING_MARKDOWN ]);
         await pinNoteDates(browser, server.baseUrl);
     } catch (e) {
         server.stop();

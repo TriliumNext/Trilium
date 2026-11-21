@@ -6,7 +6,8 @@ description: Use when making or changing the pictures and texts of Trilium shown
 # Building the showcase: store listings, Flathub, website
 
 `apps/showcase` renders every picture of Trilium that lives outside the app from one
-**demo document**: a fresh server with the bundled demo plus notes the build seeds. One
+**demo document**: a fresh server with the bundled demo, which holds every note the
+shots show except one AI chat the build seeds. One
 command per destination; the outputs land in `apps/showcase/out` (gitignored), and the
 website ones are also copied into the repo.
 
@@ -23,7 +24,7 @@ pnpm --filter showcase start <targets…> [--only tree,text] [--devices phone,ta
 Targets: `icon`, `screenshots`, `feature`, `preview` (the `play` group, the default),
 `flathub`, `flathub-preview`, `hero`, `website`, `user-guide` (never `docs`: `pnpm docs` is a
 pnpm built-in). `--only` takes scene IDs (or website file names, or User Guide image names),
-`--url` reuses a running server that already holds the demo plus the seeds and needs
+`--url` reuses a running server that already holds the demo plus the seed and needs
 no login (`flathub` always boots its own).
 
 ## Where each output goes
@@ -77,7 +78,7 @@ web clipper). Change one, then the other.
   tests them under the matching `prefers-color-scheme` query. A dark snapshot that keeps light
   note colors (highlights, table colors) means a theme selector it does not recognise.
 - `WEBSITE_SHOTS` in `src/website/build.ts` maps a scene (or a `query` among the website
-  seed's notes) to the file it replaces. `area: "note"` keeps everything right of the tree in
+  demo's notes) to the file it replaces. `area: "note"` keeps everything right of the tree in
   a window sized so that area has the 16:10 of `.showcase-image-frame`; `"tree"` keeps the
   tree pane. Light and dark are captured one after the other per shot.
 - A shot whose view draws after `settle()` returns needs a `prepare` that waits for it:
@@ -94,7 +95,7 @@ web clipper). Change one, then the other.
   `node .claude/skills/writing-documentation/docs.mjs image "<page>" <any.webp> --title demo.webp`,
   put the `<figure>` in the page, add the shot, run `user-guide`, then `docs.mjs sync` and
   `check`. Snapshot the dirty docs before the sync and restore only the pages it churned.
-- The page text must match the demo: a hero shows the seeded "Trip to Rome" notes, so a page
+- The page text must match the demo: a hero shows the demo's "Trip to Rome" notes, so a page
   that describes its example names what the shot shows.
 
 ## How it is built
@@ -113,24 +114,27 @@ web clipper). Change one, then the other.
   system one). `hero` needs `fonttools` with Brotli (`FONTTOOLS`); `flathub` needs
   `gnome-shell`, `dbus-run-session` and `gdbus`.
 
-### The demo server and the seeds
+### The demo server and the seed
 
 `startDemoServer()` boots `apps/server` in dev mode on a temp data dir with
 `apps/server/spec/db/config.ini` (no login) and **backend scripting enabled**, creates a new
-document with the demo, then `seedDocument()` runs a seed function as a backend script through
+document with the demo, then `seedDocument()` runs `SEED` and `PIN_NOTE_DATES`, each as a backend script through
 `api/script/exec`:
 
-- the function is sent as **source text** (`seed.toString()`), so it cannot see module
+- a seed is sent as **source text** (`seed.toString()`), so it cannot see module
   constants: everything it needs goes in `params` (JSON);
 - the server runs it in the bundle of `currentNoteId`, which **must be a JavaScript note**
   (`seedDocument` finds one);
 - the `api` it calls is declared as a small type at the top of the module that defines the
   seed, not imported.
 
-`SEED` (in `scenes.ts`) adds the store scenes' notes: the "Trip planning" board, the "Rome
-itinerary" text note, the "Split the trip costs" Python note, and the geo map's view
-(`viewConfig` attachment). `WEBSITE_SEED` (in `website/seed.ts`) adds a "Trip to Rome" subtree
-for the other note types and collections, and returns early when it exists.
+The notes the shots show live in the demo itself, under "Trilium Demo": the "Trip to Rome"
+subtree (itinerary, board, calendar, table, budget, Python and Markdown notes, the PDF, the
+packing list, the dashboard), the "Introducing Trilium Notes" presentation and the geo map's
+view. `SEED` (in `shared/seed.ts`) adds only the "Packing for Rome" AI chat, which stays out of
+the demo because it names a provider and model the user has not set up, and returns early
+when it exists. `PIN_NOTE_DATES` fixes every note's dates so the shots do not depend on the
+day of the build.
 
 ### Scenes
 
@@ -165,18 +169,20 @@ The build fails (exit code 1) on a failed check; `play` checks run after any Pla
 ## Changing things
 
 - **New store scene**: add it to `SCENES` (order = listing order) with a caption that fits two
-  lines; seed its note in `SEED` if the demo lacks one; run `start screenshots --only <id>`;
+  lines; add its note to the demo if it lacks one (below); run `start screenshots --only <id>`;
   check both devices — the tablet shows the tree beside the note, so a scene about the tree
   needs a `tablet` variant.
-- **New website shot**: add to `WEBSITE_SHOTS`, seed the note in `WEBSITE_SEED`, reference
+- **New website shot**: add to `WEBSITE_SHOTS`, add its note to the demo, reference
   `<file>.webp` and `<file>-dark.webp` in `pages/Home/index.tsx`.
 - **New Flathub screenshot**: run `flathub`, copy the PNG to `apps/desktop/flatpak/screenshots/`,
   commit, then add the `<screenshot>` pinned to that commit.
-- **Wrong content in the demo itself** (not something a seed adds): fix it in
+- **New or wrong content in the demo**: fix it in
   `apps/edit-docs/demo/` (or interactively with `pnpm edit-docs:edit-demo`), then
   rebuild `apps/server/src/assets/db/demo.zip` with `createZipFromDirectory()` from
   `apps/edit-docs/src/docs_pipeline.ts`. Compare the entries with the old zip: only the files
-  you changed may differ. Existing users' databases keep the old content.
+  you changed may differ, and keep the noteIds of existing notes. Existing users' databases
+  keep the old content. Then rerun every target: a moved note changes the tree and breadcrumbs
+  in most shots.
 
 ## Traps already hit
 
@@ -187,7 +193,7 @@ The build fails (exit code 1) on a failed check; `play` checks run after any Pla
   CKEditor toolbar sets `keepFocus`. Scroll with `behavior: "instant"`, scoped to
   `.ck-editor__editable` (the sidebar has headings too).
 - **Mobile layout**: set the `trilium-device=mobile` cookie. A table without a saved width is
-  1200 px wide and scrolls on mobile, so seeded tables carry `style="width:…px"`.
+  1200 px wide and scrolls on mobile, so the demo's tables carry `style="width:…px"`.
 - **Captions wrap** when a line is wider than the 860 px band (88 px font). The two-line check
   catches it; reword or resize, then rerun.
 - **Tablet first screenshot**: the tablet lays the tree beside the note, so the "tree" scene
@@ -195,7 +201,7 @@ The build fails (exit code 1) on a failed check; `play` checks run after any Pla
 - **Mind map zoom**: Mind Elixir zooms on a `wheel` event with `ctrlKey`, which
   `page.mouse.wheel()` cannot send; `zoomOutMindMap()` dispatches it.
 - **Geo map view**: stored in the map's `viewConfig` attachment as
-  `{"view":{"center":…,"zoom":…}}`; the seed sets it.
+  `{"view":{"center":…,"zoom":…}}`, in the demo.
 - **Canvas text drawn as dashes**: text elements with `"height": null` (old Excalidraw data) are
   restored with height 0 and clipped to nothing. The demo canvas had it until 6340775564;
   a drawing showing fragments of text means its data, not its fonts.
