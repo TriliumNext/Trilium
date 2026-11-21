@@ -171,6 +171,17 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
         return getArchiveIds().noteIds.has(noteId) ? getNewNoteId(noteId) : noteId;
     }
 
+    /**
+     * Whether a relation can point at this note. A safe import reaches outside the archive only to
+     * system notes (`_` IDs): a `~template` or `~inherit` passes the target's attributes, `#run`
+     * included, to the imported note, and the target's attributes are not checked.
+     */
+    function isRelationTargetAllowed(noteId: string) {
+        return !taskContext.data?.safeImport
+            || getArchiveIds().noteIds.has(noteId)
+            || noteId.startsWith("_");
+    }
+
     /** The ID that an attachment of the archive gets here. Another attachment keeps its ID. */
     function mapArchiveAttachmentId(attachmentId: string) {
         return getArchiveIds().attachmentIds.has(attachmentId)
@@ -346,6 +357,9 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             }
 
             if (attr.type === "relation") {
+                if (!isRelationTargetAllowed(attr.value)) {
+                    continue;
+                }
                 attr.value = mapArchiveNoteId(attr.value);
             }
 

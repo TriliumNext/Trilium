@@ -736,35 +736,47 @@ describe("processNoteContent", () => {
         expect(importedNote.getAttachments().map((a) => a.attachmentId)).toEqual(["keptAttach01"]);
     });
 
-    it("keeps a relation to a note outside the archive and remaps one inside it", async () => {
-        const outside = getContext().init(() => noteService.createNewNote({
-            parentNoteId: "root", title: "Relation outside", type: "text", content: ""
-        }).note);
-        const note = (noteId: string, title: string, attributes: object[]) => ({
-            noteId, title, type: "text", mime: "text/html", format: "html",
-            dataFileName: `${title}.html`, attributes
+    it.each([ false, true ])("relates to notes outside the archive when safeImport is %s", async (safeImport) => {
+        const { outside, system } = getContext().init(() => {
+            const create = (title: string, noteId?: string) => noteService.createNewNote({
+                parentNoteId: "root", title, type: "text", content: "", noteId
+            }).note;
+            return {
+                outside: create(`Relation outside ${safeImport}`),
+                system: becca.getNote("_relSystem01") ?? create("Relation system", "_relSystem01")
+            };
+        });
+        const title = `Relation source ${safeImport}`;
+        const note = (noteId: string, noteTitle: string, attributes: object[]) => ({
+            noteId, title: noteTitle, type: "text", mime: "text/html", format: "html",
+            dataFileName: `${noteTitle}.html`, attributes
         });
         const metaFile = {
             formatVersion: 2,
             appVersion: "0.0.0",
-            files: [ note("relSource001", "Relation source", [
+            files: [ note("relSource001", title, [
                 { type: "relation", name: "template", value: outside.noteId },
+                { type: "relation", name: "inherit", value: system.noteId },
                 { type: "relation", name: "sibling", value: "relTarget001" }
-            ]), note("relTarget001", "Relation target", []) ]
+            ]), note("relTarget001", `Relation target ${safeImport}`, []) ]
         };
         const zipBuffer = await createZipBuffer({
             "!!!meta.json": JSON.stringify(metaFile),
-            "Relation source.html": "<p>source</p>",
-            "Relation target.html": "<p>target</p>"
+            [`${title}.html`]: "<p>source</p>",
+            [`Relation target ${safeImport}.html`]: "<p>target</p>"
         });
 
-        const { rootNote } = await testImportBuffer(zipBuffer, "import-outside-relation");
+        const { rootNote } = await testImportBuffer(zipBuffer, `import-outside-relation-${safeImport}`,
+            { textImportedAsText: true, safeImport });
 
-        const source = rootNote.getChildNotes().find((child) => child.title === "Relation source");
+        const source = rootNote.getChildNotes().find((child) => child.title === title);
         expect(source).toBeDefined();
-        expect(source?.getRelationValue("template")).toBe(outside.noteId);
+        // A template or `~inherit` passes the target's labels, `#run` included, to the imported
+        // note, so a safe import reaches only system notes outside the archive.
+        expect(source?.getRelationValue("template")).toBe(safeImport ? null : outside.noteId);
+        expect(source?.getRelationValue("inherit")).toBe(system.noteId);
         const sibling = source?.getRelationTarget("sibling");
-        expect(sibling?.title).toBe("Relation target");
+        expect(sibling?.title).toBe(`Relation target ${safeImport}`);
         expect(sibling?.noteId).not.toBe("relTarget001");
     });
 
