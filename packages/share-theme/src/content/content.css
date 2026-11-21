@@ -278,7 +278,8 @@ iframe.pdf-view {
         color 150ms ease-in;
 }
 
-#content img {
+#content img,
+#content .mermaid svg {
     max-width: 100%;
     height: auto;
 }
