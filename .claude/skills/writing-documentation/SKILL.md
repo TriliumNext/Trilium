@@ -77,6 +77,9 @@ Hand-editing the Markdown is fine — `sync` is what makes it safe. What to know
 - **Images are attachments**, registered in `!!!meta.json` and named `<Page Title>_<name>` beside the
   page. Never drop a file in by hand: `image <page> <file>` copies it, registers it, and prints the
   `<figure>` with real dimensions. An attachment nothing references is erased by the next `sync`.
+- **`*_demo.webp` and `Collections_collection_*.webp` are generated**: `pnpm --filter showcase
+  user-guide` captures them from the demo document (`DOCS_SHOTS` in `apps/showcase/src/docs/build.ts`).
+  Never replace one by hand; change the shot and rerun (**building-showcase-assets** skill).
 - **`sync` rewrites every tree from scratch** (`rm -rf` + export) — a file on disk that is in no
   `!!!meta.json` entry disappears, and a `.md` with no entry makes the import throw. Everything that
   touches the tree shape goes through `new` / `image` / `rename` / `move` / `delete`.

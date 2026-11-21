@@ -736,6 +736,50 @@ describe("processNoteContent", () => {
         expect(importedNote.getAttachments().map((a) => a.attachmentId)).toEqual(["keptAttach01"]);
     });
 
+    it.each([ false, true ])("relates to notes outside the archive when safeImport is %s", async (safeImport) => {
+        const { outside, system } = getContext().init(() => {
+            const create = (title: string, noteId?: string) => noteService.createNewNote({
+                parentNoteId: "root", title, type: "text", content: "", noteId
+            }).note;
+            return {
+                outside: create(`Relation outside ${safeImport}`),
+                system: becca.getNote("_relSystem01") ?? create("Relation system", "_relSystem01")
+            };
+        });
+        const title = `Relation source ${safeImport}`;
+        const note = (noteId: string, noteTitle: string, attributes: object[]) => ({
+            noteId, title: noteTitle, type: "text", mime: "text/html", format: "html",
+            dataFileName: `${noteTitle}.html`, attributes
+        });
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [ note("relSource001", title, [
+                { type: "relation", name: "template", value: outside.noteId },
+                { type: "relation", name: "inherit", value: system.noteId },
+                { type: "relation", name: "sibling", value: "relTarget001" }
+            ]), note("relTarget001", `Relation target ${safeImport}`, []) ]
+        };
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            [`${title}.html`]: "<p>source</p>",
+            [`Relation target ${safeImport}.html`]: "<p>target</p>"
+        });
+
+        const { rootNote } = await testImportBuffer(zipBuffer, `import-outside-relation-${safeImport}`,
+            { textImportedAsText: true, safeImport });
+
+        const source = rootNote.getChildNotes().find((child) => child.title === title);
+        expect(source).toBeDefined();
+        // A template or `~inherit` passes the target's labels, `#run` included, to the imported
+        // note, so a safe import reaches only system notes outside the archive.
+        expect(source?.getRelationValue("template")).toBe(safeImport ? null : outside.noteId);
+        expect(source?.getRelationValue("inherit")).toBe(system.noteId);
+        const sibling = source?.getRelationTarget("sibling");
+        expect(sibling?.title).toBe(`Relation target ${safeImport}`);
+        expect(sibling?.noteId).not.toBe("relTarget001");
+    });
+
     it("substitutes placeholder ids for blank note and attachment ids", async () => {
         // A malformed archive can carry empty ids; they're funnelled onto fixed placeholders rather
         // than being allowed to collide with a generated id.
@@ -749,7 +793,18 @@ describe("processNoteContent", () => {
                 mime: "text/html",
                 format: "html",
                 dataFileName: "Host.html",
+                dirFileName: "Host",
                 attributes: [{ type: "relation", name: "myRelation", value: "   " }],
+                children: [{
+                    noteId: " ",
+                    title: "Blank",
+                    type: "text",
+                    mime: "text/html",
+                    format: "html",
+                    dataFileName: "Blank.html",
+                    attributes: [],
+                    attachments: []
+                }],
                 attachments: [{
                     attachmentId: " ",
                     title: "blank.txt",
@@ -764,11 +819,13 @@ describe("processNoteContent", () => {
         const zipBuffer = await createZipBuffer({
             "!!!meta.json": JSON.stringify(metaFile),
             "Host.html": "<p>host</p>",
-            "Host_blank.txt": "blank"
+            "Host_blank.txt": "blank",
+            "Host/Blank.html": "<p>blank</p>"
         });
 
         const { importedNote } = await testImportBuffer(zipBuffer, "import-blank-ids");
 
+        expect(importedNote.getChildNotes().map((child) => child.noteId)).toEqual(["empty_note_id"]);
         expect(importedNote.getAttachments().map((a) => a.attachmentId)).toEqual(["empty_attachment_id"]);
         // The relation's blank target maps to the placeholder, which matches no note, so the relation
         // is dropped rather than saved pointing at nothing.

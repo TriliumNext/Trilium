@@ -39,6 +39,18 @@ Here's the final structure with cloning:
                 *   some sub-notes ...
         *   Windows
 
+In the tree, Bash shows up twice, but it is one note with two parents:
+
+```mermaid
+flowchart TD
+    technology["Technology"] --> programming["Programming"]
+    technology --> os["Operating systems"]
+    os --> linux["Linux"]
+    programming --> bash["Bash"]
+    linux --> bash
+    bash --> subnotes["some sub-notes ..."]
+```
+
 So now the "Bash" subtree appears on multiple locations in the hierarchy. Both the Bash subtrees are the same and contain the same sub-categories and notes.
 
 ### Demo

@@ -17,6 +17,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Component from "../../components/component";
 import type FNote from "../../entities/fnote";
 import type { EntityChange } from "../../server_types";
+import froca from "../../services/froca";
 import LoadResults from "../../services/load_results";
 import { buildNote, buildNotes } from "../../test/easy-froca";
 import { ParentComponent } from "../react/react_utils";
@@ -385,6 +386,93 @@ describe("useNoteIds nesting depth", () => {
     });
 });
 
+describe("useNoteIds unarchiving", () => {
+    it("shows a direct child of a dashboard again once it is unarchived", async () => {
+        const note = buildNote({
+            title: "Dashboard",
+            type: "book",
+            children: [
+                { id: "unarchive-kept", title: "Kept" },
+                { id: "unarchive-back", title: "Back" }
+            ]
+        });
+        // Stands in for the archive filtering search, with "Back" archived at first.
+        let shownNoteIds = [ "unarchive-kept" ];
+        note.getChildNoteIdsWithArchiveFiltering = vi.fn(async () => shownNoteIds);
+
+        const noteIds = await unarchiveWhileShown(note, "dashboard", "unarchive-back", () => {
+            shownNoteIds = [ "unarchive-kept", "unarchive-back" ];
+        });
+        expect(noteIds).toEqual([ "unarchive-kept", "unarchive-back" ]);
+    });
+
+    it("shows a nested note of a calendar again once it is unarchived", async () => {
+        const note = buildNote({
+            title: "Calendar",
+            type: "book",
+            children: [{
+                id: "unarchive-folder",
+                title: "Folder",
+                children: [{ id: "unarchive-nested", title: "Nested" }]
+            }]
+        });
+        // Stands in for the subtree walk, with "Nested" archived at first.
+        let shownNoteIds = [ "unarchive-folder" ];
+        note.getSubtreeNoteIds = vi.fn(async () => shownNoteIds);
+
+        const noteIds = await unarchiveWhileShown(note, "calendar", "unarchive-nested", () => {
+            shownNoteIds = [ "unarchive-folder", "unarchive-nested" ];
+        });
+        expect(noteIds).toEqual([ "unarchive-folder", "unarchive-nested" ]);
+    });
+
+    /**
+     * Shows the collection, unarchives `noteId` as the server reports it (the `#archived` label
+     * deleted) and returns the note ids the collection shows afterwards.
+     */
+    async function unarchiveWhileShown(
+        note: FNote, viewType: ViewTypeOptions, noteId: string, unarchive: () => void
+    ) {
+        const parent = new Component();
+        const mountPoint = document.createElement("div");
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={parent}>
+                    <Harness note={note} viewType={viewType} />
+                </ParentComponent.Provider>,
+                mountPoint
+            );
+        });
+        await act(async () => {
+            await flushMicrotasks();
+        });
+
+        unarchive();
+        const attributeId = `archived-${noteId}`;
+        const loadResults = new LoadResults([ {
+            entityName: "attributes",
+            entityId: attributeId,
+            entity: {
+                attributeId, noteId, type: "label", name: "archived", value: "", isDeleted: true
+            },
+            componentId: "comp-1"
+        } as unknown as EntityChange ]);
+        loadResults.addAttribute(attributeId, "comp-1");
+        await act(async () => {
+            await parent.handleEvent("entitiesReloaded", { loadResults });
+        });
+        await act(async () => {
+            await flushMicrotasks();
+        });
+
+        const noteIds = currentNoteIds;
+        await act(async () => {
+            render(null, mountPoint);
+        });
+        return noteIds;
+    }
+});
+
 describe("useViewModeConfig view type switch", () => {
     it("never hands a view the config of the view type it replaced", async () => {
         const note = buildNote({ title: "Collection", type: "book" });
@@ -486,6 +574,62 @@ describe("useViewModeConfig view type switch", () => {
         await act(async () => {
             render(null, mountPoint);
         });
+    });
+
+    it("keeps the next note's config when the view it replaced saves on its way out", async () => {
+        const withConfig = (title: string, viewType: ViewTypeOptions, config: object) => {
+            const note = buildNote({ title, type: "book" });
+            note.getAttachmentsByRole = vi.fn(async () => [ {
+                attachmentId: `${title}-${viewType}`,
+                title: `${viewType}.json`,
+                getBlob: async () => ({ content: JSON.stringify(config) })
+            } ]) as unknown as FNote["getAttachmentsByRole"];
+            return note;
+        };
+        const tableConfig = { tableData: { columns: [] } };
+        const presentationConfig = { slide: 2 };
+        const table = withConfig("Places", "table", tableConfig);
+        const presentation = withConfig("Slides", "presentation", presentationConfig);
+        const saveAttachment = vi.spyOn(froca, "saveAttachment").mockResolvedValue(undefined as never);
+
+        let latest: ReturnType<typeof useViewModeConfig<object>>;
+        function ConfigProbe({ note, viewType }: { note: FNote; viewType: ViewTypeOptions }) {
+            latest = useViewModeConfig<object>(note, viewType);
+            return null;
+        }
+        const mountPoint = document.createElement("div");
+        const renderProbe = async (note: FNote, viewType: ViewTypeOptions) => {
+            await act(async () => {
+                render(
+                    <ParentComponent.Provider value={new Component()}>
+                        <ConfigProbe note={note} viewType={viewType} />
+                    </ParentComponent.Provider>,
+                    mountPoint
+                );
+            });
+            await act(async () => {
+                await flushMicrotasks();
+            });
+        };
+
+        await renderProbe(table, "table");
+        const saveTableConfig = latest?.storeFn;
+        expect(saveTableConfig).toBeDefined();
+        await renderProbe(presentation, "presentation");
+        expect(latest?.config).toEqual(presentationConfig);
+
+        await act(async () => {
+            saveTableConfig?.({ tableData: { columns: [ { field: "title" } ] } });
+            await flushMicrotasks();
+        });
+        expect(latest?.config).toEqual(presentationConfig);
+        expect(saveAttachment).toHaveBeenCalledWith(table.noteId,
+            expect.objectContaining({ title: "table.json" }));
+
+        await act(async () => {
+            render(null, mountPoint);
+        });
+        saveAttachment.mockRestore();
     });
 });
 

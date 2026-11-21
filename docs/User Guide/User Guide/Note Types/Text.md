@@ -1,14 +1,14 @@
 # Text
+<figure class="image"><img style="aspect-ratio:1152/720;" src="Text_demo.webp" width="1152" height="720"></figure>
+
 The default note type in Trilium, text notes allow for rich formatting, tables, images, admonitions and a handful of other features.
 
 ## Formatting bars
 
 Most of the interaction with text notes is done via the built-in toolbars. Depending on preference, there are two different layouts:
 
-*   The _Floating toolbar_ is hidden by default and only appears when needed. In this mode there are actually two different toolbars:  
-    <img src="1_Text_image.png" width="496" height="91"><img src="2_Text_image.png" width="812" height="114">
-*   A toolbar that appears when text is selected. This provides text-level formatting such as bold, italic, text colors, inline code, etc.  
-    _<img src="Text_image.png" width="1109" height="124">_
+*   The _Floating toolbar_ is hidden by default and only appears when needed. In this mode there are actually two different toolbars.
+*   A toolbar that appears when text is selected. This provides text-level formatting such as bold, italic, text colors, inline code, etc.
 
 Fore more information see <a class="reference-link" href="Text/Formatting%20toolbar.md">Formatting toolbar</a>.
 

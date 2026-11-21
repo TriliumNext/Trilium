@@ -1,10 +1,21 @@
+import { scrollRectIntoView } from "../services/highlight_matches";
 import type { FindResult } from "./find";
+import type { ScrollRailTarget } from "./scroll_rail_markers";
 import { getEmbedFindTarget, revealContentEmbed } from "./type_widgets/text/content_embed_tools";
 
 /** The options of a search of "Search in note". */
 export interface FindOptions {
     matchCase: boolean;
     wholeWord: boolean;
+}
+
+/** Whether the search or the write that runs is still wanted. A target that waits checks it. */
+export type FindCheck = () => boolean;
+
+/** How a match becomes the current one. */
+export interface HighlightOptions {
+    /** Scrolls to the match at once, ignoring the smooth scrolling of the boxes around it. */
+    isInstant?: boolean;
 }
 
 /**
@@ -14,24 +25,38 @@ export interface FindOptions {
 export interface FindTarget {
     /**
      * Searches for `term` and returns the number of matches, none of them the current one. An empty
-     * `term` removes the matches.
+     * `term` removes the matches. A target that waits before it paints checks `check` first, and
+     * paints nothing once it fails.
      */
-    find(term: string, options: FindOptions): Promise<number>;
+    find(term: string, options: FindOptions, check?: FindCheck): Promise<number>;
     /** Makes match `index` the current one and scrolls to it. `null` leaves no current match. */
-    highlight(index: number | null): void;
+    highlight(index: number | null, options?: HighlightOptions): void;
     /** The first match at or below `top`, a client Y coordinate, or `null` when all are above. */
     getFirstMatchBelow(top: number): number | null;
+    /**
+     * What each match is, for the scroll rail, in match order. Reads no geometry. With `isStale`,
+     * the matches that the content shows now, which no longer follow the numbering.
+     */
+    getMatchTargets(options: { isStale: boolean }): ScrollRailTarget[];
+    /**
+     * Takes the matches anew from the content, which can have changed since the search, and
+     * returns their number. The indices of the other methods follow the new list.
+     */
+    countMatches(): number;
     /** Whether `replace()` replaces match `index`, which a match in read-only content is not. */
     canReplace(index: number): boolean;
-    /** Replaces match `index` with `text`, and returns the number of matches left. */
-    replace(index: number, text: string): Promise<number>;
-    /** Replaces each match that `canReplace()` allows, and returns the number of matches left. */
-    replaceAll(text: string): Promise<number>;
     /**
-     * Removes the matches. With `index`, selects that match and focuses the target where it can,
-     * and returns whether it did.
+     * Replaces match `index` with `text`, and returns the number of matches left. A target that
+     * searches again after it checks `check` before it paints.
      */
-    close(index: number | null): boolean;
+    replace(index: number, text: string, check?: FindCheck): Promise<number>;
+    /** Replaces each match that `canReplace()` allows, and returns the number of matches left. */
+    replaceAll(text: string, check?: FindCheck): Promise<number>;
+    /**
+     * Removes the matches at once. Returns what selects match `index` and focuses the target,
+     * for the caller to run later, or `null` when there is no such match.
+     */
+    close(index: number | null): (() => void) | null;
     /**
      * Calls `callback` when the content changes, as typing in it does, until the returned function
      * is called. A target over content that cannot change leaves it out.
@@ -69,7 +94,7 @@ export default class MergedFind implements FindTarget {
 
     constructor(readonly host: HostFindTarget) {}
 
-    async find(term: string, options: FindOptions) {
+    async find(term: string, options: FindOptions, check?: FindCheck) {
         const searchId = ++this.searchId;
         this.highlight(null);
         const embeds = this.host.getEmbeds().flatMap((embed) => {
@@ -83,21 +108,17 @@ export default class MergedFind implements FindTarget {
         }
         this.embeds = embeds;
 
-        const [ hostCount, ...counts ] = await Promise.all([
-            this.host.find(term, options),
-            ...embeds.map(({ target }) => target.find(term, options))
+        await Promise.all([
+            this.host.find(term, options, check),
+            ...embeds.map(({ target }) => target.find(term, options, check))
         ]);
         if (searchId === this.searchId) {
-            this.hostCount = hostCount;
-            for (const [ index, embed ] of embeds.entries()) {
-                embed.count = counts[index] ?? 0;
-            }
-            this.layOut();
+            this.countAll();
         }
         return this.total;
     }
 
-    highlight(index: number | null) {
+    highlight(index: number | null, options?: HighlightOptions) {
         const match = index === null ? null : this.locate(index);
         const next = match?.run ?? null;
         const previous = this.current;
@@ -112,7 +133,13 @@ export default class MergedFind implements FindTarget {
             revealContentEmbed(next.embed, true);
         }
         if (match) {
-            match.run.target.highlight(match.local);
+            const { embed } = match.run;
+            if (embed && options?.isInstant) {
+                scrollRectIntoView(
+                    embed.parentElement, () => embed.getBoundingClientRect(), "instant"
+                );
+            }
+            match.run.target.highlight(match.local, options);
         }
         if (previous?.embed && previous.embed !== next?.embed) {
             revealContentEmbed(previous.embed, false);
@@ -132,6 +159,34 @@ export default class MergedFind implements FindTarget {
     }
 
     /**
+     * The targets of the matches, in the order of their numbers. While the results are stale,
+     * those that the host shows now, then those of the embeds.
+     */
+    getMatchTargets({ isStale }: { isStale: boolean }) {
+        if (isStale) {
+            return [
+                ...this.host.getMatchTargets({ isStale }),
+                ...this.embeds.flatMap(({ target }) => target.getMatchTargets({ isStale }))
+            ];
+        }
+
+        const byTarget = new Map<FindTarget, ScrollRailTarget[]>();
+        return this.runs.flatMap(({ target, first, count }) => {
+            let targets = byTarget.get(target);
+            if (!targets) {
+                targets = target.getMatchTargets({ isStale });
+                byTarget.set(target, targets);
+            }
+            return Array.from({ length: count }, (_, index) => targets[first + index] ?? null);
+        });
+    }
+
+    countMatches() {
+        this.countAll();
+        return this.total;
+    }
+
+    /**
      * The match where the find starts, while there are matches: the one at the selection of the
      * host, otherwise the first at or below `top`, a client Y coordinate.
      */
@@ -145,53 +200,67 @@ export default class MergedFind implements FindTarget {
         return !!match && match.run.target.canReplace(match.local);
     }
 
-    async replace(index: number, text: string) {
+    async replace(index: number, text: string, check?: FindCheck) {
         const match = this.locate(index);
         if (!match?.run.target.canReplace(match.local)) {
             return this.total;
         }
 
-        const { target } = match.run;
-        const count = await target.replace(match.local, text);
-        if (target === this.host) {
-            this.hostCount = count;
-        }
-        for (const embed of this.embeds) {
-            if (embed.target === target) {
-                embed.count = count;
-            }
-        }
-        this.layOut();
+        await match.run.target.replace(match.local, text, check);
+        this.countAll();
         return this.total;
     }
 
-    async replaceAll(text: string) {
-        this.hostCount = await this.host.replaceAll(text);
-        for (const embed of this.embeds) {
-            embed.count = await embed.target.replaceAll(text);
+    async replaceAll(text: string, check?: FindCheck) {
+        // The list is taken first: `close()` empties it while the host replaces.
+        const embeds = [ ...this.embeds ];
+        await this.host.replaceAll(text, check);
+        for (const { target } of embeds) {
+            await target.replaceAll(text, check);
         }
-        this.layOut();
+        this.countAll();
         return this.total;
     }
 
+    /**
+     * Closes every target, even after one of them fails, and returns the selection of the current
+     * match that the target holding it gives back.
+     */
     close(index: number | null) {
         const match = index === null ? null : this.locate(index);
-        this.highlight(null);
-
-        let isFocused = false;
+        let selection: (() => void) | null = null;
+        try {
+            this.highlight(null);
+        } catch (error) {
+            console.error("Search in note: clearing the current match failed.", error);
+        }
         for (const target of [ this.host, ...this.embeds.map((embed) => embed.target) ]) {
-            const isClosedOnMatch = target.close(target === match?.run.target ? match.local : null);
-            isFocused ||= isClosedOnMatch;
+            try {
+                selection = target.close(target === match?.run.target ? match.local : null)
+                    ?? selection;
+            } catch (error) {
+                console.error("Search in note: closing a target failed.", error);
+            }
         }
         this.embeds = [];
         this.hostCount = 0;
+        this.current = null;
         this.layOut();
-        return isFocused;
+        return selection;
     }
 
     /** Watches the content of the host. The embeds are targets of their own. */
     watchContent(callback: () => void) {
         return this.host.watchContent?.(callback) ?? (() => {});
+    }
+
+    /** Counts the matches of every target anew, which rebuilds their lists, then lays them out. */
+    private countAll() {
+        this.hostCount = this.host.countMatches();
+        for (const embed of this.embeds) {
+            embed.count = embed.target.countMatches();
+        }
+        this.layOut();
     }
 
     /** Splits the matches of the host around each embed with matches. */

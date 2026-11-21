@@ -231,6 +231,8 @@ export interface NoteSplitParts {
     titleRowStart?: () => SplitPart[];
     /** After the note's badges in the title row. */
     titleRowEnd?: () => SplitPart[];
+    /** First in the scroller, before the inline title. */
+    scrollerStart?: () => SplitPart[];
     /** Between the bar that picks the type of an empty note and the find bar. */
     beforeFind?: () => SplitPart[];
     /** After the find bar. */
@@ -266,6 +268,7 @@ export function NoteSplits({ parts, containerId, containerClassName }: {
                 .child(...parts.titleRowEnd?.() ?? []),
             new ScrollingContainer()
                 .filling()
+                .child(...parts.scrollerStart?.() ?? [])
                 .child(<InlineTitle />)
                 .child(<NoteTitleActions />)
                 .child(<NoteDetail />)

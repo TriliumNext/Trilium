@@ -1,8 +1,18 @@
 import { defineConfig } from 'vitest/config';
 import preact from '@preact/preset-vite';
+import { execFileSync } from "child_process";
+
+import rootPackageJson from "../../package.json" with { type: "json" };
+import { pickReleaseVersion } from "./src/release_version.ts";
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+    define: {
+        // The test checkouts in CI carry no tags, and no spec reads the version.
+        __RELEASE_VERSION__: JSON.stringify(mode === "test"
+            ? rootPackageJson.version
+            : pickReleaseVersion(rootPackageJson.version, listReleaseTags()))
+    },
 	plugins: [
 		preact({
 			prerender: {
@@ -29,4 +39,14 @@ export default defineConfig({
             reportsDirectory: "./test-output/vitest/coverage"
         }
     }
-});
+}));
+
+/** The repository's `v*` tags; none when git or the tags are unavailable. */
+function listReleaseTags(): string[] {
+    try {
+        return execFileSync("git", [ "tag", "--list", "v*" ], { encoding: "utf8" })
+            .split("\n").filter(Boolean);
+    } catch {
+        return [];
+    }
+}

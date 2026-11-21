@@ -214,7 +214,7 @@ describe("Notes API (core)", () => {
             expect(refused.status).toBe(409);
             expect(refused.body).toMatchObject({
                 reason: "version", blobId: note.blobId, type: "text", mime: "text/html",
-                isVersioned: true
+                isVersioned: true, content: "<p>Two</p>"
             });
             expect(note.getContent()).toBe("<p>Two</p>");
 

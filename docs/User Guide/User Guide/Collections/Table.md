@@ -1,5 +1,5 @@
 # Table
-<figure class="image"><img style="aspect-ratio:1050/259;" src="Table_image.png" width="1050" height="259"></figure>
+<figure class="image"><img style="aspect-ratio:1152/720;" src="Table_demo.webp" width="1152" height="720"></figure>
 
 The table view displays information in a grid, where the rows are individual notes and the columns are <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a>. In addition, values are editable.
 

@@ -156,6 +156,8 @@ function EditorFeatures() {
         useTriliumOptionBool("textNoteCompletionLinkTargetsEnabled");
     const [slashCommandsEnabled, setSlashCommandsEnabled] = useTriliumOptionBool("textNoteSlashCommandsEnabled");
     const [contentHintsEnabled, setContentHintsEnabled] = useTriliumOptionBool("textNoteContentHintsEnabled");
+    const [scrollRailHighlightsEnabled, setScrollRailHighlightsEnabled] =
+        useTriliumOptionBool("textNoteScrollRailHighlightsEnabled");
     const [autoLinkPreviewsEnabled, setAutoLinkPreviewsEnabled] = useTriliumOptionBool("textNoteAutoLinkPreviewsEnabled");
     const [linkTitleRetrievalEnabled, setLinkTitleRetrievalEnabled] =
         useTriliumOptionBool("textNoteLinkTitleRetrievalEnabled");
@@ -261,6 +263,17 @@ function EditorFeatures() {
                 description={t("editorfeatures.content_hints_description")}
             >
                 <FormToggle currentValue={contentHintsEnabled} onChange={setContentHintsEnabled} />
+            </OptionCardSection>
+
+            <OptionCardSection
+                name="scroll-rail-highlights-enabled"
+                label={t("editorfeatures.scroll_rail_highlights_enabled")}
+                description={t("editorfeatures.scroll_rail_highlights_description")}
+            >
+                <FormToggle
+                    currentValue={scrollRailHighlightsEnabled}
+                    onChange={setScrollRailHighlightsEnabled}
+                />
             </OptionCardSection>
 
             <OptionCardSection

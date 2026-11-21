@@ -142,6 +142,15 @@ body {
     user-select: none;
 }
 
+/* Firefox scrolls a drag selection only when the scroll container itself is selectable. */
+.scrolling-container {
+    user-select: text;
+}
+
+:where(.scrolling-container > *) {
+    user-select: none;
+}
+
 .selectable-text {
     user-select: text;
 }

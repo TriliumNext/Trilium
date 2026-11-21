@@ -1,4 +1,6 @@
 # AI
+<figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:720/1000;" src="AI_demo.webp" width="720" height="1000"></figure>
+
 Trilium can connect to a large language model and use it as an assistant that works directly on your notes: ask questions about the note you're reading, have it draft or restructure content, or get it to write scripts and widgets for you.
 
 The integration is off by default and does nothing until you enable it and configure a provider; Trilium ships no model of its own. The provider you pick decides how your notes travel: a cloud API billed per use, a subscription you already pay for, or a model running on your own hardware, in which case nothing leaves the machine. See <a class="reference-link" href="AI/Providers.md">Providers</a> for what each involves, and <a class="reference-link" href="AI/Privacy.md">Privacy</a> for exactly what gets sent.

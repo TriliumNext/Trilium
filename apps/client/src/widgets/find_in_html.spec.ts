@@ -1,11 +1,17 @@
 import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { scrollRangeIntoView } from "../services/highlight_matches";
 import { highlightedRanges, highlightedTexts } from "../test/highlights";
 import type FindWidget from "./find";
 import FindInHtml, { HtmlFindTarget, HtmlNoteFindTarget } from "./find_in_html.js";
 import MergedFind from "./merged_find";
 import { registerEmbedFindTarget } from "./type_widgets/text/content_embed_tools";
+
+vi.mock("../services/highlight_matches", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../services/highlight_matches")>()),
+    scrollRangeIntoView: vi.fn()
+}));
 
 const OPTIONS = { matchCase: false, wholeWord: false };
 const CONTENT = "<p>needle before</p>"
@@ -52,8 +58,8 @@ describe("FindInHtml", () => {
 
         const result = await finder.performFind("alpha", false, false);
 
-        expect(result.totalFound).toBe(2);
-        expect(result.currentFound).toBe(1);
+        expect(result?.totalFound).toBe(2);
+        expect(result?.currentFound).toBe(1);
         expect(highlightedTexts("find-result", container)).toEqual([ "alpha", "alpha" ]);
         expect(highlightedTexts("find-result-secondary", container)).toEqual([]);
     });
@@ -77,7 +83,7 @@ describe("FindInHtml", () => {
         expect(highlightedTexts("find-result", container)).toEqual([ "alpha" ]);
         expect(highlightedTexts("find-result-secondary", container)).toEqual([ "beta" ]);
 
-        await finder.findBoxClosed(1, 0);
+        await finder.findBoxClosed();
 
         expect(highlightedTexts("find-result", container)).toEqual([]);
         expect(highlightedTexts("find-result-selected", container)).toEqual([]);
@@ -120,7 +126,7 @@ describe("FindInHtml", () => {
 
         const result = await finder.performFind("needle", false, false);
 
-        expect(result.totalFound).toBe(1);
+        expect(result?.totalFound).toBe(1);
         expect(activeTitle()).toBe("B");
     });
 
@@ -142,11 +148,40 @@ describe("FindInHtml", () => {
 
         cleanups.push(registerEmbedFindTarget(embed, new HtmlFindTarget(embed)));
         expect(parent.invalidateResults).toHaveBeenCalledOnce();
-        await handler.findBoxClosed(3, 3);
+        await handler.findBoxClosed();
         expect(highlightedTexts("find-result", content)).toEqual([]);
         expect(highlightedTexts("find-result-secondary", content)).toEqual([]);
         cleanups.push(registerEmbedFindTarget(content, new HtmlFindTarget(content)));
         expect(parent.invalidateResults).toHaveBeenCalledOnce();
+    });
+});
+
+describe("FindInHtml checks", () => {
+    it("changes nothing once its check fails after the content arrives or the search", async () => {
+        const { finder, container } = setup("<p>alpha beta alpha</p>");
+
+        expect(await finder.performFind("alpha", false, false, () => false)).toBeNull();
+        expect(highlightedTexts("find-result", container)).toEqual([]);
+
+        // The leaves paint as their search starts; the start match is never made current.
+        const check = vi.fn().mockReturnValueOnce(true).mockReturnValue(false);
+        expect(await finder.performFind("alpha", false, false, check)).toBeNull();
+        expect(highlightedTexts("find-result-selected", container)).toEqual([]);
+        expect(scrollRangeIntoView).not.toHaveBeenCalled();
+    });
+
+    it("names the ranges of its matches; scrolls at once only for an instant step", async () => {
+        const { finder, container } = setup("<p>alpha beta alpha</p>");
+        await finder.performFind("alpha", false, false);
+        vi.mocked(scrollRangeIntoView).mockClear();
+
+        const targets = finder.getMatchTargets({ isStale: false });
+        expect(targets.map((target) => String(target))).toEqual([ "alpha", "alpha" ]);
+        expect(await finder.findNext(1, 0, 1)).toBe(true);
+        expect(scrollRangeIntoView).toHaveBeenLastCalledWith(targets[1], undefined);
+        await finder.findNext(0, 1, 0, { isInstant: true });
+        expect(scrollRangeIntoView).toHaveBeenLastCalledWith(targets[0], "instant");
+        expect(highlightedTexts("find-result-selected", container)).toEqual([ "alpha" ]);
     });
 });
 
@@ -172,7 +207,7 @@ describe("HtmlNoteFindTarget", () => {
         target.highlight(null);
         expect(highlightedTexts("find-result-selected", content)).toEqual([]);
 
-        expect(target.close()).toBe(false);
+        expect(target.close()).toBeNull();
         expect(highlightedTexts("find-result", content)).toEqual([]);
         expect(await target.find("", OPTIONS)).toBe(0);
     });

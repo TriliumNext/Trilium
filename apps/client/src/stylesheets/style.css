@@ -27,7 +27,9 @@
     --bs-body-color: var(--main-text-color) !important;
     --bs-body-bg: var(--main-background-color) !important;
     --tn-modal-max-height: 90svh;
+}
 
+:where(:root) {
     --tree-item-light-theme-max-color-lightness: 50;
     --tree-item-dark-theme-min-color-lightness: 75;
 }
@@ -2049,7 +2051,11 @@ body.dark-theme pre.code-block-preview[data-code-theme-d="vs-code-dark"] {
     height: 100%;
 }
 
-.include-note-content.type-text:fullscreen > .rendered-content:not(.full-content-width) > * {
+.include-note-content.type-text:fullscreen > .rendered-content:not(.full-content-width) > *,
+.include-note-content.type-markdown:fullscreen > .rendered-content:not(.full-content-width)
+    > .markdown-embed > .markdown-embed-content > .note-detail-split
+    > .note-detail-split-preview-col > .note-detail-split-preview
+    > .editable-embed-preview > .markdown-preview > * {
     max-width: var(--preferred-max-content-width);
     margin-inline: auto;
 }

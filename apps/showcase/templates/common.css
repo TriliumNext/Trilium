@@ -1,0 +1,54 @@
+@font-face {
+    font-family: "Inter";
+    src: url("../../../website/src/assets/fonts/Inter/Inter-VariableFont_opsz,wght.woff2") format("woff2");
+    font-weight: 100 900;
+}
+
+:root {
+    --brand-orange: #e47b19;
+    --brand-green: #4fa52b;
+    --brand-red: #e33f3b;
+    --ink: #1d1f24;
+    --ink-muted: #4d5058;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    font-family: Inter, system-ui, sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* The hero of the website's home page: apps/website/src/pages/Home/index.css. */
+.backdrop {
+    background:
+        radial-gradient(circle, rgb(255 255 255 / 0%) 60%, rgb(0 0 0 / 6%) 100%),
+        radial-gradient(40vmax 40vmax at 15% 25%, rgb(228 123 25 / 25%), transparent 70%),
+        radial-gradient(35vmax 35vmax at 75% 20%, rgb(79 165 43 / 22%), transparent 70%),
+        radial-gradient(28vmax 28vmax at 60% 75%, rgb(227 63 59 / 22%), transparent 70%),
+        radial-gradient(20vmax 20vmax at 85% 65%, rgb(228 123 25 / 18%), transparent 70%),
+        radial-gradient(15vmax 15vmax at 40% 50%, rgb(79 165 43 / 15%), transparent 70%),
+        #fff;
+
+    &.dark {
+        --ink: #f4f1ea;
+        --ink-muted: #c9c5bb;
+        background:
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"),
+            radial-gradient(50vmax 50vmax at 30% 12%, rgb(228 123 25 / 28%), transparent 70%),
+            #0a0e14;
+    }
+}
+
+.app-shot {
+    display: block;
+    border-radius: 44px;
+    box-shadow:
+        0 2px 6px rgb(0 0 0 / 12%),
+        0 24px 60px rgb(40 30 10 / 22%);
+}

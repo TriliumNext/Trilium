@@ -44,6 +44,21 @@ reader.
 - **Length follows the feature.** A new feature with many commands can need several paragraphs (the
   Vim mode highlight); a performance gain fits in two short ones: what changed, then the numbers.
 
+## The overview
+
+The `type: overview` entry opens the release note in the maintainer's voice (`.changelog/README.md`,
+"The overview"). The register above applies, and so do these:
+
+- **Open with the content.** The first sentence is the first change worth telling ("Links can now
+  point at a heading…"), not a framing sentence such as "This release is about…" or "This is the
+  release where…".
+- **No stock phrases.** Leave out "of their own", "next to", "a whole new", "under the hood" and
+  the like; say the fact directly ("text notes have a Vim mode", not "a Vim mode of their own").
+- **No technical detail.** Not what a feature is built on ("the same engine as code notes") or how
+  it works ("the tree comes first, the rest loads later"); only what the user can now do or notice.
+- **Don't repeat the sections below.** Breaking changes, compatibility notes and notices have their
+  own place in the note; the overview does not point to them.
+
 ## Before committing
 
 Read the entry as a user who skims the release note: every sentence should survive the questions

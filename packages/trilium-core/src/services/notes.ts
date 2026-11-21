@@ -1445,6 +1445,7 @@ function createSaveConflict(
     message: string,
     rows: AttachmentSaveRow[]
 ) {
+    const content = reason === "version" ? note.getContent() : undefined;
     return new DetailedConflictError<SaveConflictResponse>(message, {
         reason,
         message,
@@ -1452,7 +1453,8 @@ function createSaveConflict(
         type: note.type,
         mime: note.mime,
         isVersioned: note.isVersioned(),
-        attachments: getNamedAttachments(note, rows)
+        attachments: getNamedAttachments(note, rows),
+        ...(typeof content === "string" ? { content } : {})
     });
 }
 

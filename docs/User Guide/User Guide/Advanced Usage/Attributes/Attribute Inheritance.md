@@ -9,6 +9,12 @@ To make an attribute inheritable, simply use the visual editor for <a class="re
 
 As an example, the `archived` label can be set to be inheritable, allowing you to hide a whole subtree of notes from searches and other dialogs by applying this label at the top level.
 
+```mermaid
+flowchart TD
+    parent["Projects<br>#archived (inheritable)"] --> child["2024<br>inherits #archived"]
+    child --> grandchild["Old project<br>inherits #archived"]
+```
+
 Standard inheritance forces all the notes that are children (and sub-children) of a note to have that particular label or relation. If there is a need to have some notes not inherit one of the labels, then _copying inheritance_ or _template inheritance_ needs to be used instead.
 
 ## Copying Inheritance
@@ -16,6 +22,12 @@ Standard inheritance forces all the notes that are children (and sub-children) o
 Copying inheritance differs from standard inheritance by using a `child:` prefix in the attribute name. This prefix causes new child notes to automatically receive specific attributes from the parent note. These attributes are independent of the parent and will persist even if the note is moved elsewhere.
 
 If a parent note has the label `#child:exampleAttribute`, all newly created child notes (one level deep) will inherit the `#exampleAttribute` label. This can be useful for setting default properties for notes in a specific section.
+
+```mermaid
+flowchart TD
+    parent["Books<br>#child:exampleAttribute"] -->|"new child note"| child["New note<br>gets #exampleAttribute"]
+    child -->|"new child note"| grandchild["New note<br>gets nothing"]
+```
 
 Similarly, for relations use `~child:myRelation`.
 

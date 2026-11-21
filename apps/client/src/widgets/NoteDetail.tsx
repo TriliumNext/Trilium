@@ -45,8 +45,10 @@ export default function NoteDetail() {
     const { ntxId, viewScope } = noteContext ?? {};
     const isFullHeight = checkFullHeight(noteContext, type);
     const fillsPane = checkFillsPane(noteContext, type);
+    const hasEndMargin = !isFullHeight && !!type && !!TYPE_MAPPINGS[type].hasEndMargin;
     useParentClass(containerRef, "detail-full-height", isFullHeight);
     useParentClass(containerRef, "detail-fills-pane", fillsPane);
+    useParentClass(containerRef, "detail-has-end-margin", hasEndMargin);
     const { noteTypesToRender, activeNoteType, loadingType } = useTypeWidgets(type, note);
 
     const props: TypeWidgetProps = {

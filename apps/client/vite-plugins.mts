@@ -376,6 +376,9 @@ const LAZY_IMPORTERS: Record<string, string[]> = {
     app: [ join(SHARE_THEME_SRC, "content/app_view.ts"), join(SHARE_THEME_SRC, "index.ts") ]
 };
 
+/** The modules of the share theme whose `import()` expressions load the app's views. */
+export const SHARE_THEME_APP_LOADERS = LAZY_IMPORTERS.app;
+
 /**
  * The tables of loaders by which the app picks the view of a collection or the widget of a note
  * type, each giving its keys a group of the manifest, `<prefix><key>`, of the modules the

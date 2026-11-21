@@ -44,6 +44,10 @@ body.mobile .modal.popup-editor-dialog .modal-dialog {
     font-size: 1.1em;
 }
 
+.modal.popup-editor-dialog .modal-header .popup-editor-back {
+    margin-inline: 0 8px;
+}
+
 /* Pinned to the foot of the dialog rather than following the content, which has no room set
    aside for it. Anchored to `.modal-content`, which Bootstrap positions. */
 .modal.popup-editor-dialog .note-type-switcher {
@@ -102,6 +106,10 @@ body.desktop .modal.popup-editor-dialog .classic-toolbar-widget {
     background: var(--modal-background-color);
     z-index: 998;
     align-items: flex-start;
+}
+
+body.desktop .modal.popup-editor-dialog .has-scroll-rail .classic-toolbar-widget {
+    margin-inline-end: var(--scroll-rail-width);
 }
 
 body.mobile .modal.popup-editor-dialog .modal-content:has(.classic-toolbar-outer-container.visible) .note-type-switcher {

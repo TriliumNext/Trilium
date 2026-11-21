@@ -13,6 +13,7 @@ This feature is also well integrated with <a class="reference-link" href="../..
 *   Note that the <a class="reference-link" href="../Notes/Note%20List.md">Note List</a> will not be displayed, except for notes of type <a class="reference-link" href="../../Collections.md">Collections</a>.
 *   For <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> notes, depending on user preference, both the floating and classic editors are supported. See <a class="reference-link" href="../../Note%20Types/Text/Formatting%20toolbar.md">Formatting toolbar</a>.
 *   The title and the note and the icon are editable, just like a normal tab.
+*   A link followed in the popup opens its note in the popup. The <span class="tn-icon bx bx-left-arrow-alt"></span> button before the note's icon then returns to the previous note.
 *   The note's actions and its menu are shown in the header of the popup, as in the title row of a tab.
     *   When other notes link to the note, a button with a link icon lists the <a class="reference-link" href="../../Note%20Types/Text/Links/Backlinks.md">Backlinks</a>. Pressing one opens that note in the popup.
     *   The menu items that only work in a tab are not shown: _Note map_, _Full width_ and _Convert into attachment_.

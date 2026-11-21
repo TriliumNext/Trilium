@@ -7,9 +7,11 @@ import {
     Paragraph
 } from "ckeditor5";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { userEvent } from "vitest/browser";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
 import FindReveal from "../find_reveal.js";
+import { TAB_CHANGE_EVENT } from "./constants.js";
 import Tabs from "./tabs.js";
 
 const TWO_TABS =
@@ -50,6 +52,42 @@ describe("TabsEditing", () => {
         const tabs = editor.model.document.getRoot()?.getChild(0) as ModelElement;
         return tabs.getChild(1) as ModelElement;
     }
+
+    /** Records the active title of each tabs block whose tab change event reaches the root. */
+    function recordTabChanges() {
+        const changes: (string | null | undefined)[] = [];
+        editor.editing.view.getDomRoot()?.addEventListener(TAB_CHANGE_EVENT, event => {
+            const title = (event.target as Element)
+                .querySelector(":scope > .trilium-tabs-bar .trilium-tab-title--active");
+            changes.push(title?.textContent);
+        });
+        return changes;
+    }
+
+    /** The element of the editing view that matches `selector` and has the text `text`. */
+    function findDomElement(selector: string, text: string) {
+        const element = [ ...editor.editing.view.getDomRoot()?.querySelectorAll(selector) ?? [] ]
+            .find(candidate => candidate.textContent === text);
+        expect(element).toBeDefined();
+        return element as HTMLElement;
+    }
+
+    it("fires a bubbling tab change event on the block once another tab renders", async () => {
+        const tabs = editor.model.document.getRoot()?.getChild(0) as ModelElement;
+        const [ windows, linuxTab ] = [ ...tabs.getChildren() ] as ModelElement[];
+        const tabsEditing = editor.plugins.get("TabsEditing");
+        const changes = recordTabChanges();
+
+        await userEvent.click(findDomElement(".trilium-tab-title", "Linux"));
+        editor.model.change(writer => writer.setSelection(linuxTab.getChild(1) as ModelElement, 0));
+        editor.execute("moveTabLeft");
+        editor.model.change(writer => writer.setSelection(windows.getChild(1) as ModelElement, 0));
+        tabsEditing.showTabsAroundDomNode(findDomElement("p", "Use the package."));
+        tabsEditing.showTabsAroundDomNode(findDomElement("p", "Use the package."));
+
+        // No event for a tab that already shows, also after the tab moved.
+        expect(changes).toEqual([ "Linux", "Windows", "Linux" ]);
+    });
 
     it("keeps the tab showing for a find result outside any tab, no result, or a node outside the view", () => {
         editor.model.change(writer => writer.setSelection(linux().getChild(1) as ModelElement, 0));

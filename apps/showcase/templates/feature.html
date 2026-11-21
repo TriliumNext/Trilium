@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="common.css">
+    <style>
+        body {
+            width: 1024px;
+            height: 500px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .brand {
+            position: absolute;
+            left: 72px;
+            top: 0;
+            bottom: 0;
+            width: 520px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 18px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+
+            img {
+                width: 96px;
+                height: 96px;
+            }
+
+            h1 {
+                margin: 0;
+                font-size: 60px;
+                font-weight: 600;
+                letter-spacing: -0.02em;
+                line-height: 1;
+            }
+        }
+
+        .tagline {
+            margin: 0;
+            font-size: 30px;
+            font-weight: 400;
+            line-height: 1.25;
+            letter-spacing: -0.01em;
+        }
+
+        .tagline-sub {
+            margin: 0;
+            font-size: 19px;
+            line-height: 1.45;
+            color: var(--ink-muted);
+        }
+
+        .shots {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 400px;
+            height: 500px;
+
+            .app-shot {
+                position: absolute;
+                width: 210px;
+                border-radius: 22px;
+            }
+
+            .back {
+                left: 40px;
+                top: 70px;
+                transform: rotate(-6deg);
+            }
+
+            .front {
+                left: 170px;
+                top: 40px;
+                transform: rotate(4deg);
+            }
+        }
+    </style>
+</head>
+<body class="backdrop">
+    <div class="brand">
+        <div class="logo">
+            <img src="../../client/src/assets/icon-color.svg" alt="">
+            <h1>Trilium Notes</h1>
+        </div>
+        <p class="tagline" id="tagline"></p>
+        <p class="tagline-sub" id="tagline-sub"></p>
+    </div>
+    <div class="shots" id="shots"></div>
+    <script>
+        window.render = ({ tagline, taglineSub, shots }) => {
+            document.getElementById("tagline").textContent = tagline;
+            document.getElementById("tagline-sub").textContent = taglineSub;
+            const container = document.getElementById("shots");
+            for (const [ index, src ] of shots.entries()) {
+                const img = document.createElement("img");
+                img.className = `app-shot ${index === 0 ? "back" : "front"}`;
+                img.src = src;
+                container.append(img);
+            }
+        };
+    </script>
+</body>
+</html>
