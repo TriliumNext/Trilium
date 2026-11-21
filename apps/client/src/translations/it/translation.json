@@ -61,7 +61,16 @@
     "button_add_link": "Inserisci il link",
     "help_on_links": "Aiuto sui collegamenti",
     "edit_link": "Modifica link",
-    "button_edit_link": "Link al salvataggio"
+    "button_edit_link": "Link al salvataggio",
+    "fix_link": "Correggi il link",
+    "button_fix_link": "Correggi il link",
+    "web_link": "Pagina web",
+    "url": "Indirizzo (URL)",
+    "invalid_url": "Questo URL non è valido.",
+    "script_link_not_allowed": "I link che iniziano con {{scheme}} possono eseguire codice, pertanto non sono consentiti.",
+    "display_as": "Visualizza come",
+    "display_plain": "Testo",
+    "display_inline": "Icona e testo"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Modifica il prefisso del ramo",
@@ -287,11 +296,11 @@
   },
   "geo-map-context": {
     "open-location": "Apri la posizione",
-    "remove-from-map": "Rimuovi dalla mappa",
+    "remove-from-map": "Rimuovi dalla mappa...",
     "add-note": "Aggiungi un marcatore in questa posizione",
     "move-marker": "Trasferirsi in un'altra località",
     "remove-from-map-confirmation": "Sei sicuro di voler rimuovere la nota \"{{title}}\" dalla mappa?",
-    "delete-note": "Elimina nota",
+    "delete-note": "Elimina nota...",
     "delete-note-confirmation": "Sei sicuro di voler eliminare la nota \"{{title}}\"? Una traccia viene disegnata a partire dalla propria nota, quindi non può essere rimossa dalla mappa singolarmente."
   },
   "debug": {
@@ -360,11 +369,11 @@
     "row-insert-child": "Inserisci nota secondaria",
     "add-column-to-the-left": "Aggiungi colonna a sinistra",
     "add-column-to-the-right": "Aggiungi colonna a destra",
-    "edit-column": "Modifica colonna",
+    "edit-column": "Modifica colonna...",
     "delete_column_confirmation": "Vuoi davvero eliminare questa colonna? L'attributo corrispondente verrà rimosso da tutte le note.",
-    "delete-column": "Elimina colonna",
-    "new-column-label": "Etichetta",
-    "new-column-relation": "Relazione"
+    "delete-column": "Elimina colonna...",
+    "new-column-label": "Etichetta...",
+    "new-column-relation": "Relazione..."
   },
   "abstract_search_option": {
     "remove_this_search_option": "Rimuovi questa opzione di ricerca",
@@ -406,17 +415,17 @@
     "insert-child-note": "Inserisci nota secondaria",
     "archive": "Archivio",
     "unarchive": "Disarchiviare",
-    "delete": "Eliminare",
+    "delete": "Eliminare...",
     "search-in-subtree": "Cerca nel sottoalbero",
     "hoist-note": "Nota di sollevamento",
     "unhoist-note": "Nota di sgancio",
-    "edit-branch-prefix": "Modifica prefisso ramo",
+    "edit-branch-prefix": "Modifica prefisso ramo...",
     "advanced": "Avanzato",
     "expand-subtree": "Espandi sottoalbero",
     "collapse-subtree": "Comprimi sottoalbero",
     "sort-by": "Ordina per...",
     "recent-changes-in-subtree": "Modifiche recenti nel sottoalbero",
-    "convert-to-attachment": "Converti in allegato",
+    "convert-to-attachment": "Converti in allegato...",
     "copy-note-path-to-clipboard": "Copia il percorso della nota negli appunti",
     "protect-subtree": "Proteggi sottoalbero",
     "unprotect-subtree": "Rimuovi protezione dal sottoalbero",
@@ -424,9 +433,9 @@
     "paste-into": "Incolla in",
     "paste-after": "Incolla dopo",
     "duplicate": "Duplicato",
-    "export": "Esportare",
-    "import-into-note": "Importa nella nota",
-    "apply-bulk-actions": "Applica azioni in blocco",
+    "export": "Esporta...",
+    "import-into-note": "Importa nella nota...",
+    "apply-bulk-actions": "Applica azioni in blocco...",
     "converted-to-attachments_one": "{{count}} nota è stata convertita in allegato.",
     "converted-to-attachments_many": "{{count}} note sono state convertite in allegati.",
     "converted-to-attachments_other": "{{count}} note sono state convertite in allegati.",
@@ -497,7 +506,7 @@
   },
   "search_string": {
     "search_prefix": "Cerca:",
-    "title_column": "Stringa di ricerca:",
+    "title_column": "Stringa di ricerca",
     "placeholder": "Ctrl+Spazio per i suggerimenti, @ per inserire una nota, Maiusc+Invio per iniziare una nuova riga, Invio per effettuare una ricerca",
     "search_syntax": "Sintassi di ricerca",
     "also_see": "vedi anche",
@@ -526,7 +535,7 @@
   },
   "search_definition": {
     "action": "azione",
-    "add_search_option": "Aggiungi opzione di ricerca:",
+    "add_search_option": "Aggiungi opzione di ricerca",
     "include_archived_notes_description": "Per impostazione predefinita, le note archiviate sono escluse dai risultati della ricerca; con questa opzione verranno incluse.",
     "limit_description": "Limita il numero di risultati",
     "search_button": "Ricerca",
@@ -644,7 +653,7 @@
     "show-inbox-column": "Mostra la colonna \"Posta in arrivo\"",
     "show-archived-notes": "Mostra schede/colonne archiviate",
     "show-archived": "Mostra le schede e le colonne archiviate",
-    "properties": "Proprietà della scheda",
+    "properties": "Proprietà della scheda...",
     "properties-title": "Proprietà della scheda",
     "card-templates": "Modelli di biglietti",
     "card-templates-hint": "Scegli quali tipi di note e quali modelli di note desideri utilizzare quando crei nuove schede sulla bacheca.",
@@ -859,7 +868,7 @@
     "title_with_count_one": "{{count}} evidenza",
     "title_with_count_many": "{{count}} evidenze",
     "title_with_count_other": "{{count}} evidenze",
-    "menu_configure": "Configura elenco dei punti salienti...",
+    "menu_configure": "Configura l'elenco dei punti salienti",
     "no_highlights": "Nessun punto saliente trovato."
   },
   "quick-search": {
@@ -1310,7 +1319,7 @@
     "map_type": "Quale mappa delle note viene disegnata: <code>link</code> per le relazioni tra le note, oppure <code>tree</code> per la gerarchia.",
     "map_style": "Lo stile con cui viene disegnata una mappa geografica, scelto tra gli stili raster e vettoriali offerti nelle proprietà della raccolta.",
     "map_dark_style": "Indica a una mappa geografica che lo stile personalizzato specificato in <code>map:style</code> è scuro, in modo che i titoli dei marcatori vengano disegnati in chiaro sopra di esso. Gli stili offerti nelle proprietà della raccolta lo specificano già e non necessitano di tale etichetta.",
-    "map_scale": "Mostra una barra di scala sulla mappa geografica.",
+    "map_scale": "Visualizza una barra di scala sulla mappa geografica oppure dei righelli di coordinate lungo i bordi di una mappa immagine.",
     "map_hide_labels": "Nasconde i titoli delle note accanto ai marcatori su una mappa geografica.",
     "map_cluster": "Raggruppa i marcatori disegnati vicini in un'unica bolla numerata, che si apre quando viene cliccata.",
     "presentation_theme": "Quale tema viene mostrato durante una presentazione.",
@@ -1352,11 +1361,11 @@
     "help_text_body3": "In alternativa, è possibile aggiungere etichette e relazioni utilizzando il pulsante <code>+</code> sul lato destro.",
     "save_attributes": "Salva attributi <enter>",
     "add_a_new_attribute": "Aggiungi un nuovo attributo",
-    "add_new_label": "Aggiungi nuova etichetta <kbd data-command=\"addNewLabel\"></kbd>",
-    "add_new_relation": "Aggiungi nuova relazione <kbd data-command=\"addNewRelation\"></kbd>",
-    "add_new_relation_definition": "Aggiungi una nuova definizione di relazione",
+    "add_new_label": "Aggiungi una nuova etichetta... <kbd data-command=\"addNewLabel\"></kbd>",
+    "add_new_relation": "Aggiungi nuova relazione... <kbd data-command=\"addNewRelation\"></kbd>",
+    "add_new_relation_definition": "Aggiungi una nuova definizione di relazione...",
     "placeholder": "Digitare qui le etichette e le relazioni",
-    "add_new_label_definition": "Aggiungi nuova definizione di etichetta"
+    "add_new_label_definition": "Aggiungi nuova definizione di etichetta..."
   },
   "execute_script": {
     "execute_script": "Esegui script"
@@ -1406,14 +1415,14 @@
   "attachments_actions": {
     "open_externally": "Aperto esternamente",
     "open_externally_title": "Il file verrà aperto in un'applicazione esterna e monitorato per eventuali modifiche. Potrai quindi caricare la versione modificata su Trilium.",
-    "open_custom": "Apri personalizzato",
+    "open_custom": "Apri personalizzato...",
     "open_custom_title": "Il file verrà aperto in un'applicazione esterna e monitorato per eventuali modifiche. Potrai quindi caricare la versione modificata su Trilium.",
     "download": "Scaricamento",
-    "rename_attachment": "Rinomina allegato",
-    "upload_new_revision": "Carica nuova revisione",
+    "rename_attachment": "Rinomina allegato...",
+    "upload_new_revision": "Carica nuova revisione...",
     "copy_link_to_clipboard": "Copia il riferimento negli appunti",
-    "convert_attachment_into_note": "Convertire l'allegato in nota",
-    "delete_attachment": "Elimina allegato",
+    "convert_attachment_into_note": "Convertire l'allegato in nota...",
+    "delete_attachment": "Elimina allegato...",
     "upload_success": "È stata caricata una nuova revisione dell'allegato.",
     "upload_failed": "Caricamento di una nuova revisione dell'allegato non riuscito.",
     "open_externally_detail_page": "L'apertura esterna dell'allegato è disponibile solo dalla pagina dei dettagli. Per prima cosa, fare clic sui dettagli dell'allegato e ripetere l'operazione.",
@@ -1508,16 +1517,16 @@
   "global_menu": {
     "menu": "Menu",
     "options": "Opzioni",
-    "open_new_window": "Apri una nuova finestra",
+    "open_new_window": "Nuova finestra",
     "switch_to_mobile_version": "Passa alla versione mobile",
     "switch_to_desktop_version": "Passa alla versione desktop",
     "zoom": "Zoom",
-    "toggle_fullscreen": "Attiva schermo intero",
+    "toggle_fullscreen": "A schermo intero",
     "zoom_out": "Rimpicciolisci",
-    "reset_zoom_level": "Ripristina livello di zoom",
+    "reset_zoom_level": "Ripristina il livello di zoom",
     "zoom_in": "Ingrandisci",
-    "configure_launchbar": "Configura Launchbar",
-    "show_shared_notes_subtree": "Mostra sottoalbero note condivise",
+    "configure_launchbar": "Configura Launchbar...",
+    "show_shared_notes_subtree": "Note condivise",
     "advanced": "Avanzato",
     "open_dev_tools": "Strumenti di sviluppo aperti",
     "open_sql_console": "Apri la console SQL",
@@ -1557,17 +1566,17 @@
     "move_right": "Spostati a destra"
   },
   "note_actions": {
-    "convert_into_attachment": "Convertire in allegato",
+    "convert_into_attachment": "Convertire in allegato...",
     "re_render_note": "Nota di ri-renderizzazione",
     "search_in_note": "Cerca nella nota",
     "note_source": "Nota fonte",
     "note_attachments": "Allegati di note",
     "open_note_externally": "Apri nota esternamente",
     "open_note_externally_title": "Il file verrà aperto in un'applicazione esterna e monitorato per eventuali modifiche. Potrai quindi caricare la versione modificata su Trilium.",
-    "open_note_custom": "Apri nota personalizzata",
-    "import_files": "Importa file",
-    "export_note": "Nota di esportazione",
-    "delete_note": "Elimina nota",
+    "open_note_custom": "Inizia con...",
+    "import_files": "Importa file...",
+    "export_note": "Esporta note...",
+    "delete_note": "Elimina nota...",
     "save_revision": "Salva la revisione",
     "convert_into_attachment_failed": "Conversione della nota '{{title}}' fallita.",
     "convert_into_attachment_successful": "Nota '{{title}}' è stato convertito in allegato.",
@@ -1588,13 +1597,13 @@
     "word_wrap_off": "Off",
     "save_named_revision": "Salva revisione con nome...",
     "print_or_export_to_pdf": "Stampa/esporta in PDF...",
-    "convert_to_markdown": "Converti in Markdown - Nota",
-    "convert_to_text": "Converti in nota di testo",
+    "convert_to_markdown": "Converti in nota Markdown...",
+    "convert_to_text": "Converti in nota di testo...",
     "convert_format_warning": "Durante la conversione potrebbero andare perse alcune impostazioni di formattazione e potrebbe essere necessario correggere alcuni dettagli in seguito. Verrà salvata in anticipo una versione precedente della nota attuale, in modo da poterla ripristinare. Vuoi continuare?",
     "convert_format_warning_risky": "Stai effettuando una conversione tra due formati che non hanno le stesse funzionalità; pertanto, è possibile che alcune impostazioni di formattazione vadano perse e che alcuni elementi non supportati vengano eliminati.<br><br>Accetti pienamente questo rischio e desideri procedere con la conversione?<br><br>Verrà salvata in anticipo una versione di questa nota, in modo da poter tornare al formato originale.",
     "convert_to_markdown_successful": "La nota è stata convertita in Markdown.",
     "convert_to_text_successful": "La nota è stata convertita in una nota di testo.",
-    "note_attributes": "Attributi delle note"
+    "note_attributes": "Attributi delle note..."
   },
   "onclick_button": {
     "no_click_handler": "Il widget pulsante '{{componentId}}' non ha un gestore di clic definito"
@@ -1692,7 +1701,7 @@
   },
   "image_properties": {
     "copy_reference_to_clipboard": "Copia il riferimento negli appunti",
-    "upload_new_revision": "Carica nuova revisione",
+    "upload_new_revision": "Carica nuova revisione...",
     "upload_success": "È stata caricata una nuova revisione dell'immagine.",
     "upload_failed": "Caricamento di una nuova revisione dell'immagine non riuscito: {{message}}"
   },
@@ -1750,7 +1759,7 @@
     "select_values_placeholder": "Seleziona un'opzione o creane una",
     "values_placeholder": "Digita un valore e premi Invio",
     "add_value": "Aggiungi questo valore",
-    "create_attribute": "Crea un nuovo attributo",
+    "create_attribute": "Crea un nuovo attributo...",
     "edit_attribute": "Modifica questo attributo",
     "delete_attribute": "Elimina questo attributo",
     "delete_confirmation": "Eliminare <strong>{{name}}</strong> e i suoi valori da tutte le note in questa collezione? Quest'operazione non può essere annullata.",
@@ -1795,7 +1804,7 @@
     "desc": "Discendente"
   },
   "search_script": {
-    "title": "Cerca script:",
+    "title": "Cerca script",
     "placeholder": "cerca la nota per nome",
     "description1": "Lo script di ricerca consente di definire i risultati di ricerca eseguendo uno script. Ciò offre la massima flessibilità quando la ricerca standard non è sufficiente.",
     "description2": "Lo script di ricerca deve essere di tipo \"codice\" e sottotipo \"backend JavaScript\". Lo script deve restituire un array di noteId o note.",
@@ -1851,11 +1860,11 @@
     "unprotecting-in-progress-count": "Rimozione della protezione in corso: {{count}}"
   },
   "relation_map": {
-    "remove_note": "Rimuovi nota",
-    "edit_title": "Modifica titolo",
+    "remove_note": "Rimuovi nota...",
+    "edit_title": "Modifica titolo...",
     "rename_note": "Rinomina nota",
     "enter_new_title": "Inserisci il titolo della nuova nota:",
-    "remove_relation": "Rimuovi relazione",
+    "remove_relation": "Rimuovi relazione...",
     "confirm_remove_relation": "Sei sicuro di voler rimuovere la relazione?",
     "specify_new_relation_name": "Specificare il nome della nuova relazione (caratteri consentiti: alfanumerici, due punti e trattino basso):",
     "connection_exists": "La connessione '{{name}}' tra queste note esiste già.",
@@ -1863,7 +1872,7 @@
     "note_not_found": "Nota {{noteId}} non trovata!",
     "note_already_in_diagram": "Nota che \"{{title}}\" è già presente nel diagramma.",
     "default_new_note_title": "nuova nota",
-    "rename_relation": "Rinomina relazione"
+    "rename_relation": "Rinomina relazione..."
   },
   "vacuum_database": {
     "title": "Pulizia del database",
@@ -2414,7 +2423,7 @@
     "add-custom-widget": "Aggiungi un widget personalizzato",
     "add-spacer": "Aggiungi distanziatore",
     "delete": "Elimina <kbd data-command=\"deleteNotes\"></kbd>",
-    "reset": "Reset",
+    "reset": "Reset...",
     "move-to-visible-launchers": "Passa ai launcher visibili",
     "move-to-available-launchers": "Passa ai launcher disponibili",
     "duplicate-launcher": "Duplica il launcher <kbd data-command=\"duplicateSubtree\">"
@@ -2492,7 +2501,7 @@
   "note_language": {
     "not_set": "Nessuna lingua impostata",
     "configure-languages": "Configura le lingue...",
-    "help-on-languages": "Aiuto sulle lingue dei contenuti...",
+    "help-on-languages": "Guida alle lingue dei contenuti",
     "not_set_with_default": "Nessuna lingua impostata — {{- language}}"
   },
   "content_language": {
@@ -2522,7 +2531,7 @@
     "hide-weekends": "Nascondi i fine settimana",
     "display-week-numbers": "Visualizza i numeri delle settimane",
     "map-style": "Stile mappa",
-    "max-nesting-depth": "Profondità massima di nidificazione:",
+    "max-nesting-depth": "Profondità massima di nidificazione",
     "raster": "Trama",
     "vector_light": "Vettore (Luce)",
     "vector_dark": "Vettore (scuro)",
@@ -2535,7 +2544,7 @@
     "vector_auto": "Vector (Auto)"
   },
   "table_context_menu": {
-    "delete_row": "Elimina riga",
+    "delete_row": "Elimina riga...",
     "insert_rows_above": "Inserisci la riga sopra",
     "insert_rows_below": "Inserire la riga sottostante",
     "insert_columns_left": "Inserire la colonna a sinistra",
@@ -2952,7 +2961,7 @@
     "stop": "Stop",
     "edit_index": "Modifica {{index}} di {{total}}",
     "retry": "Riprova",
-    "web_search_unavailable_gemini": "Non disponibile sui modelli Gemini quando l'accesso alle note è attivo: l'API di Google non consente di combinare entrambe le funzioni. Disattiva l'accesso alle note o passa a un altro provider per utilizzare la ricerca sul web.",
+    "web_search_unavailable_gemini": "Gemini non è in grado di combinare la ricerca integrata con l'accesso alle note. Disattiva l'accesso alle note oppure scegli un motore di ricerca alternativo.",
     "attach_file": "Allega un'immagine, un PDF o un file di testo",
     "remove_attachment": "Rimuovi allegato",
     "attachment_upload_failed": "Caricamento non riuscito \"{{name}}\".",
@@ -2984,7 +2993,7 @@
     "save_as_note": "Salva come nota",
     "save_note_failed": "Impossibile creare una nota dal messaggio.",
     "regenerate": "Rigenerare",
-    "delete_message": "Elimina messaggio",
+    "delete_message": "Elimina messaggio...",
     "delete_message_confirm": "Eliminare questo messaggio? Questa operazione non può essere annullata.",
     "reasoning_effort_title": "Sforzo di ragionamento: {{level}}",
     "reasoning_effort_levels": {
@@ -3057,10 +3066,10 @@
     "no_chats": "Nessuna conversazione precedente",
     "view_all_chats": "Visualizza tutte le chat",
     "more_actions": "Altre azioni",
-    "rename": "Rinominare",
+    "rename": "Rinomina...",
     "rename_title": "Rinomina la chat",
     "rename_message": "Inserisci un nuovo nome per questa chat:",
-    "delete": "Eliminare",
+    "delete": "Elimina...",
     "delete_chat": "Elimina la chat",
     "delete_confirm": "Eliminare questa chat? Questa operazione è irreversibile."
   },
@@ -3351,7 +3360,7 @@
   },
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "Rimuovi dalla barra di avvio",
-    "configure_launch_bar": "Configura la barra di avvio",
+    "configure_launch_bar": "Configura la barra di avvio...",
     "launch_bar_orientation": "Orientamento della barra di avvio"
   },
   "link": {
@@ -3701,7 +3710,7 @@
   },
   "dashboard_view": {
     "refresh-widget": "Aggiorna",
-    "remove-widget": "Rimuovi dalla dashboard",
+    "remove-widget": "Rimuovi dalla dashboard...",
     "empty-hint": "Ogni nota secondaria diventa un widget. Trascina qui una nota dall'albero o creane una nuova."
   },
   "file_upload": {
@@ -3781,7 +3790,7 @@
     "revision_name_placeholder": "Nome della revisione (facoltativo)"
   },
   "convert_note": {
-    "convert_note": "Converti",
+    "convert_note": "Converti nota",
     "choose_conversion": "(scegli una conversione)",
     "conversion_htmlToMarkdown": "Note di testo → Note Markdown (con perdita di dati)",
     "conversion_markdownToHtml": "Note in Markdown → Note di testo",
@@ -3817,7 +3826,7 @@
     "inheritable": "Ereditabile: si applica a questa nota e a tutto il suo sottoalbero",
     "delete": "Elimina questo attributo",
     "delete_confirm": "Eliminare l'attributo \"{{name}}\"?",
-    "add_definition": "Aggiungi una nuova definizione",
+    "add_definition": "Aggiungi definizione",
     "no_target": "Nessuna nota di destinazione",
     "no_value": "Nessun valore",
     "change_target": "Modifica la nota di destinazione",
