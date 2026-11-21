@@ -21,6 +21,9 @@ export const CLASSES = {
 /** Custom property that marks the editing-view widget element of a tabs block. */
 export const TABS_WIDGET_PROPERTY = "tabsWidget";
 
+/** DOM event that bubbles from the element of a tabs block when another tab becomes active. */
+export const TAB_CHANGE_EVENT = "trilium-tab-change";
+
 /** Model attribute with the side of the panels that the titles of a tabs block sit on. */
 export const ALIGNMENT_ATTRIBUTE = "tabAlignment";
 export const ALIGNMENT_DATA_ATTRIBUTE = "data-trilium-tab-alignment";

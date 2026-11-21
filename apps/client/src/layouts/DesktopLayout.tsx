@@ -22,6 +22,7 @@ import { placeCustomWidgets, useCustomWidgets, useLoadCustomWidgets } from "../w
 import { useLegacyWidget } from "../widgets/react/hooks/legacy.js";
 import { useTriliumOption } from "../widgets/react/hooks/options.js";
 import { useNoteContext } from "../widgets/react/hooks/note_context.js";
+import ScrollRail from "../widgets/scroll_rail.js";
 import RightPanelContainer from "../widgets/sidebar/RightPanelContainer.js";
 import TabRowWidget from "../widgets/tab_row.js";
 import TabHistoryNavigationButtons from "../widgets/TabHistoryNavigationButtons.js";
@@ -90,9 +91,13 @@ export default function DesktopLayout() {
     );
 }
 
-/** A split's actions end its title row, after a spacer, and its custom widgets go among its parts. */
+/**
+ * A split's actions end its title row, after a spacer, its scroll rail starts the scroller, and its
+ * custom widgets go among its parts.
+ */
 const NOTE_SPLIT_PARTS: NoteSplitParts = {
     titleRowEnd: () => [ <SpacerWidget baseSize={0} growthFactor={1} />, <NoteActions /> ],
+    scrollerStart: () => [ <ScrollRail /> ],
     between: (gap, builtInCount, split) => [
         <CustomWidgets key={gap} parent="note-detail-pane" slot={split} gap={gap} builtInCount={builtInCount} keepsRoot />
     ]

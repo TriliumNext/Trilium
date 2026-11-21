@@ -17,6 +17,7 @@ vi.mock("@replit/codemirror-vim", async (importOriginal) => {
 });
 
 import { hostedCompletion } from "./extensions/hosted_completion.js";
+import { SearchHighlighter } from "./find_replace.js";
 import CodeMirror, {
     type EditorConfig, getThemeById, type HostHistory, SCRIPT_MIME_BACKEND, SharedHistory
 } from "./index.js";
@@ -908,6 +909,31 @@ describe("CodeMirror", () => {
             editor.clearActiveMatch();
             expect(editor.contentDOM.querySelectorAll(".cm-activeMatch")).toHaveLength(0);
             expect(editor.contentDOM.querySelectorAll(".cm-searchMatch")).toHaveLength(2);
+        });
+
+        it("paints no search whose check fails after its frame; keeps a newer one", async () => {
+            editor = build();
+            editor.setText("foo bar foo");
+            await editor.performFind("foo", false, false);
+            const searchFor = vi.spyOn(SearchHighlighter.prototype, "searchFor");
+
+            let isWanted = true;
+            const overtaken = editor.performFind("bar", false, false, true, () => isWanted);
+            isWanted = false;
+            expect(await overtaken).toEqual({ totalFound: 0, currentFound: 0 });
+            expect(searchFor).not.toHaveBeenCalled();
+            expect(editor.contentDOM.querySelectorAll(".cm-searchMatch")).toHaveLength(0);
+            expect(editor.getSearchMatches()).toEqual([]);
+
+            // A newer search, installed during the frame, keeps its highlighter.
+            isWanted = true;
+            const older = editor.performFind("foo", false, false, true, () => isWanted);
+            const newer = editor.performFind("bar", false, false);
+            isWanted = false;
+            expect(await older).toEqual({ totalFound: 0, currentFound: 0 });
+            expect((await newer).totalFound).toBe(1);
+            expect(editor.contentDOM.querySelectorAll(".cm-searchMatch")).toHaveLength(1);
+            expect(editor.getSearchMatches()).toEqual([ { from: 4, to: 7 } ]);
         });
 
         it("does nothing when cleaning a search that never ran", () => {

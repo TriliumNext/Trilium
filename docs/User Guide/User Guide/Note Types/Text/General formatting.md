@@ -33,8 +33,6 @@ Avoid using this feature just to simply make all text bigger. In that case it's 
 
 ## Bold, italic, underline, strike-through
 
-<figure class="image image-style-align-right"><img style="aspect-ratio:215/71;" src="3_General formatting_image.png" width="215" height="71"></figure>
-
 Text can be formatted as **Bold,** _Italic,_ Underline or ~~Strike-through~~ via the dedicated buttons (<span class="tn-icon cke cke-bold"></span>, <span class="tn-icon cke cke-italic"></span>, <span class="tn-icon cke cke-underline"></span>, <span class="tn-icon cke cke-strikethrough"></span>) in the formatting toolbar.
 
 This formatting can be easily removed using the _Remove formatting_ (<span class="tn-icon cke cke-remove-format"></span>) item.

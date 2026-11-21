@@ -1,0 +1,22 @@
+{
+  "name": "showcase",
+  "version": "1.0.0",
+  "description": "Build the store listings and the website's hero and screenshots from a demo document",
+  "private": true,
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "scripts": {
+    "start": "node src/main.ts",
+    "play": "node src/main.ts play",
+    "flathub": "node src/main.ts flathub flathub-preview",
+    "hero": "node src/main.ts hero",
+    "website": "node src/main.ts website",
+    "user-guide": "node src/main.ts user-guide"
+  },
+  "devDependencies": {
+    "@types/pngjs": "6.0.5",
+    "pixelmatch": "7.1.0",
+    "playwright": "1.65.1",
+    "pngjs": "7.0.0"
+  }
+}

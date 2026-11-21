@@ -1,8 +1,28 @@
-import { _setModelData as setModelData, ClassicEditor, Essentials, Heading, Paragraph, type DifferItemAttribute } from "ckeditor5";
+import { _setModelData as setModelData, Bold, ClassicEditor, Essentials, Heading, Paragraph, type DifferItemAttribute } from "ckeditor5";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { createTestEditor } from "../test/editor-kit.js";
-import { attributeChangeAffectsHeading, escapeHtml } from "./utils.js";
+import { attributeChangeAffectsHeading, escapeHtml, isRedrawOnly } from "./utils.js";
+
+describe("isRedrawOnly", () => {
+    it("tells an element drawn again from a change of the model", async () => {
+        const editor = await createTestEditor([ Essentials, Paragraph, Bold ]);
+        setModelData(editor.model, "<paragraph>one</paragraph>");
+        const document = editor.model.document;
+        const paragraph = document.getRoot()?.getChild(0);
+        if (!paragraph?.is("element")) throw new Error("No paragraph");
+        const results: boolean[] = [];
+        document.on("change:data", () => results.push(isRedrawOnly(document)));
+
+        editor.editing.reconvertItem(paragraph);
+        editor.model.change((writer) => writer.insertText("x", paragraph, 0));
+        editor.model.change((writer) =>
+            writer.setAttribute("bold", true, writer.createRangeIn(paragraph)));
+
+        expect(results).toStrictEqual([ true, false, false ]);
+        expect(isRedrawOnly(document)).toBe(false);
+    });
+});
 
 describe("escapeHtml", () => {
     it("returns the string unchanged when there are no special characters", () => {

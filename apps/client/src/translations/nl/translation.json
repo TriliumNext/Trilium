@@ -26,10 +26,10 @@
   "toast": {
     "critical-error": {
       "title": "Kritieke fout",
-      "message": "Een kritieke fout heeft plaatsgevonden waardoor de applicatie niet kon opstarten:\n\n{{message}}\n\nDit is waarschijnlijk veroorzaakt door een onverwachte fout in een script. Probeer de applicatie op te starten in veilige modus en het probleem op te lossen."
+      "message": "Een kritieke fout heeft plaatsgevonden waardoor het programma niet kon starten:\n\n{{message}}\n\nDit is waarschijnlijk veroorzaakt door een onverwachte fout in een script. Probeer de applicatie op te starten in veilige modus en het probleem op te lossen."
     },
     "widget-error": {
-      "title": "Starten widget mislukt",
+      "title": "Het starten van de widget is mislukt",
       "message-unknown": "Onbekende widget kan niet gestart worden omdat:\n\n{{message}}",
       "message-custom": "Aangepaste widget van notitie met ID \"{{id}}\", getiteld \"{{title}}\" kon niet worden geïnitialiseerd vanwege:\n\n{{message}}"
     },
@@ -59,9 +59,39 @@
     "note": "Notitie",
     "search_note": "zoek notitie op naam",
     "link_title": "Link titel",
-    "button_add_link": "Link toevoegen",
+    "button_add_link": "Link invoegen",
     "edit_link": "Wijzig link",
-    "button_edit_link": "Link opslaan"
+    "button_edit_link": "Link opslaan",
+    "fix_link": "Corrigeer link",
+    "button_fix_link": "Corrigeer link",
+    "web_link": "Web pagina",
+    "url": "Adres (URL)",
+    "invalid_url": "Dit is geen geldige URL.",
+    "script_link_not_allowed": "Links die beginnen met {{scheme}} kunnen code uitvoeren, en zijn daarom niet toegestaan.",
+    "display_as": "Weergeven als",
+    "display_plain": "Tekst",
+    "display_inline": "Icoon & tekst",
+    "display_card": "Kaart",
+    "page_title": "Titel van de web pagina",
+    "title_from_url": "Hetzelfde als de URL",
+    "title_from_note": "Indien niet ingesteld, wordt altijd de titel van de notitie gebruikt",
+    "description": "Beschrijving",
+    "page_description": "Beschrijving van de web pagina",
+    "display_embed": "Insluiten",
+    "anchors": "Kop / anker",
+    "target_anchor": "Ankers",
+    "headings": "Koppen",
+    "no_headings_or_anchors": "Deze notitie bevat geen koppen of ankers.",
+    "title_from_heading": "Indien niet ingesteld, wordt altijd de tekst van de kop weergegeven",
+    "retrieving_from_page": "Bezig met gegevens ophalen van de webpagina...",
+    "title_from_attachment": "Indien niet ingesteld, wordt altijd de titel van de bijlage weergegeven",
+    "top_of_note": "Link naar de notitie (standaard)",
+    "select_note_for_targets": "Selecteer een notitie om de koppen en ankers weer te geven waarnaar je kunt linken.",
+    "inspecting_note": "Notitiestructuur inspecteren",
+    "heading_reference_failed": "Kan geen verwijzing maken naar de opgegeven kop",
+    "link_to_heading": "Link naar een kop",
+    "link_to_anchor": "Link naar een anker",
+    "no_link_targets": "Er zijn geen koppen of ankers beschikbaar om naar te linken."
   },
   "branch_prefix": {
     "edit_branch_prefix": "Bewerk branch prefix",
@@ -79,10 +109,10 @@
   "bulk_actions": {
     "bulk_actions": "Bulk acties",
     "chosen_actions": "Gekozen acties",
-    "execute_bulk_actions_one": "Bulk acties uitvoeren",
-    "execute_bulk_actions_other": "",
+    "execute_bulk_actions_one": "Toepassen op {{count}} notitie",
+    "execute_bulk_actions_other": "Toepassen op {{count}} notities",
     "bulk_actions_executed": "Bulk acties zijn succesvol uitgevoerd.",
-    "none_yet": "Nog niks... voeg een actie toe door op een van de beschikbare bovenstaande opties te klikken.",
+    "none_yet": "Nog geen acties. Gebruik 'Actie toevoegen' hieronder om er een te kiezen.",
     "labels": "Labels",
     "relations": "Relaties",
     "notes": "Notities",
@@ -177,7 +207,7 @@
   "export": {
     "export_note_title": "Notitie exporteren",
     "close": "Sluiten",
-    "export_type_subtree": "Deze notitie en al haar afstammelingen",
+    "export_type_subtree": "Deze notitie & alles daaronder",
     "what_to_export": "Wat moet er geëxporteerd worden",
     "export_type_single": "Alleen deze notitie",
     "format": "Formaat",

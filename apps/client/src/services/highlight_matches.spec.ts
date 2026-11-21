@@ -1,12 +1,16 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { findTermRanges, getMatchText } from "./highlight_matches";
+import { highlightedRanges } from "../test/highlights";
+import { stubBox } from "../test/layout_stubs";
+import { findTermRanges, getMatchText, WindowedHighlight } from "./highlight_matches";
 
 const JOINED = { joinTextNodes: true };
 const JOINED_WITHOUT_MATH = { joinTextNodes: true, exclude: [ ".math-tex" ] };
 
 afterEach(() => {
     document.body.replaceChildren();
+    vi.unstubAllGlobals();
+    CSS.highlights.clear();
 });
 
 describe("findTermRanges with joinTextNodes", () => {
@@ -91,6 +95,57 @@ describe("getMatchText", () => {
     });
 });
 
+describe("WindowedHighlight", () => {
+    it("draws the blocks within one view of the visible part, then follows the observer", () => {
+        const observers = stubIntersectionObserver();
+        const scroller = createRoot("");
+        scroller.style.overflowY = "auto";
+        stubBox(scroller, { top: 0, height: 400 });
+        const root = scroller.appendChild(document.createElement("div"));
+        root.innerHTML = "<p>match match</p><p>match</p><p>match <b>match</b></p>";
+        const [ near, edge, far ] = root.querySelectorAll("p");
+        stubBox(near, { top: 100, height: 20 });
+        stubBox(edge, { top: 790, height: 20 });
+        stubBox(far, { top: 1300, height: 20 });
+        const highlight = new WindowedHighlight("find-result", root);
+
+        highlight.add(findTermRanges(root, [ "match" ]));
+        const [ observer ] = observers;
+        expect(observer.options).toEqual({ root: scroller, rootMargin: "100% 0px" });
+        expect(observer.observed).toEqual([ near, edge, far ]);
+        expect(drawnBlocks(root)).toEqual([ near, near, edge ]);
+
+        // A block with no box keeps its state.
+        observer.report([
+            { target: far, isIntersecting: true },
+            { target: near, isIntersecting: false },
+            { target: edge, isIntersecting: false, size: 0 }
+        ]);
+        expect(drawnBlocks(root)).toEqual([ edge, far, far ]);
+
+        // Ranges added to a drawn block draw at once, others wait for their block.
+        highlight.add([ near, far ].flatMap((block) => findTermRanges(block, [ "match" ])));
+        expect(drawnBlocks(root)).toEqual([ edge, far, far, far, far ]);
+
+        highlight.clear();
+        expect(drawnBlocks(root)).toEqual([]);
+        expect(observer.disconnect).toHaveBeenCalled();
+        observer.report([ { target: near, isIntersecting: true } ]);
+        expect(drawnBlocks(root)).toEqual([]);
+    });
+
+    it("draws every range where the browser has no IntersectionObserver", () => {
+        vi.stubGlobal("IntersectionObserver", undefined);
+        const root = createRoot("<p>match</p><p>match</p>");
+        const [ , far ] = root.querySelectorAll("p");
+        stubBox(far, { top: 5000, height: 20 });
+
+        new WindowedHighlight("find-result", root).add(findTermRanges(root, [ "match" ]));
+
+        expect(drawnBlocks(root)).toHaveLength(2);
+    });
+});
+
 function createRoot(html: string) {
     const root = document.createElement("div");
     root.innerHTML = html;
@@ -105,4 +160,51 @@ function getTexts(root: HTMLElement) {
         texts.push(walker.currentNode as Text);
     }
     return texts;
+}
+
+/** The paragraph of each range of the `find-result` highlight under `root`, in drawing order. */
+function drawnBlocks(root: HTMLElement) {
+    return highlightedRanges("find-result", root)
+        .map((range) => range.startContainer.parentElement?.closest("p"));
+}
+
+interface ReportedEntry {
+    target: Element;
+    isIntersecting: boolean;
+    /** The width and height of the target's box. */
+    size?: number;
+}
+
+/** Replaces `IntersectionObserver` with observers that report only when a spec tells them to. */
+function stubIntersectionObserver() {
+    const observers: FakeIntersectionObserver[] = [];
+
+    class FakeIntersectionObserver {
+
+        readonly observed: Element[] = [];
+        readonly disconnect = vi.fn();
+
+        constructor(
+            private readonly callback: IntersectionObserverCallback,
+            readonly options?: IntersectionObserverInit
+        ) {
+            observers.push(this);
+        }
+
+        observe(target: Element) {
+            this.observed.push(target);
+        }
+
+        report(entries: ReportedEntry[]) {
+            this.callback(entries.map(({ target, isIntersecting, size = 20 }) => ({
+                target,
+                isIntersecting,
+                boundingClientRect: { width: size, height: size }
+            }) as unknown as IntersectionObserverEntry), this as unknown as IntersectionObserver);
+        }
+
+    }
+
+    vi.stubGlobal("IntersectionObserver", FakeIntersectionObserver);
+    return observers;
 }

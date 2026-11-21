@@ -20,7 +20,7 @@ import FindReveal from "../find_reveal.js";
 import { markFocusedContainers } from "../widget_utils.js";
 import {
     ALIGNMENT_ATTRIBUTE, ALIGNMENT_DATA_ATTRIBUTE, CLASSES, DEFAULT_TAB_ALIGNMENT, ELEMENTS,
-    parseTabAlignment, TABS_WIDGET_PROPERTY
+    parseTabAlignment, TAB_CHANGE_EVENT, TABS_WIDGET_PROPERTY
 } from "./constants.js";
 import {
     AssignTabReferenceCommand, DeleteTabsCommand, InsertTabCommand, InsertTabsCommand,
@@ -51,6 +51,9 @@ export default class TabsEditing extends Plugin {
     /** The tab whose title each tabs block last scrolled into view, keyed by the `tabs` element. */
     private readonly revealedTabs = new WeakMap<ModelElement, RevealedTab>();
 
+    /** The view elements of the tabs blocks whose active tab changed since the last render. */
+    private readonly changedBlocks = new Set<ViewElement>();
+
     public init(): void {
         const editor = this.editor;
         editor.commands.add("tabs", new InsertTabsCommand(editor));
@@ -68,6 +71,7 @@ export default class TabsEditing extends Plugin {
         this.registerConversion();
         this.registerPostFixer();
         this.registerActiveTabTracking();
+        this.registerTabChangeEvents();
         markFocusedContainers(editor, CLASSES.focusedTabs,
             element => element.hasClass(CLASSES.tabs), { isInnermostOnly: true });
         this.registerEnterInTitle();
@@ -331,6 +335,24 @@ export default class TabsEditing extends Plugin {
         }, { priority: "lowest" });
     }
 
+    /**
+     * Fires {@link TAB_CHANGE_EVENT} on the DOM element of each tabs block whose active tab
+     * changed, once the view has rendered the change.
+     */
+    private registerTabChangeEvents() {
+        const view = this.editor.editing.view;
+        // At low priority, after the view has written the DOM.
+        this.listenTo(view, "render", () => {
+            // Cleared before dispatching, since a listener can render the view again.
+            const blocks = [ ...this.changedBlocks ];
+            this.changedBlocks.clear();
+            for (const tabs of blocks) {
+                const domTabs = view.domConverter.mapViewToDom(tabs);
+                domTabs?.dispatchEvent(new Event(TAB_CHANGE_EVENT, { bubbles: true }));
+            }
+        }, { priority: "low" });
+    }
+
     /** Shows the tab that holds the match the find shows, without moving the caret. */
     private registerFindReveal() {
         const findReveal = this.editor.plugins.get(FindReveal);
@@ -351,7 +373,8 @@ export default class TabsEditing extends Plugin {
 
     /**
      * Marks the active tab of each of `blocks`. Scrolls its title into view when another tab
-     * became active or the active tab moved.
+     * became active or the active tab moved. Queues {@link TAB_CHANGE_EVENT} for the next render
+     * when another tab became active.
      */
     private updateActiveClasses(blocks: Set<ModelElement>) {
         const editing = this.editor.editing;
@@ -381,6 +404,10 @@ export default class TabsEditing extends Plugin {
                     if (tab !== shown.tab || tab.index !== shown.index) {
                         titleBar.revealTitleAfterRender(title);
                         this.revealedTabs.set(tabs, { tab, index: tab.index });
+                    }
+                    const viewTabs = editing.mapper.toViewElement(tabs);
+                    if (tab !== shown.tab && viewTabs) {
+                        this.changedBlocks.add(viewTabs);
                     }
                 }
             }

@@ -20,6 +20,7 @@ import KeepBalloonPositions from "./plugins/keep_balloon_positions.js";
 import InlineFillerSpellcheck from "./plugins/inline_filler_spellcheck.js";
 import InlineWidgetCaret from "./plugins/inline_widget_caret.js";
 import KeepViewMappings from "./plugins/keep_view_mappings.js";
+import KeepDragSelection from "./plugins/keep_drag_selection.js";
 import DropDisallowedAttributes from "./plugins/drop_disallowed_attributes.js";
 import RemoveFormatLinksPlugin from "./plugins/remove_format_links.js";
 import IndentBlockShortcutPlugin from "./plugins/indent_block_shortcut.js";
@@ -230,6 +231,7 @@ export const CORE_PLUGINS: typeof Plugin[] = [
     InlineFillerSpellcheck,
     InlineWidgetCaret,
     KeepViewMappings,
+    KeepDragSelection,
     DropDisallowedAttributes,
     DragOutOfEditor,
     HiddenEditorBalloons,

@@ -33,6 +33,19 @@ export function init<T>(callback: () => T): T {
     return getContext().init(callback);
 }
 
+/**
+ * Runs `callback` in a context of its own that names no client component. A request names the
+ * component that sent it, and a client takes changes that name its own component for its own
+ * saves. A change that a request leaves to run later, such as a rewrite of note content after a
+ * download, runs here, so the editor that sent the request loads it.
+ */
+export function initWithoutComponent<T>(callback: () => T): T {
+    return getContext().init(() => {
+        getContext().set("componentId", undefined);
+        return callback();
+    });
+}
+
 export function get<T = any>(key: string): T | undefined {
     return getContext().get<T>(key);
 }

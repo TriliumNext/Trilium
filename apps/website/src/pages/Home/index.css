@@ -111,9 +111,116 @@ section.hero-section {
 
     .screenshot {
         position: relative;
-        width: 100%;
-        height: auto;
         margin-bottom: 0;
+        overflow: hidden;
+
+        iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            border: 0;
+            transform-origin: top left;
+            transform: scale(var(--hero-scale));
+        }
+
+        iframe {
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        &.scaled iframe {
+            opacity: 1;
+        }
+    }
+
+    /* The aspect ratios match `HERO.variants` in apps/showcase/src/shared/scenes.ts. */
+    .screenshot.desktop {
+        width: 100%;
+        aspect-ratio: 1360 / 920;
+        border-radius: 12px;
+        box-shadow:
+            0 0 0 1px rgb(0 0 0 / 16%),
+            0 2px 6px rgb(0 0 0 / 8%),
+            0 16px 48px rgb(0 0 0 / 18%);
+
+        @media (prefers-color-scheme: dark) {
+            box-shadow:
+                0 0 0 1px rgb(255 255 255 / 16%),
+                0 4px 8px rgb(0 0 0 / 16%),
+                0 12px 24px rgb(0 0 0 / 14%),
+                0 24px 40px rgb(0 0 0 / 12%);
+        }
+    }
+
+    .hero-phone {
+        box-sizing: border-box;
+        padding: 7px;
+        border-radius: 36px;
+        background: #0e0e0e;
+        box-shadow:
+            inset 0 0 0 1px rgb(255 255 255 / 14%),
+            0 0 0 1px rgb(0 0 0 / 25%),
+            0 1px 2px rgb(0 0 0 / 18%),
+            0 4px 8px rgb(0 0 0 / 14%),
+            0 10px 18px rgb(0 0 0 / 12%),
+            0 20px 32px rgb(0 0 0 / 10%),
+            0 32px 48px rgb(0 0 0 / 8%);
+
+        .screenshot {
+            width: 100%;
+            aspect-ratio: 360 / 760;
+            border-radius: 29px;
+        }
+    }
+
+    /* Laid out at the frame's size rather than scaled with a transform, so the icons rasterize
+       at the display's resolution. One em is 14px of the 360px wide snapshot; the insets match its
+       safe area: 32px at the top, 20px at the bottom. */
+    .phone-chrome {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        color: #111;
+        font: 600 calc(14px * var(--hero-scale, 1))/1 system-ui, sans-serif;
+
+        @media (prefers-color-scheme: dark) {
+            color: #f2f2f2;
+        }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: calc(32em / 14);
+            padding: calc(2em / 14) calc(24em / 14) 0;
+            box-sizing: border-box;
+        }
+
+        .status-icons {
+            display: flex;
+            align-items: center;
+            gap: calc(6em / 14);
+
+            svg {
+                height: calc(12em / 14);
+                fill: currentColor;
+            }
+
+            rect:not([stroke]) {
+                shape-rendering: crispEdges;
+            }
+        }
+
+        .home-indicator {
+            position: absolute;
+            bottom: calc(8em / 14);
+            left: 50%;
+            width: calc(120em / 14);
+            height: calc(4em / 14);
+            border-radius: calc(2em / 14);
+            background: currentColor;
+            transform: translateX(-50%);
+        }
     }
 
     .download-wrapper {
@@ -194,42 +301,32 @@ section.hero-section {
             max-width: 90%;
         }
 
-        .screenshot {
-            margin-top: 2em;
+        .screenshot-container {
+            align-self: stretch;
+        }
+
+        .screenshot.desktop {
+            display: none;
+        }
+
+        .hero-phone {
+            width: min(100%, 290px);
+            margin: 2em auto 0;
         }
     }
 }
 
 @media (min-width: 720px) {
     section.hero-section {
-        /* Clip the screenshot where it bleeds past the right edge of the viewport */
         overflow: hidden;
-
-        /* Occupy exactly one viewport below the sticky header. Without this the
-           bleeding screenshot can push the row slightly taller than the screen. */
-        height: calc(100vh - var(--header-height));
-        box-sizing: border-box;
-        display: flex;
-        align-items: stretch;
     }
 
-    /* Text column on the left (title + tagline stacked, centered as a group between
-       two flexible spacer rows); the empty 1fr column reserves the right side for
-       the screenshot, which is layered over it as a full-height absolute element so
-       it fills the hero without dictating the grid's row heights. */
     section.hero-section > .content-wrapper {
-        position: relative;
         display: grid;
         grid-template-columns: minmax(0, 40%) 1fr;
         grid-template-rows: 1fr auto auto 1fr;
-        /* Fill the hero's height. margin-block:0 overrides the base `margin:auto`,
-           whose vertical auto-margins would otherwise center (and shrink) the
-           wrapper instead of letting height:100% fill the section. */
-        height: 100%;
-        margin-block: 0;
-        /* Slim top padding so the screenshot reaches up near the header instead
-           of leaving an empty band above it. */
-        padding: 0.75em 3em 1.5em;
+        column-gap: 3em;
+        padding: 3em 3em;
     }
 
     section.hero-section .title-section {
@@ -248,31 +345,44 @@ section.hero-section {
         justify-content: flex-start;
     }
 
-    /* Deep screenshot: full-height on the right, anchored to the top and run off
-       the right edge of the viewport for an immersive, "spilling off the page"
-       look. Absolutely positioned so its intrinsic size can't inflate the grid. */
     section.hero-section .screenshot-container {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        /* Start where grid column 2 begins. The +3em compensates for the left
-           padding and column gap so the image clears the text column at every
-           width (the absolute % is of the padding box, the grid % of the content
-           box). */
-        left: calc(40% + 3em);
-        right: calc(50% - 50vw - 8em);
+        grid-column: 2;
+        grid-row: 1 / -1;
+        align-self: center;
+        /* Run to 2em from the right edge of the viewport. The wrapper is as wide as
+           `.content-wrapper` in style.css and its `min-width` above make it. */
+        margin-right: calc((max(80vw, min(1200px, 90vw)) - 100vw) / 2 - 1em);
         display: flex;
-        align-items: flex-start;
-        overflow: hidden;
+        justify-content: center;
+        container-type: inline-size;
     }
 
-    section.hero-section .screenshot {
-        height: 100%;
+    /* The desktop's height, as large as lets the desktop and the phone, which is 0.8 of it
+       tall and about 0.38 of it wide, fit the column side by side. */
+    section.hero-section .screenshot-container > * {
+        --hero-height: min(680px, (100cqw + 2.5em) / (1360 / 920 + 0.38));
+    }
+
+    section.hero-section .screenshot.desktop {
+        flex-shrink: 0;
+        height: var(--hero-height);
         width: auto;
         max-width: none;
-        min-width: 62vw;
-        object-fit: cover;
-        object-position: left top;
+    }
+
+    /* The phone overlaps the desktop's right edge, its bottom 0.06 of the desktop's height
+       below the desktop's. */
+    section.hero-section .hero-phone {
+        position: relative;
+        flex-shrink: 0;
+        height: calc(var(--hero-height) * 0.8 - 14px);
+        margin: calc(var(--hero-height) * 0.32) 0 0 -2.5em;
+        box-sizing: content-box;
+        aspect-ratio: 360 / 760;
+
+        @media (prefers-reduced-motion: no-preference) {
+            animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both;
+        }
     }
 
     section.hero-section .download-wrapper {
