@@ -340,11 +340,11 @@ importers:
         specifier: 1.0.8
         version: 1.0.8
       terra-draw:
-        specifier: 1.39.0
-        version: 1.39.0
+        specifier: 1.40.0
+        version: 1.40.0
       terra-draw-maplibre-gl-adapter:
         specifier: 1.5.0
-        version: 1.5.0(maplibre-gl@6.19.0(react@18.3.1)(use-sync-external-store@1.7.0(react@18.3.1)))(terra-draw@1.39.0)
+        version: 1.5.0(maplibre-gl@6.19.0(react@18.3.1)(use-sync-external-store@1.7.0(react@18.3.1)))(terra-draw@1.40.0)
     devDependencies:
       '@ckeditor/ckeditor5-inspector':
         specifier: 5.0.4
@@ -10686,8 +10686,8 @@ packages:
       maplibre-gl: '>=4'
       terra-draw: ^1.0.0
 
-  terra-draw@1.39.0:
-    resolution: {integrity: sha512-W9myUqAlxTQYydNM6cI1kmaU3/i9IlNUfzbfjr7sZVfE5YrJ1ogEpMTKKXdlXdON7tB/nMd3sPL26u7CAzCxKA==}
+  terra-draw@1.40.0:
+    resolution: {integrity: sha512-HMq/Eo0pU5nAm+KqKYYCoTChenh5PWXOFguIwIM1+w6jy7+smBElC3a7NRRqLGBb9oq/zOVZYypFUMui+JeqIA==}
 
   terser@5.51.2:
     resolution: {integrity: sha512-bWnjSNscmuI+GJze6ZupnHP8G/cTcsJF+bXCeQknk2SHQsgbNJnLrqiH9jZ2W4STPVXH2mDKKRX3iwPhc9Cn/Q==}
@@ -22904,12 +22904,12 @@ snapshots:
 
   terminal-size@4.0.1: {}
 
-  terra-draw-maplibre-gl-adapter@1.5.0(maplibre-gl@6.19.0(react@18.3.1)(use-sync-external-store@1.7.0(react@18.3.1)))(terra-draw@1.39.0):
+  terra-draw-maplibre-gl-adapter@1.5.0(maplibre-gl@6.19.0(react@18.3.1)(use-sync-external-store@1.7.0(react@18.3.1)))(terra-draw@1.40.0):
     dependencies:
       maplibre-gl: 6.19.0(react@18.3.1)(use-sync-external-store@1.7.0(react@18.3.1))
-      terra-draw: 1.39.0
+      terra-draw: 1.40.0
 
-  terra-draw@1.39.0: {}
+  terra-draw@1.40.0: {}
 
   terser@5.51.2:
     dependencies:
