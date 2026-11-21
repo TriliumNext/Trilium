@@ -4,18 +4,20 @@
  * phone and tablet screenshots of the demo document, and a preview page of the whole listing, then
  * checks them against the store's size and length limits and fails when one is not met. The
  * `flathub` target captures the desktop app's window for the Flathub listing instead, inside a
- * headless GNOME Shell.
+ * headless GNOME Shell, and `flathub-preview` mocks the Flathub app page from those screenshots
+ * and the metainfo, with Flathub's quality checks.
  *
  * Usage:
  *   pnpm --filter @triliumnext/mobile store-assets [icon] [feature] [screenshots] [preview]
- *       [flathub]
+ *       [flathub] [flathub-preview]
  *       [--only tree,text] [--devices phone,tablet] [--url http://localhost:8080] [--port 37991]
  *
- * With no target it builds everything but `flathub`. Screenshots boot a dev server on a fresh
+ * With no target it builds the Play Store assets only. Screenshots boot a dev server on a fresh
  * document with the demo content plus what `SEED` in `scenes.mjs` adds, unless --url points at a
  * running one that has both and needs no login; `flathub` always boots its own and then opens
  * the document in the desktop app, and needs `gnome-shell`, `dbus-run-session` and `gdbus` on
- * the PATH. Output goes to `apps/mobile/store/out`; open `out/preview.html` to review it.
+ * the PATH. Output goes to `apps/mobile/store/out`; open `out/preview.html` and
+ * `out/flathub-preview.html` to review it.
  *
  * Environment:
  *   CHROME_BIN  browser executable, for systems where Playwright's browsers cannot run (NixOS);
@@ -29,6 +31,7 @@ import { fileURLToPath, pathToFileURL } from "url";
 
 import { findNoteId, seedDocument, startDemoServer } from "./demo_server.mjs";
 import { startDesktopApp } from "./desktop_app.mjs";
+import { checkFlathubListing, readMetainfo } from "./flathub_listing.mjs";
 import { startGnomeSession } from "./gnome_session.mjs";
 import { DEVICES, ITINERARY, SCENES, SEED, TRIP_COSTS } from "./scenes.mjs";
 
@@ -41,7 +44,7 @@ const listing = JSON.parse(fs.readFileSync(path.join(here, "listing.json"), "utf
 // Playwright is a dependency of the repository root, which pnpm does not expose to this package.
 const { chromium } = createRequire(path.join(repoRoot, "package.json"))("playwright");
 
-const TARGETS = [ "icon", "screenshots", "feature", "preview", "flathub" ];
+const TARGETS = [ "icon", "screenshots", "feature", "preview", "flathub", "flathub-preview" ];
 const SEED_PARAMS = [ TRIP_COSTS, ITINERARY ];
 
 /**
@@ -57,11 +60,12 @@ const DEFAULT_TARGETS = [ "icon", "screenshots", "feature", "preview" ];
 const FLATHUB_WINDOW = { width: 1000, height: 700, scale: 2 };
 
 const BUILDERS = {
-    icon: buildIcon,
-    screenshots: buildScreenshots,
-    feature: buildFeature,
-    preview: buildPreview,
-    flathub: buildFlathub
+    "icon": buildIcon,
+    "screenshots": buildScreenshots,
+    "feature": buildFeature,
+    "preview": buildPreview,
+    "flathub": buildFlathub,
+    "flathub-preview": buildFlathubPreview
 };
 
 const options = parseArgs(process.argv.slice(2));
@@ -182,6 +186,52 @@ async function buildFlathub() {
         await app?.stop();
         await session?.stop();
         server.stop();
+    }
+}
+
+/**
+ * Writes `out/flathub-preview.html`, a mock of the Flathub app page built from the desktop
+ * app's metainfo and the screenshots in `out/flathub`, and checks both against Flathub's
+ * quality guidelines, failing the build when one is not met.
+ */
+async function buildFlathubPreview() {
+    const flatpakDir = path.join(repoRoot, "apps", "desktop", "flatpak");
+    const meta = await readMetainfo(browser,
+        path.join(flatpakDir, "org.triliumnotes.Trilium.metainfo.xml"));
+    const iconSource = path.join(repoRoot, "apps", "desktop", "electron-forge", "app-icon",
+        "png", "512x512.png");
+    fs.copyFileSync(iconSource, path.join(outDir, "flathub-icon.png"));
+
+    const screenshots = [];
+    for (const [ index, scene ] of SCENES.entries()) {
+        const file = flathubShotPath(index, scene.id);
+        if (fs.existsSync(file)) {
+            screenshots.push({
+                file: path.relative(outDir, file),
+                caption: scene.flathubCaption ?? scene.caption,
+                dark: scene.colorScheme === "dark",
+                png: readPng(file)
+            });
+        }
+    }
+    const checks = checkFlathubListing(meta, screenshots, FLATHUB_WINDOW,
+        readPng(path.join(outDir, "flathub-icon.png")));
+
+    const data = { meta, screenshots, checks };
+    const script = `window.FLATHUB = ${JSON.stringify(data, null, 4)};\n`;
+    fs.writeFileSync(path.join(outDir, "flathub-data.js"), script);
+    fs.copyFileSync(path.join(templates, "flathub.html"),
+        path.join(outDir, "flathub-preview.html"));
+    fs.copyFileSync(path.join(templates, "common.css"), path.join(outDir, "common.css"));
+
+    const failed = checks.filter((check) => !check.ok);
+    for (const check of failed) {
+        console.error(`  Fails: ${check.asset}: ${check.rule} (${check.actual})`);
+    }
+    console.log(`  ${checks.length - failed.length} of ${checks.length} checks pass.`);
+    console.log(`  Open ${path.join(outDir, "flathub-preview.html")}`);
+    if (failed.length) {
+        process.exitCode = 1;
     }
 }
 
