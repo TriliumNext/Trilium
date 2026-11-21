@@ -15,6 +15,10 @@ entry says what changed for them, in as few words as that takes.
   gain" is "This applies to phones too."
 - **Short examples, or none.** A list such as "a dialog, a menu or a note type" reads as padding;
   one clause ("loads the rest only once you use it") says the same.
+- **A fix names the symptom once, not every case that triggers it.** "Shared notes ignored a
+  `#shareCredentials` password inherited from a note outside the share." is the entry; "…when it
+  came from a template, an `~inherit` target or a parent outside the share" spells out cases the
+  commit body already lists. Aim for one line of about 15 words.
 
 ## Numbers
 
