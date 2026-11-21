@@ -5,7 +5,9 @@ import path from "path";
 
 /**
  * Starts the server in dev mode on a fresh data directory, creates a new document with the demo
- * content through the setup API, and resolves with its base URL and a `stop()` function. The
+ * content through the setup API, and resolves with its base URL and data directory.
+ * `stopServer()` stops the server and keeps the data directory for another app to open;
+ * `stop()` also removes the directory. The
  * data directory reuses `apps/server/spec/db/config.ini`, which turns the login off, and backend
  * scripting is on so that `seedDocument()` can add what the demo lacks.
  */
@@ -35,6 +37,11 @@ export async function startDemoServer({ repoRoot, port, logPath }) {
     let exited = false;
     server.on("exit", () => { exited = true; });
 
+    const stopServer = () => new Promise((resolve) => {
+        if (exited) return resolve();
+        server.once("exit", resolve);
+        server.kill();
+    });
     const stop = () => {
         server.kill();
         fs.rmSync(dataDir, { recursive: true, force: true });
@@ -57,7 +64,7 @@ export async function startDemoServer({ repoRoot, port, logPath }) {
     };
     await waitFor(isInitialized, () => exited, 60_000);
 
-    return { baseUrl, stop };
+    return { baseUrl, dataDir, stopServer, stop };
 }
 
 /**

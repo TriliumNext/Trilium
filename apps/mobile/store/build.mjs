@@ -2,16 +2,19 @@
 /**
  * Builds the Google Play store listing assets: the 512 x 512 icon, the 1024 x 500 feature graphic,
  * phone and tablet screenshots of the demo document, and a preview page of the whole listing with
- * the store's size and length checks.
+ * the store's size and length checks. The `flathub` target captures the desktop app's window for
+ * the Flathub listing instead, inside a headless GNOME Shell.
  *
  * Usage:
  *   pnpm --filter @triliumnext/mobile store-assets [icon] [feature] [screenshots] [preview]
+ *       [flathub]
  *       [--only tree,text] [--devices phone,tablet] [--url http://localhost:8080] [--port 37991]
  *
- * With no target it builds everything. Screenshots boot a dev server on a fresh document with the
- * demo content plus what `SEED` in `scenes.mjs` adds, unless --url points at a running one that
- * has both and needs no login. Output goes
- * to `apps/mobile/store/out`; open `out/preview.html` to review it.
+ * With no target it builds everything but `flathub`. Screenshots boot a dev server on a fresh
+ * document with the demo content plus what `SEED` in `scenes.mjs` adds, unless --url points at a
+ * running one that has both and needs no login; `flathub` always boots its own and then opens
+ * the document in the desktop app, and needs `gnome-shell`, `dbus-run-session` and `gdbus` on
+ * the PATH. Output goes to `apps/mobile/store/out`; open `out/preview.html` to review it.
  *
  * Environment:
  *   CHROME_BIN  browser executable, for systems where Playwright's browsers cannot run (NixOS);
@@ -24,6 +27,8 @@ import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 
 import { findNoteId, seedDocument, startDemoServer } from "./demo_server.mjs";
+import { startDesktopApp } from "./desktop_app.mjs";
+import { startGnomeSession } from "./gnome_session.mjs";
 import { DEVICES, ITINERARY, SCENES, SEED, TRIP_COSTS } from "./scenes.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -35,13 +40,22 @@ const listing = JSON.parse(fs.readFileSync(path.join(here, "listing.json"), "utf
 // Playwright is a dependency of the repository root, which pnpm does not expose to this package.
 const { chromium } = createRequire(path.join(repoRoot, "package.json"))("playwright");
 
-const TARGETS = [ "icon", "screenshots", "feature", "preview" ];
+const TARGETS = [ "icon", "screenshots", "feature", "preview", "flathub" ];
+const SEED_PARAMS = [ TRIP_COSTS, ITINERARY ];
+const DEFAULT_TARGETS = [ "icon", "screenshots", "feature", "preview" ];
+
+/**
+ * Flathub asks for a window of at most 1000 x 700, or 2000 x 1400 on a HiDPI screen, so the
+ * window is 1000 x 700 logical pixels on a monitor at 2x.
+ */
+const FLATHUB_WINDOW = { width: 1000, height: 700, scale: 2 };
 
 const BUILDERS = {
     icon: buildIcon,
     screenshots: buildScreenshots,
     feature: buildFeature,
-    preview: buildPreview
+    preview: buildPreview,
+    flathub: buildFlathub
 };
 
 const options = parseArgs(process.argv.slice(2));
@@ -86,13 +100,98 @@ async function buildScreenshots() {
     });
     try {
         if (!options.url) {
-            await seedDocument(browser, server.baseUrl, SEED, [ TRIP_COSTS, ITINERARY ]);
+            await seedDocument(browser, server.baseUrl, SEED, SEED_PARAMS);
         }
         for (const deviceName of options.devices) {
             await captureDevice(server.baseUrl, deviceName);
         }
     } finally {
         server.stop();
+    }
+}
+
+/**
+ * Captures each scene in the desktop app with GNOME's window screenshot, which keeps the frame,
+ * rounded corners and shadow that Flathub requires, into `out/flathub`.
+ */
+async function buildFlathub() {
+    const server = await startDemoServer({
+        repoRoot,
+        port: options.port,
+        logPath: path.join(outDir, "server.log")
+    });
+    let session;
+    let app;
+    try {
+        await seedDocument(browser, server.baseUrl, SEED, SEED_PARAMS);
+        await setOption(server.baseUrl, "rightPaneVisible", "false");
+        await server.stopServer();
+
+        const { width, height, scale } = FLATHUB_WINDOW;
+        session = await startGnomeSession({
+            width: width + 600,
+            height: height + 400,
+            scale,
+            logPath: path.join(outDir, "gnome-shell.log")
+        });
+        app = await startDesktopApp({
+            chromium,
+            repoRoot,
+            dataDir: server.dataDir,
+            env: session.env,
+            port: options.port,
+            debugPort: options.port + 1,
+            logPath: path.join(outDir, "desktop.log")
+        });
+        const { page } = app;
+        page.on("pageerror", (error) => {
+            console.warn(`  [flathub] page error: ${error.message}`);
+        });
+        await page.addStyleTag({ content: "* { caret-color: transparent !important; }" });
+        const scenes = SCENES.filter((scene) => options.only?.includes(scene.id) ?? true);
+        for (const scene of scenes) {
+            const noteId = await page.evaluate(async (query) => {
+                const params = new URLSearchParams({ searchString: query });
+                const response = await fetch(`api/search?${params}`, {
+                    headers: await window.glob.getHeaders()
+                });
+                return (await response.json())[0];
+            }, scene.desktopQuery ?? scene.query);
+            await page.emulateMedia({ colorScheme: scene.colorScheme ?? "light" });
+            await page.evaluate(async (id) => {
+                await window.glob.appContext.tabManager.getActiveContext().setNote(id);
+            }, noteId);
+            await settle(page);
+            await scene.desktopPrepare?.(page);
+            await settle(page);
+
+            const file = flathubShotPath(SCENES.indexOf(scene), scene.id);
+            await session.screenshotWindow(file, { width, height });
+            console.log(`  ${path.relative(outDir, file)}`);
+        }
+    } finally {
+        await app?.stop();
+        await session?.stop();
+        server.stop();
+    }
+}
+
+/** Sets an option through the API, from a page of the app that supplies the CSRF headers. */
+async function setOption(baseUrl, name, value) {
+    const page = await browser.newPage();
+    try {
+        await page.goto(baseUrl);
+        await page.waitForFunction(() => window.glob?.getHeaders, null, { timeout: 120_000 });
+        const status = await page.evaluate(async ([ optionName, optionValue ]) => {
+            const response = await fetch(`api/options/${optionName}/${optionValue}`, {
+                method: "PUT",
+                headers: await window.glob.getHeaders()
+            });
+            return response.status;
+        }, [ name, value ]);
+        if (status >= 400) throw new Error(`Setting ${name} failed (${status}).`);
+    } finally {
+        await page.close();
     }
 }
 
@@ -296,6 +395,11 @@ function storeShotPath(deviceName, index, sceneId) {
     return path.join(outDir, "screenshots", deviceName, name);
 }
 
+function flathubShotPath(index, sceneId) {
+    const name = `${String(index + 1).padStart(2, "0")}-${sceneId}.png`;
+    return path.join(outDir, "flathub", name);
+}
+
 function parseArgs(args) {
     const result = {
         targets: [],
@@ -313,7 +417,7 @@ function parseArgs(args) {
         else if (TARGETS.includes(arg)) result.targets.push(arg);
         else throw new Error(`Unknown argument ${arg}; targets are ${TARGETS.join(", ")}.`);
     }
-    if (!result.targets.length) result.targets = TARGETS;
+    if (!result.targets.length) result.targets = DEFAULT_TARGETS;
     return result;
 }
 

@@ -1,6 +1,8 @@
 /**
  * The screens captured from the demo document, in the order the store shows them. `query` finds the
- * note to open, and `prepare(page)` runs in Node with the Playwright page once the note shows.
+ * note to open, and `prepare(page)` runs in Node with the Playwright page once the note shows on
+ * the phone or tablet; `desktopQuery` and `desktopPrepare(page)` replace them in the desktop app
+ * for Flathub.
  * `caption` goes above the phone screenshot; `alt` is the screenshot's description in the store
  * (at most 140 characters).
  */
@@ -8,6 +10,7 @@ export const SCENES = [
     {
         id: "tree",
         query: "note.title = 'Inbox'",
+        desktopQuery: "note.title = 'Formatting examples'",
         prepare: (page) => page.evaluate(() => {
             window.glob.appContext.triggerCommand("setActiveScreen", { screen: "tree" });
         }),
@@ -51,7 +54,8 @@ export const SCENES = [
     {
         id: "geo-map",
         query: "note.title *=* 'Geo Map'",
-        prepare: (page) => page.locator(".maplibregl-ctrl-attrib-button").first().click(),
+        prepare: collapseMapAttribution,
+        desktopPrepare: collapseMapAttribution,
         caption: "Plan your next trip on a map",
         alt: "A geo map collection with the Seven Wonders of the World pinned on a world map"
     },
@@ -75,6 +79,7 @@ export const SCENES = [
             }, 4);
             await page.waitForTimeout(3000);
         },
+        desktopPrepare: (page) => page.locator(".mind-map-direction-side").first().click(),
         caption: "Brainstorm ideas in a mind map",
         alt: "A mind map note with branches spreading out from a central topic"
     },
@@ -82,6 +87,10 @@ export const SCENES = [
         id: "canvas",
         query: "note.title = 'Canvas' AND note.type = 'canvas'",
         prepare: async (page) => {
+            await page.locator(".excalidraw canvas").last().click({ position: { x: 20, y: 300 } });
+            await page.keyboard.press("Shift+Digit1");
+        },
+        desktopPrepare: async (page) => {
             await page.locator(".excalidraw canvas").last().click({ position: { x: 20, y: 300 } });
             await page.keyboard.press("Shift+Digit1");
         },
@@ -103,6 +112,10 @@ export const SCENES = [
             + "in the dark theme"
     }
 ];
+
+function collapseMapAttribution(page) {
+    return page.locator(".maplibregl-ctrl-attrib-button").first().click();
+}
 
 /**
  * Store devices. The phone renders 360 x 640 CSS pixels at 3x, giving the 1080 x 1920 the store
