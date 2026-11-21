@@ -109,6 +109,13 @@ describe("releaseDescription", () => {
             "## 💡 Key highlights",
             "### Not counted",
             "*   Not counted either.",
+            "## 🔄 Compatibility",
+            "*   The sync protocol version went from 39 to 41: instances on different versions "
+                + "cannot sync with each other, so update the server and every client together.",
+            "    *   [Why it was raised.](https://example.com)",
+            "*   The database version went from 240 to 242: the database is migrated the first "
+                + "time this version opens it.",
+            "*   The Docker image runs as a non-root user.",
             "## 📱 Mobile improvements",
             "*   One",
             "*   Two",
@@ -132,6 +139,10 @@ describe("releaseDescription", () => {
 
         expect(releaseDescription(notes)).toEqual([
             { paragraph: "Text notes became block editors." },
+            { paragraph: "The sync protocol version went from 39 to 41: instances on different "
+                + "versions cannot sync with each other, so update the server and every client together." },
+            { paragraph: "The database version went from 240 to 242: the database is migrated the "
+                + "first time this version opens it." },
             { paragraph: "Also in this release: 3 improvements and 10 bug fixes." }
         ]);
     });
@@ -165,12 +176,16 @@ describe("releaseDescription", () => {
             "### Spreadsheets",
             "Text.",
             "### And others…",
+            "## 🔄 Compatibility",
+            "*   The database version went from 240 to 242: migrated on first start.",
             "## 🐞 Bugfixes",
             "*   Not a highlight"
         ].join("\n");
 
         expect(releaseDescription(notes)).toEqual([
-            { items: [ "Kanban board overhaul", "Spreadsheets", "Also in this release: 1 bug fix." ] }
+            { items: [ "Kanban board overhaul", "Spreadsheets",
+                "The database version went from 240 to 242: migrated on first start.",
+                "Also in this release: 1 bug fix." ] }
         ]);
     });
 

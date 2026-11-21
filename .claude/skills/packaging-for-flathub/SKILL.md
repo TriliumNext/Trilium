@@ -130,7 +130,9 @@ A full build takes about ten minutes.
   the version being prepared is dated today until its own tag supplies the date. Each entry
   carries its release's notes, which Flathub requires: the overview paragraphs of
   `docs/Release Notes/Release Notes/v<X.Y.Z>.md` (`releaseDescription()`), or for notes older
-  than the overview, their key-highlight titles or top-level entries, ending with "Also in
+  than the overview, their key-highlight titles or top-level entries, followed by the
+  Compatibility sentences `chore:release-notes` generates for a sync protocol or database
+  version change, and ending with "Also in
   this release: N improvements and M bug fixes" counted from the note. An rc is written with
   `type="development"`. The script fails when a listed version has no release note, so the note
   is written before the bump.

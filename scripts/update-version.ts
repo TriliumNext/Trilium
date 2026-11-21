@@ -100,19 +100,34 @@ export function renderMetainfoReleases(metainfo: string, releases: Release[]): s
  * The notes Flathub shows for a release, from its release note: the overview paragraphs
  * above the first section. Notes written before the overview existed fall back to the titles
  * of their key highlights, and patch releases without highlights to their top-level entries.
- * The notes end with the number of improvements and bug fixes the release note lists.
+ * The notes end with a change of the sync protocol or database version, which decides whether
+ * the app still syncs with other instances and opens its database in an earlier version, and
+ * with the number of improvements and bug fixes the release note lists.
  */
 export function releaseDescription(markdown: string): DescriptionBlock[] {
     const lines = markdown.split("\n").slice(1);
-    const more = describeChangeCount(lines);
+    const endings = [ ...versionChanges(lines), describeChangeCount(lines) ]
+        .filter((ending): ending is string => !!ending);
     const blocks = summarizeRelease(lines);
     const last = blocks.at(-1);
-    if (more && last && "items" in last) {
-        last.items.push(more);
-    } else if (more) {
-        blocks.push({ paragraph: more });
+    if (last && "items" in last) {
+        last.items.push(...endings);
+    } else {
+        blocks.push(...endings.map((paragraph) => ({ paragraph })));
     }
     return blocks;
+}
+
+/**
+ * The Compatibility entries that `pnpm chore:release-notes` writes when the sync protocol or
+ * the database version changed since the previous release.
+ */
+function versionChanges(lines: string[]): string[] {
+    return lines
+        .map((line) => /^(?:\d+\.|\*|-)\s+(The (?:sync protocol|database) version went from .*)$/
+            .exec(line)?.[1])
+        .filter((entry): entry is string => !!entry)
+        .map(inlineMarkdown);
 }
 
 function summarizeRelease(lines: string[]): DescriptionBlock[] {
