@@ -127,6 +127,7 @@ describe("Script API (core)", () => {
                 const note = becca.getNoteOrThrow(noteId);
                 note.title = "written by the script";
                 note.save();
+                note.setContent("written by the script");
                 throw new Error("boom");
             });
             const logError = vi.spyOn(getLog(), "error");
@@ -135,8 +136,74 @@ describe("Script API (core)", () => {
 
             expect(res.status).toBe(500);
             expect(getSql().getValue("SELECT title FROM notes WHERE noteId = ?", [noteId])).toBe(before);
+            expect(becca.getNoteOrThrow(noteId).title).toBe(before);
+            expect(becca.getNoteOrThrow(noteId).getContent()).toBe("return 0;");
             expect(logError).toHaveBeenCalledWith(expect.stringContaining("boom"));
             expect(res.body).toEqual({ message: "boom", noteId });
+        });
+
+        it("restores targetRelations and child sort order when a failing script creates relations or sorts notes", async () => {
+            const scriptNoteId = await createCodeNote("return 0;");
+            const parentRes = await api.post<{ note: { noteId: string } }>("/api/notes/root/children?target=into", {
+                body: {
+                    title: "Sort Parent",
+                    content: "",
+                    type: "text"
+                }
+            });
+            const parentNoteId = parentRes.body.note.noteId;
+
+            const childBRes = await api.post<{ note: { noteId: string } }>(`/api/notes/${parentNoteId}/children?target=into`, {
+                body: {
+                    title: "B Child",
+                    content: "",
+                    type: "text"
+                }
+            });
+            const childARes = await api.post<{ note: { noteId: string } }>(`/api/notes/${parentNoteId}/children?target=into`, {
+                body: {
+                    title: "A Child",
+                    content: "",
+                    type: "text"
+                }
+            });
+            const childBId = childBRes.body.note.noteId;
+            const childAId = childARes.body.note.noteId;
+
+            const parentNote = becca.getNoteOrThrow(parentNoteId);
+            expect(parentNote.getChildNotes().map((n) => n.noteId)).toEqual([childBId, childAId]);
+
+            const treeService = (await import("../../services/tree.js")).default;
+            const noteService = (await import("../../services/notes.js")).default;
+
+            vi.spyOn(scriptService, "executeNote").mockImplementation(() => {
+                const { note: createdNote } = noteService.createNewNote({
+                    parentNoteId,
+                    title: "Rolled back note",
+                    type: "text",
+                    content: ""
+                });
+                createdNote.addRelation("myRel", childBId);
+                treeService.sortNotes(parentNoteId, "title", false, false);
+                throw new Error("script failed after relation and sort");
+            });
+
+            const res = await api.post<{ message: string; noteId: string }>(`/api/script/run/${scriptNoteId}`);
+            expect(res.status).toBe(500);
+
+            const targetNote = becca.getNoteOrThrow(childBId);
+            expect(targetNote.getTargetRelations().filter((r) => r.name === "myRel")).toEqual([]);
+            for (const rel of targetNote.getTargetRelations()) {
+                expect(() => rel.getNote()).not.toThrow();
+            }
+
+            expect(parentNote.getChildNotes().map((n) => n.noteId)).toEqual([childBId, childAId]);
+            const branchB = becca.getBranchFromChildAndParent(childBId, parentNoteId);
+            const branchA = becca.getBranchFromChildAndParent(childAId, parentNoteId);
+            if (!branchB || !branchA) {
+                throw new Error("Expected both child branches to exist");
+            }
+            expect(branchB.notePosition).toBeLessThan(branchA.notePosition);
         });
 
         it("answers a disabled backend as a failure of the note", async () => {
