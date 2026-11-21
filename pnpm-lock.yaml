@@ -286,8 +286,8 @@ importers:
         specifier: 7.1.5
         version: 7.1.5(preact-render-to-string@6.8.3)(temporal-polyfill@1.0.8)
       gridstack:
-        specifier: 14.1.0
-        version: 14.1.0
+        specifier: 14.1.1
+        version: 14.1.1
       i18next:
         specifier: 27.1.1
         version: 27.1.1(typescript@6.0.3)
@@ -7646,8 +7646,8 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
-  gridstack@14.1.0:
-    resolution: {integrity: sha512-nF6asbGVnIJH7N9pa+DCaSBGAoEvTNS7jYHUJfcNN+5bTD3a4pLEKvGia7W/6NbjiJWms9e3Zih1YuU4coT3QA==}
+  gridstack@14.1.1:
+    resolution: {integrity: sha512-7oxosr/htheY2QCgONtyMt/lQAS0z/34aQpib7X/VEDTWsINIiJQ/aI7+yVAvoW1GI7BhRBlbo/gXlXhLM/LOg==}
 
   hachure-fill@0.5.2:
     resolution: {integrity: sha512-3GKBOn+m2LX9iq+JC1064cSFprJY4jL1jCXTcpnfER5HYE2l/4EfWSGzkPa/ZDBmYI0ZOEj5VHV/eKnPGkHuOg==}
@@ -19386,7 +19386,7 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
-  gridstack@14.1.0: {}
+  gridstack@14.1.1: {}
 
   hachure-fill@0.5.2: {}
 
