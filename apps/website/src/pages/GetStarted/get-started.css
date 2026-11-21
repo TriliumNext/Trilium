@@ -112,9 +112,31 @@
     }
 }
 
-.download-server .download-card {
+.download-server .download-card,
+.download-nightly .download-card {
     --accent-color: var(--foreground-color);
     --brand-foreground-color: var(--background-color);
+}
+
+.download-nightly {
+    .section-subtitle {
+        max-width: 50em;
+        margin-inline: auto;
+        text-align: center;
+    }
+
+    .download-footer {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.5em 2em;
+        margin-top: 1em;
+        font-size: 0.9em;
+
+        a {
+            color: var(--muted-color);
+        }
+    }
 }
 
 .architecture-switch {
