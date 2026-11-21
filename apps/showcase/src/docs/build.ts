@@ -4,7 +4,9 @@ import type { Browser } from "playwright";
 
 import { type BuildOptions, outDir, repoRoot } from "../shared/build.ts";
 import { zoomOutMindMap } from "../shared/scenes.ts";
-import { captureShots, encodeWebp, type Shot, waitForCalendar } from "../website/build.ts";
+import {
+    captureShots, encodeWebp, type Shot, waitForCalendar, waitForSlideThumbnails
+} from "../website/build.ts";
 
 /**
  * The User Guide figures captured from the demo document. `page` is the Markdown file under
@@ -26,7 +28,7 @@ const DOCS_SHOTS: DocsShot[] = [
     },
     {
         query: "note.title = 'Introducing Trilium Notes'", page: "Collections.md",
-        image: "Collections_collection_presentation.webp"
+        image: "Collections_collection_presentation.webp", prepare: waitForSlideThumbnails
     },
     {
         query: "note.title = 'Trip calendar'", page: "Collections/Calendar.md",
@@ -38,7 +40,7 @@ const DOCS_SHOTS: DocsShot[] = [
     },
     {
         query: "note.title = 'Introducing Trilium Notes'", page: "Collections/Presentation.md",
-        image: "Presentation_demo.webp"
+        image: "Presentation_demo.webp", prepare: waitForSlideThumbnails
     },
     { scene: "board", page: "Collections/Kanban Board.md", image: "Kanban Board_demo.webp" },
     { scene: "text", page: "Note Types/Text.md", image: "Text_demo.webp" },

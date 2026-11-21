@@ -40,7 +40,7 @@ const WEBSITE_SHOTS: WebsiteShot[] = [
     { query: "note.title = 'Places to visit'", file: "collection_table", area: "note" },
     {
         query: "note.title = 'Introducing Trilium Notes'", file: "collection_presentation",
-        area: "note"
+        area: "note", prepare: waitForSlideThumbnails
     },
     { query: "note.title = 'Trip overview'", file: "collection_dashboard", area: "note" },
     {
@@ -237,6 +237,27 @@ async function stableScreenshot(page: Page, clip: { x: number; y: number; width:
  */
 export function waitForCalendar(page: Page) {
     return page.locator(".calendar-event[data-event-note-id]").first().waitFor();
+}
+
+/**
+ * Waits for the presentation's sidebar to draw every slide thumbnail: each one renders in its own
+ * shadow root once the theme's stylesheets arrive, a slide at a time, with gaps longer than
+ * `stableScreenshot()` waits between two screenshots.
+ */
+export async function waitForSlideThumbnails(page: Page) {
+    await page.waitForFunction(() => {
+        const thumbnails = [
+            ...document.querySelectorAll(".presentation-sidebar .slide-thumbnail")
+        ];
+        return thumbnails.length > 0 && thumbnails.every((thumbnail) => {
+            if (thumbnail.classList.contains("slide-thumbnail-placeholder")) return true;
+            const root = thumbnail.shadowRoot;
+            const content = root?.querySelector(".slide-content");
+            return !!root && root.adoptedStyleSheets.length > 0 && !!content
+                && content.getBoundingClientRect().height > 0;
+        });
+    }, null, { timeout: 30_000 });
+    await page.evaluate(() => document.fonts.ready);
 }
 
 function findScene(id: string) {
