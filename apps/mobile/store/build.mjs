@@ -6,7 +6,7 @@
  * `flathub` target captures the desktop app's window for the Flathub listing instead, inside a
  * headless GNOME Shell, and `flathub-preview` mocks the Flathub app page from those screenshots
  * and the metainfo, with Flathub's quality checks. The `hero` target writes the website hero as
- * a self-contained HTML snapshot of the app, in `out/hero`.
+ * a self-contained HTML snapshot of the app, in `out/hero`, and publishes it to the website.
  *
  * Usage:
  *   pnpm --filter @triliumnext/mobile store-assets [icon] [feature] [screenshots] [preview]
@@ -249,7 +249,8 @@ async function buildFlathubPreview() {
 /**
  * Writes the website hero to `out/hero/hero.html`: a snapshot of the desktop layout, light only,
  * whose CSS also carries the dark theme. The app is screenshotted in both color schemes and the
- * build fails when the snapshot differs from it by more than `HERO_MAX_DIFF` in either one.
+ * build fails when the snapshot differs from it by more than `HERO_MAX_DIFF` in either one;
+ * otherwise the snapshot is copied to `apps/website/public/hero.html`.
  */
 async function buildHero() {
     const fonttools = process.env.FONTTOOLS ?? findOnPath("fonttools");
@@ -322,6 +323,11 @@ async function buildHero() {
         } else {
             console.log(`  ${colorScheme}: differs from the app by ${percent}`);
         }
+    }
+    if (!process.exitCode) {
+        const published = path.join(repoRoot, "apps", "website", "public", "hero.html");
+        fs.copyFileSync(output, published);
+        console.log(`  ${path.relative(repoRoot, published)}`);
     }
 }
 
