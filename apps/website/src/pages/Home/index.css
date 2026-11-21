@@ -114,8 +114,7 @@ section.hero-section {
         margin-bottom: 0;
         overflow: hidden;
 
-        iframe,
-        .phone-chrome {
+        iframe {
             position: absolute;
             top: 0;
             left: 0;
@@ -174,13 +173,15 @@ section.hero-section {
         }
     }
 
-    /* The insets match the safe area of `hero-mobile.html`: 32px at the top, 20px at the bottom. */
+    /* Laid out at the frame's size rather than scaled with a transform, so the icons rasterize
+       at the display's resolution. One em is 14px of the 360px wide snapshot; the insets match its
+       safe area: 32px at the top, 20px at the bottom. */
     .phone-chrome {
-        width: 360px;
-        height: 760px;
+        position: absolute;
+        inset: 0;
         pointer-events: none;
         color: #111;
-        font: 600 14px/1 system-ui, sans-serif;
+        font: 600 calc(14px * var(--hero-scale, 1))/1 system-ui, sans-serif;
 
         @media (prefers-color-scheme: dark) {
             color: #f2f2f2;
@@ -190,29 +191,33 @@ section.hero-section {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            height: 32px;
-            padding: 2px 24px 0;
+            height: calc(32em / 14);
+            padding: calc(2em / 14) calc(24em / 14) 0;
             box-sizing: border-box;
         }
 
         .status-icons {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: calc(6em / 14);
 
             svg {
-                height: 12px;
+                height: calc(12em / 14);
                 fill: currentColor;
+            }
+
+            rect:not([stroke]) {
+                shape-rendering: crispEdges;
             }
         }
 
         .home-indicator {
             position: absolute;
-            bottom: 8px;
+            bottom: calc(8em / 14);
             left: 50%;
-            width: 120px;
-            height: 4px;
-            border-radius: 2px;
+            width: calc(120em / 14);
+            height: calc(4em / 14);
+            border-radius: calc(2em / 14);
             background: currentColor;
             transform: translateX(-50%);
         }
