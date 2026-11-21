@@ -65,10 +65,11 @@ export async function readMetainfo(browser, file) {
 
 /**
  * Checks the metainfo and the captured screenshots against Flathub's quality guidelines
- * (docs.flathub.org, "Quality guidelines"). `shots` are `{ file, caption, dark, png }`, and
- * `window` is the logical size and scale the screenshots were taken at.
+ * (docs.flathub.org, "Quality guidelines"). `shots` are `{ file, caption, dark, png }`,
+ * `window` is the logical size and scale the screenshots were taken at, and `iconSvg` is the
+ * source of the scalable icon the flatpak installs.
  */
-export function checkFlathubListing(meta, shots, window, icon) {
+export function checkFlathubListing(meta, shots, window, iconSvg) {
     const checks = [];
     const check = (asset, rule, actual, ok) => {
         checks.push({ asset, rule, actual: String(actual), ok: Boolean(ok) });
@@ -106,8 +107,9 @@ export function checkFlathubListing(meta, shots, window, icon) {
     check("Content rating", "an OARS rating", meta.hasContentRating ? "yes" : "no",
         meta.hasContentRating);
 
-    check("Icon", "a square PNG of at least 256 px", describeSize(icon),
-        icon && icon.width === icon.height && icon.width >= 256);
+    const [ , iconWidth, iconHeight ] = iconSvg.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/) ?? [];
+    check("Icon", "a square SVG", iconWidth ? `${iconWidth} x ${iconHeight}` : "no viewBox",
+        iconWidth && iconWidth === iconHeight);
 
     check("Screenshots", "3 to 10", shots.length, shots.length >= 3 && shots.length <= 10);
     check("Screenshots", "the first one in the default (light) style",

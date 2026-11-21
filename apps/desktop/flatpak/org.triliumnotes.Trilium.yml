@@ -60,8 +60,7 @@ modules:
       - install -Dm755 trilium.sh /app/bin/trilium
       - install -Dm644 apps/desktop/flatpak/${FLATPAK_ID}.desktop /app/share/applications/${FLATPAK_ID}.desktop
       - install -Dm644 apps/desktop/flatpak/${FLATPAK_ID}.metainfo.xml /app/share/metainfo/${FLATPAK_ID}.metainfo.xml
-      - for s in 128 256 512; do install -Dm644 "apps/desktop/electron-forge/app-icon/png/${s}x${s}.png"
-        "/app/share/icons/hicolor/${s}x${s}/apps/${FLATPAK_ID}.png"; done
+      - install -Dm644 apps/desktop/flatpak/${FLATPAK_ID}.svg /app/share/icons/hicolor/scalable/apps/${FLATPAK_ID}.svg
     sources:
       - type: git
         url: https://github.com/TriliumNext/Trilium.git

@@ -211,9 +211,8 @@ async function buildFlathubPreview() {
     const flatpakDir = path.join(repoRoot, "apps", "desktop", "flatpak");
     const meta = await readMetainfo(browser,
         path.join(flatpakDir, "org.triliumnotes.Trilium.metainfo.xml"));
-    const iconSource = path.join(repoRoot, "apps", "desktop", "electron-forge", "app-icon",
-        "png", "512x512.png");
-    fs.copyFileSync(iconSource, path.join(outDir, "flathub-icon.png"));
+    const icon = fs.readFileSync(path.join(flatpakDir, "org.triliumnotes.Trilium.svg"), "utf8");
+    fs.writeFileSync(path.join(outDir, "flathub-icon.svg"), icon);
 
     const screenshots = [];
     for (const [ index, scene ] of SCENES.entries()) {
@@ -227,8 +226,7 @@ async function buildFlathubPreview() {
             });
         }
     }
-    const checks = checkFlathubListing(meta, screenshots, FLATHUB_WINDOW,
-        readPng(path.join(outDir, "flathub-icon.png")));
+    const checks = checkFlathubListing(meta, screenshots, FLATHUB_WINDOW, icon);
 
     const data = { meta, screenshots, checks };
     const script = `window.FLATHUB = ${JSON.stringify(data, null, 4)};\n`;
