@@ -9,7 +9,8 @@
  *       [--only tree,text] [--devices phone,tablet] [--url http://localhost:8080] [--port 37991]
  *
  * With no target it builds everything. Screenshots boot a dev server on a fresh document with the
- * demo content, unless --url points at a running one that has it and needs no login. Output goes
+ * demo content plus what `SEED` in `scenes.mjs` adds, unless --url points at a running one that
+ * has both and needs no login. Output goes
  * to `apps/mobile/store/out`; open `out/preview.html` to review it.
  *
  * Environment:
@@ -22,8 +23,8 @@ import { createRequire } from "module";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 
-import { findNoteId, startDemoServer } from "./demo_server.mjs";
-import { DEVICES, SCENES } from "./scenes.mjs";
+import { findNoteId, seedDocument, startDemoServer } from "./demo_server.mjs";
+import { DEVICES, SCENES, SEED } from "./scenes.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, "..", "..", "..");
@@ -84,6 +85,9 @@ async function buildScreenshots() {
         logPath: path.join(outDir, "server.log")
     });
     try {
+        if (!options.url) {
+            await seedDocument(browser, server.baseUrl, SEED);
+        }
         for (const deviceName of options.devices) {
             await captureDevice(server.baseUrl, deviceName);
         }

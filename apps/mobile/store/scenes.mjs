@@ -22,6 +22,20 @@ export const SCENES = [
         alt: "A text note welcoming the reader to Trilium Notes, with an image and links"
     },
     {
+        id: "board",
+        query: "note.title = 'Trip planning'",
+        caption: "Track tasks on a board",
+        alt: "A board collection with to-do, in-progress and done columns of cards for "
+            + "planning a trip"
+    },
+    {
+        id: "geo-map",
+        query: "note.title *=* 'Geo Map'",
+        prepare: (page) => page.locator(".maplibregl-ctrl-attrib-button").first().click(),
+        caption: "Pin your notes on a map",
+        alt: "A geo map collection with the Seven Wonders of the World pinned on a world map"
+    },
+    {
         id: "mind-map",
         query: "note.title = 'Mind Map' AND note.type = 'mindMap'",
         prepare: async (page) => {
@@ -61,23 +75,11 @@ export const SCENES = [
         alt: "A Mermaid flowchart above the text it is drawn from"
     },
     {
-        id: "gallery",
-        query: "note.title = 'Photos from the trip'",
-        caption: "Keep photos and files next to your notes",
-        alt: "A collection of trip photos shown as a grid of cards"
-    },
-    {
         id: "dark",
         query: "note.title = 'Code blocks'",
         colorScheme: "dark",
         caption: "Code with syntax highlighting, in light or dark",
         alt: "A text note with a highlighted code block, in the dark theme"
-    },
-    {
-        id: "collection",
-        query: "note.title = 'Formatting examples'",
-        caption: "See a whole section at a glance",
-        alt: "A collection of notes shown as a grid of cards with a preview of each note"
     }
 ];
 
@@ -102,3 +104,41 @@ export const DEVICES = {
         captioned: false
     }
 };
+
+/**
+ * Adds what the demo document lacks for the scenes above, as a backend script with the script
+ * `api` in scope: a board of trip-planning cards under the Trilium Demo note, and a view of the
+ * geo map that shows most of its markers.
+ */
+export function SEED() {
+    const demo = api.searchForNote("note.title = 'Trilium Demo'");
+    const board = api.createNewNote({
+        parentNoteId: demo.noteId, title: "Trip planning", type: "book", content: ""
+    }).note;
+    board.setLabel("collection");
+    board.setLabel("viewType", "board");
+    board.setLabel("iconClass", "bx bx-trip");
+    board.setLabel("hidePromotedAttributes");
+    board.setLabel("subtreeHidden");
+    const cards = [
+        [ "To do", "Book the flights", "bx bxs-plane-take-off" ],
+        [ "To do", "Rent a car", "bx bx-car" ],
+        [ "To do", "Pack the camera", "bx bx-camera" ],
+        [ "To do", "Buy travel insurance", "bx bx-shield-quarter" ],
+        [ "To do", "Exchange some currency", "bx bx-euro" ],
+        [ "In progress", "Plan the route", "bx bx-map-alt" ],
+        [ "In progress", "Find places to stay", "bx bx-bed" ],
+        [ "Done", "Renew the passport", "bx bx-id-card" ],
+        [ "Done", "Ask for time off", "bx bx-calendar-check" ],
+        [ "Done", "Pick the dates", "bx bx-calendar" ]
+    ];
+    for (const [ status, title, icon ] of cards) {
+        const card = api.createTextNote(board.noteId, title, "").note;
+        card.setLabel("status", status);
+        card.setLabel("iconClass", icon);
+    }
+
+    const geoMap = api.searchForNote("note.title *=* 'Geo Map'");
+    const [ viewConfig ] = geoMap.getAttachmentsByRole("viewConfig");
+    viewConfig.setContent(JSON.stringify({ view: { center: { lat: 30, lng: 23 }, zoom: 1.5 } }));
+}

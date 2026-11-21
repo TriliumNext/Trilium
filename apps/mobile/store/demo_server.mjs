@@ -6,7 +6,8 @@ import path from "path";
 /**
  * Starts the server in dev mode on a fresh data directory, creates a new document with the demo
  * content through the setup API, and resolves with its base URL and a `stop()` function. The
- * data directory reuses `apps/server/spec/db/config.ini`, which turns the login off.
+ * data directory reuses `apps/server/spec/db/config.ini`, which turns the login off, and backend
+ * scripting is on so that `seedDocument()` can add what the demo lacks.
  */
 export async function startDemoServer({ repoRoot, port, logPath }) {
     const serverDir = path.join(repoRoot, "apps", "server");
@@ -24,7 +25,8 @@ export async function startDemoServer({ repoRoot, port, logPath }) {
             TRILIUM_ENV: "dev",
             TRILIUM_PORT: String(port),
             TRILIUM_DATA_DIR: dataDir,
-            TRILIUM_RESOURCE_DIR: "src"
+            TRILIUM_RESOURCE_DIR: "src",
+            TRILIUM_SECURITY_BACKEND_SCRIPTING_ENABLED: "true"
         }
     });
     const log = fs.createWriteStream(logPath);
@@ -56,6 +58,37 @@ export async function startDemoServer({ repoRoot, port, logPath }) {
     await waitFor(isInitialized, () => exited, 60_000);
 
     return { baseUrl, stop };
+}
+
+/**
+ * Runs `seed` as a backend script on the server, from a page of the app that supplies the CSRF
+ * headers. `seed` runs with the backend script `api` in scope. The server runs a script sent this
+ * way in the bundle of `currentNoteId`, which must be a JavaScript note.
+ */
+export async function seedDocument(browser, baseUrl, seed) {
+    const scriptNoteId = await findNoteId(baseUrl,
+        "note.type = 'code' AND note.mime *=* 'javascript'");
+    const page = await browser.newPage();
+    try {
+        await page.goto(baseUrl);
+        await page.waitForFunction(() => window.glob?.getHeaders, null, { timeout: 120_000 });
+        const result = await page.evaluate(async ({ script, noteId }) => {
+            const response = await fetch("api/script/exec", {
+                method: "POST",
+                headers: { ...await window.glob.getHeaders(), "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    script, params: [], startNoteId: noteId, currentNoteId: noteId,
+                    originEntityName: "notes", originEntityId: null, transactional: true
+                })
+            });
+            return response.json();
+        }, { script: seed.toString(), noteId: scriptNoteId });
+        if (!result.success) {
+            throw new Error(`Seeding the demo document failed: ${result.error}`);
+        }
+    } finally {
+        await page.close();
+    }
 }
 
 /** Finds the ID of the first note matching a search query, such as `note.title = 'Mind Map'`. */

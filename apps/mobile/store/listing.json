@@ -7,7 +7,7 @@
     "featureGraphic": {
         "tagline": "Organize your thoughts.",
         "taglineSub": "Build your personal knowledge base, on your phone and on every device you sync.",
-        "alt": "Trilium Notes, with the note tree and a canvas drawing",
-        "shots": [ "tree", "canvas" ]
+        "alt": "Trilium Notes, with the note tree and a board of trip-planning tasks",
+        "shots": [ "tree", "board" ]
     }
 }
