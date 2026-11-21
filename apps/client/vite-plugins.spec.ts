@@ -24,7 +24,7 @@ import {
 
 const entryPath = createRequire(import.meta.url).resolve("@univerjs/engine-render/lib/es/index.js");
 const entrySource = readFileSync(entryPath, "utf8");
-const chunkImport = entrySource.match(/\bfrom\s*"(\.\/worker-[^"]+\.js)"/)?.[1];
+const chunkImport = entrySource.match(/\bfrom\s*"(\.\/doc-skeleton-[^"]+\.js)"/)?.[1];
 const chunkPath = join(dirname(entryPath), chunkImport ?? "worker.js");
 const chunkSource = readFileSync(chunkPath, "utf8");
 
