@@ -30,8 +30,7 @@ The automatic download of images is enabled by default and can be toggled from 
 
 ## Configuring the images
 
-Clicking on an image will reveal a popup with multiple options:  
-![](Images_image.png)
+Clicking an image reveals a popup with multiple options.
 
 ### Alignment
 

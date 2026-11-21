@@ -5070,20 +5070,12 @@
                                     "dataFileName": "Block quotes & admonitions.md",
                                     "attachments": [
                                         {
-                                            "attachmentId": "do36b54XpmIC",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/png",
-                                            "position": 10,
-                                            "dataFileName": "Block quotes & admonitions_image.png"
-                                        },
-                                        {
                                             "attachmentId": "hUwfwkRSDeLJ",
                                             "title": "image.png",
                                             "role": "image",
                                             "mime": "image/png",
                                             "position": 10,
-                                            "dataFileName": "1_Block quotes & admonitions_image.png"
+                                            "dataFileName": "Block quotes & admonitions_image.png"
                                         }
                                     ]
                                 },
@@ -5418,14 +5410,6 @@
                                                     "mime": "image/jpg",
                                                     "position": 10,
                                                     "dataFileName": "Code blocks_image.jpg"
-                                                },
-                                                {
-                                                    "attachmentId": "kE8PPw7iyuu9",
-                                                    "title": "image.png",
-                                                    "role": "image",
-                                                    "mime": "image/png",
-                                                    "position": 10,
-                                                    "dataFileName": "Code blocks_image.png"
                                                 }
                                             ]
                                         }
@@ -5644,14 +5628,6 @@
                                             "mime": "image/png",
                                             "position": 10,
                                             "dataFileName": "2_General formatting_image.png"
-                                        },
-                                        {
-                                            "attachmentId": "VRNPOor1LpMY",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/png",
-                                            "position": 10,
-                                            "dataFileName": "3_General formatting_image.png"
                                         }
                                     ]
                                 },
@@ -5755,14 +5731,6 @@
                                             "mime": "image/jpg",
                                             "position": 10,
                                             "dataFileName": "3_Images_image.jpg"
-                                        },
-                                        {
-                                            "attachmentId": "qJXx7vPPD4JW",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/png",
-                                            "position": 10,
-                                            "dataFileName": "Images_image.png"
                                         }
                                     ],
                                     "dirFileName": "Images",

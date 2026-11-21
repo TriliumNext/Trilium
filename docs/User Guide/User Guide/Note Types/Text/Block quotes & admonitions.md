@@ -11,15 +11,13 @@ Inside the quote block, other block items can be inserted such as tables, images
 
 Admonitions are a way to highlight information to the reader. Other names for it include _call-outs_ and _info/warning/alert boxes_.
 
-<figure class="image image-style-align-center"><img style="aspect-ratio:959/547;" src="1_Block quotes &amp; admonitions_image.png" width="959" height="547"></figure>
+<figure class="image image-style-align-center"><img style="aspect-ratio:959/547;" src="Block quotes &amp; admonitions_image.png" width="959" height="547"></figure>
 
 From a functional point of view, admonitions act very similarly to a block quote, just with different styling. This includes the ability to insert other elements in it such as headings, tables, images, etc.
 
 ### Inserting a new admonition
 
-In the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>:
-
-![](Block%20quotes%20&%20admonitions_image.png)
+In the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, click the <span class="tn-icon cke cke-trilium-admonition"></span> _Admonition_ button to insert one of the type chosen last, or open the arrow next to it to pick the type: _Note_, _Tip_, _Important_, _Caution_ or _Warning_.
 
 It's possible to insert an admonition simply by typing:
 
