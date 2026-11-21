@@ -16,25 +16,20 @@
   <project_license>AGPL-3.0-or-later</project_license>
   <content_rating type="oars-1.1"/>
   <description>
-    <p>Trilium Notes is a hierarchical note-taking application with focus on building large personal knowledge bases.</p>
-    <p>Features:</p>
+    <p>Trilium Notes keeps everything you know in one tree of notes, as deep as you need it. Write rich text with tables, images and math, keep code with syntax highlighting, sketch ideas on a canvas or in a mind map, and find any of it again with full-text search.</p>
+    <p>Your notes live in a database on your computer and stay available offline. Sync them with a Trilium server you run yourself, and the same notes follow you to your other computers, your phone and any browser.</p>
     <ul>
-      <li>Rich WYSIWYG note editing including e.g. tables, images and math with markdown autoformat</li>
-      <li>Support for editing notes with source code, including syntax highlighting</li>
-      <li>Notes can be arranged into arbitrarily deep tree</li>
-      <li>A single note can be placed into multiple places in the tree (see cloning)</li>
-      <li>Fast and easy navigation between notes, full text search and note hoisting</li>
-      <li>Seamless note versioning</li>
-      <li>Note attributes can be used for note organization, querying and advanced scripting</li>
-      <li>Synchronization with self-hosted sync server</li>
-      <li>Sharing (publishing) notes to public internet</li>
-      <li>Strong note encryption with per-note granularity</li>
-      <li>Relation maps and link maps for visualizing notes and their relations</li>
-      <li>Scales well in both usability and performance upwards of 100 000 notes</li>
-      <li>Evernote and Markdown import &amp; export</li>
-      <li>Web Clipper for easy saving of web content</li>
-      <li>REST API for automation</li>
+      <li>Tabs, split views and several windows to work on many notes at once</li>
+      <li>Global keyboard shortcuts and a tray icon to capture a thought from anywhere</li>
+      <li>A web clipper that saves pages and selections from your browser</li>
+      <li>Mind maps, canvas drawings, Mermaid diagrams and spreadsheets</li>
+      <li>Collections that show notes as a board, a calendar, a table or pins on a map</li>
+      <li>Labels, relations and templates to organize and query your notes</li>
+      <li>A note can sit in several places of the tree at once</li>
+      <li>Revision history for every note, and automatic backups</li>
+      <li>Strong encryption for the notes that must stay private</li>
     </ul>
+    <p>Trilium is open source and has no ads, no tracking and no account to create. An optional AI assistant works with the provider of your choice, including models running on your own computer.</p>
   </description>
   <keywords>
     <keyword>Trillium</keyword>
