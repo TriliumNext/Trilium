@@ -2,7 +2,7 @@
 <component type="desktop-application">
   <id>org.triliumnotes.Trilium</id>
   <name>Trilium Notes</name>
-  <summary>Build your personal knowledge base</summary>
+  <summary>Grow your knowledge base</summary>
   <url type="bugtracker">https://github.com/TriliumNext/Trilium/issues</url>
   <url type="homepage">https://triliumnotes.org</url>
   <url type="donation">https://triliumnotes.org/support-us</url>
@@ -32,6 +32,13 @@
     <p>Trilium is open source and has no ads, no tracking and no account to create. An optional AI assistant works with the provider of your choice, including models running on your own computer.</p>
   </description>
   <keywords>
+    <keyword>notes</keyword>
+    <keyword>note-taking</keyword>
+    <keyword>knowledge base</keyword>
+    <keyword>wiki</keyword>
+    <keyword>outliner</keyword>
+    <keyword>markdown</keyword>
+    <keyword>journal</keyword>
     <keyword>Trillium</keyword>
   </keywords>
   <launchable type="desktop-id">org.triliumnotes.Trilium.desktop</launchable>
