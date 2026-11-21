@@ -9149,14 +9149,6 @@
                             "dataFileName": "Templates.md",
                             "attachments": [
                                 {
-                                    "attachmentId": "65tzLidJl1uU",
-                                    "title": "template.png",
-                                    "role": "image",
-                                    "mime": "image/png",
-                                    "position": 10,
-                                    "dataFileName": "Templates_template.png"
-                                },
-                                {
                                     "attachmentId": "72yQHFCV84st",
                                     "title": "template-create-instance-note.png",
                                     "role": "image",
@@ -9620,14 +9612,6 @@
                                     "format": "markdown",
                                     "dataFileName": "Day Notes.md",
                                     "attachments": [
-                                        {
-                                            "attachmentId": "9wmaElfXYjWM",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/png",
-                                            "position": 10,
-                                            "dataFileName": "Day Notes_image.png"
-                                        },
                                         {
                                             "attachmentId": "FL40jUEj7xLt",
                                             "title": "image.png",

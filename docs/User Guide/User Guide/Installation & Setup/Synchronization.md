@@ -2,9 +2,8 @@
 Trilium is an offline-first note-taking application that stores all data locally on the desktop client. However, it also offers the option to set up synchronization with a server instance, allowing multiple desktop clients to sync with a central server. This creates a star-shaped topology:
 
 ```mermaid
-flowchart TB
-    server[("Sync server")]
-    laptop["Desktop app<br>(laptop)"] <--> server
+flowchart LR
+    laptop["Desktop app<br>(laptop)"] <--> server[("Sync server")]
     work["Desktop app<br>(work computer)"] <--> server
     home["Desktop app<br>(home computer)"] <--> server
 ```
