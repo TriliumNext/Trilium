@@ -119,7 +119,8 @@ function collapseMapAttribution(page) {
 
 /**
  * The website hero: the desktop layout in a browser, with the note that `query` finds hoisted and
- * open.
+ * open. The hero's frame in apps/website/src/pages/Home/index.css has the aspect ratio of
+ * `viewport`.
  */
 export const HERO = {
     query: "note.title = 'Trilium Demo'",

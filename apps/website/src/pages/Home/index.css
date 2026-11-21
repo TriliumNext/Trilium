@@ -109,11 +109,31 @@ section.hero-section {
         }
     }
 
+    /* Matches `HERO.viewport` in apps/mobile/store/scenes.mjs. */
     .screenshot {
         position: relative;
         width: 100%;
         height: auto;
+        aspect-ratio: 1360 / 920;
         margin-bottom: 0;
+        overflow: hidden;
+        border-radius: 12px;
+        box-shadow: 0 0 0 1px rgb(0 0 0 / 10%), 0 16px 48px rgb(0 0 0 / 18%);
+
+        iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            border: 0;
+            transform-origin: top left;
+            transform: scale(var(--hero-scale));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        &.scaled iframe {
+            opacity: 1;
+        }
     }
 
     .download-wrapper {
@@ -267,12 +287,12 @@ section.hero-section {
     }
 
     section.hero-section .screenshot {
-        height: 100%;
+        flex-shrink: 0;
+        height: calc(100% - 3em);
         width: auto;
         max-width: none;
         min-width: 62vw;
-        object-fit: cover;
-        object-position: left top;
+        margin-top: 1.5em;
     }
 
     section.hero-section .download-wrapper {

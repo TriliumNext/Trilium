@@ -1,7 +1,7 @@
 import "./index.css";
 
 import { ComponentChildren } from 'preact';
-import { useContext, useEffect, useState } from 'preact/hooks';
+import { useContext, useEffect, useRef, useState } from 'preact/hooks';
 import { Trans, useTranslation } from 'react-i18next';
 
 import importIcon from "../../assets/boxicons/bx-archive-arrow-down.svg?raw";
@@ -58,8 +58,7 @@ import DownloadButton from '../../components/DownloadButton.js';
 import Icon from '../../components/Icon.js';
 import Section from '../../components/Section.js';
 import SectionNav, { SectionNavItem } from '../../components/SectionNav.js';
-import { getPlatform } from '../../download-helper.js';
-import { useColorScheme, usePageTitle } from '../../hooks.js';
+import { usePageTitle } from '../../hooks.js';
 import { StargazersContext } from '../../index.js';
 
 export function Home() {
@@ -96,25 +95,7 @@ export function Home() {
 
 function HeroSection() {
     const { t } = useTranslation();
-    const platform = getPlatform();
-    const colorScheme = useColorScheme();
     const stargazersCount = useContext(StargazersContext);
-    const [ screenshotUrl, setScreenshotUrl ] = useState<string>();
-
-    useEffect(() => {
-        switch (platform) {
-            case "macos":
-                setScreenshotUrl(`/screenshot_desktop_mac_${colorScheme}.webp`);
-                break;
-            case "linux":
-                setScreenshotUrl(`/screenshot_desktop_linux_${colorScheme}.webp`);
-                break;
-            case "windows":
-            default:
-                setScreenshotUrl(`/screenshot_desktop_win_${colorScheme}.webp`);
-                break;
-        }
-    }, [ colorScheme ]);
 
     return (
         <Section className="hero-section">
@@ -134,7 +115,7 @@ function HeroSection() {
             </div>
 
             <div className="screenshot-container">
-                {screenshotUrl && <img class="screenshot" src={screenshotUrl} alt={t("hero_section.screenshot_alt")} />}
+                <HeroSnapshot title={t("hero_section.screenshot_alt")} />
             </div>
 
             <p className="hero-tagline">
@@ -145,6 +126,41 @@ function HeroSection() {
                 <span>{t("hero_section.tagline_cross_platform")}</span>
             </p>
         </Section>
+    );
+}
+
+/** The size `hero.html` was captured at: `HERO.viewport` in apps/mobile/store/scenes.mjs. */
+const HERO_SNAPSHOT_SIZE = { width: 1360, height: 920 };
+
+/**
+ * Shows `hero.html`, a snapshot of the app, at the viewport it was captured at and scales it to
+ * the width of its frame, since the app lays out against the viewport and cannot reflow.
+ */
+function HeroSnapshot({ title }: { title: string }) {
+    const frameRef = useRef<HTMLDivElement>(null);
+    const [ scale, setScale ] = useState<number>();
+
+    useEffect(() => {
+        const frame = frameRef.current;
+        if (!frame) return;
+        const observer = new ResizeObserver(() => {
+            setScale(frame.clientWidth / HERO_SNAPSHOT_SIZE.width);
+        });
+        observer.observe(frame);
+        return () => observer.disconnect();
+    }, []);
+
+    return (
+        <div
+            ref={frameRef}
+            className={`screenshot ${scale ? "scaled" : ""}`}
+            style={scale ? { "--hero-scale": scale } : undefined}
+        >
+            <iframe
+                src="/hero.html" title={title} tabIndex={-1}
+                width={HERO_SNAPSHOT_SIZE.width} height={HERO_SNAPSHOT_SIZE.height}
+            />
+        </div>
     );
 }
 
