@@ -113,6 +113,20 @@ async function harvestPage() {
         return matches.get(plain);
     }
 
+    /**
+     * The app marks the color scheme with a `light-theme` or `dark-theme` class on `body`, which
+     * the static snapshot cannot toggle. A selector that tests one moves under the matching
+     * `prefers-color-scheme` query, the test replaced by `:nth-child(n)` to keep its specificity.
+     */
+    function unthemeSelector(selector: string) {
+        const light = /:not\(\.dark-theme\)|\.light-theme(?![\w-])/g;
+        const dark = /:not\(\.light-theme\)|\.dark-theme(?![\w-])/g;
+        const scheme = light.test(selector) ? "light" : dark.test(selector) ? "dark" : null;
+        if (!scheme) return { scheme, selector };
+        return { scheme, selector: selector.replace(light, ":nth-child(n)")
+            .replace(dark, ":nth-child(n)") };
+    }
+
     function splitSelectors(text: string) {
         const parts = [];
         let depth = 0;
@@ -141,13 +155,24 @@ async function harvestPage() {
         let out = "";
         for (const rule of rules) {
             if (rule instanceof CSSStyleRule) {
-                const selectors = splitSelectors(rule.selectorText).filter(selectorMatches);
-                if (!selectors.length) {
+                const body = rule.cssText.slice(rule.cssText.indexOf("{"));
+                const byScheme = new Map<string | null, string[]>();
+                for (const selector of splitSelectors(rule.selectorText)) {
+                    const { scheme, selector: plain } = unthemeSelector(selector);
+                    if (!selectorMatches(plain)) continue;
+                    byScheme.set(scheme, [ ...byScheme.get(scheme) ?? [], plain ]);
+                }
+                if (!byScheme.size) {
                     rulesDropped++;
                     continue;
                 }
                 rulesKept++;
-                out += `${selectors.join(",")}${rule.cssText.slice(rule.cssText.indexOf("{"))}\n`;
+                for (const [ scheme, selectors ] of byScheme) {
+                    const kept = `${selectors.join(",")}${body}`;
+                    out += scheme
+                        ? `@media (prefers-color-scheme: ${scheme}){${kept}}\n`
+                        : `${kept}\n`;
+                }
             } else if (rule instanceof CSSMediaRule) {
                 if (/^print$/i.test(rule.conditionText)) continue;
                 const inner = serialize(rule.cssRules);
@@ -260,6 +285,7 @@ async function harvestPage() {
     for (const element of clone.querySelectorAll(removed)) {
         element.remove();
     }
+    clone.querySelector("body")?.classList.remove("light-theme", "dark-theme");
     for (const image of clone.querySelectorAll("img")) {
         const source = image.getAttribute("src");
         image.removeAttribute("srcset");

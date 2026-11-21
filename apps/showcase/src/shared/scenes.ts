@@ -182,21 +182,38 @@ async function openNoteMap(page: Page) {
 export interface HeroVariant {
     /** The file in apps/website/public the snapshot is published as. */
     file: string;
+    /** Finds the note the snapshot shows. */
+    query: string;
+    /** Hoists the note, so the tree shows only its subtree. */
+    hoist: boolean;
     viewport: { width: number; height: number };
-    /** Renders the mobile layout with the phone's user agent and touch. */
-    mobile: boolean;
+    /**
+     * Renders the mobile layout with the phone's user agent and touch, and keeps the safe-area
+     * insets free for the status bar and home indicator the website draws over them.
+     */
+    mobile?: { safeArea: { top: number; bottom: number } };
 }
 
 /**
- * The website hero: the app with the note that `query` finds hoisted and open, once in the desktop
- * layout and once in the mobile one. Each `viewport` equals `HERO_SNAPSHOTS` in
- * apps/website/src/pages/Home/index.tsx and the aspect ratio of its frame in `index.css`.
+ * The website hero: the desktop layout with the Trilium Demo note hoisted, and the mobile layout
+ * with a note of its own, which the website shows in a phone in front of the desktop one. Each
+ * `viewport` and safe area equals `HERO_SNAPSHOTS` in apps/website/src/pages/Home/index.tsx.
  */
-export const HERO: { query: string; variants: HeroVariant[] } = {
-    query: "note.title = 'Trilium Demo'",
+export const HERO: { variants: HeroVariant[] } = {
     variants: [
-        { file: "hero.html", viewport: { width: 1360, height: 920 }, mobile: false },
-        { file: "hero-mobile.html", viewport: { width: 360, height: 720 }, mobile: true }
+        {
+            file: "hero.html",
+            query: "note.title = 'Trilium Demo'",
+            hoist: true,
+            viewport: { width: 1360, height: 920 }
+        },
+        {
+            file: "hero-mobile.html",
+            query: "note.title = 'Rome itinerary'",
+            hoist: false,
+            viewport: { width: 360, height: 760 },
+            mobile: { safeArea: { top: 32, bottom: 20 } }
+        }
     ]
 };
 

@@ -135,46 +135,52 @@ function HeroSection() {
  */
 const HERO_SNAPSHOTS = {
     desktop: { src: "/hero.html", width: 1360, height: 920 },
-    mobile: { src: "/hero-mobile.html", width: 360, height: 720 }
+    mobile: { src: "/hero-mobile.html", width: 360, height: 760 }
 };
 
-/** Matches the breakpoint below which `index.css` gives the hero frame the phone's shape. */
-const HERO_MOBILE_QUERY = "(max-width: 719.99px)";
+/** Matches the breakpoint from which `index.css` shows the desktop snapshot. */
+const HERO_WIDE_QUERY = "(min-width: 720px)";
 
 /**
- * Shows the mobile snapshot alone on narrow screens, and the desktop one with the mobile one
- * overlapping its corner otherwise. The frames mount once the layout is known, so a phone
- * downloads only the mobile snapshot.
+ * Shows the mobile snapshot in a phone, in front of the desktop snapshot on wide screens and
+ * alone otherwise. The desktop snapshot mounts only on a wide screen, so a phone never downloads
+ * it.
  */
 function HeroSnapshot({ title }: { title: string }) {
-    const [ narrow, setNarrow ] = useState<boolean>();
+    const [ wide, setWide ] = useState(false);
 
     useEffect(() => {
-        const query = window.matchMedia(HERO_MOBILE_QUERY);
-        const update = () => setNarrow(query.matches);
+        const query = window.matchMedia(HERO_WIDE_QUERY);
+        const update = () => setWide(query.matches);
         update();
         query.addEventListener("change", update);
         return () => query.removeEventListener("change", update);
     }, []);
 
-    if (narrow === undefined) return <div className="screenshot" />;
-    if (narrow) return <SnapshotFrame snapshot={HERO_SNAPSHOTS.mobile} title={title} />;
     return (
         <>
-            <SnapshotFrame snapshot={HERO_SNAPSHOTS.desktop} title={title} />
-            <SnapshotFrame snapshot={HERO_SNAPSHOTS.mobile} title={title} className="phone" />
+            <SnapshotFrame
+                snapshot={HERO_SNAPSHOTS.desktop} title={title} className="desktop" load={wide}
+            />
+            <div className="hero-phone">
+                <SnapshotFrame snapshot={HERO_SNAPSHOTS.mobile} title={title}>
+                    <PhoneChrome />
+                </SnapshotFrame>
+            </div>
         </>
     );
 }
 
 /**
- * Shows a snapshot at the viewport it was captured at and scales it to the width of its frame,
- * since the app lays out against the viewport and cannot reflow.
+ * Shows a snapshot at the viewport it was captured at and scales it, with `children`, to the
+ * width of its frame, since the app lays out against the viewport and cannot reflow.
  */
-function SnapshotFrame({ snapshot, title, className }: {
+function SnapshotFrame({ snapshot, title, className, load = true, children }: {
     snapshot: typeof HERO_SNAPSHOTS.desktop;
     title: string;
     className?: string;
+    load?: boolean;
+    children?: ComponentChildren;
 }) {
     const frameRef = useRef<HTMLDivElement>(null);
     const [ scale, setScale ] = useState<number>();
@@ -195,10 +201,41 @@ function SnapshotFrame({ snapshot, title, className }: {
             className={[ "screenshot", className, scale && "scaled" ].filter(Boolean).join(" ")}
             style={scale ? { "--hero-scale": scale } : undefined}
         >
-            <iframe
-                src={snapshot.src} title={title} tabIndex={-1}
-                width={snapshot.width} height={snapshot.height}
-            />
+            {load && (
+                <iframe
+                    src={snapshot.src} title={title} tabIndex={-1}
+                    width={snapshot.width} height={snapshot.height}
+                />
+            )}
+            {children}
+        </div>
+    );
+}
+
+/** The status bar and home indicator a phone draws over the safe area of the mobile snapshot. */
+function PhoneChrome() {
+    return (
+        <div className="phone-chrome" aria-hidden="true">
+            <div className="status-bar">
+                <span>9:41</span>
+                <span className="status-icons">
+                    <svg viewBox="0 0 18 12">
+                        <rect x="0" y="8" width="3" height="4" rx="1" />
+                        <rect x="5" y="5.5" width="3" height="6.5" rx="1" />
+                        <rect x="10" y="3" width="3" height="9" rx="1" />
+                        <rect x="15" y="0" width="3" height="12" rx="1" />
+                    </svg>
+                    <svg viewBox="0 0 16 12">
+                        <path d="M8 2.2c2.4 0 4.6.9 6.3 2.5l1.3-1.4A11 11 0 0 0 8 .3 11 11 0 0 0 .4 3.3l1.3 1.4A9 9 0 0 1 8 2.2Zm0 3.8c1.4 0 2.7.5 3.7 1.4L13 6a7.3 7.3 0 0 0-10 0l1.3 1.4C5.3 6.5 6.6 6 8 6Zm0 3.7c-.6 0-1.1.2-1.5.6L8 12l1.5-1.7c-.4-.4-.9-.6-1.5-.6Z" />
+                    </svg>
+                    <svg viewBox="0 0 26 12">
+                        <rect x="0.5" y="0.5" width="22" height="11" rx="3" fill="none" stroke="currentColor" opacity="0.4" />
+                        <rect x="2.5" y="2.5" width="15" height="7" rx="1.5" />
+                        <rect x="24" y="4" width="1.5" height="4" rx="0.75" opacity="0.4" />
+                    </svg>
+                </span>
+            </div>
+            <div className="home-indicator" />
         </div>
     );
 }

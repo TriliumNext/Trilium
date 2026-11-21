@@ -33,10 +33,9 @@ async function buildHero(browser: Browser, options: BuildOptions) {
     fs.mkdirSync(heroDir, { recursive: true });
     const server = await openDemo(browser, options);
     try {
-        const noteId = await findNoteId(server.baseUrl, HERO.query);
         for (const variant of HERO.variants) {
             console.log(`  ${variant.file}`);
-            await captureVariant(browser, server.baseUrl, noteId, variant, heroDir, fonttools);
+            await captureVariant(browser, server.baseUrl, variant, heroDir, fonttools);
         }
     } finally {
         server.stop();
@@ -55,9 +54,10 @@ async function buildHero(browser: Browser, options: BuildOptions) {
 }
 
 /** Screenshots the app in both color schemes and writes the snapshot of the light one. */
-async function captureVariant(browser: Browser, baseUrl: string, noteId: string,
-    variant: HeroVariant, heroDir: string, fonttools: string) {
+async function captureVariant(browser: Browser, baseUrl: string, variant: HeroVariant,
+    heroDir: string, fonttools: string) {
     const name = path.basename(variant.file, ".html");
+    const noteId = await findNoteId(baseUrl, variant.query);
     for (const colorScheme of COLOR_SCHEMES) {
         const context = await browser.newContext(contextOptions(variant, colorScheme));
         if (variant.mobile) {
@@ -65,7 +65,15 @@ async function captureVariant(browser: Browser, baseUrl: string, noteId: string,
         }
         const page = await context.newPage();
         await openApp(page, baseUrl);
-        await openNote(page, noteId, { hoist: true });
+        if (variant.mobile) {
+            const { top, bottom } = variant.mobile.safeArea;
+            await page.evaluate(({ insetTop, insetBottom }) => {
+                const { style } = document.documentElement;
+                style.setProperty("--safe-area-inset-top", `${insetTop}px`);
+                style.setProperty("--safe-area-inset-bottom", `${insetBottom}px`);
+            }, { insetTop: top, insetBottom: bottom });
+        }
+        await openNote(page, noteId, { hoist: variant.hoist });
         await settle(page);
         await page.mouse.move(variant.viewport.width - 1, variant.viewport.height - 1);
         await page.waitForTimeout(500);

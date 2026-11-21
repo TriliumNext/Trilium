@@ -109,30 +109,97 @@ section.hero-section {
         }
     }
 
-    /* The aspect ratios match `HERO.variants` in apps/showcase/src/shared/scenes.ts. */
     .screenshot {
         position: relative;
-        width: 100%;
-        height: auto;
-        aspect-ratio: 1360 / 920;
         margin-bottom: 0;
         overflow: hidden;
-        border-radius: 12px;
-        box-shadow: 0 0 0 1px rgb(0 0 0 / 10%), 0 16px 48px rgb(0 0 0 / 18%);
 
-        iframe {
+        iframe,
+        .phone-chrome {
             position: absolute;
             top: 0;
             left: 0;
             border: 0;
             transform-origin: top left;
             transform: scale(var(--hero-scale));
+        }
+
+        iframe {
             opacity: 0;
             transition: opacity 0.3s;
         }
 
         &.scaled iframe {
             opacity: 1;
+        }
+    }
+
+    /* The aspect ratios match `HERO.variants` in apps/showcase/src/shared/scenes.ts. */
+    .screenshot.desktop {
+        width: 100%;
+        aspect-ratio: 1360 / 920;
+        border-radius: 12px;
+        box-shadow: 0 0 0 1px rgb(0 0 0 / 10%), 0 16px 48px rgb(0 0 0 / 18%);
+    }
+
+    .hero-phone {
+        box-sizing: border-box;
+        padding: 7px;
+        border-radius: 36px;
+        background: #0e0e0e;
+        box-shadow:
+            inset 0 0 0 1px rgb(255 255 255 / 14%),
+            0 0 0 1px rgb(0 0 0 / 25%),
+            0 24px 64px rgb(0 0 0 / 35%);
+
+        .screenshot {
+            width: 100%;
+            aspect-ratio: 360 / 760;
+            border-radius: 29px;
+        }
+    }
+
+    /* The insets match the safe area of `hero-mobile.html`: 32px at the top, 20px at the bottom. */
+    .phone-chrome {
+        width: 360px;
+        height: 760px;
+        pointer-events: none;
+        color: #111;
+        font: 600 14px/1 system-ui, sans-serif;
+
+        @media (prefers-color-scheme: dark) {
+            color: #f2f2f2;
+        }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 32px;
+            padding: 2px 24px 0;
+            box-sizing: border-box;
+        }
+
+        .status-icons {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+
+            svg {
+                height: 12px;
+                fill: currentColor;
+            }
+        }
+
+        .home-indicator {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            width: 120px;
+            height: 4px;
+            border-radius: 2px;
+            background: currentColor;
+            transform: translateX(-50%);
         }
     }
 
@@ -218,11 +285,13 @@ section.hero-section {
             align-self: stretch;
         }
 
-        .screenshot {
-            width: min(100%, 280px);
-            aspect-ratio: 360 / 720;
+        .screenshot.desktop {
+            display: none;
+        }
+
+        .hero-phone {
+            width: min(100%, 290px);
             margin: 2em auto 0;
-            border-radius: 24px;
         }
     }
 }
@@ -275,9 +344,8 @@ section.hero-section {
         justify-content: flex-start;
     }
 
-    /* Deep screenshot: full-height on the right, anchored to the top and run off
-       the right edge of the viewport for an immersive, "spilling off the page"
-       look. Absolutely positioned so its intrinsic size can't inflate the grid. */
+    /* The desktop and the phone side by side on the right, absolutely positioned so their
+       size can't inflate the grid. */
     section.hero-section .screenshot-container {
         position: absolute;
         top: 0;
@@ -287,32 +355,36 @@ section.hero-section {
            width (the absolute % is of the padding box, the grid % of the content
            box). */
         left: calc(40% + 3em);
-        right: calc(50% - 50vw - 8em);
+        /* Reach the right edge of the viewport, past the page's content width. */
+        right: calc(50% - 50vw + 2em);
         display: flex;
-        align-items: flex-start;
-        overflow: hidden;
+        align-items: center;
+        justify-content: center;
+        container-type: size;
     }
 
-    section.hero-section .screenshot {
+    /* The desktop's height, as large as lets the desktop and the phone, which is 0.8 of it
+       tall and about 0.38 of it wide, fit the container side by side. */
+    section.hero-section .screenshot-container > * {
+        --hero-height: min(100cqh - 6em, (100cqw + 2.5em) / (1360 / 920 + 0.38));
+    }
+
+    section.hero-section .screenshot.desktop {
         flex-shrink: 0;
-        height: calc(100% - 3em);
+        height: var(--hero-height);
         width: auto;
         max-width: none;
-        min-width: 62vw;
-        margin-top: 1.5em;
     }
 
-    section.hero-section .screenshot.phone {
-        position: absolute;
-        left: 1.5em;
-        bottom: 0;
-        height: 45%;
-        width: auto;
-        min-width: 0;
-        aspect-ratio: 360 / 720;
-        margin: 0;
-        border-radius: 20px;
-        box-shadow: 0 0 0 1px rgb(0 0 0 / 12%), 0 20px 56px rgb(0 0 0 / 30%);
+    /* The phone overlaps the desktop's right edge, its bottom 0.06 of the desktop's height
+       below the desktop's. */
+    section.hero-section .hero-phone {
+        position: relative;
+        flex-shrink: 0;
+        height: calc(var(--hero-height) * 0.8 - 14px);
+        margin: calc(var(--hero-height) * 0.32) 0 0 -2.5em;
+        box-sizing: content-box;
+        aspect-ratio: 360 / 760;
 
         @media (prefers-reduced-motion: no-preference) {
             animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both;
