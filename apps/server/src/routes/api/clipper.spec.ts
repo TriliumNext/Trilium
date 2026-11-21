@@ -230,6 +230,10 @@ describe("clipper route handlers", () => {
 
         await clip();
         expect(clipping.getLabelValue("pageDescription")).toBe("Updated");
+
+        await clip({ pageDescription: { toString: () => "<b>object</b>" }, pageAuthor: 42 } as unknown as Record<string, string>);
+        expect(clipping.getLabelValue("pageDescription")).toBe("Updated");
+        expect(clipping.hasLabel("pageAuthor")).toBe(false);
     });
 
     it("appends to a clipping note moved out of the inbox without cloning it back", async () => {
@@ -358,7 +362,8 @@ describe("clipper route handlers", () => {
         });
 
         it("stores a script or a web page as an opaque file, and drops labels the extension never sends", async () => {
-            for (const mime of [ "application/javascript", "application/x-javascript", "text/javascript", "text/jsx", "text/html", "application/xhtml+xml" ]) {
+            for (const mime of [ "application/javascript", "application/x-javascript", "text/javascript", "text/jsx", "text/html", "application/xhtml+xml",
+                "application/javascript+x", "application/javascript-foo", "Application/JavaScript.foo" ]) {
                 const { noteId } = await createFile({
                     title: "Clipped",
                     dataUrl: `data:${mime};base64,${Buffer.from("window.__pwned = 1;").toString("base64")}`,
