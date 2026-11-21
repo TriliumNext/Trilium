@@ -7,7 +7,7 @@ import { type ImageAttachmentRole, isDeduplicatedAttachmentRole } from "@trilium
 import sanitizeFilename from "sanitize-filename";
 
 import becca from "../becca/becca.js";
-import { getContext } from "./context.js";
+import { getContext, initWithoutComponent } from "./context.js";
 import { getLog } from "./log.js";
 import { getImageProvider, type ImageShrink } from "./image_provider.js";
 import noteService from "./notes.js";
@@ -216,7 +216,7 @@ function saveImageToAttachment(
 
     // Schedule post-processing to mark unused attachments
     setTimeout(() => {
-        getContext().init(() => {
+        initWithoutComponent(() => {
             getSql().transactional(() => {
                 // Looked up again rather than captured, and without asserting it is still there: five
                 // seconds is ample time for the note to be deleted, whether by the user or by an incoming

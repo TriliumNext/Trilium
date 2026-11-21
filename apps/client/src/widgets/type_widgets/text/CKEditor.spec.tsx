@@ -21,13 +21,24 @@ const mocks = vi.hoisted(() => ({
     assignBlockId: vi.fn((_model: unknown, _element: unknown) => "new"),
     vimConfig: { host: {} },
     buildVimConfig: vi.fn(),
-    useVimMode: vi.fn()
+    useVimMode: vi.fn(),
+    changeListeners: new Set<() => void>(),
+    isRedrawOnly: vi.fn((_document: unknown) => false)
 }));
 
 vi.mock("@triliumnext/ckeditor5", () => {
     class MockEditor {
         plugins = { has: () => false };
-        model = { document: { on() {}, off() {} } };
+        model = {
+            document: {
+                on(name: string, listener: () => void) {
+                    if (name === "change:data") mocks.changeListeners.add(listener);
+                },
+                off(_name: string, listener: () => void) {
+                    mocks.changeListeners.delete(listener);
+                }
+            }
+        };
 
         static async create() {
             await mocks.create();
@@ -45,6 +56,7 @@ vi.mock("@triliumnext/ckeditor5", () => {
         PopupEditor: MockEditor,
         getHeadings: mocks.getHeadings,
         assignBlockId: mocks.assignBlockId,
+        isRedrawOnly: mocks.isRedrawOnly,
         onTextEditorError: (editor: unknown, callback: (error: Error) => void) => {
             mocks.reportingEditor = editor;
             mocks.reportError = callback;
@@ -96,6 +108,8 @@ beforeEach(() => {
     mocks.reportingEditor = undefined;
     mocks.getHeadings.mockReset();
     mocks.assignBlockId.mockReset();
+    mocks.changeListeners.clear();
+    mocks.isRedrawOnly.mockReset().mockReturnValue(false);
     host = document.body.appendChild(document.createElement("div"));
 });
 
@@ -108,6 +122,31 @@ afterEach(async () => {
 });
 
 describe("CKEditor", () => {
+    it("reports a change of the content, and no redraw of an element", async () => {
+        const props = {
+            contentLanguage: null,
+            editorRef: createRef<CKTextEditor>(),
+            onChange: vi.fn(),
+            editorApi: createRef<CKEditorApi>(),
+            templates: []
+        };
+        await act(async () => {
+            render(<CKEditor {...props} />, host);
+        });
+        await vi.waitFor(() => expect(mocks.changeListeners.size).toBe(1));
+        const [ listener ] = mocks.changeListeners;
+
+        listener();
+        expect(props.onChange).toHaveBeenCalledOnce();
+
+        // `reconvertItem()` draws a reference link again with the new title of its note.
+        mocks.isRedrawOnly.mockReturnValueOnce(true);
+        listener();
+        expect(props.onChange).toHaveBeenCalledOnce();
+        expect(mocks.isRedrawOnly)
+            .toHaveBeenLastCalledWith(props.editorRef.current?.model.document);
+    });
+
     it("rebuilds an open editor when the MathLive option changes", async () => {
         const props = {
             contentLanguage: null,

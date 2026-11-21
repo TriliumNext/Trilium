@@ -133,7 +133,6 @@ const {
     onNotificationInfo,
     parseLinkHref,
     onNotificationWarning,
-    refreshLinksAndImages,
     reportEditorError,
     revealLinkTargetWhenReady,
     showFileUploadProgress,
@@ -297,48 +296,6 @@ describe("showFileUploadProgress", () => {
             "change:uploadedPercent",
             listeners.get("change:uploadedPercent")
         );
-    });
-});
-
-describe("refreshLinksAndImages", () => {
-    /** Runs `refreshLinksAndImages()` for the deletion of an attachment of `note1`. */
-    function refresh({ isContentReloaded }: { isContentReloaded: boolean }) {
-        const plugins = {
-            ReferenceLinkEditing: { updateAttachmentLinks: vi.fn(), refreshNoteLinks: vi.fn() },
-            ImageEditingSource: { refresh: vi.fn() }
-        };
-        const editor = {
-            plugins: { get: (name: keyof typeof plugins) => plugins[name], has: () => true },
-            editing: { view: { getDomRoot: () => document.createElement("div") } }
-        } as unknown as CKTextEditor;
-        const loadResults = {
-            getAttachmentRows: () => [ { attachmentId: "converted", isDeleted: true } ],
-            getNoteIds: () => [ "note1" ],
-            isNoteContentReloaded: () => isContentReloaded
-        } as unknown as LoadResults;
-
-        refreshLinksAndImages(editor, loadResults, "note1", "component1", { current: undefined });
-        return plugins;
-    }
-
-    it("redraws the links to the changed notes and attachments, and the images", () => {
-        const { ReferenceLinkEditing, ImageEditingSource } = refresh({ isContentReloaded: false });
-
-        expect(ReferenceLinkEditing.refreshNoteLinks).toHaveBeenCalledExactlyOnceWith([ "note1" ]);
-        expect(ReferenceLinkEditing.updateAttachmentLinks).toHaveBeenCalledExactlyOnceWith([
-            { attachmentId: "converted", isDeleted: true }
-        ]);
-        expect(ImageEditingSource.refresh).toHaveBeenCalledOnce();
-    });
-
-    it("leaves the links to the reloaded content when the note's content reloads", () => {
-        // Converting an attachment into a note rewrites the links to it in the note. A redraw
-        // before the reload schedules a save over the rewritten content.
-        const { ReferenceLinkEditing, ImageEditingSource } = refresh({ isContentReloaded: true });
-
-        expect(ReferenceLinkEditing.refreshNoteLinks).not.toHaveBeenCalled();
-        expect(ReferenceLinkEditing.updateAttachmentLinks).not.toHaveBeenCalled();
-        expect(ImageEditingSource.refresh).toHaveBeenCalledOnce();
     });
 });
 
