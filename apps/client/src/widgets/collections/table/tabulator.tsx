@@ -51,6 +51,13 @@ export default function Tabulator<T extends {}>({ className, columns, data, modu
             onReady?.();
         });
 
+        tabulator.on("columnResized", (column) => {
+            const def = column.getDefinition();
+            if (def && def.resizable !== false) {
+                def.width = column.getWidth();
+            }
+        });
+
         return () => tabulator.destroy();
     }, [ dataTree ] );
 
