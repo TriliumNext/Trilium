@@ -18,16 +18,37 @@ export interface WebsiteSeedData {
     workbook: string;
     /** The PDF of the file note, in Base64. */
     bookingPdf: string;
+    /** The packing list the AI chat writes, as Markdown for the tool call and HTML for the note. */
+    packingMarkdown: string;
+    packingHtml: string;
+    /** The presentation added beside the trip, `TALK`. */
+    talkDeck: TalkDeck;
+}
+
+/** A presentation: its slides, and the background of those marked `glow`. */
+export interface TalkDeck {
+    glow: string;
+    slides: {
+        title: string;
+        content: string;
+        glow?: boolean;
+        /** The vertical slides, as title, content and an optional note type. */
+        slides?: [ string, string, "mermaid"? ][];
+    }[];
 }
 
 /**
  * Adds the notes that the website's screenshots of the other note types and collections show,
  * in a "Trip to Rome" note under the Trilium Demo note, as a backend script with the script `api`
  * in scope: a Markdown note, a budget spreadsheet, a hotel booking PDF, a calendar, a table of
- * places to visit, a presentation and a dashboard of clones of three of the trip's notes. It adds
- * nothing when the note exists, as on a running server given with --url that was seeded before.
+ * places to visit, a dashboard of clones of three of the trip's notes, and an AI chat that reads
+ * the trip and writes a packing list into it; and beside the trip, a presentation about Trilium.
+ * It adds nothing when the trip exists, as on a running server given with --url that was seeded
+ * before.
  */
-export function WEBSITE_SEED({ markdown, workbook, bookingPdf }: WebsiteSeedData) {
+export function WEBSITE_SEED({
+    markdown, workbook, bookingPdf, packingMarkdown, packingHtml, talkDeck
+}: WebsiteSeedData) {
     if (api.searchForNote("note.title = 'Trip to Rome'")) return;
     const demo = api.searchForNote("note.title = 'Trilium Demo'");
     if (!demo) throw new Error("The demo document has no Trilium Demo note.");
@@ -44,14 +65,15 @@ export function WEBSITE_SEED({ markdown, workbook, bookingPdf }: WebsiteSeedData
         return note;
     };
 
-    create({ title: "Getting around", type: "code", mime: "text/x-markdown", content: markdown })
-        .setLabel("iconClass", "bx bxl-markdown");
+    const gettingAround = create({ title: "Getting around", type: "code", mime: "text/x-markdown",
+        content: markdown });
+    gettingAround.setLabel("iconClass", "bx bxl-markdown");
     const budget = create({ title: "Trip budget", type: "spreadsheet", mime: "application/json",
         content: workbook });
     budget.setLabel("iconClass", "bx bx-spreadsheet");
-    create({ title: "Hotel booking.pdf", type: "file", mime: "application/pdf",
-        content: Buffer.from(bookingPdf, "base64") })
-        .setLabel("originalFileName", "Hotel booking.pdf");
+    const booking = create({ title: "Hotel booking.pdf", type: "file", mime: "application/pdf",
+        content: Buffer.from(bookingPdf, "base64") });
+    booking.setLabel("originalFileName", "Hotel booking.pdf");
 
     const calendar = collection("Trip calendar", "calendar", "bx bx-calendar");
     calendar.setLabel("calendar:initialDate", "2026-05-01");
@@ -92,27 +114,36 @@ export function WEBSITE_SEED({ markdown, workbook, bookingPdf }: WebsiteSeedData
         [ "Trevi Fountain", 3, 0, false, "Trevi" ],
         [ "Borghese Gallery", 3, 15, false, "Villa Borghese" ]
     ];
+    const sightNotes: SeedNote[] = [];
     for (const [ title, day, ticket, booked, area ] of sights) {
         const sight = api.createTextNote(places.noteId, title, "").note;
+        sightNotes.push(sight);
         sight.setLabel("day", String(day));
         sight.setLabel("ticket", String(ticket));
         sight.setLabel("booked", String(booked));
         sight.setLabel("area", area);
     }
 
-    const slides = collection("Rome in three days", "presentation", "bx bx-slideshow");
-    const slideContents: [ string, string ][] = [
-        [ "Rome in three days",
-            "<h1>Rome in three days</h1><p>Ana, Ben and Eve · May 12 to 15</p>" ],
-        [ "Day 1", "<h2>Day 1: Ancient Rome</h2><ul><li>The Colosseum at 9:00</li>"
-            + "<li>A walk through the Roman Forum</li><li>Sunset on Palatine Hill</li></ul>" ],
-        [ "Day 2", "<h2>Day 2: The Vatican</h2><ul><li>Vatican Museums and the Sistine Chapel</li>"
-            + "<li>St. Peter's Basilica</li><li>Dinner in Trastevere</li></ul>" ],
-        [ "Day 3", "<h2>Day 3: The old town</h2><ul><li>The Pantheon</li>"
-            + "<li>A coin in the Trevi Fountain</li><li>The Borghese Gallery</li></ul>" ]
-    ];
-    for (const [ title, content ] of slideContents) {
-        api.createTextNote(slides.noteId, title, content);
+    // A talk about Trilium, beside the trip: the section slides carry the brand glows as their
+    // background, and the sections' slides are their vertical slides.
+    const talk = api.createNewNote({
+        parentNoteId: demo.noteId, title: "Introducing Trilium Notes", type: "book", content: ""
+    }).note;
+    talk.setLabel("collection");
+    talk.setLabel("viewType", "presentation");
+    talk.setLabel("iconClass", "bx bx-slideshow");
+    talk.setLabel("presentation:theme", "white");
+    for (const { title, content, glow, slides } of talkDeck.slides) {
+        const slide = api.createTextNote(talk.noteId, title, content).note;
+        if (glow) slide.setLabel("slide:background", talkDeck.glow);
+        for (const [ childTitle, childContent, type ] of slides ?? []) {
+            const kind = type === "mermaid"
+                ? { type: "mermaid", mime: "text/vnd.mermaid" }
+                : { type: "text" };
+            api.createNewNote({
+                parentNoteId: slide.noteId, title: childTitle, content: childContent, ...kind
+            });
+        }
     }
 
     const overview = collection("Trip overview", "dashboard", "bx bx-grid-alt");
@@ -134,6 +165,97 @@ export function WEBSITE_SEED({ markdown, workbook, bookingPdf }: WebsiteSeedData
         mime: "application/json",
         content: JSON.stringify({ widgets })
     });
+
+    // The chat the AI screenshot shows: what a provider stores after reading the trip and
+    // writing the packing list, with the tool calls pointing at the notes above.
+    const packing = api.createTextNote(trip.noteId, "What to pack", packingHtml).note;
+    packing.setLabel("iconClass", "bx bxs-briefcase-alt-2");
+    const itinerary = api.searchForNote("note.title = 'Rome itinerary'");
+    const calls: [ string, object, unknown ][] = [
+        [ "get_child_notes", { noteId: trip.noteId }, [
+            [ gettingAround, "Getting around", "code", 0 ],
+            [ budget, "Trip budget", "spreadsheet", 0 ],
+            [ booking, "Hotel booking.pdf", "file", 0 ], [ calendar, "Trip calendar", "book", 10 ],
+            [ places, "Places to visit", "book", 9 ],
+            [ overview, "Trip overview", "book", 3 ]
+        ].map(([ note, title, type, childCount ]) => {
+            return { noteId: (note as SeedNote).noteId, title, type, childCount };
+        }) ],
+        [ "get_note_content", { noteId: itinerary?.noteId }, {
+            noteId: itinerary?.noteId,
+            content: "Three days in the Eternal City with **Ana**, **Ben** and **Eve**.\n\n"
+                + "## Day 1: Ancient Rome\n\nMeet at The Colosseum at **9:00**, then walk "
+                + "through the *Roman Forum* to Palatine Hill.\n\n### Packing list\n\n"
+                + "- [x] Passports\n- [x] Comfortable shoes\n- [ ] Camera charger\n"
+                + "- [ ] Travel adapter"
+        } ],
+        [ "get_note_content", { noteId: booking.noteId }, {
+            noteId: booking.noteId,
+            content: "Hotel Colosseo. Booking reference RM-48213, for Ana, Ben and Eve. Check-in "
+                + "Tuesday, May 12, 2026. Check-out Friday, May 15, 2026. Breakfast included."
+        } ],
+        [ "get_child_notes", { noteId: places.noteId }, sights.map(([ title ], index) => {
+            return { noteId: sightNotes[index].noteId, title, type: "text", childCount: 0 };
+        }) ],
+        [ "create_note", { parentNoteId: trip.noteId, title: "What to pack", type: "text",
+            content: packingMarkdown }, { success: true, noteId: packing.noteId,
+            title: "What to pack", type: "text", content: packingMarkdown } ],
+        [ "search_icons", { query: "suitcase luggage travel" }, { totalResults: 3, results: [
+            { iconClass: "bx bxs-briefcase-alt-2",
+                terms: [ "briefcase-alt-2", "travel", "suitcase" ] },
+            { iconClass: "bx bx-briefcase", terms: [ "briefcase", "travel", "suitcase" ] },
+            { iconClass: "bx bx-trip", terms: [ "trip", "travel", "luggage" ] }
+        ] } ],
+        [ "set_attribute", { noteId: packing.noteId, type: "label", name: "iconClass",
+            value: "bx bxs-briefcase-alt-2" }, { success: true, noteId: packing.noteId,
+            type: "label", name: "iconClass", value: "bx bxs-briefcase-alt-2" } ]
+    ];
+    const toolCall = ([ toolName, input, result ]: [ string, object, unknown ], index: number) => ({
+        type: "tool_call",
+        toolCall: { id: `toolu_${index}`, toolName, input, result: JSON.stringify(result),
+            isError: false }
+    });
+    const text = (content: string) => ({ type: "text", content });
+    const chat = {
+        version: 1,
+        messages: [ {
+            id: "packingQuestion",
+            role: "user",
+            content: "Have a look at this trip and tell me what to pack. "
+                + "Write it into a new subnote.",
+            createdAt: "2026-05-04T18:02:11.000Z"
+        }, {
+            id: "packingAnswer",
+            role: "assistant",
+            content: [
+                text("I'll read through the trip first."),
+                ...calls.slice(0, 4).map(toolCall),
+                text("Three nights in Rome in mid-May, with a lot of walking: the Colosseum, the "
+                    + "Forum, the Vatican and the Borghese Gallery. I'll write the list into a "
+                    + "subnote."),
+                ...calls.slice(4).map((call, index) => toolCall(call, index + 4)),
+                text(`I wrote the packing list into [[${packing.noteId}]]. The highlights:\n\n`
+                    + "- **Comfortable shoes** come first: the itinerary has you walking from "
+                    + "9:00 every day.\n"
+                    + "- **Cover shoulders and knees** on day 2, or St. Peter's Basilica turns "
+                    + "you away.\n"
+                    + "- The **camera charger** and the **travel adapter** are still unchecked "
+                    + `in [[${itinerary?.noteId}]]; Italy uses type F and L plugs.\n`
+                    + "- Breakfast is included at the hotel, so keep the €1.50 bus tickets and "
+                    + "some cash for lunches.")
+            ],
+            createdAt: "2026-05-04T18:02:43.000Z",
+            usage: { promptTokens: 18342, completionTokens: 1204, totalTokens: 19546,
+                model: "Claude Sonnet 5.5", provider: "anthropic" }
+        } ],
+        selectedModel: "claude-sonnet-5-5",
+        selectedProvider: "anthropic",
+        selectedProviderId: "showcase",
+        enableWebSearch: true,
+        enableNoteTools: true
+    };
+    create({ title: "Packing for Rome", type: "llmChat", mime: "application/json",
+        content: JSON.stringify(chat) });
 }
 
 /** The content of the Markdown note that `WEBSITE_SEED` adds. */
@@ -246,3 +368,126 @@ export const BOOKING_HTML = `<!doctype html>
     </table>
     <p class="muted">Free cancellation until May 5, 2026.</p>
 </body></html>`;
+
+/** The packing list that the seeded AI chat writes, as the Markdown it sends to `create_note`. */
+export const PACKING_MARKDOWN = `## Packing for Rome, May 12 to 15
+
+### Clothes
+- Comfortable walking shoes, already broken in
+- Light layers: May evenings get down to 15 °C
+- Something that covers shoulders and knees, for St. Peter's Basilica
+
+### Documents
+- Passports
+- Hotel booking (reference RM-48213)
+- Tickets for the Colosseum and the Vatican Museums
+
+### Electronics
+- Camera and its charger
+- Travel adapter for type F and L plugs
+- Power bank
+
+### Day bag
+- Refillable water bottle, for the *nasoni* fountains
+- Small umbrella
+- Cash for bus tickets and lunches
+`;
+
+/** The packing list of `PACKING_MARKDOWN`, as the HTML the text note stores. */
+export const PACKING_HTML = PACKING_MARKDOWN
+    .split(/\n(?=###? )/)
+    .map((section) => {
+        const [ heading, ...lines ] = section.trim().split("\n");
+        const level = heading.startsWith("### ") ? 3 : 2;
+        const items = lines.filter((line) => line.startsWith("- "))
+            .map((line) => `<li>${line.slice(2).replace(/\*(.+?)\*/g, "<i>$1</i>")}</li>`)
+            .join("");
+        return `<h${level}>${heading.replace(/^#+ /, "")}</h${level}>`
+            + (items ? `<ul>${items}</ul>` : "");
+    })
+    .join("");
+
+/**
+ * The presentation `WEBSITE_SEED` adds beside the trip, trimmed from a talk on Trilium: a cover,
+ * two sections with their slides, and a closing slide. `glow` is the website hero's brand glows,
+ * the background of the cover and the section slides.
+ */
+export const TALK: TalkDeck = {
+    glow: [
+        "radial-gradient(40vmax 40vmax at 15% 25%,rgba(228,123,25,.25),transparent 70%)",
+        "radial-gradient(35vmax 35vmax at 75% 20%,rgba(79,165,43,.22),transparent 70%)",
+        "radial-gradient(28vmax 28vmax at 60% 75%,rgba(227,63,59,.22),transparent 70%)",
+        "radial-gradient(20vmax 20vmax at 85% 65%,rgba(228,123,25,.18),transparent 70%)",
+        "radial-gradient(15vmax 15vmax at 40% 50%,rgba(79,165,43,.15),transparent 70%)"
+    ].join(","),
+    slides: [
+        {
+            title: "Cover slide",
+            glow: true,
+            content: "<h2><span class=\"text-tiny\">Building your personal knowledge base with"
+                + "</span></h2><h2><span class=\"text-big\" style=\"color:hsl(29, 80%, 50%);\">"
+                + "Trilium Notes</span></h2><p><span class=\"text-tiny\" "
+                + "style=\"color:hsl(0, 0%, 30%);\">A journey from note-taking to open-source "
+                + "stewardship</span></p>"
+        },
+        {
+            title: "I. Introduction",
+            glow: true,
+            content: "<h2><span class=\"text-tiny\">Part I</span><br>Introduction</h2>",
+            slides: [
+                [ "What is Trilium", "<h3>What is Trilium Notes?</h3><figure class=\"table\" "
+                    + "style=\"width:100%;\"><table><thead><tr><th>🌲 Hierarchical knowledge "
+                    + "base</th>"
+                    + "<th>✨️ Rich editor &amp; visuals</th></tr></thead><tbody><tr><td><ul>"
+                    + "<li><span class=\"text-tiny\">Unlimited tree depth with note cloning</span>"
+                    + "</li><li><span class=\"text-tiny\">Full‑text &amp; fuzzy search, relation "
+                    + "&amp; link maps</span></li></ul></td><td><ul><li><span class=\"text-tiny\">"
+                    + "WYSIWYG editing with tables, images, math formulas, code blocks with syntax "
+                    + "highlight, admonitions, etc.</span></li><li><span class=\"text-tiny\">"
+                    + "Drawing "
+                    + "canvas (powered by Excalidraw), Mindmaps, Mermaid diagrams, Note Maps, "
+                    + "Relation Maps</span></li></ul></td></tr></tbody></table></figure>" ],
+                [ "Key strengths", "<h2>🔑 Key strengths</h2><ul><li><span class=\"text-small\">"
+                    + "No vendor lock-in: notes are fully exportable to Markdown or HTML.</span>"
+                    + "</li>"
+                    + "<li><span class=\"text-small\">Self-host your own Trilium server on a VPS, "
+                    + "Raspberry Pi, or NAS, or even run it on your laptop.</span></li><li><span "
+                    + "class=\"text-small\">Or simply use the desktop application (Windows, Linux, "
+                    + "macOS).</span></li><li><span class=\"text-small\">Fully hackable: create "
+                    + "your "
+                    + "own UI themes, add features to the editors, or write custom widgets.</span>"
+                    + "</li></ul>" ]
+            ]
+        },
+        {
+            title: "II. Life as a maintainer",
+            glow: true,
+            content: "<h2><span class=\"text-tiny\">Part II</span><br>Life as a maintainer</h2>",
+            slides: [
+                [ "Quick history", [
+                    "timeline",
+                    "    title Quick history of the fork",
+                    "    Christmas 2017: First release",
+                    "    January 2024: Enters maintenance mode (no features, bugfixing only)",
+                    "                : Forked into TriliumNext as a community",
+                    "    July 2024: First release by the fork",
+                    "    June 2025: Merged back into the original repo"
+                ].join("\n"), "mermaid" ],
+                [ "Improvements", "<h2>🚀 Improvements from the original app</h2><ul><li>🔄 "
+                    + "Converted the entire source code to TypeScript.</li><li>⚙️ Added proper CI "
+                    + "mechanisms for building, testing, releasing, translation platforms.</li><li>"
+                    + "⬆️ Modernized the tech stack (converted to ES modules, monorepo).</li>"
+                    + "</ul>" ]
+            ]
+        },
+        {
+            title: "Ending",
+            glow: true,
+            content: "<p><span class=\"text-huge\">🍒 And the cherry on the top…</span></p>",
+            slides: [
+                [ "Meta", "<p><span class=\"text-big\">This presentation was created and is being "
+                    + "displayed entirely within the Trilium app!</span></p>" ]
+            ]
+        }
+    ]
+};

@@ -28,11 +28,15 @@ export async function openDemo(browser: Browser,
     return url ? { baseUrl: url, stop() {} } : await startSeededServer(browser, port);
 }
 
-/** Starts a demo server and adds what `SEED` in `scenes.ts` seeds. */
+/**
+ * Starts a demo server, adds what `SEED` in `scenes.ts` seeds and pins the notes' dates with
+ * `pinNoteDates()`.
+ */
 export async function startSeededServer(browser: Browser, port: number) {
     const server = await startDemoServer({ port, logPath: path.join(outDir, "server.log") });
     try {
         await seedDocument(browser, server.baseUrl, SEED, [ TRIP_COSTS, ITINERARY ]);
+        await pinNoteDates(browser, server.baseUrl);
     } catch (e) {
         server.stop();
         throw e;
@@ -135,6 +139,42 @@ export async function seedDocument<Params extends unknown[]>(browser: Browser, b
         }
     } finally {
         await page.close();
+    }
+}
+
+/**
+ * The moment every note of the demo document is created and modified at, so that the dates the
+ * app shows (such as "Created on" above a text note) do not depend on the day of the build.
+ */
+const DEMO_DATE = { local: "2026-05-04 18:00:00.000+0200", utc: "2026-05-04 16:00:00.000Z" };
+
+/**
+ * Sets the creation and modification dates of every note to `DEMO_DATE`, in the database and in
+ * the server's note cache. Call it after the last seed, on a server the build started.
+ */
+export async function pinNoteDates(browser: Browser, baseUrl: string) {
+    await seedDocument(browser, baseUrl, PIN_NOTE_DATES, [ DEMO_DATE ]);
+}
+
+/** The part of the backend script API that `PIN_NOTE_DATES` calls. */
+declare const api: {
+    sql: {
+        execute(query: string, params: unknown[]): void;
+        getColumn(query: string): string[];
+    };
+    getNote(noteId: string): Record<string, unknown> | null;
+};
+
+function PIN_NOTE_DATES({ local, utc }: typeof DEMO_DATE) {
+    api.sql.execute("UPDATE notes SET dateCreated = ?, dateModified = ?, utcDateCreated = ?, "
+        + "utcDateModified = ?", [ local, local, utc, utc ]);
+    for (const noteId of api.sql.getColumn("SELECT noteId FROM notes")) {
+        const note = api.getNote(noteId);
+        if (note) {
+            Object.assign(note, {
+                dateCreated: local, dateModified: local, utcDateCreated: utc, utcDateModified: utc
+            });
+        }
     }
 }
 

@@ -4,9 +4,12 @@ import type { Browser, BrowserContext, Page } from "playwright";
 
 import { openApp, openNote, settle } from "../shared/browser.ts";
 import { type BuildOptions, outDir, repoRoot } from "../shared/build.ts";
-import { findNoteId, openDemo, seedDocument } from "../shared/demo_server.ts";
+import { findNoteId, openDemo, pinNoteDates, seedDocument } from "../shared/demo_server.ts";
 import { SCENES, zoomOutMindMap } from "../shared/scenes.ts";
-import { BOOKING_HTML, buildBudgetWorkbook, GETTING_AROUND, WEBSITE_SEED } from "./seed.ts";
+import {
+    BOOKING_HTML, buildBudgetWorkbook, GETTING_AROUND, PACKING_HTML, PACKING_MARKDOWN, TALK,
+    WEBSITE_SEED
+} from "./seed.ts";
 
 /**
  * The website's screenshots, each of the scene in `SCENES` with the ID `scene` or of the note
@@ -30,26 +33,53 @@ const WEBSITE_SHOTS: WebsiteShot[] = [
     { query: "note.title = 'Getting around'", file: "type_markdown", area: "note" },
     { query: "note.title = 'Trip budget'", file: "type_spreadsheet", area: "note" },
     { query: "note.title = 'Hotel booking.pdf'", file: "type_file", area: "note" },
-    { query: "note.title = 'Trip calendar'", file: "collection_calendar", area: "note" },
+    {
+        query: "note.title = 'Trip calendar'", file: "collection_calendar", area: "note",
+        prepare: waitForCalendar
+    },
     { query: "note.title = 'Places to visit'", file: "collection_table", area: "note" },
-    { query: "note.title = 'Rome in three days'", file: "collection_presentation", area: "note" },
-    { query: "note.title = 'Trip overview'", file: "collection_dashboard", area: "note" }
+    {
+        query: "note.title = 'Introducing Trilium Notes'", file: "collection_presentation",
+        area: "note"
+    },
+    { query: "note.title = 'Trip overview'", file: "collection_dashboard", area: "note" },
+    {
+        query: "note.title = 'Packing for Rome'", file: "feature_llm", area: "note",
+        window: { noteWidth: 720, height: 1000 }
+    }
 ];
 
 /**
- * The window is as tall as `WINDOW_HEIGHT` and as wide as gives the `note` area the aspect ratio
- * of `.tabbed-showcase .showcase-image-frame` in apps/website/src/pages/Home/index.css.
+ * The window's height and the width it gives the `note` area, in the aspect ratio of
+ * `.tabbed-showcase .showcase-image-frame` in apps/website/src/pages/Home/index.css.
  */
-const WINDOW_HEIGHT = 720;
-const NOTE_ASPECT_RATIO = 16 / 10;
+const WINDOW: WindowSize = { noteWidth: 1152, height: 720 };
 const WEBP_QUALITY = 0.85;
 
-interface WebsiteShot {
+export interface WindowSize {
+    noteWidth: number;
+    height: number;
+}
+
+type ColorScheme = "light" | "dark";
+
+/**
+ * A shot of the demo document in the desktop layout. `area` is the part of the window kept:
+ * `note` is everything right of the note tree, `tree` is the tree, `window` is both.
+ */
+export interface Shot {
     scene?: string;
     query?: string;
-    file: string;
-    area: "note" | "tree";
+    area: "note" | "tree" | "window";
+    /** Replaces the window's height and the width of its note area, `WINDOW`. */
+    window?: WindowSize;
+    /** The color schemes the shot is captured in, or all those `captureShots()` opens. */
+    colorSchemes?: ColorScheme[];
     prepare?(page: Page): Promise<unknown>;
+}
+
+interface WebsiteShot extends Shot {
+    file: string;
 }
 
 export const WEBSITE_TARGETS = {
@@ -57,9 +87,9 @@ export const WEBSITE_TARGETS = {
 };
 
 /**
- * Captures the scenes of `WEBSITE_SHOTS` in the desktop layout of a browser, in light and dark,
- * at 2x, and writes them as WebP to `out/website` and to `apps/website/public`: `<file>.webp`
- * for light and `<file>-dark.webp` for dark.
+ * Captures the scenes of `WEBSITE_SHOTS` in light and dark, at 2x, and writes them as WebP to
+ * `out/website` and to `apps/website/public`: `<file>.webp` for light and `<file>-dark.webp`
+ * for dark.
  */
 async function buildWebsite(browser: Browser, options: BuildOptions) {
     const websiteDir = path.join(outDir, "website");
@@ -67,75 +97,89 @@ async function buildWebsite(browser: Browser, options: BuildOptions) {
     fs.mkdirSync(websiteDir, { recursive: true });
     const shots = WEBSITE_SHOTS
         .filter((shot) => options.only?.includes(shot.scene ?? shot.file) ?? true);
+    await captureShots(browser, options, shots, {
+        colorSchemes: [ "light", "dark" ],
+        scale: 2,
+        async write(shot, colorScheme, png) {
+            const webp = await encodeWebp(browser, png);
+            const suffix = colorScheme === "light" ? "" : "-dark";
+            const output = path.join(websiteDir, `${shot.file}${suffix}.webp`);
+            fs.writeFileSync(output, webp);
+            fs.copyFileSync(output, path.join(publicDir, path.basename(output)));
+            console.log(`  ${path.relative(outDir, output)} `
+                + `(${Math.round(webp.length / 1024)} KB)`);
+        }
+    });
+}
+
+/**
+ * Boots the demo document with `WEBSITE_SEED`, opens a browser window per color scheme at
+ * `scale`, and hands each shot's PNG to `write()`.
+ */
+export async function captureShots<S extends Shot>(browser: Browser, options: BuildOptions,
+    shots: S[], { colorSchemes, scale, write }: {
+        colorSchemes: ColorScheme[];
+        scale: number;
+        write(shot: S, colorScheme: ColorScheme, png: Buffer): Promise<void>;
+    }) {
     const server = await openDemo(browser, options);
     await seedDocument(browser, server.baseUrl, WEBSITE_SEED, [ {
         markdown: GETTING_AROUND,
         workbook: buildBudgetWorkbook(),
-        bookingPdf: (await printPdf(browser, BOOKING_HTML)).toString("base64")
+        bookingPdf: (await printPdf(browser, BOOKING_HTML)).toString("base64"),
+        packingMarkdown: PACKING_MARKDOWN,
+        packingHtml: PACKING_HTML,
+        talkDeck: TALK
     } ]);
+    if (!options.url) await pinNoteDates(browser, server.baseUrl);
     const contexts: BrowserContext[] = [];
     try {
         // Both color schemes capture each shot in turn, so that they show the tree expanded alike.
         const windows = [];
-        for (const colorScheme of [ "light", "dark" ] as const) {
+        for (const colorScheme of colorSchemes) {
             const context = await browser.newContext({
-                viewport: { width: 1440, height: WINDOW_HEIGHT },
-                deviceScaleFactor: 2,
-                colorScheme
+                viewport: { width: 1440, height: WINDOW.height },
+                deviceScaleFactor: scale,
+                colorScheme,
+                locale: "en-US",
+                timezoneId: "Europe/Bucharest"
             });
             contexts.push(context);
             const page = await context.newPage();
             page.on("pageerror", (error) => {
-                console.warn(`  [website/${colorScheme}] page error: ${error.message}`);
+                console.warn(`  [${colorScheme}] page error: ${error.message}`);
             });
             await openApp(page, server.baseUrl);
-            if (!windows.length) await hideRightPane(page);
+            if (!windows.length) await setOptions(page, SHOWCASE_OPTIONS);
             await openApp(page, server.baseUrl);
-            windows.push({ page, suffix: colorScheme === "light" ? "" : "-dark" });
+            windows.push({ page, colorScheme });
         }
-        // The tree pane's width follows the window's, so the window is sized until the note area
-        // keeps its width.
-        const noteWidth = Math.round(WINDOW_HEIGHT * NOTE_ASPECT_RATIO);
-        let noteLeft = 0;
-        let width = 0;
-        for (let attempt = 0; attempt < 5 && width !== noteLeft + noteWidth; attempt++) {
-            if (width) {
-                width = noteLeft + noteWidth;
-                await windows[0].page.setViewportSize({ width, height: WINDOW_HEIGHT });
-                await windows[0].page.waitForTimeout(500);
-            } else {
-                width = windows[0].page.viewportSize()?.width ?? 0;
-            }
-            noteLeft = await windows[0].page.locator(".note-split.visible").first()
-                .evaluate((split) => Math.round(split.getBoundingClientRect().left));
-        }
-        for (const { page } of windows) {
-            await page.setViewportSize({ width, height: WINDOW_HEIGHT });
-        }
-
         for (const shot of shots) {
             const scene = shot.scene ? findScene(shot.scene) : undefined;
             const query = scene ? scene.desktopQuery ?? scene.query : shot.query;
-            if (!query) throw new Error(`The website shot ${shot.file} has no scene or query.`);
+            if (!query) throw new Error(`A shot has neither a scene nor a query.`);
             const noteId = await findNoteId(server.baseUrl, query);
-            for (const { page, suffix } of windows) {
+            for (const { page, colorScheme } of windows) {
+                if (shot.colorSchemes && !shot.colorSchemes.includes(colorScheme)) continue;
+                const size = shot.window ?? WINDOW;
+                const noteLeft = await fitWindow(page, size);
                 await openNote(page, noteId);
                 await settle(page);
                 await scene?.desktopPrepare?.(page);
                 await shot.prepare?.(page);
-                await page.mouse.move(width - 1, WINDOW_HEIGHT - 1);
+                await page.mouse.move(noteLeft + size.noteWidth - 1, size.height - 1);
                 await settle(page);
 
-                const clip = shot.area === "note"
-                    ? { x: noteLeft, y: 0, width: width - noteLeft, height: WINDOW_HEIGHT }
-                    : await page.locator("#left-pane").boundingBox();
+                const clip = shot.area === "tree"
+                    ? await page.locator("#left-pane").boundingBox()
+                    : {
+                        x: shot.area === "note" ? noteLeft : 0,
+                        y: 0,
+                        width: size.noteWidth + (shot.area === "note" ? 0 : noteLeft),
+                        height: size.height
+                    };
                 if (!clip) throw new Error("The note tree is not shown.");
-                const webp = await encodeWebp(browser, await page.screenshot({ clip }));
-                const output = path.join(websiteDir, `${shot.file}${suffix}.webp`);
-                fs.writeFileSync(output, webp);
-                fs.copyFileSync(output, path.join(publicDir, path.basename(output)));
-                console.log(`  ${path.relative(outDir, output)} `
-                    + `(${Math.round(webp.length / 1024)} KB)`);
+                await write(shot, colorScheme, await stableScreenshot(page, clip));
             }
         }
     } finally {
@@ -144,22 +188,90 @@ async function buildWebsite(browser: Browser, options: BuildOptions) {
     }
 }
 
+/**
+ * Sizes the window to `height`, with the note area right of the tree at least `noteWidth` wide,
+ * and returns where the note area starts. The tree pane takes a share of the window's width, so
+ * the window is widened or narrowed until the note area fits. Every shot starts from the same
+ * width, so that a shot's window does not depend on the shots before it.
+ */
+async function fitWindow(page: Page, { noteWidth, height }: WindowSize) {
+    const measure = () => page.locator(".note-split.visible").first()
+        .evaluate((split) => split.getBoundingClientRect().left);
+    let width = 1440;
+    let noteLeft = 0;
+    for (let attempt = 0; attempt < 10; attempt++) {
+        await page.setViewportSize({ width, height });
+        await page.waitForTimeout(300);
+        noteLeft = await measure();
+        const excess = width - noteLeft - noteWidth;
+        if (excess >= 0 && excess < 1) break;
+        width -= excess >= 0 ? Math.floor(excess) : -Math.ceil(-excess);
+    }
+    if (width - noteLeft < noteWidth) {
+        throw new Error(`The note area does not fit ${noteWidth} px.`);
+    }
+    return noteLeft;
+}
+
+/**
+ * Screenshots `clip` until two screenshots a second apart are identical, and returns the last,
+ * so that content still loading or a transition still running does not reach the image. Gives
+ * up after `attempts` with a warning.
+ */
+async function stableScreenshot(page: Page, clip: { x: number; y: number; width: number;
+    height: number; }, attempts = 15) {
+    let previous = await page.screenshot({ clip });
+    for (let attempt = 0; attempt < attempts; attempt++) {
+        await page.waitForTimeout(1000);
+        const current = await page.screenshot({ clip });
+        if (current.equals(previous)) return current;
+        previous = current;
+    }
+    console.warn(`  The screenshot did not settle in ${attempts} s.`);
+    return previous;
+}
+
+/**
+ * Waits for the calendar to draw its events: `settle()` returns before FullCalendar renders on
+ * the first visit of a session.
+ */
+export function waitForCalendar(page: Page) {
+    return page.locator(".calendar-event[data-event-note-id]").first().waitFor();
+}
+
 function findScene(id: string) {
     const scene = SCENES.find((candidate) => candidate.id === id);
     if (!scene) throw new Error(`No scene has the ID ${id}.`);
     return scene;
 }
 
-/** Turns the right pane off through the options API, for the app's next load. */
-async function hideRightPane(page: Page) {
-    const status = await page.evaluate(async () => {
-        const response = await fetch("api/options/rightPaneVisible/false", {
+/**
+ * The options the screenshots are taken with: no right pane, and an AI provider for the AI chat
+ * to show its input bar instead of a prompt to add one. The provider has no key and is never
+ * called.
+ */
+const SHOWCASE_OPTIONS = {
+    rightPaneVisible: "false",
+    llmProviders: JSON.stringify([ {
+        id: "showcase",
+        name: "Anthropic",
+        provider: "anthropic",
+        kind: "llm",
+        selectedModels: [ { id: "claude-sonnet-5-5", name: "Claude Sonnet 5.5", isDefault: true } ]
+    } ])
+};
+
+/** Sets options through the options API, for the app's next load. */
+async function setOptions(page: Page, options: Record<string, string>) {
+    const status = await page.evaluate(async (body) => {
+        const response = await fetch("api/options", {
             method: "PUT",
-            headers: await window.glob.getHeaders()
+            headers: { ...await window.glob.getHeaders(), "Content-Type": "application/json" },
+            body: JSON.stringify(body)
         });
         return response.status;
-    });
-    if (status >= 400) throw new Error(`Hiding the right pane failed (${status}).`);
+    }, options);
+    if (status >= 400) throw new Error(`Setting the options failed (${status}).`);
 }
 
 async function printPdf(browser: Browser, html: string) {
@@ -173,7 +285,7 @@ async function printPdf(browser: Browser, html: string) {
 }
 
 /** Encodes a PNG as WebP through a canvas, since Playwright screenshots only as PNG or JPEG. */
-async function encodeWebp(browser: Browser, png: Buffer) {
+export async function encodeWebp(browser: Browser, png: Buffer) {
     const page = await browser.newPage();
     try {
         const dataUrl = await page.evaluate(async ({ source, quality }) => {

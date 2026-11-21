@@ -390,7 +390,7 @@ function AiIntegrationSection() {
         <Section id="ai-integration" className="benefits ai-integration" title={t("ai_integration.title")} subtitle={t("ai_integration.subtitle")} cta={{ text: t("ai_integration.learn_more"), href: "https://docs.triliumnotes.org/user-guide/llm" }}>
             <div className="feature-split">
                 <div className="feature-screenshot">
-                    <img src="/feature_llm.webp" alt={t("ai_integration.screenshot_alt")} loading="lazy" />
+                    <Screenshot src="/feature_llm.webp" darkSrc="/feature_llm-dark.webp" alt={t("ai_integration.screenshot_alt")} />
                 </div>
                 <div className="benefits-container feature-cards">
                     <Card iconSvg={botIcon} title={t("ai_integration.chat_title")}>{t("ai_integration.chat_description")}</Card>
