@@ -1,5 +1,5 @@
 # Calendar
-<figure class="image"><img style="aspect-ratio:2016/1413;" src="1_Calendar_image.png" width="2016" height="1413"></figure>
+<figure class="image"><img style="aspect-ratio:1152/720;" src="Calendar_demo.webp" width="1152" height="720"></figure>
 
 The Calendar view will display each child note in a calendar that has a start date and optionally an end date, as an event.
 
@@ -40,7 +40,7 @@ After creating the event, it will show up on the calendar. To edit the content o
 ## Interacting with events
 
 *   Hovering the mouse over an event will display information about the note.  
-    ![](4_Calendar_image.png)
+    ![](3_Calendar_image.png)
 *   Left clicking the event will open a dedicated popup to quickly configure the event or edit its note content.
 *   Right click will offer more options including opening the note in a new split or window.
 *   Drag and drop an event on the calendar to move it to another day.
@@ -191,7 +191,7 @@ For each note of the calendar, the following attributes can be used:
 | `#iconClass` | If present, the icon of the note will be displayed to the left of the event title. |
 | `#calendar:title` | Changes the title of an event to point to an attribute of the note other than the title, can either a label or a relation (without the `#` or `~` symbol). See _Use-cases_ for more information. |
 | `#calendar:titleTemplate` | Changes the title an event is displayed with on the calendar, filled in again for every occurrence of a repeating event. See _Use-cases_ for displaying an age on a birthday. |
-| `#calendar:displayedAttributes` | Takes precedence over the [Event attributes](#event-attributes) chosen in the calendar's properties. Allows displaying the value of one or more attributes in the calendar, in the order given, like this:            <br>  <br>![](6_Calendar_image.png)           <br>  <br>`#weight="70" #Mood="Good" #calendar:displayedAttributes="weight,Mood"`          <br>  <br>It can also be used with relations, case in which it will display the title of the target note:           <br>  <br>`~assignee=@My assignee #calendar:displayedAttributes="assignee"` |
+| `#calendar:displayedAttributes` | Takes precedence over the [Event attributes](#event-attributes) chosen in the calendar's properties. Allows displaying the value of one or more attributes in the calendar, in the order given, like this:            <br>  <br>![](5_Calendar_image.png)           <br>  <br>`#weight="70" #Mood="Good" #calendar:displayedAttributes="weight,Mood"`          <br>  <br>It can also be used with relations, case in which it will display the title of the target note:           <br>  <br>`~assignee=@My assignee #calendar:displayedAttributes="assignee"` |
 | `#calendar:startDate` | Allows using a different label to represent the start date, other than `startDate` (e.g. `expiryDate`). The label name **must not be** prefixed with `#`. If the label is not defined for a note, the default will be used instead. |
 | `#calendar:endDate` | Similar to `#calendar:startDate`, allows changing the attribute which is being used to read the end date. |
 | `#calendar:startTime` | Similar to `#calendar:startDate`, allows changing the attribute which is being used to read the start time. |
@@ -199,7 +199,7 @@ For each note of the calendar, the following attributes can be used:
 
 ## How the calendar works
 
-![](8_Calendar_image.png)
+![](7_Calendar_image.png)
 
 The calendar displays all the child notes of the Collection that have a `#startDate`. An `#endDate` can optionally be added.
 
@@ -215,7 +215,7 @@ The start date & end date can easily be edited from the calendar collection itse
 
 This will result in:
 
-![](7_Calendar_image.png)
+![](6_Calendar_image.png)
 
 When not used in a Journal, the calendar is recursive. That is, it will look for events not just in its child notes but also in the children of these child notes.
 
@@ -300,11 +300,11 @@ Based on the `#calendarRoot` (or `#workspaceCalendarRoot`) attribute, the calend
 *   Clicking on the empty space on a date will automatically open that day's note or create it if it does not exist.
 *   Direct children of a day note will be displayed on the calendar despite not having a `dateNote` attribute. Children of the child notes will not be displayed.
 
-<img src="5_Calendar_image.png" width="1217" height="724">
+<img src="4_Calendar_image.png" width="1217" height="724">
 
 ### Using a different attribute as event title
 
-<img class="image-style-align-right" src="2_Calendar_image.png" width="445" height="124">By default, events are displayed on the calendar by their note title. However, it is possible to configure a different attribute to be displayed instead.
+<img class="image-style-align-right" src="1_Calendar_image.png" width="445" height="124">By default, events are displayed on the calendar by their note title. However, it is possible to configure a different attribute to be displayed instead.
 
 To do so, assign `#calendar:title` to the child note (not the calendar/Collection note), with the value being `name` where `name` can be any label (make not to add the `#` prefix). The attribute can also come through inheritance such as a template attribute. If the note does not have the requested label, the title of the note will be used instead.
 
@@ -314,7 +314,7 @@ To do so, assign `#calendar:title` to the child note (not the calendar/Collectio
 
 ### Using a relation attribute as event title
 
-<img class="image-style-align-right image_resized" style="aspect-ratio:294/151;width:21.22%;" src="3_Calendar_image.png" width="294" height="151">Similarly to using an attribute, use `#calendar:title` and set it to `name` where `name` is the name of the relation to use.
+<img class="image-style-align-right image_resized" style="aspect-ratio:294/151;width:21.22%;" src="2_Calendar_image.png" width="294" height="151">Similarly to using an attribute, use `#calendar:title` and set it to `name` where `name` is the name of the relation to use.
 
 Moreover, if there are more relations of the same name, they will be displayed as multiple events coming from the same note.
 

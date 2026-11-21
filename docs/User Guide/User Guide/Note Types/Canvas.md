@@ -1,5 +1,5 @@
 # Canvas
-<figure class="image"><img src="Canvas_image.png" alt="grafik"></figure>
+<figure class="image"><img style="aspect-ratio:1152/720;" src="Canvas_demo.webp" width="1152" height="720"></figure>
 
 Canvas notes use the Excalidraw library to allow handwritten notes with mouse, pen or touch on an infinite canvas. It also supports basic diagramming, text and graphics input.
 

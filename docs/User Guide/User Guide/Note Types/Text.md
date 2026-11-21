@@ -1,4 +1,6 @@
 # Text
+<figure class="image"><img style="aspect-ratio:1152/720;" src="Text_demo.webp" width="1152" height="720"></figure>
+
 The default note type in Trilium, text notes allow for rich formatting, tables, images, admonitions and a handful of other features.
 
 ## Formatting bars
