@@ -321,12 +321,15 @@ function ThumbnailContent({ slide, sheets, fitObserver }: ThumbnailContentProps)
         return () => fitObserver.unobserve(content);
     }, [ fitObserver ]);
 
-    const background = slide.backgroundGradient ?? slide.backgroundColor;
+    // A gradient goes over the theme's background color, as Reveal.js lays it on a slide.
+    const background = slide.backgroundGradient
+        ? { backgroundImage: slide.backgroundGradient }
+        : slide.backgroundColor ? { backgroundColor: slide.backgroundColor } : undefined;
     return (
         <div
             ref={viewportRef}
             className="reveal-viewport"
-            style={background ? { background } : undefined}
+            style={background}
             inert
         >
             <div className="reveal">
