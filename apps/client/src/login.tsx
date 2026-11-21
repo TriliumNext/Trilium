@@ -87,8 +87,7 @@ export function PasswordLogin({ illustration, totpEnabled, initialError }: {
             });
 
             if (resp.ok) {
-                // Session established — navigate to the app.
-                window.location.assign(".");
+                openAddressAfterLogin();
                 return null;
             }
 
@@ -143,6 +142,24 @@ function initialSsoError(config: typeof window.glob.login): string | null {
         return t("login.sso-connection-failed");
     }
     return null;
+}
+
+/**
+ * Opens the address the login screen was shown at, such as a print link, without the `login`
+ * marker that GET /login adds. The same address with a fragment would only scroll, so it reloads.
+ */
+function openAddressAfterLogin() {
+    const query = window.location.search.slice(1).split("&")
+        .filter((part) => part && part.split("=")[0] !== "login")
+        .join("&");
+    const address = `.${query ? `?${query}` : ""}${window.location.hash}`;
+
+    const isSameAddress = new URL(address, window.location.href).href === window.location.href;
+    if (window.location.hash && isSameAddress) {
+        window.location.reload();
+    } else {
+        window.location.assign(address);
+    }
 }
 
 // index.ts holds the splash up until the page has rendered. The render under test imports
