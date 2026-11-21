@@ -179,14 +179,25 @@ async function openNoteMap(page: Page) {
     });
 }
 
+export interface HeroVariant {
+    /** The file in apps/website/public the snapshot is published as. */
+    file: string;
+    viewport: { width: number; height: number };
+    /** Renders the mobile layout with the phone's user agent and touch. */
+    mobile: boolean;
+}
+
 /**
- * The website hero: the desktop layout in a browser, with the note that `query` finds hoisted and
- * open. The hero's frame in apps/website/src/pages/Home/index.css has the aspect ratio of
- * `viewport`.
+ * The website hero: the app with the note that `query` finds hoisted and open, once in the desktop
+ * layout and once in the mobile one. Each `viewport` equals `HERO_SNAPSHOTS` in
+ * apps/website/src/pages/Home/index.tsx and the aspect ratio of its frame in `index.css`.
  */
-export const HERO = {
+export const HERO: { query: string; variants: HeroVariant[] } = {
     query: "note.title = 'Trilium Demo'",
-    viewport: { width: 1360, height: 920 }
+    variants: [
+        { file: "hero.html", viewport: { width: 1360, height: 920 }, mobile: false },
+        { file: "hero-mobile.html", viewport: { width: 360, height: 720 }, mobile: true }
+    ]
 };
 
 /**

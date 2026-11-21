@@ -129,26 +129,48 @@ function HeroSection() {
     );
 }
 
-/** The size `hero.html` was captured at: `HERO.viewport` in apps/showcase/src/shared/scenes.mjs. */
-const HERO_SNAPSHOT_SIZE = { width: 1360, height: 920 };
+/**
+ * The snapshots of the app and the viewports they were captured at: `HERO.variants` in
+ * apps/showcase/src/shared/scenes.ts.
+ */
+const HERO_SNAPSHOTS = {
+    desktop: { src: "/hero.html", width: 1360, height: 920 },
+    mobile: { src: "/hero-mobile.html", width: 360, height: 720 }
+};
+
+/** Matches the breakpoint below which `index.css` gives the hero frame the phone's shape. */
+const HERO_MOBILE_QUERY = "(max-width: 719.99px)";
 
 /**
- * Shows `hero.html`, a snapshot of the app, at the viewport it was captured at and scales it to
- * the width of its frame, since the app lays out against the viewport and cannot reflow.
+ * Shows a snapshot of the app, the mobile layout on narrow screens and the desktop one otherwise,
+ * at the viewport it was captured at and scales it to the width of its frame, since the app lays
+ * out against the viewport and cannot reflow. The iframe mounts once the layout is known, so only
+ * one snapshot downloads.
  */
 function HeroSnapshot({ title }: { title: string }) {
     const frameRef = useRef<HTMLDivElement>(null);
+    const [ snapshot, setSnapshot ] = useState<typeof HERO_SNAPSHOTS.desktop>();
     const [ scale, setScale ] = useState<number>();
 
     useEffect(() => {
+        const query = window.matchMedia(HERO_MOBILE_QUERY);
+        const update = () => {
+            setSnapshot(query.matches ? HERO_SNAPSHOTS.mobile : HERO_SNAPSHOTS.desktop);
+        };
+        update();
+        query.addEventListener("change", update);
+        return () => query.removeEventListener("change", update);
+    }, []);
+
+    useEffect(() => {
         const frame = frameRef.current;
-        if (!frame) return;
+        if (!frame || !snapshot) return;
         const observer = new ResizeObserver(() => {
-            setScale(frame.clientWidth / HERO_SNAPSHOT_SIZE.width);
+            setScale(frame.clientWidth / snapshot.width);
         });
         observer.observe(frame);
         return () => observer.disconnect();
-    }, []);
+    }, [ snapshot ]);
 
     return (
         <div
@@ -156,10 +178,12 @@ function HeroSnapshot({ title }: { title: string }) {
             className={`screenshot ${scale ? "scaled" : ""}`}
             style={scale ? { "--hero-scale": scale } : undefined}
         >
-            <iframe
-                src="/hero.html" title={title} tabIndex={-1}
-                width={HERO_SNAPSHOT_SIZE.width} height={HERO_SNAPSHOT_SIZE.height}
-            />
+            {snapshot && (
+                <iframe
+                    key={snapshot.src} src={snapshot.src} title={title} tabIndex={-1}
+                    width={snapshot.width} height={snapshot.height}
+                />
+            )}
         </div>
     );
 }

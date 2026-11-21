@@ -109,7 +109,7 @@ section.hero-section {
         }
     }
 
-    /* Matches `HERO.viewport` in apps/showcase/src/shared/scenes.mjs. */
+    /* The aspect ratios match `HERO.variants` in apps/showcase/src/shared/scenes.ts. */
     .screenshot {
         position: relative;
         width: 100%;
@@ -214,8 +214,15 @@ section.hero-section {
             max-width: 90%;
         }
 
+        .screenshot-container {
+            align-self: stretch;
+        }
+
         .screenshot {
-            margin-top: 2em;
+            width: min(100%, 280px);
+            aspect-ratio: 360 / 720;
+            margin: 2em auto 0;
+            border-radius: 24px;
         }
     }
 }

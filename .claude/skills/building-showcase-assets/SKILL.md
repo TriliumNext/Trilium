@@ -13,7 +13,7 @@ website ones are also copied into the repo.
 ```
 pnpm --filter showcase play       # Google Play: icon, screenshots, feature graphic, preview
 pnpm --filter showcase flathub    # Flathub: desktop window screenshots + preview with checks
-pnpm --filter showcase hero       # website hero → apps/website/public/hero.html
+pnpm --filter showcase hero       # website hero → apps/website/public/hero{,-mobile}.html
 pnpm --filter showcase website    # website screenshots → apps/website/public/*.webp
 pnpm --filter showcase start <targets…> [--only tree,text] [--devices phone,tablet]
     [--url http://localhost:8080] [--port 37991]
@@ -32,7 +32,7 @@ no login (`flathub` always boots its own).
 | `preview` | `preview.html` (+ `listing-data.js`) | nowhere: a review mock of the Play page, light and dark | open the file |
 | `flathub` | `flathub/NN-<scene>.png` | Flathub app page | copied to `apps/desktop/flatpak/screenshots/<scene>.png`, committed, then linked from the metainfo (below) |
 | `flathub-preview` | `flathub-preview.html` | nowhere: a mock of the Flathub page with Flathub's quality checks | open the file |
-| `hero` | `hero/hero.html` (+ app/snapshot/diff PNGs) | `apps/website/public/hero.html`, iframed by the home page | copied **only when** the snapshot differs from the app by ≤ 0.5 % of pixels in both schemes |
+| `hero` | `hero/hero.html`, `hero/hero-mobile.html` (+ app/snapshot/diff PNGs per variant) | `apps/website/public/`, iframed by the home page | copied **only when** every snapshot differs from the app by ≤ 0.5 % of pixels in both schemes |
 | `website` | `website/<file>.webp`, `<file>-dark.webp` | `apps/website/public/` | copied on every run; the home page serves `-dark` through `darkSrc` / `darkImageUrl` in `pages/Home/index.tsx` |
 
 The Play texts live in `src/play/listing.json` (name, developer, category, short and full
@@ -59,9 +59,11 @@ web clipper). Change one, then the other.
 
 ### Website wiring
 
-- `HERO.viewport` in `src/shared/scenes.ts` is the size `hero.html` is captured at; it must
-  equal `HERO_SNAPSHOT_SIZE` in `apps/website/src/pages/Home/index.tsx` and the hero frame's
-  aspect ratio in `index.css`.
+- `HERO.variants` in `src/shared/scenes.ts` lists the hero snapshots: `hero.html` (desktop
+  layout, 1360×920) and `hero-mobile.html` (mobile layout with the phone's user agent and the
+  `trilium-device=mobile` cookie, 360×720). Each viewport must equal `HERO_SNAPSHOTS` in
+  `apps/website/src/pages/Home/index.tsx` and the frame's aspect ratio in `index.css`. The page
+  mounts only one of them: the mobile one below 720 px (`HERO_MOBILE_QUERY`).
 - `WEBSITE_SHOTS` in `src/website/build.ts` maps a scene (or a `query` among the website
   seed's notes) to the file it replaces. `area: "note"` keeps everything right of the tree in
   a window sized so that area has the 16:10 of `.showcase-image-frame`; `"tree"` keeps the
