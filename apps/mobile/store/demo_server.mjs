@@ -62,27 +62,27 @@ export async function startDemoServer({ repoRoot, port, logPath }) {
 
 /**
  * Runs `seed` as a backend script on the server, from a page of the app that supplies the CSRF
- * headers. `seed` runs with the backend script `api` in scope. The server runs a script sent this
- * way in the bundle of `currentNoteId`, which must be a JavaScript note.
+ * headers, with `params` as its arguments and the backend script `api` in scope. The server
+ * runs a script sent this way in the bundle of `currentNoteId`, which must be a JavaScript note.
  */
-export async function seedDocument(browser, baseUrl, seed) {
+export async function seedDocument(browser, baseUrl, seed, params = []) {
     const scriptNoteId = await findNoteId(baseUrl,
         "note.type = 'code' AND note.mime *=* 'javascript'");
     const page = await browser.newPage();
     try {
         await page.goto(baseUrl);
         await page.waitForFunction(() => window.glob?.getHeaders, null, { timeout: 120_000 });
-        const result = await page.evaluate(async ({ script, noteId }) => {
+        const result = await page.evaluate(async ({ script, params, noteId }) => {
             const response = await fetch("api/script/exec", {
                 method: "POST",
                 headers: { ...await window.glob.getHeaders(), "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    script, params: [], startNoteId: noteId, currentNoteId: noteId,
+                    script, params, startNoteId: noteId, currentNoteId: noteId,
                     originEntityName: "notes", originEntityId: null, transactional: true
                 })
             });
             return response.json();
-        }, { script: seed.toString(), noteId: scriptNoteId });
+        }, { script: seed.toString(), params, noteId: scriptNoteId });
         if (!result.success) {
             throw new Error(`Seeding the demo document failed: ${result.error}`);
         }

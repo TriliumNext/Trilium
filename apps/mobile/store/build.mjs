@@ -24,7 +24,7 @@ import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 
 import { findNoteId, seedDocument, startDemoServer } from "./demo_server.mjs";
-import { DEVICES, SCENES, SEED } from "./scenes.mjs";
+import { DEVICES, ITINERARY, SCENES, SEED, TRIP_COSTS } from "./scenes.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, "..", "..", "..");
@@ -86,7 +86,7 @@ async function buildScreenshots() {
     });
     try {
         if (!options.url) {
-            await seedDocument(browser, server.baseUrl, SEED);
+            await seedDocument(browser, server.baseUrl, SEED, [ TRIP_COSTS, ITINERARY ]);
         }
         for (const deviceName of options.devices) {
             await captureDevice(server.baseUrl, deviceName);
@@ -181,7 +181,7 @@ async function captureDevice(baseUrl, deviceName) {
         }, noteId);
         await settle(page);
         await scene.prepare?.(page);
-        await settle(page);
+        await settle(page, { blur: !scene.keepFocus });
 
         const store = storeShotPath(deviceName, index, scene.id);
         const raw = device.captioned ? rawShotPath(deviceName, scene.id) : store;
@@ -201,11 +201,13 @@ async function captureDevice(baseUrl, deviceName) {
 }
 
 /** Waits for the note to render: its requests, then its animations and late layout. */
-async function settle(page) {
+async function settle(page, { blur = true } = {}) {
     await page.waitForLoadState("networkidle", { timeout: 20_000 }).catch(() => {});
-    await page.evaluate(() => {
-        if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-    });
+    await page.evaluate((shouldBlur) => {
+        if (shouldBlur && document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+    }, blur);
     await page.waitForTimeout(2500);
 }
 

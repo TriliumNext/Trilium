@@ -11,20 +11,40 @@ export const SCENES = [
         prepare: (page) => page.evaluate(() => {
             window.glob.appContext.triggerCommand("setActiveScreen", { screen: "tree" });
         }),
-        caption: "Organize your notes in a tree as deep as you need",
+        caption: "Organize everything in one place",
         alt: "The note tree, with the Trilium Demo note and its sections: an inbox, formatting "
             + "examples and a journal"
     },
     {
         id: "text",
-        query: "note.title = 'Trilium Demo'",
-        caption: "Write rich notes with images, tables and links",
-        alt: "A text note welcoming the reader to Trilium Notes, with an image and links"
+        query: "note.title = 'Rome itinerary'",
+        keepFocus: true,
+        prepare: async (page) => {
+            const editor = page.locator(".ck-editor__editable").first();
+            await editor.evaluate((editable) => {
+                const nested = editable.querySelectorAll("[contenteditable]");
+                for (const element of [ editable, ...nested ]) {
+                    element.spellcheck = false;
+                }
+            });
+            await editor.locator("strong", { hasText: "9:00" }).click();
+            await page.waitForTimeout(1000);
+            await editor.locator("h2").evaluate((heading) => {
+                heading.scrollIntoView({ block: "start", behavior: "instant" });
+            });
+            const isPhone = page.viewportSize().width < 600;
+            const button = isPhone ? "Text formatting" : "Block type";
+            await page.locator(`.ck-toolbar [data-cke-tooltip-text='${button}']`).first().click();
+            await page.mouse.move(0, 0);
+        },
+        caption: "Write notes with tables and images",
+        alt: "A text note with a trip itinerary: a heading, a highlighted link, a table and a "
+            + "checklist, with the formatting toolbar open"
     },
     {
         id: "board",
         query: "note.title = 'Trip planning'",
-        caption: "Track tasks on a board",
+        caption: "Keep track of your tasks",
         alt: "A board collection with to-do, in-progress and done columns of cards for "
             + "planning a trip"
     },
@@ -32,7 +52,7 @@ export const SCENES = [
         id: "geo-map",
         query: "note.title *=* 'Geo Map'",
         prepare: (page) => page.locator(".maplibregl-ctrl-attrib-button").first().click(),
-        caption: "Pin your notes on a map",
+        caption: "Plan your next trip on a map",
         alt: "A geo map collection with the Seven Wonders of the World pinned on a world map"
     },
     {
@@ -55,7 +75,7 @@ export const SCENES = [
             }, 4);
             await page.waitForTimeout(3000);
         },
-        caption: "Map out ideas in a mind map",
+        caption: "Brainstorm ideas in a mind map",
         alt: "A mind map note with branches spreading out from a central topic"
     },
     {
@@ -65,21 +85,22 @@ export const SCENES = [
             await page.locator(".excalidraw canvas").last().click({ position: { x: 20, y: 300 } });
             await page.keyboard.press("Shift+Digit1");
         },
-        caption: "Sketch on an infinite canvas",
+        caption: "Sketch out your ideas",
         alt: "A canvas note with hand-drawn shapes and arrows"
     },
     {
         id: "diagram",
         query: "note.title = 'Flow' AND note.type = 'mermaid'",
-        caption: "Turn text into diagrams",
+        caption: "Draw flowcharts from plain text",
         alt: "A Mermaid flowchart above the text it is drawn from"
     },
     {
         id: "dark",
-        query: "note.title = 'Code blocks'",
+        query: "note.title = 'Split the trip costs'",
         colorScheme: "dark",
-        caption: "Code with syntax highlighting, in light or dark",
-        alt: "A text note with a highlighted code block, in the dark theme"
+        caption: "Save code snippets, day or night",
+        alt: "A Python code note with syntax highlighting that splits the costs of a trip, "
+            + "in the dark theme"
     }
 ];
 
@@ -107,10 +128,12 @@ export const DEVICES = {
 
 /**
  * Adds what the demo document lacks for the scenes above, as a backend script with the script
- * `api` in scope: a board of trip-planning cards under the Trilium Demo note, and a view of the
- * geo map that shows most of its markers.
+ * `api` in scope: a board of trip-planning cards and a Python code note under the Trilium Demo
+ * note, a text note with a Rome itinerary, and a view of the geo map that shows most of its
+ * markers. `tripCosts` and `itinerary` are the contents of the two notes, `TRIP_COSTS` and
+ * `ITINERARY`.
  */
-export function SEED() {
+export function SEED(tripCosts, itinerary) {
     const demo = api.searchForNote("note.title = 'Trilium Demo'");
     const board = api.createNewNote({
         parentNoteId: demo.noteId, title: "Trip planning", type: "book", content: ""
@@ -138,7 +161,71 @@ export function SEED() {
         card.setLabel("iconClass", icon);
     }
 
+    api.createNewNote({
+        parentNoteId: demo.noteId,
+        title: "Split the trip costs",
+        type: "code",
+        mime: "text/x-python",
+        content: tripCosts
+    });
+
+    const colosseum = api.searchForNote("note.title = 'The Colosseum, Rome, Italy'");
+    api.createTextNote(demo.noteId, "Rome itinerary",
+        itinerary.replace("{{colosseum}}", colosseum.noteId));
+
     const geoMap = api.searchForNote("note.title *=* 'Geo Map'");
     const [ viewConfig ] = geoMap.getAttachmentsByRole("viewConfig");
     viewConfig.setContent(JSON.stringify({ view: { center: { lat: 30, lng: 23 }, zoom: 1.5 } }));
 }
+
+/** The content of the code note that `SEED` adds. */
+export const TRIP_COSTS = `# Who owes what after the trip
+costs = {
+    "Flights": 640.00,
+    "Car rental": 310.50,
+    "Hotel": 482.00,
+    "Museum": 54.00,
+    "Dinner": 96.40,
+}
+people = ["Ana", "Ben", "Eve"]
+
+
+def split(cost, n):
+    """Each person's share."""
+    return round(cost / n, 2)
+
+
+total = sum(costs.values())
+count = len(people)
+share = split(total, count)
+
+for name in people:
+    print(f"{name}: {share}")
+`;
+
+/** The content of the text note that `SEED` adds; `{{colosseum}}` is the Colosseum note's ID. */
+export const ITINERARY = [
+    "<p>Three days in the Eternal City with <strong>Ana</strong>, <strong>Ben</strong> and "
+        + "<strong>Eve</strong>.</p>",
+    "<h2>Day 1: Ancient Rome</h2>",
+    "<p>Meet at <a class=\"reference-link\" href=\"#root/{{colosseum}}\">The Colosseum</a> at "
+        + "<strong>9:00</strong>, then walk through the <i>Roman Forum</i> to "
+        + "<span style=\"background-color:hsl(60,75%,60%);\">Palatine Hill</span>.</p>",
+    "<aside class=\"admonition tip\"><p>Book the tickets online: the queue takes hours.</p>"
+        + "</aside>",
+    "<h3>Where to eat</h3>",
+    "<figure class=\"table\" style=\"width:330px;\"><table><thead>"
+        + "<tr><th>Place</th><th>Order</th><th>Price</th></tr></thead><tbody>"
+        + "<tr><td>Trattoria</td><td>Carbonara</td><td>€18</td></tr>"
+        + "<tr><td>Pizzeria</td><td>Margherita</td><td>€11</td></tr>"
+        + "<tr><td>Gelateria</td><td>Pistachio</td><td>€4</td></tr>"
+        + "</tbody></table></figure>",
+    "<h3>Packing list</h3>",
+    "<ul class=\"todo-list\">"
+        + [ [ "Passports", true ], [ "Comfortable shoes", true ], [ "Camera charger", false ],
+            [ "Travel adapter", false ] ].map(([ item, done ]) => "<li><label "
+            + "class=\"todo-list__label\"><input type=\"checkbox\""
+            + (done ? " checked=\"checked\"" : "") + " disabled=\"disabled\"><span "
+            + `class="todo-list__label__description">${item}</span></label></li>`).join("")
+        + "</ul>"
+].join("");
