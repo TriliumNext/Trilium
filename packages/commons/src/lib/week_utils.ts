@@ -47,11 +47,10 @@ export function getFirstDayOfWeek1(year: number, settings: WeekSettings = DEFAUL
         // First week contains first day of the year
         return weekContainingJan1Start;
     } else if (firstWeekOfYear === 1) {
-        // First week contains first Thursday (ISO 8601 standard)
-        const jan4 = dayjs(`${year}-01-04`);
-        const jan4Weekday = jan4.isoWeekday();
-        const daysToSubtractFromJan4 = (jan4Weekday - firstDayOfWeek + 7) % 7;
-        return jan4.subtract(daysToSubtractFromJan4, "day");
+        // First week contains first Thursday (ISO 8601 standard). With weeks starting on Monday this is
+        // the week containing Jan 4, but for any other first day the two can differ by a week.
+        const firstThursday = jan1.add((4 - jan1Weekday + 7) % 7, "day");
+        return firstThursday.subtract((4 - firstDayOfWeek + 7) % 7, "day");
     } else {
         // First week has minimum days
         const daysInFirstWeek = 7 - daysToSubtract;
