@@ -793,7 +793,18 @@ describe("processNoteContent", () => {
                 mime: "text/html",
                 format: "html",
                 dataFileName: "Host.html",
+                dirFileName: "Host",
                 attributes: [{ type: "relation", name: "myRelation", value: "   " }],
+                children: [{
+                    noteId: " ",
+                    title: "Blank",
+                    type: "text",
+                    mime: "text/html",
+                    format: "html",
+                    dataFileName: "Blank.html",
+                    attributes: [],
+                    attachments: []
+                }],
                 attachments: [{
                     attachmentId: " ",
                     title: "blank.txt",
@@ -808,11 +819,13 @@ describe("processNoteContent", () => {
         const zipBuffer = await createZipBuffer({
             "!!!meta.json": JSON.stringify(metaFile),
             "Host.html": "<p>host</p>",
-            "Host_blank.txt": "blank"
+            "Host_blank.txt": "blank",
+            "Host/Blank.html": "<p>blank</p>"
         });
 
         const { importedNote } = await testImportBuffer(zipBuffer, "import-blank-ids");
 
+        expect(importedNote.getChildNotes().map((child) => child.noteId)).toEqual(["empty_note_id"]);
         expect(importedNote.getAttachments().map((a) => a.attachmentId)).toEqual(["empty_attachment_id"]);
         // The relation's blank target maps to the placeholder, which matches no note, so the relation
         // is dropped rather than saved pointing at nothing.
