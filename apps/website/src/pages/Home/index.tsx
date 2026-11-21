@@ -78,8 +78,8 @@ export function Home() {
 
     return (
         <>
-            <HeroSection />
             <SectionNav items={navItems} />
+            <HeroSection />
             <OrganizationBenefitsSection />
             <ProductivityBenefitsSection />
             <NoteTypesSection />
