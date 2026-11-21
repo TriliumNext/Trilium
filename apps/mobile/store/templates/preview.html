@@ -46,12 +46,30 @@
             padding: 32px 40px 64px;
         }
 
-        .feature {
-            width: 100%;
-            aspect-ratio: 1024 / 500;
-            border-radius: 20px;
-            display: block;
-            margin-bottom: 40px;
+        .feature-graphic {
+            margin-top: 56px;
+            padding-top: 32px;
+            border-top: 1px solid var(--chip-border);
+
+            h2 {
+                margin: 0 0 4px;
+                font-size: 24px;
+                font-weight: 500;
+            }
+
+            p {
+                margin: 0 0 16px;
+                color: var(--muted);
+                font-size: 14px;
+            }
+
+            img {
+                width: 100%;
+                max-width: 760px;
+                aspect-ratio: 1024 / 500;
+                border-radius: 12px;
+                display: block;
+            }
         }
 
         .app-header {
@@ -219,7 +237,6 @@
 </head>
 <body>
     <main>
-        <img class="feature" src="feature-graphic.png" alt="">
         <header class="app-header">
             <div>
                 <h1 id="name"></h1>
@@ -271,6 +288,15 @@
             <p id="short"></p>
             <p class="description" id="description"></p>
         </section>
+
+        <section class="feature-graphic">
+            <h2>Feature graphic</h2>
+            <p>
+                Not on the listing page: Play shows it as the cover of a promo video and in
+                featured placements.
+            </p>
+            <img src="feature-graphic.png" alt="">
+        </section>
     </main>
     <script src="listing-data.js"></script>
     <script>
@@ -280,7 +306,7 @@
         document.getElementById("category").textContent = listing.category;
         document.getElementById("short").textContent = listing.shortDescription;
         document.getElementById("description").textContent = listing.fullDescription;
-        document.querySelector(".feature").alt = listing.featureGraphic.alt;
+        document.querySelector(".feature-graphic img").alt = listing.featureGraphic.alt;
 
         const carousel = document.querySelector(".carousel");
         const strip = carousel.querySelector(".strip");
