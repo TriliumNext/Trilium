@@ -467,7 +467,7 @@ body:not(.math-loaded) .math-tex {
 }
 
 @media (max-width: 48em) {
-    .ck-content :is(
+    :root .ck-content :is(
         figure.include-note, figure.captioned-content-embed, section.link-embed
     )[data-position] {
         float: none;
