@@ -292,6 +292,57 @@ describe("NoteSaver", () => {
         saver.abandon();
     });
 
+    it("saves without asking over a version that holds the content it read or saves", async () => {
+        const note = buildNote({ title: "Same content" });
+        const { saver, editor } = createSaver(note);
+        // Protecting the note stores the content that the editor read under another blob.
+        rejectWithConflict({ reason: "version", blobId: "protected", content: "<p>0</p>" });
+        put.mockResolvedValueOnce({ blobId: "b1", attachments: [] });
+        expect(await saver.saveNote(note, { content: "<p>mine</p>" }))
+            .toStrictEqual({ content: "<p>mine</p>" });
+        expect(put).toHaveBeenLastCalledWith(`notes/${note.noteId}/data`, expect.objectContaining({
+            content: "<p>mine</p>", base: { blobId: "protected", type: "text", mime: "text/html" },
+            keepOther: undefined
+        }), "editor", PUT_OPTIONS);
+
+        // Another editor of the note saved what this one saves.
+        editor.getLatestData.mockReturnValue({ content: "<p>same</p>" });
+        rejectWithConflict({ reason: "version", blobId: "other", content: "<p>same</p>" });
+        put.mockResolvedValueOnce({ blobId: "b2", attachments: [] });
+        expect(await saver.saveNote(note, { content: "<p>same</p>" }))
+            .toStrictEqual({ content: "<p>same</p>" });
+        expect(put).toHaveBeenLastCalledWith(`notes/${note.noteId}/data`, expect.objectContaining({
+            base: { blobId: "other", type: "text", mime: "text/html" }
+        }), "editor", PUT_OPTIONS);
+        expect(getQuestion()).toBeUndefined();
+        expect(get).not.toHaveBeenCalled();
+    });
+
+    it("asks over the same content when the blob or the attachments conflict", async () => {
+        const note = buildNote({ title: "Same content, other attachments" });
+        const { saver, editor } = createSaver(note);
+        const row = {
+            attachmentId: "att1", blobId: "ab1", role: "file", mime: "application/json",
+            title: "drawing.excalidraw", content: "{}"
+        };
+        const asks = async (data: SaveData) => {
+            showPersistent.mockClear();
+            const saving = saver.saveNote(note, data);
+            await vi.waitFor(() => expect(getQuestion()).toBeDefined());
+            saver.abandon();
+            await saving;
+        };
+
+        // The note keeps its blob, so the conflict is about an attachment.
+        rejectWithConflict({ reason: "version", blobId: "b0", content: "<p>0</p>" });
+        await asks({ content: "<p>mine</p>", attachments: [ row ] });
+
+        editor.getLatestData.mockReturnValue({ content: "<p>same</p>", attachments: [ row ] });
+        rejectWithConflict({ reason: "version", blobId: "other", content: "<p>same</p>" });
+        await asks({ content: "<p>same</p>", attachments: [ row ] });
+        expect(put).toHaveBeenCalledTimes(2);
+    });
+
     it("sends each attachment row with the blob that it replaces", async () => {
         const note = buildNote({ title: "Attachments" });
         const { saver } = createSaver(note);

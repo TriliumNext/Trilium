@@ -9,6 +9,7 @@ import noteService from "./notes.js";
 import optionService from "./options.js";
 import { fakeRequestProvider } from "../test/request_provider.js";
 import { initRequest } from "./request.js";
+import { getSql } from "./sql/index.js";
 
 /**
  * Runs against the real in-memory fixture DB booted by the server suite setup, through which
@@ -29,6 +30,20 @@ function createNote(content: string): BNote {
             type: "text"
         })
     ).note;
+}
+
+/** Runs `work` as a request of the client component `componentId` runs. */
+function inRequestOf<T>(componentId: string, work: () => T): T {
+    return getContext().init(() => {
+        getContext().set("componentId", componentId);
+        return work();
+    });
+}
+
+/** The client component that the last change of the note `noteId` names. */
+function getLastChangeComponent(noteId: string) {
+    return getSql().getValue<string>(/*sql*/`SELECT componentId FROM entity_changes
+        WHERE entityName = 'notes' AND entityId = ? ORDER BY id DESC LIMIT 1`, [ noteId ]);
 }
 
 /** A 1x1 PNG. The bytes are asked what they are, so a placeholder buffer would rightly be refused. */
@@ -244,16 +259,19 @@ describe("downloadImages (real DB)", () => {
             const content = `<p><img src="${url}"></p>`;
             const note = createNote(content);
 
-            withDownloads(true, () => downloadImages(note.noteId, content));
+            // Started by the save of an editor, and run later in the context of that request.
+            withDownloads(true, () => inRequestOf("editor", () => downloadImages(note.noteId, content)));
 
             // Long enough for the fetch to have answered and the pass over the note to have run.
-            await vi.advanceTimersByTimeAsync(10_000);
+            await inRequestOf("editor", () => vi.advanceTimersByTimeAsync(10_000));
 
             const [ attachment ] = note.getAttachments();
             // The reader is left with a note that names what this instance holds rather than what
             // someone else's server does — without their having saved again to get it.
             expect(String(note.getContent()))
                 .toBe(`<p><img src="api/attachments/${attachment.attachmentId}/image/${encodeURIComponent(attachment.title)}"></p>`);
+            // The editor reloads a change that names no component, and takes its own for saved.
+            expect(getLastChangeComponent(note.noteId)).toBe("NA");
         } finally {
             vi.useRealTimers();
         }
@@ -341,9 +359,11 @@ describe("storeLinkPreviewPictures (real DB)", () => {
         // sinks refuse outright — so until they are fetched the card shows placeholders.
         const note = createNote(card("https://example.com/page", "https://example.com/favicon.png", "https://cdn.example.com/cover.png"));
 
-        await getContext().init(() => storeLinkPreviewPictures(note));
+        await inRequestOf("editor", () => storeLinkPreviewPictures(note));
 
         expect(asked).toEqual([ "https://example.com/favicon.png", "https://cdn.example.com/cover.png" ]);
+        // Written after the downloads, so as a change of no component that the editor reloads.
+        expect(getLastChangeComponent(note.noteId)).toBe("NA");
 
         // Roled and named exactly as a preview fetched here would be.
         const attachments = note.getAttachments();

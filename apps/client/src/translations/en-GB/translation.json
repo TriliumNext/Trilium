@@ -268,5 +268,8 @@
     "http-status-names": {
       "401": "Unauthorised"
     }
+  },
+  "editorfeatures": {
+    "scroll_rail_highlights_description": "Show coloured marks on the scrollbar so you can see where text is highlighted in the note."
   }
 }

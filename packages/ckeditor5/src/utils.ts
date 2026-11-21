@@ -1,6 +1,6 @@
 import {
-    type DifferItemAttribute, DomEventObserver, type Editor, type ModelDocumentFragment,
-    type ModelElement, type ModelNode, type ViewDocumentDomEventData
+    type DifferItemAttribute, DomEventObserver, type Editor, type ModelDocument,
+    type ModelDocumentFragment, type ModelElement, type ModelNode, type ViewDocumentDomEventData
 } from "ckeditor5";
 
 /**
@@ -22,6 +22,17 @@ export type ViewDocumentContextMenuEvent = {
     name: "contextmenu";
     args: [data: ViewDocumentDomEventData<MouseEvent>];
 };
+
+/**
+ * Whether the change that `document` reports holds only elements drawn again, as
+ * `editor.editing.reconvertItem()` draws them, and no change of the model. Call it from a
+ * `change:data` listener, before the differ resets.
+ */
+export function isRedrawOnly(document: ModelDocument): boolean {
+    const changes = document.differ.getChanges();
+    return changes.length > 0
+        && changes.every((change) => change.type !== "attribute" && change.action === "refresh");
+}
 
 export function escapeHtml(str: string): string {
     return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

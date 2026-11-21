@@ -16,7 +16,9 @@ import type { Request, Response } from "../../http_interface";
 
 import becca from "../../becca/becca.js";
 import type BNote from "../../becca/entities/bnote.js";
-import { remapAttachmentReferences } from "../../becca/entities/bnote.js";
+import {
+    remapAttachmentReferences, toAttachmentReferenceLinks
+} from "../../becca/entities/bnote.js";
 import type BRevision from "../../becca/entities/brevision.js";
 import { ValidationError } from "../../errors.js";
 import blobService from "../../services/blob.js";
@@ -220,6 +222,9 @@ function restoreRevision(req: Request<{ revisionId: string }>) {
 
         let content = revision.getContent();
         if (typeof content === "string") {
+            if (revision.type === "text") {
+                content = toAttachmentReferenceLinks(content, note.noteId, attachmentIds);
+            }
             content = remapAttachmentReferences(content, attachmentIds);
         }
         // The links and relations follow the restored content, as after a save.

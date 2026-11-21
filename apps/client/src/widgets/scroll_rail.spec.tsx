@@ -1,12 +1,15 @@
 import { TAB_CHANGE_EVENT } from "@triliumnext/ckeditor5/src/plugins/tabs/constants.js";
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from "vitest";
 
 import appContext from "../components/app_context";
 import Component from "../components/component";
 import NoteContext from "../components/note_context";
+import contextMenu from "../menus/context_menu";
 import { revealElement } from "../services/bookmark_jump";
+import options from "../services/options";
+import { getEffectiveThemeStyle } from "../services/theme";
 import { resetLayoutRecords, scrollCalls, stubBox, type StubbedBox } from "../test/layout_stubs";
 import { NoteContextContext, ParentComponent } from "./react/react_utils";
 import ScrollRail, {
@@ -19,6 +22,10 @@ import {
 } from "./scroll_rail_markers";
 
 vi.mock("../services/bookmark_jump", () => ({ revealElement: vi.fn() }));
+vi.mock("../services/i18n", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../services/i18n")>()),
+    t: (key: string) => key
+}));
 
 const [ HIGHLIGHTS, FIND ] = SCROLL_RAIL_KINDS;
 const OWNED_CLASS = "detail-has-end-margin";
@@ -134,6 +141,7 @@ beforeEach(() => {
     };
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(context as never);
     vi.mocked(revealElement).mockReset();
+    options.load({ textNoteScrollRailHighlightsEnabled: "true" });
 
     scroller = document.body.appendChild(document.createElement("div"));
     scroller.className = `scrolling-container ${OWNED_CLASS}`;
@@ -1121,6 +1129,100 @@ describe("ScrollRail lines", () => {
             expect(drawn).toEqual(highlightLines);
         });
 
+    it("draws a highlight's hue at the theme's saturation and lightness, and a gray in its gray",
+        async () => {
+            const theme = document.body.appendChild(document.createElement("style"));
+            const setPreset = (lightness: string, gray: string) => {
+                theme.textContent = `.scroll-rail > canvas {
+                    --scroll-rail-highlight-saturation: 70%;
+                    --scroll-rail-highlight-lightness: ${lightness};
+                    --scroll-rail-highlight-gray-color: ${gray};
+                }`;
+            };
+            setPreset("65%", "#a6a6a6");
+            mountRail();
+            const highlights = [ 100, 250, 300 ].map((top) => append(content, "span",
+                { top, height: 20 }));
+            const colors = [
+                [ "#e64d4d", "rgb(234, 228, 242)" ],
+                [ "#555555", "#f6f8fa" ],
+                [ "lab(50 20 30)", "rgb(230, 77, 77)" ]
+            ];
+            await publish({
+                readTargets: () => highlights,
+                getColors: (index) => colors[index]
+            }, HIGHLIGHTS);
+            afterPaint();
+
+            // A pale purple keeps its hue; two grays share one segment, as do a color the rail
+            // cannot read and a gray.
+            expect(drawn).toEqual([
+                [ "hsl(0deg 70% 65%)", 99, 2, 0.5 ],
+                [ "hsl(266deg 70% 65%)", 99, 2, 0.5 ],
+                [ "#a6a6a6", 249, 2, 0.5 ],
+                [ "#a6a6a6", 299, 2, 0.5 ],
+                [ "hsl(0deg 70% 65%)", 299, 2, 0.5 ]
+            ]);
+
+            setPreset("45%", "#737373");
+            act(() => {
+                void parent.handleEvent("themeChanged", {
+                    themeStyle: getEffectiveThemeStyle() === "dark" ? "light" : "dark"
+                });
+            });
+            expect(drawn.map(([ color ]) => color)).toEqual([
+                "hsl(0deg 70% 45%)", "hsl(266deg 70% 45%)", "#737373", "#737373",
+                "hsl(0deg 70% 45%)"
+            ]);
+        });
+
+    it("leaves out the highlights while their option is off, which the rail's menu toggles",
+        async () => {
+            const show = vi.spyOn(contextMenu, "show").mockResolvedValue();
+            const save = vi.spyOn(options, "save").mockResolvedValue();
+            mountRail();
+            const highlight = append(content, "span", { top: 100, height: 20 });
+            await publish({ readTargets: () => [ highlight ], getColors: () => [ "yellow" ] },
+                HIGHLIGHTS);
+            afterPaint();
+            expect(drawn).toEqual([ [ "yellow", 99, 2, 0.5 ] ]);
+
+            const opened = openMenu();
+            expect(opened.defaultPrevented).toBe(true);
+            const shown = menuItem(show);
+            expect(shown).toMatchObject({ title: "scroll_rail.show_highlights", checked: true });
+            act(() => shown.handler?.(shown, opened));
+            expect(save).toHaveBeenLastCalledWith("textNoteScrollRailHighlightsEnabled", "false");
+            // The note fits, so the rail goes with its only lines.
+            expect(host.querySelector(".scroll-rail")).toBeNull();
+
+            // A note that overflows keeps the rail, with no lines, and its menu shows them again.
+            scrollerBox.scrollHeight = 4000;
+            act(() => resize(scroller));
+            expect(rail().querySelector("canvas")).toBeNull();
+            const reopened = openMenu();
+            const hidden = menuItem(show);
+            expect(hidden.checked).toBe(false);
+            act(() => hidden.handler?.(hidden, reopened));
+            expect(save).toHaveBeenLastCalledWith("textNoteScrollRailHighlightsEnabled", "true");
+            await act(async () => {
+                await vi.dynamicImportSettled();
+            });
+            afterPaint();
+            expect(drawn.map(([ color ]) => color)).toEqual([ "yellow" ]);
+        });
+
+    it("keeps the browser's menu on a rail with no highlights published", async () => {
+        const show = vi.spyOn(contextMenu, "show").mockResolvedValue();
+        scrollerBox.scrollHeight = 4000;
+        mountRail();
+        await publish({ readTargets: () => [ append(content, "p", { top: 300, height: 20 }) ] });
+        afterPaint();
+
+        expect(openMenu().defaultPrevented).toBe(false);
+        expect(show).not.toHaveBeenCalled();
+    });
+
     it("reads the highlights again once the content stops changing, and no hidden layer",
         async () => {
             mountRail();
@@ -1362,4 +1464,20 @@ function click(y: number) {
 function hover(y: number) {
     pointer("pointermove", y);
     pointer("pointerleave", y);
+}
+
+/** Right-clicks the rail. */
+function openMenu() {
+    const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true, button: 2 });
+    act(() => {
+        rail().dispatchEvent(event);
+    });
+    return event;
+}
+
+/** The first item of the last menu that `show` opened. */
+function menuItem(show: MockInstance<typeof contextMenu.show>) {
+    const item = show.mock.lastCall?.[0].items[0];
+    if (!item || "kind" in item) throw new Error("no menu with a command item was opened");
+    return item;
 }

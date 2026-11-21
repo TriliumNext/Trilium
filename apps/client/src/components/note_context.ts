@@ -4,7 +4,9 @@ import type CodeMirror from "@triliumnext/codemirror";
 import type FNote from "../entities/fnote.js";
 import froca from "../services/froca.js";
 import hoistedNoteService from "../services/hoisted_note.js";
-import { getNoteIdAndParentIdFromUrl, type ViewScope } from "../services/navigation_state.js";
+import {
+    getNavigationTarget, getNoteIdAndParentIdFromUrl, isSameViewScope, type ViewScope
+} from "../services/navigation_state.js";
 import options from "../services/options.js";
 import protectedSessionHolder from "../services/protected_session_holder.js";
 import server from "../services/server.js";
@@ -64,9 +66,6 @@ const READ_ONLY_CAPABLE_VIEW_TYPES: string[] = [
     "presentation",
     "table"
 ];
-
-/** View scope keys that hold the context's own state rather than what a navigation asks for. */
-const VIEW_STATE_KEYS: string[] = [ "isReadOnly", "readOnlyTemporarilyDisabled" ];
 
 /**
  * A section of the PDF sidebar for the viewer load `loadToken`: `loading` until the viewer of that
@@ -751,20 +750,6 @@ export function openInCurrentNoteContext(
     } else {
         appContext.tabManager.openContextWithNote(notePath, { viewScope, activate: true });
     }
-}
-
-/**
- * Whether navigating with `requested` shows what `current` already shows. Ignores the
- * `VIEW_STATE_KEYS` and the keys a reader such as `consumeBookmark()` set to `undefined`.
- */
-function isSameViewScope(current: ViewScope | undefined, requested: ViewScope) {
-    return utils.areObjectsEqual(
-        getNavigationTarget(current ?? {}), getNavigationTarget(requested));
-}
-
-function getNavigationTarget(viewScope: ViewScope) {
-    return Object.fromEntries(Object.entries(viewScope).filter(([ key, value ]) =>
-        value !== undefined && !VIEW_STATE_KEYS.includes(key)));
 }
 
 export default NoteContext;
