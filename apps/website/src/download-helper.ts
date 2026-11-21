@@ -1,14 +1,12 @@
 import { TFunction } from 'i18next';
 
-import rootPackageJson from '../../../package.json' with { type: "json" };
-
 export type App = "desktop" | "server";
 
 export type Architecture = 'x64' | 'arm64';
 
 export type Platform = "macos" | "windows" | "linux" | "pikapod" | "docker";
 
-const version = rootPackageJson.version;
+export const version = __RELEASE_VERSION__;
 
 export interface DownloadInfo {
     recommended?: boolean;

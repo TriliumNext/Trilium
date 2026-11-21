@@ -1,8 +1,16 @@
 import { defineConfig } from 'vitest/config';
 import preact from '@preact/preset-vite';
+import { execFileSync } from "child_process";
+
+import rootPackageJson from "../../package.json" with { type: "json" };
+import { pickReleaseVersion } from "./src/release_version";
 
 // https://vitejs.dev/config/
 export default defineConfig({
+    define: {
+        __RELEASE_VERSION__: JSON.stringify(
+            pickReleaseVersion(rootPackageJson.version, listReleaseTags()))
+    },
 	plugins: [
 		preact({
 			prerender: {
@@ -30,3 +38,13 @@ export default defineConfig({
         }
     }
 });
+
+/** The repository's `v*` tags; none when git or the tags are unavailable. */
+function listReleaseTags(): string[] {
+    try {
+        return execFileSync("git", [ "tag", "--list", "v*" ], { encoding: "utf8" })
+            .split("\n").filter(Boolean);
+    } catch {
+        return [];
+    }
+}

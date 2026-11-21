@@ -1,13 +1,12 @@
 import { useLayoutEffect, useState } from "preact/hooks";
 import Card from "../../components/Card.js";
 import Section from "../../components/Section.js";
-import { App, Architecture, buildDownloadUrl, DownloadMatrixEntry, getArchitecture, getDownloadMatrix, getPlatform, Platform } from "../../download-helper.js";
+import { App, Architecture, buildDownloadUrl, DownloadMatrixEntry, getArchitecture, getDownloadMatrix, getPlatform, Platform, version } from "../../download-helper.js";
 import { usePageTitle } from "../../hooks.js";
 import Button, { Link } from "../../components/Button.js";
 import Icon from "../../components/Icon.js";
 import helpIcon from "../../assets/boxicons/bx-help-circle.svg?raw";
 import "./get-started.css";
-import packageJson from "../../../../../package.json" with { type: "json" };
 import { useTranslation } from "react-i18next";
 
 export default function DownloadPage() {
@@ -25,7 +24,7 @@ export default function DownloadPage() {
 
     return (
         <>
-            <Section title={t("get-started.desktop_title", { version: packageJson.version })} className="fill accented download-desktop">
+            <Section title={t("get-started.desktop_title", { version })} className="fill accented download-desktop">
                 <div className="architecture-switch">
                     <span>{t("get-started.architecture")}</span>
 
