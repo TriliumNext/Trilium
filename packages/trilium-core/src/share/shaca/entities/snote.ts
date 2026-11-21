@@ -137,8 +137,16 @@ class SNote extends AbstractShacaEntity {
         return attributeCache.filter((attr) => !isCredentials(attr));
     }
 
-    getCredentials() {
-        return this.__getAttributes([]).filter(isCredentials);
+    /**
+     * Returns the `#shareCredentials` labels of the note in shaca and in becca. Shaca holds only
+     * shared notes, so `__getAttributes()` misses a label inherited from a template, an `~inherit`
+     * target or a parent outside the share, which becca resolves as the app does.
+     */
+    getCredentials(): { value: string }[] {
+        return [
+            ...this.__getAttributes([]).filter(isCredentials),
+            ...becca.getNote(this.noteId)?.getLabels(CREDENTIALS) ?? []
+        ];
     }
 
     __getAttributes(path: string[]) {

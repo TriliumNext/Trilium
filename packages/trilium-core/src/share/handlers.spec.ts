@@ -179,6 +179,46 @@ describe("share handlers", () => {
         expect(JSON.parse(String(right.body)).noteId).toBe("lockedNote");
     });
 
+    it("asks for credentials a note inherits from notes outside the share (GHSA-xh3r-3xw2-w23p)", () => {
+        becca.reset();
+        buildNote({
+            id: "root",
+            title: "root",
+            children: [
+                { id: "_hidden", title: "Hidden", children: [ {
+                    id: "_share",
+                    title: "Shared Notes",
+                    children: [
+                        { "id": "templated", "title": "Templated", "~template": "credentialTemplate" },
+                        { "id": "inheriting", "title": "Inheriting", "~inherit": "credentialSource" },
+                        { id: "cloned", title: "Cloned" }
+                    ]
+                } ] },
+                { "id": "credentialTemplate", "title": "Template", "#shareCredentials": "root:hunter2" },
+                { "id": "credentialSource", "title": "Source", "#shareCredentials": "root:hunter2" },
+                { id: "privateParent", title: "Private parent" }
+            ]
+        });
+        new BAttribute({
+            noteId: "privateParent", type: "label", name: "shareCredentials", value: "root:hunter2", isInheritable: true
+        });
+        new BBranch({ branchId: "privateParent_cloned", noteId: "cloned", parentNoteId: "privateParent" });
+        buildShareTree([
+            { "id": "templated", "content": "<p>classified</p>", "~template": "credentialTemplate" },
+            { "id": "inheriting", "content": "<p>classified</p>", "~inherit": "credentialSource" },
+            { id: "cloned", content: "<p>classified</p>" }
+        ]);
+
+        const statuses = (headers: Record<string, string>) => Object.fromEntries(
+            [ "templated", "inheriting", "cloned" ].map((noteId) => [
+                noteId, request("/share/api/notes/:noteId", { params: { noteId }, headers }).status
+            ])
+        );
+        expect(statuses({})).toEqual({ templated: 401, inheriting: 401, cloned: 401 });
+        expect(statuses({ authorization: `Basic ${encodeBase64("root:hunter2")}` }))
+            .toEqual({ templated: 200, inheriting: 200, cloned: 200 });
+    });
+
     it("sanitizes an SVG note and locks it down with a content security policy", () => {
         buildShareTree([ {
             id: "svgNote",
