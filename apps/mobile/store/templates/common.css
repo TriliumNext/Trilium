@@ -1,0 +1,50 @@
+@font-face {
+    font-family: "Inter";
+    src: url("../../../website/src/assets/fonts/Inter/Inter-VariableFont_opsz,wght.woff2") format("woff2");
+    font-weight: 100 900;
+}
+
+:root {
+    --brand-orange: #e47b19;
+    --brand-green: #4fa52b;
+    --brand-red: #e33f3b;
+    --ink: #1d1f24;
+    --ink-muted: #4d5058;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    font-family: Inter, system-ui, sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+}
+
+.backdrop {
+    background:
+        radial-gradient(circle at 8% 12%, rgb(79 165 43 / 22%), transparent 42%),
+        radial-gradient(circle at 92% 88%, rgb(228 123 25 / 24%), transparent 46%),
+        radial-gradient(circle at 85% 8%, rgb(227 63 59 / 12%), transparent 36%),
+        linear-gradient(160deg, #fbf7ef, #f3efe4);
+
+    &.dark {
+        --ink: #f4f1ea;
+        --ink-muted: #c9c5bb;
+        background:
+            radial-gradient(circle at 8% 12%, rgb(79 165 43 / 34%), transparent 44%),
+            radial-gradient(circle at 92% 88%, rgb(228 123 25 / 30%), transparent 48%),
+            linear-gradient(160deg, #183028, #1f2a3a);
+    }
+}
+
+.app-shot {
+    display: block;
+    border-radius: 44px;
+    box-shadow:
+        0 2px 6px rgb(0 0 0 / 12%),
+        0 24px 60px rgb(40 30 10 / 22%);
+}

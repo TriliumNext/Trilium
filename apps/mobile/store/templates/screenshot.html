@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="common.css">
+    <style>
+        body {
+            width: 1080px;
+            height: 1920px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* The store allows captions on at most 20% of a screenshot: 300 of 1920 px. */
+        h1 {
+            height: 300px;
+            margin: 0;
+            padding: 0 80px;
+            display: flex;
+            align-items: center;
+            text-align: center;
+            font-size: 64px;
+            font-weight: 750;
+            line-height: 1.15;
+            letter-spacing: -0.02em;
+            text-wrap: balance;
+        }
+
+        .app-shot {
+            width: 828px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body class="backdrop">
+    <h1 id="caption"></h1>
+    <img class="app-shot" id="shot" alt="">
+    <script>
+        window.render = ({ caption, shot, dark }) => {
+            document.getElementById("caption").textContent = caption;
+            document.getElementById("shot").src = shot;
+            document.body.classList.toggle("dark", dark);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Store listing preview</title>
+    <link rel="stylesheet" href="common.css">
+    <style>
+        body {
+            background: #f6f5f2;
+            color: #1d1f24;
+        }
+
+        main {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 32px 16px 64px;
+        }
+
+        .feature {
+            width: 100%;
+            aspect-ratio: 1024 / 500;
+            border-radius: 20px;
+            display: block;
+        }
+
+        header {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+            margin: 28px 0;
+
+            .icon {
+                width: 96px;
+                height: 96px;
+                border-radius: 30%;
+                box-shadow: 0 1px 4px rgb(0 0 0 / 20%);
+            }
+
+            h1 {
+                margin: 0;
+                font-size: 32px;
+                font-weight: 650;
+            }
+
+            .developer {
+                color: #3c7f23;
+                font-weight: 600;
+            }
+
+            .category {
+                color: #5f6368;
+                font-size: 14px;
+            }
+        }
+
+        h2 {
+            font-size: 20px;
+            font-weight: 650;
+            margin: 36px 0 12px;
+        }
+
+        .strip {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+
+            figure {
+                margin: 0;
+                flex: none;
+            }
+
+            img {
+                height: 420px;
+                border-radius: 12px;
+                display: block;
+                box-shadow: 0 1px 3px rgb(0 0 0 / 15%);
+            }
+
+            figcaption {
+                max-width: 236px;
+                font-size: 12px;
+                color: #5f6368;
+                margin-top: 6px;
+            }
+
+            &.tablet img {
+                height: 300px;
+            }
+
+            &.tablet figcaption {
+                max-width: 533px;
+            }
+        }
+
+        .short {
+            font-size: 17px;
+        }
+
+        .description {
+            white-space: pre-wrap;
+            line-height: 1.55;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 14px;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+
+            td,
+            th {
+                padding: 8px 12px;
+                border-bottom: 1px solid #e7e5df;
+                text-align: left;
+            }
+
+            .ok {
+                color: #2e7d32;
+            }
+
+            .fail {
+                color: #c62828;
+                font-weight: 600;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <img class="feature" src="feature-graphic.png" alt="">
+        <header>
+            <img class="icon" src="icon.png" alt="">
+            <div>
+                <h1 id="name"></h1>
+                <div class="developer" id="developer"></div>
+                <div class="category" id="category"></div>
+            </div>
+        </header>
+        <p class="short" id="short"></p>
+        <h2>Phone screenshots</h2>
+        <div class="strip" id="phone"></div>
+        <h2>Tablet screenshots</h2>
+        <div class="strip tablet" id="tablet"></div>
+        <h2>About this app</h2>
+        <div class="description" id="description"></div>
+        <h2>Checks</h2>
+        <table>
+            <thead><tr><th>Asset</th><th>Requirement</th><th>Actual</th><th></th></tr></thead>
+            <tbody id="checks"></tbody>
+        </table>
+    </main>
+    <script src="listing-data.js"></script>
+    <script>
+        const { listing, screenshots, checks } = window.LISTING;
+        document.getElementById("name").textContent = listing.name;
+        document.getElementById("developer").textContent = listing.developer;
+        document.getElementById("category").textContent = listing.category;
+        document.getElementById("short").textContent = listing.shortDescription;
+        document.getElementById("description").textContent = listing.fullDescription;
+        document.querySelector(".feature").alt = listing.featureGraphic.alt;
+
+        for (const shot of screenshots) {
+            const figure = document.createElement("figure");
+            const img = document.createElement("img");
+            img.src = shot.file;
+            img.alt = shot.alt;
+            const caption = document.createElement("figcaption");
+            caption.textContent = shot.alt;
+            figure.append(img, caption);
+            document.getElementById(shot.device).append(figure);
+        }
+
+        for (const check of checks) {
+            const row = document.createElement("tr");
+            for (const text of [ check.asset, check.rule, check.actual, check.ok ? "OK" : "Fails" ]) {
+                const cell = document.createElement("td");
+                cell.textContent = text;
+                row.append(cell);
+            }
+            row.lastChild.className = check.ok ? "ok" : "fail";
+            document.getElementById("checks").append(row);
+        }
+    </script>
+</body>
+</html>

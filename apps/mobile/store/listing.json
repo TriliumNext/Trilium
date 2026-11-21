@@ -1,0 +1,13 @@
+{
+    "name": "Trilium Notes",
+    "developer": "Trilium Notes Team",
+    "category": "Productivity",
+    "shortDescription": "Build your personal knowledge base, in a tree of notes as deep as you need.",
+    "fullDescription": "Trilium Notes is an open-source note-taking app for building a large personal knowledge base. Your notes live on your phone, in a tree as deep as you need, and you can sync them with your own Trilium server to keep them on every device.\n\nWRITE AND ORGANIZE\n• Rich text notes with tables, images, checklists, code blocks and math\n• Markdown and code notes with syntax highlighting\n• A note can sit in several places of the tree at once\n• Labels and relations to organize, query and link your notes\n• Full-text search across your whole knowledge base\n• Every change is kept in the note's revision history\n\nMORE THAN TEXT\n• Mind maps, canvas drawings and Mermaid diagrams\n• Collections that show notes as a calendar, a board, a table or pins on a map\n• Note maps that show how your notes link to each other\n• Spreadsheets, PDF files and other attachments\n\nYOUR NOTES, YOUR DATA\n• Works offline: your notes are stored on your device\n• Optional sync with a Trilium server that you run yourself\n• Protect individual notes with strong encryption\n• No ads, no tracking, no account with us\n• Optional AI assistant that works with the provider of your choice, including models running on your own computer\n\nOPEN SOURCE\nTrilium Notes is free software under the AGPL license, developed in the open by its community. The same notes open in the desktop app for Windows, macOS and Linux and in any browser through your server.",
+    "featureGraphic": {
+        "tagline": "Organize your thoughts.",
+        "taglineSub": "Build your personal knowledge base, on your phone and on every device you sync.",
+        "alt": "Trilium Notes, with the note tree and a canvas drawing",
+        "shots": [ "tree", "canvas" ]
+    }
+}
