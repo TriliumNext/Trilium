@@ -66,8 +66,9 @@ describe("assignStartupChunks", () => {
         expect(Object.fromEntries(chunks)).toEqual({
             // Every page loads it in its shell, the other input of the build included.
             "utils.ts": "shell",
-            // The module index.ts imports, which toast.ts makes lazily loaded.
-            "splash.ts": "entry.desktop.mobile.login",
+            // The module index.ts imports, which toast.ts makes lazily loaded. The share input
+            // loads toast.ts through utils.ts, so the chunk leaves out the rest of the entry step.
+            "splash.ts": "entry.desktop.mobile.login_lazy-ynpvlx.share",
             // Only the desktop loads it while it starts, and the dialog shares it.
             "tabs.ts": "shell.desktop",
             "icons.ts": "shell.desktop.mobile",
@@ -126,6 +127,49 @@ describe("assignStartupChunks", () => {
             "ckeditor.js": "editor",
             "calendar.js": "scripts+dialog"
         });
+    });
+
+    it("keeps what another input loads lazily out of a chunk with modules it does not load", () => {
+        // The share theme draws a diagram with mermaid, which imports DOMPurify, a module the app's
+        // shells import too, next to the module that creates the app context. Its app view and the
+        // print page load that module as well, with the app's globals.
+        const shareLoads = [ "mermaid.js", "dompurify.js" ];
+        const shareChunks = assignStartupChunks({
+            entry: "index.html",
+            pages: {
+                desktop: [ { name: "shell", entries: [ "desktop.ts" ] } ],
+                mobile: [ { name: "shell", entries: [ "mobile.ts" ] } ],
+                login: [ { name: "shell", entries: [ "login.tsx" ] } ],
+                print: [ { name: "shell", entries: [ "print.tsx" ] } ]
+            },
+            appLoaders: [ "share/src/index.ts" ],
+            getModule: buildGraph({
+                "index.html": { imports: [ "index.ts" ], isEntry: true },
+                "index.ts": { lazy: [ "desktop.ts", "mobile.ts", "login.tsx" ] },
+                "desktop.ts": { imports: [ "sanitize.ts" ], lazy: [ "dialog.tsx" ] },
+                "mobile.ts": { imports: [ "sanitize.ts" ] },
+                "dialog.tsx": { imports: [ "sanitize.ts" ] },
+                "login.tsx": { imports: [ "app_context.ts" ] },
+                "sanitize.ts": { imports: [ "dompurify.js", "app_context.ts" ] },
+                "app_context.ts": {},
+                "print.tsx": { lazy: [ "print_view.tsx" ], isEntry: true },
+                "print_view.tsx": { imports: [ "sanitize.ts" ] },
+                "share/src/index.ts": {
+                    imports: [ "share/src/content/mermaid.ts" ], lazy: [ "share/src/content/note_view.tsx" ], isEntry: true
+                },
+                "share/src/content/mermaid.ts": { lazy: [ "mermaid.js" ] },
+                "share/src/content/note_view.tsx": { imports: [ "sanitize.ts" ] },
+                "mermaid.js": { imports: [ "dompurify.js" ] },
+                "dompurify.js": {}
+            })
+        });
+
+        expect(shareChunks.get("sanitize.ts")).toBe("shell.desktop.mobile");
+        const chunk = shareChunks.get("dompurify.js");
+        const chunkMates = [ ...shareChunks ]
+            .filter(([ id, name ]) => chunk !== undefined && name === chunk && !shareLoads.includes(id))
+            .map(([ id ]) => id);
+        expect(chunkMates).toEqual([]);
     });
 });
 
