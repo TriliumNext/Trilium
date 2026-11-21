@@ -923,8 +923,12 @@ function Board({
         // least once, or there is no container to notice the tab being shown and it stays empty.
         // Nothing is deferred where the active tab cannot be read, so an answer that has yet to
         // arrive leaves the board drawn rather than blank.
+        // Only a board in a tab is deferred. A detached context, such as the quick edit popup's,
+        // is never the active tab, and nothing shows it the way a tab switch does.
         const shownTab = appContext.tabManager?.getActiveMainContext();
-        if (byColumn && noteContext && shownTab && shownTab !== noteContext.getMainContext()) {
+        const ownTab = shownTab && noteContext?.getMainContext();
+        if (byColumn && ownTab && ownTab !== shownTab
+                && appContext.tabManager.mainNoteContexts.includes(ownTab)) {
             isStale.current = true;
             return;
         }
