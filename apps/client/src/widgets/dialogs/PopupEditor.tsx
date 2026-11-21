@@ -9,6 +9,7 @@ import FNote from "../../entities/fnote";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import type { ViewScope } from "../../services/link";
+import { isSameViewScope } from "../../services/navigation_state";
 import tree from "../../services/tree";
 import utils from "../../services/utils";
 import NoteList from "../collections/NoteList";
@@ -80,10 +81,10 @@ export default function PopupEditor({ ntxId = POPUP_EDITOR_NTX_ID, openCommand =
             return;
         }
 
-        // A note opened while the popup is on show adds the current note to its history.
-        const left = shown && noteContext.noteId !== noteId.noteId
-            ? toHistoryEntry(noteContext)
-            : undefined;
+        // A note or view opened while the popup is on show adds the current one to its history.
+        const isSameView = noteContext.noteId === noteId.noteId
+            && isSameViewScope(noteContext.viewScope, { viewMode: "default", ...viewScope });
+        const left = shown && !isSameView ? toHistoryEntry(noteContext) : undefined;
         const nextContext = new NoteContext(ntxId);
         setStacked(!!document.querySelector(".modal.show"));
         setSwitchable(!!showNoteTypeSwitcher);
@@ -121,7 +122,7 @@ export default function PopupEditor({ ntxId = POPUP_EDITOR_NTX_ID, openCommand =
 
     async function goBack() {
         const entry = history.at(-1);
-        if (!entry) return;
+        if (!entry || goingBackRef.current) return;
         setHistory(history.slice(0, -1));
         goingBackRef.current = true;
         try {

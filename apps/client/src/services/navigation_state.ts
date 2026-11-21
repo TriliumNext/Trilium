@@ -1,6 +1,7 @@
 import { encodeBlockParameter } from "@triliumnext/commons/src/lib/block_reference.js";
 
 import type { NoteCommandData } from "../components/app_context.js";
+import utils from "./utils.js";
 
 export type ViewMode = "default" | "source" | "attachments" | "contextual-help" | "note-map";
 
@@ -100,6 +101,9 @@ const MAX_SPLIT_PANES_IN_HASH = 8;
 /** Hash parameters that belong to a pane's view scope rather than to the window as a whole. */
 const VIEW_SCOPE_PARAMS = ["viewMode", "attachmentId", "bookmark", "block", "column",
     "columnTitle", "columnIcon", "columnColor", "card", "page", "annotation", "heading"];
+
+/** View scope keys that hold the context's own state rather than what a navigation asks for. */
+const VIEW_STATE_KEYS: string[] = [ "isReadOnly", "readOnlyTemporarilyDisabled" ];
 
 export function calculateHash(
     { notePath, ntxId, hoistedNoteId, viewScope = {}, splits, activeSplit }: NoteCommandData
@@ -404,4 +408,19 @@ export function getNoteIdAndParentIdFromUrl(urlOrNotePath: string) {
         parentNoteId,
         noteId
     };
+}
+
+/**
+ * Whether navigating with `requested` shows what `current` already shows. Ignores the
+ * `VIEW_STATE_KEYS` and the keys a reader such as `consumeBookmark()` set to `undefined`.
+ */
+export function isSameViewScope(current: ViewScope | undefined, requested: ViewScope) {
+    return utils.areObjectsEqual(
+        getNavigationTarget(current ?? {}), getNavigationTarget(requested));
+}
+
+/** `viewScope` without the `VIEW_STATE_KEYS` and the keys set to `undefined`. */
+export function getNavigationTarget(viewScope: ViewScope) {
+    return Object.fromEntries(Object.entries(viewScope).filter(([ key, value ]) =>
+        value !== undefined && !VIEW_STATE_KEYS.includes(key)));
 }

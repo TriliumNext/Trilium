@@ -3715,7 +3715,7 @@
     "link_details_retrieval_enabled": "Automatically retrieve title and description for icon & text links and cards",
     "link_details_retrieval_description": "In the link editor, fill an empty title or description of an icon & text link or a card with those of the web page.",
     "scroll_rail_highlights_enabled": "Show highlighted text on the scrollbar",
-    "scroll_rail_highlights_description": "Show colored marks on the scrollbar so you can see where text highlighted in the note."
+    "scroll_rail_highlights_description": "Show colored marks on the scrollbar so you can see where text is highlighted in the note."
   },
   "table_view": {
     "new-row": "New row",
@@ -5518,6 +5518,6 @@
     "draft_discarded_blocks_gone": "The blocks that you were editing were changed elsewhere and can no longer be edited here. The note keeps no revisions, so your unsaved changes were discarded."
   },
   "scroll_rail": {
-    "show_highlights": "Show highlights"
+    "show_highlights": "Highlights"
   }
 }

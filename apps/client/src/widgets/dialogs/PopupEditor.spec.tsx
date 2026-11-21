@@ -1,6 +1,6 @@
 import { type ComponentChildren, render, type RefObject } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 import type FNote from "../../entities/fnote";
 import type { ViewScope } from "../../services/link";
@@ -14,7 +14,10 @@ const mocks = vi.hoisted(() => ({
     getNote: vi.fn(),
     getAttachment: vi.fn(),
     /** Every context the popup created, newest last — one is built per open. */
-    contexts: [] as { setNote: ReturnType<typeof vi.fn>, viewScope?: ViewScope, noteId: string, ntxId: string }[],
+    contexts: [] as {
+        setNote: Mock<(notePath: string, opts?: { viewScope?: ViewScope }) => Promise<void>>,
+        notePath?: string, viewScope?: ViewScope, noteId: string, ntxId: string
+    }[],
     isMobile: vi.fn(() => false),
     /** The note of every context the popup builds, read by the badges in its header. */
     contextNote: undefined as unknown,
@@ -237,6 +240,12 @@ async function goBack() {
     const button = backButton();
     expect(button).not.toBeNull();
     await act(async () => button?.click());
+    await settle();
+}
+
+/** Waits for a note switch, which runs through the parent component's events past `act()`. */
+async function settle() {
+    await act(() => new Promise<void>((resolve) => { setTimeout(resolve); }));
 }
 
 function modal() {
@@ -457,6 +466,55 @@ describe("PopupEditor", () => {
         // The first note comes back with the scope it was opened with.
         await goBack();
         expect(context?.setNote).toHaveBeenLastCalledWith("root/n1", {
+            viewScope: { viewMode: "default", readOnlyTemporarilyDisabled: true },
+            keepActiveDialog: true
+        });
+        expect(backButton()).toBeNull();
+    });
+
+    it("ignores a press of Back while it is still going back", async () => {
+        await openPopup({ noteIdOrPath: "root/n1" });
+        const context = lastContext();
+        await followLink("#root/note2");
+        await followLink("#root/note3");
+
+        let finishSwitch = () => {};
+        const switching = new Promise<void>((resolve) => { finishSwitch = resolve; });
+        const setNote = context?.setNote.getMockImplementation();
+        context?.setNote.mockClear();
+        context?.setNote.mockImplementationOnce(async (notePath, opts) => {
+            await switching;
+            return setNote?.(notePath, opts);
+        });
+
+        await goBack();
+        await goBack();
+        expect(context?.setNote).toHaveBeenCalledTimes(1);
+        expect(context?.setNote).toHaveBeenLastCalledWith("root/note2", {
+            viewScope: { viewMode: "default" },
+            keepActiveDialog: true
+        });
+
+        finishSwitch();
+        await settle();
+        expect(context?.notePath).toBe("root/note2");
+        await goBack();
+        expect(context?.setNote).toHaveBeenLastCalledWith("root/n1", {
+            viewScope: { viewMode: "default", readOnlyTemporarilyDisabled: true },
+            keepActiveDialog: true
+        });
+        expect(backButton()).toBeNull();
+    });
+
+    it("goes back from another view of the note it shows, not from the same view", async () => {
+        await openPopup({ noteIdOrPath: "root/n1" });
+        await openPopup({ noteIdOrPath: "root/n1" });
+        expect(backButton()).toBeNull();
+
+        // Quick edit on a link to an attachment of the note on show.
+        await openPopup({ noteIdOrPath: "root/n1", viewScope: ATTACHMENT_SCOPE });
+        await goBack();
+        expect(lastContext()?.setNote).toHaveBeenLastCalledWith("root/n1", {
             viewScope: { viewMode: "default", readOnlyTemporarilyDisabled: true },
             keepActiveDialog: true
         });
