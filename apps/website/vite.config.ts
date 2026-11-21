@@ -3,7 +3,7 @@ import preact from '@preact/preset-vite';
 import { execFileSync } from "child_process";
 
 import rootPackageJson from "../../package.json" with { type: "json" };
-import { pickReleaseVersion } from "./src/release_version";
+import { pickReleaseVersion } from "./src/release_version.ts";
 
 // https://vitejs.dev/config/
 export default defineConfig({
