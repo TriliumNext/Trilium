@@ -4,11 +4,13 @@ import type { Browser, BrowserContext, Page } from "playwright";
 
 import { openApp, openNote, settle } from "../shared/browser.ts";
 import { type BuildOptions, outDir, repoRoot } from "../shared/build.ts";
-import { findNoteId, openDemo } from "../shared/demo_server.ts";
-import { type Scene, SCENES, zoomOutMindMap } from "../shared/scenes.ts";
+import { findNoteId, openDemo, seedDocument } from "../shared/demo_server.ts";
+import { SCENES, zoomOutMindMap } from "../shared/scenes.ts";
+import { BOOKING_HTML, buildBudgetWorkbook, GETTING_AROUND, WEBSITE_SEED } from "./seed.ts";
 
 /**
- * The website's screenshots, each of a scene in `SCENES` and named after the file in
+ * The website's screenshots, each of the scene in `SCENES` with the ID `scene` or of the note
+ * that `query` finds among those `WEBSITE_SEED` adds, and named after the file in
  * `apps/website/public` it replaces. `area` is the part of the window kept: `note` is
  * everything right of the note tree, from the tab bar to the status bar, and `tree` is the tree.
  * `prepare(page)` runs after the scene's `desktopPrepare`.
@@ -24,7 +26,14 @@ const WEBSITE_SHOTS: WebsiteShot[] = [
         prepare: (page) => zoomOutMindMap(page, 2)
     },
     { scene: "board", file: "collection_board", area: "note" },
-    { scene: "geo-map", file: "collection_geomap", area: "note" }
+    { scene: "geo-map", file: "collection_geomap", area: "note" },
+    { query: "note.title = 'Getting around'", file: "type_markdown", area: "note" },
+    { query: "note.title = 'Trip budget'", file: "type_spreadsheet", area: "note" },
+    { query: "note.title = 'Hotel booking.pdf'", file: "type_file", area: "note" },
+    { query: "note.title = 'Trip calendar'", file: "collection_calendar", area: "note" },
+    { query: "note.title = 'Places to visit'", file: "collection_table", area: "note" },
+    { query: "note.title = 'Rome in three days'", file: "collection_presentation", area: "note" },
+    { query: "note.title = 'Trip overview'", file: "collection_dashboard", area: "note" }
 ];
 
 /**
@@ -36,7 +45,8 @@ const NOTE_ASPECT_RATIO = 16 / 10;
 const WEBP_QUALITY = 0.85;
 
 interface WebsiteShot {
-    scene: string;
+    scene?: string;
+    query?: string;
     file: string;
     area: "note" | "tree";
     prepare?(page: Page): Promise<unknown>;
@@ -55,8 +65,14 @@ async function buildWebsite(browser: Browser, options: BuildOptions) {
     const websiteDir = path.join(outDir, "website");
     const publicDir = path.join(repoRoot, "apps", "website", "public");
     fs.mkdirSync(websiteDir, { recursive: true });
-    const shots = WEBSITE_SHOTS.filter((shot) => options.only?.includes(shot.scene) ?? true);
+    const shots = WEBSITE_SHOTS
+        .filter((shot) => options.only?.includes(shot.scene ?? shot.file) ?? true);
     const server = await openDemo(browser, options);
+    await seedDocument(browser, server.baseUrl, WEBSITE_SEED, [ {
+        markdown: GETTING_AROUND,
+        workbook: buildBudgetWorkbook(),
+        bookingPdf: (await printPdf(browser, BOOKING_HTML)).toString("base64")
+    } ]);
     const contexts: BrowserContext[] = [];
     try {
         // Both color schemes capture each shot in turn, so that they show the tree expanded alike.
@@ -98,12 +114,14 @@ async function buildWebsite(browser: Browser, options: BuildOptions) {
         }
 
         for (const shot of shots) {
-            const scene = findScene(shot.scene);
-            const noteId = await findNoteId(server.baseUrl, scene.desktopQuery ?? scene.query);
+            const scene = shot.scene ? findScene(shot.scene) : undefined;
+            const query = scene ? scene.desktopQuery ?? scene.query : shot.query;
+            if (!query) throw new Error(`The website shot ${shot.file} has no scene or query.`);
+            const noteId = await findNoteId(server.baseUrl, query);
             for (const { page, suffix } of windows) {
                 await openNote(page, noteId);
                 await settle(page);
-                await scene.desktopPrepare?.(page);
+                await scene?.desktopPrepare?.(page);
                 await shot.prepare?.(page);
                 await page.mouse.move(width - 1, WINDOW_HEIGHT - 1);
                 await settle(page);
@@ -126,7 +144,7 @@ async function buildWebsite(browser: Browser, options: BuildOptions) {
     }
 }
 
-function findScene(id: string): Scene {
+function findScene(id: string) {
     const scene = SCENES.find((candidate) => candidate.id === id);
     if (!scene) throw new Error(`No scene has the ID ${id}.`);
     return scene;
@@ -142,6 +160,16 @@ async function hideRightPane(page: Page) {
         return response.status;
     });
     if (status >= 400) throw new Error(`Hiding the right pane failed (${status}).`);
+}
+
+async function printPdf(browser: Browser, html: string) {
+    const page = await browser.newPage();
+    try {
+        await page.setContent(html);
+        return await page.pdf({ format: "A4", printBackground: true });
+    } finally {
+        await page.close();
+    }
 }
 
 /** Encodes a PNG as WebP through a canvas, since Playwright screenshots only as PNG or JPEG. */

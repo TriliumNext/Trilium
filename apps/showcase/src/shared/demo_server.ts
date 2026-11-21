@@ -107,11 +107,12 @@ export async function startDemoServer({ port, logPath }: { port: number; logPath
 
 /**
  * Runs `seed` as a backend script on the server, from a page of the app that supplies the CSRF
- * headers, with `params` as its arguments and the backend script `api` in scope. The server
- * runs a script sent this way in the bundle of `currentNoteId`, which must be a JavaScript note.
+ * headers, with `params` as its arguments, sent as JSON, and the backend script `api` in scope.
+ * The server runs a script sent this way in the bundle of `currentNoteId`, which must be a
+ * JavaScript note.
  */
-export async function seedDocument(browser: Browser, baseUrl: string,
-    seed: (...params: string[]) => void, params: string[] = []) {
+export async function seedDocument<Params extends unknown[]>(browser: Browser, baseUrl: string,
+    seed: (...params: Params) => void, params: Params) {
     const scriptNoteId = await findNoteId(baseUrl,
         "note.type = 'code' AND note.mime *=* 'javascript'");
     const page = await browser.newPage();

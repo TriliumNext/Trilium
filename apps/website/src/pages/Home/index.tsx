@@ -221,6 +221,7 @@ function NoteTypesSection() {
                 {
                     title: t("note_types.markdown_title"),
                     imageUrl: "/type_markdown.webp",
+                    darkImageUrl: "/type_markdown-dark.webp",
                     iconSvg: markdownIcon,
                     moreInfo: "https://docs.triliumnotes.org/user-guide/note-types/markdown",
                     description: t("note_types.markdown_description")
@@ -236,6 +237,7 @@ function NoteTypesSection() {
                 {
                     title: t("note_types.spreadsheet_title"),
                     imageUrl: "/type_spreadsheet.webp",
+                    darkImageUrl: "/type_spreadsheet-dark.webp",
                     iconSvg: tableIcon,
                     moreInfo: "https://docs.triliumnotes.org/user-guide/note-types/spreadsheets",
                     description: t("note_types.spreadsheet_description")
@@ -267,6 +269,7 @@ function NoteTypesSection() {
                 {
                     title: t("note_types.file_title"),
                     imageUrl: "/type_file.webp",
+                    darkImageUrl: "/type_file-dark.webp",
                     iconSvg: fileIcon,
                     moreInfo: "https://docs.triliumnotes.org/user-guide/note-types/file",
                     description: t("note_types.file_description")
@@ -292,6 +295,7 @@ function CollectionsSection() {
                 {
                     title: t("collections.calendar_title"),
                     imageUrl: "/collection_calendar.webp",
+                    darkImageUrl: "/collection_calendar-dark.webp",
                     iconSvg: calendarIcon,
                     moreInfo: "https://docs.triliumnotes.org/user-guide/collections/calendar",
                     description: t("collections.calendar_description")
@@ -300,6 +304,7 @@ function CollectionsSection() {
                     title: t("collections.table_title"),
                     iconSvg: tableIcon,
                     imageUrl: "/collection_table.webp",
+                    darkImageUrl: "/collection_table-dark.webp",
                     moreInfo: "https://docs.triliumnotes.org/user-guide/collections/table",
                     description: t("collections.table_description")
                 },
@@ -323,6 +328,7 @@ function CollectionsSection() {
                     title: t("collections.presentation_title"),
                     iconSvg: presentationIcon,
                     imageUrl: "/collection_presentation.webp",
+                    darkImageUrl: "/collection_presentation-dark.webp",
                     moreInfo: "https://docs.triliumnotes.org/user-guide/collections/presentation",
                     description: t("collections.presentation_description")
                 },
@@ -330,6 +336,7 @@ function CollectionsSection() {
                     title: t("collections.dashboard_title"),
                     iconSvg: dashboardIcon,
                     imageUrl: "/collection_dashboard.webp",
+                    darkImageUrl: "/collection_dashboard-dark.webp",
                     moreInfo: "https://docs.triliumnotes.org/user-guide/collections/dashboard",
                     description: t("collections.dashboard_description")
                 }
