@@ -35,6 +35,7 @@ import { useEffectiveReadOnly } from "../../react/hooks/note_context";
 import { TypeWidgetProps } from "../type_widget";
 import useStripPastedFontFamily from "./clipboard";
 import useSpreadsheetExport from "./export";
+import { installFileLinkHandler } from "./file_links";
 import { loadUniverLocale, UniverLocale } from "./locales";
 import { useWorkbookFile, type WorkbookFileSource } from "./loading";
 import useClampEdgeNavigation from "./navigation";
@@ -309,8 +310,12 @@ function useInitializeSpreadsheet(containerRef: RefObject<HTMLDivElement | null>
             // (see toMobilePresets); the remaining feature plugins are platform-agnostic.
             presets: isMobile() ? toMobilePresets(presets) : presets,
         });
+        const disposeFileLinks = installFileLinkHandler(univerAPI);
         apiRef.current = univerAPI;
-        return () => univerAPI.dispose();
+        return () => {
+            disposeFileLinks();
+            univerAPI.dispose();
+        };
     }, [ apiRef, containerRef, readOnly, locale ]);
 }
 

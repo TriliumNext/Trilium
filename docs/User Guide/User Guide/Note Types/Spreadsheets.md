@@ -54,6 +54,7 @@ The spreadsheet has support for the following features:
 *   Conditional formatting
 *   Notes / annotations
 *   Find / replace
+*   Hyperlinks, including `file:` links to files on disk, which open in their default application on desktop.
 
 We might consider adding [other features](https://docs.univer.ai/guides/sheets/features/filter) from Univer at some point. If there is a particular feature that can be added easily, it can be discussed over [GitHub Issues](../Troubleshooting/Reporting%20issues.md).
 
