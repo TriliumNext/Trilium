@@ -295,7 +295,7 @@ export function main(
     }
     const note = renderReleaseNote(readFileSync(TEMPLATE_PATH, "utf-8"),
         unreleased ? `Changes since ${base}` : version, items,
-        { preamble: !unreleased, emptySections: !unreleased });
+        { preamble: !unreleased });
     if (stdout) {
         process.stdout.write(note);
     } else {
@@ -707,13 +707,12 @@ export function collectItems(sources: ItemSources): NoteItem[] {
 }
 
 /**
- * Fills `Release Template.md` with the items, oldest first in each section. Sections that receive
- * no item keep the template's placeholder, unless `emptySections` is off, which drops them along
- * with their placeholder; `preamble` off drops the template's lines between the title and the
- * first section.
+ * Fills `Release Template.md` with the items, oldest first in each section, and drops the sections
+ * that receive no item along with their placeholder. `preamble` off drops the template's lines
+ * between the title and the first section.
  */
 export function renderReleaseNote(template: string, version: string, items: NoteItem[],
-    { preamble = true, emptySections = true } = {}): string {
+    { preamble = true } = {}): string {
     const lines = template.replace(/^# .*$/m, `# ${version}`).split("\n");
     const admonitions = items
         .filter((item) => ADMONITIONS.has(item.section))
@@ -744,12 +743,12 @@ export function renderReleaseNote(template: string, version: string, items: Note
 
         const sectionItems = items.filter((item) => item.section.toLowerCase() === heading);
         if (sectionItems.length === 0) {
-            if (heading !== undefined && !emptySections) {
-                while (index + 1 < lines.length && !lines[index + 1].startsWith("## ")) {
-                    index++;
-                }
-            } else {
+            if (heading === undefined) {
                 output.push(line);
+                continue;
+            }
+            while (index + 1 < lines.length && !lines[index + 1].startsWith("## ")) {
+                index++;
             }
             continue;
         }
