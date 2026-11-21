@@ -26,7 +26,7 @@ vi.mock("./config.js", async (orig) => {
     };
 });
 
-import { desktopNetworkAccessGate, isBrowserExtensionOrigin, isLocalIntegrationPath, isLoopbackHost, shouldBlockDesktopWebRequest } from "./desktop_network_gate.js";
+import { desktopClipperAuth, desktopNetworkAccessGate, isBrowserExtensionOrigin, isLocalIntegrationPath, isLoopbackAddress, isLoopbackHost, shouldBlockDesktopWebRequest } from "./desktop_network_gate.js";
 import etapiTokenService from "./etapi_tokens.js";
 
 function makeRes() {
@@ -81,6 +81,61 @@ describe("isBrowserExtensionOrigin", () => {
         }
         for (const origin of ["", "null", "https://attacker.example", "http://127.0.0.1:37840", "chrome-extension.attacker.example"]) {
             expect(isBrowserExtensionOrigin(origin)).toBe(false);
+        }
+    });
+});
+
+describe("isLoopbackAddress", () => {
+    it("accepts loopback socket addresses, IPv4-mapped ones included, and rejects the rest", () => {
+        for (const address of ["127.0.0.1", "127.5.5.5", "::1", "::ffff:127.0.0.1"]) {
+            expect(isLoopbackAddress(address)).toBe(true);
+        }
+        for (const address of [undefined, "", "192.168.1.9", "::ffff:192.168.1.9", "fe80::1", "::", "127.0.0.1.attacker.example"]) {
+            expect(isLoopbackAddress(address)).toBe(false);
+        }
+    });
+});
+
+describe("desktopClipperAuth", () => {
+    function clipperReq(headers: Record<string, string | undefined>, remoteAddress: string) {
+        return {
+            method: "POST",
+            path: "/api/clipper/notes",
+            headers,
+            socket: { remoteAddress },
+            get: (name: string) => headers[name.toLowerCase()]
+        } as unknown as Request;
+    }
+
+    function run(req: Request) {
+        const res = makeRes();
+        res.setHeader = vi.fn(() => res);
+        const next = vi.fn() as unknown as NextFunction;
+        desktopClipperAuth(req, res, next);
+        return { res, next };
+    }
+
+    it("serves the extension on this computer without a token", () => {
+        for (const origin of [undefined, "chrome-extension://abcdef"]) {
+            const { res, next } = run(clipperReq({ host: "127.0.0.1:37840", origin }, "::ffff:127.0.0.1"));
+            expect(next).toHaveBeenCalled();
+            expect(res.status).not.toHaveBeenCalled();
+        }
+    });
+
+    it("refuses a web page, and asks a LAN peer or a rebound Host for a token", () => {
+        const page = run(clipperReq({ host: "127.0.0.1:37840", origin: "https://attacker.example" }, "127.0.0.1"));
+        expect(page.res.status).toHaveBeenCalledWith(403);
+        expect(page.next).not.toHaveBeenCalled();
+
+        for (const req of [
+            clipperReq({ host: "192.168.1.50:37840" }, "192.168.1.9"),
+            clipperReq({ host: "localhost:37840" }, "192.168.1.9"),
+            clipperReq({ host: "attacker.example:37840" }, "127.0.0.1")
+        ]) {
+            const { res, next } = run(req);
+            expect(res.status).toHaveBeenCalledWith(401);
+            expect(next).not.toHaveBeenCalled();
         }
     });
 });
@@ -223,6 +278,27 @@ describe("desktopNetworkAccessGate wiring (real app)", () => {
 
         expect((await formPost("127.0.0.1:37840", "chrome-extension://abcdef")).status).toBe(200);
         expect((await formPost("localhost:37840")).status).toBe(200);
+    });
+
+    it("requires a token on the clipper from a LAN or rebound Host once network access is enabled", async () => {
+        const clip = (host: string, authToken?: string) => {
+            const request = supertest(app).post("/api/clipper/notes").set("Host", host);
+            if (authToken) {
+                request.set("Authorization", authToken);
+            }
+            return request.send({ title: "Clipped over the network", content: "<p>hello</p>" });
+        };
+        const authToken = createToken("clipper lan spec");
+
+        network.allowLanAccess = true;
+        try {
+            expect((await clip("192.168.1.50:37840")).status).toBe(401);
+            expect((await clip("attacker.example:37840")).status).toBe(401);
+            expect((await clip("192.168.1.50:37840", authToken)).status).toBe(200);
+            expect((await clip("127.0.0.1:37840")).status).toBe(200);
+        } finally {
+            network.allowLanAccess = false;
+        }
     });
 
     it("serves /mcp on a LAN Host once network access is enabled", async () => {
