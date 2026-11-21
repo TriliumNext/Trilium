@@ -40,10 +40,7 @@ body {
         --ink-muted: #c9c5bb;
         background:
             url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"),
-            radial-gradient(40vmax 40vmax at 20% 30%, rgb(228 123 25 / 25%), transparent 70%),
-            radial-gradient(30vmax 30vmax at 75% 25%, rgb(79 165 43 / 25%), transparent 70%),
-            radial-gradient(25vmax 25vmax at 60% 75%, rgb(227 63 59 / 25%), transparent 70%),
-            radial-gradient(20vmax 20vmax at 85% 65%, rgb(228 123 25 / 15%), transparent 70%),
+            radial-gradient(50vmax 50vmax at 30% 12%, rgb(228 123 25 / 28%), transparent 70%),
             #0a0e14;
     }
 }

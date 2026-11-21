@@ -6,17 +6,44 @@
     <title>Store listing preview</title>
     <link rel="stylesheet" href="common.css">
     <style>
+        :root {
+            color-scheme: light dark;
+            --page: #fff;
+            --text: #1f1f1f;
+            --muted: #5f6368;
+            --accent: #01875f;
+            --on-accent: #fff;
+            --chip-border: #dadce0;
+            --chip-active: #e6f3ef;
+            --control: #fff;
+            --control-hover: #f1f3f4;
+            --shadow: rgb(0 0 0 / 20%);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --page: #0a0e14;
+                --text: #e3e3e3;
+                --muted: #9aa0a6;
+                --accent: #45c89a;
+                --on-accent: #062e22;
+                --chip-border: #3c4048;
+                --chip-active: #14382d;
+                --control: #232a33;
+                --control-hover: #2e3641;
+                --shadow: rgb(0 0 0 / 55%);
+            }
+        }
+
         body {
-            background: #f6f5f2;
-            color: #1d1f24;
-            overflow-x: clip;
+            background: var(--page);
+            color: var(--text);
         }
 
         main {
-            --gutter: max(16px, calc(50vw - 490px + 16px));
-            max-width: 980px;
+            max-width: 1100px;
             margin: 0 auto;
-            padding: 32px 16px 64px;
+            padding: 32px 40px 64px;
         }
 
         .feature {
@@ -24,109 +51,226 @@
             aspect-ratio: 1024 / 500;
             border-radius: 20px;
             display: block;
+            margin-bottom: 40px;
         }
 
-        header {
+        .app-header {
             display: flex;
-            gap: 24px;
-            align-items: center;
-            margin: 28px 0;
-
-            .icon {
-                width: 96px;
-                height: 96px;
-                border-radius: 30%;
-                box-shadow: 0 1px 4px rgb(0 0 0 / 20%);
-            }
+            justify-content: space-between;
+            gap: 32px;
 
             h1 {
-                margin: 0;
-                font-size: 32px;
-                font-weight: 650;
+                margin: 0 0 12px;
+                font-size: clamp(36px, 6vw, 60px);
+                font-weight: 500;
+                line-height: 1.1;
             }
 
             .developer {
-                color: #3c7f23;
-                font-weight: 600;
+                color: var(--accent);
+                font-size: 20px;
+                font-weight: 500;
             }
 
             .category {
-                color: #5f6368;
+                color: var(--muted);
                 font-size: 14px;
+                margin-top: 4px;
+            }
+
+            .icon {
+                width: clamp(96px, 20vw, 240px);
+                height: clamp(96px, 20vw, 240px);
+                flex: none;
+                border-radius: 20%;
+                box-shadow: 0 2px 12px var(--shadow);
             }
         }
 
-        h2 {
-            font-size: 20px;
-            font-weight: 650;
-            margin: 36px 0 12px;
+        .actions {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            margin-top: 32px;
+
+            .install {
+                padding: 10px 24px;
+                border-radius: 8px;
+                background: var(--accent);
+                color: var(--on-accent);
+                font-size: 16px;
+                font-weight: 500;
+            }
+
+            .share {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                color: var(--accent);
+                font-weight: 500;
+            }
+        }
+
+        .devices {
+            display: flex;
+            gap: 8px;
+            margin: 48px 0 16px;
+
+            button {
+                padding: 6px 16px;
+                border: 1px solid var(--chip-border);
+                border-radius: 8px;
+                background: none;
+                color: var(--text);
+                font: inherit;
+                font-size: 14px;
+                cursor: pointer;
+
+                &[aria-pressed="true"] {
+                    border-color: transparent;
+                    background: var(--chip-active);
+                    color: var(--accent);
+                }
+            }
+        }
+
+        .carousel {
+            --shot-height: 420px;
+            position: relative;
+
+            &.tablet {
+                --shot-height: 300px;
+            }
+
+            > button {
+                position: absolute;
+                top: calc(var(--shot-height) / 2 - 28px);
+                width: 56px;
+                height: 56px;
+                border: none;
+                border-radius: 50%;
+                display: grid;
+                place-items: center;
+                background: var(--control);
+                color: var(--text);
+                box-shadow: 0 2px 10px var(--shadow);
+                cursor: pointer;
+
+                &:hover {
+                    background: var(--control-hover);
+                }
+
+                &[hidden] {
+                    display: none;
+                }
+
+                &.previous {
+                    left: -28px;
+                }
+
+                &.next {
+                    right: -28px;
+                }
+            }
         }
 
         .strip {
             display: flex;
-            gap: 12px;
+            gap: 16px;
             overflow-x: auto;
-            margin-inline: calc(50% - 50vw);
-            padding: 0 var(--gutter) 8px;
-            scroll-padding-inline: var(--gutter);
             scrollbar-width: none;
 
-            figure {
-                margin: 0;
-                flex: none;
+            &::-webkit-scrollbar {
+                display: none;
             }
 
             img {
-                height: 420px;
-                border-radius: 12px;
+                height: var(--shot-height);
+                flex: none;
+                border-radius: 8px;
                 display: block;
-                box-shadow: 0 1px 3px rgb(0 0 0 / 15%);
-            }
-
-            figcaption {
-                max-width: 236px;
-                font-size: 12px;
-                color: #5f6368;
-                margin-top: 6px;
-            }
-
-            &.tablet img {
-                height: 300px;
-            }
-
-            &.tablet figcaption {
-                max-width: 533px;
+                border: 1px solid var(--chip-border);
             }
         }
 
-        .short {
-            font-size: 17px;
-        }
+        .about {
+            margin-top: 48px;
+            max-width: 760px;
 
-        .description {
-            white-space: pre-wrap;
-            line-height: 1.55;
+            h2 {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                margin: 0 0 16px;
+                font-size: 24px;
+                font-weight: 500;
+            }
+
+            p {
+                margin: 0 0 16px;
+                line-height: 1.6;
+            }
+
+            .description {
+                white-space: pre-wrap;
+            }
         }
     </style>
 </head>
 <body>
     <main>
         <img class="feature" src="feature-graphic.png" alt="">
-        <header>
-            <img class="icon" src="icon.png" alt="">
+        <header class="app-header">
             <div>
                 <h1 id="name"></h1>
                 <div class="developer" id="developer"></div>
                 <div class="category" id="category"></div>
+                <div class="actions">
+                    <span class="install">Install</span>
+                    <span class="share">
+                        <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill="currentColor" d="M18 16a3 3 0 0 0-2.1.9l-7-4.1a3 3 0 0 0
+                                0-1.6l7-4.1A3 3 0 1 0 15 5a3 3 0 0 0 .1.8l-7 4.1a3 3 0 1 0 0
+                                4.2l7 4.1a3 3 0 1 0 2.9-2.2z" />
+                        </svg>
+                        Share
+                    </span>
+                </div>
             </div>
+            <img class="icon" src="icon.png" alt="">
         </header>
-        <p class="short" id="short"></p>
-        <h2>Phone screenshots</h2>
-        <div class="strip" id="phone"></div>
-        <h2>Tablet screenshots</h2>
-        <div class="strip tablet" id="tablet"></div>
-        <h2>About this app</h2>
-        <div class="description" id="description"></div>
+
+        <div class="devices" role="group" aria-label="Device">
+            <button type="button" data-device="phone" aria-pressed="true">Phone</button>
+            <button type="button" data-device="tablet" aria-pressed="false">Tablet</button>
+        </div>
+        <div class="carousel">
+            <div class="strip"></div>
+            <button class="previous" type="button" aria-label="Previous screenshots" hidden>
+                <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </button>
+            <button class="next" type="button" aria-label="Next screenshots">
+                <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </button>
+        </div>
+
+        <section class="about">
+            <h2>
+                About this app
+                <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </h2>
+            <p id="short"></p>
+            <p class="description" id="description"></p>
+        </section>
     </main>
     <script src="listing-data.js"></script>
     <script>
@@ -138,16 +282,48 @@
         document.getElementById("description").textContent = listing.fullDescription;
         document.querySelector(".feature").alt = listing.featureGraphic.alt;
 
-        for (const shot of screenshots) {
-            const figure = document.createElement("figure");
-            const img = document.createElement("img");
-            img.src = shot.file;
-            img.alt = shot.alt;
-            const caption = document.createElement("figcaption");
-            caption.textContent = shot.alt;
-            figure.append(img, caption);
-            document.getElementById(shot.device).append(figure);
+        const carousel = document.querySelector(".carousel");
+        const strip = carousel.querySelector(".strip");
+        const previous = carousel.querySelector(".previous");
+        const next = carousel.querySelector(".next");
+        const chips = document.querySelectorAll(".devices button");
+
+        const update = () => {
+            previous.hidden = strip.scrollLeft <= 1;
+            next.hidden = strip.scrollLeft + strip.clientWidth >= strip.scrollWidth - 1;
+        };
+
+        const showDevice = (device) => {
+            carousel.classList.toggle("tablet", device === "tablet");
+            strip.replaceChildren(...screenshots
+                .filter((shot) => shot.device === device)
+                .map((shot) => {
+                    const img = document.createElement("img");
+                    img.src = shot.file;
+                    img.alt = shot.alt;
+                    img.title = shot.alt;
+                    img.addEventListener("load", update);
+                    return img;
+                }));
+            strip.scrollLeft = 0;
+            for (const chip of chips) {
+                chip.setAttribute("aria-pressed", String(chip.dataset.device === device));
+            }
+            update();
+        };
+
+        const page = (direction) => {
+            strip.scrollBy({ left: direction * strip.clientWidth * 0.8, behavior: "smooth" });
+        };
+
+        for (const chip of chips) {
+            chip.addEventListener("click", () => showDevice(chip.dataset.device));
         }
+        previous.addEventListener("click", () => page(-1));
+        next.addEventListener("click", () => page(1));
+        strip.addEventListener("scroll", update, { passive: true });
+        addEventListener("resize", update);
+        showDevice("phone");
     </script>
 </body>
 </html>
