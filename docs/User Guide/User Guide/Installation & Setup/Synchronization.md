@@ -1,6 +1,14 @@
 # Synchronization
 Trilium is an offline-first note-taking application that stores all data locally on the desktop client. However, it also offers the option to set up synchronization with a server instance, allowing multiple desktop clients to sync with a central server. This creates a star-shaped topology:
 
+```mermaid
+flowchart TB
+    server[("Sync server")]
+    laptop["Desktop app<br>(laptop)"] <--> server
+    work["Desktop app<br>(work computer)"] <--> server
+    home["Desktop app<br>(home computer)"] <--> server
+```
+
 In this setup, a central server (referred to as the _sync server_) and multiple _client_ (or _desktop_) instances synchronize with the sync server. Once configured, synchronization is automatic and ongoing, requiring no manual intervention.
 
 ## Setting Up Synchronization
@@ -41,6 +49,14 @@ Once synchronization is complete, you will be automatically redirected to the Tr
 This method allows two desktop instances to synchronize between each other without requiring a <a class="reference-link" href="Server%20Installation.md">Server Installation</a>.
 
 Every desktop app contains a built-in server. In this setup, the new desktop instance uses that server to act as the sync server for the existing one, so it must be running and reachable over the network whenever the other instance synchronizes. Both devices must be on the same network.
+
+```mermaid
+flowchart LR
+    existing["Existing desktop app"] <-->|"same network"| builtin
+    subgraph newApp ["New desktop app"]
+        builtin[("Built-in server")]
+    end
+```
 
 1.  **New desktop**: On the first start, in the setup screen, choose _Connect a desktop app_. The page lists the _Addresses for this device_ and waits for a connection.
 2.  **Network access**: If the page says the device can't be reached by other devices, select _Allow network access & restart_. Trilium restarts, after which you choose _Connect a desktop app_ again.
