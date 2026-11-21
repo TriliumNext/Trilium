@@ -310,8 +310,8 @@ importers:
         specifier: 12.3.0
         version: 12.3.0
       mind-elixir:
-        specifier: 6.0.0
-        version: 6.0.0
+        specifier: 6.0.3
+        version: 6.0.3
       preact:
         specifier: 11.2.0
         version: 11.2.0(preact-render-to-string@6.8.3)
@@ -924,8 +924,8 @@ importers:
         specifier: 12.3.0
         version: 12.3.0
       mind-elixir:
-        specifier: 6.0.0
-        version: 6.0.0
+        specifier: 6.0.3
+        version: 6.0.3
       preact:
         specifier: 11.2.0
         version: 11.2.0(preact-render-to-string@6.8.3)
@@ -8986,8 +8986,8 @@ packages:
     resolution: {integrity: sha512-VP79XUPxV2CigYP3jWwAUFSku2aKqBH7uTAapFWCBqutsbmDo96KY5o8uh6U+/YSIn5OxJnXp73beVkpqMIGhA==}
     engines: {node: '>=18'}
 
-  mind-elixir@6.0.0:
-    resolution: {integrity: sha512-8eBJMZggSAOSpD/dq9nhOflhOJ4Su2eeePBzKPHATp7VFt3ojqEjcuUasiVH36Xarp2yoceJ7QYMR1STsVxhTw==}
+  mind-elixir@6.0.3:
+    resolution: {integrity: sha512-rsReFKTxfrcAuWjhfslY/9szWa0hyrMcO1hzG8kl74mLiTcXgZXKCksb8QR8B6VUA5EzDOrOQdxGoR83plQT5w==}
 
   minimatch@10.2.6:
     resolution: {integrity: sha512-vpLQEs+VLCr1nU0BXS07maYoFwlDAH0gngQuuttxIwutDFEMHq2blX+8vpgxDdK3J1PwjCJiep77OitTZ4Ll1A==}
@@ -21006,7 +21006,7 @@ snapshots:
 
   mimic-function@5.0.1: {}
 
-  mind-elixir@6.0.0: {}
+  mind-elixir@6.0.3: {}
 
   minimatch@10.2.6:
     dependencies:

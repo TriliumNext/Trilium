@@ -512,8 +512,9 @@ export function loadMapData(mind: VanillaMindElixir, data: MindElixirData, isOth
         mind.direction = data.direction;
     }
 
-    // `diffRefresh()` exists only once `init()` has finished, which waits for `document.fonts.ready`.
-    if (isOtherNote || isNewDirection || !mind.pluginsInitialized) {
+    // `init()` installs `diffRefresh()` only after `document.fonts.ready`, but sets
+    // `pluginsInitialized` before that wait, so the method itself is checked.
+    if (isOtherNote || isNewDirection || typeof mind.diffRefresh !== "function") {
         mind.refresh(data);
     } else {
         mind.diffRefresh(data);
