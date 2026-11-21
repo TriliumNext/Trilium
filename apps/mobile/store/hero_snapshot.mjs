@@ -5,13 +5,13 @@ import path from "path";
 
 /**
  * Serializes the page into one self-contained HTML file: the DOM without scripts, only the CSS
- * rules whose selectors match an element, only the custom properties those rules reach, and each
- * font they name subset to the characters on the page, with animations and transitions off. Both
- * color schemes survive, since a rule is kept whatever media query it sits in. `pyftsubset` is
- * the fontTools subsetter, which needs the Brotli module to write WOFF2. Resolves with the HTML
- * and the numbers behind its size.
+ * rules whose selectors match an element, only the custom properties those rules reach, and only
+ * the fonts the page draws with, subset to its characters and to the OpenType features a browser
+ * applies by default; animations and transitions are off. Both color schemes survive, since a rule
+ * is kept whatever media query it sits in. `fonttools` is the fontTools command, which needs the
+ * Brotli module to write WOFF2. Resolves with the HTML and the numbers behind its size.
  */
-export async function captureSnapshot(page, { pyftsubset }) {
+export async function captureSnapshot(page, { fonttools }) {
     const harvested = await page.evaluate(harvestPage);
     const { css, declared, kept: keptProperties } = pruneCustomProperties(harvested.css,
         harvested.inlineStyles);
@@ -26,10 +26,12 @@ export async function captureSnapshot(page, { pyftsubset }) {
             const source = path.join(workDir, "source");
             const subset = path.join(workDir, "subset.woff2");
             fs.writeFileSync(source, Buffer.from(await (await fetch(face.url)).arrayBuffer()));
-            execFileSync(pyftsubset, [
-                source, `--text-file=${textFile}`, "--flavor=woff2", "--layout-features=*",
-                `--output-file=${subset}`
-            ], { stdio: [ "ignore", "ignore", "pipe" ] });
+            const run = (args) => execFileSync(fonttools, args, {
+                stdio: [ "ignore", "ignore", "pipe" ]
+            });
+            // Chromium draws list markers with `tnum`, which is not among the default features.
+            run([ "subset", source, `--text-file=${textFile}`, "--flavor=woff2",
+                "--layout-features+=tnum", `--output-file=${subset}` ]);
             const data = fs.readFileSync(subset);
             fonts.push({ family: face.family, bytes: data.length });
             fontFaces += `@font-face{${face.descriptors}`
@@ -43,7 +45,8 @@ export async function captureSnapshot(page, { pyftsubset }) {
                 customProperties: `${keptProperties} of ${declared}`,
                 cssBytes: css.length,
                 domBytes: harvested.html.length,
-                fonts
+                fonts,
+                unusedFonts: harvested.unusedFonts
             }
         };
     } finally {
@@ -193,13 +196,24 @@ async function harvestPage() {
         }
     }
 
+    // The browser downloads a face only once some text renders in it, so a loaded face is one
+    // the page draws with.
+    const faceKey = (family, weight, style) => [ family.replace(/["']/g, "").trim(),
+        weight || "normal", style || "normal" ].join("|");
+    const loadedFaces = new Set([ ...document.fonts ]
+        .filter((face) => face.status === "loaded")
+        .map((face) => faceKey(face.family, face.weight, face.style)));
     const fontFaces = [];
+    const unusedFonts = new Set();
     const seenFaces = new Set();
     for (const face of fontFaceRules) {
         const family = face.style.getPropertyValue("font-family").replace(/["']/g, "").trim();
-        if (!css.toLowerCase().includes(family.toLowerCase())) continue;
-        const key = [ "font-family", "font-weight", "font-style", "unicode-range" ]
-            .map((name) => face.style.getPropertyValue(name)).join("|");
+        const key = faceKey(family, face.style.getPropertyValue("font-weight"),
+            face.style.getPropertyValue("font-style"));
+        if (!loadedFaces.has(key)) {
+            unusedFonts.add(family);
+            continue;
+        }
         if (seenFaces.has(key)) continue;
         seenFaces.add(key);
         const urls = [ ...face.style.getPropertyValue("src").matchAll(/url\(\s*["']?([^"')]+)/g) ]
@@ -272,6 +286,7 @@ async function harvestPage() {
         css,
         chars: [ ...chars ].join(""),
         fontFaces,
+        unusedFonts: [ ...unusedFonts ],
         inlineStyles,
         rulesKept,
         rulesDropped

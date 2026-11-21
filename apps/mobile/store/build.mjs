@@ -17,14 +17,14 @@
  * document with the demo content plus what `SEED` in `scenes.mjs` adds, unless --url points at a
  * running one that has both and needs no login; `flathub` always boots its own and then opens
  * the document in the desktop app, and needs `gnome-shell`, `dbus-run-session` and `gdbus` on
- * the PATH; `hero` also boots its own and needs `pyftsubset` from fontTools, with the Brotli
+ * the PATH; `hero` also boots its own and needs the `fonttools` command, with the Brotli
  * module. Output goes to `apps/mobile/store/out`; open `out/preview.html`,
  * `out/flathub-preview.html` and `out/hero/hero.html` to review it.
  *
  * Environment:
  *   CHROME_BIN  browser executable, for systems where Playwright's browsers cannot run (NixOS);
  *               a `chromium` on the PATH is found without it
- *   PYFTSUBSET  the fontTools subsetter, when `pyftsubset` on the PATH lacks Brotli
+ *   FONTTOOLS   the `fonttools` command, when the one on the PATH lacks Brotli
  */
 import { execFileSync } from "child_process";
 import fs from "fs";
@@ -254,8 +254,8 @@ async function buildFlathubPreview() {
  * build fails when the snapshot differs from it by more than `HERO_MAX_DIFF` in either one.
  */
 async function buildHero() {
-    const pyftsubset = process.env.PYFTSUBSET ?? findOnPath("pyftsubset");
-    if (!pyftsubset) throw new Error("The hero needs pyftsubset from fontTools; set PYFTSUBSET.");
+    const fonttools = process.env.FONTTOOLS ?? findOnPath("fonttools");
+    if (!fonttools) throw new Error("The hero needs the fonttools command; set FONTTOOLS.");
     const heroDir = path.join(outDir, "hero");
     fs.mkdirSync(heroDir, { recursive: true });
     const server = options.url ? { baseUrl: options.url, stop() {} } : await startDemoServer({
@@ -289,13 +289,13 @@ async function buildHero() {
             await page.waitForTimeout(500);
             await page.screenshot({ path: path.join(heroDir, `app-${colorScheme}.png`) });
             if (colorScheme === "light") {
-                const { html, stats } = await captureSnapshot(page, { pyftsubset });
+                const { html, stats } = await captureSnapshot(page, { fonttools });
                 fs.writeFileSync(output, html);
                 const fonts = stats.fonts
-                    .map(({ family, bytes }) => `${family} ${Math.round(bytes / 1024)} KB`);
+                    .map(({ family, bytes }) => `${family} ${(bytes / 1024).toFixed(1)} KB`);
                 console.log(`  ${stats.rulesKept} of ${stats.rulesKept + stats.rulesDropped} CSS `
                     + `rules, ${stats.customProperties} custom properties, fonts: `
-                    + `${fonts.join(", ")}`);
+                    + `${fonts.join(", ")}; unused: ${stats.unusedFonts.join(", ")}`);
             }
             await context.close();
         }
