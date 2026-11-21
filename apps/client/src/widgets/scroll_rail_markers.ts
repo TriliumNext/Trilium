@@ -106,8 +106,6 @@ export class ScrollRailLayer {
 
 }
 
-/** Whether the text views publish their highlights to the scroll rail. */
-const IS_HIGHLIGHTS_LAYER_ENABLED = true;
 /** Whether the highlight lines take the colors as the theme adapts them, else as picked. */
 const IS_HIGHLIGHT_COLOR_ADAPTED = false;
 
@@ -141,7 +139,7 @@ export function useScrollRailHighlights(
 
     // Switching notes clears the context data, so each note publishes again.
     useEffect(() => {
-        if (!noteContext || !isShown || !IS_HIGHLIGHTS_LAYER_ENABLED) return;
+        if (!noteContext || !isShown) return;
         noteContext.setContextData("scrollRailHighlights", layer);
         return () => {
             // The other text view of the split can have published its own layer since.

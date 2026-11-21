@@ -332,6 +332,7 @@ const defaultOptions: DefaultOption[] = [
     { name: "textNoteSlashCommandsEnabled", value: "true", isSynced: true },
     { name: "mathFieldEnabled", value: "true", isSynced: true },
     { name: "textNoteContentHintsEnabled", value: "true", isSynced: true },
+    { name: "textNoteScrollRailHighlightsEnabled", value: "true", isSynced: false },
     { name: "textNoteAutoLinkPreviewsEnabled", value: "true", isSynced: true },
     { name: "textNoteLinkTitleRetrievalEnabled", value: "true", isSynced: true },
     { name: "textNoteLinkDetailsRetrievalEnabled", value: "true", isSynced: true },
