@@ -7,6 +7,7 @@ export default class ScrollOnUndoRedoPlugin extends Plugin {
 		const scrollToSelection = () => {
 			// Ensure scroll happens in sync with DOM updates
 			requestAnimationFrame(() => {
+				if (editor.state === 'destroyed') return;
 				editor.editing.view.scrollToTheSelection();
 			});
 		};

@@ -44,6 +44,10 @@ body.mobile .modal.popup-editor-dialog .modal-dialog {
     font-size: 1.1em;
 }
 
+.modal.popup-editor-dialog .modal-header .popup-editor-back {
+    margin-inline: 0 8px;
+}
+
 /* Pinned to the foot of the dialog rather than following the content, which has no room set
    aside for it. Anchored to `.modal-content`, which Bootstrap positions. */
 .modal.popup-editor-dialog .note-type-switcher {

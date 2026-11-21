@@ -7,11 +7,12 @@ import { useWhenShown } from "./react/hooks/dom";
 import { useColorScheme } from "./react/hooks/options";
 import {
     getPickDistance, type PublishedLayer, type RailHit, type RailLines, SCROLL_RAIL_KINDS,
-    type ScrollRailBar, type ScrollRailKind
+    type ScrollRailBar, type ScrollRailColorPreset, type ScrollRailKind
 } from "./scroll_rail";
 import {
-    drawRows, findRow, goToTarget, RANGE_MEASURE_LIMIT, type RowSet, SCROLL_RAIL_MEASURE_EVENT,
-    type ScrollRailLayer, ScrollRailLocator, type ScrollRailTarget, toRows
+    drawRows, findRow, getMarkerHue, goToTarget, RANGE_MEASURE_LIMIT, type RowSet,
+    SCROLL_RAIL_MEASURE_EVENT, type ScrollRailLayer, ScrollRailLocator, type ScrollRailTarget,
+    toRows
 } from "./scroll_rail_markers";
 
 /**
@@ -113,6 +114,14 @@ interface RailControllerOptions {
     whenShown(callback: () => void): void;
 }
 
+/** The colors of a kind, as the theme sets them now. */
+interface KindColors {
+    color: string;
+    emphasisColor: string;
+    /** The color that a marker's own color `color` is drawn in. */
+    toDrawn(color: string): string;
+}
+
 const NO_ROWS: RowSet = { rows: [], markerRows: [] };
 
 /**
@@ -140,7 +149,7 @@ export class RailController implements RailLines {
         if (this.laterTimer !== null) this.startLaterTimer();
     };
     private canvas: HTMLCanvasElement | null = null;
-    private colors = new Map<string, { color: string; emphasisColor: string }>();
+    private colors = new Map<string, KindColors>();
 
     constructor(
         private readonly bar: ScrollRailBar,
@@ -372,22 +381,31 @@ export class RailController implements RailLines {
             canvas.width = deviceWidth;
             canvas.height = deviceHeight;
         }
-        drawRows(context, { width, height, ratio }, this.getOrderedStates().map((state) => ({
-            rows: state.rows,
-            emphasized: this.getEmphasized(state),
-            opacity: state.kind.opacity,
-            colors: state.colors,
-            ...this.getColors(state.kind, canvas)
-        })));
+        drawRows(context, { width, height, ratio }, this.getOrderedStates().map((state) => {
+            const { color, emphasisColor, toDrawn } = this.getColors(state.kind, canvas);
+            return {
+                rows: state.rows,
+                emphasized: this.getEmphasized(state),
+                opacity: state.kind.opacity,
+                colors: state.colors?.map((colors) => colors.map(toDrawn)),
+                color,
+                emphasisColor
+            };
+        }));
     }
 
     private getColors(kind: ScrollRailKind, probe: HTMLElement) {
         let colors = this.colors.get(kind.key);
         if (!colors) {
-            const color = resolveColor(probe, kind.color);
+            const color = resolveColor(probe, `var(${kind.color})`);
             colors = {
                 color,
-                emphasisColor: kind.emphasisColor ? resolveColor(probe, kind.emphasisColor) : color
+                emphasisColor: kind.emphasisColor
+                    ? resolveColor(probe, `var(${kind.emphasisColor})`)
+                    : color,
+                toDrawn: kind.colorPreset
+                    ? getColorCorrection(probe, kind.colorPreset)
+                    : (given) => given
             };
             this.colors.set(kind.key, colors);
         }
@@ -416,9 +434,38 @@ export class RailController implements RailLines {
 
 }
 
-/** The value of the color variable `name` for `element`, in a form that a canvas takes. */
-function resolveColor(element: HTMLElement, name: string) {
-    element.style.color = `var(${name})`;
+/**
+ * The color that a marker's own color is drawn in under `preset`, for `probe`: its hue at the
+ * theme's saturation and lightness, or the theme's gray for a gray. While the theme sets no
+ * saturation or lightness, the color as given.
+ */
+function getColorCorrection(
+    probe: HTMLElement,
+    { saturation, lightness, grayColor }: ScrollRailColorPreset
+) {
+    const style = getComputedStyle(probe);
+    if (!style.getPropertyValue(saturation).trim() || !style.getPropertyValue(lightness).trim()) {
+        return (color: string) => color;
+    }
+
+    const gray = resolveColor(probe, `var(${grayColor})`);
+    const drawn = new Map<string, string>();
+    return (color: string) => {
+        let corrected = drawn.get(color);
+        if (corrected === undefined) {
+            const hue = getMarkerHue(color);
+            corrected = hue === null
+                ? gray
+                : resolveColor(probe, `hsl(${hue}deg var(${saturation}) var(${lightness}))`);
+            drawn.set(color, corrected);
+        }
+        return corrected;
+    };
+}
+
+/** The computed value of the CSS color `value` for `element`, in a form that a canvas takes. */
+function resolveColor(element: HTMLElement, value: string) {
+    element.style.color = value;
     const color = getComputedStyle(element).color;
     element.style.removeProperty("color");
     return color;

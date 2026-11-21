@@ -3713,7 +3713,9 @@
     "link_title_retrieval_enabled": "Automatically retrieve titles for text links",
     "link_title_retrieval_description": "In the link editor, fill an empty title of a text link with the title of the web page.",
     "link_details_retrieval_enabled": "Automatically retrieve title and description for icon & text links and cards",
-    "link_details_retrieval_description": "In the link editor, fill an empty title or description of an icon & text link or a card with those of the web page."
+    "link_details_retrieval_description": "In the link editor, fill an empty title or description of an icon & text link or a card with those of the web page.",
+    "scroll_rail_highlights_enabled": "Show highlighted text on the scrollbar",
+    "scroll_rail_highlights_description": "Show colored marks on the scrollbar so you can see where text is highlighted in the note."
   },
   "table_view": {
     "new-row": "New row",
@@ -4097,7 +4099,8 @@
   },
   "popup-editor": {
     "maximize": "Switch to full editor",
-    "attachment_title": "Attachment: {{title}}"
+    "attachment_title": "Attachment: {{title}}",
+    "back": "Back to the previous note"
   },
   "server": {
     "unknown_http_error_title": "Communication error with the server",
@@ -5513,5 +5516,8 @@
     "draft_discarded_after_conversion": "The note was converted while you were editing it, and keeps no revisions, so your unsaved changes were discarded.",
     "draft_kept_blocks_gone": "The blocks that you were editing were changed elsewhere and can no longer be edited here. Your unsaved changes were kept as a revision.",
     "draft_discarded_blocks_gone": "The blocks that you were editing were changed elsewhere and can no longer be edited here. The note keeps no revisions, so your unsaved changes were discarded."
+  },
+  "scroll_rail": {
+    "show_highlights": "Highlights"
   }
 }

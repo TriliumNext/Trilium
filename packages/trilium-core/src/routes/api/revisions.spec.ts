@@ -519,6 +519,29 @@ describe("Revisions API (core)", () => {
             expect(blob.body.content).toContain("attachments/");
         });
 
+        it("gives a restored note back its links to its own attachments", async () => {
+            const { noteId } = await createTextNote(api, { title: "Links its attachment" });
+            await api.post(`/api/notes/${noteId}/attachments`, {
+                body: { role: "file", mime: "text/plain", title: "notes.txt", content: "hello" }
+            });
+            const getAttachmentId = () => getSql().getValue<string>(
+                "SELECT attachmentId FROM attachments WHERE ownerId = ? AND isDeleted = 0", [ noteId ]);
+            const link = (attachmentId: string) => `<p><a class="reference-link" href="#root/`
+                + `${noteId}?viewMode=attachments&amp;attachmentId=${attachmentId}">notes.txt</a></p>`;
+            const attachmentId = getAttachmentId();
+            await api.put(`/api/notes/${noteId}/data`, { body: { content: link(attachmentId) } });
+            const snapshot = await api.post<{ revisionId: string }>(
+                `/api/notes/${noteId}/revision`, { body: {} });
+            await api.put(`/api/notes/${noteId}/data`, { body: { content: "<p>changed</p>" } });
+
+            const restore = await api.post(`/api/revisions/${snapshot.body.revisionId}/restore`);
+            expect(restore.status).toBe(204);
+            const restoredId = getAttachmentId();
+            expect(restoredId).not.toBe(attachmentId);
+            const blob = await api.get<{ content: string }>(`/api/notes/${noteId}/blob`);
+            expect(blob.body.content).toBe(link(restoredId));
+        });
+
         it("restores a binary revision together with its attachments", async () => {
             const { noteId } = await createTextNote(api, { title: "Binary with attachment" });
             await api.put(`/api/notes/${noteId}/type`, { body: { type: "file", mime: "application/octet-stream" } });

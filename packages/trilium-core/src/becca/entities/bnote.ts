@@ -1748,6 +1748,23 @@ export function toAttachmentDownloadLinks(content: string, attachmentIds: Map<st
     });
 }
 
+/**
+ * `content` with each download link of {@link toAttachmentDownloadLinks} to an attachment of
+ * `attachmentIds` turned back into a link to the attachment of the note `noteId` that the map gives
+ * for it, as a restored revision of a text note holds it.
+ */
+export function toAttachmentReferenceLinks(
+    content: string, noteId: string, attachmentIds: Map<string, string>
+) {
+    return content.replace(/href="api\/attachments\/([a-zA-Z0-9_]+)\/download"/g,
+        (match, attachmentId: string) => {
+            const newId = attachmentIds.get(attachmentId);
+            return newId
+                ? `href="#root/${noteId}?viewMode=attachments&amp;attachmentId=${newId}"`
+                : match;
+        });
+}
+
 /** The content of `row`, decoded when its `encoding` is `base64`. */
 export function decodeAttachmentRow(row: Pick<SavedAttachmentRow, "content" | "encoding">) {
     return row.encoding === "base64" ? decodeBase64(row.content) : row.content;

@@ -132,6 +132,15 @@ describe("the editor features", () => {
         ]));
     });
 
+    it("offers the highlights on the scrollbar after content hints, writing it back", () => {
+        open();
+        const labels = optionLabels();
+        expect(labels[labels.indexOf("editorfeatures.content_hints_enabled") + 1])
+            .toBe("editorfeatures.scroll_rail_highlights_enabled");
+        act(() => toggle("scroll-rail-highlights-enabled")?.click());
+        expect(mocks.saved).toEqual([ [ "textNoteScrollRailHighlightsEnabled", true ] ]);
+    });
+
     it("offers heading and anchor suggestions under note auto-completion while it is on", () => {
         open();
         expect(optionLabels()).toContain("editorfeatures.note_completion_enabled");

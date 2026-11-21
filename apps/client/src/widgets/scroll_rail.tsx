@@ -3,8 +3,10 @@ import "./scroll_rail.css";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import type NoteContext from "../components/note_context";
+import contextMenu from "../menus/context_menu";
+import { t } from "../services/i18n";
 import { useGetContextDataFrom, useNoteContext } from "./react/hooks/note_context";
-import { useColorScheme } from "./react/hooks/options";
+import { useColorScheme, useTriliumOptionBool } from "./react/hooks/options";
 import { WithLazyModule } from "./react/LazyComponent";
 import type { ScrollRailLayer, ScrollRailTarget } from "./scroll_rail_markers";
 
@@ -15,6 +17,12 @@ export interface ScrollRailKind {
     color: string;
     /** The color of the emphasized marker, else `color`. */
     emphasisColor?: string;
+    /**
+     * The saturation and lightness that the markers' own colors are drawn at, keeping their hue,
+     * and the color of a gray marker. While the theme sets no saturation or lightness, the colors
+     * are drawn as given.
+     */
+    colorPreset?: ScrollRailColorPreset;
     /** The opacity of the lines, from 0 to 1. Defaults to 1. */
     opacity?: number;
     /** Whether the rail reads the layer again after a change of the note's content. */
@@ -23,11 +31,23 @@ export interface ScrollRailKind {
     isExclusive?: boolean;
 }
 
+/** The CSS variables of a kind's saturation, lightness and gray. */
+export interface ScrollRailColorPreset {
+    saturation: string;
+    lightness: string;
+    grayColor: string;
+}
+
 /** The kinds of markers, in drawing order. */
 export const SCROLL_RAIL_KINDS: readonly ScrollRailKind[] = [
     {
         key: "scrollRailHighlights",
         color: "--main-text-color",
+        colorPreset: {
+            saturation: "--scroll-rail-highlight-saturation",
+            lightness: "--scroll-rail-highlight-lightness",
+            grayColor: "--scroll-rail-highlight-gray-color"
+        },
         opacity: 0.5,
         isReadOnContentChange: true
     },
@@ -61,7 +81,9 @@ export default function ScrollRail() {
     const { noteContext } = useNoteContext();
     const noteContextRef = useRef(noteContext);
     noteContextRef.current = noteContext;
-    const layers = usePublishedLayers(noteContext);
+    const [ areHighlightsShown, setHighlightsShown ] =
+        useTriliumOptionBool("textNoteScrollRailHighlightsEnabled");
+    const { layers, hasHighlights } = usePublishedLayers(noteContext, areHighlightsShown);
     const colorScheme = useColorScheme();
     const [ bar, setBar ] = useState<ScrollRailBar | null>(null);
     const [ view, setView ] = useState<BarView>({ isOwned: false, isOverflowing: false });
@@ -109,7 +131,14 @@ export default function ScrollRail() {
     return (
         <div ref={hostRef} className="scroll-rail-host">
             {isRailShown && (
-                <div ref={railRef} className="scroll-rail" aria-hidden="true">
+                <div
+                    ref={railRef}
+                    className="scroll-rail"
+                    aria-hidden="true"
+                    onContextMenu={hasHighlights
+                        ? (event) => showRailMenu(event, areHighlightsShown, setHighlightsShown)
+                        : undefined}
+                >
                     {isLayered && <canvas ref={canvasRef} />}
                     {view.isOverflowing && <div ref={handleRef} className="scroll-rail-handle" />}
                 </div>
@@ -132,18 +161,46 @@ export default function ScrollRail() {
     );
 }
 
-/** The layers that `noteContext` publishes, in drawing order, or only the first exclusive one. */
-function usePublishedLayers(noteContext: NoteContext | null | undefined) {
-    const layers: PublishedLayer[] = [];
+/**
+ * The layers that `noteContext` publishes, in drawing order, or only the first exclusive one,
+ * leaving out the highlights unless `areHighlightsShown`. `hasHighlights` tells whether the
+ * highlights are published, shown or not.
+ */
+function usePublishedLayers(noteContext: NoteContext | null | undefined,
+    areHighlightsShown: boolean) {
+    const published: PublishedLayer[] = [];
     // The list is constant, so the hooks run in the same order on every render.
     for (const kind of SCROLL_RAIL_KINDS) {
         const layer = useGetContextDataFrom(noteContext, kind.key);
         if (layer) {
-            layers.push({ kind, layer });
+            published.push({ kind, layer });
         }
     }
-    const exclusive = layers.find(({ kind }) => kind.isExclusive);
-    return exclusive ? [ exclusive ] : layers;
+    const isHighlights = ({ kind }: PublishedLayer) => kind.key === "scrollRailHighlights";
+    const shown = areHighlightsShown
+        ? published
+        : published.filter((layer) => !isHighlights(layer));
+    const exclusive = shown.find(({ kind }) => kind.isExclusive);
+    return {
+        layers: exclusive ? [ exclusive ] : shown,
+        hasHighlights: published.some(isHighlights)
+    };
+}
+
+/** Opens the menu of the rail, which shows or hides the lines of the highlights. */
+function showRailMenu(event: MouseEvent, areHighlightsShown: boolean,
+    setHighlightsShown: (isShown: boolean) => Promise<void>) {
+    event.preventDefault();
+    void contextMenu.show({
+        x: event.pageX,
+        y: event.pageY,
+        items: [ {
+            title: t("scroll_rail.show_highlights"),
+            checked: areHighlightsShown,
+            handler: () => void setHighlightsShown(!areHighlightsShown)
+        } ],
+        selectMenuItemHandler: () => {}
+    });
 }
 
 /** A line under the pointer, as the lines' module found it at a press. */
