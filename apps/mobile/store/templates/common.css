@@ -24,20 +24,27 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+/* The hero of the website's home page: apps/website/src/pages/Home/index.css. */
 .backdrop {
     background:
-        radial-gradient(circle at 8% 12%, rgb(79 165 43 / 22%), transparent 42%),
-        radial-gradient(circle at 92% 88%, rgb(228 123 25 / 24%), transparent 46%),
-        radial-gradient(circle at 85% 8%, rgb(227 63 59 / 12%), transparent 36%),
-        linear-gradient(160deg, #fbf7ef, #f3efe4);
+        radial-gradient(circle, rgb(255 255 255 / 0%) 60%, rgb(0 0 0 / 6%) 100%),
+        radial-gradient(40vmax 40vmax at 15% 25%, rgb(228 123 25 / 25%), transparent 70%),
+        radial-gradient(35vmax 35vmax at 75% 20%, rgb(79 165 43 / 22%), transparent 70%),
+        radial-gradient(28vmax 28vmax at 60% 75%, rgb(227 63 59 / 22%), transparent 70%),
+        radial-gradient(20vmax 20vmax at 85% 65%, rgb(228 123 25 / 18%), transparent 70%),
+        radial-gradient(15vmax 15vmax at 40% 50%, rgb(79 165 43 / 15%), transparent 70%),
+        #fff;
 
     &.dark {
         --ink: #f4f1ea;
         --ink-muted: #c9c5bb;
         background:
-            radial-gradient(circle at 8% 12%, rgb(79 165 43 / 34%), transparent 44%),
-            radial-gradient(circle at 92% 88%, rgb(228 123 25 / 30%), transparent 48%),
-            linear-gradient(160deg, #183028, #1f2a3a);
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"),
+            radial-gradient(40vmax 40vmax at 20% 30%, rgb(228 123 25 / 25%), transparent 70%),
+            radial-gradient(30vmax 30vmax at 75% 25%, rgb(79 165 43 / 25%), transparent 70%),
+            radial-gradient(25vmax 25vmax at 60% 75%, rgb(227 63 59 / 25%), transparent 70%),
+            radial-gradient(20vmax 20vmax at 85% 65%, rgb(228 123 25 / 15%), transparent 70%),
+            #0a0e14;
     }
 }
 

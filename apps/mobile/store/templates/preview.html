@@ -9,9 +9,11 @@
         body {
             background: #f6f5f2;
             color: #1d1f24;
+            overflow-x: clip;
         }
 
         main {
+            --gutter: max(16px, calc(50vw - 490px + 16px));
             max-width: 980px;
             margin: 0 auto;
             padding: 32px 16px 64px;
@@ -64,7 +66,10 @@
             display: flex;
             gap: 12px;
             overflow-x: auto;
-            padding-bottom: 8px;
+            margin-inline: calc(50% - 50vw);
+            padding: 0 var(--gutter) 8px;
+            scroll-padding-inline: var(--gutter);
+            scrollbar-width: none;
 
             figure {
                 margin: 0;
@@ -102,31 +107,6 @@
             white-space: pre-wrap;
             line-height: 1.55;
         }
-
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            font-size: 14px;
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-
-            td,
-            th {
-                padding: 8px 12px;
-                border-bottom: 1px solid #e7e5df;
-                text-align: left;
-            }
-
-            .ok {
-                color: #2e7d32;
-            }
-
-            .fail {
-                color: #c62828;
-                font-weight: 600;
-            }
-        }
     </style>
 </head>
 <body>
@@ -147,15 +127,10 @@
         <div class="strip tablet" id="tablet"></div>
         <h2>About this app</h2>
         <div class="description" id="description"></div>
-        <h2>Checks</h2>
-        <table>
-            <thead><tr><th>Asset</th><th>Requirement</th><th>Actual</th><th></th></tr></thead>
-            <tbody id="checks"></tbody>
-        </table>
     </main>
     <script src="listing-data.js"></script>
     <script>
-        const { listing, screenshots, checks } = window.LISTING;
+        const { listing, screenshots } = window.LISTING;
         document.getElementById("name").textContent = listing.name;
         document.getElementById("developer").textContent = listing.developer;
         document.getElementById("category").textContent = listing.category;
@@ -172,17 +147,6 @@
             caption.textContent = shot.alt;
             figure.append(img, caption);
             document.getElementById(shot.device).append(figure);
-        }
-
-        for (const check of checks) {
-            const row = document.createElement("tr");
-            for (const text of [ check.asset, check.rule, check.actual, check.ok ? "OK" : "Fails" ]) {
-                const cell = document.createElement("td");
-                cell.textContent = text;
-                row.append(cell);
-            }
-            row.lastChild.className = check.ok ? "ok" : "fail";
-            document.getElementById("checks").append(row);
         }
     </script>
 </body>

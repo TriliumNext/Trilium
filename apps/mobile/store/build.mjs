@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
  * Builds the Google Play store listing assets: the 512 x 512 icon, the 1024 x 500 feature graphic,
- * phone and tablet screenshots of the demo document, and a preview page of the whole listing with
- * the store's size and length checks. The `flathub` target captures the desktop app's window for
- * the Flathub listing instead, inside a headless GNOME Shell.
+ * phone and tablet screenshots of the demo document, and a preview page of the whole listing, then
+ * checks them against the store's size and length limits and fails when one is not met. The
+ * `flathub` target captures the desktop app's window for the Flathub listing instead, inside a
+ * headless GNOME Shell.
  *
  * Usage:
  *   pnpm --filter @triliumnext/mobile store-assets [icon] [feature] [screenshots] [preview]
@@ -42,6 +43,11 @@ const { chromium } = createRequire(path.join(repoRoot, "package.json"))("playwri
 
 const TARGETS = [ "icon", "screenshots", "feature", "preview", "flathub" ];
 const SEED_PARAMS = [ TRIP_COSTS, ITINERARY ];
+
+/**
+ * The targets built when none is named: the Play Store assets, which `checkStoreAssets()`
+ * checks.
+ */
 const DEFAULT_TARGETS = [ "icon", "screenshots", "feature", "preview" ];
 
 /**
@@ -65,6 +71,9 @@ try {
     for (const target of TARGETS.filter((target) => options.targets.includes(target))) {
         console.log(`Building ${target}...`);
         await BUILDERS[target]();
+    }
+    if (options.targets.some((target) => DEFAULT_TARGETS.includes(target))) {
+        checkStoreAssets();
     }
 } finally {
     await browser.close();
@@ -215,7 +224,34 @@ async function buildFeature() {
     });
 }
 
-async function buildPreview() {
+function buildPreview() {
+    const data = { listing, screenshots: listStoreShots() };
+    const script = `window.LISTING = ${JSON.stringify(data, null, 4)};\n`;
+    fs.writeFileSync(path.join(outDir, "listing-data.js"), script);
+    fs.copyFileSync(path.join(templates, "preview.html"), path.join(outDir, "preview.html"));
+    fs.copyFileSync(path.join(templates, "common.css"), path.join(outDir, "common.css"));
+    console.log(`  Open ${path.join(outDir, "preview.html")}`);
+}
+
+/**
+ * Checks the store assets on disk against the Play Console's limits and fails the build when one
+ * of them is not met.
+ */
+function checkStoreAssets() {
+    console.log("Checking the store assets...");
+    const checks = runChecks(listStoreShots());
+    const failed = checks.filter((check) => !check.ok);
+    for (const check of failed) {
+        console.error(`  Fails: ${check.asset}: ${check.rule} (${check.actual})`);
+    }
+    console.log(`  ${checks.length - failed.length} of ${checks.length} checks pass.`);
+    if (failed.length) {
+        process.exitCode = 1;
+    }
+}
+
+/** The store screenshots on disk, in listing order, with their alt text. */
+function listStoreShots() {
     const screenshots = [];
     for (const deviceName of Object.keys(DEVICES)) {
         for (const [ index, scene ] of SCENES.entries()) {
@@ -226,25 +262,7 @@ async function buildPreview() {
             }
         }
     }
-    const data = { listing, screenshots, checks: runChecks(screenshots) };
-    const script = `window.LISTING = ${JSON.stringify(data, null, 4)};\n`;
-    fs.writeFileSync(path.join(outDir, "listing-data.js"), script);
-    fs.copyFileSync(path.join(templates, "preview.html"), path.join(outDir, "preview.html"));
-    fs.copyFileSync(path.join(templates, "common.css"), path.join(outDir, "common.css"));
-
-    const page = await browser.newPage({ viewport: { width: 1100, height: 900 } });
-    await page.goto(pathToFileURL(path.join(outDir, "preview.html")).href);
-    await waitForAssets(page);
-    await page.screenshot({ path: path.join(outDir, "preview.png"), fullPage: true });
-    await page.close();
-
-    const failed = data.checks.filter((check) => !check.ok);
-    for (const check of failed) {
-        console.warn(`  Fails: ${check.asset}: ${check.rule} (${check.actual})`);
-    }
-    const passed = data.checks.length - failed.length;
-    console.log(`  ${passed} of ${data.checks.length} checks pass.`);
-    console.log(`  Open ${path.join(outDir, "preview.html")}`);
+    return screenshots;
 }
 
 async function captureDevice(baseUrl, deviceName) {
