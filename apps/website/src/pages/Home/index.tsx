@@ -142,29 +142,46 @@ const HERO_SNAPSHOTS = {
 const HERO_MOBILE_QUERY = "(max-width: 719.99px)";
 
 /**
- * Shows a snapshot of the app, the mobile layout on narrow screens and the desktop one otherwise,
- * at the viewport it was captured at and scales it to the width of its frame, since the app lays
- * out against the viewport and cannot reflow. The iframe mounts once the layout is known, so only
- * one snapshot downloads.
+ * Shows the mobile snapshot alone on narrow screens, and the desktop one with the mobile one
+ * overlapping its corner otherwise. The frames mount once the layout is known, so a phone
+ * downloads only the mobile snapshot.
  */
 function HeroSnapshot({ title }: { title: string }) {
-    const frameRef = useRef<HTMLDivElement>(null);
-    const [ snapshot, setSnapshot ] = useState<typeof HERO_SNAPSHOTS.desktop>();
-    const [ scale, setScale ] = useState<number>();
+    const [ narrow, setNarrow ] = useState<boolean>();
 
     useEffect(() => {
         const query = window.matchMedia(HERO_MOBILE_QUERY);
-        const update = () => {
-            setSnapshot(query.matches ? HERO_SNAPSHOTS.mobile : HERO_SNAPSHOTS.desktop);
-        };
+        const update = () => setNarrow(query.matches);
         update();
         query.addEventListener("change", update);
         return () => query.removeEventListener("change", update);
     }, []);
 
+    if (narrow === undefined) return <div className="screenshot" />;
+    if (narrow) return <SnapshotFrame snapshot={HERO_SNAPSHOTS.mobile} title={title} />;
+    return (
+        <>
+            <SnapshotFrame snapshot={HERO_SNAPSHOTS.desktop} title={title} />
+            <SnapshotFrame snapshot={HERO_SNAPSHOTS.mobile} title={title} className="phone" />
+        </>
+    );
+}
+
+/**
+ * Shows a snapshot at the viewport it was captured at and scales it to the width of its frame,
+ * since the app lays out against the viewport and cannot reflow.
+ */
+function SnapshotFrame({ snapshot, title, className }: {
+    snapshot: typeof HERO_SNAPSHOTS.desktop;
+    title: string;
+    className?: string;
+}) {
+    const frameRef = useRef<HTMLDivElement>(null);
+    const [ scale, setScale ] = useState<number>();
+
     useEffect(() => {
         const frame = frameRef.current;
-        if (!frame || !snapshot) return;
+        if (!frame) return;
         const observer = new ResizeObserver(() => {
             setScale(frame.clientWidth / snapshot.width);
         });
@@ -175,15 +192,13 @@ function HeroSnapshot({ title }: { title: string }) {
     return (
         <div
             ref={frameRef}
-            className={`screenshot ${scale ? "scaled" : ""}`}
+            className={[ "screenshot", className, scale && "scaled" ].filter(Boolean).join(" ")}
             style={scale ? { "--hero-scale": scale } : undefined}
         >
-            {snapshot && (
-                <iframe
-                    key={snapshot.src} src={snapshot.src} title={title} tabIndex={-1}
-                    width={snapshot.width} height={snapshot.height}
-                />
-            )}
+            <iframe
+                src={snapshot.src} title={title} tabIndex={-1}
+                width={snapshot.width} height={snapshot.height}
+            />
         </div>
     );
 }

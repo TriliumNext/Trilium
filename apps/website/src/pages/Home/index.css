@@ -302,6 +302,23 @@ section.hero-section {
         margin-top: 1.5em;
     }
 
+    section.hero-section .screenshot.phone {
+        position: absolute;
+        left: 1.5em;
+        bottom: 0;
+        height: 45%;
+        width: auto;
+        min-width: 0;
+        aspect-ratio: 360 / 720;
+        margin: 0;
+        border-radius: 20px;
+        box-shadow: 0 0 0 1px rgb(0 0 0 / 12%), 0 20px 56px rgb(0 0 0 / 30%);
+
+        @media (prefers-reduced-motion: no-preference) {
+            animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both;
+        }
+    }
+
     section.hero-section .download-wrapper {
         display: flex;
     }
