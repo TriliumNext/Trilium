@@ -384,17 +384,13 @@ export default function EditableText({
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         const editor = editorRef.current;
         if (editor && note) {
-            notifyAttachmentChanges(
+            refreshLinksAndImages(
                 editor,
                 loadResults,
                 note.noteId,
                 parentComponent?.componentId,
                 pendingAttachmentChangesRef
             );
-        }
-        editor?.plugins.get("ReferenceLinkEditing").refreshNoteLinks(loadResults.getNoteIds());
-        if (editor?.plugins.has("ImageEditingSource")) {
-            editor.plugins.get("ImageEditingSource").refresh();
         }
     });
 
@@ -941,6 +937,32 @@ export function onNotificationInfo(_evt: NotificationEventInfo, data: Notificati
 interface PendingAttachmentChanges {
     noteId: string;
     changes: AttachmentLinkChange[];
+}
+
+/**
+ * Brings the reference links and the images of `editor`, which shows the note `noteId`, up to
+ * date with the entities changed in `loadResults`.
+ *
+ * When `loadResults` also reloads the note's content, `setData()` draws the links again.
+ * Redrawing them before it calls `reconvertItem()`, whose `change:data` schedules a save based on
+ * the content before the reload.
+ *
+ * Exported for testing.
+ */
+export function refreshLinksAndImages(
+    editor: CKTextEditor,
+    loadResults: LoadResults,
+    noteId: string,
+    componentId: string | undefined,
+    pending: { current: PendingAttachmentChanges | undefined }
+) {
+    notifyAttachmentChanges(editor, loadResults, noteId, componentId, pending);
+    if (!loadResults.isNoteContentReloaded(noteId, componentId)) {
+        editor.plugins.get("ReferenceLinkEditing").refreshNoteLinks(loadResults.getNoteIds());
+    }
+    if (editor.plugins.has("ImageEditingSource")) {
+        editor.plugins.get("ImageEditingSource").refresh();
+    }
 }
 
 /**
