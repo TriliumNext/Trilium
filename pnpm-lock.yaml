@@ -786,8 +786,8 @@ importers:
         specifier: 8.8.0
         version: 8.8.0(encoding@0.1.13)(supports-color@7.2.0)
       openid-client:
-        specifier: 6.8.9
-        version: 6.8.9
+        specifier: 6.9.0
+        version: 6.9.0
       serve-favicon:
         specifier: 2.5.1
         version: 2.5.1
@@ -9340,8 +9340,8 @@ packages:
     resolution: {integrity: sha512-ur5UIdyw5Y7yEj9wLzhqXiy6GZ3Mwx0yGI+5sMn2r0N0v3cKJvUmFH5yPP+WXh9e0xfyzyJX95D8l088DNFj7A==}
     hasBin: true
 
-  openid-client@6.8.9:
-    resolution: {integrity: sha512-6mXMRNJxDOf6BflEWLXul1UwzLFz++9Ofz1PYwPwwsJsyXBsbfkO+Jo255SW1qnFNLYz4EJWHz42X4OJJrya/g==}
+  openid-client@6.9.0:
+    resolution: {integrity: sha512-2IvamJR8PAnWHngaCsGGA8TYfcLI2egvuqa9cOQYHIISwIUhxJwwwcCnkgVX95fzZ6J0TAna0aVGUMOxnPeRqg==}
 
   opentype.js@2.0.0:
     resolution: {integrity: sha512-kCyjv6xdDY1W/jLWZ/L3QhhTlKUqDZMQ5+Jdlw12b3dXkKNpYBqqlMMj0YDQPShWFTMwgZI1hG14kN3XUDSg/A==}
@@ -18893,7 +18893,7 @@ snapshots:
       joi: 17.13.9
       jose: 6.2.12
       on-headers: 1.1.0
-      openid-client: 6.8.9
+      openid-client: 6.9.0
       url-join: 4.0.1
       util-promisify: 3.0.0
     transitivePeerDependencies:
@@ -21326,7 +21326,7 @@ snapshots:
 
   opener@1.5.2: {}
 
-  openid-client@6.8.9:
+  openid-client@6.9.0:
     dependencies:
       jose: 6.2.15
       oauth4webapi: 3.8.8
