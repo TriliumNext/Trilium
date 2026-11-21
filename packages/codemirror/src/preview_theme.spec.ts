@@ -10,7 +10,7 @@ describe("readPreviewTheme", () => {
     it("reads the token styles and the editor colors of a theme", async () => {
         const theme = await readTheme("vs-code-light");
 
-        expect(theme.styles[0]).toMatchObject({ color: "#0064ff", fontWeight: "bold" });
+        expect(theme.styles[0]).toMatchObject({ color: "#0756d7", fontWeight: "bold" });
         expect(theme.colors).toEqual({
             background: "#ffffff",
             foreground: "#383a42",
@@ -45,7 +45,7 @@ describe("buildCodePreviewCss", () => {
             + "--code-preview-foreground: #383a42; --code-preview-gutter-background: #f5f5f5; "
             + "--code-preview-gutter-foreground: #237893; --code-preview-gutter-border-width: 1px; "
             + "--code-preview-gutter-border-color: #d6d6d6; --code-preview-line-height: 1.6; }");
-        expect(css[1]).toBe(`${root} .l0 { color: #0064ff; font-weight: bold; }`);
+        expect(css[1]).toBe(`${root} .l0 { color: #0756d7; font-weight: bold; }`);
         expect(css.length).toBe(theme.styles.length + 1);
     });
 
