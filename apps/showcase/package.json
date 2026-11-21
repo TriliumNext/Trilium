@@ -1,7 +1,7 @@
 {
   "name": "showcase",
   "version": "1.0.0",
-  "description": "Build the store listings and the website hero from a demo document",
+  "description": "Build the store listings and the website's hero and screenshots from a demo document",
   "private": true,
   "license": "AGPL-3.0-or-later",
   "type": "module",
@@ -9,7 +9,8 @@
     "start": "node src/main.ts",
     "play": "node src/main.ts play",
     "flathub": "node src/main.ts flathub flathub-preview",
-    "hero": "node src/main.ts hero"
+    "hero": "node src/main.ts hero",
+    "website": "node src/main.ts website"
   },
   "devDependencies": {
     "@types/pngjs": "6.0.5",

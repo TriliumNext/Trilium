@@ -9,11 +9,13 @@
  *   and the metainfo, with Flathub's quality checks.
  * - The website hero (`hero/`): a self-contained HTML snapshot of the app in `out/hero`,
  *   published to `apps/website/public/hero.html` once it matches the app.
+ * - The website's screenshots (`website/`): note types, collections and the note tree in the
+ *   desktop layout, light and dark, as WebP in `out/website` and `apps/website/public`.
  *
  * Usage:
- *   pnpm --filter showcase play | flathub | hero
+ *   pnpm --filter showcase play | flathub | hero | website
  *   pnpm --filter showcase start [icon] [screenshots] [feature] [preview] [flathub]
- *       [flathub-preview] [hero]
+ *       [flathub-preview] [hero] [website]
  *       [--only tree,text] [--devices phone,tablet] [--url http://localhost:8080] [--port 37991]
  *
  * With no target it builds the Play Store assets only. The demo document is a fresh one with the
@@ -40,8 +42,11 @@ import { checkPlayAssets, PLAY_TARGETS } from "./play/build.ts";
 import { launchBrowser } from "./shared/browser.ts";
 import { type BuildOptions, type Builder, outDir } from "./shared/build.ts";
 import { DEVICES } from "./shared/scenes.ts";
+import { WEBSITE_TARGETS } from "./website/build.ts";
 
-const BUILDERS: Record<string, Builder> = { ...PLAY_TARGETS, ...FLATHUB_TARGETS, ...HERO_TARGETS };
+const BUILDERS: Record<string, Builder> = {
+    ...PLAY_TARGETS, ...FLATHUB_TARGETS, ...HERO_TARGETS, ...WEBSITE_TARGETS
+};
 
 /** Names that stand for several targets; `play` is built when none is named. */
 const GROUPS: Record<string, string[]> = {

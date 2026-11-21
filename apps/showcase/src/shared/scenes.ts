@@ -104,18 +104,7 @@ export const SCENES: Scene[] = [
             await page.locator(".mind-map-direction-side").first().click();
             await page.mouse.move(0, 0);
             await page.waitForTimeout(500);
-            // Mind Elixir zooms on a wheel event with `ctrlKey`, which `page.mouse.wheel()` cannot
-            // send. Each event zooms out by at most `scaleSensitivity`.
-            await page.locator(".map-container").first().evaluate((container, steps) => {
-                const { left, top, width, height } = container.getBoundingClientRect();
-                for (let step = 0; step < steps; step++) {
-                    container.dispatchEvent(new WheelEvent("wheel", {
-                        deltaY: 400, ctrlKey: true, bubbles: true, cancelable: true,
-                        clientX: left + width / 2, clientY: top + height / 2
-                    }));
-                }
-            }, 4);
-            await page.waitForTimeout(3000);
+            await zoomOutMindMap(page, 4);
         },
         desktopPrepare: (page) => page.locator(".mind-map-direction-side").first().click(),
         caption: "Brainstorm ideas\nin a mind map",
@@ -150,6 +139,23 @@ export const SCENES: Scene[] = [
             + "in the dark theme"
     }
 ];
+
+/**
+ * Zooms the mind map out by `steps`. Mind Elixir zooms on a wheel event with `ctrlKey`, which
+ * `page.mouse.wheel()` cannot send; each event zooms out by at most `scaleSensitivity`.
+ */
+export async function zoomOutMindMap(page: Page, steps: number) {
+    await page.locator(".map-container").first().evaluate((container, count) => {
+        const { left, top, width, height } = container.getBoundingClientRect();
+        for (let step = 0; step < count; step++) {
+            container.dispatchEvent(new WheelEvent("wheel", {
+                deltaY: 400, ctrlKey: true, bubbles: true, cancelable: true,
+                clientX: left + width / 2, clientY: top + height / 2
+            }));
+        }
+    }, steps);
+    await page.waitForTimeout(3000);
+}
 
 function collapseMapAttribution(page: Page) {
     return page.locator(".maplibregl-ctrl-attrib-button").first().click();

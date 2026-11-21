@@ -171,7 +171,7 @@ function OrganizationBenefitsSection() {
             <Section id="organization" className="benefits organization" title={t("organization_benefits.title")}>
                 <div className="organization-split">
                     <div className="organization-screenshot">
-                        <img src="/feature_tree.webp" alt={t("organization_benefits.screenshot_alt")} loading="lazy" />
+                        <Screenshot src="/feature_tree.webp" darkSrc="/feature_tree-dark.webp" alt={t("organization_benefits.screenshot_alt")} />
                     </div>
                     <div className="benefits-container organization-cards">
                         <Card iconSvg={noteStructureIcon} title={t("organization_benefits.note_structure_title")} moreInfoUrl="https://docs.triliumnotes.org/user-guide/concepts/notes">{t("organization_benefits.note_structure_description")}</Card>
@@ -213,6 +213,7 @@ function NoteTypesSection() {
                 {
                     title: t("note_types.text_title"),
                     imageUrl: "/type_text.webp",
+                    darkImageUrl: "/type_text-dark.webp",
                     iconSvg: textNoteIcon,
                     moreInfo: "https://docs.triliumnotes.org/user-guide/note-types/text",
                     description: t("note_types.text_description")
@@ -227,6 +228,7 @@ function NoteTypesSection() {
                 {
                     title: t("note_types.code_title"),
                     imageUrl: "/type_code.webp",
+                    darkImageUrl: "/type_code-dark.webp",
                     iconSvg: codeIcon,
                     moreInfo: "https://docs.triliumnotes.org/user-guide/note-types/code",
                     description: t("note_types.code_description")
@@ -241,6 +243,7 @@ function NoteTypesSection() {
                 {
                     title: t("note_types.canvas_title"),
                     imageUrl: "/type_canvas.webp",
+                    darkImageUrl: "/type_canvas-dark.webp",
                     iconSvg: canvasIcon,
                     moreInfo: "https://docs.triliumnotes.org/user-guide/note-types/canvas",
                     description: t("note_types.canvas_description")
@@ -248,6 +251,7 @@ function NoteTypesSection() {
                 {
                     title: t("note_types.mermaid_title"),
                     imageUrl: "/type_mermaid.webp",
+                    darkImageUrl: "/type_mermaid-dark.webp",
                     iconSvg: mermaidIcon,
                     moreInfo: "https://docs.triliumnotes.org/user-guide/note-types/mermaid-diagrams",
                     description: t("note_types.mermaid_description")
@@ -255,6 +259,7 @@ function NoteTypesSection() {
                 {
                     title: t("note_types.mindmap_title"),
                     imageUrl: "/type_mindmap.webp",
+                    darkImageUrl: "/type_mindmap-dark.webp",
                     iconSvg: mindmapIcon,
                     moreInfo: "https://docs.triliumnotes.org/user-guide/note-types/mindmap",
                     description: t("note_types.mindmap_description")
@@ -302,6 +307,7 @@ function CollectionsSection() {
                     title: t("collections.board_title"),
                     iconSvg: boardIcon,
                     imageUrl: "/collection_board.webp",
+                    darkImageUrl: "/collection_board-dark.webp",
                     moreInfo: "https://docs.triliumnotes.org/user-guide/collections/kanban-board",
                     description: t("collections.board_description")
                 },
@@ -309,6 +315,7 @@ function CollectionsSection() {
                     title: t("collections.geomap_title"),
                     iconSvg: geomapIcon,
                     imageUrl: "/collection_geomap.webp",
+                    darkImageUrl: "/collection_geomap-dark.webp",
                     moreInfo: "https://docs.triliumnotes.org/user-guide/collections/geomap",
                     description: t("collections.geomap_description")
                 },
@@ -411,6 +418,8 @@ function ImportSection() {
 interface ShowcaseItem {
     title: string;
     imageUrl: string;
+    /** The screenshot in the dark theme, shown when the visitor's system is dark. */
+    darkImageUrl?: string;
     description: string;
     moreInfo: string;
     iconSvg?: string;
@@ -447,7 +456,7 @@ function TabbedShowcase({ items }: { items: ShowcaseItem[] }) {
 
             <div className="showcase-preview" key={activeIndex} role="tabpanel" id={`showcase-panel-${activeIndex}`} aria-labelledby={`showcase-tab-${activeIndex}`}>
                 <div className="showcase-image-frame">
-                    <img src={active.imageUrl} alt={active.title} loading="lazy" />
+                    <Screenshot src={active.imageUrl} darkSrc={active.darkImageUrl} alt={active.title} />
                 </div>
                 <div className="showcase-details">
                     <h3>
@@ -460,6 +469,16 @@ function TabbedShowcase({ items }: { items: ShowcaseItem[] }) {
                 </div>
             </div>
         </div>
+    );
+}
+
+/** A lazily loaded screenshot, with `darkSrc` in its place when the visitor's system is dark. */
+function Screenshot({ src, darkSrc, alt }: { src: string; darkSrc?: string; alt: string }) {
+    return (
+        <picture>
+            {darkSrc && <source srcSet={darkSrc} media="(prefers-color-scheme: dark)" />}
+            <img src={src} alt={alt} loading="lazy" />
+        </picture>
     );
 }
 
