@@ -1,7 +1,6 @@
 import fs from "fs";
 import path from "path";
 import type { Browser, BrowserContextOptions } from "playwright";
-import { pathToFileURL } from "url";
 import zlib from "zlib";
 
 import { findOnPath, openApp, openNote, settle, waitForAssets } from "../shared/browser.ts";
@@ -13,6 +12,12 @@ import { captureSnapshot } from "./snapshot.ts";
 
 /** The share of pixels the hero snapshot can differ from the app by, in either color scheme. */
 const HERO_MAX_DIFF = 0.005;
+
+/** The website's own copy of Inter, which the snapshots load instead of embedding the font. */
+const SHARED_FONTS = { Inter: "/fonts/Inter/Inter-VariableFont_opsz,wght.woff2" };
+
+/** The origin the fidelity check serves a snapshot from, with `apps/website/public` behind it. */
+const CHECK_ORIGIN = "http://hero.invalid";
 
 const COLOR_SCHEMES = [ "light", "dark" ] as const;
 
@@ -79,10 +84,12 @@ async function captureVariant(browser: Browser, baseUrl: string, variant: HeroVa
         await page.waitForTimeout(500);
         await page.screenshot({ path: path.join(heroDir, `app-${name}-${colorScheme}.png`) });
         if (colorScheme === "light") {
-            const { html, stats } = await captureSnapshot(page, { fonttools });
+            const { html, stats } = await captureSnapshot(page,
+                { fonttools, sharedFonts: SHARED_FONTS });
             fs.writeFileSync(path.join(heroDir, variant.file), html);
             const fonts = stats.fonts
-                .map(({ family, bytes }) => `${family} ${(bytes / 1024).toFixed(1)} KB`);
+                .map(({ family, bytes, shared }) => shared ? `${family} (shared)`
+                    : `${family} ${(bytes / 1024).toFixed(1)} KB`);
             console.log(`    ${stats.rulesKept} of ${stats.rulesKept + stats.rulesDropped} CSS `
                 + `rules, ${stats.customProperties} custom properties, fonts: `
                 + `${fonts.join(", ")}; unused: ${stats.unusedFonts.join(", ")}`);
@@ -102,8 +109,16 @@ async function compareVariant(browser: Browser, variant: HeroVariant, heroDir: s
     for (const colorScheme of COLOR_SCHEMES) {
         const shot = path.join(heroDir, `snapshot-${name}-${colorScheme}.png`);
         const context = await browser.newContext(contextOptions(variant, colorScheme));
+        // The snapshot is served as the website serves it, so that a shared font resolves.
+        const publicDir = path.join(repoRoot, "apps", "website", "public");
+        await context.route(`${CHECK_ORIGIN}/**`, (route) => {
+            const pathname = decodeURIComponent(new URL(route.request().url()).pathname);
+            const file = pathname === `/${variant.file}` ? output : path.join(publicDir, pathname);
+            if (fs.existsSync(file)) route.fulfill({ path: file });
+            else route.fulfill({ status: 404 });
+        });
         const page = await context.newPage();
-        await page.goto(pathToFileURL(output).href);
+        await page.goto(`${CHECK_ORIGIN}/${variant.file}`);
         await waitForAssets(page);
         await page.screenshot({ path: shot });
         await context.close();

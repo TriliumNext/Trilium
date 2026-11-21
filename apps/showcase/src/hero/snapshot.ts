@@ -10,10 +10,14 @@ import type { Page } from "playwright";
  * the fonts the page draws with, subset to its characters and to the OpenType features a browser
  * applies by default; animations and transitions are off. Media queries are decided at the page's
  * viewport, except `prefers-color-scheme`, so both color schemes survive. `fonttools` is the
- * fontTools command, which needs the Brotli module to write WOFF2. Resolves with the HTML and the
- * numbers behind its size.
+ * fontTools command, which needs the Brotli module to write WOFF2. A family in `sharedFonts` is not
+ * embedded but loaded from the URL given for it, which the page hosting the snapshot loads too.
+ * Resolves with the HTML and the numbers behind its size.
  */
-export async function captureSnapshot(page: Page, { fonttools }: { fonttools: string }) {
+export async function captureSnapshot(page: Page, { fonttools, sharedFonts = {} }: {
+    fonttools: string;
+    sharedFonts?: Record<string, string>;
+}) {
     const harvested = await page.evaluate(harvestPage);
     const { css, declared, kept: keptProperties } = pruneCustomProperties(harvested.css,
         harvested.inlineStyles);
@@ -23,8 +27,18 @@ export async function captureSnapshot(page: Page, { fonttools }: { fonttools: st
         const textFile = path.join(workDir, "chars.txt");
         fs.writeFileSync(textFile, harvested.chars);
         let fontFaces = "";
-        const fonts: { family: string; bytes: number }[] = [];
+        const fonts: { family: string; bytes: number; shared: boolean }[] = [];
         for (const face of harvested.fontFaces) {
+            const sharedUrl = sharedFonts[face.family];
+            if (sharedUrl) {
+                // `block`, since the app's `optional` keeps the fallback for good when the font
+                // arrives late.
+                const descriptors = face.descriptors.replace(/font-display:[^;]*;/, "");
+                fonts.push({ family: face.family, bytes: 0, shared: true });
+                fontFaces += `@font-face{${descriptors}font-display:block;`
+                    + `src:url("${sharedUrl}") format("woff2");}\n`;
+                continue;
+            }
             const source = path.join(workDir, "source");
             const subset = path.join(workDir, "subset.woff2");
             fs.writeFileSync(source, Buffer.from(await (await fetch(face.url)).arrayBuffer()));
@@ -35,7 +49,7 @@ export async function captureSnapshot(page: Page, { fonttools }: { fonttools: st
             run([ "subset", source, `--text-file=${textFile}`, "--flavor=woff2",
                 "--layout-features+=tnum", `--output-file=${subset}` ]);
             const data = fs.readFileSync(subset);
-            fonts.push({ family: face.family, bytes: data.length });
+            fonts.push({ family: face.family, bytes: data.length, shared: false });
             fontFaces += `@font-face{${face.descriptors}`
                 + `src:url(data:font/woff2;base64,${data.toString("base64")}) format("woff2");}\n`;
         }
