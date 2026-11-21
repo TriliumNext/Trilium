@@ -39,7 +39,7 @@
     "@openrouter/ai-sdk-provider": "3.1.0",
     "ai": "7.0.172",
     "better-sqlite3": "13.2.0",
-    "i18next": "27.1.1",
+    "i18next": "27.1.5",
     "ipaddr.js": "^2.4.0",
     "js-yaml": "5.5.0",
     "unpdf": "2.1.0"
