@@ -88,7 +88,7 @@ export function renderMetainfoReleases(metainfo: string, releases: Release[]): s
 
     return metainfo.replace(block, (_, indent: string) => {
         const entries = releases.map(({ version, date, description }) =>
-            `${indent}  <release version="${version}" date="${date}">\n`
+            `${indent}  <release version="${version}" date="${date}"${version.includes("-") ? " type=\"development\"" : ""}>\n`
             + renderDescription(description ?? [], `${indent}    `)
             + `${indent}    <url type="details">${RELEASE_URL}${version}</url>\n`
             + `${indent}  </release>\n`);
@@ -100,9 +100,22 @@ export function renderMetainfoReleases(metainfo: string, releases: Release[]): s
  * The notes Flathub shows for a release, from its release note: the overview paragraphs
  * above the first section. Notes written before the overview existed fall back to the titles
  * of their key highlights, and patch releases without highlights to their top-level entries.
+ * The notes end with the number of improvements and bug fixes the release note lists.
  */
 export function releaseDescription(markdown: string): DescriptionBlock[] {
     const lines = markdown.split("\n").slice(1);
+    const more = describeChangeCount(lines);
+    const blocks = summarizeRelease(lines);
+    const last = blocks.at(-1);
+    if (more && last && "items" in last) {
+        last.items.push(more);
+    } else if (more) {
+        blocks.push({ paragraph: more });
+    }
+    return blocks;
+}
+
+function summarizeRelease(lines: string[]): DescriptionBlock[] {
     const firstSection = lines.findIndex((line) => /^#{2,3} /.test(line));
     const overview = paragraphs(lines.slice(0, firstSection === -1 ? lines.length : firstSection))
         .filter((paragraph) => !/^[>*\-|!<]|^\d+\./.test(paragraph))
@@ -127,6 +140,32 @@ export function releaseDescription(markdown: string): DescriptionBlock[] {
         .filter((entry): entry is string => !!entry)
         .map((entry) => inlineMarkdown(entry).replace(/:$/, "."));
     return entries.length > 0 ? [ { items: entries.slice(0, MAX_DESCRIPTION_ITEMS) } ] : [];
+}
+
+/**
+ * "Also in this release: …" with the number of entries under the Improvements, Mobile
+ * improvements and Bugfixes sections: the count each collapsible area states in its summary,
+ * plus the entries listed outside one.
+ */
+function describeChangeCount(lines: string[]): string | undefined {
+    const counts = { improvement: 0, fix: 0 };
+    let section: keyof typeof counts | undefined;
+    for (const line of lines) {
+        const heading = /^#{2,3} (.*)$/.exec(line)?.[1].replace(/^[^\p{L}]+/u, "");
+        if (heading !== undefined) {
+            section = /^bug ?fixes$/i.test(heading) ? "fix"
+                : /^(mobile )?improvements$/i.test(heading) ? "improvement" : undefined;
+        } else if (section) {
+            const summaryCount = /<summary>.*\((\d+)\)<\/summary>/.exec(line)?.[1];
+            counts[section] += summaryCount ? Number(summaryCount)
+                : /^(?:\d+\.|\*|-)\s+/.test(line) ? 1 : 0;
+        }
+    }
+    const parts = [
+        counts.improvement && `${counts.improvement} improvement${counts.improvement === 1 ? "" : "s"}`,
+        counts.fix && `${counts.fix} bug fix${counts.fix === 1 ? "" : "es"}`
+    ].filter(Boolean);
+    return parts.length > 0 ? `Also in this release: ${parts.join(" and ")}.` : undefined;
 }
 
 /** The paragraphs of a run of Markdown lines, leaving out `<details>` blocks. */

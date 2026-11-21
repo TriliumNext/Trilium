@@ -101,6 +101,41 @@ describe("releaseDescription", () => {
         ]);
     });
 
+    it("ends with the number of improvements and bug fixes in the note", () => {
+        const notes = [
+            "# v0.107.0",
+            "Text notes became block editors.",
+            "",
+            "## 💡 Key highlights",
+            "### Not counted",
+            "*   Not counted either.",
+            "## 📱 Mobile improvements",
+            "*   One",
+            "*   Two",
+            "## 🐞 Bugfixes",
+            "1.  [Sync could lose changes.](https://example.com)",
+            "    Details nested under the entry.",
+            "<details>",
+            "    <summary>Tree (6)</summary>",
+            "    <ol><li>…</li></ol>",
+            "</details>",
+            "<details>",
+            "    <summary>Board (3)</summary>",
+            "</details>",
+            "## ✨ Improvements",
+            "<details>",
+            "    <summary>Search (1)</summary>",
+            "</details>",
+            "## 🔒️ Security improvements",
+            "*   Not counted."
+        ].join("\n");
+
+        expect(releaseDescription(notes)).toEqual([
+            { paragraph: "Text notes became block editors." },
+            { paragraph: "Also in this release: 3 improvements and 10 bug fixes." }
+        ]);
+    });
+
     it("unwraps an italic lead and skips the collapsible notices around it", () => {
         const notes = [
             "# v0.105.0",
@@ -131,11 +166,11 @@ describe("releaseDescription", () => {
             "Text.",
             "### And others…",
             "## 🐞 Bugfixes",
-            "### Not a highlight"
+            "*   Not a highlight"
         ].join("\n");
 
         expect(releaseDescription(notes)).toEqual([
-            { items: [ "Kanban board overhaul", "Spreadsheets" ] }
+            { items: [ "Kanban board overhaul", "Spreadsheets", "Also in this release: 1 bug fix." ] }
         ]);
     });
 
@@ -153,7 +188,8 @@ describe("releaseDescription", () => {
         expect(releaseDescription(notes)).toEqual([ { items: [
             "Updated Node.js to 24.22.1, taking in its fixes.",
             "Signing in no longer fails behind a proxy.",
-            "The tree kept a deleted note."
+            "The tree kept a deleted note.",
+            "Also in this release: 1 bug fix."
         ] } ]);
     });
 });
@@ -199,6 +235,14 @@ describe("renderMetainfoReleases", () => {
         expect(updated).toContain("<id>org.triliumnotes.Trilium</id>");
         expect(updated).toContain("<id>com.github.zadam.trilium</id>");
         expect(updated.endsWith("</component>\n")).toBe(true);
+    });
+
+    it("marks a release candidate as a development release", () => {
+        const updated = renderMetainfoReleases(METAINFO, [
+            { version: "0.108.0-rc.1", date: "2026-11-21" }
+        ]);
+
+        expect(updated).toContain(`<release version="0.108.0-rc.1" date="2026-11-21" type="development">`);
     });
 
     it("is stable when the list has not changed", () => {
