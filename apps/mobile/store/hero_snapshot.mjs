@@ -1,0 +1,279 @@
+import { execFileSync } from "child_process";
+import fs from "fs";
+import os from "os";
+import path from "path";
+
+/**
+ * Serializes the page into one self-contained HTML file: the DOM without scripts, only the CSS
+ * rules whose selectors match an element, only the custom properties those rules reach, and each
+ * font they name subset to the characters on the page, with animations and transitions off. Both
+ * color schemes survive, since a rule is kept whatever media query it sits in. `pyftsubset` is
+ * the fontTools subsetter, which needs the Brotli module to write WOFF2. Resolves with the HTML
+ * and the numbers behind its size.
+ */
+export async function captureSnapshot(page, { pyftsubset }) {
+    const harvested = await page.evaluate(harvestPage);
+    const { css, declared, kept: keptProperties } = pruneCustomProperties(harvested.css,
+        harvested.inlineStyles);
+
+    const workDir = fs.mkdtempSync(path.join(os.tmpdir(), "trilium-hero-"));
+    try {
+        const textFile = path.join(workDir, "chars.txt");
+        fs.writeFileSync(textFile, harvested.chars);
+        let fontFaces = "";
+        const fonts = [];
+        for (const face of harvested.fontFaces) {
+            const source = path.join(workDir, "source");
+            const subset = path.join(workDir, "subset.woff2");
+            fs.writeFileSync(source, Buffer.from(await (await fetch(face.url)).arrayBuffer()));
+            execFileSync(pyftsubset, [
+                source, `--text-file=${textFile}`, "--flavor=woff2", "--layout-features=*",
+                `--output-file=${subset}`
+            ], { stdio: [ "ignore", "ignore", "pipe" ] });
+            const data = fs.readFileSync(subset);
+            fonts.push({ family: face.family, bytes: data.length });
+            fontFaces += `@font-face{${face.descriptors}`
+                + `src:url(data:font/woff2;base64,${data.toString("base64")}) format("woff2");}\n`;
+        }
+        return {
+            html: harvested.html.replace("/*__CSS__*/", () => css + fontFaces),
+            stats: {
+                rulesKept: harvested.rulesKept,
+                rulesDropped: harvested.rulesDropped,
+                customProperties: `${keptProperties} of ${declared}`,
+                cssBytes: css.length,
+                domBytes: harvested.html.length,
+                fonts
+            }
+        };
+    } finally {
+        fs.rmSync(workDir, { recursive: true, force: true });
+    }
+}
+
+/**
+ * Drops the custom property declarations that nothing reaches: a property stays when a rule, an
+ * inline style or another kept property reads it through `var()`.
+ */
+function pruneCustomProperties(css, inlineStyles) {
+    const declaration = /(^|[{;\s])(--[A-Za-z0-9_-]+)\s*:\s*([^;{}]*)(;?)/g;
+    const values = new Map();
+    for (const [ , , name, value ] of css.matchAll(declaration)) {
+        values.set(name, `${values.get(name) ?? ""} ${value}`);
+    }
+    const references = (text) => [ ...text.matchAll(/var\(\s*(--[A-Za-z0-9_-]+)/g) ]
+        .map((match) => match[1]);
+    const used = new Set(references(css.replace(declaration, "$1") + inlineStyles));
+    const pending = [ ...used ];
+    while (pending.length) {
+        for (const name of references(values.get(pending.pop()) ?? "")) {
+            if (!used.has(name)) {
+                used.add(name);
+                pending.push(name);
+            }
+        }
+    }
+    return {
+        css: css.replace(declaration, (match, lead, name) => used.has(name) ? match : lead),
+        declared: values.size,
+        kept: used.size
+    };
+}
+
+/**
+ * Runs in the page. A selector stays when it matches an element once its states and
+ * pseudo-elements are removed, so hover and focus styles stay too; a selector the browser
+ * rejects once they are removed also stays.
+ */
+async function harvestPage() {
+    const STATES = new RegExp("::?(?:hover|focus-visible|focus-within|focus|active|visited|link|"
+        + "any-link|checked|indeterminate|disabled|enabled|placeholder-shown|autofill|before|after|"
+        + "placeholder|selection|marker|first-line|first-letter|backdrop|file-selector-button|"
+        + "-webkit-[a-z-]+|-moz-[a-z-]+|-ms-[a-z-]+)(?![\\w-])", "g");
+    let rulesKept = 0;
+    let rulesDropped = 0;
+    const fontFaceRules = [];
+    const matches = new Map();
+
+    function selectorMatches(selector) {
+        const plain = selector.replace(STATES, "").replace(/:not\(\s*\)/g, "").trim() || "*";
+        if (!matches.has(plain)) {
+            try {
+                matches.set(plain, !!document.querySelector(
+                    plain.replace(/(^|[\s>+~(,])&/g, "$1*")));
+            } catch {
+                matches.set(plain, true);
+            }
+        }
+        return matches.get(plain);
+    }
+
+    function splitSelectors(text) {
+        const parts = [];
+        let depth = 0;
+        let start = 0;
+        for (const [ index, char ] of [ ...text ].entries()) {
+            if (char === "(" || char === "[") depth++;
+            else if (char === ")" || char === "]") depth--;
+            else if (char === "," && depth === 0) {
+                parts.push(text.slice(start, index).trim());
+                start = index + 1;
+            }
+        }
+        parts.push(text.slice(start).trim());
+        return parts;
+    }
+
+    function readRules(sheet) {
+        try {
+            return sheet.cssRules;
+        } catch {
+            return [];
+        }
+    }
+
+    function serialize(rules) {
+        let out = "";
+        for (const rule of rules) {
+            if (rule instanceof CSSStyleRule) {
+                const selectors = splitSelectors(rule.selectorText).filter(selectorMatches);
+                if (!selectors.length) {
+                    rulesDropped++;
+                    continue;
+                }
+                rulesKept++;
+                out += `${selectors.join(",")}${rule.cssText.slice(rule.cssText.indexOf("{"))}\n`;
+            } else if (rule instanceof CSSMediaRule) {
+                if (/^print$/i.test(rule.conditionText)) continue;
+                const inner = serialize(rule.cssRules);
+                if (inner) out += `@media ${rule.conditionText}{${inner}}\n`;
+            } else if (rule instanceof CSSSupportsRule) {
+                const inner = serialize(rule.cssRules);
+                if (inner) out += `@supports ${rule.conditionText}{${inner}}\n`;
+            } else if (rule instanceof CSSContainerRule) {
+                const inner = serialize(rule.cssRules);
+                const condition = `${rule.containerName} ${rule.containerQuery}`;
+                if (inner) out += `@container ${condition}{${inner}}\n`;
+            } else if (rule instanceof CSSLayerBlockRule) {
+                const inner = serialize(rule.cssRules);
+                if (inner) out += `@layer ${rule.name}{${inner}}\n`;
+            } else if (rule instanceof CSSImportRule) {
+                const inner = rule.styleSheet ? serialize(readRules(rule.styleSheet)) : "";
+                const media = rule.media.mediaText;
+                if (inner) out += media && media !== "all" ? `@media ${media}{${inner}}\n` : inner;
+            } else if (rule instanceof CSSFontFaceRule) {
+                fontFaceRules.push(rule);
+            } else if (!(rule instanceof CSSKeyframesRule || rule instanceof CSSPageRule)) {
+                out += `${rule.cssText}\n`;
+            }
+        }
+        return out;
+    }
+
+    // The `next` theme loads its light and dark sheets behind the `media` of their <link>.
+    let css = "";
+    for (const sheet of document.styleSheets) {
+        const inner = serialize(readRules(sheet));
+        const owner = sheet.ownerNode;
+        const media = owner instanceof Element ? owner.getAttribute("media") : null;
+        css += media && media !== "all" && inner ? `@media ${media}{${inner}}\n` : inner;
+    }
+
+    // Icon fonts draw through generated content, so `content` counts as text.
+    const chars = new Set(`${document.body.innerText} 0123456789`);
+    for (const element of document.querySelectorAll("*")) {
+        for (const pseudo of [ "::before", "::after", "::marker" ]) {
+            const content = getComputedStyle(element, pseudo).content;
+            if (content && content !== "none" && content !== "normal") {
+                for (const char of content.replace(/^"|"$/g, "")) chars.add(char);
+            }
+        }
+        for (const text of [ element.value, element.placeholder ]) {
+            if (typeof text === "string") for (const char of text) chars.add(char);
+        }
+    }
+
+    const fontFaces = [];
+    const seenFaces = new Set();
+    for (const face of fontFaceRules) {
+        const family = face.style.getPropertyValue("font-family").replace(/["']/g, "").trim();
+        if (!css.toLowerCase().includes(family.toLowerCase())) continue;
+        const key = [ "font-family", "font-weight", "font-style", "unicode-range" ]
+            .map((name) => face.style.getPropertyValue(name)).join("|");
+        if (seenFaces.has(key)) continue;
+        seenFaces.add(key);
+        const urls = [ ...face.style.getPropertyValue("src").matchAll(/url\(\s*["']?([^"')]+)/g) ]
+            .map((match) => match[1]);
+        const url = urls.find((candidate) => /woff2/i.test(candidate)) ?? urls[0];
+        if (!url) continue;
+        let descriptors = "";
+        for (const name of face.style) {
+            if (name !== "src") descriptors += `${name}:${face.style.getPropertyValue(name)};`;
+        }
+        const base = face.parentStyleSheet?.href ?? document.baseURI;
+        fontFaces.push({ family, url: new URL(url, base).href, descriptors });
+    }
+
+    // Form state and canvases are copied into the clone as attributes and images.
+    const clone = document.documentElement.cloneNode(true);
+    const liveFields = document.querySelectorAll("input, textarea, canvas");
+    const clonedFields = clone.querySelectorAll("input, textarea, canvas");
+    for (const [ index, live ] of [ ...liveFields ].entries()) {
+        const target = clonedFields[index];
+        if (live instanceof HTMLCanvasElement) {
+            const image = document.createElement("img");
+            try {
+                image.src = live.toDataURL();
+            } catch {
+                // A tainted canvas stays blank.
+            }
+            for (const name of [ "class", "style" ]) {
+                if (target.hasAttribute(name)) image.setAttribute(name, target.getAttribute(name));
+            }
+            target.replaceWith(image);
+        } else if (live instanceof HTMLTextAreaElement) {
+            target.textContent = live.value;
+        } else {
+            target.setAttribute("value", live.value);
+            if (live.checked) target.setAttribute("checked", "");
+        }
+    }
+    const removed = "script, link, style, noscript, template, iframe";
+    for (const element of clone.querySelectorAll(removed)) {
+        element.remove();
+    }
+    for (const image of clone.querySelectorAll("img")) {
+        const source = image.getAttribute("src");
+        image.removeAttribute("srcset");
+        if (!source || source.startsWith("data:")) continue;
+        const blob = await (await fetch(new URL(source, document.baseURI))).blob();
+        image.src = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+        });
+    }
+    let inlineStyles = "";
+    for (const element of clone.querySelectorAll("*")) {
+        for (const attribute of [ ...element.attributes ]) {
+            if (attribute.name.startsWith("on")) element.removeAttribute(attribute.name);
+        }
+        element.removeAttribute("contenteditable");
+        inlineStyles += `${element.getAttribute("style") ?? ""}\n`;
+    }
+    clone.querySelector("head").innerHTML = "<meta charset=\"utf-8\">"
+        + "<meta name=\"viewport\" content=\"width=device-width\">"
+        + "<style>/*__CSS__*/</style>"
+        + "<style>html{pointer-events:none;user-select:none;overflow:hidden}"
+        + "*,::before,::after{animation:none!important;transition:none!important}</style>";
+
+    return {
+        html: `<!doctype html>\n${clone.outerHTML}`,
+        css,
+        chars: [ ...chars ].join(""),
+        fontFaces,
+        inlineStyles,
+        rulesKept,
+        rulesDropped
+    };
+}

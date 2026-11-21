@@ -118,6 +118,15 @@ function collapseMapAttribution(page) {
 }
 
 /**
+ * The website hero: the desktop layout in a browser, with the note that `query` finds hoisted and
+ * open.
+ */
+export const HERO = {
+    query: "note.title = 'Trilium Demo'",
+    viewport: { width: 1360, height: 920 }
+};
+
+/**
  * Store devices. The phone renders 360 x 640 CSS pixels at 3x, giving the 1080 x 1920 the store
  * needs for promotion; the tablet is landscape 16:9 at 1920 x 1080 and stays uncaptioned, since
  * the store allows no text outside the app on large-screen screenshots.

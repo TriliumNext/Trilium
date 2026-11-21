@@ -5,35 +5,40 @@
  * checks them against the store's size and length limits and fails when one is not met. The
  * `flathub` target captures the desktop app's window for the Flathub listing instead, inside a
  * headless GNOME Shell, and `flathub-preview` mocks the Flathub app page from those screenshots
- * and the metainfo, with Flathub's quality checks.
+ * and the metainfo, with Flathub's quality checks. The `hero` target writes the website hero as
+ * a self-contained HTML snapshot of the app, in `out/hero`.
  *
  * Usage:
  *   pnpm --filter @triliumnext/mobile store-assets [icon] [feature] [screenshots] [preview]
- *       [flathub] [flathub-preview]
+ *       [flathub] [flathub-preview] [hero]
  *       [--only tree,text] [--devices phone,tablet] [--url http://localhost:8080] [--port 37991]
  *
  * With no target it builds the Play Store assets only. Screenshots boot a dev server on a fresh
  * document with the demo content plus what `SEED` in `scenes.mjs` adds, unless --url points at a
  * running one that has both and needs no login; `flathub` always boots its own and then opens
  * the document in the desktop app, and needs `gnome-shell`, `dbus-run-session` and `gdbus` on
- * the PATH. Output goes to `apps/mobile/store/out`; open `out/preview.html` and
- * `out/flathub-preview.html` to review it.
+ * the PATH; `hero` also boots its own and needs `pyftsubset` from fontTools, with the Brotli
+ * module. Output goes to `apps/mobile/store/out`; open `out/preview.html`,
+ * `out/flathub-preview.html` and `out/hero/hero.html` to review it.
  *
  * Environment:
  *   CHROME_BIN  browser executable, for systems where Playwright's browsers cannot run (NixOS);
  *               a `chromium` on the PATH is found without it
+ *   PYFTSUBSET  the fontTools subsetter, when `pyftsubset` on the PATH lacks Brotli
  */
 import { execFileSync } from "child_process";
 import fs from "fs";
 import { createRequire } from "module";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
+import zlib from "zlib";
 
 import { findNoteId, seedDocument, startDemoServer } from "./demo_server.mjs";
 import { startDesktopApp } from "./desktop_app.mjs";
 import { checkFlathubListing, readMetainfo } from "./flathub_listing.mjs";
 import { startGnomeSession } from "./gnome_session.mjs";
-import { DEVICES, ITINERARY, SCENES, SEED, TRIP_COSTS } from "./scenes.mjs";
+import { captureSnapshot } from "./hero_snapshot.mjs";
+import { DEVICES, HERO, ITINERARY, SCENES, SEED, TRIP_COSTS } from "./scenes.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, "..", "..", "..");
@@ -41,10 +46,14 @@ const templates = path.join(here, "templates");
 const outDir = path.join(here, "out");
 const listing = JSON.parse(fs.readFileSync(path.join(here, "listing.json"), "utf8"));
 
-// Playwright is a dependency of the repository root, which pnpm does not expose to this package.
-const { chromium } = createRequire(path.join(repoRoot, "package.json"))("playwright");
+// Playwright, pngjs and pixelmatch are dependencies of the repository root, which pnpm does not
+// expose to this package.
+const rootRequire = createRequire(path.join(repoRoot, "package.json"));
+const { chromium } = rootRequire("playwright");
 
-const TARGETS = [ "icon", "screenshots", "feature", "preview", "flathub", "flathub-preview" ];
+const TARGETS = [
+    "icon", "screenshots", "feature", "preview", "flathub", "flathub-preview", "hero"
+];
 const SEED_PARAMS = [ TRIP_COSTS, ITINERARY ];
 
 /**
@@ -65,8 +74,12 @@ const BUILDERS = {
     "feature": buildFeature,
     "preview": buildPreview,
     "flathub": buildFlathub,
-    "flathub-preview": buildFlathubPreview
+    "flathub-preview": buildFlathubPreview,
+    "hero": buildHero
 };
+
+/** The share of pixels the hero snapshot can differ from the app by, in either color scheme. */
+const HERO_MAX_DIFF = 0.005;
 
 const options = parseArgs(process.argv.slice(2));
 fs.mkdirSync(outDir, { recursive: true });
@@ -233,6 +246,99 @@ async function buildFlathubPreview() {
     if (failed.length) {
         process.exitCode = 1;
     }
+}
+
+/**
+ * Writes the website hero to `out/hero/hero.html`: a snapshot of the desktop layout, light only,
+ * whose CSS also carries the dark theme. The app is screenshotted in both color schemes and the
+ * build fails when the snapshot differs from it by more than `HERO_MAX_DIFF` in either one.
+ */
+async function buildHero() {
+    const pyftsubset = process.env.PYFTSUBSET ?? findOnPath("pyftsubset");
+    if (!pyftsubset) throw new Error("The hero needs pyftsubset from fontTools; set PYFTSUBSET.");
+    const heroDir = path.join(outDir, "hero");
+    fs.mkdirSync(heroDir, { recursive: true });
+    const server = options.url ? { baseUrl: options.url, stop() {} } : await startDemoServer({
+        repoRoot,
+        port: options.port,
+        logPath: path.join(outDir, "server.log")
+    });
+    const output = path.join(heroDir, "hero.html");
+    try {
+        if (!options.url) {
+            await seedDocument(browser, server.baseUrl, SEED, SEED_PARAMS);
+        }
+        const noteId = await findNoteId(server.baseUrl, HERO.query);
+        for (const colorScheme of [ "light", "dark" ]) {
+            const context = await browser.newContext({ viewport: HERO.viewport, colorScheme });
+            const page = await context.newPage();
+            await page.goto(server.baseUrl);
+            await page.waitForFunction(
+                () => window.glob?.appContext?.tabManager?.getActiveContext(),
+                null,
+                { timeout: 120_000 }
+            );
+            await page.addStyleTag({ content: "* { caret-color: transparent !important; }" });
+            await page.evaluate(async (id) => {
+                const noteContext = window.glob.appContext.tabManager.getActiveContext();
+                await noteContext.setHoistedNoteId(id);
+                await noteContext.setNote(id);
+            }, noteId);
+            await settle(page);
+            await page.mouse.move(HERO.viewport.width - 1, HERO.viewport.height - 1);
+            await page.waitForTimeout(500);
+            await page.screenshot({ path: path.join(heroDir, `app-${colorScheme}.png`) });
+            if (colorScheme === "light") {
+                const { html, stats } = await captureSnapshot(page, { pyftsubset });
+                fs.writeFileSync(output, html);
+                const fonts = stats.fonts
+                    .map(({ family, bytes }) => `${family} ${Math.round(bytes / 1024)} KB`);
+                console.log(`  ${stats.rulesKept} of ${stats.rulesKept + stats.rulesDropped} CSS `
+                    + `rules, ${stats.customProperties} custom properties, fonts: `
+                    + `${fonts.join(", ")}`);
+            }
+            await context.close();
+        }
+    } finally {
+        server.stop();
+    }
+
+    const html = fs.readFileSync(output);
+    const brotli = zlib.brotliCompressSync(html).length;
+    console.log(`  ${path.relative(outDir, output)}: ${Math.round(html.length / 1024)} KB, `
+        + `${Math.round(brotli / 1024)} KB with Brotli`);
+    for (const colorScheme of [ "light", "dark" ]) {
+        const shot = path.join(heroDir, `snapshot-${colorScheme}.png`);
+        const context = await browser.newContext({ viewport: HERO.viewport, colorScheme });
+        const page = await context.newPage();
+        await page.goto(pathToFileURL(output).href);
+        await waitForAssets(page);
+        await page.screenshot({ path: shot });
+        await context.close();
+        const share = diffPngs(path.join(heroDir, `app-${colorScheme}.png`), shot,
+            path.join(heroDir, `diff-${colorScheme}.png`));
+        const percent = `${(share * 100).toFixed(2)}%`;
+        if (share > HERO_MAX_DIFF) {
+            console.error(`  Fails: ${colorScheme} snapshot differs from the app by ${percent}`);
+            process.exitCode = 1;
+        } else {
+            console.log(`  ${colorScheme}: differs from the app by ${percent}`);
+        }
+    }
+}
+
+/** The share of pixels that differ between two screenshots of the same size. */
+function diffPngs(expectedFile, actualFile, diffFile) {
+    const { PNG } = rootRequire("pngjs");
+    const pixelmatch = rootRequire("pixelmatch").default ?? rootRequire("pixelmatch");
+    const expected = PNG.sync.read(fs.readFileSync(expectedFile));
+    const actual = PNG.sync.read(fs.readFileSync(actualFile));
+    const { width, height } = expected;
+    const diff = new PNG({ width, height });
+    const count = pixelmatch(expected.data, actual.data, diff.data, width, height,
+        { threshold: 0.1 });
+    fs.writeFileSync(diffFile, PNG.sync.write(diff));
+    return count / (width * height);
 }
 
 /** Sets an option through the API, from a page of the app that supplies the CSRF headers. */
