@@ -332,7 +332,11 @@ export function useViewModeConfig<T extends object>(note: FNote | null | undefin
         setViewConfig(undefined);
         const viewStorage = new ViewModeStorage<T>(note, viewType);
         const storeFn = (config: T) => {
-            setViewConfig({ note, viewType, config, storeFn });
+            // A view still saves as it unmounts (the table flushes its layout), after the next
+            // note or view type took over; its config is stored but no longer shown.
+            if (storageRef.current === current) {
+                setViewConfig({ note, viewType, config, storeFn });
+            }
             viewStorage.store(config);
         };
         const current = { storage: viewStorage, storeFn, note, viewType };

@@ -17,6 +17,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Component from "../../components/component";
 import type FNote from "../../entities/fnote";
 import type { EntityChange } from "../../server_types";
+import froca from "../../services/froca";
 import LoadResults from "../../services/load_results";
 import { buildNote, buildNotes } from "../../test/easy-froca";
 import { ParentComponent } from "../react/react_utils";
@@ -573,6 +574,62 @@ describe("useViewModeConfig view type switch", () => {
         await act(async () => {
             render(null, mountPoint);
         });
+    });
+
+    it("keeps the next note's config when the view it replaced saves on its way out", async () => {
+        const withConfig = (title: string, viewType: ViewTypeOptions, config: object) => {
+            const note = buildNote({ title, type: "book" });
+            note.getAttachmentsByRole = vi.fn(async () => [ {
+                attachmentId: `${title}-${viewType}`,
+                title: `${viewType}.json`,
+                getBlob: async () => ({ content: JSON.stringify(config) })
+            } ]) as unknown as FNote["getAttachmentsByRole"];
+            return note;
+        };
+        const tableConfig = { tableData: { columns: [] } };
+        const presentationConfig = { slide: 2 };
+        const table = withConfig("Places", "table", tableConfig);
+        const presentation = withConfig("Slides", "presentation", presentationConfig);
+        const saveAttachment = vi.spyOn(froca, "saveAttachment").mockResolvedValue(undefined as never);
+
+        let latest: ReturnType<typeof useViewModeConfig<object>>;
+        function ConfigProbe({ note, viewType }: { note: FNote; viewType: ViewTypeOptions }) {
+            latest = useViewModeConfig<object>(note, viewType);
+            return null;
+        }
+        const mountPoint = document.createElement("div");
+        const renderProbe = async (note: FNote, viewType: ViewTypeOptions) => {
+            await act(async () => {
+                render(
+                    <ParentComponent.Provider value={new Component()}>
+                        <ConfigProbe note={note} viewType={viewType} />
+                    </ParentComponent.Provider>,
+                    mountPoint
+                );
+            });
+            await act(async () => {
+                await flushMicrotasks();
+            });
+        };
+
+        await renderProbe(table, "table");
+        const saveTableConfig = latest?.storeFn;
+        expect(saveTableConfig).toBeDefined();
+        await renderProbe(presentation, "presentation");
+        expect(latest?.config).toEqual(presentationConfig);
+
+        await act(async () => {
+            saveTableConfig?.({ tableData: { columns: [ { field: "title" } ] } });
+            await flushMicrotasks();
+        });
+        expect(latest?.config).toEqual(presentationConfig);
+        expect(saveAttachment).toHaveBeenCalledWith(table.noteId,
+            expect.objectContaining({ title: "table.json" }));
+
+        await act(async () => {
+            render(null, mountPoint);
+        });
+        saveAttachment.mockRestore();
     });
 });
 
