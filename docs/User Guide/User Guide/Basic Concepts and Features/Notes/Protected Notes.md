@@ -49,6 +49,14 @@ The following steps outline how encryption and decryption work in Trilium:
 5.  The data encryption key is then used to decrypt the actual content of the note, including its title and body.
     *   The encryption algorithm used is AES-128 with [CBC mode](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation), where a unique IV is generated for each encryption operation and stored with the cipher text.
 
+```mermaid
+flowchart TD
+    password(["Password"]) -->|"scrypt, verification salt"| verification["Verification hash"]
+    password -->|"scrypt, encryption salt"| derived["Password-derived key"]
+    derived -->|"decrypts (AES-128)"| dataKey["Data encryption key"]
+    dataKey -->|"decrypts (AES-128-CBC)"| content["Title and content<br>of each protected note"]
+```
+
 ## Sharing Protected Notes
 
 Protected notes cannot be shared in the same way as regular notes. Their encryption ensures that only authorized users with the correct password can access them.

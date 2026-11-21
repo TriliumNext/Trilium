@@ -73,7 +73,7 @@ jobs:
               problems = [];
             }
             // Backticks and line breaks would break out of the list, and an @ would mention someone.
-            const clean = (text) => String(text).replace(/[`\r\n]/g, ' ').replace(/@/g, '@​').slice(0, 400);
+            const clean = (text) => String(text).replace(/[`\r\n]/g, ' ').replace(/@/g, '@\u200B').slice(0, 400);
 
             const marker = '<!-- changelog-lint -->';
             const comments = await github.paginate(github.rest.issues.listComments, {

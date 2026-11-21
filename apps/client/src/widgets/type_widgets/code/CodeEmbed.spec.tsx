@@ -24,6 +24,7 @@ import {
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
 import { CodeMirrorFindTarget } from "../../find_in_code";
+import { SCROLL_RAIL_MEASURE_EVENT } from "../../scroll_rail_markers";
 import { NoteSaves } from "../text/attachment_saves";
 import { getContentEmbedTools, getEmbedFindTarget } from "../text/content_embed_tools";
 import EmbedHistories from "../text/embed_history";
@@ -153,7 +154,11 @@ describe("CodeEmbed", () => {
         expect(await target.replace(1, "log")).toBe(1);
         expect(view.state.doc.toString()).toBe("print(1)\nlog(2)");
         expect(onContentChange).toHaveBeenCalledOnce();
-        expect(target.close(0)).toBe(true);
+        const select = target.close(0);
+        expect(figure.querySelectorAll(".cm-searchMatch")).toHaveLength(0);
+        expect([ view.state.selection.main.from, view.state.selection.main.to ])
+            .not.toEqual([ 0, 5 ]);
+        select?.();
         expect([ view.state.selection.main.from, view.state.selection.main.to ]).toEqual([ 0, 5 ]);
         stopWatching();
         act(() => view.dispatch({ changes: { from: 0, insert: "#" } }));
@@ -170,6 +175,64 @@ describe("CodeEmbed", () => {
         expect(await target.replace(0, "log")).toBe(1);
         expect(await target.replaceAll("log")).toBe(1);
         expect(view.state.doc.toString()).toBe("#print(1)\nlog(2)");
+    });
+
+    it("names drawn matches by text, others by line; reports heights while searching", async () => {
+        const { figure } = await mount(buildCodeNote("print(1)\nprint(2)"), buildEditor(), {
+            isEditable: true
+        });
+        const view = await findView(figure);
+        const target = getEmbedFindTarget(figure);
+        if (!(target instanceof CodeMirrorFindTarget)) throw new Error("Expected a code target.");
+        const performFind = vi.spyOn(view as unknown as VanillaCodeMirror, "performFind");
+        const check = () => true;
+        const options = { matchCase: false, wholeWord: false };
+
+        await target.find("print", options, check);
+        expect(performFind).toHaveBeenLastCalledWith("print", false, false, false, check);
+        const rects = vi.spyOn(Element.prototype, "getBoundingClientRect");
+        const lines = [ ...figure.querySelectorAll(".cm-line") ];
+        const lineOf = (range: unknown) => range instanceof Range
+            ? lines.findIndex((line) => line.contains(range.startContainer))
+            : null;
+        const drawn = target.getMatchTargets();
+        expect(drawn.map((range) => range instanceof Range && range.toString()))
+            .toEqual([ "print", "print" ]);
+        expect(drawn.map(lineOf)).toEqual([ 0, 1 ]);
+
+        // A match outside the drawn ranges has no text in the page.
+        const visibleRanges = vi.spyOn(view, "visibleRanges", "get")
+            .mockReturnValue([ { from: 0, to: 8 } ]);
+        const lineTop = (position: number) =>
+            view.lineBlockAt(position).top + view.documentPadding.top;
+        const partly = target.getMatchTargets();
+        expect(lineOf(partly[0])).toBe(0);
+        expect(partly[1]).toEqual({ within: view.scrollDOM, offset: lineTop(9) });
+        expect(rects).not.toHaveBeenCalled();
+        rects.mockRestore();
+        visibleRanges.mockRestore();
+        expect(target.countMatches()).toBe(2);
+
+        // While it searches, each change of the editor's heights reaches the scroll rail.
+        const onMeasure = vi.fn();
+        figure.addEventListener(SCROLL_RAIL_MEASURE_EVENT, onMeasure);
+        act(() => view.dispatch({ changes: { from: 0, insert: "\n" } }));
+        expect(onMeasure).toHaveBeenCalledOnce();
+        target.close(null);
+        act(() => view.dispatch({ changes: { from: 0, insert: "\n" } }));
+        expect(onMeasure).toHaveBeenCalledOnce();
+        act(() => view.dispatch({ changes: { from: 0, to: 2 } }));
+        await target.find("print", options, check);
+
+        // A write whose check fails in the frame of its search after the edit keeps the edit.
+        const isWanted = () => false;
+        await act(async () => {
+            await target.replaceAll("log", isWanted);
+        });
+        expect(view.state.doc.toString()).toBe("log(1)\nlog(2)");
+        expect(performFind).toHaveBeenLastCalledWith("print", false, false, false, isWanted);
+        expect(figure.querySelectorAll(".cm-searchMatch")).toHaveLength(0);
+        expect(target.countMatches()).toBe(0);
     });
 
     it("keeps its edits on the text note's undo stack, read-only and remounted too", async () => {

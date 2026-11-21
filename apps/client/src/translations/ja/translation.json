@@ -85,7 +85,7 @@
     "script_link_not_allowed": "{{scheme}} で始まるリンクはコードを実行する可能性があるため、使用できません。",
     "retrieving_from_page": "web ページから取得中...",
     "title_from_attachment": "設定されていない場合、常に添付ファイルのタイトルが表示されます",
-    "top_of_note": "ノート全体にリンク",
+    "top_of_note": "ノートへのリンク（デフォルト）",
     "select_note_for_targets": "リンク可能な見出しとアンカーを表示するには、ノートを選択してください。",
     "inspecting_note": "ノート構造を確認しています",
     "heading_reference_failed": "指定された見出しへのリンクを作成できませんでした",
@@ -1274,7 +1274,11 @@
   },
   "toc": {
     "table_of_contents": "目次",
-    "no_headings": "見出しはありません。"
+    "no_headings": "見出しはありません。",
+    "building": "目次を作成中…",
+    "build_failed": "目次を読み込めませんでした。",
+    "unavailable": "目次がありません。",
+    "retry": "再試行"
   },
   "text_auto_read_only_size": {
     "title": "自動読み取り専用のサイズ",
@@ -1880,7 +1884,9 @@
     "copy_success": "クリップボードにコピーしました。",
     "copied_without_links": "ノートはクリップボードにコピーされましたが、ノートへのリンクはシステムクリップボードに配置できませんでした。",
     "paste_notes": "ノートを貼り付け",
-    "paste_failed": "クリップボードを読み込めませんでした。"
+    "paste_failed": "クリップボードを読み込めませんでした。",
+    "copy_ready": "リンクをコピーできます。",
+    "copy_button": "コピー"
   },
   "launcher_context_menu": {
     "add-note-launcher": "ノートランチャーを追加",
@@ -2471,7 +2477,8 @@
     "find_placeholder": "テキスト内を検索...",
     "replace_placeholder": "置換対象...",
     "replace": "置換",
-    "replace_all": "すべて置換"
+    "replace_all": "すべて置換",
+    "nothing_replaced": "検索が完了しなかったため、何も置換されませんでした。"
   },
   "title_bar_buttons": {
     "window-on-top": "常に手前に表示"
@@ -3054,7 +3061,11 @@
     "annotation_text_box": "{{pageNumber}} のテキストボックス",
     "copy_reference": "リンクをコピー",
     "page_reference": "{{pageNumber}} ページ",
-    "annotation_reference": "{{pageNumber}} ページの注釈"
+    "annotation_reference": "{{pageNumber}} ページの注釈",
+    "pages_title": "ページ",
+    "annotations_title": "注釈",
+    "attachments_title": "添付ファイル",
+    "layers_title": "レイヤー"
   },
   "platform_indicator": {
     "available_on": "{{platform}} で利用可能"

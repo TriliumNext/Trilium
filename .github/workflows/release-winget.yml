@@ -13,7 +13,7 @@ permissions: {}
 
 jobs:
   release-winget:
-    if: ${{ !startsWith(github.event.release.tag_name, 'web-clipper-v') }}
+    if: ${{ !github.event.release.prerelease && !startsWith(github.event.release.tag_name, 'web-clipper-v') }}
     runs-on: ubuntu-latest
     steps:
       - name: Publish to WinGet

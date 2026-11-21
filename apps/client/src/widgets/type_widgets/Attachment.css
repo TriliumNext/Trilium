@@ -363,6 +363,18 @@ body[dir=rtl] .attachment-icon-marker {
 
 .attachment-detail-wrapper.full-detail .attachment-content-wrapper {
     height: 100%;
+    min-height: 0;
+}
+
+.attachment-detail-wrapper.full-detail .attachment-content-wrapper > .rendered-content {
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+
+    > pre.code-preview {
+        flex-grow: 1;
+        min-height: 0;
+    }
 }
 
 .attachment-content-wrapper.attachment-spreadsheet > .spreadsheet {

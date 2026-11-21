@@ -570,7 +570,9 @@ export class CustomMarkdownRenderer extends Renderer {
     override code(token: Tokens.Code): string {
         if (!token.text) return "";
 
-        const text = escapeHtml(token.text).replace(/&quot;/g, '"');
+        // A code block's text holds no final newline, so the one that ends the token goes, as
+        // marked's own renderer drops it before adding one back.
+        const text = escapeHtml(token.text.replace(/\n$/, "")).replace(/&quot;/g, '"');
 
         // `mermaid` isn't in the MIME dictionary, but CKEditor/Trilium's
         // mermaid rewrite specifically looks for `language-mermaid`, so

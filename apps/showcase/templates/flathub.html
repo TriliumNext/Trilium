@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Flathub listing preview</title>
+    <link rel="stylesheet" href="common.css">
+    <style>
+        :root {
+            --page: #fafafa;
+            --card: #ffffff;
+            --text: #1d1f24;
+            --muted: #5e5c64;
+            --line: #e3e3e3;
+            --accent: #3584e4;
+            color-scheme: light;
+        }
+
+        :root[data-scheme="dark"] {
+            --page: #1e1e1e;
+            --card: #2a2a2a;
+            --text: #f2f2f2;
+            --muted: #b0b0b5;
+            --line: #3a3a3a;
+            --accent: #78aeed;
+            color-scheme: dark;
+        }
+
+        body {
+            background: var(--page);
+            color: var(--text);
+            overflow-x: clip;
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 24px 16px 64px;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            color: var(--muted);
+            font-size: 14px;
+            margin-bottom: 20px;
+
+            button {
+                font: inherit;
+                padding: 6px 14px;
+                border-radius: 999px;
+                border: 1px solid var(--line);
+                background: var(--card);
+                color: var(--text);
+                cursor: pointer;
+            }
+        }
+
+        .banner {
+            border-radius: 16px;
+            padding: 28px 32px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            background: var(--brand);
+            color: var(--brand-text);
+            margin-bottom: 36px;
+
+            img {
+                width: 96px;
+                height: 96px;
+            }
+
+            .label {
+                font-size: 13px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                opacity: 0.8;
+            }
+
+            h2 {
+                margin: 4px 0;
+                font-size: 30px;
+            }
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+
+            .icon {
+                width: 128px;
+                height: 128px;
+            }
+
+            h1 {
+                margin: 0;
+                font-size: 34px;
+                font-weight: 750;
+            }
+
+            .developer {
+                color: var(--muted);
+            }
+
+            .install {
+                margin-left: auto;
+                padding: 10px 28px;
+                border-radius: 8px;
+                background: var(--accent);
+                color: white;
+                font-weight: 650;
+            }
+        }
+
+        .summary {
+            font-size: 20px;
+            font-weight: 650;
+            margin: 28px 0 8px;
+        }
+
+        .carousel {
+            margin: 24px 0 12px;
+            border-radius: 16px;
+            background: var(--brand);
+            padding: 32px 16px 20px;
+            text-align: center;
+
+            .shot {
+                max-width: 100%;
+                max-height: 560px;
+                display: block;
+                margin: 0 auto;
+            }
+
+            figcaption {
+                color: var(--brand-text);
+                margin-top: 12px;
+                min-height: 1.4em;
+            }
+
+            .dots {
+                display: flex;
+                justify-content: center;
+                gap: 8px;
+                margin-top: 12px;
+
+                button {
+                    width: 10px;
+                    height: 10px;
+                    padding: 0;
+                    border-radius: 50%;
+                    border: none;
+                    background: var(--brand-text);
+                    opacity: 0.35;
+                    cursor: pointer;
+                }
+
+                button.active {
+                    opacity: 1;
+                }
+            }
+        }
+
+        .thumbs {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+
+            img {
+                height: 90px;
+                cursor: pointer;
+                opacity: 0.6;
+            }
+
+            img.active {
+                opacity: 1;
+            }
+        }
+
+        h3 {
+            font-size: 20px;
+            margin: 36px 0 10px;
+        }
+
+        .description {
+            line-height: 1.6;
+            max-width: 72ch;
+        }
+
+        .release {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 16px 20px;
+
+            .meta {
+                color: var(--muted);
+                font-size: 14px;
+            }
+
+            .missing {
+                color: #c62828;
+            }
+        }
+
+        .links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 20px;
+
+            a {
+                color: var(--accent);
+            }
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 14px;
+            background: var(--card);
+            border-radius: 12px;
+            overflow: hidden;
+
+            td,
+            th {
+                padding: 8px 12px;
+                border-bottom: 1px solid var(--line);
+                text-align: left;
+                overflow-wrap: anywhere;
+            }
+
+            .ok {
+                color: #2e7d32;
+            }
+
+            .fail {
+                color: #c62828;
+                font-weight: 600;
+            }
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <div class="toolbar">
+            <span>Preview of the Flathub app page, from the metainfo and <code>out/flathub</code></span>
+            <button id="scheme">Dark style</button>
+        </div>
+
+        <section class="banner">
+            <img class="icon" src="flathub-icon.svg" alt="">
+            <div>
+                <div class="label">Featured banner</div>
+                <h2 class="name"></h2>
+                <div class="summary-text"></div>
+            </div>
+        </section>
+
+        <header class="app-header">
+            <img class="icon" src="flathub-icon.svg" alt="">
+            <div>
+                <h1 class="name"></h1>
+                <div class="developer"></div>
+            </div>
+            <span class="install">Install</span>
+        </header>
+
+        <p class="summary summary-text"></p>
+
+        <figure class="carousel">
+            <img class="shot" alt="">
+            <figcaption></figcaption>
+            <div class="dots"></div>
+        </figure>
+        <div class="thumbs"></div>
+
+        <div class="description"></div>
+
+        <h3>Changes in the latest version</h3>
+        <div class="release"></div>
+
+        <h3>Links</h3>
+        <div class="links"></div>
+
+        <h3>Checks</h3>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Item</th><th>Guideline</th><th>Actual</th><th></th></tr></thead>
+                <tbody id="checks"></tbody>
+            </table>
+        </div>
+    </main>
+    <script src="flathub-data.js"></script>
+    <script>
+        const { meta, screenshots, checks } = window.FLATHUB;
+        const root = document.documentElement;
+
+        for (const element of document.querySelectorAll(".name")) {
+            element.textContent = meta.name;
+        }
+        for (const element of document.querySelectorAll(".summary-text")) {
+            element.textContent = meta.summary;
+        }
+        document.querySelector(".developer").textContent = meta.developer;
+        document.querySelector(".description").innerHTML = meta.descriptionHtml;
+
+        const [ latest ] = meta.releases;
+        const release = document.querySelector(".release");
+        if (latest) {
+            const heading = document.createElement("div");
+            heading.className = "meta";
+            heading.textContent = `Version ${latest.version} · ${latest.date}`;
+            const notes = document.createElement("div");
+            if (latest.descriptionHtml) {
+                notes.innerHTML = latest.descriptionHtml;
+            } else {
+                notes.className = "missing";
+                notes.textContent = "No release notes in the metainfo.";
+            }
+            release.append(heading, notes);
+        }
+
+        const links = document.querySelector(".links");
+        for (const url of meta.urls) {
+            const link = document.createElement("a");
+            link.href = url.href;
+            link.textContent = url.type;
+            links.append(link);
+        }
+
+        // Flathub shows the brand color behind the screenshots and on banners, and picks the
+        // light or dark one by the viewer's style. The gray stands in for a missing color.
+        function applyScheme(scheme) {
+            root.dataset.scheme = scheme;
+            const color = meta.branding[scheme] ?? (scheme === "dark" ? "#3d3846" : "#deddda");
+            const [ r, g, b ] = color.slice(1).match(/../g).map((pair) => parseInt(pair, 16));
+            const light = (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6;
+            root.style.setProperty("--brand", color);
+            root.style.setProperty("--brand-text", light ? "#1d1f24" : "#ffffff");
+            document.getElementById("scheme").textContent =
+                scheme === "dark" ? "Light style" : "Dark style";
+        }
+        document.getElementById("scheme").addEventListener("click", () => {
+            applyScheme(root.dataset.scheme === "dark" ? "light" : "dark");
+        });
+        applyScheme(matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+
+        const shot = document.querySelector(".shot");
+        const caption = document.querySelector(".carousel figcaption");
+        const dots = document.querySelector(".dots");
+        const thumbs = document.querySelector(".thumbs");
+        function show(index) {
+            shot.src = screenshots[index].file;
+            caption.textContent = screenshots[index].caption;
+            for (const [ i, element ] of [ ...dots.children ].entries()) {
+                element.classList.toggle("active", i === index);
+            }
+            for (const [ i, element ] of [ ...thumbs.children ].entries()) {
+                element.classList.toggle("active", i === index);
+            }
+        }
+        for (const [ index, screenshot ] of screenshots.entries()) {
+            const dot = document.createElement("button");
+            dot.setAttribute("aria-label", screenshot.caption);
+            dot.addEventListener("click", () => show(index));
+            dots.append(dot);
+            const thumb = document.createElement("img");
+            thumb.src = screenshot.file;
+            thumb.alt = screenshot.caption;
+            thumb.addEventListener("click", () => show(index));
+            thumbs.append(thumb);
+        }
+        if (screenshots.length) show(0);
+
+        for (const check of checks) {
+            const row = document.createElement("tr");
+            for (const text of [ check.asset, check.rule, check.actual, check.ok ? "OK" : "Fails" ]) {
+                const cell = document.createElement("td");
+                cell.textContent = text;
+                row.append(cell);
+            }
+            row.lastChild.className = check.ok ? "ok" : "fail";
+            document.getElementById("checks").append(row);
+        }
+    </script>
+</body>
+</html>

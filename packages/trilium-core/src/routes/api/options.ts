@@ -137,6 +137,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "textNoteSlashCommandsEnabled",
     "mathFieldEnabled",
     "textNoteContentHintsEnabled",
+    "textNoteScrollRailHighlightsEnabled",
     "textNoteAutoLinkPreviewsEnabled",
     "textNoteLinkTitleRetrievalEnabled",
     "textNoteLinkDetailsRetrievalEnabled",

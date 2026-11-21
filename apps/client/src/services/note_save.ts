@@ -212,6 +212,8 @@ export class NoteSaver<T extends SaveData> {
         }
 
         let base = readBase;
+        /** The version that the last conflict named, when the server sent its content. */
+        let named: CurrentVersion | undefined;
         return await this.sendUntilSaved(note, data, {
             send: async (saved, isKeepingOther) => {
                 const attachments = await this.getAttachmentRows(note, saved.attachments);
@@ -232,6 +234,9 @@ export class NoteSaver<T extends SaveData> {
                 if (conflict?.reason === "format") {
                     return "conversion";
                 }
+                named = typeof conflict?.content === "string"
+                    ? { blobId: conflict.blobId, content: conflict.content }
+                    : undefined;
                 return conflict && {
                     isVersioned: conflict.isVersioned,
                     attachments: conflict.attachments,
@@ -244,7 +249,7 @@ export class NoteSaver<T extends SaveData> {
             },
             getLatest: () => this.editor.getLatestData(noteId),
             resolve: async () => {
-                const current = await this.tryToResolve(noteId);
+                const current = await this.tryToResolve(base, named);
                 if (current) {
                     base = { ...base, blobId: current.blobId, content: current.content };
                     this.bases.set(noteId, base);
@@ -532,17 +537,38 @@ export class NoteSaver<T extends SaveData> {
     }
 
     /**
-     * The version that the server holds, once the editor brought its changes onto it, or `null`
-     * when it did not. The content and the blob come from one read, so a retry is based on
-     * exactly the version that the editor saw.
+     * The version that the server holds, once the changes of the editor apply to it, or `null`
+     * when they do not. The changes apply as they are to `named`, the version that the conflict
+     * named, when {@link appliesAsIs} says so. Otherwise the editor tries to bring them onto the
+     * version, read with its blob at once, so a retry is based on exactly the version that the
+     * editor saw.
      */
-    private async tryToResolve(noteId: string): Promise<CurrentVersion | null> {
+    private async tryToResolve(
+        base: NoteBase, named: CurrentVersion | undefined
+    ): Promise<CurrentVersion | null> {
+        // With the same blob, the conflict is about an attachment, which a retry does not change.
+        if (named && named.blobId !== base.blobId && await this.appliesAsIs(base, named)) {
+            return named;
+        }
         if (!this.editor.resolveConflict) {
             return null;
         }
 
-        const current = await readCurrentVersion(noteId);
-        return await this.editor.resolveConflict(noteId, current) ? current : null;
+        const current = await readCurrentVersion(base.noteId);
+        return await this.editor.resolveConflict(base.noteId, current) ? current : null;
+    }
+
+    /**
+     * Whether the changes of the editor apply as they are to `current`: it holds the content that
+     * the editor read, under another blob as after the note is protected, or the content that the
+     * editor saves, with no change to attachments, as when another editor of the note saved it.
+     */
+    private async appliesAsIs(base: NoteBase, current: CurrentVersion) {
+        if (current.content === base.content) {
+            return true;
+        }
+        const latest = await this.editor.getLatestData(base.noteId);
+        return !!latest && !latest.attachments?.length && latest.content === current.content;
     }
 
     private async loadCurrentVersion(note: FNote, keepNewerChanges: () => Promise<void>) {

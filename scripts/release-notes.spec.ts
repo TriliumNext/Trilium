@@ -503,12 +503,11 @@ describe("renderReleaseNote", () => {
         ])).toBe([
             "# v1.0.0", "> [!NOTE]", "",
             "> [!TIP]", "> On Flathub", "",
-            "This release is about X.", "", "It also does Y.", "",
-            "## 💡 Key highlights", "", "1.  \\[…\\]", ""
+            "This release is about X.", "", "It also does Y.", ""
         ].join("\n"));
     });
 
-    it("fills matching sections, whatever their case, and keeps the others' placeholders", () => {
+    it("fills matching sections, whatever their case, and drops the sections without items", () => {
         const template = [
             "# Release Template",
             "> [!NOTE]",
@@ -550,10 +549,6 @@ describe("renderReleaseNote", () => {
             ">",
             "> Or else.",
             "",
-            "## 💡 Key highlights",
-            "",
-            "1.  \\[…\\]",
-            "",
             "## 🚨 Breaking changes",
             "",
             "*   Gone",
@@ -570,7 +565,7 @@ describe("renderReleaseNote", () => {
         ].join("\n"));
     });
 
-    it("can drop the preamble and the sections without items, keeping the admonitions", () => {
+    it("can drop the preamble, keeping the admonitions", () => {
         const template = [
             "# Release Template",
             "> [!NOTE]",
@@ -592,7 +587,7 @@ describe("renderReleaseNote", () => {
         expect(renderReleaseNote(template, "Changes since v1.0.0", [
             { section: "Bugfixes", date: 1, text: "Fixed", details: [], credits: [] },
             { section: "Note", date: 0, text: "Rebuilt nightly", details: [], credits: [] }
-        ], { preamble: false, emptySections: false })).toBe([
+        ], { preamble: false })).toBe([
             "# Changes since v1.0.0",
             "> [!NOTE]",
             "> Rebuilt nightly",

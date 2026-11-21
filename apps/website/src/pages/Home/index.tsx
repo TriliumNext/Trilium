@@ -1,7 +1,7 @@
 import "./index.css";
 
 import { ComponentChildren } from 'preact';
-import { useContext, useEffect, useState } from 'preact/hooks';
+import { useContext, useEffect, useRef, useState } from 'preact/hooks';
 import { Trans, useTranslation } from 'react-i18next';
 
 import importIcon from "../../assets/boxicons/bx-archive-arrow-down.svg?raw";
@@ -58,8 +58,7 @@ import DownloadButton from '../../components/DownloadButton.js';
 import Icon from '../../components/Icon.js';
 import Section from '../../components/Section.js';
 import SectionNav, { SectionNavItem } from '../../components/SectionNav.js';
-import { getPlatform } from '../../download-helper.js';
-import { useColorScheme, usePageTitle } from '../../hooks.js';
+import { usePageTitle } from '../../hooks.js';
 import { StargazersContext } from '../../index.js';
 
 export function Home() {
@@ -79,8 +78,8 @@ export function Home() {
 
     return (
         <>
-            <HeroSection />
             <SectionNav items={navItems} />
+            <HeroSection />
             <OrganizationBenefitsSection />
             <ProductivityBenefitsSection />
             <NoteTypesSection />
@@ -96,25 +95,7 @@ export function Home() {
 
 function HeroSection() {
     const { t } = useTranslation();
-    const platform = getPlatform();
-    const colorScheme = useColorScheme();
     const stargazersCount = useContext(StargazersContext);
-    const [ screenshotUrl, setScreenshotUrl ] = useState<string>();
-
-    useEffect(() => {
-        switch (platform) {
-            case "macos":
-                setScreenshotUrl(`/screenshot_desktop_mac_${colorScheme}.webp`);
-                break;
-            case "linux":
-                setScreenshotUrl(`/screenshot_desktop_linux_${colorScheme}.webp`);
-                break;
-            case "windows":
-            default:
-                setScreenshotUrl(`/screenshot_desktop_win_${colorScheme}.webp`);
-                break;
-        }
-    }, [ colorScheme ]);
 
     return (
         <Section className="hero-section">
@@ -134,7 +115,7 @@ function HeroSection() {
             </div>
 
             <div className="screenshot-container">
-                {screenshotUrl && <img class="screenshot" src={screenshotUrl} alt={t("hero_section.screenshot_alt")} />}
+                <HeroSnapshot title={t("hero_section.screenshot_alt")} />
             </div>
 
             <p className="hero-tagline">
@@ -148,6 +129,117 @@ function HeroSection() {
     );
 }
 
+/**
+ * The snapshots of the app and the viewports they were captured at: `HERO.variants` in
+ * apps/showcase/src/shared/scenes.ts.
+ */
+const HERO_SNAPSHOTS = {
+    desktop: { src: "/hero.html", width: 1360, height: 920 },
+    mobile: { src: "/hero-mobile.html", width: 360, height: 760 }
+};
+
+/** Matches the breakpoint from which `index.css` shows the desktop snapshot. */
+const HERO_WIDE_QUERY = "(min-width: 720px)";
+
+/**
+ * Shows the mobile snapshot in a phone, in front of the desktop snapshot on wide screens and
+ * alone otherwise. The desktop snapshot mounts only on a wide screen, so a phone never downloads
+ * it.
+ */
+function HeroSnapshot({ title }: { title: string }) {
+    const [ wide, setWide ] = useState(false);
+
+    useEffect(() => {
+        const query = window.matchMedia(HERO_WIDE_QUERY);
+        const update = () => setWide(query.matches);
+        update();
+        query.addEventListener("change", update);
+        return () => query.removeEventListener("change", update);
+    }, []);
+
+    return (
+        <>
+            <SnapshotFrame
+                snapshot={HERO_SNAPSHOTS.desktop} title={title} className="desktop" load={wide}
+            />
+            <div className="hero-phone">
+                <SnapshotFrame snapshot={HERO_SNAPSHOTS.mobile} title={title}>
+                    <PhoneChrome />
+                </SnapshotFrame>
+            </div>
+        </>
+    );
+}
+
+/**
+ * Shows a snapshot at the viewport it was captured at and scales it, with `children`, to the
+ * width of its frame, since the app lays out against the viewport and cannot reflow.
+ */
+function SnapshotFrame({ snapshot, title, className, load = true, children }: {
+    snapshot: typeof HERO_SNAPSHOTS.desktop;
+    title: string;
+    className?: string;
+    load?: boolean;
+    children?: ComponentChildren;
+}) {
+    const frameRef = useRef<HTMLDivElement>(null);
+    const [ scale, setScale ] = useState<number>();
+
+    useEffect(() => {
+        const frame = frameRef.current;
+        if (!frame) return;
+        const observer = new ResizeObserver(() => {
+            setScale(frame.clientWidth / snapshot.width);
+        });
+        observer.observe(frame);
+        return () => observer.disconnect();
+    }, [ snapshot ]);
+
+    return (
+        <div
+            ref={frameRef}
+            className={[ "screenshot", className, scale && "scaled" ].filter(Boolean).join(" ")}
+            style={scale ? { "--hero-scale": scale } : undefined}
+        >
+            {load && (
+                <iframe
+                    src={snapshot.src} title={title} tabIndex={-1}
+                    width={snapshot.width} height={snapshot.height}
+                />
+            )}
+            {children}
+        </div>
+    );
+}
+
+/** The status bar and home indicator a phone draws over the safe area of the mobile snapshot. */
+function PhoneChrome() {
+    return (
+        <div className="phone-chrome" aria-hidden="true">
+            <div className="status-bar">
+                <span>9:41</span>
+                <span className="status-icons">
+                    <svg viewBox="0 0 18 12">
+                        <rect x="0" y="8" width="3" height="4" rx="1" />
+                        <rect x="5" y="5.5" width="3" height="6.5" rx="1" />
+                        <rect x="10" y="3" width="3" height="9" rx="1" />
+                        <rect x="15" y="0" width="3" height="12" rx="1" />
+                    </svg>
+                    <svg viewBox="0 0 16 12">
+                        <path d="M8 2.2c2.4 0 4.6.9 6.3 2.5l1.3-1.4A11 11 0 0 0 8 .3 11 11 0 0 0 .4 3.3l1.3 1.4A9 9 0 0 1 8 2.2Zm0 3.8c1.4 0 2.7.5 3.7 1.4L13 6a7.3 7.3 0 0 0-10 0l1.3 1.4C5.3 6.5 6.6 6 8 6Zm0 3.7c-.6 0-1.1.2-1.5.6L8 12l1.5-1.7c-.4-.4-.9-.6-1.5-.6Z" />
+                    </svg>
+                    <svg viewBox="0 0 26 12">
+                        <rect x="0.5" y="0.5" width="22" height="11" rx="3" fill="none" stroke="currentColor" opacity="0.4" />
+                        <rect x="2.5" y="2.5" width="15" height="7" rx="1.5" />
+                        <rect x="24" y="4" width="1.5" height="4" rx="0.75" opacity="0.4" />
+                    </svg>
+                </span>
+            </div>
+            <div className="home-indicator" />
+        </div>
+    );
+}
+
 function OrganizationBenefitsSection() {
     const { t } = useTranslation();
     return (
@@ -155,7 +247,7 @@ function OrganizationBenefitsSection() {
             <Section id="organization" className="benefits organization" title={t("organization_benefits.title")}>
                 <div className="organization-split">
                     <div className="organization-screenshot">
-                        <img src="/feature_tree.webp" alt={t("organization_benefits.screenshot_alt")} loading="lazy" />
+                        <Screenshot src="/feature_tree.webp" darkSrc="/feature_tree-dark.webp" alt={t("organization_benefits.screenshot_alt")} />
                     </div>
                     <div className="benefits-container organization-cards">
                         <Card iconSvg={noteStructureIcon} title={t("organization_benefits.note_structure_title")} moreInfoUrl="https://docs.triliumnotes.org/user-guide/concepts/notes">{t("organization_benefits.note_structure_description")}</Card>
@@ -197,6 +289,7 @@ function NoteTypesSection() {
                 {
                     title: t("note_types.text_title"),
                     imageUrl: "/type_text.webp",
+                    darkImageUrl: "/type_text-dark.webp",
                     iconSvg: textNoteIcon,
                     moreInfo: "https://docs.triliumnotes.org/user-guide/note-types/text",
                     description: t("note_types.text_description")
@@ -204,6 +297,7 @@ function NoteTypesSection() {
                 {
                     title: t("note_types.markdown_title"),
                     imageUrl: "/type_markdown.webp",
+                    darkImageUrl: "/type_markdown-dark.webp",
                     iconSvg: markdownIcon,
                     moreInfo: "https://docs.triliumnotes.org/user-guide/note-types/markdown",
                     description: t("note_types.markdown_description")
@@ -211,6 +305,7 @@ function NoteTypesSection() {
                 {
                     title: t("note_types.code_title"),
                     imageUrl: "/type_code.webp",
+                    darkImageUrl: "/type_code-dark.webp",
                     iconSvg: codeIcon,
                     moreInfo: "https://docs.triliumnotes.org/user-guide/note-types/code",
                     description: t("note_types.code_description")
@@ -218,6 +313,7 @@ function NoteTypesSection() {
                 {
                     title: t("note_types.spreadsheet_title"),
                     imageUrl: "/type_spreadsheet.webp",
+                    darkImageUrl: "/type_spreadsheet-dark.webp",
                     iconSvg: tableIcon,
                     moreInfo: "https://docs.triliumnotes.org/user-guide/note-types/spreadsheets",
                     description: t("note_types.spreadsheet_description")
@@ -225,6 +321,7 @@ function NoteTypesSection() {
                 {
                     title: t("note_types.canvas_title"),
                     imageUrl: "/type_canvas.webp",
+                    darkImageUrl: "/type_canvas-dark.webp",
                     iconSvg: canvasIcon,
                     moreInfo: "https://docs.triliumnotes.org/user-guide/note-types/canvas",
                     description: t("note_types.canvas_description")
@@ -232,6 +329,7 @@ function NoteTypesSection() {
                 {
                     title: t("note_types.mermaid_title"),
                     imageUrl: "/type_mermaid.webp",
+                    darkImageUrl: "/type_mermaid-dark.webp",
                     iconSvg: mermaidIcon,
                     moreInfo: "https://docs.triliumnotes.org/user-guide/note-types/mermaid-diagrams",
                     description: t("note_types.mermaid_description")
@@ -239,6 +337,7 @@ function NoteTypesSection() {
                 {
                     title: t("note_types.mindmap_title"),
                     imageUrl: "/type_mindmap.webp",
+                    darkImageUrl: "/type_mindmap-dark.webp",
                     iconSvg: mindmapIcon,
                     moreInfo: "https://docs.triliumnotes.org/user-guide/note-types/mindmap",
                     description: t("note_types.mindmap_description")
@@ -246,6 +345,7 @@ function NoteTypesSection() {
                 {
                     title: t("note_types.file_title"),
                     imageUrl: "/type_file.webp",
+                    darkImageUrl: "/type_file-dark.webp",
                     iconSvg: fileIcon,
                     moreInfo: "https://docs.triliumnotes.org/user-guide/note-types/file",
                     description: t("note_types.file_description")
@@ -271,6 +371,7 @@ function CollectionsSection() {
                 {
                     title: t("collections.calendar_title"),
                     imageUrl: "/collection_calendar.webp",
+                    darkImageUrl: "/collection_calendar-dark.webp",
                     iconSvg: calendarIcon,
                     moreInfo: "https://docs.triliumnotes.org/user-guide/collections/calendar",
                     description: t("collections.calendar_description")
@@ -279,6 +380,7 @@ function CollectionsSection() {
                     title: t("collections.table_title"),
                     iconSvg: tableIcon,
                     imageUrl: "/collection_table.webp",
+                    darkImageUrl: "/collection_table-dark.webp",
                     moreInfo: "https://docs.triliumnotes.org/user-guide/collections/table",
                     description: t("collections.table_description")
                 },
@@ -286,6 +388,7 @@ function CollectionsSection() {
                     title: t("collections.board_title"),
                     iconSvg: boardIcon,
                     imageUrl: "/collection_board.webp",
+                    darkImageUrl: "/collection_board-dark.webp",
                     moreInfo: "https://docs.triliumnotes.org/user-guide/collections/kanban-board",
                     description: t("collections.board_description")
                 },
@@ -293,6 +396,7 @@ function CollectionsSection() {
                     title: t("collections.geomap_title"),
                     iconSvg: geomapIcon,
                     imageUrl: "/collection_geomap.webp",
+                    darkImageUrl: "/collection_geomap-dark.webp",
                     moreInfo: "https://docs.triliumnotes.org/user-guide/collections/geomap",
                     description: t("collections.geomap_description")
                 },
@@ -300,6 +404,7 @@ function CollectionsSection() {
                     title: t("collections.presentation_title"),
                     iconSvg: presentationIcon,
                     imageUrl: "/collection_presentation.webp",
+                    darkImageUrl: "/collection_presentation-dark.webp",
                     moreInfo: "https://docs.triliumnotes.org/user-guide/collections/presentation",
                     description: t("collections.presentation_description")
                 },
@@ -307,6 +412,7 @@ function CollectionsSection() {
                     title: t("collections.dashboard_title"),
                     iconSvg: dashboardIcon,
                     imageUrl: "/collection_dashboard.webp",
+                    darkImageUrl: "/collection_dashboard-dark.webp",
                     moreInfo: "https://docs.triliumnotes.org/user-guide/collections/dashboard",
                     description: t("collections.dashboard_description")
                 }
@@ -321,7 +427,7 @@ function AiIntegrationSection() {
         <Section id="ai-integration" className="benefits ai-integration" title={t("ai_integration.title")} subtitle={t("ai_integration.subtitle")} cta={{ text: t("ai_integration.learn_more"), href: "https://docs.triliumnotes.org/user-guide/llm" }}>
             <div className="feature-split">
                 <div className="feature-screenshot">
-                    <img src="/feature_llm.webp" alt={t("ai_integration.screenshot_alt")} loading="lazy" />
+                    <Screenshot src="/feature_llm.webp" darkSrc="/feature_llm-dark.webp" alt={t("ai_integration.screenshot_alt")} />
                 </div>
                 <div className="benefits-container feature-cards">
                     <Card iconSvg={botIcon} title={t("ai_integration.chat_title")}>{t("ai_integration.chat_description")}</Card>
@@ -395,6 +501,8 @@ function ImportSection() {
 interface ShowcaseItem {
     title: string;
     imageUrl: string;
+    /** The screenshot in the dark theme, shown when the visitor's system is dark. */
+    darkImageUrl?: string;
     description: string;
     moreInfo: string;
     iconSvg?: string;
@@ -431,7 +539,7 @@ function TabbedShowcase({ items }: { items: ShowcaseItem[] }) {
 
             <div className="showcase-preview" key={activeIndex} role="tabpanel" id={`showcase-panel-${activeIndex}`} aria-labelledby={`showcase-tab-${activeIndex}`}>
                 <div className="showcase-image-frame">
-                    <img src={active.imageUrl} alt={active.title} loading="lazy" />
+                    <Screenshot src={active.imageUrl} darkSrc={active.darkImageUrl} alt={active.title} />
                 </div>
                 <div className="showcase-details">
                     <h3>
@@ -444,6 +552,16 @@ function TabbedShowcase({ items }: { items: ShowcaseItem[] }) {
                 </div>
             </div>
         </div>
+    );
+}
+
+/** A lazily loaded screenshot, with `darkSrc` in its place when the visitor's system is dark. */
+function Screenshot({ src, darkSrc, alt }: { src: string; darkSrc?: string; alt: string }) {
+    return (
+        <picture>
+            {darkSrc && <source srcSet={darkSrc} media="(prefers-color-scheme: dark)" />}
+            <img src={src} alt={alt} loading="lazy" />
+        </picture>
     );
 }
 

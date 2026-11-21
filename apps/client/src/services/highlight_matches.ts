@@ -45,6 +45,11 @@ const ALWAYS_EXCLUDED = [ "script", "style", "title", "head", "html" ];
 
 const TEXT_BREAKS = new Set(TEXT_BREAK_ELEMENTS);
 
+/** The elements whose ranges a {@link WindowedHighlight} draws and removes together. */
+const RANGE_BLOCKS = TEXT_BREAK_ELEMENTS
+    .filter((name) => name !== "br" && name !== "hr")
+    .join(",");
+
 /**
  * The ranges of the matches of `regExp` in the text under `root`, in document order. A match
  * spans two text nodes only with `joinTextNodes`.
@@ -112,21 +117,122 @@ export function removeHighlights(name: HighlightName, ranges: Iterable<Range>) {
 }
 
 /**
+ * Draws ranges as part of the highlight `name` only while their block is within one view of the
+ * visible part of its scroller. Chromium processes every range in `CSS.highlights` again in each
+ * frame whose style changes, so thousands of drawn ranges slow down scrolling and animations.
+ */
+export class WindowedHighlight {
+
+    /** The ranges of each block. */
+    private readonly blocks = new Map<Element, Range[]>();
+    private readonly drawn = new Set<Element>();
+    private observer: IntersectionObserver | null = null;
+
+    constructor(private readonly name: HighlightName, private readonly root: HTMLElement) {}
+
+    /** Adds `ranges`, and draws at once those whose block is within the window. */
+    add(ranges: Iterable<Range>) {
+        const newBlocks: Element[] = [];
+        for (const range of ranges) {
+            const block = this.getBlock(range);
+            const held = this.blocks.get(block);
+            if (!held) {
+                this.blocks.set(block, [ range ]);
+                newBlocks.push(block);
+            } else {
+                held.push(range);
+                if (this.drawn.has(block)) addHighlights(this.name, [ range ]);
+            }
+        }
+        if (!newBlocks.length) return;
+
+        const scroller = getScroller(this.root);
+        const observer = this.getObserver(scroller);
+        const area = getDrawnArea(scroller);
+        for (const block of newBlocks) {
+            const { top, bottom } = block.getBoundingClientRect();
+            if (!observer || (bottom >= area.top && top <= area.bottom)) {
+                this.draw(block);
+            }
+            observer?.observe(block);
+        }
+    }
+
+    /** Removes every range. */
+    clear() {
+        this.observer?.disconnect();
+        this.observer = null;
+        for (const block of this.drawn) {
+            removeHighlights(this.name, this.blocks.get(block) ?? []);
+        }
+        this.drawn.clear();
+        this.blocks.clear();
+    }
+
+    /** The observer of the blocks, or `null` where the browser has none and every block draws. */
+    private getObserver(scroller: Element | null) {
+        if (typeof IntersectionObserver === "undefined") return null;
+
+        this.observer ??= new IntersectionObserver((entries, observer) => {
+            if (observer !== this.observer) return;
+            for (const { target, isIntersecting, boundingClientRect } of entries) {
+                if (isIntersecting) {
+                    this.draw(target);
+                } else if (boundingClientRect.width || boundingClientRect.height) {
+                    // A block with no box is hidden, as in a hidden split. It stays drawn.
+                    this.undraw(target);
+                }
+            }
+        }, { root: scroller, rootMargin: "100% 0px" });
+        return this.observer;
+    }
+
+    /** The block under `root` that holds the start of `range`, else the element of its start. */
+    private getBlock(range: Range) {
+        const { startContainer } = range;
+        const start = startContainer instanceof Element
+            ? startContainer
+            : startContainer.parentElement;
+        const block = start?.closest(RANGE_BLOCKS);
+        return block && this.root.contains(block) ? block : start ?? this.root;
+    }
+
+    private draw(block: Element) {
+        const ranges = this.blocks.get(block);
+        if (!ranges || this.drawn.has(block)) return;
+        this.drawn.add(block);
+        addHighlights(this.name, ranges);
+    }
+
+    private undraw(block: Element) {
+        if (!this.drawn.delete(block)) return;
+        removeHighlights(this.name, this.blocks.get(block) ?? []);
+    }
+
+}
+
+/**
  * Scrolls each scrolling ancestor of `range`, innermost first, so that the range sits in its
  * middle. `Element.scrollIntoView()` would center the whole parent element instead, which can be
  * a code block taller than the view.
  */
-export function scrollRangeIntoView(range: Range) {
-    scrollRectIntoView(range.startContainer.parentElement, () => range.getBoundingClientRect());
+export function scrollRangeIntoView(range: Range, behavior?: ScrollBehavior) {
+    scrollRectIntoView(
+        range.startContainer.parentElement,
+        () => range.getBoundingClientRect(),
+        behavior
+    );
 }
 
 /**
  * Scrolls `element` and its ancestors that scroll, innermost first, so that the rectangle that
- * `getRect()` returns in client coordinates sits in the middle of each.
+ * `getRect()` returns in client coordinates sits in the middle of each. Without `behavior`, each
+ * scroll follows the `scroll-behavior` of its box.
  */
 export function scrollRectIntoView(
     element: Element | null,
-    getRect: () => Pick<DOMRectReadOnly, "left" | "top" | "width" | "height">
+    getRect: () => Pick<DOMRectReadOnly, "left" | "top" | "width" | "height">,
+    behavior?: ScrollBehavior
 ) {
     for (let ancestor = element; ancestor; ancestor = ancestor.parentElement) {
         if (!isScrollable(ancestor)) continue;
@@ -135,7 +241,8 @@ export function scrollRectIntoView(
         const box = ancestor.getBoundingClientRect();
         ancestor.scrollBy({
             left: target.left + target.width / 2 - (box.left + box.width / 2),
-            top: target.top + target.height / 2 - (box.top + box.height / 2)
+            top: target.top + target.height / 2 - (box.top + box.height / 2),
+            ...behavior && { behavior }
         });
     }
 }
@@ -150,6 +257,22 @@ interface TextSegment {
 
 function getRegistry() {
     return typeof Highlight === "undefined" ? undefined : globalThis.CSS?.highlights;
+}
+
+/** The nearest element from `element` up that scrolls vertically, or `null` for the viewport. */
+function getScroller(element: Element) {
+    for (let ancestor: Element | null = element; ancestor; ancestor = ancestor.parentElement) {
+        if (/auto|scroll|overlay/.test(getComputedStyle(ancestor).overflowY)) return ancestor;
+    }
+    return null;
+}
+
+/** The client Y span that a {@link WindowedHighlight} draws: the view and one view on each side. */
+function getDrawnArea(scroller: Element | null) {
+    const { top, bottom } = scroller?.getBoundingClientRect()
+        ?? { top: 0, bottom: window.innerHeight };
+    const height = bottom - top;
+    return { top: top - height, bottom: bottom + height };
 }
 
 function isScrollable(element: Element) {

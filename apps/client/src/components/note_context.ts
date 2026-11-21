@@ -4,7 +4,9 @@ import type CodeMirror from "@triliumnext/codemirror";
 import type FNote from "../entities/fnote.js";
 import froca from "../services/froca.js";
 import hoistedNoteService from "../services/hoisted_note.js";
-import { getNoteIdAndParentIdFromUrl, type ViewScope } from "../services/navigation_state.js";
+import {
+    getNavigationTarget, getNoteIdAndParentIdFromUrl, isSameViewScope, type ViewScope
+} from "../services/navigation_state.js";
 import options from "../services/options.js";
 import protectedSessionHolder from "../services/protected_session_holder.js";
 import server from "../services/server.js";
@@ -12,6 +14,7 @@ import { shouldRedirectPinnedNavigation } from "../services/tab_pinning.js";
 import treeService from "../services/tree.js";
 import utils from "../services/utils.js";
 import type { ReactWrappedWidget } from "../widgets/basic_widget.js";
+import type { ScrollRailLayer } from "../widgets/scroll_rail_markers.js";
 import type { TocDocumentState } from "../widgets/sidebar/CachedToCProvider.js";
 import type { HighlightContext } from "../widgets/sidebar/HighlightsList.js";
 import type { HeadingContext } from "../widgets/sidebar/TableOfContents.js";
@@ -63,9 +66,6 @@ const READ_ONLY_CAPABLE_VIEW_TYPES: string[] = [
     "presentation",
     "table"
 ];
-
-/** View scope keys that hold the context's own state rather than what a navigation asks for. */
-const VIEW_STATE_KEYS: string[] = [ "isReadOnly", "readOnlyTemporarilyDisabled" ];
 
 /**
  * A section of the PDF sidebar for the viewer load `loadToken`: `loading` until the viewer of that
@@ -119,6 +119,10 @@ export interface NoteContextDataMap {
     saveState: {
         state: SaveState;
     };
+    /** Published by the shown text view of the note, for the highlight lines of the scroll rail. */
+    scrollRailHighlights: ScrollRailLayer;
+    /** Published by the find bar while a search has matches, for the scroll rail of the split. */
+    scrollRailFind: ScrollRailLayer;
     /** Published by the code editor of the note, so the status bar can show the cursor position. */
     codeEditor: CodeMirror;
     /**
@@ -746,20 +750,6 @@ export function openInCurrentNoteContext(
     } else {
         appContext.tabManager.openContextWithNote(notePath, { viewScope, activate: true });
     }
-}
-
-/**
- * Whether navigating with `requested` shows what `current` already shows. Ignores the
- * `VIEW_STATE_KEYS` and the keys a reader such as `consumeBookmark()` set to `undefined`.
- */
-function isSameViewScope(current: ViewScope | undefined, requested: ViewScope) {
-    return utils.areObjectsEqual(
-        getNavigationTarget(current ?? {}), getNavigationTarget(requested));
-}
-
-function getNavigationTarget(viewScope: ViewScope) {
-    return Object.fromEntries(Object.entries(viewScope).filter(([ key, value ]) =>
-        value !== undefined && !VIEW_STATE_KEYS.includes(key)));
 }
 
 export default NoteContext;

@@ -107,7 +107,7 @@ describe("NoteWrapperWidget", () => {
         for (const stop of [ split.firstElementChild, split.lastElementChild ]) {
             expect(stop?.classList.contains("caret-stop")).toBe(true);
             expect(stop?.getAttribute("aria-hidden")).toBe("true");
-            expect(stop?.textContent).toBe("​");
+            expect(stop?.textContent).toBe("\u200B");
         }
     });
 

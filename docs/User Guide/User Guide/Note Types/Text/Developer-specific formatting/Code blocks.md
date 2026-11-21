@@ -59,8 +59,7 @@ Should you encounter any issues after the migration, try running Trilium in safe
 
 ## Changing the language of a code block
 
-Simply click anywhere inside the code block and press again the code block button in the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a>:  
-![](Code%20blocks_image.png)
+Click anywhere inside the code block, then open the arrow next to the <span class="tn-icon cke cke-code-block"></span> _Code block_ button in the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a> and pick the language.
 
 ## Adjusting the list of languages
 

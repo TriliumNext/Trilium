@@ -2,7 +2,7 @@
 
 Every place a kind of change has to reach. The lists are where most of the time goes: adding a
 content type touches about twenty-five places in four packages, and a missed one fails silently
-(a Tiny box, a binary blob, a download link on share pages). No line numbers here, as these files
+(a Compact box, a binary blob, a download link on share pages). No line numbers here, as these files
 move fast: jump with `grep -n "<identifier>" <file>`.
 
 Before calling any of it done, check the four surfaces of the main skill: editable text, read-only
@@ -27,9 +27,11 @@ box writes on its content as `type-<contentType>`. Every list below keys on it.
   in `content_renderer.spec.ts`, which mocks every lazy component.
 - A branch in `getRenderedContent()`, before the generic image and file branches, which would take
   the content first.
-- `PREVIEWED_TYPES`: without it, `getEmbedBoxSize()` and `getUploadBoxSize()` fall back to Tiny, and
-  the attachment detail shows a text preview.
-- `getBoxSize()`: the default box size.
+- `PREVIEWED_TYPES`: without it, `getEmbedBoxSize()`, `getEmbedBoxDefaults()` and
+  `getUploadBoxDefaults()` fall back to Compact, and the attachment detail shows a text preview.
+- `getBoxSize()`: the default box size (Compact without a preview, Full for code, else
+  Resizable). Content with a compact form of its own goes in `hasCompactContent()` (commons
+  `content_embeds.ts`), which keeps it rendered at Compact and starts it untitled.
 - `SELF_UPDATING_TYPES`: the content follows its own saves, so the host skips its redraw.
 - `EDITABLE_NOTE_TYPES`: the note types that get a `NoteEditor`.
 - `getContentType()` (the attachment role), and `ATTACHED_CODE_MIME_TYPES` /
@@ -83,8 +85,9 @@ height of its own (`type-pdf`, `type-webView`).
   - Markdown import: `markdown_renderer.ts` keeps only `mermaid` as a fence language and turns
     another unknown one into auto-detect. Export maps languages through `rewriteLanguageTag()`
     (`services/export/markdown.ts`).
-- `prepareSourceEmbeds()` sets the default size (code Full, else Medium), allows only Small, Medium
-  and Full, forces `hideTitle`, and copies only the `data-*` attributes it lists. A new attribute
+- `prepareSourceEmbeds()` reads older sizes through `normalizeEmbedBox()`, sets the default size
+  (code Full, else Resizable), allows only Resizable and Full (`INLINE_BOX_SIZES`), forces
+  `hideTitle`, and copies only the `data-*` attributes it lists. A new attribute
   goes there, in `getEmbedCodeView()` (`content_renderer_text.ts`) and in `CODE_VIEW_ATTRIBUTES`
   (`apps/client/src/test/content_embed.ts`).
 

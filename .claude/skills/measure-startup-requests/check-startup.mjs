@@ -13,10 +13,11 @@
  * --out keeps the captures in <dir>, for CI to upload.
  *
  * Environment:
- *   STARTUP_CHECK_PORT  port of the --fixture server (default 37988)
+ *   STARTUP_CHECK_PORT  port of the --fixture server (default: a free port the OS picks)
  */
 import { spawn, spawnSync } from "child_process";
 import fs from "fs";
+import net from "net";
 import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -32,7 +33,7 @@ const baseUrlArg = args.find((arg, index) => !arg.startsWith("--") && (outIndex 
 fs.mkdirSync(outDir, { recursive: true });
 
 if (fixture) {
-    const port = process.env.STARTUP_CHECK_PORT ?? "37988";
+    const port = process.env.STARTUP_CHECK_PORT ?? await findFreePort();
     const baseUrl = `http://127.0.0.1:${port}`;
     const server = await startFixtureServer(port, baseUrl);
     let failed = false;
@@ -66,6 +67,21 @@ function checkLayout(mobile, baseUrl) {
     const check = run("analyze-requests.mjs", [ "check", captureFile, allowlist, ...(update ? [ "--update" ] : []) ]);
     console.log(`Capture kept at ${captureFile}`);
     return check.status === 0;
+}
+
+/**
+ * Returns a port no socket holds. A fixed port in the ephemeral range can be taken by an outgoing
+ * connection on the CI runner, which makes the server exit with `EADDRINUSE`.
+ */
+function findFreePort() {
+    return new Promise((resolve, reject) => {
+        const probe = net.createServer();
+        probe.once("error", reject);
+        probe.listen(0, "127.0.0.1", () => {
+            const { port } = probe.address();
+            probe.close(() => resolve(String(port)));
+        });
+    });
 }
 
 function run(script, scriptArgs) {

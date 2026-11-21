@@ -5,8 +5,6 @@ Organization is an important aspect of managing a knowledge base. When developin
 
 As such, the first step is to create a new note to gather all the themes.
 
-![](Creating%20a%20custom%20theme_5_Creating%20a%20custom%20theme_im.jpg)
-
 ## Step 2. Create the theme
 
 <table>
@@ -19,12 +17,10 @@ As such, the first step is to create a new note to gather all the themes.
             <td><img src="Creating a custom theme_1_Creating a custom theme_im.jpg"></td>
             <td>Then change the note type to a CSS code.</td>
         </tr>
-        <tr>
-            <td><img src="Creating a custom theme_Creating a custom theme_im.jpg"></td>
-            <td>In the attributes of the note (the&nbsp;<span class="tn-icon bx bx-list-check"></span> button in the&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a>), define the <code>#appTheme</code> attribute to point to any desired name. This is the name that will show up in the appearance section in settings.</td>
-        </tr>
     </tbody>
 </table>
+
+Then, in the attributes of the note (the <span class="tn-icon bx bx-list-check"></span> button in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a>), set the `#appTheme` label to any name. This is the name that shows up in the appearance section of the settings.
 
 ## Step 3. Define the theme's CSS
 

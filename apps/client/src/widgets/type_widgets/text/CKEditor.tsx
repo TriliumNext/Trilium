@@ -2,8 +2,9 @@ import {
     assignBlockId, type CKEditorError, CKTextEditor, ClassicEditor,
     type ContentEmbedDialogRequest, type DocumentHeading,
     getAnchorNames, getHeadings, getLinkAtSelection, type IconPickerRequest,
-    type InsertMediaRequest, type LinkAtSelection, type LinkDialogRequest, type LinkDisplayMode,
-    onTextEditorError, PopupEditor, replaceLinkAtSelection, SnippetDefinition
+    type InsertMediaRequest, isRedrawOnly, type LinkAtSelection, type LinkDialogRequest,
+    type LinkDisplayMode, onTextEditorError, PopupEditor, replaceLinkAtSelection,
+    SnippetDefinition
 } from "@triliumnext/ckeditor5";
 import { type BoxSize, DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { createPortal, HTMLAttributes, RefObject } from "preact";
@@ -522,11 +523,16 @@ export default function CKEditor({
         return () => notificationPlugin.off("show:info", onNotificationInfo);
     }, [ editor, onNotificationInfo ]);
 
-    // React to on change listener.
+    // `isRedrawOnly()` skips a link drawn again with a renamed note's title: saving it would send
+    // content that another editor or device can have changed since.
     useEffect(() => {
         if (!editor) return;
-        editor.model.document.on("change:data", onChange);
-        return () => editor.model.document.off("change:data", onChange);
+        const modelDocument = editor.model.document;
+        const listener = () => {
+            if (!isRedrawOnly(modelDocument)) onChange();
+        };
+        modelDocument.on("change:data", listener);
+        return () => modelDocument.off("change:data", listener);
     }, [ editor, onChange ]);
 
     return (

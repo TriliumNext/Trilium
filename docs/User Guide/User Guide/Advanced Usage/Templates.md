@@ -13,7 +13,12 @@ A typical example would be a "Book" template note, which might include:
 *   **Outline**: An outline for a book review, including sections like themes, conclusion, etc.
 *   **Child Notes**: Additional notes for highlights, summary, etc.
 
-![Template Example](Templates_template.png)
+```mermaid
+flowchart LR
+    template["Book<br>#template"] -->|"attributes, inherited"| instance["Instance note<br>~template=Book"]
+    template -->|"content, copied once"| instance
+    template -->|"child notes, deep-duplicated"| instance
+```
 
 ## Instance Note
 

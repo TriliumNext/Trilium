@@ -47,6 +47,16 @@ describe("markdown", () => {
         }
     });
 
+    it("keeps a code block that ends in a blank line the same through repeated round trips", () => {
+        const markdown = "```\nfoo\n\n```";
+        const html = markdownService.renderToHtml(markdown, "Title");
+        expect(html).toBe(`<pre><code class="language-text-x-trilium-auto">foo\n</code></pre>`);
+
+        const exported = markdownExportService.toMarkdown(html);
+        expect(exported).toBe(markdown);
+        expect(markdownService.renderToHtml(exported, "Title")).toBe(html);
+    });
+
     it("rewrites language of unknown language tags", () => {
         const result = markdownService.renderToHtml(trimIndentation`\
             \`\`\`unknownlanguage
