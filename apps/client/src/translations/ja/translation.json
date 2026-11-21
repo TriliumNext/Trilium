@@ -2477,7 +2477,8 @@
     "find_placeholder": "テキスト内を検索...",
     "replace_placeholder": "置換対象...",
     "replace": "置換",
-    "replace_all": "すべて置換"
+    "replace_all": "すべて置換",
+    "nothing_replaced": "検索が完了しなかったため、何も置換されませんでした。"
   },
   "title_bar_buttons": {
     "window-on-top": "常に手前に表示"
