@@ -6,13 +6,12 @@ import Component from "../components/component";
 import type NoteContext from "../components/note_context";
 import { revealElement } from "../services/bookmark_jump";
 import options from "../services/options";
-import { getEffectiveThemeStyle } from "../services/theme";
 import { rectReads, resetLayoutRecords, scrollCalls, stubBox } from "../test/layout_stubs";
 import { ParentComponent } from "./react/react_utils";
 import type { RailMetrics } from "./scroll_rail";
 import {
-    drawRows, findRow, getHighlights, goToTarget, mapIntoClip, ScrollRailLayer, ScrollRailLocator,
-    toRow, toRows, useScrollRailHighlights
+    drawRows, findRow, getHighlights, getMarkerHue, goToTarget, mapIntoClip, ScrollRailLayer,
+    ScrollRailLocator, toRow, toRows, useScrollRailHighlights
 } from "./scroll_rail_markers";
 
 vi.mock("../services/bookmark_jump", () => ({ revealElement: vi.fn() }));
@@ -160,8 +159,21 @@ describe("getHighlights", () => {
         });
 });
 
+describe("getMarkerHue", () => {
+    it("reads the hue of a color in any legacy syntax, and none for a gray or an unread color",
+        () => {
+            expect([ "#e64d4d", "rgb(230, 77, 77)", "red" ].map(getMarkerHue)).toEqual([ 0, 0, 0 ]);
+            expect(getMarkerHue("hsl(60, 75%, 60%)")).toBe(60);
+            // A pale tint keeps its hue, rounded to a whole degree.
+            expect(getMarkerHue("rgb(234, 228, 242)")).toBe(266);
+            expect(getMarkerHue("rgba(10, 20, 30, 0.5)")).toBe(210);
+            expect([ "#555555", "#f6f8fa", "transparent", "lab(50 20 30)", "var(--x)" ]
+                .map(getMarkerHue)).toEqual([ null, null, null, null, null ]);
+        });
+});
+
 describe("useScrollRailHighlights", () => {
-    it("publishes the highlights while shown, and reads them again for new formats or theme",
+    it("publishes the highlights while shown, and reads them again for new formats",
         () => {
             stubShownColors();
             loadHighlightsList([ "color", "bgColor" ]);
@@ -194,12 +206,6 @@ describe("useScrollRailHighlights", () => {
             expect(refresh).toHaveBeenCalledOnce();
             layer.source.readTargets();
             expect(layer.source.getColors?.(0)).toEqual([ "red" ]);
-
-            const themeStyle = getEffectiveThemeStyle() === "dark" ? "light" : "dark";
-            act(() => {
-                void parent.handleEvent("themeChanged", { themeStyle });
-            });
-            expect(refresh).toHaveBeenCalledTimes(2);
 
             act(() => render(null, container));
             expect(noteContext.data.has("scrollRailHighlights")).toBe(false);

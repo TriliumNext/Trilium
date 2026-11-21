@@ -9,6 +9,7 @@ import NoteContext from "../components/note_context";
 import contextMenu from "../menus/context_menu";
 import { revealElement } from "../services/bookmark_jump";
 import options from "../services/options";
+import { getEffectiveThemeStyle } from "../services/theme";
 import { resetLayoutRecords, scrollCalls, stubBox, type StubbedBox } from "../test/layout_stubs";
 import { NoteContextContext, ParentComponent } from "./react/react_utils";
 import ScrollRail, {
@@ -1126,6 +1127,53 @@ describe("ScrollRail lines", () => {
             afterPaint();
             expect(readHighlights).toHaveBeenCalledOnce();
             expect(drawn).toEqual(highlightLines);
+        });
+
+    it("draws a highlight's hue at the theme's saturation and lightness, and a gray in its gray",
+        async () => {
+            const theme = document.body.appendChild(document.createElement("style"));
+            const setPreset = (lightness: string, gray: string) => {
+                theme.textContent = `.scroll-rail > canvas {
+                    --scroll-rail-highlight-saturation: 70%;
+                    --scroll-rail-highlight-lightness: ${lightness};
+                    --scroll-rail-highlight-gray-color: ${gray};
+                }`;
+            };
+            setPreset("65%", "#a6a6a6");
+            mountRail();
+            const highlights = [ 100, 250, 300 ].map((top) => append(content, "span",
+                { top, height: 20 }));
+            const colors = [
+                [ "#e64d4d", "rgb(234, 228, 242)" ],
+                [ "#555555", "#f6f8fa" ],
+                [ "lab(50 20 30)", "rgb(230, 77, 77)" ]
+            ];
+            await publish({
+                readTargets: () => highlights,
+                getColors: (index) => colors[index]
+            }, HIGHLIGHTS);
+            afterPaint();
+
+            // A pale purple keeps its hue; two grays share one segment, as do a color the rail
+            // cannot read and a gray.
+            expect(drawn).toEqual([
+                [ "hsl(0deg 70% 65%)", 99, 2, 0.5 ],
+                [ "hsl(266deg 70% 65%)", 99, 2, 0.5 ],
+                [ "#a6a6a6", 249, 2, 0.5 ],
+                [ "#a6a6a6", 299, 2, 0.5 ],
+                [ "hsl(0deg 70% 65%)", 299, 2, 0.5 ]
+            ]);
+
+            setPreset("45%", "#737373");
+            act(() => {
+                void parent.handleEvent("themeChanged", {
+                    themeStyle: getEffectiveThemeStyle() === "dark" ? "light" : "dark"
+                });
+            });
+            expect(drawn.map(([ color ]) => color)).toEqual([
+                "hsl(0deg 70% 45%)", "hsl(266deg 70% 45%)", "#737373", "#737373",
+                "hsl(0deg 70% 45%)"
+            ]);
         });
 
     it("leaves out the highlights while their option is off, which the rail's menu toggles",

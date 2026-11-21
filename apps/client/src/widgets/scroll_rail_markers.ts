@@ -1,10 +1,11 @@
+import Color from "color";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import type NoteContext from "../components/note_context";
 import { revealElement } from "../services/bookmark_jump";
 import { scrollRectIntoView } from "../services/highlight_matches";
 import options from "../services/options";
-import { useColorScheme, useTriliumOption } from "./react/hooks/options";
+import { useTriliumOption } from "./react/hooks/options";
 import type { RailMetrics } from "./scroll_rail";
 
 /**
@@ -106,9 +107,6 @@ export class ScrollRailLayer {
 
 }
 
-/** Whether the highlight lines take the colors as the theme adapts them, else as picked. */
-const IS_HIGHLIGHT_COLOR_ADAPTED = false;
-
 /**
  * Publishes the highlights under the element that `getRoot()` returns, outside included notes, for
  * the lines of the scroll rail of `noteContext`, while `isShown`. The rail reads them again after
@@ -123,7 +121,6 @@ export function useScrollRailHighlights(
     const getRootRef = useRef(getRoot);
     getRootRef.current = getRoot;
     const [ formats ] = useTriliumOption("highlightsList");
-    const colorScheme = useColorScheme();
     const [ layer ] = useState(() => {
         let colors: string[][] = [];
         return new ScrollRailLayer({
@@ -149,10 +146,9 @@ export function useScrollRailHighlights(
         };
     }, [ noteContext, noteId, isShown, layer ]);
 
-    // Adapted colors change with the theme.
     useEffect(() => {
         layer.refresh();
-    }, [ layer, formats, colorScheme ]);
+    }, [ layer, formats ]);
 }
 
 /** A run of text with a font or a background color, and its colors. */
@@ -179,10 +175,9 @@ export function getHighlights(root: Element | null | undefined, formats: readonl
         if ((!hasBackground && !hasColor) || !element.textContent?.trim()
             || !isOutsideEmbeds(element, root)) continue;
 
-        const style = IS_HIGHLIGHT_COLOR_ADAPTED ? getComputedStyle(element) : element.style;
         const colors: string[] = [];
-        if (hasBackground) colors.push(style.backgroundColor);
-        if (hasColor) colors.push(style.color);
+        if (hasBackground) colors.push(element.style.backgroundColor);
+        if (hasColor) colors.push(element.style.color);
         highlights.push({ element, colors });
     }
     return highlights;
@@ -197,6 +192,23 @@ function isOutsideEmbeds(element: Element, root: Element) {
 /** The values of the `highlightsList` option, as `options.getJson()` returns it. */
 function toFormats(value: unknown): string[] {
     return Array.isArray(value) ? value : [];
+}
+
+/** The chroma, from 0 to 100, below which a color counts as a gray. */
+const GRAY_CHROMA_LIMIT = 5;
+
+/**
+ * The hue of the CSS color `color` in whole degrees, or `null` for a gray or a color it cannot
+ * read.
+ */
+export function getMarkerHue(color: string) {
+    let parsed;
+    try {
+        parsed = Color(color);
+    } catch {
+        return null;
+    }
+    return parsed.chroma() < GRAY_CHROMA_LIMIT ? null : Math.round(parsed.hue());
 }
 
 /** The rows of a layer's lines on the rail. */

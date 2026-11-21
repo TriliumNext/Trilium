@@ -17,6 +17,12 @@ export interface ScrollRailKind {
     color: string;
     /** The color of the emphasized marker, else `color`. */
     emphasisColor?: string;
+    /**
+     * The saturation and lightness that the markers' own colors are drawn at, keeping their hue,
+     * and the color of a gray marker. While the theme sets no saturation or lightness, the colors
+     * are drawn as given.
+     */
+    colorPreset?: ScrollRailColorPreset;
     /** The opacity of the lines, from 0 to 1. Defaults to 1. */
     opacity?: number;
     /** Whether the rail reads the layer again after a change of the note's content. */
@@ -25,11 +31,23 @@ export interface ScrollRailKind {
     isExclusive?: boolean;
 }
 
+/** The CSS variables of a kind's saturation, lightness and gray. */
+export interface ScrollRailColorPreset {
+    saturation: string;
+    lightness: string;
+    grayColor: string;
+}
+
 /** The kinds of markers, in drawing order. */
 export const SCROLL_RAIL_KINDS: readonly ScrollRailKind[] = [
     {
         key: "scrollRailHighlights",
         color: "--main-text-color",
+        colorPreset: {
+            saturation: "--scroll-rail-highlight-saturation",
+            lightness: "--scroll-rail-highlight-lightness",
+            grayColor: "--scroll-rail-highlight-gray-color"
+        },
         opacity: 0.5,
         isReadOnContentChange: true
     },
