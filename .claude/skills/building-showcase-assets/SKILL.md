@@ -15,13 +15,15 @@ pnpm --filter showcase play       # Google Play: icon, screenshots, feature grap
 pnpm --filter showcase flathub    # Flathub: desktop window screenshots + preview with checks
 pnpm --filter showcase hero       # website hero → apps/website/public/hero{,-mobile}.html
 pnpm --filter showcase website    # website screenshots → apps/website/public/*.webp
+pnpm --filter showcase user-guide # User Guide heroes → docs/User Guide/**/*_demo.webp
 pnpm --filter showcase start <targets…> [--only tree,text] [--devices phone,tablet]
     [--url http://localhost:8080] [--port 37991]
 ```
 
 Targets: `icon`, `screenshots`, `feature`, `preview` (the `play` group, the default),
-`flathub`, `flathub-preview`, `hero`, `website`. `--only` takes scene IDs (or website file
-names), `--url` reuses a running server that already holds the demo plus the seeds and needs
+`flathub`, `flathub-preview`, `hero`, `website`, `user-guide` (never `docs`: `pnpm docs` is a
+pnpm built-in). `--only` takes scene IDs (or website file names, or User Guide image names),
+`--url` reuses a running server that already holds the demo plus the seeds and needs
 no login (`flathub` always boots its own).
 
 ## Where each output goes
@@ -34,6 +36,7 @@ no login (`flathub` always boots its own).
 | `flathub-preview` | `flathub-preview.html` | nowhere: a mock of the Flathub page with Flathub's quality checks | open the file |
 | `hero` | `hero/hero.html`, `hero/hero-mobile.html` (+ app/snapshot/diff PNGs per variant) | `apps/website/public/`, iframed by the home page | copied **only when** every snapshot differs from the app by ≤ 0.5 % of pixels in both schemes |
 | `website` | `website/<file>.webp`, `<file>-dark.webp` | `apps/website/public/` | copied on every run; the home page serves `-dark` through `darkSrc` / `darkImageUrl` in `pages/Home/index.tsx` |
+| `user-guide` | `docs/<image>.webp` | the attachments of User Guide pages | overwritten on every run, and the page's `<img>` resized to match; then `docs.mjs sync` (below) |
 
 The Play texts live in `src/play/listing.json` (name, developer, category, short and full
 description, feature graphic tagline and alt). The Flathub texts live in the metainfo,
@@ -68,6 +71,22 @@ web clipper). Change one, then the other.
   seed's notes) to the file it replaces. `area: "note"` keeps everything right of the tree in
   a window sized so that area has the 16:10 of `.showcase-image-frame`; `"tree"` keeps the
   tree pane. Light and dark are captured one after the other per shot.
+- A shot whose view draws after `settle()` returns needs a `prepare` that waits for it:
+  `waitForCalendar` waits for a `.calendar-event` chip. FullCalendar's own classes are hashed
+  (`fc-forma-…`), so `.fc-event` never matches.
+
+### User Guide wiring
+
+- `DOCS_SHOTS` in `src/docs/build.ts` maps a scene or query to a `page` under
+  `docs/User Guide/User Guide` and the `image` beside it, captured light at 1x through the
+  website's `captureShots()` (an `area: "window"` shot keeps tree and note; `colorSchemes`
+  picks dark). The build only **overwrites**: it fails on an image not yet in `!!!meta.json`.
+- **New figure**: register it once with
+  `node .claude/skills/writing-documentation/docs.mjs image "<page>" <any.webp> --title demo.webp`,
+  put the `<figure>` in the page, add the shot, run `user-guide`, then `docs.mjs sync` and
+  `check`. Snapshot the dirty docs before the sync and restore only the pages it churned.
+- The page text must match the demo: a hero shows the seeded "Trip to Rome" notes, so a page
+  that describes its example names what the shot shows.
 
 ## How it is built
 

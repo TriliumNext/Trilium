@@ -11,11 +11,13 @@
  *   published to `apps/website/public/hero.html` once it matches the app.
  * - The website's screenshots (`website/`): note types, collections and the note tree in the
  *   desktop layout, light and dark, as WebP in `out/website` and `apps/website/public`.
+ * - The User Guide (`docs/`, target `user-guide`): heroes of note types, collections and the tree, light, at 1x, over
+ *   their attachments in `docs/User Guide`.
  *
  * Usage:
- *   pnpm --filter showcase play | flathub | hero | website
+ *   pnpm --filter showcase play | flathub | hero | website | user-guide
  *   pnpm --filter showcase start [icon] [screenshots] [feature] [preview] [flathub]
- *       [flathub-preview] [hero] [website]
+ *       [flathub-preview] [hero] [website] [user-guide]
  *       [--only tree,text] [--devices phone,tablet] [--url http://localhost:8080] [--port 37991]
  *
  * With no target it builds the Play Store assets only. The demo document is a fresh one with the
@@ -36,6 +38,7 @@
 import fs from "fs";
 import { parseArgs } from "util";
 
+import { DOCS_TARGETS } from "./docs/build.ts";
 import { FLATHUB_TARGETS } from "./flathub/build.ts";
 import { HERO_TARGETS } from "./hero/build.ts";
 import { checkPlayAssets, PLAY_TARGETS } from "./play/build.ts";
@@ -45,7 +48,7 @@ import { DEVICES } from "./shared/scenes.ts";
 import { WEBSITE_TARGETS } from "./website/build.ts";
 
 const BUILDERS: Record<string, Builder> = {
-    ...PLAY_TARGETS, ...FLATHUB_TARGETS, ...HERO_TARGETS, ...WEBSITE_TARGETS
+    ...PLAY_TARGETS, ...FLATHUB_TARGETS, ...HERO_TARGETS, ...WEBSITE_TARGETS, ...DOCS_TARGETS
 };
 
 /** Names that stand for several targets; `play` is built when none is named. */

@@ -10,7 +10,8 @@
     "play": "node src/main.ts play",
     "flathub": "node src/main.ts flathub flathub-preview",
     "hero": "node src/main.ts hero",
-    "website": "node src/main.ts website"
+    "website": "node src/main.ts website",
+    "user-guide": "node src/main.ts user-guide"
   },
   "devDependencies": {
     "@types/pngjs": "6.0.5",
