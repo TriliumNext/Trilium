@@ -2669,7 +2669,7 @@
   "shared_switch": {
     "shared": "공유",
     "shared-branch": "이 노트는 공유 노트로만 존재하므로 공유를 해제하면 삭제됩니다. 계속하여 이 노트를 삭제하시겠습니까?",
-    "inherited": "노트는 조상으로부터 상속받아 공유되기 때문에 여기서 해제할 수 없습니다."
+    "inherited": "이 노트는 상위 노트로부터 공유 설정을 상속받았기 때문에 여기에서 공유를 해제할 수 없습니다."
   },
   "template_switch": {
     "template": "템플릿"
@@ -2685,7 +2685,8 @@
     "find_placeholder": "텍스트에서 찾기...",
     "replace_placeholder": "바꿀 내용...",
     "replace": "바꾸기",
-    "replace_all": "모두 바꾸기"
+    "replace_all": "모두 바꾸기",
+    "nothing_replaced": "검색이 완료되지 않아 아무것도 바꾸지 못했습니다."
   },
   "highlights_list_2": {
     "title_with_count_other": "하이라이트 {{count}}개",
@@ -3950,7 +3951,11 @@
     "annotation_text_box": "{{pageNumber}}페이지에 텍스트 상자",
     "copy_reference": "참조 복사",
     "page_reference": "{{pageNumber}}페이지",
-    "annotation_reference": "{{pageNumber}}페이지의 주석"
+    "annotation_reference": "{{pageNumber}}페이지의 주석",
+    "pages_title": "페이지",
+    "annotations_title": "주석",
+    "attachments_title": "첨부 파일",
+    "layers_title": "레이어"
   },
   "platform_indicator": {
     "available_on": "{{platform}}에서 이용 가능"
