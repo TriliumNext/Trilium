@@ -127,7 +127,11 @@ A full build takes about ten minutes.
   That is also why the metainfo's `<releases>` — the version Flathub displays — has to be
   right in the commit that gets tagged. `pnpm chore:update-version` regenerates it from
   the newest five `vX.Y.Z` tags, so it is never hand-edited and never accumulates drift;
-  the version being prepared is dated today until its own tag supplies the date.
+  the version being prepared is dated today until its own tag supplies the date. Each entry
+  carries its release's notes, which Flathub requires: the overview paragraphs of
+  `docs/Release Notes/Release Notes/v<X.Y.Z>.md` (`releaseDescription()`), or for notes older
+  than the overview, their key-highlight titles or top-level entries. The script fails when a
+  listed version has no release note, so the note is written before the bump.
 - **Sandboxed data dir, narrow filesystem access.** `trilium.sh` sets
   `TRILIUM_DATA_DIR` to `$XDG_DATA_HOME/trilium-data` (i.e. inside `~/.var/app`), falling
   back to host `~/.local/share/trilium-data` when that exists; a `flatpak override` wins.

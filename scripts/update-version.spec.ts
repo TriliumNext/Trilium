@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseReleaseTags, renderMetainfoReleases, selectReleases } from "./update-version";
+import { parseReleaseTags, releaseDescription, renderMetainfoReleases, selectReleases } from "./update-version";
 
 /** Trimmed to the shape the script anchors on, indentation included. */
 const METAINFO = `<?xml version="1.0" encoding="UTF-8"?>
@@ -72,7 +72,115 @@ describe("selectReleases", () => {
     });
 });
 
+describe("releaseDescription", () => {
+    it("takes the overview paragraphs, as AppStream markup", () => {
+        const notes = [
+            "# v0.108.0",
+            "> [!NOTE]",
+            "> If you enjoyed this release, consider [donating](https://example.com).",
+            "",
+            "> [!TIP]",
+            "> For Linux users: Trilium is now on Flathub!",
+            "",
+            "Links can now point at a [heading](https://example.com/1) in **text** and",
+            "Markdown notes, with `#anchor` links &amp; _real_ search&nbsp;results.",
+            "",
+            "Notes <kbd>Ctrl</kbd>+click to open, and snake_case_names stay as they are.",
+            "",
+            "## 💡 Key highlights",
+            "",
+            "### Vim mode in text notes",
+            "",
+            "Not part of the overview."
+        ].join("\n");
+
+        expect(releaseDescription(notes)).toEqual([
+            { paragraph: "Links can now point at a heading in text and Markdown notes, with "
+                + "<code>#anchor</code> links &amp; <em>real</em> search results." },
+            { paragraph: "Notes Ctrl+click to open, and snake_case_names stay as they are." }
+        ]);
+    });
+
+    it("unwraps an italic lead and skips the collapsible notices around it", () => {
+        const notes = [
+            "# v0.105.0",
+            "_The release that makes Trilium lighter: images shrink themselves._",
+            "",
+            "<details>",
+            "    <summary>🚨 For ARM64 Docker users</summary>",
+            "",
+            "    services:",
+            "</details>",
+            "",
+            "## 💡 Key highlights"
+        ].join("\n");
+
+        expect(releaseDescription(notes)).toEqual([
+            { paragraph: "The release that makes Trilium lighter: images shrink themselves." }
+        ]);
+    });
+
+    it("lists the key highlights when the note has no overview", () => {
+        const notes = [
+            "# v0.106.0",
+            "## 💡 Key highlights",
+            "<figure class=\"image\"><img src=\"v0.106.0_image.png\"></figure>",
+            "### 📋 Kanban board overhaul by @adoriandoran",
+            "The board has been rebuilt.",
+            "### Spreadsheets",
+            "Text.",
+            "### And others…",
+            "## 🐞 Bugfixes",
+            "### Not a highlight"
+        ].join("\n");
+
+        expect(releaseDescription(notes)).toEqual([
+            { items: [ "Kanban board overhaul", "Spreadsheets" ] }
+        ]);
+    });
+
+    it("lists the top-level entries of a patch release", () => {
+        const notes = [
+            "# v0.106.1",
+            "### 🔒 Security",
+            "1.  [Updated Node.js](https://example.com) to 24.22.1, taking in its fixes:",
+            "    1.  **A nested detail** that stays out.",
+            "2.  Signing in no longer fails behind a proxy.",
+            "### 🐞 Bugfixes",
+            "*   The tree kept a deleted note."
+        ].join("\n");
+
+        expect(releaseDescription(notes)).toEqual([ { items: [
+            "Updated Node.js to 24.22.1, taking in its fixes.",
+            "Signing in no longer fails behind a proxy.",
+            "The tree kept a deleted note."
+        ] } ]);
+    });
+});
+
 describe("renderMetainfoReleases", () => {
+    it("writes each release's description inside its entry", () => {
+        const updated = renderMetainfoReleases(METAINFO, [
+            { version: "0.106.0", date: "2026-09-22", description: [
+                { paragraph: "Boards &amp; <em>more</em>." },
+                { items: [ "Kanban board overhaul", "Spreadsheets" ] }
+            ] }
+        ]);
+
+        expect(updated).toContain(`  <releases>
+    <release version="0.106.0" date="2026-09-22">
+      <description>
+        <p>Boards &amp; <em>more</em>.</p>
+        <ul>
+          <li>Kanban board overhaul</li>
+          <li>Spreadsheets</li>
+        </ul>
+      </description>
+      <url type="details">https://github.com/TriliumNext/Trilium/releases/tag/v0.106.0</url>
+    </release>
+  </releases>`);
+    });
+
     it("rewrites the block, keeping the surrounding document and indentation", () => {
         const updated = renderMetainfoReleases(METAINFO, [
             { version: "0.106.0", date: "2026-09-22" },

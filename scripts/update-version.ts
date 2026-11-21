@@ -5,24 +5,31 @@
  * into the apps, so that it is properly displayed. It also regenerates the Flathub
  * metainfo's `<releases>`, which decides the version Flathub displays: the manifest
  * installs that file from the tagged checkout, so the entry has to be in the commit that
- * gets tagged.
+ * gets tagged. Each entry carries the release's notes, taken from the overview of its
+ * release note in `docs/Release Notes/Release Notes`.
  */
 
 import { execFileSync } from "child_process";
-import { readFileSync, writeFileSync } from "fs";
+import { existsSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import { fileURLToPath } from "url";
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const ROOT = join(SCRIPT_PATH, "..", "..");
 const METAINFO_PATH = join(ROOT, "apps", "desktop", "flatpak", "org.triliumnotes.Trilium.metainfo.xml");
+const RELEASE_NOTES_DIR = join(ROOT, "docs", "Release Notes", "Release Notes");
 const RELEASE_URL = "https://github.com/TriliumNext/Trilium/releases/tag/v";
 const MAX_RELEASE_ENTRIES = 5;
+const MAX_DESCRIPTION_ITEMS = 8;
 
 export interface Release {
     version: string;
     date: string;
+    description?: DescriptionBlock[];
 }
+
+/** A block of a release's AppStream description, its text already in AppStream markup. */
+export type DescriptionBlock = { paragraph: string } | { items: string[] };
 
 export function main() {
     const version = getVersion(join(ROOT, "package.json"));
@@ -40,7 +47,8 @@ export function main() {
     if (tags.length === 0) {
         throw new Error("Found no release tags to date the metainfo entries with.");
     }
-    const releases = selectReleases(tags, version, new Date().toISOString().slice(0, 10));
+    const releases = selectReleases(tags, version, new Date().toISOString().slice(0, 10))
+        .map((release) => ({ ...release, description: releaseDescription(readReleaseNotes(release.version)) }));
     writeFileSync(METAINFO_PATH,
         renderMetainfoReleases(readFileSync(METAINFO_PATH, "utf-8"), releases));
 }
@@ -79,12 +87,113 @@ export function renderMetainfoReleases(metainfo: string, releases: Release[]): s
     }
 
     return metainfo.replace(block, (_, indent: string) => {
-        const entries = releases.map(({ version, date }) =>
+        const entries = releases.map(({ version, date, description }) =>
             `${indent}  <release version="${version}" date="${date}">\n`
+            + renderDescription(description ?? [], `${indent}    `)
             + `${indent}    <url type="details">${RELEASE_URL}${version}</url>\n`
             + `${indent}  </release>\n`);
         return `${indent}<releases>\n${entries.join("")}${indent}</releases>`;
     });
+}
+
+/**
+ * The notes Flathub shows for a release, from its release note: the overview paragraphs
+ * above the first section. Notes written before the overview existed fall back to the titles
+ * of their key highlights, and patch releases without highlights to their top-level entries.
+ */
+export function releaseDescription(markdown: string): DescriptionBlock[] {
+    const lines = markdown.split("\n").slice(1);
+    const firstSection = lines.findIndex((line) => /^#{2,3} /.test(line));
+    const overview = paragraphs(lines.slice(0, firstSection === -1 ? lines.length : firstSection))
+        .filter((paragraph) => !/^[>*\-|!<]|^\d+\./.test(paragraph))
+        .map((paragraph) => ({ paragraph: inlineMarkdown(paragraph.replace(/^_(.*)_$/s, "$1")) }));
+    if (overview.length > 0) {
+        return overview;
+    }
+
+    const highlights = lines.findIndex((line) => /^## .*Key highlights/.test(line));
+    if (highlights !== -1) {
+        const end = lines.findIndex((line, index) => index > highlights && line.startsWith("## "));
+        const titles = lines.slice(highlights + 1, end === -1 ? lines.length : end)
+            .filter((line) => line.startsWith("### "))
+            .map((line) => inlineMarkdown(line.slice(4).replace(/^[^\p{L}\p{N}]+/u, "")
+                .replace(/ by @[\w-]+( and @[\w-]+)*$/, "")))
+            .filter((title) => !/^and others/i.test(title));
+        return [ { items: titles.slice(0, MAX_DESCRIPTION_ITEMS) } ];
+    }
+
+    const entries = lines
+        .map((line) => /^(?:\d+\.|\*|-)\s+(.*)$/.exec(line)?.[1])
+        .filter((entry): entry is string => !!entry)
+        .map((entry) => inlineMarkdown(entry).replace(/:$/, "."));
+    return entries.length > 0 ? [ { items: entries.slice(0, MAX_DESCRIPTION_ITEMS) } ] : [];
+}
+
+/** The paragraphs of a run of Markdown lines, leaving out `<details>` blocks. */
+function paragraphs(lines: string[]): string[] {
+    const result: string[] = [];
+    let current: string[] = [];
+    let inDetails = false;
+    const flush = () => {
+        if (current.length > 0) result.push(current.join(" ").trim());
+        current = [];
+    };
+    for (const line of lines) {
+        if (line.trim().startsWith("<details")) inDetails = true;
+        if (inDetails) {
+            if (line.includes("</details>")) inDetails = false;
+            flush();
+            continue;
+        }
+        if (line.trim() === "") flush();
+        else current.push(line.trim());
+    }
+    flush();
+    return result;
+}
+
+/**
+ * Converts the inline Markdown of a release note to the markup AppStream allows: links and
+ * HTML tags keep only their text, bold becomes plain, and emphasis and code spans map to
+ * `<em>` and `<code>`.
+ */
+function inlineMarkdown(text: string): string {
+    const plain = text
+        .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+        .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+        .replace(/<[^>]+>/g, "")
+        .replace(/&nbsp;/g, " ")
+        .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&#39;/g, "'")
+        .replace(/&amp;/g, "&");
+    return plain
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/`([^`]+)`/g, "<code>$1</code>")
+        .replace(/\*\*([^*]+)\*\*/g, "$1")
+        .replace(/(^|[^\w])_([^_]+)_(?=[^\w]|$)/g, "$1<em>$2</em>")
+        .replace(/(^|[^\w*])\*([^*]+)\*(?=[^\w*]|$)/g, "$1<em>$2</em>")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function renderDescription(blocks: DescriptionBlock[], indent: string): string {
+    if (blocks.length === 0) {
+        return "";
+    }
+    const body = blocks.map((block) => ("paragraph" in block
+        ? `${indent}  <p>${block.paragraph}</p>\n`
+        : `${indent}  <ul>\n`
+            + block.items.map((item) => `${indent}    <li>${item}</li>\n`).join("")
+            + `${indent}  </ul>\n`)).join("");
+    return `${indent}<description>\n${body}${indent}</description>\n`;
+}
+
+function readReleaseNotes(version: string): string {
+    const file = join(RELEASE_NOTES_DIR, `v${version}.md`);
+    if (!existsSync(file)) {
+        throw new Error(`Found no release note for v${version} at ${file}; Flathub shows it as the `
+            + "release's notes, so write it first (pnpm chore:release-notes).");
+    }
+    return readFileSync(file, "utf-8");
 }
 
 function patchPackageJson(packageJsonPath: string, version: string) {

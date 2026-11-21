@@ -51,18 +51,44 @@
   </screenshots>
   <releases>
     <release version="0.108.0-rc.1" date="2026-11-21">
+      <description>
+        <p>Links can now point at a heading or an anchor instead of a whole note, in text and Markdown notes as well as in PDF, EPUB, Word and OpenDocument files. The Outline tab lists the headings of those files too, with a filter and a way to copy a reference to any of them. Text notes also gain collapsible headings, aside blocks and a scrollbar that marks search results and colored text.</p>
+        <p>Vim users can now bring their habits to text notes, with a Vim mode that understands paragraphs, lists, tables and embedded content. Trilium also starts noticeably faster, on desktop and on phones.</p>
+        <p>Android gets its first stable release, with the APK attached below. It syncs with a server of the same version and installs beside the nightly build, so moving from the nightly means syncing again or restoring a backup.</p>
+      </description>
       <url type="details">https://github.com/TriliumNext/Trilium/releases/tag/v0.108.0-rc.1</url>
     </release>
     <release version="0.107.0" date="2026-11-08">
+      <description>
+        <p>This is the release where a text note stops being a single document. Notes can be embedded, quoted and referenced inside other notes and edited where they appear, laid out in columns and tabs, and mixed with drawings, attached files and video. Tables in text notes get the tools they had been missing, from merged cells to sorting, and the old layout is gone, a year after the new one replaced it.</p>
+        <p>Around the editor, the parts of the app that everyone touches were rebuilt: the context menus and the note autocomplete, the full search and the jump dialog, the launch bar and the tree. Shared pages look like the app again and render collections with their own views, and the calendar and geo map collections get the properties dialogs the board already had.</p>
+        <p>The AI integration becomes something to trust with a real database: every tool call asks before it reads or changes a note, a ChatGPT Codex subscription can stand in for an API key, and local models get web search through a search engine of your choice. On phones, iOS has a new layout and both apps navigate without a sidebar.</p>
+      </description>
       <url type="details">https://github.com/TriliumNext/Trilium/releases/tag/v0.107.0</url>
     </release>
     <release version="0.106.1" date="2026-10-23">
+      <description>
+        <ul>
+          <li>Updated Node.js in the Docker images to 24.22.1 (22.23.4 for the legacy image), taking in the Node.js security releases of 21 October 2026.</li>
+        </ul>
+      </description>
       <url type="details">https://github.com/TriliumNext/Trilium/releases/tag/v0.106.1</url>
     </release>
     <release version="0.106.0" date="2026-09-25">
+      <description>
+        <ul>
+          <li>Kanban board overhaul</li>
+          <li>Significant improvements to search</li>
+          <li>Geomap now features a built-in location search, current position indicator and shapes</li>
+          <li>Templates can now define a default parent for new notes</li>
+        </ul>
+      </description>
       <url type="details">https://github.com/TriliumNext/Trilium/releases/tag/v0.106.0</url>
     </release>
     <release version="0.105.0" date="2026-08-19">
+      <description>
+        <p>The release that makes Trilium lighter, more visual and easier to organise: images shrink themselves, attributes get a home of their own, and your backups can finally be restored.</p>
+      </description>
       <url type="details">https://github.com/TriliumNext/Trilium/releases/tag/v0.105.0</url>
     </release>
   </releases>

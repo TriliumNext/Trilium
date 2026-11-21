@@ -40,6 +40,11 @@ and the nightly's `unreleased` note do not. Two overview entries are an error ev
 `consume` removes it with the other entries, and moves it to `pre-release/` for an rc, so the
 final release reuses it.
 
+The overview is also the release's notes on Flathub: `pnpm chore:update-version` copies its
+paragraphs from the rendered release note into the Flatpak metainfo, where app stores such as
+GNOME Software show them. Write it so it reads on its own there, without pointing at the
+GitHub release page ("attached below") or at the sections that follow it.
+
 ## Creating one
 
 ```sh
