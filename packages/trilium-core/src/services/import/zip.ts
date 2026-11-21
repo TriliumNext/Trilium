@@ -346,7 +346,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             }
 
             if (attr.type === "relation") {
-                attr.value = getNewNoteId(attr.value);
+                attr.value = mapArchiveNoteId(attr.value);
             }
 
             attr.name = importedAttributeName(attr.type, attr.name, taskContext.data?.safeImport);

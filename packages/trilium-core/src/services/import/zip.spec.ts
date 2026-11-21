@@ -736,6 +736,38 @@ describe("processNoteContent", () => {
         expect(importedNote.getAttachments().map((a) => a.attachmentId)).toEqual(["keptAttach01"]);
     });
 
+    it("keeps a relation to a note outside the archive and remaps one inside it", async () => {
+        const outside = getContext().init(() => noteService.createNewNote({
+            parentNoteId: "root", title: "Relation outside", type: "text", content: ""
+        }).note);
+        const note = (noteId: string, title: string, attributes: object[]) => ({
+            noteId, title, type: "text", mime: "text/html", format: "html",
+            dataFileName: `${title}.html`, attributes
+        });
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [ note("relSource001", "Relation source", [
+                { type: "relation", name: "template", value: outside.noteId },
+                { type: "relation", name: "sibling", value: "relTarget001" }
+            ]), note("relTarget001", "Relation target", []) ]
+        };
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "Relation source.html": "<p>source</p>",
+            "Relation target.html": "<p>target</p>"
+        });
+
+        const { rootNote } = await testImportBuffer(zipBuffer, "import-outside-relation");
+
+        const source = rootNote.getChildNotes().find((child) => child.title === "Relation source");
+        expect(source).toBeDefined();
+        expect(source?.getRelationValue("template")).toBe(outside.noteId);
+        const sibling = source?.getRelationTarget("sibling");
+        expect(sibling?.title).toBe("Relation target");
+        expect(sibling?.noteId).not.toBe("relTarget001");
+    });
+
     it("substitutes placeholder ids for blank note and attachment ids", async () => {
         // A malformed archive can carry empty ids; they're funnelled onto fixed placeholders rather
         // than being allowed to collide with a generated id.
