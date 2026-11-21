@@ -4099,7 +4099,8 @@
   },
   "popup-editor": {
     "maximize": "Switch to full editor",
-    "attachment_title": "Attachment: {{title}}"
+    "attachment_title": "Attachment: {{title}}",
+    "back": "Back to the previous note"
   },
   "server": {
     "unknown_http_error_title": "Communication error with the server",

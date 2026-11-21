@@ -38,13 +38,18 @@ vi.mock("../../components/app_context", () => ({
 vi.mock("../../components/note_context", () => ({
     default: class {
         ntxId: string;
+        notePath: string | undefined;
         noteId = "n1";
         hoistedNoteId = "root";
         viewScope: ViewScope | undefined;
         note = mocks.contextNote;
         triggerEvent = vi.fn();
-        setNote = vi.fn(async (_notePath: string, opts?: { viewScope?: ViewScope }) => {
+        setNote = vi.fn(async (notePath: string, opts?: { viewScope?: ViewScope }) => {
+            await this.triggerEvent("beforeNoteSwitch", { noteContext: this });
+            this.notePath = notePath;
+            this.noteId = notePath.split("/").at(-1) ?? "";
             this.viewScope = { viewMode: "default", ...opts?.viewScope };
+            await this.triggerEvent("noteSwitched", { noteContext: this, notePath });
         });
 
         constructor(ntxId: string) {
@@ -216,6 +221,22 @@ function clickLink(href: string) {
         link?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
     });
     link?.remove();
+}
+
+/** Follows a link inside the popup and waits for the note switch to finish. */
+async function followLink(href: string) {
+    clickLink(href);
+    await act(async () => {});
+}
+
+function backButton() {
+    return container.querySelector<HTMLElement>(".popup-editor-back");
+}
+
+async function goBack() {
+    const button = backButton();
+    expect(button).not.toBeNull();
+    await act(async () => button?.click());
 }
 
 function modal() {
@@ -413,6 +434,51 @@ describe("PopupEditor", () => {
         clickLink("#root/_optionsAppearance");
         expect(mocks.triggerCommand).toHaveBeenCalledWith("showOptions", { section: "_optionsAppearance" });
         expect(context?.setNote).toHaveBeenCalledTimes(1);
+    });
+
+    it("goes back through the notes it navigated to, with no way back from the first", async () => {
+        await openPopup({ noteIdOrPath: "root/n1" });
+        const context = lastContext();
+        expect(backButton()).toBeNull();
+
+        await followLink("#root/note2");
+        expect(backButton()).not.toBeNull();
+        await followLink("#root/note2?viewMode=attachments&attachmentId=att1");
+        await vi.waitFor(() => expect(container.querySelector(".attachment-title")).not.toBeNull());
+        expect(backButton()).not.toBeNull();
+
+        await goBack();
+        expect(context?.setNote).toHaveBeenLastCalledWith("root/note2", {
+            viewScope: { viewMode: "default" },
+            keepActiveDialog: true
+        });
+        expect(backButton()).not.toBeNull();
+
+        // The first note comes back with the scope it was opened with.
+        await goBack();
+        expect(context?.setNote).toHaveBeenLastCalledWith("root/n1", {
+            viewScope: { viewMode: "default", readOnlyTemporarilyDisabled: true },
+            keepActiveDialog: true
+        });
+        expect(backButton()).toBeNull();
+    });
+
+    it("resets its history when it opens, but not for a note opened while on show", async () => {
+        await openPopup({ noteIdOrPath: "root/n1" });
+        await followLink("#root/note2");
+        expect(backButton()).not.toBeNull();
+
+        await act(async () => container.querySelector<HTMLElement>(".hidden-stub")?.click());
+        await openPopup({ noteIdOrPath: "root/n3" });
+        expect(backButton()).toBeNull();
+
+        await openPopup({ noteIdOrPath: "root/n4" });
+        await goBack();
+        expect(lastContext()?.setNote).toHaveBeenLastCalledWith("root/n3", {
+            viewScope: { viewMode: "default", readOnlyTemporarilyDisabled: true },
+            keepActiveDialog: true
+        });
+        expect(backButton()).toBeNull();
     });
 
     it("reports its lifecycle: focuses the content when shown, and forgets itself when hidden", async () => {
