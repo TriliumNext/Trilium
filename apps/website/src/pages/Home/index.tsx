@@ -129,7 +129,7 @@ function HeroSection() {
     );
 }
 
-/** The size `hero.html` was captured at: `HERO.viewport` in apps/mobile/store/scenes.mjs. */
+/** The size `hero.html` was captured at: `HERO.viewport` in apps/showcase/src/shared/scenes.mjs. */
 const HERO_SNAPSHOT_SIZE = { width: 1360, height: 920 };
 
 /**

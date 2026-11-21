@@ -810,6 +810,18 @@ importers:
         specifier: 3.4.0
         version: 3.4.0
 
+  apps/showcase:
+    devDependencies:
+      pixelmatch:
+        specifier: 5.3.0
+        version: 5.3.0
+      playwright:
+        specifier: 1.65.1
+        version: 1.65.1
+      pngjs:
+        specifier: 7.0.0
+        version: 7.0.0
+
   apps/standalone:
     dependencies:
       '@excalidraw/excalidraw':

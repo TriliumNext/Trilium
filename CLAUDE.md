@@ -65,6 +65,7 @@ apps/
   desktop/              # Electron: server + client in one process (see developing-electron-desktop skill)
   standalone/           # whole stack in the browser: core in a Web Worker on SQLite WASM + OPFS, no Node (see developing-standalone skill)
   mobile/               # Capacitor shell around standalone (see developing-capacitor-mobile skill)
+  showcase/             # Play Store and Flathub listings, website hero: built from a demo document
   web-clipper/, website/, db-compare/, dump-db/, edit-docs/, build-docs/, icon-pack-builder/, script-deployer/
 packages/
   trilium-core/         # entities, services, SQL, sync, most API routes — shared by server, desktop, standalone

@@ -109,7 +109,7 @@ section.hero-section {
         }
     }
 
-    /* Matches `HERO.viewport` in apps/mobile/store/scenes.mjs. */
+    /* Matches `HERO.viewport` in apps/showcase/src/shared/scenes.mjs. */
     .screenshot {
         position: relative;
         width: 100%;

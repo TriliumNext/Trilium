@@ -11,8 +11,7 @@
     "open:android": "cap open android",
     "run:android": "cap run android",
     "open:ios": "cap open ios",
-    "run:ios": "cap run ios",
-    "store-assets": "node store/build.mjs"
+    "run:ios": "cap run ios"
   },
   "dependencies": {
     "@capacitor/android": "8.6.2",

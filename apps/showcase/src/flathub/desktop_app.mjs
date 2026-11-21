@@ -1,14 +1,15 @@
 import { spawn } from "child_process";
 import fs from "fs";
 import path from "path";
+import { chromium } from "playwright";
+
+import { repoRoot } from "../shared/paths.mjs";
 
 /**
  * Starts the desktop app in dev mode on `dataDir`, in the session that `env` describes, and
  * resolves with its main window as a Playwright page, reached over the remote debugging port.
  */
-export async function startDesktopApp({
-    chromium, repoRoot, dataDir, env, debugPort, port, logPath
-}) {
+export async function startDesktopApp({ dataDir, env, debugPort, port, logPath }) {
     const electronDataDir = fs.mkdtempSync(path.join(dataDir, "electron-"));
     const appEnv = {
         ...env,

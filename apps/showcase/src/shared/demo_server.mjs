@@ -3,6 +3,25 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 
+import { outDir, repoRoot } from "./paths.mjs";
+import { ITINERARY, SEED, TRIP_COSTS } from "./scenes.mjs";
+
+/**
+ * Starts a demo server and adds what `SEED` in `scenes.mjs` seeds, or uses the running server at
+ * `url`, which must hold both and need no login.
+ */
+export async function startSeededServer(browser, { url, port }) {
+    if (url) return { baseUrl: url, stop() {} };
+    const server = await startDemoServer({ port, logPath: path.join(outDir, "server.log") });
+    try {
+        await seedDocument(browser, server.baseUrl, SEED, [ TRIP_COSTS, ITINERARY ]);
+    } catch (e) {
+        server.stop();
+        throw e;
+    }
+    return server;
+}
+
 /**
  * Starts the server in dev mode on a fresh data directory, creates a new document with the demo
  * content through the setup API, and resolves with its base URL and data directory.
@@ -11,9 +30,9 @@ import path from "path";
  * data directory reuses `apps/server/spec/db/config.ini`, which turns the login off, and backend
  * scripting is on so that `seedDocument()` can add what the demo lacks.
  */
-export async function startDemoServer({ repoRoot, port, logPath }) {
+export async function startDemoServer({ port, logPath }) {
     const serverDir = path.join(repoRoot, "apps", "server");
-    const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "trilium-store-"));
+    const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "trilium-showcase-"));
     const config = path.join(serverDir, "spec", "db", "config.ini");
     fs.copyFileSync(config, path.join(dataDir, "config.ini"));
 
