@@ -65,10 +65,16 @@
 /* Search result view */
 .nested-note-list.search-results .nested-note-list-item,
 .note-list-container.search-results .note-book-card .note-book-header {
+    span.tn-icon + span {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
     span.tn-icon + span > span {
         display: flex;
         flex-direction: column-reverse;
         align-items: flex-start;
+        max-width: 100%;
     }
 
     small {
@@ -155,22 +161,32 @@
     }
 
     .note-list-attributes {
-        flex-grow: 1;
-        margin-inline-start: 1em;
+        flex: 0 1 auto;
+        max-width: 45%;
+        margin-inline-start: auto;
+        padding-inline-start: 1em;
         text-align: right;
         font-size: .75em;
         opacity: .75;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    body.mobile & .note-list-attributes {
+        max-width: 30%;
     }
 
     /* Stands in for .note-list-attributes when the caller supplies its own controls, so the item
        menu still sits at the far end of the row instead of collapsing next to the title. */
     .note-list-item-actions {
         display: flex;
-        flex-grow: 1;
+        flex: 0 0 auto;
+        margin-inline-start: auto;
+        padding-inline-start: 1em;
         justify-content: flex-end;
         align-items: center;
         gap: .5em;
-        margin-inline-start: 1em;
     }
 
     &.archived {
@@ -181,11 +197,25 @@
     }
 }
 
+.nested-note-list h5,
+.note-book-card h5,
+.dashboard-widget-header {
+    span.tn-icon + span {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .note-list-attributes {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
 .nested-note-list:not(.search-results) h5,
 .note-book-card:not(.search-results) h5,
 .dashboard-widget-header {
-    span.tn-icon + span,
-    .note-list-attributes {
+    span.tn-icon + span {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;

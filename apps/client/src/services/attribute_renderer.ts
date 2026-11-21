@@ -98,7 +98,8 @@ const HIDDEN_ATTRIBUTES = [
     "mapPosition",
     "docName",
     "webViewSrc",
-    "archived"
+    "archived",
+    "clipType"
 ];
 
 async function renderNormalAttributes(note: FNote) {

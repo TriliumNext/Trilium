@@ -148,6 +148,7 @@ describe("renderNormalAttributes", () => {
             title: "Note",
             "#color": "red",
             "#archived": "true", // hidden attribute -> excluded
+            "#clipType": "page", // hidden attribute -> excluded
             "#internalBookmark": "x" // auto-link -> excluded
         });
         // a definition-style label is also excluded by isDefinition()
