@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/server",
-  "version": "0.107.0",
+  "version": "0.108.0-rc.1",
   "description": "The server-side component of TriliumNext, which exposes the client via the web, allows for sync and provides a REST API for both internal and external use.",
   "private": true,
   "main": "./src/main.ts",
