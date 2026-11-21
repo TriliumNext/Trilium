@@ -9,7 +9,7 @@ import {
 } from "../shared/build.ts";
 import { findNoteId, openDemo } from "../shared/demo_server.ts";
 import { describePng, readPng } from "../shared/png.ts";
-import { DEVICES, SCENES } from "../shared/scenes.ts";
+import { DEVICES, type Scene, SCENES } from "../shared/scenes.ts";
 
 const listing: Listing = JSON.parse(
     fs.readFileSync(path.join(import.meta.dirname, "listing.json"), "utf8"));
@@ -30,6 +30,9 @@ interface StoreShot {
     alt: string;
 }
 
+/** The size of a phone screenshot with its caption, which the store needs for promotion. */
+const CAPTIONED_SIZE = { width: 1080, height: 1920 };
+
 /**
  * The Google Play targets, in build order: the 512 x 512 icon, phone and tablet screenshots of the
  * demo document, the 1024 x 500 feature graphic made from the phone ones, and `out/preview.html`,
@@ -46,9 +49,9 @@ export const PLAY_TARGETS: Record<string, Builder> = {
  * Checks the store assets on disk against the Play Console's limits and fails the build when one
  * of them is not met.
  */
-export function checkPlayAssets() {
+export async function checkPlayAssets(browser: Browser) {
     console.log("Checking the Play Store assets...");
-    reportChecks(runChecks(listStoreShots()));
+    reportChecks(runChecks(listStoreShots(), await measureCaptions(browser)));
 }
 
 /**
@@ -121,7 +124,8 @@ function listStoreShots(): StoreShot[] {
             const file = storeShotPath(deviceName, index, scene.id);
             if (fs.existsSync(file)) {
                 const relative = path.relative(outDir, file);
-                screenshots.push({ device: deviceName, file: relative, alt: scene.alt });
+                const { alt } = sceneOn(scene, deviceName);
+                screenshots.push({ device: deviceName, file: relative, alt });
             }
         }
     }
@@ -132,8 +136,9 @@ async function captureDevice(browser: Browser, options: BuildOptions, baseUrl: s
     deviceName: string) {
     const device = DEVICES[deviceName];
     const scenes = SCENES.filter((scene) => options.only?.includes(scene.id) ?? true);
-    for (const scene of scenes) {
-        const index = SCENES.indexOf(scene);
+    for (const listed of scenes) {
+        const index = SCENES.indexOf(listed);
+        const scene = sceneOn(listed, deviceName);
         const colorScheme = scene.colorScheme ?? "light";
         const context = await browser.newContext({
             viewport: device.viewport,
@@ -163,8 +168,7 @@ async function captureDevice(browser: Browser, options: BuildOptions, baseUrl: s
         await context.close();
 
         if (device.captioned) {
-            const size = { width: 1080, height: 1920 };
-            await renderTemplate(browser, "screenshot.html", size, store, {
+            await renderTemplate(browser, "screenshot.html", CAPTIONED_SIZE, store, {
                 caption: scene.caption,
                 shot: pathToFileURL(raw).href,
                 dark: colorScheme === "dark"
@@ -175,7 +179,7 @@ async function captureDevice(browser: Browser, options: BuildOptions, baseUrl: s
 }
 
 /** The store's limits, from the Play Console help on preview assets and on store listing text. */
-function runChecks(screenshots: StoreShot[]) {
+function runChecks(screenshots: StoreShot[], captionLines: Map<string, number>) {
     const { checks, check } = checkList();
     const checkLength = (asset: string, text: string, max: number) => {
         const rule = `at most ${max.toLocaleString("en")} characters`;
@@ -210,7 +214,40 @@ function runChecks(screenshots: StoreShot[]) {
             checkLength(`${shot.file} alt text`, shot.alt, 140);
         }
     }
+    for (const [ id, lines ] of captionLines) {
+        check(`${id} caption`, "two lines on the phone", `${lines} lines`, lines === 2);
+    }
     return checks;
+}
+
+/** The scene as the device shows it: on the tablet, with `scene.tablet` in place. */
+function sceneOn(scene: Scene, deviceName: string): Scene {
+    return deviceName === "tablet" && scene.tablet ? { ...scene, ...scene.tablet } : scene;
+}
+
+/**
+ * The number of lines each scene's caption takes above the phone screenshot, by scene ID. The
+ * caption's text runs are counted by their distinct tops.
+ */
+async function measureCaptions(browser: Browser) {
+    const page = await browser.newPage({ viewport: CAPTIONED_SIZE, deviceScaleFactor: 1 });
+    await page.goto(pathToFileURL(path.join(templatesDir, "screenshot.html")).href);
+    const lines = new Map<string, number>();
+    for (const scene of SCENES) {
+        lines.set(scene.id, await page.evaluate(async (caption) => {
+            window.render?.({ caption, shot: "", dark: false });
+            const heading = document.getElementById("caption");
+            if (!heading) return 0;
+            // Reading the layout starts the font loads that `document.fonts.ready` waits for.
+            void heading.offsetHeight;
+            await document.fonts.ready;
+            const range = document.createRange();
+            range.selectNodeContents(heading);
+            return new Set([ ...range.getClientRects() ].map((rect) => Math.round(rect.top))).size;
+        }, scene.caption));
+    }
+    await page.close();
+    return lines;
 }
 
 function rawShotPath(deviceName: string, sceneId: string) {

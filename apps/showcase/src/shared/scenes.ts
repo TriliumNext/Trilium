@@ -10,6 +10,8 @@ export interface Scene {
     keepFocus?: boolean;
     colorScheme?: "light" | "dark";
     caption: string;
+    /** Replaces `query`, `prepare` and `alt` in the tablet layout. */
+    tablet?: { query: string; prepare?(page: Page): Promise<unknown>; alt: string };
     /** Replaces `caption` on Flathub. */
     flathubCaption?: string;
     alt: string;
@@ -39,10 +41,10 @@ interface SeedNote {
 /**
  * The screens captured from the demo document, in the order the store shows them. `query` finds the
  * note to open, and `prepare(page)` runs in Node with the Playwright page once the note shows on
- * the phone or tablet; `desktopQuery` and `desktopPrepare(page)` replace them in the desktop app
- * for Flathub.
- * `caption` goes above the phone screenshot, with `\n` where its two lines break; `alt` is the
- * screenshot's description in the store (at most 140 characters).
+ * the phone or tablet; `tablet` replaces them on the tablet, and `desktopQuery` and
+ * `desktopPrepare(page)` in the desktop app for Flathub. `caption` goes above the phone
+ * screenshot, on two lines that `\n` breaks; `alt` is the screenshot's description in the store
+ * (at most 140 characters).
  */
 export const SCENES: Scene[] = [
     {
@@ -52,6 +54,12 @@ export const SCENES: Scene[] = [
         prepare: (page) => page.evaluate(() => {
             window.glob.appContext.triggerCommand("setActiveScreen", { screen: "tree" });
         }),
+        tablet: {
+            query: "note.title = 'Trilium Demo'",
+            prepare: openNoteMap,
+            alt: "The note tree beside a note map of the Trilium Demo note, which links it to "
+                + "the notes it mentions"
+        },
         caption: "Organize everything\nin one place",
         alt: "The note tree, with the Trilium Demo note and its sections: an inbox, formatting "
             + "examples and a journal"
@@ -159,6 +167,16 @@ export async function zoomOutMindMap(page: Page, steps: number) {
 
 function collapseMapAttribution(page: Page) {
     return page.locator(".maplibregl-ctrl-attrib-button").first().click();
+}
+
+/** Shows the open note as a note map, the view of the links between it and other notes. */
+async function openNoteMap(page: Page) {
+    await page.evaluate(async () => {
+        const noteContext = window.glob.appContext.tabManager.getActiveContext();
+        if (noteContext?.noteId) {
+            await noteContext.setNote(noteContext.noteId, { viewScope: { viewMode: "note-map" } });
+        }
+    });
 }
 
 /**

@@ -64,7 +64,7 @@ try {
         }
     }
     if (options.targets.some((target) => target in PLAY_TARGETS)) {
-        checkPlayAssets();
+        await checkPlayAssets(browser);
     }
 } finally {
     await browser.close();

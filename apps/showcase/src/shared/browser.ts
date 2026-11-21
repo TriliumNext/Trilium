@@ -22,7 +22,8 @@ declare global {
 }
 
 interface NoteContext {
-    setNote(noteId: string): Promise<void>;
+    noteId: string | null;
+    setNote(noteId: string, options?: { viewScope?: { viewMode: string } }): Promise<void>;
     setHoistedNoteId(noteId: string): Promise<void>;
 }
 
