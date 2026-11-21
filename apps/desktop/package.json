@@ -32,7 +32,7 @@
     "test": "vitest --config vitest.config.mts"
   },
   "dependencies": {
-    "better-sqlite3": "13.1.1",
+    "better-sqlite3": "13.2.0",
     "electron-debug": "5.0.0",
     "electron-dl": "5.0.0",
     "sherpa-onnx-node": "2.0.1"
