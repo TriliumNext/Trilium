@@ -14,7 +14,7 @@ import { decodeUtf8, encodeBase64, encodeUtf8 } from "../services/utils/binary.j
 import { buildNote } from "../test/becca_easy_mocking.js";
 import { buildShareNote } from "../test/shaca_mocking.js";
 import {
-    getShareRoute, getShareRoutes, handleShareRequest, type ShareReply, type ShareRequest
+    getShareRoute, getShareRoutes, handleShareRequest, isVisibleInShareTree, type ShareReply, type ShareRequest
 } from "./handlers.js";
 import { SHARE_ROUTE_PATHS, type ShareRoutePath } from "./route_paths.js";
 import { getShareProvider } from "./share_provider.js";
@@ -217,6 +217,58 @@ describe("share handlers", () => {
         expect(statuses({})).toEqual({ templated: 401, inheriting: 401, cloned: 401 });
         expect(statuses({ authorization: `Basic ${encodeBase64("root:hunter2")}` }))
             .toEqual({ templated: 200, inheriting: 200, cloned: 200 });
+    });
+
+    it("hides a note that inherits #shareHiddenFromTree from notes outside the share", () => {
+        becca.reset();
+        buildNote({
+            id: "root",
+            title: "root",
+            children: [
+                { id: "_hidden", title: "Hidden", children: [ {
+                    id: "_share",
+                    title: "Shared Notes",
+                    children: [ {
+                        id: "docs",
+                        title: "Docs",
+                        children: [
+                            { id: "shown", title: "Shown" },
+                            { "id": "templated", "title": "Templated", "~template": "hidingTemplate" },
+                            { "id": "inheriting", "title": "Inheriting", "~inherit": "hidingSource" },
+                            { id: "cloned", title: "Cloned" }
+                        ]
+                    } ]
+                } ] },
+                { "id": "hidingTemplate", "title": "Template", "#shareHiddenFromTree": "" },
+                { "id": "hidingSource", "title": "Source", "#shareHiddenFromTree": "" },
+                { id: "privateParent", title: "Private parent" }
+            ]
+        });
+        new BAttribute({
+            noteId: "privateParent", type: "label", name: "shareHiddenFromTree", value: "", isInheritable: true
+        });
+        new BBranch({ branchId: "privateParent_cloned", noteId: "cloned", parentNoteId: "privateParent" });
+        const hiddenIds = [ "templated", "inheriting", "cloned" ];
+        buildShareTree([ {
+            id: "docs",
+            content: "",
+            children: [
+                { "id": "shown", "content": "", "#projectShown": "" },
+                { "id": "templated", "content": "", "~template": "hidingTemplate", "#projectTemplated": "" },
+                { "id": "inheriting", "content": "", "~inherit": "hidingSource", "#projectInheriting": "" },
+                { "id": "cloned", "content": "", "#projectCloned": "" }
+            ]
+        } ]);
+
+        expect(readJson("/share/api/notes/:noteId", { params: { noteId: "docs" } }).childNoteIds)
+            .toEqual([ "shown" ]);
+        expect(hiddenIds.filter((noteId) => isVisibleInShareTree("docs", [ "docs", noteId ])))
+            .toEqual([]);
+        expect(readJson("/share/api/attribute-names", { query: { type: "label", query: "project" } }))
+            .toEqual([ "projectShown" ]);
+        // The notes stay readable by their URL.
+        expect(hiddenIds.map((noteId) => request("/share/api/notes/:noteId", { params: { noteId } }).status))
+            .toEqual([ 200, 200, 200 ]);
     });
 
     it("sanitizes an SVG note and locks it down with a content security policy", () => {

@@ -277,7 +277,7 @@ function isListedInShareTree(noteId: string, visited = new Set<string>()): boole
     }
 
     const note = shaca.getNote(noteId);
-    if (!note || visited.has(noteId) || note.isLabelTruthy("shareHiddenFromTree")) {
+    if (!note || visited.has(noteId) || note.isHiddenFromShareTree()) {
         return false;
     }
 
@@ -573,7 +573,7 @@ export function isVisibleInShareTree(ancestorNoteId: string, notePathArray: stri
         const childNote = shaca.notes[notePathArray[i]];
         const branch = shaca.getBranchFromChildAndParent(notePathArray[i], notePathArray[i - 1]);
 
-        if (!childNote || !branch || branch.isHidden || childNote.isLabelTruthy("shareHiddenFromTree")) {
+        if (!childNote || !branch || branch.isHidden || childNote.isHiddenFromShareTree()) {
             return false;
         }
     }

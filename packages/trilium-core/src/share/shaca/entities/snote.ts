@@ -70,7 +70,7 @@ class SNote extends AbstractShacaEntity {
     }
 
     getVisibleChildBranches() {
-        return this.getChildBranches().filter((branch) => !branch.isHidden && !branch.getNote().isLabelTruthy("shareHiddenFromTree"));
+        return this.getChildBranches().filter((branch) => !branch.isHidden && !branch.getNote().isHiddenFromShareTree());
     }
 
     getParentNotes() {
@@ -147,6 +147,12 @@ class SNote extends AbstractShacaEntity {
             ...this.__getAttributes([]).filter(isCredentials),
             ...becca.getNote(this.noteId)?.getLabels(CREDENTIALS) ?? []
         ];
+    }
+
+    /** Whether `#shareHiddenFromTree` applies in shaca or in becca, as with `getCredentials()`. */
+    isHiddenFromShareTree() {
+        return this.isLabelTruthy("shareHiddenFromTree")
+            || !!becca.getNote(this.noteId)?.isLabelTruthy("shareHiddenFromTree");
     }
 
     __getAttributes(path: string[]) {
