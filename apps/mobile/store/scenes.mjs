@@ -3,8 +3,8 @@
  * note to open, and `prepare(page)` runs in Node with the Playwright page once the note shows on
  * the phone or tablet; `desktopQuery` and `desktopPrepare(page)` replace them in the desktop app
  * for Flathub.
- * `caption` goes above the phone screenshot; `alt` is the screenshot's description in the store
- * (at most 140 characters).
+ * `caption` goes above the phone screenshot, with `\n` where its two lines break; `alt` is the
+ * screenshot's description in the store (at most 140 characters).
  */
 export const SCENES = [
     {
@@ -14,7 +14,7 @@ export const SCENES = [
         prepare: (page) => page.evaluate(() => {
             window.glob.appContext.triggerCommand("setActiveScreen", { screen: "tree" });
         }),
-        caption: "Organize everything in one place",
+        caption: "Organize everything\nin one place",
         alt: "The note tree, with the Trilium Demo note and its sections: an inbox, formatting "
             + "examples and a journal"
     },
@@ -40,14 +40,14 @@ export const SCENES = [
             await page.locator(`.ck-toolbar [data-cke-tooltip-text='${button}']`).first().click();
             await page.mouse.move(0, 0);
         },
-        caption: "Write notes with tables and images",
+        caption: "Write notes with\ntables and images",
         alt: "A text note with a trip itinerary: a heading, a highlighted link, a table and a "
             + "checklist, with the formatting toolbar open"
     },
     {
         id: "board",
         query: "note.title = 'Trip planning'",
-        caption: "Keep track of your tasks",
+        caption: "Keep track\nof your tasks",
         alt: "A board collection with to-do, in-progress and done columns of cards for "
             + "planning a trip"
     },
@@ -56,7 +56,7 @@ export const SCENES = [
         query: "note.title *=* 'Geo Map'",
         prepare: collapseMapAttribution,
         desktopPrepare: collapseMapAttribution,
-        caption: "Plan your next trip on a map",
+        caption: "Plan your next\ntrip on a map",
         alt: "A geo map collection with the Seven Wonders of the World pinned on a world map"
     },
     {
@@ -80,7 +80,7 @@ export const SCENES = [
             await page.waitForTimeout(3000);
         },
         desktopPrepare: (page) => page.locator(".mind-map-direction-side").first().click(),
-        caption: "Brainstorm ideas in a mind map",
+        caption: "Brainstorm ideas\nin a mind map",
         alt: "A mind map note with branches spreading out from a central topic"
     },
     {
@@ -94,20 +94,20 @@ export const SCENES = [
             await page.locator(".excalidraw canvas").last().click({ position: { x: 20, y: 300 } });
             await page.keyboard.press("Shift+Digit1");
         },
-        caption: "Sketch out your ideas",
+        caption: "Sketch out\nyour ideas",
         alt: "A canvas note with hand-drawn shapes and arrows"
     },
     {
         id: "diagram",
         query: "note.title = 'Flow' AND note.type = 'mermaid'",
-        caption: "Draw flowcharts from plain text",
+        caption: "Draw flowcharts\nfrom plain text",
         alt: "A Mermaid flowchart above the text it is drawn from"
     },
     {
         id: "dark",
         query: "note.title = 'Split the trip costs'",
         colorScheme: "dark",
-        caption: "Save code snippets, day or night",
+        caption: "Save code snippets,\nday or night",
         alt: "A Python code note with syntax highlighting that splits the costs of a trip, "
             + "in the dark theme"
     }

@@ -8,29 +8,33 @@
             width: 1080px;
             height: 1920px;
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            position: relative;
         }
 
-        /* The store allows captions on at most 20% of a screenshot: 300 of 1920 px. */
+        /* The store allows captions on at most 20% of a screenshot: 384 of 1920 px. */
         h1 {
-            height: 300px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 384px;
             margin: 0;
-            padding: 0 80px;
+            padding: 0 110px 24px;
             display: flex;
-            align-items: center;
-            text-align: center;
-            font-size: 64px;
+            align-items: flex-end;
+            font-size: 96px;
             font-weight: 400;
-            line-height: 1.15;
-            letter-spacing: -0.02em;
-            text-wrap: balance;
+            line-height: 1.08;
+            letter-spacing: -0.03em;
+            white-space: pre-line;
         }
 
         .app-shot {
-            width: 828px;
-            margin-top: 20px;
+            position: absolute;
+            top: 456px;
+            left: 90px;
+            width: 900px;
+            border-radius: 48px;
         }
     </style>
 </head>
