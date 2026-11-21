@@ -18,7 +18,7 @@
     "faq": "FAQ"
   },
   "hero_section": {
-    "title": "Organize your thoughts. Build your personal knowledge base.",
+    "title": "Organize your thoughts. Grow your personal knowledge base.",
     "subtitle": "Trilium is an open-source solution for note-taking and organizing a personal knowledge base. Use it locally on your desktop, or sync it with your self-hosted server to keep your notes everywhere you go.",
     "get_started": "Get started",
     "github": "GitHub",
@@ -172,7 +172,7 @@
     "more_questions": "Still have questions? <0>Ask the community</0>"
   },
   "final_cta": {
-    "title": "Start building your knowledge base",
+    "title": "Start growing your knowledge base",
     "description": "Organize everything in one open-source app: hierarchical notes, powerful search, and sync to a server you control.",
     "get_started": "Get started"
   },
