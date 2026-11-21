@@ -8,9 +8,10 @@ import type { Page } from "playwright";
  * Serializes the page into one self-contained HTML file: the DOM without scripts, only the CSS
  * rules whose selectors match an element, only the custom properties those rules reach, and only
  * the fonts the page draws with, subset to its characters and to the OpenType features a browser
- * applies by default; animations and transitions are off. Both color schemes survive, since a rule
- * is kept whatever media query it sits in. `fonttools` is the fontTools command, which needs the
- * Brotli module to write WOFF2. Resolves with the HTML and the numbers behind its size.
+ * applies by default; animations and transitions are off. Media queries are decided at the page's
+ * viewport, except `prefers-color-scheme`, so both color schemes survive. `fonttools` is the
+ * fontTools command, which needs the Brotli module to write WOFF2. Resolves with the HTML and the
+ * numbers behind its size.
  */
 export async function captureSnapshot(page: Page, { fonttools }: { fonttools: string }) {
     const harvested = await page.evaluate(harvestPage);
@@ -86,12 +87,13 @@ function pruneCustomProperties(css: string, inlineStyles: string) {
 }
 
 /**
- * Runs in the page. A selector stays when it matches an element once its states and
- * pseudo-elements are removed, so hover and focus styles stay too; a selector the browser
- * rejects once they are removed also stays.
+ * Runs in the page. A selector stays when it matches an element once its pseudo-elements and the
+ * states the clone might not reproduce are removed; a selector the browser rejects once they are
+ * removed also stays. Hover, focus and active states stay in the selector and match as they are
+ * at capture, since nobody can hover or focus the snapshot.
  */
 async function harvestPage() {
-    const STATES = new RegExp("::?(?:hover|focus-visible|focus-within|focus|active|visited|link|"
+    const STATES = new RegExp("::?(?:visited|link|"
         + "any-link|checked|indeterminate|disabled|enabled|placeholder-shown|autofill|before|after|"
         + "placeholder|selection|marker|first-line|first-letter|backdrop|file-selector-button|"
         + "-webkit-[a-z-]+|-moz-[a-z-]+|-ms-[a-z-]+)(?![\\w-])", "g");
@@ -100,12 +102,28 @@ async function harvestPage() {
     const fontFaceRules: CSSFontFaceRule[] = [];
     const matches = new Map<string, boolean>();
 
+    // An element that generates no box, such as one under `display: none`, leaves the snapshot,
+    // and so do the rules that only it matches. One that has a box stays even outside the
+    // viewport, since its size can still move the elements that are shown.
+    const shown = new Set<Element>([ document.documentElement, document.head, document.body ]);
+    for (const element of document.body.querySelectorAll("*")) {
+        if (shown.has(element) || !hasBox(element)) continue;
+        for (let node: Element | null = element; node && !shown.has(node);
+            node = node.parentElement) {
+            shown.add(node);
+        }
+    }
+
+    function hasBox(element: Element) {
+        return element.getClientRects().length > 0;
+    }
+
     function selectorMatches(selector: string) {
         const plain = selector.replace(STATES, "").replace(/:not\(\s*\)/g, "").trim() || "*";
         if (!matches.has(plain)) {
             try {
-                matches.set(plain, !!document.querySelector(
-                    plain.replace(/(^|[\s>+~(,])&/g, "$1*")));
+                const matched = document.querySelectorAll(plain.replace(/(^|[\s>+~(,])&/g, "$1*"));
+                matches.set(plain, [ ...matched ].some((element) => shown.has(element)));
             } catch {
                 matches.set(plain, true);
             }
@@ -143,6 +161,17 @@ async function harvestPage() {
         return parts;
     }
 
+    /**
+     * Applies a media condition as the page's viewport decides it: rules under a condition that
+     * fails are dropped, and a condition that holds is removed. A condition on the color scheme
+     * stays, for the visitor's scheme to decide.
+     */
+    function underMedia(condition: string, inner: string) {
+        if (!inner || !condition || condition === "all") return inner;
+        if (/prefers-color-scheme/.test(condition)) return `@media ${condition}{${inner}}\n`;
+        return matchMedia(condition).matches ? inner : "";
+    }
+
     function readRules(sheet: CSSStyleSheet): CSSRuleList | CSSRule[] {
         try {
             return sheet.cssRules;
@@ -174,9 +203,10 @@ async function harvestPage() {
                         : `${kept}\n`;
                 }
             } else if (rule instanceof CSSMediaRule) {
-                if (/^print$/i.test(rule.conditionText)) continue;
-                const inner = serialize(rule.cssRules);
-                if (inner) out += `@media ${rule.conditionText}{${inner}}\n`;
+                const condition = rule.conditionText;
+                const decided = !/prefers-color-scheme/.test(condition);
+                if (decided && !matchMedia(condition).matches) continue;
+                out += underMedia(condition, serialize(rule.cssRules));
             } else if (rule instanceof CSSSupportsRule) {
                 const inner = serialize(rule.cssRules);
                 if (inner) out += `@supports ${rule.conditionText}{${inner}}\n`;
@@ -189,8 +219,7 @@ async function harvestPage() {
                 if (inner) out += `@layer ${rule.name}{${inner}}\n`;
             } else if (rule instanceof CSSImportRule) {
                 const inner = rule.styleSheet ? serialize(readRules(rule.styleSheet)) : "";
-                const media = rule.media.mediaText;
-                if (inner) out += media && media !== "all" ? `@media ${media}{${inner}}\n` : inner;
+                out += underMedia(rule.media.mediaText, inner);
             } else if (rule instanceof CSSFontFaceRule) {
                 fontFaceRules.push(rule);
             } else if (!(rule instanceof CSSKeyframesRule || rule instanceof CSSPageRule)) {
@@ -203,10 +232,9 @@ async function harvestPage() {
     // The `next` theme loads its light and dark sheets behind the `media` of their <link>.
     let css = "";
     for (const sheet of document.styleSheets) {
-        const inner = serialize(readRules(sheet));
         const owner = sheet.ownerNode;
-        const media = owner instanceof Element ? owner.getAttribute("media") : null;
-        css += media && media !== "all" && inner ? `@media ${media}{${inner}}\n` : inner;
+        const media = owner instanceof Element ? owner.getAttribute("media") ?? "" : "";
+        css += underMedia(media, serialize(readRules(sheet)));
     }
 
     // Icon fonts draw through generated content, so `content` counts as text.
@@ -256,8 +284,13 @@ async function harvestPage() {
         fontFaces.push({ family, url: new URL(url, base).href, descriptors });
     }
 
-    // Form state and canvases are copied into the clone as attributes and images.
+    // Form state and canvases are copied into the clone as attributes and images. An element left
+    // out keeps its tag and attributes, so that sibling and type selectors still match the same
+    // elements, but loses its content and stays hidden.
     const clone = document.documentElement.cloneNode(true) as HTMLElement;
+    const liveElements = [ ...document.documentElement.querySelectorAll("*") ];
+    const clonedElements = [ ...clone.querySelectorAll("*") ];
+    const hidden = clonedElements.filter((element, index) => !shown.has(liveElements[index]));
     const liveFields = document.querySelectorAll("input, textarea, canvas");
     const clonedFields = clone.querySelectorAll("input, textarea, canvas");
     for (const [ index, live ] of [ ...liveFields ].entries()) {
@@ -279,6 +312,12 @@ async function harvestPage() {
         } else if (live instanceof HTMLInputElement) {
             target.setAttribute("value", live.value);
             if (live.checked) target.setAttribute("checked", "");
+        }
+    }
+    for (const element of hidden) {
+        if (element.getRootNode() === clone && element.closest("head") === null) {
+            element.replaceChildren();
+            element.setAttribute("style", "display:none!important");
         }
     }
     const removed = "script, link, style, noscript, template, iframe";
