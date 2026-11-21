@@ -40,6 +40,10 @@
     <keyword>Trillium</keyword>
   </keywords>
   <launchable type="desktop-id">org.triliumnotes.Trilium.desktop</launchable>
+  <branding>
+    <color type="primary" scheme_preference="light">#f7dcc6</color>
+    <color type="primary" scheme_preference="dark">#8a4512</color>
+  </branding>
   <screenshots>
     <screenshot type="default">
       <caption>Rich-text editing with the note tree and table of contents</caption>
