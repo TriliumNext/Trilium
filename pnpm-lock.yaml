@@ -829,7 +829,7 @@ importers:
     dependencies:
       '@excalidraw/excalidraw':
         specifier: 0.18.1
-        version: 0.18.1(patch_hash=ab1f9211ffc9c7f65505b0f4f17f9a7879f35a67c4a87efcd98c54e41743618a)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 0.18.1(patch_hash=ab1f9211ffc9c7f65505b0f4f17f9a7879f35a67c4a87efcd98c54e41743618a)(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
       '@floating-ui/dom':
         specifier: 1.8.0
         version: 1.8.0
@@ -916,7 +916,7 @@ importers:
         version: 0.19.1
       maplibre-gl:
         specifier: 6.19.0
-        version: 6.19.0(react@18.3.1)(use-sync-external-store@1.7.0(react@18.3.1))
+        version: 6.19.0(react@19.3.0)(use-sync-external-store@1.7.0(react@19.3.0))
       marked:
         specifier: 18.2.1
         version: 18.2.1
@@ -931,13 +931,13 @@ importers:
         version: 11.2.0(preact-render-to-string@6.8.3)
       react-i18next:
         specifier: 18.0.2
-        version: 18.0.2(i18next@27.1.5(typescript@6.0.3))(react@18.3.1)(typescript@6.0.3)
+        version: 18.0.2(i18next@27.1.5(typescript@6.0.3))(react@19.3.0)(typescript@6.0.3)
       react-window:
         specifier: 2.5.3
-        version: 2.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 2.5.3(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
       react-zoom-pan-pinch:
         specifier: 4.2.0
-        version: 4.2.0(patch_hash=09dfeb6f635c52ef565ca21aec3f70eb129577661f85eb67262092e8cb9f8548)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 4.2.0(patch_hash=09dfeb6f635c52ef565ca21aec3f70eb129577661f85eb67262092e8cb9f8548)(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
       reveal.js:
         specifier: 6.0.2
         version: 6.0.2
@@ -1141,89 +1141,98 @@ importers:
         specifier: 6.43.15
         version: 6.43.15
       '@fsegurai/codemirror-theme-abcdef':
-        specifier: 6.3.0
-        version: 6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-abyss':
-        specifier: 6.3.0
-        version: 6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-android-studio':
-        specifier: 6.3.0
-        version: 6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-andromeda':
-        specifier: 6.3.0
-        version: 6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-basic-dark':
-        specifier: 6.3.0
-        version: 6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-basic-light':
-        specifier: 6.3.0
-        version: 6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-cobalt2':
-        specifier: 6.1.0
-        version: 6.1.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.2.0
+        version: 6.2.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+      '@fsegurai/codemirror-theme-dracula':
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-forest':
-        specifier: 6.3.0
-        version: 6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-github-dark':
-        specifier: 6.3.0
-        version: 6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-github-light':
-        specifier: 6.3.0
-        version: 6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-gruvbox-dark':
-        specifier: 6.3.0
-        version: 6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-gruvbox-light':
-        specifier: 6.3.0
-        version: 6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-high-contrast-dark':
-        specifier: 6.1.0
-        version: 6.1.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.2.0
+        version: 6.2.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-high-contrast-light':
-        specifier: 6.1.0
-        version: 6.1.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.2.0
+        version: 6.2.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-material-dark':
-        specifier: 6.3.0
-        version: 6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-material-light':
-        specifier: 6.3.0
-        version: 6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-material-ocean':
-        specifier: 6.1.0
-        version: 6.1.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.2.0
+        version: 6.2.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-monokai':
-        specifier: 6.3.0
-        version: 6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-nord':
-        specifier: 6.3.0
-        version: 6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+      '@fsegurai/codemirror-theme-one-dark':
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-palenight':
-        specifier: 6.3.0
-        version: 6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+      '@fsegurai/codemirror-theme-rose-pine-dawn':
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-solarized-dark':
-        specifier: 6.3.0
-        version: 6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-solarized-light':
-        specifier: 6.3.0
-        version: 6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-synthwave-84':
-        specifier: 6.1.0
-        version: 6.1.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.2.0
+        version: 6.2.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-tokyo-night-day':
-        specifier: 6.3.0
-        version: 6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-tokyo-night-storm':
-        specifier: 6.3.0
-        version: 6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-volcano':
-        specifier: 6.3.0
-        version: 6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-vscode-dark':
-        specifier: 6.3.0
-        version: 6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@fsegurai/codemirror-theme-vscode-light':
-        specifier: 6.3.0
-        version: 6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+        specifier: 6.4.0
+        version: 6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/common':
         specifier: 1.5.5
         version: 1.5.5
@@ -2639,224 +2648,256 @@ packages:
     resolution: {integrity: sha512-PyUXQWB42s4jBli435TDiYuVsadwRHnMc27YaLouINktvTWsL3FcKrRMGawTayFk46X+n5bE23RjUTWQwrukWw==}
     engines: {node: '>= 0.10.0'}
 
-  '@fsegurai/codemirror-theme-abcdef@6.3.0':
-    resolution: {integrity: sha512-+0X+fQNbAm0Q8VPkSagHl4xJ6SE9m0zQwZCxnSLm+ZEggSMzk3kERRFPWKQc2t2JvbLR25rXOyqxnGT+PZDMPQ==}
+  '@fsegurai/codemirror-theme-abcdef@6.4.0':
+    resolution: {integrity: sha512-S8Eae9mEb5v5cAmcZlQwxC57t+qSKqn5wRoT4dCIjFt83ztcAqsRGVXCTF8hldkhtemVMTMw1Hto3oCUSUU8QQ==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-abyss@6.3.0':
-    resolution: {integrity: sha512-InoseqtlY2n8wcwrxFOK4qLpx3+quz2Y/9ax9Jc5tIDJNYT2Kce0VHMqdKLRpkT1DDda4R0SAGsOKnn0q6J0+g==}
+  '@fsegurai/codemirror-theme-abyss@6.4.0':
+    resolution: {integrity: sha512-awEpuCr0eE8pJY89ZrKppA/sk/G6HXjY66I46uM06355x2euBiPmKxF3aV8UizWKSZdVF15kcs1b1z1MAkYtOw==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-android-studio@6.3.0':
-    resolution: {integrity: sha512-IisXO6qGGGWHgHTgUT3dUQWNZrUkWpCuV11615DScSNQu+QcX5MV0C4nwUglau1ws5akadvZ2kN++gmFxiLQFQ==}
+  '@fsegurai/codemirror-theme-android-studio@6.4.0':
+    resolution: {integrity: sha512-LA8gTAorjBrgKssonhLgblBxXTfZ85OcqjPbit3wS9UVBsQw+GBoC14FTqQWrhZ2V9XZjXF0qy/aHVMxc0kL4Q==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-andromeda@6.3.0':
-    resolution: {integrity: sha512-DSPs00bIbn0bbnOwAJmhL/R5wXHxjEQCF4zvIkhAOT/WCoe+M8eNKLKro4mFTQwhZriaPGPKYi+f02NGw9jVjQ==}
+  '@fsegurai/codemirror-theme-andromeda@6.4.0':
+    resolution: {integrity: sha512-w7qOaCaMzpdmIkZGCe+pp3JC8vZr3iMhAat3EBgIi9dTOyeH2N9+nwiUtLIIjSQZiPNBUI2oMr671d0TqEEEeg==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-basic-dark@6.3.0':
-    resolution: {integrity: sha512-AGMAheFwphrggJ0HsOWUTYM2imormnpFzIEek1SYBrOG3u0K7oMsRnipgJcbCLn99PqInVcqHp9NAfSphCtyKQ==}
+  '@fsegurai/codemirror-theme-basic-dark@6.4.0':
+    resolution: {integrity: sha512-qHxuVo329yyh8XOrylhEr+9sdyATitThDZjPK/2NscHe08XEKpFWZzojYvd0d4AkI2ADZiCk/0XolkLXLT1yhQ==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-basic-light@6.3.0':
-    resolution: {integrity: sha512-q+6EoxLwF8WplW8EgZgrTLFT0TVxIk93my7OwZqm049trJfBCmPUNrlIbTUHJNRCNeEE7KUikxPhiynKCYeGYw==}
+  '@fsegurai/codemirror-theme-basic-light@6.4.0':
+    resolution: {integrity: sha512-FScp+MyYzcDVburdaPmsreuUVvqIhcT1OLCMsp9DTGDGahNfiairJML9hSeFUKI6f+lncaTe9ZUDn1Uc7CWk/A==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-cobalt2@6.1.0':
-    resolution: {integrity: sha512-QDt4E0U0RwwG7aF3KttVAecRIm5M8Trw7d6qqtjHiAFfmMqg/4JEx2c7lphx892ebf39Iul05h0rjo5LJzMUlw==}
+  '@fsegurai/codemirror-theme-cobalt2@6.2.0':
+    resolution: {integrity: sha512-BN9O+fxe3obHlCXjgnjijfVd7A2z7L7cD+jFiuChQZzHueJKDLXTBnlN+jpE3uOsAJHHDtUAbR7r6pdkDKTzAg==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-forest@6.3.0':
-    resolution: {integrity: sha512-vNjCStMv2DXTbrlr+Dzv0c5qwrGWS8LlR7l9d6nBNPznIkGyK2qFAjgsXCJIFBAdoRX3S/Vom+eaGUoWEqistw==}
+  '@fsegurai/codemirror-theme-core@6.0.0':
+    resolution: {integrity: sha512-I36H/c2oC+hDjuScOUvZhMJ8L9PgT9iqK2e/OtsT+3NHFwj296bMlB2+FPlZnqwo+LQehUUmF1RJ3/gRnYwuWA==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-github-dark@6.3.0':
-    resolution: {integrity: sha512-EiCOjwOLVbCxX/YRJBbJ/qR36yQaNAUmEfmnKOBfrMmM1NRkDLL9XDQHyEITjULAqZKVRNcd9Vz4m4SeLWzEtg==}
+  '@fsegurai/codemirror-theme-dracula@6.4.0':
+    resolution: {integrity: sha512-YyZbklQdCxxs0j7k5EpE/mUAwXm3yjIIRYq8sRr215vv4Ggk8bd54pO/5fTaLa3/tRL77HaFFCoXck2xOvaP0w==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-github-light@6.3.0':
-    resolution: {integrity: sha512-/70yBAuKnRR0MRy8EklpH6R7hauBnz78R/M8zhYZrh17o/BNYDKYLn2AaRtFC4d7lg/A2+cCttbPEM0y+oBXgA==}
+  '@fsegurai/codemirror-theme-forest@6.4.0':
+    resolution: {integrity: sha512-aplMxoynS0aZGj5cZShxJAVhXtjAv8ZHywKOSgmbh2MOqx4dLkHwmsufTfhWU4hGxhUnobA1h1pz+On9trGaig==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-gruvbox-dark@6.3.0':
-    resolution: {integrity: sha512-MaV3s8KbxZvqnurw6vS/vmLr9SXb7s9fFdysSd9aSR+jyPGWPl+ODPknukrzP9yymQTLNoF9Bo4XOMAMu5NHPg==}
+  '@fsegurai/codemirror-theme-github-dark@6.4.0':
+    resolution: {integrity: sha512-UI22dn/7BTX13fkLh9Zw362rkPBG1C7s6GkBJOMvD92dltGHyH1+o0vrFTfj722/Xm+IWzjer0sq52VP5mbOng==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-gruvbox-light@6.3.0':
-    resolution: {integrity: sha512-RJ9Z+i2PRk1xhF+/CDtj5EPPv8OhPf6f1P0CqI5j6XEe2fcvayy0mVruihOkvSiRRAQLThZ7pZrNpxGfNqbRoQ==}
+  '@fsegurai/codemirror-theme-github-light@6.4.0':
+    resolution: {integrity: sha512-AGcLwIKituy8ZS5FN8cwefYhy1cfzUQ5EU/yz3Pd65D2FRFqIms+cSQG1nrCaPLIWMd0DXGsHVUTX9ikv9R9hA==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-high-contrast-dark@6.1.0':
-    resolution: {integrity: sha512-imton8qwMTTrP8VVWQc1T8oeQdMfbZNK+N5/HZBoZjcGZpJ4m3DFRsjm5+02mZGih/tGeeXv0ScHQ9a91TIuJg==}
+  '@fsegurai/codemirror-theme-gruvbox-dark@6.4.0':
+    resolution: {integrity: sha512-DbnzTwJEW/7w0txbXN82bAdI+1fZCnkucVV/qW8uJKPTPntIWTucz4i0GrdZHXgVnhiO2r1J5Akeuv1XwQ6tKQ==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-high-contrast-light@6.1.0':
-    resolution: {integrity: sha512-wnBTswBTGZUH9dWgKcoTzJcjXC/lrcxJuqSoi/qR8ZhB+7pS55UsT8mmfXwhESVvAWyLiyUCYu0HKyqn9I0uDA==}
+  '@fsegurai/codemirror-theme-gruvbox-light@6.4.0':
+    resolution: {integrity: sha512-xO330RKOYFX5WEfT8Mi6HY5d3noH+RCDCFR4CAXqchZByG8zWeJGnayuxR7exyBVVT7mHu8ZDzR6Kms907Z1AA==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-material-dark@6.3.0':
-    resolution: {integrity: sha512-iNu13BBfYbmYYkrCZNPFFcUnJUeD8mb+iokaaLMtKs4ndaD+cvVBQvwszjW9dxlNLI63+SYDuomcc77YYAdrJw==}
+  '@fsegurai/codemirror-theme-high-contrast-dark@6.2.0':
+    resolution: {integrity: sha512-J3RkX3F+nKrZdXD5/xvcgmORvVi+YFAV85Gt3WISBn1XKPlvKCoQdzGZ0BtRMyhQ3AhTXa8Kw+7qByoz05jB4g==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-material-light@6.3.0':
-    resolution: {integrity: sha512-GsRSR7imrrtdI98419SMUKW9mCJbogoBiNrrScRjtGEld4rBWphuVT8KBrEN2c00XcF32OuaPraWKQcrQ+GltA==}
+  '@fsegurai/codemirror-theme-high-contrast-light@6.2.0':
+    resolution: {integrity: sha512-vGOhx1CXVgobIvuucpIkvIyOCjXJWg0D+iVM+jOI/LxJET016Fq/rtNnNXMuRyt13DyNXwYmsNpm5XK2xAHEwA==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-material-ocean@6.1.0':
-    resolution: {integrity: sha512-Zw3SyM1TcMVUmz5mF3iswTxCH8wYiW+XEpEwn4bIacx0pkbo+HAdeujhbcZlFZlU9w6SGn6aP1k5G4sPjH147Q==}
+  '@fsegurai/codemirror-theme-material-dark@6.4.0':
+    resolution: {integrity: sha512-X/hbJw7ZjDRI73R7VyQBVvZ+TBwBL7A6c1jWvcUvZTmlWoAl2RYSSKtYiJSOaEhLEACbBzZ8nUmE0s07zirPsA==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-monokai@6.3.0':
-    resolution: {integrity: sha512-TeFqOaQDp8z/7ratvCUHhbw9b/GjLH3hcGlPywg4KizbJGEDUrrK6f7jRmcPM9zAcey8n9tE9FM5fmVmWd60gQ==}
+  '@fsegurai/codemirror-theme-material-light@6.4.0':
+    resolution: {integrity: sha512-oc2ZRjXDm05Dc1trDz9/tMgf3tNsDjEBWkbXi1tYq5WZwon7PDg7ldiuWQPDdG5zRTU9iorYU1ysiGP+XoK/jw==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-nord@6.3.0':
-    resolution: {integrity: sha512-JcAPNR0CB0De15aJAdumuBKeT0Ipz2nWKIOBvBtOWuIg1P9XxhRg7kcRvwcv5SuonoXGo6jqtI/3gwVWpvYSkg==}
+  '@fsegurai/codemirror-theme-material-ocean@6.2.0':
+    resolution: {integrity: sha512-nZN7nDlXQ2qJgzyzSBRCQ0LqXNdOuwBBoM0f+THbEjzC55xSYL4ZZvRumhexgo1I3eAog8k+lfRSReeQgIWecA==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-palenight@6.3.0':
-    resolution: {integrity: sha512-N/P0XQdtXv7hTCRwgfcOOlBNbjbIrX978ppKQAGwPVagZwn2VO0PIMgEfQ7zkB5NP6wwKqJn1HYnmvmeyY+Stw==}
+  '@fsegurai/codemirror-theme-monokai@6.4.0':
+    resolution: {integrity: sha512-AR+cC3auaGAJg58I3q6Sq4+PqmD/2zrcEyPyTr6wXyoKsZU6WgmfnUy+DlnMQpqa8P97knRjJebPR1+YaMg6bg==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-solarized-dark@6.3.0':
-    resolution: {integrity: sha512-X9lGx6UBvl9UTGJO/vLNEyZZFhaHykleRjkS3LVj3tpSBBsujn84Byb/WyPLL92I8l3S04fCYyKIJmzr2VA3Aw==}
+  '@fsegurai/codemirror-theme-nord@6.4.0':
+    resolution: {integrity: sha512-6YBxAPWUah/Rd647Yo3GVwtm9iQsGOgRbkIyej4qYJgYnHtnSCW3mwx8PF50lcwbwF0GWXzONH0OpW152ldhvQ==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-solarized-light@6.3.0':
-    resolution: {integrity: sha512-c9wlGyDISGIABhWJ4/wrMWqrFAb1agMQRy/BmvOqaAf8mjNAIzyjHWNEYehTqQEtTx4XfcydFl6MvCrmY4dInA==}
+  '@fsegurai/codemirror-theme-one-dark@6.4.0':
+    resolution: {integrity: sha512-r2wcKJcgg3B3HzECxyqdm+StengnSLGfL+8ZwSKLCY5dzF0NxrwjJt8M3x4tQjwHGZH/Rbnu235aKGHgXsMhfA==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-synthwave-84@6.1.0':
-    resolution: {integrity: sha512-2ddliKUNTkk5uwmreo6wAENriTTTNdR/gslT4elWqvkE8nMS/cfFhqZZ+Z9uahuukwvRjOCc3KTpTCEnQPhqcQ==}
+  '@fsegurai/codemirror-theme-palenight@6.4.0':
+    resolution: {integrity: sha512-Xz52dx3dODrtelLe2itR6w8gGy9agO68psTMVvDgErnYJn0fjqU+wSJzU3ZRtoM+S9gAsHz0G1nfa6Z11Oqr6g==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-tokyo-night-day@6.3.0':
-    resolution: {integrity: sha512-CJ5b8/3PtRqTKR9WekjGryfixpEZYUDIipbROslBH+dm0Bd8pGRDtUfP8h0IEL0AvhRBYCzO547wl8sAvBqzag==}
+  '@fsegurai/codemirror-theme-rose-pine-dawn@6.4.0':
+    resolution: {integrity: sha512-Hsp1RfWP/Fsu46YJh0qAsZbm8pqvxu9SRlmJC2QrY9zN48mB9AoMqkqJQ/IYNQl3cRlNPhclHHbPJJb8rEBj1w==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-tokyo-night-storm@6.3.0':
-    resolution: {integrity: sha512-psLEFn48ZSOsiNCRLxftLT/JnCk6C03Z76zTulPow7oyrkqthCyOS87DqrvFT+gx/r1LA7rWoU91ISzMAT8qZA==}
+  '@fsegurai/codemirror-theme-solarized-dark@6.4.0':
+    resolution: {integrity: sha512-xzulrWXUwrg2gmDHnKnWbpheu+bOchL74nUOOStX3AhAzZINxwnQ+XHtT7E8XXhru0OoJU07LBHgU98KIVPClg==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-volcano@6.3.0':
-    resolution: {integrity: sha512-p8DlheXX2c1NCK2EAhcWeoxWak+NtKPf2yl/7HLhjN8cK4fL2lw0y6PUNtxPYttfm2WtIgI9W7UB8CsGhsBfZQ==}
+  '@fsegurai/codemirror-theme-solarized-light@6.4.0':
+    resolution: {integrity: sha512-BKg/VGZrsdkIEOsiMssa/c7hBgXRmEflcgQCGSJOp6pnuOlMhBvdcR6KsVgM3jSsZlIvfjct/4i5Zjltzi0R3Q==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-vscode-dark@6.3.0':
-    resolution: {integrity: sha512-GUT24lKfrbK+UpZT0eM6IabNV6peKjZ49ANJIB0IABbVIbgqhUUEawjvXHe1CsRUlIOmbZ84pW8Nv6xu76do3Q==}
+  '@fsegurai/codemirror-theme-synthwave-84@6.2.0':
+    resolution: {integrity: sha512-aZ8Kh3guj7biMVn543Bup0KAbeGTAmbYXDF1j6idSkeRS8+QQyuMlqXICh/GkbCOGQ/mnO47LRScsijoWLQ5EA==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-vscode-light@6.3.0':
-    resolution: {integrity: sha512-/bQTyZjv97uJBgen0dNZJMHx56cf1+vSKcWxJJpTiuRinnl+EhX8k00xLoZAj/qT+Zqyj1aVeABMbB1CEz9w5Q==}
+  '@fsegurai/codemirror-theme-tokyo-night-day@6.4.0':
+    resolution: {integrity: sha512-oWkhckpWg3wET0ed7KQ8Mn/9qvVKFMGauIdMg1vQ07lOT77sTk4r8zmQJ78/YIKY1D6UhvdLMmaM63iLvIgKOA==}
+    peerDependencies:
+      '@codemirror/language': 6.13.1
+      '@codemirror/state': 6.7.6
+      '@codemirror/view': 6.43.15
+      '@lezer/highlight': 1.2.5
+
+  '@fsegurai/codemirror-theme-tokyo-night-storm@6.4.0':
+    resolution: {integrity: sha512-8GLMxescFF/MrIAggpkLT8XO1us+T3b2rzjtBZn6ibEkmQklnHAxBbYJ77wvKDRYTZgeWQZkAsmy9RhqHuJCGA==}
+    peerDependencies:
+      '@codemirror/language': 6.13.1
+      '@codemirror/state': 6.7.6
+      '@codemirror/view': 6.43.15
+      '@lezer/highlight': 1.2.5
+
+  '@fsegurai/codemirror-theme-volcano@6.4.0':
+    resolution: {integrity: sha512-QZBEwLlNi3Qyr8RBAo5dS70ZbmgvSrlV/o5U7OwHqRFGQTs3cyOQ5T+NDcdaRfKjJQm4RjLWZy/nxbjbzu+OrA==}
+    peerDependencies:
+      '@codemirror/language': 6.13.1
+      '@codemirror/state': 6.7.6
+      '@codemirror/view': 6.43.15
+      '@lezer/highlight': 1.2.5
+
+  '@fsegurai/codemirror-theme-vscode-dark@6.4.0':
+    resolution: {integrity: sha512-aizvonEBab75UpKxtV0W7siCFBZ+45D0rC4a5qnKUsPap5rqOn5znOxe84MD6N9kHzUl2yD7oC+xSnH3IBfyGA==}
+    peerDependencies:
+      '@codemirror/language': 6.13.1
+      '@codemirror/state': 6.7.6
+      '@codemirror/view': 6.43.15
+      '@lezer/highlight': 1.2.5
+
+  '@fsegurai/codemirror-theme-vscode-light@6.4.0':
+    resolution: {integrity: sha512-B2YL8SEiZd05z0FrV6NpntuhmiJzgFEiPAppNJm8a/g1usHObdtHRGEuV5I5r58r1JCglb/vDnBbJ/7lMovm5Q==}
     peerDependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
@@ -13471,6 +13512,46 @@ snapshots:
       - '@types/react-dom'
       - immer
 
+  '@excalidraw/excalidraw@0.18.1(patch_hash=ab1f9211ffc9c7f65505b0f4f17f9a7879f35a67c4a87efcd98c54e41743618a)(react-dom@18.3.1(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      '@braintree/sanitize-url': 6.0.2
+      '@excalidraw/laser-pointer': 1.3.1
+      '@excalidraw/mermaid-to-excalidraw': 2.2.2
+      '@excalidraw/random-username': 1.1.0
+      '@radix-ui/react-popover': 1.1.6(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
+      '@radix-ui/react-tabs': 1.0.2(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
+      browser-fs-access: 0.29.1
+      canvas-roundrect-polyfill: 0.0.1
+      clsx: 1.1.1
+      cross-env: 7.0.3
+      es6-promise-pool: 2.5.0
+      fractional-indexing: 3.2.0
+      fuzzy: 0.1.3
+      image-blob-reduce: 3.0.1
+      jotai: 2.11.0(react@19.3.0)
+      jotai-scope: 0.7.2(jotai@2.11.0(react@19.3.0))(react@19.3.0)
+      lodash.debounce: 4.0.8
+      lodash.throttle: 4.1.1
+      nanoid: 6.0.1
+      open-color: 1.9.1
+      pako: 2.0.3
+      perfect-freehand: 1.2.0
+      pica: 7.1.1
+      png-chunk-text: 1.0.0
+      png-chunks-encode: 1.0.0
+      png-chunks-extract: 1.0.0
+      points-on-curve: 1.0.1
+      pwacompat: 2.0.17
+      react: 19.3.0
+      react-dom: 18.3.1(react@19.3.0)
+      roughjs: 4.6.6
+      sass: 1.51.0
+      tunnel-rat: 0.1.2(react@19.3.0)
+    transitivePeerDependencies:
+      - '@types/react'
+      - '@types/react-dom'
+      - immer
+
   '@excalidraw/laser-pointer@1.3.1': {}
 
   '@excalidraw/markdown-to-text@0.1.2': {}
@@ -13533,6 +13614,12 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
+  '@floating-ui/react-dom@2.1.9(react-dom@18.3.1(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      '@floating-ui/dom': 1.8.0
+      react: 19.3.0
+      react-dom: 18.3.1(react@19.3.0)
+
   '@floating-ui/utils@0.2.12': {}
 
   '@fluent/syntax@0.19.0': {}
@@ -13541,200 +13628,259 @@ snapshots:
 
   '@fregante/relaxed-json@2.0.0': {}
 
-  '@fsegurai/codemirror-theme-abcdef@6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-abcdef@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+    dependencies:
+      '@codemirror/language': 6.13.1
+      '@codemirror/state': 6.7.6
+      '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+      '@lezer/highlight': 1.2.5
+
+  '@fsegurai/codemirror-theme-abyss@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+    dependencies:
+      '@codemirror/language': 6.13.1
+      '@codemirror/state': 6.7.6
+      '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+      '@lezer/highlight': 1.2.5
+
+  '@fsegurai/codemirror-theme-android-studio@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+    dependencies:
+      '@codemirror/language': 6.13.1
+      '@codemirror/state': 6.7.6
+      '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+      '@lezer/highlight': 1.2.5
+
+  '@fsegurai/codemirror-theme-andromeda@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+    dependencies:
+      '@codemirror/language': 6.13.1
+      '@codemirror/state': 6.7.6
+      '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+      '@lezer/highlight': 1.2.5
+
+  '@fsegurai/codemirror-theme-basic-dark@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+    dependencies:
+      '@codemirror/language': 6.13.1
+      '@codemirror/state': 6.7.6
+      '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+      '@lezer/highlight': 1.2.5
+
+  '@fsegurai/codemirror-theme-basic-light@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+    dependencies:
+      '@codemirror/language': 6.13.1
+      '@codemirror/state': 6.7.6
+      '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+      '@lezer/highlight': 1.2.5
+
+  '@fsegurai/codemirror-theme-cobalt2@6.2.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+    dependencies:
+      '@codemirror/language': 6.13.1
+      '@codemirror/state': 6.7.6
+      '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
+      '@lezer/highlight': 1.2.5
+
+  '@fsegurai/codemirror-theme-core@6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-abyss@6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-dracula@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-android-studio@6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-forest@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-andromeda@6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-github-dark@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-basic-dark@6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-github-light@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-basic-light@6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-gruvbox-dark@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-cobalt2@6.1.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-gruvbox-light@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-forest@6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-high-contrast-dark@6.2.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-github-dark@6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-high-contrast-light@6.2.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-github-light@6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-material-dark@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-gruvbox-dark@6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-material-light@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-gruvbox-light@6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-material-ocean@6.2.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-high-contrast-dark@6.1.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-monokai@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-high-contrast-light@6.1.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-nord@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-material-dark@6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-one-dark@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-material-light@6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-palenight@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-material-ocean@6.1.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-rose-pine-dawn@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-monokai@6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-solarized-dark@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-nord@6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-solarized-light@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-palenight@6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-synthwave-84@6.2.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-solarized-dark@6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-tokyo-night-day@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-solarized-light@6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-tokyo-night-storm@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-synthwave-84@6.1.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-volcano@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-tokyo-night-day@6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-vscode-dark@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
-  '@fsegurai/codemirror-theme-tokyo-night-storm@6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
+  '@fsegurai/codemirror-theme-vscode-light@6.4.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
-      '@lezer/highlight': 1.2.5
-
-  '@fsegurai/codemirror-theme-volcano@6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
-    dependencies:
-      '@codemirror/language': 6.13.1
-      '@codemirror/state': 6.7.6
-      '@codemirror/view': 6.43.15
-      '@lezer/highlight': 1.2.5
-
-  '@fsegurai/codemirror-theme-vscode-dark@6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
-    dependencies:
-      '@codemirror/language': 6.13.1
-      '@codemirror/state': 6.7.6
-      '@codemirror/view': 6.43.15
-      '@lezer/highlight': 1.2.5
-
-  '@fsegurai/codemirror-theme-vscode-light@6.3.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)':
-    dependencies:
-      '@codemirror/language': 6.13.1
-      '@codemirror/state': 6.7.6
-      '@codemirror/view': 6.43.15
+      '@fsegurai/codemirror-theme-core': 6.0.0(@codemirror/language@6.13.1)(@codemirror/state@6.7.6)(@codemirror/view@6.43.15)(@lezer/highlight@1.2.5)
       '@lezer/highlight': 1.2.5
 
   '@full-ui/headless-calendar@7.1.5(temporal-polyfill@1.0.8)':
@@ -14445,7 +14591,7 @@ snapshots:
     dependencies:
       '@hono/node-server': 2.1.8(hono@4.13.18)
       ajv: 8.20.0
-      ajv-formats: 3.0.1
+      ajv-formats: 3.0.1(ajv@8.20.0)
       content-type: 1.0.5
       cors: 2.8.6
       cross-spawn: 7.0.6
@@ -14748,6 +14894,12 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
+  '@radix-ui/react-arrow@1.1.2(react-dom@18.3.1(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      '@radix-ui/react-primitive': 2.0.2(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
+      react: 19.3.0
+      react-dom: 18.3.1(react@19.3.0)
+
   '@radix-ui/react-collection@1.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@babel/runtime': 7.29.7
@@ -14757,6 +14909,16 @@ snapshots:
       '@radix-ui/react-slot': 1.0.1(react@18.3.1)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
+
+  '@radix-ui/react-collection@1.0.1(react-dom@18.3.1(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      '@babel/runtime': 7.29.7
+      '@radix-ui/react-compose-refs': 1.0.0(react@19.3.0)
+      '@radix-ui/react-context': 1.0.0(react@19.3.0)
+      '@radix-ui/react-primitive': 1.0.1(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
+      '@radix-ui/react-slot': 1.0.1(react@19.3.0)
+      react: 19.3.0
+      react-dom: 18.3.1(react@19.3.0)
 
   '@radix-ui/react-collection@1.1.15(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -14772,9 +14934,18 @@ snapshots:
       '@babel/runtime': 7.29.7
       react: 18.3.1
 
+  '@radix-ui/react-compose-refs@1.0.0(react@19.3.0)':
+    dependencies:
+      '@babel/runtime': 7.29.7
+      react: 19.3.0
+
   '@radix-ui/react-compose-refs@1.1.1(react@18.3.1)':
     dependencies:
       react: 18.3.1
+
+  '@radix-ui/react-compose-refs@1.1.1(react@19.3.0)':
+    dependencies:
+      react: 19.3.0
 
   '@radix-ui/react-compose-refs@1.1.5(react@18.3.1)':
     dependencies:
@@ -14785,9 +14956,18 @@ snapshots:
       '@babel/runtime': 7.29.7
       react: 18.3.1
 
+  '@radix-ui/react-context@1.0.0(react@19.3.0)':
+    dependencies:
+      '@babel/runtime': 7.29.7
+      react: 19.3.0
+
   '@radix-ui/react-context@1.1.1(react@18.3.1)':
     dependencies:
       react: 18.3.1
+
+  '@radix-ui/react-context@1.1.1(react@19.3.0)':
+    dependencies:
+      react: 19.3.0
 
   '@radix-ui/react-context@1.2.2(react@18.3.1)':
     dependencies:
@@ -14818,6 +14998,11 @@ snapshots:
       '@babel/runtime': 7.29.7
       react: 18.3.1
 
+  '@radix-ui/react-direction@1.0.0(react@19.3.0)':
+    dependencies:
+      '@babel/runtime': 7.29.7
+      react: 19.3.0
+
   '@radix-ui/react-direction@1.1.4(react@18.3.1)':
     dependencies:
       react: 18.3.1
@@ -14842,6 +15027,16 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
+  '@radix-ui/react-dismissable-layer@1.1.5(react-dom@18.3.1(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      '@radix-ui/primitive': 1.1.1
+      '@radix-ui/react-compose-refs': 1.1.1(react@19.3.0)
+      '@radix-ui/react-primitive': 2.0.2(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
+      '@radix-ui/react-use-callback-ref': 1.1.0(react@19.3.0)
+      '@radix-ui/react-use-escape-keydown': 1.1.0(react@19.3.0)
+      react: 19.3.0
+      react-dom: 18.3.1(react@19.3.0)
+
   '@radix-ui/react-dropdown-menu@2.1.24(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@radix-ui/primitive': 1.1.7
@@ -14857,6 +15052,10 @@ snapshots:
   '@radix-ui/react-focus-guards@1.1.1(react@18.3.1)':
     dependencies:
       react: 18.3.1
+
+  '@radix-ui/react-focus-guards@1.1.1(react@19.3.0)':
+    dependencies:
+      react: 19.3.0
 
   '@radix-ui/react-focus-guards@1.1.6(react@18.3.1)':
     dependencies:
@@ -14878,6 +15077,14 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
+  '@radix-ui/react-focus-scope@1.1.2(react-dom@18.3.1(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      '@radix-ui/react-compose-refs': 1.1.1(react@19.3.0)
+      '@radix-ui/react-primitive': 2.0.2(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
+      '@radix-ui/react-use-callback-ref': 1.1.0(react@19.3.0)
+      react: 19.3.0
+      react-dom: 18.3.1(react@19.3.0)
+
   '@radix-ui/react-hover-card@1.1.23(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@radix-ui/primitive': 1.1.7
@@ -14898,10 +15105,21 @@ snapshots:
       '@radix-ui/react-use-layout-effect': 1.0.0(react@18.3.1)
       react: 18.3.1
 
+  '@radix-ui/react-id@1.0.0(react@19.3.0)':
+    dependencies:
+      '@babel/runtime': 7.29.7
+      '@radix-ui/react-use-layout-effect': 1.0.0(react@19.3.0)
+      react: 19.3.0
+
   '@radix-ui/react-id@1.1.0(react@18.3.1)':
     dependencies:
       '@radix-ui/react-use-layout-effect': 1.1.0(react@18.3.1)
       react: 18.3.1
+
+  '@radix-ui/react-id@1.1.0(react@19.3.0)':
+    dependencies:
+      '@radix-ui/react-use-layout-effect': 1.1.0(react@19.3.0)
+      react: 19.3.0
 
   '@radix-ui/react-id@1.1.4(react@18.3.1)':
     dependencies:
@@ -14971,6 +15189,26 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       react-remove-scroll: 2.7.2(react@18.3.1)
 
+  '@radix-ui/react-popover@1.1.6(react-dom@18.3.1(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      '@radix-ui/primitive': 1.1.1
+      '@radix-ui/react-compose-refs': 1.1.1(react@19.3.0)
+      '@radix-ui/react-context': 1.1.1(react@19.3.0)
+      '@radix-ui/react-dismissable-layer': 1.1.5(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
+      '@radix-ui/react-focus-guards': 1.1.1(react@19.3.0)
+      '@radix-ui/react-focus-scope': 1.1.2(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
+      '@radix-ui/react-id': 1.1.0(react@19.3.0)
+      '@radix-ui/react-popper': 1.2.2(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
+      '@radix-ui/react-portal': 1.1.4(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
+      '@radix-ui/react-presence': 1.1.2(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
+      '@radix-ui/react-primitive': 2.0.2(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
+      '@radix-ui/react-slot': 1.1.2(react@19.3.0)
+      '@radix-ui/react-use-controllable-state': 1.1.0(react@19.3.0)
+      aria-hidden: 1.2.6
+      react: 19.3.0
+      react-dom: 18.3.1(react@19.3.0)
+      react-remove-scroll: 2.7.2(react@19.3.0)
+
   '@radix-ui/react-popper@1.2.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@floating-ui/react-dom': 2.1.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -14985,6 +15223,21 @@ snapshots:
       '@radix-ui/rect': 1.1.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
+
+  '@radix-ui/react-popper@1.2.2(react-dom@18.3.1(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      '@floating-ui/react-dom': 2.1.9(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
+      '@radix-ui/react-arrow': 1.1.2(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
+      '@radix-ui/react-compose-refs': 1.1.1(react@19.3.0)
+      '@radix-ui/react-context': 1.1.1(react@19.3.0)
+      '@radix-ui/react-primitive': 2.0.2(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
+      '@radix-ui/react-use-callback-ref': 1.1.0(react@19.3.0)
+      '@radix-ui/react-use-layout-effect': 1.1.0(react@19.3.0)
+      '@radix-ui/react-use-rect': 1.1.0(react@19.3.0)
+      '@radix-ui/react-use-size': 1.1.0(react@19.3.0)
+      '@radix-ui/rect': 1.1.0
+      react: 19.3.0
+      react-dom: 18.3.1(react@19.3.0)
 
   '@radix-ui/react-popper@1.3.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -15015,6 +15268,13 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
+  '@radix-ui/react-portal@1.1.4(react-dom@18.3.1(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      '@radix-ui/react-primitive': 2.0.2(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
+      '@radix-ui/react-use-layout-effect': 1.1.0(react@19.3.0)
+      react: 19.3.0
+      react-dom: 18.3.1(react@19.3.0)
+
   '@radix-ui/react-presence@1.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@babel/runtime': 7.29.7
@@ -15022,6 +15282,14 @@ snapshots:
       '@radix-ui/react-use-layout-effect': 1.0.0(react@18.3.1)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
+
+  '@radix-ui/react-presence@1.0.0(react-dom@18.3.1(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      '@babel/runtime': 7.29.7
+      '@radix-ui/react-compose-refs': 1.0.0(react@19.3.0)
+      '@radix-ui/react-use-layout-effect': 1.0.0(react@19.3.0)
+      react: 19.3.0
+      react-dom: 18.3.1(react@19.3.0)
 
   '@radix-ui/react-presence@1.1.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -15036,6 +15304,13 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
+  '@radix-ui/react-presence@1.1.2(react-dom@18.3.1(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      '@radix-ui/react-compose-refs': 1.1.1(react@19.3.0)
+      '@radix-ui/react-use-layout-effect': 1.1.0(react@19.3.0)
+      react: 19.3.0
+      react-dom: 18.3.1(react@19.3.0)
+
   '@radix-ui/react-primitive@1.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@babel/runtime': 7.29.7
@@ -15043,11 +15318,24 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
+  '@radix-ui/react-primitive@1.0.1(react-dom@18.3.1(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      '@babel/runtime': 7.29.7
+      '@radix-ui/react-slot': 1.0.1(react@19.3.0)
+      react: 19.3.0
+      react-dom: 18.3.1(react@19.3.0)
+
   '@radix-ui/react-primitive@2.0.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@radix-ui/react-slot': 1.1.2(react@18.3.1)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
+
+  '@radix-ui/react-primitive@2.0.2(react-dom@18.3.1(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      '@radix-ui/react-slot': 1.1.2(react@19.3.0)
+      react: 19.3.0
+      react-dom: 18.3.1(react@19.3.0)
 
   '@radix-ui/react-primitive@2.1.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -15069,6 +15357,21 @@ snapshots:
       '@radix-ui/react-use-controllable-state': 1.0.0(react@18.3.1)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
+
+  '@radix-ui/react-roving-focus@1.0.2(react-dom@18.3.1(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      '@babel/runtime': 7.29.7
+      '@radix-ui/primitive': 1.0.0
+      '@radix-ui/react-collection': 1.0.1(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
+      '@radix-ui/react-compose-refs': 1.0.0(react@19.3.0)
+      '@radix-ui/react-context': 1.0.0(react@19.3.0)
+      '@radix-ui/react-direction': 1.0.0(react@19.3.0)
+      '@radix-ui/react-id': 1.0.0(react@19.3.0)
+      '@radix-ui/react-primitive': 1.0.1(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
+      '@radix-ui/react-use-callback-ref': 1.0.0(react@19.3.0)
+      '@radix-ui/react-use-controllable-state': 1.0.0(react@19.3.0)
+      react: 19.3.0
+      react-dom: 18.3.1(react@19.3.0)
 
   '@radix-ui/react-roving-focus@1.1.19(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -15098,10 +15401,21 @@ snapshots:
       '@radix-ui/react-compose-refs': 1.0.0(react@18.3.1)
       react: 18.3.1
 
+  '@radix-ui/react-slot@1.0.1(react@19.3.0)':
+    dependencies:
+      '@babel/runtime': 7.29.7
+      '@radix-ui/react-compose-refs': 1.0.0(react@19.3.0)
+      react: 19.3.0
+
   '@radix-ui/react-slot@1.1.2(react@18.3.1)':
     dependencies:
       '@radix-ui/react-compose-refs': 1.1.1(react@18.3.1)
       react: 18.3.1
+
+  '@radix-ui/react-slot@1.1.2(react@19.3.0)':
+    dependencies:
+      '@radix-ui/react-compose-refs': 1.1.1(react@19.3.0)
+      react: 19.3.0
 
   '@radix-ui/react-slot@1.3.3(react@18.3.1)':
     dependencies:
@@ -15122,14 +15436,37 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
+  '@radix-ui/react-tabs@1.0.2(react-dom@18.3.1(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      '@babel/runtime': 7.29.7
+      '@radix-ui/primitive': 1.0.0
+      '@radix-ui/react-context': 1.0.0(react@19.3.0)
+      '@radix-ui/react-direction': 1.0.0(react@19.3.0)
+      '@radix-ui/react-id': 1.0.0(react@19.3.0)
+      '@radix-ui/react-presence': 1.0.0(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
+      '@radix-ui/react-primitive': 1.0.1(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
+      '@radix-ui/react-roving-focus': 1.0.2(react-dom@18.3.1(react@19.3.0))(react@19.3.0)
+      '@radix-ui/react-use-controllable-state': 1.0.0(react@19.3.0)
+      react: 19.3.0
+      react-dom: 18.3.1(react@19.3.0)
+
   '@radix-ui/react-use-callback-ref@1.0.0(react@18.3.1)':
     dependencies:
       '@babel/runtime': 7.29.7
       react: 18.3.1
 
+  '@radix-ui/react-use-callback-ref@1.0.0(react@19.3.0)':
+    dependencies:
+      '@babel/runtime': 7.29.7
+      react: 19.3.0
+
   '@radix-ui/react-use-callback-ref@1.1.0(react@18.3.1)':
     dependencies:
       react: 18.3.1
+
+  '@radix-ui/react-use-callback-ref@1.1.0(react@19.3.0)':
+    dependencies:
+      react: 19.3.0
 
   '@radix-ui/react-use-callback-ref@1.1.4(react@18.3.1)':
     dependencies:
@@ -15141,10 +15478,21 @@ snapshots:
       '@radix-ui/react-use-callback-ref': 1.0.0(react@18.3.1)
       react: 18.3.1
 
+  '@radix-ui/react-use-controllable-state@1.0.0(react@19.3.0)':
+    dependencies:
+      '@babel/runtime': 7.29.7
+      '@radix-ui/react-use-callback-ref': 1.0.0(react@19.3.0)
+      react: 19.3.0
+
   '@radix-ui/react-use-controllable-state@1.1.0(react@18.3.1)':
     dependencies:
       '@radix-ui/react-use-callback-ref': 1.1.0(react@18.3.1)
       react: 18.3.1
+
+  '@radix-ui/react-use-controllable-state@1.1.0(react@19.3.0)':
+    dependencies:
+      '@radix-ui/react-use-callback-ref': 1.1.0(react@19.3.0)
+      react: 19.3.0
 
   '@radix-ui/react-use-controllable-state@1.2.6(react@18.3.1)':
     dependencies:
@@ -15163,6 +15511,11 @@ snapshots:
       '@radix-ui/react-use-callback-ref': 1.1.0(react@18.3.1)
       react: 18.3.1
 
+  '@radix-ui/react-use-escape-keydown@1.1.0(react@19.3.0)':
+    dependencies:
+      '@radix-ui/react-use-callback-ref': 1.1.0(react@19.3.0)
+      react: 19.3.0
+
   '@radix-ui/react-use-is-hydrated@0.1.3(react@18.3.1)':
     dependencies:
       react: 18.3.1
@@ -15172,9 +15525,18 @@ snapshots:
       '@babel/runtime': 7.29.7
       react: 18.3.1
 
+  '@radix-ui/react-use-layout-effect@1.0.0(react@19.3.0)':
+    dependencies:
+      '@babel/runtime': 7.29.7
+      react: 19.3.0
+
   '@radix-ui/react-use-layout-effect@1.1.0(react@18.3.1)':
     dependencies:
       react: 18.3.1
+
+  '@radix-ui/react-use-layout-effect@1.1.0(react@19.3.0)':
+    dependencies:
+      react: 19.3.0
 
   '@radix-ui/react-use-layout-effect@1.1.4(react@18.3.1)':
     dependencies:
@@ -15185,6 +15547,11 @@ snapshots:
       '@radix-ui/rect': 1.1.0
       react: 18.3.1
 
+  '@radix-ui/react-use-rect@1.1.0(react@19.3.0)':
+    dependencies:
+      '@radix-ui/rect': 1.1.0
+      react: 19.3.0
+
   '@radix-ui/react-use-rect@1.1.4(react@18.3.1)':
     dependencies:
       '@radix-ui/rect': 1.1.3
@@ -15194,6 +15561,11 @@ snapshots:
     dependencies:
       '@radix-ui/react-use-layout-effect': 1.1.0(react@18.3.1)
       react: 18.3.1
+
+  '@radix-ui/react-use-size@1.1.0(react@19.3.0)':
+    dependencies:
+      '@radix-ui/react-use-layout-effect': 1.1.0(react@19.3.0)
+      react: 19.3.0
 
   '@radix-ui/react-use-size@1.1.4(react@18.3.1)':
     dependencies:
@@ -16859,8 +17231,8 @@ snapshots:
       '@ai-sdk/provider-utils': 5.0.82(zod@4.6.7)
       zod: 4.6.7
 
-  ajv-formats@3.0.1:
-    dependencies:
+  ajv-formats@3.0.1(ajv@8.20.0):
+    optionalDependencies:
       ajv: 8.20.0
 
   ajv-keywords@5.1.0(ajv@8.20.0):
@@ -20153,9 +20525,18 @@ snapshots:
       jotai: 2.11.0(react@18.3.1)
       react: 18.3.1
 
+  jotai-scope@0.7.2(jotai@2.11.0(react@19.3.0))(react@19.3.0):
+    dependencies:
+      jotai: 2.11.0(react@19.3.0)
+      react: 19.3.0
+
   jotai@2.11.0(react@18.3.1):
     optionalDependencies:
       react: 18.3.1
+
+  jotai@2.11.0(react@19.3.0):
+    optionalDependencies:
+      react: 19.3.0
 
   jpeg-js@0.4.4: {}
 
@@ -20600,6 +20981,33 @@ snapshots:
       quickselect: 3.0.0
       tinyqueue: 3.0.0
       zustand: 5.1.0(react@18.3.1)(use-sync-external-store@1.7.0(react@18.3.1))
+    transitivePeerDependencies:
+      - '@types/react'
+      - immer
+      - react
+      - use-sync-external-store
+
+  maplibre-gl@6.19.0(react@19.3.0)(use-sync-external-store@1.7.0(react@19.3.0)):
+    dependencies:
+      '@mapbox/point-geometry': 1.1.0
+      '@mapbox/tiny-sdf': 2.3.0
+      '@mapbox/unitbezier': 1.0.0
+      '@mapbox/vector-tile': 3.0.0
+      '@maplibre/geojson-vt': 6.3.3
+      '@maplibre/maplibre-gl-style-spec': 26.9.0
+      '@maplibre/mlt': 1.3.0
+      '@maplibre/vt-pbf': 4.3.3
+      '@types/geojson': 7946.0.16
+      bidi-js: 1.1.0
+      earcut: 3.2.4
+      gl-matrix: 3.4.4
+      kdbush: 4.1.0
+      murmurhash-js: 1.0.0
+      pbf: 5.1.2
+      potpack: 2.1.0
+      quickselect: 3.0.0
+      tinyqueue: 3.0.0
+      zustand: 5.1.0(react@19.3.0)(use-sync-external-store@1.7.0(react@19.3.0))
     transitivePeerDependencies:
       - '@types/react'
       - immer
@@ -21887,6 +22295,12 @@ snapshots:
       react: 18.3.1
       scheduler: 0.23.2
 
+  react-dom@18.3.1(react@19.3.0):
+    dependencies:
+      loose-envify: 1.4.0
+      react: 19.3.0
+      scheduler: 0.23.2
+
   react-i18next@18.0.2(i18next@27.1.5(typescript@6.0.3))(react@18.3.1)(typescript@6.0.3):
     dependencies:
       html-parse-stringify: 4.0.1
@@ -21923,6 +22337,12 @@ snapshots:
       react-style-singleton: 2.2.3(react@18.3.1)
       tslib: 2.9.1
 
+  react-remove-scroll-bar@2.3.8(react@19.3.0):
+    dependencies:
+      react: 19.3.0
+      react-style-singleton: 2.2.3(react@19.3.0)
+      tslib: 2.9.1
+
   react-remove-scroll@2.7.2(react@18.3.1):
     dependencies:
       react: 18.3.1
@@ -21931,6 +22351,15 @@ snapshots:
       tslib: 2.9.1
       use-callback-ref: 1.3.3(react@18.3.1)
       use-sidecar: 1.1.3(react@18.3.1)
+
+  react-remove-scroll@2.7.2(react@19.3.0):
+    dependencies:
+      react: 19.3.0
+      react-remove-scroll-bar: 2.3.8(react@19.3.0)
+      react-style-singleton: 2.2.3(react@19.3.0)
+      tslib: 2.9.1
+      use-callback-ref: 1.3.3(react@19.3.0)
+      use-sidecar: 1.1.3(react@19.3.0)
 
   react-router-dom@4.3.1(react@16.14.0):
     dependencies:
@@ -21959,15 +22388,31 @@ snapshots:
       react: 18.3.1
       tslib: 2.9.1
 
+  react-style-singleton@2.2.3(react@19.3.0):
+    dependencies:
+      get-nonce: 1.0.1
+      react: 19.3.0
+      tslib: 2.9.1
+
   react-window@2.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
+  react-window@2.5.3(react-dom@18.3.1(react@19.3.0))(react@19.3.0):
+    dependencies:
+      react: 19.3.0
+      react-dom: 18.3.1(react@19.3.0)
+
   react-zoom-pan-pinch@4.2.0(patch_hash=09dfeb6f635c52ef565ca21aec3f70eb129577661f85eb67262092e8cb9f8548)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
+
+  react-zoom-pan-pinch@4.2.0(patch_hash=09dfeb6f635c52ef565ca21aec3f70eb129577661f85eb67262092e8cb9f8548)(react-dom@18.3.1(react@19.3.0))(react@19.3.0):
+    dependencies:
+      react: 19.3.0
+      react-dom: 18.3.1(react@19.3.0)
 
   react@16.14.0:
     dependencies:
@@ -22356,7 +22801,7 @@ snapshots:
     dependencies:
       '@types/json-schema': 7.0.15
       ajv: 8.20.0
-      ajv-formats: 3.0.1
+      ajv-formats: 3.0.1(ajv@8.20.0)
       ajv-keywords: 5.1.0(ajv@8.20.0)
     optional: true
 
@@ -23109,6 +23554,14 @@ snapshots:
       - immer
       - react
 
+  tunnel-rat@0.1.2(react@19.3.0):
+    dependencies:
+      zustand: 4.5.7(react@19.3.0)
+    transitivePeerDependencies:
+      - '@types/react'
+      - immer
+      - react
+
   tunnel@0.0.6: {}
 
   turndown@7.2.5:
@@ -23446,15 +23899,30 @@ snapshots:
       react: 18.3.1
       tslib: 2.9.1
 
+  use-callback-ref@1.3.3(react@19.3.0):
+    dependencies:
+      react: 19.3.0
+      tslib: 2.9.1
+
   use-sidecar@1.1.3(react@18.3.1):
     dependencies:
       detect-node-es: 1.1.0
       react: 18.3.1
       tslib: 2.9.1
 
+  use-sidecar@1.1.3(react@19.3.0):
+    dependencies:
+      detect-node-es: 1.1.0
+      react: 19.3.0
+      tslib: 2.9.1
+
   use-sync-external-store@1.7.0(react@18.3.1):
     dependencies:
       react: 18.3.1
+
+  use-sync-external-store@1.7.0(react@19.3.0):
+    dependencies:
+      react: 19.3.0
 
   user-agent-data-types@0.4.3: {}
 
@@ -23994,9 +24462,20 @@ snapshots:
     optionalDependencies:
       react: 18.3.1
 
+  zustand@4.5.7(react@19.3.0):
+    dependencies:
+      use-sync-external-store: 1.7.0(react@19.3.0)
+    optionalDependencies:
+      react: 19.3.0
+
   zustand@5.1.0(react@18.3.1)(use-sync-external-store@1.7.0(react@18.3.1)):
     optionalDependencies:
       react: 18.3.1
       use-sync-external-store: 1.7.0(react@18.3.1)
+
+  zustand@5.1.0(react@19.3.0)(use-sync-external-store@1.7.0(react@19.3.0)):
+    optionalDependencies:
+      react: 19.3.0
+      use-sync-external-store: 1.7.0(react@19.3.0)
 
   zwitch@2.0.4: {}
