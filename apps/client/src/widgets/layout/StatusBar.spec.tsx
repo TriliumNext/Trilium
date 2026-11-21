@@ -200,8 +200,12 @@ describe("StatusBar panels", () => {
             [ "status_bar.cursor_column", "32" ]
         ]);
 
-        const lineTooltip = getTooltip(0);
-        expect(lineTooltip).not.toBeNull();
+        // `useStaticTooltip()` attaches the tooltip in an effect, which runs after the part renders.
+        const lineTooltip = await vi.waitFor(() => {
+            const tooltip = getTooltip(0);
+            expect(tooltip).not.toBeNull();
+            return tooltip;
+        });
         act(() => report?.({ line: 3, column: 1, selectionLength: 120 }));
         expect(getParts()).toEqual([
             [ "status_bar.cursor_line", "3" ],
