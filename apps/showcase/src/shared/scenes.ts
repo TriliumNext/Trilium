@@ -1,3 +1,41 @@
+import type { Page } from "playwright";
+
+export interface Scene {
+    id: string;
+    query: string;
+    desktopQuery?: string;
+    prepare?(page: Page): Promise<unknown>;
+    desktopPrepare?(page: Page): Promise<unknown>;
+    /** Keeps the focus where `prepare` left it, such as in an editor whose toolbar shows. */
+    keepFocus?: boolean;
+    colorScheme?: "light" | "dark";
+    caption: string;
+    /** Replaces `caption` on Flathub. */
+    flathubCaption?: string;
+    alt: string;
+}
+
+export interface Device {
+    viewport: { width: number; height: number };
+    deviceScaleFactor: number;
+    userAgent: string;
+    /** Sets the screenshot under a caption, from `templates/screenshot.html`. */
+    captioned: boolean;
+}
+
+/** The part of the backend script API that `SEED` calls. */
+declare const api: {
+    searchForNote(query: string): SeedNote;
+    createNewNote(params: object): { note: SeedNote };
+    createTextNote(parentNoteId: string, title: string, content: string): { note: SeedNote };
+};
+
+interface SeedNote {
+    noteId: string;
+    setLabel(name: string, value?: string): void;
+    getAttachmentsByRole(role: string): { setContent(content: string): void }[];
+}
+
 /**
  * The screens captured from the demo document, in the order the store shows them. `query` finds the
  * note to open, and `prepare(page)` runs in Node with the Playwright page once the note shows on
@@ -6,7 +44,7 @@
  * `caption` goes above the phone screenshot, with `\n` where its two lines break; `alt` is the
  * screenshot's description in the store (at most 140 characters).
  */
-export const SCENES = [
+export const SCENES: Scene[] = [
     {
         id: "tree",
         query: "note.title = 'Inbox'",
@@ -27,7 +65,7 @@ export const SCENES = [
             await editor.evaluate((editable) => {
                 const nested = editable.querySelectorAll("[contenteditable]");
                 for (const element of [ editable, ...nested ]) {
-                    element.spellcheck = false;
+                    if (element instanceof HTMLElement) element.spellcheck = false;
                 }
             });
             await editor.locator("strong", { hasText: "9:00" }).click();
@@ -35,7 +73,7 @@ export const SCENES = [
             await editor.locator("h2").evaluate((heading) => {
                 heading.scrollIntoView({ block: "start", behavior: "instant" });
             });
-            const isPhone = page.viewportSize().width < 600;
+            const isPhone = (page.viewportSize()?.width ?? 0) < 600;
             const button = isPhone ? "Text formatting" : "Block type";
             await page.locator(`.ck-toolbar [data-cke-tooltip-text='${button}']`).first().click();
             await page.mouse.move(0, 0);
@@ -113,7 +151,7 @@ export const SCENES = [
     }
 ];
 
-function collapseMapAttribution(page) {
+function collapseMapAttribution(page: Page) {
     return page.locator(".maplibregl-ctrl-attrib-button").first().click();
 }
 
@@ -132,7 +170,7 @@ export const HERO = {
  * needs for promotion; the tablet is landscape 16:9 at 1920 x 1080 and stays uncaptioned, since
  * the store allows no text outside the app on large-screen screenshots.
  */
-export const DEVICES = {
+export const DEVICES: Record<string, Device> = {
     phone: {
         viewport: { width: 360, height: 640 },
         deviceScaleFactor: 3,
@@ -156,7 +194,7 @@ export const DEVICES = {
  * markers. `tripCosts` and `itinerary` are the contents of the two notes, `TRIP_COSTS` and
  * `ITINERARY`.
  */
-export function SEED(tripCosts, itinerary) {
+export function SEED(tripCosts: string, itinerary: string) {
     const demo = api.searchForNote("note.title = 'Trilium Demo'");
     const board = api.createNewNote({
         parentNoteId: demo.noteId, title: "Trip planning", type: "book", content: ""
@@ -166,7 +204,7 @@ export function SEED(tripCosts, itinerary) {
     board.setLabel("iconClass", "bx bx-trip");
     board.setLabel("hidePromotedAttributes");
     board.setLabel("subtreeHidden");
-    const cards = [
+    const cards: [ string, string, string ][] = [
         [ "To do", "Book the flights", "bx bxs-plane-take-off" ],
         [ "To do", "Rent a car", "bx bx-car" ],
         [ "To do", "Pack the camera", "bx bx-camera" ],
@@ -245,8 +283,8 @@ export const ITINERARY = [
         + "</tbody></table></figure>",
     "<h3>Packing list</h3>",
     "<ul class=\"todo-list\">"
-        + [ [ "Passports", true ], [ "Comfortable shoes", true ], [ "Camera charger", false ],
-            [ "Travel adapter", false ] ].map(([ item, done ]) => "<li><label "
+        + ([ [ "Passports", true ], [ "Comfortable shoes", true ], [ "Camera charger", false ],
+            [ "Travel adapter", false ] ] as const).map(([ item, done ]) => "<li><label "
             + "class=\"todo-list__label\"><input type=\"checkbox\""
             + (done ? " checked=\"checked\"" : "") + " disabled=\"disabled\"><span "
             + `class="todo-list__label__description">${item}</span></label></li>`).join("")

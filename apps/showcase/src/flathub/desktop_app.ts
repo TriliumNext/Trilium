@@ -1,17 +1,29 @@
 import { spawn } from "child_process";
 import fs from "fs";
 import path from "path";
-import { chromium } from "playwright";
+import { type Browser, chromium, type Page } from "playwright";
 
-import { repoRoot } from "../shared/paths.mjs";
+import { repoRoot } from "../shared/build.ts";
+
+export interface DesktopApp {
+    /** The main window. */
+    page: Page;
+    stop(): Promise<void>;
+}
 
 /**
  * Starts the desktop app in dev mode on `dataDir`, in the session that `env` describes, and
  * resolves with its main window as a Playwright page, reached over the remote debugging port.
  */
-export async function startDesktopApp({ dataDir, env, debugPort, port, logPath }) {
+export async function startDesktopApp({ dataDir, env, debugPort, port, logPath }: {
+    dataDir: string;
+    env: NodeJS.ProcessEnv;
+    debugPort: number;
+    port: number;
+    logPath: string;
+}): Promise<DesktopApp> {
     const electronDataDir = fs.mkdtempSync(path.join(dataDir, "electron-"));
-    const appEnv = {
+    const appEnv: NodeJS.ProcessEnv = {
         ...env,
         TRILIUM_PORT: String(port),
         TRILIUM_DATA_DIR: dataDir,
@@ -36,7 +48,7 @@ export async function startDesktopApp({ dataDir, env, debugPort, port, logPath }
 
     const stop = () => {
         try {
-            process.kill(-app.pid);
+            if (app.pid) process.kill(-app.pid);
         } catch {
             // Already gone.
         }
@@ -44,8 +56,8 @@ export async function startDesktopApp({ dataDir, env, debugPort, port, logPath }
     process.on("exit", stop);
 
     const deadline = Date.now() + 3 * 60_000;
-    let browser;
-    let page;
+    let browser: Browser | undefined;
+    let page: Page | undefined;
     while (!page) {
         if (exited || Date.now() > deadline) {
             stop();
@@ -69,7 +81,7 @@ export async function startDesktopApp({ dataDir, env, debugPort, port, logPath }
     return {
         page,
         async stop() {
-            await browser.close().catch(() => {});
+            await browser?.close().catch(() => {});
             stop();
         }
     };

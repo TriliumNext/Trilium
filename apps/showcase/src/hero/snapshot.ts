@@ -2,6 +2,7 @@ import { execFileSync } from "child_process";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import type { Page } from "playwright";
 
 /**
  * Serializes the page into one self-contained HTML file: the DOM without scripts, only the CSS
@@ -11,7 +12,7 @@ import path from "path";
  * is kept whatever media query it sits in. `fonttools` is the fontTools command, which needs the
  * Brotli module to write WOFF2. Resolves with the HTML and the numbers behind its size.
  */
-export async function captureSnapshot(page, { fonttools }) {
+export async function captureSnapshot(page: Page, { fonttools }: { fonttools: string }) {
     const harvested = await page.evaluate(harvestPage);
     const { css, declared, kept: keptProperties } = pruneCustomProperties(harvested.css,
         harvested.inlineStyles);
@@ -21,12 +22,12 @@ export async function captureSnapshot(page, { fonttools }) {
         const textFile = path.join(workDir, "chars.txt");
         fs.writeFileSync(textFile, harvested.chars);
         let fontFaces = "";
-        const fonts = [];
+        const fonts: { family: string; bytes: number }[] = [];
         for (const face of harvested.fontFaces) {
             const source = path.join(workDir, "source");
             const subset = path.join(workDir, "subset.woff2");
             fs.writeFileSync(source, Buffer.from(await (await fetch(face.url)).arrayBuffer()));
-            const run = (args) => execFileSync(fonttools, args, {
+            const run = (args: string[]) => execFileSync(fonttools, args, {
                 stdio: [ "ignore", "ignore", "pipe" ]
             });
             // Chromium draws list markers with `tnum`, which is not among the default features.
@@ -58,18 +59,18 @@ export async function captureSnapshot(page, { fonttools }) {
  * Drops the custom property declarations that nothing reaches: a property stays when a rule, an
  * inline style or another kept property reads it through `var()`.
  */
-function pruneCustomProperties(css, inlineStyles) {
+function pruneCustomProperties(css: string, inlineStyles: string) {
     const declaration = /(^|[{;\s])(--[A-Za-z0-9_-]+)\s*:\s*([^;{}]*)(;?)/g;
-    const values = new Map();
+    const values = new Map<string, string>();
     for (const [ , , name, value ] of css.matchAll(declaration)) {
         values.set(name, `${values.get(name) ?? ""} ${value}`);
     }
-    const references = (text) => [ ...text.matchAll(/var\(\s*(--[A-Za-z0-9_-]+)/g) ]
+    const references = (text: string) => [ ...text.matchAll(/var\(\s*(--[A-Za-z0-9_-]+)/g) ]
         .map((match) => match[1]);
     const used = new Set(references(css.replace(declaration, "$1") + inlineStyles));
     const pending = [ ...used ];
     while (pending.length) {
-        for (const name of references(values.get(pending.pop()) ?? "")) {
+        for (const name of references(values.get(pending.pop() ?? "") ?? "")) {
             if (!used.has(name)) {
                 used.add(name);
                 pending.push(name);
@@ -77,7 +78,8 @@ function pruneCustomProperties(css, inlineStyles) {
         }
     }
     return {
-        css: css.replace(declaration, (match, lead, name) => used.has(name) ? match : lead),
+        css: css.replace(declaration,
+            (match, lead: string, name: string) => used.has(name) ? match : lead),
         declared: values.size,
         kept: used.size
     };
@@ -95,10 +97,10 @@ async function harvestPage() {
         + "-webkit-[a-z-]+|-moz-[a-z-]+|-ms-[a-z-]+)(?![\\w-])", "g");
     let rulesKept = 0;
     let rulesDropped = 0;
-    const fontFaceRules = [];
-    const matches = new Map();
+    const fontFaceRules: CSSFontFaceRule[] = [];
+    const matches = new Map<string, boolean>();
 
-    function selectorMatches(selector) {
+    function selectorMatches(selector: string) {
         const plain = selector.replace(STATES, "").replace(/:not\(\s*\)/g, "").trim() || "*";
         if (!matches.has(plain)) {
             try {
@@ -111,7 +113,7 @@ async function harvestPage() {
         return matches.get(plain);
     }
 
-    function splitSelectors(text) {
+    function splitSelectors(text: string) {
         const parts = [];
         let depth = 0;
         let start = 0;
@@ -127,7 +129,7 @@ async function harvestPage() {
         return parts;
     }
 
-    function readRules(sheet) {
+    function readRules(sheet: CSSStyleSheet): CSSRuleList | CSSRule[] {
         try {
             return sheet.cssRules;
         } catch {
@@ -135,7 +137,7 @@ async function harvestPage() {
         }
     }
 
-    function serialize(rules) {
+    function serialize(rules: CSSRuleList | CSSRule[]) {
         let out = "";
         for (const rule of rules) {
             if (rule instanceof CSSStyleRule) {
@@ -191,21 +193,22 @@ async function harvestPage() {
                 for (const char of content.replace(/^"|"$/g, "")) chars.add(char);
             }
         }
-        for (const text of [ element.value, element.placeholder ]) {
-            if (typeof text === "string") for (const char of text) chars.add(char);
+        if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+            for (const char of element.value + element.placeholder) chars.add(char);
         }
     }
 
     // The browser downloads a face only once some text renders in it, so a loaded face is one
     // the page draws with.
-    const faceKey = (family, weight, style) => [ family.replace(/["']/g, "").trim(),
-        weight || "normal", style || "normal" ].join("|");
+    const faceKey = (family: string, weight: string, style: string) => [
+        family.replace(/["']/g, "").trim(), weight || "normal", style || "normal"
+    ].join("|");
     const loadedFaces = new Set([ ...document.fonts ]
         .filter((face) => face.status === "loaded")
         .map((face) => faceKey(face.family, face.weight, face.style)));
-    const fontFaces = [];
-    const unusedFonts = new Set();
-    const seenFaces = new Set();
+    const fontFaces: { family: string; url: string; descriptors: string }[] = [];
+    const unusedFonts = new Set<string>();
+    const seenFaces = new Set<string>();
     for (const face of fontFaceRules) {
         const family = face.style.getPropertyValue("font-family").replace(/["']/g, "").trim();
         const key = faceKey(family, face.style.getPropertyValue("font-weight"),
@@ -229,7 +232,7 @@ async function harvestPage() {
     }
 
     // Form state and canvases are copied into the clone as attributes and images.
-    const clone = document.documentElement.cloneNode(true);
+    const clone = document.documentElement.cloneNode(true) as HTMLElement;
     const liveFields = document.querySelectorAll("input, textarea, canvas");
     const clonedFields = clone.querySelectorAll("input, textarea, canvas");
     for (const [ index, live ] of [ ...liveFields ].entries()) {
@@ -242,12 +245,13 @@ async function harvestPage() {
                 // A tainted canvas stays blank.
             }
             for (const name of [ "class", "style" ]) {
-                if (target.hasAttribute(name)) image.setAttribute(name, target.getAttribute(name));
+                const value = target.getAttribute(name);
+                if (value !== null) image.setAttribute(name, value);
             }
             target.replaceWith(image);
         } else if (live instanceof HTMLTextAreaElement) {
             target.textContent = live.value;
-        } else {
+        } else if (live instanceof HTMLInputElement) {
             target.setAttribute("value", live.value);
             if (live.checked) target.setAttribute("checked", "");
         }
@@ -261,9 +265,9 @@ async function harvestPage() {
         image.removeAttribute("srcset");
         if (!source || source.startsWith("data:")) continue;
         const blob = await (await fetch(new URL(source, document.baseURI))).blob();
-        image.src = await new Promise((resolve) => {
+        image.src = await new Promise<string>((resolve) => {
             const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
+            reader.onload = () => resolve(String(reader.result));
             reader.readAsDataURL(blob);
         });
     }
@@ -275,7 +279,8 @@ async function harvestPage() {
         element.removeAttribute("contenteditable");
         inlineStyles += `${element.getAttribute("style") ?? ""}\n`;
     }
-    clone.querySelector("head").innerHTML = "<meta charset=\"utf-8\">"
+    const head = clone.querySelector("head");
+    if (head) head.innerHTML = "<meta charset=\"utf-8\">"
         + "<meta name=\"viewport\" content=\"width=device-width\">"
         + "<style>/*__CSS__*/</style>"
         + "<style>html{pointer-events:none;user-select:none;overflow:hidden}"

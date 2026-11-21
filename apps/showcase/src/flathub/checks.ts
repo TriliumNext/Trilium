@@ -1,30 +1,63 @@
 import fs from "fs";
+import type { Browser } from "playwright";
+
+import { checkList } from "../shared/build.ts";
+import type { PngInfo } from "../shared/png.ts";
+
+/** The parts of an AppStream metainfo file that Flathub shows on the app page. */
+export interface Metainfo {
+    id: string;
+    name: string;
+    summary: string;
+    developer: string;
+    license: string;
+    descriptionHtml: string;
+    hasParagraph: boolean;
+    /** The number of items in each list of the description. */
+    listSizes: number[];
+    keywords: string[];
+    urls: { type: string | null; href: string }[];
+    /** The primary colors, keyed by `scheme_preference`. */
+    branding: Record<string, string>;
+    releases: { version: string | null; date: string | null; descriptionHtml: string }[];
+    hasContentRating: boolean;
+}
+
+export interface FlathubShot {
+    file: string;
+    caption: string;
+    dark: boolean;
+    png: PngInfo | undefined;
+}
 
 /**
  * Reads the parts of an AppStream metainfo file that Flathub shows on the app page, with the
  * browser's `DOMParser`. The description keeps only the markup AppStream allows.
  */
-export async function readMetainfo(browser, file) {
+export async function readMetainfo(browser: Browser, file: string): Promise<Metainfo> {
     const page = await browser.newPage();
     try {
         return await page.evaluate((xml) => {
             const doc = new DOMParser().parseFromString(xml, "application/xml");
             const component = doc.documentElement;
-            const text = (element) => element?.textContent.trim().replace(/\s+/g, " ") ?? "";
-            const child = (parent, name) => [ ...parent.children ]
-                .find((element) => element.localName === name);
-            const children = (parent, name) => [ ...parent?.children ?? [] ]
-                .filter((c) => c.localName === name && !c.hasAttribute("xml:lang"));
-            const toHtml = (element) => {
+            const text = (element: Element | undefined) =>
+                element?.textContent.trim().replace(/\s+/g, " ") ?? "";
+            const child = (parent: Element | undefined, name: string) => [
+                ...parent?.children ?? []
+            ].find((element) => element.localName === name);
+            const children = (parent: Element | undefined, name: string) => [
+                ...parent?.children ?? []
+            ].filter((c) => c.localName === name && !c.hasAttribute("xml:lang"));
+            const toHtml = (element: Element | undefined) => {
                 if (!element) return "";
                 const allowed = new Set([ "p", "ul", "ol", "li", "em", "code" ]);
-                const convert = (node) => {
+                const convert = (node: Node): string => {
                     if (node.nodeType === Node.TEXT_NODE) {
                         const span = document.createElement("span");
                         span.textContent = node.textContent;
                         return span.innerHTML;
                     }
-                    if (node.nodeType !== Node.ELEMENT_NODE) return "";
+                    if (!(node instanceof Element)) return "";
                     const inner = [ ...node.childNodes ].map(convert).join("");
                     return allowed.has(node.localName)
                         ? `<${node.localName}>${inner}</${node.localName}>`
@@ -65,15 +98,13 @@ export async function readMetainfo(browser, file) {
 
 /**
  * Checks the metainfo and the captured screenshots against Flathub's quality guidelines
- * (docs.flathub.org, "Quality guidelines"). `shots` are `{ file, caption, dark, png }`,
- * `window` is the logical size and scale the screenshots were taken at, and `iconSvg` is the
- * source of the scalable icon the flatpak installs.
+ * (docs.flathub.org, "Quality guidelines"). `window` is the logical size and scale the
+ * screenshots were taken at, and `iconSvg` is the source of the scalable icon the flatpak
+ * installs.
  */
-export function checkFlathubListing(meta, shots, window, iconSvg) {
-    const checks = [];
-    const check = (asset, rule, actual, ok) => {
-        checks.push({ asset, rule, actual: String(actual), ok: Boolean(ok) });
-    };
+export function checkFlathubListing(meta: Metainfo, shots: FlathubShot[],
+    window: { width: number; height: number; scale: number }, iconSvg: string) {
+    const { checks, check } = checkList();
 
     check("Name", "under 20 characters", meta.name.length, meta.name.length < 20);
     const summary = meta.summary;
@@ -128,12 +159,13 @@ export function checkFlathubListing(meta, shots, window, iconSvg) {
     return checks;
 }
 
-function describeSize(png) {
+function describeSize(png: PngInfo | undefined) {
     return png ? `${png.width} x ${png.height}` : "missing";
 }
 
 /** The HSL lightness of a `#rrggbb` color, from 0 to 1. */
-function lightness(hex) {
-    const channels = hex.replace("#", "").match(/../g).map((pair) => parseInt(pair, 16) / 255);
+function lightness(hex: string) {
+    const channels = (hex.replace("#", "").match(/../g) ?? [])
+        .map((pair) => parseInt(pair, 16) / 255);
     return (Math.max(...channels) + Math.min(...channels)) / 2;
 }

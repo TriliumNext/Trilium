@@ -2,16 +2,34 @@ import { spawn } from "child_process";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import type { Browser } from "playwright";
 
-import { outDir, repoRoot } from "./paths.mjs";
-import { ITINERARY, SEED, TRIP_COSTS } from "./scenes.mjs";
+import { type BuildOptions, outDir, repoRoot } from "./build.ts";
+import { ITINERARY, SEED, TRIP_COSTS } from "./scenes.ts";
+
+/** A server holding the demo document. */
+export interface Server {
+    baseUrl: string;
+    stop(): void;
+}
+
+export interface DemoServer extends Server {
+    dataDir: string;
+    /** Stops the server and keeps the data directory for another app to open. */
+    stopServer(): Promise<void>;
+}
 
 /**
- * Starts a demo server and adds what `SEED` in `scenes.mjs` seeds, or uses the running server at
- * `url`, which must hold both and need no login.
+ * Uses the running server at `url`, which must hold the demo document and what `SEED` adds and
+ * need no login, or else starts one with `startSeededServer()`.
  */
-export async function startSeededServer(browser, { url, port }) {
-    if (url) return { baseUrl: url, stop() {} };
+export async function openDemo(browser: Browser,
+    { url, port }: Pick<BuildOptions, "url" | "port">): Promise<Server> {
+    return url ? { baseUrl: url, stop() {} } : await startSeededServer(browser, port);
+}
+
+/** Starts a demo server and adds what `SEED` in `scenes.ts` seeds. */
+export async function startSeededServer(browser: Browser, port: number) {
     const server = await startDemoServer({ port, logPath: path.join(outDir, "server.log") });
     try {
         await seedDocument(browser, server.baseUrl, SEED, [ TRIP_COSTS, ITINERARY ]);
@@ -30,7 +48,8 @@ export async function startSeededServer(browser, { url, port }) {
  * data directory reuses `apps/server/spec/db/config.ini`, which turns the login off, and backend
  * scripting is on so that `seedDocument()` can add what the demo lacks.
  */
-export async function startDemoServer({ port, logPath }) {
+export async function startDemoServer({ port, logPath }: { port: number; logPath: string }):
+    Promise<DemoServer> {
     const serverDir = path.join(repoRoot, "apps", "server");
     const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "trilium-showcase-"));
     const config = path.join(serverDir, "spec", "db", "config.ini");
@@ -56,9 +75,9 @@ export async function startDemoServer({ port, logPath }) {
     let exited = false;
     server.on("exit", () => { exited = true; });
 
-    const stopServer = () => new Promise((resolve) => {
+    const stopServer = () => new Promise<void>((resolve) => {
         if (exited) return resolve();
-        server.once("exit", resolve);
+        server.once("exit", () => resolve());
         server.kill();
     });
     const stop = () => {
@@ -91,7 +110,8 @@ export async function startDemoServer({ port, logPath }) {
  * headers, with `params` as its arguments and the backend script `api` in scope. The server
  * runs a script sent this way in the bundle of `currentNoteId`, which must be a JavaScript note.
  */
-export async function seedDocument(browser, baseUrl, seed, params = []) {
+export async function seedDocument(browser: Browser, baseUrl: string,
+    seed: (...params: string[]) => void, params: string[] = []) {
     const scriptNoteId = await findNoteId(baseUrl,
         "note.type = 'code' AND note.mime *=* 'javascript'");
     const page = await browser.newPage();
@@ -118,7 +138,7 @@ export async function seedDocument(browser, baseUrl, seed, params = []) {
 }
 
 /** Finds the ID of the first note matching a search query, such as `note.title = 'Mind Map'`. */
-export async function findNoteId(baseUrl, query) {
+export async function findNoteId(baseUrl: string, query: string): Promise<string> {
     const params = new URLSearchParams({ searchString: query });
     const response = await fetch(`${baseUrl}/api/search?${params}`);
     const [ noteId ] = await response.json();
@@ -128,7 +148,8 @@ export async function findNoteId(baseUrl, query) {
     return noteId;
 }
 
-async function waitFor(check, hasExited, timeout) {
+async function waitFor(check: () => Promise<boolean>, hasExited: () => boolean,
+    timeout: number) {
     const deadline = Date.now() + timeout;
     while (Date.now() < deadline && !hasExited()) {
         try {

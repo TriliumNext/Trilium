@@ -1,19 +1,20 @@
 import fs from "fs";
 import path from "path";
+import type { Browser } from "playwright";
 import { pathToFileURL } from "url";
 import zlib from "zlib";
 
-import { findOnPath, openApp, settle, waitForAssets } from "../shared/browser.mjs";
-import { findNoteId, startSeededServer } from "../shared/demo_server.mjs";
-import { outDir, repoRoot } from "../shared/paths.mjs";
-import { diffPngs } from "../shared/png.mjs";
-import { HERO } from "../shared/scenes.mjs";
-import { captureSnapshot } from "./snapshot.mjs";
+import { findOnPath, openApp, openNote, settle, waitForAssets } from "../shared/browser.ts";
+import { type BuildOptions, type Builder, outDir, repoRoot } from "../shared/build.ts";
+import { findNoteId, openDemo } from "../shared/demo_server.ts";
+import { diffPngs } from "../shared/png.ts";
+import { HERO } from "../shared/scenes.ts";
+import { captureSnapshot } from "./snapshot.ts";
 
 /** The share of pixels the hero snapshot can differ from the app by, in either color scheme. */
 const HERO_MAX_DIFF = 0.005;
 
-export const HERO_TARGETS = {
+export const HERO_TARGETS: Record<string, Builder> = {
     "hero": buildHero
 };
 
@@ -23,24 +24,20 @@ export const HERO_TARGETS = {
  * build fails when the snapshot differs from it by more than `HERO_MAX_DIFF` in either one;
  * otherwise the snapshot is copied to `apps/website/public/hero.html`.
  */
-async function buildHero(browser, options) {
+async function buildHero(browser: Browser, options: BuildOptions) {
     const fonttools = process.env.FONTTOOLS ?? findOnPath("fonttools");
     if (!fonttools) throw new Error("The hero needs the fonttools command; set FONTTOOLS.");
     const heroDir = path.join(outDir, "hero");
     fs.mkdirSync(heroDir, { recursive: true });
-    const server = await startSeededServer(browser, options);
+    const server = await openDemo(browser, options);
     const output = path.join(heroDir, "hero.html");
     try {
         const noteId = await findNoteId(server.baseUrl, HERO.query);
-        for (const colorScheme of [ "light", "dark" ]) {
+        for (const colorScheme of [ "light", "dark" ] as const) {
             const context = await browser.newContext({ viewport: HERO.viewport, colorScheme });
             const page = await context.newPage();
             await openApp(page, server.baseUrl);
-            await page.evaluate(async (id) => {
-                const noteContext = window.glob.appContext.tabManager.getActiveContext();
-                await noteContext.setHoistedNoteId(id);
-                await noteContext.setNote(id);
-            }, noteId);
+            await openNote(page, noteId, { hoist: true });
             await settle(page);
             await page.mouse.move(HERO.viewport.width - 1, HERO.viewport.height - 1);
             await page.waitForTimeout(500);
@@ -64,7 +61,7 @@ async function buildHero(browser, options) {
     const brotli = zlib.brotliCompressSync(html).length;
     console.log(`  ${path.relative(outDir, output)}: ${Math.round(html.length / 1024)} KB, `
         + `${Math.round(brotli / 1024)} KB with Brotli`);
-    for (const colorScheme of [ "light", "dark" ]) {
+    for (const colorScheme of [ "light", "dark" ] as const) {
         const shot = path.join(heroDir, `snapshot-${colorScheme}.png`);
         const context = await browser.newContext({ viewport: HERO.viewport, colorScheme });
         const page = await context.newPage();

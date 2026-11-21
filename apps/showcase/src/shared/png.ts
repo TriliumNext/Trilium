@@ -1,9 +1,17 @@
 import fs from "fs";
 import pixelmatch from "pixelmatch";
-import pngjs from "pngjs";
+import { PNG } from "pngjs";
+
+export interface PngInfo {
+    width: number;
+    height: number;
+    alpha: boolean;
+    /** The file size in bytes. */
+    size: number;
+}
 
 /** The size and alpha channel of a PNG, read from its header, or undefined when it is missing. */
-export function readPng(file) {
+export function readPng(file: string): PngInfo | undefined {
     if (!fs.existsSync(file)) return undefined;
     const buffer = fs.readFileSync(file);
     const colorType = buffer[25];
@@ -15,15 +23,14 @@ export function readPng(file) {
     };
 }
 
-export function describePng(png) {
+export function describePng(png: PngInfo | undefined) {
     if (!png) return "missing";
     const alpha = png.alpha ? "alpha" : "no alpha";
     return `${png.width} x ${png.height}, ${alpha}, ${Math.round(png.size / 1024)} KB`;
 }
 
 /** The share of pixels that differ between two screenshots of the same size. */
-export function diffPngs(expectedFile, actualFile, diffFile) {
-    const { PNG } = pngjs;
+export function diffPngs(expectedFile: string, actualFile: string, diffFile: string) {
     const expected = PNG.sync.read(fs.readFileSync(expectedFile));
     const actual = PNG.sync.read(fs.readFileSync(actualFile));
     const { width, height } = expected;
@@ -32,16 +39,4 @@ export function diffPngs(expectedFile, actualFile, diffFile) {
         { threshold: 0.1 });
     fs.writeFileSync(diffFile, PNG.sync.write(diff));
     return count / (width * height);
-}
-
-/** Prints each failed check and sets a failing exit code when there is one. */
-export function reportChecks(checks) {
-    const failed = checks.filter((check) => !check.ok);
-    for (const check of failed) {
-        console.error(`  Fails: ${check.asset}: ${check.rule} (${check.actual})`);
-    }
-    console.log(`  ${checks.length - failed.length} of ${checks.length} checks pass.`);
-    if (failed.length) {
-        process.exitCode = 1;
-    }
 }

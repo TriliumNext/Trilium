@@ -1,14 +1,17 @@
 import fs from "fs";
 import path from "path";
+import type { Browser } from "playwright";
 
-import { settle } from "../shared/browser.mjs";
-import { startSeededServer } from "../shared/demo_server.mjs";
-import { outDir, repoRoot, sceneFileName, templatesDir } from "../shared/paths.mjs";
-import { readPng, reportChecks } from "../shared/png.mjs";
-import { SCENES } from "../shared/scenes.mjs";
-import { checkFlathubListing, readMetainfo } from "./checks.mjs";
-import { startDesktopApp } from "./desktop_app.mjs";
-import { startGnomeSession } from "./gnome_session.mjs";
+import { openNote, settle } from "../shared/browser.ts";
+import {
+    type BuildOptions, type Builder, outDir, reportChecks, repoRoot, sceneFileName, templatesDir
+} from "../shared/build.ts";
+import { startSeededServer } from "../shared/demo_server.ts";
+import { readPng } from "../shared/png.ts";
+import { SCENES } from "../shared/scenes.ts";
+import { checkFlathubListing, type FlathubShot, readMetainfo } from "./checks.ts";
+import { type DesktopApp, startDesktopApp } from "./desktop_app.ts";
+import { type GnomeSession, startGnomeSession } from "./gnome_session.ts";
 
 /**
  * Flathub asks for a window of at most 1000 x 700, or 2000 x 1400 on a HiDPI screen, so the
@@ -21,7 +24,7 @@ const FLATHUB_WINDOW = { width: 1000, height: 700, scale: 2 };
  * Shell, and `flathub-preview` mocks the Flathub app page from those screenshots and the
  * metainfo, with Flathub's quality checks.
  */
-export const FLATHUB_TARGETS = {
+export const FLATHUB_TARGETS: Record<string, Builder> = {
     "flathub": buildFlathub,
     "flathub-preview": buildFlathubPreview
 };
@@ -30,10 +33,10 @@ export const FLATHUB_TARGETS = {
  * Captures each scene in the desktop app with GNOME's window screenshot, which keeps the frame,
  * rounded corners and shadow that Flathub requires, into `out/flathub`.
  */
-async function buildFlathub(browser, options) {
-    const server = await startSeededServer(browser, { port: options.port });
-    let session;
-    let app;
+async function buildFlathub(browser: Browser, options: BuildOptions) {
+    const server = await startSeededServer(browser, options.port);
+    let session: GnomeSession | undefined;
+    let app: DesktopApp | undefined;
     try {
         await setOption(browser, server.baseUrl, "rightPaneVisible", "false");
         await server.stopServer();
@@ -67,9 +70,7 @@ async function buildFlathub(browser, options) {
                 return (await response.json())[0];
             }, scene.desktopQuery ?? scene.query);
             await page.emulateMedia({ colorScheme: scene.colorScheme ?? "light" });
-            await page.evaluate(async (id) => {
-                await window.glob.appContext.tabManager.getActiveContext().setNote(id);
-            }, noteId);
+            await openNote(page, noteId);
             await settle(page);
             await scene.desktopPrepare?.(page);
             await settle(page);
@@ -90,14 +91,14 @@ async function buildFlathub(browser, options) {
  * app's metainfo and the screenshots in `out/flathub`, and checks both against Flathub's
  * quality guidelines, failing the build when one is not met.
  */
-async function buildFlathubPreview(browser) {
+async function buildFlathubPreview(browser: Browser) {
     const flatpakDir = path.join(repoRoot, "apps", "desktop", "flatpak");
     const meta = await readMetainfo(browser,
         path.join(flatpakDir, "org.triliumnotes.Trilium.metainfo.xml"));
     const icon = fs.readFileSync(path.join(flatpakDir, "org.triliumnotes.Trilium.svg"), "utf8");
     fs.writeFileSync(path.join(outDir, "flathub-icon.svg"), icon);
 
-    const screenshots = [];
+    const screenshots: FlathubShot[] = [];
     for (const [ index, scene ] of SCENES.entries()) {
         const file = flathubShotPath(index, scene.id);
         if (fs.existsSync(file)) {
@@ -123,7 +124,7 @@ async function buildFlathubPreview(browser) {
 }
 
 /** Sets an option through the API, from a page of the app that supplies the CSRF headers. */
-async function setOption(browser, baseUrl, name, value) {
+async function setOption(browser: Browser, baseUrl: string, name: string, value: string) {
     const page = await browser.newPage();
     try {
         await page.goto(baseUrl);
@@ -141,6 +142,6 @@ async function setOption(browser, baseUrl, name, value) {
     }
 }
 
-function flathubShotPath(index, sceneId) {
+function flathubShotPath(index: number, sceneId: string) {
     return path.join(outDir, "flathub", sceneFileName(index, sceneId));
 }

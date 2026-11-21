@@ -1,22 +1,41 @@
 import fs from "fs";
 import path from "path";
-import { fileURLToPath, pathToFileURL } from "url";
+import type { Browser } from "playwright";
+import { pathToFileURL } from "url";
 
-import { openApp, renderTemplate, settle } from "../shared/browser.mjs";
-import { findNoteId, startSeededServer } from "../shared/demo_server.mjs";
-import { outDir, sceneFileName, templatesDir } from "../shared/paths.mjs";
-import { describePng, readPng, reportChecks } from "../shared/png.mjs";
-import { DEVICES, SCENES } from "../shared/scenes.mjs";
+import { openApp, openNote, renderTemplate, settle } from "../shared/browser.ts";
+import {
+    type BuildOptions, type Builder, checkList, outDir, reportChecks, sceneFileName, templatesDir
+} from "../shared/build.ts";
+import { findNoteId, openDemo } from "../shared/demo_server.ts";
+import { describePng, readPng } from "../shared/png.ts";
+import { DEVICES, SCENES } from "../shared/scenes.ts";
 
-const listing = JSON.parse(fs.readFileSync(
-    path.join(path.dirname(fileURLToPath(import.meta.url)), "listing.json"), "utf8"));
+const listing: Listing = JSON.parse(
+    fs.readFileSync(path.join(import.meta.dirname, "listing.json"), "utf8"));
+
+/** The texts of the store listing, which `listing.json` holds. */
+interface Listing {
+    name: string;
+    developer: string;
+    category: string;
+    shortDescription: string;
+    fullDescription: string;
+    featureGraphic: { tagline: string; taglineSub: string; alt: string; shots: string[] };
+}
+
+interface StoreShot {
+    device: string;
+    file: string;
+    alt: string;
+}
 
 /**
  * The Google Play targets, in build order: the 512 x 512 icon, phone and tablet screenshots of the
  * demo document, the 1024 x 500 feature graphic made from the phone ones, and `out/preview.html`,
  * a mock of the listing page.
  */
-export const PLAY_TARGETS = {
+export const PLAY_TARGETS: Record<string, Builder> = {
     "icon": buildIcon,
     "screenshots": buildScreenshots,
     "feature": buildFeature,
@@ -36,7 +55,7 @@ export function checkPlayAssets() {
  * The store asks for a 32-bit PNG, but Chromium writes an opaque screenshot as 24-bit, so the
  * screenshot is encoded again through a canvas, which keeps the alpha channel.
  */
-async function buildIcon(browser) {
+async function buildIcon(browser: Browser) {
     const output = path.join(outDir, "icon.png");
     await renderTemplate(browser, "icon.html", { width: 512, height: 512 }, output, {});
     const page = await browser.newPage();
@@ -47,15 +66,15 @@ async function buildIcon(browser) {
         const canvas = document.createElement("canvas");
         canvas.width = image.width;
         canvas.height = image.height;
-        canvas.getContext("2d").drawImage(image, 0, 0);
+        canvas.getContext("2d")?.drawImage(image, 0, 0);
         return canvas.toDataURL("image/png");
     }, `data:image/png;base64,${fs.readFileSync(output).toString("base64")}`);
     await page.close();
     fs.writeFileSync(output, Buffer.from(dataUrl.slice(dataUrl.indexOf(",") + 1), "base64"));
 }
 
-async function buildScreenshots(browser, options) {
-    const server = await startSeededServer(browser, options);
+async function buildScreenshots(browser: Browser, options: BuildOptions) {
+    const server = await openDemo(browser, options);
     try {
         for (const deviceName of options.devices) {
             await captureDevice(browser, options, server.baseUrl, deviceName);
@@ -65,7 +84,7 @@ async function buildScreenshots(browser, options) {
     }
 }
 
-async function buildFeature(browser) {
+async function buildFeature(browser: Browser) {
     const shots = listing.featureGraphic.shots
         .map((id) => rawShotPath("phone", id))
         .filter((file) => {
@@ -95,8 +114,8 @@ function buildPreview() {
 }
 
 /** The store screenshots on disk, in listing order, with their alt text. */
-function listStoreShots() {
-    const screenshots = [];
+function listStoreShots(): StoreShot[] {
+    const screenshots: StoreShot[] = [];
     for (const deviceName of Object.keys(DEVICES)) {
         for (const [ index, scene ] of SCENES.entries()) {
             const file = storeShotPath(deviceName, index, scene.id);
@@ -109,7 +128,8 @@ function listStoreShots() {
     return screenshots;
 }
 
-async function captureDevice(browser, options, baseUrl, deviceName) {
+async function captureDevice(browser: Browser, options: BuildOptions, baseUrl: string,
+    deviceName: string) {
     const device = DEVICES[deviceName];
     const scenes = SCENES.filter((scene) => options.only?.includes(scene.id) ?? true);
     for (const scene of scenes) {
@@ -131,9 +151,7 @@ async function captureDevice(browser, options, baseUrl, deviceName) {
 
         const noteId = await findNoteId(baseUrl, scene.query);
         await openApp(page, baseUrl);
-        await page.evaluate((id) => {
-            return window.glob.appContext.tabManager.getActiveContext().setNote(id);
-        }, noteId);
+        await openNote(page, noteId);
         await settle(page);
         await scene.prepare?.(page);
         await settle(page, { blur: !scene.keepFocus });
@@ -157,12 +175,9 @@ async function captureDevice(browser, options, baseUrl, deviceName) {
 }
 
 /** The store's limits, from the Play Console help on preview assets and on store listing text. */
-function runChecks(screenshots) {
-    const checks = [];
-    const check = (asset, rule, actual, ok) => {
-        checks.push({ asset, rule, actual: String(actual), ok });
-    };
-    const checkLength = (asset, text, max) => {
+function runChecks(screenshots: StoreShot[]) {
+    const { checks, check } = checkList();
+    const checkLength = (asset: string, text: string, max: number) => {
         const rule = `at most ${max.toLocaleString("en")} characters`;
         check(asset, rule, text.length, text.length <= max);
     };
@@ -179,12 +194,13 @@ function runChecks(screenshots) {
     check("Feature graphic", "1024 x 500 PNG without alpha", describePng(feature),
         feature?.width === 1024 && feature.height === 500 && !feature.alpha);
 
-    for (const [ device, minCount ] of [ [ "phone", 4 ], [ "tablet", 4 ] ]) {
+    for (const [ device, minCount ] of [ [ "phone", 4 ], [ "tablet", 4 ] ] as const) {
         const shots = screenshots.filter((shot) => shot.device === device);
         check(`${device} screenshots`, `${minCount} to 8 for promotion`, shots.length,
             shots.length >= minCount && shots.length <= 8);
         for (const shot of shots) {
             const png = readPng(path.join(outDir, shot.file));
+            if (!png) continue;
             const long = Math.max(png.width, png.height);
             const short = Math.min(png.width, png.height);
             const rule = "16:9 or 9:16, at least 1080 px, no alpha, at most 8 MB";
@@ -197,10 +213,10 @@ function runChecks(screenshots) {
     return checks;
 }
 
-function rawShotPath(deviceName, sceneId) {
+function rawShotPath(deviceName: string, sceneId: string) {
     return path.join(outDir, "screenshots", deviceName, "raw", `${sceneId}.png`);
 }
 
-function storeShotPath(deviceName, index, sceneId) {
+function storeShotPath(deviceName: string, index: number, sceneId: string) {
     return path.join(outDir, "screenshots", deviceName, sceneFileName(index, sceneId));
 }

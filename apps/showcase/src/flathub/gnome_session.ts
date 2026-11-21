@@ -9,14 +9,19 @@ import path from "path";
  * `screenshotWindow()` and `evaluate()` call the shell's D-Bus API, which only allowlisted
  * callers can use otherwise.
  */
-export async function startGnomeSession({ width, height, scale, logPath }) {
+export async function startGnomeSession({ width, height, scale, logPath }: {
+    width: number;
+    height: number;
+    scale: number;
+    logPath: string;
+}) {
     // The Wayland socket lives in the runtime directory, and its path must fit in 108 bytes.
     const runtimeDir = fs.mkdtempSync("/tmp/trilium-gnome-");
     const home = path.join(runtimeDir, "home");
     fs.mkdirSync(home);
     const busFile = path.join(runtimeDir, "bus");
 
-    const env = {
+    const env: NodeJS.ProcessEnv = {
         ...process.env,
         HOME: home,
         XDG_CONFIG_HOME: path.join(home, ".config"),
@@ -41,7 +46,7 @@ export async function startGnomeSession({ width, height, scale, logPath }) {
 
     const kill = () => {
         try {
-            process.kill(-shell.pid);
+            if (shell.pid) process.kill(-shell.pid);
         } catch {
             // Already gone.
         }
@@ -50,17 +55,17 @@ export async function startGnomeSession({ width, height, scale, logPath }) {
     const stop = async () => {
         const done = exited
             ? Promise.resolve()
-            : new Promise((resolve) => shell.once("exit", resolve));
+            : new Promise<void>((resolve) => shell.once("exit", () => resolve()));
         kill();
         await done;
         removeRuntimeDir(runtimeDir);
     };
 
-    const call = (destination, objectPath, method, ...args) => execFileSync("gdbus", [
+    const call: DbusCall = (destination, objectPath, method, ...args) => execFileSync("gdbus", [
         "call", "--session", "--dest", destination, "--object-path", objectPath,
         "--method", method, ...args
     ], { env, encoding: "utf8", stdio: [ "ignore", "pipe", "pipe" ] });
-    const evaluate = (script) => {
+    const evaluate = (script: string): unknown => {
         const output = call("org.gnome.Shell", "/org/gnome/Shell", "org.gnome.Shell.Eval", script);
         const [ , success, result ] = output.match(/^\((true|false), '(.*)'\)\s*$/s) ?? [];
         if (success !== "true") throw new Error(`GNOME Shell could not run ${script}: ${output}`);
@@ -95,7 +100,7 @@ export async function startGnomeSession({ width, height, scale, logPath }) {
          * Resizes the app's window to `width` x `height` logical pixels and saves it with its
          * frame and shadow, as GNOME's screenshot tool does.
          */
-        async screenshotWindow(file, { width, height }) {
+        async screenshotWindow(file: string, { width, height }: { width: number; height: number }) {
             // The overview opens once the shell has started, so it can open after `hide()` above.
             if (evaluate("Main.overview.visible")) {
                 evaluate("Main.overview.hide()");
@@ -127,7 +132,7 @@ export async function startGnomeSession({ width, height, scale, logPath }) {
  * Removes the runtime directory once the session is gone. The document portal and GVfs, which
  * the session starts on demand, mount FUSE file systems inside it, and those outlive the shell.
  */
-function removeRuntimeDir(runtimeDir) {
+function removeRuntimeDir(runtimeDir: string) {
     const mounts = fs.readFileSync("/proc/self/mountinfo", "utf8").split("\n")
         .map((line) => line.split(" ")[4])
         .filter((mountPoint) => mountPoint?.startsWith(`${runtimeDir}/`));
@@ -144,13 +149,15 @@ function removeRuntimeDir(runtimeDir) {
     try {
         fs.rmSync(runtimeDir, { recursive: true, force: true });
     } catch (error) {
-        console.warn(`  Could not remove ${runtimeDir}: ${error.message}`);
+        console.warn(`  Could not remove ${runtimeDir}: ${(error as Error).message}`);
     }
 }
 
 /** Applies `scale` to the virtual monitor through `org.gnome.Mutter.DisplayConfig`. */
-function setScale(call, monitor, scale) {
-    const destination = [ "org.gnome.Mutter.DisplayConfig", "/org/gnome/Mutter/DisplayConfig" ];
+function setScale(call: DbusCall, monitor: string, scale: number) {
+    const destination = [
+        "org.gnome.Mutter.DisplayConfig", "/org/gnome/Mutter/DisplayConfig"
+    ] as const;
     const state = call(...destination, "org.gnome.Mutter.DisplayConfig.GetCurrentState");
     const serial = state.match(/^\(uint32 (\d+)/)?.[1];
     const mode = state.match(new RegExp(`'(${monitor}@[\\d.]+)'`))?.[1];
@@ -163,3 +170,8 @@ function setScale(call, monitor, scale) {
         `[(0, 0, ${scale.toFixed(1)}, 0, true, [('${connector}', '${mode}', @a{sv} {})])]`,
         "@a{sv} {}");
 }
+
+type DbusCall = (destination: string, objectPath: string, method: string, ...args: string[])
+    => string;
+
+export type GnomeSession = Awaited<ReturnType<typeof startGnomeSession>>;
