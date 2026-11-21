@@ -298,34 +298,15 @@ section.hero-section {
 
 @media (min-width: 720px) {
     section.hero-section {
-        /* Clip the screenshot where it bleeds past the right edge of the viewport */
         overflow: hidden;
-
-        /* Occupy exactly one viewport below the sticky header. Without this the
-           bleeding screenshot can push the row slightly taller than the screen. */
-        height: calc(100vh - var(--header-height));
-        box-sizing: border-box;
-        display: flex;
-        align-items: stretch;
     }
 
-    /* Text column on the left (title + tagline stacked, centered as a group between
-       two flexible spacer rows); the empty 1fr column reserves the right side for
-       the screenshot, which is layered over it as a full-height absolute element so
-       it fills the hero without dictating the grid's row heights. */
     section.hero-section > .content-wrapper {
-        position: relative;
         display: grid;
         grid-template-columns: minmax(0, 40%) 1fr;
         grid-template-rows: 1fr auto auto 1fr;
-        /* Fill the hero's height. margin-block:0 overrides the base `margin:auto`,
-           whose vertical auto-margins would otherwise center (and shrink) the
-           wrapper instead of letting height:100% fill the section. */
-        height: 100%;
-        margin-block: 0;
-        /* Slim top padding so the screenshot reaches up near the header instead
-           of leaving an empty band above it. */
-        padding: 0.75em 3em 1.5em;
+        column-gap: 3em;
+        padding: 3em 3em;
     }
 
     section.hero-section .title-section {
@@ -344,29 +325,22 @@ section.hero-section {
         justify-content: flex-start;
     }
 
-    /* The desktop and the phone side by side on the right, absolutely positioned so their
-       size can't inflate the grid. */
     section.hero-section .screenshot-container {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        /* Start where grid column 2 begins. The +3em compensates for the left
-           padding and column gap so the image clears the text column at every
-           width (the absolute % is of the padding box, the grid % of the content
-           box). */
-        left: calc(40% + 3em);
-        /* Reach the right edge of the viewport, past the page's content width. */
-        right: calc(50% - 50vw + 2em);
+        grid-column: 2;
+        grid-row: 1 / -1;
+        align-self: center;
+        /* Run to 2em from the right edge of the viewport. The wrapper is as wide as
+           `.content-wrapper` in style.css and its `min-width` above make it. */
+        margin-right: calc((max(80vw, min(1200px, 90vw)) - 100vw) / 2 - 1em);
         display: flex;
-        align-items: center;
         justify-content: center;
-        container-type: size;
+        container-type: inline-size;
     }
 
     /* The desktop's height, as large as lets the desktop and the phone, which is 0.8 of it
-       tall and about 0.38 of it wide, fit the container side by side. */
+       tall and about 0.38 of it wide, fit the column side by side. */
     section.hero-section .screenshot-container > * {
-        --hero-height: min(100cqh - 6em, (100cqw + 2.5em) / (1360 / 920 + 0.38));
+        --hero-height: min(680px, (100cqw + 2.5em) / (1360 / 920 + 0.38));
     }
 
     section.hero-section .screenshot.desktop {
