@@ -62,11 +62,20 @@ web clipper). Change one, then the other.
 
 ### Website wiring
 
-- `HERO.variants` in `src/shared/scenes.ts` lists the hero snapshots: `hero.html` (desktop
-  layout, 1360×920) and `hero-mobile.html` (mobile layout with the phone's user agent and the
-  `trilium-device=mobile` cookie, 360×720). Each viewport must equal `HERO_SNAPSHOTS` in
-  `apps/website/src/pages/Home/index.tsx` and the frame's aspect ratio in `index.css`. The page
-  mounts only one of them: the mobile one below 720 px (`HERO_MOBILE_QUERY`).
+- `HERO.variants` in `src/shared/scenes.ts` lists the hero snapshots, each with its own note:
+  `hero.html` (desktop layout, Trilium Demo hoisted, 1360×920) and `hero-mobile.html` (mobile
+  layout with the phone's user agent and the `trilium-device=mobile` cookie, Rome itinerary,
+  360×760). Each viewport must equal `HERO_SNAPSHOTS` in `apps/website/src/pages/Home/index.tsx`
+  and the frames' aspect ratios in `index.css`.
+- The website draws the phone around `hero-mobile.html`: a bezel, and `PhoneChrome` (status bar,
+  home indicator) over the safe area the capture leaves free (`--safe-area-inset-top: 32px`,
+  `-bottom: 20px`, set from `mobile.safeArea`; the sizes in `.phone-chrome` must match). Wide
+  screens show the phone in front of the desktop window's right side; below 720 px
+  (`HERO_WIDE_QUERY`) the phone shows alone and the desktop snapshot never loads.
+- The snapshot is static, so the `light-theme` / `dark-theme` classes the app toggles on `body`
+  cannot follow the color scheme: `unthemeSelector()` in `hero/snapshot.ts` moves a rule that
+  tests them under the matching `prefers-color-scheme` query. A dark snapshot that keeps light
+  note colors (highlights, table colors) means a theme selector it does not recognise.
 - `WEBSITE_SHOTS` in `src/website/build.ts` maps a scene (or a `query` among the website
   seed's notes) to the file it replaces. `area: "note"` keeps everything right of the tree in
   a window sized so that area has the 16:10 of `.showcase-image-frame`; `"tree"` keeps the
