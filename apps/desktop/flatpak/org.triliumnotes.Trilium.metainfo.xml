@@ -48,12 +48,32 @@
   </branding>
   <screenshots>
     <screenshot type="default">
-      <caption>Rich-text editing with the note tree and table of contents</caption>
-      <image>https://raw.githubusercontent.com/TriliumNext/Trilium/adc31d157d172077c6642e9faeef227a74f1b671/apps/website/original-images/screenshot_desktop_linux_light.png</image>
+      <caption>A text note with a trip itinerary: headings, a highlighted link, a callout and a table</caption>
+      <image>https://raw.githubusercontent.com/TriliumNext/Trilium/dab0b87c75d3f20539725c45a93faa65f2334ea1/apps/desktop/flatpak/screenshots/text.png</image>
     </screenshot>
     <screenshot>
-      <caption>Dark theme</caption>
-      <image>https://raw.githubusercontent.com/TriliumNext/Trilium/adc31d157d172077c6642e9faeef227a74f1b671/apps/website/original-images/screenshot_desktop_linux_dark.png</image>
+      <caption>Tasks for a trip on a board, in to-do, in-progress and done columns</caption>
+      <image>https://raw.githubusercontent.com/TriliumNext/Trilium/dab0b87c75d3f20539725c45a93faa65f2334ea1/apps/desktop/flatpak/screenshots/board.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>The Seven Wonders of the World pinned on a map</caption>
+      <image>https://raw.githubusercontent.com/TriliumNext/Trilium/dab0b87c75d3f20539725c45a93faa65f2334ea1/apps/desktop/flatpak/screenshots/geo-map.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>A hand-drawn sketch of shapes, arrows and notes on a canvas</caption>
+      <image>https://raw.githubusercontent.com/TriliumNext/Trilium/dab0b87c75d3f20539725c45a93faa65f2334ea1/apps/desktop/flatpak/screenshots/canvas.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>A flowchart drawn from the Mermaid text beside it</caption>
+      <image>https://raw.githubusercontent.com/TriliumNext/Trilium/dab0b87c75d3f20539725c45a93faa65f2334ea1/apps/desktop/flatpak/screenshots/diagram.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>A section of notes shown as a grid of cards next to the note tree</caption>
+      <image>https://raw.githubusercontent.com/TriliumNext/Trilium/dab0b87c75d3f20539725c45a93faa65f2334ea1/apps/desktop/flatpak/screenshots/collection.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Python code with syntax highlighting, in the dark theme</caption>
+      <image>https://raw.githubusercontent.com/TriliumNext/Trilium/dab0b87c75d3f20539725c45a93faa65f2334ea1/apps/desktop/flatpak/screenshots/dark.png</image>
     </screenshot>
   </screenshots>
   <releases>
