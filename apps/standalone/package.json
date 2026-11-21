@@ -40,7 +40,7 @@
     "fullcalendar": "7.1.5",
     "i18next": "27.1.1",
     "i18next-http-backend": "4.0.10",
-    "jquery": "4.0.0",
+    "jquery": "4.1.0",
     "jquery.fancytree": "2.38.5",
     "katex": "0.19.1",
     "maplibre-gl": "6.19.0",
