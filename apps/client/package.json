@@ -65,7 +65,7 @@
     "rrule": "2.8.1",
     "tabulator-tables": "6.7.1",
     "temporal-polyfill": "1.0.8",
-    "terra-draw": "1.39.0",
+    "terra-draw": "1.40.0",
     "terra-draw-maplibre-gl-adapter": "1.5.0"
   },
   "devDependencies": {
