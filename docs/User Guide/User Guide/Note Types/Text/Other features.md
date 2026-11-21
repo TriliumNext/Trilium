@@ -1,8 +1,6 @@
 # Other features
 ## Indentation
 
-<figure class="image image-style-align-right"><img style="aspect-ratio:201/124;" src="1_Other features_image.png" width="201" height="124"></figure>
-
 Paragraphs can be indented using the following buttons from the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>:
 
 *   Press <span class="tn-icon cke cke-indent"></span> to increase the indentation of the current paragraph by one. Can be pressed multiple times if needed.

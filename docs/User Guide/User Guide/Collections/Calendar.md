@@ -199,8 +199,6 @@ For each note of the calendar, the following attributes can be used:
 
 ## How the calendar works
 
-![](7_Calendar_image.png)
-
 The calendar displays all the child notes of the Collection that have a `#startDate`. An `#endDate` can optionally be added.
 
 A text note with a start date is shown with the <span class="tn-icon bx bx-calendar-event"></span> icon in the note tree and elsewhere, unless it has an icon of its own (set with `#iconClass`). The start date is read from the label `#calendar:startDate` names, if any.

@@ -3,10 +3,6 @@
 
 Inline code formats text using a monospace font to indicate technical content in a sentence such as code, paths, etc.
 
-![](Developer-specific%20formatting_image.png)
-
-Example of inline code being used to illustrate file system paths as well as shell commands (`git` in this case).
-
 To insert an inline code:
 
 *   Via the [Formatting toolbar](Formatting%20toolbar.md), look for the <span class="tn-icon cke cke-code"></span> button.
