@@ -153,7 +153,7 @@ jobs:
       - name: Build mobile APK
         uses: ./.github/actions/build-mobile
         with:
-          nightly: "true"
+          variant: nightly
           upload-artifact: "false"
           keystore-base64: ${{ secrets.NIGHTLY_ANDROID_KEYSTORE_BASE64 }}
           keystore-password: ${{ secrets.NIGHTLY_ANDROID_KEYSTORE_PASSWORD }}
