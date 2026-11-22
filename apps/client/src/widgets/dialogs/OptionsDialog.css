@@ -43,11 +43,31 @@ body.desktop .modal.options-dialog > .modal-dialog {
 
 /* The main header only carries the window (maximize/close) buttons, with the title moved into the
    sidebar. Float it over the content so it doesn't leave a tall empty band at the top. */
-body.desktop .modal.options-dialog > .modal-dialog > .modal-content > .modal-main > .modal-header {
+body.desktop .modal.options-dialog > .modal-dialog > .modal-content > .modal-main > .modal-header,
+body.mobile .modal.options-dialog:not(.mobile-master-detail) > .modal-dialog > .modal-content > .modal-main > .modal-header {
     position: absolute;
     top: 0;
     right: 4px;
     z-index: 9999;
+}
+
+/* A tablet keeps the desktop's sidebar layout, title included, where `style.css` moves a mobile
+   sidebar dialog's title into the main header. */
+body.mobile .modal.options-dialog:not(.mobile-master-detail) > .modal-dialog > .modal-content {
+    > .modal-sidebar > .modal-sidebar-header {
+        display: block;
+    }
+
+    > .modal-main > .modal-header {
+        border-bottom: 0;
+        background: transparent;
+
+        > .modal-title {
+            visibility: hidden;
+            width: 0;
+            padding: 0;
+        }
+    }
 }
 
 /* The dialog fills the full mobile page (isFullPageOnMobile), so the body stretches instead of
