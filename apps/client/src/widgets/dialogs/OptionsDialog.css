@@ -59,6 +59,11 @@ body.mobile .modal.options-dialog:not(.mobile-master-detail) > .modal-dialog > .
     }
 
     > .modal-main > .modal-header {
+        /* The title row of `.options-page-header`: its 10px block padding around the 40px icon
+           badge of OptionsPageHeader.css. */
+        height: 60px;
+        padding-block: 0 !important;
+        margin-top: 0;
         border-bottom: 0;
         background: transparent;
 
@@ -67,6 +72,10 @@ body.mobile .modal.options-dialog:not(.mobile-master-detail) > .modal-dialog > .
             width: 0;
             padding: 0;
         }
+    }
+
+    .options-page-header {
+        margin-top: calc(var(--default-padding, 15px) * -1);
     }
 }
 
