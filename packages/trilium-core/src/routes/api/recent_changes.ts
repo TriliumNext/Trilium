@@ -34,7 +34,11 @@ function getRecentChanges(req: Request<{ ancestorNoteId: string }, { deletedOnly
                 revisions
                 JOIN notes USING(noteId)`);
 
-        recentChanges.push(...revisionRows.filter(isListed));
+        for (const row of revisionRows) {
+            if (isListed(row)) {
+                recentChanges.push(row);
+            }
+        }
     }
 
     // Date points from the notes table:
@@ -75,7 +79,11 @@ function getRecentChanges(req: Request<{ ancestorNoteId: string }, { deletedOnly
             FROM notes
             WHERE notes.isDeleted = 1`);
 
-    recentChanges.push(...noteRows.filter(isListed));
+    for (const row of noteRows) {
+        if (isListed(row)) {
+            recentChanges.push(row);
+        }
+    }
 
     recentChanges.sort((a, b) => (a.utcDate > b.utcDate ? -1 : 1));
 

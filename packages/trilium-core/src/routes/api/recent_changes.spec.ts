@@ -133,6 +133,27 @@ describe("Recent changes API (core)", () => {
         expect(res.body.length).toBe(0);
     });
 
+    it("lists the newest 500 changes of a history too long to pass as call arguments", async () => {
+        const { noteId } = await createTextNote(api, { title: "Recent change long history" });
+        const count = 300_000;
+        getSql().execute(`
+            WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < ?)
+            INSERT INTO revisions (revisionId, noteId, title, utcDateLastEdited, utcDateCreated,
+                                   utcDateModified, dateLastEdited, dateCreated)
+            SELECT 'longHistory' || i, ?, 'long history', '2000-01-01 00:00:00.000Z',
+                   '2000-01-01 00:00:00.000Z', '2000-01-01 00:00:00.000Z',
+                   '2000-01-01 00:00:00.000+0000', '2000-01-01 00:00:00.000+0000'
+              FROM n`, [ count, noteId ]);
+
+        try {
+            const res = await api.get<RecentChangeRow[]>("/api/recent-changes/root");
+            expect(res.status).toBe(200);
+            expect(res.body.length).toBe(500);
+        } finally {
+            getSql().execute("DELETE FROM revisions WHERE revisionId LIKE 'longHistory%'");
+        }
+    });
+
     describe("recently changed note IDs", () => {
         function setModified(noteId: string, utcDateModified: string) {
             getSql().execute(
