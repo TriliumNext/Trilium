@@ -32,4 +32,8 @@ A note someone gave you access to appears under _Shared with me_ at the top of y
 *   A note you create inside a shared note belongs to you. The owner of the shared note sees it and can edit it, as does everyone with access to the shared note.
 *   When your access is taken away, the shared note disappears from your tree, along with any clone of it. The notes you created inside it stay, under _Shared with me_.
 
-_Can view_ doesn't prevent editing yet. For this and the other limitations, see _Limitations_ in <a class="reference-link" href="../Multiple%20users.md">Multiple users</a>.
+With _Can view_, you can read the note and the notes below it, but not change them: Trilium refuses an edit of their title, content, attributes or attachments, and creating, moving or deleting notes inside them. With _Can edit_, you can do all of that.
+
+Deleting a note also removes the <a class="reference-link" href="../../../Advanced%20Usage/Attributes/Relations.md">Relations</a> that other notes hold to it, including notes of other users that you can't see. Restoring the note from <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Recent%20Changes.md">Recent Changes</a> brings them back.
+
+For the other limitations, see _Limitations_ in <a class="reference-link" href="../Multiple%20users.md">Multiple users</a>.

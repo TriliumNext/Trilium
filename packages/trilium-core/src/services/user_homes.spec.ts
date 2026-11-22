@@ -2,6 +2,7 @@ import { USERS_NOTE_ID } from "@triliumnext/commons";
 import { describe, expect, it, onTestFinished, vi } from "vitest";
 
 import becca from "../becca/becca.js";
+import { ForbiddenError } from "../errors.js";
 import cloningService from "./cloning.js";
 import * as cls from "./context.js";
 import noteService from "./notes.js";
@@ -89,12 +90,6 @@ describe("user homes", () => {
         }).note);
         expect(cls.initAsSystem(() => adminNote.getParentNotes().map((parent) => parent.noteId))).toEqual([ "root" ]);
 
-        // A user who has no home yet keeps root.
-        const homelessId = cls.initAsSystem(() => userService.createUser("home-create-homeless-spec", null, false));
-        const homelessNote = await asUser(homelessId, () => noteService.createNewNote({
-            parentNoteId: "root", ownerId: homelessId, title: "homeless into root", content: "", type: "text"
-        }).note);
-        expect(cls.initAsSystem(() => homelessNote.getParentNotes().map((parent) => parent.noteId))).toEqual([ "root" ]);
     });
 
     it("refuses to move or clone a user's note to the top level", async () => {
@@ -136,6 +131,13 @@ describe("user homes", () => {
 const isBrowserRuntime = typeof self !== "undefined";
 
 describe.skipIf(isBrowserRuntime)("user homes as members see them", () => {
+    it("refuses a member who has no home yet a note at the top level, which they cannot write", async () => {
+        const homelessId = cls.initAsSystem(() => userService.createUser("home-create-homeless-spec", null, false));
+        await expect(asUser(homelessId, () => noteService.createNewNote({
+            parentNoteId: "root", title: "homeless into root", content: "", type: "text"
+        }))).rejects.toThrow(ForbiddenError);
+    });
+
     it("takes a note off Shared with me once a member pastes it into their home", async () => {
         const aliceId = cls.initAsSystem(() => userService.createUser("paste-alice-spec", null, false));
         const bobId = cls.initAsSystem(() => userService.createUser("paste-bob-spec", null, false));
@@ -210,6 +212,33 @@ describe.skipIf(isBrowserRuntime)("user homes as members see them", () => {
         expect(live).toEqual([
             `${project.noteId} in ${bobHome.noteId}`, `${spec.noteId} in ${project.noteId}`
         ].sort());
+    });
+
+    it("keeps a child that another user keeps elsewhere when a member deletes its parent", async () => {
+        const aliceId = cls.initAsSystem(() => userService.createUser("child-alice-spec", null, false));
+        const bobId = cls.initAsSystem(() => userService.createUser("child-bob-spec", null, false));
+        const aliceHome = cls.initAsSystem(() => userHomes.ensureUserHome(aliceId, "child-alice-spec"));
+        const bobHome = cls.initAsSystem(() => userHomes.ensureUserHome(bobId, "child-bob-spec"));
+        const draft = createOwnedNote(aliceHome.noteId, aliceId, "child draft");
+        const child = createOwnedNote(draft.noteId, aliceId, "child of draft");
+        const bobPrivate = createOwnedNote(bobHome.noteId, bobId, "bob keeps the child");
+        cls.initAsSystem(() => cloningService.cloneNoteToParentNote(child.noteId, bobPrivate.noteId));
+
+        const [ childrenSeen, bobPrivateSeen ] = await asUser(aliceId, () => {
+            const seen = draft.getChildNotes().map((note) => note.noteId);
+            const isBobPrivateSeen = !!becca.getNote(bobPrivate.noteId);
+            becca.getBranchFromChildAndParent(draft.noteId, aliceHome.noteId)?.deleteBranch();
+            return [ seen, isBobPrivateSeen ];
+        });
+        // Every child of a note a member sees is in their view, since visibility covers the subtree.
+        expect(childrenSeen).toEqual([ child.noteId ]);
+        expect(bobPrivateSeen).toBe(false);
+
+        const live = cls.initAsSystem(() => getSql().getColumn<string>(
+            "SELECT noteId || ' in ' || parentNoteId FROM branches WHERE noteId IN (?, ?) AND isDeleted = 0",
+            [ draft.noteId, child.noteId ]
+        ));
+        expect(live).toEqual([ `${child.noteId} in ${bobPrivate.noteId}` ]);
     });
 });
 

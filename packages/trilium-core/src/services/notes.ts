@@ -253,6 +253,10 @@ function getAndValidateParent(params: GetValidateParams) {
         throw new ValidationError(`Parent note '${params.parentNoteId}' was not found.`);
     }
 
+    // Before the note row is written: a refusal from the branch alone would roll back a note and
+    // reload the Becca.
+    becca.ensureCanWriteNote(parentNote.noteId);
+
     if (parentNote.type === "launcher" && parentNote.noteId !== "_lbBookmarks") {
         throw new ValidationError(`Creating child notes into launcher notes is not allowed.`);
     }
@@ -1605,9 +1609,14 @@ function restoreNoteAndDescendants(noteRow: NoteRow, deleteId: string, taskConte
         [deleteId, noteRow.noteId, noteRow.noteId]
     );
 
-    for (const attributeRow of attributeRows) {
-        // relation might point to a note which hasn't been undeleted yet and would thus throw up
-        new BAttribute(attributeRow).save({ skipValidation: true });
+    noteEntity.isBeingRestored = true;
+    try {
+        for (const attributeRow of attributeRows) {
+            // relation might point to a note which hasn't been undeleted yet and would thus throw up
+            new BAttribute(attributeRow).save({ skipValidation: true });
+        }
+    } finally {
+        noteEntity.isBeingRestored = false;
     }
 
     const attachmentRows = sql.getRows<AttachmentRow>(

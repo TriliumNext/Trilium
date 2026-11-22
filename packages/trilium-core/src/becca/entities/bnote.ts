@@ -116,6 +116,8 @@ class BNote extends AbstractBeccaEntity<BNote> {
     ownerId!: string | null;
     /** set during the deletion operation, before it is completed (removed from becca completely). */
     isBeingDeleted!: boolean;
+    /** Set while `notes.undeleteNote()` restores the relations that point at the note. */
+    isBeingRestored!: boolean;
     isDecrypted!: boolean;
 
     ownedAttributes!: BAttribute[];
@@ -175,6 +177,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
         }
         this.ownerId = ownerId ?? null;
         this.isBeingDeleted = false;
+        this.isBeingRestored = false;
 
         // ------ Derived attributes ------
 
@@ -190,7 +193,10 @@ class BNote extends AbstractBeccaEntity<BNote> {
 
     override init() {
         this.initRelations();
-        this.becca.addNote(this.noteId, this);
+        // A new note gets its ID in `beforeSaving()`, which adds it to the Becca then.
+        if (this.noteId) {
+            this.becca.addNote(this.noteId, this);
+        }
 
         this.contentSize = null;
         this.contentAndAttachmentsSize = null;
@@ -1630,6 +1636,10 @@ class BNote extends AbstractBeccaEntity<BNote> {
             [this.dateCreated, this.utcDateCreated, this.dateModified, this.utcDateModified, this.noteId]
         );
         sql.execute(/*sql*/`UPDATE blobs SET utcDateModified = ? WHERE blobId = ?`, [this.utcDateModified, this.blobId]);
+    }
+
+    protected override getWriteAccessNoteId() {
+        return this.noteId || null;
     }
 
     override beforeSaving() {

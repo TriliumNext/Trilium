@@ -1,4 +1,4 @@
-import { NotFoundError } from "../errors.js";
+import { ForbiddenError, NotFoundError } from "../errors.js";
 import { getUserId } from "../services/context.js";
 import { getLog } from "../services/log.js";
 import { formatSize } from "../services/utils/index.js";
@@ -370,6 +370,13 @@ export default class Becca {
     /** Whether the current scope can see the note, which an admin or a system scope always can. */
     canSeeNote(noteId: string) {
         return getNoteView(this)?.canSeeNote(noteId) ?? true;
+    }
+
+    /** Throws a `ForbiddenError` unless the current scope can write the note, which an admin or a system scope always can. */
+    ensureCanWriteNote(noteId: string) {
+        if (getNoteView(this)?.canWriteNote(noteId) === false) {
+            throw new ForbiddenError(`Note '${noteId}' is read-only for the signed-in user.`);
+        }
     }
 
     /**

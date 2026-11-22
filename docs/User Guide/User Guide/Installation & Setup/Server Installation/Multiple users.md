@@ -32,7 +32,7 @@ When several users have the same [text](../../Note%20Types/Text.md), [code](../.
 
 ## Limitations
 
-*   _Can view_ prevents editing only in the editor of a text, code, Markdown or Mermaid note: anyone with access to a note can still change it in other ways.
+*   On a note shared with _Can view_, the interface still offers the controls that change it. Trilium refuses the change and shows an error.
 *   Only text, code, Markdown and Mermaid notes are edited together. For the other note types, the last save replaces the earlier ones.
 *   The <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a>, the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>, saved searches and AI chats are shared by all users.
 *   On a note shared with them, a user doesn't get the labels the owner set on the notes above it, such as an icon or a sort order, nor the definitions from a template they can't see.
