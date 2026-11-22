@@ -69,6 +69,11 @@ export default class App {
                 value: isMobile ? "mobile" : "desktop"
             }
         ]);
+        // The default 1280x720 lays the mobile layout out as a tablet, with the tree docked
+        // (`STACKED_TREE_LAYOUT`), so mobile tests run at a phone's size.
+        if (isMobile) {
+            await this.page.setViewportSize({ width: 390, height: 844 });
+        }
 
         if (!url) {
             url = "/";
