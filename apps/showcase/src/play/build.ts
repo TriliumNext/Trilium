@@ -3,7 +3,7 @@ import path from "path";
 import type { Browser } from "playwright";
 import { pathToFileURL } from "url";
 
-import { openApp, openNote, renderTemplate, settle } from "../shared/browser.ts";
+import { openApp, openNote, renderTemplate, setOption, settle } from "../shared/browser.ts";
 import {
     type BuildOptions, type Builder, checkList, outDir, reportChecks, sceneFileName, templatesDir
 } from "../shared/build.ts";
@@ -79,6 +79,7 @@ async function buildIcon(browser: Browser) {
 async function buildScreenshots(browser: Browser, options: BuildOptions) {
     const server = await openDemo(browser, options);
     try {
+        await setOption(browser, server.baseUrl, "rightPaneVisible", "false");
         for (const deviceName of options.devices) {
             await captureDevice(browser, options, server.baseUrl, deviceName);
         }
