@@ -58,4 +58,15 @@ describe("ToggleSidebarButton", () => {
         expect(container.querySelector(".toggle-sidebar-button")).toBeInstanceOf(HTMLElement);
         expect(container.querySelector("button")).toBeNull();
     });
+
+    it("points back to the tree from the right in a right-to-left layout", () => {
+        mockWidth("phone");
+        glob.isRtl = true;
+        try {
+            const container = renderInto(<ToggleSidebarButton />);
+            expect(container.querySelector("button.bx-chevron-right")).toBeInstanceOf(HTMLElement);
+        } finally {
+            delete (glob as Partial<typeof glob>).isRtl;
+        }
+    });
 });

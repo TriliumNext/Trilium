@@ -125,6 +125,32 @@ describe("MobileSidebar", () => {
         expect(rest.querySelector(".mobile-sidebar-gutter")).toBeNull();
     });
 
+    it("widens the docked tree towards the left in a right-to-left layout", () => {
+        const sidebar = render(true);
+        const gutter = sidebar.nextElementSibling;
+        if (!(gutter instanceof HTMLElement)) throw new Error("No gutter");
+        gutter.setPointerCapture = vi.fn();
+        vi.spyOn(sidebar, "getBoundingClientRect").mockReturnValue(new DOMRect(600, 0, 320, 600));
+
+        glob.isRtl = true;
+        try {
+            act(() => { gutter.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 1, bubbles: true })); });
+            gutter.dispatchEvent(new PointerEvent("pointermove", { pointerId: 1, clientX: 520 }));
+            expect(sidebar.style.getPropertyValue("--mobile-sidebar-width")).toBe("400px");
+        } finally {
+            delete (glob as Partial<typeof glob>).isRtl;
+        }
+    });
+
+    it("keeps the docked tree and the note in place as tabs switch", () => {
+        render(true);
+        triggerCommand.mockClear();
+        trigger("activeContextChanged", {
+            noteContext: { getMainContext: () => ({ ntxId: "docked-tab" }) } as unknown as NoteContext
+        });
+        expect(triggerCommand).not.toHaveBeenCalledWith("setActiveScreen", expect.anything());
+    });
+
     it("peeks the closed tree over the note from the edge button, until a press outside, and docks it from the launch bar", async () => {
         const sidebar = render(false);
         expect(sidebar.classList.contains("left-pane-hidden")).toBe(true);

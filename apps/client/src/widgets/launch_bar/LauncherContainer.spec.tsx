@@ -329,6 +329,41 @@ describe("LauncherContainer on a tablet", () => {
         options.set("aiEnabled", "false");
     });
 
+    it("shows a phone the mobile launchers, without those marked desktop-only", async () => {
+        h.isMobile = true;
+        buildNote({ id: "_lbMobileVisibleLaunchers", title: "Mobile Visible Launchers", children: [
+            { id: "_lbMobileSpacerStub", title: "Spacer", type: "launcher", "#launcherType": "builtinWidget", "#builtinWidget": "spacer" },
+            { id: "_lbMobileJumpToStub", title: "Jump to", type: "launcher", "#launcherType": "command", "#command": "jumpToNote", "#desktopOnly": "" }
+        ] });
+        container = document.createElement("div");
+        document.body.appendChild(container);
+        act(() => render(
+            <ParentComponent.Provider value={new Component()}>
+                <LauncherContainer isHorizontalLayout />
+            </ParentComponent.Provider>, container));
+        await flush();
+
+        expect(container.querySelector(".launcher-slot[data-launcher-id='_lbMobileSpacerStub']")).not.toBeNull();
+        expect(container.querySelector(".launcher-slot[data-launcher-id='_lbMobileJumpToStub']")).toBeNull();
+    });
+
+    it("shows the AI chat launcher on desktop, where the right pane takes the chat", async () => {
+        options.set("aiEnabled", "true");
+        buildNote({ id: "_lbVisibleLaunchers", title: "Visible Launchers", children: [
+            { id: "_lbDesktopChatStub", title: "Chat", type: "launcher", "#launcherType": "builtinWidget", "#builtinWidget": "sidebarChat" }
+        ] });
+        container = document.createElement("div");
+        document.body.appendChild(container);
+        act(() => render(
+            <ParentComponent.Provider value={new Component()}>
+                <LauncherContainer isHorizontalLayout={false} />
+            </ParentComponent.Provider>, container));
+        await flush();
+
+        const chatSlot = container.querySelector(".launcher-slot[data-launcher-id='_lbDesktopChatStub']");
+        expect(chatSlot?.querySelector("button")).toBeInstanceOf(HTMLElement);
+    });
+
     it("shows the desktop's launchers, those marked desktop-only among them, and leaves out the AI chat, with no tab switcher in either bar", async () => {
         h.isMobile = true;
         h.isTablet = true;
