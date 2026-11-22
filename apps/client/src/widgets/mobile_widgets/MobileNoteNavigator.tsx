@@ -58,11 +58,12 @@ export default function MobileNoteNavigator() {
     // phone reaches the tree back from the note, so while the note shows, the tree stands on the
     // column listing it.
     const [activeScreen, setActiveScreen] = useState<Screen>();
-    // On a tablet the note sits next to the tree: there is nothing to bring back, entering a folder
-    // or going back to one opens it there as well, the column needs no tile with the folder's
-    // preview, and the root lists no bookmarks, which the launch bar's Bookmarks launcher holds.
-    const [ isPhone, setPhone ] = useState(utils.isNarrowLayout);
-    useEffect(() => utils.onNarrowLayoutChange(() => setPhone(utils.isNarrowLayout())), []);
+    // With the tree docked, as on a tablet, the note sits next to it: there is nothing to bring
+    // back, entering a folder or going back to one opens it there as well, the column needs no
+    // tile with the folder's preview, and the root lists no bookmarks, which the launch bar's
+    // Bookmarks launcher holds.
+    const [ isStacked, setStacked ] = useState(utils.isTreeStacked);
+    useEffect(() => utils.onTreeStackedChange(() => setStacked(utils.isTreeStacked())), []);
     const tabId = noteContext?.getMainContext().ntxId;
     const treeOwnerRef = useRef({ tabId, notePath: activeNotePath, hoistedNoteId: effectiveHoistedId });
     treeOwnerRef.current = { tabId, notePath: activeNotePath, hoistedNoteId: effectiveHoistedId };
@@ -75,12 +76,12 @@ export default function MobileNoteNavigator() {
     const nextStackRef = useRef(nextStack);
     nextStackRef.current = nextStack;
     useEffect(() => {
-        const isNoteShown = utils.isNarrowLayout() && activeScreen !== "tree";
+        const isNoteShown = utils.isTreeStacked() && activeScreen !== "tree";
         const target = isNoteShown
             ? getParentStack(activeNotePath, effectiveHoistedId)
             : getTreeStack(tabId, activeNotePath, effectiveHoistedId);
-        // On a tablet, `drillInto()` and `goBack()` open the folder they move to, and commit that
-        // column themselves once its subtree is in.
+        // With the tree docked, `drillInto()` and `goBack()` open the folder they move to, and
+        // commit that column themselves once its subtree is in.
         if (nextStackRef.current && isSameStack(nextStackRef.current, target)) return;
         commitStack(target);
         setNextStack(null);
@@ -133,13 +134,13 @@ export default function MobileNoteNavigator() {
         };
     }, [loadedParents]);
     useEffect(() => loadParent(currentParentId), [currentParentId, loadParent]);
-    useEffect(() => (isPhone ? undefined : loadParent(pendingId)), [isPhone, pendingId, loadParent]);
+    useEffect(() => (isStacked ? undefined : loadParent(pendingId)), [isStacked, pendingId, loadParent]);
 
     const isLoaded = !!currentParentId && loadedParents.has(currentParentId);
     const spotlightedNoteId = getSpotlightedNoteId(currentParentPath, activeNotePath);
     const children = useNavigatorChildren(parentNote, hideArchived, isLoaded, isParentSubtreeHidden, spotlightedNoteId);
     const canGoBack = stack.length > 1;
-    const backOpensColumnNote = opensColumnNoteOnBack({ isPhone, stack, activeNoteId, spotlightedNoteId });
+    const backOpensColumnNote = opensColumnNoteOnBack({ isStacked, stack, activeNoteId, spotlightedNoteId });
     const backTargetId = canGoBack ? getLastSegment(stack[stack.length - 2]) : undefined;
     const backTargetParentId = stack.length >= 3 ? getLastSegment(stack[stack.length - 3]) : undefined;
     const backTargetTitle = useNoteTitle(backTargetId, backTargetParentId);
@@ -165,7 +166,7 @@ export default function MobileNoteNavigator() {
 
     // Gate the visible body on the content preview being ready to avoid a layout shift
     // when the preview finishes rendering.
-    const previewReady = !isPhone || (!!currentParentId && readyPreviewIds.has(currentParentId));
+    const previewReady = !isStacked || (!!currentParentId && readyPreviewIds.has(currentParentId));
     const bodyVisible = previewReady && isLoaded;
 
     // Full-screen spinner only for the very first render — once a body has been shown,
@@ -180,14 +181,14 @@ export default function MobileNoteNavigator() {
     const [commitCounter, setCommitCounter] = useState(0);
 
     useEffect(() => {
-        const isPendingReady = isPhone ? readyPreviewIds.has(pendingId ?? "") : loadedParents.has(pendingId ?? "");
+        const isPendingReady = isStacked ? readyPreviewIds.has(pendingId ?? "") : loadedParents.has(pendingId ?? "");
         if (!nextStack || !pendingId || !isPendingReady) return;
         commitStack(nextStack);
         setNextStack(null);
         setCommitCounter((c) => c + 1);
         // Reset scroll so the committed column shows from its top.
         if (scrollRef.current) scrollRef.current.scrollTop = 0;
-    }, [nextStack, pendingId, isPhone, readyPreviewIds, loadedParents, commitStack]);
+    }, [nextStack, pendingId, isStacked, readyPreviewIds, loadedParents, commitStack]);
 
     // Brief slide-in on forward / back so the swap feels directional without blocking the user.
     useLayoutEffect(() => {
@@ -226,8 +227,8 @@ export default function MobileNoteNavigator() {
         directionRef.current = "backward";
         const parentStack = stack.slice(0, -1);
         navigateTo(parentStack);
-        if (!isPhone) void noteContext?.setNote(parentStack[parentStack.length - 1]);
-    }, [stack, backOpensColumnNote, currentParentPath, navigateTo, isPhone, noteContext]);
+        if (!isStacked) void noteContext?.setNote(parentStack[parentStack.length - 1]);
+    }, [stack, backOpensColumnNote, currentParentPath, navigateTo, isStacked, noteContext]);
 
     const unhoist = useCallback(() => {
         if (tabId) leaveHoistedNote(tabId, activeNotePath, effectiveHoistedId);
@@ -247,7 +248,7 @@ export default function MobileNoteNavigator() {
     });
     const goBackOnSystemBack = useRef<SystemBackHandler>(() => false);
     goBackOnSystemBack.current = () => {
-        if (!canGoBack || pendingPop || (utils.isNarrowLayout() && !isTreeShown.current)) return false;
+        if (!canGoBack || pendingPop || (utils.isTreeStacked() && !isTreeShown.current)) return false;
         goBack();
         return true;
     };
@@ -270,15 +271,15 @@ export default function MobileNoteNavigator() {
         (childNotePath: string) => {
             directionRef.current = "forward";
             navigateTo([...stack, childNotePath]);
-            if (!isPhone) void noteContext?.setNote(childNotePath);
+            if (!isStacked) void noteContext?.setNote(childNotePath);
         },
-        [stack, navigateTo, isPhone, noteContext]
+        [stack, navigateTo, isStacked, noteContext]
     );
 
     const isCurrentActive = !!activeNoteId && activeNoteId === currentParentId;
     const isHoisted = effectiveHoistedId !== "root";
-    const canGoForward = isPhone && !!activeNotePath;
-    const showToolbar = canGoBack || isHoisted || canGoForward || (!isPhone && !!parentNote);
+    const canGoForward = isStacked && !!activeNotePath;
+    const showToolbar = canGoBack || isHoisted || canGoForward || (!isStacked && !!parentNote);
 
     const currentContextHandler = useMemo(
         () => buildNoteContextMenu(currentParentPath, parentComponent),
@@ -310,7 +311,7 @@ export default function MobileNoteNavigator() {
                         <UnhoistButton hoistedNoteId={effectiveHoistedId} onUnhoist={unhoist} />
                     )}
                     {canGoForward && activeNotePath && <ForwardToNoteButton notePath={activeNotePath} />}
-                    {!isPhone && parentNote && (
+                    {!isStacked && parentNote && (
                         <div className="mobile-navigator-toolbar-actions">
                             <CurrentNoteActions notePath={currentParentPath} onMoreActions={currentContextHandler} />
                         </div>
@@ -321,7 +322,7 @@ export default function MobileNoteNavigator() {
             <div ref={scrollRef} className={clsx("mobile-navigator-scroll", showInitialLoader && "is-pending")}>
                 <div ref={bodyRef} className="mobile-navigator-body">
                     {!isHoisted && currentParentId === "root" && <WorkspaceCards onEnter={enterWorkspace} />}
-                    {isPhone && !isHoisted && currentParentId === "root" && (
+                    {isStacked && !isHoisted && currentParentId === "root" && (
                         <BookmarkList
                             renderRow={({ note, notePath, parentNoteId }) => (
                                 <NavigatorRow
@@ -340,12 +341,12 @@ export default function MobileNoteNavigator() {
                             )}
                         />
                     )}
-                    {isPhone && parentNote && (
+                    {isStacked && parentNote && (
                         <div className="mobile-navigator-children-label">
                             {t("mobile_note_navigator.current_note")}
                         </div>
                     )}
-                    {isPhone && parentNote && (
+                    {isStacked && parentNote && (
                         <div
                             className={clsx("mobile-navigator-current-tile", parentColorClass, {
                                 "is-active": isCurrentActive,
@@ -379,7 +380,7 @@ export default function MobileNoteNavigator() {
                         </div>
                     )}
 
-                    {isLoaded && parentNote && children.length > 0 && (isPhone || isParentSubtreeHidden) && (
+                    {isLoaded && parentNote && children.length > 0 && (isStacked || isParentSubtreeHidden) && (
                         <div className="mobile-navigator-children-label">
                             {isParentSubtreeHidden
                                 ? t("mobile_note_navigator.children_hidden")

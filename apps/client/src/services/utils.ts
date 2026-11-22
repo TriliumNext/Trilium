@@ -361,9 +361,10 @@ export function getLaunchBarRootId() {
 }
 
 /**
- * Whether the viewport is as narrow as a phone's. In the mobile layout, a menu is a bottom sheet
- * only then; a tablet's wider layout places it beside what opened it. Must match the media query
- * around the `.mobile-bottom-menu` rules in style.css.
+ * Whether the viewport is as narrow as a phone's. In the mobile layout, the launch bar sits at the
+ * bottom and a menu is a bottom sheet only then; a tablet in landscape places the launch bar on
+ * the side and a menu beside what opened it. Must match the media queries of
+ * `layouts/MobileLayout.phone.css` and `MobileLayout.tablet.css`.
  */
 export function isNarrowLayout() {
     return window.matchMedia(NARROW_LAYOUT).matches;
@@ -371,12 +372,33 @@ export function isNarrowLayout() {
 
 /** Calls `onChange` whenever {@link isNarrowLayout} changes, until the returned function runs. */
 export function onNarrowLayoutChange(onChange: () => void) {
-    const query = window.matchMedia(NARROW_LAYOUT);
-    query.addEventListener("change", onChange);
-    return () => query.removeEventListener("change", onChange);
+    return onMediaQueryChange(NARROW_LAYOUT, onChange);
 }
 
 export const NARROW_LAYOUT = "(max-width: 991px)";
+
+/**
+ * Whether the mobile layout stacks the note tree under the note, which slides away to reveal it,
+ * rather than docking it beside the note: on a viewport narrower than an iPad mini in portrait, or
+ * shorter than a tablet, as a phone turned sideways is. A tablet in portrait docks the tree while
+ * keeping the launch bar at the bottom. Must match the media queries of `MobileSidebar.css`.
+ */
+export function isTreeStacked() {
+    return window.matchMedia(STACKED_TREE_LAYOUT).matches;
+}
+
+/** Calls `onChange` whenever {@link isTreeStacked} changes, until the returned function runs. */
+export function onTreeStackedChange(onChange: () => void) {
+    return onMediaQueryChange(STACKED_TREE_LAYOUT, onChange);
+}
+
+export const STACKED_TREE_LAYOUT = "(max-width: 743px), (max-height: 599px)";
+
+function onMediaQueryChange(mediaQuery: string, onChange: () => void) {
+    const query = window.matchMedia(mediaQuery);
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+}
 
 /**
  * Returns true if the client device is an Apple iOS one (iPad, iPhone, iPod).
@@ -1074,6 +1096,8 @@ export default {
     getLaunchBarRootId,
     isNarrowLayout,
     onNarrowLayoutChange,
+    isTreeStacked,
+    onTreeStackedChange,
     isDesktop,
     setCookie,
     getNoteTypeClass,

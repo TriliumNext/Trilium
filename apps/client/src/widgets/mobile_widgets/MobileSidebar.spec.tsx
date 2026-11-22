@@ -9,6 +9,7 @@ import appContext, { type EventData, type EventNames } from "../../components/ap
 import type NoteContext from "../../components/note_context";
 import options from "../../services/options";
 import { handleSystemBack } from "../../services/system_back";
+import { NARROW_LAYOUT, STACKED_TREE_LAYOUT } from "../../services/utils";
 import { ParentComponent } from "../react/react_utils";
 import MobileSidebar from "./MobileSidebar";
 import { getTabNavigation } from "./tab_navigation";
@@ -100,7 +101,7 @@ describe("MobileSidebar", () => {
             isNarrow = true;
             onLayoutChange = () => {};
             vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
-                matches: isNarrow && query === "(max-width: 991px)",
+                matches: isNarrow && (query === NARROW_LAYOUT || query === STACKED_TREE_LAYOUT),
                 media: query,
                 addEventListener: (_type: string, listener: () => void) => { onLayoutChange = listener; },
                 removeEventListener: vi.fn()

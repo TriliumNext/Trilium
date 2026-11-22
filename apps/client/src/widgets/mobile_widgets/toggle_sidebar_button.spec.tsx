@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { NARROW_LAYOUT, STACKED_TREE_LAYOUT } from "../../services/utils";
 import { renderInto } from "../../test/render";
 
 const { triggerCommand } = vi.hoisted(() => ({ triggerCommand: vi.fn() }));
@@ -18,19 +19,20 @@ vi.mock("../react/hooks/tooltip", async (importOriginal) => ({
 
 import ToggleSidebarButton from "./toggle_sidebar_button";
 
-/** Answers `matchMedia()` as a phone or a tablet would. */
-function mockWidth(width: "phone" | "tablet") {
+/** Answers `matchMedia()` as a phone, a tablet in portrait or a tablet in landscape would. */
+function mockWidth(width: "phone" | "portrait" | "landscape") {
     return vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
-        matches: width === "phone" && query === "(max-width: 991px)",
+        matches: (query === STACKED_TREE_LAYOUT && width === "phone")
+            || (query === NARROW_LAYOUT && width !== "landscape"),
         media: query,
         addEventListener: vi.fn(),
         removeEventListener: vi.fn()
     }) as unknown as MediaQueryList);
 }
 
-/** Renders the button at a phone or tablet width and clicks it. */
-function clickAt(width: "phone" | "tablet") {
-    const matchMedia = mockWidth(width);
+/** Renders the button at a width and clicks it. */
+function clickAt(width: "phone" | "portrait") {
+    mockWidth(width);
 
     const container = renderInto(<ToggleSidebarButton />);
     // `SplitNoteContainer` binds this on the `.note-split` the button renders inside.
@@ -41,8 +43,8 @@ function clickAt(width: "phone" | "tablet") {
     expect(button).not.toBeNull();
     button?.click();
 
-    expect(matchMedia).toHaveBeenCalledWith("(max-width: 991px)");
     expect(activateSplit).not.toHaveBeenCalled();
+    return button;
 }
 
 describe("ToggleSidebarButton", () => {
@@ -54,23 +56,24 @@ describe("ToggleSidebarButton", () => {
         vi.restoreAllMocks();
     });
 
-    it("opens the sidebar on a phone without activating the split it sits in", () => {
-        clickAt("phone");
+    it("goes back to the tree on a phone, where the tree lies under the note, without activating the split it sits in", () => {
+        const button = clickAt("phone");
 
+        expect(button?.classList.contains("bx-chevron-left")).toBe(true);
         expect(triggerCommand).toHaveBeenCalledWith("setActiveScreen", { screen: "tree" });
         expect(triggerCommand).not.toHaveBeenCalledWith("toggleLeftPane");
     });
 
-    it("goes back to the tree on a phone, where the tree lies under the note", () => {
-        mockWidth("phone");
-        const button = renderInto(<ToggleSidebarButton />).querySelector<HTMLButtonElement>("button.bx-chevron-left");
-        expect(button).not.toBeNull();
-        button?.click();
-        expect(triggerCommand).toHaveBeenCalledWith("setActiveScreen", { screen: "tree" });
+    it("shows and hides the docked tree on a tablet in portrait, whose launch bar sits at the bottom", () => {
+        const button = clickAt("portrait");
+
+        expect(button?.classList.contains("bx-sidebar")).toBe(true);
+        expect(triggerCommand).toHaveBeenCalledWith("toggleLeftPane");
+        expect(triggerCommand).not.toHaveBeenCalledWith("setActiveScreen", expect.anything());
     });
 
-    it("leaves a tablet's sidebar to the toggle in the launch bar", () => {
-        mockWidth("tablet");
+    it("leaves a tablet's sidebar in landscape to the toggle in the launch bar", () => {
+        mockWidth("landscape");
         const container = renderInto(<ToggleSidebarButton />);
         expect(container.querySelector(".toggle-sidebar-button")).toBeInstanceOf(HTMLElement);
         expect(container.querySelector("button")).toBeNull();

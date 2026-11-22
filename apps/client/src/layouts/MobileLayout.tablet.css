@@ -61,20 +61,6 @@
         }
     }
 
-    #mobile-sidebar-wrapper {
-        --navigator-backdrop: var(--left-pane-background-color);
-        transform: none !important;
-        background-color: var(--navigator-backdrop) !important;
-    }
-
-    #mobile-rest-container > #mobile-sidebar-wrapper.left-pane-hidden {
-        display: none !important;
-    }
-
-    #mobile-rest-container > #mobile-sidebar-wrapper.left-pane-hidden ~ #mobile-rest-pane {
-        width: 100%;
-    }
-
     #mobile-rest-container {
         background-color: var(--root-background);
     }

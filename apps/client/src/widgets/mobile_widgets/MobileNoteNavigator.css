@@ -443,7 +443,8 @@ body[dir=rtl] :is(.mobile-navigator-row-icon, .mobile-navigator-current-icon).is
     line-height: 1.2;
 }
 
-@media (min-width: 992px) {
+/* The breakpoints must match `STACKED_TREE_LAYOUT` in services/utils.ts. */
+@media (min-width: 744px) and (min-height: 600px) {
     #mobile-sidebar-wrapper .mobile-note-navigator {
         --navigator-separator-color: transparent;
 

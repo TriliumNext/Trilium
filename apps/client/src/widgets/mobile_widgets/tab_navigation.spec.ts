@@ -40,10 +40,10 @@ describe("tab navigation", () => {
     });
 
     it("on a tablet, goes back from a child listed in the column to the column's note before going up", () => {
-        function opensColumnNote(stack: string[], notePath: string, isPhone = false) {
+        function opensColumnNote(stack: string[], notePath: string, isStacked = false) {
             const activeNoteId = notePath.split("/").at(-1);
             const spotlightedNoteId = getSpotlightedNoteId(stack[stack.length - 1], notePath);
-            return opensColumnNoteOnBack({ isPhone, stack, activeNoteId, spotlightedNoteId });
+            return opensColumnNoteOnBack({ isStacked, stack, activeNoteId, spotlightedNoteId });
         }
 
         const column = [ "root", "root/folder", "root/folder/inner" ];
@@ -53,7 +53,7 @@ describe("tab navigation", () => {
         // A note further down, or elsewhere, is not a child of the column's note.
         expect(opensColumnNote([ "root", "root/folder" ], "root/folder/inner/leaf")).toBe(false);
         expect(opensColumnNote(column, "root/folder/page")).toBe(false);
-        // A phone hides the note behind the tree; the root column has no back.
+        // A stacked tree hides the note under it; the root column has no back.
         expect(opensColumnNote(column, "root/folder/inner/leaf", true)).toBe(false);
         expect(opensColumnNote([ "root" ], "root/folder")).toBe(false);
         // A hoisted tree's columns start at the hoisted note, while the note's path starts at the root.
