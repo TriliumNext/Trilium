@@ -1,6 +1,6 @@
 ---
 type: fix
-area: Collections
+area: Interface
 ---
 
-On a tablet, the grid view squeezed five narrow cards into each row instead of sizing them as on the desktop.
+On a tablet, notes kept the phone's narrow side margins, and the grid view squeezed five narrow cards into each row.
