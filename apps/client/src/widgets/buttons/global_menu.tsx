@@ -1,5 +1,6 @@
 import "./global_menu.css";
 
+import type { Tooltip } from "bootstrap";
 import { RefObject } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
@@ -14,7 +15,7 @@ export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout:
     const isVerticalLayout = !isHorizontalLayout;
     const { isUpdateAvailable, latestVersion } = useTriliumUpdateStatus();
     const logoRef = useRef<SVGSVGElement>(null);
-    useStaticTooltip(logoRef);
+    useStaticTooltip(logoRef, LOGO_TOOLTIP);
 
     return (
         <Dropdown
@@ -33,6 +34,9 @@ export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout:
         </Dropdown>
     );
 }
+
+// The logo shows only in a vertical launch bar, so its tooltip opens beside the bar.
+const LOGO_TOOLTIP: Partial<Tooltip.Options> = { placement: "right", fallbackPlacements: [ "right" ] };
 
 // The rows load once the menu is about to open.
 const loadGlobalMenuItems = () => import("./GlobalMenuItems");
