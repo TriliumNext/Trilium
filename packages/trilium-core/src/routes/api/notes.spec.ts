@@ -3,11 +3,11 @@ import type {
     NoteReferencesResponse, NoteSaveBase, SaveConflictResponse, SavedAttachmentRow,
     SaveNoteBlocksResponse, SaveNoteDataRequest, SaveNoteDataResponse
 } from "@triliumnext/commons";
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import becca from "../../becca/becca";
 import { load } from "../../becca/becca_loader";
-import { getContext } from "../../services/context";
+import { getContext, initAsSystem } from "../../services/context";
 import eraseService from "../../services/erase";
 import noteService from "../../services/notes";
 import {
@@ -177,12 +177,13 @@ describe("Notes API (core)", () => {
         });
 
         it("refuses to rename a user's home, which keeps its user's name", async () => {
-            const userId = getContext().init(() => userService.createUser("title-home-spec", null, false));
-            const home = getContext().init(() => userHomes.ensureUserHome(userId, "title-home-spec"));
+            const userId = initAsSystem(() => userService.createUser("title-home-spec", null, false));
+            onTestFinished(() => initAsSystem(() => userService.deleteUser(userId)));
+            const home = initAsSystem(() => userHomes.ensureUserHome(userId, "title-home-spec"));
 
             const res = await api.put(`/api/notes/${home.noteId}/title`, { body: { title: "Renamed" } });
             expect(res.status).toBe(400);
-            expect(becca.getNoteOrThrow(home.noteId).title).toBe("title-home-spec");
+            expect(initAsSystem(() => becca.getNoteOrThrow(home.noteId).title)).toBe("title-home-spec");
         });
 
         it("updates note content", async () => {

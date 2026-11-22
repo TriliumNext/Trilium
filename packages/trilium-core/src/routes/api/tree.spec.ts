@@ -1,8 +1,8 @@
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import becca from "../../becca/becca";
 import { load } from "../../becca/becca_loader";
-import { getContext } from "../../services/context";
+import { getContext, initAsSystem } from "../../services/context";
 import optionService from "../../services/options";
 import permissionService from "../../services/permission_service";
 import userService from "../../services/user_service";
@@ -213,8 +213,9 @@ describe("Tree API (core)", () => {
 
     it("names the users with access to a note, and only on that note", async () => {
         const note = await createTextNote(api, { title: "tree-access-spec" });
-        const userId = getContext().init(() => userService.createUser("tree-access-user", null, false));
-        getContext().init(() => permissionService.setUserAccess(note.noteId, userId, false));
+        const userId = initAsSystem(() => userService.createUser("tree-access-user", null, false));
+        onTestFinished(() => initAsSystem(() => userService.deleteUser(userId)));
+        initAsSystem(() => permissionService.setUserAccess(note.noteId, userId, false));
 
         const res = await api.post<{ notes: { noteId: string; accessUsernames?: string[]; ownerId?: string | null }[] }>("/api/tree/load", {
             body: { noteIds: [ "root", note.noteId ] }

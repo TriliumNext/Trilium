@@ -145,8 +145,8 @@ export class NoteView {
 }
 
 /**
- * The view the current scope reads the Becca through, or `null` for an admin, a system scope, or a
- * scope without a user.
+ * The view the current scope reads the Becca through, or `null` for an admin or a system scope.
+ * Throws for a scope that acts for no user, once members exist.
  */
 export function getNoteView(becca: Becca): NoteView | null {
     if (!hasMembers(version) || isSystem()) {
@@ -155,7 +155,7 @@ export function getNoteView(becca: Becca): NoteView | null {
 
     const userId = getUserId();
     if (!userId) {
-        return null;
+        throw new Error("The Becca was read in a scope that acts for no user and is not a system scope.");
     }
 
     let cached = viewsByUser.get(userId);

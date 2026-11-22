@@ -29,15 +29,15 @@ describe("collaboration over the messaging provider", () => {
         ({ type: "collab-join", noteId, memberId: "m", kind });
 
     it("lets a user join the session of a text note they can see, with their right to write", () => {
-        const adminId = cls.init(() => userService.getAdminUserId());
-        const ownerId = cls.init(() => userService.createUser("collab-owner-spec", null, false));
-        const readerId = cls.init(() => userService.createUser("collab-reader-spec", null, false));
-        const strangerId = cls.init(() => userService.createUser("collab-stranger-spec", null, false));
-        const createNote = (type: "text" | "code" | "mermaid" | "canvas") => cls.init(() => noteService.createNewNote({
+        const adminId = cls.initAsSystem(() => userService.getAdminUserId());
+        const ownerId = cls.initAsSystem(() => userService.createUser("collab-owner-spec", null, false));
+        const readerId = cls.initAsSystem(() => userService.createUser("collab-reader-spec", null, false));
+        const strangerId = cls.initAsSystem(() => userService.createUser("collab-stranger-spec", null, false));
+        const createNote = (type: "text" | "code" | "mermaid" | "canvas") => cls.initAsSystem(() => noteService.createNewNote({
             parentNoteId: "root", ownerId, title: "shared", content: "", type
         }).note.noteId);
         const noteId = createNote("text");
-        cls.init(() => permissionService.setUserAccess(noteId, readerId, false));
+        cls.initAsSystem(() => permissionService.setUserAccess(noteId, readerId, false));
 
         const { provider, sent, disconnect } = buildProvider();
         const collaboration = initCollaboration(provider);
@@ -95,22 +95,24 @@ describe("collaboration over the messaging provider", () => {
         sent.length = 0;
         collaboration.recheckUser(readerId);
         expect(summarize()).toEqual([]);
-        cls.init(() => permissionService.setUserAccess(noteId, readerId, true));
+        cls.initAsSystem(() => permissionService.setUserAccess(noteId, readerId, true));
         collaboration.recheckUser(readerId);
         expect(summarize()).toEqual([ [ readerId, "collab-rejoin", false ] ]);
 
         handle(readerId, join(noteId));
         sent.length = 0;
-        cls.init(() => permissionService.revokeUserAccess(noteId, readerId));
+        cls.initAsSystem(() => permissionService.revokeUserAccess(noteId, readerId));
         collaboration.recheckUser(readerId);
         expect(summarize()).toEqual([ [ readerId, "collab-denied", false ] ]);
 
         // A protected note has no session, and neither has a user who was deleted since they
         // signed in, even for a note they own.
         const protectedNoteId = createNote("text");
-        becca.getNoteOrThrow(protectedNoteId).isProtected = true;
+        cls.initAsSystem(() => {
+            becca.getNoteOrThrow(protectedNoteId).isProtected = true;
+        });
         expect(joined(ownerId, protectedNoteId)).toEqual([ [ ownerId, "collab-denied", false ] ]);
-        cls.init(() => userService.deleteUser(ownerId));
+        cls.initAsSystem(() => userService.deleteUser(ownerId));
         expect(joined(ownerId)).toEqual([ [ ownerId, "collab-denied", false ] ]);
     });
 

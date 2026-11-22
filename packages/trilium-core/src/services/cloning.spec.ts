@@ -1,10 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, onTestFinished, vi } from "vitest";
 
 import becca from "../becca/becca.js";
 import type BBranch from "../becca/entities/bbranch.js";
 import type BNote from "../becca/entities/bnote.js";
 import cloningService from "./cloning.js";
-import { getContext } from "./context.js";
+import { getContext, initAsSystem } from "./context.js";
 import noteService from "./notes.js";
 import { getSql } from "./sql/index.js";
 import userHomes from "./user_homes.js";
@@ -419,12 +419,13 @@ describe("cloning service (real DB)", () => {
         });
 
         it.skipIf(isBrowserRuntime)("clones into a member's home through its virtual branch without saving that branch", async () => {
-            const memberId = getContext().init(() => userService.createUser("cloning-virtual-spec", null, false));
-            const home = getContext().init(() => userHomes.ensureUserHome(memberId, "cloning-virtual-spec"));
-            const folder = getContext().init(() => noteService.createNewNote({
+            const memberId = initAsSystem(() => userService.createUser("cloning-virtual-spec", null, false));
+            onTestFinished(() => initAsSystem(() => userService.deleteUser(memberId)));
+            const home = initAsSystem(() => userHomes.ensureUserHome(memberId, "cloning-virtual-spec"));
+            const folder = initAsSystem(() => noteService.createNewNote({
                 parentNoteId: home.noteId, ownerId: memberId, title: "cloning-virtual-folder", content: "", type: "text"
             }).note);
-            const note = getContext().init(() => noteService.createNewNote({
+            const note = initAsSystem(() => noteService.createNewNote({
                 parentNoteId: folder.noteId, ownerId: memberId, title: "cloning-virtual-note", content: "", type: "text"
             }).note);
             const homeBranchId = `root_${home.noteId}`;
@@ -437,7 +438,7 @@ describe("cloning service (real DB)", () => {
             });
 
             expect(res.success).toBe(true);
-            expect(becca.getBranchFromChildAndParent(note.noteId, home.noteId)).not.toBeNull();
+            expect(initAsSystem(() => becca.getBranchFromChildAndParent(note.noteId, home.noteId))).not.toBeNull();
             expect(getSql().getValue("SELECT COUNT(*) FROM branches WHERE branchId = ?", [ homeBranchId ])).toBe(0);
         });
     });

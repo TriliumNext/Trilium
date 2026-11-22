@@ -106,14 +106,14 @@ describe("Users API", () => {
         });
 
         it("renames, changes the email and promotes or demotes a user", () => {
-            const memberId = cls.init(() => user_service.createUser("update-target-spec", "old@example.com", false));
-            cls.init(() => user_homes.ensureUserHome(memberId, "update-target-spec"));
+            const memberId = cls.initAsSystem(() => user_service.createUser("update-target-spec", "old@example.com", false));
+            cls.initAsSystem(() => user_homes.ensureUserHome(memberId, "update-target-spec"));
 
             expect(update(memberId, { username: " renamed-spec ", email: "", isAdmin: true })).toBeUndefined();
             expect(cls.init(() => user_service.getUserById(memberId))).toMatchObject({
                 username: "renamed-spec", email: null, isAdmin: 1
             });
-            expect(becca.getNote(`home_${memberId}`)?.title).toBe("renamed-spec");
+            expect(cls.initAsSystem(() => becca.getNote(`home_${memberId}`)?.title)).toBe("renamed-spec");
 
             // Keeping one's own username is not a clash with oneself.
             expect(update(memberId, { username: "renamed-spec", isAdmin: false })).toBeUndefined();
@@ -121,7 +121,7 @@ describe("Users API", () => {
 
             // A change that leaves the username out leaves the home's title alone.
             expect(update(memberId, { email: "new@example.com" })).toBeUndefined();
-            expect(becca.getNote(`home_${memberId}`)?.title).toBe("renamed-spec");
+            expect(cls.initAsSystem(() => becca.getNote(`home_${memberId}`)?.title)).toBe("renamed-spec");
 
             cls.init(() => user_service.deleteUser(memberId));
         });
@@ -172,7 +172,7 @@ describe("Users API", () => {
             const listed = (getUsers(sess) as UserListItem[])
                 .find((user) => user.userId === userId);
             expect(listed).toMatchObject({ hasPassword: false, setupLinkExpiresAt: setupLink.expiresAt });
-            expect(becca.getNote(`home_${userId}`)).toMatchObject({ title: "new-spec-user", ownerId: userId });
+            expect(cls.initAsSystem(() => becca.getNote(`home_${userId}`))).toMatchObject({ title: "new-spec-user", ownerId: userId });
         });
     });
 
