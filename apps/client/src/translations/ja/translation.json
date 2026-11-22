@@ -2024,7 +2024,9 @@
     "link_details_retrieval_enabled": "アイコンとテキスト のリンクやカードのタイトルと説明を自動的に取得",
     "link_details_retrieval_description": "リンクエディターで、アイコンとテキスト のリンクまたはカードのタイトルや説明が空の場合、Web ページの情報を自動入力します。",
     "note_completion_link_targets_enabled": "リンク先の見出しとアンカーの候補",
-    "note_completion_link_targets_description": "ノートを選択した後、対象ノート内のリンク先として見出しやアンカーの候補を表示します。"
+    "note_completion_link_targets_description": "ノートを選択した後、対象ノート内のリンク先として見出しやアンカーの候補を表示します。",
+    "scroll_rail_highlights_enabled": "スクロールバーにハイライト箇所を表示",
+    "scroll_rail_highlights_description": "ノート内のどこがハイライトされているかを確認できるよう、スクロールバーに色付きのマークを表示します。"
   },
   "table_context_menu": {
     "delete_row": "行を削除...",
@@ -2928,7 +2930,8 @@
   },
   "popup-editor": {
     "maximize": "フルエディターに切り替え",
-    "attachment_title": "添付ファイル: {{title}}"
+    "attachment_title": "添付ファイル: {{title}}",
+    "back": "前のノートに戻る"
   },
   "server": {
     "unknown_http_error_title": "サーバーとの通信エラー",
@@ -5425,5 +5428,8 @@
     "draft_discarded_after_conversion": "編集中にノートが変換されました。このノートは変更履歴を保持しない設定のため、未保存の変更は破棄されました。",
     "draft_kept_blocks_gone": "編集していたブロックが別の場所で変更されたため、ここでは編集できなくなりました。未保存の変更は変更履歴として保持されました。",
     "draft_discarded_blocks_gone": "編集していたブロックが別の場所で変更されたため、ここでは編集できなくなりました。このノートは変更履歴を保持しない設定のため、未保存の変更は破棄されました。"
+  },
+  "scroll_rail": {
+    "show_highlights": "ハイライト"
   }
 }
