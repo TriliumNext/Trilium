@@ -342,6 +342,25 @@ export function isMobile() {
 }
 
 /**
+ * Whether the mobile layout runs on a tablet: a screen whose shorter side is at least 600px, the
+ * threshold Android uses. It reads the screen, not the viewport, so it does not change as the device
+ * turns or splits its screen.
+ */
+export function isTablet() {
+    return isMobile() && Math.min(window.screen.width, window.screen.height) >= 600;
+}
+
+/** Whether the launch bar shows the desktop's launchers: on a desktop, and on a tablet. */
+export function hasDesktopLaunchBar() {
+    return !isMobile() || isTablet();
+}
+
+/** The note that holds the launchers of this device's launch bar, visible and available. */
+export function getLaunchBarRootId() {
+    return hasDesktopLaunchBar() ? "_lbRoot" : "_lbMobileRoot";
+}
+
+/**
  * Whether the viewport is as narrow as a phone's. In the mobile layout, a menu is a bottom sheet
  * only then; a tablet's wider layout places it beside what opened it. Must match the media query
  * around the `.mobile-bottom-menu` rules in style.css.
@@ -1050,6 +1069,9 @@ export default {
     toObject,
     randomString,
     isMobile,
+    isTablet,
+    hasDesktopLaunchBar,
+    getLaunchBarRootId,
     isNarrowLayout,
     onNarrowLayoutChange,
     isDesktop,

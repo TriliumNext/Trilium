@@ -30,7 +30,9 @@ describe("MobileLayout", () => {
     beforeEach(() => {
         device = window.glob.device;
         window.glob.device = "mobile";
+        // A phone shows the mobile launchers, a tablet the desktop ones.
         buildNote({ id: "_lbMobileVisibleLaunchers", title: "Visible Launchers" });
+        buildNote({ id: "_lbVisibleLaunchers", title: "Visible Launchers" });
         options.set("experimentalFeatures", "[]");
         // A split shows an empty note, whose view searches for the workspaces, also after the case.
         if (!vi.isMockFunction(server.get)) {

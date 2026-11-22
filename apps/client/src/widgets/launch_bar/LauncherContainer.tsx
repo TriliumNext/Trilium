@@ -6,7 +6,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preac
 import FNote from "../../entities/fnote";
 import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 import froca from "../../services/froca";
-import { isDesktop, isElectron, isMobile } from "../../services/utils";
+import { hasDesktopLaunchBar, isElectron, isMobile, isTablet } from "../../services/utils";
 import { useTriliumEvent } from "../react/hooks/events";
 import { useNoteLabelBoolean } from "../react/hooks/note";
 import { useTriliumOptionBool } from "../react/hooks/options";
@@ -30,7 +30,10 @@ import SyncStatus from "./SyncStatus";
 export default function LauncherContainer({ isHorizontalLayout }: { isHorizontalLayout: boolean }) {
     const childNotes = useLauncherChildNotes();
     const containerRef = useLauncherScrollbarCompensation(isHorizontalLayout, childNotes);
-    const hasTabSwitcher = !!childNotes?.some((note) => note.getLabelValue("builtinWidget") === "mobileTabSwitcher");
+    // A tablet shows the desktop's launchers, which hold no tab switcher, and has no tab bar.
+    const hasFixedTabSwitcher = isTablet();
+    const hasTabSwitcher = hasFixedTabSwitcher
+        || !!childNotes?.some((note) => note.getLabelValue("builtinWidget") === "mobileTabSwitcher");
     const [ dragEntered, setDragEntered ] = useState(false);
 
     return (
@@ -51,8 +54,9 @@ export default function LauncherContainer({ isHorizontalLayout }: { isHorizontal
             <LaunchBarContext.Provider value={{
                 isHorizontalLayout
             }}>
+                {hasFixedTabSwitcher && <LazyTabSwitcher />}
                 {childNotes?.map(childNote => {
-                    if (!isDesktop() && childNote.isLabelTruthy("desktopOnly")) {
+                    if (!hasDesktopLaunchBar() && childNote.isLabelTruthy("desktopOnly")) {
                         return false;
                     }
 
@@ -150,7 +154,8 @@ function initBuiltinWidget(note: FNote, isHorizontalLayout: boolean) {
         case "mobileTabSwitcher":
             return <LazyTabSwitcher launcherNote={note} />;
         case "sidebarChat":
-            return isExperimentalFeatureEnabled("llm") ? <SidebarChatButton launcherNote={note} /> : undefined;
+            // The mobile layout has no right pane for the chat to open in.
+            return isExperimentalFeatureEnabled("llm") && !isMobile() ? <SidebarChatButton launcherNote={note} /> : undefined;
         case "recordMeeting":
             return isElectron() ? <LazyRecordMeetingButton launcherNote={note} /> : undefined;
         case "colorSchemeSwitcher":
@@ -172,7 +177,7 @@ const loadLauncherDropTarget = () => import("./LauncherDropTarget");
  * The tab switcher, or until its module loads a button that looks like `TabSwitcher`'s, so the bar
  * spreads its launchers once and they do not move when it arrives.
  */
-function LazyTabSwitcher({ launcherNote }: { launcherNote: FNote }) {
+function LazyTabSwitcher({ launcherNote }: { launcherNote?: FNote }) {
     const tabSwitcher = useLazyModule(loadTabSwitcher);
     if (!tabSwitcher) {
         return <LaunchBarActionButton launcherNote={launcherNote} className="mobile-tab-switcher" icon="bx bx-rectangle" text="Tabs" />;
@@ -259,7 +264,7 @@ export function useLauncherChildNotes() {
 
 /** The note whose children are the launchers shown in this layout's launch bar. */
 function getVisibleLaunchersRootId() {
-    return isMobile() ? "_lbMobileVisibleLaunchers" : "_lbVisibleLaunchers";
+    return hasDesktopLaunchBar() ? "_lbVisibleLaunchers" : "_lbMobileVisibleLaunchers";
 }
 
 // Measures the scrollbar's actual consumed size (which varies by browser and the OS "show scroll

@@ -11,7 +11,7 @@ import { ParentComponent } from "../react/react_utils.js";
 import LauncherContainer, { useLauncherChildNotes } from "./LauncherContainer.js";
 
 const h = vi.hoisted(() => ({
-    isElectron: false, showLauncherContextMenu: vi.fn(), tabSwitcherLoaded: false, recordMeetingLoaded: false,
+    isElectron: false, isMobile: false, isTablet: false, showLauncherContextMenu: vi.fn(), tabSwitcherLoaded: false, recordMeetingLoaded: false,
     dropTargetLoaded: false, customWidgetLoaded: false, ...gate()
 }));
 
@@ -24,7 +24,10 @@ function gate() {
 
 vi.mock("../../services/utils", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../services/utils")>(),
-    isElectron: () => h.isElectron
+    isElectron: () => h.isElectron,
+    isMobile: () => h.isMobile,
+    isTablet: () => h.isTablet,
+    hasDesktopLaunchBar: () => !h.isMobile || h.isTablet
 }));
 vi.mock("../../menus/launcher_button_context_menu", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../menus/launcher_button_context_menu")>(),
@@ -315,5 +318,42 @@ describe("LauncherContainer", () => {
         expect(slot?.querySelector(".tab-switcher-stub")).not.toBeNull();
         expect(slot?.querySelector("button.mobile-tab-switcher")).toBeNull();
         expect(container.querySelector(".tab-swipe-stub")).not.toBeNull();
+    });
+});
+
+describe("LauncherContainer on a tablet", () => {
+    afterEach(() => {
+        h.isMobile = false;
+        h.isTablet = false;
+        options.set("aiEnabled", "false");
+    });
+
+    it("shows the desktop's launchers, those marked desktop-only among them, after a fixed tab switcher, and leaves out the AI chat", async () => {
+        h.isMobile = true;
+        h.isTablet = true;
+        options.set("aiEnabled", "true");
+        buildNote({ id: "_lbMobileVisibleLaunchers", title: "Mobile Visible Launchers", children: [
+            { id: "_lbMobileCalendarStub", title: "Calendar", type: "launcher", "#launcherType": "builtinWidget", "#builtinWidget": "spacer" }
+        ] });
+        buildNote({ id: "_lbVisibleLaunchers", title: "Visible Launchers", children: [
+            { id: "_lbJumpToStub", title: "Jump to", type: "launcher", "#launcherType": "command", "#command": "jumpToNote", "#desktopOnly": "" },
+            { id: "_lbSidebarChatStub", title: "Chat", type: "launcher", "#launcherType": "builtinWidget", "#builtinWidget": "sidebarChat" }
+        ] });
+        container = document.createElement("div");
+        document.body.appendChild(container);
+        act(() => render(
+            <ParentComponent.Provider value={new Component()}>
+                <LauncherContainer isHorizontalLayout={false} />
+            </ParentComponent.Provider>, container));
+        await flush();
+
+        const bar = container.querySelector("#launcher-container");
+        // The previous case loaded the switcher's module, so its stub stands in the place of the button.
+        expect(bar?.firstElementChild?.classList.contains("tab-switcher-stub")).toBe(true);
+        expect(container.querySelector(".launcher-slot[data-launcher-id='_lbMobileCalendarStub']")).toBeNull();
+        expect(container.querySelector(".launcher-slot[data-launcher-id='_lbJumpToStub'] button")).not.toBeNull();
+        const chatSlot = container.querySelector(".launcher-slot[data-launcher-id='_lbSidebarChatStub']");
+        expect(chatSlot).not.toBeNull();
+        expect(chatSlot?.childElementCount).toBe(0);
     });
 });

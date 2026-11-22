@@ -352,6 +352,35 @@ describe("platform / device detection", () => {
         expect(fileAccept(".enex")).toBe("*/*");
     });
 
+    it("takes a mobile device with a shorter screen side of 600px or more for a tablet, which shows the desktop launchers", () => {
+        const original = window.glob.device;
+        const setScreen = (width: number, height: number) => {
+            vi.spyOn(window.screen, "width", "get").mockReturnValue(width);
+            vi.spyOn(window.screen, "height", "get").mockReturnValue(height);
+        };
+        try {
+            window.glob.device = "mobile";
+            setScreen(390, 844);
+            expect([ utils.isTablet(), utils.hasDesktopLaunchBar(), utils.getLaunchBarRootId() ])
+                .toEqual([ false, false, "_lbMobileRoot" ]);
+
+            // Either way up, as the screen keeps its size while the device turns.
+            setScreen(1024, 768);
+            expect([ utils.isTablet(), utils.hasDesktopLaunchBar(), utils.getLaunchBarRootId() ])
+                .toEqual([ true, true, "_lbRoot" ]);
+            setScreen(768, 1024);
+            expect(utils.isTablet()).toBe(true);
+
+            window.glob.device = "desktop";
+            setScreen(390, 844);
+            expect([ utils.isTablet(), utils.hasDesktopLaunchBar(), utils.getLaunchBarRootId() ])
+                .toEqual([ false, true, "_lbRoot" ]);
+        } finally {
+            window.glob.device = original;
+            vi.restoreAllMocks();
+        }
+    });
+
     it("isMobile / isDesktop respond to glob.device", () => {
         const original = window.glob.device;
         window.glob.device = "mobile";

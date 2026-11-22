@@ -4,8 +4,9 @@ import { createPortal, type RefObject } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
-import { LaunchBarActionButton, LauncherNoteProps } from "../launch_bar/launch_bar_widgets";
 import type NoteContext from "../../components/note_context";
+import type FNote from "../../entities/fnote";
+import { LaunchBarActionButton } from "../launch_bar/launch_bar_widgets";
 import { useTriliumEvents } from "../react/hooks/events";
 import { preloadLazyModule, useLazyModule } from "../react/LazyComponent";
 import { isTabSwipeActive, type SwipeDirection, TabSwipe } from "./tab_swipe";
@@ -17,7 +18,8 @@ const FLICK_WINDOW = 100;
 /** The least travel a whole slide takes, so a press by the edge does not throw the slide across. */
 const MIN_ROOM = 48;
 
-export default function TabSwitcher({ launcherNote }: LauncherNoteProps) {
+/** The tab switcher, as a launcher or, on a tablet, fixed in the launch bar with no launcher note. */
+export default function TabSwitcher({ launcherNote }: { launcherNote?: FNote }) {
     const [ shown, setShown ] = useState(false);
     // The grid stays mounted once opened, so it can animate closed.
     const [ opened, setOpened ] = useState(false);
