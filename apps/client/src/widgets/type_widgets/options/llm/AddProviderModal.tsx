@@ -1,6 +1,7 @@
 import "./AddProviderModal.css";
 
 import type { LlmModelInfo, LlmProviderKind } from "@triliumnext/commons";
+import { DEEPSEEK_SEARCH_DEFAULT_BASE_URL } from "@triliumnext/commons/src/lib/llm_api.js";
 import { createPortal } from "preact";
 import { useMemo, useState } from "preact/hooks";
 import { Trans } from "react-i18next";
@@ -62,6 +63,8 @@ export interface ProviderType {
     connectionDescription?: string;
     /** One-line setup reminder shown under the endpoint field (i18n key, rendered via `<Trans>`). */
     setupHintKey?: string;
+    /** External documentation linked from the setup hint. */
+    setupHintUrl?: string;
     /** Marks the provider as beta, shown as a badge next to its name. */
     beta?: boolean;
     /**
@@ -180,15 +183,21 @@ export const SEARCH_PROVIDER_TYPES: ProviderType[] = [
     { id: "serper", name: "Serper", group: "search-cloud", defaultBaseUrl: "https://google.serper.dev", icon: PROVIDER_ICONS.serper },
     { id: "perplexity", name: "Perplexity", group: "search-cloud", defaultBaseUrl: "https://api.perplexity.ai", icon: PROVIDER_ICONS.perplexity, refusesBrowserRequests: true },
     {
+        id: "deepseek", name: "DeepSeek", group: "search-cloud",
+        defaultBaseUrl: DEEPSEEK_SEARCH_DEFAULT_BASE_URL, icon: PROVIDER_ICONS.deepseek,
+        setupHintKey: "llm.setup_hint_deepseek_search",
+        setupHintUrl: "https://api-docs.deepseek.com/zh-cn/api/search"
+    },
+    {
         id: "searxng", name: "SearXNG", group: "search-local", defaultBaseUrl: "http://localhost:8888", prefillBaseUrl: true,
         icon: PROVIDER_ICONS.searxng,
         setupHintKey: "llm.setup_hint_searxng", apiKey: "optional", baseUrl: "required"
     }
 ];
 
-/** The provider type with `providerId`, of either kind. */
-export function findProviderType(providerId: string | undefined): ProviderType | undefined {
-    return PROVIDER_TYPES.find(p => p.id === providerId) ?? SEARCH_PROVIDER_TYPES.find(p => p.id === providerId);
+/** Provider IDs can occur in both the model and search lists. */
+export function findProviderType(providerId: string, kind: LlmProviderKind): ProviderType | undefined {
+    return (kind === "search" ? SEARCH_PROVIDER_TYPES : PROVIDER_TYPES).find(p => p.id === providerId);
 }
 
 /**
@@ -265,11 +274,13 @@ export default function AddProviderModal({ show, onHidden, onSave, existingProvi
     // moves on immediately, so a pre-highlighted card would be a lie.
     const [providerChosen, setProviderChosen] = useState(firstStep !== "provider");
     const [apiKey, setApiKey] = useState(existingProvider?.apiKey ?? "");
-    const [baseUrl, setBaseUrl] = useState(existingProvider?.baseURL ?? prefilledBaseUrl(existingProvider?.provider ?? providerTypes[0].id));
+    const [baseUrl, setBaseUrl] = useState(
+        existingProvider?.baseURL ?? prefilledBaseUrl(existingProvider?.provider ?? providerTypes[0].id, kind)
+    );
     const [selectedModels, setSelectedModels] = useState<LlmModelInfo[]>(existingProvider?.selectedModels ?? []);
     const [searchCheckFailed, setSearchCheckFailed] = useState(false);
 
-    const providerType = useMemo(() => findProviderType(selectedProvider), [selectedProvider]);
+    const providerType = findProviderType(selectedProvider, kind);
     const apiKeyMode = providerType?.apiKey ?? "required";
     // Self-hosted providers show the endpoint as their primary connection detail;
     // vendor providers keep it tucked away as an advanced override.
@@ -288,7 +299,7 @@ export default function AddProviderModal({ show, onHidden, onSave, existingProvi
     function selectProviderType(providerId: string) {
         setSelectedProvider(providerId);
         setProviderChosen(true);
-        setBaseUrl(prefilledBaseUrl(providerId));
+        setBaseUrl(prefilledBaseUrl(providerId, kind));
         setStep("connection");
     }
 
@@ -298,7 +309,15 @@ export default function AddProviderModal({ show, onHidden, onSave, existingProvi
     const baseUrlDescription = !baseUrlIsValid
         ? <span className="text-danger">{t("llm.base_url_invalid")}</span>
         : providerType?.setupHintKey
-            ? <Trans i18nKey={providerType.setupHintKey} components={{ Code: <code /> }} />
+            ? <Trans
+                i18nKey={providerType.setupHintKey}
+                components={{
+                    Code: <code />,
+                    ...(providerType.setupHintUrl && { Link: (
+                        <a className="tn-link external" href={providerType.setupHintUrl} target="_blank" rel="noopener noreferrer" />
+                    ) })
+                }}
+            />
             : isSearch ? t("llm.search_base_url_description") : t("llm.base_url_description");
 
     // Rendered in one of two slots: ahead of the key for self-hosted providers
@@ -335,7 +354,7 @@ export default function AddProviderModal({ show, onHidden, onSave, existingProvi
         setSelectedProvider(initialProvider);
         setProviderChosen(firstStep !== "provider");
         setApiKey(existingProvider?.apiKey ?? "");
-        setBaseUrl(existingProvider?.baseURL ?? prefilledBaseUrl(initialProvider));
+        setBaseUrl(existingProvider?.baseURL ?? prefilledBaseUrl(initialProvider, kind));
         setSelectedModels(existingProvider?.selectedModels ?? []);
         setSearchCheckFailed(false);
     }
@@ -586,8 +605,8 @@ function standaloneUnavailableReason(provider: ProviderType): string | undefined
  * runtime, whereas a vendor endpoint is a hint the user should leave alone (an
  * unedited field must not store a redundant override).
  */
-export function prefilledBaseUrl(providerId: string): string {
-    const providerType = findProviderType(providerId);
+export function prefilledBaseUrl(providerId: string, kind: LlmProviderKind = "llm"): string {
+    const providerType = findProviderType(providerId, kind);
     return providerType?.prefillBaseUrl ? providerType.defaultBaseUrl : "";
 }
 

@@ -153,6 +153,9 @@ export function isProviderOfKind(config: { kind?: LlmProviderKind }, kind: LlmPr
     return (config.kind ?? "llm") === kind;
 }
 
+/** The default base URL to which the DeepSeek Search API adds `/tools/search`. */
+export const DEEPSEEK_SEARCH_DEFAULT_BASE_URL = "https://api.deepseek.com/v1";
+
 /** One page a web search found. */
 export interface LlmWebSearchResult {
     title: string;

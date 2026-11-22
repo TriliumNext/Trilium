@@ -302,6 +302,67 @@ describe("what gets saved", () => {
         expect(saved).not.toHaveProperty("selectedModels");
     });
 
+    it("adds DeepSeek search with a required password field and the default API base URL", () => {
+        open(undefined, "search");
+        const card = providerCard("DeepSeek");
+        expect(card).toBeDefined();
+        act(() => card?.click());
+
+        const [key, endpoint] = textBoxes();
+        expect(key?.type).toBe("password");
+        expect(endpoint?.placeholder).toBe("https://api.deepseek.com/v1");
+        expect(endpoint?.value).toBe("");
+        expect(document.querySelector("a[href='https://api-docs.deepseek.com/zh-cn/api/search']"))
+            .not.toBeNull();
+        type(key, "   ");
+        expect(nextButton()?.disabled).toBe(true);
+        type(key, "  fake-deepseek-key  ");
+        expect(nextButton()?.disabled).toBe(false);
+        act(() => void nextButton()?.click());
+
+        expect(mocks.searchCheck?.query).toEqual({
+            provider: "deepseek", apiKey: "fake-deepseek-key", baseURL: undefined
+        });
+        act(() => void nextButton()?.click());
+        const [saved] = mocks.onSave.mock.calls[0] as [LlmProviderConfig];
+        expect(saved).toMatchObject({
+            provider: "deepseek", name: "DeepSeek", kind: "search", apiKey: "fake-deepseek-key"
+        });
+        expect(saved).not.toHaveProperty("baseURL");
+        expect(saved).not.toHaveProperty("selectedModels");
+
+        open();
+        act(() => providerCard("DeepSeek")?.click());
+        expect(textBoxes()[1]?.placeholder).toBe("https://api.deepseek.com/v1");
+        expect(document.querySelector(".wizard-step a[href*='api-docs.deepseek.com']")).toBeNull();
+    });
+
+    it("tests and saves a changed DeepSeek search connection with its custom base URL", () => {
+        open({
+            id: "deepseek_1", name: "DeepSeek", provider: "deepseek", kind: "search",
+            apiKey: "fake-old-key", baseURL: "https://old.example.test/v1/tools"
+        });
+        const [key, endpoint] = textBoxes();
+        expect(key?.value).toBe("fake-old-key");
+        expect(endpoint?.value).toBe("https://old.example.test/v1/tools");
+        expect(document.querySelector(".wizard-step a[href*='api-docs.deepseek.com']")).not.toBeNull();
+        type(endpoint, "not-an-http-url");
+        expect(nextButton()?.disabled).toBe(true);
+
+        type(endpoint, "  https://proxy.example.test/api  ");
+        type(key, "fake-new-key");
+        act(() => void nextButton()?.click());
+        expect(mocks.searchCheck?.query).toEqual({
+            provider: "deepseek", apiKey: "fake-new-key", baseURL: "https://proxy.example.test/api"
+        });
+        expect(mocks.onSave).not.toHaveBeenCalled();
+        act(() => void nextButton()?.click());
+        expect(mocks.onSave).toHaveBeenCalledWith(expect.objectContaining({
+            id: "deepseek_1", kind: "search", apiKey: "fake-new-key",
+            baseURL: "https://proxy.example.test/api"
+        }));
+    });
+
     it("explains a search API's endpoint override without pointing at model runtimes", () => {
         open(undefined, "search");
         act(() => providerCard("Brave Search")?.click());
@@ -312,7 +373,7 @@ describe("what gets saved", () => {
     });
 
     it("disables, with the reason, the search services that refuse requests from a web page in the browser version", () => {
-        const cards = () => Object.fromEntries([ "Brave Search", "Tavily", "Exa", "Serper", "Perplexity", "SearXNG" ]
+        const cards = () => Object.fromEntries([ "Brave Search", "Tavily", "Exa", "Serper", "Perplexity", "DeepSeek", "SearXNG" ]
             .map((name) => [ name, providerCard(name) ]));
         open(undefined, "search");
         expect(Object.values(cards()).every((card) => card && !(card as HTMLButtonElement).disabled)).toBe(true);

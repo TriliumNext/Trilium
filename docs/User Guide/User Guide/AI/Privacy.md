@@ -1,5 +1,5 @@
 # Privacy
-Trilium sends nothing to an AI provider until you send a message. Enabling the integration, adding a provider or opening a chat transmits nothing on its own, the one exception is that listing a provider's models sends your API key to that provider, so the list can be fetched.
+Enabling the AI integration or opening a chat does not send anything to a provider. Listing a model provider's models sends your API key to that provider. Testing a search provider during setup sends a fixed test query and the configured API key, if any, to the search service. Neither operation sends notes or chat messages.
 
 Once you send a message or run the <a class="reference-link" href="../Note%20Types/Text/In-editor%20AI%20assistant.md">In-editor AI assistant</a>, what leaves your machine depends on the provider you chose and on which context options are enabled.
 
@@ -30,7 +30,7 @@ This is the reason the provider list is grouped this way, and why Trilium pre-se
     *   Tools let the model search your tree and read notes, attributes and attachments beyond the current one.
     *   It decides what to fetch, and each call waits for you to allow it, unless the chat's permission mode lets reads or every call run on their own, or you allowed that tool for the chat. The reachable scope is your whole tree, except for notes you exclude (see _Excluding notes_ below).
 *   **Attachments and mentions**, when you add them: images, PDFs and text files are sent to the provider, and an `@` mention makes that note fetchable.
-*   **Your search query**, when web search is enabled, the model's search terms reach the provider's own search infrastructure, or the search provider chosen in the _Tools_ menu (Brave Search, Tavily, Exa, Serper, Perplexity or your SearXNG instance).
+*   **Your search query**, when web search is enabled, the model's search terms reach the provider's own search infrastructure, or the search provider chosen in the _Tools_ menu (Brave Search, Tavily, Exa, Serper, Perplexity, DeepSeek or your SearXNG instance).
 *   **The pages the model reads**, when web search goes through a search provider or a DeepSeek model's built-in search: Trilium fetches each page the model asks for from the site itself, so the site sees a request from the machine running Trilium. The page's text is then sent to the model's provider.
 
 ## The in-editor AI assistant

@@ -291,7 +291,7 @@ function ProviderList({ providers, emptyIcon, emptyText, onEdit, onDelete }: Pro
 
     return <>
         {providers.map((provider) => {
-            const providerType = findProviderType(provider.provider);
+            const providerType = findProviderType(provider.provider, provider.kind ?? "llm");
             return (
                 <OptionCardSection
                     key={provider.id}

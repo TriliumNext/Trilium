@@ -4531,6 +4531,7 @@
     "search_provider_group_local": "Self-hosted",
     "search_provider_group_local_description": "Your own metasearch instance. Searches reach only that instance and the search engines it queries.",
     "setup_hint_searxng": "The address of your SearXNG instance. Its <Code>settings.yml</Code> must list <Code>json</Code> under <Code>search.formats</Code>.",
+    "setup_hint_deepseek_search": "Optional. Base URL before <Code>/tools/search</Code>. See the <Link>DeepSeek Search API documentation</Link>.",
     "search_base_url_description": "Optional. Reaches the same API through a proxy or gateway.",
     "model_providers": "Model Providers",
     "add_model_provider": "Add Model Provider",

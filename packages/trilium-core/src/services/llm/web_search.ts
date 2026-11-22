@@ -5,6 +5,7 @@
  */
 
 import type { LlmWebSearchResult } from "@triliumnext/commons";
+import { DEEPSEEK_SEARCH_DEFAULT_BASE_URL } from "@triliumnext/commons/src/lib/llm_api.js";
 import { tool } from "ai";
 import { parse as parseHtml } from "node-html-parser";
 import { z } from "zod";
@@ -122,10 +123,12 @@ export async function searchWeb(setup: WebSearchSetup, query: string, signal?: A
             return toSources(payload.results, "snippet");
         }
         case "deepseek": {
-            const payload = await requestJson(`${setup.baseURL ?? "https://api.deepseek.com/v1"}/tools/search`, {
+            const base = trimTrailingSlashes(setup.baseURL?.trim() || DEEPSEEK_SEARCH_DEFAULT_BASE_URL);
+            const searchQuery = [...query.trim()].slice(0, DEEPSEEK_MAX_QUERY_CHARS).join("");
+            const payload = await requestJson(`${base}/tools/search`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Authorization": `Bearer ${setup.apiKey}` },
-                body: JSON.stringify({ query: query.slice(0, DEEPSEEK_MAX_QUERY_CHARS), count: MAX_RESULTS })
+                body: JSON.stringify({ query: searchQuery, count: MAX_RESULTS })
             }, signal, describeDeepSeekFailure) as { results?: unknown[] };
             return toSources(payload.results, "summary");
         }
@@ -305,7 +308,8 @@ function describeDeepSeekFailure(status: number): string | undefined {
         return "The DeepSeek account has no balance left (HTTP 402); top it up on the DeepSeek platform.";
     }
     if (status === 404) {
-        return "The DeepSeek provider's endpoint has no Search API (HTTP 404). Search needs DeepSeek's own endpoint, https://api.deepseek.com, or a search provider chosen in the chat's Tools menu.";
+        return "The DeepSeek endpoint has no Search API (HTTP 404). "
+            + `Use ${DEEPSEEK_SEARCH_DEFAULT_BASE_URL} or a base URL that supports /tools/search.`;
     }
     return undefined;
 }

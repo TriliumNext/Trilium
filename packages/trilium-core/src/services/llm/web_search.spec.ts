@@ -89,24 +89,30 @@ describe("searchWeb", () => {
         expect(sources).toEqual([ { ...PAGE, snippet: "From Perplexity" } ]);
     });
 
-    it("posts to DeepSeek's Search API with its key, cut to its query limit, and reads the summaries", async () => {
+    it("posts to DeepSeek's Search API and limits queries by Unicode character count", async () => {
+        const character = "\u{20000}";
         respond({ results: [ { ...PAGE, snippet: "Short", summary: "From DeepSeek", rerank_score: 2 } ] });
-        const sources = await searchWeb({ provider: "deepseek", apiKey: "dk" }, "q".repeat(200));
+        const sources = await searchWeb({ provider: "deepseek", apiKey: "dk" }, ` ${character.repeat(130)} `);
 
         const { url, init, headers, body } = request();
         expect(url).toBe("https://api.deepseek.com/v1/tools/search");
         expect(init.method).toBe("POST");
+        expect(headers["Content-Type"]).toBe("application/json");
         expect(headers.Authorization).toBe("Bearer dk");
-        expect(body).toEqual({ query: "q".repeat(128), count: 8 });
+        expect(body).toEqual({ query: character.repeat(128), count: 8 });
         expect(sources).toEqual([ { ...PAGE, snippet: "From DeepSeek" } ]);
     });
 
-    it("names an empty DeepSeek balance and an endpoint without the Search API", async () => {
-        const deepseek = () => searchWeb({ provider: "deepseek", apiKey: "dk", baseURL: "https://gateway.example/v1" }, "q");
+    it("uses a custom DeepSeek base URL and explains account and endpoint errors", async () => {
+        const deepseek = () => searchWeb({ provider: "deepseek", apiKey: "dk", baseURL: "https://gateway.example/prefix/v1/" }, "q");
+        respond({ results: [] });
+        await expect(deepseek()).resolves.toEqual([]);
+        expect(request().url).toBe("https://gateway.example/prefix/v1/tools/search");
+
         respond({}, 402);
         await expect(deepseek()).rejects.toThrow("top it up");
         respond({}, 404);
-        await expect(deepseek()).rejects.toThrow("https://api.deepseek.com");
+        await expect(deepseek()).rejects.toThrow("https://api.deepseek.com/v1");
         respond({}, 500);
         await expect(deepseek()).rejects.toThrow("The search provider answered HTTP 500.");
     });
