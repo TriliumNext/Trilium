@@ -54,33 +54,36 @@ body.mobile.ios {
         --mobile-menu-group-radius: 12px;
     }
 
-    #mobile-rest-container > #mobile-sidebar-wrapper {
-        background: var(--grouped-background-color);
-    }
-
-    .mobile-note-navigator {
-        --navigator-group-radius: var(--grouped-card-radius);
-        --navigator-group-spacing: 22px;
-        --navigator-group-background: var(--grouped-card-background-color);
-        --navigator-separator-color: var(--main-border-color);
-        /* Starts under the title: the padding, the 1.2em icon and the 12px gap before it. */
-        --navigator-separator-inset: calc(var(--navigator-row-padding) + 1.2em + 12px);
-        background: var(--grouped-background-color);
-
-        .mobile-navigator-children-label {
-            padding-block-end: 8px;
-            font-size: 0.95em;
-            letter-spacing: normal;
-            text-transform: none;
-            opacity: 1;
+    /* The breakpoints must match `STACKED_TREE_LAYOUT` in services/utils.ts. */
+    @media (max-width: 743px), (max-height: 599px) {
+        #mobile-rest-container > #mobile-sidebar-wrapper {
+            background: var(--grouped-background-color);
         }
 
-        .mobile-navigator-row {
-            min-height: 52px;
-        }
+        .mobile-note-navigator {
+            --navigator-group-radius: var(--grouped-card-radius);
+            --navigator-group-spacing: 22px;
+            --navigator-group-background: var(--grouped-card-background-color);
+            --navigator-separator-color: var(--main-border-color);
+            /* Starts under the title: the padding, the 1.2em icon and the 12px gap before it. */
+            --navigator-separator-inset: calc(var(--navigator-row-padding) + 1.2em + 12px);
+            background: var(--grouped-background-color);
 
-        .mobile-navigator-row-chevron {
-            opacity: 0.35;
+            .mobile-navigator-children-label {
+                padding-block-end: 8px;
+                font-size: 0.95em;
+                letter-spacing: normal;
+                text-transform: none;
+                opacity: 1;
+            }
+
+            .mobile-navigator-row {
+                min-height: 52px;
+            }
+
+            .mobile-navigator-row-chevron {
+                opacity: 0.35;
+            }
         }
     }
 
@@ -186,15 +189,17 @@ body.mobile.ios {
 
         /* Safari tints its bars from the page's background and from `theme-color`, which
            `initThemeColor()` in appearance.ts copies from `#background-color-tracker`. */
-        &.mobile-sidebar-open {
-            background-color: var(--grouped-background-color);
-
-            #root-widget {
+        @media (max-width: 743px), (max-height: 599px) {
+            &.mobile-sidebar-open {
                 background-color: var(--grouped-background-color);
-            }
 
-            #background-color-tracker {
-                color: var(--grouped-background-color) !important;
+                #root-widget {
+                    background-color: var(--grouped-background-color);
+                }
+
+                #background-color-tracker {
+                    color: var(--grouped-background-color) !important;
+                }
             }
         }
 
