@@ -314,7 +314,7 @@
     overflow: hidden;
 }
 
-.mobile-navigator-current-tile + .mobile-navigator-list {
+.mobile-navigator-body > :not(.mobile-navigator-children-label) + .mobile-navigator-list {
     margin-block-start: var(--navigator-group-spacing);
 }
 

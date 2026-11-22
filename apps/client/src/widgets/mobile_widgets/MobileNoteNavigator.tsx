@@ -59,8 +59,8 @@ export default function MobileNoteNavigator() {
     // column listing it.
     const [activeScreen, setActiveScreen] = useState<Screen>();
     // On a tablet the note sits next to the tree: there is nothing to bring back, entering a folder
-    // or going back to one opens it there as well, and the column needs no tile with the folder's
-    // preview.
+    // or going back to one opens it there as well, the column needs no tile with the folder's
+    // preview, and the root lists no bookmarks, which the launch bar's Bookmarks launcher holds.
     const [ isPhone, setPhone ] = useState(utils.isNarrowLayout);
     useEffect(() => utils.onNarrowLayoutChange(() => setPhone(utils.isNarrowLayout())), []);
     const tabId = noteContext?.getMainContext().ntxId;
@@ -315,7 +315,7 @@ export default function MobileNoteNavigator() {
             <div ref={scrollRef} className={clsx("mobile-navigator-scroll", showInitialLoader && "is-pending")}>
                 <div ref={bodyRef} className="mobile-navigator-body">
                     {!isHoisted && currentParentId === "root" && <WorkspaceCards onEnter={enterWorkspace} />}
-                    {!isHoisted && currentParentId === "root" && (
+                    {isPhone && !isHoisted && currentParentId === "root" && (
                         <BookmarkList
                             renderRow={({ note, notePath, parentNoteId }) => (
                                 <NavigatorRow
