@@ -7,6 +7,7 @@ export declare module "express-serve-static-core" {
             "x-labels"?: string;
 
             authorization?: string;
+            cookie?: string;
             "trilium-cred"?: string;
             "trilium-totp"?: string;
             "x-csrf-token"?: string;

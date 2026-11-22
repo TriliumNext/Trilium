@@ -1,8 +1,9 @@
+import { events, getLog, getMessagingProvider, isMessagingInitialized } from "@triliumnext/core";
+import cookieParser from "cookie-parser";
 import type express from "express";
 import session, { Store } from "express-session";
 
 import config from "../services/config.js";
-import { events, getLog, getMessagingProvider, isMessagingInitialized } from "@triliumnext/core";
 import sessionSecret from "../services/session_secret.js";
 import sql from "../services/sql.js";
 import sqlInit from "../services/sql_init.js";
@@ -118,7 +119,9 @@ export class SQLiteSessionStore extends Store {
 
 export const sessionStore = new SQLiteSessionStore();
 
-const sessionParser: express.RequestHandler = session({
+const SESSION_COOKIE_NAME = "trilium.sid";
+
+const expressSessionParser: express.RequestHandler = session({
     secret: sessionSecret,
     resave: false, // true forces the session to be saved back to the session store, even if the session was never modified during the request.
     saveUninitialized: false, // true forces a session that is "uninitialized" to be saved to the store. A session is uninitialized when it is new but not modified.
@@ -130,9 +133,77 @@ const sessionParser: express.RequestHandler = session({
         sameSite: "lax",
         maxAge: config.Session.cookieMaxAge * 1000 // needs value in milliseconds
     },
-    name: "trilium.sid",
+    name: SESSION_COOKIE_NAME,
     store: sessionStore
 });
+
+/**
+ * Runs `express-session` after reducing duplicate `trilium.sid` cookies to the logged-in one.
+ * `express-session` reads only the first cookie of a name, and the browser sends the cookie with
+ * the longest path first, so a stale cookie left at a deeper path hides the current session.
+ */
+const sessionParser: express.RequestHandler = (req, res, next) => {
+    keepLoggedInSessionCookie(req);
+    expressSessionParser(req, res, next);
+};
+
+let duplicateCookiesReported = false;
+
+function keepLoggedInSessionCookie(req: express.Request) {
+    const header = req.headers.cookie;
+    if (!header) {
+        return;
+    }
+
+    const pairs = header.split(";").map((pair) => pair.trim());
+    const sessionPairs = pairs.filter((pair) => cookieName(pair) === SESSION_COOKIE_NAME);
+    if (sessionPairs.length < 2) {
+        return;
+    }
+
+    if (!duplicateCookiesReported) {
+        duplicateCookiesReported = true;
+        getLog().warn(`Received ${sessionPairs.length} "${SESSION_COOKIE_NAME}" cookies in one request. `
+            + "The browser holds session cookies for several paths, usually left behind by a changed "
+            + "reverse proxy `proxy_cookie_path`; clearing the site's cookies in the browser removes them.");
+    }
+
+    const loggedInPair = sessionPairs.find((pair) => isLoggedInSessionCookie(pair));
+    if (loggedInPair) {
+        const otherPairs = pairs.filter((pair) => cookieName(pair) !== SESSION_COOKIE_NAME);
+        req.headers.cookie = [ ...otherPairs, loggedInPair ].join("; ");
+    }
+}
+
+function cookieName(pair: string) {
+    const separator = pair.indexOf("=");
+    return (separator === -1 ? pair : pair.slice(0, separator)).trim();
+}
+
+function isLoggedInSessionCookie(pair: string) {
+    let value: string;
+    try {
+        value = decodeURIComponent(pair.slice(pair.indexOf("=") + 1).trim());
+    } catch {
+        return false;
+    }
+
+    // Like `express-session`, accept only a signed value whose signature verifies.
+    if (!value.startsWith("s:")) {
+        return false;
+    }
+    const sid = cookieParser.signedCookie(value, sessionSecret);
+    if (!sid || !sqlInit.isDbInitialized()) {
+        return false;
+    }
+
+    const data = sql.getValue<string>(/*sql*/`SELECT data FROM sessions WHERE id = ?`, sid);
+    try {
+        return !!data && JSON.parse(data).loggedIn === true;
+    } catch {
+        return false;
+    }
+}
 
 export function startSessionCleanup() {
     setInterval(() => {
