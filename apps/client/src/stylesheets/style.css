@@ -2591,7 +2591,12 @@ body.dark-theme pre.code-block-preview[data-code-theme-d="vs-code-dark"] {
 /* Mobile, tablet mode */
 @media (min-width: 992px) {
     body.mobile #root-widget {
+        padding-top: 0;
         background-color: var(--launcher-pane-background-color);
+    }
+
+    body.mobile #mobile-rest-container > :is(#launcher-pane, #mobile-sidebar-wrapper, #detail-container) {
+        padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
     }
 
     /* The panes clear the navigation bar. The open keyboard covers it, as in phone mode. */
