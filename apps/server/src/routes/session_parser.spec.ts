@@ -6,6 +6,7 @@ import supertest from "supertest";
 import { describe, expect, it, vi } from "vitest";
 
 import sessionSecret from "../services/session_secret.js";
+import sql from "../services/sql.js";
 import sessionParser, { SQLiteSessionStore } from "./session_parser.js";
 
 const store = new SQLiteSessionStore();
@@ -104,5 +105,21 @@ describe("sessionParser with several session cookies", () => {
         const res = await request(`trilium.sid=${signed("stale-session")}; trilium.sid=${forged}`);
         expect(res.body.loggedIn).toBe(false);
         expect(res.body.sessionID).not.toBe("forged-session");
+    });
+
+    it("passes over undecodable, unsigned and unreadable session cookies", async () => {
+        await set("corrupt-session", baseSession());
+        cls.init(() => sql.execute(
+            /*sql*/`UPDATE sessions SET data = 'not json' WHERE id = ?`, [ "corrupt-session" ]
+        ));
+        await set("kept-session", baseSession());
+
+        const res = await request([
+            "trilium.sid=%E0%A4%A",
+            "trilium.sid=unsigned-session",
+            `trilium.sid=${signed("corrupt-session")}`,
+            `trilium.sid=${signed("kept-session")}`
+        ].join("; "));
+        expect(res.body).toEqual({ sessionID: "kept-session", loggedIn: true });
     });
 });

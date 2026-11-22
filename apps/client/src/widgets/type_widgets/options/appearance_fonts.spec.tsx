@@ -83,7 +83,15 @@ vi.mock("../../react/hooks/tree", async (importOriginal) => ({
 }));
 
 import { STACKED_TREE_LAYOUT } from "../../../services/utils";
+import { buildNote } from "../../../test/easy-froca";
 import Fonts from "./appearance_fonts";
+
+// The tree preview shows the first notes under the root, which froca serves without the server.
+buildNote({
+    id: "root",
+    title: "root",
+    children: [ { title: "Projects", children: [ { title: "Roadmap" } ] } ]
+});
 
 let host: HTMLElement;
 
