@@ -35,8 +35,11 @@
             /* These notes draw to the bottom edge, and keep their own controls clear of the navigation
                bar by `--note-bottom-inset`. */
             &:has(
-                > .note-detail > :is(.note-detail-canvas, .note-detail-mermaid, .note-detail-mind-map).visible,
-                > .note-list-widget .geo-map-container
+                > .note-detail > :is(
+                    .note-detail-canvas, .note-detail-mermaid, .note-detail-mind-map, .note-detail-note-map,
+                    .note-detail-relation-map
+                ).visible,
+                > .note-list-widget :is(.geo-map-container, .presentation-view)
             ) {
                 --scroll-end-clearance: 0px;
                 --note-bottom-inset: var(--mobile-bottom-offset);
