@@ -6,9 +6,10 @@ import type FNote from "../../entities/fnote";
 
 const shownNote = vi.hoisted(() => ({ current: null as FNote | null }));
 const shownContext = vi.hoisted(() => ({ current: null as { isCommandTarget: (ntxId?: string | null) => boolean } | null }));
+const triggerCommand = vi.hoisted(() => vi.fn());
 vi.mock("../react/hooks/note_context", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../react/hooks/note_context")>()),
-    useNoteContext: () => ({ note: shownNote.current, noteContext: shownContext.current })
+    useNoteContext: () => ({ note: shownNote.current, noteContext: shownContext.current, parentComponent: { triggerCommand } })
 }));
 vi.mock("../react/hooks/tree", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../react/hooks/tree")>()),
@@ -61,6 +62,7 @@ async function stubWidget(className: string) {
 import appContext from "../../components/app_context";
 import type Component from "../../components/component";
 import options from "../../services/options";
+import { STACKED_TREE_LAYOUT } from "../../services/utils";
 import { buildNote } from "../../test/easy-froca";
 import { setCustomWidgets } from "../react/hooks/custom_widgets";
 import { ParentComponent } from "../react/react_utils";
@@ -71,8 +73,18 @@ import MobileNotePanel from "./MobileNotePanel";
 
 describe("MobileNotePanel", () => {
     let container: HTMLElement;
+    let isTablet: boolean;
 
     beforeEach(() => {
+        // A phone unless the case says otherwise: happy-dom's window is a tablet's.
+        isTablet = false;
+        triggerCommand.mockClear();
+        vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+            matches: !isTablet && query === STACKED_TREE_LAYOUT,
+            media: query,
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn()
+        }) as unknown as MediaQueryList);
         options.set("highlightsList", "[]");
         options.set("aiEnabled", "false");
         appContext.tabManager = { getActiveContext: () => null } as typeof appContext.tabManager;
@@ -85,6 +97,25 @@ describe("MobileNotePanel", () => {
         act(() => render(null, container));
         container.remove();
         for (const stub of document.body.querySelectorAll(".modal-stub")) stub.remove();
+        vi.mocked(window.matchMedia).mockRestore();
+    });
+
+    it("peeks the desktop's right pane on a tablet instead, on its attributes tab when they are asked for", async () => {
+        isTablet = true;
+        shownNote.current = buildNote({ title: "Read" });
+        shownContext.current = { isCommandTarget: (ntxId) => ntxId === "ntx1" };
+        const handlers = renderPanel();
+
+        const button = container.querySelector<HTMLButtonElement>("button.bx-dock-right");
+        expect(button).toBeInstanceOf(HTMLElement);
+        button?.click();
+        expect(triggerCommand).toHaveBeenCalledWith("peekRightPane");
+
+        act(() => handlers.get("showNoteAttributes")?.({ ntxId: "ntx1" }));
+        expect(triggerCommand).toHaveBeenLastCalledWith("selectRightPaneTab", { tabId: "attributes", peek: true });
+        // The panel itself never loads on a tablet.
+        await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
+        expect(document.body.querySelector(".modal-stub")).toBeNull();
     });
 
     it("loads the panel once its button is about to be pressed, not with the button", async () => {

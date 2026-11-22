@@ -45,3 +45,25 @@ body.desktop.background-effects.last-split-bgfx #center-pane ~ .right-pane-peek-
 body.backdrop-effects-disabled #right-pane.right-pane-mode-peek {
     background: var(--right-pane-background-color);
 }
+
+/* The mobile layout of a tablet: the peek button follows the note in the flow, and the peeked pane
+   covers the rest of `#mobile-rest-container` up to it. */
+#mobile-rest-container {
+    --right-pane-peek-button-width: 16px;
+
+    > .right-pane-peek-button {
+        --peek-pane-button-width: var(--right-pane-peek-button-width);
+        position: relative;
+        flex: none;
+    }
+
+    > #right-pane-host.peek {
+        inset-inline-start: 0;
+        inset-inline-end: var(--right-pane-peek-button-width);
+    }
+
+    > #right-pane-host:not(.peek) {
+        flex: none;
+        width: clamp(230px, 25%, 40%);
+    }
+}

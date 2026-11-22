@@ -79,7 +79,7 @@ export default function RightPanelContainer({ widgetsByParent }: { widgetsByPare
     // Outside-press / Esc *soft*-dismisses the peek: it hides but stays mounted, so re-peeking is
     // instant and preserves widget state. The × button and the docked toggle hard-close (unmount).
     usePeekDismiss(mode === "peek", dismiss, {
-        keepOpenSelector: "#right-pane, .right-pane-peek-button",
+        keepOpenSelector: "#right-pane, .right-pane-peek-button, .mobile-note-panel-button",
         focusSelector: ".right-pane-peek-button"
     });
 

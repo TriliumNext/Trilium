@@ -130,6 +130,8 @@ describe("MobileLayout", () => {
         expect(bottomBar?.nextElementSibling?.nextElementSibling?.classList.contains("hide-keyboard-button")).toBe(true);
         expect(root?.querySelector("#toast-container")).toBeInstanceOf(HTMLElement);
         expect(root?.querySelector("#launcher-pane.vertical")).toBeNull();
+        // A phone opens the note panel instead of the desktop's right pane.
+        expect(root?.querySelector("#right-pane-host")).toBeNull();
         // A phone's tabs are in the tab switcher, not in a tab bar.
         expect(root?.classList.contains("tablet")).toBe(false);
     });
@@ -171,6 +173,10 @@ describe("MobileLayout", () => {
         expect(restPane?.querySelector(".right-pane-toggle-button")).toBeNull();
         const detail = restPane?.lastElementChild;
         expect(detail?.id).toBe("detail-container");
+        // The desktop's right pane follows the notes, with its peek button.
+        const rest = root?.querySelector(":scope > #mobile-rest-container");
+        await vi.waitFor(() => expect(rest?.querySelector(":scope > #mobile-rest-pane ~ .right-pane-peek-button")).toBeInstanceOf(HTMLElement));
+        expect(rest?.querySelector(":scope > #right-pane-host")).toBeInstanceOf(HTMLElement);
 
         // In portrait, the tab bar runs across the top of the screen, over the tree and the note.
         act(() => layout.turnTo("portrait"));

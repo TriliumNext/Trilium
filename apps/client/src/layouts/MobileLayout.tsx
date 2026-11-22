@@ -15,7 +15,7 @@ import MobileNotePanel from "../widgets/mobile_widgets/MobileNotePanel.js";
 import MobileSidebar from "../widgets/mobile_widgets/MobileSidebar.js";
 import ToggleSidebarButton from "../widgets/mobile_widgets/toggle_sidebar_button.js";
 import { trackVirtualKeyboard } from "../widgets/mobile_widgets/virtual_keyboard.js";
-import { useLoadCustomWidgets } from "../widgets/react/hooks/custom_widgets.js";
+import { useCustomWidgets, useLoadCustomWidgets } from "../widgets/react/hooks/custom_widgets.js";
 import { useMediaQuery } from "../widgets/react/hooks/dom.js";
 import { useLazyModule } from "../widgets/react/LazyComponent.js";
 import MobileEditorToolbar from "../widgets/type_widgets/text/mobile_editor_toolbar.js";
@@ -25,8 +25,8 @@ import { Modals, NoteSplits, type NoteSplitParts, triggerLegacyCommand, useAppea
  * The mobile layout, as a single Preact tree. A phone shows the launch bar at the bottom of the
  * screen. A tablet shows the desktop's tab bar: in portrait across the top of the screen, with
  * the launch bar at the bottom as on a phone; in landscape above the notes, with the launch bar
- * as a rail on the start edge. Either way the tree is docked beside the notes, and the launch bar
- * holds its toggle.
+ * as a rail on the start edge. Either way the tree is docked beside the notes, with its toggle in
+ * the launch bar, and the desktop's right pane peeks over the notes from the end edge.
  */
 export default function MobileLayout() {
     const rootRef = useRef<HTMLDivElement>(null);
@@ -63,6 +63,7 @@ export default function MobileLayout() {
                     {!isPhone && <LazyTabBar fullWidth={false} />}
                     <NoteSplits parts={NOTE_SPLIT_PARTS} containerId="detail-container" />
                 </div>
+                {tablet && <LazyRightPanel />}
             </div>
             {isPhone && (
                 <div id="mobile-bottom-bar">
@@ -107,4 +108,13 @@ function LazyTabBar({ fullWidth }: { fullWidth: boolean }) {
 function LazyLeftPaneToggle() {
     const leftPaneToggle = useLazyModule(loadLeftPaneToggle);
     return leftPaneToggle && <leftPaneToggle.default isHorizontalLayout={false} />;
+}
+
+// A tablet shows the desktop's right pane beside the note, where a phone opens the note panel.
+const loadRightPanel = () => import("../widgets/sidebar/RightPanelContainer.js");
+
+function LazyRightPanel() {
+    const rightPanel = useLazyModule(loadRightPanel);
+    const widgetsByParent = useCustomWidgets();
+    return rightPanel && <rightPanel.default widgetsByParent={widgetsByParent} />;
 }
