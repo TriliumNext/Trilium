@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { buildNotes } from "../../test/easy-froca";
-import { enterHoistedNote, forgetTabs, getParentStack, getSpotlightedNoteId, getTabNavigation, getTreeStack, leaveHoistedNote, setTabScreen, setTabTree } from "./tab_navigation";
+import {
+    enterHoistedNote, forgetTabs, getParentStack, getSpotlightedNoteId, getTabNavigation, getTreeStack,
+    isSameStack,
+    leaveHoistedNote, setTabScreen, setTabTree
+} from "./tab_navigation";
 
 describe("tab navigation", () => {
     buildNotes([
@@ -22,6 +26,15 @@ describe("tab navigation", () => {
         // A tab whose tree never moved: the column of its note, or a folder's own column.
         expect(getTreeStack("other", "root/folder/page", "root")).toEqual([ "root", "root/folder" ]);
         expect(getTreeStack("other", "root/folder/inner", "root")).toEqual(drilled);
+    });
+
+    it("rebuilds the column a tablet enters when it opens the folder there, hoisted or not", () => {
+        const entered = [ "root", "root/folder", "root/folder/inner" ];
+        expect(isSameStack(getTreeStack("fresh", "root/folder/inner", "root"), entered)).toBe(true);
+        // A hoisted tree's columns start at the hoisted note, while the note's path starts at the root.
+        expect(isSameStack(getTreeStack("fresh", "root/folder/inner", "folder"), [ "folder", "folder/inner" ])).toBe(true);
+        expect(isSameStack(entered, [ "root", "root/folder" ])).toBe(false);
+        expect(isSameStack(entered, [ "root", "root/folder", "root/folder/page" ])).toBe(false);
     });
 
     it("goes back from a note to the column listing it, even when the note has children", () => {

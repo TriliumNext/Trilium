@@ -61,6 +61,11 @@ export function getParentStack(notePath: string | null | undefined, hoistedNoteI
     return buildStackForActiveNote(notePath, hoistedNoteId, false);
 }
 
+/** Whether two stacks lead through the same columns. */
+export function isSameStack(a: string[], b: string[]) {
+    return a.length === b.length && a.every((path, index) => path === b[index]);
+}
+
 /**
  * Leaves the tree of `tabId` on the column holding `hoistedNoteId` once the tab unhoists, as a step
  * up out of the hoisted note, instead of the column of the note the tab shows. Runs before the

@@ -33,7 +33,7 @@ import NoItems from "../react/NoItems";
 import { ParentComponent } from "../react/react_utils";
 import {
     enterHoistedNote, getLastSegment, getParentStack, getSpotlightedNoteId, getTreeStack,
-    leaveHoistedNote, setTabTree, useNavigatorChildren
+    isSameStack, leaveHoistedNote, setTabTree, useNavigatorChildren
 } from "./tab_navigation";
 
 /**
@@ -67,11 +67,17 @@ export default function MobileNoteNavigator() {
         if (tabId) setTabTree(tabId, { ...owner, stack: newStack });
     }, []);
 
+    const nextStackRef = useRef(nextStack);
+    nextStackRef.current = nextStack;
     useEffect(() => {
         const isNoteShown = utils.isNarrowLayout() && activeScreen !== "tree";
-        commitStack(isNoteShown
+        const target = isNoteShown
             ? getParentStack(activeNotePath, effectiveHoistedId)
-            : getTreeStack(tabId, activeNotePath, effectiveHoistedId));
+            : getTreeStack(tabId, activeNotePath, effectiveHoistedId);
+        // On a tablet, `drillInto()` opens the folder it enters, and commits that column itself
+        // once its preview is ready.
+        if (nextStackRef.current && isSameStack(nextStackRef.current, target)) return;
+        commitStack(target);
         setNextStack(null);
     }, [tabId, activeNotePath, effectiveHoistedId, activeScreen, commitStack]);
 
@@ -243,19 +249,22 @@ export default function MobileNoteNavigator() {
         openNotePath(currentParentPath);
     }, [currentParentPath, openNotePath]);
 
+    // In tablet mode the note sits next to the tree, so there is nothing to bring back, and entering
+    // a folder opens it there as well.
+    const [ isPhone, setPhone ] = useState(utils.isNarrowLayout);
+    useEffect(() => utils.onNarrowLayoutChange(() => setPhone(utils.isNarrowLayout())), []);
+
     const drillInto = useCallback(
         (childNotePath: string) => {
             directionRef.current = "forward";
             navigateTo([...stack, childNotePath]);
+            if (!isPhone) void noteContext?.setNote(childNotePath);
         },
-        [stack, navigateTo]
+        [stack, navigateTo, isPhone, noteContext]
     );
 
     const isCurrentActive = !!activeNoteId && activeNoteId === currentParentId;
     const isHoisted = effectiveHoistedId !== "root";
-    // In tablet mode the note sits next to the tree, so there is nothing to bring back.
-    const [ isPhone, setPhone ] = useState(utils.isNarrowLayout);
-    useEffect(() => utils.onNarrowLayoutChange(() => setPhone(utils.isNarrowLayout())), []);
     const canGoForward = isPhone && !!activeNotePath;
     const showToolbar = canGoBack || isHoisted || canGoForward;
 
