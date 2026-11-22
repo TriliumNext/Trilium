@@ -67,16 +67,12 @@ describe("ToggleSidebarButton", () => {
         expect(button).not.toBeNull();
         button?.click();
         expect(triggerCommand).toHaveBeenCalledWith("setActiveScreen", { screen: "tree" });
-
-        vi.restoreAllMocks();
-        mockWidth("tablet");
-        expect(renderInto(<ToggleSidebarButton />).querySelector("button.bx-sidebar")).not.toBeNull();
     });
 
-    it("toggles the sidebar on a tablet, where it sits next to the note", () => {
-        clickAt("tablet");
-
-        expect(triggerCommand).toHaveBeenCalledWith("toggleLeftPane");
-        expect(triggerCommand).not.toHaveBeenCalledWith("setActiveScreen", expect.anything());
+    it("leaves a tablet's sidebar to the toggle in the launch bar", () => {
+        mockWidth("tablet");
+        const container = renderInto(<ToggleSidebarButton />);
+        expect(container.querySelector(".toggle-sidebar-button")).toBeInstanceOf(HTMLElement);
+        expect(container.querySelector("button")).toBeNull();
     });
 });

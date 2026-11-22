@@ -130,7 +130,9 @@ describe("MobileLayout", () => {
         const rail = root?.querySelector(":scope > #mobile-rest-container > #launcher-pane.vertical");
         expect(rail).toBeInstanceOf(HTMLElement);
         expect(rail?.firstElementChild?.classList.contains("global-menu")).toBe(true);
-        expect(rail?.lastElementChild?.id).toBe("launcher-container");
+        expect(rail?.children[1]?.id).toBe("launcher-container");
+        // The tree's toggle ends the rail, as in the desktop's vertical layout.
+        expect(rail?.lastElementChild?.classList.contains("left-pane-toggle-button")).toBe(true);
         expect(rail?.nextElementSibling?.id).toBe("mobile-sidebar-wrapper");
 
         act(() => layout.turnTo("phone"));

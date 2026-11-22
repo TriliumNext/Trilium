@@ -60,14 +60,23 @@ describe("MobileSidebar", () => {
         const sidebar = render(true);
         expect(sidebar.classList.contains("left-pane-hidden")).toBe(false);
 
-        // The sidebar toggle in the title row.
+        // The launch bar's toggle follows the sidebar, as it follows the left pane on desktop.
+        const modes: string[] = [];
+        const triggerEvent = appContext.triggerEvent.bind(appContext);
+        vi.spyOn(appContext, "triggerEvent").mockImplementation(async (name, data) => {
+            if (name === "paneModeChanged") modes.push(`${(data as EventData<"paneModeChanged">).pane}:${(data as EventData<"paneModeChanged">).mode}`);
+            return triggerEvent(name, data);
+        });
+
         trigger("setLeftPaneVisibility", { leftPaneVisible: null });
         expect(sidebar.classList.contains("left-pane-hidden")).toBe(true);
         expect(save).toHaveBeenLastCalledWith("leftPaneVisible", "false");
+        expect(modes).toEqual([ "left:closed" ]);
 
         trigger("setLeftPaneVisibility", { leftPaneVisible: null });
         expect(sidebar.classList.contains("left-pane-hidden")).toBe(false);
         expect(save).toHaveBeenLastCalledWith("leftPaneVisible", "true");
+        expect(modes).toEqual([ "left:closed", "left:docked" ]);
 
         // The "hide/show panel" commands.
         trigger("setLeftPaneVisibility", { leftPaneVisible: false });

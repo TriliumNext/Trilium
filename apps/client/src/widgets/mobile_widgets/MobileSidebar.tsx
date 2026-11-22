@@ -13,7 +13,8 @@ import SidebarNavigation from "./sidebar_container";
 /**
  * The note tree of the mobile layout: the quick search above the note navigator. The sidebar itself
  * renders with the layout, to follow the tabs as they are restored; the navigator loads after the
- * first paint. On a tablet it hides like the left pane on desktop, sharing its option.
+ * first paint. On a tablet it hides like the left pane on desktop, sharing its option, from the
+ * `LeftPaneToggle` at the end of the launch bar.
  */
 export default function MobileSidebar() {
     const sidebarRef = useRef<HTMLDivElement>(null);
@@ -36,6 +37,8 @@ export default function MobileSidebar() {
         if (visible === leftPaneVisible) return;
         setLeftPaneVisible(visible);
         void options.save("leftPaneVisible", visible.toString());
+        // The launch bar's `LeftPaneToggle` follows the sidebar as it follows the left pane on desktop.
+        void parentComponent?.triggerEvent("paneModeChanged", { pane: "left", mode: visible ? "docked" : "closed" });
     });
     useTriliumEvent("activeContextChanged", ({ noteContext }) => navigationRef.current?.switchToTab(noteContext));
     useTriliumEvent("noteSwitchedAndActivated", ({ noteContext }) => navigationRef.current?.switchToTab(noteContext));

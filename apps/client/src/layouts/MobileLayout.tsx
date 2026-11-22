@@ -6,6 +6,7 @@ import { useLayoutEffect, useRef } from "preact/hooks";
 
 import { NARROW_LAYOUT } from "../services/utils.js";
 import GlobalMenu from "../widgets/buttons/global_menu.js";
+import LeftPaneToggle from "../widgets/buttons/left_pane_toggle.js";
 import CloseZenModeButton from "../widgets/close_zen_button.js";
 import LauncherContainer from "../widgets/launch_bar/LauncherContainer.js";
 import HideKeyboardButton from "../widgets/mobile_widgets/hide_keyboard_button.js";
@@ -42,6 +43,7 @@ export default function MobileLayout() {
                     <div id="launcher-pane" className="vertical">
                         <GlobalMenu isHorizontalLayout={false} />
                         <LauncherContainer isHorizontalLayout={false} />
+                        <LeftPaneToggle isHorizontalLayout={false} />
                     </div>
                 )}
                 <MobileSidebar />

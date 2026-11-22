@@ -2911,7 +2911,6 @@
     "refresh-saved-search-results": "Refresh saved search results",
     "create-child-note": "Create child note",
     "unhoist": "Unhoist",
-    "toggle-sidebar": "Toggle sidebar",
     "dropping-not-allowed": "Dropping notes into this location is not allowed.",
     "clone-indicator-tooltip": "This note has {{- count}} parents: {{- parents}}",
     "clone-indicator-tooltip-single": "This note is cloned (1 additional parent: {{- parent}})",
