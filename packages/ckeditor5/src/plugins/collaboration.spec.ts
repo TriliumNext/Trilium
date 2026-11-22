@@ -8,6 +8,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { createTestEditor, createTestEditorOf } from "../../test/editor-kit.js";
 import { registerTestCleanup } from "../../test/globals-test-kit.js";
+import { HEADING_OPTIONS } from "../../test/headings-kit.js";
 import { ClassicEditor as TriliumEditor } from "../index.js";
 import Collaboration from "./collaboration.js";
 
@@ -61,7 +62,10 @@ describe("Collaboration", () => {
                 "<pre><code class=\"language-plaintext\">code</code></pre><aside class=\"admonition note\"><p>note</p></aside>"
             ].join("");
             const create = (initialData: string) => () =>
-                createTestEditorOf(TriliumEditor, undefined, { initialData }) as unknown as Promise<ClassicEditor>;
+                createTestEditorOf(TriliumEditor, undefined, {
+                    initialData,
+                    heading: { options: HEADING_OPTIONS }
+                }) as unknown as Promise<ClassicEditor>;
             const network = new Network();
             const first = await network.addEditor("writer1", "", create(content));
             const second = await network.addEditor("writer2", "", create(""));
