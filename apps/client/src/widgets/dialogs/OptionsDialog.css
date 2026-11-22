@@ -110,6 +110,23 @@ body.mobile .modal.options-dialog:not(.mobile-master-detail) > .modal-dialog {
     }
 }
 
+/* The breakpoint must match `NARROW_LAYOUT` in services/utils.ts, where MobileLayout.phone.css
+   pins a full-page dialog to the edges of the screen. */
+@media (max-width: 991px) {
+    body.mobile .modal.options-dialog:not(.mobile-master-detail) > .modal-dialog.modal-dialog-full-page-on-mobile {
+        inset: var(--safe-area-inset-top, env(safe-area-inset-top)) 0
+            var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
+        width: calc(100% - 2 * var(--bs-modal-margin));
+        margin: auto !important;
+        transform: none;
+
+        > .modal-content {
+            border: 1px solid var(--modal-border-color, var(--bs-modal-border-color));
+            border-radius: var(--bs-modal-border-radius);
+        }
+    }
+}
+
 /* The master-detail flow itself is the shared one (master_detail.css); what is particular here is the
    page selector's own padding, and the settings page filling the pane it is wrapped in. */
 body.mobile .modal.options-dialog.mobile-master-detail {
