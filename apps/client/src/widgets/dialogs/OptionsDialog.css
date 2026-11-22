@@ -75,6 +75,10 @@ body.mobile .modal.options-dialog > .modal-dialog > .modal-content-with-sidebar 
 /* On tablets, don't take up the full page height like the master-detail flow does. */
 body.mobile .modal.options-dialog:not(.mobile-master-detail) > .modal-dialog {
     height: 90vh;
+
+    > .modal-content {
+        height: 100%;
+    }
 }
 
 /* The master-detail flow itself is the shared one (master_detail.css); what is particular here is the
