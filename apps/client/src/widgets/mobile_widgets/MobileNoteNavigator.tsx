@@ -59,7 +59,8 @@ export default function MobileNoteNavigator() {
     // column listing it.
     const [activeScreen, setActiveScreen] = useState<Screen>();
     // On a tablet the note sits next to the tree: there is nothing to bring back, entering a folder
-    // opens it there as well, and the column needs no tile with the folder's preview.
+    // or going back to one opens it there as well, and the column needs no tile with the folder's
+    // preview.
     const [ isPhone, setPhone ] = useState(utils.isNarrowLayout);
     useEffect(() => utils.onNarrowLayoutChange(() => setPhone(utils.isNarrowLayout())), []);
     const tabId = noteContext?.getMainContext().ntxId;
@@ -78,8 +79,8 @@ export default function MobileNoteNavigator() {
         const target = isNoteShown
             ? getParentStack(activeNotePath, effectiveHoistedId)
             : getTreeStack(tabId, activeNotePath, effectiveHoistedId);
-        // On a tablet, `drillInto()` opens the folder it enters, and commits that column itself
-        // once its preview is ready.
+        // On a tablet, `drillInto()` and `goBack()` open the folder they move to, and commit that
+        // column themselves once its subtree is in.
         if (nextStackRef.current && isSameStack(nextStackRef.current, target)) return;
         commitStack(target);
         setNextStack(null);
@@ -217,8 +218,10 @@ export default function MobileNoteNavigator() {
     const goBack = useCallback(() => {
         if (stack.length <= 1) return;
         directionRef.current = "backward";
-        navigateTo(stack.slice(0, -1));
-    }, [stack, navigateTo]);
+        const parentStack = stack.slice(0, -1);
+        navigateTo(parentStack);
+        if (!isPhone) void noteContext?.setNote(parentStack[parentStack.length - 1]);
+    }, [stack, navigateTo, isPhone, noteContext]);
 
     const unhoist = useCallback(() => {
         if (tabId) leaveHoistedNote(tabId, activeNotePath, effectiveHoistedId);

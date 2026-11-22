@@ -28,11 +28,14 @@ describe("tab navigation", () => {
         expect(getTreeStack("other", "root/folder/inner", "root")).toEqual(drilled);
     });
 
-    it("rebuilds the column a tablet enters when it opens the folder there, hoisted or not", () => {
+    it("rebuilds the column a tablet enters or goes back to when it opens the folder there, hoisted or not", () => {
         const entered = [ "root", "root/folder", "root/folder/inner" ];
         expect(isSameStack(getTreeStack("fresh", "root/folder/inner", "root"), entered)).toBe(true);
+        expect(isSameStack(getTreeStack("fresh", "root/folder", "root"), [ "root", "root/folder" ])).toBe(true);
+        expect(isSameStack(getTreeStack("fresh", "root", "root"), [ "root" ])).toBe(true);
         // A hoisted tree's columns start at the hoisted note, while the note's path starts at the root.
         expect(isSameStack(getTreeStack("fresh", "root/folder/inner", "folder"), [ "folder", "folder/inner" ])).toBe(true);
+        expect(isSameStack(getTreeStack("fresh", "root/folder", "folder"), [ "folder" ])).toBe(true);
         expect(isSameStack(entered, [ "root", "root/folder" ])).toBe(false);
         expect(isSameStack(entered, [ "root", "root/folder", "root/folder/page" ])).toBe(false);
     });
