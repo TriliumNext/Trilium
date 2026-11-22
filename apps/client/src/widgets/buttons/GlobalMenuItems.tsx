@@ -1,5 +1,6 @@
 import type { CurrentUser, KeyboardActionNames } from "@triliumnext/commons";
 import { ComponentChildren } from "preact";
+import { lazy, Suspense } from "preact/compat";
 import { useContext, useRef, useState } from "preact/hooks";
 
 import { CommandNames } from "../../components/app_context";
@@ -18,7 +19,6 @@ import { useTriliumOption, useUserThemes } from "../react/hooks/options";
 import { useStaticTooltipWithKeyboardShortcut } from "../react/hooks/shortcuts";
 import { MenuItemRows } from "../react/Menu";
 import { ParentComponent } from "../react/react_utils";
-import UserAvatar from "../react/UserAvatar";
 
 interface MenuItemProps<T> {
     icon: string,
@@ -182,7 +182,9 @@ function AccountRow({ user }: { user: CurrentUser }) {
     return (
         <FormListCustomItem>
             <div className="global-menu-account">
-                <UserAvatar username={user.username} hue={user.avatarHue} />
+                <Suspense fallback={null}>
+                    <UserAvatar username={user.username} hue={user.avatarHue} />
+                </Suspense>
                 <div className="global-menu-account-details">
                     <span className="global-menu-account-name">{user.username}</span>
                     <span className="global-menu-account-role">
@@ -305,3 +307,6 @@ function ToggleWindowOnTop() {
         />
     );
 }
+
+/** Loaded once a signed-in user is shown, so a single-user instance never loads it. */
+const UserAvatar = lazy(() => import("../react/UserAvatar"));

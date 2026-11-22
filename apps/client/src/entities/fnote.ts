@@ -1,6 +1,7 @@
 import type { HighlightedTokenInfo, NoteType } from "@triliumnext/commons";
-import { getNoteIcon, isMarkdownMime } from "@triliumnext/commons/src/lib/notes.js";
-import { HOME_NOTE_ID_PREFIX, USERS_NOTE_ID } from "@triliumnext/commons/src/lib/server_api.js";
+import {
+    getNoteIcon, HOME_NOTE_ID_PREFIX, isMarkdownMime, USERS_NOTE_ID
+} from "@triliumnext/commons/src/lib/notes.js";
 
 import cssClassManager from "../services/css_class_manager.js";
 import { t } from "../services/i18n.js";
