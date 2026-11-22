@@ -20,7 +20,12 @@
     align-items: center;
     gap: 8px;
     padding: 4px 6px;
-    background: var(--main-background-color);
+}
+
+.mobile-navigator-toolbar-actions {
+    display: flex;
+    flex: 0 0 auto;
+    margin-inline-start: auto;
 }
 
 .mobile-navigator-workspaces {
@@ -123,6 +128,10 @@
     overscroll-behavior: contain;
     padding-bottom: calc(var(--navigator-group-spacing) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
     mask-image: linear-gradient(to bottom, transparent, #000 var(--navigator-group-spacing));
+}
+
+.mobile-navigator-body > :first-child:not(.mobile-navigator-children-label) {
+    margin-block-start: var(--navigator-group-spacing);
 }
 
 .mobile-navigator-scroll.is-pending .mobile-navigator-body {

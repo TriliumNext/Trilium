@@ -67,10 +67,6 @@ body.mobile.ios {
         --navigator-separator-inset: calc(var(--navigator-row-padding) + 1.2em + 12px);
         background: var(--grouped-background-color);
 
-        .mobile-navigator-toolbar {
-            background: transparent;
-        }
-
         .mobile-navigator-children-label {
             padding-block-end: 8px;
             font-size: 0.95em;

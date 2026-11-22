@@ -58,6 +58,10 @@ export default function MobileNoteNavigator() {
     // phone reaches the tree back from the note, so while the note shows, the tree stands on the
     // column listing it.
     const [activeScreen, setActiveScreen] = useState<Screen>();
+    // On a tablet the note sits next to the tree: there is nothing to bring back, entering a folder
+    // opens it there as well, and the column needs no tile with the folder's preview.
+    const [ isPhone, setPhone ] = useState(utils.isNarrowLayout);
+    useEffect(() => utils.onNarrowLayoutChange(() => setPhone(utils.isNarrowLayout())), []);
     const tabId = noteContext?.getMainContext().ntxId;
     const treeOwnerRef = useRef({ tabId, notePath: activeNotePath, hoistedNoteId: effectiveHoistedId });
     treeOwnerRef.current = { tabId, notePath: activeNotePath, hoistedNoteId: effectiveHoistedId };
@@ -108,24 +112,27 @@ export default function MobileNoteNavigator() {
 
     // Froca's initial `tree` response only returns the top of the tree; deeper levels are
     // normally pulled in by Fancytree's lazy-load. The navigator doesn't use Fancytree,
-    // so we pull the subtree ourselves whenever the current parent changes.
+    // so we pull the subtree ourselves whenever the current parent changes. A tablet shows no
+    // preview to wait for, so it pulls the pending column's subtree too and commits once it is in.
     const [loadedParents, setLoadedParents] = useState<Set<string>>(() => new Set());
-    useEffect(() => {
-        if (!currentParentId || loadedParents.has(currentParentId)) return;
+    const loadParent = useCallback((parentId: string | undefined) => {
+        if (!parentId || loadedParents.has(parentId)) return;
         let cancelled = false;
-        froca.loadSubTree(currentParentId).then(() => {
+        froca.loadSubTree(parentId).then(() => {
             if (cancelled) return;
             setLoadedParents((prev) => {
-                if (prev.has(currentParentId)) return prev;
+                if (prev.has(parentId)) return prev;
                 const next = new Set(prev);
-                next.add(currentParentId);
+                next.add(parentId);
                 return next;
             });
         });
         return () => {
             cancelled = true;
         };
-    }, [currentParentId, loadedParents]);
+    }, [loadedParents]);
+    useEffect(() => loadParent(currentParentId), [currentParentId, loadParent]);
+    useEffect(() => (isPhone ? undefined : loadParent(pendingId)), [isPhone, pendingId, loadParent]);
 
     const isLoaded = !!currentParentId && loadedParents.has(currentParentId);
     const spotlightedNoteId = getSpotlightedNoteId(currentParentPath, activeNotePath);
@@ -155,7 +162,7 @@ export default function MobileNoteNavigator() {
 
     // Gate the visible body on the content preview being ready to avoid a layout shift
     // when the preview finishes rendering.
-    const previewReady = !!currentParentId && readyPreviewIds.has(currentParentId);
+    const previewReady = !isPhone || (!!currentParentId && readyPreviewIds.has(currentParentId));
     const bodyVisible = previewReady && isLoaded;
 
     // Full-screen spinner only for the very first render — once a body has been shown,
@@ -170,13 +177,14 @@ export default function MobileNoteNavigator() {
     const [commitCounter, setCommitCounter] = useState(0);
 
     useEffect(() => {
-        if (!nextStack || !pendingId || !readyPreviewIds.has(pendingId)) return;
+        const isPendingReady = isPhone ? readyPreviewIds.has(pendingId ?? "") : loadedParents.has(pendingId ?? "");
+        if (!nextStack || !pendingId || !isPendingReady) return;
         commitStack(nextStack);
         setNextStack(null);
         setCommitCounter((c) => c + 1);
-        // Reset scroll so the committed tile is visible at the top of the column.
+        // Reset scroll so the committed column shows from its top.
         if (scrollRef.current) scrollRef.current.scrollTop = 0;
-    }, [nextStack, pendingId, readyPreviewIds, commitStack]);
+    }, [nextStack, pendingId, isPhone, readyPreviewIds, loadedParents, commitStack]);
 
     // Brief slide-in on forward / back so the swap feels directional without blocking the user.
     useLayoutEffect(() => {
@@ -249,11 +257,6 @@ export default function MobileNoteNavigator() {
         openNotePath(currentParentPath);
     }, [currentParentPath, openNotePath]);
 
-    // In tablet mode the note sits next to the tree, so there is nothing to bring back, and entering
-    // a folder opens it there as well.
-    const [ isPhone, setPhone ] = useState(utils.isNarrowLayout);
-    useEffect(() => utils.onNarrowLayoutChange(() => setPhone(utils.isNarrowLayout())), []);
-
     const drillInto = useCallback(
         (childNotePath: string) => {
             directionRef.current = "forward";
@@ -266,7 +269,7 @@ export default function MobileNoteNavigator() {
     const isCurrentActive = !!activeNoteId && activeNoteId === currentParentId;
     const isHoisted = effectiveHoistedId !== "root";
     const canGoForward = isPhone && !!activeNotePath;
-    const showToolbar = canGoBack || isHoisted || canGoForward;
+    const showToolbar = canGoBack || isHoisted || canGoForward || (!isPhone && !!parentNote);
 
     const currentContextHandler = useMemo(
         () => buildNoteContextMenu(currentParentPath, parentComponent),
@@ -298,6 +301,11 @@ export default function MobileNoteNavigator() {
                         <UnhoistButton hoistedNoteId={effectiveHoistedId} onUnhoist={unhoist} />
                     )}
                     {canGoForward && activeNotePath && <ForwardToNoteButton notePath={activeNotePath} />}
+                    {!isPhone && parentNote && (
+                        <div className="mobile-navigator-toolbar-actions">
+                            <CurrentNoteActions notePath={currentParentPath} onMoreActions={currentContextHandler} />
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -323,12 +331,12 @@ export default function MobileNoteNavigator() {
                             )}
                         />
                     )}
-                    {parentNote && (
+                    {isPhone && parentNote && (
                         <div className="mobile-navigator-children-label">
                             {t("mobile_note_navigator.current_note")}
                         </div>
                     )}
-                    {parentNote && (
+                    {isPhone && parentNote && (
                         <div
                             className={clsx("mobile-navigator-current-tile", parentColorClass, {
                                 "is-active": isCurrentActive,
@@ -345,30 +353,7 @@ export default function MobileNoteNavigator() {
                                     className={clsx("mobile-navigator-current-icon", parentNote.isProtected && "is-protected")}
                                 />
                                 <TitleWithIndicators note={parentNote} parentNoteId={grandparentId} title={parentTitle ?? parentNote.title} className="mobile-navigator-current-title" />
-                                <button
-                                    type="button"
-                                    className="mobile-navigator-current-action"
-                                    aria-label={t("mobile_note_navigator.add_child")}
-                                    title={t("mobile_note_navigator.add_child")}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (currentParentPath) note_create.createNote(currentParentPath);
-                                    }}
-                                >
-                                    <Icon icon="bx bx-plus" />
-                                </button>
-                                <button
-                                    type="button"
-                                    className="mobile-navigator-current-action"
-                                    aria-label={t("mobile_note_navigator.more_actions")}
-                                    title={t("mobile_note_navigator.more_actions")}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        currentContextHandler(e as unknown as MouseEvent);
-                                    }}
-                                >
-                                    <Icon icon="bx bx-dots-horizontal-rounded" />
-                                </button>
+                                <CurrentNoteActions notePath={currentParentPath} onMoreActions={currentContextHandler} />
                             </div>
                             <div className="mobile-navigator-current-preview">
                                 {getPreviewNotes(getPreviewNoteIds(previewIds, currentParentId, pendingId)).map((note) => (
@@ -381,11 +366,11 @@ export default function MobileNoteNavigator() {
                                     />
                                 ))}
                             </div>
-                            {isPhone && <OpenNoteFooter />}
+                            <OpenNoteFooter />
                         </div>
                     )}
 
-                    {isLoaded && parentNote && children.length > 0 && (
+                    {isLoaded && parentNote && children.length > 0 && (isPhone || isParentSubtreeHidden) && (
                         <div className="mobile-navigator-children-label">
                             {isParentSubtreeHidden
                                 ? t("mobile_note_navigator.children_hidden")
@@ -528,6 +513,45 @@ export function OpenNoteFooter() {
             {t("mobile_note_navigator.open")}
             <Icon icon={getChevronIcon("forward")} />
         </span>
+    );
+}
+
+/**
+ * The buttons that add a child to the column's note at `notePath` and open its menu: in the column's
+ * tile on a phone, at the trailing end of the toolbar on a tablet. They stop the tap, so the tile
+ * does not also open the note.
+ */
+export function CurrentNoteActions({ notePath, onMoreActions }: {
+    notePath: string | undefined;
+    onMoreActions: (e: MouseEvent) => void;
+}) {
+    return (
+        <>
+            <button
+                type="button"
+                className="mobile-navigator-current-action"
+                aria-label={t("mobile_note_navigator.add_child")}
+                title={t("mobile_note_navigator.add_child")}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    if (notePath) note_create.createNote(notePath);
+                }}
+            >
+                <Icon icon="bx bx-plus" />
+            </button>
+            <button
+                type="button"
+                className="mobile-navigator-current-action"
+                aria-label={t("mobile_note_navigator.more_actions")}
+                title={t("mobile_note_navigator.more_actions")}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onMoreActions(e as unknown as MouseEvent);
+                }}
+            >
+                <Icon icon="bx bx-dots-horizontal-rounded" />
+            </button>
+        </>
     );
 }
 
