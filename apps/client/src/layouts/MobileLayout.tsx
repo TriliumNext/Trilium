@@ -5,7 +5,7 @@ import "./MobileLayout.tablet.css";
 import clsx from "clsx";
 import { useLayoutEffect, useRef } from "preact/hooks";
 
-import { isTablet, NARROW_LAYOUT } from "../services/utils.js";
+import { isTablet, NARROW_LAYOUT, STACKED_TREE_LAYOUT } from "../services/utils.js";
 import GlobalMenu from "../widgets/buttons/global_menu.js";
 import CloseZenModeButton from "../widgets/close_zen_button.js";
 import LauncherContainer from "../widgets/launch_bar/LauncherContainer.js";
@@ -25,11 +25,13 @@ import { Modals, NoteSplits, type NoteSplitParts, triggerLegacyCommand, useAppea
  * The mobile layout, as a single Preact tree. A phone shows the launch bar at the bottom of the
  * screen. A tablet shows the desktop's tab bar: in portrait across the top of the screen, with
  * the launch bar at the bottom as on a phone; in landscape above the notes, with the launch bar
- * as a rail on the start edge.
+ * as a rail on the start edge. Either way the tree is docked beside the notes, and the launch bar
+ * holds its toggle.
  */
 export default function MobileLayout() {
     const rootRef = useRef<HTMLDivElement>(null);
     const isPhone = useMediaQuery(NARROW_LAYOUT);
+    const isTreeStacked = useMediaQuery(STACKED_TREE_LAYOUT);
     const tablet = isTablet();
     useAppearance();
     useLayoutEffect(() => (rootRef.current ? trackVirtualKeyboard(rootRef.current) : undefined), []);
@@ -64,6 +66,7 @@ export default function MobileLayout() {
             {isPhone && (
                 <div id="mobile-bottom-bar">
                     <div id="launcher-pane" className="horizontal">
+                        {!isTreeStacked && <LazyLeftPaneToggle />}
                         <LauncherContainer isHorizontalLayout={true} />
                         <GlobalMenu isHorizontalLayout={true} />
                     </div>

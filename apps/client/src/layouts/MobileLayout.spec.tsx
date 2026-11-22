@@ -17,7 +17,7 @@ import NoteContext from "../components/note_context.js";
 import LoadResults from "../services/load_results.js";
 import options from "../services/options.js";
 import server from "../services/server.js";
-import { NARROW_LAYOUT } from "../services/utils.js";
+import { NARROW_LAYOUT, STACKED_TREE_LAYOUT } from "../services/utils.js";
 import { buildNote } from "../test/easy-froca.js";
 import { showNoteSplit } from "../test/note_splits.js";
 import { renderInto } from "../test/render.js";
@@ -154,7 +154,7 @@ describe("MobileLayout", () => {
         expect(detail?.id).toBe("detail-container");
 
         // In portrait, the tab bar runs across the top of the screen, over the tree and the note.
-        act(() => layout.turnTo("phone"));
+        act(() => layout.turnTo("portrait"));
         expect(root?.classList.contains("horizontal-layout")).toBe(true);
         expect(root?.classList.contains("tablet")).toBe(true);
         expect(root?.querySelector("#launcher-pane.vertical")).toBeNull();
@@ -164,7 +164,11 @@ describe("MobileLayout", () => {
         expect(root?.firstElementChild?.nextElementSibling?.id).toBe("mobile-rest-container");
         // The notes stay as they are, so turning the device does not rebuild them.
         expect(root?.querySelector("#detail-container")).toBe(detail);
-        expect(root?.querySelector(":scope > #mobile-bottom-bar > #launcher-pane.horizontal")).toBeInstanceOf(HTMLElement);
+        // The launch bar sits at the bottom, starting with the toggle of the tree, which stays docked.
+        const bottomBar = root?.querySelector(":scope > #mobile-bottom-bar > #launcher-pane.horizontal");
+        await vi.waitFor(() => expect(bottomBar?.firstElementChild?.classList.contains("left-pane-toggle-button")).toBe(true));
+        expect(bottomBar?.firstElementChild?.classList.contains("bx-chevrons-left")).toBe(true);
+        expect(bottomBar?.children[1]?.id).toBe("launcher-container");
     });
 
     it("applies the appearance options to the body before the first paint, and again as they change", async () => {
@@ -225,30 +229,33 @@ describe("MobileLayout", () => {
 });
 
 /**
- * Answers `NARROW_LAYOUT` as a phone or a tablet would, and every other query as the test window does.
- * `turnTo()` changes the answer and notifies the listeners, as turning the device does.
+ * Answers `NARROW_LAYOUT` and `STACKED_TREE_LAYOUT` as a phone, a tablet in portrait or a tablet in
+ * landscape would, and every other query as the test window does. `turnTo()` changes the answers
+ * and notifies the listeners, as turning the device does.
  */
-function stubLayoutWidth(initial: "phone" | "tablet") {
+function stubLayoutWidth(initial: "phone" | "portrait" | "tablet") {
     if (vi.isMockFunction(window.matchMedia)) window.matchMedia.mockRestore();
     // The device: its screen keeps its size as the layout follows the width of the window.
     const [ width, height ] = initial === "phone" ? [ 390, 844 ] : [ 1024, 768 ];
     vi.spyOn(window.screen, "width", "get").mockReturnValue(width);
     vi.spyOn(window.screen, "height", "get").mockReturnValue(height);
-    let isPhone = initial === "phone";
+    let layout = initial;
     const listeners = new Set<() => void>();
     const original = window.matchMedia.bind(window);
     vi.spyOn(window, "matchMedia").mockImplementation((query) => {
-        if (query !== NARROW_LAYOUT) return original(query);
+        if (query !== NARROW_LAYOUT && query !== STACKED_TREE_LAYOUT) return original(query);
         return {
-            get matches() { return isPhone; },
+            get matches() {
+                return query === NARROW_LAYOUT ? layout !== "tablet" : layout === "phone";
+            },
             media: query,
             addEventListener: (_type: string, listener: () => void) => listeners.add(listener),
             removeEventListener: (_type: string, listener: () => void) => listeners.delete(listener)
         } as unknown as MediaQueryList;
     });
     return {
-        turnTo(layout: "phone" | "tablet") {
-            isPhone = layout === "phone";
+        turnTo(newLayout: "phone" | "portrait" | "tablet") {
+            layout = newLayout;
             for (const listener of listeners) listener();
         }
     };
