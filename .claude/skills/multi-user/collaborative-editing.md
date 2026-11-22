@@ -47,7 +47,7 @@ Flat text converges: 40 random runs of three editors with insertions, deletions,
 
 The component is shared: `EditableCode` joins a session for `noteType` `code` and `mermaid`, and `EDITOR_KINDS` maps both note types to the `code` kind. A code note includes Markdown notes (`Markdown.tsx`, a code note with a Markdown MIME type shown in a `SplitEditor`) and the SQL console.
 
-A write that bypasses the session reaches a code editor through its saver: the saver's own saves are not echoed back to it, so content that arrives there was written by something else, and it types it in for everyone (`onContentChange` in `Code.tsx`). The sample diagrams of an empty Mermaid note depend on this, since `NoteContentSwitcher` saves them straight to the note. The text editor does not do this yet.
+A write that bypasses the session (a restored revision, ETAPI, a script, an import, sync) reaches the editors through the saver: the saver's own saves are not echoed back to it, so content that arrives there was written by something else, and it types it in for everyone (`onContentChange` in `Code.tsx` and `EditableText.tsx`). The text editor does it with `setData()`, a local batch that the session sends as operations. The sample diagrams of an empty Mermaid note depend on this, since `NoteContentSwitcher` saves them straight to the note.
 
 Every editor of a Mermaid note still saves the SVG attachment of the diagram it renders (`SvgSplitEditor.tsx`), so the same picture is posted once per editor.
 
@@ -73,7 +73,7 @@ Three stock editors, 30 random edits per run, 300 runs per cell; the columns are
 ## Open work
 
 - **Trilium's plugins under load.** Only a smoke test covers the full editor build. Run the random spec on it and look at plugins with post-fixers (`registerPostFixer` under `packages/ckeditor5/src/plugins`) and at marker operations for local-only markers leaking into the stream.
-- **Writes outside the session** (ETAPI, a script, an import, sync, a note edited inside another note) do not reach the editors of a text note; the saver's next save overwrites them. Code editors take them in through the saver (see above), unless the saver has unsaved changes at that moment.
+- **Writes outside the session** reach the editors through the saver (see above), except while the saver has unsaved changes: `useEditorSpacedUpdate()` then keeps them, and the saver's next save overwrites the write.
 - **Attachments edited by a member that is not the saver** are not saved, since its whole save is skipped.
 - **Desktop and standalone** have no sessions: their providers do not know the user of a connection, and a join is refused.
 - **Other note types**, each through its own adapter on the same session channel:

@@ -9,6 +9,7 @@
 import type {
     CKEditorError, CKTextEditor, DocumentHeading, FileUploadData, LinkAtSelection, ModelElement
 } from "@triliumnext/ckeditor5";
+import type { CollabEditor } from "@triliumnext/commons";
 import { type ComponentProps, h, render } from "preact";
 import { act } from "preact/test-utils";
 import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
@@ -713,6 +714,38 @@ describe("EditableText", () => {
         expect(viewScope.bookmark).toBeUndefined();
     });
 
+    it("takes in content written outside the session only in the editor that saves the note",
+        async () => {
+        renderInto(h(EditableText, {
+            note: { noteId: "abc" } as FNote,
+            noteContext: createNoteContext({ notePath: "root/abc" }),
+            viewScope: undefined,
+            ntxId: "ntx",
+            parentComponent: undefined
+        }));
+        await vi.waitFor(() => expect(rendered.editor).toBeDefined());
+        const session = { isActive: true, isSaver: true, noteId: "abc", start: vi.fn(), stop: vi.fn() };
+        const editor = createTextEditor("<p>Typed</p>", undefined, session);
+        const editorRef = rendered.editor?.editorRef;
+        if (editorRef) {
+            editorRef.current = editor;
+        }
+        const receive = (content: string) => act(() => spacedUpdate.options?.onContentChange(content));
+
+        // The saver's own save trails the session and changes nothing.
+        receive("<p>Typed</p>");
+        expect(editor.setData).not.toHaveBeenCalled();
+
+        receive("<p>Restored from a revision</p>");
+        expect(editor.setData).toHaveBeenCalledExactlyOnceWith("<p>Restored from a revision</p>");
+        expect(session.stop).not.toHaveBeenCalled();
+
+        // Another editor of the session receives the change from the saver instead.
+        session.isSaver = false;
+        receive("<p>Written by a script</p>");
+        expect(editor.setData).toHaveBeenCalledOnce();
+    });
+
     it("publishes the highlights of its editor while shown", async () => {
         const getJson = vi.spyOn(options, "getJson").mockReturnValue([ "color" ]);
         onTestFinished(() => getJson.mockRestore());
@@ -927,10 +960,14 @@ function createNoteContext(props: Partial<NoteContext>) {
     } as unknown as NoteContext;
 }
 
-function createTextEditor(data: string, root = document.createElement("div")) {
+function createTextEditor(
+    data: string, root = document.createElement("div"),
+    collaboration: Partial<CollabEditor> = { isActive: false, isSaver: false, start: vi.fn(), stop: vi.fn() }
+) {
     return {
         getData: vi.fn(() => data),
         setData: vi.fn(),
-        editing: { view: { getDomRoot: () => root } }
+        editing: { view: { getDomRoot: () => root } },
+        plugins: { get: () => collaboration }
     } as unknown as CKTextEditor;
 }
