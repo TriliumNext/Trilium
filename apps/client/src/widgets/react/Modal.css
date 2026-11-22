@@ -41,7 +41,7 @@
     display: contents;
 }
 
-@media (max-width: 991px) {
+@media (max-width: 743px), (max-height: 599px) {
     /* Bootstrap times the hide on the `.modal` element's first transition duration, so it matches
        the dialog's. */
     body.mobile .modal.fade {
@@ -66,7 +66,7 @@
     }
 }
 
-@media (max-width: 991px) and (prefers-reduced-motion: reduce) {
+@media ((max-width: 743px) or (max-height: 599px)) and (prefers-reduced-motion: reduce) {
     body.mobile .modal.fade .modal-dialog,
     body.mobile .modal.fade.show .modal-dialog {
         transition: none;

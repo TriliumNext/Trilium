@@ -34,18 +34,30 @@
         justify-content: space-evenly;
     }
 
+    body.mobile > .tn-dropdown-portal > .tn-dropdown-backdrop,
+    body.mobile .tn-popover-backdrop {
+        background-color: var(--mobile-backdrop-color);
+        opacity: 1;
+    }
+
+    body.mobile .help-dialog kbd {
+        display: inline !important;
+    }
+
+    body.mobile .options-section-card table {
+        word-break: break-all;
+    }
+}
+
+/* Dialogs are sheets rising from the bottom of a phone, and float as on desktop on a tablet in
+   either orientation. The breakpoint must match `STACKED_TREE_LAYOUT` in services/utils.ts. */
+@media (max-width: 743px), (max-height: 599px) {
     body.mobile .modal.show {
         background-color: var(--mobile-modal-backdrop-color);
     }
 
     body.mobile .modal-backdrop {
         background-color: transparent !important;
-    }
-
-    body.mobile > .tn-dropdown-portal > .tn-dropdown-backdrop,
-    body.mobile .tn-popover-backdrop {
-        background-color: var(--mobile-backdrop-color);
-        opacity: 1;
     }
 
     body.mobile .modal-dialog {
@@ -91,14 +103,6 @@
     body.mobile .modal-footer {
         padding-top: 12px;
         padding-bottom: calc(max(var(--safe-area-inset-bottom, env(safe-area-inset-bottom)), 12px));
-    }
-
-    body.mobile .help-dialog kbd {
-        display: inline !important;
-    }
-
-    body.mobile .options-section-card table {
-        word-break: break-all;
     }
 
     body.mobile .modal-dialog .dropdown-menu {

@@ -69,17 +69,6 @@
         flex-grow: 1;
         min-width: 0;
     }
-
-    body.mobile {
-        .modal-dialog {
-            margin: var(--bs-modal-margin);
-            max-width: 80%;
-        }
-
-        .modal-content {
-            height: 100%;
-        }
-    }
 }
 
 /* Wherever the tree is docked beside the note. The breakpoints must match the inverse of
@@ -93,5 +82,16 @@
         overflow: clip;
         border-start-start-radius: var(--center-pane-border-radius, 0);
         background: var(--main-background-color);
+    }
+
+    body.mobile {
+        .modal-dialog {
+            margin: var(--bs-modal-margin);
+            max-width: 80%;
+        }
+
+        .modal-content {
+            height: 100%;
+        }
     }
 }

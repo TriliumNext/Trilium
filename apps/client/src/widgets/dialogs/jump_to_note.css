@@ -1,10 +1,6 @@
 .jump-to-note-dialog .modal-dialog {
     max-width: 900px;
     width: 90%;
-
-    body.mobile & {
-        height: 100vh;
-    }
 }
 
 .jump-to-note-dialog .modal-header {
@@ -36,9 +32,9 @@
 
 /*
  * A fixed height, so the dialog keeps its size as the results change: the list's cap above plus
- * room for the footer, which stays at the bottom. On mobile the dialog fills the screen instead.
+ * room for the footer, which stays at the bottom. On a phone the dialog fills the screen instead.
  */
-body.desktop .jump-to-note-results {
+:is(body.desktop, .mobile-layout.tablet) .jump-to-note-results {
     display: flex;
     flex-direction: column;
     height: calc(80vh - 150px);
@@ -133,8 +129,12 @@ body.desktop .jump-to-note-dialog.wide {
     }
 }
 
-@media (max-width: 991px) {
+@media (max-width: 743px), (max-height: 599px) {
     body.mobile .jump-to-note-dialog {
+        .modal-dialog {
+            height: 100vh;
+        }
+
         .modal-header {
             padding-bottom: 0.75rem !important;
         }

@@ -342,104 +342,108 @@ body.mobile.ios {
             scroll-padding-top: var(--mobile-title-row-height);
         }
 
-        .modal-dialog:not(.modal-dialog-full-page-on-mobile) > .modal-content {
-            border: 0;
-            border-radius: var(--mobile-sheet-radius) var(--mobile-sheet-radius) 0 0;
-        }
-
-        /* The blur goes on `.modal-dialog`: WebKit draws a scroller's `backdrop-filter` without its
-           rounded corners. */
-        .modal-dialog:not(.modal-dialog-full-page-on-mobile, .modal-dialog-tall) {
-            --mobile-sheet-bottom-radius: var(--mobile-sheet-corner-radius);
-            bottom: var(--mobile-sheet-margin);
-            width: calc(100% - 2 * var(--mobile-sheet-margin));
-            border-radius: var(--mobile-sheet-radius) var(--mobile-sheet-radius) var(--mobile-sheet-bottom-radius) var(--mobile-sheet-bottom-radius);
-            background: var(--glass-background);
-            backdrop-filter: var(--dropdown-backdrop-filter);
-            box-shadow: var(--glass-shadow);
-
-            > .modal-content {
-                border-radius: inherit;
-                background: transparent !important;
-                box-shadow: none;
+        /* Dialogs are sheets on a phone only. The breakpoint must match `STACKED_TREE_LAYOUT` in
+           services/utils.ts. */
+        @media (max-width: 743px), (max-height: 599px) {
+            .modal-dialog:not(.modal-dialog-full-page-on-mobile) > .modal-content {
+                border: 0;
+                border-radius: var(--mobile-sheet-radius) var(--mobile-sheet-radius) 0 0;
             }
 
-            .modal-footer {
-                padding-bottom: 16px;
-                background: transparent;
-            }
-        }
+            /* The blur goes on `.modal-dialog`: WebKit draws a scroller's `backdrop-filter` without its
+               rounded corners. */
+            .modal-dialog:not(.modal-dialog-full-page-on-mobile, .modal-dialog-tall) {
+                --mobile-sheet-bottom-radius: var(--mobile-sheet-corner-radius);
+                bottom: var(--mobile-sheet-margin);
+                width: calc(100% - 2 * var(--mobile-sheet-margin));
+                border-radius: var(--mobile-sheet-radius) var(--mobile-sheet-radius) var(--mobile-sheet-bottom-radius) var(--mobile-sheet-bottom-radius);
+                background: var(--glass-background);
+                backdrop-filter: var(--dropdown-backdrop-filter);
+                box-shadow: var(--glass-shadow);
 
-        /* Each button after the title is a 44px circle with the 8px margin from dialogs.css. */
-        .modal .modal-header {
-            --modal-header-trailing-width: 52px;
-            padding-block: 12px !important;
-
-            &:has(> .modal-title:nth-last-child(3)) {
-                --modal-header-trailing-width: 104px;
-            }
-
-            &:has(> .modal-title:nth-last-child(4)) {
-                --modal-header-trailing-width: 156px;
-            }
-
-            .modal-title,
-            .tn-master-detail-title {
-                color: var(--main-text-color);
-                font-weight: 600;
-                text-align: center;
-            }
-
-            .modal-title {
-                display: -webkit-box;
-                padding-inline-start: var(--modal-header-trailing-width);
-                overflow: hidden;
-                -webkit-box-orient: vertical;
-                -webkit-line-clamp: 2;
-                line-clamp: 2;
-            }
-
-            .tn-master-detail-icon {
-                display: none;
-            }
-
-            /* The close button follows the master-detail header; the back button, 44px with an 8px
-               gap, takes its width. */
-            .tn-master-detail-header {
-                padding-inline-start: 52px;
-
-                &:has(> button.icon-action, > .note-panel-header-slot:not([hidden], :empty)) {
-                    padding-inline-start: 0;
+                > .modal-content {
+                    border-radius: inherit;
+                    background: transparent !important;
+                    box-shadow: none;
                 }
 
-                button.icon-action {
-                    --icon-button-size: 44px;
-                    --icon-button-icon-ratio: 0.55;
-                    --icon-button-color: var(--main-text-color);
-                    --icon-button-hover-color: var(--main-text-color);
-                    --icon-button-hover-background: var(--glass-background);
+                .modal-footer {
+                    padding-bottom: 16px;
+                    background: transparent;
+                }
+            }
+
+            /* Each button after the title is a 44px circle with the 8px margin from dialogs.css. */
+            .modal .modal-header {
+                --modal-header-trailing-width: 52px;
+                padding-block: 12px !important;
+
+                &:has(> .modal-title:nth-last-child(3)) {
+                    --modal-header-trailing-width: 104px;
+                }
+
+                &:has(> .modal-title:nth-last-child(4)) {
+                    --modal-header-trailing-width: 156px;
+                }
+
+                .modal-title,
+                .tn-master-detail-title {
+                    color: var(--main-text-color);
+                    font-weight: 600;
+                    text-align: center;
+                }
+
+                .modal-title {
+                    display: -webkit-box;
+                    padding-inline-start: var(--modal-header-trailing-width);
+                    overflow: hidden;
+                    -webkit-box-orient: vertical;
+                    -webkit-line-clamp: 2;
+                    line-clamp: 2;
+                }
+
+                .tn-master-detail-icon {
+                    display: none;
+                }
+
+                /* The close button follows the master-detail header; the back button, 44px with an 8px
+                   gap, takes its width. */
+                .tn-master-detail-header {
+                    padding-inline-start: 52px;
+
+                    &:has(> button.icon-action, > .note-panel-header-slot:not([hidden], :empty)) {
+                        padding-inline-start: 0;
+                    }
+
+                    button.icon-action {
+                        --icon-button-size: 44px;
+                        --icon-button-icon-ratio: 0.55;
+                        --icon-button-color: var(--main-text-color);
+                        --icon-button-hover-color: var(--main-text-color);
+                        --icon-button-hover-background: var(--glass-background);
+                        flex-shrink: 0;
+                        margin-inline-end: 4px;
+                        border-radius: 50%;
+                        background: var(--glass-background);
+                        backdrop-filter: var(--dropdown-backdrop-filter);
+                        box-shadow: var(--glass-edge);
+                    }
+                }
+
+                :is(.btn-close, .help-button, .custom-title-bar-button) {
+                    --modal-control-button-size: 44px;
                     flex-shrink: 0;
-                    margin-inline-end: 4px;
-                    border-radius: 50%;
-                    background: var(--glass-background);
+                    margin-block: 0;
+                    margin-inline-end: 0;
+                    font-size: 22px;
                     backdrop-filter: var(--dropdown-backdrop-filter);
                     box-shadow: var(--glass-edge);
-                }
-            }
 
-            :is(.btn-close, .help-button, .custom-title-bar-button) {
-                --modal-control-button-size: 44px;
-                flex-shrink: 0;
-                margin-block: 0;
-                margin-inline-end: 0;
-                font-size: 22px;
-                backdrop-filter: var(--dropdown-backdrop-filter);
-                box-shadow: var(--glass-edge);
-
-                &,
-                &:hover {
-                    background: var(--glass-background);
-                    color: var(--main-text-color);
+                    &,
+                    &:hover {
+                        background: var(--glass-background);
+                        color: var(--main-text-color);
+                    }
                 }
             }
         }

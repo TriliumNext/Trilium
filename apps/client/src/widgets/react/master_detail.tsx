@@ -6,9 +6,9 @@ import { ComponentChildren, createContext, RefObject } from "preact";
 import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 
 import { onSystemBack } from "../../services/system_back";
-import utils from "../../services/utils";
+import utils, { STACKED_TREE_LAYOUT } from "../../services/utils";
 import ActionButton from "./ActionButton";
-import { useSlide, useWindowSize } from "./hooks/dom";
+import { useMediaQuery, useSlide } from "./hooks/dom";
 import MasterDetailHeader from "./MasterDetailHeader";
 import Modal, { ModalProps } from "./Modal";
 
@@ -19,10 +19,6 @@ import Modal, { ModalProps } from "./Modal";
  * ({@link MasterPane}, {@link DetailPane}) and their styling (master_detail.css), with the header in
  * MasterDetailHeader.tsx — so that three dialogs do not each carry their own copy of the same slide.
  */
-
-/** Mobile viewports at least this wide (tablets) keep a side-by-side layout; narrower ones get the
- *  master-detail flow. */
-export const MASTER_DETAIL_TABLET_MIN_WIDTH = 768;
 
 export interface MobileMasterDetail {
     /** True on narrow mobile viewports where the list and detail collapse into a master-detail flow. */
@@ -44,8 +40,9 @@ export interface MobileMasterDetail {
 export function useMobileMasterDetail(modalRef: RefObject<HTMLElement | null>): MobileMasterDetail {
     const [ mobileView, setMobileView ] = useState<"list" | "page">("list");
     const isMobile = utils.isMobile();
-    const { windowWidth } = useWindowSize();
-    const isMasterDetail = isMobile && windowWidth < MASTER_DETAIL_TABLET_MIN_WIDTH;
+    // A phone, by the breakpoint that also stacks the note tree; a tablet keeps both panes side by side.
+    const isPhone = useMediaQuery(STACKED_TREE_LAYOUT);
+    const isMasterDetail = isMobile && isPhone;
     /** Whether the next change of view slides: a switch does, a reset does not. */
     const slideNext = useRef(false);
     // Outside the master-detail flow both panes are on show, and there is nothing to slide between.
