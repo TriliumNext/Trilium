@@ -1,6 +1,6 @@
 import "./UserAvatar.css";
 
-import { getInitials } from "@triliumnext/commons";
+import { getInitials } from "@triliumnext/commons/src/lib/user_avatar.js";
 import clsx from "clsx";
 
 interface UserAvatarProps {

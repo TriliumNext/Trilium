@@ -931,6 +931,7 @@ function createTextEditor(data: string, root = document.createElement("div")) {
     return {
         getData: vi.fn(() => data),
         setData: vi.fn(),
-        editing: { view: { getDomRoot: () => root } }
+        editing: { view: { getDomRoot: () => root } },
+        plugins: { get: () => ({ isActive: false, isSaver: false, stop: vi.fn() }) }
     } as unknown as CKTextEditor;
 }

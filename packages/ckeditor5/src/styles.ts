@@ -11,6 +11,7 @@ import "ckeditor5/ckeditor5.css";
 import "./theme/blockquote.css";
 import "./theme/content_colors.css";
 import "./theme/code_block_toolbar.css";
+import "./theme/collaboration.css";
 import "./theme/format_painter.css";
 import "./theme/resizable_widgets.css";
 import "./theme/mention.css";

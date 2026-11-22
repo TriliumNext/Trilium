@@ -39,7 +39,7 @@ import {
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
 describe("CollaboratorsBadge", () => {
-    it("shows the avatar of each other user who is editing the note, once", () => {
+    it("shows the avatar of each other user who is editing the note, once", async () => {
         shownNote.contextData = {};
         expect(renderInto(<CollaboratorsBadge />).querySelector(".collaborators-badge")).toBeNull();
 
@@ -52,6 +52,7 @@ describe("CollaboratorsBadge", () => {
         };
         const badge = renderInto(<CollaboratorsBadge />).querySelector(".collaborators-badge");
         expect(badge?.getAttribute("aria-label")).toBe("breadcrumb_badges.collaborators");
+        await vi.waitFor(() => expect(badge?.querySelector(".user-avatar")).not.toBeNull());
         const avatars = Array.from(badge?.querySelectorAll<HTMLElement>(".user-avatar") ?? []);
         expect(avatars.map((avatar) => avatar.textContent)).toEqual([ "AL", "BS" ]);
         expect(avatars.map((avatar) => avatar.parentElement?.title)).toEqual([ "Alice", "Bob Stone" ]);
