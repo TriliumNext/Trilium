@@ -519,6 +519,15 @@ export default class TabRowWidget extends BasicWidget {
             this.layoutTabs();
         }).observe(this.$widget[0]);
 
+        // A mouse switches tabs on press, as browsers do, from here rather than from Draggabilly, which
+        // listens to touch events alone where the window has `ontouchstart`: an iPad's touchpad sends
+        // none.
+        this.$tabContainer[0].addEventListener("pointerdown", (e) => {
+            if (e.pointerType !== "mouse" || e.button !== 0 || !(e.target instanceof Element)) return;
+            const tabEl = e.target.closest(".note-tab-drag-handle")?.closest(".note-tab");
+            if (tabEl) appContext.tabManager.activateTabContext(tabEl.getAttribute("data-ntx-id"));
+        });
+
         this.tabEls.forEach((tabEl) => this.setTabCloseEvent(tabEl));
     }
 
@@ -865,11 +874,8 @@ export default class TabRowWidget extends BasicWidget {
             const activate = () =>
                 appContext.tabManager.activateTabContext(tabEl.getAttribute("data-ntx-id"));
 
-            // A mouse switches tabs on press, as browsers do. A touch switches on release, as a
-            // long press opens the context menu instead.
-            draggabilly.on("pointerDown", (event: PointerEvent) => {
-                if (event.pointerType === "mouse") activate();
-            });
+            // A touch switches on release, as a long press opens the context menu instead. A mouse
+            // switches on press, in `setupEvents()`.
             draggabilly.on("staticClick", (event: PointerEvent) => {
                 if (event.pointerType !== "mouse") activate();
             });
