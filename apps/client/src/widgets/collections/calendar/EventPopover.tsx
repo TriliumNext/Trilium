@@ -208,6 +208,7 @@ function EventSheet({ note, parentNote, isEditable, onClose, onFollowLink }: {
     return (
         <Modal
             className={clsx("calendar-event-sheet", colorClass)}
+            portal
             size="lg"
             title={<TitleRow />}
             modalRef={modalRef}

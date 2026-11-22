@@ -201,6 +201,7 @@ export function CodeMimeTypesModal({ modalShown, setModalShown }: { modalShown: 
     return (
         <Modal
             className="code-mime-types-modal"
+            portal
             title={t("code_mime_types.title")}
             show={modalShown} onHidden={() => setModalShown(false)}
             size="md" scrollable
