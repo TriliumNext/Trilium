@@ -454,8 +454,10 @@ body[dir=rtl] :is(.mobile-navigator-row-icon, .mobile-navigator-current-icon).is
         }
 
         .mobile-navigator-row {
-            margin-inline: 8px;
-            padding-inline: calc(var(--navigator-row-padding) - 8px);
+            gap: 10px;
+            min-height: 40px;
+            margin: 1px 8px;
+            padding: 6px calc(var(--navigator-row-padding) - 8px);
             border-radius: 6px;
 
             @media (hover: hover) {
