@@ -452,5 +452,35 @@ body[dir=rtl] :is(.mobile-navigator-row-icon, .mobile-navigator-current-icon).is
             border-radius: 0;
             background: transparent;
         }
+
+        .mobile-navigator-row {
+            margin-inline: 8px;
+            padding-inline: calc(var(--navigator-row-padding) - 8px);
+            border-radius: 6px;
+
+            @media (hover: hover) {
+                &:hover {
+                    background: var(--left-pane-item-hover-background, var(--hover-item-background-color));
+                }
+            }
+        }
+
+        .mobile-navigator-row.is-active {
+            isolation: isolate;
+            color: var(--left-pane-item-selected-color, var(--active-item-text-color));
+
+            &:hover {
+                background: transparent;
+            }
+
+            &::before {
+                inset: 0;
+                z-index: -1;
+                width: auto;
+                border-radius: 6px;
+                background: var(--left-pane-item-selected-background, var(--active-item-background-color));
+                box-shadow: var(--left-pane-item-selected-shadow, none);
+            }
+        }
     }
 }
