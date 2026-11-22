@@ -262,7 +262,7 @@
     }
 
     @media (max-width: 991px) {
-        body.mobile & {
+        body.mobile #root-widget:not(.tablet) & {
             flex-basis: 150px;
         }
     }

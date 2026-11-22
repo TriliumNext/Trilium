@@ -20,7 +20,7 @@
 }
 
 @media (max-width: 991px) {
-    body.mobile .scrolling-container {
+    body.mobile #root-widget:not(.tablet) .scrolling-container {
         --content-margin-inline: 8px;
     }
 }
