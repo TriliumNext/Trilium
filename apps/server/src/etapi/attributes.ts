@@ -63,7 +63,9 @@ function register(router: Router) {
         if (attribute.type === "label") {
             eu.validateAndPatch(attribute, req.body, ALLOWED_PROPERTIES_FOR_PATCH_LABEL);
         } else if (attribute.type === "relation") {
-            eu.getAndCheckNote(req.body.value);
+            if (req.body.value !== undefined) {
+                eu.getAndCheckNote(req.body.value);
+            }
 
             eu.validateAndPatch(attribute, req.body, ALLOWED_PROPERTIES_FOR_PATCH_RELATION);
         }

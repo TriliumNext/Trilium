@@ -235,9 +235,9 @@ describe("Permissions API", () => {
         });
 
         it("refuses access to a whole home and to the Users note, but not to a note in a home", () => {
-            const memberId = cls.init(() => user_service.createUser(`access-home-${Date.now()}`, null, false));
-            const home = cls.init(() => user_homes.ensureUserHome(memberId, "access-home"));
-            const inHome = cls.init(() => note_service.createNewNote({
+            const memberId = cls.initAsSystem(() => user_service.createUser(`access-home-${Date.now()}`, null, false));
+            const home = cls.initAsSystem(() => user_homes.ensureUserHome(memberId, "access-home"));
+            const inHome = cls.initAsSystem(() => note_service.createNewNote({
                 parentNoteId: home.noteId, ownerId: memberId, title: "in home", content: "", type: "text"
             }).note);
             const member = { userId: memberId };

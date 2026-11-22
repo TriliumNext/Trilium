@@ -3,7 +3,7 @@ import { Writable } from "node:stream";
 import { HttpError } from "../errors";
 import type { ResponseLocals } from "../http_interface";
 import * as routes from "../routes";
-import { getContext } from "../services/context";
+import { getContext, initAsSystem } from "../services/context";
 import entityChanges from "../services/entity_changes";
 import { getSql } from "../services/sql/index";
 
@@ -199,7 +199,7 @@ export class CoreApiTester {
         const apiRoute = (method: HttpMethod, path: string, handler: Handler) =>
             this.add(method, path, async (req) => {
                 const mockRes = createMockResponse();
-                const result = await getContext().init(() => {
+                const result = await openScope(req)(() => {
                     seedContext(req);
                     return getSql().transactional(() => handler(req, mockRes));
                 });
@@ -208,7 +208,7 @@ export class CoreApiTester {
 
         const asyncApiRoute = (method: HttpMethod, path: string, handler: Handler) =>
             this.add(method, path, async (req) => {
-                const result = await getContext().init(async () => {
+                const result = await openScope(req)(async () => {
                     seedContext(req);
                     return await handler(req);
                 });
@@ -226,11 +226,11 @@ export class CoreApiTester {
                     const mockRes = createMockResponse();
                     const invoke = () => handler(req, mockRes);
                     const result = transactional
-                        ? await getContext().init(() => {
+                        ? await openScope(req)(() => {
                             seedContext(req);
                             return getSql().transactional(invoke);
                         })
-                        : await getContext().init(async () => {
+                        : await openScope(req)(async () => {
                             seedContext(req);
                             return await invoke();
                         });
@@ -346,6 +346,14 @@ export class CoreApiTester {
         return this.request<T>("delete", path, opts);
     }
 
+}
+
+/**
+ * Picks the scope a request runs in, the way `route_api.ts` does: a request without a user acts for
+ * the instance, as on an instance without authentication.
+ */
+function openScope(req: ApiRequest): <T>(callback: () => T) => T {
+    return req.session?.userId ? (callback) => getContext().init(callback) : initAsSystem;
 }
 
 /**

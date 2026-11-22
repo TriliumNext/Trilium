@@ -155,12 +155,18 @@ export default function EditableText({
             if (editor && note) {
                 setEditorNoteId(editor, note.noteId);
             }
-            if (editor && note && isCollaboratingOn(editor.plugins.get("Collaboration"), note.noteId)) {
-                // The session holds the content, and the saved one that arrives here trails it.
+            const collaboration = editor?.plugins.get("Collaboration");
+            if (editor && note && collaboration && isCollaboratingOn(collaboration, note.noteId)) {
+                // The session holds the content, and what its saver saved trails it. The saver
+                // itself only receives what was written past the session, such as a restored
+                // revision, and sets it as a local change, which the session sends to everyone.
+                if (!isSavedByAnotherEditor(collaboration) && getNoteData(editor) !== newContent) {
+                    editor.setData(newContent);
+                }
                 return;
             }
-            if (editor) {
-                stopCollaboration(editor.plugins.get("Collaboration"));
+            if (collaboration) {
+                stopCollaboration(collaboration);
             }
             editor?.setData(newContent);
             if (editor && note) {

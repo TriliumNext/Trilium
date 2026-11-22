@@ -7,6 +7,7 @@ import becca from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
 import { type ByteRange, parseRangeHeader } from "../routes/partial_content.js";
 import attributeService from "../services/attributes.js";
+import { initAsSystem } from "../services/context.js";
 import { getCrypto } from "../services/encryption/crypto.js";
 import searchService from "../services/search/services/search.js";
 import SearchContext from "../services/search/search_context.js";
@@ -67,6 +68,8 @@ export function getShareRoute(path: ShareRoutePath): ShareRoute {
 /**
  * Runs a share handler, turning the replies its access checks raise into the handler's own result.
  * Every transport adapter dispatches through this rather than calling {@link ShareRoute.handle}.
+ * A visitor is not a user, and the `#share` labels decide what is published, so the handler runs
+ * as a system scope.
  */
 export function handleShareRequest(route: ShareRoute, req: ShareRequest): ShareReply {
     if (!isShareReady()) {
@@ -78,9 +81,11 @@ export function handleShareRequest(route: ShareRoute, req: ShareRequest): ShareR
     }
 
     try {
-        shacaLoader.ensureLoad();
+        return initAsSystem(() => {
+            shacaLoader.ensureLoad();
 
-        return route.handle(req);
+            return route.handle(req);
+        });
     } catch (e: unknown) {
         if (e instanceof ShareReplyError) {
             return e.reply;

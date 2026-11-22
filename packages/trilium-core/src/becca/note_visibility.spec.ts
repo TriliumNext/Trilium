@@ -1,17 +1,19 @@
 import { USERS_NOTE_ID } from "@triliumnext/commons";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { NotFoundError } from "../errors.js";
+import { ForbiddenError, NotFoundError } from "../errors.js";
 import cloningService from "../services/cloning.js";
 import * as cls from "../services/context.js";
 import noteService from "../services/notes.js";
 import permissionService from "../services/permission_service.js";
 import searchService from "../services/search/services/search.js";
 import { getSql } from "../services/sql/index.js";
+import TaskContext from "../services/task_context.js";
 import userHomes, { getHomeNoteId } from "../services/user_homes.js";
 import userService from "../services/user_service.js";
 import dateUtils from "../services/utils/date.js";
 import becca from "./becca.js";
+import { load } from "./becca_loader.js";
 import type BNote from "./entities/bnote.js";
 
 /** Standalone has no users, so every scope there acts for the instance and nothing is filtered. */
@@ -120,6 +122,10 @@ describe.skipIf(isBrowserRuntime)("note visibility", () => {
         function visibleOf() {
             return [ f.secret, f.adminNote, f.teamDoc, f.project ].map((note) => becca.getNote(note.noteId) === note);
         }
+    });
+
+    it("refuses a read in a scope that acts for no user", () => {
+        expect(() => cls.init(() => becca.getNote(f.secret.noteId))).toThrow("acts for no user");
     });
 
     it("reaches a note shared with a group through its members only", () => {
@@ -273,6 +279,187 @@ describe.skipIf(isBrowserRuntime)("note visibility", () => {
         expect(found).not.toContain(f.secret.noteId);
         expect(found).not.toContain(f.adminNote.noteId);
         expect(found).not.toContain(f.template.noteId);
+    });
+});
+
+/**
+ * Bob shares one project with Alice to read and another to write. A note of Alice's is the target of a
+ * relation in a note of Bob's that she cannot see.
+ */
+interface WriteFixture {
+    aliceId: string;
+    bobId: string;
+    aliceHome: BNote;
+    aliceNote: BNote;
+    relationTarget: BNote;
+    readProject: BNote;
+    readSpec: BNote;
+    writeProject: BNote;
+    writeSpec: BNote;
+    bobSecret: BNote;
+}
+
+describe.skipIf(isBrowserRuntime)("note write access", () => {
+    let w: WriteFixture;
+
+    beforeAll(() => {
+        w = cls.initAsSystem(() => {
+            const suffix = Date.now();
+            const aliceId = userService.createUser(`write-alice-${suffix}`, null, false);
+            const bobId = userService.createUser(`write-bob-${suffix}`, null, false);
+            const aliceHome = userHomes.ensureUserHome(aliceId, `write-alice-${suffix}`);
+            const bobHome = userHomes.ensureUserHome(bobId, `write-bob-${suffix}`);
+            const aliceNote = createNote(aliceHome.noteId, aliceId, "write alice note");
+            const readProject = createNote(bobHome.noteId, bobId, "write read project");
+            const readSpec = createNote(readProject.noteId, bobId, "write read spec");
+            const writeProject = createNote(bobHome.noteId, bobId, "write write project");
+            const writeSpec = createNote(writeProject.noteId, bobId, "write write spec");
+            const bobSecret = createNote(bobHome.noteId, bobId, "write bob secret");
+            const relationTarget = createNote(aliceHome.noteId, aliceId, "write relation target");
+            bobSecret.addRelation("writePointsAt", relationTarget.noteId);
+            permissionService.setUserAccess(readProject.noteId, aliceId, false);
+            permissionService.setUserAccess(writeProject.noteId, aliceId, true);
+            return { aliceId, bobId, aliceHome, aliceNote, relationTarget, readProject, readSpec, writeProject, writeSpec, bobSecret };
+        });
+    });
+
+    it("refuses a member every change to a note they can only read, and keeps it as it was", () => {
+        const { readProject, readSpec } = w;
+        const writes: [ string, () => unknown ][] = [
+            [ "title", () => { readSpec.title = "renamed"; readSpec.save(); } ],
+            [ "content", () => readSpec.setContent("<p>changed</p>") ],
+            [ "label", () => readSpec.addLabel("writeLabel") ],
+            [ "attachment", () => readSpec.saveAttachment({ role: "file", mime: "text/plain", title: "a", content: "x" }) ],
+            [ "revision", () => readSpec.saveRevision() ],
+            [ "child", () => noteService.createNewNote({ parentNoteId: readProject.noteId, title: "child", content: "", type: "text" }) ],
+            [ "clone", () => cloningService.cloneNoteToParentNote(w.aliceNote.noteId, readProject.noteId) ],
+            [ "delete", () => becca.getBranchFromChildAndParent(readSpec.noteId, readProject.noteId)?.deleteBranch() ]
+        ];
+
+        const allowed = writes.filter(([ , write ]) => {
+            try {
+                asUser(w.aliceId, () => getSql().transactional(write));
+                return true;
+            } catch (e: unknown) {
+                return !(e instanceof ForbiddenError);
+            }
+        }).map(([ name ]) => name);
+        expect(allowed).toEqual([]);
+
+        // A rollback that recorded entity changes reloads the Becca, as `core_init.ts` does.
+        cls.initAsSystem(() => load());
+        expect(cls.initAsSystem(() => getSql().getRow(
+            "SELECT title, isDeleted, (SELECT COUNT(*) FROM attributes WHERE noteId = notes.noteId AND isDeleted = 0) AS attributes FROM notes WHERE noteId = ?",
+            [ readSpec.noteId ]
+        ))).toEqual({ title: "write read spec", isDeleted: 0, attributes: 0 });
+        expect(cls.initAsSystem(() => becca.getNoteOrThrow(readProject.noteId).getChildNotes().map((note) => note.noteId)))
+            .toEqual([ readSpec.noteId ]);
+    });
+
+    it("lets a member change a note they may write, their own notes and the system notes", () => {
+        const { writeProject, writeSpec, aliceNote } = w;
+        asUser(w.aliceId, () => getSql().transactional(() => {
+            writeSpec.title = "write write spec, edited";
+            writeSpec.save();
+            writeSpec.setContent("<p>edited</p>");
+            writeSpec.addLabel("writeLabel");
+            const { note: child } = noteService.createNewNote({ parentNoteId: writeProject.noteId, title: "write child", content: "", type: "text" });
+            child.addLabel("writeChildLabel");
+            aliceNote.setContent("<p>mine</p>");
+            expect(cloningService.cloneNoteToParentNote(aliceNote.noteId, "_lbBookmarks").success).toBe(true);
+            expect(becca.getBranchFromChildAndParent(child.noteId, writeProject.noteId)?.deleteBranch()).toBe(true);
+        }));
+
+        expect(cls.initAsSystem(() => writeSpec.getContent())).toBe("<p>edited</p>");
+        expect(cls.initAsSystem(() => writeSpec.hasLabel("writeLabel"))).toBe(true);
+    });
+
+    it("refuses a member a clone of a note they can only read, even into a note they own", () => {
+        const { aliceId, aliceHome, readSpec } = w;
+        for (const target of [ aliceHome.noteId, w.writeProject.noteId ]) {
+            expect(() => asUser(aliceId, () => getSql().transactional(() =>
+                cloningService.cloneNoteToParentNote(readSpec.noteId, target))), target).toThrow(ForbiddenError);
+            expect(cls.initAsSystem(() => becca.getBranchFromChildAndParent(readSpec.noteId, target)), target).toBeFalsy();
+            expect(asUser(aliceId, () => becca.getNoteOrThrow(readSpec.noteId).getParentNotes().map((note) => note.noteId)), target)
+                .toEqual([ w.readProject.noteId ]);
+        }
+    });
+
+    it("keeps nothing of a refused change in the Becca, in a transaction or not", () => {
+        const { aliceId, readSpec } = w;
+        const changeType = () => {
+            const note = becca.getNoteOrThrow(readSpec.noteId);
+            note.type = "code";
+            note.mime = "text/plain";
+            note.save();
+        };
+
+        for (const [ name, run ] of [ [ "transaction", () => getSql().transactional(changeType) ], [ "no transaction", changeType ] ] as const) {
+            expect(() => asUser(aliceId, run), name).toThrow(ForbiddenError);
+            expect(cls.initAsSystem(() => becca.getNoteOrThrow(readSpec.noteId).type), name).toBe("text");
+        }
+    });
+
+    it("removes and restores the relations others hold to a note a member deletes, though the member cannot write them", () => {
+        const relation = cls.initAsSystem(() => w.bobSecret.getRelation("writePointsAt"));
+        expect(relation).toBeTruthy();
+        const isRelationDeleted = () => cls.initAsSystem(() => getSql().getValue<number>(
+            "SELECT isDeleted FROM attributes WHERE attributeId = ?", [ relation?.attributeId ]
+        ));
+
+        const deleted = asUser(w.aliceId, () => getSql().transactional(() =>
+            becca.getBranchFromChildAndParent(w.relationTarget.noteId, w.aliceHome.noteId)?.deleteBranch()));
+        expect(deleted).toBe(true);
+        expect(isRelationDeleted()).toBe(1);
+
+        const restored = asUser(w.aliceId, () => getSql().transactional(() =>
+            noteService.undeleteNote(w.relationTarget.noteId, new TaskContext("write-undelete", "undeleteNotes", null))));
+        expect(restored).toMatchObject({ undeleted: true });
+        expect(isRelationDeleted()).toBe(0);
+    });
+
+    it("restores a member's own orphaned note into a note they write, and no one else's", () => {
+        const { aliceId, bobId, aliceHome } = w;
+        const [ ownParent, ownChild, bobParent, bobChild ] = cls.initAsSystem(() => {
+            const ownParent = createNote(aliceHome.noteId, aliceId, "write orphan parent");
+            const bobParent = createNote(w.writeProject.noteId, bobId, "write bob orphan parent");
+            return [ ownParent, createNote(ownParent.noteId, aliceId, "write orphan child"),
+                bobParent, createNote(bobParent.noteId, bobId, "write bob orphan child") ];
+        });
+        for (const parent of [ ownParent, bobParent ]) {
+            cls.initAsSystem(() => getSql().transactional(() =>
+                becca.getBranchFromChildAndParent(parent.noteId, parent.getParentNotes()[0].noteId)?.deleteBranch()));
+        }
+
+        const restore = (noteId: string) => asUser(aliceId, () => getSql().transactional(() =>
+            noteService.undeleteNote(noteId, new TaskContext("write-orphan", "undeleteNotes", null),
+                { fallbackParentNoteId: aliceHome.noteId })));
+
+        expect(restore(ownChild.noteId)).toEqual({ undeleted: true, restoredToFallbackParent: true });
+        expect(asUser(aliceId, () => becca.getNoteOrThrow(ownChild.noteId).getParentNotes().map((note) => note.noteId)))
+            .toEqual([ aliceHome.noteId ]);
+
+        expect(restore(bobChild.noteId)).toEqual({ undeleted: false, restoredToFallbackParent: false });
+        expect(cls.initAsSystem(() => getSql().getValue("SELECT isDeleted FROM notes WHERE noteId = ?", [ bobChild.noteId ])))
+            .toBe(1);
+    });
+
+    it("duplicates a note a member can read into a note they write, as theirs, and nowhere else", () => {
+        const { aliceId, aliceHome, readProject, readSpec, writeProject, writeSpec } = w;
+        const duplicate = (noteId: string, parentNoteId: string) => asUser(aliceId, () => getSql().transactional(() =>
+            noteService.duplicateSubtree(noteId, parentNoteId).note.noteId));
+
+        for (const [ source, target ] of [ [ writeSpec, writeProject ], [ readSpec, aliceHome ] ]) {
+            const copyId = duplicate(source.noteId, target.noteId);
+            expect(cls.initAsSystem(() => becca.getNoteOrThrow(copyId).ownerId), source.title).toBe(aliceId);
+            expect(asUser(aliceId, () => becca.getNoteOrThrow(copyId).getParentNotes().map((note) => note.noteId)), source.title)
+                .toEqual([ target.noteId ]);
+        }
+
+        const childCount = () => cls.initAsSystem(() => becca.getNoteOrThrow(readProject.noteId).getChildNotes().length);
+        const before = childCount();
+        expect(() => duplicate(readSpec.noteId, readProject.noteId)).toThrow(ForbiddenError);
+        expect(childCount()).toBe(before);
     });
 });
 

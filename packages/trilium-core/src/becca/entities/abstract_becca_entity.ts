@@ -53,6 +53,27 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
         throw new ValidationError(`Cannot ${action} ${constructorData.entityName} '${(this as any)[constructorData.primaryKeyName]}': it is a virtual entity (provided by a virtual note provider) and is read-only.`);
     }
 
+    /**
+     * The note whose write access a change to this entity needs, or `null` for an entity that belongs
+     * to no note, such as an option or a token.
+     */
+    protected getWriteAccessNoteId(_action: "save" | "delete"): string | null {
+        return null;
+    }
+
+    /**
+     * @throws ForbiddenError when the current scope cannot write the note this entity belongs to.
+     * Deleting what belongs to a note that `BBranch.deleteBranch()` is deleting needs no check of its
+     * own: the branch was checked, and removing it can take the note out of the deleting user's view.
+     */
+    protected ensureWritable(action: "save" | "delete") {
+        const noteId = this.getWriteAccessNoteId(action);
+        if (!noteId || (action === "delete" && this.becca.allNotes[noteId]?.isBeingDeleted)) {
+            return;
+        }
+        this.becca.ensureCanWriteNote(noteId);
+    }
+
     protected beforeSaving(opts?: {}) {
         const constructorData = this.constructor as unknown as ConstructorData<T>;
         if (!(this as any)[constructorData.primaryKeyName]) {
@@ -124,6 +145,7 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
      */
     save(opts?: {}): this {
         this.ensureNotVirtual("save");
+        this.ensureWritable("save");
 
         const constructorData = this.constructor as unknown as ConstructorData<T>;
         const entityName = constructorData.entityName;
@@ -164,6 +186,7 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
 
     protected _setContent(content: string | Uint8Array, opts: ContentOpts = {}) {
         this.ensureNotVirtual("set content of");
+        this.ensureWritable("save");
 
         // client code asks to save entity even if blobId didn't change (something else was changed)
         opts.forceSave = !!opts.forceSave;
@@ -317,6 +340,7 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
      */
     markAsDeleted(deleteId: string | null = null) {
         this.ensureNotVirtual("delete");
+        this.ensureWritable("delete");
 
         const constructorData = this.constructor as unknown as ConstructorData<T>;
         const entityId = (this as any)[constructorData.primaryKeyName];
@@ -346,6 +370,7 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
 
     markAsDeletedSimple() {
         this.ensureNotVirtual("delete");
+        this.ensureWritable("delete");
 
         const constructorData = this.constructor as unknown as ConstructorData<T>;
         const entityId = (this as any)[constructorData.primaryKeyName];

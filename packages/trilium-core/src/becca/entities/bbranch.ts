@@ -66,6 +66,14 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
     }
 
     override init() {
+        // A new branch also needs write access to its note: below a note the member owns, a clone of
+        // a note they can only read would become writable. Checked before the branch joins the Becca,
+        // where the view would already count the note as writable through it. A note outside the
+        // Becca is a deleted note that `notes.undeleteNote()` restores after checking its owner.
+        if (!this.branchId && this.noteId in this.becca.allNotes) {
+            this.becca.ensureCanWriteNote(this.noteId);
+        }
+
         if (this.branchId) {
             this.becca.allBranches[this.branchId] = this;
         }
@@ -180,6 +188,10 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
         const notDeletedBranches = note.allParentBranches.filter((branch) => !branch.isWeak);
 
         if (notDeletedBranches.length === 0) {
+            // Set before the children go: removing this branch already rebuilt the views, and the
+            // write checks of what follows rely on it (`AbstractBeccaEntity.ensureWritable()`).
+            this.becca.allNotes[note.noteId].isBeingDeleted = true;
+
             for (const weakBranch of note.allParentBranches) {
                 weakBranch.markAsDeleted(deleteId);
             }
@@ -191,8 +203,6 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
             // first delete children and then parent - this will show up better in recent changes
 
             getLog().info(`Deleting note '${note.noteId}'`);
-
-            this.becca.allNotes[note.noteId].isBeingDeleted = true;
 
             for (const attribute of note.getOwnedAttributes().slice()) {
                 attribute.markAsDeleted(deleteId);
@@ -212,6 +222,11 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
         }
         return false;
 
+    }
+
+    /** A branch belongs to its parent: creating, moving or removing one changes the parent's children. */
+    protected override getWriteAccessNoteId() {
+        return this.parentNoteId;
     }
 
     override beforeSaving() {

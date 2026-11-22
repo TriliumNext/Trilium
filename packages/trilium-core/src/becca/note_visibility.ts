@@ -21,7 +21,8 @@ export const SHARED_WITH_ME_NOTE_ID = "_sharedWithMe";
  * What one member sees of the Becca. Admins and system scopes have no view: they read the Becca
  * as it is. A member sees `root`, the `_` system notes, and every note at or below a note they own
  * or a note shared with them or with one of their groups, as in `permission_service`. The owner of
- * a note therefore sees what others add below it.
+ * a note therefore sees what others add below it. A member writes the notes they own, every note at
+ * or below a note they own or were granted write access to, and the `_` system notes.
  */
 export class NoteView {
     readonly notes: Record<string, BNote>;
@@ -30,6 +31,7 @@ export class NoteView {
     readonly childParentToBranch: Record<string, BBranch>;
 
     private readonly visibleNoteIds: Set<string>;
+    private readonly writableNoteIds: Set<string>;
     private readonly homeNoteId: string;
     private readonly homeBranch: BBranch | null;
     private readonly sharedWithMe: BNote | null;
@@ -37,8 +39,10 @@ export class NoteView {
     private readonly sharedWithMeBranches = new Map<string, BBranch>();
     private noteSet: NoteSet | null = null;
 
-    constructor(private readonly becca: Becca, userId: string) {
-        this.visibleNoteIds = collectVisibleNoteIds(becca, userId);
+    constructor(private readonly becca: Becca, private readonly userId: string) {
+        const noteIds = collectNoteIds(becca, userId);
+        this.visibleNoteIds = noteIds.visible;
+        this.writableNoteIds = noteIds.writable;
         this.homeNoteId = `${HOME_NOTE_ID_PREFIX}${userId}`;
 
         const home = becca.allNotes[this.homeNoteId];
@@ -63,6 +67,15 @@ export class NoteView {
 
     canSeeNote(noteId: string) {
         return this.visibleNoteIds.has(noteId) || (noteId === SHARED_WITH_ME_NOTE_ID && !!this.sharedWithMe);
+    }
+
+    /**
+     * Whether the member can change the note: its row, content, attributes, attachments and
+     * revisions, and the branches below it. A note they own counts before the view is rebuilt.
+     */
+    canWriteNote(noteId: string) {
+        return noteId.startsWith("_") || this.writableNoteIds.has(noteId)
+            || this.becca.allNotes[noteId]?.ownerId === this.userId;
     }
 
     canSeeBranch(branch: BBranch) {
@@ -145,8 +158,8 @@ export class NoteView {
 }
 
 /**
- * The view the current scope reads the Becca through, or `null` for an admin, a system scope, or a
- * scope without a user.
+ * The view the current scope reads the Becca through, or `null` for an admin or a system scope.
+ * Throws for a scope that acts for no user, once members exist.
  */
 export function getNoteView(becca: Becca): NoteView | null {
     if (!hasMembers(version) || isSystem()) {
@@ -155,7 +168,7 @@ export function getNoteView(becca: Becca): NoteView | null {
 
     const userId = getUserId();
     if (!userId) {
-        return null;
+        throw new Error("The Becca was read in a scope that acts for no user and is not a system scope.");
     }
 
     let cached = viewsByUser.get(userId);
@@ -197,41 +210,51 @@ function hasMembers(version: number) {
     return members.exist;
 }
 
-function collectVisibleNoteIds(becca: Becca, userId: string) {
+/** The notes a member sees and the notes they write: the subtrees below their own notes and their grants. */
+function collectNoteIds(becca: Becca, userId: string) {
     const visible = new Set<string>([ "root" ]);
-    const pending: string[] = [];
+    const owned: string[] = [];
     for (const [ noteId, note ] of Object.entries(becca.allNotes)) {
         if (note.ownerId === userId) {
-            pending.push(noteId);
+            owned.push(noteId);
         } else if (noteId.startsWith("_")) {
             visible.add(noteId);
         }
     }
 
-    const grantedNoteIds = getSql().getColumn<string>(
-        `SELECT noteId FROM note_permissions
+    const grants = getSql().getRows<{ noteId: string; canWrite: number }>(
+        `SELECT noteId, canWrite FROM note_permissions
           WHERE (canRead = 1 OR canWrite = 1)
             AND (userId = ? OR groupId IN (SELECT groupId FROM user_group_members WHERE userId = ?))`,
         [ userId, userId ]
-    );
-    pending.push(...grantedNoteIds.filter((noteId) => noteId in becca.allNotes));
+    ).filter((grant) => grant.noteId in becca.allNotes);
 
-    const descended = new Set<string>();
+    const writable = collectSubtrees(becca, [ ...owned, ...grants.filter((grant) => grant.canWrite).map((grant) => grant.noteId) ]);
+    for (const noteId of collectSubtrees(becca, [ ...owned, ...grants.map((grant) => grant.noteId) ])) {
+        visible.add(noteId);
+    }
+
+    return { visible, writable };
+}
+
+/** The notes at or below `noteIds`, across every branch. */
+function collectSubtrees(becca: Becca, noteIds: string[]) {
+    const pending = [ ...noteIds ];
+    const collected = new Set<string>();
     while (pending.length) {
         const noteId = pending.pop() as string;
-        if (descended.has(noteId)) {
+        if (collected.has(noteId)) {
             continue;
         }
 
-        descended.add(noteId);
-        visible.add(noteId);
+        collected.add(noteId);
         /* v8 ignore next -- every pending note ID comes from becca.allNotes or a note's allChildren. */
         for (const child of becca.allNotes[noteId]?.allChildren ?? []) {
             pending.push(child.noteId);
         }
     }
 
-    return visible;
+    return collected;
 }
 
 /** Reads the role directly: `user_service` goes through options, which would close an import cycle with the Becca. */

@@ -181,6 +181,10 @@ class BRevision extends AbstractBeccaEntity<BRevision> {
         }
     }
 
+    protected override getWriteAccessNoteId() {
+        return this.noteId;
+    }
+
     override beforeSaving() {
         if (this.becca.allNotes[this.noteId]?.isVirtual) {
             throw new ValidationError(`Cannot save a revision of note '${this.noteId}': virtual notes have no revisions.`);

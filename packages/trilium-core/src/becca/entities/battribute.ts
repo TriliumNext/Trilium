@@ -183,6 +183,18 @@ class BAttribute extends AbstractBeccaEntity<BAttribute> {
         return !(this.attributeId in this.becca.allAttributes);
     }
 
+    /**
+     * An attribute belongs to the note that holds it. A relation to a note that is being deleted or
+     * restored goes and comes back with it, though its note can be one the user cannot write.
+     */
+    protected override getWriteAccessNoteId(action: "save" | "delete") {
+        const target = this.type === "relation" ? this.becca.allNotes[this.value] : undefined;
+        if (action === "delete" ? target?.isBeingDeleted : target?.isBeingRestored) {
+            return null;
+        }
+        return this.noteId;
+    }
+
     override beforeSaving(opts: SavingOpts = {}) {
         // Virtual notes (e.g. the in-app help) are not user-customizable, so no persisted
         // attribute may be attached to them. (Relations *pointing to* virtual notes from

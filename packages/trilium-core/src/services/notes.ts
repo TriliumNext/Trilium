@@ -253,6 +253,10 @@ function getAndValidateParent(params: GetValidateParams) {
         throw new ValidationError(`Parent note '${params.parentNoteId}' was not found.`);
     }
 
+    // Before the note row is written: a refusal from the branch alone would roll back a note and
+    // reload the Becca.
+    becca.ensureCanWriteNote(parentNote.noteId);
+
     if (parentNote.type === "launcher" && parentNote.noteId !== "_lbBookmarks") {
         throw new ValidationError(`Creating child notes into launcher notes is not allowed.`);
     }
@@ -1516,6 +1520,11 @@ function undeleteNote(
         return failed;
     }
 
+    if (!becca.canSeeDeletedNote(noteRow.ownerId)) {
+        getLog().info(`Note '${noteId}' is not visible to the signed-in user and thus cannot be undeleted.`);
+        return failed;
+    }
+
     const deleteId = noteRow.deleteId;
     const undeletedParentBranchIds = getUndeletedParentBranchIds(noteId, deleteId);
 
@@ -1605,9 +1614,14 @@ function restoreNoteAndDescendants(noteRow: NoteRow, deleteId: string, taskConte
         [deleteId, noteRow.noteId, noteRow.noteId]
     );
 
-    for (const attributeRow of attributeRows) {
-        // relation might point to a note which hasn't been undeleted yet and would thus throw up
-        new BAttribute(attributeRow).save({ skipValidation: true });
+    noteEntity.isBeingRestored = true;
+    try {
+        for (const attributeRow of attributeRows) {
+            // relation might point to a note which hasn't been undeleted yet and would thus throw up
+            new BAttribute(attributeRow).save({ skipValidation: true });
+        }
+    } finally {
+        noteEntity.isBeingRestored = false;
     }
 
     const attachmentRows = sql.getRows<AttachmentRow>(
@@ -1719,6 +1733,10 @@ function duplicateSubtree(origNoteId: string, newParentNoteId: string, { withChi
 
     getLog().info(`Duplicating '${origNoteId}' subtree into '${newParentNoteId}'`);
 
+    // Before any row is written: a refusal from the first branch would roll back the copied notes and
+    // reload the Becca.
+    becca.ensureCanWriteNote(newParentNoteId);
+
     const origNote = becca.notes[origNoteId];
     // might be null if orig note is not in the target newParentNoteId
     const origBranch = origNote.getParentBranches().find((branch) => branch.parentNoteId === newParentNoteId);
@@ -1779,6 +1797,8 @@ function duplicateSubtreeInner(origNote: BNote, origBranch: BBranch | null | und
         const newNote = new BNote({
             ...origNote,
             noteId: newNoteId,
+            // The copy belongs to whoever makes it, as a note they create would.
+            ownerId: cls.getUserId() ?? origNote.ownerId,
             dateCreated: date_utils.localNowDateTime(),
             utcDateCreated: date_utils.utcNowDateTime()
         }).save();

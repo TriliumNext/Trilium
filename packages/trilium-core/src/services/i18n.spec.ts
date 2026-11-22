@@ -23,6 +23,20 @@ describe("i18n service (core)", () => {
         expect(checkSpy).toHaveBeenCalledWith(true, { restoreNames: true });
     });
 
+    it("changeLanguage rebuilds the hidden subtree for the instance, not for the user who asked", async () => {
+        const scopes: { userId: string | undefined; isSystem: boolean }[] = [];
+        vi.spyOn(hidden_subtree, "checkHiddenSubtree").mockImplementation(() => {
+            scopes.push({ userId: cls.getUserId(), isSystem: cls.isSystem() });
+        });
+
+        await cls.init(async () => {
+            cls.set("userId", "locale-member");
+            await changeLanguage("en");
+        });
+
+        expect(scopes).toEqual([ { userId: undefined, isSystem: true } ]);
+    });
+
     it("getCurrentLocale resolves the option, falling back to English", () => {
         const valid = getCurrentLocale();
         expect(valid.id).toBeTruthy();

@@ -1,10 +1,11 @@
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import becca from "../../becca/becca";
 import { load } from "../../becca/becca_loader";
-import { getContext } from "../../services/context";
+import { getContext, initAsSystem } from "../../services/context";
 import optionService from "../../services/options";
 import permissionService from "../../services/permission_service";
+import { getSql } from "../../services/sql/index";
 import userService from "../../services/user_service";
 import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../../services/virtual_notes";
 import { createTextNote } from "../../test/api_fixtures";
@@ -213,8 +214,9 @@ describe("Tree API (core)", () => {
 
     it("names the users with access to a note, and only on that note", async () => {
         const note = await createTextNote(api, { title: "tree-access-spec" });
-        const userId = getContext().init(() => userService.createUser("tree-access-user", null, false));
-        getContext().init(() => permissionService.setUserAccess(note.noteId, userId, false));
+        const userId = initAsSystem(() => userService.createUser("tree-access-user", null, false));
+        onTestFinished(() => initAsSystem(() => userService.deleteUser(userId)));
+        initAsSystem(() => permissionService.setUserAccess(note.noteId, userId, false));
 
         const res = await api.post<{ notes: { noteId: string; accessUsernames?: string[]; ownerId?: string | null }[] }>("/api/tree/load", {
             body: { noteIds: [ "root", note.noteId ] }
@@ -306,5 +308,29 @@ describe.skipIf(isBrowserRuntime)("Tree API (core) for a member", () => {
 
         expect((await api.get(`/api/notes/${secretId}`, { session })).status).toBe(404);
         expect((await api.get(`/api/notes/${sharedId}`, { session })).status).toBe(200);
+    });
+
+    it("leaves the parent of a shared note and its other children to a member who deletes what they see", async () => {
+        const session = { userId: memberId };
+        const parent = await createTextNote(api, { title: "shared parent" });
+        const invisible = await createTextNote(api, { parentNoteId: parent.noteId, title: "invisible child" });
+        const visible = await createTextNote(api, { parentNoteId: parent.noteId, title: "visible child" });
+        getContext().init(() => permissionService.setUserAccess(visible.noteId, memberId, false));
+
+        const query = { taskId: "member-delete", last: "true" };
+        expect((await api.delete(`/api/notes/${parent.noteId}`, { query, session })).status).toBe(404);
+        expect((await api.delete(`/api/branches/${parent.branchId}`, { query, session })).status).toBe(404);
+        expect((await api.delete(`/api/branches/${visible.branchId}`, { query, session })).status).toBe(404);
+
+        const tree = await api.get<TreeResponse>("/api/tree", { session });
+        const handle = tree.body.branches.find((branch) => branch.noteId === visible.noteId);
+        expect(handle?.parentNoteId).toBe("_sharedWithMe");
+        expect((await api.delete(`/api/branches/${handle?.branchId}`, { query, session })).status).toBe(400);
+
+        const live = getContext().init(() => getSql().getColumn<string>(
+            "SELECT noteId FROM notes WHERE noteId IN (?, ?, ?) AND isDeleted = 0",
+            [ parent.noteId, invisible.noteId, visible.noteId ]
+        ));
+        expect(live.sort()).toEqual([ parent.noteId, invisible.noteId, visible.noteId ].sort());
     });
 });

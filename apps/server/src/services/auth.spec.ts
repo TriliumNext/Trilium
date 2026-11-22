@@ -488,15 +488,20 @@ describe("Auth", () => {
             spy.mockRestore();
         });
 
-        it("checkEtapiToken accepts a valid token header and rejects an invalid one", () => {
+        it("checkEtapiToken accepts a valid token header for the instance and rejects an invalid one", () => {
             const { authToken } = cls.init(() => etapiTokens.createToken("auth-spec-token"));
             const next = vi.fn();
-            auth.checkEtapiToken(makeReq({ headers: { authorization: authToken } }), makeRes() as never, next);
+            const tokenReq = makeReq({ headers: { authorization: authToken } });
+            expect(auth.isSystemRequest(tokenReq)).toBe(false);
+            auth.checkEtapiToken(tokenReq, makeRes() as never, next);
             expect(next).toHaveBeenCalled();
+            expect(auth.isSystemRequest(tokenReq)).toBe(true);
 
             const res = makeRes();
-            auth.checkEtapiToken(makeReq({ headers: { authorization: "bogus_token" } }), res as never, vi.fn());
+            const bogusReq = makeReq({ headers: { authorization: "bogus_token" } });
+            auth.checkEtapiToken(bogusReq, res as never, vi.fn());
             expect(res.statusCode).toBe(401);
+            expect(auth.isSystemRequest(bogusReq)).toBe(false);
         });
 
         it("checkCredentials walks DB/password/header/verification branches", async () => {

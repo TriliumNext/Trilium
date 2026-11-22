@@ -1,7 +1,7 @@
-import { becca, cls, options, password_encryption, protected_session, task_states } from "@triliumnext/core";
+import { becca, cls, options, password_encryption, protected_session, task_states, user_service } from "@triliumnext/core";
 import type { Application, NextFunction,Request, Response } from "express";
 import supertest from "supertest";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { safeExtractMessageAndStackFromError } from "../services/utils.js";
 import config from "../services/config.js";
@@ -45,6 +45,14 @@ describe("Share API test", () => {
         } finally {
             getOption.mockRestore();
         }
+    });
+
+    it("serves shared notes to anonymous visitors once the instance has members", async () => {
+        const memberId = cls.initAsSystem(() => user_service.createUser("share-member-spec", null, false));
+        onTestFinished(() => cls.initAsSystem(() => user_service.deleteUser(memberId)));
+
+        await supertest(app).get("/share/").expect(200);
+        await supertest(app).get("/share/YjlPRj2E9fOV").expect(401);
     });
 
     it("requests password for password-protected share", async () => {

@@ -1,6 +1,7 @@
 import type { Request } from "../../http_interface";
 import type { NoteRow, NoteType } from "@triliumnext/commons";
 
+import becca from "../../becca/becca.js";
 import { NotFoundError } from "../../errors.js";
 import blobService from "../../services/blob.js";
 import protectedSessionService from "../../services/protected_session.js";
@@ -28,12 +29,14 @@ interface DeletedNoteMetadata {
 function getDeletedNoteMetadata(req: Request<{ noteId: string }>): DeletedNoteMetadata {
     const { noteId } = req.params;
 
-    const row = getSql().getRowOrNull<Pick<NoteRow, "noteId" | "title" | "type" | "mime" | "blobId" | "isProtected">>(
-        /*sql*/ `SELECT noteId, title, type, mime, blobId, isProtected FROM notes WHERE noteId = ? AND isDeleted = 1`,
+    type Row = Pick<NoteRow, "noteId" | "title" | "type" | "mime" | "blobId" | "isProtected" | "ownerId">;
+    const row = getSql().getRowOrNull<Row>(
+        /*sql*/ `SELECT noteId, title, type, mime, blobId, isProtected, ownerId
+                 FROM notes WHERE noteId = ? AND isDeleted = 1`,
         [noteId]
     );
 
-    if (!row || !row.blobId || !row.type) {
+    if (!row || !row.blobId || !row.type || !becca.canSeeDeletedNote(row.ownerId)) {
         throw new NotFoundError(`Deleted note '${noteId}' was not found.`);
     }
 
