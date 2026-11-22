@@ -31,8 +31,10 @@ import MobileLayout from "./MobileLayout.js";
 
 describe("MobileLayout", () => {
     let device: typeof window.glob.device;
+    let appChildren: typeof appContext.children;
     beforeEach(() => {
         device = window.glob.device;
+        appChildren = [ ...appContext.children ];
         window.glob.device = "mobile";
         // A phone shows the mobile launchers, a tablet the desktop ones.
         buildNote({ id: "_lbMobileVisibleLaunchers", title: "Visible Launchers" });
@@ -52,6 +54,9 @@ describe("MobileLayout", () => {
     });
     afterEach(() => {
         window.glob.device = device;
+        // A lazy tab bar can render after the last `act()`, and a teardown before its effects run
+        // leaves its `TabRowWidget` among the children of `appContext`, where later events reach it.
+        appContext.children = appChildren;
         if (vi.isMockFunction(window.matchMedia)) window.matchMedia.mockRestore();
     });
 
