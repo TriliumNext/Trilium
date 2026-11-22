@@ -12,6 +12,10 @@ vi.mock("@ai-sdk/mistral", () => ({
     }
 }));
 
+vi.mock("i18next", () => ({
+    t: (key: string) => key
+}));
+
 const { streamTextMock } = vi.hoisted(() => ({
     streamTextMock: vi.fn((..._args: any[]) => ({}) as any)
 }));
@@ -222,7 +226,7 @@ describe("MistralProvider model listing", () => {
     it("propagates a malformed response body", async () => {
         fetchMock.mockResolvedValue(okJson({ nope: true }));
         const provider = new MistralProvider("sk-test");
-        await expect(provider.listModels()).rejects.toThrow(/Unexpected response from the provider/);
+        await expect(provider.listModels()).rejects.toThrow("llm_providers.unexpected_models_response");
     });
 });
 
