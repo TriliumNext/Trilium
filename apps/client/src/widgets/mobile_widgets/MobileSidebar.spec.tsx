@@ -4,6 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } fr
 
 vi.mock("./MobileNoteNavigator", () => ({ default: () => <div className="note-navigator-stub" /> }));
 vi.mock("../LazyQuickSearch", () => ({ default: () => <div className="quick-search-stub" /> }));
+// The peek button shows its shortcut, and the test server lists no keyboard actions.
+vi.mock("../../services/keyboard_actions", () => ({
+    default: { getAction: vi.fn().mockResolvedValue({ effectiveShortcuts: [] }), updateDisplayedShortcuts: vi.fn() }
+}));
 
 import appContext, { type EventData, type EventNames } from "../../components/app_context";
 import type NoteContext from "../../components/note_context";
@@ -119,6 +123,35 @@ describe("MobileSidebar", () => {
 
         trigger("setLeftPaneVisibility", { leftPaneVisible: false });
         expect(rest.querySelector(".mobile-sidebar-gutter")).toBeNull();
+    });
+
+    it("peeks the closed tree over the note from the edge button, until a press outside, and docks it from the launch bar", async () => {
+        const sidebar = render(false);
+        expect(sidebar.classList.contains("left-pane-hidden")).toBe(true);
+        await vi.waitFor(() => expect(sidebar.nextElementSibling?.classList.contains("left-pane-peek-button")).toBe(true));
+
+        trigger("peekLeftPane", {});
+        expect(sidebar.classList.contains("peek")).toBe(true);
+        expect(sidebar.classList.contains("left-pane-hidden")).toBe(false);
+        // A press inside the tree keeps it; one on the note dismisses it, which leaves the option alone.
+        act(() => { sidebar.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })); });
+        expect(sidebar.classList.contains("peek")).toBe(true);
+        act(() => { document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })); });
+        expect(sidebar.classList.contains("left-pane-hidden")).toBe(true);
+        expect(save).not.toHaveBeenCalledWith("leftPaneVisible", expect.anything());
+
+        // The launch bar's toggle docks a peeked tree, which then has its gutter instead of the button.
+        trigger("peekLeftPane", {});
+        trigger("setLeftPaneVisibility", { leftPaneVisible: true });
+        expect(sidebar.classList.contains("peek")).toBe(false);
+        expect(sidebar.classList.contains("left-pane-hidden")).toBe(false);
+        expect(save).toHaveBeenLastCalledWith("leftPaneVisible", "true");
+        expect(rest.querySelector(".left-pane-peek-button")).toBeNull();
+        expect(sidebar.nextElementSibling?.classList.contains("mobile-sidebar-gutter")).toBe(true);
+
+        // A docked tree does not peek.
+        trigger("peekLeftPane", {});
+        expect(sidebar.classList.contains("peek")).toBe(false);
     });
 
     describe("on a phone", () => {

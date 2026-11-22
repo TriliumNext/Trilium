@@ -82,8 +82,40 @@
         display: none !important;
     }
 
-    #mobile-rest-container > #mobile-sidebar-wrapper.left-pane-hidden ~ #mobile-rest-pane {
+    #mobile-rest-container > #mobile-sidebar-wrapper:is(.left-pane-hidden, .peek) ~ #mobile-rest-pane {
         width: 100%;
+    }
+
+    /* The peeked tree, out of the flow, floats over the note after the rail in landscape and the
+       peek button that follows it. */
+    #mobile-rest-container {
+        --mobile-peek-button-width: 16px;
+        position: relative;
+
+        &:has(> #launcher-pane.vertical) {
+            --mobile-rail-width: var(--launcher-pane-vert-size, var(--launcher-pane-size));
+        }
+
+        > .left-pane-peek-button {
+            --peek-pane-button-width: var(--mobile-peek-button-width);
+            position: relative;
+            flex: none;
+        }
+
+        > #mobile-sidebar-wrapper.peek {
+            --peek-pane-shadow-offset: var(--peek-pane-shadow-depth);
+            position: absolute;
+            inset-block: 0;
+            inset-inline-start: calc(var(--mobile-rail-width, 0px) + var(--mobile-peek-button-width));
+            z-index: 15;
+            box-shadow: var(--peek-pane-shadow-offset) 0 var(--peek-pane-shadow-depth)
+                calc(-1 * var(--peek-pane-shadow-depth)) var(--peek-pane-shadow-color);
+            animation: peek-pane-in 200ms ease-out;
+
+            body[dir=rtl] & {
+                --peek-pane-shadow-offset: calc(-1 * var(--peek-pane-shadow-depth));
+            }
+        }
     }
 }
 

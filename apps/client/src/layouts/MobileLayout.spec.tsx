@@ -11,6 +11,10 @@ vi.mock("../services/bundle.js", async (importOriginal) => {
 // The sidebar loads them after the first paint, and the navigator then reads the tree from the server.
 vi.mock("../widgets/mobile_widgets/MobileNoteNavigator.js", () => ({ default: () => null }));
 vi.mock("../widgets/quick_search.js", () => ({ default: () => null }));
+// The tablet's peek button shows its shortcut, and the test server lists no keyboard actions.
+vi.mock("../services/keyboard_actions", () => ({
+    default: { getAction: vi.fn().mockResolvedValue({ effectiveShortcuts: [] }), updateDisplayedShortcuts: vi.fn() }
+}));
 
 import appContext from "../components/app_context.js";
 import NoteContext from "../components/note_context.js";

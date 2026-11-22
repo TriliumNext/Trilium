@@ -351,6 +351,7 @@
 /src/widgets/react/Popup.tsx
 /src/widgets/react/RawHtml.tsx
 /src/widgets/react/ResponsiveContainer.tsx
+/src/widgets/react/floating_layers.ts
 /src/widgets/react/hooks/custom_widgets.ts
 /src/widgets/react/hooks/dom.ts
 /src/widgets/react/hooks/events.ts
@@ -365,6 +366,8 @@
 /src/widgets/react/menu_context.ts
 /src/widgets/react/modal_focustrap.ts
 /src/widgets/react/open_popups.ts
+/src/widgets/react/peek_pane.css
+/src/widgets/react/peek_pane.ts
 /src/widgets/react/react_utils.tsx
 /src/widgets/react/shortcut_kbd.tsx
 /src/widgets/react/tooltip.css

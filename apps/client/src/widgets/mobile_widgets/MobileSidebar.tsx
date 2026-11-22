@@ -10,21 +10,24 @@ import LazyQuickSearch from "../LazyQuickSearch";
 import { useMediaQuery } from "../react/hooks/dom";
 import { useTriliumEvent } from "../react/hooks/events";
 import { useLazyModule } from "../react/LazyComponent";
+import { usePaneMode, usePeekDismiss } from "../react/peek_pane";
 import { ParentComponent } from "../react/react_utils";
 import SidebarNavigation from "./sidebar_container";
 
 /**
  * The note tree of the mobile layout: the quick search above the note navigator. The sidebar itself
  * renders with the layout, to follow the tabs as they are restored; the navigator loads after the
- * first paint. On a tablet it hides like the left pane on desktop, sharing its option, from the
- * `LeftPaneToggle` of the launch bar, and a gutter after it resizes it, to a width of its own
- * (`mobileLeftPaneWidth`, in pixels, which suits either orientation).
+ * first paint. On a tablet it is docked, closed or peeked over the note like the left pane on
+ * desktop, through `usePaneMode()` and the same option: the `LeftPaneToggle` of the launch bar docks
+ * and closes it, and while it is not docked the desktop's peek button on the edge peeks it. A gutter
+ * after the docked tree resizes it, to a width of its own (`mobileLeftPaneWidth`, in pixels, which
+ * suits either orientation).
  */
 export default function MobileSidebar() {
     const sidebarRef = useRef<HTMLDivElement>(null);
     const navigationRef = useRef<SidebarNavigation | null>(null);
     const parentComponent = useContext(ParentComponent);
-    const [ leftPaneVisible, setLeftPaneVisible ] = useState(() => options.is("leftPaneVisible"));
+    const { mode, dock, close, toggleDocked, togglePeek, dismiss } = usePaneMode("leftPaneVisible", "left");
     const isTreeStacked = useMediaQuery(STACKED_TREE_LAYOUT);
     const [ width, setWidth ] = useState(() => options.getInt("mobileLeftPaneWidth") ?? 0);
 
@@ -48,13 +51,17 @@ export default function MobileSidebar() {
         return () => navigation.dispose();
     }, [ parentComponent ]);
 
-    useTriliumEvent("setLeftPaneVisibility", ({ leftPaneVisible: requested }) => {
-        const visible = requested ?? !leftPaneVisible;
-        if (visible === leftPaneVisible) return;
-        setLeftPaneVisible(visible);
-        void options.save("leftPaneVisible", visible.toString());
-        // The launch bar's `LeftPaneToggle` follows the sidebar as it follows the left pane on desktop.
-        void parentComponent?.triggerEvent("paneModeChanged", { pane: "left", mode: visible ? "docked" : "closed" });
+    useTriliumEvent("setLeftPaneVisibility", ({ leftPaneVisible }) => {
+        if (leftPaneVisible === null) toggleDocked();
+        else if (leftPaneVisible) dock();
+        else close();
+    });
+    useTriliumEvent("peekLeftPane", () => {
+        if (!isTreeStacked && mode !== "docked") togglePeek();
+    });
+    usePeekDismiss(mode === "peek", dismiss, {
+        keepOpenSelector: "#mobile-sidebar-wrapper, .left-pane-peek-button, .left-pane-toggle-button",
+        focusSelector: ".left-pane-peek-button"
     });
     useTriliumEvent("activeContextChanged", ({ noteContext }) => navigationRef.current?.switchToTab(noteContext));
     useTriliumEvent("noteSwitchedAndActivated", ({ noteContext }) => navigationRef.current?.switchToTab(noteContext));
@@ -64,13 +71,18 @@ export default function MobileSidebar() {
 
     return (
         <>
-            <div ref={sidebarRef} id="mobile-sidebar-wrapper" className={clsx(!leftPaneVisible && "left-pane-hidden")}>
+            <div
+                ref={sidebarRef}
+                id="mobile-sidebar-wrapper"
+                className={clsx(mode === "closed" && "left-pane-hidden", mode === "peek" && "peek")}
+            >
                 <div className="mobile-sidebar-content">
                     <LazyQuickSearch />
                     <LazyNoteNavigator />
                 </div>
             </div>
-            {!isTreeStacked && leftPaneVisible && (
+            {!isTreeStacked && mode !== "docked" && <LazyPeekButton />}
+            {!isTreeStacked && mode === "docked" && (
                 <SidebarGutter
                     sidebarRef={sidebarRef}
                     onResized={(newWidth) => {
@@ -128,4 +140,12 @@ const loadNoteNavigator = () => import("./MobileNoteNavigator");
 function LazyNoteNavigator() {
     const noteNavigator = useLazyModule(loadNoteNavigator);
     return noteNavigator ? <noteNavigator.default /> : null;
+}
+
+const loadLeftPaneToggle = () => import("../buttons/left_pane_toggle");
+
+/** The desktop's edge button that peeks the hidden tree over the note, or hides the peeked one. */
+function LazyPeekButton() {
+    const leftPaneToggle = useLazyModule(loadLeftPaneToggle);
+    return leftPaneToggle ? <leftPaneToggle.LeftPanePeekButton /> : null;
 }
