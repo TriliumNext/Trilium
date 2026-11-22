@@ -86,8 +86,6 @@
         width: 100%;
     }
 
-    /* The peeked tree, out of the flow, floats over the note after the rail in landscape and the
-       peek button that follows it. */
     #mobile-rest-container {
         --mobile-peek-button-width: 16px;
         position: relative;

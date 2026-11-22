@@ -15,7 +15,6 @@ body.tree-popup-stacked .tree-popup-editor-dialog { z-index: 1100; }
     height: 80vh;
 }
 
-/* Outranks the full width that style.css gives every mobile dialog. */
 body.mobile.tablet .modal.tree-popup-editor-dialog .modal-dialog {
     width: 90vw;
 }

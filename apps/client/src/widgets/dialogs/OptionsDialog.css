@@ -51,8 +51,6 @@ body.mobile .modal.options-dialog:not(.mobile-master-detail) > .modal-dialog > .
     z-index: 9999;
 }
 
-/* On a tablet, the close button is centered on the page's title row, which starts at the top of the
-   page. */
 body.mobile .modal.options-dialog:not(.mobile-master-detail) > .modal-dialog > .modal-content {
     > .modal-main > .modal-header {
         /* The title row of `.options-page-header`: its 10px block padding around the 40px icon

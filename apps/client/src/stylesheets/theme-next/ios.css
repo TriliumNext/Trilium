@@ -342,8 +342,7 @@ body.mobile.ios {
             scroll-padding-top: var(--mobile-title-row-height);
         }
 
-        /* Dialogs are sheets on a phone only. The breakpoint must match `STACKED_TREE_LAYOUT` in
-           services/utils.ts. */
+        /* The breakpoint must match `STACKED_TREE_LAYOUT` in services/utils.ts. */
         @media (max-width: 743px), (max-height: 599px) {
             .modal-dialog:not(.modal-dialog-full-page-on-mobile) > .modal-content {
                 border: 0;

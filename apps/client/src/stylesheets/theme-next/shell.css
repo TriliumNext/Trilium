@@ -762,8 +762,6 @@ body[dir=rtl] :is(#left-pane, .tree-popup-sidebar) span.fancytree-node.protected
     height: var(--tab-bar-height) !important;
 }
 
-/* The mobile layout paints `#root-widget` with the note's background, so a tablet's tab bar takes
-   the darker one the desktop shows behind it. */
 body.mobile .tab-row-container {
     background: var(--root-background) !important;
 }

@@ -37,7 +37,6 @@
     }
 }
 
-/* A tablet in portrait: the tab bar across the top runs up under the status bar. */
 body.mobile #root-widget.tablet.horizontal-layout {
     padding-top: 0;
 

@@ -49,8 +49,7 @@
     }
 }
 
-/* Dialogs are sheets rising from the bottom of a phone, and float as on desktop on a tablet in
-   either orientation. The breakpoint must match `STACKED_TREE_LAYOUT` in services/utils.ts. */
+/* The breakpoint must match `STACKED_TREE_LAYOUT` in services/utils.ts. */
 @media (max-width: 743px), (max-height: 599px) {
     body.mobile .modal.show {
         background-color: var(--mobile-modal-backdrop-color);

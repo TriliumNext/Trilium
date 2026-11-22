@@ -46,8 +46,6 @@ body.backdrop-effects-disabled #right-pane.right-pane-mode-peek {
     background: var(--right-pane-background-color);
 }
 
-/* The mobile layout of a tablet: the peek button follows the note in the flow, and the peeked pane
-   covers the rest of `#mobile-rest-container` up to it. */
 #mobile-rest-container {
     --right-pane-peek-button-width: 16px;
 

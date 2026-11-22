@@ -10,9 +10,6 @@
         padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
     }
 
-    /* The tree and the note scroll under the navigation bar, and their content ends above it. The
-       tree's `.mobile-navigator-scroll` pads itself. The open keyboard covers the navigation bar,
-       as in phone mode. */
     body.mobile:not(.keyboard-panel-open) #root-widget:not(.virtual-keyboard-opened) {
         #mobile-rest-container > #launcher-pane,
         #right-pane-host > #right-pane {
@@ -34,8 +31,6 @@
                 --scroll-end-clearance: var(--mobile-bottom-offset);
             }
 
-            /* These notes draw to the bottom edge, and keep their own controls clear of the navigation
-               bar by `--note-bottom-inset`. */
             &:has(
                 > .note-detail > :is(
                     .note-detail-canvas, .note-detail-mermaid, .note-detail-mind-map, .note-detail-note-map,
@@ -73,14 +68,16 @@
     }
 }
 
-/* Wherever the tree is docked beside the note. The breakpoints must match the inverse of
-   `STACKED_TREE_LAYOUT` in services/utils.ts. */
+/* The breakpoints must match the inverse of `STACKED_TREE_LAYOUT` in services/utils.ts. */
 @media (min-width: 744px) and (min-height: 600px) {
     #mobile-rest-container {
         background-color: var(--root-background);
     }
 
+    /* Keeps the z-index of the note's controls (999 for the iOS title row) under the peeked panes
+       (15). */
     #detail-container {
+        isolation: isolate;
         overflow: clip;
         border-start-start-radius: var(--center-pane-border-radius, 0);
         background: var(--main-background-color);
@@ -93,7 +90,6 @@
         }
 
         .modal-dialog {
-            /* `style.css` centers a mobile dialog with `left` and `transform`. */
             margin: var(--bs-modal-margin) 0;
             max-width: 80%;
             max-height: calc(100% - 2 * var(--bs-modal-margin));
