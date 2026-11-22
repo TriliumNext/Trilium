@@ -1,7 +1,9 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
+import * as cls from "../../services/context";
 import protectedSessionService from "../../services/protected_session";
 import { getSql } from "../../services/sql/index";
+import userService from "../../services/user_service";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
 
@@ -133,5 +135,32 @@ describe("Deleted notes API (core)", () => {
 
             expect(res.body.title).toBe("[protected]");
         });
+    });
+});
+
+const isBrowserRuntime = typeof self !== "undefined";
+
+describe.skipIf(isBrowserRuntime)("Deleted notes API (core) for a member", () => {
+    let session: { userId: string };
+    let secretId: string;
+    let ownId: string;
+
+    beforeAll(async () => {
+        api = CoreApiTester.build();
+        secretId = await createDeletedNote("deleted member secret");
+        ownId = await createDeletedNote("deleted member own");
+        const userId = cls.init(() => userService.createUser(`deleted-member-${Date.now()}`, null, false));
+        getSql().execute("UPDATE notes SET ownerId = ? WHERE noteId = ?", [ userId, ownId ]);
+        session = { userId };
+    });
+
+    it("reads only the deleted notes the member owns", async () => {
+        const read = async (noteId: string, part: string) =>
+            (await api.get(`/api/deleted-notes/${noteId}/${part}`, { session })).status;
+
+        expect(await read(secretId, "metadata")).toBe(404);
+        expect(await read(secretId, "blob")).toBe(404);
+        expect(await read(ownId, "metadata")).toBe(200);
+        expect(await read(ownId, "blob")).toBe(200);
     });
 });

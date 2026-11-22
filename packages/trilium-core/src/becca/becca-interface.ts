@@ -1,4 +1,5 @@
 import { NotFoundError } from "../errors.js";
+import { getUserId } from "../services/context.js";
 import { getLog } from "../services/log.js";
 import { formatSize } from "../services/utils/index.js";
 import type BOption from "./entities/boption.js";
@@ -369,6 +370,14 @@ export default class Becca {
     /** Whether the current scope can see the note, which an admin or a system scope always can. */
     canSeeNote(noteId: string) {
         return getNoteView(this)?.canSeeNote(noteId) ?? true;
+    }
+
+    /**
+     * Whether the current scope can see a soft-deleted note, which has left the Becca and so the
+     * view: a member sees only the deleted notes they own.
+     */
+    canSeeDeletedNote(ownerId: string | null | undefined) {
+        return !getNoteView(this) || (!!ownerId && ownerId === getUserId());
     }
 
     /** An attachment belongs to a note or to a revision, which the scope can see when it can see the revision's note. */
