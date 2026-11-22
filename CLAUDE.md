@@ -290,7 +290,8 @@ entry (closed issues are listed without one).
 4. `credits` names only an outside contributor whose code is the change. **Never credit the reporter** of
    the bug or the author of the idea, and leave it out when the maintainers wrote the change.
 5. The body is one short line, past tense for a fix, describing what the user saw, not the code,
-   and naming the symptom once rather than every case that triggers it: "Typing `/2`
+   and naming the symptom once rather than every case or condition that triggers it (no "when the
+   size is not 100%" clause): "Typing `/2`
    in the slash command menu suggested the column layout before the heading", not "Rank exact alias
    matches first". A highlight is a few short paragraphs in the same plain register; its numbers are
    the ones a user feels, never request counts or sizes (`writing-documentation` skill,

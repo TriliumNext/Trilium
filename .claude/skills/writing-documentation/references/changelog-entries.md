@@ -19,6 +19,9 @@ entry says what changed for them, in as few words as that takes.
   `#shareCredentials` password inherited from a note outside the share." is the entry; "…when it
   came from a template, an `~inherit` target or a parent outside the share" spells out cases the
   commit body already lists. Aim for one line of about 15 words.
+- **No trigger conditions either.** Drop the "when …" clause that says under which settings or
+  state the bug showed: "The font previews in the Fonts settings were drawn at the wrong size.",
+  not "…larger or smaller than the text they set when the document font size was not 100%."
 
 ## Numbers
 
