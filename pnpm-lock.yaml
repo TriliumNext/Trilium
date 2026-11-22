@@ -85,6 +85,7 @@ overrides:
 
 patchedDependencies:
   '@excalidraw/excalidraw@0.18.1': ab1f9211ffc9c7f65505b0f4f17f9a7879f35a67c4a87efcd98c54e41743618a
+  appdmg@0.6.6: 6c875d6ba70a4a7a257ac6208147d0af4344aa7c9fbdbd046a313bbdfca94a6e
   exceljs@4.4.0: 608c2aabb16393f2cc7f10e1e34a3b8b0f1b346e11be78dea365a09e40bb165f
   react-zoom-pan-pinch@4.2.0: 09dfeb6f635c52ef565ca21aec3f70eb129577661f85eb67262092e8cb9f8548
 
@@ -17286,7 +17287,7 @@ snapshots:
       normalize-path: 3.0.0
       picomatch: 4.0.7
 
-  appdmg@0.6.6:
+  appdmg@0.6.6(patch_hash=6c875d6ba70a4a7a257ac6208147d0af4344aa7c9fbdbd046a313bbdfca94a6e):
     dependencies:
       async: 1.5.2
       ds-store: 0.1.6
@@ -18797,7 +18798,7 @@ snapshots:
       debug: 4.4.3(supports-color@7.2.0)
       minimist: 1.2.8
     optionalDependencies:
-      appdmg: 0.6.6
+      appdmg: 0.6.6(patch_hash=6c875d6ba70a4a7a257ac6208147d0af4344aa7c9fbdbd046a313bbdfca94a6e)
     transitivePeerDependencies:
       - supports-color
     optional: true
