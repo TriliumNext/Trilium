@@ -90,6 +90,35 @@ describe("TabRowWidget tab activation", () => {
         expect(tap("touch-tab", "touch", 2)).toEqual([]);
         expect(activateTabContext.mock.calls).toEqual([ [ "touch-tab" ] ]);
     });
+
+    // Draggabilly listens to touch events alone where the window has `ontouchstart`, as on an iPad, whose
+    // touchpad sends pointer and mouse events only. The stub hears none of them.
+    it("switches on a touchpad press of an iPad", async () => {
+        vi.resetModules();
+        vi.doMock("draggabilly", () => ({
+            default: class { on() {} destroy() {} }
+        }));
+        try {
+            const { default: freshAppContext } = await import("../components/app_context");
+            const { default: FreshTabRowWidget } = await import("./tab_row");
+            const activateTabContext = vi.fn();
+            freshAppContext.tabManager = {
+                activateTabContext,
+                getMainNoteContexts: () => [ { ntxId: "pad-tab" } ]
+            } as unknown as TabManager;
+            const widget = new FreshTabRowWidget();
+            document.body.append(widget.render()[0]);
+            widget.addTab("pad-tab");
+
+            const handle = widget.$widget.find('.note-tab[data-ntx-id="pad-tab"] .note-tab-drag-handle')[0];
+            expect(handle).toBeInstanceOf(HTMLElement);
+            handle.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerType: "mouse", pointerId: 3 }));
+            expect(activateTabContext.mock.calls).toEqual([ [ "pad-tab" ] ]);
+        } finally {
+            vi.doUnmock("draggabilly");
+            document.body.replaceChildren();
+        }
+    });
 });
 
 describe("TabRowWidget context menus", () => {

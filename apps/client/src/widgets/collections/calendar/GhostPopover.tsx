@@ -145,6 +145,7 @@ export default function GhostPopover({
         return (
             <Modal
                 className="calendar-ghost-sheet"
+                portal
                 size="md"
                 title={t("calendar_view.new_event")}
                 show

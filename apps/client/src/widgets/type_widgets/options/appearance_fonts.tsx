@@ -19,13 +19,14 @@ import {
 } from "../../../services/font";
 import { t } from "../../../services/i18n";
 import toast from "../../../services/toast";
-import { isElectron, isMobile } from "../../../services/utils";
+import { isElectron, isMobile, STACKED_TREE_LAYOUT } from "../../../services/utils";
 import Button from "../../react/Button";
 import { Card, OptionCardSection } from "../../react/Card";
 import { filterTokens, matchesFilter } from "../../react/filter";
 import FormList, { FormListHeader, FormListItem } from "../../react/FormList";
 import { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
+import { useMediaQuery } from "../../react/hooks/dom";
 import { useChildNotes } from "../../react/hooks/note";
 import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
 import { useNoteTitle } from "../../react/hooks/tree";
@@ -596,6 +597,8 @@ function FontPickerModal({ show, onHidden, target, onTargetChange, option: { fam
     const searchRef = useRef<HTMLInputElement>(null);
     const matching = useMemo(() => filterFontGroups(groups, query), [ groups, query ]);
     const { Preview } = target;
+    const isStacked = useMediaQuery(STACKED_TREE_LAYOUT);
+    const isPhone = isMobile() && isStacked;
 
     return createPortal(
         <Modal
@@ -679,7 +682,7 @@ function FontPickerModal({ show, onHidden, target, onTargetChange, option: { fam
                     {target.sizeDescription && <small className="font-size-description">{target.sizeDescription}</small>}
                 </div>
 
-                {!isMobile() && (
+                {!isPhone && (
                     <div className="font-preview">
                         <label>{t("fonts.preview")}</label>
                         <div

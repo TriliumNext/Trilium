@@ -29,8 +29,8 @@ body.mobile .modal.popup-editor-dialog .modal-dialog {
 }
 
 /* Bootstrap caps every `.modal-dialog` at 500px from 576px up; the quick editor is a sheet, so it
-   takes the whole width on phones and leaves the tablet rule (80%) to apply above 992px. */
-@media (max-width: 991px) {
+   takes the whole width on phones and leaves the tablet rule (80%) to apply on a tablet. */
+@media (max-width: 743px), (max-device-width: 599px), (max-device-height: 599px) {
     body.mobile .modal.popup-editor-dialog .modal-dialog {
         max-width: none;
     }
@@ -122,7 +122,7 @@ body.mobile .modal.popup-editor-dialog .modal-body {
     min-height: 0;
 }
 
-@media (max-width: 991px) {
+@media (max-width: 743px), (max-device-width: 599px), (max-device-height: 599px) {
     body.mobile:not(.keyboard-panel-open) .modal.popup-editor-dialog {
         --mobile-toolbar-clearance: calc(var(--mobile-toolbar-height) + 2 * var(--mobile-toolbar-gap) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
     }

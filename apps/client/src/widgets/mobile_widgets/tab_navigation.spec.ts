@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { buildNotes } from "../../test/easy-froca";
-import { enterHoistedNote, forgetTabs, getParentStack, getSpotlightedNoteId, getTabNavigation, getTreeStack, leaveHoistedNote, setTabScreen, setTabTree } from "./tab_navigation";
+import {
+    enterHoistedNote, forgetTabs, getParentStack, getSpotlightedNoteId, getTabNavigation, getTreeStack,
+    isSameStack, leaveHoistedNote, opensColumnNoteOnBack, setTabScreen, setTabTree
+} from "./tab_navigation";
 
 describe("tab navigation", () => {
     buildNotes([
@@ -22,6 +25,39 @@ describe("tab navigation", () => {
         // A tab whose tree never moved: the column of its note, or a folder's own column.
         expect(getTreeStack("other", "root/folder/page", "root")).toEqual([ "root", "root/folder" ]);
         expect(getTreeStack("other", "root/folder/inner", "root")).toEqual(drilled);
+    });
+
+    it("rebuilds the column a tablet enters or goes back to when it opens the folder there, hoisted or not", () => {
+        const entered = [ "root", "root/folder", "root/folder/inner" ];
+        expect(isSameStack(getTreeStack("fresh", "root/folder/inner", "root"), entered)).toBe(true);
+        expect(isSameStack(getTreeStack("fresh", "root/folder", "root"), [ "root", "root/folder" ])).toBe(true);
+        expect(isSameStack(getTreeStack("fresh", "root", "root"), [ "root" ])).toBe(true);
+        // A hoisted tree's columns start at the hoisted note, while the note's path starts at the root.
+        expect(isSameStack(getTreeStack("fresh", "root/folder/inner", "folder"), [ "folder", "folder/inner" ])).toBe(true);
+        expect(isSameStack(getTreeStack("fresh", "root/folder", "folder"), [ "folder" ])).toBe(true);
+        expect(isSameStack(entered, [ "root", "root/folder" ])).toBe(false);
+        expect(isSameStack(entered, [ "root", "root/folder", "root/folder/page" ])).toBe(false);
+    });
+
+    it("on a tablet, goes back from a child listed in the column to the column's note before going up", () => {
+        function opensColumnNote(stack: string[], notePath: string, isStacked = false) {
+            const activeNoteId = notePath.split("/").at(-1);
+            const spotlightedNoteId = getSpotlightedNoteId(stack[stack.length - 1], notePath);
+            return opensColumnNoteOnBack({ isStacked, stack, activeNoteId, spotlightedNoteId });
+        }
+
+        const column = [ "root", "root/folder", "root/folder/inner" ];
+        expect(opensColumnNote(column, "root/folder/inner/leaf")).toBe(true);
+        // The column's own note is open: back goes up a column.
+        expect(opensColumnNote(column, "root/folder/inner")).toBe(false);
+        // A note further down, or elsewhere, is not a child of the column's note.
+        expect(opensColumnNote([ "root", "root/folder" ], "root/folder/inner/leaf")).toBe(false);
+        expect(opensColumnNote(column, "root/folder/page")).toBe(false);
+        // A stacked tree hides the note under it; the root column has no back.
+        expect(opensColumnNote(column, "root/folder/inner/leaf", true)).toBe(false);
+        expect(opensColumnNote([ "root" ], "root/folder")).toBe(false);
+        // A hoisted tree's columns start at the hoisted note, while the note's path starts at the root.
+        expect(opensColumnNote([ "folder", "folder/inner" ], "root/folder/inner/leaf")).toBe(true);
     });
 
     it("goes back from a note to the column listing it, even when the note has children", () => {

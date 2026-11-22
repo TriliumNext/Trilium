@@ -74,6 +74,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "imagePngHandling",
     "imageConversionQuality",
     "leftPaneWidth",
+    "mobileLeftPaneWidth",
     "leftPaneVisible",
     "rightPaneWidth",
     "rightPaneCollapsedItems",

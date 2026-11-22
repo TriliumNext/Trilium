@@ -97,6 +97,8 @@
 /src/index.ts
 /src/layouts/DesktopLayout.css
 /src/layouts/DesktopLayout.tsx
+/src/layouts/TabBar.css
+/src/layouts/TabBar.tsx
 /src/layouts/layout_commons.css
 /src/layouts/layout_commons.tsx
 /src/layouts/render_layout.ts

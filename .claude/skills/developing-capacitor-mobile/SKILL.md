@@ -156,6 +156,9 @@ never a `-left` var falling back to `env(…-right)`.
   `apps/client/src/stylesheets/style.css` — platform-scoped to where `env()` is the real source.
 - **`body.desktop` rules are in scope too.** An Android tablet WebView has no `Mobi` in its UA, so
   `isMobile()` is false and `index.ts` picks the desktop layout for it.
+- **The mobile layout's inset rules live with the layout**: `apps/client/src/layouts/MobileLayout.phone.css`
+  (bottom bar, bottom sheets) and `MobileLayout.tablet.css` (the panes run under the status and
+  navigation bars and pad what they hold), not `style.css`.
 - **`--keyboard-height` is injected but read by nothing.** `MainActivity` resizes the WebView through
   `bottomMargin` instead, so the CSS viewport shrinks on its own. iOS drives `--tn-keyboard-gap` from
   `ViewController` for a different purpose; the two are not a pair.

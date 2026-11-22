@@ -45,3 +45,26 @@ body.desktop.background-effects.last-split-bgfx #center-pane ~ .right-pane-peek-
 body.backdrop-effects-disabled #right-pane.right-pane-mode-peek {
     background: var(--right-pane-background-color);
 }
+
+#mobile-rest-container {
+    --right-pane-peek-button-width: 16px;
+
+    > .right-pane-peek-button {
+        --peek-pane-button-width: var(--right-pane-peek-button-width);
+        --peek-button-expand-background-color: transparent;
+        position: relative;
+        flex: none;
+        order: 1;
+        border-bottom: 0;
+    }
+
+    > #right-pane-host.peek {
+        inset-inline-start: 0;
+        inset-inline-end: var(--right-pane-peek-button-width);
+    }
+
+    > #right-pane-host:not(.peek) {
+        flex: none;
+        width: clamp(230px, 25%, 40%);
+    }
+}

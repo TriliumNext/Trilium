@@ -112,9 +112,15 @@ export interface ModalProps {
      * announced as nothing but "dialog".
      */
     ariaLabel?: string;
+    /**
+     * Renders the dialog on `document.body` rather than where it is used, for a dialog opened from
+     * inside a note: the note's container (`#center-pane`, or `#detail-container` on a tablet) keeps
+     * its layers to itself, which would leave the dialog under Bootstrap's backdrop on the body.
+     */
+    portal?: boolean;
 }
 
-export default function Modal({ children, className = "", size, title, customTitleBarButtons: titleBarButtons, header, footer, footerStyle, footerAlignment, onShown, onHide, onSubmit, helpPageId, minWidth, maxWidth, zIndex, scrollable, onHidden, modalRef: externalModalRef, formRef, bodyStyle, show, stackable, keepInDom, noFocus, sidebar, hideSidebarHeader, isFullPageOnMobile, ariaLabel }: ModalProps) {
+export default function Modal({ children, className = "", size, title, customTitleBarButtons: titleBarButtons, header, footer, footerStyle, footerAlignment, onShown, onHide, onSubmit, helpPageId, minWidth, maxWidth, zIndex, scrollable, onHidden, modalRef: externalModalRef, formRef, bodyStyle, show, stackable, keepInDom, noFocus, sidebar, hideSidebarHeader, isFullPageOnMobile, ariaLabel, portal }: ModalProps) {
     const modalRef = useSyncedRef<HTMLDivElement>(externalModalRef);
     const modalInstanceRef = useRef<BootstrapModal | undefined>(undefined);
     const elementToFocus = useRef<Element | null | undefined>(undefined);
@@ -294,7 +300,7 @@ export default function Modal({ children, className = "", size, title, customTit
     const [ dialogElement, setDialogElement ] = useState<HTMLDivElement | null>(null);
     const isTall = useIsTallerThanHalfScreen(dialogElement);
 
-    return (
+    const dialog = (
         <div className={renderedClassName.current} tabIndex={-1} style={dialogStyle} role="dialog" aria-label={ariaLabel} ref={modalRef}>
             {(show || keepInDom) && <ContainerVisibilityContext.Provider value={show}><div className={clsx("modal-dialog", `modal-${size}`, {"modal-dialog-scrollable": scrollable, "modal-dialog-full-page-on-mobile": isFullPageOnMobile, "modal-content-with-sidebar": sidebar, "modal-dialog-tall": isTall})} style={documentStyle} role="document" ref={setDialogElement}>
                 <div className={clsx("modal-content", sidebar && "modal-content-with-sidebar")}>
@@ -349,6 +355,7 @@ export default function Modal({ children, className = "", size, title, customTit
             </div></ContainerVisibilityContext.Provider>}
         </div>
     );
+    return portal ? createPortal(dialog, document.body) : dialog;
 }
 
 /** Mounts a script modal beside Bootstrap's body-level backdrop while retaining its source context. */

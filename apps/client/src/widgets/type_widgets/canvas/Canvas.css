@@ -22,7 +22,7 @@
    `#root-widget` and `#mobile-bottom-bar` already keep clear of every inset. */
 .excalidraw-wrapper {
   --sat: 0px;
-  --sab: 0px;
+  --sab: var(--note-bottom-inset, 0px);
   --sal: 0px;
   --sar: 0px;
   height: 100%;

@@ -10,9 +10,12 @@
     }
 
     #detail-container {
+        position: relative;
         display: flex;
         flex-grow: 1;
         min-width: 0;
+        min-height: 0;
+        max-height: 100%;
     }
 
     .note-split-title {
@@ -21,7 +24,25 @@
 
     #launcher-pane {
         display: flex;
-        height: 53px;
+        flex-shrink: 0;
+
+        &.vertical {
+            flex-direction: column;
+            width: 53px;
+        }
+
+        &.horizontal {
+            height: 53px;
+        }
+    }
+}
+
+body.mobile #root-widget.tablet.horizontal-layout {
+    padding-top: 0;
+
+    > .tab-row-container {
+        box-sizing: content-box;
+        padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
     }
 }
 

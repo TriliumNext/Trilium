@@ -4,8 +4,8 @@ import { createPortal, type RefObject } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
-import { LaunchBarActionButton, LauncherNoteProps } from "../launch_bar/launch_bar_widgets";
 import type NoteContext from "../../components/note_context";
+import { LaunchBarActionButton, type LauncherNoteProps } from "../launch_bar/launch_bar_widgets";
 import { useTriliumEvents } from "../react/hooks/events";
 import { preloadLazyModule, useLazyModule } from "../react/LazyComponent";
 import { isTabSwipeActive, type SwipeDirection, TabSwipe } from "./tab_swipe";

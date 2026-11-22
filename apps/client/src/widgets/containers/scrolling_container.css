@@ -19,8 +19,10 @@
     }
 }
 
-body.mobile .scrolling-container {
-    --content-margin-inline: 8px;
+@media (max-width: 991px) {
+    body.mobile #root-widget:not(.tablet) .scrolling-container {
+        --content-margin-inline: 8px;
+    }
 }
 
 /* Programmatic jumps in a code note (go to line, search, scroll to end) can travel through the

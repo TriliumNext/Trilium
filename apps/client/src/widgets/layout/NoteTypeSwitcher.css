@@ -13,8 +13,10 @@
 .note-type-switcher-bar {
     padding: 10px 24px;
 
-    body.mobile & {
-        padding-inline: 8px;
+    @media (max-width: 991px) {
+        body.mobile & {
+            padding-inline: 8px;
+        }
     }
 
     body.mobile &:has(~ .classic-toolbar-outer-container.visible) {

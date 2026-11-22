@@ -12,7 +12,7 @@ import { getHue, parseColor } from "../../services/css_class_manager";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import type { ViewMode, ViewScope } from "../../services/link";
-import { isNarrowLayout } from "../../services/utils";
+import { isTreeStacked } from "../../services/utils";
 import { ICON_MAPPINGS } from "../collections/interface";
 import ActionButton from "../react/ActionButton";
 import { useNote, useNoteColorClass, useNoteIcon, useNoteLabelBoolean } from "../react/hooks/note";
@@ -138,7 +138,7 @@ export function Tab({ noteContext, containerRef, selectTab, activeNtxId }: {
     const colorClass = note?.getColorClass() || '';
     const workspaceTabBackgroundColorHue = getWorkspaceTabBackgroundColorHue(noteContext);
     const subContexts = noteContext.getSubContexts();
-    const navigation = isNarrowLayout() ? getTabNavigation(noteContext.ntxId) : undefined;
+    const navigation = isTreeStacked() ? getTabNavigation(noteContext.ntxId) : undefined;
     const tree = navigation?.screen === "tree" ? navigation.tree : undefined;
 
     return (

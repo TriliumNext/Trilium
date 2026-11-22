@@ -6,7 +6,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preac
 import FNote from "../../entities/fnote";
 import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 import froca from "../../services/froca";
-import { isDesktop, isElectron, isMobile } from "../../services/utils";
+import { hasDesktopLaunchBar, isElectron, isMobile, isTablet } from "../../services/utils";
+import { useIsTablet } from "../react/hooks/dom";
 import { useTriliumEvent } from "../react/hooks/events";
 import { useNoteLabelBoolean } from "../react/hooks/note";
 import { useTriliumOptionBool } from "../react/hooks/options";
@@ -30,7 +31,10 @@ import SyncStatus from "./SyncStatus";
 export default function LauncherContainer({ isHorizontalLayout }: { isHorizontalLayout: boolean }) {
     const childNotes = useLauncherChildNotes();
     const containerRef = useLauncherScrollbarCompensation(isHorizontalLayout, childNotes);
-    const hasTabSwitcher = !!childNotes?.some((note) => note.getLabelValue("builtinWidget") === "mobileTabSwitcher");
+    // A swipe across the bottom bar changes tabs where a tab switcher is in it, and on a tablet, which
+    // shows a tab bar instead.
+    const swipesTabs = isTablet()
+        || !!childNotes?.some((note) => note.getLabelValue("builtinWidget") === "mobileTabSwitcher");
     const [ dragEntered, setDragEntered ] = useState(false);
 
     return (
@@ -52,7 +56,7 @@ export default function LauncherContainer({ isHorizontalLayout }: { isHorizontal
                 isHorizontalLayout
             }}>
                 {childNotes?.map(childNote => {
-                    if (!isDesktop() && childNote.isLabelTruthy("desktopOnly")) {
+                    if (!hasDesktopLaunchBar() && childNote.isLabelTruthy("desktopOnly")) {
                         return false;
                     }
 
@@ -68,7 +72,7 @@ export default function LauncherContainer({ isHorizontalLayout }: { isHorizontal
                     );
                 })}
             </LaunchBarContext.Provider>
-            {isHorizontalLayout && hasTabSwitcher && <LazyTabSwipe containerRef={containerRef} />}
+            {isHorizontalLayout && swipesTabs && <LazyTabSwipe containerRef={containerRef} />}
             {dragEntered && (
                 <LazyLauncherDropTarget
                     containerRef={containerRef}
@@ -150,7 +154,8 @@ function initBuiltinWidget(note: FNote, isHorizontalLayout: boolean) {
         case "mobileTabSwitcher":
             return <LazyTabSwitcher launcherNote={note} />;
         case "sidebarChat":
-            return isExperimentalFeatureEnabled("llm") ? <SidebarChatButton launcherNote={note} /> : undefined;
+            // The mobile layout has no right pane for the chat to open in.
+            return isExperimentalFeatureEnabled("llm") && !isMobile() ? <SidebarChatButton launcherNote={note} /> : undefined;
         case "recordMeeting":
             return isElectron() ? <LazyRecordMeetingButton launcherNote={note} /> : undefined;
         case "colorSchemeSwitcher":
@@ -227,11 +232,13 @@ function LazyRecordMeetingButton({ launcherNote }: { launcherNote: FNote }) {
 export function useLauncherChildNotes() {
     const [ visibleLaunchersRoot, setVisibleLaunchersRoot ] = useState<FNote | undefined | null>();
     const [ childNotes, setChildNotes ] = useState<FNote[]>();
+    // A foldable swaps the desktop's launchers and the mobile ones as it unfolds and folds.
+    const tablet = useIsTablet();
 
     // Load the root note.
     const loadRoot = useCallback(() => {
         froca.getNote(getVisibleLaunchersRootId(), true).then(setVisibleLaunchersRoot);
-    }, []);
+    }, [ tablet ]);
     useLayoutEffect(loadRoot, [ loadRoot ]);
 
     // Load the children.
@@ -259,7 +266,7 @@ export function useLauncherChildNotes() {
 
 /** The note whose children are the launchers shown in this layout's launch bar. */
 function getVisibleLaunchersRootId() {
-    return isMobile() ? "_lbMobileVisibleLaunchers" : "_lbVisibleLaunchers";
+    return hasDesktopLaunchBar() ? "_lbVisibleLaunchers" : "_lbMobileVisibleLaunchers";
 }
 
 // Measures the scrollbar's actual consumed size (which varies by browser and the OS "show scroll

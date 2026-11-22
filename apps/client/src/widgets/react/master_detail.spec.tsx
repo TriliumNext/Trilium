@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
     isMobile: vi.fn(() => true),
-    windowWidth: 500,
+    isPhone: true,
     /** The header the modal stub was handed, so the flow's own header can be asserted on. */
     modalHeader: undefined as ComponentChildren
 }));
@@ -17,7 +17,7 @@ vi.mock("../../services/utils", async (importActual) => {
 
 vi.mock("./hooks/dom", async (importOriginal) => ({
     ...(await importOriginal<typeof import("./hooks/dom")>()),
-    useWindowSize: () => ({ windowWidth: mocks.windowWidth, windowHeight: 800 })
+    useMediaQuery: () => mocks.isPhone
 }));
 
 // Bootstrap drives the real modal; what matters here is the header the flow hands it.
@@ -89,7 +89,7 @@ function endSlide() {
 beforeEach(() => {
     vi.clearAllMocks();
     mocks.isMobile.mockReturnValue(true);
-    mocks.windowWidth = 500;
+    mocks.isPhone = true;
     mocks.modalHeader = undefined;
     flow = undefined;
     container = document.body.appendChild(document.createElement("div"));
@@ -108,12 +108,12 @@ describe("useMobileMasterDetail", () => {
         expect(flowClasses()).toContain("mobile-master-detail");
 
         // A tablet is wide enough to hold both panes, and so is any desktop window.
-        mocks.windowWidth = 900;
+        mocks.isPhone = false;
         renderHost();
         expect(flow?.isMasterDetail).toBe(false);
         expect(flowClasses()).not.toContain("mobile-master-detail");
 
-        mocks.windowWidth = 500;
+        mocks.isPhone = true;
         mocks.isMobile.mockReturnValue(false);
         renderHost();
         expect(flow?.isMasterDetail).toBe(false);
@@ -156,7 +156,7 @@ describe("useMobileMasterDetail", () => {
         document.body.classList.remove("motion-disabled");
 
         // Side by side, both panes are on show: there is nothing to slide between.
-        mocks.windowWidth = 900;
+        mocks.isPhone = false;
         renderHost();
         act(() => flow?.switchMobileView("page"));
         expect(flowClasses()).not.toContain("mobile-transition-to-page");
@@ -264,7 +264,7 @@ describe("MasterDetailModal", () => {
     });
 
     it("leaves the header to the dialog where both panes fit side by side", () => {
-        mocks.windowWidth = 900;
+        mocks.isPhone = false;
         renderModal("Attributes", vi.fn());
 
         expect(container.querySelector<HTMLElement>(".page-stub")?.dataset.inFlow).toBe("false");

@@ -222,11 +222,13 @@ describe("TemplatePropertiesDialog", () => {
 
 async function open(noteId: string) {
     const host = new Component();
-    const container = renderInto(
+    renderInto(
         <ParentComponent.Provider value={host}>
             <TemplatePropertiesDialog />
         </ParentComponent.Provider>
     );
+    // `CollectionPropertiesDialog` portals the dialog onto `document.body`.
+    const container = document.body;
     await act(async () => {
         await host.handleEventInChildren("showTemplateProperties", { noteId });
     });

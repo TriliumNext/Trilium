@@ -208,7 +208,7 @@ body.mobile #context-menu-container.mobile-bottom-menu {
     padding-bottom: max(var(--safe-area-inset-bottom, env(safe-area-inset-bottom)), var(--padding, var(--menu-padding-size))) !important;
 }
 
-body.mobile .dropdown-menu:not(.excalidraw *) {
+body.mobile .dropdown-menu:not(.static, .excalidraw *) {
     position: fixed !important;
     z-index: 3000 !important;
 }

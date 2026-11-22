@@ -342,9 +342,35 @@ export function isMobile() {
 }
 
 /**
- * Whether the viewport is as narrow as a phone's. In the mobile layout, a menu is a bottom sheet
- * only then; a tablet's wider layout places it beside what opened it. Must match the media query
- * around the `.mobile-bottom-menu` rules in style.css.
+ * Whether the mobile layout runs as a tablet's: on a viewport that docks the note tree beside the
+ * note (see {@link isTreeStacked}). A tablet keeps it either way up, a phone never has it, and a
+ * foldable changes as it folds, so it follows the viewport; {@link onTabletChange} reports the
+ * change.
+ */
+export function isTablet() {
+    return isMobile() && !isTreeStacked();
+}
+
+/** Calls `onChange` whenever {@link isTablet} changes, until the returned function runs. */
+export function onTabletChange(onChange: () => void) {
+    return onTreeStackedChange(onChange);
+}
+
+/** Whether the launch bar shows the desktop's launchers: on a desktop, and on a tablet. */
+export function hasDesktopLaunchBar() {
+    return !isMobile() || isTablet();
+}
+
+/** The note that holds the launchers of this device's launch bar, visible and available. */
+export function getLaunchBarRootId() {
+    return hasDesktopLaunchBar() ? "_lbRoot" : "_lbMobileRoot";
+}
+
+/**
+ * Whether the viewport is as narrow as a phone's. In the mobile layout, the launch bar sits at the
+ * bottom and a menu is a bottom sheet only then; a tablet in landscape places the launch bar on
+ * the side and a menu beside what opened it. Must match the media queries of
+ * `layouts/MobileLayout.phone.css` and `MobileLayout.tablet.css`.
  */
 export function isNarrowLayout() {
     return window.matchMedia(NARROW_LAYOUT).matches;
@@ -352,12 +378,36 @@ export function isNarrowLayout() {
 
 /** Calls `onChange` whenever {@link isNarrowLayout} changes, until the returned function runs. */
 export function onNarrowLayoutChange(onChange: () => void) {
-    const query = window.matchMedia(NARROW_LAYOUT);
+    return onMediaQueryChange(NARROW_LAYOUT, onChange);
+}
+
+export const NARROW_LAYOUT = "(max-width: 991px)";
+
+/**
+ * Whether the mobile layout stacks the note tree under the note, which slides away to reveal it,
+ * rather than docking it beside the note: on a viewport narrower than an iPad mini in portrait, or
+ * on a phone, whose screen is under 600px on its shorter side either way up. It reads the screen
+ * rather than the viewport's height, which an open keyboard shrinks on Android and in the iOS app.
+ * A tablet in portrait docks the tree while keeping the launch bar at the bottom. Must match the
+ * media queries of `MobileSidebar.css`.
+ */
+export function isTreeStacked() {
+    return window.matchMedia(STACKED_TREE_LAYOUT).matches;
+}
+
+/** Calls `onChange` whenever {@link isTreeStacked} changes, until the returned function runs. */
+export function onTreeStackedChange(onChange: () => void) {
+    return onMediaQueryChange(STACKED_TREE_LAYOUT, onChange);
+}
+
+export const STACKED_TREE_LAYOUT =
+    "(max-width: 743px), (max-device-width: 599px), (max-device-height: 599px)";
+
+function onMediaQueryChange(mediaQuery: string, onChange: () => void) {
+    const query = window.matchMedia(mediaQuery);
     query.addEventListener("change", onChange);
     return () => query.removeEventListener("change", onChange);
 }
-
-const NARROW_LAYOUT = "(max-width: 991px)";
 
 /**
  * Returns true if the client device is an Apple iOS one (iPad, iPhone, iPod).
@@ -365,8 +415,10 @@ const NARROW_LAYOUT = "(max-width: 991px)";
  *
  * @returns `true` if running under iOS.
  */
+/** Whether the device runs iOS or iPadOS, whose Safari reports a Mac user agent on an iPad. */
 export function isIOS() {
-    return /iPad|iPhone|iPod/.test(navigator.userAgent);
+    return /iPad|iPhone|iPod/.test(navigator.userAgent)
+        || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
 }
 
 /**
@@ -1050,8 +1102,13 @@ export default {
     toObject,
     randomString,
     isMobile,
+    isTablet,
+    hasDesktopLaunchBar,
+    getLaunchBarRootId,
     isNarrowLayout,
     onNarrowLayoutChange,
+    isTreeStacked,
+    onTreeStackedChange,
     isDesktop,
     setCookie,
     getNoteTypeClass,

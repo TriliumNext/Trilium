@@ -1,0 +1,102 @@
+/* The breakpoint must match `NARROW_LAYOUT` in services/utils.ts. */
+@media (min-width: 992px) {
+    body.mobile #root-widget {
+        padding-top: 0;
+        background-color: var(--launcher-pane-background-color);
+    }
+
+    body.mobile #mobile-rest-container > :is(#launcher-pane, #mobile-sidebar-wrapper, #mobile-rest-pane),
+    body.mobile #right-pane-host > #right-pane {
+        padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
+    }
+
+    body.mobile:not(.keyboard-panel-open) #root-widget:not(.virtual-keyboard-opened) {
+        #mobile-rest-container > #launcher-pane,
+        #right-pane-host > #right-pane {
+            padding-bottom: var(--mobile-bottom-offset);
+        }
+
+        #detail-container {
+            --mobile-toolbar-clearance: calc(
+                var(--mobile-toolbar-height) + 2 * var(--mobile-toolbar-gap) + var(--mobile-bottom-offset)
+            );
+        }
+
+        .note-split > .scrolling-container:not(:has(~ .classic-toolbar-outer-container.visible)) {
+            --scroll-end-clearance: calc(var(--mobile-bottom-offset) + 24px);
+            padding-bottom: var(--scroll-end-clearance);
+            scroll-padding-bottom: var(--scroll-end-clearance);
+
+            &:is(.detail-full-height, .list-full-height) {
+                --scroll-end-clearance: var(--mobile-bottom-offset);
+            }
+
+            &:has(
+                > .note-detail > :is(
+                    .note-detail-canvas, .note-detail-mermaid, .note-detail-mind-map, .note-detail-note-map,
+                    .note-detail-relation-map
+                ).visible,
+                > .note-list-widget :is(.geo-map-container, .presentation-view)
+            ) {
+                --scroll-end-clearance: 0px;
+                --note-bottom-inset: var(--mobile-bottom-offset);
+            }
+        }
+
+        #detail-container .classic-toolbar-island {
+            bottom: calc(var(--tn-layout-overhang, 0px) + var(--mobile-bottom-offset));
+        }
+
+        .note-split > .note-type-switcher-bar:has(> .note-type-switcher > *):has(
+            ~ .find-replace-widget[style*="display: none"]
+        ) {
+            &:not(:has(~ .classic-toolbar-outer-container.visible)) {
+                padding-bottom: calc(10px + var(--mobile-bottom-offset));
+            }
+        }
+
+        .note-split > .find-replace-widget {
+            padding-bottom: var(--mobile-bottom-offset);
+        }
+    }
+
+    #mobile-rest-pane {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        min-width: 0;
+    }
+}
+
+/* The breakpoints must match the inverse of `STACKED_TREE_LAYOUT` in services/utils.ts. */
+@media (min-width: 744px) and (min-device-width: 600px) and (min-device-height: 600px) {
+    #mobile-rest-container {
+        background-color: var(--root-background);
+    }
+
+    /* Keeps the z-index of the note's controls (999 for the iOS title row) under the peeked panes
+       (15). */
+    #detail-container {
+        isolation: isolate;
+        overflow: clip;
+        border-start-start-radius: var(--center-pane-border-radius, 0);
+        background: var(--main-background-color);
+    }
+
+    body.mobile {
+        .modal {
+            padding-block: var(--safe-area-inset-top, env(safe-area-inset-top))
+                var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
+        }
+
+        .modal-dialog {
+            margin: var(--bs-modal-margin) 0;
+            max-width: 80%;
+            max-height: calc(100% - 2 * var(--bs-modal-margin));
+        }
+
+        .modal-content {
+            height: 100%;
+        }
+    }
+}

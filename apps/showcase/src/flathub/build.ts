@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import type { Browser } from "playwright";
 
-import { openNote, settle } from "../shared/browser.ts";
+import { openNote, setOption, settle } from "../shared/browser.ts";
 import {
     type BuildOptions, type Builder, outDir, reportChecks, repoRoot, sceneFileName, templatesDir
 } from "../shared/build.ts";
@@ -121,25 +121,6 @@ async function buildFlathubPreview(browser: Browser) {
 
     reportChecks(checks);
     console.log(`  Open ${path.join(outDir, "flathub-preview.html")}`);
-}
-
-/** Sets an option through the API, from a page of the app that supplies the CSRF headers. */
-async function setOption(browser: Browser, baseUrl: string, name: string, value: string) {
-    const page = await browser.newPage();
-    try {
-        await page.goto(baseUrl);
-        await page.waitForFunction(() => window.glob?.getHeaders, null, { timeout: 120_000 });
-        const status = await page.evaluate(async ([ optionName, optionValue ]) => {
-            const response = await fetch(`api/options/${optionName}/${optionValue}`, {
-                method: "PUT",
-                headers: await window.glob.getHeaders()
-            });
-            return response.status;
-        }, [ name, value ]);
-        if (status >= 400) throw new Error(`Setting ${name} failed (${status}).`);
-    } finally {
-        await page.close();
-    }
 }
 
 function flathubShotPath(index: number, sceneId: string) {

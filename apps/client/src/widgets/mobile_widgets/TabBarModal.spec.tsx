@@ -9,6 +9,7 @@ vi.mock("../collections/legacy/NoteContent", async (importOriginal) => {
 
 import type NoteContext from "../../components/note_context";
 import froca from "../../services/froca";
+import { NARROW_LAYOUT, STACKED_TREE_LAYOUT } from "../../services/utils";
 import { buildNotes } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import { setTabScreen, setTabTree } from "./tab_navigation";
@@ -32,7 +33,7 @@ describe("Tab", () => {
     beforeEach(() => {
         isNarrow = true;
         vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
-            matches: isNarrow && query === "(max-width: 991px)",
+            matches: isNarrow && (query === NARROW_LAYOUT || query === STACKED_TREE_LAYOUT),
             media: query,
             addEventListener: vi.fn(),
             removeEventListener: vi.fn()

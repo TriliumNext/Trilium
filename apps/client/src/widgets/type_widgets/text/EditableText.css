@@ -8,8 +8,10 @@ body.desktop.electron .note-detail-editable-text {
     letter-spacing: -0.01px;
 }
 
-body.mobile .note-detail-editable-text {
-    padding-inline-start: 4px;
+@media (max-width: 991px) {
+    body.mobile .note-detail-editable-text {
+        padding-inline-start: 4px;
+    }
 }
 
 .note-detail-editable-text-editor:not(.ck-format-painter-active) a:where(:not(.excalidraw *)) {

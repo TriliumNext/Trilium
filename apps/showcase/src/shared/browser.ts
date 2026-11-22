@@ -107,3 +107,22 @@ export async function openNote(page: Page, noteId: string, { hoist = false } = {
         await noteContext?.setNote(id);
     }, { id: noteId, hoisted: hoist });
 }
+
+/** Sets an option through the API, from a page of the app that supplies the CSRF headers. */
+export async function setOption(browser: Browser, baseUrl: string, name: string, value: string) {
+    const page = await browser.newPage();
+    try {
+        await page.goto(baseUrl);
+        await page.waitForFunction(() => window.glob?.getHeaders, null, { timeout: 120_000 });
+        const status = await page.evaluate(async ([ optionName, optionValue ]) => {
+            const response = await fetch(`api/options/${optionName}/${optionValue}`, {
+                method: "PUT",
+                headers: await window.glob.getHeaders()
+            });
+            return response.status;
+        }, [ name, value ]);
+        if (status >= 400) throw new Error(`Setting ${name} failed (${status}).`);
+    } finally {
+        await page.close();
+    }
+}

@@ -166,7 +166,7 @@
 }
 
 .tn-overlay-control-group[data-placement^="bottom-"] {
-    bottom: var(--overlay-group-inset-bottom, var(--overlay-group-inset));
+    bottom: var(--overlay-group-inset-bottom, calc(var(--overlay-group-inset) + var(--note-bottom-inset, 0px)));
 }
 
 .tn-overlay-control-group[data-placement$="-start"] {
@@ -189,7 +189,8 @@
 /* The middle of a side edge, measured as `-center` measures the middle of a top or bottom one:
    stretched between the two insets, with the margins sharing what the group does not take. */
 .tn-overlay-control-group[data-placement^="middle-"] {
-    inset-block: var(--overlay-group-inset-top, var(--overlay-group-inset)) var(--overlay-group-inset-bottom, var(--overlay-group-inset));
+    inset-block: var(--overlay-group-inset-top, var(--overlay-group-inset))
+        var(--overlay-group-inset-bottom, calc(var(--overlay-group-inset) + var(--note-bottom-inset, 0px)));
     margin-block: auto;
     height: fit-content;
 }
