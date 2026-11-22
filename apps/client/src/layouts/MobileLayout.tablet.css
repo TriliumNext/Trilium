@@ -61,21 +61,11 @@
         }
     }
 
-    #mobile-rest-container {
-        background-color: var(--root-background);
-    }
-
     #mobile-rest-pane {
         display: flex;
         flex-direction: column;
         flex-grow: 1;
         min-width: 0;
-    }
-
-    #detail-container {
-        overflow: clip;
-        border-start-start-radius: var(--center-pane-border-radius, 0);
-        background: var(--main-background-color);
     }
 
     body.mobile {
@@ -87,5 +77,19 @@
         .modal-content {
             height: 100%;
         }
+    }
+}
+
+/* Wherever the tree is docked beside the note. The breakpoints must match the inverse of
+   `STACKED_TREE_LAYOUT` in services/utils.ts. */
+@media (min-width: 744px) and (min-height: 600px) {
+    #mobile-rest-container {
+        background-color: var(--root-background);
+    }
+
+    #detail-container {
+        overflow: clip;
+        border-start-start-radius: var(--center-pane-border-radius, 0);
+        background: var(--main-background-color);
     }
 }
