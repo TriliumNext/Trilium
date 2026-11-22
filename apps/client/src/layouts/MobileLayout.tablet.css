@@ -52,7 +52,9 @@
             bottom: calc(var(--tn-layout-overhang, 0px) + var(--mobile-bottom-offset));
         }
 
-        .note-split > .note-type-switcher-bar:has(~ .find-replace-widget[style*="display: none"]) {
+        .note-split > .note-type-switcher-bar:has(> .note-type-switcher > *):has(
+            ~ .find-replace-widget[style*="display: none"]
+        ) {
             &:not(:has(~ .classic-toolbar-outer-container.visible)) {
                 padding-bottom: calc(10px + var(--mobile-bottom-offset));
             }
