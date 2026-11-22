@@ -963,6 +963,10 @@ describe.skipIf(isBrowserRuntime)("Revisions API (core) for a member", () => {
             `/api/edited-notes/${EDITED_DATE}`, { session });
         expect(res.status).toBe(200);
         expect(res.body.map((note) => note.noteId)).toEqual([ editedSharedId ]);
+
+        const all = await api.get<Array<{ noteId: string }>>(`/api/edited-notes/${EDITED_DATE}`);
+        expect(all.body).toHaveLength(50);
+        expect(all.body.map((note) => note.noteId)).not.toContain(editedSharedId);
     });
 
     it("lets a member erase revisions only of notes they can see", async () => {

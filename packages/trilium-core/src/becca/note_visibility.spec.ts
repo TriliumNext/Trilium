@@ -124,6 +124,10 @@ describe.skipIf(isBrowserRuntime)("note visibility", () => {
         }
     });
 
+    it("refuses a read in a scope that acts for no user", () => {
+        expect(() => cls.init(() => becca.getNote(f.secret.noteId))).toThrow("acts for no user");
+    });
+
     it("reaches a note shared with a group through its members only", () => {
         expect(asUser(f.daveId, () => becca.getNote(f.teamDoc.noteId))).toBe(f.teamDoc);
         expect(asUser(f.aliceId, () => becca.getNote(f.teamDoc.noteId))).toBeNull();
