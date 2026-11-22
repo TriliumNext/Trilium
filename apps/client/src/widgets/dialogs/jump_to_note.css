@@ -34,7 +34,7 @@
  * A fixed height, so the dialog keeps its size as the results change: the list's cap above plus
  * room for the footer, which stays at the bottom. On a phone the dialog fills the screen instead.
  */
-:is(body.desktop, .mobile-layout.tablet) .jump-to-note-results {
+:is(body.desktop, body.mobile.tablet) .jump-to-note-results {
     display: flex;
     flex-direction: column;
     height: calc(80vh - 150px);

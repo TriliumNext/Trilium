@@ -36,6 +36,10 @@ export default function MobileLayout() {
     const tablet = !isTreeStacked;
     useAppearance();
     useLayoutEffect(() => (rootRef.current ? trackVirtualKeyboard(rootRef.current) : undefined), []);
+    // On `body` too, for the dialogs and menus portaled outside the layout.
+    useLayoutEffect(() => {
+        document.body.classList.toggle("tablet", tablet);
+    }, [ tablet ]);
     useLoadCustomWidgets();
 
     return (

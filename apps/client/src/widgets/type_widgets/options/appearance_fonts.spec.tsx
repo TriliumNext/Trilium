@@ -82,6 +82,7 @@ vi.mock("../../react/hooks/tree", async (importOriginal) => ({
     useNoteTitle: (noteId: string | undefined) => mocks.userFonts.find((font) => font.noteId === noteId)?.title
 }));
 
+import { STACKED_TREE_LAYOUT } from "../../../services/utils";
 import Fonts from "./appearance_fonts";
 
 let host: HTMLElement;
@@ -497,13 +498,27 @@ describe("the font settings", () => {
         expect(sample?.textContent).toContain("<=");
     });
 
-    it("leaves the preview out on mobile, where the font list needs the room", async () => {
+    it("leaves the preview out on a phone, where the font list needs the room, but not on a tablet", async () => {
         mocks.mobile = true;
+        const matchMedia = vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+            matches: query === STACKED_TREE_LAYOUT,
+            media: query,
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn()
+        }) as unknown as MediaQueryList);
         await openPicker();
 
         expect(document.querySelector(".font-picker-modal .font-size-control")).not.toBeNull();
         expect(listedFonts()).toEqual(expect.arrayContaining(GENERIC_LABELS));
         expect(document.querySelector(".font-picker-modal .font-preview")).toBeNull();
+
+        // happy-dom's window is a tablet's.
+        matchMedia.mockRestore();
+        act(() => render(null, host));
+        document.body.innerHTML = "";
+        host = document.body.appendChild(document.createElement("div"));
+        await openPicker();
+        expect(document.querySelector(".font-picker-modal .font-preview")).toBeInstanceOf(HTMLElement);
     });
 
     it("leaves ligatures alone, since they come from the theme's own font", () => {
