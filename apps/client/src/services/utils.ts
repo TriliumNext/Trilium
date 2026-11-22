@@ -412,8 +412,10 @@ function onMediaQueryChange(mediaQuery: string, onChange: () => void) {
  *
  * @returns `true` if running under iOS.
  */
+/** Whether the device runs iOS or iPadOS, whose Safari reports a Mac user agent on an iPad. */
 export function isIOS() {
-    return /iPad|iPhone|iPod/.test(navigator.userAgent);
+    return /iPad|iPhone|iPod/.test(navigator.userAgent)
+        || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
 }
 
 /**

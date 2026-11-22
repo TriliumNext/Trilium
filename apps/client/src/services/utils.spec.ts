@@ -430,6 +430,18 @@ describe("isIOS (named export)", () => {
         uaSpy.mockReturnValue("Windows");
         expect(isIOS()).toBe(false);
     });
+
+    it("tells an iPad, which reports a Mac user agent, from a Mac by its touch points", async () => {
+        const { isIOS } = await import("./utils.js");
+        vi.spyOn(navigator, "userAgent", "get").mockReturnValue(
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) "
+            + "Version/26.5 Safari/605.1.15"
+        );
+        const touchPoints = vi.spyOn(navigator, "maxTouchPoints", "get").mockReturnValue(5);
+        expect(isIOS()).toBe(true);
+        touchPoints.mockReturnValue(0);
+        expect(isIOS()).toBe(false);
+    });
 });
 
 describe("electron-aware helpers", () => {
