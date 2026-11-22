@@ -122,13 +122,17 @@ function downloadRevision(req: Request<{ revisionId: string }>, res: Response) {
 }
 
 function eraseAllRevisions(req: Request<{ noteId: string }>) {
-    const revisionIdsToErase = getSql().getColumn<string>("SELECT revisionId FROM revisions WHERE noteId = ?", [req.params.noteId]);
+    const { noteId } = becca.getNoteOrThrow(req.params.noteId);
+    const revisionIdsToErase = getSql().getColumn<string>(
+        "SELECT revisionId FROM revisions WHERE noteId = ?", [ noteId ]);
 
     eraseService.eraseRevisions(revisionIdsToErase);
 }
 
 function eraseRevision(req: Request<{ revisionId: string }>) {
-    eraseService.eraseRevisions([req.params.revisionId]);
+    const { revisionId } = req.params;
+    becca.getRevisionOrThrow(revisionId);
+    eraseService.eraseRevisions([revisionId]);
 }
 
 function updateRevisionDescription(req: Request<{ revisionId: string }>) {
