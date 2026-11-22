@@ -6,6 +6,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import becca from "../../becca/becca.js";
 import BNote from "../../becca/entities/bnote";
 import * as cls from "../../services/context";
+import noteService from "../../services/notes";
 import permissionService from "../../services/permission_service";
 import { getSql } from "../../services/sql/index";
 import userService from "../../services/user_service";
@@ -929,17 +930,39 @@ describe.skipIf(isBrowserRuntime)("Revisions API (core) for a member", () => {
     let session: { userId: string };
     let secret: { noteId: string; revisionId: string };
     let shared: { noteId: string; revisionId: string };
+    let editedSharedId: string;
+    const EDITED_DATE = "2001-02-03";
+    const setEditedOn = (noteId: string) => getSql().execute(
+        "UPDATE notes SET dateCreated = ?, dateModified = ? WHERE noteId = ?",
+        [ `${EDITED_DATE} 10:00:00.000+0000`, `${EDITED_DATE} 10:00:00.000+0000`, noteId ]);
 
     beforeAll(async () => {
         api = CoreApiTester.build();
         secret = await createNoteWithRevision({ title: "revision member secret" });
         shared = await createNoteWithRevision({ title: "revision member shared" });
+        for (let i = 0; i < 50; i++) {
+            setEditedOn((await createTextNote(api, { title: `edited secret ${i}` })).noteId);
+        }
+        // The route reads the date's notes in `noteId` order, so this one comes after the 50 above.
+        editedSharedId = cls.init(() => noteService.createNewNote({
+            parentNoteId: "root", noteId: "zzzzEditedShared", title: "edited shared",
+            content: "", type: "text"
+        }).note.noteId);
+        setEditedOn(editedSharedId);
         const userId = cls.init(() => {
             const memberId = userService.createUser(`revision-member-${Date.now()}`, null, false);
             permissionService.setUserAccess(shared.noteId, memberId, false);
+            permissionService.setUserAccess(editedSharedId, memberId, false);
             return memberId;
         });
         session = { userId };
+    });
+
+    it("lists the notes a member can see among those edited on a date", async () => {
+        const res = await api.get<Array<{ noteId: string }>>(
+            `/api/edited-notes/${EDITED_DATE}`, { session });
+        expect(res.status).toBe(200);
+        expect(res.body.map((note) => note.noteId)).toEqual([ editedSharedId ]);
     });
 
     it("lets a member erase revisions only of notes they can see", async () => {

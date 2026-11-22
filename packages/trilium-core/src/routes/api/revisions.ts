@@ -332,9 +332,11 @@ function isAttachmentRowList(rows: unknown): rows is SavedAttachmentRow[] {
         && typeof row.mime === "string" && typeof row.content === "string");
 }
 
+const EDITED_NOTES_LIMIT = 50;
+
 function getEditedNotesOnDate(req: Request) {
-    const noteIds = getSql().getColumn<string>(/*sql*/`\
-        SELECT notes.*
+    const rows = getSql().iterateRows<{ noteId: string }>(/*sql*/`\
+        SELECT noteId
         FROM notes
         WHERE noteId IN (
                 SELECT noteId FROM notes
@@ -345,17 +347,22 @@ function getEditedNotesOnDate(req: Request) {
                 SELECT noteId FROM revisions
                 WHERE revisions.dateCreated LIKE :date
         )
-        ORDER BY isDeleted
-        LIMIT 50`,
+        ORDER BY isDeleted`,
     { date: `${req.params.date}%` }
     );
 
-    let notes = becca.getNotes(noteIds, true);
-
-    // Narrow down the results if a note is hoisted, similar to "Jump to note".
+    // The limit applies after the view and the hoisted note have filtered the rows, so notes
+    // the scope cannot list never take a place in it.
     const hoistedNoteId = cls.getHoistedNoteId();
-    if (hoistedNoteId !== "root") {
-        notes = notes.filter((note) => note.hasAncestor(hoistedNoteId));
+    const notes: BNote[] = [];
+    for (const { noteId } of rows) {
+        const note = becca.getNote(noteId);
+        if (note && (hoistedNoteId === "root" || note.hasAncestor(hoistedNoteId))) {
+            notes.push(note);
+            if (notes.length === EDITED_NOTES_LIMIT) {
+                break;
+            }
+        }
     }
 
     return notes.map((note) => {
