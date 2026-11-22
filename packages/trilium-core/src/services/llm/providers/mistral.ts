@@ -78,6 +78,11 @@ export class MistralProvider extends BaseProvider {
         return this.mistral.chat(modelId);
     }
 
+    /** Friendly display names for the price-table list and the endpoint's unnamed entries. */
+    protected override modelName(id: string): string {
+        return mistralModelName(id);
+    }
+
     /**
      * List models from the Mistral API. Only chat-capable models are kept.
      */
@@ -116,28 +121,6 @@ export class MistralProvider extends BaseProvider {
             }
             return model;
         });
-    }
-
-    /**
-     * The fallback list of known Mistral models with curated metadata.
-     */
-    override getAvailableModels(): ModelInfo[] {
-        return [
-            { id: "mistral-large-4", name: "Mistral Large 4", isDefault: true, recommended: true },
-            { id: "mistral-large-4-0", name: "Mistral Large 4.0", recommended: true },
-            { id: "mistral-medium-3-5", name: "Mistral Medium 3.5", recommended: true },
-            { id: "mistral-medium-3-5-26-04", name: "Mistral Medium 3.5 (26-04)", recommended: true },
-            { id: "mistral-small-4", name: "Mistral Small 4", recommended: true },
-            { id: "mistral-small-2603", name: "Mistral Small (2603)", recommended: true },
-            { id: "zai-glm-5-3", name: "GLM 5.3", recommended: true },
-            { id: "zai-glm-5-3-flash", name: "GLM 5.3 Flash", recommended: true },
-            // Legacy models
-            { id: "mistral-large-2", name: "Mistral Large 2", isLegacy: true },
-            { id: "mistral-large", name: "Mistral Large", isLegacy: true },
-            { id: "mistral-medium", name: "Mistral Medium", isLegacy: true },
-            { id: "mistral-small", name: "Mistral Small", isLegacy: true },
-            { id: "mistral-tiny", name: "Mistral Tiny", isLegacy: true }
-        ];
     }
 
     /**

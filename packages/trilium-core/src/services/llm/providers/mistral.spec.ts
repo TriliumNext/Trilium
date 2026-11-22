@@ -227,41 +227,25 @@ describe("MistralProvider model listing", () => {
 });
 
 describe("MistralProvider getAvailableModels", () => {
-    it("returns the curated list of Mistral models", () => {
+    it("builds the list from the price table with pricing and context window intact", () => {
         const provider = new MistralProvider("sk-test");
         const models = provider.getAvailableModels();
 
         expect(models.length).toBeGreaterThan(0);
-        expect(models.map(m => m.id)).toContain("mistral-large-4");
-        expect(models.map(m => m.id)).toContain("mistral-small-4");
-        expect(models.map(m => m.id)).toContain("mistral-medium-3-5");
-    });
-
-    it("marks mistral-large-4 as default", () => {
-        const provider = new MistralProvider("sk-test");
-        const models = provider.getAvailableModels();
         const large4 = models.find(m => m.id === "mistral-large-4");
-        expect(large4?.isDefault).toBe(true);
+        expect(large4).toMatchObject({
+            name: "Mistral Large 4",
+            isDefault: true,
+            pricing: { input: 5, output: 25 },
+            contextWindow: 128000
+        });
     });
 
-    it("marks newer models as recommended", () => {
+    it("names models via mistralModelName", () => {
         const provider = new MistralProvider("sk-test");
         const models = provider.getAvailableModels();
-        
-        for (const id of ["mistral-large-4", "mistral-medium-3-5", "mistral-small-4"]) {
-            const model = models.find(m => m.id === id);
-            expect(model?.recommended).toBe(true);
-        }
-    });
-
-    it("marks older models as legacy", () => {
-        const provider = new MistralProvider("sk-test");
-        const models = provider.getAvailableModels();
-        
-        for (const id of ["mistral-large-2", "mistral-large", "mistral-medium", "mistral-small", "mistral-tiny"]) {
-            const model = models.find(m => m.id === id);
-            expect(model?.isLegacy).toBe(true);
-        }
+        expect(models.find(m => m.id === "mistral-small-2603")?.name).toBe("Mistral Small 2603");
+        expect(models.find(m => m.id === "zai-glm-5-3")?.name).toBe("GLM 5 3");
     });
 });
 
