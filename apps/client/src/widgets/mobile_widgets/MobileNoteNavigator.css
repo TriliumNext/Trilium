@@ -442,3 +442,15 @@ body[dir=rtl] :is(.mobile-navigator-row-icon, .mobile-navigator-current-icon).is
     text-align: center;
     line-height: 1.2;
 }
+
+@media (min-width: 992px) {
+    #mobile-sidebar-wrapper .mobile-note-navigator {
+        --navigator-separator-color: transparent;
+
+        .mobile-navigator-list {
+            margin-inline: 0;
+            border-radius: 0;
+            background: transparent;
+        }
+    }
+}
