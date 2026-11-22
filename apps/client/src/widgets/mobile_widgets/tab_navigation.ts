@@ -61,6 +61,21 @@ export function getParentStack(notePath: string | null | undefined, hoistedNoteI
     return buildStackForActiveNote(notePath, hoistedNoteId, false);
 }
 
+/**
+ * Whether back opens the note of the column in place instead of going up a column. On a tablet,
+ * back opens the parent of the note shown beside the tree, and while that note is a child listed in
+ * the column (`spotlightedNoteId` is the child leading to it), its parent is the column's note.
+ * The root column has no back.
+ */
+export function opensColumnNoteOnBack({ isPhone, stack, activeNoteId, spotlightedNoteId }: {
+    isPhone: boolean;
+    stack: string[];
+    activeNoteId: string | undefined;
+    spotlightedNoteId: string | undefined;
+}) {
+    return !isPhone && stack.length > 1 && !!activeNoteId && spotlightedNoteId === activeNoteId;
+}
+
 /** Whether two stacks lead through the same columns. */
 export function isSameStack(a: string[], b: string[]) {
     return a.length === b.length && a.every((path, index) => path === b[index]);

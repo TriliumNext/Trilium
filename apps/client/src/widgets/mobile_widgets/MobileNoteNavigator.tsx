@@ -33,7 +33,7 @@ import NoItems from "../react/NoItems";
 import { ParentComponent } from "../react/react_utils";
 import {
     enterHoistedNote, getLastSegment, getParentStack, getSpotlightedNoteId, getTreeStack,
-    isSameStack, leaveHoistedNote, setTabTree, useNavigatorChildren
+    isSameStack, leaveHoistedNote, opensColumnNoteOnBack, setTabTree, useNavigatorChildren
 } from "./tab_navigation";
 
 /**
@@ -139,9 +139,11 @@ export default function MobileNoteNavigator() {
     const spotlightedNoteId = getSpotlightedNoteId(currentParentPath, activeNotePath);
     const children = useNavigatorChildren(parentNote, hideArchived, isLoaded, isParentSubtreeHidden, spotlightedNoteId);
     const canGoBack = stack.length > 1;
+    const backOpensColumnNote = opensColumnNoteOnBack({ isPhone, stack, activeNoteId, spotlightedNoteId });
     const backTargetId = canGoBack ? getLastSegment(stack[stack.length - 2]) : undefined;
     const backTargetParentId = stack.length >= 3 ? getLastSegment(stack[stack.length - 3]) : undefined;
     const backTargetTitle = useNoteTitle(backTargetId, backTargetParentId);
+    const backTitle = backOpensColumnNote ? parentTitle : backTargetTitle;
 
     // The columns shown last keep their rendered preview, so going back to one (in another tab,
     // or a step back) shows it laid out at once. The pending column renders its preview hidden,
@@ -217,11 +219,15 @@ export default function MobileNoteNavigator() {
 
     const goBack = useCallback(() => {
         if (stack.length <= 1) return;
+        if (backOpensColumnNote) {
+            void noteContext?.setNote(currentParentPath);
+            return;
+        }
         directionRef.current = "backward";
         const parentStack = stack.slice(0, -1);
         navigateTo(parentStack);
         if (!isPhone) void noteContext?.setNote(parentStack[parentStack.length - 1]);
-    }, [stack, navigateTo, isPhone, noteContext]);
+    }, [stack, backOpensColumnNote, currentParentPath, navigateTo, isPhone, noteContext]);
 
     const unhoist = useCallback(() => {
         if (tabId) leaveHoistedNote(tabId, activeNotePath, effectiveHoistedId);
@@ -297,7 +303,7 @@ export default function MobileNoteNavigator() {
                                 className="mobile-navigator-toolbar-icon"
                             />
                             <span className="mobile-navigator-toolbar-title">
-                                {backTargetTitle ?? ""}
+                                {backTitle ?? ""}
                             </span>
                         </button>
                     ) : isHoisted && (
