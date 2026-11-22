@@ -171,6 +171,7 @@ export default function Fonts() {
                         key={target.key}
                         target={target}
                         option={fontOptions[target.key]}
+                        documentSize={fontOptions.detail.size}
                         disabled={!isEnabled}
                         onOpen={() => {
                             setPickerTarget(target);
@@ -195,6 +196,7 @@ export default function Fonts() {
                 target={pickerTarget}
                 onTargetChange={setPickerTarget}
                 option={fontOptions[pickerTarget.key]}
+                documentSize={fontOptions.detail.size}
                 groups={fontGroups}
             />
 
@@ -383,11 +385,13 @@ function useFontOption(familyOption: OptionNames, sizeOption: OptionNames): Font
 interface FontRowProps {
     target: FontTarget;
     option: FontOption;
+    /** The document size, which the monospace size is a percentage of. */
+    documentSize: number;
     disabled?: boolean;
     onOpen: () => void;
 }
 
-function FontRow({ target, option: { family, size }, disabled, onOpen }: FontRowProps) {
+function FontRow({ target, option: { family, size }, documentSize, disabled, onOpen }: FontRowProps) {
     // One of the user's own fonts is named by the note holding it, so its own title says what is
     // set — read from the cache rather than waited for from the listing, and it follows a rename.
     const customFontTitle = useNoteTitle(customFontNoteId(family) ?? undefined, undefined);
@@ -404,7 +408,7 @@ function FontRow({ target, option: { family, size }, disabled, onOpen }: FontRow
             onAction={disabled ? undefined : onOpen}
         >
             <span className="font-option-preview">
-                <span className="font-option-specimen" style={{ fontFamily: cssFontFamily(target, family), fontSize: specimenFontSize(target, size) }}>{name}</span>
+                <span className="font-option-specimen" style={{ fontFamily: cssFontFamily(target, family), fontSize: specimenFontSize(target, size, documentSize) }}>{name}</span>
                 <span className="tn-card-chevron" />
             </span>
         </OptionCardSection>
@@ -412,11 +416,20 @@ function FontRow({ target, option: { family, size }, disabled, onOpen }: FontRow
 }
 
 /**
- * The size a specimen is drawn at. The other sizes are percentages of the interface size, which
- * the page itself is already drawn at once it is saved, so the interface specimen takes `1rem`.
+ * The size a specimen is drawn at, in `rem` so that it does not depend on the card's own size,
+ * which is the document size. `rem` is the interface size; the tree and document sizes are
+ * percentages of it, and code is drawn inside the document, so the monospace size is a
+ * percentage of the document size.
  */
-function specimenFontSize(target: FontTarget, size: number): string {
-    return target.key === "main" ? "1rem" : `${size}%`;
+function specimenFontSize(target: FontTarget, size: number, documentSize: number): string {
+    switch (target.key) {
+        case "main":
+            return "1rem";
+        case "monospace":
+            return `${(size * documentSize) / 10000}rem`;
+        default:
+            return `${size / 100}rem`;
+    }
 }
 
 /** What CSS is given to draw an entry, whose value is not always a family the browser can resolve. */
@@ -573,10 +586,12 @@ interface FontPickerModalProps {
     target: FontTarget;
     onTargetChange: (target: FontTarget) => void;
     option: FontOption;
+    /** The document size, which the monospace size is a percentage of. */
+    documentSize: number;
     groups: FontGroup[];
 }
 
-function FontPickerModal({ show, onHidden, target, onTargetChange, option: { family, size, setFamily, setSize }, groups }: FontPickerModalProps) {
+function FontPickerModal({ show, onHidden, target, onTargetChange, option: { family, size, setFamily, setSize }, documentSize, groups }: FontPickerModalProps) {
     const [ query, setQuery ] = useState("");
     const searchRef = useRef<HTMLInputElement>(null);
     const matching = useMemo(() => filterFontGroups(groups, query), [ groups, query ]);
@@ -671,7 +686,7 @@ function FontPickerModal({ show, onHidden, target, onTargetChange, option: { fam
                             className="font-preview-text"
                             style={{
                                 fontFamily: cssFontFamily(target, family),
-                                fontSize: specimenFontSize(target, size)
+                                fontSize: specimenFontSize(target, size, documentSize)
                             }}
                         >
                             {Preview ? <Preview /> : PREVIEW_TEXT}

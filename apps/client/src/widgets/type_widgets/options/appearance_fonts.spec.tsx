@@ -444,23 +444,27 @@ describe("the font settings", () => {
         expect(box?.step).toBe(slider?.step);
     });
 
-    it("draws the interface specimens at the interface size, not that size again", async () => {
-        mocks.stored = { overrideThemeFonts: true, mainFontSize: "175", treeFontSize: "120", detailFontSize: "130" };
+    it("draws each specimen at the size its area is drawn at, whatever size the card is at", async () => {
+        mocks.stored = {
+            overrideThemeFonts: true, mainFontSize: "175", treeFontSize: "120", detailFontSize: "130",
+            monospaceFontSize: "90"
+        };
         open();
         await act(async () => {});
 
-        // The interface size is applied to the whole page as it changes, so a percentage on top
-        // of it would draw the specimen at 175% of 175%.
-        const [ mainRow, treeRow ] = fontRows();
-        expect(mainRow.querySelector<HTMLElement>(".font-option-specimen")?.style.fontSize).toBe("1rem");
-        expect(treeRow.querySelector<HTMLElement>(".font-option-specimen")?.style.fontSize).toBe("120%");
+        // The card is drawn at the document size, so a percentage would be one of that size.
+        // Code is drawn inside the document, so the monospace size is a percentage of it.
+        const specimenSizes = fontRows().map((row) => row.querySelector<HTMLElement>(".font-option-specimen")?.style.fontSize);
+        expect(specimenSizes).toEqual([ "1rem", "1.2rem", "1.3rem", "1.17rem" ]);
 
         await openFirstRow();
         const preview = () => document.querySelector<HTMLElement>(".font-picker-modal .font-preview-text");
-        expect(preview()?.style.fontSize).toBe("1rem");
-
-        await act(async () => pickerTargets()[2].click());
-        expect(preview()?.style.fontSize).toBe("130%");
+        const previewSizes: (string | undefined)[] = [];
+        for (const target of pickerTargets()) {
+            await act(async () => target.click());
+            previewSizes.push(preview()?.style.fontSize);
+        }
+        expect(previewSizes).toEqual(specimenSizes);
     });
 
     it("shows the interface on the components the interface is made of", async () => {
