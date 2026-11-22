@@ -2,9 +2,10 @@ import "./MobileLayout.css";
 import "./MobileLayout.phone.css";
 import "./MobileLayout.tablet.css";
 
+import clsx from "clsx";
 import { useLayoutEffect, useRef } from "preact/hooks";
 
-import { NARROW_LAYOUT } from "../services/utils.js";
+import { isTablet, NARROW_LAYOUT } from "../services/utils.js";
 import GlobalMenu from "../widgets/buttons/global_menu.js";
 import CloseZenModeButton from "../widgets/close_zen_button.js";
 import LauncherContainer from "../widgets/launch_bar/LauncherContainer.js";
@@ -22,12 +23,14 @@ import { Modals, NoteSplits, type NoteSplitParts, triggerLegacyCommand, useAppea
 
 /**
  * The mobile layout, as a single Preact tree. A phone shows the launch bar at the bottom of the
- * screen; a tablet shows it as a rail on the start edge, before the sidebar, and the desktop's tab bar
- * above the notes.
+ * screen. A tablet shows the desktop's tab bar: in portrait across the top of the screen, with
+ * the launch bar at the bottom as on a phone; in landscape above the notes, with the launch bar
+ * as a rail on the start edge.
  */
 export default function MobileLayout() {
     const rootRef = useRef<HTMLDivElement>(null);
     const isPhone = useMediaQuery(NARROW_LAYOUT);
+    const tablet = isTablet();
     useAppearance();
     useLayoutEffect(() => (rootRef.current ? trackVirtualKeyboard(rootRef.current) : undefined), []);
     useLoadCustomWidgets();
@@ -36,9 +39,14 @@ export default function MobileLayout() {
         <div
             ref={rootRef}
             id="root-widget"
-            className={`mobile-layout ${isPhone ? "horizontal" : "vertical"}-layout`}
+            className={clsx(
+                "mobile-layout",
+                isPhone ? "horizontal-layout" : "vertical-layout",
+                tablet && "tablet"
+            )}
             onClick={triggerLegacyCommand}
         >
+            {tablet && isPhone && <LazyTabBar fullWidth />}
             <div id="mobile-rest-container">
                 {!isPhone && (
                     <div id="launcher-pane" className="vertical">
@@ -49,7 +57,7 @@ export default function MobileLayout() {
                 )}
                 <MobileSidebar />
                 <div id="mobile-rest-pane">
-                    {!isPhone && <LazyTabBar />}
+                    {!isPhone && <LazyTabBar fullWidth={false} />}
                     <NoteSplits parts={NOTE_SPLIT_PARTS} containerId="detail-container" />
                 </div>
             </div>
@@ -79,14 +87,17 @@ const NOTE_SPLIT_PARTS: NoteSplitParts = {
     beforeFind: () => [ <MobileEditorToolbar /> ]
 };
 
-// The tab bar and the tree's toggle load only on a tablet, so a phone's startup leaves them out. The
-// note splits stay in `#mobile-rest-pane` on a phone too, so turning the device does not rebuild them.
+// The tab bar and the tree's toggle load only on a tablet, so a phone's startup leaves them out.
+// Turning a tablet moves the tab bar, which takes the tabs again, as the desktop's does. The note
+// splits stay in `#mobile-rest-pane` on a phone too, so turning the device does not rebuild them.
 const loadTabBar = () => import("./TabBar.js");
 const loadLeftPaneToggle = () => import("../widgets/buttons/left_pane_toggle.js");
 
-function LazyTabBar() {
+function LazyTabBar({ fullWidth }: { fullWidth: boolean }) {
     const tabBar = useLazyModule(loadTabBar);
-    return tabBar && <tabBar.default fullWidth={false} leftPaneToggle={false} rightPaneToggle={false} />;
+    return tabBar && (
+        <tabBar.default fullWidth={fullWidth} leftPaneToggle={false} rightPaneToggle={false} />
+    );
 }
 
 function LazyLeftPaneToggle() {

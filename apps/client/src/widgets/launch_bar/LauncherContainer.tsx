@@ -30,10 +30,9 @@ import SyncStatus from "./SyncStatus";
 export default function LauncherContainer({ isHorizontalLayout }: { isHorizontalLayout: boolean }) {
     const childNotes = useLauncherChildNotes();
     const containerRef = useLauncherScrollbarCompensation(isHorizontalLayout, childNotes);
-    // A tablet shows the desktop's launchers, which hold no tab switcher. Its rail stands beside a tab
-    // bar, but its bottom bar has none.
-    const hasFixedTabSwitcher = isTablet() && isHorizontalLayout;
-    const hasTabSwitcher = hasFixedTabSwitcher
+    // A swipe across the bottom bar changes tabs where a tab switcher is in it, and on a tablet, which
+    // shows a tab bar instead.
+    const swipesTabs = isTablet()
         || !!childNotes?.some((note) => note.getLabelValue("builtinWidget") === "mobileTabSwitcher");
     const [ dragEntered, setDragEntered ] = useState(false);
 
@@ -55,7 +54,6 @@ export default function LauncherContainer({ isHorizontalLayout }: { isHorizontal
             <LaunchBarContext.Provider value={{
                 isHorizontalLayout
             }}>
-                {hasFixedTabSwitcher && <LazyTabSwitcher />}
                 {childNotes?.map(childNote => {
                     if (!hasDesktopLaunchBar() && childNote.isLabelTruthy("desktopOnly")) {
                         return false;
@@ -73,7 +71,7 @@ export default function LauncherContainer({ isHorizontalLayout }: { isHorizontal
                     );
                 })}
             </LaunchBarContext.Provider>
-            {isHorizontalLayout && hasTabSwitcher && <LazyTabSwipe containerRef={containerRef} />}
+            {isHorizontalLayout && swipesTabs && <LazyTabSwipe containerRef={containerRef} />}
             {dragEntered && (
                 <LazyLauncherDropTarget
                     containerRef={containerRef}
@@ -178,7 +176,7 @@ const loadLauncherDropTarget = () => import("./LauncherDropTarget");
  * The tab switcher, or until its module loads a button that looks like `TabSwitcher`'s, so the bar
  * spreads its launchers once and they do not move when it arrives.
  */
-function LazyTabSwitcher({ launcherNote }: { launcherNote?: FNote }) {
+function LazyTabSwitcher({ launcherNote }: { launcherNote: FNote }) {
     const tabSwitcher = useLazyModule(loadTabSwitcher);
     if (!tabSwitcher) {
         return <LaunchBarActionButton launcherNote={launcherNote} className="mobile-tab-switcher" icon="bx bx-rectangle" text="Tabs" />;

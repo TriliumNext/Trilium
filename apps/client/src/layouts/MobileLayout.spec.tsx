@@ -36,7 +36,7 @@ describe("MobileLayout", () => {
         // A tablet's tab bar starts with the history buttons, which take these launchers' titles.
         buildNote({ id: "_lbBackInHistory", title: "Back" });
         buildNote({ id: "_lbForwardInHistory", title: "Forward" });
-        // A phone unless the case says otherwise: happy-dom's window is as wide as a tablet's.
+        // A phone unless the case says otherwise: happy-dom's window and screen are a tablet's.
         stubLayoutWidth("phone");
         options.set("experimentalFeatures", "[]");
         // A split shows an empty note, whose view searches for the workspaces, also after the case.
@@ -49,6 +49,7 @@ describe("MobileLayout", () => {
     afterEach(() => {
         window.glob.device = device;
         if (vi.isMockFunction(window.matchMedia)) window.matchMedia.mockRestore();
+        for (const side of [ "width", "height" ] as const) vi.spyOn(window.screen, side, "get").mockRestore();
     });
 
     it("gives each note split a title row, a scroller with the note and its search results, then the type bar, editor toolbar and find bar", async () => {
@@ -126,9 +127,11 @@ describe("MobileLayout", () => {
         expect(bottomBar?.nextElementSibling?.nextElementSibling?.classList.contains("hide-keyboard-button")).toBe(true);
         expect(root?.querySelector("#toast-container")).toBeInstanceOf(HTMLElement);
         expect(root?.querySelector("#launcher-pane.vertical")).toBeNull();
+        // A phone's tabs are in the tab switcher, not in a tab bar.
+        expect(root?.classList.contains("tablet")).toBe(false);
     });
 
-    it("puts the launchers in a rail before the sidebar on a tablet and the tab bar above the notes, and moves them as the device turns", async () => {
+    it("puts the launchers in a rail before the sidebar on a tablet and the tab bar above the notes, and in portrait the tab bar across the top", async () => {
         const layout = stubLayoutWidth("tablet");
         let container: HTMLElement | undefined;
         act(() => { container = renderLayout(); });
@@ -150,10 +153,15 @@ describe("MobileLayout", () => {
         const detail = restPane?.lastElementChild;
         expect(detail?.id).toBe("detail-container");
 
+        // In portrait, the tab bar runs across the top of the screen, over the tree and the note.
         act(() => layout.turnTo("phone"));
         expect(root?.classList.contains("horizontal-layout")).toBe(true);
+        expect(root?.classList.contains("tablet")).toBe(true);
         expect(root?.querySelector("#launcher-pane.vertical")).toBeNull();
-        expect(root?.querySelector(".tab-row-container")).toBeNull();
+        expect(restPane?.querySelector(".tab-row-container")).toBeNull();
+        await vi.waitFor(() => expect(root?.firstElementChild?.classList.contains("tab-row-container")).toBe(true));
+        expect(root?.querySelector(":scope > .tab-row-container .tab-row-widget.full-width")).toBeInstanceOf(HTMLElement);
+        expect(root?.firstElementChild?.nextElementSibling?.id).toBe("mobile-rest-container");
         // The notes stay as they are, so turning the device does not rebuild them.
         expect(root?.querySelector("#detail-container")).toBe(detail);
         expect(root?.querySelector(":scope > #mobile-bottom-bar > #launcher-pane.horizontal")).toBeInstanceOf(HTMLElement);
@@ -222,6 +230,10 @@ describe("MobileLayout", () => {
  */
 function stubLayoutWidth(initial: "phone" | "tablet") {
     if (vi.isMockFunction(window.matchMedia)) window.matchMedia.mockRestore();
+    // The device: its screen keeps its size as the layout follows the width of the window.
+    const [ width, height ] = initial === "phone" ? [ 390, 844 ] : [ 1024, 768 ];
+    vi.spyOn(window.screen, "width", "get").mockReturnValue(width);
+    vi.spyOn(window.screen, "height", "get").mockReturnValue(height);
     let isPhone = initial === "phone";
     const listeners = new Set<() => void>();
     const original = window.matchMedia.bind(window);

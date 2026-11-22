@@ -37,6 +37,16 @@
     }
 }
 
+/* A tablet in portrait: the tab bar across the top runs up under the status bar. */
+body.mobile #root-widget.tablet.horizontal-layout {
+    padding-top: 0;
+
+    > .tab-row-container {
+        box-sizing: content-box;
+        padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
+    }
+}
+
 #background-color-tracker {
     color: var(--main-background-color) !important;
 }

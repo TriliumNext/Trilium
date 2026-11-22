@@ -329,7 +329,7 @@ describe("LauncherContainer on a tablet", () => {
         options.set("aiEnabled", "false");
     });
 
-    it("shows the desktop's launchers, those marked desktop-only among them, and leaves out the AI chat; its bottom bar starts with a tab switcher", async () => {
+    it("shows the desktop's launchers, those marked desktop-only among them, and leaves out the AI chat, with no tab switcher in either bar", async () => {
         h.isMobile = true;
         h.isTablet = true;
         options.set("aiEnabled", "true");
@@ -348,7 +348,7 @@ describe("LauncherContainer on a tablet", () => {
             </ParentComponent.Provider>, container));
         await flush();
 
-        // The rail stands beside the tab bar, so it holds no tab switcher.
+        // A tablet's tabs are in its tab bar.
         expect(container.querySelector("#launcher-container")?.firstElementChild?.classList.contains("launcher-slot")).toBe(true);
         expect(container.querySelector(".tab-switcher-stub, .mobile-tab-switcher")).toBeNull();
         expect(container.querySelector(".launcher-slot[data-launcher-id='_lbMobileCalendarStub']")).toBeNull();
@@ -362,8 +362,9 @@ describe("LauncherContainer on a tablet", () => {
                 <LauncherContainer isHorizontalLayout />
             </ParentComponent.Provider>, container));
         await flush();
-        // The previous case loaded the switcher's module, so its stub stands in the place of the button.
-        expect(container.querySelector("#launcher-container")?.firstElementChild?.classList.contains("tab-switcher-stub")).toBe(true);
+        // The bottom bar of a tablet in portrait stands under a tab bar too, but takes a swipe between tabs.
+        expect(container.querySelector(".tab-switcher-stub, .mobile-tab-switcher")).toBeNull();
+        expect(container.querySelector(".tab-swipe-stub")).not.toBeNull();
     });
 });
 
