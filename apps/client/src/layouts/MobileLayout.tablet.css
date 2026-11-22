@@ -74,6 +74,8 @@
     }
 
     #detail-container {
+        overflow: clip;
+        border-start-start-radius: var(--center-pane-border-radius, 0);
         background: var(--main-background-color);
     }
 
