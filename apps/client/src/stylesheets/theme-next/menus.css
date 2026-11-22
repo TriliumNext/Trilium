@@ -219,7 +219,7 @@ html body .dropdown-item[disabled] {
 }
 
 /* Static menus (used as a list, such as on the note revisions dialog) */
-body.desktop .dropdown-menu.static {
+:is(body.desktop, .mobile-layout.tablet) .dropdown-menu.static {
     box-shadow: unset;
     border-radius: 4px;
     border: unset;
@@ -228,7 +228,7 @@ body.desktop .dropdown-menu.static {
     user-select: none;
 }
 
-body.desktop .dropdown-menu.static .dropdown-item.active {
+:is(body.desktop, .mobile-layout.tablet) .dropdown-menu.static .dropdown-item.active {
     --active-item-text-color: var(--menu-text-color);
 }
 

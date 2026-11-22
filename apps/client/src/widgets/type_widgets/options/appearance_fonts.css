@@ -37,7 +37,7 @@
 }
 
 /* Font Picker Modal */
-body.desktop .modal.font-picker-modal {
+:is(body.desktop, .mobile-layout.tablet) .modal.font-picker-modal {
     .modal-dialog {
         --bs-modal-width: 50rem;
     }
@@ -62,7 +62,7 @@ body.desktop .modal.font-picker-modal {
     }
 }
 
-body.mobile .modal.font-picker-modal {
+.mobile-layout:not(.tablet) .modal.font-picker-modal {
     .modal-dialog {
         height: 85vh;
     }

@@ -51,13 +51,9 @@ body.mobile .modal.options-dialog:not(.mobile-master-detail) > .modal-dialog > .
     z-index: 9999;
 }
 
-/* A tablet keeps the desktop's sidebar layout, title included, where `style.css` moves a mobile
-   sidebar dialog's title into the main header. */
+/* On a tablet, the close button is centered on the page's title row, which starts at the top of the
+   page. */
 body.mobile .modal.options-dialog:not(.mobile-master-detail) > .modal-dialog > .modal-content {
-    > .modal-sidebar > .modal-sidebar-header {
-        display: block;
-    }
-
     > .modal-main > .modal-header {
         /* The title row of `.options-page-header`: its 10px block padding around the 40px icon
            badge of OptionsPageHeader.css. */
@@ -65,12 +61,6 @@ body.mobile .modal.options-dialog:not(.mobile-master-detail) > .modal-dialog > .
         padding-block: 0 !important;
         border-bottom: 0;
         background: transparent;
-
-        > .modal-title {
-            visibility: hidden;
-            width: 0;
-            padding: 0;
-        }
     }
 
     .options-page-header {
@@ -84,20 +74,6 @@ body.mobile .modal.options-dialog > .modal-dialog > .modal-content > .modal-main
 body.mobile .modal.options-dialog > .modal-dialog > .modal-content > .modal-body {
     height: auto;
     flex: 1 1 auto;
-}
-
-/* On wider mobile viewports (tablets) the dialog keeps the desktop-style sidebar layout; undo the
-   generic bottom-strip arrangement that style.css applies to sidebar modals on mobile. The sidebar
-   only exists outside the master-detail flow, so no extra scoping is needed. */
-body.mobile .modal.options-dialog > .modal-dialog > .modal-content-with-sidebar {
-    flex-direction: row !important;
-}
-
-body.mobile .modal.options-dialog > .modal-dialog > .modal-content-with-sidebar > .modal-sidebar {
-    order: 0;
-    height: auto;
-    border-right: 1px solid var(--main-border-color);
-    border-bottom: none;
 }
 
 /* On tablets, don't take up the full page height like the master-detail flow does. */

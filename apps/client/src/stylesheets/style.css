@@ -1316,31 +1316,34 @@ svg.ck-icon.note-icon {
     min-height: 0;
 }
 
-body.mobile .modal-content-with-sidebar {
-    flex-direction: column !important;
-}
+/* On a phone, a dialog's sidebar is a strip under its content. The breakpoint must match
+   `STACKED_TREE_LAYOUT` in services/utils.ts. */
+@media (max-width: 743px), (max-height: 599px) {
+    body.mobile .modal-content-with-sidebar {
+        flex-direction: column !important;
+    }
 
-body.mobile .modal-content-with-sidebar > .modal-sidebar {
-    border-right: none;
-    border-bottom: 1px solid var(--main-border-color);
-    height: 30vh;
-    flex-shrink: 0;
-    overflow: hidden;
-    order: 1;
-}
+    body.mobile .modal-content-with-sidebar > .modal-sidebar {
+        border-right: none;
+        border-bottom: 1px solid var(--main-border-color);
+        height: 30vh;
+        flex-shrink: 0;
+        overflow: hidden;
+        order: 1;
+    }
 
-body.mobile .modal-content-with-sidebar > .modal-main {
-    order: 0;
-}
+    body.mobile .modal-content-with-sidebar > .modal-main {
+        order: 0;
+    }
 
-body.mobile .modal-content-with-sidebar .modal-sidebar-header {
-    display: none;
-}
+    body.mobile .modal-content-with-sidebar .modal-sidebar-header {
+        display: none;
+    }
 
-body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-title {
-    visibility: visible;
-    width: auto;
-}
+    body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-title {
+        visibility: visible;
+        width: auto;
+    }}
 
 .side-checkbox {
     display: flex;

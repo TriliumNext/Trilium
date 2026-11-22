@@ -15,6 +15,11 @@ body.tree-popup-stacked .tree-popup-editor-dialog { z-index: 1100; }
     height: 80vh;
 }
 
+/* Outranks the full width that style.css gives every mobile dialog. */
+.mobile-layout.tablet .modal.tree-popup-editor-dialog .modal-dialog {
+    width: 90vw;
+}
+
 .modal.tree-popup-editor-dialog .modal-content {
     height: 80vh;
 
@@ -24,11 +29,11 @@ body.tree-popup-stacked .tree-popup-editor-dialog { z-index: 1100; }
 }
 
 /* Sidebar holding the hoisted note tree. */
-body.desktop .modal.tree-popup-editor-dialog .modal-sidebar {
+:is(body.desktop, .mobile-layout.tablet) .modal.tree-popup-editor-dialog .modal-sidebar {
     width: 300px;
 }
 
-body.mobile .modal.tree-popup-editor-dialog .modal-sidebar {
+.mobile-layout:not(.tablet) .modal.tree-popup-editor-dialog .modal-sidebar {
     border-top: 1px solid var(--main-border-color);
 }
 

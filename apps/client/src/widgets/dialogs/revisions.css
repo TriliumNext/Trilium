@@ -48,7 +48,7 @@ body.mobile .revisions-dialog {
     }
 }
 
-body.desktop .revisions-dialog {
+:is(body.desktop, .mobile-layout.tablet) .revisions-dialog {
     .revision-list {
         width: 300px;
     }
