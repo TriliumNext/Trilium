@@ -85,13 +85,15 @@
     "script_link_not_allowed": "以 {{scheme}} 开头的链接可以执行代码，因此不允许使用。",
     "retrieving_from_page": "正在从网页获取…",
     "title_from_attachment": "若未设置，将始终跟随附件的标题",
-    "top_of_note": "链接到整篇笔记",
+    "top_of_note": "链接到整篇笔记（默认）",
     "select_note_for_targets": "选择一篇笔记，即可看到可链接到的标题和锚点。",
     "inspecting_note": "正在检查笔记结构",
     "heading_reference_failed": "无法创建指向该标题的引用",
     "link_to_heading": "链接到标题",
     "link_to_anchor": "链接到锚点",
-    "no_link_targets": "没有可链接到的标题或锚点。"
+    "no_link_targets": "没有可链接到的标题或锚点。",
+    "open_file_for_targets": "打开该文件，即可列出它的标题。",
+    "listing_changed": "列出标题期间笔记发生了改动。请重新选择标题。"
   },
   "branch_prefix": {
     "edit_branch_prefix": "编辑分支前缀",
@@ -1005,7 +1007,8 @@
     "note_attributes_title": "笔记属性",
     "search_in_note_short": "查找",
     "note_attachments_short": "附件",
-    "note_settings": "笔记设置"
+    "note_settings": "笔记设置",
+    "convert_block_references_changed": "指向本笔记各块的引用中，已失效的有 {{lost}} 个，另有 {{moved}} 个改指向了别的块。转换前保存的版本仍保留笔记原来的样子。"
   },
   "onclick_button": {
     "no_click_handler": "按钮组件'{{componentId}}'没有定义点击处理程序"
@@ -2053,7 +2056,8 @@
     "find_placeholder": "在文本中查找...",
     "replace_placeholder": "替换为...",
     "replace": "替换",
-    "replace_all": "全部替换"
+    "replace_all": "全部替换",
+    "nothing_replaced": "没有替换任何内容，因为搜索没有完成。"
   },
   "highlights_list_2": {
     "title_with_count_other": "{{count}} 处高亮",
@@ -2173,7 +2177,11 @@
   },
   "toc": {
     "table_of_contents": "目录",
-    "no_headings": "无标题。"
+    "no_headings": "无标题。",
+    "building": "正在生成目录…",
+    "build_failed": "无法读取目录。",
+    "unavailable": "目录当前不可用。",
+    "retry": "重试"
   },
   "watched_file_update_status": {
     "upload_modified_file": "上传",
@@ -2201,7 +2209,9 @@
     "copy_success": "已复制到剪贴板。",
     "copied_without_links": "笔记已复制到剪贴板，但笔记链接无法放入系统剪贴板。",
     "paste_notes": "粘贴笔记",
-    "paste_failed": "无法读取剪贴板。"
+    "paste_failed": "无法读取剪贴板。",
+    "copy_ready": "链接已就绪，可以复制。",
+    "copy_button": "复制"
   },
   "entrypoints": {
     "note-revision-created": "笔记修订已创建。",
@@ -2582,7 +2592,9 @@
     "link_details_retrieval_enabled": "自动获取图标与文字链接和卡片的标题与描述",
     "link_details_retrieval_description": "在链接编辑器中，用网页的标题和描述填充图标与文字链接或卡片中为空的标题或描述。",
     "note_completion_link_targets_enabled": "建议可链接到的标题和锚点",
-    "note_completion_link_targets_description": "选择一篇笔记后，还会建议目标笔记中的标题或锚点作为链接目标。"
+    "note_completion_link_targets_description": "选择一篇笔记后，还会建议目标笔记中的标题或锚点作为链接目标。",
+    "scroll_rail_highlights_enabled": "在滚动条上显示高亮文本",
+    "scroll_rail_highlights_description": "在滚动条上显示彩色标记，让你看出笔记中哪些位置有高亮文本。"
   },
   "table_view": {
     "new-row": "新增行",
@@ -2934,7 +2946,8 @@
   },
   "popup-editor": {
     "maximize": "切换至完整编辑器",
-    "attachment_title": "附件：{{title}}"
+    "attachment_title": "附件：{{title}}",
+    "back": "返回上一篇笔记"
   },
   "server": {
     "unknown_http_error_title": "与服务器通讯错误",
@@ -3067,7 +3080,11 @@
     "annotation_text_box": "第 {{pageNumber}} 页上的文本框",
     "copy_reference": "复制引用",
     "page_reference": "第 {{pageNumber}} 页",
-    "annotation_reference": "第 {{pageNumber}} 页上的批注"
+    "annotation_reference": "第 {{pageNumber}} 页上的批注",
+    "pages_title": "页面",
+    "annotations_title": "批注",
+    "attachments_title": "附件",
+    "layers_title": "图层"
   },
   "platform_indicator": {
     "available_on": "在 {{platform}} 上可用"
@@ -3633,7 +3650,11 @@
     "source_description_restore": "在还原先前修订之前已保存",
     "source_description_unknown": "来源不可用",
     "diff_identical": "此修订与当前笔记内容相同。",
-    "back": "返回"
+    "back": "返回",
+    "source_description_draft": "未保存的改动，在笔记于别处被改动后保留下来",
+    "source_description_fragment": "某段摘录的未保存改动，其块已不存在",
+    "fragment_not_restorable": "此版本只包含这篇笔记的部分块，而这些块已不在笔记中。它无法恢复，但可以复制。",
+    "copy_button": "复制"
   },
   "database": {
     "title": "数据库",
@@ -4853,7 +4874,8 @@
     "viewConfig": "视图设置",
     "canvasLibraryItem": "画布库",
     "importSource": "导入来源",
-    "transcript": "会议转录文本"
+    "transcript": "会议转录文本",
+    "tocCache": "目录缓存"
   },
   "color-picker": {
     "clear-color": "清除颜色",
@@ -5122,7 +5144,11 @@
     "edit_excerpt": "编辑摘录",
     "copy_tab": "复制此标签页的链接",
     "copy_share_link": "复制公开链接",
-    "copy_reference": "复制引用"
+    "copy_reference": "复制引用",
+    "inert_marker": "引用 {{id}} 未指向任何块",
+    "remove_reference": "移除引用",
+    "copy_failed": "无法创建引用。",
+    "paste_failed": "无法将引用粘贴到这里。"
   },
   "record_meeting": {
     "note_title": "会议 {{date}}",
@@ -5389,5 +5415,21 @@
     "menu_help": "帮助",
     "menu_note_description": "仅应用于这篇笔记。",
     "menu_note_description_subtree": "应用于这篇笔记及其下的笔记。"
+  },
+  "note_save": {
+    "conflict_title": "已在别处修改",
+    "conflict_message": "你编辑这篇笔记时，它在别处被修改了。请选择要保留的版本；另一个版本会存为一条版本记录。",
+    "conflict_message_unversioned": "你编辑这篇笔记时，它在别处被修改了。请选择要保留的版本；这篇笔记不保留版本历史，另一个版本会被丢弃。",
+    "keep_this_version": "保留此版本",
+    "load_other_version": "载入另一个版本",
+    "draft_kept": "你的未保存改动已存为这篇笔记的一个版本。",
+    "draft_discarded": "你的未保存改动已被丢弃，因为这篇笔记不保留版本历史。",
+    "draft_kept_after_conversion": "你在编辑期间笔记被转换了。你的未保存改动已存为一个版本。",
+    "draft_discarded_after_conversion": "你在编辑期间笔记被转换了，而这篇笔记不保留版本历史，因此你的未保存改动已被丢弃。",
+    "draft_kept_blocks_gone": "你正在编辑的块已在别处被修改，无法再在这里编辑。你的未保存改动已存为一个版本。",
+    "draft_discarded_blocks_gone": "你正在编辑的块已在别处被修改，无法再在这里编辑。这篇笔记不保留版本历史，因此你的未保存改动已被丢弃。"
+  },
+  "scroll_rail": {
+    "show_highlights": "高亮"
   }
 }
