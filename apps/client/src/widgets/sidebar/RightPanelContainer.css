@@ -53,8 +53,11 @@ body.backdrop-effects-disabled #right-pane.right-pane-mode-peek {
 
     > .right-pane-peek-button {
         --peek-pane-button-width: var(--right-pane-peek-button-width);
+        --peek-button-expand-background-color: transparent;
         position: relative;
         flex: none;
+        order: 1;
+        border-bottom: 0;
     }
 
     > #right-pane-host.peek {

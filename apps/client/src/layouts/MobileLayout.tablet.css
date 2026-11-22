@@ -5,7 +5,8 @@
         background-color: var(--launcher-pane-background-color);
     }
 
-    body.mobile #mobile-rest-container > :is(#launcher-pane, #mobile-sidebar-wrapper, #mobile-rest-pane, #right-pane-host) {
+    body.mobile #mobile-rest-container > :is(#launcher-pane, #mobile-sidebar-wrapper, #mobile-rest-pane),
+    body.mobile #right-pane-host > #right-pane {
         padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
     }
 
@@ -13,7 +14,8 @@
        tree's `.mobile-navigator-scroll` pads itself. The open keyboard covers the navigation bar,
        as in phone mode. */
     body.mobile:not(.keyboard-panel-open) #root-widget:not(.virtual-keyboard-opened) {
-        #mobile-rest-container > :is(#launcher-pane, #right-pane-host) {
+        #mobile-rest-container > #launcher-pane,
+        #right-pane-host > #right-pane {
             padding-bottom: var(--mobile-bottom-offset);
         }
 

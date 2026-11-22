@@ -98,6 +98,7 @@
 
         > .left-pane-peek-button {
             --peek-pane-button-width: var(--mobile-peek-button-width);
+            --peek-button-expand-background-color: transparent;
             position: relative;
             flex: none;
         }
