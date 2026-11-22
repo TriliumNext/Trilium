@@ -2296,7 +2296,6 @@
     "refresh-saved-search-results": "Aggiorna i risultati della ricerca salvati",
     "create-child-note": "Crea nota figlio",
     "unhoist": "Sganciare",
-    "toggle-sidebar": "Attiva/disattiva la barra laterale",
     "dropping-not-allowed": "Non è consentito lasciare appunti in questa posizione.",
     "clone-indicator-tooltip": "Questa nota ha {{- count}} genitori: {{- parents}}",
     "clone-indicator-tooltip-single": "Questa nota è stata clonata (1 genitore aggiuntivo: {{- parent}})",

@@ -1593,7 +1593,6 @@
     "refresh-saved-search-results": "सेव की गई खोज के परिणाम रीफ़्रेश करें",
     "create-child-note": "चाइल्ड नोट बनाएं",
     "unhoist": "मुख्य नोट से हटाएं (Unhoist)",
-    "toggle-sidebar": "साइडबार दिखाएं/छुपाएं",
     "dropping-not-allowed": "यहाँ नोट्स डालना (Drop) मना है।",
     "clone-indicator-tooltip": "इस नोट के {{- count}} पैरेंट नोट्स हैं: {{- parents}}",
     "clone-indicator-tooltip-single": "यह नोट क्लोन किया गया है (1 और पैरेंट: {{- parent}})",

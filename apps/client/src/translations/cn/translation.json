@@ -2089,7 +2089,6 @@
     "refresh-saved-search-results": "刷新保存的搜索结果",
     "create-child-note": "创建子笔记",
     "unhoist": "取消聚焦",
-    "toggle-sidebar": "切换侧边栏",
     "dropping-not-allowed": "不允许移动笔记到此处。",
     "shared-indicator-tooltip": "此笔记已公开分享",
     "shared-indicator-tooltip-with-url": "此笔记已公开分享至：{{- url}}",

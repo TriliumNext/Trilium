@@ -1711,7 +1711,6 @@
     "refresh-saved-search-results": "重新整理儲存的搜尋結果",
     "create-child-note": "建立子筆記",
     "unhoist": "取消聚焦",
-    "toggle-sidebar": "切換側邊欄",
     "dropping-not-allowed": "不允許移動筆記至此處。",
     "clone-indicator-tooltip": "此筆記有 {{- count}} 個父級：{{- parents}}",
     "clone-indicator-tooltip-single": "此筆記已克隆（新增 1 個父級：{{- parent}}）",

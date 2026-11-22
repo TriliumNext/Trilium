@@ -2272,7 +2272,6 @@
     "refresh-saved-search-results": "Segarkan hasil pencarian tersimpan",
     "create-child-note": "Buat catatan anak",
     "unhoist": "Batalkan hoist",
-    "toggle-sidebar": "Alihkan sidebar",
     "dropping-not-allowed": "Menjatuhkan catatan ke lokasi ini tidak diperbolehkan.",
     "clone-indicator-tooltip": "Catatan ini memiliki {{- count}} induk: {{- parents}}",
     "clone-indicator-tooltip-single": "Catatan ini adalah clone (1 induk tambahan: {{- parent}})",

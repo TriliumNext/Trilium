@@ -1398,7 +1398,6 @@
     "saved-search-note-refreshed": "Сохраненная поисковая заметка обновлена.",
     "refresh-saved-search-results": "Обновить сохраненные результаты поиска",
     "automatically-collapse-notes-title": "Заметки будут свернуты после определенного периода бездействия, чтобы навести порядок в дереве.",
-    "toggle-sidebar": "Переключить боковую панель",
     "dropping-not-allowed": "Перетаскивание заметок в эту область не разрешено.",
     "shared-indicator-tooltip": "Эта заметка опубликована",
     "shared-indicator-tooltip-with-url": "Эта заметка доступно публично по адресу: {{- url}}",

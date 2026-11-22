@@ -2720,7 +2720,6 @@
     "refresh-saved-search-results": "저장된 검색 결과를 새로고침하기",
     "create-child-note": "하위 노트 생성",
     "unhoist": "루트 보기 해제",
-    "toggle-sidebar": "사이드바 토글",
     "dropping-not-allowed": "이 위치에는 노트를 놓을 수 없습니다.",
     "clone-indicator-tooltip": "이 노트의 상위 노트 {{- count}}개: {{- parents}}",
     "clone-indicator-tooltip-single": "이 노트는 복제되어 있습니다(추가 상위 노트 1개: {{- parent}})",

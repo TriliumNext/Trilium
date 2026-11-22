@@ -1338,7 +1338,6 @@
     "refresh-saved-search-results": "Atualizar resultados de pesquisa gravados",
     "create-child-note": "Criar nota filha",
     "unhoist": "Desafixar",
-    "toggle-sidebar": "Alternar barra lateral",
     "dropping-not-allowed": "Largar notas nesta localização não é permitida",
     "clone-indicator-tooltip": "Esta nota tem {{- count}} ascendentes: {{- parents}}",
     "shared-indicator-tooltip": "Esta nota está partilhada publicamente",

@@ -1802,7 +1802,6 @@
     "unhoist": "ホイスト解除",
     "saved-search-note-refreshed": "保存した検索ノートが更新されました。",
     "refresh-saved-search-results": "保存した検索結果を更新",
-    "toggle-sidebar": "サイドバーを切り替え",
     "dropping-not-allowed": "この場所にノートをドロップすることはできません。",
     "clone-indicator-tooltip": "このノートには {{- count}} 個の親があります: {{- parents}}",
     "clone-indicator-tooltip-single": "このノートは複製されています (親が 1 件追加: {{- parent}})",

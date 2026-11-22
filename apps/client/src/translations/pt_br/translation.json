@@ -1776,7 +1776,6 @@
     "refresh-saved-search-results": "Atualizar resultados de pesquisa salvos",
     "create-child-note": "Criar nota filha",
     "unhoist": "Desafixar",
-    "toggle-sidebar": "Alternar barra lateral",
     "dropping-not-allowed": "Não é permitido soltar notas neste local.",
     "follow-active-note": "Seguir a nota ativa",
     "follow-active-note-title": "Rola a árvore e expande os nós pais para mostrar a nota ativa. Quando desativado, a árvore permanece no lugar e apenas o destaque de fundo é atualizado.",

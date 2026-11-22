@@ -2120,7 +2120,6 @@
     "refresh-saved-search-results": "Refrescar resultados de búsqueda guardados",
     "create-child-note": "Crear subnota",
     "unhoist": "Desanclar",
-    "toggle-sidebar": "Alternar barra lateral",
     "dropping-not-allowed": "No está permitido soltar notas en esta ubicación.",
     "clone-indicator-tooltip": "Esta nota tiene {{- count}} padres: {{- parents}}",
     "clone-indicator-tooltip-single": "Esta nota está clonada (1 padre adicional: {{- parent}})",

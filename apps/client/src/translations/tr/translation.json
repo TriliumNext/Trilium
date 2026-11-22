@@ -375,7 +375,6 @@
     "refresh-saved-search-results": "Kaydedilmiş arama sonuçlarını yenile",
     "create-child-note": "Alt not oluştur",
     "unhoist": "Yükseltmeyi kaldır",
-    "toggle-sidebar": "Kenar çubuğunu aç/kapat",
     "dropping-not-allowed": "Notların bu konuma bırakılmasına izin verilmiyor.",
     "shared-indicator-tooltip": "Bu not herkese açık olarak paylaşılıyor",
     "shared-indicator-tooltip-with-url": "Bu not şurada herkese açık olarak paylaşılıyor: {{- url}}",
