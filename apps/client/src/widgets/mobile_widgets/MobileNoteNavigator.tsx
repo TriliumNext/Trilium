@@ -21,6 +21,7 @@ import tree from "../../services/tree";
 import utils, { isIOS } from "../../services/utils";
 import { NoteContent } from "../collections/legacy/NoteContent";
 import { useShareState } from "../layout/NoteBadges";
+import ActionButton from "../react/ActionButton";
 import { useTriliumEvent } from "../react/hooks/events";
 import { useLongPressContextMenu } from "../react/hooks/dom";
 import {
@@ -537,30 +538,26 @@ export function CurrentNoteActions({ notePath, onMoreActions }: {
 }) {
     return (
         <>
-            <button
-                type="button"
+            <ActionButton
                 className="mobile-navigator-current-action"
-                aria-label={t("mobile_note_navigator.add_child")}
-                title={t("mobile_note_navigator.add_child")}
+                icon="bx bx-plus"
+                text={t("mobile_note_navigator.add_child")}
+                noTooltipOnTouch
                 onClick={(e) => {
                     e.stopPropagation();
                     if (notePath) note_create.createNote(notePath);
                 }}
-            >
-                <Icon icon="bx bx-plus" />
-            </button>
-            <button
-                type="button"
+            />
+            <ActionButton
                 className="mobile-navigator-current-action"
-                aria-label={t("mobile_note_navigator.more_actions")}
-                title={t("mobile_note_navigator.more_actions")}
+                icon="bx bx-dots-horizontal-rounded"
+                text={t("mobile_note_navigator.more_actions")}
+                noTooltipOnTouch
                 onClick={(e) => {
                     e.stopPropagation();
                     onMoreActions(e as unknown as MouseEvent);
                 }}
-            >
-                <Icon icon="bx bx-dots-horizontal-rounded" />
-            </button>
+            />
         </>
     );
 }
