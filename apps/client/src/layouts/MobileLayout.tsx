@@ -1,4 +1,5 @@
 import "./MobileLayout.css";
+import "./MobileLayout.tablet.css";
 
 import { useLayoutEffect, useRef } from "preact/hooks";
 
