@@ -92,18 +92,47 @@ describe("MobileSidebar", () => {
         expect(save).not.toHaveBeenCalled();
     });
 
+    it("resizes the docked tree by its gutter, keeping the width the tree takes, and has none while hidden", () => {
+        options.set("mobileLeftPaneWidth", "320");
+        const sidebar = render(true);
+        expect(sidebar.style.getPropertyValue("--mobile-sidebar-width")).toBe("320px");
+        const gutter = sidebar.nextElementSibling;
+        if (!(gutter instanceof HTMLElement)) throw new Error("No gutter");
+        expect(gutter.classList.contains("mobile-sidebar-gutter")).toBe(true);
+        gutter.setPointerCapture = vi.fn();
+
+        // The stylesheet caps the width the drag asks for; the tree's own width is the one kept.
+        vi.spyOn(sidebar, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 320, 600));
+        act(() => { gutter.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 1, bubbles: true })); });
+        gutter.dispatchEvent(new PointerEvent("pointermove", { pointerId: 1, clientX: 412.4 }));
+        expect(sidebar.style.getPropertyValue("--mobile-sidebar-width")).toBe("412px");
+        vi.spyOn(sidebar, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 600));
+        act(() => { gutter.dispatchEvent(new PointerEvent("pointerup", { pointerId: 1 })); });
+        expect(save).toHaveBeenLastCalledWith("mobileLeftPaneWidth", 400);
+        expect(sidebar.style.getPropertyValue("--mobile-sidebar-width")).toBe("400px");
+
+        // A tap without a drag keeps the width.
+        save.mockClear();
+        act(() => { gutter.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 1, bubbles: true })); });
+        act(() => { gutter.dispatchEvent(new PointerEvent("pointerup", { pointerId: 1 })); });
+        expect(save).not.toHaveBeenCalled();
+
+        trigger("setLeftPaneVisibility", { leftPaneVisible: false });
+        expect(rest.querySelector(".mobile-sidebar-gutter")).toBeNull();
+    });
+
     describe("on a phone", () => {
         let detail: HTMLElement;
         let isNarrow: boolean;
-        let onLayoutChange: () => void;
+        let layoutListeners: Set<() => void>;
 
         beforeEach(() => {
             isNarrow = true;
-            onLayoutChange = () => {};
+            layoutListeners = new Set();
             vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
                 matches: isNarrow && (query === NARROW_LAYOUT || query === STACKED_TREE_LAYOUT),
                 media: query,
-                addEventListener: (_type: string, listener: () => void) => { onLayoutChange = listener; },
+                addEventListener: (_type: string, listener: () => void) => { layoutListeners.add(listener); },
                 removeEventListener: vi.fn()
             }) as unknown as MediaQueryList);
 
@@ -132,6 +161,8 @@ describe("MobileSidebar", () => {
 
         it("marks the body while the tree is open", () => {
             renderPhone();
+            // A stacked tree has no gutter to resize it.
+            expect(rest.querySelector(".mobile-sidebar-gutter")).toBeNull();
 
             trigger("activeScreenChanged", { activeScreen: "tree" });
             expect(tree.classList.contains("show")).toBe(true);
@@ -283,7 +314,7 @@ describe("MobileSidebar", () => {
             expect(detail.style.transform).toBe("translateX(100%)");
 
             isNarrow = false;
-            onLayoutChange();
+            act(() => { for (const listener of layoutListeners) listener(); });
             expect(detail.style.transform).toBe("");
             expect(tree.style.transform).toBe("");
         });

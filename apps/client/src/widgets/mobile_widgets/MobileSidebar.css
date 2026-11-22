@@ -73,7 +73,7 @@
     #mobile-sidebar-wrapper {
         --navigator-backdrop: var(--left-pane-background-color);
         flex-shrink: 0;
-        width: max(25%, 280px);
+        width: clamp(200px, var(--mobile-sidebar-width, max(25%, 280px)), 60%);
         transform: none !important;
         background-color: var(--navigator-backdrop) !important;
     }
@@ -84,5 +84,20 @@
 
     #mobile-rest-container > #mobile-sidebar-wrapper.left-pane-hidden ~ #mobile-rest-pane {
         width: 100%;
+    }
+}
+
+.mobile-sidebar-gutter {
+    position: relative;
+    flex-shrink: 0;
+    width: 5px;
+    touch-action: none;
+
+    &::before {
+        content: "";
+        position: absolute;
+        inset-block: 0;
+        inset-inline: -8px;
+        z-index: 1;
     }
 }

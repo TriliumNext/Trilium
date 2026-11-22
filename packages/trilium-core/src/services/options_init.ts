@@ -200,6 +200,7 @@ const defaultOptions: DefaultOption[] = [
     { name: "contentManagerSortOrder", value: "title", isSynced: true },
     { name: "contentManagerViewMode", value: "category", isSynced: true },
     { name: "leftPaneWidth", value: "25", isSynced: false },
+    { name: "mobileLeftPaneWidth", value: "0", isSynced: false },
     { name: "leftPaneVisible", value: "true", isSynced: false },
     { name: "rightPaneWidth", value: "25", isSynced: false },
     { name: "rightPaneVisible", value: "true", isSynced: false },

@@ -151,6 +151,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     /** JPEG quality a lossless image is converted at, kept apart from {@link imageJpegQuality}. */
     imageConversionQuality: number;
     leftPaneWidth: number;
+    /** The width of the tree docked beside the note on a tablet, in pixels; `0` for the default. */
+    mobileLeftPaneWidth: number;
     rightPaneWidth: number;
     rightPaneCollapsedItems: string;
     rightPaneSelectedTab: string;
