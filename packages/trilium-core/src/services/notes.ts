@@ -1520,6 +1520,11 @@ function undeleteNote(
         return failed;
     }
 
+    if (!becca.canSeeDeletedNote(noteRow.ownerId)) {
+        getLog().info(`Note '${noteId}' is not visible to the signed-in user and thus cannot be undeleted.`);
+        return failed;
+    }
+
     const deleteId = noteRow.deleteId;
     const undeletedParentBranchIds = getUndeletedParentBranchIds(noteId, deleteId);
 
@@ -1728,6 +1733,10 @@ function duplicateSubtree(origNoteId: string, newParentNoteId: string, { withChi
 
     getLog().info(`Duplicating '${origNoteId}' subtree into '${newParentNoteId}'`);
 
+    // Before any row is written: a refusal from the first branch would roll back the copied notes and
+    // reload the Becca.
+    becca.ensureCanWriteNote(newParentNoteId);
+
     const origNote = becca.notes[origNoteId];
     // might be null if orig note is not in the target newParentNoteId
     const origBranch = origNote.getParentBranches().find((branch) => branch.parentNoteId === newParentNoteId);
@@ -1788,6 +1797,8 @@ function duplicateSubtreeInner(origNote: BNote, origBranch: BBranch | null | und
         const newNote = new BNote({
             ...origNote,
             noteId: newNoteId,
+            // The copy belongs to whoever makes it, as a note they create would.
+            ownerId: cls.getUserId() ?? origNote.ownerId,
             dateCreated: date_utils.localNowDateTime(),
             utcDateCreated: date_utils.utcNowDateTime()
         }).save();

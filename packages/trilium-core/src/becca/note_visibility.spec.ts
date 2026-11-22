@@ -284,6 +284,7 @@ describe.skipIf(isBrowserRuntime)("note visibility", () => {
  */
 interface WriteFixture {
     aliceId: string;
+    bobId: string;
     aliceHome: BNote;
     aliceNote: BNote;
     relationTarget: BNote;
@@ -314,7 +315,7 @@ describe.skipIf(isBrowserRuntime)("note write access", () => {
             bobSecret.addRelation("writePointsAt", relationTarget.noteId);
             permissionService.setUserAccess(readProject.noteId, aliceId, false);
             permissionService.setUserAccess(writeProject.noteId, aliceId, true);
-            return { aliceId, aliceHome, aliceNote, relationTarget, readProject, readSpec, writeProject, writeSpec, bobSecret };
+            return { aliceId, bobId, aliceHome, aliceNote, relationTarget, readProject, readSpec, writeProject, writeSpec, bobSecret };
         });
     });
 
@@ -411,6 +412,50 @@ describe.skipIf(isBrowserRuntime)("note write access", () => {
             noteService.undeleteNote(w.relationTarget.noteId, new TaskContext("write-undelete", "undeleteNotes", null))));
         expect(restored).toMatchObject({ undeleted: true });
         expect(isRelationDeleted()).toBe(0);
+    });
+
+    it("restores a member's own orphaned note into a note they write, and no one else's", () => {
+        const { aliceId, bobId, aliceHome } = w;
+        const [ ownParent, ownChild, bobParent, bobChild ] = cls.initAsSystem(() => {
+            const ownParent = createNote(aliceHome.noteId, aliceId, "write orphan parent");
+            const bobParent = createNote(w.writeProject.noteId, bobId, "write bob orphan parent");
+            return [ ownParent, createNote(ownParent.noteId, aliceId, "write orphan child"),
+                bobParent, createNote(bobParent.noteId, bobId, "write bob orphan child") ];
+        });
+        for (const parent of [ ownParent, bobParent ]) {
+            cls.initAsSystem(() => getSql().transactional(() =>
+                becca.getBranchFromChildAndParent(parent.noteId, parent.getParentNotes()[0].noteId)?.deleteBranch()));
+        }
+
+        const restore = (noteId: string) => asUser(aliceId, () => getSql().transactional(() =>
+            noteService.undeleteNote(noteId, new TaskContext("write-orphan", "undeleteNotes", null),
+                { fallbackParentNoteId: aliceHome.noteId })));
+
+        expect(restore(ownChild.noteId)).toEqual({ undeleted: true, restoredToFallbackParent: true });
+        expect(asUser(aliceId, () => becca.getNoteOrThrow(ownChild.noteId).getParentNotes().map((note) => note.noteId)))
+            .toEqual([ aliceHome.noteId ]);
+
+        expect(restore(bobChild.noteId)).toEqual({ undeleted: false, restoredToFallbackParent: false });
+        expect(cls.initAsSystem(() => getSql().getValue("SELECT isDeleted FROM notes WHERE noteId = ?", [ bobChild.noteId ])))
+            .toBe(1);
+    });
+
+    it("duplicates a note a member can read into a note they write, as theirs, and nowhere else", () => {
+        const { aliceId, aliceHome, readProject, readSpec, writeProject, writeSpec } = w;
+        const duplicate = (noteId: string, parentNoteId: string) => asUser(aliceId, () => getSql().transactional(() =>
+            noteService.duplicateSubtree(noteId, parentNoteId).note.noteId));
+
+        for (const [ source, target ] of [ [ writeSpec, writeProject ], [ readSpec, aliceHome ] ]) {
+            const copyId = duplicate(source.noteId, target.noteId);
+            expect(cls.initAsSystem(() => becca.getNoteOrThrow(copyId).ownerId), source.title).toBe(aliceId);
+            expect(asUser(aliceId, () => becca.getNoteOrThrow(copyId).getParentNotes().map((note) => note.noteId)), source.title)
+                .toEqual([ target.noteId ]);
+        }
+
+        const childCount = () => cls.initAsSystem(() => becca.getNoteOrThrow(readProject.noteId).getChildNotes().length);
+        const before = childCount();
+        expect(() => duplicate(readSpec.noteId, readProject.noteId)).toThrow(ForbiddenError);
+        expect(childCount()).toBe(before);
     });
 });
 
