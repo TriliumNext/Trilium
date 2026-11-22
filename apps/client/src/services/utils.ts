@@ -342,12 +342,18 @@ export function isMobile() {
 }
 
 /**
- * Whether the mobile layout runs on a tablet: a screen whose shorter side is at least 600px, the
- * threshold Android uses. It reads the screen, not the viewport, so it does not change as the device
- * turns or splits its screen.
+ * Whether the mobile layout runs as a tablet's: on a viewport that docks the note tree beside the
+ * note (see {@link isTreeStacked}). A tablet keeps it either way up, a phone never has it, and a
+ * foldable changes as it folds, so it follows the viewport; {@link onTabletChange} reports the
+ * change.
  */
 export function isTablet() {
-    return isMobile() && Math.min(window.screen.width, window.screen.height) >= 600;
+    return isMobile() && !isTreeStacked();
+}
+
+/** Calls `onChange` whenever {@link isTablet} changes, until the returned function runs. */
+export function onTabletChange(onChange: () => void) {
+    return onTreeStackedChange(onChange);
 }
 
 /** Whether the launch bar shows the desktop's launchers: on a desktop, and on a tablet. */

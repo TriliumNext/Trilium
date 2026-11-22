@@ -35,6 +35,7 @@ import utils, {
     restartDesktopApp,
     reuseAcrossHotReloads,
     rootCauseMessage,
+    STACKED_TREE_LAYOUT,
     toggleBodyClass
 } from "./utils.js";
 
@@ -352,27 +353,24 @@ describe("platform / device detection", () => {
         expect(fileAccept(".enex")).toBe("*/*");
     });
 
-    it("takes a mobile device with a shorter screen side of 600px or more for a tablet, which shows the desktop launchers", () => {
+    it("takes a mobile viewport that docks the tree for a tablet's, which shows the desktop launchers", () => {
         const original = window.glob.device;
-        const setScreen = (width: number, height: number) => {
-            vi.spyOn(window.screen, "width", "get").mockReturnValue(width);
-            vi.spyOn(window.screen, "height", "get").mockReturnValue(height);
-        };
+        let isTreeStacked = true;
+        vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+            matches: query === STACKED_TREE_LAYOUT && isTreeStacked
+        }) as MediaQueryList);
         try {
             window.glob.device = "mobile";
-            setScreen(390, 844);
             expect([ utils.isTablet(), utils.hasDesktopLaunchBar(), utils.getLaunchBarRootId() ])
                 .toEqual([ false, false, "_lbMobileRoot" ]);
 
-            // Either way up, as the screen keeps its size while the device turns.
-            setScreen(1024, 768);
+            // A foldable, as it unfolds.
+            isTreeStacked = false;
             expect([ utils.isTablet(), utils.hasDesktopLaunchBar(), utils.getLaunchBarRootId() ])
                 .toEqual([ true, true, "_lbRoot" ]);
-            setScreen(768, 1024);
-            expect(utils.isTablet()).toBe(true);
 
             window.glob.device = "desktop";
-            setScreen(390, 844);
+            isTreeStacked = true;
             expect([ utils.isTablet(), utils.hasDesktopLaunchBar(), utils.getLaunchBarRootId() ])
                 .toEqual([ false, true, "_lbRoot" ]);
         } finally {

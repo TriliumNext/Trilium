@@ -5,7 +5,7 @@ import "./MobileLayout.tablet.css";
 import clsx from "clsx";
 import { useLayoutEffect, useRef } from "preact/hooks";
 
-import { isTablet, NARROW_LAYOUT, STACKED_TREE_LAYOUT } from "../services/utils.js";
+import { NARROW_LAYOUT, STACKED_TREE_LAYOUT } from "../services/utils.js";
 import GlobalMenu from "../widgets/buttons/global_menu.js";
 import CloseZenModeButton from "../widgets/close_zen_button.js";
 import LauncherContainer from "../widgets/launch_bar/LauncherContainer.js";
@@ -32,7 +32,8 @@ export default function MobileLayout() {
     const rootRef = useRef<HTMLDivElement>(null);
     const isPhone = useMediaQuery(NARROW_LAYOUT);
     const isTreeStacked = useMediaQuery(STACKED_TREE_LAYOUT);
-    const tablet = isTablet();
+    // `isTablet()`, which this layout follows as a foldable folds.
+    const tablet = !isTreeStacked;
     useAppearance();
     useLayoutEffect(() => (rootRef.current ? trackVirtualKeyboard(rootRef.current) : undefined), []);
     useLoadCustomWidgets();

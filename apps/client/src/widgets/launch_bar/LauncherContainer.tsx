@@ -7,6 +7,7 @@ import FNote from "../../entities/fnote";
 import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 import froca from "../../services/froca";
 import { hasDesktopLaunchBar, isElectron, isMobile, isTablet } from "../../services/utils";
+import { useIsTablet } from "../react/hooks/dom";
 import { useTriliumEvent } from "../react/hooks/events";
 import { useNoteLabelBoolean } from "../react/hooks/note";
 import { useTriliumOptionBool } from "../react/hooks/options";
@@ -231,11 +232,13 @@ function LazyRecordMeetingButton({ launcherNote }: { launcherNote: FNote }) {
 export function useLauncherChildNotes() {
     const [ visibleLaunchersRoot, setVisibleLaunchersRoot ] = useState<FNote | undefined | null>();
     const [ childNotes, setChildNotes ] = useState<FNote[]>();
+    // A foldable swaps the desktop's launchers and the mobile ones as it unfolds and folds.
+    const tablet = useIsTablet();
 
     // Load the root note.
     const loadRoot = useCallback(() => {
         froca.getNote(getVisibleLaunchersRootId(), true).then(setVisibleLaunchersRoot);
-    }, []);
+    }, [ tablet ]);
     useLayoutEffect(loadRoot, [ loadRoot ]);
 
     // Load the children.
