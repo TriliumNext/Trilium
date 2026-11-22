@@ -66,6 +66,13 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
     }
 
     override init() {
+        // A new branch also needs write access to its note: below a note the member owns, a clone of
+        // a note they can only read would become writable. Checked before the branch joins the Becca,
+        // where the view would already count the note as writable through it.
+        if (!this.branchId) {
+            this.becca.ensureCanWriteNote(this.noteId);
+        }
+
         if (this.branchId) {
             this.becca.allBranches[this.branchId] = this;
         }

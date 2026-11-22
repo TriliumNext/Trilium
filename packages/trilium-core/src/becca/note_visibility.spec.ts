@@ -369,6 +369,17 @@ describe.skipIf(isBrowserRuntime)("note write access", () => {
         expect(cls.initAsSystem(() => writeSpec.hasLabel("writeLabel"))).toBe(true);
     });
 
+    it("refuses a member a clone of a note they can only read, even into a note they own", () => {
+        const { aliceId, aliceHome, readSpec } = w;
+        for (const target of [ aliceHome.noteId, w.writeProject.noteId ]) {
+            expect(() => asUser(aliceId, () => getSql().transactional(() =>
+                cloningService.cloneNoteToParentNote(readSpec.noteId, target))), target).toThrow(ForbiddenError);
+            expect(cls.initAsSystem(() => becca.getBranchFromChildAndParent(readSpec.noteId, target)), target).toBeFalsy();
+            expect(asUser(aliceId, () => becca.getNoteOrThrow(readSpec.noteId).getParentNotes().map((note) => note.noteId)), target)
+                .toEqual([ w.readProject.noteId ]);
+        }
+    });
+
     it("removes and restores the relations others hold to a note a member deletes, though the member cannot write them", () => {
         const relation = cls.initAsSystem(() => w.bobSecret.getRelation("writePointsAt"));
         expect(relation).toBeTruthy();

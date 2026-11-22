@@ -144,7 +144,7 @@ describe.skipIf(isBrowserRuntime)("user homes as members see them", () => {
         const aliceHome = cls.initAsSystem(() => userHomes.ensureUserHome(aliceId, "paste-alice-spec"));
         const bobHome = cls.initAsSystem(() => userHomes.ensureUserHome(bobId, "paste-bob-spec"));
         const project = createOwnedNote(bobHome.noteId, bobId, "pasted project");
-        cls.initAsSystem(() => permissionService.setUserAccess(project.noteId, aliceId, false));
+        cls.initAsSystem(() => permissionService.setUserAccess(project.noteId, aliceId, true));
 
         const reload = vi.spyOn(ws, "reloadFrocaForUser");
         onTestFinished(() => reload.mockRestore());
