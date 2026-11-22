@@ -24,10 +24,11 @@ export default function MobileEditorToolbar() {
     const outerRef = useRef<HTMLDivElement>(null);
     const islandRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    const { note, noteContext, ntxId } = useNoteContext();
+    const { note, noteContext, ntxId, viewScope } = useNoteContext();
     const noteType = useNoteProperty(note, "type");
     const { isReadOnly } = useIsNoteReadOnly(note, noteContext);
-    const shouldDisplay = noteType === "text" && isReadOnly === false;
+    const shouldDisplay = noteType === "text" && viewScope?.viewMode === "default"
+        && isReadOnly === false;
     const [ dropdownActive, setDropdownActive ] = useState(false);
     const [ noteEditor, setNoteEditor ] = useState<CKTextEditor>();
     const nestedEditor = useNestedEditor(ntxId);
