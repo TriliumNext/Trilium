@@ -2599,10 +2599,41 @@ body.dark-theme pre.code-block-preview[data-code-theme-d="vs-code-dark"] {
         padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
     }
 
-    /* The panes clear the navigation bar. The open keyboard covers it, as in phone mode. */
-    body.mobile #root-widget:not(.virtual-keyboard-opened) {
-        #mobile-rest-container > :is(#launcher-pane, #mobile-sidebar-wrapper),
+    /* The tree and the note scroll under the navigation bar, and their content ends above it. The
+       tree's `.mobile-navigator-scroll` pads itself. The open keyboard covers the navigation bar,
+       as in phone mode. */
+    body.mobile:not(.keyboard-panel-open) #root-widget:not(.virtual-keyboard-opened) {
+        #mobile-rest-container > #launcher-pane {
+            padding-bottom: var(--mobile-bottom-offset);
+        }
+
         #detail-container {
+            --mobile-toolbar-clearance: calc(
+                var(--mobile-toolbar-height) + 2 * var(--mobile-toolbar-gap) + var(--mobile-bottom-offset)
+            );
+        }
+
+        .note-split > .scrolling-container:not(:has(~ .classic-toolbar-outer-container.visible)) {
+            --scroll-end-clearance: calc(var(--mobile-bottom-offset) + 24px);
+            padding-bottom: var(--scroll-end-clearance);
+            scroll-padding-bottom: var(--scroll-end-clearance);
+
+            &:is(.detail-full-height, .list-full-height) {
+                --scroll-end-clearance: var(--mobile-bottom-offset);
+            }
+        }
+
+        #detail-container .classic-toolbar-island {
+            bottom: calc(var(--tn-layout-overhang, 0px) + var(--mobile-bottom-offset));
+        }
+
+        .note-split > .note-type-switcher-bar:has(~ .find-replace-widget[style*="display: none"]) {
+            &:not(:has(~ .classic-toolbar-outer-container.visible)) {
+                padding-bottom: calc(10px + var(--mobile-bottom-offset));
+            }
+        }
+
+        .note-split > .find-replace-widget {
             padding-bottom: var(--mobile-bottom-offset);
         }
     }
