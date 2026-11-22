@@ -8,6 +8,7 @@ import options from "../../services/options.js";
 import { buildNote } from "../../test/easy-froca.js";
 import { TREE_CLIPBOARD_TYPE } from "../react/hooks/drag.js";
 import { ParentComponent } from "../react/react_utils.js";
+import { LaunchBarContext, useLaunchBarTitlePosition } from "./launch_bar_widgets.js";
 import LauncherContainer, { useLauncherChildNotes } from "./LauncherContainer.js";
 
 const h = vi.hoisted(() => ({
@@ -355,5 +356,27 @@ describe("LauncherContainer on a tablet", () => {
         const chatSlot = container.querySelector(".launcher-slot[data-launcher-id='_lbSidebarChatStub']");
         expect(chatSlot).not.toBeNull();
         expect(chatSlot?.childElementCount).toBe(0);
+    });
+});
+
+describe("useLaunchBarTitlePosition", () => {
+    afterEach(() => { h.isMobile = false; });
+
+    it("opens beside a vertical bar, below a desktop's horizontal one and above a phone's", () => {
+        const positions: string[] = [];
+        function Probe() {
+            positions.push(useLaunchBarTitlePosition());
+            return null;
+        }
+        container = document.createElement("div");
+        document.body.appendChild(container);
+        for (const [ isMobile, isHorizontalLayout ] of [ [ false, false ], [ false, true ], [ true, false ], [ true, true ] ]) {
+            h.isMobile = isMobile;
+            act(() => render(
+                <LaunchBarContext.Provider value={{ isHorizontalLayout }}><Probe /></LaunchBarContext.Provider>,
+                container));
+            act(() => render(null, container));
+        }
+        expect(positions).toEqual([ "right", "bottom", "right", "top" ]);
     });
 });

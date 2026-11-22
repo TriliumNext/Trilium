@@ -5,13 +5,11 @@ import { useContext } from "preact/hooks";
 import FNote from "../../entities/fnote";
 import type { ContextMenuEvent } from "../../menus/context_menu";
 import type { ShowLauncherContextMenuOptions } from "../../menus/launcher_button_context_menu";
-import utils from "../../services/utils";
+import { isMobile } from "../../services/utils";
 import ActionButton, { ActionButtonProps } from "../react/ActionButton";
 import Dropdown, { DropdownPanel, DropdownProps } from "../react/Dropdown";
 import { useNoteLabel, useNoteProperty } from "../react/hooks/note";
 import Icon from "../react/Icon";
-
-const cachedIsMobile = utils.isMobile();
 
 // Hoisted so the reference is stable across renders — an inline object would change identity
 // every render and defeat Dropdown's tooltip-config memoization, recreating the tooltip each time.
@@ -126,9 +124,8 @@ export async function showLauncherContextMenu<T extends string>(
     await menu.showLauncherContextMenu(launcherNote, e, options);
 }
 
+/** Beside a vertical bar, above the bottom bar of a phone and below the top bar of a desktop. */
 function getTitlePosition(isHorizontalLayout: boolean) {
-    if (cachedIsMobile) {
-        return "top";
-    }
-    return isHorizontalLayout ? "bottom" : "right";
+    if (!isHorizontalLayout) return "right";
+    return isMobile() ? "top" : "bottom";
 }
