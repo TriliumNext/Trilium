@@ -4,15 +4,19 @@
         "desktop_title": "デスクトップアプリケーションをダウンロード (v{{version}})",
         "architecture": "アーキテクチャ:",
         "older_releases": "以前のリリースを見る",
-        "server_title": "複数のデバイスからアクセスできるようにサーバーを設定する"
+        "server_title": "複数のデバイスからアクセスできるようにサーバーを設定する",
+        "nightly_title": "ナイトリービルドを試す",
+        "nightly_subtitle": "メインブランチから毎日ビルドされるバージョンで、リリース前の最新機能や修正が含まれています。ナイトリービルドのインストーラーを実行すると、既存の安定版が置き換えられますが、ノートのデータはそのまま引き継がれます。ナイトリービルドによってデータベースに変更が加えられた場合、安定版に戻すにはバックアップからの復元が必要となります。",
+        "nightly_all_downloads": "ナイトリービルドのダウンロード一覧",
+        "nightly_learn_more": "ナイトリービルドについて"
     },
     "hero_section": {
-        "title": "思考を整理し、自分だけの知識ベースを構築しましょう。",
-        "subtitle": "Triliumは、ノート作成と個人のナレッジベースの整理に役立つオープンソースソリューションです。デスクトップでローカルで使用することも、セルフホストサーバーと同期してどこにいてもノートを保存することもできます。",
+        "title": "自分だけのナレッジベースを構築しましょう。",
+        "subtitle": "知識のすべてを、深く階層化されたノートのツリー構造に必要なだけまとめられます。デスクトップやスマートフォンで文章を書いたり、スケッチや計画を立てたりでき、自分で運用するサーバーを介して同期することで、あらゆるブラウザからノートにアクセス可能です。",
         "get_started": "はじめる",
         "github": "GitHub",
         "dockerhub": "Docker Hub",
-        "screenshot_alt": "Trilium Notes デスクトップアプリケーションのスクリーンショット",
+        "screenshot_alt": "ノートツリーの横にテキストノートを開いている、Trilium Notes デスクトップ版の画面",
         "tagline_license": "AGPL-3.0 ライセンス",
         "tagline_no_account": "アカウント不要",
         "tagline_cross_platform": "オフラインでも利用可能"
@@ -283,5 +287,15 @@
         "render_description": "ここに表示されている時計のように、ノート内で直接レンダリングされるインタラクティブなダッシュボードやミニアプリを作成できます。",
         "api_title": "スクリプト API",
         "api_description": "ノート、ブランチ、属性、検索のための型付き API。フロントエンドスクリプトとバックエンドスクリプトの両方で利用可能です。"
+    },
+    "download_helper_nightly": {
+        "desktop_description": "お使いのコンピュータ向けの最新デスクトップ版ビルドです。別のアーキテクチャ用が必要な場合は、上の切り替えオプションを使用してください。",
+        "download_flatpak": ".flatpak",
+        "android_title": "Android",
+        "android_description": "モバイルアプリはノートの完全なコピーを端末内に保存するため、オフラインでも動作し、サーバーと同期できます。",
+        "download_apk": "APK をダウンロード (.apk)",
+        "server_title": "サーバー",
+        "server_description": "Docker イメージまたは Linux パッケージ形式の最新サーバー版ビルドです。",
+        "server_quick_start": "Docker で実行する場合:"
     }
 }
