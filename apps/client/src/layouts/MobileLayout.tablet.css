@@ -31,6 +31,16 @@
             &:is(.detail-full-height, .list-full-height) {
                 --scroll-end-clearance: var(--mobile-bottom-offset);
             }
+
+            /* These notes draw to the bottom edge, and keep their own controls clear of the navigation
+               bar by `--note-bottom-inset`. */
+            &:has(
+                > .note-detail > :is(.note-detail-canvas, .note-detail-mermaid, .note-detail-mind-map).visible,
+                > .note-list-widget .geo-map-container
+            ) {
+                --scroll-end-clearance: 0px;
+                --note-bottom-inset: var(--mobile-bottom-offset);
+            }
         }
 
         #detail-container .classic-toolbar-island {
