@@ -380,6 +380,21 @@ describe.skipIf(isBrowserRuntime)("note write access", () => {
         }
     });
 
+    it("keeps nothing of a refused change in the Becca, in a transaction or not", () => {
+        const { aliceId, readSpec } = w;
+        const changeType = () => {
+            const note = becca.getNoteOrThrow(readSpec.noteId);
+            note.type = "code";
+            note.mime = "text/plain";
+            note.save();
+        };
+
+        for (const [ name, run ] of [ [ "transaction", () => getSql().transactional(changeType) ], [ "no transaction", changeType ] ] as const) {
+            expect(() => asUser(aliceId, run), name).toThrow(ForbiddenError);
+            expect(cls.initAsSystem(() => becca.getNoteOrThrow(readSpec.noteId).type), name).toBe("text");
+        }
+    });
+
     it("removes and restores the relations others hold to a note a member deletes, though the member cannot write them", () => {
         const relation = cls.initAsSystem(() => w.bobSecret.getRelation("writePointsAt"));
         expect(relation).toBeTruthy();

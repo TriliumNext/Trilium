@@ -1,5 +1,6 @@
 import { ForbiddenError, NotFoundError } from "../errors.js";
 import { getUserId } from "../services/context.js";
+import eventService from "../services/events.js";
 import { getLog } from "../services/log.js";
 import { formatSize } from "../services/utils/index.js";
 import type BOption from "./entities/boption.js";
@@ -375,6 +376,9 @@ export default class Becca {
     /** Throws a `ForbiddenError` unless the current scope can write the note, which an admin or a system scope always can. */
     ensureCanWriteNote(noteId: string) {
         if (getNoteView(this)?.canWriteNote(noteId) === false) {
+            // The caller has usually changed the cached entity already, and a refused write records no
+            // entity change for the rollback hooks to act on, so `becca_loader` reloads the Becca.
+            eventService.emit(eventService.WRITE_REFUSED);
             throw new ForbiddenError(`Note '${noteId}' is read-only for the signed-in user.`);
         }
     }

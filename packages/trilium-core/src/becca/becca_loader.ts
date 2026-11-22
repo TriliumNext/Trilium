@@ -512,6 +512,10 @@ eventService.subscribeBeccaLoader(eventService.ENTER_PROTECTED_SESSION, () => {
 
 eventService.subscribeBeccaLoader(eventService.LEAVE_PROTECTED_SESSION, load);
 
+eventService.subscribeBeccaLoader(eventService.WRITE_REFUSED, () => {
+    getSql().afterTransaction(() => initAsSystem(load));
+});
+
 export { load, reload };
 
 export default {
