@@ -55,7 +55,7 @@ body.mobile.ios {
     }
 
     /* The breakpoints must match `STACKED_TREE_LAYOUT` in services/utils.ts. */
-    @media (max-width: 743px), (max-height: 599px) {
+    @media (max-width: 743px), (max-device-width: 599px), (max-device-height: 599px) {
         #mobile-rest-container > #mobile-sidebar-wrapper {
             background: var(--grouped-background-color);
         }
@@ -189,7 +189,7 @@ body.mobile.ios {
 
         /* Safari tints its bars from the page's background and from `theme-color`, which
            `initThemeColor()` in appearance.ts copies from `#background-color-tracker`. */
-        @media (max-width: 743px), (max-height: 599px) {
+        @media (max-width: 743px), (max-device-width: 599px), (max-device-height: 599px) {
             &.mobile-sidebar-open {
                 background-color: var(--grouped-background-color);
 
@@ -343,7 +343,7 @@ body.mobile.ios {
         }
 
         /* The breakpoint must match `STACKED_TREE_LAYOUT` in services/utils.ts. */
-        @media (max-width: 743px), (max-height: 599px) {
+        @media (max-width: 743px), (max-device-width: 599px), (max-device-height: 599px) {
             .modal-dialog:not(.modal-dialog-full-page-on-mobile) > .modal-content {
                 border: 0;
                 border-radius: var(--mobile-sheet-radius) var(--mobile-sheet-radius) 0 0;

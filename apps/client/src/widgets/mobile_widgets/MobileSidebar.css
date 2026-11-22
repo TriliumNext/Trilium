@@ -13,7 +13,7 @@
 }
 
 /* The breakpoints must match `STACKED_TREE_LAYOUT` in services/utils.ts. */
-@media (max-width: 743px), (max-height: 599px) {
+@media (max-width: 743px), (max-device-width: 599px), (max-device-height: 599px) {
     #mobile-rest-container {
         overflow: clip;
         position: relative;
@@ -69,7 +69,7 @@
     }
 }
 
-@media (min-width: 744px) and (min-height: 600px) {
+@media (min-width: 744px) and (min-device-width: 600px) and (min-device-height: 600px) {
     #mobile-sidebar-wrapper {
         --navigator-backdrop: var(--left-pane-background-color);
         flex-shrink: 0;

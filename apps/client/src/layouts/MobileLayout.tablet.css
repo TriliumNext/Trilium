@@ -69,7 +69,7 @@
 }
 
 /* The breakpoints must match the inverse of `STACKED_TREE_LAYOUT` in services/utils.ts. */
-@media (min-width: 744px) and (min-height: 600px) {
+@media (min-width: 744px) and (min-device-width: 600px) and (min-device-height: 600px) {
     #mobile-rest-container {
         background-color: var(--root-background);
     }

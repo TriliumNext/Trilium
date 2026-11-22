@@ -386,8 +386,10 @@ export const NARROW_LAYOUT = "(max-width: 991px)";
 /**
  * Whether the mobile layout stacks the note tree under the note, which slides away to reveal it,
  * rather than docking it beside the note: on a viewport narrower than an iPad mini in portrait, or
- * shorter than a tablet, as a phone turned sideways is. A tablet in portrait docks the tree while
- * keeping the launch bar at the bottom. Must match the media queries of `MobileSidebar.css`.
+ * on a phone, whose screen is under 600px on its shorter side either way up. It reads the screen
+ * rather than the viewport's height, which an open keyboard shrinks on Android and in the iOS app.
+ * A tablet in portrait docks the tree while keeping the launch bar at the bottom. Must match the
+ * media queries of `MobileSidebar.css`.
  */
 export function isTreeStacked() {
     return window.matchMedia(STACKED_TREE_LAYOUT).matches;
@@ -398,7 +400,8 @@ export function onTreeStackedChange(onChange: () => void) {
     return onMediaQueryChange(STACKED_TREE_LAYOUT, onChange);
 }
 
-export const STACKED_TREE_LAYOUT = "(max-width: 743px), (max-height: 599px)";
+export const STACKED_TREE_LAYOUT =
+    "(max-width: 743px), (max-device-width: 599px), (max-device-height: 599px)";
 
 function onMediaQueryChange(mediaQuery: string, onChange: () => void) {
     const query = window.matchMedia(mediaQuery);

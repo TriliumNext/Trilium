@@ -129,7 +129,7 @@ body.desktop .jump-to-note-dialog.wide {
     }
 }
 
-@media (max-width: 743px), (max-height: 599px) {
+@media (max-width: 743px), (max-device-width: 599px), (max-device-height: 599px) {
     body.mobile .jump-to-note-dialog {
         .modal-dialog {
             height: 100vh;
