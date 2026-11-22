@@ -7,7 +7,10 @@ import { useEffect, useRef, useState } from "preact/hooks";
 
 import link, { calculateHash, ViewScope } from "../../services/link";
 import tree from "../../services/tree";
-import { useImperativeSearchHighlighlighting, useNote, useNoteColorClass, useNoteIcon, useNoteLabelBoolean, useNoteTitle, useTriliumEvent } from "./hooks";
+import { useTriliumEvent } from "./hooks/events";
+import { useNote, useNoteColorClass, useNoteIcon, useNoteLabelBoolean } from "./hooks/note";
+import { useNoteTitle } from "./hooks/tree";
+import { useImperativeSearchHighlighlighting } from "./hooks/highlight";
 import Icon from "./Icon";
 
 interface NoteLinkOpts {

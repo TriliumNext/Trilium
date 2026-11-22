@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/source",
-  "version": "0.107.0",
+  "version": "0.108.0-rc.1",
   "description": "Build your personal knowledge base with Trilium Notes",
   "directories": {
     "doc": "docs"
@@ -53,6 +53,7 @@
     "test:parallel": "pnpm --filter=!server --filter=!ckeditor5 --parallel test",
     "test:sequential": "pnpm --filter=server --filter=ckeditor5 --sequential test",
     "typecheck": "tsx scripts/filter-tsc-output.mts",
+    "dev:check-startup": "node .claude/skills/measure-startup-requests/check-startup.mjs --fixture",
     "dev:format-check": "eslint -c eslint.format.config.mjs .",
     "dev:format-fix": "eslint -c eslint.format.config.mjs . --fix",
     "dev:linter-check": "cross-env NODE_OPTIONS=--max_old_space_size=4096 eslint .",
@@ -64,8 +65,8 @@
   "private": true,
   "devDependencies": {
     "@fast-csv/parse": "5.0.8",
-    "@stylistic/eslint-plugin": "5.10.0",
-    "@playwright/test": "1.64.1",
+    "@stylistic/eslint-plugin": "6.0.1",
+    "@playwright/test": "1.65.1",
     "@triliumnext/server": "workspace:*",
     "@types/express": "5.0.6",
     "@types/node": "24.19.2",
@@ -76,7 +77,7 @@
     "cross-env": "10.1.0",
     "dpdm": "4.3.0",
     "esbuild": "0.28.2",
-    "eslint": "10.14.0",
+    "eslint": "10.15.0",
     "eslint-config-preact": "2.0.0",
     "eslint-plugin-playwright": "2.12.2",
     "eslint-plugin-simple-import-sort": "14.0.0",
@@ -84,12 +85,12 @@
     "http-server": "14.1.1",
     "jiti": "2.7.0",
     "js-yaml": "5.5.0",
-    "playwright": "1.64.1",
+    "playwright": "1.65.1",
     "tslib": "2.9.1",
     "tsx": "4.23.15",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.72.1",
-    "vite": "8.3.5",
+    "typescript-eslint": "8.73.0",
+    "vite": "8.3.8",
     "vitest": "5.1.0"
   },
   "license": "AGPL-3.0-or-later",
@@ -106,5 +107,5 @@
     "url": "https://github.com/TriliumNext/Trilium/issues"
   },
   "homepage": "https://triliumnotes.org",
-  "packageManager": "pnpm@12.18.0"
+  "packageManager": "pnpm@12.21.0"
 }

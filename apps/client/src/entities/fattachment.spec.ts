@@ -19,16 +19,18 @@ describe("FAttachment", () => {
         expect(attachment.utcDateModified).toBe("2026-01-01 00:00:00.000Z");
         expect(attachment.utcDateScheduledForErasureSince).toBe("2026-02-01 00:00:00.000Z");
         expect(attachment.contentLength).toBe(42);
+        expect(attachment.isProtected).toBe(false);
     });
 
     it("update() re-applies the row and re-registers the attachment", () => {
         const { froca } = buildFroca();
         const attachment = new FAttachment(froca, buildRow());
 
-        attachment.update(buildRow({ title: "Renamed", contentLength: 7 }));
+        attachment.update(buildRow({ title: "Renamed", contentLength: 7, isProtected: true }));
 
         expect(attachment.title).toBe("Renamed");
         expect(attachment.contentLength).toBe(7);
+        expect(attachment.isProtected).toBe(true);
         expect(froca.attachments["att1"]).toBe(attachment);
     });
 

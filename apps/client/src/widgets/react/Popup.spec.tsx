@@ -1,7 +1,8 @@
 import { render } from "preact";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import Popup, { closeOpenPopups, placeFloating, type PopupProps } from "./Popup";
+import { closeOpenPopups } from "./open_popups";
+import Popup, { placeFloating, type PopupProps } from "./Popup";
 
 describe("Popup", () => {
     const host = document.createElement("div");

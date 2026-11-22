@@ -490,6 +490,7 @@ describe("#removeDiacritic", () => {
         [ "w/ 'Été' it should replace the 'É' and 'é'", [ "Été" ], "Ete" ],
         [ "w/ 'Fête' it should replace the 'ê'", [ "Fête" ], "Fete" ],
         [ "w/ 'Αλφαβήτα' it should replace the 'ή'", [ "Αλφαβήτα" ], "Αλφαβητα" ],
+        [ "w/ '그래픽' it should keep the Hangul syllables composed", [ "그래픽" ], "그래픽" ],
         [ "w/ '' (empty string) it should return empty string", [ "" ], "" ]
     ];
 

@@ -1,11 +1,14 @@
 import {
-    CAPTIONED_CONTENT_EMBED_CLASS, getMarkdownNameFromCKEditorLanguage, MIME_TYPE_AUTO,
-    MULTICOLUMN_COLUMN_CLASS, MULTICOLUMN_LAYOUT_CLASS, safeLinkPreviewHref, type TaskStateDef
+    BLOCK_ID_ATTRIBUTE, CAPTIONED_CONTENT_EMBED_CLASS, formatBlockMarker,
+    getMarkdownNameFromCKEditorLanguage, isValidBlockId, MIME_TYPE_AUTO, MULTICOLUMN_COLUMN_CLASS,
+    MULTICOLUMN_LAYOUT_CLASS, safeLinkPreviewHref, type TaskStateDef
 } from "@triliumnext/commons";
-import { ADMONITION_TYPE_MAPPINGS } from "@triliumnext/commons/src/lib/markdown_renderer.js";
+import {
+    ADMONITION_TYPE_MAPPINGS, BARE_ASIDE_BACKGROUND, BARE_ASIDE_POSITION
+} from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { HIGHLIGHT_BACKGROUND } from "@triliumnext/commons/src/lib/marked_extensions.js";
-import { gfm, serializeStructuralHtml } from "@triliumnext/turndown-plugin-gfm";
-import { parse as parseHtml } from "node-html-parser";
+import { gfm, serializeStructuralHtml, type TableBlockId } from "@triliumnext/turndown-plugin-gfm";
+import { type HTMLElement as ParsedElement, parse as parseHtml } from "node-html-parser";
 import Turnish, { type Rule } from "turnish";
 
 import { getTaskStates } from "../task_states.js";
@@ -17,6 +20,9 @@ const instances = new Map<HeaderlessTableMode, Turnish>();
 /** Task states for the current `toMarkdown` invocation, consulted by the list-item filter. */
 let currentTaskStates: TaskStateDef[] = [];
 
+/** Whether the current `toMarkdown` invocation writes block markers, read by the table rule. */
+let isWritingBlockMarkers = false;
+
 /**
  * How a table without a heading row renders: kept as raw HTML so notes round-trip ("keepHtml",
  * the default), or under a synthesized blank header ("emptyHeader") for output that never
@@ -26,6 +32,11 @@ export type HeaderlessTableMode = "keepHtml" | "emptyHeader";
 
 export interface ToMarkdownOptions {
     headerlessTables?: HeaderlessTableMode;
+    /**
+     * Whether the block ids of the note are written as block markers, so that the Markdown keeps
+     * them ("markers"), or left out ("drop", the default), as on the clipboard.
+     */
+    blockIds?: "markers" | "drop";
 }
 
 export { ADMONITION_TYPE_MAPPINGS };
@@ -47,12 +58,23 @@ const fencedCodeBlockFilter: Rule = {
         const className = node.firstChild.getAttribute("class") || "";
         const language = rewriteLanguageTag((className.match(/language-(\S+)/) || [null, ""])[1]);
 
-        return `\n\n${options.fence}${language}\n${node.firstChild.textContent}\n${options.fence}\n\n`;
+        // A fence closes on a line starting with at least as many fence characters, so the fence
+        // has to be longer than any such run in the code, as Turndown's own rule does.
+        const code = String(node.firstChild.textContent);
+        const fenceChar = String(options.fence).charAt(0);
+        let fenceSize = 3;
+        for (const [ run ] of code.matchAll(new RegExp(`^ {0,3}(?:\\${fenceChar}){3,}`, "gm"))) {
+            fenceSize = Math.max(fenceSize, run.trimStart().length + 1);
+        }
+        const fence = fenceChar.repeat(fenceSize);
+
+        return `\n\n${fence}${language}\n${code}\n${fence}\n\n`;
     }
 };
 
 function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
     currentTaskStates = getTaskStates();
+    isWritingBlockMarkers = options.blockIds === "markers";
 
     const headerlessTables = options.headerlessTables ?? "keepHtml";
     let instance = instances.get(headerlessTables);
@@ -63,6 +85,7 @@ function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
             emDelimiter: "_",
             codeBlockStyle: "fenced",
             headerlessTables,
+            tableBlockId: getTableBlockId,
             blankReplacement(_content, node) {
                 if (isContentEmbed(node)) {
                     return node.outerHTML;
@@ -83,6 +106,9 @@ function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
                 if (isMulticolumnLayout(node) || isMulticolumnColumn(node)) {
                     return blankMulticolumnReplacement(node);
                 }
+                if (isAside(node)) {
+                    return asideReplacement(node, "");
+                }
                 // Original implementation as per https://github.com/mixmark-io/turndown/blob/master/src/turndown.js.
                 return ("isBlock" in node && node.isBlock) ? '\n\n' : '';
             },
@@ -95,6 +121,7 @@ function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
         instance.addRule("tabTitle", buildTabTitleFilter());
         instance.addRule("tabPanel", buildTabPanelFilter());
         instance.addRule("multicolumn", buildMulticolumnFilter());
+        instance.addRule("aside", buildAsideFilter());
         instance.addRule("inlineLink", buildInlineLinkFilter());
         instance.addRule("bookmark", buildBookmarkFilter());
         instance.addRule("figure", buildFigureFilter());
@@ -105,12 +132,144 @@ function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
         instance.addRule("highlight", buildHighlightFilter());
         instance.addRule("math", buildMathFilter());
         instance.addRule("li", buildListItemFilter());
+        instance.addRule("blockMarker", buildBlockMarkerFilter());
         instance.use(gfm);
         instance.keep([ "kbd", "sup", "sub" ]);
         instances.set(headerlessTables, instance);
     }
 
-    return instance.render(injectIconFallbacks(injectLinkPreviewFallbacks(content)));
+    const html = isWritingBlockMarkers ? injectBlockMarkers(content) : content;
+    return instance.render(injectIconFallbacks(injectLinkPreviewFallbacks(html)));
+}
+
+/** The attribute of an element that stands for a block marker while Turnish runs, with the id. */
+const MARKER_ATTRIBUTE = "data-trilium-block-marker";
+
+/** Marks the marker of an empty paragraph, which keeps the paragraph's non-breaking space. */
+const EMPTY_PARAGRAPH_ATTRIBUTE = "data-trilium-empty-paragraph";
+
+/**
+ * Places a block marker where the renderer reads each block id back on the same block, for the
+ * blocks that the export writes as Markdown. Tables are left to the table rule, which alone knows
+ * whether a table becomes Markdown. A block written as raw HTML keeps the attribute on its tag,
+ * and so does everything in a `<details>`.
+ */
+function injectBlockMarkers(content: string): string {
+    if (!content.includes(BLOCK_ID_ATTRIBUTE)) {
+        return content;
+    }
+
+    // The `<code>` of a code block holds its id, so `<pre>` is parsed as elements.
+    const textElements = { script: true, noscript: true, style: true };
+    const root = parseHtml(content, { blockTextElements: textElements });
+    for (const element of root.querySelectorAll(`[${BLOCK_ID_ATTRIBUTE}]`)) {
+        const id = element.getAttribute(BLOCK_ID_ATTRIBUTE);
+        if (!isValidBlockId(id) || element.closest("details, table")) {
+            continue;
+        }
+
+        const markerLine = `<p><a ${MARKER_ATTRIBUTE}="${escapeHtml(id)}"></a></p>`;
+        const classes = element.classList;
+        switch (element.tagName) {
+            case "P": case "H1": case "H2": case "H3": case "H4": case "H5": case "H6":
+                placeMarkerInText(element, id);
+                break;
+            case "CODE":
+                if (element.parentNode?.tagName === "PRE" && !isBlank(element.parentNode)) {
+                    element.parentNode.insertAdjacentHTML("beforebegin", markerLine);
+                }
+                break;
+            case "PRE": case "BLOCKQUOTE":
+                if (!isBlank(element)) {
+                    element.insertAdjacentHTML("beforebegin", markerLine);
+                }
+                break;
+            case "HR":
+                element.insertAdjacentHTML("beforebegin", markerLine);
+                break;
+            case "ASIDE":
+                if (classes.contains("admonition") && !isBlank(element)) {
+                    element.insertAdjacentHTML("beforebegin", markerLine);
+                }
+                break;
+            case "DIV":
+                if (classes.contains(TABS_CLASS)) {
+                    element.insertAdjacentHTML("beforebegin", markerLine);
+                }
+                break;
+            case "SECTION": {
+                const title = classes.contains(TAB_CLASS)
+                    ? element.querySelector(`.${TAB_TITLE_CLASS}`)
+                    : null;
+                if (title) {
+                    placeMarkerInText(title, id);
+                }
+                break;
+            }
+        }
+    }
+    return root.toString();
+}
+
+/**
+ * Puts the marker of `id` at the end of the text of `block`, before the line breaks that end it,
+ * which would leave the marker alone on a line, where it marks the next block. A paragraph that
+ * starts with a formula takes it in front: a line that starts with a formula is raw HTML to
+ * Markdown. An empty paragraph keeps a non-breaking space in front of it, for the same reason.
+ */
+function placeMarkerInText(block: ParsedElement, id: string) {
+    const inner = block.innerHTML;
+    const marker = `<a ${MARKER_ATTRIBUTE}="${escapeHtml(id)}"></a>`;
+    const hasElements = block.childNodes.some((node) =>
+        node.nodeType === ELEMENT_NODE && (node as ParsedElement).tagName !== "BR");
+    if (!block.textContent.trim() && !hasElements) {
+        block.set_content(marker.replace("></a>", ` ${EMPTY_PARAGRAPH_ATTRIBUTE}></a>`));
+    } else if (/^\s*<span class="math-tex"/.test(inner)) {
+        block.set_content(marker + inner);
+    } else {
+        const end = inner.search(/(?:\s|&nbsp;|<br\s*\/?>)*$/);
+        block.set_content(inner.slice(0, end) + marker + inner.slice(end));
+    }
+}
+
+/**
+ * Whether Turnish drops `element` as blank: no text and nothing shown without text. A marker line
+ * above it would mark the block after it.
+ */
+function isBlank(element: ParsedElement) {
+    return !element.textContent.trim()
+        && !element.querySelector("img, hr, iframe, video, audio, input, figure, table");
+}
+
+const ELEMENT_NODE = 1;
+
+/** Writes a marker that `injectBlockMarkers()` placed, in the form the renderer reads. */
+function buildBlockMarkerFilter(): Rule {
+    return {
+        filter(node) {
+            return node.nodeName === "A" && node.hasAttribute(MARKER_ATTRIBUTE);
+        },
+        replacement(_content, node) {
+            const element = node as HTMLElement;
+            const marker = formatBlockMarker(element.getAttribute(MARKER_ATTRIBUTE) as string);
+            return element.hasAttribute(EMPTY_PARAGRAPH_ATTRIBUTE) ? `&nbsp;${marker}` : marker;
+        }
+    };
+}
+
+/** The block id of the figure around `table`, which the table rule writes when markers are on. */
+function getTableBlockId(table: HTMLTableElement): TableBlockId | null {
+    const figure = table.parentElement;
+    const id = isWritingBlockMarkers && figure?.nodeName === "FIGURE"
+        ? figure.getAttribute(BLOCK_ID_ATTRIBUTE)
+        : null;
+    if (!isValidBlockId(id)) {
+        return null;
+    }
+    return {
+        marker: formatBlockMarker(id),
+        figure: `<figure class="table" ${BLOCK_ID_ATTRIBUTE}="${escapeHtml(id)}">`
+    };
 }
 
 /** The class every icon in the application wears beside its pack's own. */
@@ -471,10 +630,10 @@ function buildMulticolumnFilter(): Rule {
 function multicolumnReplacement(node: Element, content: string): string {
     if (isMulticolumnColumn(node)) {
         const body = content.trim();
-        const opening = multicolumnOpeningTag(node);
+        const opening = getOpeningTag(node);
         return `\n${opening}\n${body ? `\n${body}\n\n` : ""}</div>\n`;
     }
-    const opening = multicolumnOpeningTag(node);
+    const opening = getOpeningTag(node);
     return `\n\n${opening}\n${content.trim()}\n</div>\n\n`;
 }
 
@@ -487,10 +646,62 @@ function blankMulticolumnReplacement(node: Element): string {
     return multicolumnReplacement(node, columns.join("\n"));
 }
 
-function multicolumnOpeningTag(node: Element): string {
+/** The opening tag of `node`, with its attributes as they are. */
+function getOpeningTag(node: Element): string {
     const attributes = Array.from(node.attributes)
         .map(({ name, value }) => ` ${name}="${escapeHtml(value)}"`);
-    return `<div${attributes.join("")}>`;
+    return `<${node.nodeName.toLowerCase()}${attributes.join("")}>`;
+}
+
+/**
+ * Exports an aside as `<aside>` tags on lines of their own around the Markdown of its blocks, as a
+ * column of a multicolumn layout is, so that the import gets the aside back.
+ */
+function buildAsideFilter(): Rule {
+    return {
+        filter(node) {
+            return isAside(node);
+        },
+        replacement(content, node) {
+            return asideReplacement(node, content);
+        }
+    };
+}
+
+function asideReplacement(node: Element, content: string): string {
+    const body = content.trim();
+    return `\n\n${getAsideOpeningTag(node)}\n${body ? `\n${body}\n\n` : ""}</aside>\n\n`;
+}
+
+/**
+ * The opening tag of an aside in Markdown, where a bare `<aside>` is placed at
+ * `BARE_ASIDE_POSITION` in `BARE_ASIDE_BACKGROUND`. An aside in the flow, saved without
+ * attributes, gets `data-position="center"`.
+ */
+function getAsideOpeningTag(node: Element): string {
+    if (!node.attributes.length) {
+        return `<aside data-position="center">`;
+    }
+    return isBareAside(node) ? "<aside>" : getOpeningTag(node);
+}
+
+/** Whether `node` has only the position and the background color of a new aside. */
+function isBareAside(node: Element): boolean {
+    const names = Array.from(node.attributes, ({ name }) => name).sort();
+    // The text editor repeats the color in a `--tn-*` variable for the theme to adapt.
+    const declarations = parseStyleDeclarations(node.getAttribute("style"))
+        .filter(({ property }) => !property.startsWith("--tn-"));
+    const [ declaration ] = declarations;
+
+    return names.join(" ") === "data-position style"
+        && node.getAttribute("data-position") === BARE_ASIDE_POSITION
+        && declarations.length === 1 && declaration.property === "background-color"
+        && normalizeColor(declaration.value) === normalizeColor(BARE_ASIDE_BACKGROUND);
+}
+
+/** Whether `node` is an aside, which an admonition is not, although it is saved as `<aside>`. */
+function isAside(node: Node): boolean {
+    return isElement(node) && node.nodeName === "ASIDE" && !node.classList.contains("admonition");
 }
 
 function isMulticolumnLayout(node: Node): boolean {

@@ -1,5 +1,5 @@
 import type { NetworkAddressesResponse } from "@triliumnext/commons";
-import { execSync } from "child_process";
+import { execFile } from "child_process";
 import { arch, cpus, networkInterfaces } from "os";
 
 import config from "../../services/config.js";
@@ -10,10 +10,10 @@ import {
 import port from "../../services/port.js";
 import { isMac, isWindows } from "../../services/utils";
 
-function systemChecks() {
+async function systemChecks() {
     return {
-        isCpuArchMismatch: isCpuArchMismatch()
-    }
+        isCpuArchMismatch: await checkCpuArchMismatch()
+    };
 }
 
 /**
@@ -33,37 +33,47 @@ function getNetworkAddresses(): NetworkAddressesResponse {
     };
 }
 
+/** The result of {@link checkCpuArchMismatch}, once known. */
+let cpuArchMismatch: boolean | undefined;
+let cpuArchCheck: Promise<boolean> | undefined;
+
+/**
+ * Runs {@link detectCpuArchMismatch} the first time it is called, and returns its result. The
+ * process keeps its architecture for as long as it runs, so every later call shares that result.
+ */
+export function checkCpuArchMismatch() {
+    cpuArchCheck ??= detectCpuArchMismatch().then((result) => (cpuArchMismatch = result));
+    return cpuArchCheck;
+}
+
+/** The result of {@link checkCpuArchMismatch} if it has finished, for `/bootstrap` to pass on. */
+export function getKnownCpuArchMismatch() {
+    return cpuArchMismatch;
+}
+
 /**
  * Detects if the application is running under emulation on Apple Silicon or Windows on ARM.
  * This happens when an x64 version of the app is run on an M1/M2/M3 Mac or on a Windows Snapdragon chip.
+ * On macOS it runs `sysctl` without waiting on it, so the server goes on answering meanwhile.
  * @returns true if running on x86 emulation on ARM, false otherwise.
  */
-export const isCpuArchMismatch = () => {
+export async function detectCpuArchMismatch(): Promise<boolean> {
     if (isMac) {
-        try {
-            // Use child_process to check sysctl.proc_translated
-            // This is the proper way to detect Rosetta 2 translation
-            const result = execSync("sysctl -n sysctl.proc_translated 2>/dev/null", {
-                encoding: "utf8",
-                timeout: 1000
-            }).trim();
-
-            // 1 means the process is being translated by Rosetta 2
-            // 0 means native execution
-            // If the sysctl doesn't exist (on Intel Macs), this will return empty/error
-            return result === "1";
-        } catch (error) {
-            // If sysctl fails or doesn't exist (Intel Macs), not running under Rosetta 2
-            return false;
-        }
+        // `sysctl.proc_translated` is 1 while Rosetta 2 translates the process, 0 for native
+        // execution, and missing on Intel Macs, where the call fails.
+        const result = await new Promise<string>((resolve) => {
+            execFile("sysctl", [ "-n", "sysctl.proc_translated" ], { encoding: "utf8", timeout: 1000 }, (error, stdout) => {
+                resolve(error ? "" : String(stdout).trim());
+            });
+        });
+        return result === "1";
     } else if (isWindows && arch() === "x64") {
         return cpus().some(cpu =>
             cpu.model.includes('Microsoft SQ') ||
             cpu.model.includes('Snapdragon'));
-    } else {
-        return false;
     }
-};
+    return false;
+}
 
 export default {
     systemChecks,

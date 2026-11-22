@@ -1,4 +1,5 @@
-import { type BoxSize, getAttachedFileMime } from "@triliumnext/commons";
+import type { BoxSize } from "@triliumnext/commons";
+import { getAttachedFileMime } from "@triliumnext/commons/src/lib/notes.js";
 import {
     Command,
     FileRepository,

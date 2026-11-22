@@ -79,6 +79,27 @@ describe("CollapsibleHeadings", () => {
             });
             expect([ isMarked("A"), isMarked("B") ]).toEqual([ false, true ]);
         });
+
+        it("marks the headings whose last line is blank, which keep the arrow at their end", () => {
+            setModelData(editor.model,
+                "<heading2>[]</heading2><heading2>B<softBreak></softBreak></heading2>" +
+                "<paragraph>p</paragraph>");
+            const root = getRoot(editor);
+            const getBlock = (index: number) => root.getChild(index) as ModelElement;
+            const isMarked = (index: number) => editor.editing.mapper
+                .toViewElement(getBlock(index))?.hasClass("trilium-heading-blank-end");
+
+            expect([ isMarked(0), isMarked(1), isMarked(2) ]).toEqual([ true, true, false ]);
+
+            editor.model.change((writer) => {
+                writer.insertText("A", getBlock(0), 0);
+                writer.remove(getBlock(1).getChild(1) as ModelElement);
+            });
+            expect([ isMarked(0), isMarked(1) ]).toEqual([ false, false ]);
+
+            editor.model.change((writer) => writer.remove(writer.createRangeIn(getBlock(0))));
+            expect(isMarked(0)).toBe(true);
+        });
     });
 
     describe("toggleHeadingCollapse", () => {
@@ -275,6 +296,16 @@ describe("CollapsibleHeadings", () => {
 
             editor.execute("undo");
             expect(outline(editor)).toBe("intro, ▸Alpha, (a1), (a2), Beta, b1");
+        });
+
+        it("keeps a heading collapsed when undo puts it back without its section", () => {
+            editor.model.change((writer) => writer.remove(findBlock(editor, "Alpha")));
+            expect(outline(editor)).toBe("intro, a1, a2, Beta, b1");
+
+            editor.execute("undo");
+            expect(outline(editor)).toBe("intro, ▸Alpha, (a1), (a2), Beta, b1");
+            editor.execute("redo");
+            expect(outline(editor)).toBe("intro, a1, a2, Beta, b1");
         });
 
         it("keeps a section collapsed when its copy and removal happen in one change", () => {

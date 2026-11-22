@@ -25,6 +25,7 @@ export const ATTR_HELP: AttrHelpMap = {
         hidePromotedAttributes: t("attribute_detail.hide_promoted_attributes"),
         readOnly: t("attribute_detail.read_only"),
         autoReadOnlyDisabled: t("attribute_detail.auto_read_only_disabled"),
+        vimMode: t("attribute_detail.vim_mode"),
         appCss: t("attribute_detail.app_css"),
         appTheme: t("attribute_detail.app_theme"),
         appThemeBase: t("attribute_detail.app_theme_base"),

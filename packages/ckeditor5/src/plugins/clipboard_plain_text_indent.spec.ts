@@ -1,9 +1,14 @@
-import { _setModelData as setModelData, CodeBlock, Essentials, Heading, Indent, IndentBlock, Paragraph } from "ckeditor5";
+import {
+    _setModelData as setModelData, CodeBlock, Essentials, Heading, Indent, IndentBlock, Paragraph,
+    ViewDowncastWriter
+} from "ckeditor5";
 import type { ClassicEditor, ViewDocumentFragment } from "ckeditor5";
 import { describe, expect, it } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
-import ClipboardPlainTextIndent, { viewToIndentedPlainText } from "./clipboard_plain_text_indent.js";
+import ClipboardPlainTextIndent, {
+    CLIPBOARD_PLAIN_TEXT_PROPERTY, viewToIndentedPlainText
+} from "./clipboard_plain_text_indent.js";
 
 describe("ClipboardPlainTextIndent", () => {
     async function createEditor(html: string, extraConfig = {}) {
@@ -93,6 +98,30 @@ describe("ClipboardPlainTextIndent", () => {
         ) as ViewDocumentFragment;
 
         expect(viewToIndentedPlainText(editor, content)).not.toContain("\t");
+    });
+
+    it("writes an element with a plain-text form as that text, without changing it", async () => {
+        const editor = await createEditor("");
+        const writer = new ViewDowncastWriter(editor.editing.view.document);
+        const preview = (name: string) => {
+            const element = writer.createContainerElement(name, {}, [ writer.createText("Title") ]);
+            writer.setCustomProperty(CLIPBOARD_PLAIN_TEXT_PROPERTY, "https://e.com/", element);
+            return element;
+        };
+        const content = writer.createDocumentFragment([
+            writer.createContainerElement("p", { style: "margin-left:40px" }, [
+                writer.createText("See "), preview("span"), writer.createText(" now"),
+                writer.createEmptyElement("br"), writer.createText("Next")
+            ]),
+            preview("section"),
+            preview("section"),
+            writer.createContainerElement("p", {}, [ writer.createText("End") ])
+        ]);
+        const before = editor.data.processor.toData(content);
+
+        expect(viewToIndentedPlainText(editor, content))
+            .toBe("\tSee https://e.com/ now\n\tNext\n\nhttps://e.com/\n\nhttps://e.com/\n\nEnd");
+        expect(editor.data.processor.toData(content)).toBe(before);
     });
 
     describe("on paste", () => {

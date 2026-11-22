@@ -6,7 +6,9 @@ vi.mock("../../services/i18n.js", () => ({ t: (key: string) => key }));
 vi.mock("../../services/keyboard_actions.js", () => ({
     default: { getAction: vi.fn().mockResolvedValue({ effectiveShortcuts: ["Alt+F1"] }) }
 }));
-vi.mock("../react/hooks.js", () => ({ useStaticTooltip: () => {} }));
+vi.mock("../react/hooks/tooltip.js", () => ({
+    useStaticTooltip: () => {}
+}));
 
 import appContext from "../../components/app_context.js";
 import Component from "../../components/component.js";

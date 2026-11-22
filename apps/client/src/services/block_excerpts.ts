@@ -1,6 +1,8 @@
 import "./block_reference.css";
 
-import { BLOCK_ID_ATTRIBUTE, parseBlockRange } from "@triliumnext/commons";
+import {
+    BLOCK_ID_ATTRIBUTE, parseBlockRange
+} from "@triliumnext/commons/src/lib/block_reference.js";
 
 import type FNote from "../entities/fnote.js";
 import { t } from "./i18n.js";
@@ -99,7 +101,8 @@ function findBlocks(root: ParentNode, block: string): [ Element, Element ] | nul
 }
 
 function loadContent(note: FNote) {
-    if (note.type !== "text" || !note.isContentAvailable()) {
+    const isMarkdown = note.isMarkdown();
+    if ((note.type !== "text" && !isMarkdown) || !note.isContentAvailable()) {
         return Promise.resolve(null);
     }
 
@@ -114,8 +117,10 @@ function loadContent(note: FNote) {
         loaded: Promise.resolve(null)
     };
     entry.loaded = note.getBlob()
-        .then((blob) => {
-            entry.content = new DOMParser().parseFromString(blob?.content ?? "", "text/html");
+        .then(async (blob) => {
+            const content = blob?.content ?? "";
+            const html = isMarkdown ? await renderMarkdown(content) : content;
+            entry.content = new DOMParser().parseFromString(html, "text/html");
             return entry.content;
         })
         .catch(() => {
@@ -132,6 +137,20 @@ function loadContent(note: FNote) {
     }
 
     return entry.loaded;
+}
+
+/**
+ * The HTML of the Markdown `source`, where block markers are ids, as the preview renders it. The
+ * renderer loads with the first Markdown label: this module is on the startup path.
+ */
+async function renderMarkdown(source: string) {
+    const [ { renderToHtml }, { default: DOMPurify } ] = await Promise.all([
+        import("@triliumnext/commons/src/lib/markdown_renderer.js"),
+        import("dompurify")
+    ]);
+    return renderToHtml(source, "", {
+        sanitize: (html) => DOMPurify.sanitize(html), demoteH1: false
+    });
 }
 
 /**

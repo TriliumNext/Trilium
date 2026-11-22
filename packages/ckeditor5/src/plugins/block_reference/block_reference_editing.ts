@@ -1,4 +1,7 @@
-import { BLOCK_ID_ATTRIBUTE, type BlockRange, isValidBlockId } from "@triliumnext/commons";
+import type { BlockRange } from "@triliumnext/commons";
+import {
+    BLOCK_ID_ATTRIBUTE, generateBlockId, isValidBlockId
+} from "@triliumnext/commons/src/lib/block_reference.js";
 import {
     Command, type Model, type ModelElement, type ModelWriter, Plugin, type ViewElement
 } from "ckeditor5";
@@ -8,8 +11,6 @@ import { ELEMENTS as MULTICOLUMN_ELEMENTS } from "../multicolumn/constants.js";
 /** The model attribute with the id of a block. */
 export const BLOCK_ID = "blockId";
 
-const BLOCK_ID_LENGTH = 12;
-const BLOCK_ID_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 const EDGES = [ "first", "last" ] as const;
 
 /** How long the blocks stay unchanged before `linkedBlockChanged` reports them. */
@@ -340,12 +341,4 @@ export function assignBlockId(model: Model, block: ModelElement): string {
         writer.setAttribute(BLOCK_ID, newId, block);
     });
     return newId;
-}
-
-/** A new random block id. */
-export function generateBlockId() {
-    const bytes = crypto.getRandomValues(new Uint8Array(BLOCK_ID_LENGTH));
-    const characters = Array.from(bytes, (byte) =>
-        BLOCK_ID_CHARACTERS[byte % BLOCK_ID_CHARACTERS.length]);
-    return characters.join("");
 }

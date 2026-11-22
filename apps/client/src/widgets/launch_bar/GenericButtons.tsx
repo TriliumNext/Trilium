@@ -2,11 +2,10 @@ import { useCallback } from "preact/hooks";
 
 import appContext, { CommandNames } from "../../components/app_context";
 import FNote from "../../entities/fnote";
-import { showLauncherContextMenu } from "../../menus/launcher_button_context_menu";
-import link_context_menu from "../../menus/link_context_menu";
 import { isCtrlKey } from "../../services/utils";
-import { useGlobalShortcut, useNoteLabel } from "../react/hooks";
-import { LaunchBarActionButton, useLauncherIconAndTitle } from "./launch_bar_widgets";
+import { useNoteLabel } from "../react/hooks/note";
+import { useGlobalShortcut } from "../react/hooks/shortcuts";
+import { LaunchBarActionButton, showLauncherContextMenu, useLauncherIconAndTitle } from "./launch_bar_widgets";
 
 /** How a click on a launcher button finds the note it opens, and where it opens it. */
 interface NoteLaunchOptions {
@@ -52,13 +51,14 @@ export function CustomNoteLauncher(props: NoteLaunchOptions & {
                 evt.preventDefault();
                 const targetNoteId = await getTargetNoteId(launcherNote);
                 const hoistedNoteId = getHoistedNoteId?.(launcherNote) ?? null;
-                const linkItems = targetNoteId ? link_context_menu.getItems(evt) : [];
+                const { default: linkContextMenu } = await import("../../menus/link_context_menu");
+                const linkItems = targetNoteId ? linkContextMenu.getItems(evt) : [];
                 await showLauncherContextMenu<CommandNames>(launcherNote, evt, {
                     parentNoteId,
                     extraItems: linkItems,
                     onCommand: (command) => {
                         if (command && targetNoteId) {
-                            link_context_menu.handleLinkContextMenuItem(command, evt, targetNoteId, {}, hoistedNoteId);
+                            linkContextMenu.handleLinkContextMenuItem(command, evt, targetNoteId, {}, hoistedNoteId);
                         }
                     }
                 });
@@ -107,7 +107,8 @@ async function openInMode(
     if (openMode === "newTab") {
         await appContext.tabManager.openInNewTab(targetNoteId, hoistedNoteId, true, "afterCurrent");
     } else if (command) {
-        link_context_menu.handleLinkContextMenuItem(command, evt, targetNoteId, {}, hoistedNoteId);
+        const { default: linkContextMenu } = await import("../../menus/link_context_menu");
+        linkContextMenu.handleLinkContextMenuItem(command, evt, targetNoteId, {}, hoistedNoteId);
     } else {
         await appContext.tabManager.openInSameTab(targetNoteId, hoistedNoteId);
     }

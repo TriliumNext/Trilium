@@ -73,7 +73,7 @@ The rest of the menu lists its options one per row:
     *   If the note is already archived, it will be unarchived instead.
     *   Multiple notes can be selected as well. However, all the selected notes must be in the same state (archived or not), otherwise the option will be disabled.
 *   **Protect subtree/Unprotect subtree**
-    *   On a note that is not protected, _Protect subtree_ marks this note and all of its descendants as protected. On a protected note, the item reads _Unprotect subtree_ and unprotects them instead. See <a class="reference-link" href="../../Notes/Protected%20Notes.md">Protected Notes</a> for more information.
+    *   On a note that is not protected, _Protect subtree_ marks this note and all of its descendants as protected. On a protected note, the item reads _Unprotect subtree_ and unprotects them instead, after asking for confirmation. Either action asks for the password if no protected session is running. See <a class="reference-link" href="../../Notes/Protected%20Notes.md">Protected Notes</a> for more information.
     *   Hovering the item or clicking its arrow opens a submenu with both actions, for instance to unprotect the protected notes below a note that is not protected itself.
 *   **Access…**
     *   On a server with <a class="reference-link" href="../../../Installation%20%26%20Setup/Server%20Installation/Multiple%20users.md">Multiple users</a>, opens the dialog that gives other users access to the note and the notes below it. Only the owner of the note and administrators see it. See <a class="reference-link" href="../../../Installation%20%26%20Setup/Server%20Installation/Multiple%20users/Giving%20access%20to%20notes.md">Giving access to notes</a>.

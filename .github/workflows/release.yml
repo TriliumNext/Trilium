@@ -144,6 +144,49 @@ jobs:
           name: release-server-linux-${{ matrix.arch }}
           path: upload/*.*
 
+  build_mobile:
+    name: Build Android app
+    needs:
+      - sanity-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Build APK and bundle
+        uses: ./.github/actions/build-mobile
+        with:
+          variant: stable
+          upload-artifact: "false"
+          keystore-base64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          keystore-password: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          key-alias: ${{ secrets.ANDROID_KEY_ALIAS }}
+          key-password: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          upload-keystore-base64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+          upload-keystore-password: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_PASSWORD }}
+          upload-key-alias: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          upload-key-password: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+
+      - name: Prepare artifacts
+        run: |
+          mkdir -p upload
+          cp apps/mobile/android/app/build/outputs/apk/release/app-release.apk \
+            "upload/TriliumNotes-${{ github.ref_name }}-android.apk"
+
+      - name: Upload the APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-mobile-android
+          path: upload/*.*
+
+      - name: Upload the Google Play bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: play-bundle-android
+          path: apps/mobile/android/app/build/outputs/bundle/release/app-release.aab
+          archive: false
+
   build_docker:
     name: Build Docker images
     needs:
@@ -176,6 +219,7 @@ jobs:
     needs:
       - make-electron
       - build_server
+      - build_mobile
       - publish_docker
     steps:
       - run: mkdir upload
@@ -204,7 +248,7 @@ jobs:
           path: upload
 
       - name: Publish stable release
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
           draft: false
           body_path: ${{ runner.temp }}/release-body.md

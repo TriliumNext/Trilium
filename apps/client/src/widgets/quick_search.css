@@ -72,6 +72,15 @@
         .cm-placeholder {
             color: var(--quick-search-color, var(--muted-text-color));
         }
+
+        .search-string-placeholder {
+            flex: 1 1 auto;
+            min-width: 0;
+            overflow: hidden;
+            color: var(--quick-search-color, var(--muted-text-color));
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
     }
 
     &:focus-within .search-string {

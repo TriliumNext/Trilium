@@ -107,9 +107,7 @@
     "help_on_links": "Help on links",
     "note": "Note",
     "search_note": "search for note by its name",
-    "link_title": "Link title",
-    "anchor": "Anchor (optional)",
-    "anchor_none": "None (link to note)"
+    "link_title": "Link title"
   },
   "delete_notes": {
     "delete_clones_description_one": "Also delete {{count}} other clone. Can be undone in recent changes.",
@@ -257,6 +255,10 @@
     "color-menu": {
       "text-color": "Text colour",
       "background-color": "Background colour"
+    },
+    "ck": {
+      "center-this-line": "centre this line",
+      "background-color": "Background colour"
     }
   },
   "link_context_menu": {
@@ -266,5 +268,8 @@
     "http-status-names": {
       "401": "Unauthorised"
     }
+  },
+  "editorfeatures": {
+    "scroll_rail_highlights_description": "Show coloured marks on the scrollbar so you can see where text is highlighted in the note."
   }
 }

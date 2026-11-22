@@ -1,7 +1,7 @@
 import $ from "jquery";
 import { useState } from "preact/hooks";
 import { act } from "preact/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import FNote from "../entities/fnote";
 import attributes from "../services/attributes";
@@ -9,7 +9,9 @@ import { renderInto } from "../test/render";
 import { ReactWrappedWidget } from "./basic_widget";
 
 vi.mock("bootstrap", () => ({
-    Tooltip: class {}
+    Tooltip: class {},
+    // `Modal.tsx`, which the icon picker loads, hands it over as its module loads.
+    Modal: class {}
 }));
 
 // i18next is not initialized under test, where t() answers with nothing; echoing the key back keeps
@@ -33,14 +35,20 @@ const iconPickerProps = vi.hoisted(() => ({
     }
 }));
 
-vi.mock("./react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("./react/hooks")>()),
+vi.mock("./react/hooks/note", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./react/hooks/note")>()),
+    useNoteLabel: () => [ undefined ]
+}));
+vi.mock("./react/hooks/note_context", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./react/hooks/note_context")>()),
     useNoteContext: () => {
         const [ note, setNote ] = useState(noteContext.initialNote);
         noteContext.setNote = setNote;
         return { note, viewScope: { viewMode: "default" } };
-    },
-    useNoteLabel: () => [ undefined ],
+    }
+}));
+vi.mock("./react/hooks/tooltip", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./react/hooks/tooltip")>()),
     useStaticTooltip: () => {},
     useTooltip: (_ref: unknown, config: { title?: unknown }) => {
         tooltipConfig.current = config;
@@ -50,9 +58,11 @@ vi.mock("./react/hooks", async (importOriginal) => ({
 
 vi.mock("../services/server", () => ({
     default: {
-        get: vi.fn(async (url: string) => url === "other/icon-usage"
-            ? { iconClassToCountMap: {} }
-            : [])
+        get: vi.fn(async (url: string) => {
+            if (url === "other/icon-usage") return { iconClassToCountMap: {} };
+            if (url === "other/icon-registry") return { sources: [] };
+            return [];
+        })
     }
 }));
 
@@ -63,8 +73,8 @@ vi.mock("../services/attributes", () => ({
     }
 }));
 
-vi.mock("./react/IconPicker", async (importOriginal) => {
-    const original = await importOriginal<typeof import("./react/IconPicker")>();
+vi.mock("./react/IconPickerButton", async (importOriginal) => {
+    const original = await importOriginal<typeof import("./react/IconPickerButton")>();
     return {
         ...original,
         IconPickerButton: (props: Parameters<typeof original.IconPickerButton>[0]) => {
@@ -76,6 +86,9 @@ vi.mock("./react/IconPicker", async (importOriginal) => {
 });
 
 import NoteIcon from "./note_icon";
+import { preloadDropdownPopups } from "./react/Dropdown";
+
+beforeAll(() => preloadDropdownPopups());
 
 class ResizeObserverStub {
     observe() {}
@@ -123,7 +136,7 @@ describe("NoteIcon", () => {
     });
 
     it("stays in the legacy widget tree when the active note changes", () => {
-        glob.iconRegistry = { sources: [] };
+        glob.iconPacks = [];
         noteContext.initialNote = buildNote("note-a");
         const widget = new ReactWrappedWidget(<NoteIcon />);
         widget.doRender();
@@ -143,8 +156,8 @@ describe("NoteIcon", () => {
         }
     });
 
-    it("closes an open icon picker when the active note changes", () => {
-        glob.iconRegistry = { sources: [] };
+    it("closes an open icon picker when the active note changes", async () => {
+        glob.iconPacks = [];
         noteContext.initialNote = buildNote("note-a");
         const container = renderInto(<NoteIcon />);
         const toggle = container.querySelector<HTMLButtonElement>("button");
@@ -154,7 +167,8 @@ describe("NoteIcon", () => {
         void act(() => {
             $(dropdown as HTMLElement).children("button:not([aria-expanded=true])").trigger("click");
         });
-        expect(document.body.querySelector(".tn-dropdown-portal .icon-picker")).not.toBeNull();
+        // The picker comes with its module, which the button imports on the first opening.
+        await vi.waitFor(() => expect(document.body.querySelector(".tn-dropdown-portal .icon-picker")).not.toBeNull());
 
         void act(() => noteContext.setNote?.(buildNote("note-a", "bx-updated")));
 

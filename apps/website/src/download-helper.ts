@@ -1,14 +1,12 @@
 import { TFunction } from 'i18next';
 
-import rootPackageJson from '../../../package.json' with { type: "json" };
-
 export type App = "desktop" | "server";
 
 export type Architecture = 'x64' | 'arm64';
 
 export type Platform = "macos" | "windows" | "linux" | "pikapod" | "docker";
 
-const version = rootPackageJson.version;
+export const version = __RELEASE_VERSION__;
 
 export interface DownloadInfo {
     recommended?: boolean;
@@ -192,6 +190,106 @@ export function buildDownloadUrl(t: TFunction<"translation", undefined>, app: Ap
         return downloadMatrix.server[platform]?.downloads[format].url ?? "#";
     }
     return "#";
+}
+
+export type DesktopPlatform = "windows" | "macos" | "linux";
+
+export interface NightlyMatrix {
+    desktop: DownloadMatrixEntry;
+    android: DownloadMatrixEntry;
+    server: DownloadMatrixEntry;
+}
+
+export const NIGHTLY_RELEASE_URL = "https://github.com/TriliumNext/Trilium/releases/tag/nightly";
+
+const NIGHTLY_DOWNLOAD_URL = "https://github.com/TriliumNext/Trilium/releases/download/nightly";
+
+/**
+ * Builds the nightly downloads for one desktop platform and architecture. Every link points
+ * straight at an asset of the `nightly` release, whose file names `nightly.yml` keeps fixed.
+ */
+export function getNightlyMatrix(
+    t: TFunction<"translation", undefined>,
+    platform: DesktopPlatform,
+    architecture: Architecture
+): NightlyMatrix {
+    const desktopUrl = (format: string) =>
+        `${NIGHTLY_DOWNLOAD_URL}/TriliumNotes-main-${platform}-${architecture}.${format}`;
+    const desktopDownloads: Record<DesktopPlatform, Record<string, DownloadInfo>> = {
+        windows: {
+            exe: {
+                recommended: true,
+                name: t("download_helper_desktop_windows.download_exe"),
+                url: desktopUrl("exe")
+            },
+            zip: { name: t("download_helper_desktop_windows.download_zip"), url: desktopUrl("zip") }
+        },
+        macos: {
+            dmg: {
+                recommended: true,
+                name: t("download_helper_desktop_macos.download_dmg"),
+                url: desktopUrl("dmg")
+            },
+            zip: { name: t("download_helper_desktop_macos.download_zip"), url: desktopUrl("zip") }
+        },
+        linux: {
+            deb: {
+                recommended: true,
+                name: t("download_helper_desktop_linux.download_deb"),
+                url: desktopUrl("deb")
+            },
+            rpm: {
+                recommended: true,
+                name: t("download_helper_desktop_linux.download_rpm"),
+                url: desktopUrl("rpm")
+            },
+            AppImage: {
+                name: t("download_helper_desktop_linux.download_appimage"),
+                url: desktopUrl("AppImage")
+            },
+            flatpak: {
+                name: t("download_helper_nightly.download_flatpak"),
+                url: desktopUrl("flatpak")
+            },
+            zip: { name: t("download_helper_desktop_linux.download_zip"), url: desktopUrl("zip") }
+        }
+    };
+    const tarName = architecture === "arm64"
+        ? t("download_helper_server_linux.download_tar_arm64")
+        : t("download_helper_server_linux.download_tar_x64");
+
+    return {
+        desktop: {
+            title: getDownloadMatrix(t).desktop[platform]?.title ?? platform,
+            description: t("download_helper_nightly.desktop_description"),
+            downloads: desktopDownloads[platform]
+        },
+        android: {
+            title: t("download_helper_nightly.android_title"),
+            description: t("download_helper_nightly.android_description"),
+            downloads: {
+                apk: {
+                    recommended: true,
+                    name: t("download_helper_nightly.download_apk"),
+                    url: `${NIGHTLY_DOWNLOAD_URL}/TriliumNotes-mobile-nightly.apk`
+                }
+            }
+        },
+        server: {
+            title: t("download_helper_nightly.server_title"),
+            description: t("download_helper_nightly.server_description"),
+            quickStartTitle: t("download_helper_nightly.server_quick_start"),
+            quickStartCode: "docker run -p 8080:8080 -d -v ./data:/home/node/trilium-data "
+                + "triliumnext/trilium:main",
+            downloads: {
+                tar: {
+                    recommended: true,
+                    name: tarName,
+                    url: `${NIGHTLY_DOWNLOAD_URL}/TriliumNotes-Server-main-linux-${architecture}.tar.xz`
+                }
+            }
+        }
+    };
 }
 
 export async function getArchitecture(): Promise<Architecture | null> {

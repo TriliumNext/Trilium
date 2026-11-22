@@ -67,7 +67,7 @@ From `apiResultHandler` ([`route_api.ts:29-47`](../../../apps/server/src/routes/
 | object / array / string | `200` | most handlers |
 | `undefined` / nothing | `204` | `branches.ts` `setPrefix`, `setExpanded` |
 | `[integer, body]` (first elem is an int) | that status code | `branches.ts:42,90` `[200, …]`; `import.ts:67,71,126` `[500, msg]`; `revisions.ts:123` `[400, "Description must be a string."]` |
-| `throw new ValidationError(...)` / `NotFoundError(...)` | `400` / `404` | mapped by `handleException` (`route_api.ts:130`); `CoreApiTester` maps `HttpError`→status at `api_tester.ts:335` |
+| `throw new ValidationError(...)` / `NotFoundError(...)` | `400` / `404` | any `HttpError` answers its `statusCode`: `handleException` (`route_api.ts:130`) on the server, `BrowserRouter.formatError()` on standalone and mobile; `CoreApiTester` maps `HttpError`→status at `api_tester.ts:335` the server's way, so core specs never reach the standalone router (its own spec is `browser_router.spec.ts`) |
 
 Direct-response handlers (image/download) write to `res` themselves and use `route()`, not `apiRoute()` — see the direct-response registrations in `index.ts`.
 

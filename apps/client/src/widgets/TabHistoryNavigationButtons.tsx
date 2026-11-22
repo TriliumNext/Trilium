@@ -7,7 +7,7 @@ import { t } from "../services/i18n";
 import { isElectron } from "../services/utils";
 import { useHistoryContextMenu } from "./launch_bar/HistoryNavigation";
 import ActionButton from "./react/ActionButton";
-import { useLauncherVisibility } from "./react/hooks";
+import { useLauncherVisibility } from "./react/hooks/note";
 
 export default function TabHistoryNavigationButtons() {
     const hasApi = isElectron() && window.electronApi;

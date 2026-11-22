@@ -1,7 +1,9 @@
-import { getEnglishName, type Locale, LOCALE_IDS, LOCALES, setDayjsLocale } from "@triliumnext/commons";
-import i18next from "i18next";
-import i18nextHttpBackend from "i18next-http-backend";
+import type { Locale, LOCALE_IDS } from "@triliumnext/commons";
+import { getEnglishName, LOCALES } from "@triliumnext/commons/src/lib/i18n.js";
+import i18next, { type BackendModule } from "i18next";
 import { initReactI18next } from "react-i18next";
+
+import { type CatalogueScope, getNamespaces, takeCatalogue } from "./catalogue_requests.js";
 
 /**
  * A deferred promise that resolves when translations are initialized.
@@ -11,9 +13,6 @@ export const translationsInitializedPromise = new Promise<void>((resolve) => {
     resolveTranslationsInitialized = resolve;
 });
 
-/** Every string in the app proper: 200-300 KB depending on the language. */
-const APP_NAMESPACE = "translation";
-
 /**
  * The screens shown before the app itself — the setup wizard, the login page and the password
  * reset. Kept apart from the app catalogue because the wizard changes language on the spot, and
@@ -22,26 +21,39 @@ const APP_NAMESPACE = "translation";
  */
 const ENTRY_NAMESPACE = "entry";
 
+/** Reads each catalogue through `takeCatalogue()`, which hands over a request `index.ts` started. */
+const catalogueBackend: BackendModule = {
+    type: "backend",
+    init() {},
+    read(lng, ns, callback) {
+        takeCatalogue(lng, ns).then(
+            (catalogue) => callback(null, catalogue),
+            (error: Error) => callback(error, false)
+        );
+    }
+};
+
 /**
  * @param scope which catalogue the page reads: `entry` for the pages shown before the app is
  *              available, `app` for the app itself — which reads both, since shared widgets such as
  *              the credentials form use `login.*` keys that live in the entry catalogue.
  */
-export async function initLocale(locale: LOCALE_IDS = "en", scope: "app" | "entry" = "app") {
-    const entryOnly = scope === "entry";
+export async function initLocale(locale: LOCALE_IDS = "en", scope: CatalogueScope = "app") {
+    const namespaces = getNamespaces(scope);
 
     i18next.use(initReactI18next);
-    await i18next.use(i18nextHttpBackend).init({
+    await i18next.use(catalogueBackend).init({
         lng: locale,
-        fallbackLng: "en",
-        ns: entryOnly ? [ ENTRY_NAMESPACE ] : [ APP_NAMESPACE, ENTRY_NAMESPACE ],
-        defaultNS: entryOnly ? ENTRY_NAMESPACE : APP_NAMESPACE,
+        // Each catalogue arrives completed with the English strings its language lacks (see
+        // translation-catalogues.mts), so neither English nor a base language such as `pt` for
+        // `pt_br` is fetched as a fallback.
+        fallbackLng: false,
+        load: "currentOnly",
+        ns: namespaces,
+        defaultNS: namespaces[0],
         // Resolving through the entry catalogue on a miss keeps every call site writing
         // `t("login.password")` without having to know which of the two holds it.
         fallbackNS: ENTRY_NAMESPACE,
-        backend: {
-            loadPath: `${window.glob.assetPath}/translations/{{lng}}/{{ns}}.json`
-        },
         // Interpolated values are not HTML-escaped: the client renders translated strings as text, where
         // escaping shows `&#x2F;` and `&#39;` to the reader. A string headed for a sink that takes HTML
         // escapes its own values: `Menu` titles and `highlightedNotePathTitle` callers use
@@ -50,7 +62,6 @@ export async function initLocale(locale: LOCALE_IDS = "en", scope: "app" | "entr
         returnEmptyString: false
     });
 
-    await setDayjsLocale(locale);
     resolveTranslationsInitialized();
 }
 

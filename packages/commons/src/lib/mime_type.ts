@@ -243,10 +243,13 @@ export function resolveEnabledMimeTypes(
     }));
 }
 
-/** Code longer than this many lines is not syntax-highlighted. */
+/** Code longer than this many lines is not syntax-highlighted, or only up to this line. */
 const HIGHLIGHT_MAX_LINE_COUNT = 500;
 
-/** Code longer than this many characters is not syntax-highlighted, such as one minified line. */
+/**
+ * Code longer than this many characters, such as one minified line, is not syntax-highlighted, or
+ * only up to this character.
+ */
 const HIGHLIGHT_MAX_CHAR_COUNT = 50_000;
 
 /**
@@ -256,18 +259,24 @@ const HIGHLIGHT_MAX_CHAR_COUNT = 50_000;
  * characters stays plain.
  */
 export function shouldSyntaxHighlight(code: string) {
-    if (code.length > HIGHLIGHT_MAX_CHAR_COUNT) {
-        return false;
-    }
+    return getSyntaxHighlightEnd(code) === code.length;
+}
 
-    let lineCount = 1;
+/**
+ * The index where the head of `code` that is small enough to syntax-highlight ends: at the end of
+ * line {@link HIGHLIGHT_MAX_LINE_COUNT} or at {@link HIGHLIGHT_MAX_CHAR_COUNT} characters,
+ * whichever comes first, and at the end of `code` when it is shorter than both.
+ */
+export function getSyntaxHighlightEnd(code: string) {
+    const maxEnd = Math.min(code.length, HIGHLIGHT_MAX_CHAR_COUNT);
     let index = -1;
-    while ((index = code.indexOf("\n", index + 1)) !== -1) {
-        if (++lineCount > HIGHLIGHT_MAX_LINE_COUNT) {
-            return false;
+    for (let lineCount = 1; lineCount <= HIGHLIGHT_MAX_LINE_COUNT; lineCount++) {
+        index = code.indexOf("\n", index + 1);
+        if (index === -1 || index >= maxEnd) {
+            return maxEnd;
         }
     }
-    return true;
+    return index;
 }
 
 let byMarkdownNameMappings: Record<string, MimeTypeDefinition> | null = null;

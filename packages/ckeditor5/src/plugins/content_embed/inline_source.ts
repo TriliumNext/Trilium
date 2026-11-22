@@ -3,6 +3,12 @@ import {
 	readBoxSize
 } from '@triliumnext/commons';
 import {
+	BLOCK_ID_ATTRIBUTE, isValidBlockId
+} from '@triliumnext/commons/src/lib/block_reference.js';
+import {
+	getMimeTypeFromCKEditorLanguage, MIME_TYPE_AUTO
+} from '@triliumnext/commons/src/lib/mime_type.js';
+import {
 	Command,
 	type DowncastConversionApi,
 	type DowncastInsertEvent,
@@ -15,14 +21,14 @@ import {
 	type ViewElement
 } from 'ckeditor5';
 
+import { BLOCK_ID } from '../block_reference/block_reference_editing.js';
+import { getPositionAttributes, getPositionOfView } from '../positioned_widgets.js';
 import { SIZE_ATTRIBUTES } from '../resizable_widgets/resizable_widgets.js';
 import {
 	getCodeViewAttributes,
 	getCodeViewOfView,
 	getDisplayModeAttributes,
 	getDisplayModeOfView,
-	getPositionAttributes,
-	getPositionOfView,
 	toDisplayMode
 } from './content_embed.js';
 
@@ -65,10 +71,11 @@ const SIZE_PROPERTIES = [
 
 /**
  * Embeds whose content lives in the note, as `<pre><code class="language-…">` code blocks: the
- * diagrams of the languages in `contentEmbed.inlineLanguages`, and the extended code blocks, whose
- * `<pre>` has the `EXTENDED_CODE_BLOCK_CLASS` class. The embed keeps the language and the source as
- * attributes, and is saved as the code block, with its box size, flags, position and size on the
- * `<pre>`, so that anything reading the note sees a plain code block.
+ * diagrams of the languages in `contentEmbed.inlineLanguages`, and the extended code blocks. A code
+ * block is an extended one when its `<pre>` has the `EXTENDED_CODE_BLOCK_CLASS` class, and every
+ * code block is one while `contentEmbed.isCodeBlockExtended`. The embed keeps the language and the
+ * source as attributes, and is saved as the code block, with its box size, flags, position and
+ * size on the `<pre>`, so that anything reading the note sees a plain code block.
  *
  * The content renders through the host's `contentEmbed.loadInline()`, which receives an
  * {@link InlineEmbedSource} rather than an ID.
@@ -110,7 +117,24 @@ export default class ContentEmbedInlineSource extends Plugin {
 	}
 
 	afterInit() {
-		this.editor.model.schema.extend( 'contentEmbed', { allowAttributes: [ 'language', 'source' ] } );
+		const editor = this.editor;
+		const schema = editor.model.schema;
+		schema.extend( 'contentEmbed', { allowAttributes: [ 'language', 'source' ] } );
+
+		// A code block can be a block of a list item, so the extended code block that replaces it
+		// takes the list attributes. The other embeds take none.
+		if ( isCodeBlockExtended( editor ) && schema.isRegistered( '$listItem' ) ) {
+			schema.extend( 'contentEmbed', { allowAttributesOf: '$listItem' } );
+			schema.addAttributeCheck( ( context, attributeName ) => {
+				const item = context.last;
+				const isListAttribute = schema.getDefinition( '$listItem' )
+					?.allowAttributes.includes( attributeName );
+				if ( isListAttribute && item.name === 'contentEmbed'
+					&& !isExtendedCodeBlock( editor, item ) ) {
+					return false;
+				}
+			} );
+		}
 	}
 
 	/** Has the host render the source of `embed` into `wrapper`. */
@@ -180,15 +204,18 @@ export default class ContentEmbedInlineSource extends Plugin {
 		}
 
 		const codeLanguage = getCodeLanguage( code );
-		const isDiagram = !!codeLanguage && getInlineLanguages( this.editor ).includes( codeLanguage );
-		const isCodeBlock = !isDiagram && pre.hasClass( EXTENDED_CODE_BLOCK_CLASS );
-		if ( !isDiagram && !isCodeBlock ) {
+		const diagramLanguage = getInlineLanguages( this.editor )
+			.find( language => language === codeLanguage );
+		const isCodeBlock = !diagramLanguage
+			&& ( isCodeBlockExtended( this.editor ) || pre.hasClass( EXTENDED_CODE_BLOCK_CLASS ) );
+		if ( !diagramLanguage && !isCodeBlock ) {
 			return;
 		}
 
 		const source = getViewText( code );
+		const blockId = pre.getAttribute( BLOCK_ID_ATTRIBUTE );
 		const embed = api.writer.createElement( 'contentEmbed', {
-			language: codeLanguage ?? EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE,
+			language: diagramLanguage ?? getCodeBlockLanguage( this.editor, codeLanguage ),
 			source,
 			...getBoxOfView( pre, isCodeBlock ? 'full' : 'resizable' ),
 			hideTitle: true,
@@ -200,6 +227,11 @@ export default class ContentEmbedInlineSource extends Plugin {
 		} );
 		if ( !api.safeInsert( embed, data.modelCursor ) ) {
 			return;
+		}
+		// Earlier versions saved the block ID on the `<pre>`. `BlockReferenceEditing` reads the
+		// one on the `<code>`.
+		if ( isValidBlockId( blockId ) && api.schema.checkAttribute( embed, BLOCK_ID ) ) {
+			api.writer.setAttribute( BLOCK_ID, blockId, embed );
 		}
 
 		api.consumable.consume( code, { name: true } );
@@ -242,9 +274,17 @@ export function isInlineSourceEmbed( embed: ModelElement ) {
 }
 
 /** Whether `embed` is an extended code block: an inline embed of a language that is no diagram. */
-export function isExtendedCodeBlock( editor: Editor, embed: ModelElement ) {
+export function isExtendedCodeBlock( editor: Editor, embed: Pick<ModelElement, 'getAttribute'> ) {
 	const language = embed.getAttribute( 'language' );
 	return typeof language === 'string' && !getInlineLanguages( editor ).includes( language );
+}
+
+/**
+ * Whether extended code blocks replace the code blocks of `editor`: every `<pre><code>` loads as
+ * one, and one at its defaults is saved as CKEditor saves a code block.
+ */
+export function isCodeBlockExtended( editor: Editor ) {
+	return !!editor.config.get( 'contentEmbed.isCodeBlockExtended' );
 }
 
 /** The extended code block that the selection is on, or `null`. */
@@ -263,14 +303,19 @@ function downcastData( editor: Editor, embed: ModelElement, api: DowncastConvers
 	}
 
 	const { writer, mapper } = api;
+	const boxSize = embed.getAttribute( 'boxSize' ) as string;
+	const isCodeBlock = isExtendedCodeBlock( editor, embed );
+	const isReplacement = isCodeBlock && isCodeBlockExtended( editor );
+	// The upcast reads a `<pre>` without a box size as Full and editable.
+	const isBare = isReplacement && boxSize === 'full' && !!embed.getAttribute( 'editable' );
 	const preAttributes: Record<string, string> = {
-		...( isExtendedCodeBlock( editor, embed ) ? { class: EXTENDED_CODE_BLOCK_CLASS } : {} ),
-		'data-box-size': embed.getAttribute( 'boxSize' ) as string,
+		...( isCodeBlock && !isReplacement ? { class: EXTENDED_CODE_BLOCK_CLASS } : {} ),
+		...( isBare ? {} : { 'data-box-size': boxSize } ),
 		...getDisplayModeAttributes( embed ),
 		...getPositionAttributes( embed )
 	};
 	for ( const [ flag, dataAttribute ] of FLAG_ATTRIBUTES ) {
-		if ( embed.getAttribute( flag ) ) {
+		if ( !isBare && embed.getAttribute( flag ) ) {
 			preAttributes[ dataAttribute ] = 'true';
 		}
 	}
@@ -279,8 +324,13 @@ function downcastData( editor: Editor, embed: ModelElement, api: DowncastConvers
 		...preAttributes,
 		...getCodeViewAttributes( embed )
 	} );
+	// The block ID goes on the `<code>`, as in a code block of CKEditor, where the upcast reads
+	// it. Consuming it keeps `BlockReferenceEditing` from writing it on the `<pre>`.
+	const blockId = embed.getAttribute( BLOCK_ID ) as string | undefined;
+	api.consumable.consume( embed, `attribute:${ BLOCK_ID }` );
 	const code = writer.createContainerElement( 'code', {
-		class: `language-${ embed.getAttribute( 'language' ) as string }`
+		class: `language-${ embed.getAttribute( 'language' ) as string }`,
+		...( blockId ? { [ BLOCK_ID_ATTRIBUTE ]: blockId } : {} )
 	} );
 	writer.insert( writer.createPositionAt( code, 0 ),
 		writer.createText( embed.getAttribute( 'source' ) as string | undefined ?? '' ) );
@@ -318,6 +368,20 @@ function getCodeLanguage( code: ViewElement ) {
 		}
 	}
 	return null;
+}
+
+/**
+ * The language of the extended code block that a code block of `codeLanguage` loads as. In place
+ * of the code blocks of CKEditor, a block in no language of `MIME_TYPES_DICT`, such as one pasted
+ * from a web page, is `MIME_TYPE_AUTO`, as CKEditor loads it, so that the host detects it.
+ */
+function getCodeBlockLanguage( editor: Editor, codeLanguage: string | null ) {
+	if ( !isCodeBlockExtended( editor ) ) {
+		return codeLanguage ?? EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE;
+	}
+	return codeLanguage && getMimeTypeFromCKEditorLanguage( codeLanguage )
+		? codeLanguage
+		: MIME_TYPE_AUTO;
 }
 
 /**

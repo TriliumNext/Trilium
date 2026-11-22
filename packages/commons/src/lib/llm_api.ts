@@ -153,6 +153,14 @@ export function isProviderOfKind(config: { kind?: LlmProviderKind }, kind: LlmPr
     return (config.kind ?? "llm") === kind;
 }
 
+/** One page a web search found. */
+export interface LlmWebSearchResult {
+    title: string;
+    url: string;
+    /** The provider's excerpt of the page; empty when it gave none. */
+    snippet: string;
+}
+
 /**
  * Information about an available LLM model.
  */

@@ -21,7 +21,10 @@ const presentation: PresentationModel = {
             content: { __html: "<h1>Intro</h1>" },
             backgroundColor: "rgb(255, 0, 0)",
             verticalSlides: [
-                { noteId: "first", type: "text", content: { __html: "<p>First</p>" } },
+                {
+                    noteId: "first", type: "text", content: { __html: "<p>First</p>" },
+                    backgroundGradient: "radial-gradient(circle, rgba(228, 123, 25, 0.25), transparent 70%)"
+                },
                 { noteId: "second", type: "text", content: { __html: "<p>Second</p>" } }
             ]
         },
@@ -51,12 +54,24 @@ describe("SlideSidebar", () => {
         const thumbnail = sidebar.querySelector<HTMLElement>(".slide-thumbnail[data-note-id=intro]");
         const root = thumbnail?.shadowRoot;
         expect(root?.querySelector(".reveal .slides section.present .slide-content")?.innerHTML).toBe("<h1>Intro</h1>");
-        expect(root?.querySelector<HTMLElement>(".reveal-viewport")?.style.background).toContain("rgb(255, 0, 0)");
+        expect(root?.querySelector<HTMLElement>(".reveal-viewport")?.style.backgroundColor).toBe("rgb(255, 0, 0)");
         // The two stylesheets passed in, plus the thumbnail's own.
         expect(root?.adoptedStyleSheets).toHaveLength(3);
         // Every thumbnail shares the same parsed sheets.
         const other = sidebar.querySelector<HTMLElement>(".slide-thumbnail[data-note-id=first]")?.shadowRoot;
         expect(other?.adoptedStyleSheets[0]).toBe(root?.adoptedStyleSheets[0]);
+    });
+
+    it("lays a slide's gradient over the theme's background instead of replacing it", () => {
+        const sidebar = renderSidebar();
+
+        const viewport = sidebar.querySelector<HTMLElement>(".slide-thumbnail[data-note-id=first]")
+            ?.shadowRoot?.querySelector<HTMLElement>(".reveal-viewport");
+        expect(viewport).toBeDefined();
+        expect(viewport?.style.backgroundImage).toContain("radial-gradient");
+        // An inline color, even the transparent one the `background` shorthand implies, would hide
+        // the theme's.
+        expect(viewport?.style.backgroundColor).toBe("");
     });
 
     it("shows an icon instead of loading a web view or a collection again", () => {

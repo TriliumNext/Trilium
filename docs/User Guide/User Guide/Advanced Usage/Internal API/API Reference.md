@@ -7,7 +7,7 @@ This is the internal API used by the Trilium Notes client application.
 
 Most endpoints require session-based authentication. You can authenticate using:
 
-*   **Password login**: POST to `/api/login` with password
+*   **Password login**: POST to `/login` with password
 *   **Token authentication**: Generate a token via `/api/login/token`
 *   **Sync authentication**: Use document secret for sync operations
 
@@ -39,7 +39,7 @@ Login, logout, and session management
 
 ### Login with password
 
-`POST /api/login` · `login`
+`POST /login` · `login`
 
 Responds with 401 when the password is wrong or, with two-factor authentication enabled, the TOTP token is missing or wrong.
 
@@ -51,6 +51,7 @@ Responds with 401 when the password is wrong or, with two-factor authentication 
 
 | Property | Description |
 | --- | --- |
+| `username` | `string`  <br>Empty, or the primary admin's username, signs in with the instance password. |
 | `password`  <br>_required_ | `string (password)` |
 | `totpToken` | `string`  <br>TOTP token if 2FA is enabled |
 
@@ -180,6 +181,52 @@ Responds with 401 when the password is wrong or, with two-factor authentication 
     {
         "instanceId": "string",
         "maxEntityChangeId": "string"
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "400: Sync version / document secret mismatch"
+
+    *   `application/json`: `object`
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `message` | `string` |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "message": "Non-matching sync versions, local is version ${server syncVersion}, remote is ${requested syncVersion}. It is recommended to run same version of Trilium on both sides of sync"
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "401: Timestamp mismatch"
+
+    *   `application/json`: `object`
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `message` | `string` |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "message": "Auth request time is out of sync, please check that both client and server have correct time. The difference between clocks has to be smaller than 5 minutes"
     }
     ```
 
@@ -354,10 +401,10 @@ Core note operations
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -370,10 +417,10 @@ Core note operations
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -400,9 +447,9 @@ Core note operations
 
 | Name | Description |
 | --- | --- |
-| `taskId`  <br>_required_ | `string` |
+| `taskId`  <br>_required_ | `string`  <br>Task group identifier |
 | `eraseNotes` | `boolean` |
-| `last`  <br>_required_ | `boolean` |
+| `last`  <br>_required_ | `boolean`  <br>Whether this is the last request of this task group |
 
 **Responses**
 
@@ -430,17 +477,34 @@ Core note operations
 
 === "200: Note content"
 
-    === "`text/html`: `string`"
+    *   `application/json`: [`Blob`](#schema-Blob)
 
-    === "`text/plain`: `string`"
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
 
-    === "`application/json`: `object`"
+    | Property | Description |
+    | --- | --- |
+    | `blobId` | `string` |
+    | `content` | `string \| null`  <br>`null` if not text. |
+    | `contentLength` | `integer` |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
-        ```json
-        {}
-        ```
+    </div>
+    <div class="trilium-multicolumn-column">
 
-    === "`application/octet-stream`: `string (binary)`"
+    ```json
+    {
+        "blobId": "8iqMIB8eiY1tPYmElfjm",
+        "content": "string",
+        "contentLength": 0,
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
+    }
+    ```
+
+    </div>
+    </div>
 
 === "404: Note not found"
 
@@ -449,6 +513,8 @@ Core note operations
 ### Update note content
 
 `PUT /api/notes/{noteId}/data` · `updateNoteContent`
+
+Saves the content of a note. A save with `base` names the version that the content is based on: it is refused with 409, and saves nothing, when the note has another format (type, or Markdown and other code) or another blob, or when an attachment row does not hold. In such a save, a row with `attachmentId` replaces that attachment only while it is at `blobId`, and a row without one creates an attachment of its title, refused when the note has one. The answer is what the next save is based on. A save without `base` is unconditional, and answers 204.
 
 **Authorization**: `sessionAuth` or `tokenAuth`
 
@@ -468,7 +534,9 @@ Core note operations
 | Property | Description |
 | --- | --- |
 | `content`  <br>_required_ | `string` |
-| `attachments` | array of [`Attachment`](#schema-Attachment) |
+| `attachments` | array of [`SavedAttachmentRow`](#schema-SavedAttachmentRow) |
+| `base` | [`NoteSaveBase`](#schema-NoteSaveBase)  <br>What a save of the content of a note is based on |
+| `keepOther` | `boolean`  <br>Saves over the version that `base` names, which another writer saved, after the note keeps that version as a revision |
 
 </div>
 <div class="trilium-multicolumn-column">
@@ -479,15 +547,21 @@ Core note operations
     "attachments": [
         {
             "attachmentId": "string",
-            "ownerId": "string",
-            "role": "image",
-            "mime": "string",
-            "title": "string",
             "blobId": "string",
-            "dateModified": "2019-08-24T14:15:22Z",
-            "utcDateModified": "2019-08-24T14:15:22Z"
+            "role": "string",
+            "title": "string",
+            "mime": "string",
+            "content": "string",
+            "position": 0,
+            "encoding": "base64"
         }
-    ]
+    ],
+    "base": {
+        "blobId": "string",
+        "type": "string",
+        "mime": "string"
+    },
+    "keepOther": true
 }
 ```
 
@@ -496,13 +570,91 @@ Core note operations
 
 **Responses**
 
-=== "204: Content updated"
+=== "200: Content updated, by a save with `base`"
+
+    *   `application/json`: `object`
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `blobId`  <br>_required_ | `string` |
+    | `attachments`  <br>_required_ | array of [`SavedAttachmentBase`](#schema-SavedAttachmentBase)  <br>The attachments that the save created or replaced |
+    | `content` | `string`  <br>The content as stored, when the server changed what was sent |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "blobId": "string",
+        "attachments": [
+            {
+                "attachmentId": "string",
+                "title": "string",
+                "blobId": "string"
+            }
+        ],
+        "content": "string"
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "204: Content updated, by a save without `base`"
+
+    No content.
+
+=== "400: A malformed `base`, or `keepOther` without `base`"
 
     No content.
 
 === "404: Note not found"
 
     No content.
+
+=== "409: The note has another format or version than the save is based on"
+
+    *   `application/json`: [`SaveConflict`](#schema-SaveConflict)
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `reason`  <br>_required_ | `string`  <br>One of `format`, `version`. |
+    | `message`  <br>_required_ | `string` |
+    | `blobId`  <br>_required_ | `string`  <br>The blob of the note now, which a save that keeps its version names |
+    | `type`  <br>_required_ | `string` |
+    | `mime`  <br>_required_ | `string` |
+    | `isVersioned`  <br>_required_ | `boolean`  <br>Whether the note keeps revisions |
+    | `attachments`  <br>_required_ | array of [`SavedAttachmentBase`](#schema-SavedAttachmentBase)  <br>The attachments that the save names, by ID or by title, as the note has them now. A save that keeps its version replaces them at these blobs. |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "reason": "format",
+        "message": "string",
+        "blobId": "string",
+        "type": "string",
+        "mime": "string",
+        "isVersioned": true,
+        "attachments": [
+            {
+                "attachmentId": "string",
+                "title": "string",
+                "blobId": "string"
+            }
+        ]
+    }
+    ```
+
+    </div>
+    </div>
 
 ### Get note timestamps
 
@@ -527,20 +679,20 @@ Core note operations
 
     | Property | Description |
     | --- | --- |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
 
     ```json
     {
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -548,6 +700,623 @@ Core note operations
     </div>
 
 === "404: Note not found"
+
+    No content.
+
+### Get blocks of a text note
+
+`GET /api/notes/{noteId}/blocks` · `getNoteBlocks`
+
+The blocks of a text note that `block` points at, as their exact HTML source, so that an excerpt can edit them apart from the rest of the note. The range must be a run of whole sibling blocks. A run of list items comes inside a copy of its list, numbered as in the note.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `noteId`  <br>_required_ | `string`  <br>12-character note ID |
+
+**Query parameters**
+
+| Name | Description |
+| --- | --- |
+| `block`  <br>_required_ | `string`  <br>The block id of one block, or the ids of the first and the last block of a range joined with `:` |
+
+**Responses**
+
+=== "200: The HTML of the blocks"
+
+    *   `application/json`: `object`
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `content`  <br>_required_ | `string` |
+    | `hash`  <br>_required_ | `string`  <br>The hash of `content`, which a save of the blocks is based on |
+    | `note`  <br>_required_ | `string`  <br>The whole note that `content` was read from, which a draft of the blocks goes into |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "content": "<p data-trilium-block-id=\"eaJkN47U8kI4\">First paragraph</p>",
+        "hash": "string",
+        "note": "string"
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "400: No `block` parameter, a note that is not a text note, or a protected note without a protected session"
+
+    No content.
+
+=== "404: The note or a block of the range does not exist, or the range is not a run of whole sibling blocks"
+
+    No content.
+
+### Replace blocks of a text note
+
+`PUT /api/notes/{noteId}/blocks` · `updateNoteBlocks`
+
+Replaces the blocks that `block` points at with `content` and saves the note as `PUT /api/notes/{noteId}/data` does, with a revision when one is due. The rest of the note keeps its bytes. Block ids in `content` that the note holds outside the range are removed. For a run of list items, `content` is a list: when its tag and `class` match the original list, its items replace the run and its other attributes apply to the whole list; otherwise the original list is split around `content`. `block` is the range as the note stores it before the change; once the blocks at its edges change, later requests use the new range.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `noteId`  <br>_required_ | `string`  <br>12-character note ID |
+
+**Query parameters**
+
+| Name | Description |
+| --- | --- |
+| `block`  <br>_required_ | `string`  <br>The block id of one block, or the ids of the first and the last block of a range joined with `:` |
+
+**Request body** (required)
+
+*   `application/json`: `object`
+
+<div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+<div class="trilium-multicolumn-column">
+
+| Property | Description |
+| --- | --- |
+| `content`  <br>_required_ | `string`  <br>The HTML of the blocks |
+| `attachments` | array of [`SavedAttachmentRow`](#schema-SavedAttachmentRow) |
+| `base` | `object`  <br>The `hash` of the blocks as read. The save is refused with 409 when the blocks have changed since; a change elsewhere in the note goes through. |
+| `base.hash`  <br>_required_ | `string` |
+| `keepOther` | `boolean`  <br>Saves over the blocks that `base` names, after the note keeps its version as a revision |
+| `block` | `string`  <br>The range of the blocks after the save, when it differs from `block` |
+
+</div>
+<div class="trilium-multicolumn-column">
+
+```json
+{
+    "content": "<p data-trilium-block-id=\"eaJkN47U8kI4\">First paragraph</p>",
+    "attachments": [
+        {
+            "attachmentId": "string",
+            "blobId": "string",
+            "role": "string",
+            "title": "string",
+            "mime": "string",
+            "content": "string",
+            "position": 0,
+            "encoding": "base64"
+        }
+    ],
+    "base": {
+        "hash": "string"
+    },
+    "keepOther": true,
+    "block": "string"
+}
+```
+
+</div>
+</div>
+
+**Responses**
+
+=== "200: Blocks replaced, by a save with `base`"
+
+    *   `application/json`: `object`
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `hash`  <br>_required_ | `string \| null`  <br>The hash of the blocks as saved, `null` when they cannot be read apart |
+    | `note`  <br>_required_ | `string`  <br>The whole note as the save left it, which a draft of the blocks goes into |
+    | `attachments`  <br>_required_ | array of [`SavedAttachmentBase`](#schema-SavedAttachmentBase)  <br>The attachments that the save created or replaced |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "hash": "string",
+        "note": "string",
+        "attachments": [
+            {
+                "attachmentId": "string",
+                "title": "string",
+                "blobId": "string"
+            }
+        ]
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "204: Blocks replaced, by a save without `base`"
+
+    No content.
+
+=== "400: No `block` parameter, no `content`, a malformed `base`, `keepOther` without `base`, a note that is not a text note in a save without `base`, or a protected note without a protected session"
+
+    No content.
+
+=== "404: The note or a block of the range does not exist, or the range is not a run of whole sibling blocks"
+
+    No content.
+
+=== "409: The blocks, or an attachment that the save replaces, changed since they were read (`version`), or the blocks can no longer be saved apart (`format`, `range`)"
+
+    *   `application/json`: [`BlocksVersionConflict`](#schema-BlocksVersionConflict) | [`BlocksGoneConflict`](#schema-BlocksGoneConflict)
+
+    ```json
+    {
+        "reason": "version",
+        "message": "string",
+        "hash": "string",
+        "attachments": [
+            {
+                "attachmentId": "string",
+                "title": "string",
+                "blobId": "string"
+            }
+        ],
+        "isVersioned": true
+    }
+    ```
+
+### List the places inside a note that a link can point at
+
+`GET /api/notes/{noteId}/references` · `getNoteReferences`
+
+The targets of a note, such as the headings and anchors of a text note, in the order that the link lists show them, the targets of each kind together. A link points at a target by adding its `params` to the path of the note: a heading of a text note through `?block=` and its block id, an anchor through `?bookmark=`. A target without `params` needs a reference first, which `POST /api/notes/{noteId}/references` creates. Such a target is listed only when the note can take one. Titles are plain text, never HTML. A note whose type has no targets lists none. The headings of a PDF file, the headings and bookmarks of a Word (DOCX) or OpenDocument text (ODT) file, and the entries of an EPUB e-book's table of contents come from its ToC cache, which the server builds when it is missing or stale. Where the server cannot read PDFs (standalone, mobile), the answer for a PDF lists none and carries `pendingToc` until the viewer of the file has built the cache. A DOCX, ODT or EPUB file links a heading through `?heading=`, and a DOCX or ODT file a bookmark through `?bookmark=`. An entry of an EPUB's table of contents that its preview does not show is not listed.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `noteId`  <br>_required_ | `string`  <br>12-character note ID |
+
+**Responses**
+
+=== "200: The targets of the note"
+
+    *   `application/json`: [`NoteReferences`](#schema-NoteReferences)
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `targets`  <br>_required_ | array of [`ReferenceTarget`](#schema-ReferenceTarget) |
+    | `blobId` | `string`  <br>The blob of the note that the targets were read from |
+    | `pendingToc` | [`PendingToc`](#schema-PendingToc)  <br>A table of contents that the viewer of the document builds |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "targets": [
+            {
+                "kind": "heading",
+                "title": "Installation",
+                "level": 2,
+                "params": {
+                    "block": "eaJkN47U8kI4"
+                }
+            }
+        ],
+        "blobId": "string",
+        "pendingToc": {
+            "format": "pdf"
+        }
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "400: A protected note without a protected session"
+
+    No content.
+
+=== "404: Note not found"
+
+    No content.
+
+### Give a target a reference
+
+`POST /api/notes/{noteId}/references` · `createNoteReference`
+
+Gives a target that `GET /api/notes/{noteId}/references` lists without `params` a reference, unless it has one, and returns the link parameters that point at it. A request names the target by exactly one of `index` and `line`. By `index`, the target is the one at that position among the targets of its `kind` while its title is still `title`, otherwise the only target of that kind with that title. By `line`, which only Markdown notes take, it is the only heading whose block starts on that source line, while its title is `title`. A request that names the `blobId` of its listing is refused with 409, reason `listing`, when the note has another blob: the targets are then listed again. For a heading of a text note, the reference is a block id. Read-only notes get the reference too. It is the only change to the content, and no revision is saved.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `noteId`  <br>_required_ | `string`  <br>12-character note ID |
+
+**Request body** (required)
+
+*   `application/json`: `object`
+
+<div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+<div class="trilium-multicolumn-column">
+
+| Property | Description |
+| --- | --- |
+| `kind`  <br>_required_ | [`ReferenceKind`](#schema-ReferenceKind)  <br>The kind of a target, which sets how the link lists show it. One of `heading`, `anchor`. |
+| `index` | `integer`  <br>The position of the target among the targets of its kind. Not sent with `line`. |
+| `line` | `integer`  <br>The 1-based source line where the block of a heading of a Markdown note starts, in the blob `blobId`. Not sent with `index`, and requires `blobId`. |
+| `title`  <br>_required_ | `string`  <br>The title of the target there |
+| `blobId` | `string`  <br>The `blobId` of the listing that the target was picked from. Required with `line`. |
+
+</div>
+<div class="trilium-multicolumn-column">
+
+```json
+{
+    "kind": "heading",
+    "index": 0,
+    "line": 12,
+    "title": "Installation",
+    "blobId": "string"
+}
+```
+
+</div>
+</div>
+
+**Responses**
+
+=== "200: The link parameters of the target"
+
+    *   `application/json`: `object`
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `params`  <br>_required_ | [`ReferenceParams`](#schema-ReferenceParams)  <br>The parameters of a link that point at a target, not encoded |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "params": {
+            "block": "eaJkN47U8kI4"
+        }
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "400: A malformed request, a note whose targets take no reference, a `line` for a note that is not Markdown, a protected note without a protected session, or a note whose content cannot be changed, such as a help page"
+
+    No content.
+
+=== "404: Note not found"
+
+    No content.
+
+=== "409: No target matches, because the targets changed since they were listed, or the listing was read from another blob (reason `listing`)"
+
+    No content.
+
+### List the headings of a text note with its content marked by their positions
+
+`GET /api/notes/{noteId}/references/marked` · `getMarkedNoteHeadings`
+
+For a read-only view of a text note, which parses the content otherwise than the server. Answers the heading targets as `GET /api/notes/{noteId}/references` lists them, before any filtering, and the content with `data-trilium-heading-index` on the opening tag of each of them, valued `<markToken>.<position>`. The position is the `index` that `POST /api/notes/{noteId}/references` takes. `markToken` is drawn for each answer and occurs nowhere in the content. Writes nothing.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `noteId`  <br>_required_ | `string`  <br>12-character note ID |
+
+**Responses**
+
+=== "200: The headings and the marked content"
+
+    *   `application/json`: `object`
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `blobId` | `string`  <br>The blob that the headings and the content were read from, absent for a note without one |
+    | `headings`  <br>_required_ | array of [`ReferenceTarget`](#schema-ReferenceTarget) |
+    | `markedContent`  <br>_required_ | `string`  <br>The content with each heading marked; never saved |
+    | `markToken`  <br>_required_ | `string`  <br>The token that every mark of this answer starts with |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "blobId": "string",
+        "headings": [
+            {
+                "kind": "heading",
+                "title": "Installation",
+                "level": 2,
+                "params": {
+                    "block": "eaJkN47U8kI4"
+                }
+            }
+        ],
+        "markedContent": "string",
+        "markToken": "Xb2kQ9pLm4Rt"
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "400: A note that is not a text note, or a protected note without a protected session"
+
+    No content.
+
+=== "404: Note not found"
+
+    No content.
+
+### Read the ToC cache of a note
+
+`GET /api/notes/{noteId}/toc` · `getNoteToc`
+
+The table of contents that the ToC cache of a note holds, such as the outline of a PDF file, the headings of a DOCX or ODT file or the entries of an EPUB e-book's table of contents, without building it or writing anything. `ready` is a cache of the note as it is, `stale` one of an earlier blob, `missing` a note without a cache that can be read, `unavailable` a note that is gone or protected without a protected session, and `none` a note that has no table of contents. `pendingToc` tells that the viewer of the document builds the cache, since the server cannot read the format. Each heading carries the `params` of a link to it.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `noteId`  <br>_required_ | `string`  <br>12-character note ID |
+
+**Responses**
+
+=== "200: The cached table of contents"
+
+    *   `application/json`: [`CachedToc`](#schema-CachedToc)
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `status`  <br>_required_ | `string`  <br>One of `ready`, `stale`, `missing`, `unreadable`, `unavailable`, `none`. |
+    | `blobId` | `string`  <br>For `ready` and `stale`, the blob that the headings were read from |
+    | `headings` | array of [`TocHeading`](#schema-TocHeading) |
+    | `pendingToc` | [`PendingToc`](#schema-PendingToc)  <br>A table of contents that the viewer of the document builds |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "status": "ready",
+        "blobId": "string",
+        "headings": [
+            {
+                "id": "0k3x9aa1h7q2mz",
+                "title": "Installation",
+                "level": 1,
+                "params": {
+                    "page": "4",
+                    "heading": "0k3x9aa1h7q2mz"
+                }
+            }
+        ],
+        "pendingToc": {
+            "format": "pdf"
+        }
+    }
+    ```
+
+    </div>
+    </div>
+
+### Save the table of contents that the viewer read
+
+`PUT /api/notes/{noteId}/toc` · `saveNoteToc`
+
+Saves the table of contents that the viewer of a document read, where the server cannot read the format itself, which is PDF on standalone and mobile. The server checks it, normalizes the titles and computes the ids of the headings. A valid cache that exists already is kept.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `noteId`  <br>_required_ | `string`  <br>12-character note ID |
+
+**Request body** (required)
+
+*   `application/json`: [`ClientToc`](#schema-ClientToc)
+
+<div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+<div class="trilium-multicolumn-column">
+
+| Property | Description |
+| --- | --- |
+| `targetBlobHash`  <br>_required_ | `string`  <br>The `blobId` of the bytes that the viewer read, from their digest |
+| `headings`  <br>_required_ | `array of object`  <br>In document order, without ids: `title` (at most 500 characters), `level` (1 for the first heading, at most one more than the heading before), and the fields of the format |
+| `properties` | `object`  <br>The properties of the format, such as `{ "reader": 2 }` |
+| `isCut` | `boolean`  <br>Whether the viewer stopped reading at 20,000 headings, before another one. The ids of every heading of a cut table of contents are bound to the blob. |
+| `elapsedMs`  <br>_required_ | `number`  <br>How long the viewer took, for the log |
+
+</div>
+<div class="trilium-multicolumn-column">
+
+```json
+{
+    "targetBlobHash": "string",
+    "headings": [
+        {}
+    ],
+    "properties": {},
+    "isCut": true,
+    "elapsedMs": 0
+}
+```
+
+</div>
+</div>
+
+**Responses**
+
+=== "200: The saved cache"
+
+    *   `application/json`: [`CachedToc`](#schema-CachedToc)
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `status`  <br>_required_ | `string`  <br>One of `ready`, `stale`, `missing`, `unreadable`, `unavailable`, `none`. |
+    | `blobId` | `string`  <br>For `ready` and `stale`, the blob that the headings were read from |
+    | `headings` | array of [`TocHeading`](#schema-TocHeading) |
+    | `pendingToc` | [`PendingToc`](#schema-PendingToc)  <br>A table of contents that the viewer of the document builds |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "status": "ready",
+        "blobId": "string",
+        "headings": [
+            {
+                "id": "0k3x9aa1h7q2mz",
+                "title": "Installation",
+                "level": 1,
+                "params": {
+                    "page": "4",
+                    "heading": "0k3x9aa1h7q2mz"
+                }
+            }
+        ],
+        "pendingToc": {
+            "format": "pdf"
+        }
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "400: A malformed table of contents, a note without a table of contents format, a protected note without a protected session, or a server that reads the format itself"
+
+    No content.
+
+=== "404: Note not found"
+
+    No content.
+
+=== "409: The note has another blob than the one the viewer read (reason `changed`)"
+
+    No content.
+
+### Build the ToC cache of a note
+
+`POST /api/notes/{noteId}/toc/build` · `buildNoteToc`
+
+Answers the ToC cache of a note, and builds and saves it first when it is not valid and the server can read the format. Where only the viewer can read it (PDF on standalone and mobile), answers as `GET /api/notes/{noteId}/toc` does, with `pendingToc`. `unreadable` is a file whose table of contents cannot be read.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `noteId`  <br>_required_ | `string`  <br>12-character note ID |
+
+**Responses**
+
+=== "200: The table of contents"
+
+    *   `application/json`: [`CachedToc`](#schema-CachedToc)
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `status`  <br>_required_ | `string`  <br>One of `ready`, `stale`, `missing`, `unreadable`, `unavailable`, `none`. |
+    | `blobId` | `string`  <br>For `ready` and `stale`, the blob that the headings were read from |
+    | `headings` | array of [`TocHeading`](#schema-TocHeading) |
+    | `pendingToc` | [`PendingToc`](#schema-PendingToc)  <br>A table of contents that the viewer of the document builds |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "status": "ready",
+        "blobId": "string",
+        "headings": [
+            {
+                "id": "0k3x9aa1h7q2mz",
+                "title": "Installation",
+                "level": 1,
+                "params": {
+                    "page": "4",
+                    "heading": "0k3x9aa1h7q2mz"
+                }
+            }
+        ],
+        "pendingToc": {
+            "format": "pdf"
+        }
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "409: The note changed during two builds in a row"
 
     No content.
 
@@ -780,10 +1549,10 @@ Core note operations
             "mime": "text/html",
             "isProtected": true,
             "blobId": "string",
-            "dateCreated": "2019-08-24T14:15:22Z",
-            "dateModified": "2019-08-24T14:15:22Z",
-            "utcDateCreated": "2019-08-24T14:15:22Z",
-            "utcDateModified": "2019-08-24T14:15:22Z"
+            "dateCreated": "2025-02-14 08:19:59.203+0100",
+            "dateModified": "2025-02-14 08:19:59.203+0100",
+            "utcDateCreated": "2025-02-13 07:42:47.698Z",
+            "utcDateModified": "2025-02-13 07:42:47.698Z"
         },
         "branch": {
             "branchId": "string",
@@ -829,10 +1598,10 @@ Core note operations
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -845,10 +1614,10 @@ Core note operations
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -883,8 +1652,8 @@ Core note operations
     | `title` | `string` |
     | `type` | [`NoteType`](#schema-NoteType)  <br>One of `text`, `code`, `render`, `file`, `image`, `search`, `relationMap`, `book`, `noteMap`, `mermaid`, `canvas`, `webView`, `launcher`, `doc`, `contentWidget`, `mindMap`, `geoMap`. |
     | `mime` | `string` |
-    | `dateCreated` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -896,8 +1665,8 @@ Core note operations
         "title": "string",
         "type": "text",
         "mime": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -982,8 +1751,8 @@ Core note operations
     | `mime`  <br>_required_ | `string` |
     | `title`  <br>_required_ | `string` |
     | `blobId` | `string` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -996,8 +1765,8 @@ Core note operations
         "mime": "string",
         "title": "string",
         "blobId": "string",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -1026,9 +1795,32 @@ Core note operations
 
 **Responses**
 
-=== "204: File uploaded"
+=== "200: File uploaded"
 
-    No content.
+    *   `application/json`: [`FileUploaded`](#schema-FileUploaded)
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `uploaded`  <br>_required_ | `boolean` |
+    | `blobId` | `string`  <br>The blob that the upload wrote |
+    | `message` | `string`  <br>Why nothing was uploaded |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "uploaded": true,
+        "blobId": "string",
+        "message": "string"
+    }
+    ```
+
+    </div>
+    </div>
 
 ### Open file note
 
@@ -1042,11 +1834,21 @@ Core note operations
 | --- | --- |
 | `noteId`  <br>_required_ | `string`  <br>12-character note ID |
 
+**Query parameters**
+
+| Name | Description |
+| --- | --- |
+| `blobId` | `string`  <br>The blob that the caller expects. When the content holds another one, the route answers 409 without the content. |
+
 **Responses**
 
 === "200: File content"
 
     *   `application/octet-stream`: `string (binary)`
+
+=== "409: The note holds another blob than `blobId`"
+
+    No content.
 
 ### Download file note
 
@@ -1173,6 +1975,47 @@ Core note operations
 === "204: Note updated from file"
 
     No content.
+
+### Retrieve the timestamps of several notes at once
+
+`POST /api/notes/metadata` · `notesMetadata`
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Request body** (required)
+
+*   `application/json`: `object`
+
+<div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+<div class="trilium-multicolumn-column">
+
+| Property | Description |
+| --- | --- |
+| `noteIds` | `array of string` |
+
+</div>
+<div class="trilium-multicolumn-column">
+
+```json
+{
+    "noteIds": [
+        "string"
+    ]
+}
+```
+
+</div>
+</div>
+
+**Responses**
+
+=== "200: The timestamps of each note found, keyed by note ID"
+
+    *   `application/json`: `object`
+
+    ```json
+    {}
+    ```
 
 ### Get image from note
 
@@ -1432,10 +2275,10 @@ Note tree structure and branches
                 "mime": "text/html",
                 "isProtected": true,
                 "blobId": "string",
-                "dateCreated": "2019-08-24T14:15:22Z",
-                "dateModified": "2019-08-24T14:15:22Z",
-                "utcDateCreated": "2019-08-24T14:15:22Z",
-                "utcDateModified": "2019-08-24T14:15:22Z"
+                "dateCreated": "2025-02-14 08:19:59.203+0100",
+                "dateModified": "2025-02-14 08:19:59.203+0100",
+                "utcDateCreated": "2025-02-13 07:42:47.698Z",
+                "utcDateModified": "2025-02-13 07:42:47.698Z"
             }
         ],
         "branches": [
@@ -1524,10 +2367,10 @@ Note tree structure and branches
                 "mime": "text/html",
                 "isProtected": true,
                 "blobId": "string",
-                "dateCreated": "2019-08-24T14:15:22Z",
-                "dateModified": "2019-08-24T14:15:22Z",
-                "utcDateCreated": "2019-08-24T14:15:22Z",
-                "utcDateModified": "2019-08-24T14:15:22Z"
+                "dateCreated": "2025-02-14 08:19:59.203+0100",
+                "dateModified": "2025-02-14 08:19:59.203+0100",
+                "utcDateCreated": "2025-02-13 07:42:47.698Z",
+                "utcDateModified": "2025-02-13 07:42:47.698Z"
             }
         ],
         "branches": [
@@ -1573,9 +2416,9 @@ Note tree structure and branches
 
 | Name | Description |
 | --- | --- |
-| `taskId`  <br>_required_ | `string` |
+| `taskId`  <br>_required_ | `string`  <br>Task group identifier |
 | `eraseNotes` | `boolean` |
-| `last`  <br>_required_ | `boolean` |
+| `last`  <br>_required_ | `boolean`  <br>Whether this is the last request of this task group |
 
 **Responses**
 
@@ -1588,7 +2431,7 @@ Note tree structure and branches
 
     | Property | Description |
     | --- | --- |
-    | `noteDeleted` | `boolean` |
+    | `noteDeleted` | `boolean`  <br>Whether the last note clone was deleted |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -2373,8 +3216,8 @@ File attachments
             "mime": "string",
             "title": "string",
             "blobId": "string",
-            "dateModified": "2019-08-24T14:15:22Z",
-            "utcDateModified": "2019-08-24T14:15:22Z"
+            "dateModified": "2025-02-14 08:19:59.203+0100",
+            "utcDateModified": "2025-02-13 07:42:47.698Z"
         }
     ]
     ```
@@ -2382,6 +3225,8 @@ File attachments
 ### Save attachment
 
 `POST /api/notes/{noteId}/attachments` · `saveAttachment`
+
+Saves an attachment of the note, replacing the one that `matchBy` finds or creating one. A save with `blobId` names the blob that the replaced attachment was read at: it is refused with 409, and saves nothing, when that attachment has another blob now. The answer is what the next save is based on. A save without `blobId` is unconditional, and answers 204.
 
 **Authorization**: `sessionAuth` or `tokenAuth`
 
@@ -2395,25 +3240,24 @@ File attachments
 
 | Name | Description |
 | --- | --- |
-| `matchBy` | `string`  <br>One of `attachmentId`, `title`. |
+| `matchBy` | `string`  <br>How the attachment to replace is found: by `attachmentId` (the default) or by `title`. One of `attachmentId`, `title`. |
 
 **Request body** (required)
 
-*   `application/json`: [`Attachment`](#schema-Attachment)
+*   `application/json`: `object`
 
 <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
 <div class="trilium-multicolumn-column">
 
 | Property | Description |
 | --- | --- |
-| `attachmentId`  <br>_required_ | `string` |
-| `ownerId`  <br>_required_ | `string` |
-| `role`  <br>_required_ | `string`  <br>One of `image`, `file`. |
+| `attachmentId` | `string` |
+| `role`  <br>_required_ | `string` |
 | `mime`  <br>_required_ | `string` |
 | `title`  <br>_required_ | `string` |
-| `blobId` | `string` |
-| `dateModified` | `string (date-time)` |
-| `utcDateModified` | `string (date-time)` |
+| `content` | `string` |
+| `blobId` | `string`  <br>The blob that the replaced attachment was read at |
+| `keepOther` | `boolean`  <br>Saves over the attachment that another writer saved, after the note keeps its version as a revision |
 
 </div>
 <div class="trilium-multicolumn-column">
@@ -2421,13 +3265,12 @@ File attachments
 ```json
 {
     "attachmentId": "string",
-    "ownerId": "string",
-    "role": "image",
+    "role": "string",
     "mime": "string",
     "title": "string",
+    "content": "string",
     "blobId": "string",
-    "dateModified": "2019-08-24T14:15:22Z",
-    "utcDateModified": "2019-08-24T14:15:22Z"
+    "keepOther": true
 }
 ```
 
@@ -2436,9 +3279,9 @@ File attachments
 
 **Responses**
 
-=== "201: Attachment saved"
+=== "200: Attachment saved, by a save with `blobId`"
 
-    *   `application/json`: [`Attachment`](#schema-Attachment)
+    *   `application/json`: [`SavedAttachmentBase`](#schema-SavedAttachmentBase)
 
     <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
     <div class="trilium-multicolumn-column">
@@ -2446,13 +3289,8 @@ File attachments
     | Property | Description |
     | --- | --- |
     | `attachmentId`  <br>_required_ | `string` |
-    | `ownerId`  <br>_required_ | `string` |
-    | `role`  <br>_required_ | `string`  <br>One of `image`, `file`. |
-    | `mime`  <br>_required_ | `string` |
     | `title`  <br>_required_ | `string` |
-    | `blobId` | `string` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `blobId`  <br>_required_ | `string` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -2460,13 +3298,61 @@ File attachments
     ```json
     {
         "attachmentId": "string",
-        "ownerId": "string",
-        "role": "image",
-        "mime": "string",
         "title": "string",
+        "blobId": "string"
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "204: Attachment saved, by a save without `blobId`"
+
+    No content.
+
+=== "400: A `blobId` that is not a string, or `keepOther` without `blobId`"
+
+    No content.
+
+=== "404: Note not found"
+
+    No content.
+
+=== "409: The replaced attachment has another blob than the save is based on. `attachments` holds that attachment as it is now."
+
+    *   `application/json`: [`SaveConflict`](#schema-SaveConflict)
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `reason`  <br>_required_ | `string`  <br>One of `format`, `version`. |
+    | `message`  <br>_required_ | `string` |
+    | `blobId`  <br>_required_ | `string`  <br>The blob of the note now, which a save that keeps its version names |
+    | `type`  <br>_required_ | `string` |
+    | `mime`  <br>_required_ | `string` |
+    | `isVersioned`  <br>_required_ | `boolean`  <br>Whether the note keeps revisions |
+    | `attachments`  <br>_required_ | array of [`SavedAttachmentBase`](#schema-SavedAttachmentBase)  <br>The attachments that the save names, by ID or by title, as the note has them now. A save that keeps its version replaces them at these blobs. |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "reason": "format",
+        "message": "string",
         "blobId": "string",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "type": "string",
+        "mime": "string",
+        "isVersioned": true,
+        "attachments": [
+            {
+                "attachmentId": "string",
+                "title": "string",
+                "blobId": "string"
+            }
+        ]
     }
     ```
 
@@ -2516,8 +3402,8 @@ File attachments
     | `mime`  <br>_required_ | `string` |
     | `title`  <br>_required_ | `string` |
     | `blobId` | `string` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -2530,8 +3416,8 @@ File attachments
         "mime": "string",
         "title": "string",
         "blobId": "string",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -2567,8 +3453,8 @@ File attachments
     | `mime`  <br>_required_ | `string` |
     | `title`  <br>_required_ | `string` |
     | `blobId` | `string` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -2581,8 +3467,8 @@ File attachments
         "mime": "string",
         "title": "string",
         "blobId": "string",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -2630,6 +3516,288 @@ File attachments
 === "200: Attachment content"
 
     *   `application/octet-stream`: `string (binary)`
+
+### List the places inside an attachment that a link can point at
+
+`GET /api/attachments/{attachmentId}/references` · `getAttachmentReferences`
+
+The twin of `GET /api/notes/{noteId}/references` for an attachment, such as the headings of a PDF, DOCX or ODT file or the entries of an EPUB e-book's table of contents. The ToC cache of an attachment is kept on its note.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `attachmentId`  <br>_required_ | `string` |
+
+**Responses**
+
+=== "200: The targets of the attachment"
+
+    *   `application/json`: [`NoteReferences`](#schema-NoteReferences)
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `targets`  <br>_required_ | array of [`ReferenceTarget`](#schema-ReferenceTarget) |
+    | `blobId` | `string`  <br>The blob of the note that the targets were read from |
+    | `pendingToc` | [`PendingToc`](#schema-PendingToc)  <br>A table of contents that the viewer of the document builds |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "targets": [
+            {
+                "kind": "heading",
+                "title": "Installation",
+                "level": 2,
+                "params": {
+                    "block": "eaJkN47U8kI4"
+                }
+            }
+        ],
+        "blobId": "string",
+        "pendingToc": {
+            "format": "pdf"
+        }
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "400: A protected attachment without a protected session"
+
+    No content.
+
+=== "404: Attachment not found"
+
+    No content.
+
+### Read the ToC cache of an attachment
+
+`GET /api/attachments/{attachmentId}/toc` · `getAttachmentToc`
+
+The twin of `GET /api/notes/{noteId}/toc` for an attachment.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `attachmentId`  <br>_required_ | `string` |
+
+**Responses**
+
+=== "200: The cached table of contents"
+
+    *   `application/json`: [`CachedToc`](#schema-CachedToc)
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `status`  <br>_required_ | `string`  <br>One of `ready`, `stale`, `missing`, `unreadable`, `unavailable`, `none`. |
+    | `blobId` | `string`  <br>For `ready` and `stale`, the blob that the headings were read from |
+    | `headings` | array of [`TocHeading`](#schema-TocHeading) |
+    | `pendingToc` | [`PendingToc`](#schema-PendingToc)  <br>A table of contents that the viewer of the document builds |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "status": "ready",
+        "blobId": "string",
+        "headings": [
+            {
+                "id": "0k3x9aa1h7q2mz",
+                "title": "Installation",
+                "level": 1,
+                "params": {
+                    "page": "4",
+                    "heading": "0k3x9aa1h7q2mz"
+                }
+            }
+        ],
+        "pendingToc": {
+            "format": "pdf"
+        }
+    }
+    ```
+
+    </div>
+    </div>
+
+### Save the table of contents that the viewer of an attachment read
+
+`PUT /api/attachments/{attachmentId}/toc` · `saveAttachmentToc`
+
+The twin of `PUT /api/notes/{noteId}/toc` for an attachment.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `attachmentId`  <br>_required_ | `string` |
+
+**Request body** (required)
+
+*   `application/json`: [`ClientToc`](#schema-ClientToc)
+
+<div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+<div class="trilium-multicolumn-column">
+
+| Property | Description |
+| --- | --- |
+| `targetBlobHash`  <br>_required_ | `string`  <br>The `blobId` of the bytes that the viewer read, from their digest |
+| `headings`  <br>_required_ | `array of object`  <br>In document order, without ids: `title` (at most 500 characters), `level` (1 for the first heading, at most one more than the heading before), and the fields of the format |
+| `properties` | `object`  <br>The properties of the format, such as `{ "reader": 2 }` |
+| `isCut` | `boolean`  <br>Whether the viewer stopped reading at 20,000 headings, before another one. The ids of every heading of a cut table of contents are bound to the blob. |
+| `elapsedMs`  <br>_required_ | `number`  <br>How long the viewer took, for the log |
+
+</div>
+<div class="trilium-multicolumn-column">
+
+```json
+{
+    "targetBlobHash": "string",
+    "headings": [
+        {}
+    ],
+    "properties": {},
+    "isCut": true,
+    "elapsedMs": 0
+}
+```
+
+</div>
+</div>
+
+**Responses**
+
+=== "200: The saved cache"
+
+    *   `application/json`: [`CachedToc`](#schema-CachedToc)
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `status`  <br>_required_ | `string`  <br>One of `ready`, `stale`, `missing`, `unreadable`, `unavailable`, `none`. |
+    | `blobId` | `string`  <br>For `ready` and `stale`, the blob that the headings were read from |
+    | `headings` | array of [`TocHeading`](#schema-TocHeading) |
+    | `pendingToc` | [`PendingToc`](#schema-PendingToc)  <br>A table of contents that the viewer of the document builds |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "status": "ready",
+        "blobId": "string",
+        "headings": [
+            {
+                "id": "0k3x9aa1h7q2mz",
+                "title": "Installation",
+                "level": 1,
+                "params": {
+                    "page": "4",
+                    "heading": "0k3x9aa1h7q2mz"
+                }
+            }
+        ],
+        "pendingToc": {
+            "format": "pdf"
+        }
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "400: A malformed table of contents, or one the server does not take"
+
+    No content.
+
+=== "404: Attachment not found"
+
+    No content.
+
+=== "409: The attachment has another blob than the one the viewer read (reason `changed`)"
+
+    No content.
+
+### Build the ToC cache of an attachment
+
+`POST /api/attachments/{attachmentId}/toc/build` · `buildAttachmentToc`
+
+The twin of `POST /api/notes/{noteId}/toc/build` for an attachment.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `attachmentId`  <br>_required_ | `string` |
+
+**Responses**
+
+=== "200: The table of contents"
+
+    *   `application/json`: [`CachedToc`](#schema-CachedToc)
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `status`  <br>_required_ | `string`  <br>One of `ready`, `stale`, `missing`, `unreadable`, `unavailable`, `none`. |
+    | `blobId` | `string`  <br>For `ready` and `stale`, the blob that the headings were read from |
+    | `headings` | array of [`TocHeading`](#schema-TocHeading) |
+    | `pendingToc` | [`PendingToc`](#schema-PendingToc)  <br>A table of contents that the viewer of the document builds |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "status": "ready",
+        "blobId": "string",
+        "headings": [
+            {
+                "id": "0k3x9aa1h7q2mz",
+                "title": "Installation",
+                "level": 1,
+                "params": {
+                    "page": "4",
+                    "heading": "0k3x9aa1h7q2mz"
+                }
+            }
+        ],
+        "pendingToc": {
+            "format": "pdf"
+        }
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "409: The attachment changed during two builds in a row"
+
+    No content.
 
 ### Rename attachment
 
@@ -2701,10 +3869,10 @@ File attachments
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -2717,10 +3885,10 @@ File attachments
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -2749,9 +3917,32 @@ File attachments
 
 **Responses**
 
-=== "204: Attachment file updated"
+=== "200: Attachment file updated"
 
-    No content.
+    *   `application/json`: [`FileUploaded`](#schema-FileUploaded)
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `uploaded`  <br>_required_ | `boolean` |
+    | `blobId` | `string`  <br>The blob that the upload wrote |
+    | `message` | `string`  <br>Why nothing was uploaded |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "uploaded": true,
+        "blobId": "string",
+        "message": "string"
+    }
+    ```
+
+    </div>
+    </div>
 
 ### Open attachment
 
@@ -2765,11 +3956,21 @@ File attachments
 | --- | --- |
 | `attachmentId`  <br>_required_ | `string` |
 
+**Query parameters**
+
+| Name | Description |
+| --- | --- |
+| `blobId` | `string`  <br>The blob that the caller expects. When the content holds another one, the route answers 409 without the content. |
+
 **Responses**
 
 === "200: Attachment content"
 
     *   `application/octet-stream`: `string (binary)`
+
+=== "409: The attachment holds another blob than `blobId`"
+
+    No content.
 
 ### Download attachment
 
@@ -3017,8 +4218,8 @@ Note revision history
             "title": "string",
             "type": "text",
             "mime": "string",
-            "dateCreated": "2019-08-24T14:15:22Z",
-            "utcDateCreated": "2019-08-24T14:15:22Z"
+            "dateCreated": "2025-02-14 08:19:59.203+0100",
+            "utcDateCreated": "2025-02-13 07:42:47.698Z"
         }
     ]
     ```
@@ -3038,6 +4239,113 @@ Note revision history
 **Responses**
 
 === "204: Revisions erased"
+
+    No content.
+
+### Keep unsaved changes as a revision
+
+`POST /api/notes/{noteId}/revisions/draft` · `saveDraftRevision`
+
+Keeps the changes that an editor could not save, after a conflict or a conversion of the note, as a revision in the format they were written in, with their attachment edits written into the copies of the attachments. A draft of an excerpt is put into `fragment.base.note`, the note as its editor read it, not as it is now. Without a `base`, or where that note no longer holds the blocks with the hash `fragment.base.hash`, the revision holds the blocks alone, with the source `fragment`, and cannot be restored. A repeated request with the same `revisionId` makes one revision. A note that keeps no revisions keeps no draft.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `noteId`  <br>_required_ | `string`  <br>12-character note ID |
+
+**Request body** (required)
+
+*   `application/json`: `object`
+
+<div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+<div class="trilium-multicolumn-column">
+
+| Property | Description |
+| --- | --- |
+| `revisionId`  <br>_required_ | `string`  <br>Drawn by the client once for each draft |
+| `type`  <br>_required_ | `string` |
+| `mime`  <br>_required_ | `string` |
+| `content` | `string`  <br>The content of the whole note; or `fragment` |
+| `fragment` | `object`  <br>The edited blocks of an excerpt, and the range they replace |
+| `fragment.content`  <br>_required_ | `string` |
+| `fragment.block`  <br>_required_ | `string` |
+| `fragment.base` | `object`  <br>The note that the blocks were read from |
+| `fragment.base.note`  <br>_required_ | `string`  <br>The content of the whole note, as the editor last read or saved it |
+| `fragment.base.hash`  <br>_required_ | `string`  <br>The hash of the blocks of the range in `note` |
+| `attachments` | array of [`SavedAttachmentRow`](#schema-SavedAttachmentRow) |
+
+</div>
+<div class="trilium-multicolumn-column">
+
+```json
+{
+    "revisionId": "string",
+    "type": "string",
+    "mime": "string",
+    "content": "string",
+    "fragment": {
+        "content": "string",
+        "block": "string",
+        "base": {
+            "note": "string",
+            "hash": "string"
+        }
+    },
+    "attachments": [
+        {
+            "attachmentId": "string",
+            "blobId": "string",
+            "role": "string",
+            "title": "string",
+            "mime": "string",
+            "content": "string",
+            "position": 0,
+            "encoding": "base64"
+        }
+    ]
+}
+```
+
+</div>
+</div>
+
+**Responses**
+
+=== "200: The revision of the draft"
+
+    *   `application/json`: `object`
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `revisionId`  <br>_required_ | `string` |
+    | `isKept`  <br>_required_ | `boolean`  <br>Whether the note keeps the revision |
+    | `isFragment`  <br>_required_ | `boolean`  <br>Whether the revision holds the blocks alone |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "revisionId": "string",
+        "isKept": true,
+        "isFragment": true
+    }
+    ```
+
+    </div>
+    </div>
+
+=== "400: A malformed draft, a revision ID of another note, or a note whose content is not available"
+
+    No content.
+
+=== "404: Note not found"
 
     No content.
 
@@ -3069,8 +4377,8 @@ Note revision history
     | `title` | `string` |
     | `type` | [`NoteType`](#schema-NoteType)  <br>One of `text`, `code`, `render`, `file`, `image`, `search`, `relationMap`, `book`, `noteMap`, `mermaid`, `canvas`, `webView`, `launcher`, `doc`, `contentWidget`, `mindMap`, `geoMap`. |
     | `mime` | `string` |
-    | `dateCreated` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -3082,8 +4390,8 @@ Note revision history
         "title": "string",
         "type": "text",
         "mime": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -3138,6 +4446,8 @@ Note revision history
 
 `POST /api/revisions/{revisionId}/restore` · `restoreRevision`
 
+Restores the revision as the content of its note, with its attachments, and the links and relations of that content.
+
 **Authorization**: `sessionAuth` or `tokenAuth`
 
 **Path parameters**
@@ -3148,46 +4458,13 @@ Note revision history
 
 **Responses**
 
-=== "200: Revision restored"
+=== "204: Revision restored, or there is no revision of that ID"
 
-    *   `application/json`: [`Note`](#schema-Note)
+    No content.
 
-    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
-    <div class="trilium-multicolumn-column">
+=== "400: A revision of the source `fragment`, which holds blocks of the note alone"
 
-    | Property | Description |
-    | --- | --- |
-    | `noteId`  <br>_required_ | `string`  <br>12-character note ID |
-    | `title`  <br>_required_ | `string`  <br>Note title |
-    | `type`  <br>_required_ | [`NoteType`](#schema-NoteType)  <br>One of `text`, `code`, `render`, `file`, `image`, `search`, `relationMap`, `book`, `noteMap`, `mermaid`, `canvas`, `webView`, `launcher`, `doc`, `contentWidget`, `mindMap`, `geoMap`. |
-    | `mime`  <br>_required_ | `string`  <br>MIME type |
-    | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
-    | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
-
-    </div>
-    <div class="trilium-multicolumn-column">
-
-    ```json
-    {
-        "noteId": "ur11rSfHkzeV",
-        "title": "string",
-        "type": "text",
-        "mime": "text/html",
-        "isProtected": true,
-        "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
-    }
-    ```
-
-    </div>
-    </div>
+    No content.
 
 ### Download revision
 
@@ -3300,10 +4577,10 @@ Note revision history
             "mime": "text/html",
             "isProtected": true,
             "blobId": "string",
-            "dateCreated": "2019-08-24T14:15:22Z",
-            "dateModified": "2019-08-24T14:15:22Z",
-            "utcDateCreated": "2019-08-24T14:15:22Z",
-            "utcDateModified": "2019-08-24T14:15:22Z"
+            "dateCreated": "2025-02-14 08:19:59.203+0100",
+            "dateModified": "2025-02-14 08:19:59.203+0100",
+            "utcDateCreated": "2025-02-13 07:42:47.698Z",
+            "utcDateModified": "2025-02-13 07:42:47.698Z"
         }
     ]
     ```
@@ -3551,10 +4828,10 @@ Search and discovery
             "mime": "text/html",
             "isProtected": true,
             "blobId": "string",
-            "dateCreated": "2019-08-24T14:15:22Z",
-            "dateModified": "2019-08-24T14:15:22Z",
-            "utcDateCreated": "2019-08-24T14:15:22Z",
-            "utcDateModified": "2019-08-24T14:15:22Z"
+            "dateCreated": "2025-02-14 08:19:59.203+0100",
+            "dateModified": "2025-02-14 08:19:59.203+0100",
+            "utcDateCreated": "2025-02-13 07:42:47.698Z",
+            "utcDateModified": "2025-02-13 07:42:47.698Z"
         }
     ]
     ```
@@ -3582,9 +4859,21 @@ Search and discovery
     ```json
     [
         {
-            "noteId": "string",
-            "title": "string",
-            "path": "string"
+            "noteId": "_help_gcI7RPbaNSh3",
+            "notePath": "root/_hidden/_help/_help_CdNpE2pqjmI6/_help_yIhgI5H7A2Sm/_help_4Gn3psZKsfSm/_help_gcI7RPbaNSh3",
+            "noteTitle": "Analog Watch",
+            "notePathTitle": "Hidden Notes › User Guide › Scripting › Frontend Basics › Launch Bar Widgets › Analog Watch",
+            "highlightedNotePathTitle": "Hidden Notes › User Guide › Scripting › Frontend Basics › Launch Bar Widgets › Analog <b>Wat</b>ch",
+            "highlightedNoteTitle": "Analog <b>Wat</b>ch",
+            "highlightedParentPathTitle": "Hidden Notes › User Guide › Scripting › Frontend Basics › Launch Bar Widgets",
+            "contentSnippet": "This is a more intricate example of a basic widget, which displays an analog watch in the launch bar.",
+            "highlightedContentSnippet": "This is a more intricate example of a basic widget, which displays an analog <b>wat</b>ch in the launch bar.",
+            "contentSnippetTruncated": true,
+            "attributeSnippet": "",
+            "matchedTerms": [
+                "wat"
+            ],
+            "icon": "tn-icon bx bx-file"
         }
     ]
     ```
@@ -3695,10 +4984,10 @@ Import and export operations
             "mime": "text/html",
             "isProtected": true,
             "blobId": "string",
-            "dateCreated": "2019-08-24T14:15:22Z",
-            "dateModified": "2019-08-24T14:15:22Z",
-            "utcDateCreated": "2019-08-24T14:15:22Z",
-            "utcDateModified": "2019-08-24T14:15:22Z"
+            "dateCreated": "2025-02-14 08:19:59.203+0100",
+            "dateModified": "2025-02-14 08:19:59.203+0100",
+            "utcDateCreated": "2025-02-13 07:42:47.698Z",
+            "utcDateModified": "2025-02-13 07:42:47.698Z"
         }
     }
     ```
@@ -3729,6 +5018,156 @@ Import and export operations
 **Responses**
 
 === "200: Import results"
+
+    No content.
+
+## <span class="tn-icon bx bx-file"></span> OCR
+
+Text recognition
+
+### Process OCR for a specific note
+
+`POST /api/ocr/process-note/{noteId}` · `ocrProcessNote`
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `noteId`  <br>_required_ | `string`  <br>12-character note ID |
+
+**Request body**
+
+*   `application/json`: `object`
+
+<div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+<div class="trilium-multicolumn-column">
+
+| Property | Description |
+| --- | --- |
+| `language` | `string`  <br>Tesseract language code to use (e.g. 'eng', 'fra', 'deu', 'eng+fra'). If omitted, the language is resolved automatically from the note's language label, the enabled content languages, or the UI locale. |
+| `forceReprocess` | `boolean`  <br>Force reprocessing even if OCR already exists |
+
+</div>
+<div class="trilium-multicolumn-column">
+
+```json
+{
+    "language": "string",
+    "forceReprocess": false
+}
+```
+
+</div>
+</div>
+
+**Responses**
+
+=== "200: OCR processing completed successfully"
+
+    No content.
+
+=== "400: Bad request - unsupported file type"
+
+    No content.
+
+=== "404: Note not found"
+
+    No content.
+
+=== "500: Internal server error"
+
+    No content.
+
+### Process OCR for a specific attachment
+
+`POST /api/ocr/process-attachment/{attachmentId}` · `ocrProcessAttachment`
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `attachmentId`  <br>_required_ | `string`  <br>ID of the attachment to process |
+
+**Request body**
+
+*   `application/json`: `object`
+
+<div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+<div class="trilium-multicolumn-column">
+
+| Property | Description |
+| --- | --- |
+| `language` | `string`  <br>Tesseract language code to use (e.g. 'eng', 'fra', 'deu', 'eng+fra'). If omitted, the language is resolved automatically from the owner note's language label, the enabled content languages, or the UI locale. |
+| `forceReprocess` | `boolean`  <br>Force reprocessing even if OCR already exists |
+
+</div>
+<div class="trilium-multicolumn-column">
+
+```json
+{
+    "language": "string",
+    "forceReprocess": false
+}
+```
+
+</div>
+</div>
+
+**Responses**
+
+=== "200: OCR processing completed successfully"
+
+    No content.
+
+=== "400: Bad request - unsupported file type"
+
+    No content.
+
+=== "404: Attachment not found"
+
+    No content.
+
+=== "500: Internal server error"
+
+    No content.
+
+### Process OCR for all images without existing OCR results
+
+`POST /api/ocr/batch-process` · `ocrBatchProcess`
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Responses**
+
+=== "200: Batch processing initiated successfully"
+
+    No content.
+
+=== "400: Bad request - OCR disabled or already processing"
+
+    No content.
+
+=== "500: Internal server error"
+
+    No content.
+
+### Get batch OCR processing progress
+
+`GET /api/ocr/batch-progress` · `ocrBatchProgress`
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Responses**
+
+=== "200: Batch processing progress information"
+
+    No content.
+
+=== "500: Internal server error"
 
     No content.
 
@@ -3808,6 +5247,7 @@ Synchronization between instances
 | `instanceId`  <br>_required_ | `string` |
 | `lastEntityChangeId`  <br>_required_ | `integer` |
 | `logMarkerId`  <br>_required_ | `string` |
+| `maxBlobContentSize` | `integer`  <br>If set, blob rows whose content exceeds this many bytes are returned with empty content; the entity\_change metadata (including its hash) is unaffected. |
 
 **Responses**
 
@@ -3821,8 +5261,8 @@ Synchronization between instances
     | Property | Description |
     | --- | --- |
     | `entityChanges` | array of [`EntityChange`](#schema-EntityChange) |
-    | `lastEntityChangeId` | `integer` |
-    | `outstandingPullCount` | `integer` |
+    | `lastEntityChangeId` | `integer`  <br>If `outstandingPullCount > 0`, pass this as parameter in your next request to continue. |
+    | `outstandingPullCount` | `integer`  <br>Number of changes not yet returned by the remote. |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -3849,6 +5289,8 @@ Synchronization between instances
 ### Push sync changes
 
 `PUT /api/sync/update` · `pushSyncChanges`
+
+Basic usage: set `pageCount = 1`, `pageIndex = 0`, and omit `requestId`. Supply your entity changes in the request body.
 
 **Authorization**: `sessionAuth` or `tokenAuth`
 
@@ -4384,20 +5826,23 @@ System options and settings
 
     | Property | Description |
     | --- | --- |
-    | `syncVersion` | `integer` |
-    | `schemaVersion` | `integer` |
-    | `documentSecret` | `string` |
-    | `maxSyncId` | `integer` |
+    | `options`  <br>_required_ | `array of object` |
+    | `options[].name`  <br>_required_ | `string`  <br>Either `"documentId"` or `"documentSecret"`. |
+    | `options[].value`  <br>_required_ | `string` |
+    | `syncVersion`  <br>_required_ | `integer` |
 
     </div>
     <div class="trilium-multicolumn-column">
 
     ```json
     {
-        "syncVersion": 0,
-        "schemaVersion": 0,
-        "documentSecret": "string",
-        "maxSyncId": 0
+        "options": [
+            {
+                "name": "string",
+                "value": "string"
+            }
+        ],
+        "syncVersion": 0
     }
     ```
 
@@ -4741,562 +6186,6 @@ Only files inside the anonymized database directory can be downloaded; any other
     {
         "results": [
             "string"
-        ]
-    }
-    ```
-
-    </div>
-    </div>
-
-## <span class="tn-icon bx bx-bot"></span> LLM
-
-AI/LLM integration
-
-### List all chat sessions
-
-`GET /api/llm/chat` · `listChatSessions`
-
-**Authorization**: `sessionAuth` or `tokenAuth`
-
-**Responses**
-
-=== "200: Chat sessions"
-
-    *   `application/json`: array of [`ChatSession`](#schema-ChatSession)
-
-    ```json
-    [
-        {
-            "sessionId": "string",
-            "title": "string",
-            "messages": [
-                {
-                    "role": "user",
-                    "content": "string",
-                    "timestamp": "2019-08-24T14:15:22Z"
-                }
-            ],
-            "createdAt": "2019-08-24T14:15:22Z",
-            "lastActive": "2019-08-24T14:15:22Z",
-            "messageCount": 0
-        }
-    ]
-    ```
-
-### Create new chat session
-
-`POST /api/llm/chat` · `createChatSession`
-
-**Authorization**: `sessionAuth` or `tokenAuth`
-
-**Request body** (required)
-
-*   `application/json`: `object`
-
-<div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
-<div class="trilium-multicolumn-column">
-
-| Property | Description |
-| --- | --- |
-| `title` | `string` |
-| `systemPrompt` | `string` |
-| `temperature` | `number` |
-| `maxTokens` | `integer` |
-| `model` | `string` |
-| `provider` | `string`  <br>One of `openai`, `anthropic`, `ollama`. |
-| `contextNoteId` | `string` |
-
-</div>
-<div class="trilium-multicolumn-column">
-
-```json
-{
-    "title": "string",
-    "systemPrompt": "string",
-    "temperature": 0,
-    "maxTokens": 0,
-    "model": "string",
-    "provider": "openai",
-    "contextNoteId": "string"
-}
-```
-
-</div>
-</div>
-
-**Responses**
-
-=== "201: Chat session created"
-
-    *   `application/json`: [`ChatSession`](#schema-ChatSession)
-
-    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
-    <div class="trilium-multicolumn-column">
-
-    | Property | Description |
-    | --- | --- |
-    | `sessionId` | `string` |
-    | `title` | `string` |
-    | `messages` | `array of object` |
-    | `messages[].role` | `string`  <br>One of `user`, `assistant`, `system`. |
-    | `messages[].content` | `string` |
-    | `messages[].timestamp` | `string (date-time)` |
-    | `createdAt` | `string (date-time)` |
-    | `lastActive` | `string (date-time)` |
-    | `messageCount` | `integer` |
-
-    </div>
-    <div class="trilium-multicolumn-column">
-
-    ```json
-    {
-        "sessionId": "string",
-        "title": "string",
-        "messages": [
-            {
-                "role": "user",
-                "content": "string",
-                "timestamp": "2019-08-24T14:15:22Z"
-            }
-        ],
-        "createdAt": "2019-08-24T14:15:22Z",
-        "lastActive": "2019-08-24T14:15:22Z",
-        "messageCount": 0
-    }
-    ```
-
-    </div>
-    </div>
-
-### Get specific chat session
-
-`GET /api/llm/chat/{sessionId}` · `getChatSession`
-
-**Authorization**: `sessionAuth` or `tokenAuth`
-
-**Path parameters**
-
-| Name | Description |
-| --- | --- |
-| `sessionId`  <br>_required_ | `string` |
-
-**Responses**
-
-=== "200: Chat session details"
-
-    *   `application/json`: [`ChatSession`](#schema-ChatSession)
-
-    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
-    <div class="trilium-multicolumn-column">
-
-    | Property | Description |
-    | --- | --- |
-    | `sessionId` | `string` |
-    | `title` | `string` |
-    | `messages` | `array of object` |
-    | `messages[].role` | `string`  <br>One of `user`, `assistant`, `system`. |
-    | `messages[].content` | `string` |
-    | `messages[].timestamp` | `string (date-time)` |
-    | `createdAt` | `string (date-time)` |
-    | `lastActive` | `string (date-time)` |
-    | `messageCount` | `integer` |
-
-    </div>
-    <div class="trilium-multicolumn-column">
-
-    ```json
-    {
-        "sessionId": "string",
-        "title": "string",
-        "messages": [
-            {
-                "role": "user",
-                "content": "string",
-                "timestamp": "2019-08-24T14:15:22Z"
-            }
-        ],
-        "createdAt": "2019-08-24T14:15:22Z",
-        "lastActive": "2019-08-24T14:15:22Z",
-        "messageCount": 0
-    }
-    ```
-
-    </div>
-    </div>
-
-### Update chat session
-
-`PATCH /api/llm/chat/{sessionId}` · `updateChatSession`
-
-**Authorization**: `sessionAuth` or `tokenAuth`
-
-**Path parameters**
-
-| Name | Description |
-| --- | --- |
-| `sessionId`  <br>_required_ | `string` |
-
-**Request body** (required)
-
-*   `application/json`: `object`
-
-<div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
-<div class="trilium-multicolumn-column">
-
-| Property | Description |
-| --- | --- |
-| `title` | `string` |
-| `systemPrompt` | `string` |
-| `temperature` | `number` |
-| `maxTokens` | `integer` |
-| `model` | `string` |
-| `provider` | `string` |
-| `contextNoteId` | `string` |
-
-</div>
-<div class="trilium-multicolumn-column">
-
-```json
-{
-    "title": "string",
-    "systemPrompt": "string",
-    "temperature": 0,
-    "maxTokens": 0,
-    "model": "string",
-    "provider": "string",
-    "contextNoteId": "string"
-}
-```
-
-</div>
-</div>
-
-**Responses**
-
-=== "200: Session updated"
-
-    *   `application/json`: [`ChatSession`](#schema-ChatSession)
-
-    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
-    <div class="trilium-multicolumn-column">
-
-    | Property | Description |
-    | --- | --- |
-    | `sessionId` | `string` |
-    | `title` | `string` |
-    | `messages` | `array of object` |
-    | `messages[].role` | `string`  <br>One of `user`, `assistant`, `system`. |
-    | `messages[].content` | `string` |
-    | `messages[].timestamp` | `string (date-time)` |
-    | `createdAt` | `string (date-time)` |
-    | `lastActive` | `string (date-time)` |
-    | `messageCount` | `integer` |
-
-    </div>
-    <div class="trilium-multicolumn-column">
-
-    ```json
-    {
-        "sessionId": "string",
-        "title": "string",
-        "messages": [
-            {
-                "role": "user",
-                "content": "string",
-                "timestamp": "2019-08-24T14:15:22Z"
-            }
-        ],
-        "createdAt": "2019-08-24T14:15:22Z",
-        "lastActive": "2019-08-24T14:15:22Z",
-        "messageCount": 0
-    }
-    ```
-
-    </div>
-    </div>
-
-### Delete chat session
-
-`DELETE /api/llm/chat/{chatNoteId}` · `deleteChatSession`
-
-**Authorization**: `sessionAuth` or `tokenAuth`
-
-**Path parameters**
-
-| Name | Description |
-| --- | --- |
-| `chatNoteId`  <br>_required_ | `string` |
-
-**Responses**
-
-=== "204: Session deleted"
-
-    No content.
-
-### Send message to LLM
-
-`POST /api/llm/chat/{chatNoteId}/messages` · `sendChatMessage`
-
-**Authorization**: `sessionAuth` or `tokenAuth`
-
-**Path parameters**
-
-| Name | Description |
-| --- | --- |
-| `sessionId`  <br>_required_ | `string` |
-
-**Request body** (required)
-
-*   `application/json`: `object`
-
-<div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
-<div class="trilium-multicolumn-column">
-
-| Property | Description |
-| --- | --- |
-| `message`  <br>_required_ | `string` |
-| `options` | `object` |
-| `options.temperature` | `number` |
-| `options.maxTokens` | `integer` |
-| `options.model` | `string` |
-| `options.provider` | `string` |
-| `includeContext` | `boolean` |
-| `useNoteContext` | `boolean` |
-
-</div>
-<div class="trilium-multicolumn-column">
-
-```json
-{
-    "message": "string",
-    "options": {
-        "temperature": 0,
-        "maxTokens": 0,
-        "model": "string",
-        "provider": "string"
-    },
-    "includeContext": true,
-    "useNoteContext": true
-}
-```
-
-</div>
-</div>
-
-**Responses**
-
-=== "200: LLM response"
-
-    *   `application/json`: `object`
-
-    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
-    <div class="trilium-multicolumn-column">
-
-    | Property | Description |
-    | --- | --- |
-    | `response` | `string` |
-    | `sources` | `array of object` |
-    | `sources[].noteId` | `string` |
-    | `sources[].title` | `string` |
-    | `sources[].similarity` | `number` |
-
-    </div>
-    <div class="trilium-multicolumn-column">
-
-    ```json
-    {
-        "response": "string",
-        "sources": [
-            {
-                "noteId": "string",
-                "title": "string",
-                "similarity": 0
-            }
-        ]
-    }
-    ```
-
-    </div>
-    </div>
-
-### Stream message to LLM
-
-`POST /api/llm/chat/{chatNoteId}/messages/stream` · `streamChatMessage`
-
-**Authorization**: `sessionAuth` or `tokenAuth`
-
-**Path parameters**
-
-| Name | Description |
-| --- | --- |
-| `sessionId`  <br>_required_ | `string` |
-
-**Request body** (required)
-
-*   `application/json`: `object`
-
-<div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
-<div class="trilium-multicolumn-column">
-
-| Property | Description |
-| --- | --- |
-| `content`  <br>_required_ | `string` |
-| `useAdvancedContext` | `boolean` |
-| `showThinking` | `boolean` |
-| `mentions` | `array of string` |
-
-</div>
-<div class="trilium-multicolumn-column">
-
-```json
-{
-    "content": "string",
-    "useAdvancedContext": true,
-    "showThinking": true,
-    "mentions": [
-        "string"
-    ]
-}
-```
-
-</div>
-</div>
-
-**Responses**
-
-=== "200: Streaming started"
-
-    No content.
-
-### List Ollama models
-
-`GET /api/llm/providers/ollama/models` · `listOllamaModels`
-
-**Authorization**: `sessionAuth` or `tokenAuth`
-
-**Query parameters**
-
-| Name | Description |
-| --- | --- |
-| `baseUrl` | `string` |
-
-**Responses**
-
-=== "200: Ollama models"
-
-    *   `application/json`: `object`
-
-    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
-    <div class="trilium-multicolumn-column">
-
-    | Property | Description |
-    | --- | --- |
-    | `success` | `boolean` |
-    | `models` | `array of object` |
-
-    </div>
-    <div class="trilium-multicolumn-column">
-
-    ```json
-    {
-        "success": true,
-        "models": [
-            {}
-        ]
-    }
-    ```
-
-    </div>
-    </div>
-
-### List OpenAI models
-
-`GET /api/llm/providers/openai/models` · `listOpenAIModels`
-
-**Authorization**: `sessionAuth` or `tokenAuth`
-
-**Responses**
-
-=== "200: OpenAI models"
-
-    *   `application/json`: `object`
-
-    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
-    <div class="trilium-multicolumn-column">
-
-    | Property | Description |
-    | --- | --- |
-    | `success` | `boolean` |
-    | `chatModels` | `array of object` |
-    | `chatModels[].id` | `string` |
-    | `chatModels[].name` | `string` |
-    | `chatModels[].type` | `string` |
-    | `embeddingModels` | `array of object` |
-    | `embeddingModels[].id` | `string` |
-    | `embeddingModels[].name` | `string` |
-    | `embeddingModels[].type` | `string` |
-
-    </div>
-    <div class="trilium-multicolumn-column">
-
-    ```json
-    {
-        "success": true,
-        "chatModels": [
-            {
-                "id": "string",
-                "name": "string",
-                "type": "string"
-            }
-        ],
-        "embeddingModels": [
-            {
-                "id": "string",
-                "name": "string",
-                "type": "string"
-            }
-        ]
-    }
-    ```
-
-    </div>
-    </div>
-
-### List Anthropic models
-
-`GET /api/llm/providers/anthropic/models` · `listAnthropicModels`
-
-**Authorization**: `sessionAuth` or `tokenAuth`
-
-**Responses**
-
-=== "200: Anthropic models"
-
-    *   `application/json`: `object`
-
-    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
-    <div class="trilium-multicolumn-column">
-
-    | Property | Description |
-    | --- | --- |
-    | `success` | `boolean` |
-    | `chatModels` | `array of object` |
-    | `chatModels[].id` | `string` |
-    | `chatModels[].name` | `string` |
-    | `chatModels[].type` | `string` |
-
-    </div>
-    <div class="trilium-multicolumn-column">
-
-    ```json
-    {
-        "success": true,
-        "chatModels": [
-            {
-                "id": "string",
-                "name": "string",
-                "type": "string"
-            }
         ]
     }
     ```
@@ -5770,7 +6659,7 @@ Returns an empty array if no recovery codes are set, otherwise an object listing
             "etapiTokenId": "string",
             "name": "string",
             "token": "string",
-            "dateCreated": "2019-08-24T14:15:22Z",
+            "dateCreated": "2025-02-14 08:19:59.203+0100",
             "isDeleted": true
         }
     ]
@@ -5819,7 +6708,7 @@ Returns an empty array if no recovery codes are set, otherwise an object listing
     | `etapiTokenId` | `string` |
     | `name` | `string` |
     | `token` | `string` |
-    | `dateCreated` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
     | `isDeleted` | `boolean` |
 
     </div>
@@ -5830,7 +6719,7 @@ Returns an empty array if no recovery codes are set, otherwise an object listing
         "etapiTokenId": "string",
         "name": "string",
         "token": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
         "isDeleted": true
     }
     ```
@@ -5905,7 +6794,7 @@ Returns an empty array if no recovery codes are set, otherwise an object listing
     | `etapiTokenId` | `string` |
     | `name` | `string` |
     | `token` | `string` |
-    | `dateCreated` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
     | `isDeleted` | `boolean` |
 
     </div>
@@ -5916,7 +6805,7 @@ Returns an empty array if no recovery codes are set, otherwise an object listing
         "etapiTokenId": "string",
         "name": "string",
         "token": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
         "isDeleted": true
     }
     ```
@@ -5957,10 +6846,10 @@ Special note types (calendar, inbox)
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -5973,10 +6862,10 @@ Special note types (calendar, inbox)
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -6049,10 +6938,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -6065,10 +6954,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -6104,10 +6993,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -6120,10 +7009,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -6159,10 +7048,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -6175,10 +7064,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -6214,10 +7103,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -6230,10 +7119,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -6263,10 +7152,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -6279,10 +7168,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -6312,10 +7201,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -6328,10 +7217,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -6368,10 +7257,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -6384,10 +7273,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -6421,10 +7310,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
             "mime": "text/html",
             "isProtected": true,
             "blobId": "string",
-            "dateCreated": "2019-08-24T14:15:22Z",
-            "dateModified": "2019-08-24T14:15:22Z",
-            "utcDateCreated": "2019-08-24T14:15:22Z",
-            "utcDateModified": "2019-08-24T14:15:22Z"
+            "dateCreated": "2025-02-14 08:19:59.203+0100",
+            "dateModified": "2025-02-14 08:19:59.203+0100",
+            "utcDateCreated": "2025-02-13 07:42:47.698Z",
+            "utcDateModified": "2025-02-13 07:42:47.698Z"
         }
     ]
     ```
@@ -6458,10 +7347,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -6474,10 +7363,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -6550,10 +7439,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -6566,10 +7455,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -6624,10 +7513,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -6640,10 +7529,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -6698,10 +7587,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -6714,10 +7603,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -6770,10 +7659,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -6786,10 +7675,10 @@ Reports the destination `/api/special-notes/inbox/{date}` would use, without cre
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -7036,10 +7925,10 @@ External integrations (clipper, sender)
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -7052,10 +7941,10 @@ External integrations (clipper, sender)
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -7112,10 +8001,10 @@ External integrations (clipper, sender)
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -7128,10 +8017,10 @@ External integrations (clipper, sender)
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -7264,10 +8153,10 @@ External integrations (clipper, sender)
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -7280,10 +8169,10 @@ External integrations (clipper, sender)
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -7338,10 +8227,10 @@ External integrations (clipper, sender)
     | `mime`  <br>_required_ | `string`  <br>MIME type |
     | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
     | `blobId` | `string`  <br>ID of content blob |
-    | `dateCreated` | `string (date-time)` |
-    | `dateModified` | `string (date-time)` |
-    | `utcDateCreated` | `string (date-time)` |
-    | `utcDateModified` | `string (date-time)` |
+    | `dateCreated` | [`DateTime`](#schema-DateTime) |
+    | `dateModified` | [`DateTime`](#schema-DateTime) |
+    | `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+    | `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
     </div>
     <div class="trilium-multicolumn-column">
@@ -7354,10 +8243,10 @@ External integrations (clipper, sender)
         "mime": "text/html",
         "isProtected": true,
         "blobId": "string",
-        "dateCreated": "2019-08-24T14:15:22Z",
-        "dateModified": "2019-08-24T14:15:22Z",
-        "utcDateCreated": "2019-08-24T14:15:22Z",
-        "utcDateModified": "2019-08-24T14:15:22Z"
+        "dateCreated": "2025-02-14 08:19:59.203+0100",
+        "dateModified": "2025-02-14 08:19:59.203+0100",
+        "utcDateCreated": "2025-02-13 07:42:47.698Z",
+        "utcDateModified": "2025-02-13 07:42:47.698Z"
     }
     ```
 
@@ -7378,19 +8267,110 @@ Miscellaneous utilities
 
 | Name | Description |
 | --- | --- |
-| `format` | `string`  <br>One of `prometheus`, `json`. |
+| `format` | `string`  <br>Response format - 'prometheus' (default) for Prometheus text format, 'json' for JSON. One of `prometheus`, `json`. |
 
 **Responses**
 
-=== "200: System metrics"
+=== "200: Instance metrics"
+
+    === "`text/plain`: `string`"
 
     === "`application/json`: `object`"
 
+        <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+        <div class="trilium-multicolumn-column">
+
+        | Property | Description |
+        | --- | --- |
+        | `version` | `object` |
+        | `version.app` | `string` |
+        | `version.db` | `integer` |
+        | `version.node` | `string` |
+        | `version.sync` | `integer` |
+        | `version.buildDate` | `string` |
+        | `version.buildRevision` | `string` |
+        | `database` | `object` |
+        | `database.totalNotes` | `integer` |
+        | `database.deletedNotes` | `integer` |
+        | `database.activeNotes` | `integer` |
+        | `database.protectedNotes` | `integer` |
+        | `database.totalAttachments` | `integer` |
+        | `database.deletedAttachments` | `integer` |
+        | `database.activeAttachments` | `integer` |
+        | `database.totalRevisions` | `integer` |
+        | `database.totalBranches` | `integer` |
+        | `database.totalAttributes` | `integer` |
+        | `database.totalBlobs` | `integer` |
+        | `database.totalEtapiTokens` | `integer` |
+        | `database.totalRecentNotes` | `integer` |
+        | `noteTypes` | `object` |
+        | `attachmentTypes` | `object` |
+        | `statistics` | `object` |
+        | `statistics.oldestNote` | `string \| null` |
+        | `statistics.newestNote` | `string \| null` |
+        | `statistics.lastModified` | `string \| null` |
+        | `statistics.databaseSizeBytes` | `integer \| null` |
+        | `timestamp` | `string` |
+
+        </div>
+        <div class="trilium-multicolumn-column">
+
         ```json
-        {}
+        {
+            "version": {
+                "app": "0.91.6",
+                "db": 231,
+                "node": "v18.17.0",
+                "sync": 35,
+                "buildDate": "2024-09-07T18:36:34Z",
+                "buildRevision": "7c0d6930fa8f20d269dcfbcbc8f636a25f6bb9a7"
+            },
+            "database": {
+                "totalNotes": 1234,
+                "deletedNotes": 56,
+                "activeNotes": 1178,
+                "protectedNotes": 23,
+                "totalAttachments": 89,
+                "deletedAttachments": 5,
+                "activeAttachments": 84,
+                "totalRevisions": 567,
+                "totalBranches": 1200,
+                "totalAttributes": 345,
+                "totalBlobs": 678,
+                "totalEtapiTokens": 3,
+                "totalRecentNotes": 50
+            },
+            "noteTypes": {
+                "text": 800,
+                "code": 200,
+                "image": 100,
+                "file": 50
+            },
+            "attachmentTypes": {
+                "image/png": 45,
+                "image/jpeg": 30,
+                "application/pdf": 14
+            },
+            "statistics": {
+                "oldestNote": "2020-01-01T00:00:00.000Z",
+                "newestNote": "2024-12-01T12:00:00.000Z",
+                "lastModified": "2024-12-01T11:30:00.000Z",
+                "databaseSizeBytes": 52428800
+            },
+            "timestamp": "2024-12-01T12:00:00.000Z"
+        }
         ```
 
-    === "`text/plain`: `string`"
+        </div>
+        </div>
+
+=== "400: Invalid format parameter"
+
+    No content.
+
+=== "500: Error collecting metrics"
+
+    No content.
 
 ### Run system diagnostics
 
@@ -7677,6 +8657,79 @@ Returns the IDs of the most recently modified live notes under the ancestor, new
 
     No content.
 
+### Get the glyph of every icon
+
+`GET /api/icon-packs.css` · `getIconPackGlyphCss`
+
+A stylesheet with the `::before` rule that places the character of each icon of each icon pack. The bootstrap data carries the fonts of the packs and links this stylesheet with a `v` parameter derived from its content, so the response can be cached for good. Served without a session, like the bootstrap data that names it on the login screen.
+
+**Authorization**: none
+
+**Query parameters**
+
+| Name | Description |
+| --- | --- |
+| `v` | `string`  <br>The content version the bootstrap data names; any value returns the current stylesheet |
+
+**Responses**
+
+=== "200: The glyph rules of the icon packs"
+
+    *   `text/css`: `string`
+
+### Get every icon of each icon pack
+
+`GET /api/other/icon-registry` · `getIconRegistry`
+
+Lists the icons that the icon picker searches. The bootstrap data names only the icon packs, since the full list runs to over a megabyte with many packs installed.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Responses**
+
+=== "200: The icons of each icon pack"
+
+    *   `application/json`: `object`
+
+    <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+    <div class="trilium-multicolumn-column">
+
+    | Property | Description |
+    | --- | --- |
+    | `sources` | `array of object` |
+    | `sources[].prefix` | `string` |
+    | `sources[].name` | `string` |
+    | `sources[].icon` | `string`  <br>An icon class that identifies the pack |
+    | `sources[].icons` | `array of object` |
+    | `sources[].icons[].id` | `string`  <br>The icon's classes, such as `bx bx-star` |
+    | `sources[].icons[].terms` | `array of string` |
+
+    </div>
+    <div class="trilium-multicolumn-column">
+
+    ```json
+    {
+        "sources": [
+            {
+                "prefix": "string",
+                "name": "string",
+                "icon": "string",
+                "icons": [
+                    {
+                        "id": "string",
+                        "terms": [
+                            "string"
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+    ```
+
+    </div>
+    </div>
+
 ### Get icon usage statistics
 
 `GET /api/other/icon-usage` · `getIconUsage`
@@ -7775,16 +8828,26 @@ Returns the IDs of the most recently modified live notes under the ancestor, new
 | `mime`  <br>_required_ | `string`  <br>MIME type |
 | `isProtected`  <br>_required_ | `boolean`  <br>Whether note is protected |
 | `blobId` | `string`  <br>ID of content blob |
-| `dateCreated` | `string (date-time)` |
-| `dateModified` | `string (date-time)` |
-| `utcDateCreated` | `string (date-time)` |
-| `utcDateModified` | `string (date-time)` |
+| `dateCreated` | [`DateTime`](#schema-DateTime) |
+| `dateModified` | [`DateTime`](#schema-DateTime) |
+| `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+| `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
 ### <a id="schema-NoteType"></a>`NoteType`
 
 Type: `string`
 
 One of `text`, `code`, `render`, `file`, `image`, `search`, `relationMap`, `book`, `noteMap`, `mermaid`, `canvas`, `webView`, `launcher`, `doc`, `contentWidget`, `mindMap`, `geoMap`.
+
+### <a id="schema-Blob"></a>`Blob`
+
+| Property | Description |
+| --- | --- |
+| `blobId` | `string` |
+| `content` | `string \| null`  <br>`null` if not text. |
+| `contentLength` | `integer` |
+| `dateModified` | [`DateTime`](#schema-DateTime) |
+| `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
 ### <a id="schema-Branch"></a>`Branch`
 
@@ -7819,8 +8882,8 @@ One of `text`, `code`, `render`, `file`, `image`, `search`, `relationMap`, `book
 | `mime`  <br>_required_ | `string` |
 | `title`  <br>_required_ | `string` |
 | `blobId` | `string` |
-| `dateModified` | `string (date-time)` |
-| `utcDateModified` | `string (date-time)` |
+| `dateModified` | [`DateTime`](#schema-DateTime) |
+| `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
 ### <a id="schema-Revision"></a>`Revision`
 
@@ -7831,8 +8894,8 @@ One of `text`, `code`, `render`, `file`, `image`, `search`, `relationMap`, `book
 | `title` | `string` |
 | `type` | [`NoteType`](#schema-NoteType)  <br>One of `text`, `code`, `render`, `file`, `image`, `search`, `relationMap`, `book`, `noteMap`, `mermaid`, `canvas`, `webView`, `launcher`, `doc`, `contentWidget`, `mindMap`, `geoMap`. |
 | `mime` | `string` |
-| `dateCreated` | `string (date-time)` |
-| `utcDateCreated` | `string (date-time)` |
+| `dateCreated` | [`DateTime`](#schema-DateTime) |
+| `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
 
 ### <a id="schema-SearchResult"></a>`SearchResult`
 
@@ -7853,14 +8916,179 @@ One of `text`, `code`, `render`, `file`, `image`, `search`, `relationMap`, `book
 | `entityChange.changeId` | `string` |
 | `entity` | `object` |
 
+### <a id="schema-DateTime"></a>`DateTime`
+
+Type: `string`
+
+Example: `2025-02-14 08:19:59.203+0100`
+
+### <a id="schema-UtcDateTime"></a>`UtcDateTime`
+
+Result of `new Date().toISOString().replace('T', ' ')`
+
+Type: `string`
+
+Example: `2025-02-13 07:42:47.698Z`
+
 ### <a id="schema-Timestamps"></a>`Timestamps`
 
 | Property | Description |
 | --- | --- |
-| `dateCreated` | `string (date-time)` |
-| `dateModified` | `string (date-time)` |
-| `utcDateCreated` | `string (date-time)` |
-| `utcDateModified` | `string (date-time)` |
+| `dateCreated` | [`DateTime`](#schema-DateTime) |
+| `dateModified` | [`DateTime`](#schema-DateTime) |
+| `utcDateCreated` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+| `utcDateModified` | [`UtcDateTime`](#schema-UtcDateTime)  <br>Result of `new Date().toISOString().replace('T', ' ')` |
+
+### <a id="schema-ReferenceKind"></a>`ReferenceKind`
+
+The kind of a target, which sets how the link lists show it
+
+Type: `string`
+
+One of `heading`, `anchor`.
+
+Example: `heading`
+
+### <a id="schema-ReferenceParams"></a>`ReferenceParams`
+
+The parameters of a link that point at a target, not encoded
+
+Type: `object`
+
+Example: `[object Object]`
+
+### <a id="schema-ReferenceTarget"></a>`ReferenceTarget`
+
+| Property | Description |
+| --- | --- |
+| `kind`  <br>_required_ | [`ReferenceKind`](#schema-ReferenceKind)  <br>The kind of a target, which sets how the link lists show it. One of `heading`, `anchor`. |
+| `title`  <br>_required_ | `string`  <br>The plain text that the lists show |
+| `level` | `integer`  <br>For a kind that nests, the depth of the target, such as 2 for an `<h2>` |
+| `params` | [`ReferenceParams`](#schema-ReferenceParams)  <br>The link parameters that point at the target; absent while it needs a reference |
+
+### <a id="schema-NoteReferences"></a>`NoteReferences`
+
+| Property | Description |
+| --- | --- |
+| `targets`  <br>_required_ | array of [`ReferenceTarget`](#schema-ReferenceTarget) |
+| `blobId` | `string`  <br>The blob of the note that the targets were read from |
+| `pendingToc` | [`PendingToc`](#schema-PendingToc)  <br>A table of contents that the viewer of the document builds |
+
+### <a id="schema-PendingToc"></a>`PendingToc`
+
+A table of contents that the viewer of the document builds
+
+| Property | Description |
+| --- | --- |
+| `format`  <br>_required_ | `string` |
+
+### <a id="schema-TocHeading"></a>`TocHeading`
+
+A heading of a table of contents, with the fields of its format, such as `page`
+
+| Property | Description |
+| --- | --- |
+| `id`  <br>_required_ | `string`  <br>Names the heading in its document, for the `heading` link parameter |
+| `title`  <br>_required_ | `string`  <br>Plain text, never HTML |
+| `level`  <br>_required_ | `integer` |
+| `params` | `object`  <br>The parameters of a link to the heading; absent when no link can reach it |
+
+### <a id="schema-CachedToc"></a>`CachedToc`
+
+| Property | Description |
+| --- | --- |
+| `status`  <br>_required_ | `string`  <br>One of `ready`, `stale`, `missing`, `unreadable`, `unavailable`, `none`. |
+| `blobId` | `string`  <br>For `ready` and `stale`, the blob that the headings were read from |
+| `headings` | array of [`TocHeading`](#schema-TocHeading) |
+| `pendingToc` | [`PendingToc`](#schema-PendingToc)  <br>A table of contents that the viewer of the document builds |
+
+### <a id="schema-ClientToc"></a>`ClientToc`
+
+| Property | Description |
+| --- | --- |
+| `targetBlobHash`  <br>_required_ | `string`  <br>The `blobId` of the bytes that the viewer read, from their digest |
+| `headings`  <br>_required_ | `array of object`  <br>In document order, without ids: `title` (at most 500 characters), `level` (1 for the first heading, at most one more than the heading before), and the fields of the format |
+| `properties` | `object`  <br>The properties of the format, such as `{ "reader": 2 }` |
+| `isCut` | `boolean`  <br>Whether the viewer stopped reading at 20,000 headings, before another one. The ids of every heading of a cut table of contents are bound to the blob. |
+| `elapsedMs`  <br>_required_ | `number`  <br>How long the viewer took, for the log |
+
+### <a id="schema-FileUploaded"></a>`FileUploaded`
+
+| Property | Description |
+| --- | --- |
+| `uploaded`  <br>_required_ | `boolean` |
+| `blobId` | `string`  <br>The blob that the upload wrote |
+| `message` | `string`  <br>Why nothing was uploaded |
+
+### <a id="schema-NoteSaveBase"></a>`NoteSaveBase`
+
+What a save of the content of a note is based on
+
+| Property | Description |
+| --- | --- |
+| `blobId`  <br>_required_ | `string` |
+| `type`  <br>_required_ | `string` |
+| `mime`  <br>_required_ | `string` |
+
+### <a id="schema-SavedAttachmentRow"></a>`SavedAttachmentRow`
+
+An attachment that a save writes. With `attachmentId` it replaces that attachment, in a save with a base only while it is at `blobId`; without it, it creates one of its title.
+
+| Property | Description |
+| --- | --- |
+| `attachmentId` | `string` |
+| `blobId` | `string`  <br>The blob that the attachment was read at |
+| `role`  <br>_required_ | `string` |
+| `title`  <br>_required_ | `string` |
+| `mime`  <br>_required_ | `string` |
+| `content`  <br>_required_ | `string` |
+| `position` | `integer` |
+| `encoding` | `string`  <br>One of `base64`. |
+
+### <a id="schema-SavedAttachmentBase"></a>`SavedAttachmentBase`
+
+An attachment as a save left it
+
+| Property | Description |
+| --- | --- |
+| `attachmentId`  <br>_required_ | `string` |
+| `title`  <br>_required_ | `string` |
+| `blobId`  <br>_required_ | `string` |
+
+### <a id="schema-SaveConflict"></a>`SaveConflict`
+
+Why a save of a note or an attachment was refused: the note now has another format, after a conversion, or another version than the one the save is based on
+
+| Property | Description |
+| --- | --- |
+| `reason`  <br>_required_ | `string`  <br>One of `format`, `version`. |
+| `message`  <br>_required_ | `string` |
+| `blobId`  <br>_required_ | `string`  <br>The blob of the note now, which a save that keeps its version names |
+| `type`  <br>_required_ | `string` |
+| `mime`  <br>_required_ | `string` |
+| `isVersioned`  <br>_required_ | `boolean`  <br>Whether the note keeps revisions |
+| `attachments`  <br>_required_ | array of [`SavedAttachmentBase`](#schema-SavedAttachmentBase)  <br>The attachments that the save names, by ID or by title, as the note has them now. A save that keeps its version replaces them at these blobs. |
+
+### <a id="schema-BlocksVersionConflict"></a>`BlocksVersionConflict`
+
+The blocks, or an attachment that the save replaces, changed since they were read
+
+| Property | Description |
+| --- | --- |
+| `reason`  <br>_required_ | `string`  <br>One of `version`. |
+| `message`  <br>_required_ | `string` |
+| `hash`  <br>_required_ | `string`  <br>The hash of the blocks now, which a save that keeps its version names |
+| `attachments`  <br>_required_ | array of [`SavedAttachmentBase`](#schema-SavedAttachmentBase)  <br>As `attachments` of `SaveConflict` |
+| `isVersioned`  <br>_required_ | `boolean`  <br>Whether the note keeps revisions |
+
+### <a id="schema-BlocksGoneConflict"></a>`BlocksGoneConflict`
+
+The blocks can no longer be saved apart: the note was converted (`format`), or the `block` parameter no longer points at blocks that can be edited apart (`range`)
+
+| Property | Description |
+| --- | --- |
+| `reason`  <br>_required_ | `string`  <br>One of `format`, `range`. |
+| `message`  <br>_required_ | `string` |
 
 ### <a id="schema-CreateNoteRequest"></a>`CreateNoteRequest`
 
@@ -7900,20 +9128,6 @@ One of `text`, `code`, `render`, `file`, `image`, `search`, `relationMap`, `book
 | `clipperProtocolVersion` | `string` |
 | `utcDateTime` | `string (date-time)` |
 
-### <a id="schema-ChatSession"></a>`ChatSession`
-
-| Property | Description |
-| --- | --- |
-| `sessionId` | `string` |
-| `title` | `string` |
-| `messages` | `array of object` |
-| `messages[].role` | `string`  <br>One of `user`, `assistant`, `system`. |
-| `messages[].content` | `string` |
-| `messages[].timestamp` | `string (date-time)` |
-| `createdAt` | `string (date-time)` |
-| `lastActive` | `string (date-time)` |
-| `messageCount` | `integer` |
-
 ### <a id="schema-EtapiToken"></a>`EtapiToken`
 
 | Property | Description |
@@ -7921,5 +9135,5 @@ One of `text`, `code`, `render`, `file`, `image`, `search`, `relationMap`, `book
 | `etapiTokenId` | `string` |
 | `name` | `string` |
 | `token` | `string` |
-| `dateCreated` | `string (date-time)` |
+| `dateCreated` | [`DateTime`](#schema-DateTime) |
 | `isDeleted` | `boolean` |

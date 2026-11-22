@@ -1,10 +1,7 @@
 import "./setup_backup.css";
 
-import {
-    defaultBackupName,
-    type SetupBackupDefaults,
-    type SetupBackupSettings
-} from "@triliumnext/commons";
+import type { SetupBackupDefaults, SetupBackupSettings } from "@triliumnext/commons";
+import { defaultBackupName } from "@triliumnext/commons/src/lib/backup_name.js";
 import type { ComponentChildren } from "preact";
 import { useMemo, useState } from "preact/hooks";
 

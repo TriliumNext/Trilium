@@ -11,7 +11,7 @@ import { formatDateTime } from "../../../utils/formatters";
 import ActionButton from "../../react/ActionButton";
 import Button from "../../react/Button";
 import { Card, OptionCardSection } from "../../react/Card";
-import { useTriliumEvent } from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks/events";
 import NoItems from "../../react/NoItems";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 

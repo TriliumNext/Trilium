@@ -1,6 +1,7 @@
+import { generateBlockId } from "@triliumnext/commons/src/lib/block_reference.js";
 import { Command, type Editor, type ModelElement, type ModelWriter } from "ckeditor5";
 
-import { BLOCK_ID, type BlockReferenceTarget, generateBlockId } from "../block_reference/block_reference_editing.js";
+import { BLOCK_ID, type BlockReferenceTarget } from "../block_reference/block_reference_editing.js";
 import {
     getSelectedChildren, getSibling, moveSelectedChildren, moveToSibling, type SiblingTarget
 } from "../containers/container_content.js";

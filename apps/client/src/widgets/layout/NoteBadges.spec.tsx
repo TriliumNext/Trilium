@@ -14,8 +14,8 @@ const shownNote = vi.hoisted(() => ({
     parentComponent: { triggerEvent: vi.fn() },
     contextData: {} as Record<string, unknown>
 }));
-vi.mock("../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../react/hooks")>()),
+vi.mock("../react/hooks/note_context", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/note_context")>()),
     useNoteContext: () => ({
         note: shownNote.current,
         viewScope: shownNote.viewScope,

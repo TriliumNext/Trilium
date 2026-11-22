@@ -107,6 +107,8 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "hidePromotedAttributes", valueType: "boolean" },
     { type: "label", name: "readOnly", valueType: "boolean" },
     { type: "label", name: "autoReadOnlyDisabled", valueType: "boolean" },
+    // Turns Vim mode on or off in a text note, whatever the option of the device says.
+    { type: "label", name: "vimMode", valueType: "select", selectOptions: [ "true", "false" ] },
     { type: "label", name: "cssClass", valueType: "text" },
     { type: "label", name: "iconClass", valueType: "text" },
     { type: "label", name: "keyboardShortcut", valueType: "text" },

@@ -7,7 +7,7 @@ import toast from "../../../services/toast";
 import Button from "../../react/Button";
 import { Card, OptionCardSection } from "../../react/Card";
 import FormTextBox from "../../react/FormTextBox";
-import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 import TimeSelector from "./components/TimeSelector";
 

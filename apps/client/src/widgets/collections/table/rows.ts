@@ -1,4 +1,7 @@
-import { extractAttributeDefinitionTypeAndName, LabelType } from "@triliumnext/commons";
+import type { LabelType } from "@triliumnext/commons";
+import {
+    extractAttributeDefinitionTypeAndName
+} from "@triliumnext/commons/src/lib/promoted_attribute_definition_parser.js";
 
 import FNote from "../../../entities/fnote.js";
 import froca from "../../../services/froca.js";

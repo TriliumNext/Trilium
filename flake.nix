@@ -45,12 +45,12 @@
         # Don't refresh these by hand — `pnpm chore:update-flake-electron` rewrites both
         # bindings from the release's SHASUMS256.txt, and the update-nix-flake workflow
         # opens a PR whenever apps/desktop/package.json moves ahead of the pin.
-        pinnedElectronVersion = "45.2.3";
+        pinnedElectronVersion = "45.3.4";
         pinnedElectronHashes = {
-          x86_64-linux = "a87fe741f6d121285117e574da6c9a2e65210d410123bbc04713b099add0263b";
-          aarch64-linux = "397c060fd9da99ab72b78787d65545b432fcadf13ef6c96658e4f525692aae0f";
-          aarch64-darwin = "4d7c429064087a47b855d9bd06c76ead4819b7f02b385de232d4a5c37ecef55f";
-          headers = "0jpkayhvf7779fch0z85cwkpkx0x6vddbixlx6cch3xfj2xfvkqx";
+          x86_64-linux = "696689916f56fc12dd3085527351751ff0845c37eda45df420fc0d7aecc841f3";
+          aarch64-linux = "619d0431bc7653acb10af4f803538322b8665926daf0938b87e6139ffb004b9d";
+          aarch64-darwin = "f3ac0124c48a6cc3aa9332caca0e913cc478cd3610a378881729ca33452caa72";
+          headers = "00xi69gfpgiwg9x10gnbv07fzbvzw6vjmyi124w092cng8pwgr8n";
         };
         mkElectronBin = pkgs.callPackage (
           pkgs.path + "/pkgs/development/tools/electron/binary/generic.nix"
@@ -314,6 +314,12 @@
           installCommands = ''
             mkdir -p $out/{bin,share/icons/hicolor/512x512/apps,opt/trilium}
             cp --archive apps/desktop/dist/* $out/opt/trilium
+            ${lib.optionalString stdenv.hostPlatform.isLinux ''
+              # Electron links libc++ statically, so nothing in its process provides the
+              # libstdc++ that prebuilt addons (better-sqlite3, sherpa-onnx) link against.
+              find $out/opt/trilium/node_modules -type f \( -name '*.node' -o -name '*.so' \) \
+                -exec patchelf --add-rpath ${lib.getLib stdenv.cc.cc}/lib {} \;
+            ''}
             cp apps/client/src/assets/icon.png $out/share/icons/hicolor/512x512/apps/trilium.png
             makeShellWrapper ${lib.getExe electron} $out/bin/trilium \
               "''${gappsWrapperArgs[@]}" \

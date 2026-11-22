@@ -1,18 +1,33 @@
-import { MULTICOLUMN_LAYOUT_CLASS } from "@triliumnext/commons";
+import { MULTICOLUMN_LAYOUT_CLASS, type WikiLinkOptions } from "@triliumnext/commons";
+import type { BlockIndexHost } from "@triliumnext/commons/src/lib/markdown_block_index.js";
 import { renderToHtml as renderToHtmlShared } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { HTMLElement, Node, NodeType, parse as parseHtml } from "node-html-parser";
 
 import { sanitizeHtml } from "../sanitizer.js";
 import { getTaskStates } from "../task_states.js";
 
-function renderToHtml(content: string, title: string, opts?: { obsidian?: boolean }): string {
+function renderToHtml(
+    content: string,
+    title: string,
+    opts?: { obsidian?: boolean; wikiLink?: WikiLinkOptions }
+): string {
     const html = renderToHtmlShared(content, title, {
         sanitize: sanitizeHtml,
         taskStates: getTaskStates(),
-        obsidian: opts?.obsidian
+        obsidian: opts?.obsidian,
+        wikiLink: opts?.wikiLink
     });
     return normalizeToEditorMarkup(html);
 }
+
+/**
+ * How the server reads rendered Markdown, as the share renderer does: core's sanitizer, and a
+ * parser that reads the content of `<pre>` as elements, where a code block holds its block id.
+ */
+export const serverBlockHost: BlockIndexHost = {
+    sanitize: sanitizeHtml,
+    parse: (html) => parseHtml(html, { blockTextElements: {} })
+};
 
 export default {
     renderToHtml
@@ -20,15 +35,16 @@ export default {
 
 /**
  * Restores what the Markdown exporter gives up on a `<details>` block, on a table it keeps as raw
- * HTML and on a multicolumn layout: the `trilium-collapsible` class, the `<figure class="table">`
- * wrapper, the paragraph of an empty column, and the absence of whitespace between block children,
- * which the exporter puts on lines of their own for readability. All of them are what CKEditor
- * downcasts, so a note that goes out to Markdown and comes back keeps the content it started with
- * instead of changing on its next save.
+ * HTML, on a multicolumn layout and on an aside: the `trilium-collapsible` class, the
+ * `<figure class="table">` wrapper, the paragraph of an empty column or aside, and the absence of
+ * whitespace between block children, which the exporter puts on lines of their own for
+ * readability. All of them are what CKEditor downcasts, so a note that goes out to Markdown and
+ * comes back keeps the content it started with instead of changing on its next save.
  */
 function normalizeToEditorMarkup(html: string): string {
     const hasLayout = html.includes(MULTICOLUMN_LAYOUT_CLASS);
-    if (!html.includes("<details") && !html.includes("<table") && !hasLayout) {
+    const hasAside = html.includes("<aside");
+    if (!html.includes("<details") && !html.includes("<table") && !hasLayout && !hasAside) {
         return html;
     }
 
@@ -36,21 +52,25 @@ function normalizeToEditorMarkup(html: string): string {
     const collapsibles = root.querySelectorAll("details");
     const tables = root.querySelectorAll("table");
     const layouts = hasLayout ? root.querySelectorAll(`.${MULTICOLUMN_LAYOUT_CLASS}`) : [];
-    if (!collapsibles.length && !tables.length && !layouts.length) {
+    // An admonition is saved as an `<aside>` too, which the exporter writes as a block quote.
+    const asides = hasAside
+        ? root.querySelectorAll("aside").filter((aside) => !aside.classList.contains("admonition"))
+        : [];
+    if (!collapsibles.length && !tables.length && !layouts.length && !asides.length) {
         return html;
     }
 
     for (const layout of layouts) {
         removeLayoutWhitespace(layout, NO_CONTAINER_TAGS);
         for (const column of layout.childNodes) {
-            if (!(column instanceof HTMLElement)) {
-                continue;
-            }
-            removeLayoutWhitespace(column, NO_CONTAINER_TAGS);
-            if (!column.childNodes.length) {
-                column.set_content("<p>&nbsp;</p>");
+            if (column instanceof HTMLElement) {
+                removeBlockWhitespace(column);
             }
         }
+    }
+
+    for (const aside of asides) {
+        removeBlockWhitespace(aside);
     }
 
     for (const collapsible of collapsibles) {
@@ -98,6 +118,17 @@ function removeLayoutWhitespace(element: HTMLElement, containerTags: Set<string>
         if (child instanceof HTMLElement && containerTags.has(child.tagName)) {
             removeLayoutWhitespace(child, containerTags);
         }
+    }
+}
+
+/**
+ * Drops the whitespace between the blocks of a column or an aside, and gives an empty one the
+ * paragraph that CKEditor writes into it.
+ */
+function removeBlockWhitespace(element: HTMLElement) {
+    removeLayoutWhitespace(element, NO_CONTAINER_TAGS);
+    if (!element.childNodes.length) {
+        element.set_content("<p>&nbsp;</p>");
     }
 }
 

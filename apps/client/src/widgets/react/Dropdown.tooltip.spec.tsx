@@ -1,8 +1,10 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import Dropdown from "./Dropdown";
+import Dropdown, { preloadDropdownPopups } from "./Dropdown";
+
+beforeAll(() => preloadDropdownPopups());
 
 // This spec keeps Bootstrap real for the tooltip and for closing the menu. Dropdown.spec.tsx mocks
 // Bootstrap to assert the wiring of the component.

@@ -1,36 +1,55 @@
 import {
-    type AttachmentUploadHost, type ContentEmbedDialogRequest, type ContentEmbedHost,
-    type EditorConfig, getCkLocale,
+    assignBlockId, type AttachmentUploadHost, type ContentEmbedDialogRequest,
+    type ContentEmbedHost, type EditorConfig, getAnchorNames, getCkLocale, getHeadings,
     type IconPickerRequest, LINK_TOOLBAR, type LinkDialogRequest, type LinkEmbedHost,
-    type InsertMediaRequest, type LinkMenuHost, SnippetDefinition, type TextTransformationConfig
+    type InsertMediaRequest, type LinkMenuHost, SnippetDefinition, type TextTransformationConfig,
+    type VimConfig
 } from "@triliumnext/ckeditor5";
 import emojiDefinitionsUrl from "@triliumnext/ckeditor5/src/emoji_definitions/en.json?url";
-import { ALLOWED_PROTOCOLS, DISPLAYABLE_LOCALE_IDS, formatShortcut, IMAGE_UPLOAD_SUBTYPES, joinShortcut, KATEX_MACROS, MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
+import type { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
+import { IMAGE_UPLOAD_SUBTYPES } from "@triliumnext/commons/src/lib/image_mimes.js";
+import { KATEX_MACROS } from "@triliumnext/commons/src/lib/katex_macros.js";
+import {
+    formatShortcut, joinShortcut
+} from "@triliumnext/commons/src/lib/keyboard_shortcut_display.js";
+import {
+    MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor
+} from "@triliumnext/commons/src/lib/mime_type.js";
+import { ALLOWED_PROTOCOLS } from "@triliumnext/commons/src/lib/shared_constants.js";
 import i18next from "i18next";
 
 import type { CommandMappings, CommandNames } from "../../../components/app_context.js";
 import { openInCurrentNoteContext } from "../../../components/note_context.js";
 import linkContextMenu from "../../../menus/link_context_menu.js";
 import { buildReferenceConfig, type ReferenceSource } from "../../../services/block_reference.js";
+import { takeCatalogue } from "../../../services/catalogue_requests.js";
 import { copyHtmlWithToast, copyTextWithToast } from "../../../services/clipboard_ext.js";
 import { getEmbedContentInfo, getUploadBoxDefaults } from "../../../services/content_renderer.js";
+import { formatCustomDateTime } from "../../../services/dayjs.js";
 import { prompt } from "../../../services/dialog.js";
 import { isExperimentalFeatureEnabled } from "../../../services/experimental_features.js";
 import froca from "../../../services/froca.js";
 import { t } from "../../../services/i18n.js";
 import imageService from "../../../services/image.js";
+import { embedReferenceImageAsDataUrl } from "../../../services/image_embed.js";
 import { getNoteImageSourceToLoad } from "../../../services/image_urls.js";
 import linkService from "../../../services/link.js";
 import { detectEmbedType, fetchMetadata, renderEmbedPreview, renderMentionPreview, unresolvedMetadata } from "../../../services/link_embed.js";
+import {
+    createAnchorTargets, createEditorHeadings, type LinkTarget
+} from "../../../services/link_targets.js";
 import { captureVideoThumbnail } from "../../../services/media_thumbnail.js";
 import { default as mimeTypesService, getHighlightJsNameForMime } from "../../../services/mime_types.js";
+import { getNoteIdFromUrl } from "../../../services/navigation_state.js";
 import options from "../../../services/options.js";
 import { sanitizeNoteContentHtml } from "../../../services/sanitize_content.js";
 import server from "../../../services/server.js";
 import { getSourceEmbedTypeByLanguage, SOURCE_EMBED_TYPES } from "../../../services/source_embeds.js";
-import { ensureMimeTypesForHighlighting, isSyntaxHighlightEnabled } from "../../../services/syntax_highlight.js";
+import {
+    detectCodeLanguage, ensureMimeTypesForHighlighting, isSyntaxHighlightEnabled
+} from "../../../services/syntax_highlight.js";
 import { getTaskStateDefinitions, openCustomTaskStateConfig } from "../../../services/task_states.js";
-import { formatDateTime, isMac, isMobile } from "../../../services/utils.js";
+import { isMac, isMobile } from "../../../services/utils.js";
 import { resolveContentLanguage } from "../../../utils/formatters.js";
 import { FLOATING_LAYER_SELECTOR } from "../../react/floating_layers.js";
 import { convertImageToDrawing } from "../canvas/image_to_drawing.js";
@@ -99,17 +118,20 @@ export interface BuildEditorOptions {
      * state of the component that hosts the editor, which changes as it renders.
      */
     getContentEmbedHandlers?: () => ContentEmbedHandlers | undefined;
+    /** The configuration of the Vim mode of the editor. */
+    vim?: VimConfig;
 }
 
 /** The members of `contentEmbed` that the component hosting the editor implements. */
 export type ContentEmbedHandlers = Omit<ContentEmbedHost,
-    "pickNote" | "inlineLanguages" | "renderInlinePreview" | "sanitizeHtml"
-    | "captureVideoThumbnail" | "getEmbedContentInfo">;
+    "pickNote" | "inlineLanguages" | "isCodeBlockExtended" | "detectLanguage"
+    | "renderInlinePreview" | "sanitizeHtml" | "captureVideoThumbnail" | "getEmbedContentInfo">;
 
 export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfig> {
     // `undefined` when the AI features are off or no LLM provider is configured. Decided once:
     // it both disables the assistant's command and keeps its entries off the toolbar.
     const aiAssistantStream = buildAiAssistantStream(opts.getNoteLocation);
+    const isCodeBlockExtended = hasExtendedCodeBlocks(opts);
     const config: EditorConfig = {
         licenseKey: OPEN_SOURCE_LICENSE_KEY,
         placeholder: t("editable_text.placeholder"),
@@ -119,7 +141,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             overlayContainer: document.body
         },
         codeBlock: {
-            languages: buildListOfLanguages()
+            languages: buildListOfLanguages(isCodeBlockExtended)
         },
         math: {
             engine: "katex",
@@ -140,6 +162,8 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         contentEmbed: {
             pickNote: (request) => opts.showContentEmbedDialog?.(request) ?? null,
             inlineLanguages: SOURCE_EMBED_TYPES.map((type) => type.language),
+            isCodeBlockExtended,
+            detectLanguage: detectCodeLanguage,
             renderInlinePreview: (language, source, container) => {
                 void getSourceEmbedTypeByLanguage(language)?.renderPreview(source, container);
             },
@@ -262,8 +286,9 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             list: createEmojiList
         },
         syntaxHighlighting: {
-            loadHighlightJs: async () => {
-                await ensureMimeTypesForHighlighting();
+            // Auto-detection needs every language; any other block only its own.
+            loadHighlightJs: async (mimeType) => {
+                await ensureMimeTypesForHighlighting(mimeType === MIME_TYPE_AUTO ? undefined : mimeType);
                 return await import("@triliumnext/highlightjs");
             },
             mapLanguageName: getHighlightJsNameForMime,
@@ -275,7 +300,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             copyHtml: copyHtmlWithToast
         },
         // Reads `customDateTimeFormat` on each call, so a changed format applies to open editors.
-        formatDateTime: (date, format) => formatDateTime(date, format ?? options.get("customDateTimeFormat")),
+        formatDateTime: (date, format) => formatCustomDateTime(date, format ?? options.get("customDateTimeFormat")),
         referenceLink: {
             getTitle: linkService.getReferenceLinkTitle,
             getTitleSync: (href, storedTitle, content) => linkService.getReferenceLinkTitleSync(
@@ -321,8 +346,8 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         },
         slashCommand: {
             // Drop CKEditor's built-in list slash commands, whose Title Case titles the palette
-            // re-defines in sentence case, and those of the experimental features that are off.
-            removeCommands: ["bulletedList", "numberedList", ...getDisabledExperimentalCommands()],
+            // re-defines in sentence case.
+            removeCommands: ["bulletedList", "numberedList"],
             list: createSlashCommandList
         },
         ...(options.get("textNoteSlashCommandsEnabled") === "true" && {
@@ -331,6 +356,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         snippets: {
             definitions: opts.templates
         },
+        vim: opts.vim,
         aiAssistant: {
             stream: aiAssistantStream,
             // The "Changes" review view: a block-aware inline diff, so that a response which
@@ -351,7 +377,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         removePlugins: getDisabledPlugins(),
         // The locale's CKEditor translations, plus the dictionary of Trilium-authored editor
         // strings resolved through the app's i18n (see `messages.ts` in the ckeditor5 package).
-        ...await getCkLocale(opts.uiLanguage, { englishMessages: getEnglishEditorMessages(), translate: (key) => t(key) })
+        ...await getCkLocale(opts.uiLanguage, { englishMessages: await getEnglishEditorMessages(), translate: (key) => t(key) })
     };
 
     // User-configurable todo task states (from the `_taskStates` hidden subtree).
@@ -401,7 +427,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
     // boolean would leave an open editor still embedding after the switch was flipped.
     config.clipboardImageEmbed = {
         enabled: () => options.get("clipboardImageEmbedEnabled") === "true",
-        embedImage: (src: string) => imageService.embedReferenceImageAsDataUrl(src)
+        embedImage: (src: string) => embedReferenceImageAsDataUrl(src)
     };
 
     // Table sorting reads dates inserted in the user's own format.
@@ -439,9 +465,11 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
                 minimumCharacters: 0,
                 // Note titles contain spaces, so the query must be allowed to as well.
                 allowSpaces: true,
-                list: () => createNoteMentionList({
+                list: (editor) => createNoteMentionList({
                     allowCreatingNotes: true,
-                    getChildNoteParent: opts.getChildNoteParent
+                    getChildNoteParent: opts.getChildNoteParent,
+                    getOwnLinkTargets: (notePath) =>
+                        getOwnLinkTargets(editor, opts.getNoteId?.(), notePath)
                 })
             }
         ] : []
@@ -457,6 +485,23 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         ...config,
         ...buildToolbarConfig(opts.isClassicEditor, !!aiAssistantStream)
     };
+}
+
+/**
+ * The headings and anchors of the document in `editor`, for a link at `notePath` to the note
+ * `noteId` that the editor is open on. `undefined` for a link to another note.
+ */
+function getOwnLinkTargets(
+    editor: Parameters<typeof getHeadings>[0], noteId: string | undefined, notePath: string
+): LinkTarget[] | undefined {
+    if (!noteId || getNoteIdFromUrl(notePath) !== noteId) return undefined;
+
+    return [
+        ...createEditorHeadings(
+            getHeadings(editor), notePath, (heading) => assignBlockId(editor.model, heading.element)
+        ),
+        ...createAnchorTargets(getAnchorNames(editor), notePath)
+    ];
 }
 
 /** The `contentEmbed` members that call the handlers `getHandlers()` returns at the time. */
@@ -479,9 +524,12 @@ function bindContentEmbedHandlers(
     };
 }
 
-/** The slash commands of the experimental features that are off. */
-function getDisabledExperimentalCommands(): string[] {
-    return isExperimentalFeatureEnabled("extendedCodeBlocks") ? [] : [ "extended-code-block" ];
+/**
+ * Whether the code blocks of the editor are extended code blocks: the experimental feature is on,
+ * and the component that hosts the editor renders its embeds.
+ */
+function hasExtendedCodeBlocks(opts: BuildEditorOptions) {
+    return !!opts.getContentEmbedHandlers?.() && isExperimentalFeatureEnabled("extendedCodeBlocks");
 }
 
 /** A callback that triggers `command` on the component that hosts the editor, and waits for it. */
@@ -600,29 +648,44 @@ function buildTransformationsConfig(contentLanguage: string | null): TextTransfo
  * registry of Trilium-authored editor strings — there is no list of them in code — so reading it
  * back is what lets the message dictionary be built.
  *
- * English is always loaded, being i18next's `fallbackLng`; an empty section only means every editor
- * string renders its English message id, which is what an unconfigured editor does anyway.
+ * i18next holds the English catalog only while the app is in English, so in another language it is
+ * fetched once, with the first editor. An empty section only means every editor string renders its
+ * English message id, which is what an unconfigured editor does anyway.
  *
  * `getResourceBundle` is bound onto the i18next instance by `init()`, so it is missing until
  * `initLocale()` has run — the case for a test that builds a config without booting i18n.
  */
-function getEnglishEditorMessages(): Record<string, string> {
-    const bundle = i18next.getResourceBundle?.("en", "translation") as
+async function getEnglishEditorMessages(): Promise<Record<string, string>> {
+    if (!i18next.getResourceBundle) return {};
+    const bundle = (i18next.getResourceBundle("en", "translation") ?? await loadEnglishCatalogue()) as
         { "text-editor"?: { ck?: Record<string, string> } } | undefined;
     return bundle?.["text-editor"]?.ck ?? {};
 }
 
-function buildListOfLanguages() {
-    const userLanguages = mimeTypesService
-        .getEnabledMimeTypes()
-        // The `env=frontend`/`env=backend` JavaScript variants are Trilium script environments,
-        // which are meaningless inside a (display-only) code block. Plain `text/javascript`
-        // already provides JavaScript highlighting, so omit the script-specific variants here.
-        .filter((mt) => mt.mime && !mt.mime.startsWith("application/javascript;env="))
-        .map((mt) => ({
-            language: normalizeMimeTypeForCKEditor(mt.mime),
-            label: mt.title
-        }));
+let englishCatalogue: Promise<Record<string, unknown> | undefined> | undefined;
+
+/** The English `translation` catalog, fetched once; a failed fetch is tried again by the next editor. */
+function loadEnglishCatalogue() {
+    englishCatalogue ??= takeCatalogue("en", "translation").catch((e: unknown) => {
+        console.warn("Could not load the English editor messages:", e);
+        englishCatalogue = undefined;
+        return undefined;
+    });
+    return englishCatalogue;
+}
+
+/**
+ * The languages that a code block offers. An extended code block always has a language of its
+ * own, so the list then has no entry that detects it.
+ */
+function buildListOfLanguages(isCodeBlockExtended: boolean) {
+    const userLanguages = mimeTypesService.getCodeBlockMimeTypes().map((mt) => ({
+        language: normalizeMimeTypeForCKEditor(mt.mime),
+        label: mt.title
+    }));
+    if (isCodeBlockExtended) {
+        return userLanguages;
+    }
 
     return [
         {

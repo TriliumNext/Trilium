@@ -21,17 +21,22 @@
  */
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import Component from "../../../components/component";
 import NoteContext from "../../../components/note_context";
 import LoadResults from "../../../services/load_results";
+import options from "../../../services/options";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
 import ReadOnlyText, { ReadOnlyTextContent } from "./ReadOnlyText";
 
-// Imported by ReadOnlyText only for its content styles; irrelevant (and heavy) in happy-dom.
-vi.mock("@triliumnext/ckeditor5", () => ({}));
+// KaTeX, which the math service loads; `loaded` says whether anything has imported it.
+const math = vi.hoisted(() => ({ loaded: false, renderMathInElement: vi.fn() }));
+vi.mock("../../../services/math", () => {
+    math.loaded = true;
+    return { default: {}, renderMathInElement: math.renderMathInElement };
+});
 vi.mock("../../../services/i18n", async (importOriginal) => ({
     ...(await importOriginal<object>()),
     t: (key: string) => key
@@ -60,6 +65,17 @@ vi.mock("./utils", async (importOriginal) => ({
     loadMediaEmbed
 }));
 
+const experimentalState = vi.hoisted(() => ({ enabled: new Set<string>() }));
+vi.mock("../../../services/experimental_features", async (importOriginal) => ({
+    ...await importOriginal<typeof import("../../../services/experimental_features")>(),
+    isExperimentalFeatureEnabled: (id: string) => experimentalState.enabled.has(id)
+}));
+const detectCodeLanguage = vi.hoisted(() => vi.fn(async (_code: string) => null as string | null));
+vi.mock("../../../services/syntax_highlight", async (importOriginal) => ({
+    ...await importOriginal<typeof import("../../../services/syntax_highlight")>(),
+    detectCodeLanguage
+}));
+
 const disposeStickyTableHeaders = vi.hoisted(() => vi.fn());
 const applyStickyTableHeaders = vi.hoisted(() => vi.fn(() => disposeStickyTableHeaders));
 vi.mock("@triliumnext/ckeditor5/src/plugins/table_sticky_header_read_only.js", () => ({
@@ -69,11 +85,15 @@ vi.mock("@triliumnext/ckeditor5/src/plugins/table_sticky_header_read_only.js", (
 vi.stubGlobal("logError", vi.fn());
 vi.stubGlobal("logInfo", vi.fn());
 
-function setupHarness({ isVisible: initialIsVisible, language }: { isVisible: boolean; language?: string }) {
+function setupHarness({ isVisible: initialIsVisible, language, content = "<p>hello</p>" }: {
+    isVisible: boolean;
+    language?: string;
+    content?: string;
+}) {
     const note = buildNote({
         title: "Big note",
         type: "text",
-        content: "<p>hello</p>",
+        content,
         ...(language ? { "#language": language } : {})
     });
 
@@ -155,6 +175,24 @@ describe("ReadOnlyText reacting to content changes (#10575)", () => {
         expect(harness.contentLoadStates).toEqual([ "loading", "loaded" ]);
     });
 
+    it("publishes its highlights for the scroll rail while shown", async () => {
+        const getJson = vi.spyOn(options, "getJson").mockReturnValue([ "bgColor" ]);
+        onTestFinished(() => getJson.mockRestore());
+        const harness = setupHarness({
+            isVisible: true,
+            content: "<p>hello <span style=\"background-color:yellow\">hi</span></p>"
+        });
+        cleanupContainer = harness.container;
+
+        await harness.mount();
+        const highlights = harness.noteContext.getContextData("scrollRailHighlights");
+        expect(highlights?.source.readTargets())
+            .toEqual([ harness.container.querySelector("span[style]") ]);
+        expect(highlights?.source.readTargets()).toHaveLength(1);
+        await harness.mount(false);
+        expect(harness.noteContext.getContextData("scrollRailHighlights")).toBeUndefined();
+    });
+
     it("ignores the echo of a save made by its own component (no refetch, no overlay)", async () => {
         const harness = setupHarness({ isVisible: false });
         cleanupContainer = harness.container;
@@ -220,6 +258,21 @@ describe("ReadOnlyText reacting to content changes (#10575)", () => {
         } finally {
             globalThis.ResizeObserver = ResizeObserver;
         }
+    });
+
+    it("names the blob it renders on the content element", async () => {
+        const harness = setupHarness({ isVisible: true });
+        cleanupContainer = harness.container;
+        harness.getBlobSpy.mockResolvedValue({ blobId: "first", content: "<p>hello</p>" } as never);
+        await harness.mount();
+        const content = () => harness.container.querySelector<HTMLElement>(".ck-content");
+        expect(content()?.dataset.blobId).toBe("first");
+
+        harness.getBlobSpy
+            .mockResolvedValue({ blobId: "second", content: "<p>changed</p>" } as never);
+        await harness.fireContentChange("ReactWrappedWidget-remote");
+        expect(content()?.textContent).toBe("changed");
+        expect(content()?.dataset.blobId).toBe("second");
     });
 
     it("catches up on skipped own-component changes when displayed again, but only then", async () => {
@@ -701,13 +754,11 @@ describe("ReadOnlyText videos", () => {
 });
 
 describe("ReadOnlyText extended code blocks", () => {
-    it("shows each extended code block in the embed box of the editor, and no other", async () => {
+    afterEach(() => experimentalState.enabled.clear());
+
+    /** What each box of `html` was loaded with, and the container, which the caller removes. */
+    async function loadBoxes(html: string) {
         loadInlineEmbed.mockClear();
-        const html = `<pre class="extended-code-block" data-box-size="medium"`
-            + ` data-hide-title="true" data-code-tab-width="2" data-code-indent-with-tabs="false">`
-            + `<code class="language-text-x-python">pass</code></pre>`
-            + `<pre class="extended-code-block"><code data-trilium-block-id="b1">x</code></pre>`
-            + `<pre><code class="language-text-x-python">plain</code></pre>`;
         const container = document.createElement("div");
         document.body.append(container);
         await act(async () => render(<ReadOnlyTextContent html={html} />, container));
@@ -725,6 +776,17 @@ describe("ReadOnlyText extended code blocks", () => {
                 data: { ...figure.dataset }
             };
         });
+        return { embeds, container };
+    }
+
+    it("shows each extended code block in the embed box of the editor, and no other", async () => {
+        const { embeds, container } = await loadBoxes(
+            `<pre class="extended-code-block" data-box-size="medium"`
+            + ` data-hide-title="true" data-code-tab-width="2" data-code-indent-with-tabs="false">`
+            + `<code class="language-text-x-python">pass</code></pre>`
+            + `<pre class="extended-code-block"><code data-trilium-block-id="b1">x</code></pre>`
+            + `<pre><code class="language-text-x-python">plain</code></pre>`);
+
         expect(embeds).toEqual([
             {
                 language: "text-x-python", source: "pass", boxSize: "resizable",
@@ -748,6 +810,43 @@ describe("ReadOnlyText extended code blocks", () => {
         await act(async () => render(null, container));
         container.remove();
     });
+
+    it("shows every code block in a box while the feature is on", async () => {
+        experimentalState.enabled.add("extendedCodeBlocks");
+        detectCodeLanguage.mockClear();
+        detectCodeLanguage.mockResolvedValueOnce("text-x-python").mockResolvedValueOnce(null);
+        const { embeds, container } = await loadBoxes(
+            `<pre><code class="language-text-css">a {}</code></pre>`
+            + `<pre><code class="language-text-x-trilium-auto">print(1)</code></pre>`
+            + `<pre><code class="language-text-x-trilium-auto">lorem</code></pre>`
+            + `<pre><code class="language-mermaid">graph TD;</code></pre>`);
+
+        const box = { boxSize: "full", className: "include-note extended-code-block" };
+        // A box whose language is detected loads after the others.
+        expect(embeds.toSorted((a, b) => a.source.localeCompare(b.source))).toEqual([
+            {
+                ...box, language: "text-css", source: "a {}",
+                data: { boxSize: "full", hideTitle: "true", language: "text-css" }
+            },
+            {
+                language: "mermaid", source: "graph TD;", boxSize: "resizable",
+                className: "include-note",
+                data: { boxSize: "resizable", hideTitle: "true", language: "mermaid" }
+            },
+            {
+                ...box, language: "text-plain", source: "lorem",
+                data: { boxSize: "full", hideTitle: "true", language: "text-plain" }
+            },
+            {
+                ...box, language: "text-x-python", source: "print(1)",
+                data: { boxSize: "full", hideTitle: "true", language: "text-x-python" }
+            }
+        ]);
+        expect(detectCodeLanguage.mock.calls).toEqual([ [ "print(1)" ], [ "lorem" ] ]);
+        expect(container.querySelector("pre")).toBeNull();
+        await act(async () => render(null, container));
+        container.remove();
+    });
 });
 
 describe("ReadOnlyText lists", () => {
@@ -763,6 +862,26 @@ describe("ReadOnlyText lists", () => {
             .toEqual([ "trilium-list-item-aligned-right", "" ]);
         await act(async () => render(null, harness.container));
         harness.container.remove();
+    });
+});
+
+describe("ReadOnlyText math", () => {
+    it("loads KaTeX only for content with formulas, and renders them before printing", async () => {
+        const container = document.createElement("div");
+        document.body.appendChild(container);
+
+        await act(async () => render(<ReadOnlyTextContent html="<p>No formulas here.</p>" />, container));
+        expect(math.loaded).toBe(false);
+
+        const html = "<p>Area: <span class=\"math-tex\">\\(\\pi r^2\\)</span></p>";
+        await act(async () => render(<ReadOnlyTextContent html={html} />, container));
+        const { waitForPendingRenders } = await import("../../../services/pending_renders");
+        await waitForPendingRenders(container);
+
+        expect(math.renderMathInElement).toHaveBeenCalledWith(
+            container.querySelector("span.math-tex"), { trust: true, throwOnError: false });
+        await act(async () => render(null, container));
+        container.remove();
     });
 });
 

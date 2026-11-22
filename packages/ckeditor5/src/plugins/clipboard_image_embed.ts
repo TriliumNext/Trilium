@@ -1,4 +1,4 @@
-import { TRILIUM_SRC_ATTRIBUTE } from "@triliumnext/commons";
+import { TRILIUM_SRC_ATTRIBUTE } from "@triliumnext/commons/src/lib/shared_constants.js";
 import { ClipboardPipeline, Plugin, UpcastWriter } from "ckeditor5";
 import type { ClipboardInputTransformationData, ClipboardInputTransformationEvent, EditingView, ViewDocumentClipboardOutputEvent, ViewDocumentClipboardOutputEventData, ViewDocumentFragment, ViewElement } from "ckeditor5";
 

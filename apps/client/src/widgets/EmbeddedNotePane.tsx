@@ -17,7 +17,9 @@ import TitleRow from "./layout/TitleRow";
 import ActionButton from "./react/ActionButton";
 import Dropdown, { DropdownPanel } from "./react/Dropdown";
 import { FormListItem } from "./react/FormList";
-import { useDetachedNoteContext, useLegacyComponentElement, useNoteColorClass, useNoteContext } from "./react/hooks";
+import { useNoteColorClass } from "./react/hooks/note";
+import { useDetachedNoteContext, useNoteContext } from "./react/hooks/note_context";
+import { useLegacyComponentElement } from "./react/hooks/legacy";
 import Modal from "./react/Modal";
 import OverlayPanel, { OverlayPanelBody } from "./react/OverlayPanel";
 import { NoteContextContext, ParentComponent } from "./react/react_utils";
@@ -194,6 +196,7 @@ export function useFollowLinksWithin(paneRef: RefObject<HTMLElement | null>, onF
             const { noteId, ntxId, viewScope, openInPopup } = link.parseNavigationStateFromUrl(href);
             if (!noteId || ntxId || openInPopup || viewScope?.viewMode !== "default"
                 || viewScope.attachmentId || viewScope.bookmark || viewScope.block
+                || viewScope.page || viewScope.annotation || viewScope.heading
                 || !onFollowLink(noteId)) return;
 
             e.preventDefault();

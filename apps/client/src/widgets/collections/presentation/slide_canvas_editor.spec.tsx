@@ -24,7 +24,7 @@ vi.mock("@excalidraw/excalidraw", () => ({
 }));
 const editorProps = vi.hoisted(() => ({ initialData: undefined as unknown }));
 vi.mock("../../type_widgets/canvas/Canvas", async () => {
-    const { useNoteContext } = await import("../../react/hooks");
+    const { useNoteContext } = await import("../../react/hooks/note_context");
     return {
         CanvasEditor: ({ persistence }: { persistence: { initialData: unknown } }) => {
             editorProps.initialData = persistence.initialData;

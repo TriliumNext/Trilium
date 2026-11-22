@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { NoteContextDataMap } from "../../components/note_context";
 import options from "../../services/options";
 import BoardColumns from "./BoardColumns";
+import { NavigatedInNote } from "./RightPanelWidget";
 
 // The board publishes its columns through the note context, which needs the whole app around it,
 // so the panel is handed them directly here.
@@ -12,8 +13,8 @@ const shown = vi.hoisted(() => ({
     board: null as NoteContextDataMap["boardColumns"] | null
 }));
 vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
-vi.mock("../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../react/hooks")>()),
+vi.mock("../react/hooks/tree", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/tree")>()),
     useGetContextData: () => shown.board
 }));
 
@@ -66,6 +67,25 @@ describe("BoardColumns", () => {
         });
         // The inbox is named by the empty value, which is what it is identified by throughout.
         expect(shown.board?.scrollToColumn).toHaveBeenLastCalledWith("");
+    });
+
+    it("tells the mobile panel once the board scrolled to a column", () => {
+        const onNavigated = vi.fn();
+        act(() => render(
+            <NavigatedInNote.Provider value={onNavigated}>
+                <BoardColumns />
+            </NavigatedInNote.Provider>, container));
+        const entries = [ ...container.querySelectorAll<HTMLElement>(".board-column-entry") ];
+
+        entries[1].click();
+        expect(shown.board?.scrollToColumn).toHaveBeenCalledWith("To Do");
+        expect(onNavigated).toHaveBeenCalledTimes(1);
+
+        act(() => {
+            entries[0].dispatchEvent(
+                new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+        });
+        expect(onNavigated).toHaveBeenCalledTimes(2);
     });
 
     it("says so for a board with no columns at all", () => {

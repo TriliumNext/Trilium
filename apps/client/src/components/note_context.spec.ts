@@ -1,11 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ViewScope } from "../services/link.js";
+import type { ViewScope } from "../services/navigation_state.js";
 import utils from "../services/utils.js";
 import { buildNote } from "../test/easy-froca.js";
 import appContext from "./app_context.js";
 import NoteContext from "./note_context.js";
 import type TabManager from "./tab_manager.js";
+
+const dialogMock = vi.hoisted(() => ({ loaded: false, closeActiveDialog: vi.fn() }));
+vi.mock("../services/dialog.js", () => {
+    dialogMock.loaded = true;
+    return { closeActiveDialog: dialogMock.closeActiveDialog };
+});
 
 describe("NoteContext.isCommandTarget", () => {
     it("matches a command with its own ntxId, or one without an ntxId while it is the active context", () => {
@@ -102,9 +108,34 @@ describe("NoteContext view scope", () => {
         });
         expect(noteContext.viewScope).toEqual({ block: "a", viewMode: "default" });
 
-        // What `revealBlockReference()` does once it has scrolled to the block.
+        // What `consumeBlockReference()` does once it has scrolled to the block.
         if (noteContext.viewScope) noteContext.viewScope.block = undefined;
         expect(viewScope).toEqual({ block: "a" });
+    });
+
+    it("closes the open dialog when it switches notes, loading the dialogs only for one", async () => {
+        buildNote({
+            id: "root", title: "root", children: [
+                { id: "first", title: "First" }, { id: "second", title: "Second" }, { id: "third", title: "Third" }
+            ]
+        });
+        const noteContext = new NoteContext();
+        const navigate = (notePath: string, keepActiveDialog?: boolean) => noteContext.setNote(notePath, {
+            skipRecentNotes: true, triggerSwitchEvent: false, keepActiveDialog
+        });
+
+        await navigate("root/first");
+        expect(dialogMock.loaded).toBe(false);
+
+        glob.activeDialog = $("<div>");
+        try {
+            await navigate("root/second", true);
+            expect(dialogMock.closeActiveDialog).not.toHaveBeenCalled();
+            await navigate("root/third");
+            expect(dialogMock.closeActiveDialog).toHaveBeenCalledOnce();
+        } finally {
+            glob.activeDialog = null;
+        }
     });
 
     it("stays on the open note when it is navigated to again", async () => {

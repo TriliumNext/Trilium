@@ -602,6 +602,13 @@ describe("ContentEmbed", () => {
         expect(button("include-note-edit").disabled).toBe(true);
     });
 
+    it("shows no edit button on an excerpt of a note that is not a text note", () => {
+        renderBox({ boxSize: "full", isExcerpt: true, contentType: "markdown" });
+
+        expect(container.querySelector(".include-note-badges")?.children.length).toBe(1);
+        expect(container.querySelector(".include-note-edit")).toBeNull();
+    });
+
     it("opens an expandable excerpt to edit it, and focuses it once shown", () => {
         placeInHostEditor();
         const { content } = renderBox({ boxSize: "expandable", isExcerpt: true });

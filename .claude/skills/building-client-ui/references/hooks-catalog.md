@@ -1,8 +1,29 @@
-# Hooks catalog — `apps/client/src/widgets/react/hooks.tsx`
+# Hooks catalog — `apps/client/src/widgets/react/hooks/`
 
-Every exported `use*` hook (60 at the time of writing: `grep -cE "^export function use" apps/client/src/widgets/react/hooks.tsx`), grouped by purpose. The point of this file: **find the hook before writing `useState` + `server.get` + a hand-rolled `entitiesReloaded` listener.**
+Every exported `use*` hook (79 at the time of writing: `grep -cE "^export function use" apps/client/src/widgets/react/hooks/*`), grouped by purpose. The point of this file: **find the hook before writing `useState` + `server.get` + a hand-rolled `entitiesReloaded` listener.**
 
-No line numbers here — the file moves too fast for them to stay true. Jump with `grep -n "export function <name>" apps/client/src/widgets/react/hooks.tsx`.
+No line numbers here — the files move too fast for them to stay true. Jump with `grep -n "export function <name>" apps/client/src/widgets/react/hooks/*`.
+
+The hooks are split by what they import, so a component pays only for the services its hooks use; there is no index module. Import each hook from its own file:
+
+| File | Holds | Imports beyond Preact |
+|---|---|---|
+| `events.ts` | `useTriliumEvent`, `useTriliumEvents` | `react_utils` |
+| `dom.ts` | element size, visibility, focus, fullscreen, media queries, refs, long press, debounce | `hold_context_menu` |
+| `tooltip.ts` | `useTooltip`, `useStaticTooltip` | Bootstrap (patches `Tooltip.dispose()` and loads `tooltip.css`) |
+| `highlight.ts` | `useImperativeSearchHighlighlighting` | `highlight_matches`, `collapsible` |
+| `note.ts` | note fields, labels, relations, blobs, children, attachments | `froca`, `attributes` |
+| `options.ts` | `useTriliumOption*`, `useUserThemes`, `useColorScheme` | `options`, `server`, `theme` (`ws` only once a save fails) |
+| `note_context.ts` | `useNoteContext`, context data, read-only state, `useSearchTermsConsumer` | `app_context`, `options`, `search_jump` |
+| `tree.ts` | `useActiveNoteContext`, `useGetContextData`, `useNoteTitle` | `services/tree` |
+| `editor.ts` | spaced updates and saved-data plumbing | `spaced_update`, `server`, `NoteStore` |
+| `shortcuts.ts` | keyboard shortcuts, `useStaticTooltipWithKeyboardShortcut`, shortcut hints | `keyboard_actions`, `shortcuts` |
+| `drag.ts` | tree drag, `useFileDrop` | `toast`, `i18n` |
+| `legacy.tsx` | `useLegacyWidget` and the other bridges to jQuery widgets | `note_context_aware_widget` |
+| `content.ts` | `useMathRendering`, `useContainedLinkNavigation` | `link` |
+| `note_types.ts` | `useNoteTypeOptions` | `note_types` |
+
+A new hook goes in the file whose imports it already shares; one that needs a service no file has gets a file of its own, rather than a heavy import in a light file. A spec that mocks a hook mocks the file that holds it: `vi.mock("../react/hooks/options", …)`.
 
 ## Note fields / identity
 

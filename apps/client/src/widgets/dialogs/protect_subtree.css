@@ -1,0 +1,10 @@
+.modal.protect-subtree-dialog {
+    .protect-subtree-target {
+        gap: 12px;
+    }
+
+    .protect-subtree-icon {
+        font-size: 1.6em;
+        color: var(--muted-text-color);
+    }
+}

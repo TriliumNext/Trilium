@@ -53,7 +53,8 @@ async function extractAndSendAttachments() {
         type: "pdfjs-viewer-attachments",
         attachments,
         ntxId: window.TRILIUM_NTX_ID,
-        noteId: window.TRILIUM_NOTE_ID
+        noteId: window.TRILIUM_NOTE_ID,
+        loadToken: window.TRILIUM_LOAD_TOKEN
     } satisfies PdfViewerAttachmentsMessage, window.location.origin);
 }
 

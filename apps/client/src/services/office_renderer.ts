@@ -1,3 +1,5 @@
+import { OFFICE_PREVIEW_TOO_LARGE_MESSAGE } from "@triliumnext/commons/src/lib/office.js";
+
 import { sanitizeNoteContentHtml } from "./sanitize_content.js";
 import server from "./server.js";
 
@@ -14,17 +16,39 @@ import server from "./server.js";
  * element rather than as markup, keeping it clear of the sanitizer without reaching the DOM as
  * text. Every rule it carries is scoped under `.spreadsheet-table` by the renderer.
  *
- * Throws if the document is too large, unsupported, or conversion fails — callers should
- * catch and fall back to the usual download / open-externally affordance.
+ * Throws an {@link OfficePreviewTooLargeError} if the server refuses the document for its size,
+ * and the request's failure if the document is unsupported or the conversion fails. Callers
+ * catch either and fall back to the usual download / open-externally affordance.
+ *
+ * With `blobId`, the preview is of that blob only: an {@link OfficePreviewChangedError} tells that
+ * the document has another one.
  */
 export async function renderOfficeToHtml(
     entityType: "notes" | "attachments",
     entityId: string,
-    { trim }: { trim?: boolean } = {}
+    { trim, blobId }: { trim?: boolean; blobId?: string } = {}
 ): Promise<OfficePreview> {
+    const query = new URLSearchParams();
+    if (trim) {
+        query.set("trim", "1");
+    }
+    if (blobId) {
+        query.set("blobId", blobId);
+    }
+    const search = query.size > 0 ? `?${query}` : "";
     // `raw` keeps the response a plain string; the route sends the fragment as the body.
-    const url = `${entityType}/${entityId}/office-preview${trim ? "?trim=1" : ""}`;
-    const body = await server.get<string>(url, undefined, true);
+    const url = `${entityType}/${entityId}/office-preview${search}`;
+    let body: string;
+    try {
+        body = await server.get<string>(url, undefined, true, {
+            silentBadRequest: true, silentConflict: true
+        });
+    } catch (e) {
+        if (isChangedRefusal(e)) {
+            throw new OfficePreviewChangedError();
+        }
+        throw isTooLargeRefusal(e) ? new OfficePreviewTooLargeError() : e;
+    }
     const { css, html } = splitStylesheet(body);
     const sanitized = sanitizeNoteContentHtml(html);
 
@@ -37,11 +61,51 @@ export async function renderOfficeToHtml(
     return { css, html: strippable ? stripLinkColors(sanitized) : sanitized };
 }
 
+/** The server refused to preview the document because it is above the preview size limit. */
+export class OfficePreviewTooLargeError extends Error {
+    constructor() {
+        super(OFFICE_PREVIEW_TOO_LARGE_MESSAGE);
+        this.name = "OfficePreviewTooLargeError";
+    }
+}
+
+/** The document has another blob than the one that the preview was requested for. */
+export class OfficePreviewChangedError extends Error {
+    constructor() {
+        super("The document changed since its blob was read.");
+        this.name = "OfficePreviewChangedError";
+    }
+}
+
 export interface OfficePreview {
     /** The rules the fragment's classes refer to, or "" when it carries none. */
     css: string;
     /** The sanitized markup. */
     html: string;
+}
+
+/** Whether a failed request is the route's size refusal, which arrives as JSON response text. */
+function isTooLargeRefusal(error: unknown) {
+    const message = readRefusal(error)?.message;
+    return typeof message === "string" && message.startsWith(OFFICE_PREVIEW_TOO_LARGE_MESSAGE);
+}
+
+/** Whether a failed request is the route's refusal of a blob that the document no longer has. */
+function isChangedRefusal(error: unknown) {
+    return readRefusal(error)?.reason === "changed";
+}
+
+/** The JSON body of a refused request, which arrives as response text. */
+function readRefusal(error: unknown): { message?: unknown; reason?: unknown } | null {
+    if (typeof error !== "string") {
+        return null;
+    }
+    try {
+        const body: unknown = JSON.parse(error);
+        return typeof body === "object" && body !== null ? body : null;
+    } catch {
+        return null;
+    }
 }
 
 /**

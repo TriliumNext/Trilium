@@ -4,7 +4,7 @@ import clsx from "clsx";
 import { useRef } from "preact/hooks";
 
 import HelpButton from "./HelpButton";
-import { useStaticTooltip } from "./hooks";
+import { useStaticTooltip } from "./hooks/tooltip";
 
 interface HelpTooltipButtonProps {
     /** The explanation itself, shown on hover. May carry markup, e.g. `<code>` or a list of values. */

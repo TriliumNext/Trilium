@@ -1,10 +1,18 @@
 import "./content_renderer.css";
 
+import type { BoxSize, TextRepresentationResponse } from "@triliumnext/commons";
 import {
-    attachmentIcon, type BoxSize, getEditableBlockRun, getFileContentType, getMimeTypeFromFileName,
-    getNoteContentType, hasCompactContent, isAcceptedImageMime, isImageAttachmentRole,
-    isMarkdownMime, type TextRepresentationResponse
-} from "@triliumnext/commons";
+    attachmentIcon, isImageAttachmentRole
+} from "@triliumnext/commons/src/lib/attachment_roles.js";
+import {
+    getEditableBlockRun, sliceToBlockReference
+} from "@triliumnext/commons/src/lib/block_reference.js";
+import { hasCompactContent } from "@triliumnext/commons/src/lib/content_embeds.js";
+import { isAcceptedImageMime } from "@triliumnext/commons/src/lib/image_mimes.js";
+import { getMimeTypeFromFileName } from "@triliumnext/commons/src/lib/mime_type.js";
+import {
+    getFileContentType, getNoteContentType, isMarkdownMime
+} from "@triliumnext/commons/src/lib/notes.js";
 import DOMPurify from "dompurify";
 import { h, type JSX, render } from "preact";
 
@@ -15,6 +23,9 @@ import FNote from "../entities/fnote.js";
 import imageContextMenuService from "../menus/image_context_menu.js";
 import { t } from "../services/i18n.js";
 import { type MediaEnvironment, showsFileActions } from "../widgets/type_widgets/file/media_environment.js";
+import type { ClientTocBuild } from "../widgets/sidebar/CachedToCProvider.js";
+import type { PdfLinkTarget, PdfReading } from "../widgets/type_widgets/file/PdfViewer.js";
+import type { DocumentTarget } from "./bookmark_jump.js";
 import type { LlmChatContent, StoredMessage } from "../widgets/type_widgets/llm_chat/llm_chat_types.js";
 import type {
     ContentHistory, default as EmbedHistories
@@ -25,7 +36,11 @@ import renderText, {
 } from "./content_renderer_text.js";
 import renderDoc from "./doc_renderer.js";
 import { getAttachmentImageUrl, getNoteImageUrl } from "./image_urls.js";
-import { renderOfficeToHtml } from "./office_renderer.js";
+import { getTocUrl } from "./link.js";
+import type { ChangeRecordHooks } from "./note_save.js";
+import {
+    OfficePreviewChangedError, OfficePreviewTooLargeError, renderOfficeToHtml
+} from "./office_renderer.js";
 import openService from "./open.js";
 import { waitForPendingRenders } from "./pending_renders.js";
 import protectedSessionService from "./protected_session.js";
@@ -123,6 +138,21 @@ export interface RenderOptions {
      */
     pdfToolbar?: boolean;
     /**
+     * Lets the viewer of a PDF attachment build its ToC cache where the server cannot read PDFs,
+     * as the viewer of a PDF note does.
+     */
+    buildsPdfToc?: boolean;
+    /** Receives the ToC build of the viewer of a PDF attachment, with `buildsPdfToc`. */
+    onTocBuild?(build: ClientTocBuild): void;
+    /** Receives where the viewer of a PDF reads, as it changes. */
+    onReadingChange?(reading: PdfReading): void;
+    /**
+     * Reports which blob of a PDF or an office document the content shows. With it, the content is
+     * of the blob the attachment has: a fetch that meets another blob reads the current one and
+     * renders it.
+     */
+    onDocumentState?(state: RenderedDocumentState): void;
+    /**
      * Saves the changes that interactive content makes to an attachment, such as a canvas drawing.
      * Without it, that content is read-only.
      */
@@ -162,6 +192,11 @@ export interface AttachmentEditor {
     postponeSave(): void;
     /** Reads the unsaved content of the attachment now, before its editor unmounts. */
     release(attachmentId: string): void;
+    /**
+     * Calls `listener` once the unsaved changes are dropped for the version of another writer,
+     * until the returned call.
+     */
+    subscribeVersionLoaded?(listener: () => void): () => void;
 }
 
 /** Saves the changes that rendered content makes to the notes it shows. */
@@ -172,15 +207,31 @@ export interface NoteEditor {
     getUnsavedContent(noteId: string): string | undefined;
     /**
      * Schedules a save of `note`. The save reads the content from `getContent`, and runs `onSaved`
-     * with it once it saves, unless a newer change waits by then.
+     * with it once it saves, unless a newer change waits by then. With `hooks`, the save brings
+     * the changes onto a version that another writer saved, where they allow it.
      */
-    scheduleSave(note: FNote, getContent: () => string, onSaved?: (content: string) => void): void;
+    scheduleSave(
+        note: FNote,
+        getContent: () => string,
+        onSaved?: (content: string) => void,
+        hooks?: ChangeRecordHooks
+    ): void;
     /** Reads the unsaved content of the note now, before its editor unmounts. */
     release(noteId: string): void;
     /** How the saving of the note goes, or `undefined` before its first change. */
     getSaveState(noteId: string): SaveState | undefined;
     /** Calls `listener` when the save state of a note changes, until the returned call. */
     subscribeSaveState(listener: () => void): () => void;
+    /**
+     * Takes the blob `blobId`, which holds `content`, as the version of the note `noteId` that the
+     * content shows: the next change to the note is based on it.
+     */
+    setLoadedVersion?(noteId: string, blobId: string, content: string): void;
+    /**
+     * Saves the changes to the note `noteId` now. Resolves to its content as saved, or `undefined`
+     * while changes wait.
+     */
+    saveNow?(noteId: string): Promise<string | undefined>;
 }
 
 
@@ -212,7 +263,38 @@ const PREVIEWED_TYPES = new Set([
  */
 const SELF_UPDATING_TYPES = new Set([ "canvasDrawing", "code", "markdown" ]);
 
-export async function getRenderedContent(this: {} | { ctx: string }, entity: FNote | FAttachment, options: RenderOptions = {}) {
+/** A place inside rendered content that a link names: in a PDF, or in the preview of a document. */
+export interface ContentLinkTarget extends PdfLinkTarget, DocumentTarget {}
+
+/** How a link lands in rendered content. */
+export interface ContentLandingOptions {
+    /** Whether a preview without the target scrolls to its top, as a followed link does. */
+    isFallbackToTop?: boolean;
+}
+
+/** Which blob of a document rendered content shows, for {@link RenderOptions.onDocumentState}. */
+export type RenderedDocumentState =
+    | { status: "rendering" }
+    | { status: "shown"; blobId: string }
+    | { status: "unavailable" };
+
+/** How many times a document reads its current blob again after a load or a fetch failed. */
+const MAX_DOCUMENT_ROUNDS = 3;
+
+/** What {@link getRenderedContent} renders. */
+export interface RenderedContent {
+    $renderedContent: JQuery<HTMLElement>;
+    type: string;
+    /**
+     * Shows the rendered PDF or office preview at the place that a link names, once the content is
+     * in the document. Absent for content without such places.
+     */
+    showTarget?: (target: ContentLinkTarget, options?: ContentLandingOptions) => void;
+}
+
+export async function getRenderedContent(
+    this: {} | { ctx: string }, entity: FNote | FAttachment, options: RenderOptions = {}
+): Promise<RenderedContent> {
 
     options = Object.assign(
         {
@@ -317,7 +399,8 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
 
     return {
         $renderedContent,
-        type
+        type,
+        showTarget: contentTargets.get($renderedContent[0])
     };
 }
 
@@ -398,7 +481,8 @@ function isEditableBlockRange(content: string, block: string) {
  * the user sees in the Markdown note type's preview pane.
  */
 async function renderMarkdown(note: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>, options: RenderOptions) {
-    if (options.hasDisplayModes) {
+    // An excerpt of Markdown is never edited in place, so it shows only its blocks.
+    if (options.hasDisplayModes && options.block === undefined) {
         await renderMarkdownEmbed(note, $renderedContent, options);
         return;
     }
@@ -406,7 +490,7 @@ async function renderMarkdown(note: FNote | FAttachment, $renderedContent: JQuer
     const blob = await note.getBlob();
     const source = blob?.content ?? "";
 
-    if (!source.trim()) {
+    if (!source.trim() && options.block === undefined) {
         if (note instanceof FNote && !options.noChildrenList) {
             await renderChildrenList($renderedContent, note, options.includeArchivedNotes ?? false);
         }
@@ -418,7 +502,19 @@ async function renderMarkdown(note: FNote | FAttachment, $renderedContent: JQuer
         sanitize: (dirty) => DOMPurify.sanitize(dirty),
         wikiLink: { formatHref: (id) => `#root/${id}` }
     });
-    $renderedContent.append($('<div class="ck-content">').html(html));
+    const $content = $('<div class="ck-content">').html(html);
+    // Sliced before the embeds render, which hold the blocks of other notes.
+    if (options.block !== undefined && !sliceToBlockReference($content[0], options.block)) {
+        $renderedContent.append($("<p>")
+            .addClass("block-reference-broken")
+            .text(t("block_reference.broken")));
+        return;
+    }
+    if (options.highlightBlock) {
+        const { highlightBlockReference } = await import("./block_reference.js");
+        highlightBlockReference($content[0], options.highlightBlock);
+    }
+    $renderedContent.append($content);
     await postProcessRichContent(note, $renderedContent, options);
 }
 
@@ -578,7 +674,12 @@ export interface ContentEditor {
     /** Whether the rendered content can change the note or attachment. */
     canEdit(): boolean;
     getUnsavedContent(): string | undefined;
-    scheduleSave(getContent: () => string, onSaved?: (content: string) => void): void;
+    /** As {@link NoteEditor.scheduleSave}; the editor of an attachment ignores `hooks`. */
+    scheduleSave(
+        getContent: () => string,
+        onSaved?: (content: string) => void,
+        hooks?: ChangeRecordHooks
+    ): void;
     /** Postpones the scheduled save by its interval, as `AttachmentEditor.postponeSave()` does. */
     postponeSave?(): void;
     release(): void;
@@ -591,6 +692,12 @@ export interface ContentEditor {
     subscribeSaveState?(listener: () => void): () => void;
     /** The undo history that the content shares with the text note that shows it. */
     history?: ContentHistory;
+    /** As {@link NoteEditor.setLoadedVersion}, for content that shows a note. */
+    setLoadedVersion?(blobId: string, content: string): void;
+    /** As {@link NoteEditor.saveNow}, for content that shows a note. */
+    saveNow?(): Promise<string | undefined>;
+    /** As {@link AttachmentEditor.subscribeVersionLoaded}, for content that shows an attachment. */
+    subscribeVersionLoaded?(listener: () => void): () => void;
 }
 
 /** `editor`, saving the changes to `attachment`. */
@@ -604,7 +711,8 @@ export function bindAttachmentEditor(
         getUnsavedContent: () => editor.getUnsavedContent(attachment.attachmentId),
         scheduleSave: (getContent, onSaved) => editor.scheduleSave(attachment, getContent, onSaved),
         postponeSave: () => editor.postponeSave(),
-        release: () => editor.release(attachment.attachmentId)
+        release: () => editor.release(attachment.attachmentId),
+        subscribeVersionLoaded: editor.subscribeVersionLoaded?.bind(editor)
     };
 }
 
@@ -627,13 +735,17 @@ function getContentEditor(
     return editor && EDITABLE_NOTE_TYPES.has(entity.type) ? {
         canEdit: () => editor.canEdit(entity),
         getUnsavedContent: () => editor.getUnsavedContent(entity.noteId),
-        scheduleSave: (getContent, onSaved) => editor.scheduleSave(entity, getContent, onSaved),
+        scheduleSave: (getContent, onSaved, hooks) =>
+            editor.scheduleSave(entity, getContent, onSaved, hooks),
         release: () => editor.release(entity.noteId),
         getSaveState: () => editor.getSaveState(entity.noteId),
         subscribeSaveState: (listener) => editor.subscribeSaveState(listener),
         history: options.histories?.get(entity.noteId, (text) => {
             editor.scheduleSave(entity, () => text);
-        })
+        }),
+        setLoadedVersion: (blobId, content) =>
+            editor.setLoadedVersion?.(entity.noteId, blobId, content),
+        saveNow: async () => await editor.saveNow?.(entity.noteId)
     } : undefined;
 }
 
@@ -798,10 +910,8 @@ async function renderFile(entity: FNote | FAttachment, type: string, $renderedCo
 
     if (type === "pdf") {
         const $viewer = $(`<div style="height: 100%">`);
-        const { default: PdfViewer, getPdfUrl } = await CONTENT_RENDERERS.file.pdf();
-        const url = getPdfUrl(`${entityType}/${entityId}/open`);
-        render(h(PdfViewer, {pdfUrl: url, editable: false, toolbar: options.pdfToolbar ?? false}), $viewer.get(0)!);
-
+        const viewer = $viewer.get(0)!;
+        contentTargets.set($renderedContent[0], await mountPdfViewer(entity, viewer, options));
         $content.append($viewer);
 
 
@@ -833,14 +943,124 @@ async function renderFile(entity: FNote | FAttachment, type: string, $renderedCo
 }
 
 /**
+ * Mounts the viewer of the PDF `entity` in `viewer`, and returns what shows it at a link's place.
+ * With `options.onDocumentState`, each load requests the blob of the attachment, and a load that
+ * fails reads the current blob and loads that, as the viewer of a PDF note does.
+ */
+async function mountPdfViewer(
+    entity: FNote | FAttachment, viewer: HTMLElement, options: RenderOptions
+) {
+    const { default: PdfViewer, getPdfUrl, nextPdfLoadToken } = await CONTENT_RENDERERS.file.pdf();
+    const { entityType, entityId } = getEntityTypeAndId(entity);
+    const { onDocumentState } = options;
+    const tocDocument = options.buildsPdfToc && entity instanceof FAttachment ? {
+        tocUrl: getTocUrl("attachments", entity.attachmentId),
+        isProtected: !!entity.isProtected
+    } : undefined;
+    /** The blobs of the loads that failed in a row. */
+    const failedLoads: (string | undefined)[] = [];
+    let load = { token: nextPdfLoadToken(), blobId: entity.blobId };
+    let target: PdfLinkTarget | undefined;
+
+    function draw() {
+        const current = load;
+        const url = getPdfUrl(`${entityType}/${entityId}/open`);
+        // Rendering the same viewer again keeps its frame; a new URL navigates it.
+        render(h(PdfViewer, {
+            pdfUrl: onDocumentState && current.blobId ? `${url}?blobId=${current.blobId}` : url,
+            editable: false, toolbar: options.pdfToolbar ?? false, tocDocument, target,
+            loadToken: current.token,
+            onTocBuild: options.onTocBuild,
+            onReadingChange: options.onReadingChange,
+            onDocumentLoaded() {
+                if (current === load && current.blobId) {
+                    failedLoads.length = 0;
+                    onDocumentState?.({ status: "shown", blobId: current.blobId });
+                }
+            },
+            onDocumentError() {
+                void recover(current);
+            }
+        }), viewer);
+    }
+
+    async function recover(failedLoad: typeof load) {
+        if (failedLoad !== load || !onDocumentState) {
+            return;
+        }
+        const isRepeated = failedLoads.at(-1) === failedLoad.blobId;
+        failedLoads.push(failedLoad.blobId);
+        let blobId: string | null = null;
+        if (!isRepeated && failedLoads.length < MAX_DOCUMENT_ROUNDS) {
+            blobId = await readCurrentBlobId(entity).catch(() => null);
+        }
+        if (failedLoad !== load) {
+            return;
+        }
+        if (blobId) {
+            load = { token: nextPdfLoadToken(), blobId };
+            onDocumentState({ status: "rendering" });
+            draw();
+        } else {
+            onDocumentState({ status: "unavailable" });
+        }
+    }
+
+    draw();
+    // The viewer holds a target given before its document loads.
+    return ({ page, heading, annotation }: ContentLinkTarget) => {
+        target = { page, heading, annotation };
+        draw();
+    };
+}
+
+/** The current blob of `entity`, read from the server; `null` for a removed attachment. */
+async function readCurrentBlobId(entity: FNote | FAttachment) {
+    const { refreshBlobId } = await import("../widgets/type_widgets/file/toc_build.js");
+    return entity instanceof FAttachment
+        ? refreshBlobId({
+            kind: "attachment", attachmentId: entity.attachmentId, ownerId: entity.ownerId
+        })
+        : refreshBlobId({ kind: "note", noteId: entity.noteId });
+}
+
+/**
+ * The preview of the office document `entity`. With `options.onDocumentState`, of the blob that
+ * the entity has, read again after the server refused another, and the blob it is of.
+ */
+async function renderOfficePreviewOf(entity: FNote | FAttachment, options: RenderOptions) {
+    const { entityType, entityId } = getEntityTypeAndId(entity);
+    if (!options.onDocumentState) {
+        const preview = await renderOfficeToHtml(entityType, entityId, { trim: options.trim });
+        return { ...preview, blobId: undefined };
+    }
+
+    let blobId = entity.blobId;
+    for (let round = 1; ; round++) {
+        try {
+            const preview = await renderOfficeToHtml(
+                entityType, entityId, { trim: options.trim, blobId });
+            return { ...preview, blobId };
+        } catch (e) {
+            if (!(e instanceof OfficePreviewChangedError) || round >= MAX_DOCUMENT_ROUNDS) {
+                throw e;
+            }
+            const next = await readCurrentBlobId(entity);
+            if (!next) {
+                throw e;
+            }
+            blobId = next;
+        }
+    }
+}
+
+/**
  * Renders an inline preview of an office document (DOCX/XLSX/PPTX, ODT/ODS/ODP, RTF and
  * EPUB) by fetching the server-rendered HTML preview and sanitizing it. On failure it
  * falls back to a notice plus the usual download/open actions, so the file is never left
  * unreachable. `options.trim` asks for the corner of a workbook rather than all of it.
  */
 async function renderOffice(entity: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>, options: RenderOptions) {
-    const { entityType, entityId } = getEntityTypeAndId(entity);
-
     // The scroll host is a separate, unpadded element (like the note view's .scrolling-container)
     // so the body's padding scrolls with the document instead of sitting on the scroller itself.
     const $content = $('<div class="office-preview">');
@@ -854,8 +1074,15 @@ async function renderOffice(entity: FNote | FAttachment, $renderedContent: JQuer
     try {
         // A note list asks for a trimmed render: a card shows a few rows, and a workbook that
         // fills one runs to megabytes the browser would parse and lay out to display none of.
-        const { css, html } = await renderOfficeToHtml(entityType, entityId, { trim: options.trim });
+        const { css, html, blobId } = await renderOfficePreviewOf(entity, options);
         $body.html(html);
+        const body = $body[0];
+        contentTargets.set($renderedContent[0], (target, landing) => void import(
+            "./bookmark_jump.js"
+        ).then(({ showDocumentTarget }) => showDocumentTarget(body, target, landing)));
+        if (blobId) {
+            options.onDocumentState?.({ status: "shown", blobId });
+        }
         if (css) {
             // Built as an element with its text set, never parsed as markup, so a cell's styling
             // cannot escape the rule it belongs to. It sits inside the preview body, so the
@@ -863,9 +1090,14 @@ async function renderOffice(entity: FNote | FAttachment, $renderedContent: JQuer
             $body.prepend($("<style>").text(css));
         }
     } catch (e) {
-        console.warn("Failed to render office document preview:", getErrorMessage(e));
+        const tooLarge = e instanceof OfficePreviewTooLargeError;
+        if (!tooLarge) {
+            console.warn("Failed to render office document preview:", getErrorMessage(e));
+        }
+        const message = tooLarge ? "content_renderer.office_too_large" : "content_renderer.office_render_error";
+        options.onDocumentState?.({ status: "unavailable" });
         $scroll.remove();
-        $content.prepend($("<div>").addClass("admonition caution").text(t("content_renderer.office_render_error")));
+        $content.prepend($("<div>").addClass("admonition caution").text(t(message)));
     }
 
     appendNoteFileActions($content, entity);
@@ -1115,6 +1347,10 @@ export function addContentDisposer(element: HTMLElement, dispose: () => void) {
 const DISPOSER_ATTR = "data-content-disposer";
 
 const contentDisposers = new WeakMap<Element, (() => void)[]>();
+/** Shows rendered content at the place that a link names, by the rendered content. */
+const contentTargets = new WeakMap<
+    Element, (target: ContentLinkTarget, options?: ContentLandingOptions) => void
+>();
 
 /**
  * Mounts a collection — a book or a saved search — as the live {@link EmbeddedNoteList}, the same

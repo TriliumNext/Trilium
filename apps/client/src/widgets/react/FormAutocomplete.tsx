@@ -5,7 +5,7 @@ import type { ComponentChildren, RefObject } from "preact";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import FormTextBox from "./FormTextBox";
-import { useUniqueName } from "./hooks";
+import { useUniqueName } from "./hooks/dom";
 import Popup, { type PopupProps } from "./Popup";
 
 /** Marks the dropdown, which is portalled to the body: popups checking for outside clicks must ignore it. */
@@ -236,12 +236,7 @@ export function useForwardedKeys<T>(
 ) {
     const { isShown, activeIndex, itemId } = autocomplete;
     const activeId = isShown && activeIndex >= 0 ? itemId(activeIndex) : null;
-    const onActiveDescendantRef = useRef(onActiveDescendant);
-    onActiveDescendantRef.current = onActiveDescendant;
-    useEffect(() => onActiveDescendantRef.current?.(activeId), [ activeId ]);
-    // A layout cleanup runs during the unmount itself; a passive one runs after paint, by which
-    // time `createHostedList()` has already let go of the host it would report to.
-    useLayoutEffect(() => () => onActiveDescendantRef.current?.(null), []);
+    useActiveDescendant(activeId, onActiveDescendant);
 
     useLayoutEffect(() => {
         handleRef.current = {
@@ -257,6 +252,21 @@ export function useForwardedKeys<T>(
             handleRef.current = null;
         };
     });
+}
+
+/**
+ * Reports `activeId`, the id of the highlighted entry's element, to `onActiveDescendant` each time
+ * it changes, and `null` once the list is unmounted.
+ */
+export function useActiveDescendant(
+    activeId: string | null, onActiveDescendant?: (id: string | null) => void
+) {
+    const onActiveDescendantRef = useRef(onActiveDescendant);
+    onActiveDescendantRef.current = onActiveDescendant;
+    useEffect(() => onActiveDescendantRef.current?.(activeId), [ activeId ]);
+    // A layout cleanup runs during the unmount itself; a passive one runs after paint, by which
+    // time `createHostedList()` has already let go of the host it would report to.
+    useLayoutEffect(() => () => onActiveDescendantRef.current?.(null), []);
 }
 
 /**
@@ -336,6 +346,11 @@ interface UseAutocompleteOptions<T> {
      * that refreshes the list rather than choosing from it.
      */
     keepOpenOnPick?: boolean | ((item: T) => boolean);
+    /**
+     * Whether the list stays as it is once `item` is picked, with `item` still highlighted, for a
+     * host that then shows something else in the place of the list.
+     */
+    holdOnPick?(item: T): boolean;
     /** See {@link FormAutocompleteProps.autoActivate}. */
     autoActivate?: boolean;
     /**
@@ -363,7 +378,7 @@ interface UseAutocompleteOptions<T> {
  * field's events to the `handle*` functions. Entries are fetched while the list is open, debounced
  * or paced by `schedule`, and a response to a superseded query is discarded.
  */
-export function useAutocomplete<T>({ query, source, onPick, inputRef, disabled, openOnFocus, openOnEnter, keepOpenOnPick, autoActivate, fallbackIndex, isHeading, textOf = String, schedule }: UseAutocompleteOptions<T>) {
+export function useAutocomplete<T>({ query, source, onPick, inputRef, disabled, openOnFocus, openOnEnter, keepOpenOnPick, holdOnPick, autoActivate, fallbackIndex, isHeading, textOf = String, schedule }: UseAutocompleteOptions<T>) {
     const [ isOpen, setIsOpen ] = useState(false);
     // What an input method is composing is not yet what the user means, so nothing is looked up for
     // it until the composition ends.
@@ -482,7 +497,9 @@ export function useAutocomplete<T>({ query, source, onPick, inputRef, disabled, 
 
         pickedSinceRender.current = true;
         onPick(item);
-        if (typeof keepOpenOnPick === "function" ? keepOpenOnPick(item) : keepOpenOnPick) {
+        if (holdOnPick?.(item)) {
+            // The list stays as it is.
+        } else if (typeof keepOpenOnPick === "function" ? keepOpenOnPick(item) : keepOpenOnPick) {
             // Nothing is highlighted until the refreshed entries arrive, so Enter cannot take twice
             // what the list is about to stop offering.
             setActiveIndex(-1);

@@ -17,7 +17,10 @@ vi.mock("../../services/keyboard_actions", () => ({
     getActionSync: () => ({ effectiveShortcuts: [ "CommandOrControl+Q" ] })
 }));
 
-import FormList, { focusListItem, FormDropdownDivider, FormDropdownSubmenu, FormListCustomItem, FormListHeader, FormListItem, FormListToggleableItem, menuItemTooltipSide } from "./FormList";
+import FormList, {
+    FilterField, focusListItem, FormDropdownDivider, FormDropdownSubmenu, FormListCustomItem,
+    FormListHeader, FormListItem, FormListToggleableItem, menuItemTooltipSide
+} from "./FormList";
 
 describe("FormDropdownDivider", () => {
     it("draws a separator among the rows, whose click closes no menu", () => {
@@ -511,6 +514,64 @@ describe("menuItemTooltipSide", () => {
             }
         } finally {
             window.innerWidth = innerWidth;
+        }
+    });
+});
+
+describe("FilterField", () => {
+    it("trades the search icon for a clear button that empties and refocuses the input", () => {
+        const host = document.createElement("div");
+        document.body.append(host);
+        const onChange = vi.fn();
+        const input = () => host.querySelector<HTMLInputElement>("input.tn-menu-filter-input");
+        const box = () => host.querySelector(".tn-menu-filter-box.tn-input-field");
+        const clear = () => box()?.querySelector<HTMLElement>(".tn-menu-filter-clear") ?? null;
+
+        try {
+            render((
+                <FilterField value="" onChange={onChange} className="extra" data-level={2} />
+            ), host);
+            expect(box()?.classList.contains("extra")).toBe(true);
+            expect(input()?.dataset.level).toBe("2");
+            expect(box()?.querySelector(".bx-search")).not.toBeNull();
+            expect(clear()).toBeNull();
+
+            const field = input();
+            if (!field) throw new Error("expected the input");
+            field.value = "budget";
+            field.dispatchEvent(new Event("input", { bubbles: true }));
+            expect(onChange).toHaveBeenLastCalledWith("budget");
+
+            render(<FilterField value="budget" onChange={onChange} />, host);
+            expect(box()?.querySelector(".bx-search")).toBeNull();
+            const button = clear();
+            if (!button) throw new Error("expected the clear button");
+            field.blur();
+            button.click();
+            expect(onChange).toHaveBeenLastCalledWith("");
+            expect(document.activeElement).toBe(input());
+        } finally {
+            render(null, host);
+            host.remove();
+        }
+    });
+
+    it("keeps focus in the input on a press anywhere in the box", () => {
+        const host = document.createElement("div");
+        document.body.append(host);
+
+        try {
+            render(<FilterField value="" onChange={() => {}} />, host);
+            const icon = host.querySelector(".tn-menu-filter-box .bx-search");
+            if (!icon) throw new Error("expected the search icon");
+            const press = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+            icon.dispatchEvent(press);
+
+            expect(press.defaultPrevented).toBe(true);
+            expect(document.activeElement).toBe(host.querySelector("input.tn-menu-filter-input"));
+        } finally {
+            render(null, host);
+            host.remove();
         }
     });
 });

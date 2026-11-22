@@ -1,9 +1,11 @@
 import type { FileId } from "@excalidraw/excalidraw/element/types";
 import type { BinaryFileData } from "@excalidraw/excalidraw/types";
 import {
-    CANVAS_ATTACHMENT_MIME, CANVAS_ATTACHMENT_TITLE, EMPTY_CANVAS_CONTENT, imageExtensionForMime,
-    isAcceptedImageMime
-} from "@triliumnext/commons";
+    imageExtensionForMime, isAcceptedImageMime
+} from "@triliumnext/commons/src/lib/image_mimes.js";
+import {
+    CANVAS_ATTACHMENT_MIME, CANVAS_ATTACHMENT_TITLE, EMPTY_CANVAS_CONTENT
+} from "@triliumnext/commons/src/lib/notes.js";
 
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";

@@ -29,8 +29,8 @@ vi.mock("./context_menu", async (importOriginal) => ({
 
 // The treemap container never gets a real layout under happy-dom; the rest of the hooks are the
 // real ones.
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...await importOriginal<typeof import("../../react/hooks")>(),
+vi.mock("../../react/hooks/dom", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/dom")>()),
     useElementSize: () => ({ width: 400, height: 300 })
 }));
 

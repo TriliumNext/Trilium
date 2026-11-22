@@ -1,7 +1,8 @@
+import type { LinkPreviewData } from "@triliumnext/commons";
 import {
-    getLinkPreviewPlayer, getVideoAspectRatio, LINK_PREVIEW_DATA_ATTRIBUTES, type LinkPreviewData,
-    readLinkPreviewData, readMediaEmbedBox, VIDEO_ASPECT_RATIO_PROPERTY
-} from "@triliumnext/commons";
+    getLinkPreviewPlayer, getVideoAspectRatio, LINK_PREVIEW_DATA_ATTRIBUTES, readLinkPreviewData,
+    readMediaEmbedBox, VIDEO_ASPECT_RATIO_PROPERTY
+} from "@triliumnext/commons/src/lib/link_embed_markup.js";
 import {
     type Batch,
     type DowncastAttributeEvent,
@@ -15,8 +16,8 @@ import {
     type UpcastElementEvent
 } from "ckeditor5";
 
+import { getPositionAttributes, getPositionOfView } from "../positioned_widgets.js";
 import { SIZE_ATTRIBUTES } from "../resizable_widgets/resizable_widgets.js";
-import { getPositionAttributes, getPositionOfView } from "./content_embed.js";
 
 /** The height of a new video, in em, as high as a Resizable box starts. */
 const VIDEO_DEFAULT_HEIGHT = 20;

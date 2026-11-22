@@ -1,4 +1,4 @@
-import { ATTACHMENT_ROLES } from "@triliumnext/commons";
+import { ATTACHMENT_ROLES } from "@triliumnext/commons/src/lib/attachment_roles.js";
 import { describe, expect, it, vi } from "vitest";
 
 // Nothing initializes i18next for the tests, so the wording is stood in for by the key — which is
@@ -10,7 +10,7 @@ const { attachmentRoleLabel } = await import("./attachment_role_names.js");
 describe("attachmentRoleLabel", () => {
     it("names the app's own doing, which nothing else in the card does", () => {
         // "Site icon" is the whole reason that row is not a picture the reader forgot placing.
-        for (const role of [ "favicon", "coverImage", "viewConfig", "canvasLibraryItem", "importSource", "transcript" ]) {
+        for (const role of [ "favicon", "coverImage", "viewConfig", "canvasLibraryItem", "importSource", "transcript", "tocCache" ]) {
             expect(attachmentRoleLabel(role), role).toBe(`attachment_roles.${role}`);
         }
     });

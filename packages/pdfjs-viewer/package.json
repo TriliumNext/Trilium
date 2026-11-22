@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/pdfjs-viewer",
-  "version": "0.107.0",
+  "version": "0.108.0-rc.1",
   "private": true,
   "scripts": {
     "build": "tsx scripts/build.ts",
@@ -10,6 +10,7 @@
     "e2e": "playwright test"
   },
   "dependencies": {
+    "@noble/hashes": "2.4.0",
     "@triliumnext/commons": "workspace:*"
   },
   "devDependencies": {

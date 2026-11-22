@@ -15,8 +15,9 @@ const TRAFFIC_LIGHT_HEIGHT = 14;
 
 /**
  * Pushes the theme-derived part of the native window configuration to Electron: the preferred
- * light/dark mode (which drives the tint of background effects such as Mica on Windows), the
- * window background material and the native title bar colors and button position.
+ * light/dark mode (which drives the tint of background effects such as Mica on Windows) and the
+ * native title bar colors and button position. The main process picks the background material
+ * itself, from the `theme` and `layoutOrientation` options.
  *
  * These all come from the active theme's CSS variables, which Electron cannot observe itself, so
  * this runs at startup, after every live theme change (see `applyTheme`), when the OS color scheme
@@ -29,15 +30,12 @@ export function syncNativeWindowWithTheme() {
         return;
     }
 
-    const style = window.getComputedStyle(document.body);
-
     applyDarkOrLightMode(win);
-    applyTransparencyEffects(win, style);
 
     // The title bar overlay only exists on a window created without the native title bar; setting it
     // otherwise throws. `hasNativeTitleBar` is fixed at creation, unlike the option it comes from.
     if (!window.glob.hasNativeTitleBar) {
-        applyTitleBarButtons(win, style);
+        applyTitleBarButtons(win, window.getComputedStyle(document.body));
     }
 }
 
@@ -54,26 +52,6 @@ function applyDarkOrLightMode(win: ElectronWindowApi) {
     }
 
     win.setNativeThemeSource(themeSource);
-}
-
-/** Window effects (Mica on Windows and Vibrancy on macOS), driven by the theme's `--background-material`. */
-function applyTransparencyEffects(win: ElectronWindowApi, style: CSSStyleDeclaration) {
-    const material = style.getPropertyValue("--background-material").trim();
-    if (window.glob.platform === "win32") {
-        const bgMaterialOptions = ["auto", "none", "mica", "acrylic", "tabbed"] as const;
-        const foundBgMaterialOption = bgMaterialOptions.find((bgMaterialOption) => material === bgMaterialOption);
-        if (foundBgMaterialOption) {
-            win.setBackgroundMaterial(foundBgMaterialOption);
-        }
-    }
-
-    if (window.glob.platform === "darwin") {
-        const bgMaterialOptions = [ "popover", "tooltip", "titlebar", "selection", "menu", "sidebar", "header", "sheet", "window", "hud", "fullscreen-ui", "content", "under-window", "under-page" ] as const;
-        const foundBgMaterialOption = bgMaterialOptions.find((bgMaterialOption) => material === bgMaterialOption);
-        if (foundBgMaterialOption) {
-            win.setVibrancy(foundBgMaterialOption);
-        }
-    }
 }
 
 function applyTitleBarButtons(win: ElectronWindowApi, style: CSSStyleDeclaration) {

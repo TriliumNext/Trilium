@@ -3,7 +3,7 @@ import type { default as MindElixirInstance } from "mind-elixir";
 import { sanitizeNoteContentHtml } from "../../../services/sanitize_content";
 import { type ExportedIcon, renderExportedIcons } from "./icons";
 import { loadImageData } from "./images";
-import { exportMindMapSvg } from "./svg_exporter";
+import { createSvgText, exportMindMapSvg } from "./svg_exporter";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
@@ -93,8 +93,9 @@ const SIZE_SLACK_PX = 2;
  *   positioned `div.svg-label` elements inside `mind.nodes` (their offset parent is the
  *   `position: relative` `.me-nodes` element), so their `offsetLeft`/`offsetTop` are in
  *   the same coordinate space as the exported SVG layers. Each label is appended to the
- *   exporter's inner `<svg>` (the one holding the map layers) as a `<foreignObject>`
- *   replicating the label's box and text style.
+ *   exporter's inner `<svg>` (the one holding the map layers): a plain-text label as a box
+ *   and SVG text, a label holding markup as a `<foreignObject>` replicating its box and
+ *   text style.
  * - Adds slack to every `<foreignObject>`'s exact-fit size so text is not clipped when
  *   the SVG is rasterized with slightly different font metrics (see the slack constants).
  * - Backs translucent node boxes with the canvas color (see {@link backTranslucentNodeBoxes}).
@@ -126,7 +127,8 @@ export function postProcessExportedSvg(mind: MindElixirInstance, svgText: string
 
     const labels = mind.nodes.querySelectorAll<HTMLElement>(".svg-label");
     for (const label of Array.from(labels)) {
-        contentSvg.appendChild(doc.importNode(buildLabelForeignObject(label), true));
+        const exported = label.childElementCount ? buildLabelForeignObject(label) : buildLabelText(label);
+        contentSvg.appendChild(doc.importNode(exported, true));
     }
 
     for (const foreignObject of Array.from(doc.querySelectorAll("foreignObject"))) {
@@ -292,6 +294,34 @@ function addSizeSlack(element: Element, attribute: "width" | "height") {
         return;
     }
     element.setAttribute(attribute, String(Math.ceil(value * SIZE_SLACK_RATIO + SIZE_SLACK_PX)));
+}
+
+/**
+ * Builds the box and the SVG text of a `.svg-label` holding plain text, which image viewers draw
+ * where they skip a `<foreignObject>` (see `createSvgText()`).
+ */
+function buildLabelText(label: HTMLElement): SVGElement {
+    const style = getComputedStyle(label);
+    const offset = { offsetLeft: label.offsetLeft, offsetTop: label.offsetTop };
+
+    const group = document.createElementNS(SVG_NS, "g");
+    const box = document.createElementNS(SVG_NS, "rect");
+    const attributes: Record<string, string> = {
+        x: String(offset.offsetLeft),
+        y: String(offset.offsetTop),
+        width: String(Number.parseFloat(style.width) || label.offsetWidth),
+        height: String(Number.parseFloat(style.height) || label.offsetHeight),
+        rx: style.borderRadius,
+        fill: style.backgroundColor
+    };
+    for (const [ name, value ] of Object.entries(attributes)) {
+        if (value) {
+            box.setAttribute(name, value);
+        }
+    }
+    group.appendChild(box);
+    group.appendChild(createSvgText(label, style, offset));
+    return group;
 }
 
 /**

@@ -1,7 +1,10 @@
-import { BootstrapDefinition } from "@triliumnext/commons";
+import { BootstrapDefinition, buildFontCss, type OptionMap } from "@triliumnext/commons";
 import { getSql } from "./sql";
 import protected_session from "./protected_session";
-import { generateCss, generateIconRegistry, getIconPacks, MIME_TO_EXTENSION_MAPPINGS } from "./icon_packs";
+import {
+    generateIconPackFontCss, generateIconPackGlyphCss, generateIconRegistry, getIconPacks, MIME_TO_EXTENSION_MAPPINGS,
+    type ProcessedIconPack
+} from "./icon_packs";
 import { generateTaskStateCss } from "./task_states";
 import optionService from "./options";
 import { getCurrentLocale } from "./i18n";
@@ -11,6 +14,7 @@ import { getPlatform } from "./platform";
 import { isSetupAuthRequired, isSetupSecondFactorRequired } from "./setup_auth";
 import { getSetupTargetScreen, hasExistingData, isSetupRequested } from "./setup_mode";
 import sqlInit from "./sql_init";
+import { md5 } from "./utils/index";
 
 export default function getSharedBootstrapItems(assetPath: string, dbInitialized: boolean) {
     const sql = getSql();
@@ -48,6 +52,7 @@ export default function getSharedBootstrapItems(assetPath: string, dbInitialized
             themeCssUrl: false as const,
             themeUseNextAsBase: "next" as const,
             appCssNoteIds: [],
+            preloadFonts: getPreloadFonts(assetPath, "next", undefined, null),
         };
     }
 
@@ -70,23 +75,75 @@ export default function getSharedBootstrapItems(assetPath: string, dbInitialized
         themeCssUrl: getThemeCssUrl(theme, commonItems.assetPath, themeNote) as string | false,
         themeUseNextAsBase: themeNote?.getAttributeValue("label", "appThemeBase") as "next" | "next-light" | "next-dark",
         appCssNoteIds: getAppCssNoteIds(),
+        preloadFonts: getPreloadFonts(assetPath, theme, themeUseNextAsBase, options),
+        fontCss: buildFontCss(options),
     }
 }
 
-export function getIconConfig(assetPath: string): Pick<BootstrapDefinition, "iconRegistry" | "iconPackCss"> {
+export function getIconConfig(assetPath: string): Pick<BootstrapDefinition, "iconPacks" | "iconPackCss" | "iconPackGlyphCssUrl"> {
     const iconPacks = getIconPacks();
 
     return {
-        iconRegistry: generateIconRegistry(iconPacks),
+        iconPacks: generateIconRegistry(iconPacks).sources.map(({ prefix, name, icon }) => ({ prefix, name, icon })),
         iconPackCss: [
-            ...iconPacks.map(p => generateCss(p, p.builtin
-                ? `${assetPath}/fonts/${p.fontAttachmentId}.${MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
-                : `api/attachments/download/${p.fontAttachmentId}`)),
+            ...iconPacks.map(p => generateIconPackFontCss(p, getIconPackFontUrl(p, assetPath))),
             generateTaskStateCss(iconPacks)
         ]
             .filter(Boolean)
             .join("\n\n"),
+        // Named after its content, so the browser keeps it until an icon pack changes.
+        iconPackGlyphCssUrl: `api/icon-packs.css?v=${md5(getIconPackGlyphCss(iconPacks))}`
     };
+}
+
+/** The glyph of every icon of the icon packs, which `GET /api/icon-packs.css` serves. */
+export function getIconPackGlyphCss(iconPacks = getIconPacks()) {
+    return iconPacks.map((iconPack) => generateIconPackGlyphCss(iconPack)).filter(Boolean).join("\n");
+}
+
+function getIconPackFontUrl(iconPack: ProcessedIconPack, assetPath: string) {
+    return iconPack.builtin
+        ? `${assetPath}/fonts/${iconPack.fontAttachmentId}.${MIME_TO_EXTENSION_MAPPINGS[iconPack.fontMime]}`
+        : `api/attachments/download/${iconPack.fontAttachmentId}`;
+}
+
+/**
+ * The fonts the first render draws text with, so the client can request them before its
+ * scripts lay out any text. Boxicons draws the interface icons under every theme. The Next
+ * themes draw `--main-font-family` in Inter unless `/api/fonts` overrides it, and
+ * `--tree-font-family` and `--detail-font-family` follow that variable.
+ */
+function getPreloadFonts(assetPath: string, theme: string, themeBase: string | undefined, options: OptionMap | null) {
+    const fonts: string[] = [];
+
+    const boxicons = getIconPacks().find((iconPack) => iconPack.builtin && iconPack.fontAttachmentId === "boxicons");
+    /* v8 ignore else -- `getIconPacks()` always lists the built-in Boxicons pack */
+    if (boxicons) {
+        fonts.push(getIconPackFontUrl(boxicons, assetPath));
+    }
+
+    const isNextBased = isNextTheme(theme) || isNextTheme(themeBase);
+    const mainFontOverridden = options?.overrideThemeFonts === "true" && options.mainFontFamily !== "theme";
+    if (isNextBased && !mainFontOverridden) {
+        fonts.push(`${assetPath}/fonts/Inter/Inter-VariableFont_opsz,wght.woff2`);
+    }
+
+    return fonts;
+}
+
+const NEXT_THEMES = [ "next", "next-light", "next-dark" ];
+
+function isNextTheme(theme: string | undefined) {
+    return !!theme && NEXT_THEMES.includes(theme);
+}
+
+/**
+ * Whether the stylesheets of `theme` include the Next theme's, either because it is one of the Next
+ * themes or because it is a custom theme whose `appThemeBase` names one.
+ */
+export function isNextBasedTheme(theme: string) {
+    const themeNote = attributes.getNoteWithLabel("appTheme", theme);
+    return isNextTheme(theme) || isNextTheme(themeNote?.getAttributeValue("label", "appThemeBase") ?? undefined);
 }
 
 function getAppCssNoteIds() {

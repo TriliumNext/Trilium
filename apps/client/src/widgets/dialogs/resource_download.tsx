@@ -15,7 +15,7 @@ import { subscribeToMessages, unsubscribeToMessage } from "../../services/ws";
 import { ExtendedAdmonition } from "../react/Admonition";
 import Button from "../react/Button";
 import { Card, CardSection } from "../react/Card";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import Icon from "../react/Icon";
 import Modal from "../react/Modal";
 import ProgressBar from "../react/ProgressBar";

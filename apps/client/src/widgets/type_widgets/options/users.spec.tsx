@@ -110,6 +110,7 @@ const menuItems = () => [ ...[ ...document.querySelectorAll(".tn-popup:not([data
 
 async function openMenu(row: HTMLElement | undefined) {
     await act(async () => row?.querySelector<HTMLButtonElement>("button.user-row-menu-button")?.click());
+    await vi.waitFor(() => expect(menuItems()).not.toHaveLength(0));
 }
 
 /** Opens the row's menu and runs its `index`th action: edit, new setup link, delete. */

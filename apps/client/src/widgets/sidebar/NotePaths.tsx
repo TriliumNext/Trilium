@@ -1,13 +1,14 @@
 import "./NotePaths.css";
 
 import clsx from "clsx";
-import { useContext, useEffect, useMemo, useState } from "preact/hooks";
+import { useContext, useMemo } from "preact/hooks";
 
 import FNote, { NotePathRecord } from "../../entities/fnote";
 import { t } from "../../services/i18n";
 import { NOTE_PATH_TITLE_SEPARATOR } from "../../services/tree";
 import ActionButton from "../react/ActionButton";
-import { useActiveNoteContext, useTriliumEvent } from "../react/hooks";
+import { useSortedNotePaths } from "../react/hooks/note";
+import { useActiveNoteContext } from "../react/hooks/tree";
 import LinkButton from "../react/LinkButton";
 import NoteLink, { NewNoteLink } from "../react/NoteLink";
 import { joinElements, ParentComponent } from "../react/react_utils";
@@ -78,29 +79,6 @@ export function NotePathsWidget({ sortedNotePaths, currentNotePath, cloneButton 
             </>
         </div>
     );
-}
-
-export function useSortedNotePaths(note: FNote | null | undefined, hoistedNoteId?: string) {
-    const [ sortedNotePaths, setSortedNotePaths ] = useState<NotePathRecord[]>();
-
-    function refresh() {
-        if (!note) return;
-        setSortedNotePaths(note
-            .getSortedNotePathRecords(hoistedNoteId)
-            .filter((notePath) => !notePath.isHidden));
-    }
-
-    useEffect(refresh, [ note, hoistedNoteId ]);
-    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
-        const noteId = note?.noteId;
-        if (!noteId) return;
-        if (loadResults.getBranchRows().find((branch) => branch.noteId === noteId)
-            || loadResults.isNoteReloaded(noteId)) {
-            refresh();
-        }
-    });
-
-    return sortedNotePaths;
 }
 
 function NotePath({ currentNotePath, notePathRecord }: { currentNotePath?: string | null, notePathRecord?: NotePathRecord }) {

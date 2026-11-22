@@ -17,7 +17,7 @@ import FormGroup from "../../react/FormGroup";
 import FormSelect from "../../react/FormSelect";
 import FormText from "../../react/FormText";
 import FormTextBox from "../../react/FormTextBox";
-import { useTriliumOption } from "../../react/hooks";
+import { useTriliumOption } from "../../react/hooks/options";
 import Modal from "../../react/Modal";
 import RawHtml from "../../react/RawHtml";
 import MfaStatusBadge, { MfaStatusTone } from "./components/MfaStatusBadge";

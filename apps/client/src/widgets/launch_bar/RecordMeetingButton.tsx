@@ -1,20 +1,22 @@
 import "./RecordMeetingButton.css";
 
-import {
-    dayjs, getTranscriptionResources, MEETING_RECORDING_LABEL, type TranscriptionState,
-    type TranscriptionStatus, type TranscriptSource, type TranscriptSourceIssue
+import type {
+    TranscriptionState, TranscriptionStatus, TranscriptSource, TranscriptSourceIssue
 } from "@triliumnext/commons";
+import { MEETING_RECORDING_LABEL } from "@triliumnext/commons/src/lib/notes.js";
+import { getTranscriptionResources } from "@triliumnext/commons/src/lib/transcript.js";
 import clsx from "clsx";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import dateNoteService from "../../services/date_notes";
+import { dayjs } from "../../services/dayjs";
 import { requireResources } from "../../services/dialog";
 import { t } from "../../services/i18n";
 import noteCreateService from "../../services/note_create";
 import options from "../../services/options";
 import toast from "../../services/toast";
 import { Badge } from "../react/Badge";
-import { useTriliumOptionBool } from "../react/hooks";
+import { useTriliumOptionBool } from "../react/hooks/options";
 import Icon from "../react/Icon";
 import Popover from "../react/Popover";
 import {

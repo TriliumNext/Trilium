@@ -1,5 +1,7 @@
 import type { CKTextEditor, EditorConfig, ModelElement } from "@triliumnext/ckeditor5";
-import { CANVAS_ATTACHMENT_MIME, MERMAID_ATTACHMENT_MIME } from "@triliumnext/commons";
+import {
+    CANVAS_ATTACHMENT_MIME, MERMAID_ATTACHMENT_MIME
+} from "@triliumnext/commons/src/lib/notes.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CommandNames } from "../components/app_context.js";
@@ -49,13 +51,21 @@ vi.mock("../menus/text_editor_context_menu.js", async (importOriginal) => ({
     ...await importOriginal<typeof import("../menus/text_editor_context_menu.js")>(),
     buildSortSelectionMenuItem, buildAiAssistantMenuItem, getTextEditorContaining
 }));
-vi.mock("./clipboard_ext.js", () => ({ copyHtml, copyHtmlWithToast, copyTextWithToast }));
+vi.mock("./clipboard_ext.js", async (importOriginal) => ({
+    toReferenceLinkHtml:
+        (await importOriginal<typeof import("./clipboard_ext.js")>()).toReferenceLinkHtml,
+    copyHtml, copyHtmlWithToast, copyTextWithToast
+}));
 vi.mock("./froca.js", () => ({ default: { getNote, attachments } }));
 vi.mock("./content_renderer.js", () => ({
     getEmbedBoxSize: () => "medium"
 }));
 
-vi.mock("./share_link.js", () => ({ getNoteShareLink }));
+vi.mock("./share_link.js", async (importOriginal) => ({
+    getSharedPageLink:
+        (await importOriginal<typeof import("./share_link.js")>()).getSharedPageLink,
+    getNoteShareLink
+}));
 
 const scrollBy = vi.fn();
 
@@ -382,6 +392,7 @@ describe("openBlockHandleMenu", () => {
             buildBlock("aside"),
             buildBlock("details"),
             buildBlock("multicolumnLayout"),
+            buildBlock("asideBlock"),
             buildBlock("footnoteContent"),
             buildBlock("contentEmbed", { url: "https://example.com/a.mp4", embedType: "video" }),
             buildBlock("contentEmbed", { url: "https://example.com/a.mp3", embedType: "audio" }),
@@ -406,9 +417,9 @@ describe("openBlockHandleMenu", () => {
 
         expect(titles).toEqual([
             "paragraph", "heading:3", "list_item", "list_item", "todo_item", "table",
-            "admonition", "collapsible", "columns", "footnote", "video", "audio", "mermaid",
-            "code_block", "included_note", "excerpt", "drawing", "mermaid", "attachment",
-            "attachment", "attachment", "block"
+            "admonition", "collapsible", "columns", "aside", "footnote", "video", "audio",
+            "mermaid", "code_block", "included_note", "excerpt", "drawing", "mermaid",
+            "attachment", "attachment", "attachment", "block"
         ].map((type) => `block_handle_menu.types.${type}`));
     });
 

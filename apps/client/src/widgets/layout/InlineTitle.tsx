@@ -1,7 +1,7 @@
 import "./InlineTitle.css";
 
 import { NoteType } from "@triliumnext/commons";
-import { Tooltip } from "bootstrap";
+import type { Tooltip } from "bootstrap";
 import clsx from "clsx";
 import { ComponentChild } from "preact";
 import { useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
@@ -13,7 +13,10 @@ import { ViewScope } from "../../services/link";
 import { formatDateTime } from "../../utils/formatters";
 import NoteIcon from "../note_icon";
 import NoteTitleWidget from "../note_title";
-import { useNoteContext, useNoteProperty, useStaticTooltip, useTriliumOption } from "../react/hooks";
+import { useNoteProperty } from "../react/hooks/note";
+import { useTriliumOption } from "../react/hooks/options";
+import { useNoteContext } from "../react/hooks/note_context";
+import { useStaticTooltip } from "../react/hooks/tooltip";
 import { joinElements } from "../react/react_utils";
 import { useNoteMetadata } from "./note_metadata";
 
@@ -69,7 +72,7 @@ export default function InlineTitle() {
             <div class={clsx("inline-title-row", titleHidden && "hidden")}>
                 <NoteIcon />
                 <div class="note-title-caption">
-                    <NoteTitleWidget />
+                    <NoteTitleWidget placement="inline" />
                     <NoteTitleDetails />
                 </div>
             </div>

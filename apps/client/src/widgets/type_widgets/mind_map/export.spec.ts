@@ -59,19 +59,21 @@ function buildMind({ labels = [] as string[], canvasColor = "#252526" } = {}) {
 }
 
 describe("postProcessExportedSvg", () => {
-    it("appends a foreignObject per label to the inner svg, carrying the label content", () => {
+    it("writes plain labels as SVG text and HTML labels as a foreignObject, inside the inner svg", () => {
+        // Image viewers (librsvg) skip foreignObject, so only a label that needs HTML uses one.
         const mind = buildMind({ labels: [ "first label", "second <b>label</b>" ] });
 
         const result = postProcessExportedSvg(mind, buildExportedSvg());
         const doc = new DOMParser().parseFromString(result, "image/svg+xml");
         const innerSvg = doc.documentElement.querySelector(":scope > svg");
         const foreignObjects = innerSvg?.querySelectorAll("foreignObject") ?? [];
+        const texts = Array.from(innerSvg?.querySelectorAll("text") ?? []).map((text) => text.textContent);
 
-        expect(foreignObjects).toHaveLength(2);
-        expect(foreignObjects[0].textContent).toBe("first label");
-        expect(foreignObjects[1].querySelector("b")?.textContent).toBe("label");
+        expect(texts).toEqual([ "first label" ]);
+        expect(foreignObjects).toHaveLength(1);
+        expect(foreignObjects[0].querySelector("b")?.textContent).toBe("label");
         // The outer svg must only gain content inside the inner svg.
-        expect(doc.documentElement.querySelectorAll(":scope > foreignObject")).toHaveLength(0);
+        expect(doc.documentElement.querySelectorAll(":scope > foreignObject, :scope > text")).toHaveLength(0);
     });
 
     it("sanitizes label HTML before embedding it", () => {
@@ -365,12 +367,55 @@ describe("renderMindMapPreviewSvg (real mind-elixir)", () => {
             expect(result).toContain(text);
         }
 
-        // Both labels must land inside the inner (map layers) svg as foreignObjects.
+        // Every text lands inside the inner (map layers) svg as SVG text, which image viewers draw.
         const innerSvg = doc.documentElement.querySelector(":scope > svg");
-        const labelDivs = Array.from(innerSvg?.querySelectorAll("foreignObject > div") ?? [])
-            .map((div) => div.textContent);
-        expect(labelDivs).toContain("my arrow label");
-        expect(labelDivs).toContain("my summary label");
+        const texts = Array.from(innerSvg?.querySelectorAll("text") ?? []).map((text) => text.textContent);
+        expect(texts).toEqual(expect.arrayContaining(expectedTexts));
+        expect(doc.querySelectorAll("foreignObject")).toHaveLength(0);
+    });
+
+    it("writes each line of a wrapped topic where the map drew it", async () => {
+        // jsdom has no layout, so the line boxes the browser reports are stubbed: "alpha beta"
+        // wraps after "alpha ", each character 8px wide and each line 16px tall, 20px apart.
+        const charRect = (range: Range) => {
+            const index = range.startOffset;
+            const line = index < 6 ? 0 : 1;
+            const left = (line === 0 ? index : index - 6) * 8;
+            return new DOMRect(left, line * 20, 8, 16);
+        };
+        const rangePrototype = Range.prototype as Partial<Range>;
+        rangePrototype.getBoundingClientRect = function (this: Range) { return charRect(this); };
+        rangePrototype.getClientRects = function (this: Range) {
+            const rects = this.toString().length > 1
+                ? [ new DOMRect(0, 0, 48, 16), new DOMRect(0, 20, 32, 16) ]
+                : [ charRect(this) ];
+            return Object.assign(rects, { item: (index: number) => rects[index] }) as unknown as DOMRectList;
+        };
+        const elementRect = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+            .mockReturnValue(new DOMRect(0, 0, 80, 40));
+
+        try {
+            const mind = await initRealMindMap({ nodeData: { id: "root", topic: "alpha beta", children: [] } });
+            const doc = new DOMParser().parseFromString(exportMindMapSvg(mind), "image/svg+xml");
+
+            const lines = Array.from(doc.querySelectorAll("text"))
+                .map((text) => [ text.textContent, text.getAttribute("x"), text.getAttribute("y") ]);
+            expect(lines).toEqual([ [ "alpha", "0", "8" ], [ "beta", "0", "28" ] ]);
+            expect(doc.querySelectorAll("foreignObject")).toHaveLength(0);
+        } finally {
+            elementRect.mockRestore();
+            delete rangePrototype.getBoundingClientRect;
+            delete rangePrototype.getClientRects;
+        }
+    });
+
+    it("keeps a foreignObject for a topic written in HTML", async () => {
+        const mind = await initRealMindMap({
+            nodeData: { id: "root", topic: "", dangerouslySetInnerHTML: "<b>bold</b> topic", children: [] }
+        });
+        const doc = new DOMParser().parseFromString(exportMindMapSvg(mind), "image/svg+xml");
+
+        expect(doc.querySelector("foreignObject b")?.textContent).toBe("bold");
     });
 
     it("XML-special characters in topics and labels survive export as valid SVG", async () => {
@@ -403,6 +448,8 @@ describe("renderMindMapPreviewSvg (real mind-elixir)", () => {
         const labelDivs = Array.from(doc.querySelectorAll("foreignObject > div"))
             .map((div) => div.textContent);
         expect(labelDivs).toContain(`label & "quoted"`);
+        expect(Array.from(doc.querySelectorAll("text")).map((text) => text.textContent))
+            .toContain("Both l & r <tags>");
     });
 
     it("a map without arrows or summaries exports without label injection", async () => {

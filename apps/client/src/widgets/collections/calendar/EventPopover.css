@@ -65,7 +65,7 @@
 /*
  * The same event as a sheet (see EventSheet). What heads it, the surface and the way out are the
  * dialog's, and its head is dressed as the quick editor's (see the shared rules in
- * PopupEditor.css); what is left here is how tall it stands and the body inside it.
+ * TitleRow.css); what is left here is how tall it stands and the body inside it.
  */
 .modal.calendar-event-sheet .modal-dialog {
     /* As tall as a dialog may stand, the quick editor's own bargain: a note's editor wants the

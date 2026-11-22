@@ -4,7 +4,7 @@ import {
     buildCodePreviewCss, loadPreviewLanguage, loadPreviewTheme, type PreviewThemeSlot,
     renderCodePreview
 } from "@triliumnext/codemirror/src/code_preview.js";
-import { type OptionNames, shouldSyntaxHighlight } from "@triliumnext/commons";
+import type { OptionNames } from "@triliumnext/commons";
 
 import type FNote from "../entities/fnote.js";
 import { CODE_THEME_DEFAULT_PREFIX } from "../widgets/type_widgets/constants.js";
@@ -49,7 +49,7 @@ export async function renderCodeNotePreview(
 ) {
     const [ themes, language ] = await Promise.all([
         Promise.all(getThemeChoices().map(loadSlot)),
-        shouldSyntaxHighlight(content) ? loadPreviewLanguage(mime) : null
+        loadPreviewLanguage(mime)
     ]);
     const isWrapped = lines.isWrapped ?? isLineWrapped(note);
     const hasLineNumbers = lines.hasLineNumbers ?? options.is("codeLineNumbersEnabled");

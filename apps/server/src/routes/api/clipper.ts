@@ -164,7 +164,7 @@ async function createFile(req: Request) {
         title,
         content: Buffer.from(dataUrl.substring(header[0].length), "base64"),
         type: "file",
-        mime: EXECUTABLE_MIMES.has(header[1].toLowerCase()) ? "application/octet-stream" : header[1]
+        mime: isExecutableMime(header[1]) ? "application/octet-stream" : header[1]
     });
 
     note.setLabel("clipType", "file");
@@ -222,9 +222,16 @@ async function storeTabFavicon(note: BNote, pageUrl: string, dataUrl: unknown) {
 }
 
 /**
- * MIME types Trilium runs as a script or renders as a page (`BNote.isJavaScript()`,
- * `BNote.isHtml()`, `BNote.isJsx()`). A clipped file with one of them is stored as opaque bytes.
+ * Whether Trilium runs a file with this MIME type as a script or renders it as a page
+ * (`BNote.isJavaScript()`, `BNote.isHtml()`, `BNote.isJsx()`). `BNote.isJavaScript()` accepts
+ * any type that starts with `application/javascript`, so the prefix is matched too.
  */
+function isExecutableMime(mime: string) {
+    const normalized = mime.toLowerCase();
+    return EXECUTABLE_MIMES.has(normalized) || normalized.startsWith("application/javascript");
+}
+
+/** MIME types a clipped file is stored with as opaque bytes, matched whole. */
 const EXECUTABLE_MIMES = new Set([
     "application/javascript",
     "application/x-javascript",
@@ -241,10 +248,11 @@ const EXECUTABLE_MIMES = new Set([
 const CLIPPER_LABELS = new Set([ "pageDescription", "pageAuthor", "publishedDate", "modifiedDate" ]);
 
 /** Sets each label the extension sends, replacing the value a previous clipping set. */
-function setLabels(note: BNote, labels: Record<string, string> | undefined) {
+function setLabels(note: BNote, labels: Record<string, unknown> | undefined) {
     for (const labelName in labels) {
-        if (CLIPPER_LABELS.has(labelName)) {
-            note.setLabel(labelName, sanitizeLabelValue(labels[labelName]));
+        const value = labels[labelName];
+        if (CLIPPER_LABELS.has(labelName) && typeof value === "string") {
+            note.setLabel(labelName, sanitizeLabelValue(value));
         }
     }
 }

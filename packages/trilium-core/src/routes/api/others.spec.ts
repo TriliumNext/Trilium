@@ -1,5 +1,8 @@
+import type { IconRegistry } from "@triliumnext/commons";
 import { beforeAll, describe, expect, it } from "vitest";
 
+import { getIconConfig } from "../../services/bootstrap_utils";
+import { md5 } from "../../services/utils/index";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
 
@@ -53,6 +56,30 @@ describe("Others API (core)", () => {
             expect(res.status).toBe(200);
             // The blank value is skipped, so no empty-string key is added.
             expect(Object.keys(res.body.iconClassToCountMap)).not.toContain("");
+        });
+    });
+
+    describe("icon registry", () => {
+        it("lists every icon of each pack with its search terms", async () => {
+            const res = await api.get<IconRegistry>("/api/other/icon-registry");
+            expect(res.status).toBe(200);
+
+            const boxicons = res.body.sources.find((source) => source.prefix === "bx");
+            expect(boxicons).toMatchObject({ name: expect.any(String), icon: expect.any(String) });
+            expect(boxicons?.icons.length).toBeGreaterThan(100);
+            expect(boxicons?.icons[0]).toEqual({ id: expect.stringMatching(/^bx /), terms: expect.any(Array) });
+        });
+    });
+
+    describe("icon pack glyphs", () => {
+        it("serves the glyph of every icon as a stylesheet the bootstrap names by its content", async () => {
+            const { iconPackGlyphCssUrl } = getIconConfig(".");
+            const res = await api.get<string>(`/${iconPackGlyphCssUrl}`);
+            expect(res.status).toBe(200);
+            expect(res.headers["Content-Type"]).toBe("text/css");
+            expect(res.headers["Cache-Control"]).toContain("immutable");
+            expect(res.body).toMatch(/\.bx\.bx-[\w-]+::before \{ content: /);
+            expect(iconPackGlyphCssUrl).toBe(`api/icon-packs.css?v=${md5(res.body)}`);
         });
     });
 

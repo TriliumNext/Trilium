@@ -111,3 +111,18 @@ const CONTENT_IMAGE_URL =
 function toQuery(query: string | undefined) {
     return query === undefined ? "" : `?${query}`;
 }
+
+/** Maps an embedded image's `src` to the download endpoint of its backing note or attachment. */
+export function getImageDownloadUrl(src: string) {
+    const noteMatch = src.match(/(?:^|\/)api\/images\/([^/?#]+)\//);
+    if (noteMatch) {
+        return `api/notes/${noteMatch[1]}/download`;
+    }
+
+    const attachmentMatch = src.match(/(?:^|\/)api\/attachments\/([^/?#]+)\/image\//);
+    if (attachmentMatch) {
+        return `api/attachments/${attachmentMatch[1]}/download`;
+    }
+
+    return null;
+}

@@ -1,6 +1,6 @@
 import "./CodeBlock.css";
 
-import { normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
+import { normalizeMimeTypeForCKEditor } from "@triliumnext/commons/src/lib/mime_type.js";
 import { useEffect, useLayoutEffect, useRef } from "preact/hooks";
 
 import { copyTextWithToast } from "../../services/clipboard_ext";

@@ -17,6 +17,7 @@ import OptionsRow from "../components/OptionsRow";
 import { useAntigravityDownload } from "./antigravity_download";
 import ModelSelection from "./ModelSelection";
 import { PROVIDER_ICONS } from "./provider_icons.js";
+import SearchProviderCheck from "./SearchProviderCheck";
 
 export interface LlmProviderConfig {
     id: string;
@@ -230,11 +231,12 @@ export function isConnectionValid(providerType: ProviderType | undefined, apiKey
 }
 
 /**
- * Pick a provider, enter its credentials, choose its models. Named rather than
- * numbered because editing skips the first one — the provider type of a saved
- * config can't change, so its id and name would no longer match.
+ * Pick a provider, enter its credentials, then choose its models (a model provider) or check it
+ * with a test search (a search provider). Named rather than numbered because editing skips the
+ * first one — the provider type of a saved config can't change, so its id and name would no
+ * longer match.
  */
-export type ProviderStep = "provider" | "connection" | "models";
+export type ProviderStep = "provider" | "connection" | "models" | "check";
 
 interface AddProviderModalProps {
     show: boolean;
@@ -265,6 +267,7 @@ export default function AddProviderModal({ show, onHidden, onSave, existingProvi
     const [apiKey, setApiKey] = useState(existingProvider?.apiKey ?? "");
     const [baseUrl, setBaseUrl] = useState(existingProvider?.baseURL ?? prefilledBaseUrl(existingProvider?.provider ?? providerTypes[0].id));
     const [selectedModels, setSelectedModels] = useState<LlmModelInfo[]>(existingProvider?.selectedModels ?? []);
+    const [searchCheckFailed, setSearchCheckFailed] = useState(false);
 
     const providerType = useMemo(() => findProviderType(selectedProvider), [selectedProvider]);
     const apiKeyMode = providerType?.apiKey ?? "required";
@@ -334,6 +337,7 @@ export default function AddProviderModal({ show, onHidden, onSave, existingProvi
         setApiKey(existingProvider?.apiKey ?? "");
         setBaseUrl(existingProvider?.baseURL ?? prefilledBaseUrl(initialProvider));
         setSelectedModels(existingProvider?.selectedModels ?? []);
+        setSearchCheckFailed(false);
     }
 
     function handleCancel() {
@@ -450,10 +454,30 @@ export default function AddProviderModal({ show, onHidden, onSave, existingProvi
                     </CardSection>
                 </Card>
             )
+        },
+        {
+            id: "check",
+            title: namedTitle,
+            // A failed test search does not block saving: the service might be down for the
+            // moment, or not set up yet.
+            nextLabel: searchCheckFailed ? (isEdit ? t("llm.save_anyway") : t("llm.add_provider_anyway")) : undefined,
+            content: (
+                <Card heading={t("llm.search_check_heading")}>
+                    <CardSection>
+                        <SearchProviderCheck query={modelQuery} onFailedChange={setSearchCheckFailed} />
+                    </CardSection>
+                </Card>
+            )
         }
     ];
-    // Search providers have no models to choose, so their wizard ends at the connection step.
-    const steps = isSearch ? allSteps.filter(s => s.id !== "models") : allSteps;
+    // An edit that leaves the connection as saved has nothing new to test, so it saves from the
+    // connection step.
+    const connectionUnchanged = isEdit
+        && trimmedApiKey === (existingProvider?.apiKey ?? "")
+        && trimmedBaseUrl === (existingProvider?.baseURL ?? "");
+    const steps = allSteps.filter(s => isSearch
+        ? s.id !== "models" && !(s.id === "check" && connectionUnchanged)
+        : s.id !== "check");
 
     return createPortal(
         <WizardModal

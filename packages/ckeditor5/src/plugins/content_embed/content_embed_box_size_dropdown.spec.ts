@@ -1,4 +1,4 @@
-import { INLINE_BOX_SIZES } from "@triliumnext/commons";
+import { INLINE_BOX_SIZES } from "@triliumnext/commons/src/lib/content_embeds.js";
 import {
     ButtonView, type ClassicEditor, DropdownView, Essentials, ListItemView, ListSeparatorView,
     type ModelElement, Paragraph, Widget

@@ -1,6 +1,6 @@
-import { Tooltip } from "bootstrap";
-import NoteContextAwareWidget from "../note_context_aware_widget.js";
 import { handleRightToLeftPlacement } from "../../services/utils.js";
+import NoteContextAwareWidget from "../note_context_aware_widget.js";
+import { attachTooltip, getTooltipInstance } from "../react/hooks/tooltip.js";
 
 const TPL = /*html*/`<button class="button-widget bx"
       data-bs-toggle="tooltip"
@@ -19,7 +19,6 @@ export interface AbstractButtonWidgetSettings {
 
 export default class AbstractButtonWidget<SettingsT extends AbstractButtonWidgetSettings> extends NoteContextAwareWidget {
     protected settings!: SettingsT;
-    protected tooltip!: Tooltip;
 
     isEnabled(): boolean | null | undefined {
         return true;
@@ -28,7 +27,7 @@ export default class AbstractButtonWidget<SettingsT extends AbstractButtonWidget
     doRender() {
         this.$widget = $(TPL);
 
-        this.tooltip = new Tooltip(this.$widget[0], {
+        attachTooltip(this.$widget[0], {
             html: true,
             // in case getTitle() returns null -> use empty string as fallback
             title: () => this.getTitle() || "",
@@ -39,7 +38,7 @@ export default class AbstractButtonWidget<SettingsT extends AbstractButtonWidget
 
         if (this.settings.onContextMenu) {
             this.$widget.on("contextmenu", (e) => {
-                this.tooltip.hide();
+                getTooltipInstance(this.$widget[0])?.hide();
 
                 if (this.settings.onContextMenu) {
                     this.settings.onContextMenu(e);

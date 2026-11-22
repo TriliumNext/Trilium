@@ -4,7 +4,11 @@
     "desktop_title": "Download the desktop application (v{{version}})",
     "architecture": "Architecture:",
     "older_releases": "See older releases",
-    "server_title": "Set up a server for access on multiple devices"
+    "server_title": "Set up a server for access on multiple devices",
+    "nightly_title": "Try the nightly build",
+    "nightly_subtitle": "Built every day from the main branch, with the newest features and fixes before they are released. A nightly installer replaces your stable installation and opens the same notes. If a nightly changes the database, going back to the stable version means restoring a backup.",
+    "nightly_all_downloads": "All nightly downloads",
+    "nightly_learn_more": "About nightly builds"
   },
   "section_nav": {
     "aria_label": "Jump to section",
@@ -18,15 +22,15 @@
     "faq": "FAQ"
   },
   "hero_section": {
-    "title": "Organize your thoughts. Build your personal knowledge base.",
-    "subtitle": "Trilium is an open-source solution for note-taking and organizing a personal knowledge base. Use it locally on your desktop, or sync it with your self-hosted server to keep your notes everywhere you go.",
+    "title": "Grow your personal knowledge base.",
+    "subtitle": "Keep everything you know in one tree of notes, as deep as you need it. Write, sketch and plan on your desktop and your phone, and sync through a server you run yourself to reach your notes from any browser.",
     "get_started": "Get started",
     "github": "GitHub",
     "dockerhub": "Docker Hub",
     "tagline_license": "AGPL-3.0 licensed",
     "tagline_no_account": "No account needed",
     "tagline_cross_platform": "Works offline",
-    "screenshot_alt": "Screenshot of the Trilium Notes desktop application"
+    "screenshot_alt": "The Trilium Notes desktop application, with a text note open next to the note tree"
   },
   "organization_benefits": {
     "title": "Structure your notes, your way",
@@ -172,7 +176,7 @@
     "more_questions": "Still have questions? <0>Ask the community</0>"
   },
   "final_cta": {
-    "title": "Start building your knowledge base",
+    "title": "Start growing your knowledge base",
     "description": "Organize everything in one open-source app: hierarchical notes, powerful search, and sync to a server you control.",
     "get_started": "Get started"
   },
@@ -276,6 +280,16 @@
     "title": "Paid hosting",
     "description": "Trilium Notes hosted on PikaPods, a paid service for easy access and management. Not directly affiliated with the Trilium team.",
     "download_pikapod": "Set up on PikaPods"
+  },
+  "download_helper_nightly": {
+    "desktop_description": "The latest desktop build for this computer. Use the architecture switch above to get the other one.",
+    "download_flatpak": ".flatpak",
+    "android_title": "Android",
+    "android_description": "The mobile app keeps a full copy of your notes on the phone, works offline and syncs with your server.",
+    "download_apk": "Download APK (.apk)",
+    "server_title": "Server",
+    "server_description": "The latest server build, as a Docker image or a Linux package.",
+    "server_quick_start": "To run it with Docker:"
   },
   "resources": {
     "title": "Resources",

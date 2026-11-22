@@ -260,23 +260,9 @@ span.fancytree-node.archived {
     display: inline-block;
 }
 
-.tn-icon.tree-item-button {
-    display: none;
-    font-size: 120%;
-    cursor: pointer;
-    margin-inline-start: 8px;
-    padding: 1px;
-    border: 1px solid transparent;
-    border-radius: 5px;
-}
-
 .unhoist-button.tn-icon.tree-item-button {
     margin-inline-start: 0; /* unhoist button is on the left and doesn't need more margin */
     display: block; /* keep always visible */
-}
-
-.tree-item-button:hover {
-    border: 1px dotted var(--main-text-color);
 }
 
 .add-note-button {
@@ -309,6 +295,7 @@ span.fancytree-node:hover .add-note-button {
  */
 #fancytree-drop-marker.fancytree-drop-after {
     --drop-marker-shift: var(--tree-drop-marker-shift, 0px);
+    --drop-marker-indent: var(--tree-drop-marker-indent, 0px);
 }
 
 #fancytree-drop-marker.fancytree-drop-before {
@@ -318,13 +305,15 @@ span.fancytree-node:hover .add-note-button {
 /*
  * The line, and the ring capping the end it is measured from. Both are drawn by pseudo-elements so
  * the marker's own box stays at zero height: dnd5 positions that box, and a border on it would
- * carry the line half its thickness off the edge.
+ * carry the line half its thickness off the edge. The indent is a translate on these rather than
+ * on the marker, because jQuery's offset() setter measures the marker and cancels its translate.
  */
 #fancytree-drop-marker.fancytree-drop-after::before,
 #fancytree-drop-marker.fancytree-drop-before::before {
     content: "";
     position: absolute;
     inset-inline: 0;
+    translate: var(--drop-marker-indent, 0px) 0;
     top: calc(-1px + var(--drop-marker-shift, 0px));
     height: 2px;
     border-radius: 1px;
@@ -336,6 +325,7 @@ span.fancytree-node:hover .add-note-button {
     content: "";
     position: absolute;
     inset-inline-start: -2px;
+    translate: var(--drop-marker-indent, 0px) 0;
     top: calc(-4px + var(--drop-marker-shift, 0px));
     box-sizing: border-box;
     width: 8px;

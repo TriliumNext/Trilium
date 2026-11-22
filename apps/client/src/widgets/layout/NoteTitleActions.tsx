@@ -9,13 +9,19 @@ import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import server from "../../services/server";
 import { checkFullHeight, getExtendedWidgetType } from "../NoteDetail";
-import { PromotedAttributesContent, usePromotedAttributeData } from "../PromotedAttributes";
+import { usePromotedAttributeData } from "../promoted_attribute_cells";
 import Collapsible, { ExternallyControlledCollapsible } from "../react/Collapsible";
-import { useNoteContext, useNoteLabel, useNoteProperty, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
+import { useNoteLabel, useNoteProperty } from "../react/hooks/note";
+import { useTriliumOption, useTriliumOptionBool } from "../react/hooks/options";
+import { useNoteContext } from "../react/hooks/note_context";
+import { WithLazyModule } from "../react/LazyComponent";
 import { NewNoteLink } from "../react/NoteLink";
-import SearchDefinition from "../search/SearchDefinition";
-import NoteTypeSwitcher from "./NoteTypeSwitcher";
 import PinnedAttachments from "./PinnedAttachments";
+
+const loadSearchDefinition = () => import("../search/SearchDefinition");
+const loadNoteTypeSwitcher = () => import("./NoteTypeSwitcher");
+const loadPromotedAttributes = () => import("../PromotedAttributes");
 
 export default function NoteTitleActions() {
     const { note, ntxId, componentId, noteContext, viewScope } = useNoteContext();
@@ -29,7 +35,11 @@ export default function NoteTitleActions() {
             {noteType === "search" && <SearchProperties note={note} ntxId={ntxId} />}
             {isDefaultView && note && <PinnedAttachments note={note} />}
             <EditedNotes />
-            {isDefaultView && noteTitleStyle !== "compact" && <NoteTypeSwitcher note={note} />}
+            {isDefaultView && noteTitleStyle !== "compact" && noteType === "text" && (
+                <WithLazyModule load={loadNoteTypeSwitcher}>
+                    {({ default: NoteTypeSwitcher }) => <NoteTypeSwitcher note={note} />}
+                </WithLazyModule>
+            )}
         </div>
     );
 }
@@ -40,7 +50,9 @@ function SearchProperties({ note, ntxId }: { note: FNote | null | undefined, ntx
             title={t("search_definition.search_parameters")}
             initiallyExpanded={note.isInHiddenSubtree()} // not saved searches
         >
-            <SearchDefinition note={note} ntxId={ntxId} />
+            <WithLazyModule load={loadSearchDefinition}>
+                {({ default: SearchDefinition }) => <SearchDefinition note={note} ntxId={ntxId} />}
+            </WithLazyModule>
         </Collapsible>
     );
 }
@@ -73,7 +85,11 @@ function PromotedAttributes({ note, componentId, noteContext }: {
             title={t("note_title.promoted_attributes")}
             expanded={expanded} setExpanded={setExpanded}
         >
-            <PromotedAttributesContent note={note} componentId={componentId} cells={cells} setCells={setCells} />
+            <WithLazyModule load={loadPromotedAttributes}>
+                {({ PromotedAttributesContent }) => (
+                    <PromotedAttributesContent note={note} componentId={componentId} cells={cells} setCells={setCells} />
+                )}
+            </WithLazyModule>
         </ExternallyControlledCollapsible>
     ));
 }

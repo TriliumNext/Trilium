@@ -13,7 +13,7 @@ import ActionButton from "../../react/ActionButton";
 import FormTextArea from "../../react/FormTextArea";
 import FormTextBox from "../../react/FormTextBox";
 import Icon from "../../react/Icon";
-import { IconPickerButton } from "../../react/IconPicker";
+import { IconPickerButton } from "../../react/IconPickerButton";
 import NoteAutocomplete from "../../react/NoteAutocomplete";
 import type { HoldOpen } from ".";
 import BoardApi from "./api";

@@ -1,4 +1,6 @@
-import { MULTICOLUMN_COLUMN_CLASS, MULTICOLUMN_LAYOUT_CLASS } from "@triliumnext/commons";
+import {
+    MULTICOLUMN_COLUMN_CLASS, MULTICOLUMN_LAYOUT_CLASS
+} from "@triliumnext/commons/src/lib/block_reference.js";
 
 /** Model element names of the multicolumn layout. */
 export const ELEMENTS = {

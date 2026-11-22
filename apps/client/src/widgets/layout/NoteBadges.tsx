@@ -1,6 +1,7 @@
 import "./NoteBadges.css";
 
-import { isOfficeMimeType, safeHostname } from "@triliumnext/commons";
+import { safeHostname } from "@triliumnext/commons/src/lib/link_embed.js";
+import { isOfficeMimeType } from "@triliumnext/commons/src/lib/office.js";
 import { clsx } from "clsx";
 import { useCallback, useEffect, useState } from "preact/hooks";
 
@@ -9,7 +10,6 @@ import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
 import branches from "../../services/branches";
 import { copyTextWithToast } from "../../services/clipboard_ext";
-import dialog from "../../services/dialog";
 import { t } from "../../services/i18n";
 import { goToLinkExt } from "../../services/link";
 import server from "../../services/server";
@@ -20,10 +20,14 @@ import sync from "../../services/sync";
 import { isElectron, isMobileApp, isStandalone } from "../../services/utils";
 import { Badge, BadgeWithDropdown } from "../react/Badge";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
+import { useTriliumEvent } from "../react/hooks/events";
 import {
-    useGetContextDataFrom, useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelByName, useNoteProperty,
-    useTriliumEvent, useTriliumOption
-} from "../react/hooks";
+    useNoteLabel, useNoteLabelBoolean, useNoteLabelByName, useNoteProperty
+} from "../react/hooks/note";
+import { useTriliumOption } from "../react/hooks/options";
+import {
+    useGetContextDataFrom, useIsNoteReadOnly, useNoteContext
+} from "../react/hooks/note_context";
 import Icon from "../react/Icon";
 import UserAvatar from "../react/UserAvatar";
 import { ActiveContentBadges } from "./ActiveContentBadges";
@@ -100,9 +104,9 @@ export function ReadOnlyBadge() {
 }
 
 /**
- * Marks a file note that `OfficePreview` renders as HTML (DOCX/XLSX/PPTX, ODT/ODS/ODP, RTF and
- * EPUB). The preview is a rendering of the document, not an editor, so the badge tells the reader
- * why nothing can be typed into it. Unlike `ReadOnlyBadge` there is nothing to unlock.
+ * Marks a file note that holds an office document, which `OfficePreview` renders as HTML or, for
+ * an XLSX workbook, `SpreadsheetFile` shows read-only. Neither is an editor, so the badge tells the
+ * reader why nothing can be typed into it. Unlike `ReadOnlyBadge` there is nothing to unlock.
  */
 export function OfficePreviewBadge() {
     const { note, viewScope } = useNoteContext();
@@ -399,6 +403,7 @@ export function useShareState(note: FNote | null | undefined) {
         if (shouldShare) {
             await branches.cloneNoteToParentNote(note.noteId, "_share");
         } else {
+            const { default: dialog } = await import("../../services/dialog");
             if (note?.getParentBranches().length === 1 && !(await dialog.confirm(t("shared_switch.shared-branch")))) {
                 return;
             }

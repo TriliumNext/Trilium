@@ -30,3 +30,60 @@
         font-size: 1em;
     }
 }
+
+/* The header of the dialogs that show a note under its `TitleRow`: the quick editor, the tree
+   popup, the calendar's event sheet and the embedded note sheets. */
+.modal.popup-editor-dialog .modal-header .title-row,
+.modal.tree-popup-editor-dialog .modal-header .title-row,
+.modal.calendar-event-sheet .modal-header .title-row,
+.modal.tn-embedded-note-sheet .modal-header .title-row {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    margin-block: 0;
+
+    .note-icon-widget {
+        display: flex;
+        align-items: center;
+        margin-inline-start: 0;
+    }
+}
+
+.modal.popup-editor-dialog .modal-header .note-title-widget,
+.modal.tree-popup-editor-dialog .modal-header .note-title-widget,
+.modal.calendar-event-sheet .modal-header .note-title-widget,
+.modal.tn-embedded-note-sheet .modal-header .note-title-widget {
+    display: flex;
+    align-items: center;
+}
+
+.modal.popup-editor-dialog .title-row,
+.modal.popup-editor-dialog .modal-title,
+.modal.popup-editor-dialog .note-icon-widget,
+.modal.tree-popup-editor-dialog .title-row,
+.modal.tree-popup-editor-dialog .note-icon-widget,
+.modal.calendar-event-sheet .title-row,
+.modal.calendar-event-sheet .note-icon-widget,
+.modal.tn-embedded-note-sheet .title-row,
+.modal.tn-embedded-note-sheet .note-icon-widget {
+    height: 32px;
+    min-height: unset;
+}
+
+:root div.modal.popup-editor-dialog div.note-title-widget,
+:root div.modal.tree-popup-editor-dialog div.note-title-widget,
+:root div.modal.calendar-event-sheet div.note-title-widget,
+:root div.modal.tn-embedded-note-sheet div.note-title-widget {
+    --note-title-padding-inline: 8px;
+}
+
+.modal.popup-editor-dialog .note-icon-widget button.note-icon,
+.modal.popup-editor-dialog .note-title-widget input.note-title,
+.modal.tree-popup-editor-dialog .note-icon-widget button.note-icon,
+.modal.tree-popup-editor-dialog .note-title-widget input.note-title,
+.modal.calendar-event-sheet .note-icon-widget button.note-icon,
+.modal.calendar-event-sheet .note-title-widget input.note-title,
+.modal.tn-embedded-note-sheet .note-icon-widget button.note-icon,
+.modal.tn-embedded-note-sheet .note-title-widget input.note-title {
+    font-size: 1em;
+}

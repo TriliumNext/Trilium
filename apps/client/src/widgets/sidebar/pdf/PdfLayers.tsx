@@ -1,8 +1,12 @@
 import "./PdfLayers.css";
 
 import { t } from "../../../services/i18n";
-import { useActiveNoteContext, useGetContextData, useNoteProperty } from "../../react/hooks";
+import { useFilterState } from "../../react/filter";
+import { useNoteProperty } from "../../react/hooks/note";
+import { useActiveNoteContext, useGetContextData } from "../../react/hooks/tree";
 import Icon from "../../react/Icon";
+import { HighlightedText } from "../../react/RawHtml";
+import { OutlineLoading, useOutlineFilter } from "../outline_filter";
 import RightPanelWidget from "../RightPanelWidget";
 
 interface LayerInfo {
@@ -16,19 +20,39 @@ export default function PdfLayers() {
     const noteType = useNoteProperty(note, "type");
     const noteMime = useNoteProperty(note, "mime");
     const layersData = useGetContextData("pdfLayers");
+    const tokens = useFilterState()?.tokens;
+    const ready = layersData?.status === "ready" ? layersData : undefined;
+    const matches = useOutlineFilter(ready?.layers ?? null, {
+        section: "pdf-layers",
+        getText: (layer) => layer.name
+    });
 
-    if (noteType !== "file" || noteMime !== "application/pdf") {
+    if (noteType !== "file" || noteMime !== "application/pdf" || !layersData) {
         return null;
     }
 
-    return (layersData?.layers && layersData.layers.length > 0 &&
-        <RightPanelWidget id="pdf-layers" title={t("pdf.layers", { count: layersData.layers.length })}>
+    if (!ready) {
+        return matches ? (
+            <RightPanelWidget id="pdf-layers" title={t("pdf.layers_title")}>
+                <OutlineLoading />
+            </RightPanelWidget>
+        ) : null;
+    }
+
+    if (ready.layers.length === 0) {
+        return null;
+    }
+
+    const shown = matches ? matches.map(({ item }) => item) : ready.layers;
+    return (
+        <RightPanelWidget id="pdf-layers" title={t("pdf.layers", { count: ready.layers.length })}>
             <div className="pdf-layers-list">
-                {layersData.layers.map((layer) => (
+                {shown.map((layer) => (
                     <PdfLayerItem
                         key={layer.id}
                         layer={layer}
-                        onToggle={layersData.toggleLayer}
+                        onToggle={ready.toggleLayer}
+                        tokens={tokens}
                     />
                 ))}
             </div>
@@ -38,10 +62,12 @@ export default function PdfLayers() {
 
 function PdfLayerItem({
     layer,
-    onToggle
+    onToggle,
+    tokens
 }: {
     layer: LayerInfo;
     onToggle: (layerId: string, visible: boolean) => void;
+    tokens?: string[];
 }) {
     return (
         <div
@@ -49,7 +75,11 @@ function PdfLayerItem({
             onClick={() => onToggle(layer.id, !layer.visible)}
         >
             <Icon icon={layer.visible ? "bx bx-show" : "bx bx-hide"} />
-            <div className="pdf-layer-name">{layer.name}</div>
+            <HighlightedText
+                className="pdf-layer-name"
+                text={layer.name}
+                highlightedTokens={tokens}
+            />
         </div>
     );
 }

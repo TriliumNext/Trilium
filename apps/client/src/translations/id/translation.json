@@ -60,8 +60,6 @@
     "search_note": "cari catatan berdasarkan namanya",
     "link_title": "Judul tautan",
     "button_add_link": "Tambahkan tautan",
-    "anchor": "Anchor (opsional)",
-    "anchor_none": "Tidak ada (tautan ke catatan)",
     "edit_link": "Edit tautan",
     "button_edit_link": "Simpan tautan"
   },
@@ -2425,8 +2423,7 @@
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "Hapus dari launch bar",
     "configure_launch_bar": "Konfigurasikan bilah launcher",
-    "launch_bar_orientation": "Orientasi bilah launcher",
-    "will_reload_frontend": "(aplikasi akan dimuat ulang)"
+    "launch_bar_orientation": "Orientasi bilah launcher"
   },
   "highlighting": {
     "title": "Blok Kode",
@@ -3433,7 +3430,6 @@
       "markdown-import-from-clipboard": "Impor Markdown dari papan klip",
       "math-editor-unavailable": "Editor matematika tidak tersedia",
       "math-equation": "Persamaan matematika",
-      "medium": "Sedang",
       "mermaid-diagram": "Diagram Mermaid",
       "mermaid-diagram-0": "Diagram Mermaid: %0",
       "missing-definition": "(definisi tidak ditemukan)",

@@ -1,17 +1,24 @@
+import type { CachedTocResponse } from "@triliumnext/commons";
 import {
-    ALLOWED_PROTOCOLS, encodeBlockParameter, resolveBlockReference
-} from "@triliumnext/commons";
+    getContentScopes, resolveBlockReference
+} from "@triliumnext/commons/src/lib/block_reference.js";
+import { ALLOWED_PROTOCOLS } from "@triliumnext/commons/src/lib/shared_constants.js";
 
-import appContext, { type NoteCommandData } from "../components/app_context.js";
+import appContext from "../components/app_context.js";
 import { openInCurrentNoteContext } from "../components/note_context.js";
-import linkContextMenuService from "../menus/link_context_menu.js";
+import type FNote from "../entities/fnote.js";
 import {
-    getBlockReferenceLabel, getCachedBlockReferenceLabel, loadBlockReferenceLabel
+    type BlockReferenceLabel, getBlockReferenceLabel, getCachedBlockReferenceLabel,
+    loadBlockReferenceLabel
 } from "./block_excerpts.js";
 import cssClassManager from "./css_class_manager.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import { getNoteImageUrl } from "./image_urls.js";
+import {
+    calculateExtraWindowUrl, calculateHash, parseNavigationStateFromUrl, type ViewMode, type ViewScope
+} from "./navigation_state.js";
+import server from "./server.js";
 import { showError } from "./toast.js";
 import treeService from "./tree.js";
 import utils, { isShare } from "./utils.js";
@@ -19,6 +26,19 @@ import utils, { isShare } from "./utils.js";
 /** The icon a column reference uses when the link carries no `columnIcon`. */
 const DEFAULT_COLUMN_REFERENCE_ICON = "bx bx-columns";
 const MISSING_NOTE_TITLE = "[missing note]";
+/** How many documents the heading titles are kept for. */
+const MAX_CACHED_TOCS = 20;
+/**
+ * The link parameters that the label of a reference link names, the most specific first, in the
+ * order the views land on them: blocks before an anchor in a Markdown note, a heading before a
+ * bookmark in a document preview and before the page in a PDF. The first with a label names it.
+ */
+export const LABELED_TARGET_PARAMS = [ "block", "heading", "bookmark", "page" ] as const;
+
+/** The heading titles of each document by heading id, by its ToC route, with their blob. */
+const headingTitles = new Map<string, { blobId: string; titles: Map<string, string> }>();
+/** The reads of a ToC cache in flight, by ToC route and blob. */
+const tocReads = new Map<string, Promise<CachedTocResponse | null>>();
 
 function getNotePathFromUrl(url: string) {
     const notePathMatch = /#(root[A-Za-z0-9_/]*)$/.exec(url);
@@ -40,99 +60,6 @@ async function getLinkIcon(noteId: string, viewMode: ViewMode | undefined) {
     }
     return icon;
 }
-
-export type ViewMode = "default" | "source" | "attachments" | "contextual-help" | "note-map";
-
-export interface ViewScope {
-    /**
-     * - "source", when viewing the source code of a note.
-     * - "attachments", when viewing the attachments of a note.
-     * - "contextual-help", if the current view represents a help window that was opened to the side of the main content.
-     * - "default", otherwise.
-     */
-    viewMode?: ViewMode;
-    attachmentId?: string;
-    readOnlyTemporarilyDisabled?: boolean;
-    /**
-     * If true, it indicates that the note in the view should be opened in read-only mode (for supported note types such as text or code).
-     *
-     * The reason why we store this information here is that a note can become read-only as the user types content in it, and we wouldn't want
-     * to immediately enter read-only mode.
-     */
-    isReadOnly?: boolean;
-    /**
-     * If true, a text note is edited with the floating toolbar whatever the user's editor-type
-     * option says — the toolbar following the selection rather than standing in a bar of its own.
-     *
-     * For views too narrow to carry a full toolbar, such as the geo map's marker pane: a classic bar
-     * built for the width of a note either spills out of them or eats the room the note is left.
-     */
-    floatingToolbar?: boolean;
-    /** When set, scrolls to a bookmark anchor within the note after navigation. */
-    bookmark?: string;
-    /**
-     * The blocks of a text note a reference points at, `id` or `startId:endId`, which the note
-     * scrolls to and flashes once it renders. Consumed once, as `bookmark` is.
-     */
-    block?: string;
-    /**
-     * Search terms to highlight and jump to after navigating from search results; consumed once
-     * by the destination type widget (mirrors `bookmark` semantics).
-     */
-    searchTerms?: string[];
-    /**
-     * The id of the board column a reference points at, which the board reveals once it has drawn
-     * it. Consumed once, as `bookmark` is.
-     */
-    column?: string;
-    /**
-     * The title, icon and colour a column reference renders as, copied from the board when the
-     * reference was made. Carried in the link because reading them needs the board's own
-     * configuration; {@link column} is what the board resolves, so a rename only dates the label.
-     */
-    columnTitle?: string;
-    columnIcon?: string;
-    columnColor?: string;
-    /**
-     * The note id of the board card a reference points at, revealed the same way {@link column}
-     * is.
-     */
-    card?: string;
-    /**
-     * The PDF page a reference points at, which the PDF viewer turns to once it has opened the
-     * document. Consumed once, as `bookmark` is.
-     */
-    page?: string;
-    /**
-     * The id of the PDF annotation a reference points at, which the viewer scrolls to on
-     * {@link page}. A reference to an annotation always carries its page too, so a deleted
-     * annotation still leaves the reader on the right page.
-     */
-    annotation?: string;
-}
-
-/**
- * The state of a single split pane, as carried by the `splits` hash parameter when a tab is
- * moved or copied into a window of its own.
- */
-export interface HashPane {
-    notePath?: string | null;
-    hoistedNoteId?: string | null;
-    viewScope?: ViewScope;
-}
-
-/** A note path as it may appear in a hash: slash-separated note ids. */
-const NOTE_PATH_PATTERN = /^[_a-z0-9]{4,}(\/[_a-z0-9]{4,})*$/i;
-
-/**
- * How many extra panes a hash is allowed to carry. Well beyond any layout a user would build by
- * hand, but low enough that a hand-written address can't ask the app to open hundreds of panes.
- */
-const MAX_SPLIT_PANES_IN_HASH = 8;
-
-/** Hash parameters that belong to a pane's view scope rather than to the window as a whole. */
-const VIEW_SCOPE_PARAMS = ["viewMode", "attachmentId", "bookmark", "block", "column",
-    "columnTitle", "columnIcon", "columnColor", "card", "page", "annotation"];
 
 interface CreateLinkOptions {
     title?: string;
@@ -256,264 +183,6 @@ async function createLink(notePath: string | undefined, options: CreateLinkOptio
     }
 
     return $container;
-}
-
-export function calculateHash(
-    { notePath, ntxId, hoistedNoteId, viewScope = {}, splits, activeSplit }: NoteCommandData
-) {
-    notePath = notePath || "";
-    const params = [
-        ntxId ? { ntxId } : null,
-        hoistedNoteId && hoistedNoteId !== "root" ? { hoistedNoteId } : null,
-        viewScope.viewMode && viewScope.viewMode !== "default" ? { viewMode: viewScope.viewMode } : null,
-        viewScope.attachmentId ? { attachmentId: viewScope.attachmentId } : null,
-        viewScope.block ? { block: viewScope.block } : null,
-        viewScope.column ? { column: viewScope.column } : null,
-        viewScope.columnTitle ? { columnTitle: viewScope.columnTitle } : null,
-        viewScope.columnIcon ? { columnIcon: viewScope.columnIcon } : null,
-        viewScope.columnColor ? { columnColor: viewScope.columnColor } : null,
-        viewScope.card ? { card: viewScope.card } : null,
-        viewScope.page ? { page: viewScope.page } : null,
-        viewScope.annotation ? { annotation: viewScope.annotation } : null,
-        viewScope.searchTerms?.length
-            ? { searchTerms: viewScope.searchTerms.map(encodeURIComponent).join(",") }
-            : null,
-        splits?.length ? { splits: splits.map(encodeSplitPane).join(",") } : null,
-        splits?.length && activeSplit ? { activeSplit: String(activeSplit) } : null
-    ].filter((p) => !!p);
-
-    const paramStr = params
-        .map((pair) => {
-            const name = Object.keys(pair)[0];
-            const value = (pair as Record<string, string | undefined>)[name];
-
-            /* v8 ignore next -- `value` is never undefined: every retained pair holds a string. It
-               can be empty, but only for a `splits` list whose panes are all empty. */
-            const encodedValue = name === "block"
-                ? encodeBlockParameter(value || "")
-                : encodeURIComponent(value || "");
-            return `${encodeURIComponent(name)}=${encodedValue}`;
-        })
-        .join("&");
-
-    if (!notePath && !paramStr) {
-        return "";
-    }
-
-    let hash = `#${notePath}`;
-
-    if (paramStr) {
-        hash += `?${paramStr}`;
-    }
-
-    return hash;
-}
-
-/**
- * Serializes one extra pane into an entry of the `splits` parameter: its own hash body, minus the
- * leading `#`. Entries are joined with commas, which is unambiguous because neither a note path nor
- * an encoded parameter value can contain one. A pane holding no note yields an empty entry, so that
- * the pane count of the original tab survives the trip.
- */
-function encodeSplitPane(pane: HashPane) {
-    return calculateHash(pane).slice(1);
-}
-
-/** The subset of `window.location` needed to build a URL, which a plain `URL` also satisfies. */
-interface UrlParts {
-    protocol: string;
-    host: string;
-    pathname: string;
-    search: string;
-}
-
-/**
- * Builds the address of a detached ("extra") window showing the given target.
- *
- * The current query string is carried over rather than replaced. On the server it holds nothing of
- * interest, but in standalone the query *is* the environment (`?safeMode`, `?startNoteId` — see
- * `QUERY_TO_ENV` in the standalone platform provider), so a window that dropped it would boot with
- * different settings than the one it was opened from, and would apply those to every other window
- * should it later inherit the database lock.
- */
-export function calculateExtraWindowUrl(target: NoteCommandData, location: UrlParts = window.location) {
-    const params = new URLSearchParams(location.search);
-    params.set("extraWindow", "1");
-
-    return `${location.protocol}//${location.host}${location.pathname}?${params}${calculateHash(target)}`;
-}
-
-/** Whether the query string of `url` (everything before `hashIdx`) carries the `extraWindow` marker. */
-function isExtraWindowUrl(url: string, hashIdx: number) {
-    return /[?&]extraWindow(?:[=&]|$)/.test(url.slice(0, hashIdx));
-}
-
-/**
- * Parses the navigation state in the hash of `url`. A full URL is internal when it addresses the
- * document at `location` or has an accepted internal form. Any other URL is external: `{}`.
- */
-export function parseNavigationStateFromUrl(
-    url: string | undefined,
-    location: UrlParts = window.location
-) {
-    if (!url) {
-        return {};
-    }
-
-    url = url.trim();
-    const hashIdx = url.indexOf("#");
-    if (hashIdx === -1) {
-        return {};
-    }
-
-    const isExtraWindow = isExtraWindowUrl(url, hashIdx);
-
-    // Exclude external links that contain #
-    if (
-        hashIdx !== 0
-        && !url.includes("/#root")
-        && !url.includes("/#?searchString")
-        && !isExtraWindow
-        && !isSameDocumentUrl(url, hashIdx, location)
-    ) {
-        return {};
-    }
-
-    const hash = url.substr(hashIdx + 1); // strip also the initial '#'
-    const [notePath, paramString] = hash.split("?");
-
-    const viewScope: ViewScope = {
-        viewMode: "default"
-    };
-    let ntxId: string | null = null;
-    let hoistedNoteId: string | null = null;
-    let searchString: string | null = null;
-    let openInPopup = false;
-    let splits: HashPane[] | null = null;
-    let activeSplit = 0;
-
-    for (const [name, value] of parseHashParams(paramString)) {
-        if (name === "ntxId") {
-            ntxId = value;
-        } else if (name === "hoistedNoteId") {
-            hoistedNoteId = value;
-        } else if (name === "searchString") {
-            searchString = value; // supports triggering search from URL, e.g. #?searchString=blabla
-        } else if (name === "searchTerms") {
-            // `value` already went through one decodeURIComponent() in parseHashParams (undoing the
-            // generic pipeline's outer encode); each comma-separated token needs its own inner decode.
-            // A malformed token (corrupted URL, hand-edited link) must not break navigation for
-            // the rest of the link, so drop it rather than letting decodeURIComponent throw.
-            viewScope.searchTerms = value
-                .split(",")
-                .map((token) => {
-                    try {
-                        return decodeURIComponent(token);
-                    } catch {
-                        return null;
-                    }
-                })
-                .filter((token): token is string => token !== null);
-        } else if (VIEW_SCOPE_PARAMS.includes(name)) {
-            (viewScope as any)[name] = value;
-        } else if (name === "popup") {
-            openInPopup = true;
-        } else if (name === "splits") {
-            // Splits lay out the whole window, so they are honoured only while booting a
-            // detached one. A link inside a note reaches this same parser, and no note should
-            // be able to rearrange the panes of the window it is read in.
-            splits = isExtraWindow ? parseSplitPanes(value) : null;
-        } else if (name === "activeSplit") {
-            activeSplit = Number.parseInt(value, 10) || 0;
-        } else {
-            console.warn(`Unrecognized hash parameter '${name}'.`);
-        }
-    }
-
-    if (searchString) {
-        return { searchString };
-    }
-
-    // A hash carrying splits is one we wrote ourselves, so its main pane may hold no note —
-    // that is how a tab whose first pane was empty keeps the rest of its panes.
-    const isEmptyMainPaneWithSplits = !notePath && !!splits?.length;
-
-    if (!isEmptyMainPaneWithSplits && !NOTE_PATH_PATTERN.test(notePath)) {
-        return {};
-    }
-
-    return {
-        notePath,
-        noteId: treeService.getNoteIdFromUrl(notePath),
-        ntxId,
-        hoistedNoteId,
-        viewScope,
-        searchString,
-        openInPopup,
-        splits,
-        activeSplit
-    };
-}
-
-/** Whether `url` addresses the document at `location`, query string included, hash ignored. */
-function isSameDocumentUrl(url: string, hashIdx: number, location: UrlParts) {
-    const documentUrl = url.slice(0, hashIdx);
-
-    const { protocol, host, pathname, search } = location;
-    return documentUrl === `${protocol}//${host}${pathname}${search}`;
-}
-
-/** Iterates the `name=value` pairs of a hash's parameter string, decoding both sides. */
-function parseHashParams(paramString: string | undefined) {
-    if (!paramString) {
-        return [];
-    }
-
-    return paramString.split("&").map((pair) => {
-        const [name, value] = pair.split("=");
-
-        return [decodeURIComponent(name), decodeURIComponent(value ?? "")] as const;
-    });
-}
-
-/**
- * Parses the `splits` parameter — the panes that stood beside the main one, in order. Entries that
- * aren't a well-formed pane are dropped rather than failing the whole hash, so a mangled address
- * still opens what it can.
- */
-function parseSplitPanes(value: string): HashPane[] {
-    return value
-        .split(",")
-        .slice(0, MAX_SPLIT_PANES_IN_HASH)
-        .map(parseSplitPane)
-        .filter((pane) => !!pane);
-}
-
-function parseSplitPane(entry: string): HashPane | null {
-    const [notePath, paramString] = entry.split("?");
-
-    // An empty entry is a pane that held no note; anything else has to be a real note path.
-    if (notePath && !NOTE_PATH_PATTERN.test(notePath)) {
-        return null;
-    }
-
-    const pane: HashPane = {
-        notePath: notePath || null,
-        hoistedNoteId: null,
-        viewScope: { viewMode: "default" }
-    };
-
-    for (const [name, paramValue] of parseHashParams(paramString)) {
-        if (name === "hoistedNoteId") {
-            pane.hoistedNoteId = paramValue;
-        } else if (VIEW_SCOPE_PARAMS.includes(name)) {
-            (pane.viewScope as any)[name] = paramValue;
-        }
-        // Everything else — `ntxId`, `searchString`, a nested `splits` — describes a window rather
-        // than a pane, and has no meaning this far down.
-    }
-
-    return pane;
 }
 
 /**
@@ -715,14 +384,24 @@ export interface BlockJump {
 function getBlockJump(
     $link: JQuery<HTMLElement>, noteId: string | null, block: string
 ): BlockJump | null {
-    const content = $link.closest(".ck-content")[0];
+    // The content of the note in the split, around the embeds that the link can be in.
+    const page = $link.parents(".ck-content").last()[0];
     const ntxId = $link.closest("[data-ntx-id]").attr("data-ntx-id");
-    if (!content || !ntxId || appContext.tabManager.getNoteContextById(ntxId).noteId !== noteId) {
+    if (!page || !ntxId || !noteId) {
+        return null;
+    }
+
+    // The innermost scope that shows the note: the embed that holds the link, one around it, or
+    // the note of the split.
+    const pageNoteId = appContext.tabManager.getNoteContextById(ntxId).noteId;
+    const scope = getContentScopes<Element>($link[0], page)
+        .find((candidate) => (candidate.noteId ?? pageNoteId) === noteId);
+    if (!scope) {
         return null;
     }
 
     // A broken range is left to the note context, which also shows the error.
-    const { start, end } = resolveBlockReference<Element>(content, block);
+    const { start, end } = resolveBlockReference<Element>(scope.root, block);
     if (!start || !end) {
         return null;
     }
@@ -730,7 +409,7 @@ function getBlockJump(
     return {
         isHeading: start === end && /^H[1-6]$/.test(start.tagName),
         show: () => void loadBlockJump()
-            .then(({ showBlockReference }) => showBlockReference(content, block))
+            .then(({ showBlockReference }) => showBlockReference(scope.root, block))
     };
 }
 
@@ -771,7 +450,10 @@ function linkContextMenu(e: PointerEvent) {
 
     e.preventDefault();
 
-    linkContextMenuService.openContextMenu(notePath, e, viewScope, null);
+    // Loaded with the first right-click on a link: the menu imports the other context menus.
+    void import("../menus/link_context_menu.js").then(({ default: linkContextMenuService }) => {
+        linkContextMenuService.openContextMenu(notePath, e, viewScope, null);
+    });
 }
 
 /**
@@ -836,30 +518,15 @@ async function loadReferenceLinkTitle(
     // A column reference renders as "<board>: <column>", the column in a `<small>` below.
     $el.text(viewScope?.columnTitle ? `${title}:` : title);
 
-    if (viewScope?.bookmark) {
-        $el.append($("<small>").append(
-            $("<span>").addClass("bx bx-bookmark"),
-            document.createTextNode(viewScope.bookmark)
-        ));
-    }
-
-    if (viewScope?.block) {
-        const label = await loadBlockReferenceLabel(note, viewScope.block);
-        if (label) {
-            $el.append($("<small>")
-                .toggleClass("block-reference-broken", label.isBroken)
-                .append(
-                    $("<span>").addClass("bx bx-paragraph"),
-                    document.createTextNode(label.text)
-                ));
-        }
-    }
-
-    if (viewScope?.page) {
-        $el.append($("<small>").append(
-            $("<span>").addClass(viewScope.annotation ? "bx bx-comment-detail" : "bx bx-file"),
-            document.createTextNode(getPdfReferenceLabel(viewScope.page, viewScope.annotation))
-        ));
+    /* v8 ignore next -- parseNavigationStateFromUrl() gives a view scope with every note ID */
+    const targetLabel = viewScope ? await loadLinkTargetLabel(note, viewScope) : null;
+    if (targetLabel) {
+        $el.append($("<small>")
+            .toggleClass("block-reference-broken", targetLabel.isBroken)
+            .append(
+                $("<span>").addClass(targetLabel.icon),
+                document.createTextNode(targetLabel.text)
+            ));
     }
 
     if (viewScope?.columnTitle) {
@@ -940,32 +607,191 @@ function getReferenceLinkTitleSync(
         return `${note.title}: ${viewScope.columnTitle}`;
     }
 
-    if (viewScope?.bookmark) {
-        return `${note.title} - ${viewScope.bookmark}`;
-    }
-
-    const blockLabel = viewScope?.block
-        ? getCachedBlockReferenceLabel(note, viewScope.block)
-        : null;
-    if (blockLabel && !blockLabel.isBroken) {
-        return `${note.title} - ${blockLabel.text}`;
-    }
-
-    if (viewScope?.page) {
-        return `${note.title} - ${getPdfReferenceLabel(viewScope.page, viewScope.annotation)}`;
-    }
-
-    return note.title;
+    /* v8 ignore next -- parseNavigationStateFromUrl() gives a view scope with every note ID */
+    const targetLabel = viewScope ? getCachedLinkTargetLabel(note, viewScope) : null;
+    // A broken reference names the note alone.
+    return targetLabel && !targetLabel.isBroken
+        ? `${note.title} - ${targetLabel.text}`
+        : note.title;
 }
 
-/** What a reference to a PDF says after the title: the page, or the annotation on it. */
-function getPdfReferenceLabel(pageNumber: string, annotation: string | undefined) {
-    return t(annotation ? "pdf.annotation_reference" : "pdf.page_reference", { pageNumber });
+/** What a reference link shows after the note title for the place in the note it points at. */
+export interface LinkTargetLabel {
+    text: string;
+    /** The icon, with its `bx` prefix. */
+    icon: string;
+    /** Whether the blocks that the link points at are missing from the note. */
+    isBroken: boolean;
 }
 
-// A shared page hosting an app view keeps its links as plain links to other shared pages.
-/* v8 ignore next -- the `print` device branch is evaluated once at module load; under test glob.device is undefined, so the false arm cannot be exercised */
-if (glob.device !== "print" && !isShare) {
+type LabeledTargetParam = (typeof LABELED_TARGET_PARAMS)[number];
+
+/**
+ * The label of the place in `note`, or in its attachment, that `viewScope` points at: blocks, a
+ * heading of a document, an anchor or a page of a PDF, the first of {@link LABELED_TARGET_PARAMS}
+ * that has one. `null` for a link to the whole note.
+ */
+export async function loadLinkTargetLabel(note: FNote, viewScope: ViewScope) {
+    for (const param of LABELED_TARGET_PARAMS) {
+        const value = viewScope[param];
+        const label = value ? await loadParamLabel(note, viewScope, param, value) : null;
+        if (label) {
+            return label;
+        }
+    }
+    return null;
+}
+
+/**
+ * {@link loadLinkTargetLabel} for a link to a note, from the content and the heading titles that
+ * are loaded already.
+ */
+function getCachedLinkTargetLabel(note: FNote, viewScope: ViewScope) {
+    for (const param of LABELED_TARGET_PARAMS) {
+        const value = viewScope[param];
+        const label = value ? getCachedParamLabel(note, viewScope, param, value) : null;
+        if (label) {
+            return label;
+        }
+    }
+    return null;
+}
+
+/** The label of the link parameter `param` whose value is `value`, read from the saved note. */
+async function loadParamLabel(
+    note: FNote, viewScope: ViewScope, param: LabeledTargetParam, value: string
+) {
+    if (param === "block") {
+        return toBlockLabel(await loadBlockReferenceLabel(note, value));
+    }
+    if (param === "heading") {
+        return toHeadingLabel(await loadLinkedHeadingTitle(note, viewScope, value));
+    }
+    return getCachedParamLabel(note, viewScope, param, value);
+}
+
+/** The label of the link parameter `param` whose value is `value`, from what is loaded already. */
+function getCachedParamLabel(
+    note: FNote, viewScope: ViewScope, param: LabeledTargetParam, value: string
+): LinkTargetLabel | null {
+    switch (param) {
+        case "block":
+            return toBlockLabel(getCachedBlockReferenceLabel(note, value));
+        case "heading":
+            return toHeadingLabel(
+                getCachedHeadingTitle(getTocUrl("notes", note.noteId), note.blobId, value));
+        case "bookmark":
+            return { text: value, icon: "bx bx-bookmark", isBroken: false };
+        case "page": {
+            const { annotation } = viewScope;
+            return {
+                text: t(annotation ? "pdf.annotation_reference" : "pdf.page_reference",
+                    { pageNumber: value }),
+                icon: annotation ? "bx bx-comment-detail" : "bx bx-file",
+                isBroken: false
+            };
+        }
+    }
+}
+
+function toBlockLabel(label: BlockReferenceLabel | null): LinkTargetLabel | null {
+    return label && { text: label.text, icon: "bx bx-paragraph", isBroken: label.isBroken };
+}
+
+function toHeadingLabel(title: string | null): LinkTargetLabel | null {
+    return title ? { text: title, icon: "bx bx-heading", isBroken: false } : null;
+}
+
+/** The ToC route of a note or an attachment, such as `notes/abc/toc`. */
+export function getTocUrl(entityType: "notes" | "attachments", entityId: string) {
+    return `${entityType}/${entityId}/toc`;
+}
+
+/**
+ * Remembers the titles of the headings that the ToC cache of a document lists for its blob
+ * `blobId`, so that the labels of links to them need no request. `tocUrl` is the ToC route of the
+ * document, from {@link getTocUrl}.
+ */
+export function rememberHeadingTitles(
+    tocUrl: string, blobId: string, headings: { id: string; title: string }[]
+) {
+    headingTitles.delete(tocUrl);
+    if (headingTitles.size >= MAX_CACHED_TOCS) {
+        const [ oldest ] = headingTitles.keys();
+        headingTitles.delete(oldest);
+    }
+    const titles = new Map(headings.map(({ id, title }) => [ id, title ]));
+    headingTitles.set(tocUrl, { blobId, titles });
+}
+
+/** The title of the heading `headingId` that is remembered for the blob `blobId`, if any. */
+function getCachedHeadingTitle(tocUrl: string, blobId: string | undefined, headingId: string) {
+    const cached = headingTitles.get(tocUrl);
+    return cached && cached.blobId === blobId ? cached.titles.get(headingId) ?? null : null;
+}
+
+/**
+ * The title of the heading `headingId` of `note`, or of its attachment that `viewScope` names.
+ * `null` when the heading is not found.
+ */
+async function loadLinkedHeadingTitle(note: FNote, viewScope: ViewScope, headingId: string) {
+    if (viewScope.viewMode === "attachments" && viewScope.attachmentId) {
+        const attachment = await froca.getAttachmentOfNote(note.noteId, viewScope.attachmentId);
+        const tocUrl = getTocUrl("attachments", viewScope.attachmentId);
+        return attachment ? loadHeadingTitle(tocUrl, attachment.blobId, headingId) : null;
+    }
+    return loadHeadingTitle(getTocUrl("notes", note.noteId), note.blobId, headingId);
+}
+
+/**
+ * The title of the heading `headingId` of the document whose ToC route is `tocUrl` and whose blob
+ * is `blobId`, read from its ToC cache. The read never builds the cache. Only a cache of the
+ * current blob is remembered; a stale one gives the title once.
+ */
+async function loadHeadingTitle(tocUrl: string, blobId: string | undefined, headingId: string) {
+    const cached = headingTitles.get(tocUrl);
+    if (cached && cached.blobId === blobId) {
+        return cached.titles.get(headingId) ?? null;
+    }
+
+    const response = await readToc(tocUrl, blobId);
+    if (response?.status === "ready") {
+        rememberHeadingTitles(tocUrl, response.blobId, response.headings);
+    }
+    if (response?.status === "ready" || response?.status === "stale") {
+        return response.headings.find(({ id }) => id === headingId)?.title ?? null;
+    }
+    return null;
+}
+
+/** The ToC cache at `tocUrl`, read once for the labels of a blob that wait for it together. */
+function readToc(tocUrl: string, blobId: string | undefined) {
+    const key = `${tocUrl}:${blobId}`;
+    const pending = tocReads.get(key);
+    if (pending) {
+        return pending;
+    }
+
+    const read = server.get<CachedTocResponse>(tocUrl, undefined, false, {
+        silentBadRequest: true, silentNotFound: true
+    })
+        .catch(() => null)
+        .finally(() => tocReads.delete(key));
+    tocReads.set(key, read);
+    return read;
+}
+
+/**
+ * Opens notes from the links of the app: a click, middle click or double click on an `<a>` goes
+ * through {@link goToLink}, a right-click opens the link menu. An entry that shows notes calls it
+ * once at startup. A shared page hosting an app view keeps its links as plain links to other shared
+ * pages, and a printed note keeps them as they are.
+ */
+export function setupLinkHandlers() {
+    if (glob.device === "print" || isShare) {
+        return;
+    }
+
     // TODO: Check why the event is not supported.
     //@ts-ignore
     $(document).on("click", "a", goToLink);
@@ -995,6 +821,9 @@ if (glob.device !== "print" && !isShare) {
         }
     });
 }
+
+export { calculateExtraWindowUrl, calculateHash, parseNavigationStateFromUrl } from "./navigation_state.js";
+export type { HashPane, ViewMode, ViewScope } from "./navigation_state.js";
 
 export default {
     getNotePathFromUrl,

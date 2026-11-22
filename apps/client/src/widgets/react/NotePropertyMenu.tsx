@@ -6,12 +6,14 @@ import Component from "../../components/component";
 import FNote from "../../entities/fnote";
 import NoteContextAwareWidget from "../note_context_aware_widget";
 import { OptionCardSection } from "./Card";
-import { FormDropdownDivider, FormDropdownSubmenu, FormListItem, FormListToggleableItem } from "./FormList";
+import {
+    FormDropdownDivider, FormDropdownSubmenu, FormListItem, FormListToggleableItem
+} from "./FormList";
 import FormSelect, { FormSelectWithGroups } from "./FormSelect";
 import FormToggle from "./FormToggle";
 import HelpTooltipButton from "./HelpTooltipButton";
 import FormTextBox from "./FormTextBox";
-import { useNoteLabel, useNoteLabelBoolean } from "./hooks";
+import { useNoteLabel, useNoteLabelBoolean } from "./hooks/note";
 import { NoteContextContext, ParentComponent } from "./react_utils";
 
 export interface ClickContext {

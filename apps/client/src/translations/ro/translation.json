@@ -43,8 +43,6 @@
     "note": "Notiță",
     "search_note": "căutați notița după nume",
     "button_add_link": "Adaugă legătură",
-    "anchor": "Ancoră (opțional)",
-    "anchor_none": "Niciuna (legătură către notiță)",
     "edit_link": "Editează legătura",
     "button_edit_link": "Salvează legătura"
   },
@@ -2799,8 +2797,7 @@
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "Elimină din bara de lansare",
     "configure_launch_bar": "Configurează bara de lansare",
-    "launch_bar_orientation": "Orientarea barei de lansare",
-    "will_reload_frontend": "(va reîncărca aplicația)"
+    "launch_bar_orientation": "Orientarea barei de lansare"
   },
   "link": {
     "failed_to_open": "Deschiderea legăturii „{{- href}}” a eșuat: {{- message}}"
@@ -3159,7 +3156,6 @@
       "markdown-import-from-clipboard": "Importă Markdown din clipboard",
       "math-editor-unavailable": "Editorul de ecuații nu este disponibil",
       "math-equation": "Ecuație matematică",
-      "medium": "Medie",
       "mermaid-diagram": "Diagramă Mermaid",
       "mermaid-diagram-0": "Diagramă Mermaid: %0",
       "missing-definition": "(definiție lipsă)",

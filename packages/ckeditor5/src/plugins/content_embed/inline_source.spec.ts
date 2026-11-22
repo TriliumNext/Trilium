@@ -6,13 +6,14 @@ import {
     CodeBlock,
     DropdownView,
     Essentials,
+    List,
     ListItemView,
     type ModelElement,
     Paragraph,
     Undo,
     Widget
 } from "ckeditor5";
-import { BOX_SIZES } from "@triliumnext/commons";
+import { BOX_SIZES } from "@triliumnext/commons/src/lib/content_embeds.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
@@ -415,9 +416,120 @@ describe("ContentEmbedInlineSource", () => {
 
             const model = getModelData(withCodeBlocks.model, { withoutSelection: true });
             expect(model).toMatch(/^<codeBlock [^>]*>a<\/codeBlock><contentEmbed /);
-            // A code block keeps its block ID on the <code>, an embed on the <pre>.
-            expect(withCodeBlocks.getData()).toContain(
-                ` data-trilium-block-id="b1"><code class="language-text-x-python">x</code></pre>`);
+            // An embed keeps its block ID on the <code>, as a code block does.
+            const saved = ` data-editable="true"><code class="language-text-x-python"`
+                + ` data-trilium-block-id="b1">x</code></pre>`;
+            expect(withCodeBlocks.getData()).toContain(saved);
+
+            // An earlier version saved the block ID on the <pre>, also of a diagram.
+            withCodeBlocks.setData(`<pre class="extended-code-block" data-trilium-block-id="b1">`
+                + `<code class="language-text-x-python">x</code></pre>`
+                + `<pre data-trilium-block-id="b:2"><code class="language-mermaid">a</code></pre>`);
+            expect(withCodeBlocks.getData()).toContain(saved);
+            expect(withCodeBlocks.getData()).toContain(`<code class="language-mermaid">a</code>`);
+        });
+
+        describe("in place of the code blocks of CKEditor", () => {
+            const PYTHON = { language: "text-x-python", label: "Python" };
+
+            function createReplacing(plugins = [ BlockReferenceEditing ]) {
+                return createTestEditor([
+                    Essentials, Paragraph, Widget, CodeBlock, ContentEmbed, ...plugins
+                ], {
+                    contentEmbed: {
+                        inlineLanguages: [ "mermaid" ],
+                        isCodeBlockExtended: true,
+                        loadInline: loadInlineEmbed
+                    }
+                });
+            }
+
+            /** An editor that keeps the code blocks of CKEditor, as one before the replacement. */
+            function createPlain(plugins = [ BlockReferenceEditing ]) {
+                return createTestEditor([ Essentials, Paragraph, CodeBlock, ...plugins ], {
+                    codeBlock: { languages: [ PYTHON ] }
+                });
+            }
+
+            it("loads every code block as one, and saves it as CKEditor does", async () => {
+                const replacing = await createReplacing();
+                const plain = await createPlain();
+                const html = `<pre><code class="language-text-x-python">`
+                    + `def a():\n    pass</code></pre>`;
+
+                for (const saved of [ html, html.replace("<pre>", `<pre class="extended-code-block"`
+                    + ` data-box-size="full" data-hide-title="true" data-editable="true">`) ]) {
+                    replacing.setData(saved);
+                    const embed = replacing.model.document.getRoot()?.getChild(0) as ModelElement;
+                    expect(isExtendedCodeBlock(replacing, embed)).toBe(true);
+                    expect([ "language", "source", "boxSize", "hideTitle", "editable" ]
+                        .map((name) => embed.getAttribute(name)))
+                        .toEqual([ "text-x-python", "def a():\n    pass", "full", true, true ]);
+                    expect(replacing.getData()).toBe(html);
+                }
+                plain.setData(html);
+                expect(plain.getData()).toBe(html);
+
+                // A code block in no known language leaves its language to be detected, as in
+                // CKEditor, and a diagram stays a diagram.
+                const auto = `<code class="language-text-x-trilium-auto">a</code></pre>`;
+                replacing.setData(`<pre><code>a</code></pre>`
+                    + `<pre><code class="language-js">a</code></pre>`
+                    + `<pre><code class="language-mermaid">graph TD;</code></pre>`);
+                expect(replacing.getData()).toBe(`<pre>${auto}<pre>${auto}`
+                    + `<pre data-box-size="resizable" data-display-mode="split"`
+                    + ` data-hide-title="true" data-editable="true">`
+                    + `<code class="language-mermaid">graph TD;</code></pre>`);
+            });
+
+            it("saves the settings that a code block has not, and no class", async () => {
+                const replacing = await createReplacing();
+                const blocks = [
+                    `<pre style="--include-note-width:30em;" data-box-size="resizable"`
+                        + ` data-position="left" data-hide-title="true" data-editable="true">`,
+                    `<pre data-box-size="full" data-hide-title="true">`,
+                    `<pre data-code-wrap-lines="true" data-code-line-numbers="false">`
+                ].map((pre) => `${pre}<code class="language-text-x-python">x</code></pre>`);
+
+                for (const html of blocks) {
+                    replacing.setData(html);
+                    expect(replacing.getData()).toBe(html);
+                }
+            });
+
+            it("keeps the block ID of a code block where CKEditor reads it", async () => {
+                const replacing = await createReplacing();
+                const plain = await createPlain();
+                const html = `<pre><code class="language-text-x-python"`
+                    + ` data-trilium-block-id="b1">x</code></pre>`;
+
+                replacing.setData(html);
+                plain.setData(html);
+                expect(replacing.getData()).toBe(html);
+                expect(plain.getData()).toBe(html);
+            });
+
+            it("keeps a code block in its list item, and a diagram out of it", async () => {
+                const replacing = await createReplacing([ List ]);
+                const plain = await createPlain([ List ]);
+                const getData = (editor: ClassicEditor) =>
+                    editor.getData().replace(/ data-list-item-id="[^"]*"/g, "");
+                const html = `<ol><li><p>one</p><pre><code class="language-text-x-python">x</code>`
+                    + `</pre></li><li>two</li></ol>`;
+
+                replacing.setData(html);
+                plain.setData(html);
+                expect(getModelData(replacing.model, { withoutSelection: true }))
+                    .toMatch(/<contentEmbed [^>]*listItemId="[^>]*source="x">/);
+                expect(getData(replacing)).toBe(html);
+                expect(getData(plain)).toBe(html);
+
+                replacing.setData(`<ul><li>one<pre><code class="language-mermaid">a</code></pre>`
+                    + `</li></ul>`);
+                const model = getModelData(replacing.model, { withoutSelection: true });
+                expect(model).toMatch(/<contentEmbed [^>]*language="mermaid"/);
+                expect(model).not.toMatch(/<contentEmbed [^>]*listItemId/);
+            });
         });
 
         it("writes the source that the host holds back before a copy", async () => {

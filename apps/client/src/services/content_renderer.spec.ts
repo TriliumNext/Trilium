@@ -1,8 +1,9 @@
-import { attachmentIcon, CONTENT_RENDERER_GROUPS } from "@triliumnext/commons";
+import { attachmentIcon } from "@triliumnext/commons/src/lib/attachment_roles.js";
+import { CONTENT_RENDERER_GROUPS } from "@triliumnext/commons/src/lib/notes.js";
 import { h, render, VNode } from "preact";
 import { useLayoutEffect } from "preact/hooks";
 import { act } from "preact/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 // --- Mock heavy / side-effecting collaborators BEFORE importing the SUT. ---
 // content_renderer_text: renderText / postProcessRichContent / renderChildrenList
@@ -70,8 +71,21 @@ vi.mock("./open.js", () => ({
 // isOfficeMimeType comes (unmocked) from @triliumnext/commons; only the server
 // round-trip is stubbed out.
 const renderOfficeToHtml = vi.fn(async (..._args: any[]) => ({ css: "", html: `<div class="office-doc">converted</div>` }));
-vi.mock("./office_renderer.js", () => ({
+vi.mock("./office_renderer.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./office_renderer.js")>(),
     renderOfficeToHtml: (...a: any[]) => renderOfficeToHtml(...a)
+}));
+
+const showDocumentTarget = vi.fn();
+vi.mock("./bookmark_jump.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./bookmark_jump.js")>(),
+    showDocumentTarget
+}));
+
+const refreshBlobId = vi.fn<(ref: object) => Promise<string | null>>();
+vi.mock("../widgets/type_widgets/file/toc_build.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("../widgets/type_widgets/file/toc_build.js")>(),
+    refreshBlobId: (ref: object) => refreshBlobId(ref)
 }));
 
 const mermaidRender = vi.fn(async (..._args: any[]) => ({ svg: "<g/>" }));
@@ -161,7 +175,7 @@ import Component from "../components/component.js";
 import type { SaveState } from "../components/note_context.js";
 import FAttachment from "../entities/fattachment.js";
 import { buildNote } from "../test/easy-froca.js";
-import { useLegacyImperativeHandlers } from "../widgets/react/hooks.js";
+import { useLegacyImperativeHandlers } from "../widgets/react/hooks/legacy.js";
 import EmbedHistories from "../widgets/type_widgets/text/embed_history.js";
 import {
     addContentDisposer,
@@ -175,6 +189,7 @@ import {
     snapshotAndDispose
 } from "./content_renderer.js";
 import froca from "./froca.js";
+import { t } from "./i18n.js";
 import server from "./server.js";
 
 // getRenderedContent declares an explicit `this` parameter; bind it so callers don't need to.
@@ -348,6 +363,36 @@ describe("getRenderedContent dispatch", () => {
         expect(opts.sanitize("<b>x</b>")).toBe("<b>x</b>");
     });
 
+    it("renders only the blocks of a Markdown excerpt, or says it is broken", async () => {
+        const blocks = `<p data-trilium-block-id="a">A</p><p data-trilium-block-id="b">B</p>`
+            + `<p data-trilium-block-id="c">C</p>`;
+        renderToHtml.mockImplementation((source: string) => (source ? blocks : ""));
+        onTestFinished(() => {
+            renderToHtml.mockImplementation((...args: unknown[]) => `<p>${String(args[0])}</p>`);
+        });
+        const note = buildNote({ title: "Doc", type: "code", content: "source" });
+        note.mime = "text/x-markdown";
+
+        const { $renderedContent } = await getRenderedContent(note, {
+            block: "b:c", hasDisplayModes: true, highlightBlock: "c"
+        });
+        const ids = $renderedContent.find("[data-trilium-block-id]").toArray()
+            .map((element) => element.getAttribute("data-trilium-block-id"));
+        expect(ids).toEqual([ "b", "c" ]);
+        expect(markdownEmbedComponent).not.toHaveBeenCalled();
+        expect($renderedContent.find(".block-reference-highlight").length).toBe(1);
+
+        const broken = await getRenderedContent(note, { block: "a:gone" });
+        expect(broken.$renderedContent.find(".block-reference-broken").length).toBe(1);
+        expect(broken.$renderedContent.find(".ck-content").length).toBe(0);
+
+        const empty = buildNote({ title: "Empty", type: "code", content: "" });
+        empty.mime = "text/x-markdown";
+        const emptyExcerpt = await getRenderedContent(empty, { block: "a" });
+        expect(emptyExcerpt.$renderedContent.find(".block-reference-broken").length).toBe(1);
+        expect(renderChildrenList).not.toHaveBeenCalled();
+    });
+
     it("treats a markdown note with a null blob as empty", async () => {
         const note = buildNote({ title: "NullBlob", type: "code" });
         note.mime = "text/markdown";
@@ -416,7 +461,9 @@ describe("getRenderedContent editable code", () => {
             postponeSave: vi.fn(),
             release: vi.fn(),
             getSaveState: vi.fn((): SaveState | undefined => "saving"),
-            subscribeSaveState: vi.fn(() => () => {})
+            subscribeSaveState: vi.fn(() => () => {}),
+            setLoadedVersion: vi.fn(),
+            saveNow: vi.fn(async (): Promise<string | undefined> => "saved")
         };
     }
 
@@ -484,13 +531,16 @@ describe("getRenderedContent editable code", () => {
         expect(props.editor.canEdit()).toBe(true);
         expect(noteEditor.canEdit).toHaveBeenCalledWith(note);
         expect(noteEditor.getUnsavedContent).toHaveBeenCalledWith(note.noteId);
-        expect(noteEditor.scheduleSave).toHaveBeenCalledWith(note, getContent, onSaved);
+        expect(noteEditor.scheduleSave).toHaveBeenCalledWith(note, getContent, onSaved, undefined);
         expect(noteEditor.release).toHaveBeenCalledWith(note.noteId);
         const listener = () => {};
         expect(props.editor.getSaveState()).toBe("saving");
         props.editor.subscribeSaveState(listener);
         expect(noteEditor.getSaveState).toHaveBeenCalledWith(note.noteId);
         expect(noteEditor.subscribeSaveState).toHaveBeenCalledWith(listener);
+        props.editor.setLoadedVersion("loadedBlob", "loaded");
+        expect(noteEditor.setLoadedVersion)
+            .toHaveBeenCalledExactlyOnceWith(note.noteId, "loadedBlob", "loaded");
     });
 
     it("mounts MarkdownEmbed for a Markdown note in an embed, saved by `noteEditor`", async () => {
@@ -515,8 +565,11 @@ describe("getRenderedContent editable code", () => {
             expect.objectContaining({ hasDisplayModes: true }));
         expect(renderToHtml).not.toHaveBeenCalled();
         const getContent = () => "edited";
-        props.editor.scheduleSave(getContent);
-        expect(noteEditor.scheduleSave).toHaveBeenCalledWith(note, getContent, undefined);
+        const hooks = { onDataTaken: vi.fn(), dataSaved: vi.fn(), resolveConflict: vi.fn() };
+        props.editor.scheduleSave(getContent, undefined, hooks);
+        expect(noteEditor.scheduleSave).toHaveBeenCalledWith(note, getContent, undefined, hooks);
+        expect(await props.editor.saveNow()).toBe("saved");
+        expect(noteEditor.saveNow).toHaveBeenCalledExactlyOnceWith(note.noteId);
 
         // Other Markdown renders the same way, and none shows the children of the note.
         expect((await props.renderPreview("edited")).innerHTML).toBe("<p>edited</p>");
@@ -827,6 +880,88 @@ describe("getRenderedContent file rendering", () => {
         expect(openNoteExternally).toHaveBeenCalledWith(note.noteId, note.mime);
     });
 
+    it("asks for the blob of a PDF attachment, and loads the current one after a failed load",
+        async () => {
+        const att = buildAttachment({ role: "file", mime: "application/pdf", blobId: "blobA" });
+        const onDocumentState = vi.fn();
+        await getRenderedContent(att, { onDocumentState });
+        const first = pdfViewerComponent.mock.calls.at(-1)?.[0];
+        expect(first.pdfUrl).toBe(`/api/attachments/${att.attachmentId}/open?blobId=blobA`);
+
+        first.onDocumentLoaded();
+        expect(onDocumentState).toHaveBeenLastCalledWith({ status: "shown", blobId: "blobA" });
+
+        refreshBlobId.mockResolvedValueOnce("blobB");
+        first.onDocumentError();
+        await vi.waitFor(() => expect(pdfViewerComponent.mock.calls.at(-1)?.[0].pdfUrl)
+            .toBe(`/api/attachments/${att.attachmentId}/open?blobId=blobB`));
+        const second = pdfViewerComponent.mock.calls.at(-1)?.[0];
+        expect(second.loadToken).not.toBe(first.loadToken);
+        expect(onDocumentState).toHaveBeenLastCalledWith({ status: "rendering" });
+
+        // A report of the earlier load changes nothing; one of the current load shows its blob.
+        first.onDocumentLoaded();
+        expect(onDocumentState).toHaveBeenLastCalledWith({ status: "rendering" });
+        second.onDocumentLoaded();
+        expect(onDocumentState).toHaveBeenLastCalledWith({ status: "shown", blobId: "blobB" });
+
+        // Without the report, a viewer requests no blob.
+        await getRenderedContent(att);
+        expect(pdfViewerComponent.mock.calls.at(-1)?.[0].pdfUrl)
+            .toBe(`/api/attachments/${att.attachmentId}/open`);
+    });
+
+    it("gives up on a PDF attachment whose blob fails to load twice", async () => {
+        const att = buildAttachment({ role: "file", mime: "application/pdf", blobId: "blobA" });
+        const onDocumentState = vi.fn();
+        refreshBlobId.mockResolvedValue("blobA");
+        await getRenderedContent(att, { onDocumentState });
+
+        pdfViewerComponent.mock.calls.at(-1)?.[0].onDocumentError();
+        await vi.waitFor(() => expect(onDocumentState)
+            .toHaveBeenCalledWith({ status: "rendering" }));
+        pdfViewerComponent.mock.calls.at(-1)?.[0].onDocumentError();
+
+        await vi.waitFor(() => expect(onDocumentState)
+            .toHaveBeenLastCalledWith({ status: "unavailable" }));
+        expect(refreshBlobId).toHaveBeenCalledOnce();
+        refreshBlobId.mockReset();
+    });
+
+    it("opens a PDF attachment at each target in one viewer, and lets it build a cache", async () => {
+        const att = buildAttachment({ role: "file", mime: "application/pdf" });
+        const onReadingChange = vi.fn();
+        const { showTarget } = await getRenderedContent(att, {
+            buildsPdfToc: true, onReadingChange
+        });
+        expect(pdfViewerComponent.mock.calls.at(-1)?.[0]).toMatchObject({
+            tocDocument: { tocUrl: `attachments/${att.attachmentId}/toc`, isProtected: false },
+            onReadingChange
+        });
+        expect(pdfViewerComponent.mock.calls.at(-1)?.[0].target).toBeUndefined();
+
+        showTarget?.({ page: 3, heading: "h1", bookmark: "Intro" });
+        expect(pdfViewerComponent.mock.calls.at(-1)?.[0].target)
+            .toStrictEqual({ page: 3, heading: "h1", annotation: undefined });
+        showTarget?.({ page: 5 });
+        expect(pdfViewerComponent.mock.calls.at(-1)?.[0]).toMatchObject({ target: { page: 5 } });
+
+        isProtectedSessionAvailable.mockReturnValue(true);
+        const secret = buildAttachment({
+            role: "file", mime: "application/pdf", isProtected: true
+        });
+        await getRenderedContent(secret, { buildsPdfToc: true });
+        expect(pdfViewerComponent.mock.calls.at(-1)?.[0].tocDocument)
+            .toStrictEqual({ tocUrl: `attachments/${secret.attachmentId}/toc`, isProtected: true });
+
+        // A note builds its own cache in its own viewer, and other content has no PDF to open.
+        const note = buildNote({ title: "P", type: "file" });
+        note.mime = "application/pdf";
+        await getRenderedContent(note, { buildsPdfToc: true });
+        expect(pdfViewerComponent.mock.calls.at(-1)?.[0].tocDocument).toBeUndefined();
+        expect((await getRenderedContent(buildNote({ title: "T" }))).showTarget).toBeUndefined();
+    });
+
     it("does not render file when tooltip option is set", async () => {
         const note = buildNote({ title: "PT", type: "file" });
         note.mime = "application/pdf";
@@ -927,6 +1062,68 @@ describe("getRenderedContent office rendering", () => {
         expect($renderedContent.find(".file-open").length).toBe(1);
     });
 
+    it("shows the preview at the place that a link names, once converted", async () => {
+        const note = buildNote({ title: "Doc", type: "file" });
+        note.mime = DOCX;
+        const { $renderedContent, showTarget } = await getRenderedContent(note);
+
+        showTarget?.({ heading: "h1" });
+
+        const body = $renderedContent.find(".office-preview-body")[0];
+        await vi.waitFor(() => expect(showDocumentTarget)
+            .toHaveBeenCalledExactlyOnceWith(body, { heading: "h1" }, undefined));
+
+        renderOfficeToHtml.mockRejectedValueOnce(new Error("bad zip"));
+        expect((await getRenderedContent(note)).showTarget).toBeUndefined();
+    });
+
+    it("previews the blob an attachment holds, reading it again after the server refused another",
+        async () => {
+        const { OfficePreviewChangedError } = await import("./office_renderer.js");
+        const att = buildAttachment({ role: "file", mime: DOCX, blobId: "blobA" });
+        const onDocumentState = vi.fn();
+        renderOfficeToHtml.mockRejectedValueOnce(new OfficePreviewChangedError());
+        refreshBlobId.mockResolvedValueOnce("blobB");
+
+        const { showTarget } = await getRenderedContent(att, { onDocumentState });
+
+        expect(renderOfficeToHtml.mock.calls.map(([ , , options ]) => options.blobId))
+            .toStrictEqual([ "blobA", "blobB" ]);
+        expect(refreshBlobId).toHaveBeenCalledWith(
+            { kind: "attachment", attachmentId: att.attachmentId, ownerId: att.ownerId });
+        expect(onDocumentState)
+            .toHaveBeenCalledExactlyOnceWith({ status: "shown", blobId: "blobB" });
+
+        showTarget?.({ heading: "gone" }, { isFallbackToTop: false });
+        await vi.waitFor(() => expect(showDocumentTarget).toHaveBeenCalledWith(
+            expect.anything(), { heading: "gone" }, { isFallbackToTop: false }));
+    });
+
+    it("reports a removed attachment, and three refusals in a row, as unavailable", async () => {
+        const { OfficePreviewChangedError } = await import("./office_renderer.js");
+        vi.spyOn(console, "warn").mockImplementation(() => {});
+        const att = buildAttachment({ role: "file", mime: DOCX, blobId: "blobA" });
+        const onDocumentState = vi.fn();
+        renderOfficeToHtml.mockRejectedValueOnce(new OfficePreviewChangedError());
+        refreshBlobId.mockResolvedValueOnce(null);
+        await getRenderedContent(att, { onDocumentState });
+        expect(onDocumentState).toHaveBeenLastCalledWith({ status: "unavailable" });
+
+        renderOfficeToHtml.mockClear();
+        renderOfficeToHtml.mockRejectedValue(new OfficePreviewChangedError());
+        refreshBlobId.mockResolvedValue("blobN");
+        try {
+            await getRenderedContent(att, { onDocumentState });
+            expect(renderOfficeToHtml).toHaveBeenCalledTimes(3);
+            expect(onDocumentState).toHaveBeenLastCalledWith({ status: "unavailable" });
+        } finally {
+            renderOfficeToHtml.mockReset();
+            renderOfficeToHtml.mockImplementation(async () => (
+                { css: "", html: `<div class="office-doc">converted</div>` }));
+            refreshBlobId.mockReset();
+        }
+    });
+
     it("attaches a spreadsheet's stylesheet inside the preview body, as an element", async () => {
         renderOfficeToHtml.mockResolvedValueOnce({
             css: ".spreadsheet-table .sst-1{font-weight:bold}",
@@ -949,8 +1146,17 @@ describe("getRenderedContent office rendering", () => {
         note.mime = "application/vnd.oasis.opendocument.text";
         const { type, $renderedContent } = await getRenderedContent(note);
         expect(type).toBe("office");
-        expect($renderedContent.find(".admonition.caution").length).toBe(1);
+        expect($renderedContent.find(".admonition.caution").text()).toBe(t("content_renderer.office_render_error"));
         expect($renderedContent.find(".office-preview-scroll, .office-preview-body").length).toBe(0);
+    });
+
+    it("says the document is too large when the server refuses it for its size", async () => {
+        const { OfficePreviewTooLargeError } = await import("./office_renderer.js");
+        renderOfficeToHtml.mockRejectedValueOnce(new OfficePreviewTooLargeError());
+        const note = buildNote({ title: "DocHuge", type: "file" });
+        note.mime = "application/vnd.oasis.opendocument.text";
+        const { $renderedContent } = await getRenderedContent(note);
+        expect($renderedContent.find(".admonition.caution").text()).toBe(t("content_renderer.office_too_large"));
     });
 
     it("does not run the heavy conversion in tooltip mode", async () => {
@@ -1441,6 +1647,14 @@ describe("getRenderingType detection", () => {
         const zip = buildAttachment({ role: "importSource", mime: "application/zip" });
         expect((await getRenderedContent(html)).type).toBe("code");
         expect((await getRenderedContent(zip)).type).toBe("file");
+    });
+
+    it("renders the JSON of a view config and of a ToC cache as code", async () => {
+        for (const role of [ "viewConfig", "tocCache" ]) {
+            const att = buildAttachment({ role, mime: "application/json" });
+            att.getBlob = (async () => ({ content: "{}" })) as any;
+            expect((await getRenderedContent(att)).type).toBe("code");
+        }
     });
 
     it("returns the raw role of an attachment with no branch, drawn as an icon", async () => {

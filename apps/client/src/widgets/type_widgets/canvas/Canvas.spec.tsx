@@ -17,13 +17,13 @@ vi.mock("@excalidraw/excalidraw", () => ({
         );
     }
 }));
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...await importOriginal<typeof import("../../react/hooks")>(),
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useTriliumOption: () => [ "en" ],
     useTriliumOptionBool: (name: keyof typeof options) => [ options[name] ]
 }));
 
-const { CanvasEditor } = await import("./Canvas");
+const { CanvasEditor, getExcalidrawAssetPath } = await import("./Canvas");
 
 describe("CanvasEditor", () => {
     let container: HTMLElement;
@@ -141,5 +141,14 @@ describe("CanvasEditor", () => {
         options.canvasThinStroke = false;
         await mount({ isReadOnly: true });
         expect(getFactor()).toBe(1);
+    });
+});
+
+describe("getExcalidrawAssetPath", () => {
+    it("joins the page path and the asset directory with a single slash", () => {
+        const assetDir = "node_modules/@excalidraw/excalidraw/dist/prod";
+        expect(getExcalidrawAssetPath("/")).toBe(`/${assetDir}`);
+        expect(getExcalidrawAssetPath("/trilium/")).toBe(`/trilium/${assetDir}`);
+        expect(getExcalidrawAssetPath("/trilium")).toBe(`/trilium/${assetDir}`);
     });
 });

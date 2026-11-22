@@ -14,6 +14,12 @@ import { renderInto } from "../../test/render";
 import { ParentComponent } from "../react/react_utils";
 import { BookmarkList, ForwardToNoteButton, getChevronIcon, getListedChildCount, getPreviewNoteIds, OpenNoteFooter, PreviewSlot, TitleWithIndicators, UnhoistButton, WorkspaceCards } from "./MobileNoteNavigator";
 
+const treeContextMenu = vi.hoisted(() => ({ loaded: false }));
+vi.mock("../../menus/tree_context_menu", async (importOriginal) => {
+    treeContextMenu.loaded = true;
+    return await importOriginal<typeof import("../../menus/tree_context_menu")>();
+});
+
 vi.mock("../../services/i18n", () => ({
     t: (key: string, options?: object) => (options ? `${key} ${JSON.stringify(options)}` : key),
     translationsInitializedPromise: Promise.resolve()
@@ -35,6 +41,12 @@ function reloadingParent(extra: object = {}) {
     });
     return { parent, reload };
 }
+
+describe("MobileNoteNavigator", () => {
+    it("loads the tree's context menu only once a note is long pressed, not with the navigator", () => {
+        expect(treeContextMenu.loaded).toBe(false);
+    });
+});
 
 describe("getListedChildCount", () => {
     buildNotes([

@@ -1,5 +1,8 @@
 import type { LinkEmbedMetadata } from "@triliumnext/commons";
-import { _setModelData as setModelData, type ClassicEditor } from "ckeditor5";
+import {
+    _getModelData as getModelData, _setModelData as setModelData, type ClassicEditor,
+    FontBackgroundColor, FontColor
+} from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -277,6 +280,32 @@ describe("LinkEmbed commands", () => {
         expect(mention).toBeDefined();
         expect(mention?.getAttribute("url")).toBe("https://e.com/");
         expect(mention?.getAttribute("title")).toBe("T");
+    });
+
+    it("keeps the colors of a preview or link whose display changes", async () => {
+        const plugins = [ ...LINK_EMBED_TEST_PLUGINS, FontColor, FontBackgroundColor ];
+        const coloring = await createTestEditor(plugins, { linkEmbed: createLinkEmbedHost() });
+        const colors = 'fontBackgroundColor="#e5e64d" fontColor="#e64d4d"';
+        setModelData(coloring.model, '<paragraph>[<linkMention url="https://e.com/" title="T" '
+            + `${colors}></linkMention>]</paragraph>`);
+
+        coloring.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "cardLink" });
+        const card = findElement(coloring, "linkEmbed");
+        if (!card) {
+            throw new Error("Expected a card.");
+        }
+        expect(card.getAttribute("fontColor")).toBe("#e64d4d");
+        expect(card.getAttribute("fontBackgroundColor")).toBe("#e5e64d");
+
+        coloring.model.change((writer) => writer.setSelection(card, "on"));
+        coloring.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "textLink" });
+        expect(getModelData(coloring.model, { withoutSelection: true })).toBe(
+            `<paragraph><$text ${colors} linkHref="https://e.com/">T</$text></paragraph>`);
+
+        setModelData(coloring.model,
+            `<paragraph><$text ${colors} linkHref="https://e.com/">T[]</$text></paragraph>`);
+        await coloring.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "iconAndTextLink" });
+        expect(findElement(coloring, "linkMention")?.getAttribute("fontColor")).toBe("#e64d4d");
     });
 
     it("converts a link widget to a plain, ordinary link — and never re-converts it", async () => {

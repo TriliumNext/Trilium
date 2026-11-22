@@ -22,7 +22,7 @@ vi.mock("../../../services/i18n", () => ({
 
 // Collapsible pulls the real hooks module, which imports half the app (app_context, keyboard
 // actions) at module scope; only the two hooks it actually uses are stood in for.
-vi.mock("../../react/hooks", () => ({
+vi.mock("../../react/hooks/dom", () => ({
     useElementSize: () => ({ width: 100, height: 100 }),
     useUniqueName: () => "test-collapsible"
 }));

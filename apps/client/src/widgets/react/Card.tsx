@@ -9,7 +9,7 @@ import Button from "./Button";
 import {
     type FilterRole, FilterPassthrough, filterRoleClass, useFilterMatch, useIsFiltering
 } from "./filter";
-import { useUniqueName } from "./hooks";
+import { useUniqueName } from "./hooks/dom";
 import Icon from "./Icon";
 
 // #region Card Frame
@@ -284,6 +284,13 @@ function holdsSmallControl(element: HTMLElement) {
 export interface ChoiceCardSectionProps {
     isChecked: boolean;
     onCheck: () => void;
+    /** The id of the element of the choice, which a host can point `aria-activedescendant` at. */
+    id?: string;
+    /**
+     * Whether the choice takes the focus. Turn it off in a list whose host keeps the focus and
+     * moves the checked choice with its own keys.
+     */
+    isFocusable?: boolean;
     /** An icon class, `bx` prefix included, shown before the label. */
     icon?: string;
     className?: string;
@@ -305,8 +312,8 @@ export interface ChoiceCardSectionProps {
  * checked segment shows a check mark.
  */
 export function ChoiceCardSection({
-    isChecked, onCheck, icon, className, children, subSections, isExpanded = true,
-    onExpandedChange
+    isChecked, onCheck, id, isFocusable = true, icon, className, children, subSections,
+    isExpanded = true, onExpandedChange
 }: ChoiceCardSectionProps) {
     const parentContext = useContext(CardSectionContext);
     const nestingLevel = parentContext ? parentContext.nestingLevel + 1 : 0;
@@ -315,6 +322,7 @@ export function ChoiceCardSection({
 
     return <>
         <section
+            id={id}
             className={clsx(
                 "tn-card-section tn-card-highlight-on-hover tn-card-choice", className,
                 { "tn-card-section-nested": nestingLevel > 0 }
@@ -323,7 +331,7 @@ export function ChoiceCardSection({
             role="radio"
             aria-checked={isChecked}
             aria-expanded={onExpandedChange && isExpandable ? isExpanded : undefined}
-            tabIndex={0}
+            tabIndex={isFocusable ? 0 : undefined}
             onClick={onCheck}
             onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {

@@ -1,5 +1,5 @@
 # Presentation
-<figure class="image"><img style="aspect-ratio:1120/763;" src="Presentation_image.png" width="1120" height="763"></figure>
+<figure class="image"><img style="aspect-ratio:1152/720;" src="Presentation_demo.webp" width="1152" height="720"></figure>
 
 The Presentation view allows the creation of slideshows directly from within Trilium.
 
@@ -116,7 +116,7 @@ This horizontal/vertical organization affects transitions (especially on the “
 *   Pressing <kbd>Space</kbd> and <kbd>Shift</kbd> + <kbd>Space</kbd> will go to the next/previous slide in order, regardless of the direction. This is generally the key combination to use when presenting.
 *   The _Previous slide_ and _Next slide_ buttons below the slides go in order, as <kbd>Space</kbd> and <kbd>Shift</kbd>+<kbd>Space</kbd> do.
 
-<figure class="image image-style-align-right image_resized" style="width:55.57%;"><img style="aspect-ratio:890/569;" src="1_Presentation_image.png" width="890" height="569"></figure>
+<figure class="image image-style-align-right image_resized" style="width:55.57%;"><img style="aspect-ratio:890/569;" src="Presentation_image.png" width="890" height="569"></figure>
 
 All direct children of the collection will be laid out horizontally. If a direct child also has children, those children will be placed as vertical slides.
 

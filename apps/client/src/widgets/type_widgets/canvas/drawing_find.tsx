@@ -9,7 +9,7 @@ import type { RefObject } from "preact";
 
 import { scrollRectIntoView } from "../../../services/highlight_matches";
 import { escapeRegExp } from "../../../services/utils";
-import type { FindOptions, FindTarget } from "../../merged_find";
+import type { FindOptions, FindTarget, HighlightOptions } from "../../merged_find";
 import { DEFAULT_SIDEBAR, SEARCH_TAB } from "./CanvasEmbedTools";
 import { applyDrawingView, type DrawingView, getBoundedView, isSameView } from "./drawing_view";
 
@@ -105,12 +105,12 @@ export class DrawingFindTarget implements FindTarget {
         return this.matches.length;
     }
 
-    highlight(index: number | null) {
+    highlight(index: number | null, options?: HighlightOptions) {
         const match = index === null ? undefined : this.matches[index];
         this.current = match ? index : null;
         this.surface?.showMatches(this.matches, this.current);
         if (match) {
-            this.show(match, true);
+            this.show(match, true, options?.isInstant ? "instant" : undefined);
         } else {
             this.restoreView();
         }
@@ -130,6 +130,16 @@ export class DrawingFindTarget implements FindTarget {
         return index >= 0 ? index : null;
     }
 
+    /** The root of the drawing for every match, which a pan or a zoom cannot move. */
+    getMatchTargets() {
+        const root = this.rootRef.current;
+        return this.matches.map(() => root);
+    }
+
+    countMatches() {
+        return this.matches.length;
+    }
+
     canReplace() {
         return false;
     }
@@ -142,6 +152,7 @@ export class DrawingFindTarget implements FindTarget {
         return this.matches.length;
     }
 
+    /** Removes the matches at once. Selecting match `index` is left to the returned function. */
     close(index: number | null) {
         const match = index === null ? undefined : this.matches[index];
         this.regExp = null;
@@ -150,14 +161,16 @@ export class DrawingFindTarget implements FindTarget {
         this.surface?.showMatches([], null);
         if (!match) {
             this.restoreView();
-            return false;
+            return null;
         }
 
         // The search ends on this match, so the drawing keeps showing it.
         this.savedView = null;
         this.searchView = null;
-        this.show(match, false);
-        return this.surface?.select?.(match) ?? false;
+        return () => {
+            this.show(match, false);
+            this.surface?.select?.(match);
+        };
     }
 
     watchContent(callback: () => void) {
@@ -186,7 +199,7 @@ export class DrawingFindTarget implements FindTarget {
      * Scrolls the note to `match`, and moves the drawing first if `match` is out of its view.
      * `restoreView()` undoes an `isTemporary` move.
      */
-    private show(match: DrawingMatch, isTemporary: boolean) {
+    private show(match: DrawingMatch, isTemporary: boolean, behavior?: ScrollBehavior) {
         const root = this.rootRef.current;
         const surface = this.surface;
         const view = surface?.getView();
@@ -214,7 +227,7 @@ export class DrawingFindTarget implements FindTarget {
                 width: rect.right - rect.left,
                 height: rect.bottom - rect.top
             };
-        });
+        }, behavior);
     }
 
     /** Shows the view from before the search, unless the user moved the drawing since. */

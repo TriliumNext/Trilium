@@ -10,8 +10,10 @@ import { NoteContextContext, ParentComponent } from "../react/react_utils";
 import NoteTitleActions from "./NoteTitleActions";
 
 // The attribute grid has a spec of its own; here one cell is enough for the section to show.
+vi.mock("../promoted_attribute_cells", () => ({
+    usePromotedAttributeData: () => [ [ { uniqueId: "cell" } ], () => {} ]
+}));
 vi.mock("../PromotedAttributes", () => ({
-    usePromotedAttributeData: () => [ [ { uniqueId: "cell" } ], () => {} ],
     PromotedAttributesContent: () => <div className="promoted-attributes-stub" />
 }));
 vi.mock("../NoteDetail", () => ({
@@ -48,8 +50,10 @@ describe("NoteTitleActions", () => {
         expect(expanded()).toBe("true");
     });
 
-    it("carries the note type switcher with the large title only, the compact one has it in a bar", () => {
+    it("carries the note type switcher of a text note with the large title only, the compact one has it in a bar", async () => {
+        const note = buildNote({ title: "Text", type: "text" });
         const noteContext = new NoteContext("ntx-compact");
+        noteContext.noteId = note.noteId;
         noteContext.viewScope = { viewMode: "default" };
         const render = () => renderInto(
             <ParentComponent.Provider value={new Component()}>
@@ -60,6 +64,9 @@ describe("NoteTitleActions", () => {
         ).querySelector(".title-actions .note-type-switcher-stub");
 
         options.set("noteTitleStyle", "large");
+        // The switcher loads with the first text note; after that it shows from the first render.
+        render();
+        await vi.waitFor(() => expect(document.querySelector(".title-actions .note-type-switcher-stub")).not.toBeNull());
         expect(render()).not.toBeNull();
 
         options.set("noteTitleStyle", "compact");

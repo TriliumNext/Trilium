@@ -1,6 +1,6 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import FNote from "../../entities/fnote";
 
@@ -13,8 +13,8 @@ vi.mock("../../services/utils", async (importOriginal) => ({
 }));
 
 const shownNote = vi.hoisted(() => ({ current: null as FNote | null }));
-vi.mock("../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../react/hooks")>()),
+vi.mock("../react/hooks/tree", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks/tree")>()),
     useActiveNoteContext: () => ({ note: shownNote.current })
 }));
 
@@ -30,7 +30,10 @@ import noteAttributeCache from "../../services/note_attribute_cache";
 import options from "../../services/options";
 import server from "../../services/server";
 import { buildNote } from "../../test/easy-froca";
+import { preloadDropdownPopups } from "../react/Dropdown";
 import AttributeList from "./AttributeList";
+
+beforeAll(() => preloadDropdownPopups());
 
 describe("AttributeList on a phone", () => {
     let container: HTMLElement;

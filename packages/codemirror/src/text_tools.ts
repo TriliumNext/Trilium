@@ -2,10 +2,10 @@ import { isolateHistory } from "@codemirror/commands";
 import {
     type ChangeSpec, EditorSelection, type EditorState, type Transaction, type TransactionSpec
 } from "@codemirror/state";
-import {
-    type LineOperation, type LineOperationOptions, type TextTransform, type TextTransformOptions,
-    transformLines, transformText
+import type {
+    LineOperation, LineOperationOptions, TextTransform, TextTransformOptions
 } from "@triliumnext/commons";
+import { transformLines, transformText } from "@triliumnext/commons/src/lib/text_transforms.js";
 
 /** What the text tools change: an `EditorView`, or a state with a dispatch function. */
 export interface TextToolTarget {

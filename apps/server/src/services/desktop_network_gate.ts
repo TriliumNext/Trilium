@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 
+import auth from "./auth.js";
 import config from "./config.js";
 import { isInternalElectronRequest } from "./electron_request.js";
 import { isElectron } from "./utils.js";
@@ -60,18 +61,34 @@ export function isBrowserExtensionOrigin(origin: string | undefined): boolean {
     return origin === undefined || EXTENSION_ORIGIN.test(origin);
 }
 
+/** Whether a socket's remote address is loopback, in IPv4, IPv6 or IPv4-mapped IPv6 form. */
+export function isLoopbackAddress(address: string | undefined): boolean {
+    if (!address) {
+        return false;
+    }
+    const ipv4 = address.startsWith("::ffff:") ? address.slice("::ffff:".length) : address;
+    return address === "::1" || LOOPBACK_IPV4.test(ipv4);
+}
+
 /**
- * Refuses a request to the unauthenticated desktop clipper that a web page sent. An HTML form
- * reaches `127.0.0.1` with a genuine loopback `Host`, so {@link desktopNetworkAccessGate}
- * lets it through; its `Origin` header is what exposes it.
+ * Guards the desktop clipper. It refuses a request that a web page sent: an HTML form reaches
+ * `127.0.0.1` with a genuine loopback `Host`, so only its `Origin` header exposes it. The
+ * extension on this computer needs no token. Any other client needs an ETAPI token, which
+ * matters once network access binds the listener to every interface and
+ * {@link desktopNetworkAccessGate} stops checking the `Host` header.
  */
-export function requireExtensionOrigin(req: Request, res: Response, next: NextFunction): void {
+export function desktopClipperAuth(req: Request, res: Response, next: NextFunction): void {
     if (!isBrowserExtensionOrigin(req.get("origin"))) {
         res.status(403).type("text/plain").send("The web clipper accepts requests only from the browser extension.");
         return;
     }
 
-    next();
+    if (isLoopbackAddress(req.socket.remoteAddress) && isLoopbackHost(req.get("host"))) {
+        next();
+        return;
+    }
+
+    auth.checkEtapiToken(req, res, next);
 }
 
 /**

@@ -2,17 +2,23 @@ import type VanillaCodeMirror from "@triliumnext/codemirror";
 import {
     hostedCompletion, type HostedCompletionApply, type HostedCompletionState
 } from "@triliumnext/codemirror/src/extensions/hosted_completion";
-import { isMarkdownMime, type TaskStateDef } from "@triliumnext/commons";
+import type { TaskStateDef } from "@triliumnext/commons";
+import { isMarkdownMime } from "@triliumnext/commons/src/lib/notes.js";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
 import type FNote from "../../../entities/fnote";
+import type { LinkTarget } from "../../../services/link_targets";
+import { getNoteIdFromUrl } from "../../../services/navigation_state";
+import options from "../../../services/options";
 import { getTaskStateDefinitions } from "../../../services/task_states";
+import LinkMentionList from "../../react/LinkMentionList";
 import {
     type CommandEntry, CommandMentionList, createHostedList, filterCommandEntries, NoteMentionList
 } from "../../react/NoteAutocomplete";
 import {
     buildMarkdownCommands, codeFenceCompletionSource, linkToNote, markdownCompletionAt
 } from "../markdown/completions";
+import { getOwnLinkTargets } from "../markdown/editor_utils";
 import { type CodeSnippet, snippetCommand, useCodeSnippets } from "./snippets";
 
 /** A `/` command of a code editor, listed as the text editor lists its own. */
@@ -75,16 +81,27 @@ export function useEditorCompletions(
         );
         const commands = (): SlashCommand[] => [
             ...buildMarkdownCommands({
-                editorView: view, getOwnerNote, taskStates: taskStatesRef.current
+                editorView: view,
+                getOwnerNote,
+                getEditedNote: () => targetRef.current?.note ?? null,
+                taskStates: taskStatesRef.current
             }),
             ...getSnippets().map(snippetCommand)
         ];
+
+        // The editor lists the targets of its own note: the server reads only what is saved.
+        const getOwnTargets = (notePath: string) => {
+            const noteId = targetRef.current?.note?.noteId;
+            return noteId && getNoteIdFromUrl(notePath) === noteId
+                ? getOwnLinkTargets(view, notePath)
+                : undefined;
+        };
 
         // Bridges the codemirror package's own @codemirror/state identity.
         type CmMatcher = Parameters<typeof hostedCompletion<CompletionMatch>>[0]["match"];
         view.setNamedExtension("markdownCompletions", hostedCompletion({
             match: markdownCompletionAt as unknown as CmMatcher,
-            list: () => createCompletionList(commands, getNotePath)
+            list: () => createCompletionList(commands, getNotePath, getOwnTargets)
         }));
         // CodeMirror allows one `override` config per editor, so the fence languages go through
         // `setCompletionSource()`. Bridges the package's own @codemirror/autocomplete identity.
@@ -107,25 +124,43 @@ const noSnippets = (): CodeSnippet[] => [];
 /**
  * The `/` list or the `@` list, drawn as the text editor's: the first runs the command picked on
  * the typed `/command`, the second puts a link to the note picked or created in place of the typed
- * note. A note created goes under `getNotePath()`.
+ * note. A note created goes under `getNotePath()`. With `textNoteCompletionLinkTargetsEnabled`,
+ * a note picked is linked at once, and the list follows up with its headings and anchors, which
+ * `getOwnTargets()` reads from the editor for the note being edited.
  */
 function createCompletionList(
     commands: () => SlashCommand[],
-    getNotePath: () => string | null | undefined
+    getNotePath: () => string | null | undefined,
+    getOwnTargets: (notePath: string) => LinkTarget[] | undefined
 ) {
     return createHostedList<HostedCompletionState<CompletionMatch>>((state, list) => {
         const { kind, from, query } = state.match;
         if (kind === "note") {
-            return (
-                <NoteMentionList
-                    key={`note:${from}`}
-                    {...list}
-                    query={query}
-                    allowCreatingNotes
-                    parentNotePath={getNotePath()}
-                    onPick={(notePath) => state.commit(typeof notePath === "string"
+            const props = {
+                ...list,
+                query,
+                allowCreatingNotes: true,
+                parentNotePath: getNotePath(),
+                onPick: (notePath: string | Promise<string | undefined>) => state.commit(
+                    typeof notePath === "string"
                         ? linkToNote(notePath)
-                        : notePath.then((path) => path ? linkToNote(path) : undefined))}
+                        : notePath.then((path) => path ? linkToNote(path) : undefined)
+                )
+            };
+            if (!options.is("textNoteCompletionLinkTargetsEnabled")) {
+                return <NoteMentionList key={`note:${from}`} {...props} />;
+            }
+
+            const { followUp } = state;
+            return (
+                <LinkMentionList
+                    key={`note:${from}`}
+                    {...props}
+                    query={followUp?.query ?? query}
+                    linkedNotePath={followUp?.of}
+                    onLinkNote={(notePath) => state.commitAndFollowUp(linkToNote(notePath), notePath)}
+                    onKeepLink={state.dismiss}
+                    getOwnTargets={getOwnTargets}
                 />
             );
         }

@@ -44,6 +44,29 @@ describe("date_notes", () => {
         expect(result).toBe(note);
     });
 
+    it("asks for the inbox and the day note of the local date", async () => {
+        const note = buildNote({ title: "Today" });
+        server.get = vi.fn(async () => ({ noteId: note.noteId })) as typeof server.get;
+        vi.useFakeTimers({ toFake: [ "Date" ] });
+        try {
+            // At either end of the day, so that a date taken in UTC differs in any other time zone.
+            for (const time of [ new Date(2024, 2, 9, 0, 1), new Date(2024, 2, 9, 23, 59) ]) {
+                vi.setSystemTime(time);
+                await dateNotes.getInboxNote();
+                await dateNotes.getTodayNote();
+            }
+        } finally {
+            vi.useRealTimers();
+        }
+
+        expect(vi.mocked(server.get).mock.calls.map(([ url ]) => url)).toEqual([
+            "special-notes/inbox/2024-03-09",
+            "special-notes/days/2024-03-09",
+            "special-notes/inbox/2024-03-09",
+            "special-notes/days/2024-03-09"
+        ]);
+    });
+
     it("getDayNote omits calendarRootId when not provided", async () => {
         const note = buildNote({ title: "Day" });
         server.get = vi.fn(async () => ({ noteId: note.noteId })) as typeof server.get;

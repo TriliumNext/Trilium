@@ -10,7 +10,7 @@ import server from "../../services/server";
 import toast from "../../services/toast";
 import { isStandalone, randomString } from "../../services/utils";
 import Button from "../react/Button";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import Modal from "../react/Modal";
 
 type State =

@@ -4,6 +4,7 @@ import { sanitizeNoteContentHtml } from "../../../services/sanitize_content";
 import { offsetWithin } from "./icons";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
+const XML_NS = "http://www.w3.org/XML/1998/namespace";
 const PADDING = 100;
 
 /**
@@ -51,7 +52,7 @@ export function exportMindMapSvg(mind: MindElixirInstance): string {
             layers.appendChild(convertBox(nodes, topic, true));
         } else {
             layers.appendChild(createBoxRect(topic, getComputedStyle(topic), offsetWithin(topic, nodes)));
-            layers.appendChild(convertBox(nodes, topic.text, true));
+            layers.appendChild(convertBox(nodes, topic.text, false));
         }
     }
     for (const element of nodes.querySelectorAll<HTMLElement>(".tags > span, .icons > span")) {
@@ -93,29 +94,130 @@ function createBoxRect(element: HTMLElement, style: CSSStyleDeclaration, { offse
     });
 }
 
-/** Writes the text one `<text>` per line, for elements whose text is plain (tags and icons). */
-function createSvgText(element: HTMLElement, style: CSSStyleDeclaration, { offsetLeft, offsetTop }: Offset) {
+/**
+ * Writes plain text one `<text>` per line, placed where the browser laid each line out.
+ *
+ * SVG renderers outside the browser (librsvg, which image viewers use) skip `<foreignObject>`, so
+ * plain text is written as SVG text. That does not wrap, so the line breaks and positions come from
+ * {@link measureTextLines}. Each line is centred on its line box with `dy`, like the icon text in
+ * export.ts, because not every renderer honours `dominant-baseline`.
+ *
+ * @param element the element holding the text.
+ * @param style the computed style of `element`.
+ * @param offset the position of `element` in the coordinate space of the exported layers.
+ */
+export function createSvgText(element: HTMLElement, style: CSSStyleDeclaration, { offsetLeft, offsetTop }: Offset) {
     const group = createSvgElement("g", {});
-    const fontSize = Number.parseFloat(style.fontSize);
-    const halfLeading = (Number.parseInt(style.lineHeight) - Number.parseInt(style.fontSize)) / 2;
-
-    for (const [ index, line ] of getPlainText(element).split("\n").entries()) {
+    for (const line of measureTextLines(element) ?? estimateTextLines(element, style)) {
         const text = createSvgElement("text", {
-            x: String(offsetLeft + Number.parseInt(style.paddingLeft)),
-            y: String(offsetTop + Number.parseInt(style.paddingTop) + (halfLeading + fontSize) * (index + 1)),
+            x: String(round(offsetLeft + line.x)),
+            y: String(round(offsetTop + line.centerY)),
+            dy: "0.35em",
             "text-anchor": "start",
             "font-family": style.fontFamily,
             "font-size": style.fontSize,
             "font-weight": style.fontWeight,
+            "font-style": style.fontStyle,
             fill: style.color
         });
-        text.textContent = line;
+        text.setAttributeNS(XML_NS, "xml:space", "preserve");
+        text.textContent = line.text;
         group.appendChild(text);
     }
     return group;
 }
 
-/** Writes the text as HTML inside a `<foreignObject>`, which wraps it as the map does. */
+interface TextLine {
+    text: string;
+    /** The left edge of the line, relative to the element's border box. */
+    x: number;
+    /** The vertical middle of the line's glyphs, relative to the element's border box. */
+    centerY: number;
+}
+
+/**
+ * Splits the text of an element into the lines the browser wrapped it into, from the client rects
+ * of a `Range` over the text. Text on one line costs one `getClientRects()` call; wrapped text is
+ * measured one character at a time.
+ *
+ * Client rects are in screen space, which the map's zoom scales, so they are converted back to the
+ * unscaled layout space of `offsetLeft`/`offsetTop`.
+ *
+ * @returns the lines, or `null` when the element is not laid out (a hidden map, or no layout engine).
+ */
+function measureTextLines(element: HTMLElement): TextLine[] | null {
+    const box = element.getBoundingClientRect();
+    const textNodes = getTextNodes(element);
+    const range = document.createRange();
+    if (!box.width || !textNodes.length || typeof range.getClientRects !== "function") {
+        return null;
+    }
+
+    const scale = element.offsetWidth / box.width || 1;
+    const toLine = (text: string, rect: DOMRect): TextLine => ({
+        text,
+        x: (rect.left - box.left) * scale,
+        centerY: (rect.top + rect.height / 2 - box.top) * scale
+    });
+
+    range.selectNodeContents(element);
+    const rects = Array.from(range.getClientRects()).filter((rect) => rect.width && rect.height);
+    if (!rects.length) {
+        return null;
+    }
+    if (rects.every((rect) => Math.abs(rect.top - rects[0].top) < rects[0].height / 2)) {
+        return [ toLine((element.textContent ?? "").replace(/\n/g, "").trimEnd(), rects[0]) ];
+    }
+
+    const lines: { text: string; rect: DOMRect }[] = [];
+    for (const node of textNodes) {
+        for (let index = 0; index < node.data.length; index++) {
+            const character = node.data[index];
+            const current = lines.at(-1);
+            if (character === "\n") {
+                continue;
+            }
+            range.setStart(node, index);
+            range.setEnd(node, index + 1);
+            const rect = range.getBoundingClientRect();
+            if (current && (!rect.height || rect.top < current.rect.top + current.rect.height / 2)) {
+                current.text += character;
+            } else if (rect.height) {
+                lines.push({ text: character, rect });
+            }
+        }
+    }
+    return lines
+        .map(({ text, rect }) => toLine(text.trimEnd(), rect))
+        .filter((line) => line.text);
+}
+
+/** The lines of an element that is not laid out: its hard line breaks, spaced by its line height. */
+function estimateTextLines(element: HTMLElement, style: CSSStyleDeclaration): TextLine[] {
+    const fontSize = Number.parseFloat(style.fontSize) || 16;
+    const lineHeight = Number.parseFloat(style.lineHeight) || fontSize * 1.2;
+    const x = (Number.parseFloat(style.borderLeftWidth) || 0) + (Number.parseFloat(style.paddingLeft) || 0);
+    const top = (Number.parseFloat(style.borderTopWidth) || 0) + (Number.parseFloat(style.paddingTop) || 0);
+
+    return (element.textContent ?? "").split("\n")
+        .map((text, index) => ({ text: text.trimEnd(), x, centerY: top + lineHeight * (index + 0.5) }))
+        .filter((line) => line.text);
+}
+
+function getTextNodes(element: HTMLElement) {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    const nodes: Text[] = [];
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        nodes.push(node as Text);
+    }
+    return nodes;
+}
+
+function round(value: number) {
+    return Math.round(value * 100) / 100;
+}
+
+/** Writes the text as HTML inside a `<foreignObject>`, for topics written in HTML. */
 function createForeignObjectText(element: HTMLElement, style: CSSStyleDeclaration, { offsetLeft, offsetTop }: Offset) {
     const foreignObject = createSvgElement("foreignObject", {
         x: String(offsetLeft + Number.parseInt(style.paddingLeft)),
@@ -181,4 +283,4 @@ function createSvgElement(name: string, attributes: Record<string, string>) {
     return element;
 }
 
-type Offset = ReturnType<typeof offsetWithin>;
+export type Offset = ReturnType<typeof offsetWithin>;

@@ -1,0 +1,63 @@
+diff --git a/dist/es5/xlsx/xform/sheet/data-validations-xform.js b/dist/es5/xlsx/xform/sheet/data-validations-xform.js
+index 20a30bb3c8aee252103cce58de9847583c130bc3..e0ef5ba42154a42114aec4d4bcd8038f628ec96e 100644
+--- a/dist/es5/xlsx/xform/sheet/data-validations-xform.js
++++ b/dist/es5/xlsx/xform/sheet/data-validations-xform.js
+@@ -205,14 +205,8 @@ class DataValidationsXform extends BaseXform {
+           // The four known cases: 1. E4:L9 N4:U9  2.E4 L9  3. N4:U9  4. E4
+           const list = this._address.split(/\s+/g) || [];
+           list.forEach(addr => {
+-            if (addr.includes(':')) {
+-              const range = new Range(addr);
+-              range.forEachAddress(address => {
+-                this.model[address] = this._dataValidation;
+-              });
+-            } else {
+-              this.model[addr] = this._dataValidation;
+-            }
++            // Patched for Trilium: keep a range as one entry instead of one per cell.
++            this.model[addr] = this._dataValidation;
+           });
+           return true;
+         }
+diff --git a/dist/exceljs.js b/dist/exceljs.js
+index ab2c9d6e576d8069d77d787b863dfe09c7659890..c62c71e47a2b1c5ae9d09d60f45a06d4fa58d921 100644
+--- a/dist/exceljs.js
++++ b/dist/exceljs.js
+@@ -10592,14 +10592,8 @@ class DataValidationsXform extends BaseXform {
+           // The four known cases: 1. E4:L9 N4:U9  2.E4 L9  3. N4:U9  4. E4
+           const list = this._address.split(/\s+/g) || [];
+           list.forEach(addr => {
+-            if (addr.includes(':')) {
+-              const range = new Range(addr);
+-              range.forEachAddress(address => {
+-                this.model[address] = this._dataValidation;
+-              });
+-            } else {
+-              this.model[addr] = this._dataValidation;
+-            }
++            // Patched for Trilium: keep a range as one entry instead of one per cell.
++            this.model[addr] = this._dataValidation;
+           });
+           return true;
+         }
+diff --git a/lib/xlsx/xform/sheet/data-validations-xform.js b/lib/xlsx/xform/sheet/data-validations-xform.js
+index 58d6f098aa3e2e712d23185356bd861d76e4e99f..cbbebebce813cd1514c4afe47099fd109ccec206 100644
+--- a/lib/xlsx/xform/sheet/data-validations-xform.js
++++ b/lib/xlsx/xform/sheet/data-validations-xform.js
+@@ -216,14 +216,8 @@ class DataValidationsXform extends BaseXform {
+         // The four known cases: 1. E4:L9 N4:U9  2.E4 L9  3. N4:U9  4. E4
+         const list = this._address.split(/\s+/g) || [];
+         list.forEach(addr => {
+-          if (addr.includes(':')) {
+-            const range = new Range(addr);
+-            range.forEachAddress(address => {
+-              this.model[address] = this._dataValidation;
+-            });
+-          } else {
+-            this.model[addr] = this._dataValidation;
+-          }
++          // Patched for Trilium: keep a range as one entry instead of one per cell.
++          this.model[addr] = this._dataValidation;
+         });
+         return true;
+       }

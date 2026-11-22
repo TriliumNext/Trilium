@@ -1,4 +1,8 @@
-import { AttributeType, BUILTIN_ATTRIBUTES, type BuiltinLabel, type DefinitionObject, type LabelType, promotedAttributeDefinitionParser } from "@triliumnext/commons";
+import type {
+    AttributeType, BuiltinLabel, DefinitionObject, LabelType
+} from "@triliumnext/commons";
+import BUILTIN_ATTRIBUTES from "@triliumnext/commons/src/lib/builtin_attributes.js";
+import promotedAttributeDefinitionParser from "@triliumnext/commons/src/lib/promoted_attribute_definition_parser.js";
 
 import type FAttribute from "../entities/fattribute.js";
 import type FNote from "../entities/fnote.js";
@@ -361,12 +365,15 @@ async function toggleDangerousAttribute(note: FNote, type: "label" | "relation",
         const newName = willEnable ? baseName : `disabled:${baseName}`;
         if (newName === attr.name) continue;
 
-        // We are adding and removing afterwards to avoid a flicker (because for a moment there would be no active content attribute anymore) because the operations are done in sequence and not atomically.
-        if (attr.type === "label") {
-            await setLabel(note.noteId, newName, attr.value);
-        } else {
-            await setRelation(note.noteId, newName, attr.value);
-        }
+        // The copy is added before the original is removed, so the note never goes without the
+        // active content attribute in between.
+        await server.post(`notes/${note.noteId}/attributes`, {
+            type: attr.type,
+            name: newName,
+            value: attr.value,
+            isInheritable: attr.isInheritable,
+            position: attr.position
+        });
         await removeAttributeById(note.noteId, attr.attributeId);
     }
 }

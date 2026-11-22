@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
 const useStaticTooltip = vi.hoisted(() => vi.fn());
-vi.mock("./hooks", () => ({ useStaticTooltip }));
+vi.mock("./hooks/tooltip", () => ({
+    useStaticTooltip
+}));
 
 import { renderInto } from "../../test/render";
 import TabStrip from "./TabStrip";

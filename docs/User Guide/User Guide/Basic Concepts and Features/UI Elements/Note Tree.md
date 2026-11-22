@@ -1,13 +1,18 @@
 # Note Tree
 This page explains how to manipulate the note tree in TriliumNext, focusing on moving notes.
 
-![](Note%20Tree_image.jpg)
+<figure class="image image-style-align-right"><img style="aspect-ratio:401/720;" src="Note Tree_demo.webp" width="401" height="720"></figure>
 
 ## Drag and Drop
 
 ![Drag and drop example](Note%20Tree_drag-and-drop.gif)
 
 You can easily rearrange the note tree by dragging and dropping notes, as demonstrated in the example above.
+
+Where the note lands depends on the part of the row the pointer is over:
+
+*   The middle of a note: the dragged note becomes its last child.
+*   The line between two notes: the dragged note is placed between them. Below an expanded note, that line places it as the first child.
 
 ### Importing files
 
@@ -39,7 +44,7 @@ Click the tree icon in the tree toolbar to open the tree settings popup. Each op
 *   _Display density_: _Relaxed_ (default) or _Dense_. Dense rows are shorter, so more notes fit on the screen. This setting is not synchronized, so each device keeps its own.
 *   _Hide archived notes_: When enabled, archived notes are not shown in the tree.
 *   _Automatically collapse notes_: When enabled, notes are collapsed after a period of inactivity to keep the tree tidy.
-*   _Follow active note_: When enabled (default), the tree automatically scrolls and expands parent nodes to keep the currently active note visible. When disabled, the tree is fully detached from navigation — only the background highlight of the active note is updated, but the tree viewport and its expanded/collapsed state are never changed by navigation. Use the crosshair button to manually jump the tree to the active note at any time.
+*   _Follow active note_: When enabled (default), the tree automatically scrolls and expands parent nodes to keep the currently active note visible. A parent of the active note that you collapse stays collapsed until you navigate to another note or the active note is moved. When disabled, the tree is fully detached from navigation — only the background highlight of the active note is updated, but the tree viewport and its expanded/collapsed state are never changed by navigation. Use the crosshair button to manually jump the tree to the active note at any time.
 
 ## Hiding and peeking the tree
 

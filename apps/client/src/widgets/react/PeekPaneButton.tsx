@@ -1,11 +1,11 @@
 import "./PeekPaneButton.css";
 
 import type { KeyboardActionNames } from "@triliumnext/commons";
-import { Tooltip } from "bootstrap";
 import clsx from "clsx";
 import { useCallback, useMemo, useRef } from "preact/hooks";
 
-import { useStaticTooltipWithKeyboardShortcut } from "./hooks";
+import { useStaticTooltipWithKeyboardShortcut } from "./hooks/shortcuts";
+import { getTooltipInstance } from "./hooks/tooltip";
 
 // Gap (px) between the peek button and its tooltip, so the tooltip can't overlap the button.
 const TOOLTIP_MARGIN_PX = 8;
@@ -46,7 +46,7 @@ export default function PeekPaneButton(props: PeekPaneButtonProps) {
         // focused, which keeps the tooltip "stuck" and prevents it re-triggering on next hover.
         const button = buttonRef.current;
         if (button) {
-            Tooltip.getInstance(button)?.hide();
+            getTooltipInstance(button)?.hide();
             button.blur();
         }
     }, [ onToggle ]);

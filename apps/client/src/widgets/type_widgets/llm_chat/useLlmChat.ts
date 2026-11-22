@@ -1,12 +1,21 @@
-import { LLM_PERMISSION_MODES, LLM_REASONING_EFFORTS, type LlmCitation, type LlmMessage, type LlmMessagePart, type LlmModelInfo, type LlmPermissionMode, type LlmReasoningEffort, type LlmStreamStatus, type LlmToolApprovalAnswer, type LlmUsage } from "@triliumnext/commons";
+import type {
+    LlmCitation, LlmMessage, LlmMessagePart, LlmModelInfo, LlmPermissionMode, LlmReasoningEffort,
+    LlmStreamStatus, LlmToolApprovalAnswer, LlmUsage
+} from "@triliumnext/commons";
+import {
+    LLM_PERMISSION_MODES, LLM_REASONING_EFFORTS
+} from "@triliumnext/commons/src/lib/llm_api.js";
 import { RefObject } from "preact";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { streamChatCompletion } from "../../../services/llm_chat.js";
-import { type ModelOption, type ModelProviderGroup, readSearchProviders, readSelectedModels, resolveSelectedModel, resolveWebSearch, unreadableAttachments } from "../../../services/llm_providers.js";
+import {
+    type ModelOption, type ModelProviderGroup, readSearchProviders, readSelectedModels,
+    resolveSelectedModel, resolveWebSearch, unreadableAttachments
+} from "../../../services/llm_providers.js";
 import optionService from "../../../services/options.js";
 import { randomString } from "../../../services/utils.js";
-import { useTriliumEvent } from "../../react/hooks.js";
+import { useTriliumEvent } from "../../react/hooks/events.js";
 import { estimateTokens, quantizeDraftTokens } from "./chat_context_usage.js";
 import { stripQuoteSources } from "./chat_quote.js";
 import { conversationForRegenerate } from "./chat_regenerate.js";

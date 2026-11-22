@@ -24,7 +24,7 @@ import { DirectoryLocation } from "../../react/DirectoryLink";
 import FormPasswordWithConfirmation from "../../react/FormPasswordWithConfirmation";
 import FormText from "../../react/FormText";
 import FormToggle from "../../react/FormToggle";
-import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks/options";
 import Modal from "../../react/Modal";
 import SetupForm from "../helpers/SetupForm";
 import DatabaseFileList from "./components/DatabaseFileList";

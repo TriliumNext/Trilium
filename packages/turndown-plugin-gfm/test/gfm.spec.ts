@@ -312,6 +312,26 @@ describe("GFM plugin", () => {
             expect(turndown.turndown(input)).toBe(expected);
         });
 
+        it("keeps a table's block id in its first heading cell, or on a figure around HTML", () => {
+            const marker = `<a data-trilium-block-id="t"></a>`;
+            const figure = `<figure class="table" data-trilium-block-id="t">`;
+            const tableBlockId = (table: HTMLTableElement) =>
+                table.id === "none" ? null : { marker, figure };
+            const service = new TurndownService({ tableBlockId } as TurndownService.Options);
+            service.use(gfm);
+
+            expect(service.turndown(`<table><thead><tr><th>A</th><th>B</th></tr></thead>`
+                + `<tbody><tr><th>1</th><td>2</td></tr></tbody></table>`))
+                .toBe(`| A${marker} | B |\n| --- | --- |\n| 1 | 2 |`);
+            expect(service.turndown(`<table><tr><td>1</td><td>2</td></tr></table>`)).toBe(
+                `${figure}<table>\n    <tbody>\n        <tr>\n            <td>1</td>\n`
+                + `            <td>2</td>\n        </tr>\n    </tbody>\n</table></figure>`);
+            expect(service.turndown(`<table id="none"><thead><tr><th>A</th></tr></thead>`
+                + `<tbody><tr><td>1</td></tr></tbody></table>`)).toBe("| A |\n| --- |\n| 1 |");
+            expect(turndown.turndown(`<table><thead><tr><th>A</th></tr></thead>`
+                + `<tbody><tr><td>1</td></tr></tbody></table>`)).toBe("| A |\n| --- |\n| 1 |");
+        });
+
         it("pretty-prints a caption, colgroup and thead kept as HTML", () => {
             // A table with block content in a cell (here a list) is kept as HTML;
             // the caption, colgroup/col and thead/tbody structure is all indented,

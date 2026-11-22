@@ -13,7 +13,7 @@
     src: url(../../fonts/Inter/Inter-VariableFont_opsz,wght.woff2) format("woff2-variations");
     font-weight: 100 900;
     font-style: normal;
-    font-display: swap;
+    font-display: optional;
 }
 
 @font-face {
@@ -139,6 +139,15 @@
 }
 
 body {
+    user-select: none;
+}
+
+/* Firefox scrolls a drag selection only when the scroll container itself is selectable. */
+.scrolling-container {
+    user-select: text;
+}
+
+:where(.scrolling-container > *) {
     user-select: none;
 }
 

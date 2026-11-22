@@ -1,7 +1,7 @@
+import type { AttachmentRole, NoteType } from "@triliumnext/commons";
 import {
-    type AttachmentRole, CANVAS_ATTACHMENT_MIME, getDrawingPictureTitle,
-    NOTE_TYPE_IMAGE_ATTACHMENTS, type NoteType
-} from "@triliumnext/commons";
+    CANVAS_ATTACHMENT_MIME, getDrawingPictureTitle, NOTE_TYPE_IMAGE_ATTACHMENTS
+} from "@triliumnext/commons/src/lib/notes.js";
 
 /**
  * Which half of the attachment list an attachment belongs in.
@@ -40,7 +40,9 @@ export const ATTACHMENT_ROLE_GROUPS: Record<AttachmentRole, AttachmentGroup> = {
     // The file an import was read from, kept so an import that went wrong can be looked at again.
     importSource: "system",
     // A meeting recording's transcript, which `PinnedAttachments` shows above the note's content.
-    transcript: "system"
+    transcript: "system",
+    // The table of contents read from a document, rebuilt when the document changes.
+    tocCache: "system"
 };
 
 /**

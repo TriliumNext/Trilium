@@ -34,7 +34,13 @@ vi.mock("./keyboard_actions.js", () => ({
 }));
 
 // Imports AFTER vi.mock calls.
+import { Modal } from "bootstrap";
+
+import { setBootstrapModal } from "../widgets/react/modal_focustrap.js";
 import dialogService, { closeActiveDialog, openDialog } from "./dialog.js";
+
+// `test/setup.ts` hands over the real `Modal`, which it imports before the mock applies.
+setBootstrapModal(Modal);
 
 function makeDialog() {
     // A real jQuery-wrapped element so `.on("hidden.bs.modal", ...)` works

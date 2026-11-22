@@ -13,7 +13,7 @@ import etapiRevisionsRoutes from "../etapi/revisions.js";
 import etapiSpecRoute from "../etapi/spec.js";
 import etapiSpecialNoteRoutes from "../etapi/special_notes.js";
 import auth from "../services/auth.js";
-import { requireExtensionOrigin } from "../services/desktop_network_gate.js";
+import { desktopClipperAuth } from "../services/desktop_network_gate.js";
 import openID from '../services/open_id.js';
 import { isElectron } from "../services/utils.js";
 import shareRoutes from "../share/routes.js";
@@ -35,7 +35,7 @@ import senderRoute from "./api/sender.js";
 import setupAccountRoute from "./api/setup_account.js";
 import setupRestoreRoute from "./api/setup_restore.js";
 import shareTargetRoute from "./api/share_target.js";
-import systemInfoRoute from "./api/system_info.js";
+import systemInfoRoute, { checkCpuArchMismatch } from "./api/system_info.js";
 import totp from './api/totp.js';
 import usersApiRoute from "./api/users.js";
 import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
@@ -130,7 +130,7 @@ function register(app: express.Application) {
         mediaProxyRoute.streamProxy, null);
 
     apiRoute(GET, "/api/metrics", metricsRoute.getMetrics);
-    apiRoute(GET, "/api/system-checks", systemInfoRoute.systemChecks);
+    asyncApiRoute(GET, "/api/system-checks", systemInfoRoute.systemChecks);
     apiRoute(GET, "/api/network-addresses", systemInfoRoute.getNetworkAddresses);
 
     // docker health check
@@ -157,8 +157,8 @@ function register(app: express.Application) {
     apiRoute(PUT,  "/api/notes/:noteId/access/:userId",     permissionsApiRoute.setNoteAccess);
     apiRoute(DEL,  "/api/notes/:noteId/access/:userId",     permissionsApiRoute.removeNoteAccess);
 
-    // in case of local electron, local calls are allowed unauthenticated, for server they need auth
-    const clipperMiddleware = isElectron ? [requireExtensionOrigin] : [auth.checkEtapiToken];
+    // The desktop clipper serves the extension on this computer without a token; a server needs one.
+    const clipperMiddleware = isElectron ? [desktopClipperAuth] : [auth.checkEtapiToken];
 
     route(GET, "/api/clipper/handshake", clipperMiddleware, clipperRoute.handshake, apiResultHandler);
     asyncRoute(PST, "/api/clipper/clippings", clipperMiddleware, clipperRoute.addClipping, apiResultHandler);
@@ -236,6 +236,10 @@ function register(app: express.Application) {
     asyncApiRoute(DEL, "/api/resources/:id", resourcesRoute.deleteResource);
 
     app.use("", router);
+
+    // Started once the startup work in progress has run, so that `/bootstrap` can pass the result on
+    // without a request of its own, and nothing on the way to the first page waits for `sysctl`.
+    setTimeout(() => void checkCpuArchMismatch());
 }
 
 export default {

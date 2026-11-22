@@ -1,13 +1,15 @@
 import { useLayoutEffect, useState } from "preact/hooks";
 import Card from "../../components/Card.js";
 import Section from "../../components/Section.js";
-import { App, Architecture, buildDownloadUrl, DownloadMatrixEntry, getArchitecture, getDownloadMatrix, getPlatform, Platform } from "../../download-helper.js";
+import {
+    App, Architecture, buildDownloadUrl, DesktopPlatform, DownloadMatrixEntry, getArchitecture,
+    getDownloadMatrix, getNightlyMatrix, getPlatform, NIGHTLY_RELEASE_URL, Platform, version
+} from "../../download-helper.js";
 import { usePageTitle } from "../../hooks.js";
 import Button, { Link } from "../../components/Button.js";
 import Icon from "../../components/Icon.js";
 import helpIcon from "../../assets/boxicons/bx-help-circle.svg?raw";
 import "./get-started.css";
-import packageJson from "../../../../../package.json" with { type: "json" };
 import { useTranslation } from "react-i18next";
 
 export default function DownloadPage() {
@@ -25,7 +27,7 @@ export default function DownloadPage() {
 
     return (
         <>
-            <Section title={t("get-started.desktop_title", { version: packageJson.version })} className="fill accented download-desktop">
+            <Section title={t("get-started.desktop_title", { version })} className="fill accented download-desktop">
                 <div className="architecture-switch">
                     <span>{t("get-started.architecture")}</span>
 
@@ -59,8 +61,39 @@ export default function DownloadPage() {
                     ))}
                 </div>
             </Section>
+
+            <NightlySection
+                platform={userPlatform === "macos" || userPlatform === "linux" ? userPlatform : "windows"}
+                arch={currentArch}
+            />
         </>
     )
+}
+
+function NightlySection({ platform, arch }: { platform: DesktopPlatform, arch: Architecture }) {
+    const { t } = useTranslation();
+    const nightly = getNightlyMatrix(t, platform, arch);
+
+    return (
+        <Section
+            title={t("get-started.nightly_title")}
+            subtitle={t("get-started.nightly_subtitle")}
+            className="download-nightly"
+        >
+            <div className="grid-3-cols">
+                <DownloadCard app="desktop" arch={arch} entry={[ platform, nightly.desktop ]} />
+                <DownloadCard app="desktop" arch={arch} entry={[ "android", nightly.android ]} />
+                <DownloadCard app="server" arch={arch} entry={[ "server", nightly.server ]} />
+            </div>
+
+            <div class="download-footer">
+                <Link href={NIGHTLY_RELEASE_URL} openExternally>{t("get-started.nightly_all_downloads")}</Link>
+                <Link href="https://docs.triliumnotes.org/user-guide/advanced-usage/nightly-release" openExternally>
+                    {t("get-started.nightly_learn_more")}
+                </Link>
+            </div>
+        </Section>
+    );
 }
 
 export function DownloadCard({ app, arch, entry: [ platform, entry ], isRecommended }: {
@@ -110,7 +143,8 @@ export function DownloadCard({ app, arch, entry: [ platform, entry ], isRecommen
                     {recommendedDownloads.map(recommendedDownload => (
                         <Button
                             className="recommended"
-                            href={buildDownloadUrl(t, app, platform as Platform, recommendedDownload[0], arch)}
+                            href={recommendedDownload[1].url
+                                ?? buildDownloadUrl(t, app, platform as Platform, recommendedDownload[0], arch)}
                             text={recommendedDownload[1].name}
                             openExternally={!!recommendedDownload[1].url}
                         />
@@ -120,7 +154,8 @@ export function DownloadCard({ app, arch, entry: [ platform, entry ], isRecommen
                 <div class="other-options">
                     {restDownloads.map(download => (
                         <Link
-                            href={buildDownloadUrl(t, app, platform as Platform, download[0], arch)}
+                            href={download[1].url
+                                ?? buildDownloadUrl(t, app, platform as Platform, download[0], arch)}
                             openExternally={!!download[1].url}
                         >
                             {download[1].name}

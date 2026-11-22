@@ -1,4 +1,6 @@
-import type { AiQuickAction, AiQuickActionFooter, AiQuickActionGroup } from "@triliumnext/ckeditor5";
+import type {
+    AiQuickAction, AiQuickActionFooter, AiQuickActionGroup
+} from "@triliumnext/ckeditor5";
 import { useEffect, useMemo, useState } from "preact/hooks";
 
 import type FNote from "../../../entities/fnote.js";
@@ -7,7 +9,8 @@ import froca from "../../../services/froca.js";
 import { t } from "../../../services/i18n.js";
 import type LoadResults from "../../../services/load_results.js";
 import search from "../../../services/search.js";
-import { useTriliumEvent, useTriliumOption } from "../../react/hooks.jsx";
+import { useTriliumEvent } from "../../react/hooks/events.js";
+import { useTriliumOption } from "../../react/hooks/options.js";
 import { buildAiAssistantQuickActions } from "./ai_assistant_stream.js";
 import { buildAiModelPicker } from "./ai_model_picker.js";
 

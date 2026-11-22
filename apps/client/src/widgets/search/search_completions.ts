@@ -1,7 +1,10 @@
+import type { MermaidMimeType, NoteMimeCount } from "@triliumnext/commons";
+import { MIME_TYPES_DICT } from "@triliumnext/commons/src/lib/mime_type.js";
+import { getMimeIcon, NOTE_TYPE_ICONS } from "@triliumnext/commons/src/lib/notes.js";
+import { ALLOWED_NOTE_TYPES } from "@triliumnext/commons/src/lib/rows.js";
 import {
-    ALLOWED_NOTE_TYPES, allowedSearchOperators, getMimeIcon, type MermaidMimeType, MIME_TYPES_DICT,
-    NOTE_TYPE_ICONS, type NoteMimeCount, SEARCH_NOTE_PATH
-} from "@triliumnext/commons";
+    allowedSearchOperators, SEARCH_NOTE_PATH
+} from "@triliumnext/commons/src/lib/search_syntax.js";
 
 import { t } from "../../services/i18n";
 import server from "../../services/server";

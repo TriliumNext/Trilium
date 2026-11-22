@@ -89,14 +89,16 @@ describe("boot sequence", () => {
         // Each sidebar panel is fed by its own setup call; a missing one shows as an empty
         // panel rather than an error, so assert they all reported.
         for (const type of [
+            "pdfjs-viewer-document-loaded",
             "pdfjs-viewer-annotations",
-            "pdfjs-viewer-toc",
             "pdfjs-viewer-page-info",
             "pdfjs-viewer-attachments",
             "pdfjs-viewer-layers"
         ]) {
             await vi.waitFor(() => expect(viewer.messagesOfType(type).length).toBeGreaterThan(0));
         }
+        // The outline comes from the ToC cache, which the client reads.
+        expect(viewer.messagesOfType("pdfjs-viewer-toc")).toHaveLength(0);
 
         // And the save plumbing is live: dirtying the storage reaches the parent.
         (viewer.pdfDocument.annotationStorage as any).setValue("field-1", { value: "typed" });
@@ -137,6 +139,61 @@ describe("boot sequence", () => {
 
         for (const message of viewer.messages) {
             expect(message).toMatchObject({ noteId: "note-2", ntxId: "ntx-2" });
+        }
+    });
+
+    it("reports the load and the failure of its document with its token, always", async () => {
+        delete (window as Partial<Window>).TRILIUM_NOTE_ID;
+        delete (window as Partial<Window>).TRILIUM_NTX_ID;
+        viewer = await installViewerApp(allFeaturesPdf());
+        await bootWith("editable=0&loadToken=load-7");
+        expect(window.TRILIUM_LOAD_TOKEN).toBe("load-7");
+
+        viewer.eventBus.dispatch("documentloaded", { source: null });
+        viewer.eventBus.dispatch("documenterror", { source: null, message: "Invalid PDF" });
+
+        expect(viewer.messagesOfType("pdfjs-viewer-document-loaded"))
+            .toStrictEqual([ {
+                type: "pdfjs-viewer-document-loaded", loadToken: "load-7", ntxId: undefined,
+                noteId: undefined
+            } ]);
+        expect(viewer.messagesOfType("pdfjs-viewer-document-error"))
+            .toStrictEqual([ {
+                type: "pdfjs-viewer-document-error", loadToken: "load-7", ntxId: undefined,
+                noteId: undefined
+            } ]);
+    });
+
+    it("reports the position and rotations to a note's viewer or one that asks, read-only too",
+        async () => {
+        const pages = {
+            0: { offsetTop: 0, clientHeight: 792 }, 1: { offsetTop: 1000, clientHeight: 792 }
+        };
+        for (const [ query, address ] of [
+            [ "editable=0&noteId=note-2&ntxId=ntx-2&loadToken=load-1",
+                { loadToken: "load-1", noteId: "note-2" } ],
+            [ "editable=0&position=1&loadToken=load-3", { loadToken: "load-3" } ],
+            [ "editable=1&loadToken=load-2", null ]
+        ] as const) {
+            delete (window as Partial<Window>).TRILIUM_NOTE_ID;
+            delete (window as Partial<Window>).TRILIUM_NTX_ID;
+            viewer = await installViewerApp(allFeaturesPdf(), pages);
+            await bootWith(query);
+
+            viewer.eventBus.dispatch("documentloaded", { source: null });
+            viewer.eventBus.dispatch("documentinit", { source: null });
+
+            if (address) {
+                await vi.waitFor(() => expect(viewer.lastMessageOfType("pdfjs-viewer-position"))
+                    .toMatchObject({ ...address, pageNumber: 1 }));
+                expect(viewer.lastMessageOfType("pdfjs-viewer-rotations"))
+                    .toMatchObject({ ...address, rotations: [ 0, 0 ] });
+            } else {
+                await new Promise((resolve) => setTimeout(resolve, 150));
+                expect(viewer.messagesOfType("pdfjs-viewer-position")).toHaveLength(0);
+                expect(viewer.messagesOfType("pdfjs-viewer-rotations")).toHaveLength(0);
+            }
+            uninstallViewerApp();
         }
     });
 

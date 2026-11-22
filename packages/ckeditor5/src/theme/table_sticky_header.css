@@ -27,18 +27,44 @@
                 exit-crossing
                 calc(var(--table-header-start, 0px) + var(--table-header-travel, 0px));
 
+            /* Fills the 1px that the borders of `th::before` reach past the header rows, so the
+               rows do not show through translucent border colors. It precedes the cells, so their
+               borders paint over it. */
+            &::before {
+                content: "";
+                display: var(--table-header-borders, none);
+                position: absolute;
+                z-index: -1;
+                inset: -1px;
+                background-color: var(--main-background-color, var(--ck-color-base-background));
+                pointer-events: none;
+            }
+
             > tr > th {
                 position: relative;
 
-                /* Collapsed borders stay at the rest position of the header rows. */
+                /* Collapsed borders stay at the rest position of the header rows. One cell draws
+                   each shared border: at fractional device pixel ratios, the borders of two
+                   neighboring cells land 1px apart. */
                 &::before {
                     content: "";
                     display: var(--table-header-borders, none);
                     position: absolute;
+                    z-index: -1;
                     inset: -1px;
                     border: inherit;
+                    border-inline-end-width: 0;
+                    border-block-start-width: 0;
                     pointer-events: none;
                 }
+
+                &:last-child::before {
+                    border-inline-end-width: inherit;
+                }
+            }
+
+            > tr:first-child > th::before {
+                border-block-start-width: inherit;
             }
         }
 

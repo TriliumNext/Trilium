@@ -1,5 +1,5 @@
 import type { ResourcesStatusResponse } from "@triliumnext/commons";
-import { Modal } from "bootstrap";
+import type { Modal } from "bootstrap";
 
 import type { NotePickerDialogOptions } from "../widgets/dialogs/note_picker.js";
 
@@ -11,12 +11,22 @@ import type { PromptDialogOptions } from "../widgets/dialogs/prompt.js";
 import { focusSavedElement, saveFocusedElement } from "./focus.js";
 import keyboardActionsService from "./keyboard_actions.js";
 import type { NoteDeletionTarget } from "./note_deletion.js";
+import { loadBootstrap } from "../widgets/react/hooks/tooltip.js";
+import { getBootstrapModal, setBootstrapModal } from "../widgets/react/modal_focustrap.js";
 import server from "./server.js";
 
 /**
  * @param declaredZIndex the z-index the dialog defines for itself, if any (see {@link raiseAboveStackedPopup}).
  */
 export async function openDialog($dialog: JQuery<HTMLElement>, closeActDialog = true, config?: Partial<Modal.Options>, declaredZIndex?: number) {
+    // `Modal.tsx` has handed Bootstrap's `Modal` over by the time it opens a dialog, so only a
+    // dialog that is not a Preact component waits here, for the first one to open.
+    let BootstrapModal = getBootstrapModal();
+    if (!BootstrapModal) {
+        BootstrapModal = (await loadBootstrap()).Modal;
+        setBootstrapModal(BootstrapModal);
+    }
+
     if (closeActDialog) {
         closeActiveDialog();
         glob.activeDialog = $dialog;
@@ -27,7 +37,7 @@ export async function openDialog($dialog: JQuery<HTMLElement>, closeActDialog = 
     // Lift this dialog above whatever is already open, if anything is (see raiseAboveWhatIsOpen).
     const bumpedZIndex = raiseAboveWhatIsOpen($dialog[0], declaredZIndex);
 
-    Modal.getOrCreateInstance($dialog[0], config).show();
+    BootstrapModal.getOrCreateInstance($dialog[0], config).show();
 
     // Normalise the just-shown dialog's backdrop z-index. Bootstrap appends the backdrop during
     // show(), and reuses the *same* element across shows of a kept-in-DOM modal — so a lift applied on
@@ -170,7 +180,7 @@ function sendDialogHome(dialogEl: HTMLElement) {
 
 export function closeActiveDialog() {
     if (glob.activeDialog) {
-        Modal.getOrCreateInstance(glob.activeDialog[0]).hide();
+        getBootstrapModal()?.getOrCreateInstance(glob.activeDialog[0]).hide();
         glob.activeDialog = null;
     }
 }

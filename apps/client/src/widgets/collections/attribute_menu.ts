@@ -1,8 +1,8 @@
 import type FNote from "../../entities/fnote";
 import type { MenuCommandItem, MenuItem } from "../../menus/context_menu";
-import { menuName } from "../../menus/context_menu_utils";
 import { t } from "../../services/i18n";
 import { clearLabelOnNotes, setLabelOnNotes, shared } from "../../services/note_set";
+import { menuName } from "../../services/utils";
 import { promotedAttributeIcon } from "../attribute_widgets/attribute_types";
 import DatePicker from "../react/DatePicker";
 import type { PromotedAttribute } from "./promoted_attributes";

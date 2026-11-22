@@ -43,7 +43,8 @@ vi.mock("../../components/app_context", () => ({
 }));
 
 vi.mock("./modal_focustrap", () => ({
-    suspendModalFocusTraps: mocks.suspendModalFocusTraps
+    suspendModalFocusTraps: mocks.suspendModalFocusTraps,
+    setBootstrapModal: () => {}
 }));
 
 import { handleSystemBack } from "../../services/system_back";
@@ -355,6 +356,18 @@ describe("Modal stacking", () => {
         expect(onOuterHidden).toHaveBeenCalledOnce();
     });
 
+    it("does not report a nested modal's start of closing as its own", () => {
+        const { outer, inner, onOuterHide, onInnerHide } = renderNested();
+
+        fire(inner, "hide.bs.modal");
+
+        expect(onInnerHide).toHaveBeenCalledOnce();
+        expect(onOuterHide).not.toHaveBeenCalled();
+
+        fire(outer, "hide.bs.modal");
+        expect(onOuterHide).toHaveBeenCalledOnce();
+    });
+
     it("does not report a nested modal's opening as its own", () => {
         const { inner, onOuterShown, onInnerShown } = renderNested();
 
@@ -366,6 +379,8 @@ describe("Modal stacking", () => {
 });
 
 function renderNested() {
+    const onOuterHide = vi.fn();
+    const onInnerHide = vi.fn();
     const onOuterHidden = vi.fn();
     const onInnerHidden = vi.fn();
     const onOuterShown = vi.fn();
@@ -379,6 +394,7 @@ function renderNested() {
             title="Outer"
             show={false}
             keepInDom
+            onHide={onOuterHide}
             onHidden={onOuterHidden}
             onShown={onOuterShown}
         >
@@ -389,6 +405,7 @@ function renderNested() {
                 show={false}
                 keepInDom
                 stackable
+                onHide={onInnerHide}
                 onHidden={onInnerHidden}
                 onShown={onInnerShown}
             >
@@ -405,7 +422,10 @@ function renderNested() {
     }
     expect(outer.contains(inner)).toBe(true);
 
-    return { outer, inner, onOuterHidden, onInnerHidden, onOuterShown, onInnerShown };
+    return {
+        outer, inner, onOuterHide, onInnerHide, onOuterHidden, onInnerHidden, onOuterShown,
+        onInnerShown
+    };
 }
 
 function fire(element: HTMLElement, type: string) {

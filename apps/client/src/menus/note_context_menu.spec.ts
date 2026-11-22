@@ -29,6 +29,9 @@ vi.mock("../services/utils.js", () => ({
 }));
 // `context_menu_utils` imports `tree`, whose imports fail against the partial mocks above.
 vi.mock("../services/tree.js", () => ({ default: {}, NOTE_PATH_TITLE_SEPARATOR: " › " }));
+vi.mock("../widgets/type_widgets/markdown/block_reference_menu.js", () => ({
+    buildMarkdownReferenceMenuItems: vi.fn(async () => null)
+}));
 vi.mock("./context_menu.js", () => ({ default: { show: vi.fn() } }));
 vi.mock("./code_editor_context_menu.js", () => ({
     buildCodeEditorContextMenuItems: vi.fn(async () => null)
@@ -46,6 +49,10 @@ import { buildBlockReferenceMenuItems } from "../services/block_reference.js";
 import { copyHtml, copyTextWithToast } from "../services/clipboard_ext.js";
 import server from "../services/server.js";
 import { setEditorNoteId } from "../widgets/react/NoteStore.js";
+import {
+    buildMarkdownReferenceMenuItems
+} from "../widgets/type_widgets/markdown/block_reference_menu.js";
+import { setupContextMenu } from "./browser_context_menu.js";
 import { buildCodeEditorContextMenuItems } from "./code_editor_context_menu.js";
 import contextMenu, { type MenuCommandItem, type MenuItem } from "./context_menu.js";
 import {
@@ -58,8 +65,7 @@ import {
     buildNoteContextMenuItems,
     type ContextMenuHost,
     type ContextMenuTarget,
-    getSelectedHtmlForMarkdown,
-    setupContextMenu
+    getSelectedHtmlForMarkdown
 } from "./note_context_menu.js";
 
 /**
@@ -477,6 +483,32 @@ describe("buildNoteContextMenuItems", () => {
 
         await build({ element: cell });
         expect(buildBlockReferenceMenuItems).toHaveBeenCalledTimes(1);
+    });
+
+    it("asks the Markdown editor around the element for its block reference rows", async () => {
+        const editorRoot = document.createElement("div");
+        editorRoot.className = "cm-editor";
+        const line = editorRoot.appendChild(document.createElement("div"));
+        vi.mocked(buildMarkdownReferenceMenuItems).mockResolvedValueOnce({
+            copy: { title: "MC" },
+            copyTab: null,
+            paste: [ { title: "MP" } ]
+        });
+        const host = browserLikeHost({
+            paste: { enabled: true, run: vi.fn(), runAsPlainText: vi.fn(), read: vi.fn() }
+        });
+
+        const items = await build({ isEditable: true, element: line, selectionText: "" }, host);
+
+        expect(buildMarkdownReferenceMenuItems).toHaveBeenCalledExactlyOnceWith(line, host.paste);
+        expect(titles(submenu(items, "electron_context_menu.copy")).slice(-2))
+            .toEqual([ "---", "MC" ]);
+        expect(titles(submenu(items, "electron_context_menu.paste")).slice(-2))
+            .toEqual([ "---", "MP" ]);
+
+        // An element outside a code editor does not ask it.
+        await build({ isEditable: true, element: document.createElement("p") }, host);
+        expect(buildMarkdownReferenceMenuItems).toHaveBeenCalledOnce();
     });
 
     it("converts the selection through the to-markdown route", async () => {

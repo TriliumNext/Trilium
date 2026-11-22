@@ -3,19 +3,28 @@ import { undo } from "@codemirror/commands";
 import { indentUnit } from "@codemirror/language";
 import { EditorSelection, EditorState, StateEffect } from "@codemirror/state";
 import { EditorView, showTooltip, type ViewUpdate } from "@codemirror/view";
-import { CodeMirror as VimEditor, getCM } from "@replit/codemirror-vim";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 vi.mock("./type_completion/index.js", async (importOriginal) => {
     const original = await importOriginal<typeof import("./type_completion/index.js")>();
     return { ...original, buildTypeCompletion: vi.fn(original.buildTypeCompletion) };
 });
 
+const vimModule = vi.hoisted(() => ({ loads: 0 }));
+vi.mock("@replit/codemirror-vim", async (importOriginal) => {
+    vimModule.loads++;
+    return await importOriginal();
+});
+
 import { hostedCompletion } from "./extensions/hosted_completion.js";
+import { SearchHighlighter } from "./find_replace.js";
 import CodeMirror, {
     type EditorConfig, getThemeById, type HostHistory, SCRIPT_MIME_BACKEND, SharedHistory
 } from "./index.js";
 import { buildTypeCompletion } from "./type_completion/index.js";
+
+/** The loads of `@replit/codemirror-vim` that importing `index.ts` caused. */
+const vimLoadsOnImport = vimModule.loads;
 
 let editor: CodeMirror | undefined;
 
@@ -322,6 +331,66 @@ describe("CodeMirror", () => {
             expect(editor.getText()).toBe("b");
         });
 
+        it("loads the Vim keybindings once an editor turns them on", async () => {
+            expect(vimLoadsOnImport).toBe(0);
+            const { getCM } = await import("@replit/codemirror-vim");
+            const instance = editor = build({ vimKeybindings: true });
+            await vi.waitFor(() => expect(getCM(instance)).not.toBeNull());
+        });
+
+        it("turns the Vim keybindings on and off in place", async () => {
+            const instance = editor = build();
+            const { getCM } = await import("@replit/codemirror-vim");
+            await instance.setVimKeybindings(true);
+            const dispatch = vi.spyOn(instance, "dispatch");
+            await instance.setVimKeybindings(true);
+            expect(dispatch).not.toHaveBeenCalled();
+            instance.setText("text");
+
+            await instance.setVimKeybindings(false);
+            expect(getCM(instance)).toBeNull();
+            expect(instance.scrollDOM.classList.contains("cm-vimMode")).toBe(false);
+
+            await instance.setVimKeybindings(true);
+            expect(getCM(instance)).not.toBeNull();
+            expect(instance.scrollDOM.classList.contains("cm-vimMode")).toBe(true);
+            expect(instance.getText()).toBe("text");
+        });
+
+        it("keeps the Vim keybindings off when they are turned off while loading", async () => {
+            const instance = editor = build();
+            const { getCM } = await import("@replit/codemirror-vim");
+            const loading = instance.setVimKeybindings(true);
+            await instance.setVimKeybindings(false);
+            await loading;
+            expect(getCM(instance)).toBeNull();
+        });
+
+        it("loads the Vim keybindings again after a load that failed", async () => {
+            const { getCM } = await import("@replit/codemirror-vim");
+            // A module that has not loaded them yet, whose first load fails.
+            vi.resetModules();
+            vi.doMock("@replit/codemirror-vim", () => {
+                throw new Error("The download failed.");
+            });
+            onTestFinished(() => vi.doUnmock("@replit/codemirror-vim"));
+            const { default: FreshCodeMirror } = await import("./index.js");
+            const failed = editor = new FreshCodeMirror({ parent: document.createElement("div") });
+            await expect(failed.setVimKeybindings(true)).rejects
+                .toHaveProperty("cause.message", "The download failed.");
+            expect(getCM(failed)).toBeNull();
+            vi.doUnmock("@replit/codemirror-vim");
+
+            // Another editor, as when the note opens again.
+            const other = new FreshCodeMirror({ parent: document.createElement("div") });
+            onTestFinished(() => other.destroy());
+            await other.setVimKeybindings(true);
+            expect(getCM(other)).not.toBeNull();
+
+            await failed.setVimKeybindings(true);
+            expect(getCM(failed)).not.toBeNull();
+        });
+
         it("hides the caret of a read-only editor over that of the color theme", async () => {
             const theme = getThemeById("github-dark");
             expect(theme).not.toBeNull();
@@ -521,25 +590,27 @@ describe("CodeMirror", () => {
             expect(host.redo).toHaveBeenCalledTimes(3);
         });
 
-        it("runs the shared history from Vim, and the editor's own without one", () => {
-            editor = build({ vimKeybindings: true });
-            const cm = getCM(editor);
+        it("runs the shared history from Vim, and the editor's own without one", async () => {
+            const instance = editor = build();
+            await instance.setVimKeybindings(true);
+            const { CodeMirror: VimEditor, getCM } = await import("@replit/codemirror-vim");
+            const cm = getCM(instance);
             expect(cm).not.toBeNull();
             if (!cm) return;
-            editor.setText("typed");
+            instance.setText("typed");
 
             VimEditor.commands.undo(cm);
-            expect(editor.getText()).toBe("");
+            expect(instance.getText()).toBe("");
             VimEditor.commands.redo(cm);
-            expect(editor.getText()).toBe("typed");
+            expect(instance.getText()).toBe("typed");
 
             const { host, history } = createSharedHistory();
-            editor.setSharedHistory(history);
+            instance.setSharedHistory(history);
             VimEditor.commands.undo(cm);
             VimEditor.commands.redo(cm);
             expect(host.undo).toHaveBeenCalledOnce();
             expect(host.redo).toHaveBeenCalledOnce();
-            expect(editor.getText()).toBe("typed");
+            expect(instance.getText()).toBe("typed");
         });
 
         it("leaves the shared history as it is destroyed, with the document it shows", () => {
@@ -838,6 +909,31 @@ describe("CodeMirror", () => {
             editor.clearActiveMatch();
             expect(editor.contentDOM.querySelectorAll(".cm-activeMatch")).toHaveLength(0);
             expect(editor.contentDOM.querySelectorAll(".cm-searchMatch")).toHaveLength(2);
+        });
+
+        it("paints no search whose check fails after its frame; keeps a newer one", async () => {
+            editor = build();
+            editor.setText("foo bar foo");
+            await editor.performFind("foo", false, false);
+            const searchFor = vi.spyOn(SearchHighlighter.prototype, "searchFor");
+
+            let isWanted = true;
+            const overtaken = editor.performFind("bar", false, false, true, () => isWanted);
+            isWanted = false;
+            expect(await overtaken).toEqual({ totalFound: 0, currentFound: 0 });
+            expect(searchFor).not.toHaveBeenCalled();
+            expect(editor.contentDOM.querySelectorAll(".cm-searchMatch")).toHaveLength(0);
+            expect(editor.getSearchMatches()).toEqual([]);
+
+            // A newer search, installed during the frame, keeps its highlighter.
+            isWanted = true;
+            const older = editor.performFind("foo", false, false, true, () => isWanted);
+            const newer = editor.performFind("bar", false, false);
+            isWanted = false;
+            expect(await older).toEqual({ totalFound: 0, currentFound: 0 });
+            expect((await newer).totalFound).toBe(1);
+            expect(editor.contentDOM.querySelectorAll(".cm-searchMatch")).toHaveLength(1);
+            expect(editor.getSearchMatches()).toEqual([ { from: 4, to: 7 } ]);
         });
 
         it("does nothing when cleaning a search that never ran", () => {

@@ -179,6 +179,17 @@ describe("showAnchor", () => {
         expect(scrollBy).toHaveBeenCalledTimes(2);
     });
 
+    it("takes the anchor of the note's own content before one of an embed above it", () => {
+        const scroller = mountScroller("<figure class=\"include-note\" data-note-id=\"other\">"
+            + "<p><a id=\"dup\"></a>embedded</p><p><a id=\"inner\"></a>inner</p></figure>"
+            + SPACER + "<p><a id=\"dup\"></a>own</p>" + SPACER);
+
+        expect(showAnchor(scroller, "dup")).toBe(true);
+        expect(getFlashed(scroller)).toEqual([ "own" ]);
+        expect(showAnchor(scroller, "inner")).toBe(true);
+        expect(getFlashed(scroller)).toEqual([ "inner", "own" ]);
+    });
+
     it("scrolls the root of a page that has no scrolling element", () => {
         // A page in quirks mode has none when both its root and its body clip their overflow.
         const frame = document.createElement("iframe");

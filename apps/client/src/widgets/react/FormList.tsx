@@ -4,7 +4,7 @@ import { autoUpdate } from "@floating-ui/dom";
 import type { KeyboardActionNames } from "@triliumnext/commons";
 import type { Tooltip } from "bootstrap";
 import clsx from "clsx";
-import { ComponentChildren, createPortal, type CSSProperties, RefObject } from "preact";
+import { ComponentChildren, type ComponentProps, createPortal, type CSSProperties, RefObject } from "preact";
 import { useContext, useLayoutEffect, useMemo, useRef } from "preact/hooks";
 
 import type { MenuHeaderActions } from "../../menus/context_menu";
@@ -12,16 +12,20 @@ import { t } from "../../services/i18n";
 import { getActionSync } from "../../services/keyboard_actions";
 import { handleRightToLeftPlacement, isMobile, openInAppHelpFromUrl } from "../../services/utils";
 import ActionButton from "./ActionButton";
-import FormTextBox from "./FormTextBox";
+import FormTextBox, { type FormTextBoxProps } from "./FormTextBox";
 import FormToggle from "./FormToggle";
-import { useStaticTooltip, useSyncedRef, useUniqueName } from "./hooks";
+import { useSlide, useSyncedRef, useUniqueName } from "./hooks/dom";
+import { useStaticTooltip } from "./hooks/tooltip";
 import Icon, { SvgIcon } from "./Icon";
-import { MasterDetailHeader } from "./master_detail";
-import { isRightToLeft, MenuContext, type MenuContextValue, type MenuFilter, MenuFilterContext, MenuLevelContext, type OpenSubmenu, pointerMoved, shouldDropStart, useMenu } from "./menu_context";
+import { useLazyModule } from "./LazyComponent";
+import {
+    isRightToLeft, MenuContext, type MenuContextValue, type MenuFilter, MenuFilterContext,
+    MenuLevelContext, type OpenSubmenu, pointerMoved, shouldDropStart, useMenu
+} from "./menu_context";
+import type MenuSubmenuPage from "./MenuSubmenuPage";
 import { placeFloating } from "./Popup";
 import { joinElements } from "./react_utils";
 import { renderShortcutKbds } from "./shortcut_kbd";
-import { type Slide, useSlide } from "./SlidePages";
 
 interface FormListOpts {
     children: ComponentChildren;
@@ -564,13 +568,14 @@ function MenuSubmenu({
 
     const layer = isMobile()
         // A phone has no room beside the menu, so a submenu replaces it as a page of its own.
-        ? (open || pageSlide.from !== undefined) && menu.layerHost && createPortal((
-            <SubmenuPage
-                rowId={id} level={level + 1} title={title} slide={pageSlide} filter={filter}
+        ? (open || pageSlide.from !== undefined) && menu.layerHost && (
+            <LazySubmenuPage
+                slide={pageSlide} layerHost={menu.layerHost}
+                rowId={id} level={level + 1} title={title} filter={filter}
             >
                 {children}
-            </SubmenuPage>
-        ), menu.layerHost)
+            </LazySubmenuPage>
+        )
         : open && openSubmenu && menu.layerHost && createPortal((
             <SubmenuLayer
                 level={level + 1} submenu={openSubmenu} filter={filter} className={submenuClassName}
@@ -769,46 +774,12 @@ function SubmenuLayer({ level, submenu, filter, className, children }: {
     );
 }
 
-/**
- * A submenu opened on a phone: a page that takes the menu's place, headed by the submenu's title and
- * a way back. The level it covers stays mounted, as the row that owns this page stands in it.
- */
-function SubmenuPage({ rowId, level, title, slide, filter, children }: {
-    rowId: string,
-    level: number,
-    title: ComponentChildren,
-    /** The slide of whether the page is open: from closed as it arrives, from open as it leaves. */
-    slide: Slide<boolean>,
-    filter: MenuFilter | undefined,
-    children: ComponentChildren
-}) {
-    const menu = useMenu();
+// Only a phone opens submenus as pages, so the other layouts never load them.
+const loadSubmenuPage = () => import("./MenuSubmenuPage");
 
-    function back() {
-        menu.openSubmenu(level - 1);
-        menu.setActive(level - 1, rowId);
-    }
-
-    return (
-        <MenuLevelContext.Provider value={level}>
-            <div
-                role="menu" aria-labelledby={titleId(rowId)}
-                className={clsx("tn-menu-page", slide.from === false && "tn-menu-page-entering",
-                    slide.from === true && "tn-menu-page-leaving")}
-                onAnimationEnd={slide.onAnimationEnd}
-            >
-                {/* As a row's press: the menu keeps focus, and the dropdown does not close on it. */}
-                <div
-                    className="tn-menu-page-header"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <MasterDetailHeader inPage onBack={back} backTitle={t("menu.back")} pageTitle={title} listTitle={title} />
-                </div>
-                <MenuList filter={filter}>{children}</MenuList>
-            </div>
-        </MenuLevelContext.Provider>
-    );
+function LazySubmenuPage(props: ComponentProps<typeof MenuSubmenuPage>) {
+    const submenuPage = useLazyModule(loadSubmenuPage);
+    return submenuPage ? <submenuPage.default {...props} /> : null;
 }
 
 /**
@@ -855,39 +826,72 @@ function MenuFilterInput({ filter }: { filter: MenuFilter }) {
 
     return (
         <div className="tn-menu-filter">
-            {/* A press anywhere in the box, the clear button's included, keeps focus in the input,
-                and a click in it does not close the dropdown. */}
-            <div
-                className="tn-menu-filter-box tn-input-field"
-                onMouseDown={(e) => {
-                    if (e.target === inputRef.current) return;
-                    e.preventDefault();
-                    inputRef.current?.focus({ preventScroll: true });
-                }}
-                onClick={(e) => e.stopPropagation()}
-            >
-                <FormTextBox
-                    inputRef={inputRef} className="tn-menu-filter-input"
-                    data-level={filter.level + 1} currentValue={filter.text}
-                    autoComplete="off" spellcheck={false}
-                    placeholder={t("menu.filter_placeholder")} aria-label={t("menu.filter")}
-                    onChange={(text) => menu.setFilter(text
-                        ? { rowId: filter.rowId, level: filter.level, text }
-                        : undefined)}
+            <FilterField
+                inputRef={inputRef}
+                data-level={filter.level + 1}
+                value={filter.text}
+                onChange={(text) => menu.setFilter(text
+                    ? { rowId: filter.rowId, level: filter.level, text }
+                    : undefined)}
+            />
+        </div>
+    );
+}
+
+export interface FilterFieldProps extends Omit<FormTextBoxProps,
+    "currentValue" | "onChange" | "onBlur" | "inputRef" | "className"> {
+    /** The text typed in the field. */
+    value: string;
+    onChange(text: string): void;
+    onBlur?(text: string): void;
+    inputRef?: RefObject<HTMLInputElement | null>;
+    /** Classes added to the box around the input. */
+    className?: string;
+}
+
+/**
+ * A text box to filter a list by, with a search icon that turns into a clear button once text is
+ * typed. The other props go to the input.
+ */
+export function FilterField({
+    value, onChange, inputRef: externalInputRef, className, ...rest
+}: FilterFieldProps) {
+    const inputRef = useSyncedRef<HTMLInputElement>(externalInputRef, null);
+
+    // A press anywhere in the box, the clear button's included, keeps focus in the input, and a
+    // click in it does not close a dropdown around it.
+    return (
+        <div
+            className={clsx("tn-menu-filter-box tn-input-field", className)}
+            onMouseDown={(e) => {
+                if (e.target === inputRef.current) return;
+                e.preventDefault();
+                inputRef.current?.focus({ preventScroll: true });
+            }}
+            onClick={(e) => e.stopPropagation()}
+        >
+            <FormTextBox
+                inputRef={inputRef} className="tn-menu-filter-input"
+                currentValue={value} onChange={(text) => onChange(text)}
+                autoComplete="off" spellcheck={false}
+                placeholder={t("menu.filter_placeholder")} aria-label={t("menu.filter")}
+                {...rest}
+            />
+            {value
+                ? <ActionButton
+                    className="tn-menu-filter-clear" icon="bx bx-x" text={t("menu.clear_filter")}
+                    onClick={() => {
+                        onChange("");
+                        inputRef.current?.focus({ preventScroll: true });
+                    }}
                 />
-                {filter.text
-                    ? <ActionButton
-                        className="tn-menu-filter-clear" icon="bx bx-x" text={t("menu.clear_filter")}
-                        onClick={() => menu.setFilter(undefined)}
-                    />
-                    : <span className="bx bx-search" aria-hidden="true" />}
-            </div>
+                : <span className="bx bx-search" aria-hidden="true" />}
         </div>
     );
 }
 
 /** The id of a row's title, which names the submenu it opens. */
-function titleId(rowId: string) {
+export function titleId(rowId: string) {
     return `${rowId}-title`;
 }
 

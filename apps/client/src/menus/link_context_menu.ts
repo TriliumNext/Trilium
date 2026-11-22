@@ -3,7 +3,9 @@ import "./link_context_menu.css";
 import type {
     CKTextEditor, ContentEmbedState, PositionValue, ToolbarGroupMenuItem
 } from "@triliumnext/ckeditor5";
-import { EXCERPT_BOX_SIZE, EXTENDED_CODE_BLOCK_CLASS } from "@triliumnext/commons";
+import {
+    EXCERPT_BOX_SIZE, EXTENDED_CODE_BLOCK_CLASS
+} from "@triliumnext/commons/src/lib/content_embeds.js";
 
 import type { GeoMouseEvent } from "../widgets/collections/geomap/map.js";
 

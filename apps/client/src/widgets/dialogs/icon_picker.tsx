@@ -1,7 +1,7 @@
 import { useRef, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import { IconPickerModal } from "../react/IconPicker";
 
 export interface IconPickerOpts {

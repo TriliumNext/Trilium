@@ -4,7 +4,7 @@ import { useEffect, useRef } from "preact/hooks";
 
 import appContext from "../../components/app_context";
 import renderDoc from "../../services/doc_renderer";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks/events";
 import { refToJQuerySelector } from "../react/react_utils";
 import { TypeWidgetProps } from "./type_widget";
 

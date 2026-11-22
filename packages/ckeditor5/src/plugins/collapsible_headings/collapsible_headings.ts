@@ -8,8 +8,8 @@ import CollapsibleHeadingsEditing, {
 import CollapsibleHeadingsUI from "./collapsible_headings_ui.js";
 
 /**
- * Headings that collapse to hide the blocks under them, with an arrow at the end of the heading
- * and `Ctrl+Alt+Enter`.
+ * Headings that collapse to hide the blocks under them, with an arrow on the heading and
+ * `Ctrl+Alt+Enter`.
  */
 export default class CollapsibleHeadings extends Plugin {
 

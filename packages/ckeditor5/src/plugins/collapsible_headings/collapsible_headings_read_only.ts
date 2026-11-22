@@ -7,8 +7,8 @@ import { CLASSES, COLLAPSED_DATA_ATTRIBUTE } from "./constants.js";
 
 /**
  * Makes the headings of `container`, saved content shown outside an editor, collapsible. The
- * sections of the headings saved as collapsed start hidden. A click on the arrow at the end of a
- * heading toggles it, and so do Enter and Space on a heading that Tab reaches. A toggle changes
+ * sections of the headings saved as collapsed start hidden. A click on the arrow of a heading
+ * toggles it, and so do Enter and Space on a heading that Tab reaches. A toggle changes
  * classes only, so the saved state stays as it was.
  *
  * Returns a function that removes the listeners. The module imports only types from CKEditor.
@@ -19,6 +19,7 @@ export function applyCollapsedHeadings(container: HTMLElement) {
         .filter((heading) => (heading.parentElement as HTMLElement).tagName !== "LI");
     for (const heading of headings) {
         heading.classList.add(CLASSES.sectionHeading);
+        heading.classList.toggle(CLASSES.blankEnd, isBlankAtEnd(heading));
     }
     // The headings share the tab index of the container, so that Tab reaches them right after it.
     const tabIndex = String(Math.max(container.tabIndex, 0));
@@ -69,7 +70,7 @@ export function applyCollapsedHeadings(container: HTMLElement) {
     };
     const onMouseMove = (event: MouseEvent) => {
         const heading = event.buttons === 0 ? getSectionHeading(event) : null;
-        setHovered(heading, !!heading && isOnHeadingArrow(heading, event.clientX));
+        setHovered(heading, !!heading && isOnHeadingArrow(heading, event.clientX, event.clientY));
     };
     const onMouseLeave = () => setHovered(null, false);
 
@@ -110,12 +111,16 @@ export function revealCollapsedHeadings(element: Element) {
 }
 
 /**
- * Whether the pointer at `clientX` over `heading` is on its arrow: in the padding at the end of
- * the heading, which keeps the text away from the arrow.
+ * Whether the pointer at `clientX`, `clientY` over `heading` is on its arrow. An arrow after the
+ * text takes its own box. An arrow at the end of the heading takes the padding there, which keeps
+ * the text away from it, on every line.
  */
-export function isOnHeadingArrow(heading: Element, clientX: number) {
+export function isOnHeadingArrow(heading: Element, clientX: number, clientY: number) {
     const style = getComputedStyle(heading);
     const rect = heading.getBoundingClientRect();
+    if (style.getPropertyValue("--_arrow-placement").trim() === "text") {
+        return isOnArrowAfterText(heading, style, rect, clientX, clientY);
+    }
     const padding = parseFloat(style.paddingInlineEnd);
     if (style.direction === "rtl") {
         const end = rect.left + parseFloat(style.borderLeftWidth);
@@ -123,6 +128,26 @@ export function isOnHeadingArrow(heading: Element, clientX: number) {
     }
     const end = rect.right - parseFloat(style.borderRightWidth);
     return clientX >= end - padding && clientX <= end;
+}
+
+/** Whether the point is on the arrow after the text of `heading`, placed by its `::after`. */
+function isOnArrowAfterText(
+    heading: Element, style: CSSStyleDeclaration, rect: DOMRect, clientX: number, clientY: number
+) {
+    const arrow = getComputedStyle(heading, "::after");
+    const left = rect.left + parseFloat(style.borderLeftWidth) + parseFloat(arrow.left)
+        + parseFloat(arrow.marginLeft);
+    // `translateY(-50%)` puts the middle of the arrow where its top would be.
+    const middle = rect.top + parseFloat(style.borderTopWidth) + parseFloat(arrow.top)
+        + parseFloat(arrow.marginTop);
+    return clientX >= left && clientX <= left + parseFloat(arrow.width)
+        && Math.abs(clientY - middle) <= parseFloat(arrow.height) / 2;
+}
+
+/** Whether the last line of `heading` has no text: it is empty or ends with a line break. */
+function isBlankAtEnd(heading: Element) {
+    const lastChild = heading.lastChild;
+    return !lastChild || lastChild.nodeName === "BR";
 }
 
 /** The heading that hides each hidden block. */
@@ -178,5 +203,5 @@ function getSectionHeading(event: MouseEvent) {
 /** The section heading whose arrow is under the pointer of `event`. */
 function getArrowHeading(event: MouseEvent) {
     const heading = getSectionHeading(event);
-    return heading && isOnHeadingArrow(heading, event.clientX) ? heading : null;
+    return heading && isOnHeadingArrow(heading, event.clientX, event.clientY) ? heading : null;
 }

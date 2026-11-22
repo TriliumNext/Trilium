@@ -3,37 +3,58 @@ import "./MarkdownCommons.css";
 
 import { revealTab } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import VanillaCodeMirror from "@triliumnext/codemirror";
-import { findWikilinkNoteIds, triliumNoteChips } from "@triliumnext/codemirror/src/extensions/trilium_note_chips";
-import { CustomMarkdownRenderer, renderToHtml } from "@triliumnext/commons/src/lib/markdown_renderer";
-import { createLiteralTildeExtension, createTabsExtensions } from "@triliumnext/commons/src/lib/marked_extensions";
+import {
+    findWikilinkNoteIds, triliumNoteChips
+} from "@triliumnext/codemirror/src/extensions/trilium_note_chips";
+import { stripBlockMarkers } from "@triliumnext/commons/src/lib/block_reference";
+import {
+    CustomMarkdownRenderer, renderToHtml
+} from "@triliumnext/commons/src/lib/markdown_renderer";
+import { countLineBreaks, walkBlockTokens } from "@triliumnext/commons/src/lib/markdown_source";
+import {
+    createBlockMarkerExtensions, createLiteralTildeExtension, createTabsExtensions
+} from "@triliumnext/commons/src/lib/marked_extensions";
 import DOMPurify from "dompurify";
 import { Marked, type Token, type Tokens } from "marked";
-import { createContext } from "preact";
-import { useCallback, useContext, useEffect, useMemo, useState } from "preact/hooks";
+import { createContext, type RefObject } from "preact";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
 import NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
+import { consumeBlockReference } from "../../../services/block_reference";
+import { consumeBookmark } from "../../../services/bookmark_jump";
 import keyboard_actions from "../../../services/keyboard_actions";
 import note_create from "../../../services/note_create";
 import { removeIndividualBinding } from "../../../services/shortcuts";
 import { isDesktop } from "../../../services/utils";
-import { useLegacyImperativeHandlers, useTriliumEvent } from "../../react/hooks";
-import { resolveNoteChip } from "../../search_field_editor";
-import { extractHighlightsFromStaticHtml, type RawHighlight } from "../../sidebar/highlights_extract";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useLegacyImperativeHandlers } from "../../react/hooks/legacy";
+import { useLinkTargetLanding } from "../../react/hooks/note_context";
+import {
+    extractHighlightsFromStaticHtml, type RawHighlight
+} from "../../sidebar/highlights_extract";
+import type { HeadingLinks } from "../../sidebar/TableOfContents";
 import SplitEditor from "../helpers/SplitEditor";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText";
 import { TypeWidgetProps } from "../type_widget";
 import {
-    insertDateTime, insertText, replaceSelection, showEditLinkDialog, showIncludeNoteDialog,
-    uploadImageAndInsert
+    getMarkdownHeadingTarget, getSavedMarkdownHeadingTarget, revealInSource, useBlockMarkers
+} from "./editor_block_references";
+import {
+    insertDateTime, insertText, replaceSelection, resolveWikilinkChip, showEditLinkDialog,
+    showIncludeNoteDialog, uploadImageAndInsert
 } from "./editor_utils";
 
 const marked = new Marked({ breaks: true, gfm: true });
 // Headings in the outline are rendered by this instance rather than by `renderToHtml`, so it needs
 // the same single-tilde handling to stay consistent with the preview body. `renderWithSourceLines`
 // pairs its top-level tokens with the rendered blocks, so it also needs every block extension.
-marked.use({ extensions: [createLiteralTildeExtension(), ...createTabsExtensions()] });
+marked.use({
+    extensions: [
+        ...createBlockMarkerExtensions(), createLiteralTildeExtension(), ...createTabsExtensions()
+    ]
+});
 
 /**
  * The default {@link CustomMarkdownRenderer} falls back to
@@ -48,11 +69,11 @@ class MarkdownPreviewRenderer extends CustomMarkdownRenderer {
     override code(token: Tokens.Code): string {
         const html = super.code(token);
         if (token.lang) return html;
-        return html.replace('<code class="language-text-x-trilium-auto">', `<code class="language-text-plain">`);
+        return html.replace(`class="language-text-x-trilium-auto"`, `class="language-text-plain"`);
     }
 }
 
-export interface MarkdownHeading {
+export interface MarkdownTocHeading {
     id: string;
     level: number;
     text: string;
@@ -64,9 +85,18 @@ export interface MarkdownHighlight extends RawHighlight {
     line: number;
 }
 
+/** The content last loaded into the widget. */
+interface LoadedContent {
+    /** The note of `content`, absent before any content loads. */
+    noteId?: string;
+    content: string;
+    /** The blob of `content`, when it was read from the note rather than edited. */
+    blobId?: string;
+}
+
 interface MarkdownContextValue {
     html: string;
-    headings: MarkdownHeading[];
+    headings: MarkdownTocHeading[];
     setEditorView: (view: VanillaCodeMirror | null) => void;
     setPreviewEl: (el: HTMLDivElement | null) => void;
 }
@@ -84,6 +114,20 @@ export default function Markdown(props: TypeWidgetProps) {
     const [ editorView, setEditorView ] = useState<VanillaCodeMirror | null>(null);
     const [ previewEl, setPreviewEl ] = useState<HTMLDivElement | null>(null);
     const { html, headings, highlights } = useMemo(() => renderWithSourceLines(content), [ content ]);
+    // The note whose content `content` is: an editor reused for another note keeps the content
+    // of the previous one until the new one loads.
+    const loadedRef = useRef<LoadedContent>({ content: "" });
+    const onContentChanged = useCallback((text: string, blobId?: string) => {
+        loadedRef.current = { noteId: props.note.noteId, content: text, blobId };
+        setContent(text);
+    }, [ props.note.noteId ]);
+    const recordHooks = useBlockMarkers(editorView, {
+        getNote: () => props.note,
+        getNotePath: () => props.noteContext?.notePath,
+        getPreview: () => previewEl
+    });
+    useRevealLinkTarget(props, editorView, previewEl, html, loadedRef);
+    const headingLinks = useHeadingLinks(props, editorView, content, loadedRef);
 
     // Bind text-detail shortcuts (e.g. Ctrl+L for the edit link dialog) to CodeMirror's contentDOM,
     // since the outer `dom` only receives events after CodeMirror has already handled them.
@@ -102,10 +146,13 @@ export default function Markdown(props: TypeWidgetProps) {
 
     useSyncedScrolling(editorView, previewEl);
     useSyncedHighlight(editorView, previewEl, html);
-    usePublishToc(props.noteContext, editorView, previewEl, headings, props.note);
+    usePublishToc(props.noteContext, editorView, previewEl, headings, props.note, headingLinks);
     usePublishHighlights(props.noteContext, editorView, previewEl, highlights, props.note);
     useImageDrop(props.note, editorView);
-    useTextCommands(editorView);
+    useTextCommands(editorView, () => ({
+        noteId: props.note.noteId,
+        notePath: props.noteContext?.notePath ?? props.note.getBestNotePathString()
+    }));
     useNoteLinkChips(editorView);
     useMarkdownKeymap(editorView);
 
@@ -120,7 +167,10 @@ export default function Markdown(props: TypeWidgetProps) {
                 noteType="code"
                 {...props}
                 editorRef={setEditorView}
-                onContentChanged={setContent}
+                onContentChanged={onContentChanged}
+                onDataTaken={recordHooks.onDataTaken}
+                dataSaved={recordHooks.dataSaved}
+                resolveConflict={recordHooks.resolveConflict}
                 previewContent={<MarkdownPreview ntxId={props.ntxId} />}
                 forceOrientation={isDesktop() ? "horizontal" : "vertical"}
                 allowKeyboardSuggestions
@@ -142,6 +192,77 @@ function MarkdownPreview({ ntxId }: { ntxId: TypeWidgetProps["ntxId"] }) {
     );
 }
 
+//#region Link targets
+/**
+ * Scrolls to the blocks or the anchor that a link to the note points at, once the editor or the
+ * preview holds the content of the note: in the source, highlighting its lines; in the preview,
+ * flashing the blocks; in a split, the source scrolls first, and the preview reveals the target a
+ * frame later, once it has followed.
+ */
+function useRevealLinkTarget(
+    { note, noteContext, ntxId, isVisible }: TypeWidgetProps,
+    editorView: VanillaCodeMirror | null,
+    previewEl: HTMLDivElement | null,
+    html: string,
+    loadedRef: RefObject<LoadedContent>
+) {
+    const reveal = useCallback(() => {
+        const viewScope = noteContext?.viewScope;
+        if (!viewScope || (!viewScope.block && !viewScope.bookmark)
+            || loadedRef.current?.noteId !== note.noteId) {
+            return;
+        }
+
+        const isPreviewShown = !!previewEl?.clientHeight;
+        if (editorView?.scrollDOM.clientHeight) {
+            revealInSource(editorView, viewScope, {
+                isFlashed: !isPreviewShown, isConsumed: !isPreviewShown
+            });
+        }
+        if (previewEl && isPreviewShown) {
+            requestAnimationFrame(() => {
+                consumeBookmark(previewEl, viewScope);
+                consumeBlockReference(previewEl, viewScope);
+            });
+        }
+    }, [ editorView, previewEl, noteContext, note.noteId, loadedRef ]);
+
+    useLinkTargetLanding({ note, ntxId, isVisible }, reveal, [ html, reveal ]);
+}
+
+/**
+ * Links to the headings of `content`, for the outline. The note path is the one of the render that
+ * lists the headings. A target is `null` once the note, its content or the document of the editor
+ * changed since: the outline then lists the headings again.
+ */
+function useHeadingLinks(
+    { note, noteContext }: TypeWidgetProps,
+    editorView: VanillaCodeMirror | null,
+    content: string,
+    loadedRef: RefObject<LoadedContent>
+) {
+    const notePath = noteContext?.notePath ?? note.getBestNotePathString();
+    return useMemo<HeadingLinks>(() => ({
+        async getTarget(heading) {
+            const { line } = heading as MarkdownTocHeading;
+            const loaded = loadedRef.current;
+            if (loaded?.noteId !== note.noteId || loaded.content !== content) return null;
+
+            // `ReadOnlyCode` passes its view too, which is read-only and takes no marker.
+            if (editorView && !editorView.state.readOnly) {
+                return editorView.state.doc.toString() === content
+                    ? getMarkdownHeadingTarget(editorView, line, notePath, note.noteId)
+                    : null;
+            }
+            return loaded.blobId
+                ? getSavedMarkdownHeadingTarget(note.noteId, notePath, content, line, loaded.blobId)
+                : null;
+        },
+        hasPublicLinks: true
+    }), [ note, notePath, editorView, content, loadedRef ]);
+}
+//#endregion
+
 //#region Table of contents
 /**
  * Publishes heading data via `setContextData("toc", ...)` so the sidebar
@@ -152,8 +273,9 @@ function usePublishToc(
     noteContext: NoteContext | undefined,
     editorView: VanillaCodeMirror | null,
     previewEl: HTMLDivElement | null,
-    headings: MarkdownHeading[],
-    note: FNote
+    headings: MarkdownTocHeading[],
+    note: FNote,
+    headingLinks: HeadingLinks
 ) {
     const publish = useCallback(() => {
         if (!noteContext || noteContext.noteId !== note.noteId) return;
@@ -162,9 +284,10 @@ function usePublishToc(
             scrollToHeading(heading) {
                 const mdHeading = headings.find(h => h.id === heading.id);
                 if (mdHeading) scrollToSourceLine(editorView, previewEl, mdHeading.line);
-            }
+            },
+            headingLinks
         });
-    }, [ noteContext, headings, editorView, previewEl, note.noteId ]);
+    }, [ noteContext, headings, editorView, previewEl, note.noteId, headingLinks ]);
 
     // Publish when headings or editor change.
     useEffect(() => { publish(); }, [ publish ]);
@@ -317,10 +440,7 @@ export function useSyncedHighlight(view: VanillaCodeMirror | null, preview: HTML
             const moving = !!current && !!match && current !== match;
             preview.classList.toggle("markdown-preview-marker-moving", moving);
             current = match;
-
-            // `offsetTop` and the marker's containing block are both the preview's padding box.
-            preview.style.setProperty("--markdown-preview-marker-top", `${match?.offsetTop ?? 0}px`);
-            preview.style.setProperty("--markdown-preview-marker-height", `${match?.offsetHeight ?? 0}px`);
+            placePreviewMarker(preview, match);
         }
 
         // A resize leaves the tabs alone, so a tab picked in the preview stays shown.
@@ -337,6 +457,20 @@ export function useSyncedHighlight(view: VanillaCodeMirror | null, preview: HTML
             unsubscribe();
         };
     }, [ view, preview, html ]);
+}
+
+/** Writes the geometry of the marker of `block`, the active block, for `Markdown.css` to draw. */
+export function placePreviewMarker(preview: HTMLElement, block: HTMLElement | null) {
+    // `offsetTop` and the marker's containing block are both the preview's padding box.
+    preview.style.setProperty("--markdown-preview-marker-top", `${block?.offsetTop ?? 0}px`);
+    preview.style.setProperty("--markdown-preview-marker-height", `${block?.offsetHeight ?? 0}px`);
+
+    // An aside can be far from the gutter, so its marker is beside the aside.
+    if (block?.matches("aside:not(.admonition)")) {
+        preview.style.setProperty("--markdown-preview-marker-left", `${block.offsetLeft}px`);
+    } else {
+        preview.style.removeProperty("--markdown-preview-marker-left");
+    }
 }
 
 /**
@@ -369,10 +503,13 @@ export function findActiveBlock(blocks: ArrayLike<HTMLElement>, activeLine: numb
  * - Add Link (Ctrl+L): opens the edit link dialog, inserts markdown link syntax
  * - Insert Date/Time (Alt+T): inserts a formatted date/time string
  */
-function useTextCommands(editorView: VanillaCodeMirror | null) {
+function useTextCommands(
+    editorView: VanillaCodeMirror | null,
+    getOwnNote: () => { noteId: string; notePath: string }
+) {
     useLegacyImperativeHandlers({
         addLinkToTextCommand() {
-            if (editorView) showEditLinkDialog(editorView);
+            if (editorView) showEditLinkDialog(editorView, getOwnNote());
         },
 
         insertDateTimeToTextCommand() {
@@ -393,7 +530,7 @@ function useTextCommands(editorView: VanillaCodeMirror | null) {
 
             // Extract first heading as title, if present.
             const headingMatch = selectedText.match(/^(#{1,6})\s+(.+)$/m);
-            const title = headingMatch ? headingMatch[2].trim() : null;
+            const title = headingMatch ? stripBlockMarkers(headingMatch[2]).trim() : null;
             const content = headingMatch
                 ? selectedText.replace(headingMatch[0], "").trim()
                 : selectedText;
@@ -433,7 +570,7 @@ export function useNoteLinkChips(editorView: VanillaCodeMirror | null) {
     useEffect(() => {
         if (!editorView) return;
 
-        editorView.setNamedExtension("noteLinkChips", triliumNoteChips(resolveNoteChip, {
+        editorView.setNamedExtension("noteLinkChips", triliumNoteChips(resolveWikilinkChip, {
             find: findWikilinkNoteIds,
             revealAtSelection: true
         }));
@@ -600,7 +737,7 @@ function useImageDrop(note: FNote, editorView: VanillaCodeMirror | null) {
 //#endregion
 
 /** Token types the parser emits but which don't produce top-level block HTML. */
-const NON_RENDERED_TOKENS = new Set([ "space", "def" ]);
+const NON_RENDERED_TOKENS = new Set([ "space", "def", "blockMarkerLine" ]);
 
 /**
  * Render markdown and tag each top-level block with its 1-indexed source line,
@@ -610,20 +747,22 @@ const NON_RENDERED_TOKENS = new Set([ "space", "def" ]);
  * with the matching lexer token's start line. Marked does not emit source
  * positions (markedjs/marked#1267) so we count newlines in `raw` ourselves.
  */
-export function renderWithSourceLines(src: string): { html: string; headings: MarkdownHeading[]; highlights: MarkdownHighlight[] } {
-    // Compute the start line of each renderable top-level token in source order.
+export function renderWithSourceLines(src: string): {
+    html: string;
+    headings: MarkdownTocHeading[];
+    highlights: MarkdownHighlight[];
+} {
     const tokens = marked.lexer(src);
-    const lines: number[] = [];
-    const headings: MarkdownHeading[] = [];
+    const lines = getBlockLines(tokens);
+    const headings: MarkdownTocHeading[] = [];
     let line = 1;
     let headingIdx = 0;
     for (const token of tokens) {
         const startLine = line;
-        line += (token.raw.match(/\n/g) ?? []).length;
-        if (!NON_RENDERED_TOKENS.has(token.type)) lines.push(startLine);
+        line += countLineBreaks(token.raw);
         if (token.type === "heading") {
             const rawText = token.text ?? "";
-            const inlineHtml = DOMPurify.sanitize(marked.parseInline(rawText) as string);
+            const inlineHtml = DOMPurify.sanitize(marked.parseInline(rawText) as string).trim();
             headings.push({
                 id: `md-heading-${headingIdx++}`,
                 level: (token as { depth: number }).depth,
@@ -654,7 +793,7 @@ export function renderWithSourceLines(src: string): { html: string; headings: Ma
 
     // A separate attribute: the scroll sync and the active-line marker measure every
     // `[data-source-line]` element, and a hidden tab has no geometry.
-    const tabLines = collectTabLines(tokens, 1);
+    const tabLines = collectTabLines(tokens);
     const tabs = container.querySelectorAll<HTMLElement>("section.trilium-tab");
     if (tabs.length === tabLines.length) {
         for (const [ index, tab ] of tabs.entries()) {
@@ -666,37 +805,51 @@ export function renderWithSourceLines(src: string): { html: string; headings: Ma
 }
 
 /**
- * Returns the 1-indexed line of every tab header, in the order of the rendered
- * `section.trilium-tab` elements; inside a list or a block quote the lines are approximate.
+ * Returns the 1-indexed line of every top-level element of the preview, in order. Raw HTML can
+ * open an element that the next tokens render inside, such as `<aside>` or `<details>` around
+ * Markdown, and one HTML token can render several elements or none. So the tokens are parsed as
+ * HTML: a marker with the line, then the token's HTML, or a `<p>` for a token of another type.
  */
-function collectTabLines(tokens: Token[], firstLine: number): number[] {
-    const lines: number[] = [];
-    let line = firstLine;
+function getBlockLines(tokens: Token[]): number[] {
+    let outline = "";
+    let line = 1;
     for (const token of tokens) {
-        if (token.type === "tabs") {
-            let tabLine = line;
-            for (const tab of (token as Tokens.Generic).tokens ?? []) {
-                lines.push(tabLine);
-                // The panel starts below the `=== "Title"` line.
-                lines.push(...collectTabLines((tab as Tokens.Generic).tokens ?? [], tabLine + 1));
-                tabLine += countNewlines(tab.raw);
-            }
-        } else if (token.type === "list") {
-            let itemLine = line;
-            for (const item of (token as Tokens.List).items) {
-                lines.push(...collectTabLines(item.tokens, itemLine));
-                itemLine += countNewlines(item.raw);
-            }
-        } else if (token.type === "blockquote") {
-            lines.push(...collectTabLines((token as Tokens.Blockquote).tokens, line));
+        if (!NON_RENDERED_TOKENS.has(token.type)) {
+            const block = token.type === "html" ? token.raw : "<p></p>";
+            outline += `<div ${LINE_MARKER}="${line}"></div>${block}`;
         }
-        line += countNewlines(token.raw);
+        line += countLineBreaks(token.raw);
+    }
+
+    // A template parses its content without loading the images of the raw HTML.
+    const template = document.createElement("template");
+    template.innerHTML = DOMPurify.sanitize(outline);
+
+    const lines: number[] = [];
+    let blockLine = 1;
+    for (const element of template.content.children) {
+        const markerLine = element.getAttribute(LINE_MARKER);
+        if (markerLine) {
+            blockLine = Number(markerLine);
+        } else {
+            lines.push(blockLine);
+        }
     }
     return lines;
 }
 
-function countNewlines(text: string) {
-    return (text.match(/\n/g) ?? []).length;
+const LINE_MARKER = "data-line-marker";
+
+/**
+ * Returns the 1-indexed line of every tab header, in the order of the rendered
+ * `section.trilium-tab` elements; inside a list or a block quote the lines are approximate.
+ */
+function collectTabLines(tokens: Token[]): number[] {
+    const lines: number[] = [];
+    walkBlockTokens(tokens, (token, line) => {
+        if (token.type === "tab") lines.push(line);
+    });
+    return lines;
 }
 
 /**

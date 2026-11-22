@@ -1,7 +1,7 @@
 import $ from "jquery";
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Bootstrap places the menu and its tooltips against a real layout, which happy-dom has none of; what
 // the list decides is which items exist, how the current one is marked, and what a press reports.
@@ -9,13 +9,16 @@ vi.mock("bootstrap", () => ({
     Dropdown: { getOrCreateInstance: () => ({ show() {}, hide() {}, update() {}, dispose() {} }) },
     Tooltip: class { static getInstance() { return null; } }
 }));
-vi.mock("./hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("./hooks")>()),
+vi.mock("./hooks/tooltip", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./hooks/tooltip")>()),
     useStaticTooltip: vi.fn(),
     useTooltip: () => ({ showTooltip: vi.fn(), hideTooltip: vi.fn() })
 }));
 
+import { preloadDropdownPopups } from "./Dropdown";
 import FormDropdownList from "./FormDropdownList";
+
+beforeAll(() => preloadDropdownPopups());
 
 // happy-dom has no ResizeObserver; the dropdown only needs observe/disconnect to exist.
 class ResizeObserverStub {

@@ -1,4 +1,6 @@
-import { getMermaidConfig as getSharedMermaidConfig, parseMermaidTheme } from "@triliumnext/commons";
+import {
+    getMermaidConfig as getSharedMermaidConfig, parseMermaidTheme
+} from "@triliumnext/commons/src/lib/mermaid_config.js";
 import type { MermaidConfig } from "mermaid";
 
 export function getMermaidConfig(): MermaidConfig {

@@ -32,6 +32,22 @@ describe("layer extraction", () => {
         });
     });
 
+    it("names the load of its frame in the list, an empty one included", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        window.TRILIUM_LOAD_TOKEN = "load-7";
+        await setupPdfLayers();
+        expect(viewer.lastMessageOfType("pdfjs-viewer-layers"))
+            .toMatchObject({ loadToken: "load-7" });
+        uninstallViewerApp();
+
+        viewer = await installViewerApp(barePdf());
+        window.TRILIUM_LOAD_TOKEN = "load-8";
+        await setupPdfLayers();
+        expect(viewer.lastMessageOfType("pdfjs-viewer-layers")).toMatchObject({
+            layers: [], loadToken: "load-8"
+        });
+    });
+
     it("drops groups pdf.js reports without a name", async () => {
         viewer = await installViewerApp(layeredPdf());
 

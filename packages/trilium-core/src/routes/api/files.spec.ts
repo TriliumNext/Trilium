@@ -1,9 +1,20 @@
-import { CANVAS_ATTACHMENT_MIME, getDrawingPictureTitle } from "@triliumnext/commons";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+import {
+    CANVAS_ATTACHMENT_MIME, DOCX_MIME, EPUB_MIME_TYPES, getDrawingPictureTitle,
+    type NoteReferencesResponse, ODT_MIME
+} from "@triliumnext/commons";
+import type { PersistedData } from "@triliumnext/commons/src/lib/spreadsheet/workbook_model";
 import ExcelJS from "exceljs";
-import { beforeAll, describe, expect, it } from "vitest";
+import { OfficeConverter } from "officeparser";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../../becca/becca.js";
+import appInfo from "../../services/app_info.js";
 import * as cls from "../../services/context.js";
+import noteService from "../../services/notes.js";
 import { getPlatform } from "../../services/platform.js";
 import protectedSessionService from "../../services/protected_session";
 import { getSql } from "../../services/sql/index.js";
@@ -19,6 +30,9 @@ import { CoreApiTester } from "../../test/api_tester";
  * standalone (WASM) suites.
  */
 let api: CoreApiTester;
+
+const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../services/toc/fixtures");
 
 interface AttachmentPojo {
     attachmentId: string;
@@ -49,6 +63,22 @@ describe("Files API (core)", () => {
             expect(res.status).toBe(200);
             expect(res.body).toContain("inline view");
             expect(res.headers["Content-Disposition"]).toBeUndefined();
+        });
+
+        it("opens only the blob that the caller asks for, and any without one", async () => {
+            const { noteId } = await createTextNote(api, { content: "<p>current</p>" });
+            const { blobId } = becca.getNoteOrThrow(noteId);
+
+            const other = await api.get<string>(`/api/notes/${noteId}/open?blobId=anotherBlob`);
+            const expected = await api.get<string>(`/api/notes/${noteId}/open?blobId=${blobId}`);
+            const any = await api.get<string>(`/api/notes/${noteId}/open`);
+
+            expect(other.status).toBe(409);
+            expect(other.body).not.toContain("current");
+            expect(expected.status).toBe(200);
+            expect(expected.body).toContain("current");
+            expect(any.status).toBe(200);
+            expect(any.body).toContain("current");
         });
 
         it("supports the legacy /api/notes/download/:noteId path", async () => {
@@ -118,6 +148,20 @@ describe("Files API (core)", () => {
             expect(res.status).toBe(200);
             expect(res.body).toContain("attachment payload");
             expect(res.headers["Content-Disposition"]).toBeUndefined();
+        });
+
+        it("opens only the blob of an attachment that the caller asks for", async () => {
+            const { attachmentId } = await createAttachment();
+            const { blobId } = becca.getAttachmentOrThrow(attachmentId);
+
+            const other = await api.get<string>(`/api/attachments/${attachmentId}/open?blobId=x`);
+            const expected = await api.get<string>(
+                `/api/attachments/${attachmentId}/open?blobId=${blobId}`);
+
+            expect(other.status).toBe(409);
+            expect(other.body).not.toContain("attachment payload");
+            expect(expected.status).toBe(200);
+            expect(expected.body).toContain("attachment payload");
         });
 
         it("downloads and opens a canvas drawing with the images it refers to inside", async () => {
@@ -305,7 +349,8 @@ describe("Files API (core)", () => {
 
             const res = await api.put(`/api/notes/${noteId}/file`, { file: upload("replaced", "TEXT/Plain") });
             expect(res.status).toBe(200);
-            expect(res.body).toEqual({ uploaded: true });
+            expect(res.body)
+                .toEqual({ uploaded: true, blobId: becca.getNoteOrThrow(noteId).blobId });
 
             const note = becca.getNoteOrThrow(noteId);
             expect(note.getContent().toString()).toBe("replaced");
@@ -336,7 +381,9 @@ describe("Files API (core)", () => {
             const { attachmentId } = list.body[0];
 
             const res = await api.put(`/api/attachments/${attachmentId}/file`, { file: upload("new-att") });
-            expect(res.body).toEqual({ uploaded: true });
+            expect(res.body).toEqual({
+                uploaded: true, blobId: becca.getAttachmentOrThrow(attachmentId).blobId
+            });
             expect(becca.getAttachmentOrThrow(attachmentId).getContent().toString()).toBe("new-att");
             expect(await revisionCount(noteId)).toBe(1);
 
@@ -526,6 +573,23 @@ describe("Files API (core)", () => {
             expect(res.body).not.toContain("<html");
         });
 
+        it("answers 409 without converting for a blob that the note does not hold", async () => {
+            const noteId = await createRtfNote();
+            const { blobId } = becca.getNoteOrThrow(noteId);
+            const convert = vi.spyOn(OfficeConverter, "convert");
+
+            const refused = await api.get(`/api/notes/${noteId}/office-preview?blobId=another`);
+
+            expect(refused.status).toBe(409);
+            expect(refused.body).toMatchObject({ reason: "changed" });
+            expect(convert).not.toHaveBeenCalled();
+            const preview = await api.get<string>(
+                `/api/notes/${noteId}/office-preview?blobId=${blobId}`);
+            expect(preview.status).toBe(200);
+            expect(preview.body).toContain("Hello");
+            convert.mockRestore();
+        });
+
         it("converts an RTF attachment to an embeddable HTML fragment", async () => {
             const { noteId } = await createTextNote(api, { title: "Has office attachment" });
             const save = await api.post(`/api/notes/${noteId}/attachments`, {
@@ -557,6 +621,75 @@ describe("Files API (core)", () => {
             expect(corner.body.length).toBeLessThan(whole.body.length / 5);
         });
 
+        it("answers a preview the browser already holds with 304, per content and per trim", async () => {
+            const noteId = await createRtfNote();
+            const url = `/api/notes/${noteId}/office-preview`;
+
+            const first = await api.get<string>(url);
+            const etag = first.headers.ETag;
+            expect(etag).toMatch(/^".+"$/);
+            expect(first.headers["Cache-Control"]).toBe("no-cache");
+
+            const again = await api.get<string>(url, { headers: { "if-none-match": etag } });
+            expect(again.status).toBe(304);
+            expect(again.body).toBeFalsy();
+            expect(again.headers.ETag).toBe(etag);
+
+            const corner = await api.get<string>(`${url}?trim=1`, { headers: { "if-none-match": etag } });
+            expect(corner.status).toBe(200);
+            expect(corner.headers.ETag).not.toBe(etag);
+
+            const update = await api.put(`/api/notes/${noteId}/data`, {
+                body: { content: String.raw`{\rtf1\ansi Changed}` }
+            });
+            expect(update.status).toBe(204);
+            const changed = await api.get<string>(url, { headers: { "if-none-match": etag } });
+            expect(changed.status).toBe(200);
+            expect(changed.body).toContain("Changed");
+        });
+
+        it("matches an If-None-Match header sent more than once, weak or as a wildcard", async () => {
+            const noteId = await createRtfNote();
+            const url = `/api/notes/${noteId}/office-preview`;
+            const etag = (await api.get(url)).headers.ETag;
+
+            const revalidate = async (header: string | string[]) =>
+                (await api.get(url, { headers: { "if-none-match": header } })).status;
+            expect(await revalidate([ `"other"`, `W/${etag}` ])).toBe(304);
+            expect(await revalidate("*")).toBe(304);
+            expect(await revalidate([ `"other"`, `"another"` ])).toBe(200);
+        });
+
+        it("keys a release's ETag to its build, so the cache outlives a restart", async () => {
+            const noteId = await createRtfNote();
+            const url = `/api/notes/${noteId}/office-preview`;
+            const build = `${appInfo.appVersion}-${appInfo.buildRevision}`;
+
+            // A dev checkout's build info is a placeholder, so its ETag does not rely on it.
+            const devEtag = await withEnv("dev", async () => (await api.get(url)).headers.ETag);
+            expect(devEtag).not.toContain(build);
+
+            const releaseEtag = await withEnv("production", async () => (await api.get(url)).headers.ETag);
+            expect(releaseEtag).toContain(build);
+            expect(await withEnv("production", async () => (await api.get(url)).headers.ETag)).toBe(releaseEtag);
+        });
+
+        it("keeps the preview of a protected note out of the browser's cache", async () => {
+            const noteId = await createRtfNote();
+            protectedSessionService.setDataKey(encodeUtf8("0123456789abcdef")); // exactly 16 bytes
+            try {
+                expect((await api.put(`/api/notes/${noteId}/protect/1`)).status).toBe(204);
+
+                const res = await api.get<string>(`/api/notes/${noteId}/office-preview`);
+                expect(res.status).toBe(200);
+                expect(res.body).toContain("Hello");
+                expect(res.headers.ETag).toBeUndefined();
+                expect(res.headers["Cache-Control"]).toBe("no-store");
+            } finally {
+                protectedSessionService.resetDataKey();
+            }
+        });
+
         it("rejects an unsupported MIME type with 400", async () => {
             const { noteId } = await createTextNote(api, { content: "<p>not office</p>" });
 
@@ -567,6 +700,58 @@ describe("Files API (core)", () => {
         it("404s for a missing note", async () => {
             const res = await api.get("/api/notes/missingNote123/office-preview");
             expect(res.status).toBe(404);
+        });
+
+        it("answers an XLSX note with the workbook a spreadsheet note stores, revalidated by ETag", async () => {
+            const wb = new ExcelJS.Workbook();
+            wb.addWorksheet("Data").getCell("B2").value = "in a cell";
+            const noteId = await createXlsxNote(Buffer.from(await wb.xlsx.writeBuffer()));
+            const url = `/api/notes/${noteId}/spreadsheet-workbook`;
+
+            const res = await api.get<string>(url);
+            expect(res.status).toBe(200);
+            expect(res.headers["Content-Type"]).toContain("application/json");
+            const { version, workbook } = JSON.parse(res.body) as PersistedData;
+            expect(version).toBe(1);
+            const sheet = workbook.sheets[workbook.sheetOrder[0]];
+            expect(sheet?.name).toBe("Data");
+            expect(sheet?.cellData?.[1]?.[1]?.v).toBe("in a cell");
+
+            const etag = res.headers.ETag;
+            expect(etag).not.toBe((await api.get(`/api/notes/${noteId}/office-preview`)).headers.ETag);
+            expect((await api.get(url, { headers: { "if-none-match": etag } })).status).toBe(304);
+        });
+
+        it("answers an XLSX attachment with its workbook too", async () => {
+            const wb = new ExcelJS.Workbook();
+            wb.addWorksheet("Attached").getCell("A1").value = "from an attachment";
+            const xlsxBuffer = Buffer.from(await wb.xlsx.writeBuffer());
+            const { noteId } = await createTextNote(api, { title: "Has workbook attachment" });
+            const save = await api.post(`/api/notes/${noteId}/attachments`, {
+                body: { role: "file", mime: XLSX_MIME, title: "attached.xlsx", content: "" }
+            });
+            expect(save.status).toBe(204);
+            const list = await api.get<AttachmentPojo[]>(`/api/notes/${noteId}/attachments`);
+            const attachmentId = list.body[0].attachmentId;
+            cls.init(() => getSql().transactional(() => {
+                becca.getAttachmentOrThrow(attachmentId).setContent(xlsxBuffer, { forceSave: true });
+            }));
+
+            const res = await api.get<string>(`/api/attachments/${attachmentId}/spreadsheet-workbook`);
+            expect(res.status).toBe(200);
+            const { workbook } = JSON.parse(res.body) as PersistedData;
+            expect(workbook.sheets[workbook.sheetOrder[0]]?.cellData?.[0]?.[0]?.v).toBe("from an attachment");
+            expect((await api.get(`/api/attachments/${attachmentId}/spreadsheet-workbook`,
+                { headers: { "if-none-match": res.headers.ETag } })).status).toBe(304);
+        });
+
+        it("rejects a note that holds no workbook with 400", async () => {
+            const noteId = await createRtfNote();
+            expect((await api.get(`/api/notes/${noteId}/spreadsheet-workbook`)).status).toBe(400);
+
+            // A document labelled as a workbook, which exceljs would open as an empty one.
+            const mislabelled = await createXlsxNote(Buffer.from("not a zip"));
+            expect((await api.get(`/api/notes/${mislabelled}/spreadsheet-workbook`)).status).toBe(400);
         });
 
         it("renders an XLSX note through the native spreadsheet pipeline", async () => {
@@ -594,7 +779,250 @@ describe("Files API (core)", () => {
             expect(res.body).not.toContain("excel-col-header");
         });
     });
+
+    describe("headings of Word and OpenDocument previews", () => {
+        const documents = [ { name: "docx", mime: DOCX_MIME }, { name: "odt", mime: ODT_MIME } ];
+
+        afterEach(() => {
+            protectedSessionService.resetDataKey();
+            vi.restoreAllMocks();
+        });
+
+        it.each(documents)("marks the $name preview with the targets it lists", async (testCase) => {
+            const { name, mime } = testCase;
+            const bytes = readFixture(name);
+            const contract = readContract(name);
+            const note = createFileNote(bytes, mime);
+            const attachment = cls.init(() => note.saveAttachment({
+                role: "file", mime, title: `attached.${name}`, content: bytes
+            }));
+
+            for (const url of [
+                `/api/notes/${note.noteId}`, `/api/attachments/${attachment.attachmentId}`
+            ]) {
+                const preview = await api.get<string>(`${url}/office-preview`);
+                const references = await api.get<NoteReferencesResponse>(`${url}/references`);
+                const { targets } = references.body;
+
+                const marked = readMarks(preview.body, "data-toc-heading");
+                expect(marked).toHaveLength(contract.headings.length);
+                expect(marked).toStrictEqual(targets.filter(({ kind }) => kind === "heading")
+                    .map(({ params }) => params?.heading));
+                // The anchors follow the headings, sorted by name.
+                const anchors = targets.slice(marked.length).map(({ kind, params }) =>
+                    kind === "anchor" ? params?.bookmark : kind);
+                expect(anchors)
+                    .toStrictEqual(contract.bookmarks.toSorted((a, b) => a.localeCompare(b)));
+                expect(readMarks(preview.body, "data-toc-bookmark").toSorted())
+                    .toStrictEqual(contract.bookmarks.toSorted());
+                expect(preview.headers.ETag).toContain(`-full-${name}-`);
+                const trimmed = await api.get(`${url}/office-preview?trim=1`);
+                expect(trimmed.headers.ETag).toContain(`-trim-${name}-`);
+            }
+        });
+
+        it("marks a protected preview with the ids of its protected blob", async () => {
+            const note = createFileNote(readFixture("docx"), DOCX_MIME);
+            protectedSessionService.setDataKey(encodeUtf8("0123456789abcdef"));
+            expect((await api.put(`/api/notes/${note.noteId}/protect/1`)).status).toBe(204);
+
+            const preview = await api.get<string>(`/api/notes/${note.noteId}/office-preview`);
+
+            expect(readMarks(preview.body, "data-toc-heading"))
+                .toStrictEqual(readContract("docx").protectedIds);
+            expect(preview.headers.ETag).toBeUndefined();
+        });
+
+        it("leaves the preview of the other office formats unmarked", async () => {
+            const res = await api.post<{ note: { noteId: string } }>(
+                "/api/notes/root/children?target=into", { body: {
+                    title: "document.rtf", type: "file", mime: "application/rtf",
+                    content: String.raw`{\rtf1\ansi Hello}`
+                } });
+            const url = `/api/notes/${res.body.note.noteId}/office-preview`;
+
+            const preview = await api.get<string>(url);
+
+            expect(preview.body).toContain("Hello");
+            expect(preview.body).not.toContain("data-toc-heading");
+            expect(preview.headers.ETag).toContain("-full-");
+        });
+
+        it("sends the body of the format its ETag names, though the note changes", async () => {
+            const note = createFileNote(readFixture("docx"), DOCX_MIME);
+            const url = `/api/notes/${note.noteId}/office-preview`;
+            const setType = (type: string, mime: string) =>
+                api.put(`/api/notes/${note.noteId}/type`, { body: { type, mime } });
+            const release = holdConversion();
+
+            const request = api.get<string>(url);
+            await vi.waitFor(() => expect(OfficeConverter.convert).toHaveBeenCalled());
+            expect((await setType("file", "application/pdf")).status).toBe(204);
+            release();
+            const held = await request;
+
+            expect(held.headers.ETag).toContain("-full-docx-");
+            expect(held.body).toContain("data-toc-heading");
+            const revalidate = { headers: { "if-none-match": held.headers.ETag } };
+            await setType("file", DOCX_MIME);
+            expect((await api.get(url, revalidate)).status).toBe(304);
+
+            // Another type with the same MIME type and bytes has no ToC format.
+            await setType("image", DOCX_MIME);
+            const other = await api.get<string>(url, revalidate);
+            expect(other.status).toBe(200);
+            expect(other.body).not.toContain("data-toc-heading");
+        });
+    });
 });
+
+describe("entries of EPUB previews", () => {
+    const bytes = readFixture("epub");
+    const contract = JSON.parse(fs.readFileSync(path.join(FIXTURES, "toc_contract_epub.json"),
+        "utf-8")) as { ids: string[]; protectedIds: string[]; headings: { isShown?: false }[] };
+
+    beforeAll(() => {
+        api = CoreApiTester.build();
+    });
+
+    afterEach(() => {
+        protectedSessionService.resetDataKey();
+        vi.restoreAllMocks();
+    });
+
+    it.each(EPUB_MIME_TYPES)("marks the %s preview with the entries it lists", async (mime) => {
+        const note = createFileNote(bytes, mime);
+        const attachment = cls.init(() => note.saveAttachment({
+            role: "file", mime, title: "attached.epub", content: bytes
+        }));
+
+        for (const url of [
+            `/api/notes/${note.noteId}`, `/api/attachments/${attachment.attachmentId}`
+        ]) {
+            const preview = await api.get<string>(`${url}/office-preview`);
+            const references = await api.get<NoteReferencesResponse>(`${url}/references`);
+            const headings = references.body.targets.filter(({ kind }) => kind === "heading")
+                .map(({ params }) => String(params?.heading));
+
+            expect(headings).toStrictEqual(contract.ids.filter((_, index) =>
+                contract.headings[index].isShown !== false));
+            expect(readMarks(preview.body, "data-toc-heading").flatMap((value) => value.split(" "))
+                .toSorted()).toStrictEqual(headings.toSorted());
+            expect(preview.headers.ETag).toContain("-full-epub-");
+            const trimmed = await api.get(`${url}/office-preview?trim=1`);
+            expect(trimmed.headers.ETag).toContain("-trim-epub-");
+        }
+    });
+
+    it("sends a preview whose pass failed uncached and unmarked, then marks the next one",
+        async () => {
+        const note = createFileNote(bytes, EPUB_MIME_TYPES[0]);
+        const url = `/api/notes/${note.noteId}/office-preview`;
+        const current = (await api.get<string>(url)).headers.ETag;
+        failMarkedConversions(2);
+
+        for (const headers of [
+            {}, { "if-none-match": "\"stale\"" }
+        ] as Record<string, string>[]) {
+            const failed = await api.get<string>(url, { headers });
+            expect(failed.status).toBe(200);
+            expect(failed.headers["Cache-Control"]).toBe("no-store");
+            expect(failed.headers.ETag).toBeUndefined();
+            expect(failed.body).toContain("Chapter 1");
+            expect(failed.body).not.toContain("data-toc-heading");
+        }
+
+        const marked = await api.get<string>(url);
+        expect(marked.headers.ETag).toBe(current);
+        expect(marked.body).toContain("data-toc-heading");
+        const convert = vi.spyOn(OfficeConverter, "convert").mockClear();
+        expect((await api.get(url, { headers: { "if-none-match": current } })).status).toBe(304);
+        expect(convert).not.toHaveBeenCalled();
+    });
+
+    it("marks a protected preview with the ids of its protected blob, without an ETag",
+        async () => {
+        const note = createFileNote(bytes, EPUB_MIME_TYPES[0]);
+        protectedSessionService.setDataKey(encodeUtf8("0123456789abcdef"));
+        expect((await api.put(`/api/notes/${note.noteId}/protect/1`)).status).toBe(204);
+
+        const preview = await api.get<string>(`/api/notes/${note.noteId}/office-preview`);
+
+        expect(readMarks(preview.body, "data-toc-heading").flatMap((value) => value.split(" "))
+            .toSorted()).toStrictEqual(contract.protectedIds.filter((_, index) =>
+            contract.headings[index].isShown !== false).toSorted());
+        expect(preview.headers.ETag).toBeUndefined();
+        expect(preview.headers["Cache-Control"]).toBe("no-store");
+    });
+});
+
+/**
+ * Makes the next `count` conversions of a marked archive fail as no input failure does, so that
+ * the ToC pass fails and the original bytes are converted.
+ */
+function failMarkedConversions(count: number) {
+    const convert = OfficeConverter.convert.bind(OfficeConverter);
+    let failures = count;
+    let isMarked = true;
+    vi.spyOn(OfficeConverter, "convert").mockImplementation(async (...args) => {
+        // The marked archive is converted first, then the original after a failure.
+        if (failures > 0 && isMarked) {
+            failures--;
+            isMarked = false;
+            throw new RangeError("Out of memory");
+        }
+        isMarked = true;
+        return convert(...args);
+    });
+}
+
+/** The contract document `toc_contract.<name>` of the ToC formats. */
+function readFixture(name: string) {
+    return new Uint8Array(fs.readFileSync(path.join(FIXTURES, `toc_contract.${name}`)));
+}
+
+function readContract(name: string) {
+    const json = fs.readFileSync(path.join(FIXTURES, `toc_contract_${name}.json`), "utf-8");
+    return JSON.parse(json) as { headings: unknown[]; protectedIds: string[]; bookmarks: string[] };
+}
+
+/** The values of the attribute `name` in `html`, in document order. */
+function readMarks(html: string, name: string) {
+    return Array.from(html.matchAll(new RegExp(`${name}="([^"]*)"`, "g")), ([ , value ]) => value);
+}
+
+function createFileNote(content: Uint8Array, mime: string) {
+    return cls.init(() => noteService.createNewNote({
+        parentNoteId: "root", title: "document", type: "file", mime, content
+    })).note;
+}
+
+/** Holds the next conversion of `officeparser` until the returned function is called. */
+function holdConversion() {
+    const convert = OfficeConverter.convert.bind(OfficeConverter);
+    let release = () => {};
+    const gate = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+    vi.spyOn(OfficeConverter, "convert").mockImplementationOnce(async (...args) => {
+        await gate;
+        return convert(...args);
+    });
+    return release;
+}
+
+/** Runs `fn` with `TRILIUM_ENV` reading `env`. */
+async function withEnv<T>(env: string, fn: () => Promise<T>): Promise<T> {
+    const platform = getPlatform();
+    const getEnv = platform.getEnv.bind(platform);
+    const spy = vi.spyOn(platform, "getEnv")
+        .mockImplementation((key) => key === "TRILIUM_ENV" ? env : getEnv(key));
+    try {
+        return await fn();
+    } finally {
+        spy.mockRestore();
+    }
+}
 
 /**
  * Creates a file note holding a binary `.xlsx` workbook. The JSON note-creation API cannot

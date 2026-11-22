@@ -396,6 +396,27 @@ describe("ResizableWidgets", () => {
         expect(getSize()).toBe("<testBox customHeight=\"8em\" customWidth=\"35em\"></testBox>");
     });
 
+    it("gives the corner the cursor of the only axis that it resizes", async () => {
+        const getCursor = () => getComputedStyle(getHandle("corner")).cursor;
+        await createEditor({
+            isWidthResizable: (element) => element.getAttribute("kind") !== "tall",
+            isHeightResizable: (element) => element.getAttribute("kind") !== "wide",
+            getAnchor: () => "right"
+        });
+        editor.setData("<div class=\"test-box\"></div>");
+        const box = editor.model.document.getRoot()?.getChild(0);
+        if (!box?.is("element")) {
+            throw new Error("Expected a box.");
+        }
+        expect(getCursor()).toBe("nesw-resize");
+
+        editor.model.change((writer) => writer.setAttribute("kind", "wide", box));
+        expect(getCursor()).toBe("ew-resize");
+
+        editor.model.change((writer) => writer.setAttribute("kind", "tall", box));
+        expect(getCursor()).toBe("ns-resize");
+    });
+
     it("cancels on Escape, pointercancel or lost capture, and ignores other pointers", async () => {
         await createEditor();
         editor.setData(RESIZED);

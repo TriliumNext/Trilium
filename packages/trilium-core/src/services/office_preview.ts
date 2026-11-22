@@ -1,24 +1,32 @@
-import { isOfficeMimeType, OFFICE_FILE_TYPE_HINTS } from "@triliumnext/commons";
+import {
+    DOCX_MIME,
+    EPUB_MIME_TYPES,
+    isOfficeMimeType,
+    ODT_MIME,
+    OFFICE_FILE_TYPE_HINTS,
+    OFFICE_PREVIEW_TOO_LARGE_MESSAGE,
+    XLSX_MIME
+} from "@triliumnext/commons";
 
 import { ValidationError } from "../errors.js";
+import type { TocPassOutcome } from "./toc/epub.js";
 import { wrapStringOrBuffer } from "./utils/binary.js";
-import { getZipProvider } from "./zip_provider.js";
 
 /**
  * Conversion is CPU-bound and runs on the main thread (or the standalone service worker),
  * so a very large document would block other requests. Above this size we refuse the
  * preview and let the client fall back to download / open.
  */
-const MAX_OFFICE_PREVIEW_BYTES = 20 * 1024 * 1024;
+export const MAX_OFFICE_PREVIEW_BYTES = 20 * 1024 * 1024;
+/** The formats whose preview gives headings no slug ids. */
+const NO_GENERATED_IDS = new Set<string>([ DOCX_MIME, ODT_MIME, ...EPUB_MIME_TYPES ]);
 
-// MIME of an `.xlsx` upload (Office Open XML spreadsheet), previewed through the native
-// spreadsheet pipeline rather than officeparser.
 export interface OfficePreviewOptions {
     /** Renders the corner of the first sheet only, for a preview shown in a card or a list. */
     trim?: boolean;
+    /** Receives the outcome of the ToC pass of an EPUB, for the body that the call returns. */
+    onTocPass?(outcome: TocPassOutcome): void;
 }
-
-const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 /**
  * Converts an office document (DOCX/XLSX/PPTX, ODT/ODS/ODP, RTF and EPUB) to an embeddable
@@ -33,6 +41,10 @@ const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.s
  *
  * `trim` reaches the spreadsheet pipeline only; the other formats convert whole, since none of
  * them turns a page of content into the megabytes a workbook can.
+ *
+ * An EPUB is converted from an archive in which the ToC pass of `toc/epub_pass.ts` placed a marker
+ * at each entry of the book's table of contents. Whatever fails in the pass, the original bytes
+ * are converted instead, and `onTocPass` tells which.
  */
 export async function convertOfficeToHtml(content: string | Uint8Array, mime: string, options: OfficePreviewOptions = {}): Promise<string> {
     if (!isOfficeMimeType(mime)) {
@@ -41,7 +53,7 @@ export async function convertOfficeToHtml(content: string | Uint8Array, mime: st
 
     const buffer = wrapStringOrBuffer(content);
     if (buffer.byteLength > MAX_OFFICE_PREVIEW_BYTES) {
-        throw new ValidationError(`Office document is too large to preview (${buffer.byteLength} bytes).`);
+        throw new ValidationError(`${OFFICE_PREVIEW_TOO_LARGE_MESSAGE} (${buffer.byteLength} bytes).`);
     }
 
     // A file labeled as a workbook without being one (a DOCX, say) opens in exceljs as an
@@ -55,28 +67,30 @@ export async function convertOfficeToHtml(content: string | Uint8Array, mime: st
         }
     }
 
-    const fileType = OFFICE_FILE_TYPE_HINTS[mime];
-    const { OfficeConverter } = await import("officeparser");
-    const { value } = await OfficeConverter.convert(buffer, "html", {
-        // Pass the explicit fileType only when auto-detection is unreliable (RTF/EPUB).
-        parseConfig: fileType ? { fileType } : undefined,
-        generatorConfig: {
-            // Charts would be emitted as a Chart.js <script> (loaded from a CDN) that the
-            // client-side sanitizer strips anyway, so don't bother generating them.
-            includeCharts: false,
-            // Inline every embedded image as a data: URI, which the client-side sanitizer permits
-            // on <img>. Above the default cap a fragment emits `<img src="<attachment name>">`,
-            // which resolves against the note's URL and 404s.
-            maxInlineImageBytes: Infinity,
-            // Emit an embeddable fragment instead of a full standalone <html> document.
-            htmlConfig: { standalone: false }
-        }
-    });
+    const convert = (bytes: Uint8Array) => convertWithOfficeParser(bytes, mime);
+    return isEpubMime(mime) ? convertEpub(buffer, convert, options) : convert(buffer);
+}
 
-    // Defensive: officeparser types `value` as string for the 'html' destination, so the
-    // fallback arm is unreachable unless the library breaks its own contract.
-    /* v8 ignore next */
-    return typeof value === "string" ? value : "";
+/**
+ * Parses an `.xlsx` workbook into the JSON a spreadsheet note stores, for the read-only
+ * spreadsheet that shows a workbook file. Anything that is not a workbook is refused with a
+ * `ValidationError`, so the client falls back to the HTML preview.
+ */
+export async function convertXlsxToWorkbook(content: string | Uint8Array, mime: string): Promise<string> {
+    if (mime !== XLSX_MIME) {
+        throw new ValidationError(`MIME type '${mime}' is not an XLSX workbook.`);
+    }
+
+    const buffer = wrapStringOrBuffer(content);
+    if (buffer.byteLength > MAX_OFFICE_PREVIEW_BYTES) {
+        throw new ValidationError(`Workbook is too large to preview (${buffer.byteLength} bytes).`);
+    }
+    if (!await isSpreadsheetPackage(buffer)) {
+        throw new ValidationError("The file is not an XLSX workbook.");
+    }
+
+    const { parseXlsxToWorkbook } = await import("@triliumnext/commons/src/lib/spreadsheet/parse_from_xlsx.js");
+    return JSON.stringify(await parseXlsxToWorkbook(buffer));
 }
 
 /**
@@ -84,15 +98,12 @@ export async function convertOfficeToHtml(content: string | Uint8Array, mime: st
  * workbook from. Only the central directory is read; no entry is decompressed.
  */
 async function isSpreadsheetPackage(buffer: Uint8Array): Promise<boolean> {
-    let hasWorkbook = false;
     try {
-        await getZipProvider().readZipFile(buffer, async ({ fileName }) => {
-            hasWorkbook ||= fileName === "xl/workbook.xml";
-        });
+        const { readZipIndex } = await import("./utils/zip_records.js");
+        return (await readZipIndex(buffer)).records.has("xl/workbook.xml");
     } catch {
         return false;
     }
-    return hasWorkbook;
 }
 
 /**
@@ -111,4 +122,64 @@ async function convertXlsxToHtml(buffer: Uint8Array, options: OfficePreviewOptio
     const workbook = await parseXlsxToWorkbook(buffer);
 
     return renderSpreadsheetToHtml(workbook, options);
+}
+
+/**
+ * Converts the EPUB `buffer` from the archive that the ToC pass marks, else from its own bytes,
+ * and reports the outcome of the pass for the HTML returned. The `import()`, the pass and the
+ * conversion of the marked archive are one boundary; a failure of the original's conversion is
+ * thrown as it is, and then nothing is reported.
+ */
+async function convertEpub(
+    buffer: Uint8Array, convert: (bytes: Uint8Array) => Promise<string>,
+    { onTocPass }: OfficePreviewOptions
+) {
+    let outcome: TocPassOutcome;
+    try {
+        const { convertMarkedEpub } = await import("./toc/epub_pass.js");
+        const marked = await convertMarkedEpub(buffer, convert);
+        if (marked.html !== undefined) {
+            onTocPass?.(marked.outcome);
+            return marked.html;
+        }
+        outcome = marked.outcome;
+    } catch (error) {
+        outcome = { status: "failed", error };
+    }
+    const html = await convert(buffer);
+    onTocPass?.(outcome);
+    return html;
+}
+
+function isEpubMime(mime: string) {
+    return (EPUB_MIME_TYPES as readonly string[]).includes(mime);
+}
+
+async function convertWithOfficeParser(buffer: Uint8Array, mime: string) {
+    const fileType = OFFICE_FILE_TYPE_HINTS[mime];
+    const { OfficeConverter } = await import("officeparser");
+    const { value } = await OfficeConverter.convert(buffer, "html", {
+        // Pass the explicit fileType only when auto-detection is unreliable (RTF/EPUB).
+        parseConfig: fileType ? { fileType } : undefined,
+        generatorConfig: {
+            // Charts would be emitted as a Chart.js <script> (loaded from a CDN) that the
+            // client-side sanitizer strips anyway, so don't bother generating them.
+            includeCharts: false,
+            // Inline every embedded image as a data: URI, which the client-side sanitizer permits
+            // on <img>. Above the default cap a fragment emits `<img src="<attachment name>">`,
+            // which resolves against the note's URL and 404s.
+            maxInlineImageBytes: Infinity,
+            // Emit an embeddable fragment instead of a full standalone <html> document.
+            htmlConfig: { standalone: false },
+            // A heading's slug id can equal a bookmark's name or a book's own id, so that a link to
+            // either lands on the heading. The ToC formats of these mark headings with ids of their
+            // own.
+            generateIds: !NO_GENERATED_IDS.has(mime)
+        }
+    });
+
+    // Defensive: officeparser types `value` as string for the 'html' destination, so the
+    // fallback arm is unreachable unless the library breaks its own contract.
+    /* v8 ignore next */
+    return typeof value === "string" ? value : "";
 }

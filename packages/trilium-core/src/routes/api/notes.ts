@@ -1,102 +1,45 @@
-import { type AttributeRow, type CreateChildrenResponse, type DeleteNotesPreview, isNoteType, type MetadataResponse } from "@triliumnext/commons";
+import {
+    type AttributeRow, type BlocksConflictResponse, type CreateChildrenResponse,
+    type CreateReferenceRequest, type CreateReferenceResponse, type DeleteNotesPreview, isNoteType,
+    type MetadataResponse, type NoteBlocksResponse, type NoteSaveBase, REFERENCE_KINDS,
+    type ReferenceKind, type SaveConflictResponse, type SavedAttachmentBase,
+    type SaveNoteBlocksRequest, type SaveNoteBlocksResponse, type SaveNoteDataRequest,
+    type SaveNoteDataResponse
+} from "@triliumnext/commons";
 import { t } from "i18next";
 
 import type { Request } from "../../http_interface";
 
 import blobService from "../../services/blob";
-import { getBlockRangeContent, replaceBlockRangeContent } from "../../services/block_ranges";
+import {
+    getBlockRangeContent, replaceBlockRangeContent, replaceBlockRangeOnBase
+} from "../../services/block_ranges";
 import eraseService from "../../services/erase.js";
-import { NotFoundError, ValidationError } from "../../errors.js";
+import { DetailedConflictError, NotFoundError, ValidationError } from "../../errors.js";
+import { answerConflict } from "../helpers.js";
 import becca from "../../becca/becca.js";
 import type BBranch from "../../becca/entities/bbranch.js";
+import type BNote from "../../becca/entities/bnote.js";
 import { getLog } from "../../services/log.js";
 import noteFormatConversionService from "../../services/note_format_conversion.js";
 import noteService from "../../services/notes.js";
+import {
+    createReference, findMarkedHeadings, findReferenceTargets
+} from "../../services/references/index.js";
 import { getSql } from "../../services/sql/index";
 import TaskContext from "../../services/task_context.js";
 import treeService from "../../services/tree.js";
 import userHomes from "../../services/user_homes.js";
-import { randomString } from "../../services/utils/index";
+import { hashedBlobId, randomString } from "../../services/utils/index";
 
-/**
- * @swagger
- * /api/notes/{noteId}:
- *   get:
- *     summary: Retrieve note metadata
- *     operationId: notes-get
- *     parameters:
- *       - name: noteId
- *         in: path
- *         required: true
- *         schema:
- *           $ref: "#/components/schemas/NoteId"
- *     responses:
- *       '200':
- *         description: Note metadata
- *         content:
- *           application/json:
- *             schema:
- *              allOf:
- *                - $ref: '#/components/schemas/Note'
- *                - $ref: "#/components/schemas/Timestamps"
- *     security:
- *       - session: []
- *     tags: ["data"]
- */
 function getNote(req: Request<{ noteId: string }>) {
     return becca.getNoteOrThrow(req.params.noteId);
 }
 
-/**
- * @swagger
- * /api/notes/{noteId}/blob:
- *   get:
- *     summary: Retrieve note content
- *     operationId: notes-blob
- *     parameters:
- *       - name: noteId
- *         in: path
- *         required: true
- *         schema:
- *           $ref: "#/components/schemas/NoteId"
- *     responses:
- *       '304':
- *         description: Note content
- *         content:
- *           application/json:
- *             schema:
- *              $ref: '#/components/schemas/Blob'
- *     security:
- *       - session: []
- *     tags: ["data"]
- */
 function getNoteBlob(req: Request<{ noteId: string }>) {
     return blobService.getBlobPojo("notes", req.params.noteId);
 }
 
-/**
- * @swagger
- * /api/notes/{noteId}/metadata:
- *   get:
- *     summary: Retrieve note metadata (limited to timestamps)
- *     operationId: notes-metadata
- *     parameters:
- *       - name: noteId
- *         in: path
- *         required: true
- *         schema:
- *           $ref: "#/components/schemas/NoteId"
- *     responses:
- *       '200':
- *         description: Note metadata
- *         content:
- *           application/json:
- *             schema:
- *              $ref: "#/components/schemas/Timestamps"
- *     security:
- *       - session: []
- *     tags: ["data"]
- */
 function getNoteMetadata(req: Request<{ noteId: string }>) {
     const note = becca.getNoteOrThrow(req.params.noteId);
 
@@ -108,36 +51,6 @@ function getNoteMetadata(req: Request<{ noteId: string }>) {
     } satisfies MetadataResponse;
 }
 
-/**
- * @swagger
- * /api/notes/metadata:
- *   post:
- *     summary: Retrieve the timestamps of several notes at once
- *     operationId: notes-metadata-bulk
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               noteIds:
- *                 type: array
- *                 items:
- *                   $ref: "#/components/schemas/NoteId"
- *     responses:
- *       '200':
- *         description: The timestamps of each note found, keyed by note ID
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               additionalProperties:
- *                 $ref: "#/components/schemas/Timestamps"
- *     security:
- *       - session: []
- *     tags: ["data"]
- */
 function getNotesMetadata(req: Request) {
     const { noteIds } = req.body as { noteIds?: unknown };
     if (!Array.isArray(noteIds) || noteIds.some((noteId) => typeof noteId !== "string")) {
@@ -201,38 +114,191 @@ function createNote(req: Request) {
     } satisfies CreateChildrenResponse;
 }
 
+/**
+ * Saves the content of a note. With a `base`, the save is refused with 409 when the note has
+ * another format or version, and the answer is what the next save is based on. Without it, the
+ * save is unconditional, with an empty answer.
+ */
 function updateNoteData(req: Request<{ noteId: string }>) {
-    const { content, attachments } = req.body;
+    const { content, attachments, base, keepOther } = req.body as SaveNoteDataRequest;
     const { noteId } = req.params;
+    if (base === undefined) {
+        refuseKeepingWithoutBase(keepOther);
+        noteService.updateNoteData(noteId, content, attachments);
+        return;
+    }
+    if (!isSaveBase(base)) {
+        throw new ValidationError("Expected the 'blobId', the 'type' and the 'mime' of the base.");
+    }
 
-    return noteService.updateNoteData(noteId, content, attachments);
+    const precondition = { base, isKeepingOther: keepOther === true };
+    return answerConflict(() =>
+        noteService.updateNoteData(noteId, content, attachments, precondition));
 }
 
 /** The blocks of a text note that the `block` query parameter points at, to edit apart. */
 function getNoteBlocks(req: Request<{ noteId: string }>) {
-    const { content, block } = getBlockRangeRequest(req);
+    const { note, block } = getBlockRangeRequest(req);
+    const content = getTextContent(note);
     const blocks = getBlockRangeContent(content, block);
     if (blocks === null) {
-        throw new NotFoundError(getBlockRangeError(req.params.noteId, block));
+        throw new NotFoundError(getBlockRangeError(note.noteId, block));
     }
 
-    return { content: blocks };
+    return {
+        content: blocks, hash: hashedBlobId(blocks), note: content
+    } satisfies NoteBlocksResponse;
 }
 
-/** Replaces the blocks of a text note that the `block` query parameter points at. */
+/**
+ * Replaces the blocks of a text note that the `block` query parameter points at. With a `base`,
+ * the save is refused with 409 when the blocks changed since they were read, or can no longer be
+ * saved apart; a change elsewhere in the note goes through.
+ */
 function updateNoteBlocks(req: Request<{ noteId: string }>) {
-    const { content, block } = getBlockRangeRequest(req);
-    const { content: blocks, attachments } = req.body;
+    const { note, block } = getBlockRangeRequest(req);
+    const { content: blocks, attachments, base, keepOther, block: savedBlock } =
+        req.body as SaveNoteBlocksRequest;
     if (typeof blocks !== "string") {
         throw new ValidationError("Missing the content of the blocks.");
     }
 
-    const newContent = replaceBlockRangeContent(content, block, blocks);
-    if (newContent === null) {
-        throw new NotFoundError(getBlockRangeError(req.params.noteId, block));
+    if (base === undefined) {
+        refuseKeepingWithoutBase(keepOther);
+        const newContent = replaceBlockRangeContent(getTextContent(note), block, blocks);
+        if (newContent === null) {
+            throw new NotFoundError(getBlockRangeError(note.noteId, block));
+        }
+        noteService.updateNoteData(note.noteId, newContent, attachments);
+        return;
+    }
+    if (typeof base?.hash !== "string") {
+        throw new ValidationError("Expected the 'hash' of the base.");
     }
 
-    noteService.updateNoteData(req.params.noteId, newContent, attachments);
+    return answerConflict(() => saveBlocksOnBase(note, block, {
+        blocks, attachments, hash: base.hash, isKeepingOther: keepOther === true, savedBlock
+    }));
+}
+
+/**
+ * Saves `blocks` in place of the blocks of `note` that `block` points at, when those are still as
+ * `hash` names them. Throws a {@link DetailedConflictError} otherwise.
+ */
+function saveBlocksOnBase(note: BNote, block: string, save: {
+    blocks: string;
+    attachments: SaveNoteBlocksRequest["attachments"];
+    hash: string;
+    isKeepingOther: boolean;
+    savedBlock: unknown;
+}) {
+    const gone = (reason: "format" | "range") => {
+        const message = getBlockRangeError(note.noteId, block);
+        return new DetailedConflictError<BlocksConflictResponse>(message, { reason, message });
+    };
+    if (note.type !== "text") {
+        throw gone("format");
+    }
+    const replacement =
+        replaceBlockRangeOnBase(getTextContent(note), block, save.blocks, save.hash);
+    if (replacement.status === "missing") {
+        throw gone("range");
+    }
+
+    const { hash } = replacement;
+    const rows = save.attachments ?? [];
+    const changed = (message: string, attachments: SavedAttachmentBase[]) =>
+        new DetailedConflictError<BlocksConflictResponse>(message, {
+            reason: "version", message, hash, attachments, isVersioned: note.isVersioned()
+        });
+    if (replacement.status === "changed") {
+        const message =
+            `Blocks '${block}' of note '${note.noteId}' have changed since they were read.`;
+        throw changed(message, noteService.getNamedAttachments(note, rows));
+    }
+    const newContent = replacement.content;
+
+    // A change outside the blocks goes through: the precondition is the note as it is now, which
+    // still checks the attachment rows.
+    const precondition = {
+        base: { blobId: note.blobId as string, type: note.type, mime: note.mime },
+        isKeepingOther: save.isKeepingOther
+    };
+    let saved: SaveNoteDataResponse;
+    try {
+        saved = noteService.updateNoteData(note.noteId, newContent, rows, precondition);
+    } catch (e) {
+        if (e instanceof DetailedConflictError) {
+            const { message, attachments = [] } = e.details as SaveConflictResponse;
+            throw changed(message, attachments);
+        }
+        throw e;
+    }
+    const savedNote = saved.content ?? newContent;
+    const savedBlocks = getBlockRangeContent(
+        savedNote, typeof save.savedBlock === "string" ? save.savedBlock : block
+    );
+    return {
+        hash: savedBlocks === null ? null : hashedBlobId(savedBlocks),
+        note: savedNote,
+        attachments: saved.attachments
+    } satisfies SaveNoteBlocksResponse;
+}
+
+/** Refuses `keepOther` in a save without a base: it would save over a version it never saw. */
+function refuseKeepingWithoutBase(keepOther: unknown) {
+    if (keepOther !== undefined && keepOther !== false) {
+        throw new ValidationError("A save that keeps its version needs the base it is based on.");
+    }
+}
+
+/** The places inside a note that a link can point at, such as its headings and anchors. */
+async function getNoteReferences(req: Request<{ noteId: string }>) {
+    const note = becca.getNoteOrThrow(req.params.noteId);
+    return await findReferenceTargets(note);
+}
+
+/** Gives a target of a note a reference, unless it has one, and returns its link parameters. */
+function createNoteReference(req: Request<{ noteId: string }>) {
+    const request = parseReferenceRequest(req.body);
+    const note = becca.getNoteOrThrow(req.params.noteId);
+    return answerConflict(() => (
+        { params: createReference(note, request) } satisfies CreateReferenceResponse
+    ));
+}
+
+/** The headings of a note with the content marked by their positions, for a read-only view. */
+function getMarkedNoteHeadings(req: Request<{ noteId: string }>) {
+    return findMarkedHeadings(becca.getNoteOrThrow(req.params.noteId));
+}
+
+function parseReferenceRequest(body: unknown): CreateReferenceRequest {
+    const { kind, index, line, title, blobId } = (body ?? {}) as Record<string, unknown>;
+    if (isReferenceKind(kind) && typeof title === "string" && title) {
+        if (isIntegerFrom(index, 0) && line === undefined
+            && (blobId === undefined || typeof blobId === "string")) {
+            return { kind, index, title, blobId };
+        }
+        if (isIntegerFrom(line, 1) && index === undefined && typeof blobId === "string" && blobId) {
+            return { kind, line, title, blobId };
+        }
+    }
+    throw new ValidationError("Expected the 'kind' and the 'title' of a target, and either its "
+        + "'index' or its 'line' and 'blobId'.");
+}
+
+function isIntegerFrom(value: unknown, min: number): value is number {
+    return typeof value === "number" && Number.isSafeInteger(value) && value >= min;
+}
+
+function isSaveBase(base: unknown): base is NoteSaveBase {
+    const { blobId, type, mime } = (base ?? {}) as Record<string, unknown>;
+    return typeof blobId === "string" && typeof type === "string" && isNoteType(type)
+        && typeof mime === "string";
+}
+
+function isReferenceKind(value: unknown): value is ReferenceKind {
+    return REFERENCE_KINDS.some((kind) => kind === value);
 }
 
 function getBlockRangeRequest(req: Request<{ noteId: string }>) {
@@ -241,56 +307,22 @@ function getBlockRangeRequest(req: Request<{ noteId: string }>) {
         throw new ValidationError("Missing the 'block' parameter.");
     }
 
-    const note = becca.getNoteOrThrow(req.params.noteId);
-    const content = note.type === "text" && note.isContentAvailable() ? note.getContent() : null;
-    if (typeof content !== "string") {
-        throw new ValidationError(`Note '${note.noteId}' has no text content to edit.`);
-    }
-
-    return { content, block };
+    return { note: becca.getNoteOrThrow(req.params.noteId), block };
 }
 
 function getBlockRangeError(noteId: string, block: string) {
     return `Blocks '${block}' of note '${noteId}' do not exist or cannot be edited apart.`;
 }
 
-/**
- * @swagger
- * /api/notes/{noteId}:
- *   delete:
- *     summary: Delete note
- *     operationId: notes-delete
- *     parameters:
- *       - name: noteId
- *         in: path
- *         required: true
- *         schema:
- *           $ref: "#/components/schemas/NoteId"
- *       - name: taskId
- *         in: query
- *         required: true
- *         schema:
- *           type: string
- *         description: Task group identifier
- *       - name: eraseNotes
- *         in: query
- *         schema:
- *           type: boolean
- *         required: false
- *         description: Whether to erase the note immediately
- *       - name: last
- *         in: query
- *         schema:
- *           type: boolean
- *         required: true
- *         description: Whether this is the last request of this task group
- *     responses:
- *       '200':
- *         description: Note successfully deleted
- *     security:
- *       - session: []
- *     tags: ["data"]
- */
+/** The HTML of `note`, which must be a text note whose content is available. */
+function getTextContent(note: BNote) {
+    const content = note.type === "text" && note.isContentAvailable() ? note.getContent() : null;
+    if (typeof content !== "string") {
+        throw new ValidationError(`Note '${note.noteId}' has no text content available.`);
+    }
+    return content;
+}
+
 function deleteNote(req: Request<{ noteId: string }>) {
     const noteId = req.params.noteId;
     const taskId = req.query.taskId;
@@ -603,6 +635,9 @@ export default {
     updateNoteData,
     getNoteBlocks,
     updateNoteBlocks,
+    getNoteReferences,
+    createNoteReference,
+    getMarkedNoteHeadings,
     deleteNote,
     undeleteNote,
     createNote,

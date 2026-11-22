@@ -45,7 +45,7 @@ export function buildShareData(root: BNote, paths: ShareDataPaths) {
     const attachmentPaths: Record<string, string> = {};
     const images: Record<string, string> = {};
     for (const note of notes) {
-        const owned = note.getAttachments();
+        const owned = note.getPortableAttachments();
         attachments[note.noteId] = owned.map(getAttachmentRow);
         for (const attachment of owned) {
             /* v8 ignore next -- an attachment read from the database always has an id */
@@ -64,7 +64,7 @@ export function buildShareData(root: BNote, paths: ShareDataPaths) {
 
     for (const note of getNotesReadByViews(notes)) {
         writeJson(`data/blobs/notes/${note.noteId}.json`, getBlobRow(note));
-        for (const attachment of note.getAttachments()) {
+        for (const attachment of note.getPortableAttachments()) {
             if (attachment.hasStringContent()) {
                 writeJson(`data/blobs/attachments/${attachment.attachmentId}.json`,
                     getBlobRow(attachment));

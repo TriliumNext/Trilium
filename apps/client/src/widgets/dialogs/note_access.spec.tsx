@@ -71,6 +71,7 @@ describe("NoteAccessDialog", () => {
     /** The rows of the user picker, which opens as a menu in the page's body. */
     async function openUserPicker() {
         await click(container.querySelector(".note-access-add-user .dropdown-toggle"));
+        await vi.waitFor(() => expect(pickerRows()).not.toHaveLength(0));
         return pickerRows();
     }
 

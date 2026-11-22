@@ -1,0 +1,20 @@
+#mobile-sidebar-wrapper {
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+    contain: content;
+
+    .mobile-sidebar-content {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        min-height: 0;
+    }
+}
+
+@media (min-width: 992px) {
+    #mobile-sidebar-wrapper {
+        flex-shrink: 0;
+        width: 25%;
+    }
+}

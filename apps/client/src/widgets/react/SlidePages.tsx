@@ -3,7 +3,8 @@ import "./SlidePages.css";
 
 import clsx from "clsx";
 import { ComponentChildren } from "preact";
-import { useCallback, useRef, useState } from "preact/hooks";
+
+import { useSlide } from "./hooks/dom";
 
 interface SlidePagesProps<T extends string> {
     /** The page to show. Changing it slides the one before it out and this one in. */
@@ -50,52 +51,6 @@ export default function SlidePages<T extends string>({ current, order, inFlow, c
             </div>
         </div>
     );
-}
-
-/** The keyframes of slide_animations.css are named with this, which is how a slide's end is recognized. */
-const SLIDE_ANIMATION_PREFIX = "tn-slide-";
-
-export interface Slide<T> {
-    /** What `current` replaced, while the slide from it runs, so both can be drawn; `undefined` at rest. */
-    from: T | undefined;
-    /**
-     * Ends the slide at the end of one of slide_animations.css's animations. Other animations that
-     * bubble up from inside the views, such as a spinner's, leave it running.
-     */
-    onAnimationEnd(e: AnimationEvent): void;
-    /** Ends the slide at once, as for a view put back without the animation that would end it. */
-    settle(): void;
-}
-
-/**
- * Keeps the value `current` replaced for as long as the slide between the two runs. A change while
- * `animated` is false, or with `motion-disabled`, where no animation runs to end it, switches at once.
- */
-export function useSlide<T>(current: T, animated = true): Slide<T> {
-    const shown = useRef(current);
-    const from = useRef<T | undefined>(undefined);
-    const [ , redraw ] = useState(0);
-
-    // Worked out while rendering the view being arrived at rather than in an effect afterwards: a
-    // pass that drew the new view before the slide had started would put it in its final place and
-    // then jump it back to slide in from there.
-    if (!Object.is(shown.current, current)) {
-        const slides = animated && !document.body.classList.contains("motion-disabled");
-        from.current = slides ? shown.current : undefined;
-        shown.current = current;
-    }
-
-    const settle = useCallback(() => {
-        if (from.current === undefined) return;
-        from.current = undefined;
-        redraw((pass) => pass + 1);
-    }, []);
-
-    const onAnimationEnd = useCallback((e: AnimationEvent) => {
-        if (e.animationName?.startsWith(SLIDE_ANIMATION_PREFIX)) settle();
-    }, [ settle ]);
-
-    return { from: from.current, onAnimationEnd, settle };
 }
 
 type Direction = "forward" | "backward";

@@ -23,8 +23,8 @@ vi.mock("react-zoom-pan-pinch", () => ({
 
 // Keep the real hooks (useContextualShortcutHints is exercised below), but stub the bootstrap-Tooltip
 // one, which needs real layout.
-vi.mock("./hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("./hooks")>()),
+vi.mock("./hooks/tooltip", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./hooks/tooltip")>()),
     useStaticTooltip: () => {}
 }));
 

@@ -7,9 +7,12 @@ import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import type FNote from "../../../entities/fnote";
 import type { ContentEditor } from "../../../services/content_renderer";
 import { CodeMirrorFindTarget } from "../../find_in_code";
-import { useNoteLabelOptionalBool, useTriliumOptionBool } from "../../react/hooks";
+import { useNoteLabelOptionalBool } from "../../react/hooks/note";
+import { useTriliumOptionBool } from "../../react/hooks/options";
 import { registerEmbedFindTarget } from "../text/content_embed_tools";
-import { CaretNavigationContext, useEmbedCaretNavigation } from "../text/editable_embed";
+import {
+    CaretNavigationContext, useEmbedCaretNavigation, useTextNoteVimMode
+} from "../text/editable_embed";
 import type { ContentHistory } from "../text/embed_history";
 import { CodeEditor } from "./Code";
 
@@ -54,6 +57,9 @@ export default function CodeEmbedEditor({
     languageLabel, viewRef, isShown = true, onClose, onChange, onReady
 }: CodeEmbedEditorProps) {
     const isLoadingRef = useRef(false);
+    const containerRef = useRef<HTMLPreElement>(null);
+    // In a text note, the Vim mode of the note replaces the option of code notes.
+    const textNoteVimMode = useTextNoteVimMode(containerRef);
     const [ vimKeymapEnabled ] = useTriliumOptionBool("vimKeymapEnabled");
     const [ noteWrapLines ] = useNoteLabelOptionalBool(note, "wrapLines");
     const lineWrapping = wrapLines ?? noteWrapLines;
@@ -133,10 +139,11 @@ export default function CodeEmbedEditor({
         <CodeEditor
             ntxId={null}
             editorRef={viewRef}
+            containerRef={containerRef}
             className={clsx("code-embed-editor", !editor && "read-only")}
             mime={mime}
             completions={editor && { note, ownerNote }}
-            vimKeybindings={vimKeymapEnabled}
+            vimKeybindings={textNoteVimMode ?? vimKeymapEnabled}
             readOnly={!editor}
             lineNumbers={hasLineNumbers}
             languageLabel={languageLabel}

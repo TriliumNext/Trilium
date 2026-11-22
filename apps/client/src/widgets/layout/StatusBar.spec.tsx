@@ -5,16 +5,17 @@ import { render, type VNode } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type FAttachment from "../../entities/fattachment";
 import FNote from "../../entities/fnote";
 
 // The bar follows whichever note is being read; the tests hand it one directly, along with the tab it
 // is read in — neither of which a rendered widget brings with it.
 const shownNote = vi.hoisted(() => ({ current: null as FNote | null }));
 const contextData = vi.hoisted(() => new Map<string, unknown>());
-vi.mock("../react/hooks", async (importOriginal) => {
+vi.mock("../react/hooks/tree", async (importOriginal) => {
     const noteContext = { ntxId: "ntx1", getContextData: (key: string) => contextData.get(key) };
     return {
-        ...(await importOriginal<typeof import("../react/hooks")>()),
+        ...(await importOriginal<typeof import("../react/hooks/tree")>()),
         useActiveNoteContext: () => ({
             note: shownNote.current,
             noteContext,
@@ -50,12 +51,17 @@ vi.mock("../attribute_widgets/AttributeEditor", async () => {
     };
 });
 
+// The Vim command line slot imports `vim_mode` without awaiting it, and that import graph can
+// still be loading once the environment is torn down.
+vi.mock("../type_widgets/text/vim_mode", () => ({ setCommandLineSlot: vi.fn() }));
+
 import appContext from "../../components/app_context";
 import type Component from "../../components/component";
+import options from "../../services/options";
 import server from "../../services/server";
 import { buildNote } from "../../test/easy-froca";
 import { ParentComponent } from "../react/react_utils";
-import StatusBar, { useAttributeCount } from "./StatusBar";
+import StatusBar, { useAttributeCount, useUserAttachmentCount } from "./StatusBar";
 
 describe("StatusBar panels", () => {
     let container: HTMLElement;
@@ -74,15 +80,16 @@ describe("StatusBar panels", () => {
         render(null, container);
         container.remove();
         contextData.clear();
+        vi.restoreAllMocks();
     });
 
-    it("opens the similar notes panel on the keyboard action, and puts it away on a second press", () => {
+    it("opens the similar notes panel on the keyboard action, and puts it away on a second press", async () => {
         renderBar();
         expect(container.querySelector(".similar-notes-pane")).toBeNull();
 
         fire("toggleRibbonTabSimilarNotes");
         // The panel carries the list, which is the whole point of the action reaching the bar at all.
-        expect(container.querySelector(".similar-notes-pane .similar-notes-widget")).not.toBeNull();
+        await waitForElement(".similar-notes-pane .similar-notes-widget");
         expect(document.body.classList.contains("status-bar-panel-open")).toBe(true);
 
         fire("toggleRibbonTabSimilarNotes");
@@ -99,33 +106,34 @@ describe("StatusBar panels", () => {
         expect(document.body.classList.contains("status-bar-panel-open")).toBe(false);
     });
 
-    it("shows one panel at a time, the newer taking the place of the one already open", () => {
+    it("shows one panel at a time, the newer taking the place of the one already open", async () => {
         renderBar();
 
         fire("toggleRibbonTabOwnedAttributes");
+        await waitForElement(".attribute-list");
         expect(isShown(".attribute-list")).toBe(true);
         expect(container.querySelector(".similar-notes-pane")).toBeNull();
 
         fire("toggleRibbonTabSimilarNotes");
-        expect(container.querySelector(".similar-notes-pane")).not.toBeNull();
+        await waitForElement(".similar-notes-pane");
         expect(isShown(".attribute-list")).toBe(false);
     });
 
-    it("hands the shortcut that opens the attributes panel to the editor it mounts", () => {
+    it("hands the shortcut that opens the attributes panel to the editor it mounts", async () => {
         renderBar();
         fire("addNewRelation");
 
+        await waitForElement(".attribute-list");
         expect(isShown(".attribute-list")).toBe(true);
         expect(editorProps.current?.initialCommand).toBe("addNewRelation");
     });
 
-    it("offers the attributes panel a way to the sidebar's own, and steps aside once taken", () => {
+    it("offers the attributes panel a way to the sidebar's own, and steps aside once taken", async () => {
         const triggerEvent = vi.spyOn(appContext, "triggerEvent").mockResolvedValue(undefined);
         renderBar();
         fire("toggleRibbonTabOwnedAttributes");
 
-        const sidebarLink = container.querySelector<HTMLElement>(".attribute-list .bottom-panel-title-bar .status-bar-sidebar-link");
-        expect(sidebarLink).not.toBeNull();
+        const sidebarLink = await waitForElement(".attribute-list .bottom-panel-title-bar .status-bar-sidebar-link");
 
         act(() => sidebarLink?.click());
         expect(triggerEvent).toHaveBeenCalledWith("selectRightPaneTab", { tabId: "attributes", peek: true });
@@ -136,25 +144,25 @@ describe("StatusBar panels", () => {
     it("offers no attributes panel for a note that cannot be edited, not even on the shortcut", () => {
         renderBar(false);
         expect(container.querySelector(".attributes-button")).toBeNull();
+        expect(eventHandlers.has("addNewLabel")).toBe(false);
 
         fire("addNewLabel");
         expect(container.querySelector(".attribute-editor-stub")).toBeNull();
     });
 
-    it("closes the similar notes panel from its own title bar", () => {
+    it("closes the similar notes panel from its own title bar", async () => {
         renderBar();
         fire("toggleRibbonTabSimilarNotes");
 
         // Looked up and vouched for before the press: a panel that never opened has no close button
         // either, and the assertion below would then hold for the wrong reason.
-        const closeButton = container.querySelector<HTMLElement>(".similar-notes-pane .bottom-panel-title-bar .bx-x");
-        expect(closeButton).not.toBeNull();
+        const closeButton = await waitForElement(".similar-notes-pane .bottom-panel-title-bar .bx-x");
 
-        act(() => closeButton?.click());
+        act(() => closeButton.click());
         expect(container.querySelector(".similar-notes-pane")).toBeNull();
     });
 
-    it("shows the cursor position of a code note first in the row, and follows the cursor", () => {
+    it("shows the cursor position of a code note first in the row, and follows the cursor", async () => {
         let report: ((position: CursorPosition) => void) | undefined;
         const unsubscribe = vi.fn();
         contextData.set("codeEditor", {
@@ -185,16 +193,19 @@ describe("StatusBar panels", () => {
         };
 
         renderBar(true, "code");
-        const position = container.querySelector(".actions-row > .cursor-position");
-        expect(position).not.toBeNull();
+        const position = await waitForElement(".actions-row > .cursor-position");
         expect(position?.previousElementSibling).toBeNull();
         expect(getParts()).toEqual([
             [ "status_bar.cursor_line", "12" ],
             [ "status_bar.cursor_column", "32" ]
         ]);
 
-        const lineTooltip = getTooltip(0);
-        expect(lineTooltip).not.toBeNull();
+        // `useStaticTooltip()` attaches the tooltip in an effect, which runs after the part renders.
+        const lineTooltip = await vi.waitFor(() => {
+            const tooltip = getTooltip(0);
+            expect(tooltip).not.toBeNull();
+            return tooltip;
+        });
         act(() => report?.({ line: 3, column: 1, selectionLength: 120 }));
         expect(getParts()).toEqual([
             [ "status_bar.cursor_line", "3" ],
@@ -215,6 +226,87 @@ describe("StatusBar panels", () => {
         renderBar(true, "text");
         expect(container.querySelector(".actions-row")).not.toBeNull();
         expect(container.querySelector(".cursor-position")).toBeNull();
+    });
+
+    it("shows Vim mode before the buttons, and its command line in place of the breadcrumb", () => {
+        const listeners = new Set<() => void>();
+        const vim = {
+            status: {
+                mode: "normal", isOneCommand: false, pendingKeys: "", recording: null,
+                message: null, commandLine: null
+            } as Record<string, unknown>,
+            on: (_event: string, callback: () => void) => listeners.add(callback),
+            off: (_event: string, callback: () => void) => listeners.delete(callback)
+        };
+        const setStatus = (status: Record<string, unknown>) => act(() => {
+            vim.status = { ...vim.status, ...status };
+            for (const listener of listeners) {
+                listener();
+            }
+        });
+        contextData.set("vimMode", vim);
+
+        renderBar();
+        const statusLine = container.querySelector(".actions-row > .vim-status-line");
+        expect(statusLine?.textContent?.trim()).toBe("vim_mode.normal");
+        expect(statusLine?.previousElementSibling).toBeNull();
+        expect(container.querySelector(".breadcrumb + .vim-command-line-slot")).not.toBeNull();
+        expect(document.body.classList.contains("vim-status-shown")).toBe(true);
+        expect(container.querySelector(".vim-hint-strip, .vim-hints-shown")).toBeNull();
+
+        setStatus({ hints: { kind: "mode", typedKeys: [], hints: [] } });
+        expect(container.querySelector(".status-bar.vim-hints-shown")).not.toBeNull();
+        expect(container.querySelector(".vim-command-line-slot + .vim-hint-strip")).not.toBeNull();
+        setStatus({ hints: null });
+
+        setStatus({
+            commandLine: { element: document.createElement("div"), focus() {} },
+            message: { text: "a, b", isLong: true }
+        });
+        expect(container.querySelector(".status-bar.vim-command-line-open")).not.toBeNull();
+        expect(container.querySelector(".status-bar > .vim-message-panel")?.textContent)
+            .toBe("a, b");
+
+        setStatus({ mode: null, commandLine: null, message: null });
+        expect(container.querySelector(".vim-status-line, .vim-command-line-slot")).toBeNull();
+        expect(container.querySelector(".vim-command-line-open, .vim-message-panel")).toBeNull();
+        expect(document.body.classList.contains("vim-status-shown")).toBe(false);
+    });
+
+    it("shows the Vim mode badge before the mode while the Vim mode option is on", () => {
+        const vim = {
+            status: { mode: "normal" } as Record<string, unknown>,
+            on: () => {},
+            off: () => {}
+        };
+        contextData.set("vimMode", vim);
+        renderBar();
+        expect(container.querySelector(".vim-mode-badge")).toBeNull();
+        act(() => render(null, container));
+
+        options.load({ textNoteVimModeEnabled: "true" });
+        try {
+            renderBar();
+            const badge = container.querySelector(".actions-row > .vim-mode-badge");
+            expect(badge?.previousElementSibling).toBeNull();
+            expect(badge?.nextElementSibling?.classList.contains("vim-status-line")).toBe(true);
+            act(() => render(null, container));
+
+            // Vim mode off for the note: the badge stays, to turn it back on, in Zen mode too.
+            vim.status = { mode: null };
+            renderBar();
+            expect(container.querySelector(".vim-mode-badge")).not.toBeNull();
+            expect(container.querySelector(".vim-status-line")).toBeNull();
+            expect(document.body.classList.contains("vim-status-shown")).toBe(true);
+            act(() => render(null, container));
+
+            contextData.clear();
+            renderBar();
+            expect(container.querySelector(".vim-mode-badge")).toBeNull();
+            expect(document.body.classList.contains("vim-status-shown")).toBe(false);
+        } finally {
+            options.load({});
+        }
     });
 
     function renderBar(isContentWritable = true, type: NoteType = "text") {
@@ -246,9 +338,47 @@ describe("StatusBar panels", () => {
         expect(container.querySelector(".count")?.textContent).toBe("2");
     });
 
+    it("counts only the attachments placed on the note, and hides the button without one", async () => {
+        const withRoles = (...roles: string[]) => roles.map((role) => (
+            { attachmentId: role, role, mime: "image/png", title: `${role}.png` } as FAttachment
+        ));
+        const getAttachments = vi.spyOn(FNote.prototype, "getAttachments");
+
+        getAttachments.mockResolvedValue(
+            withRoles("image", "favicon", "file", "tocCache", "viewConfig"));
+        const note = buildNote({ title: "Counted" });
+        function Count() {
+            return <span className="count">{useUserAttachmentCount(note)}</span>;
+        }
+        const parent = { registerHandler: () => {}, removeHandler: () => {} } as unknown as Component;
+        act(() => render(
+            <ParentComponent.Provider value={parent}><Count /></ParentComponent.Provider>,
+            container
+        ));
+        await vi.waitFor(() => expect(container.querySelector(".count")?.textContent).not.toBe("0"));
+        expect(container.querySelector(".count")?.textContent).toBe("2");
+        act(() => render(null, container));
+
+        getAttachments.mockResolvedValue(withRoles("favicon", "coverImage", "tocCache"));
+        renderBar();
+        await act(async () => {
+            await getAttachments.mock.results.at(-1)?.value;
+        });
+        expect(container.querySelector(".attachment-count-button")).toBeNull();
+    });
+
     /** Hands the bar one of the keyboard actions it listens for, as the app's event bus would. */
     function fire(eventName: string) {
         act(() => eventHandlers.get(eventName)?.({}));
+    }
+
+    /** Waits for the element of `selector`, which can be in a module the bar loads on demand. */
+    function waitForElement(selector: string) {
+        return vi.waitFor(() => {
+            const element = container.querySelector<HTMLElement>(selector);
+            expect(element).toBeInstanceOf(HTMLElement);
+            return element as HTMLElement;
+        });
     }
 
     /** A panel that is always rendered says whether it is up through a class rather than by absence. */

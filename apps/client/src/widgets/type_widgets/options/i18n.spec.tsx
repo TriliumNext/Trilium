@@ -21,8 +21,8 @@ vi.mock("../../../services/i18n", async (importOriginal) => ({
     t: (key: string) => key
 }));
 
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
+vi.mock("../../react/hooks/options", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks/options")>()),
     useTriliumOption: (name: string) => [
         mocks.stored[name] ?? "",
         (value: string) => void mocks.saved.push([ name, value ])

@@ -6,7 +6,7 @@ import { t } from "../../../services/i18n";
 import ActionButton from "../../react/ActionButton";
 import Dropdown from "../../react/Dropdown";
 import { FormDropdownDivider, FormListItem } from "../../react/FormList";
-import { useNoteLabel } from "../../react/hooks";
+import { useNoteLabel } from "../../react/hooks/note";
 
 const MAX_DEPTH = 5;
 

@@ -1,4 +1,6 @@
-import { getMimeTypeFromMarkdownName, normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
+import {
+    getMimeTypeFromMarkdownName, normalizeMimeTypeForCKEditor
+} from "@triliumnext/commons/src/lib/mime_type.js";
 import { Plugin } from "ckeditor5";
 import type { ViewDocumentClipboardInputEvent } from "ckeditor5";
 

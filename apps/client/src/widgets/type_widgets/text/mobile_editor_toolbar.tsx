@@ -8,10 +8,11 @@ import { isIOS } from "../../../services/utils";
 import {
     HideKeyboardAction, holdVisibleBottom, usePositioningOniOS
 } from "../../mobile_widgets/hide_keyboard_button";
-import {
-    useBodyClass, useIsNoteReadOnly, useNoteContext, useNoteProperty, useTriliumEvent
-} from "../../react/hooks";
-import { useNestedEditor } from "./editable_embed";
+import { useTriliumEvent } from "../../react/hooks/events";
+import { useBodyClass } from "../../react/hooks/dom";
+import { useNoteProperty } from "../../react/hooks/note";
+import { useIsNoteReadOnly, useNoteContext } from "../../react/hooks/note_context";
+import { useNestedEditor } from "./nested_editor";
 
 /**
  * Handles the editing toolbar for CKEditor in mobile mode. The toolbar acts as a floating bar, with two different mechanism:
@@ -292,11 +293,11 @@ function takeKeyboardPlace(isOwnHeight: boolean) {
 /**
  * Gives a closed panel's place back. When the text has the focus once the menu has closed, as
  * after an entry runs or the menu's own button closes it, the keyboard is on its way, so the
- * layout stays until `RootContainer` reports it up; laying out for no keyboard in between drops
- * the toolbar and brings the launcher bar back for some 250ms. A menu that a press closes, which
- * `Popup` does as the press starts, keeps the layout until the press's click: that click can open
- * the menu of another button of the toolbar, or focus the text, and the button must not move from
- * under it.
+ * layout stays until `trackVirtualKeyboard()` reports it up; laying out for no keyboard in between
+ * drops the toolbar and brings the launcher bar back for some 250ms. A menu that a press closes,
+ * which `Popup` does as the press starts, keeps the layout until the press's click: that click can
+ * open the menu of another button of the toolbar, or focus the text, and the button must not move
+ * from under it.
  */
 function handBackKeyboardPlace() {
     let isCancelled = false;

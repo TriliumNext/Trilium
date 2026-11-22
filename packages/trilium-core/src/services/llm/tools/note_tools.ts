@@ -143,7 +143,7 @@ export const noteTools = defineTools({
             }
             const mimeChanged = newMime !== note.mime;
 
-            note.saveRevision({ source: "llm" });
+            saveLlmRevision(note);
             if (typeChanged || mimeChanged) {
                 note.type = newType;
                 note.mime = newMime;
@@ -197,7 +197,7 @@ export const noteTools = defineTools({
                 newContent = existingContent + (existingContent.endsWith("\n") ? "" : "\n") + content;
             }
 
-            note.saveRevision({ source: "llm" });
+            saveLlmRevision(note);
             note.setContent(newContent);
             scanWrittenContent(note);
             return {
@@ -262,7 +262,7 @@ export const noteTools = defineTools({
                 return { error: svgError };
             }
 
-            note.saveRevision({ source: "llm" });
+            saveLlmRevision(note);
             note.setContent(result.content);
             scanWrittenContent(note);
             return {
@@ -420,6 +420,17 @@ export const noteTools = defineTools({
         }
     }
 });
+
+/**
+ * Snapshots the note before a tool overwrites it, unless the note has `#disableVersioning`, own or
+ * inherited, as `saveRevisionIfNeeded()` does for the editor.
+ */
+function saveLlmRevision(note: BNote) {
+    if (note.isLabelTruthy("disableVersioning")) {
+        return;
+    }
+    note.saveRevision({ source: "llm" });
+}
 
 /** Records the `internalLink` relations of what a tool wrote, as `updateNoteData()` does for the editor. */
 function scanWrittenContent(note: BNote) {
