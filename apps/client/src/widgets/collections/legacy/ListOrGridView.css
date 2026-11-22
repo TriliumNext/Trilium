@@ -261,8 +261,10 @@
         height: 300px;
     }
 
-    body.mobile & {
-        flex-basis: 150px;
+    @media (max-width: 991px) {
+        body.mobile & {
+            flex-basis: 150px;
+        }
     }
 
     &:hover {
