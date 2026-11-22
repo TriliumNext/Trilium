@@ -166,7 +166,24 @@ body.desktop {
         #left-pane,
         #rest-pane {
             padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
+        }
+
+        #launcher-pane,
+        #left-pane:has(> .custom-widgets:last-child),
+        #rest-pane {
             padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
+        }
+
+        #left-pane:not(:has(> .custom-widgets:last-child)) {
+            .tree::after {
+                content: "";
+                display: block;
+                height: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
+            }
+
+            .tree-actions {
+                bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
+            }
         }
     }
 
