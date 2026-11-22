@@ -7,6 +7,7 @@
 import type { LlmWebSearchResult } from "@triliumnext/commons";
 import { DEEPSEEK_SEARCH_DEFAULT_BASE_URL } from "@triliumnext/commons/src/lib/llm_api.js";
 import { tool } from "ai";
+import { t } from "i18next";
 import { parse as parseHtml } from "node-html-parser";
 import { z } from "zod";
 
@@ -305,11 +306,12 @@ function describeSearxngFailure(status: number, hasApiKey: boolean): string | un
  */
 function describeDeepSeekFailure(status: number): string | undefined {
     if (status === 402) {
-        return "The DeepSeek account has no balance left (HTTP 402); top it up on the DeepSeek platform.";
+        return t("llm_providers.deepseek_search_insufficient_balance");
     }
     if (status === 404) {
-        return "The DeepSeek endpoint has no Search API (HTTP 404). "
-            + `Use ${DEEPSEEK_SEARCH_DEFAULT_BASE_URL} or a base URL that supports /tools/search.`;
+        return t("llm_providers.deepseek_search_endpoint_not_found", {
+            baseURL: DEEPSEEK_SEARCH_DEFAULT_BASE_URL
+        });
     }
     return undefined;
 }

@@ -1,3 +1,4 @@
+import i18next from "i18next";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const fetchMock = vi.hoisted(() => vi.fn());
@@ -115,6 +116,21 @@ describe("searchWeb", () => {
         await expect(deepseek()).rejects.toThrow("https://api.deepseek.com/v1");
         respond({}, 500);
         await expect(deepseek()).rejects.toThrow("The search provider answered HTTP 500.");
+    });
+
+    it.each([
+        [ 402, "llm_providers.deepseek_search_insufficient_balance" ],
+        [ 404, "llm_providers.deepseek_search_endpoint_not_found" ]
+    ] as const)("translates a DeepSeek HTTP %i error", async (status, key) => {
+        const previousLanguage = i18next.language;
+        try {
+            await i18next.changeLanguage("cimode");
+            respond({}, status);
+            const search = searchWeb({ provider: "deepseek", apiKey: "dk" }, "q");
+            await expect(search).rejects.toThrow(key);
+        } finally {
+            await i18next.changeLanguage(previousLanguage);
+        }
     });
 
     it("asks SearXNG for JSON, sends a key only when there is one, and keeps web URLs only", async () => {
