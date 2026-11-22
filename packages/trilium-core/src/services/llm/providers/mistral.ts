@@ -1,6 +1,7 @@
 import { createMistral, type MistralProvider as MistralSDKProvider } from "@ai-sdk/mistral";
 import type { LlmReasoningEffort } from "@triliumnext/commons";
 import type { ToolSet } from "ai";
+import { t } from "i18next";
 
 import type { LlmProviderConfig, ModelInfo } from "../types.js";
 import { BaseProvider, type RemoteModel } from "./base_provider.js";
@@ -92,7 +93,7 @@ export class MistralProvider extends BaseProvider {
         });
         const data = (payload as { data?: unknown }).data;
         if (!Array.isArray(data)) {
-            throw new Error("Unexpected /models response shape");
+            throw new Error(t("llm_providers.unexpected_models_response"));
         }
         return data
             .filter((m): m is { id: string; object?: string; created?: number; context_length?: number } =>

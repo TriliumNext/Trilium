@@ -222,7 +222,7 @@ describe("MistralProvider model listing", () => {
     it("propagates a malformed response body", async () => {
         fetchMock.mockResolvedValue(okJson({ nope: true }));
         const provider = new MistralProvider("sk-test");
-        await expect(provider.listModels()).rejects.toThrow(/Unexpected .* response shape/);
+        await expect(provider.listModels()).rejects.toThrow(/Unexpected response from the provider/);
     });
 });
 
