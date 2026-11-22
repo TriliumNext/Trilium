@@ -3,7 +3,7 @@
 
 On desktop, depending on the layout selected, the launcher bar will either be on the left side of the screen with buttons displayed vertically or at the top of the screen. See <a class="reference-link" href="Vertical%20and%20horizontal%20layout.md">Vertical and horizontal layout</a> for more information.
 
-On mobile, the launch bar will always be at the bottom.
+On mobile, the launch bar is at the bottom of the screen on a phone, and on the left side of the screen with buttons displayed vertically on wider screens, such as a tablet in landscape.
 
 If there are too many items in the launch bar to fit the screen, it will become scrollable.
 

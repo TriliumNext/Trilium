@@ -21,7 +21,16 @@
 
     #launcher-pane {
         display: flex;
-        height: 53px;
+        flex-shrink: 0;
+
+        &.vertical {
+            flex-direction: column;
+            width: 53px;
+        }
+
+        &.horizontal {
+            height: 53px;
+        }
     }
 }
 

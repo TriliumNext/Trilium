@@ -357,7 +357,7 @@ export function onNarrowLayoutChange(onChange: () => void) {
     return () => query.removeEventListener("change", onChange);
 }
 
-const NARROW_LAYOUT = "(max-width: 991px)";
+export const NARROW_LAYOUT = "(max-width: 991px)";
 
 /**
  * Returns true if the client device is an Apple iOS one (iPad, iPhone, iPod).

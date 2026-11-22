@@ -17,6 +17,7 @@ import NoteContext from "../components/note_context.js";
 import LoadResults from "../services/load_results.js";
 import options from "../services/options.js";
 import server from "../services/server.js";
+import { NARROW_LAYOUT } from "../services/utils.js";
 import { buildNote } from "../test/easy-froca.js";
 import { showNoteSplit } from "../test/note_splits.js";
 import { renderInto } from "../test/render.js";
@@ -40,6 +41,7 @@ describe("MobileLayout", () => {
     });
     afterEach(() => {
         window.glob.device = device;
+        if (vi.isMockFunction(window.matchMedia)) window.matchMedia.mockRestore();
     });
 
     it("gives each note split a title row, a scroller with the note and its search results, then the type bar, editor toolbar and find bar", async () => {
@@ -89,15 +91,17 @@ describe("MobileLayout", () => {
     });
 
     it("puts the sidebar before the note splits, beside them as the stylesheets select it", () => {
+        stubLayoutWidth("phone");
         const container = renderLayout();
         const rest = container.querySelector("#mobile-rest-container");
         expect(rest?.firstElementChild?.id).toBe("mobile-sidebar-wrapper");
         expect(rest?.firstElementChild?.nextElementSibling?.id).toBe("detail-container");
     });
 
-    it("puts the bottom bar under the panes, holding the launchers and then the global menu", () => {
+    it("puts the bottom bar under the panes on a phone, holding the launchers and then the global menu", () => {
+        stubLayoutWidth("phone");
         const container = renderLayout();
-        const root = container.querySelector("#root-widget.mobile-layout");
+        const root = container.querySelector("#root-widget.mobile-layout.horizontal-layout");
 
         const bottomBar = root?.querySelector(":scope > #mobile-bottom-bar");
         expect(bottomBar).toBeInstanceOf(HTMLElement);
@@ -110,6 +114,27 @@ describe("MobileLayout", () => {
         expect(bottomBar?.nextElementSibling?.classList.contains("close-zen-container")).toBe(true);
         expect(bottomBar?.nextElementSibling?.nextElementSibling?.classList.contains("hide-keyboard-button")).toBe(true);
         expect(root?.querySelector("#toast-container")).toBeInstanceOf(HTMLElement);
+        expect(root?.querySelector("#launcher-pane.vertical")).toBeNull();
+    });
+
+    it("puts the launchers in a rail before the sidebar on a tablet, and moves them as the device turns", () => {
+        const layout = stubLayoutWidth("tablet");
+        let container: HTMLElement | undefined;
+        act(() => { container = renderLayout(); });
+        const root = container?.querySelector("#root-widget.mobile-layout");
+        expect(root?.classList.contains("vertical-layout")).toBe(true);
+        expect(root?.querySelector("#mobile-bottom-bar")).toBeNull();
+
+        const rail = root?.querySelector(":scope > #mobile-rest-container > #launcher-pane.vertical");
+        expect(rail).toBeInstanceOf(HTMLElement);
+        expect(rail?.firstElementChild?.classList.contains("global-menu")).toBe(true);
+        expect(rail?.lastElementChild?.id).toBe("launcher-container");
+        expect(rail?.nextElementSibling?.id).toBe("mobile-sidebar-wrapper");
+
+        act(() => layout.turnTo("phone"));
+        expect(root?.classList.contains("horizontal-layout")).toBe(true);
+        expect(root?.querySelector("#launcher-pane.vertical")).toBeNull();
+        expect(root?.querySelector(":scope > #mobile-bottom-bar > #launcher-pane.horizontal")).toBeInstanceOf(HTMLElement);
     });
 
     it("applies the appearance options to the body before the first paint, and again as they change", async () => {
@@ -168,6 +193,31 @@ describe("MobileLayout", () => {
         }
     });
 });
+
+/**
+ * Answers `NARROW_LAYOUT` as a phone or a tablet would, and every other query as the test window does.
+ * `turnTo()` changes the answer and notifies the listeners, as turning the device does.
+ */
+function stubLayoutWidth(initial: "phone" | "tablet") {
+    let isPhone = initial === "phone";
+    const listeners = new Set<() => void>();
+    const original = window.matchMedia.bind(window);
+    vi.spyOn(window, "matchMedia").mockImplementation((query) => {
+        if (query !== NARROW_LAYOUT) return original(query);
+        return {
+            get matches() { return isPhone; },
+            media: query,
+            addEventListener: (_type: string, listener: () => void) => listeners.add(listener),
+            removeEventListener: (_type: string, listener: () => void) => listeners.delete(listener)
+        } as unknown as MediaQueryList;
+    });
+    return {
+        turnTo(layout: "phone" | "tablet") {
+            isPhone = layout === "phone";
+            for (const listener of listeners) listener();
+        }
+    };
+}
 
 function renderLayout() {
     return renderInto(

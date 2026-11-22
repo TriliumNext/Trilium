@@ -2591,18 +2591,12 @@ body.dark-theme pre.code-block-preview[data-code-theme-d="vs-code-dark"] {
 /* Mobile, tablet mode */
 @media (min-width: 992px) {
     body.mobile #root-widget {
-        flex-direction: column-reverse !important;
         background-color: var(--launcher-pane-background-color);
     }
 
-    /* `column-reverse` puts `#mobile-bottom-bar` at the top, so the panes clear the navigation bar
-       instead. The open keyboard covers the navigation bar, as in phone mode. */
-    body.mobile #mobile-bottom-bar {
-        padding-bottom: 0;
-    }
-
+    /* The panes clear the navigation bar. The open keyboard covers it, as in phone mode. */
     body.mobile #root-widget:not(.virtual-keyboard-opened) {
-        #mobile-rest-container > #mobile-sidebar-wrapper,
+        #mobile-rest-container > :is(#launcher-pane, #mobile-sidebar-wrapper),
         #detail-container {
             padding-bottom: var(--mobile-bottom-offset);
         }
