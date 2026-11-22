@@ -3,6 +3,7 @@ import "./NoteBadges.css";
 import { safeHostname } from "@triliumnext/commons/src/lib/link_embed.js";
 import { isOfficeMimeType } from "@triliumnext/commons/src/lib/office.js";
 import { clsx } from "clsx";
+import { lazy, Suspense } from "preact/compat";
 import { useCallback, useEffect, useState } from "preact/hooks";
 
 import type { SaveState } from "../../components/note_context";
@@ -29,7 +30,6 @@ import {
     useGetContextDataFrom, useIsNoteReadOnly, useNoteContext
 } from "../react/hooks/note_context";
 import Icon from "../react/Icon";
-import UserAvatar from "../react/UserAvatar";
 import { ActiveContentBadges } from "./ActiveContentBadges";
 import { SnippetBadge } from "./SnippetBadge";
 
@@ -63,11 +63,13 @@ export function CollaboratorsBadge() {
     const names = users.map((user) => user.username).join(", ");
     return (
         <div className="collaborators-badge" role="group" aria-label={t("breadcrumb_badges.collaborators", { names })}>
-            {users.map((user) => (
-                <span key={user.userId} className="collaborator" title={user.username}>
-                    <UserAvatar username={user.username} hue={user.avatarHue} />
-                </span>
-            ))}
+            <Suspense fallback={null}>
+                {users.map((user) => (
+                    <span key={user.userId} className="collaborator" title={user.username}>
+                        <UserAvatar username={user.username} hue={user.avatarHue} />
+                    </span>
+                ))}
+            </Suspense>
         </div>
     );
 }
@@ -452,3 +454,6 @@ function useShareInfo(note: FNote | null | undefined) {
         })
     };
 }
+
+/** Loaded once another user edits the note, so a note nobody else has open never loads it. */
+const UserAvatar = lazy(() => import("../react/UserAvatar"));

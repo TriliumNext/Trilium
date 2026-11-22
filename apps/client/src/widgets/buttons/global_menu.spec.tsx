@@ -404,6 +404,7 @@ describe("GlobalMenu", () => {
         it("heads the menu with the user's avatar, name and role, and logs out from there", async () => {
             window.glob = { ...window.glob, currentUser: { userId: "alice", username: "alice", isAdmin: false, avatarHue: 120 } };
             const scroll = await openMenu();
+            await vi.waitFor(() => expect(scroll?.querySelector(".user-avatar")).not.toBeNull());
 
             const account = scroll?.firstElementChild;
             expect(account?.querySelector(".global-menu-account")).not.toBeNull();
@@ -428,6 +429,7 @@ describe("GlobalMenu", () => {
         it("stays open when the account row is clicked anywhere but its button", async () => {
             window.glob = { ...window.glob, currentUser: { userId: "alice", username: "alice", isAdmin: false, avatarHue: 120 } };
             const scroll = await openMenu();
+            await vi.waitFor(() => expect(scroll?.querySelector(".user-avatar")).not.toBeNull());
 
             for (const selector of [ ".global-menu-account", ".user-avatar", ".global-menu-account-name", ".global-menu-account-role" ]) {
                 const target = scroll?.querySelector<HTMLElement>(selector);
