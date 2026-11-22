@@ -31,10 +31,16 @@
                 {"id":"_help_lwAX5SvbrK2g","title":"Resetting your password","type":"text","attributes":[{"type":"label","name":"docUrl","value":"https://docs.triliumnotes.org/user-guide/setup/server/auth/password-reset"},{"type":"label","name":"iconClass","value":"bx bx-key"}]}
             ]},
             {"id":"_help_7DAiwaf8Z7Rz","title":"Multi-factor authentication with TOTP","type":"text","attributes":[{"type":"label","name":"docUrl","value":"https://docs.triliumnotes.org/user-guide/setup/server/mfa"},{"type":"label","name":"iconClass","value":"bx bx-stopwatch"}]},
-            {"id":"_help_Un4wj2Mak2Ky","title":"Nix flake","type":"text","attributes":[{"type":"label","name":"iconClass","value":"bx bxl-tux"}]},
             {"id":"_help_x1lQNKQBqLcA","title":"Signing in with OpenID Connect","type":"text","attributes":[{"type":"label","name":"docUrl","value":"https://docs.triliumnotes.org/user-guide/setup/server/openid-connect"},{"type":"label","name":"iconClass","value":"bx bxs-key"}],"children":[
                 {"id":"_help_IgkTHSaFfq6A","title":"Setting up with various providers","type":"text","attributes":[{"type":"label","name":"docUrl","value":"https://docs.triliumnotes.org/user-guide/setup/server/openid-connect/setup"},{"type":"label","name":"iconClass","value":"bx bx-file"}]}
             ]},
+            {"id":"_help_4HGcy3Cyleb8","title":"Multiple users","type":"text","attributes":[{"type":"label","name":"docUrl","value":"https://docs.triliumnotes.org/user-guide/setup/server/multi-user"},{"type":"label","name":"iconClass","value":"bx bx-group"}],"children":[
+                {"id":"_help_Ndko7EEPAw40","title":"Managing users","type":"text","attributes":[{"type":"label","name":"docUrl","value":"https://docs.triliumnotes.org/user-guide/setup/server/multi-user/managing-users"},{"type":"label","name":"iconClass","value":"bx bx-user-check"}]},
+                {"id":"_help_qrN5tGlqs5k8","title":"Signing in as a user","type":"text","attributes":[{"type":"label","name":"docUrl","value":"https://docs.triliumnotes.org/user-guide/setup/server/multi-user/signing-in"},{"type":"label","name":"iconClass","value":"bx bx-log-in-circle"}]},
+                {"id":"_help_Zz2BXq8xdID4","title":"Giving access to notes","type":"text","attributes":[{"type":"label","name":"docUrl","value":"https://docs.triliumnotes.org/user-guide/setup/server/multi-user/access"},{"type":"label","name":"iconClass","value":"bx bx-user-plus"}]},
+                {"id":"_help_X3bIYqBQ6RFl","title":"Editing notes together","type":"text","attributes":[{"type":"label","name":"docUrl","value":"https://docs.triliumnotes.org/user-guide/setup/server/multi-user/editing-together"},{"type":"label","name":"iconClass","value":"bx bx-edit-alt"}]}
+            ]},
+            {"id":"_help_Un4wj2Mak2Ky","title":"Nix flake","type":"text","attributes":[{"type":"label","name":"iconClass","value":"bx bxl-tux"}]},
             {"id":"_help_yeEaYqosGLSh","title":"Third-party cloud hosting","type":"text","attributes":[{"type":"label","name":"docUrl","value":"https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting"},{"type":"label","name":"iconClass","value":"bx bx-cloud"}]},
             {"id":"_help_iGTnKjubbXkA","title":"System Requirements","type":"text","attributes":[{"type":"label","name":"docUrl","value":"https://docs.triliumnotes.org/user-guide/setup/server/system-requirements"},{"type":"label","name":"iconClass","value":"bx bx-chip"}]}
         ]},

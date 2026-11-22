@@ -1,7 +1,7 @@
 import { cls, options as optionService } from "@triliumnext/core";
 import type { Application, NextFunction, Request, Response } from "express";
 import supertest from "supertest";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it, onTestFinished, vi } from "vitest";
 
 // Simulate the desktop build — the only one where the middleware gates anything.
 vi.mock("./utils.js", async (orig) => {
@@ -26,8 +26,11 @@ vi.mock("./config.js", async (orig) => {
     };
 });
 
+import auth, { refreshAuth } from "./auth.js";
+import config from "./config.js";
 import { desktopClipperAuth, desktopNetworkAccessGate, isBrowserExtensionOrigin, isLocalIntegrationPath, isLoopbackAddress, isLoopbackHost, shouldBlockDesktopWebRequest } from "./desktop_network_gate.js";
 import etapiTokenService from "./etapi_tokens.js";
+import sqlInit from "./sql_init.js";
 
 function makeRes() {
     const res = {} as Record<string, unknown>;
@@ -115,11 +118,23 @@ describe("desktopClipperAuth", () => {
         return { res, next };
     }
 
-    it("serves the extension on this computer without a token", () => {
+    it("serves the extension on this computer without a token, for the instance", () => {
+        vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(true);
+        const noAuthentication = config.General.noAuthentication;
+        config.General.noAuthentication = false;
+        refreshAuth();
+        onTestFinished(() => {
+            config.General.noAuthentication = noAuthentication;
+            refreshAuth();
+            vi.restoreAllMocks();
+        });
         for (const origin of [undefined, "chrome-extension://abcdef"]) {
-            const { res, next } = run(clipperReq({ host: "127.0.0.1:37840", origin }, "::ffff:127.0.0.1"));
+            const req = clipperReq({ host: "127.0.0.1:37840", origin }, "::ffff:127.0.0.1");
+            expect(auth.isSystemRequest(req)).toBe(false);
+            const { res, next } = run(req);
             expect(next).toHaveBeenCalled();
             expect(res.status).not.toHaveBeenCalled();
+            expect(auth.isSystemRequest(req)).toBe(true);
         }
     });
 

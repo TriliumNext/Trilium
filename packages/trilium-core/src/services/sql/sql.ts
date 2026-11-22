@@ -26,6 +26,7 @@ export class SqlService {
 
     private dbConnection: DatabaseProvider;
     private statementCache: Record<string, Statement> = {};
+    private transactionEndListeners: (() => void)[] = [];
     private params: Omit<SqlServiceParams, "provider">;
 
     constructor({ provider, ...restParams }: SqlServiceParams,
@@ -413,13 +414,37 @@ export class SqlService {
             if (!this.dbConnection.inTransaction) {
                 // i.e. transaction was really committed (and not just savepoint released)
                 this.params.onTransactionCommit();
+                this.runTransactionEndListeners();
             }
 
             return ret as T;
         } catch (e) {
             console.warn("Got error ", e);
             this.params.onTransactionRollback();
+            if (!this.dbConnection.inTransaction) {
+                this.runTransactionEndListeners();
+            }
             throw e;
+        }
+    }
+
+    /**
+     * Runs `listener` once the outermost transaction commits or rolls back, or at once outside a
+     * transaction.
+     */
+    afterTransaction(listener: () => void) {
+        if (this.dbConnection.inTransaction) {
+            this.transactionEndListeners.push(listener);
+        } else {
+            listener();
+        }
+    }
+
+    private runTransactionEndListeners() {
+        const listeners = this.transactionEndListeners;
+        this.transactionEndListeners = [];
+        for (const listener of listeners) {
+            listener();
         }
     }
 
@@ -434,11 +459,13 @@ export class SqlService {
             this.execute("COMMIT");
             if (!this.dbConnection.inTransaction) {
                 this.params.onTransactionCommit();
+                this.runTransactionEndListeners();
             }
             return result;
         } catch (e) {
             this.execute("ROLLBACK");
             this.params.onTransactionRollback();
+            this.runTransactionEndListeners();
             throw e;
         }
     }

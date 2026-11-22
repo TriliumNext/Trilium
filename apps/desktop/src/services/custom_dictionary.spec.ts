@@ -1,4 +1,4 @@
-import { becca, becca_easy_mocking } from "@triliumnext/core";
+import { becca, becca_easy_mocking, cls } from "@triliumnext/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { buildNote } = becca_easy_mocking;
@@ -263,14 +263,22 @@ describe("custom_dictionary", () => {
         it("persists a valid word to both the local session and the note", () => {
             const session = mockSession();
             // easy-mock's getContent is a fixed closure, so spy on setContent
-            // to capture what gets written.
-            const setContent = vi.spyOn(becca.getNoteOrThrow("_customDictionary"), "setContent");
+            // to capture what gets written, and in which scope.
+            const note = becca.getNoteOrThrow("_customDictionary");
+            const writeContent = note.setContent.bind(note);
+            const scopes: boolean[] = [];
+            const setContent = vi.spyOn(note, "setContent").mockImplementation((...args) => {
+                scopes.push(cls.isSystem());
+                return writeContent(...args);
+            });
 
             addWord("banana", session);
 
             expect(session.addWordToSpellCheckerDictionary).toHaveBeenCalledWith("banana");
             // Existing "apple" + new "banana", saved sorted, one word per line.
             expect(setContent).toHaveBeenCalledWith("apple\nbanana");
+            // The desktop app has no users, so the IPC handler acts for the instance.
+            expect(scopes).toEqual([ true ]);
         });
 
         it("rejects non-string / empty payloads without side effects", () => {

@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 
-import auth from "./auth.js";
+import auth, { markAsTokenClientRequest } from "./auth.js";
 import config from "./config.js";
 import { isInternalElectronRequest } from "./electron_request.js";
 import { isElectron } from "./utils.js";
@@ -84,6 +84,7 @@ export function desktopClipperAuth(req: Request, res: Response, next: NextFuncti
     }
 
     if (isLoopbackAddress(req.socket.remoteAddress) && isLoopbackHost(req.get("host"))) {
+        markAsTokenClientRequest(req);
         next();
         return;
     }

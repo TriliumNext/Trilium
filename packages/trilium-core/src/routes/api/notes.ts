@@ -29,6 +29,7 @@ import {
 import { getSql } from "../../services/sql/index";
 import TaskContext from "../../services/task_context.js";
 import treeService from "../../services/tree.js";
+import userHomes from "../../services/user_homes.js";
 import { hashedBlobId, randomString } from "../../services/utils/index";
 
 function getNote(req: Request<{ noteId: string }>) {
@@ -418,6 +419,10 @@ function changeTitle(req: Request<{ noteId: string }>) {
 
     if (!note.isContentAvailable()) {
         throw new ValidationError(`Note '${noteId}' is not available for change`);
+    }
+
+    if (userHomes.isHomeNote(noteId)) {
+        throw new ValidationError(`Note '${noteId}' is a user's home, which is named after its user.`);
     }
 
     const noteTitleChanged = note.title !== title;

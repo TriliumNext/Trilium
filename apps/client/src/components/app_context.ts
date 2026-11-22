@@ -216,6 +216,7 @@ export type CommandMappings = {
     collapseSubtree: ContextMenuCommandData;
     toggleArchivedNotes: CommandData;
     sortChildNotes: ContextMenuCommandData;
+    showNoteAccess: ContextMenuCommandData;
     copyNotePathToClipboard: ContextMenuCommandData;
     recentChangesInSubtree: ContextMenuCommandData;
     cutNotesToClipboard: ContextMenuCommandData;

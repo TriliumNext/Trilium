@@ -12,6 +12,7 @@ on:
       - stable
       - standalone
       - "release/*"
+      - "milestone/*"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

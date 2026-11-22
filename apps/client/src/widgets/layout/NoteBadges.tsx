@@ -3,6 +3,7 @@ import "./NoteBadges.css";
 import { safeHostname } from "@triliumnext/commons/src/lib/link_embed.js";
 import { isOfficeMimeType } from "@triliumnext/commons/src/lib/office.js";
 import { clsx } from "clsx";
+import { lazy, Suspense } from "preact/compat";
 import { useCallback, useEffect, useState } from "preact/hooks";
 
 import type { SaveState } from "../../components/note_context";
@@ -36,6 +37,7 @@ export default function NoteBadges() {
     return (
         <div className="note-badges">
             <SaveStatusBadge />
+            <CollaboratorsBadge />
             <ReadOnlyBadge />
             <OfficePreviewBadge />
             <ShareBadge />
@@ -44,6 +46,30 @@ export default function NoteBadges() {
             <SnippetBadge />
             <TemplateBadge />
             <ActiveContentBadges />
+        </div>
+    );
+}
+
+/** The avatars of the other users who are editing the note at the moment. */
+export function CollaboratorsBadge() {
+    const { noteContext } = useNoteContext();
+    const collaborators = useGetContextDataFrom(noteContext, "collaborators") ?? [];
+    // A user who has the note open twice shows once.
+    const users = [ ...new Map(collaborators.map((peer) => [ peer.userId, peer ])).values() ];
+    if (!users.length) {
+        return;
+    }
+
+    const names = users.map((user) => user.username).join(", ");
+    return (
+        <div className="collaborators-badge" role="group" aria-label={t("breadcrumb_badges.collaborators", { names })}>
+            <Suspense fallback={null}>
+                {users.map((user) => (
+                    <span key={user.userId} className="collaborator" title={user.username}>
+                        <UserAvatar username={user.username} hue={user.avatarHue} />
+                    </span>
+                ))}
+            </Suspense>
         </div>
     );
 }
@@ -428,3 +454,6 @@ function useShareInfo(note: FNote | null | undefined) {
         })
     };
 }
+
+/** Loaded once another user edits the note, so a note nobody else has open never loads it. */
+const UserAvatar = lazy(() => import("../react/UserAvatar"));

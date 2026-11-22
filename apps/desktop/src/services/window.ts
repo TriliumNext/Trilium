@@ -533,7 +533,7 @@ async function registerGlobalShortcuts() {
 
                 const result = globalShortcut.register(
                     translatedShortcut,
-                    cls.wrap(() => {
+                    cls.wrapAsSystem(() => {
                         const targetWindow = getLastFocusedWindow() || mainWindow;
                         if (!targetWindow || targetWindow.isDestroyed()) {
                             return;

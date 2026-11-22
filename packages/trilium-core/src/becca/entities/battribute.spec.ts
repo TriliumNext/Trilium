@@ -171,8 +171,8 @@ describe("BAttribute", () => {
         });
     });
 
-    describe("targetNoteId", () => {
-        it("returns the value for a relation", () => {
+    describe("targetNoteId / targetNote", () => {
+        it("returns the value and the target note for a relation", () => {
             const owner = createNote();
             const target = createNote();
             const attr = new BAttribute({
@@ -186,6 +186,7 @@ describe("BAttribute", () => {
             });
 
             expect(attr.targetNoteId).toBe(target.noteId);
+            expect(attr.targetNote).toBe(target);
         });
 
         it("returns undefined for a label", () => {
@@ -201,6 +202,7 @@ describe("BAttribute", () => {
             });
 
             expect(attr.targetNoteId).toBeUndefined();
+            expect(attr.targetNote).toBeUndefined();
         });
     });
 

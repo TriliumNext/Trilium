@@ -397,7 +397,7 @@ describe("BNote attribute methods (real DB)", () => {
                 expect(template.getSubtreeNotesIncludingTemplated()).toEqual([ template ]);
                 expect(template.getInheritingNotes()).toEqual([ template ]);
             } finally {
-                template.targetRelations = template.targetRelations.filter((r) => r !== relation);
+                template.allTargetRelations = template.allTargetRelations.filter((r) => r !== relation);
                 delete becca.attributes.bnGhostOwnerRel;
             }
         });

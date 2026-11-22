@@ -1,7 +1,7 @@
 import { NoteMapNote, trimIndentation } from "@triliumnext/commons";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-import becca from "../../becca/becca";
+import becca from "../../becca/becca.js";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
 import { buildNote, buildNotes } from "../../test/becca_easy_mocking";

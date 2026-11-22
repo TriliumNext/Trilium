@@ -7,6 +7,15 @@ import { MIME_TYPES_DICT, type MimeTypeDefinition } from "./mime_type.js";
 import { isOfficeMimeType, XLSX_MIME } from "./office.js";
 import { NoteType } from "./rows.js";
 
+/**
+ * The note that holds one home note per user, seen only by admins. It has no `_` prefix, which
+ * would make it a system note, because the homes below it hold user content.
+ */
+export const USERS_NOTE_ID = "users";
+
+/** What a home's note ID starts with, followed by the user's ID. */
+export const HOME_NOTE_ID_PREFIX = "home_";
+
 export const NOTE_TYPE_ICONS = {
     file: "bx bx-file",
     image: "bx bx-image",

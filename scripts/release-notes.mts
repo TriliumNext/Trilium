@@ -68,10 +68,10 @@ const SEPARATELY_SHIPPED_AREAS = /^(?:(?:web-)?clipper|website)\b/;
 export const AREAS = [
     "Attributes", "Authentication", "Board", "Calendar", "Code", "Collections", "Desktop",
     "Drawing canvases", "ETAPI", "Flatpak", "General", "Geo map", "Import and export", "Interface",
-    "Launch bar", "LLM", "Markdown", "Mermaid", "Mind map", "PDF", "Performance", "Printing",
-    "Quick edit", "Relation map", "Render notes", "Scripting", "Search", "Server", "Settings",
-    "Share", "Spreadsheet", "Sync", "Table collection", "Tables in text notes", "Tabs",
-    "Templates", "Text editor", "Tree", "Web clipper"
+    "Launch bar", "LLM", "Markdown", "Mermaid", "Mind map", "Multi-user", "PDF", "Performance",
+    "Printing", "Quick edit", "Relation map", "Render notes", "Scripting", "Search", "Server",
+    "Settings", "Share", "Spreadsheet", "Sync", "Table collection", "Tables in text notes",
+    "Tabs", "Templates", "Text editor", "Tree", "Web clipper"
 ];
 /** Sections whose entries must name an area. */
 const AREA_SECTIONS = new Set<string>([ "Bugfixes", "Improvements" ]);
@@ -120,7 +120,8 @@ export const AREA_NAMES: Record<string, string> = {
     "text": "Text editor",
     "ckeditor": "Text editor",
     "code-block": "Text editor",
-    "tree": "Tree"
+    "tree": "Tree",
+    "users": "Multi-user"
 };
 const GRAPHQL_BATCH_SIZE = 50;
 const CHANGELOG_DIR = join(ROOT, ".changelog");

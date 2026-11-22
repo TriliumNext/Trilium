@@ -3,11 +3,14 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { getBackup } from "./backup.js";
 import { getConfig } from "./config.js";
-import { getContext } from "./context.js";
+import { getContext, isSystem } from "./context.js";
 import eventService from "./events.js";
+import { getLog } from "./log.js";
+import migrationService from "./migration.js";
 import { enterSetupMode, leaveSetupMode } from "./setup_mode.js";
 import { getSql } from "./sql/index.js";
 import sqlInit, { applySetupLanguage, initDemoArchive } from "./sql_init.js";
+import { SqlService } from "./sql/sql.js";
 
 describe("sql_init (real DB)", () => {
     beforeAll(() => {
@@ -62,13 +65,13 @@ describe("sql_init (real DB)", () => {
     });
 
     describe("setDbAsInitialized", () => {
-        it("is a no-op when the DB is already initialized and does not re-emit DB_INITIALIZED", () => {
+        it("is a no-op when the DB is already initialized and does not re-emit DB_INITIALIZED", async () => {
             let dbInitializedEmitted = false;
             eventService.subscribe(eventService.DB_INITIALIZED, () => {
                 dbInitializedEmitted = true;
             });
 
-            sqlInit.setDbAsInitialized();
+            await sqlInit.setDbAsInitialized();
 
             // The `!isDbInitialized()` guard skips both the option write and the event emit.
             expect(dbInitializedEmitted).toBe(false);
@@ -101,16 +104,39 @@ describe("sql_init (real DB)", () => {
         });
     });
 
+    describe("initializeDb", () => {
+        it("opens the connection as the instance", async () => {
+            let migratedAsSystem: boolean | undefined;
+            const migrate = vi.spyOn(migrationService, "migrateIfNecessary").mockImplementation(async () => {
+                migratedAsSystem = isSystem();
+            });
+            const scheduleBackups = vi.spyOn(getBackup(), "scheduleBackups").mockImplementation(() => {});
+            const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout").mockReturnValue(0 as unknown as ReturnType<typeof setTimeout>);
+            const setIntervalSpy = vi.spyOn(globalThis, "setInterval").mockReturnValue(0 as unknown as ReturnType<typeof setInterval>);
+
+            try {
+                sqlInit.initializeDb();
+                await sqlInit.dbReady;
+                await vi.waitFor(() => expect(migratedAsSystem).toBe(true));
+            } finally {
+                for (const spy of [ migrate, scheduleBackups, setTimeoutSpy, setIntervalSpy ]) {
+                    spy.mockRestore();
+                }
+            }
+        });
+    });
+
     describe("initDbConnection", () => {
-        it("creates the param_list and user_data tables and resolves dbReady", async () => {
+        it("creates the param_list and users tables and resolves dbReady", async () => {
             await getContext().init(() => sqlInit.initDbConnection());
 
             // The connection setup creates these auxiliary tables idempotently.
+            // user_data was replaced by the users table in migration 239.
             expect(
                 getSql().getValue(
-                    "SELECT name FROM sqlite_master WHERE type IN ('table') AND name = 'user_data'"
+                    "SELECT name FROM sqlite_master WHERE type IN ('table') AND name = 'users'"
                 )
-            ).toBe("user_data");
+            ).toBe("users");
             expect(
                 getSql().getValue(
                     "SELECT name FROM sqlite_temp_master WHERE type = 'table' AND name = 'param_list'"
@@ -121,6 +147,135 @@ describe("sql_init (real DB)", () => {
             // connection is ready; awaiting it must not hang.
             await expect(Promise.resolve(sqlInit.dbReady)).resolves.toBeUndefined();
         });
+
+        it("seeds an admin user and writes adminUserId to options", async () => {
+            await getContext().init(() => sqlInit.initDbConnection());
+
+            const adminCount = getSql().getValue<number>(
+                "SELECT COUNT(*) FROM users WHERE isAdmin = 1 AND isDeleted = 0"
+            );
+            expect(adminCount).toBeGreaterThan(0);
+
+            const adminUserId = getSql().getValue<string | null>(
+                "SELECT value FROM options WHERE name = 'adminUserId'"
+            );
+            expect(typeof adminUserId).toBe("string");
+            expect(adminUserId).toBeTruthy();
+
+            // The stored adminUserId must match an actual admin user row.
+            const userExists = getSql().getValue<number>(
+                "SELECT COUNT(*) FROM users WHERE userId = ? AND isAdmin = 1 AND isDeleted = 0",
+                [adminUserId]
+            );
+            expect(userExists).toBe(1);
+        });
+    });
+
+    describe("seedAdminUser promotion path", () => {
+        // Save and restore state so other tests aren't affected.
+        let savedAdminRows: unknown[];
+        let savedAdminUserId: string | null;
+
+        beforeAll(() => {
+            const sql = getSql();
+            savedAdminRows = sql.getRows("SELECT * FROM users WHERE isAdmin = 1");
+            savedAdminUserId = sql.getValue<string | null>(
+                "SELECT value FROM options WHERE name = 'adminUserId'"
+            );
+        });
+
+        afterEach(() => {
+            const sql = getSql();
+            sql.execute("DELETE FROM users WHERE username = 'admin'");
+            for (const row of savedAdminRows) {
+                const r = row as Record<string, unknown>;
+                sql.execute(
+                    `INSERT OR REPLACE INTO users (userId, username, email, isAdmin, isDeleted, dateCreated, utcDateModified)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                    [r.userId, r.username, r.email, r.isAdmin, r.isDeleted, r.dateCreated, r.utcDateModified]
+                );
+            }
+            if (savedAdminUserId) {
+                sql.execute(
+                    `INSERT OR REPLACE INTO options (name, value, isSynced, utcDateModified) VALUES ('adminUserId', ?, 0, datetime('now'))`,
+                    [savedAdminUserId]
+                );
+            }
+        });
+
+        it("promotes an existing non-admin 'admin' user when no admin row exists", () => {
+            const sql = getSql();
+
+            // Remove the seeded admin row and the option so seedAdminUser enters the fresh-insert path.
+            sql.execute("UPDATE users SET isDeleted = 1 WHERE isAdmin = 1");
+            sql.execute("DELETE FROM options WHERE name = 'adminUserId'");
+
+            // Insert a non-admin user occupying the 'admin' username — OR IGNORE will skip the insert.
+            const nonAdminId = "test-non-admin-01";
+            sql.execute(
+                `INSERT OR IGNORE INTO users (userId, username, email, isAdmin, isDeleted, dateCreated, utcDateModified)
+                 VALUES (?, 'admin', NULL, 0, 0, datetime('now'), datetime('now'))`,
+                [nonAdminId]
+            );
+
+            sqlInit.seedAdminUser(sql as SqlService);
+
+            // The non-admin user should have been promoted to admin.
+            const isNowAdmin = sql.getValue<number>(
+                "SELECT isAdmin FROM users WHERE userId = ?", [nonAdminId]
+            );
+            expect(isNowAdmin).toBe(1);
+
+            // adminUserId option must point to the promoted user.
+            const adminUserId = sql.getValue<string | null>(
+                "SELECT value FROM options WHERE name = 'adminUserId'"
+            );
+            expect(adminUserId).toBe(nonAdminId);
+        });
+    });
+});
+
+describe("seedAdminUser failures", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    function fakeSql(getValue: (query: string) => string | null, execute: (query: string) => void) {
+        const executed: string[] = [];
+        const sql = {
+            getValue: vi.fn(getValue),
+            execute: vi.fn((query: string) => {
+                executed.push(query);
+                execute(query);
+            })
+        };
+        return { sql: sql as unknown as SqlService, executed };
+    }
+
+    it("logs and stops when no admin can be inserted or found", () => {
+        const logError = vi.spyOn(getLog(), "error").mockImplementation(() => {});
+        const { sql, executed } = fakeSql(() => null, () => {});
+
+        sqlInit.seedAdminUser(sql);
+
+        expect(logError).toHaveBeenCalledOnce();
+        expect(executed).toHaveLength(1);
+        expect(executed[0]).toContain("INSERT OR IGNORE INTO users");
+    });
+
+    it("tolerates missing tables and columns in the backfill but logs other errors", () => {
+        const logError = vi.spyOn(getLog(), "error").mockImplementation(() => {});
+        const { sql, executed } = fakeSql(() => "admin-spec", (query) => {
+            if (query.includes("UPDATE notes")) throw new Error("no such table: notes");
+            if (query.includes("UPDATE etapi_tokens")) throw new Error("no such column: userId");
+            if (query.includes("UPDATE entity_changes")) throw "disk I/O error";
+        });
+
+        sqlInit.seedAdminUser(sql);
+
+        expect(logError).toHaveBeenCalledOnce();
+        expect(logError.mock.calls[0][0]).toContain("entity_changes backfill: disk I/O error");
+        expect(executed.at(-1)).toContain("'adminUserId'");
     });
 });
 

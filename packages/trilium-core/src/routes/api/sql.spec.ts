@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import becca from "../../becca/becca";
+import becca from "../../becca/becca.js";
 import config from "../../services/config";
 import { getSql } from "../../services/sql/index";
 import { createTextNote } from "../../test/api_fixtures";

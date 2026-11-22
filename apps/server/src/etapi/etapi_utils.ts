@@ -57,7 +57,8 @@ function processRequest<P extends ParamsDictionary>(req: Request<P>, res: Respon
         bindEmitter(req);
         bindEmitter(res);
 
-        cls.init(() => {
+        // An ETAPI token is not tied to a user, so a request made with one acts for the instance.
+        cls.initAsSystem(() => {
             cls.set("componentId", "etapi");
             cls.set("localNowDateTime", req.headers["trilium-local-now-datetime"]);
 

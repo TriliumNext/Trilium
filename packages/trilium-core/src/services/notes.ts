@@ -30,6 +30,7 @@ import { evaluateTemplateSafe } from "./safe_template.js";
 import { sanitizeHtml } from "./sanitizer.js";
 import { getSql } from "./sql/index.js";
 import type TaskContext from "./task_context.js";
+import { getActingUserHomeNoteId } from "./user_homes.js";
 import { decodeBase64, decodeUtf8, encodeBase64 } from "./utils/binary.js";
 import date_utils from "./utils/date.js";
 import { isValidEntityId, newEntityId, replaceAll, toMap, unescapeHtml } from "./utils/index.js";
@@ -48,6 +49,8 @@ interface Attachment {
 export interface NoteParams {
     /** Forces a specific noteId: 4 to 128 letters, digits or underscores. */
     noteId?: string;
+    /** The user who owns the note; defaults to the user in CLS, else the primary admin. */
+    ownerId?: string;
     branchId?: string;
     parentNoteId: string;
     templateNoteId?: string;
@@ -250,6 +253,10 @@ function getAndValidateParent(params: GetValidateParams) {
         throw new ValidationError(`Parent note '${params.parentNoteId}' was not found.`);
     }
 
+    // Before the note row is written: a refusal from the branch alone would roll back a note and
+    // reload the Becca.
+    becca.ensureCanWriteNote(parentNote.noteId);
+
     if (parentNote.type === "launcher" && parentNote.noteId !== "_lbBookmarks") {
         throw new ValidationError(`Creating child notes into launcher notes is not allowed.`);
     }
@@ -274,6 +281,10 @@ function createNewNote(params: NoteParams): {
     note: BNote;
     branch: BBranch;
 } {
+    if (params.parentNoteId === "root") {
+        params.parentNoteId = getActingUserHomeNoteId() ?? "root";
+    }
+
     const parentNote = getAndValidateParent(params);
 
     const isTitleDefaulted = params.title === null || params.title === undefined;
@@ -303,7 +314,7 @@ function createNewNote(params: NoteParams): {
             + "Only letters, digits and underscores are allowed, with a length of 4 to 128.");
     }
 
-    if (typeof forcedNoteId === "string" && forcedNoteId && becca.notes[forcedNoteId]) {
+    if (typeof forcedNoteId === "string" && forcedNoteId && becca.allNotes[forcedNoteId]) {
         throw new ValidationError(`Note '${forcedNoteId}' already exists.`);
     }
 
@@ -337,7 +348,8 @@ function createNewNote(params: NoteParams): {
                 type: params.type,
                 mime: deriveMime(params.type, params.mime),
                 dateCreated: params.dateCreated,
-                utcDateCreated: params.utcDateCreated
+                utcDateCreated: params.utcDateCreated,
+                ownerId: params.ownerId ?? cls.getUserId() ?? optionService.getOptionOrNull("adminUserId")
             }).save();
 
             // Create attributes atomically.
@@ -429,6 +441,12 @@ function createNewNoteWithTarget(target: "into" | "after" | "before", targetBran
     }
 
     const params = rawParams as NoteParams;
+
+    // A position next to a top-level note is a position among `root`'s children, which the home
+    // replaces as the parent; the note goes to the end of the home instead.
+    if (params.parentNoteId === "root" && getActingUserHomeNoteId()) {
+        target = "into";
+    }
 
     if (target === "into") {
         return createNewNote(params);
@@ -1502,6 +1520,11 @@ function undeleteNote(
         return failed;
     }
 
+    if (!becca.canSeeDeletedNote(noteRow.ownerId)) {
+        getLog().info(`Note '${noteId}' is not visible to the signed-in user and thus cannot be undeleted.`);
+        return failed;
+    }
+
     const deleteId = noteRow.deleteId;
     const undeletedParentBranchIds = getUndeletedParentBranchIds(noteId, deleteId);
 
@@ -1591,9 +1614,14 @@ function restoreNoteAndDescendants(noteRow: NoteRow, deleteId: string, taskConte
         [deleteId, noteRow.noteId, noteRow.noteId]
     );
 
-    for (const attributeRow of attributeRows) {
-        // relation might point to a note which hasn't been undeleted yet and would thus throw up
-        new BAttribute(attributeRow).save({ skipValidation: true });
+    noteEntity.isBeingRestored = true;
+    try {
+        for (const attributeRow of attributeRows) {
+            // relation might point to a note which hasn't been undeleted yet and would thus throw up
+            new BAttribute(attributeRow).save({ skipValidation: true });
+        }
+    } finally {
+        noteEntity.isBeingRestored = false;
     }
 
     const attachmentRows = sql.getRows<AttachmentRow>(
@@ -1705,6 +1733,10 @@ function duplicateSubtree(origNoteId: string, newParentNoteId: string, { withChi
 
     getLog().info(`Duplicating '${origNoteId}' subtree into '${newParentNoteId}'`);
 
+    // Before any row is written: a refusal from the first branch would roll back the copied notes and
+    // reload the Becca.
+    becca.ensureCanWriteNote(newParentNoteId);
+
     const origNote = becca.notes[origNoteId];
     // might be null if orig note is not in the target newParentNoteId
     const origBranch = origNote.getParentBranches().find((branch) => branch.parentNoteId === newParentNoteId);
@@ -1765,6 +1797,8 @@ function duplicateSubtreeInner(origNote: BNote, origBranch: BBranch | null | und
         const newNote = new BNote({
             ...origNote,
             noteId: newNoteId,
+            // The copy belongs to whoever makes it, as a note they create would.
+            ownerId: cls.getUserId() ?? origNote.ownerId,
             dateCreated: date_utils.localNowDateTime(),
             utcDateCreated: date_utils.utcNowDateTime()
         }).save();

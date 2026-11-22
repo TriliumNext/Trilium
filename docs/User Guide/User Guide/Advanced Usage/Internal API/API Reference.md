@@ -51,6 +51,7 @@ Responds with 401 when the password is wrong or, with two-factor authentication 
 
 | Property | Description |
 | --- | --- |
+| `username` | `string`  <br>Empty, or the primary admin's username, signs in with the instance password. |
 | `password`  <br>_required_ | `string (password)` |
 | `totpToken` | `string`  <br>TOTP token if 2FA is enabled |
 

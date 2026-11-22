@@ -163,5 +163,20 @@ describe("oneTimeTimer", () => {
 
             expect(failure).toBeUndefined();
         });
+
+        it("runs the callback for the instance, not for the user whose write scheduled it", async () => {
+            let scope: { userId: string | undefined; isSystem: boolean } | undefined;
+
+            cls.init(() => {
+                cls.set("userId", "timer-member");
+                oneTimeTimer.scheduleExecution("system-scope", 1, () => {
+                    scope = { userId: cls.getUserId(), isSystem: cls.isSystem() };
+                });
+            });
+
+            await new Promise((resolve) => setTimeout(resolve, 20));
+
+            expect(scope).toEqual({ userId: undefined, isSystem: true });
+        });
     });
 });

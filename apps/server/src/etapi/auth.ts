@@ -22,7 +22,7 @@ function register(router: Router, loginMiddleware: RequestHandler[]) {
 
             // `verifyTOTP()` and `verifyRecoveryCode()` write options when they accept a code, and
             // middleware runs before `processRequest()` opens a CLS context.
-            const failedFactor = await cls.init(() => verifyLoginCredentials(password, totpToken));
+            const failedFactor = await cls.initAsSystem(() => verifyLoginCredentials(password, totpToken));
             if (failedFactor === "password") {
                 eu.sendError(res, 401, "WRONG_PASSWORD", "Wrong password.");
                 return;

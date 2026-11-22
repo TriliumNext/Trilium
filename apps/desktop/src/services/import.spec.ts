@@ -37,6 +37,7 @@ vi.mock("fs/promises", () => ({ readFile: fsMock.readFile, stat: fsMock.stat }))
 const coreMock = vi.hoisted(() => ({
     dispatch: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
     getNoteOrThrow: vi.fn((id: string) => ({ noteId: id })),
+    initAsSystem: vi.fn((cb: () => unknown) => cb()),
     taskSucceeded: vi.fn(),
     reportError: vi.fn(),
     load: vi.fn(),
@@ -47,7 +48,7 @@ vi.mock("@triliumnext/core", () => ({
     becca: { getNoteOrThrow: coreMock.getNoteOrThrow },
     becca_loader: { load: coreMock.load },
     cls: {
-        init: (cb: () => unknown) => cb(),
+        initAsSystem: coreMock.initAsSystem,
         disableEntityEvents: vi.fn(),
         ignoreEntityChangeIds: vi.fn()
     },
@@ -189,6 +190,8 @@ describe("desktop native import — capability token", () => {
             expect(fsMock.readFile).not.toHaveBeenCalled();
             expect(parentNote).toEqual({ noteId: "parent1" });
             expect(coreMock.load).toHaveBeenCalled();
+            // The desktop app has no users, so the import acts for the instance.
+            expect(coreMock.initAsSystem).toHaveBeenCalledTimes(1);
             // Success is reported on a short delay (lets the transaction commit first).
             await vi.advanceTimersByTimeAsync(1000);
             expect(coreMock.taskSucceeded).toHaveBeenCalledTimes(1);

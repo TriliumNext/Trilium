@@ -992,10 +992,10 @@ function runEntityChangesChecks() {
 
 function startConsistencyChecks() {
     sqlInit.dbReady.then(() => {
-        setInterval(cls.wrap(runPeriodicChecks), 60 * 60 * 1000);
+        setInterval(cls.wrapAsSystem(runPeriodicChecks), 60 * 60 * 1000);
 
         // kickoff checks soon after startup (to not block the initial load)
-        setTimeout(cls.wrap(runPeriodicChecks), 4 * 1000);
+        setTimeout(cls.wrapAsSystem(runPeriodicChecks), 4 * 1000);
     });
 }
 

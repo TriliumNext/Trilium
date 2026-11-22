@@ -114,6 +114,9 @@ paths:
               type: object
               required: [password]
               properties:
+                username:
+                  type: string
+                  description: Empty, or the primary admin's username, signs in with the instance password.
                 password:
                   type: string
                   format: password

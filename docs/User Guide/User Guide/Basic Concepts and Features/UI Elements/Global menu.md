@@ -7,6 +7,10 @@ The global menu configures the current window (zoom, keeping the window on top),
 
 See [Vertical and horizontal layout](Vertical%20and%20horizontal%20layout.md) since the position of the global menu is changed based on which layout has been selected.
 
+## Your account
+
+On a server with <a class="reference-link" href="../../Installation%20%26%20Setup/Server%20Installation/Multiple%20users.md">Multiple users</a>, the top of the global menu shows the account you are signed in with and its role. The <span class="tn-icon bx bx-log-out"></span> button beside it signs you out.
+
 ## Switching the theme
 
 The _Theme_ submenu changes the look of the application without opening the <a class="reference-link" href="Options.md">Options</a>. A check mark at the end of a row shows the active choice. The submenu is not shown on mobile; change the theme from <a class="reference-link" href="Options.md">Options</a> → _Appearance_ there.

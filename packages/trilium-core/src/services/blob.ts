@@ -80,12 +80,13 @@ function virtualBlobPojo(noteId: string) {
 function getDeletedNoteBlobPojo(noteId: string) {
     const sql = getSql();
 
-    const noteRow = sql.getRowOrNull<Pick<NoteRow, "isProtected" | "type" | "mime" | "blobId">>(
-        /*sql*/ `SELECT isProtected, type, mime, blobId FROM notes WHERE noteId = ? AND isDeleted = 1`,
+    const noteRow = sql.getRowOrNull<Pick<NoteRow, "isProtected" | "type" | "mime" | "blobId" | "ownerId">>(
+        /*sql*/ `SELECT isProtected, type, mime, blobId, ownerId
+                 FROM notes WHERE noteId = ? AND isDeleted = 1`,
         [noteId]
     );
 
-    if (!noteRow || !noteRow.blobId) {
+    if (!noteRow || !noteRow.blobId || !becca.canSeeDeletedNote(noteRow.ownerId)) {
         throw new NotFoundError(`Deleted note '${noteId}' was not found.`);
     }
 

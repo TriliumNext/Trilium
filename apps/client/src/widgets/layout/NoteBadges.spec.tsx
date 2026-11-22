@@ -11,14 +11,16 @@ import { ViewScope } from "../../services/link";
 const shownNote = vi.hoisted(() => ({
     current: null as FNote | null,
     viewScope: undefined as ViewScope | undefined,
-    parentComponent: { triggerEvent: vi.fn() }
+    parentComponent: { triggerEvent: vi.fn() },
+    contextData: {} as Record<string, unknown>
 }));
 vi.mock("../react/hooks/note_context", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../react/hooks/note_context")>()),
     useNoteContext: () => ({
         note: shownNote.current,
         viewScope: shownNote.viewScope,
-        parentComponent: shownNote.parentComponent
+        parentComponent: shownNote.parentComponent,
+        noteContext: { getContextData: (key: string) => shownNote.contextData[key] }
     })
 }));
 
@@ -31,10 +33,32 @@ vi.mock("../../services/i18n", () => ({
 import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import {
-    ClippedNoteBadge, ExecuteBadge, OfficePreviewBadge, ReadOnlyBadge, TemplateBadge
+    ClippedNoteBadge, CollaboratorsBadge, ExecuteBadge, OfficePreviewBadge, ReadOnlyBadge, TemplateBadge
 } from "./NoteBadges";
 
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+describe("CollaboratorsBadge", () => {
+    it("shows the avatar of each other user who is editing the note, once", async () => {
+        shownNote.contextData = {};
+        expect(renderInto(<CollaboratorsBadge />).querySelector(".collaborators-badge")).toBeNull();
+
+        shownNote.contextData = {
+            collaborators: [
+                { peerId: "1", userId: "alice", username: "Alice", avatarHue: 10 },
+                { peerId: "2", userId: "bob", username: "Bob Stone", avatarHue: 200 },
+                { peerId: "3", userId: "alice", username: "Alice", avatarHue: 10 }
+            ]
+        };
+        const badge = renderInto(<CollaboratorsBadge />).querySelector(".collaborators-badge");
+        expect(badge?.getAttribute("aria-label")).toBe("breadcrumb_badges.collaborators");
+        await vi.waitFor(() => expect(badge?.querySelector(".user-avatar")).not.toBeNull());
+        const avatars = Array.from(badge?.querySelectorAll<HTMLElement>(".user-avatar") ?? []);
+        expect(avatars.map((avatar) => avatar.textContent)).toEqual([ "AL", "BS" ]);
+        expect(avatars.map((avatar) => avatar.parentElement?.title)).toEqual([ "Alice", "Bob Stone" ]);
+        expect(avatars[1]?.style.getPropertyValue("--user-avatar-hue")).toBe("200");
+    });
+});
 
 describe("ReadOnlyBadge", () => {
     it("says a note that cannot be saved is read-only, without offering to edit it", () => {

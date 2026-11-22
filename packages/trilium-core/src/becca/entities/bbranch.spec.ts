@@ -209,7 +209,7 @@ describe("BBranch (real DB)", () => {
             expect(note.getParentBranches().filter((b) => b === branch)).toHaveLength(1);
             expect(note.getParentNotes().map((n) => n.noteId)).toEqual([ "root" ]);
 
-            note.parentBranches = note.parentBranches.filter((b) => b !== branch);
+            note.allParentBranches = note.allParentBranches.filter((b) => b !== branch);
             delete becca.branches.bbrTopLevel;
             delete becca.childParentToBranch[`${note.noteId}-none`];
         });

@@ -40,6 +40,7 @@ export function modals(): VNode[] {
         <LazyDialog key="recent_changes" triggerEvents={["showRecentChanges", "showDeletedNotes"]} loader={() => import("../widgets/dialogs/recent_changes.js")} />,
         <LazyDialog key="branch_prefix" triggerEvents={["editBranchPrefix"]} loader={() => import("../widgets/dialogs/branch_prefix.js")} />,
         <LazyDialog key="sort_child_notes" triggerEvents={["sortChildNotes"]} loader={() => import("../widgets/dialogs/sort_child_notes.js")} />,
+        <LazyDialog key="note_access" triggerEvents={["showNoteAccess"]} loader={() => import("../widgets/dialogs/note_access.js")} />,
         <LazyDialog key="template_properties" triggerEvents={["showTemplateProperties"]} loader={() => import("../widgets/dialogs/template_properties.js")} />,
         <LazyDialog key="content_embed" triggerEvents={["showContentEmbedDialog"]} loader={() => import("../widgets/dialogs/content_embed.js")} />,
         <LazyDialog key="note_picker" triggerEvents={["showNotePickerDialog"]} loader={() => import("../widgets/dialogs/note_picker.js")} />,

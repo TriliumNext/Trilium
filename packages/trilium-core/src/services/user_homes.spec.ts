@@ -1,0 +1,255 @@
+import { USERS_NOTE_ID } from "@triliumnext/commons";
+import { describe, expect, it, onTestFinished, vi } from "vitest";
+
+import becca from "../becca/becca.js";
+import { ForbiddenError } from "../errors.js";
+import cloningService from "./cloning.js";
+import * as cls from "./context.js";
+import noteService from "./notes.js";
+import permissionService from "./permission_service.js";
+import { getSql } from "./sql/index.js";
+import treeService from "./tree.js";
+import userHomes, { getHomeNoteId } from "./user_homes.js";
+import userService from "./user_service.js";
+import ws from "./ws.js";
+
+const SHARED_WITH_ME_NOTE_ID = "_sharedWithMe";
+
+describe("user homes", () => {
+    it("creates nothing while the primary admin is the only user", () => {
+        const adminId = cls.initAsSystem(() => userService.getAdminUserId());
+        getSql().execute("UPDATE users SET isDeleted = 1 WHERE userId != ?", [ adminId ]);
+
+        cls.initAsSystem(() => userHomes.ensureUserHomes());
+
+        expect(cls.initAsSystem(() => becca.getNote(USERS_NOTE_ID))).toBeNull();
+    });
+
+    it("gives every other user a home under the admin-owned Users note", () => {
+        const adminId = cls.initAsSystem(() => userService.getAdminUserId());
+        const memberId = cls.initAsSystem(() => userService.createUser("home-member-spec", null, false));
+        const otherAdminId = cls.initAsSystem(() => userService.createUser("home-admin-spec", null, true));
+
+        cls.initAsSystem(() => {
+            userHomes.ensureUserHomes();
+
+            const usersNote = becca.getNoteOrThrow(USERS_NOTE_ID);
+            expect(usersNote.ownerId).toBe(adminId);
+            expect(usersNote.getParentNotes().map((parent) => parent.noteId)).toEqual([ "root" ]);
+
+            const memberHome = becca.getNoteOrThrow(getHomeNoteId(memberId));
+            expect(memberHome).toMatchObject({ title: "home-member-spec", ownerId: memberId });
+            expect(memberHome.getParentNotes().map((parent) => parent.noteId)).toEqual([ USERS_NOTE_ID ]);
+            expect(becca.getNote(getHomeNoteId(otherAdminId))?.ownerId).toBe(otherAdminId);
+            expect(becca.getNote(getHomeNoteId(adminId))).toBeNull();
+
+            // A second pass, as on every startup, finds nothing to add.
+            const childCount = usersNote.getChildNotes().length;
+            userHomes.ensureUserHomes();
+            expect(usersNote.getChildNotes()).toHaveLength(childCount);
+        });
+    });
+
+    it("names the home at the top of the tree for members only", () => {
+        const memberId = cls.initAsSystem(() => userService.createUser("home-top-member-spec", null, false));
+        const adminId = cls.initAsSystem(() => userService.createUser("home-top-admin-spec", null, true));
+        cls.initAsSystem(() => userHomes.ensureUserHome(memberId, "home-top-member-spec"));
+        cls.initAsSystem(() => userHomes.ensureUserHome(adminId, "home-top-admin-spec"));
+        const homelessId = cls.initAsSystem(() => userService.createUser("home-top-homeless-spec", null, false));
+
+        expect(cls.initAsSystem(() => userHomes.getTopLevelHomeNoteId(memberId))).toBe(getHomeNoteId(memberId));
+        // An admin sees the whole tree, where their home sits under the Users note.
+        expect(cls.initAsSystem(() => userHomes.getTopLevelHomeNoteId(adminId))).toBeUndefined();
+        expect(cls.initAsSystem(() => userHomes.getTopLevelHomeNoteId(homelessId))).toBeUndefined();
+    });
+
+    it("renames a home along with its user", () => {
+        const memberId = cls.initAsSystem(() => userService.createUser("home-rename-spec", null, false));
+        cls.initAsSystem(() => userHomes.ensureUserHome(memberId, "home-rename-spec"));
+
+        cls.initAsSystem(() => userHomes.renameUserHome(memberId, "home-renamed-spec"));
+
+        expect(cls.initAsSystem(() => becca.getNoteOrThrow(getHomeNoteId(memberId)).title)).toBe("home-renamed-spec");
+    });
+
+    it("creates a user's top-level notes in their home, but the primary admin's under root", async () => {
+        const memberId = cls.initAsSystem(() => userService.createUser("home-create-spec", null, false));
+        const memberHome = cls.initAsSystem(() => userHomes.ensureUserHome(memberId, "home-create-spec"));
+
+        const [ intoRoot, afterHome ] = await asUser(memberId, () => [
+            noteService.createNewNote({ parentNoteId: "root", title: "into root", content: "", type: "text" }).note,
+            noteService.createNewNoteWithTarget("after", `root_${memberHome.noteId}`, {
+                parentNoteId: "root", title: "after home", content: ""
+            }).note
+        ]);
+        expect(cls.initAsSystem(() => intoRoot.getParentNotes().map((parent) => parent.noteId))).toEqual([ memberHome.noteId ]);
+        expect(cls.initAsSystem(() => afterHome.getParentNotes().map((parent) => parent.noteId))).toEqual([ memberHome.noteId ]);
+
+        const adminNote = cls.initAsSystem(() => noteService.createNewNote({
+            parentNoteId: "root", title: "admin into root", content: "", type: "text"
+        }).note);
+        expect(cls.initAsSystem(() => adminNote.getParentNotes().map((parent) => parent.noteId))).toEqual([ "root" ]);
+
+    });
+
+    it("refuses to move or clone a user's note to the top level", async () => {
+        const memberId = cls.initAsSystem(() => userService.createUser("home-move-spec", null, false));
+        const memberHome = cls.initAsSystem(() => userHomes.ensureUserHome(memberId, "home-move-spec"));
+        const note = cls.initAsSystem(() => noteService.createNewNote({
+            parentNoteId: memberHome.noteId, ownerId: memberId, title: "movable", content: "", type: "text"
+        }).note);
+
+        const [ move, clone ] = await asUser(memberId, () => [
+            treeService.validateParentChild("root", note.noteId),
+            cloningService.cloneNoteToParentNote(note.noteId, "root")
+        ]);
+        expect(move.success).toBe(false);
+        expect(clone.success).toBe(false);
+        expect(cls.initAsSystem(() => note.getParentNotes().map((parent) => parent.noteId))).toEqual([ memberHome.noteId ]);
+
+        expect(cls.initAsSystem(() => treeService.validateParentChild("root", note.noteId).success)).toBe(true);
+    });
+
+    it("refuses a member's new note that reuses the ID of a note they cannot see", async () => {
+        const aliceId = cls.initAsSystem(() => userService.createUser("forced-alice-spec", null, false));
+        const bobId = cls.initAsSystem(() => userService.createUser("forced-bob-spec", null, false));
+        const aliceHome = cls.initAsSystem(() => userHomes.ensureUserHome(aliceId, "forced-alice-spec"));
+        const bobHome = cls.initAsSystem(() => userHomes.ensureUserHome(bobId, "forced-bob-spec"));
+        const secret = createOwnedNote(bobHome.noteId, bobId, "bob secret");
+
+        await expect(asUser(aliceId, () => noteService.createNewNote({
+            noteId: secret.noteId, parentNoteId: aliceHome.noteId, title: "taken", content: "", type: "text"
+        }))).rejects.toThrow(`Note '${secret.noteId}' already exists.`);
+        const row = cls.initAsSystem(() => getSql().getRow(
+            "SELECT title, ownerId FROM notes WHERE noteId = ?", [ secret.noteId ]
+        ));
+        expect(row).toEqual({ title: "bob secret", ownerId: bobId });
+    });
+});
+
+/** Standalone has no users, so every scope there acts for the instance and nothing is filtered. */
+const isBrowserRuntime = typeof self !== "undefined";
+
+describe.skipIf(isBrowserRuntime)("user homes as members see them", () => {
+    it("refuses a member who has no home yet a note at the top level, which they cannot write", async () => {
+        const homelessId = cls.initAsSystem(() => userService.createUser("home-create-homeless-spec", null, false));
+        await expect(asUser(homelessId, () => noteService.createNewNote({
+            parentNoteId: "root", title: "homeless into root", content: "", type: "text"
+        }))).rejects.toThrow(ForbiddenError);
+    });
+
+    it("takes a note off Shared with me once a member pastes it into their home", async () => {
+        const aliceId = cls.initAsSystem(() => userService.createUser("paste-alice-spec", null, false));
+        const bobId = cls.initAsSystem(() => userService.createUser("paste-bob-spec", null, false));
+        const aliceHome = cls.initAsSystem(() => userHomes.ensureUserHome(aliceId, "paste-alice-spec"));
+        const bobHome = cls.initAsSystem(() => userHomes.ensureUserHome(bobId, "paste-bob-spec"));
+        const project = createOwnedNote(bobHome.noteId, bobId, "pasted project");
+        cls.initAsSystem(() => permissionService.setUserAccess(project.noteId, aliceId, true));
+
+        const reload = vi.spyOn(ws, "reloadFrocaForUser");
+        onTestFinished(() => reload.mockRestore());
+        // A note created in the home was never listed, so it changes nothing the client cannot see.
+        await asUser(aliceId, () => noteService.createNewNote({ parentNoteId: aliceHome.noteId, title: "paste draft", content: "", type: "text" }));
+        expect(reload).not.toHaveBeenCalled();
+
+        const result = await asUser(aliceId, () => {
+            expect(becca.getNote(SHARED_WITH_ME_NOTE_ID)?.getChildNotes().map((child) => child.noteId))
+                .toEqual([ project.noteId ]);
+            return cloningService.cloneNoteToParentNote(project.noteId, aliceHome.noteId);
+        });
+        expect(result.success).toBe(true);
+        expect(reload.mock.calls.map(([ userId ]) => userId)).toEqual([ aliceId ]);
+
+        const [ sharedWithMe, parentNoteIds ] = await asUser(aliceId, () => [
+            becca.getNote(SHARED_WITH_ME_NOTE_ID),
+            project.getParentNotes().map((parent) => parent.noteId)
+        ]);
+        expect(sharedWithMe).toBeNull();
+        expect(parentNoteIds).toEqual([ aliceHome.noteId ]);
+    });
+
+    it("deletes a member's notes and notes inside a shared one, but only their copy of a shared note", async () => {
+        const aliceId = cls.initAsSystem(() => userService.createUser("unclone-alice-spec", null, false));
+        const bobId = cls.initAsSystem(() => userService.createUser("unclone-bob-spec", null, false));
+        const aliceHome = cls.initAsSystem(() => userHomes.ensureUserHome(aliceId, "unclone-alice-spec"));
+        const bobHome = cls.initAsSystem(() => userHomes.ensureUserHome(bobId, "unclone-bob-spec"));
+        const draft = createOwnedNote(aliceHome.noteId, aliceId, "alice draft");
+        const project = createOwnedNote(bobHome.noteId, bobId, "uncloned project");
+        const spec = createOwnedNote(project.noteId, bobId, "uncloned spec");
+        const event = createOwnedNote(project.noteId, bobId, "uncloned event");
+        cls.initAsSystem(() => {
+            permissionService.setUserAccess(project.noteId, aliceId, true);
+            cloningService.cloneNoteToParentNote(project.noteId, aliceHome.noteId);
+        });
+
+        const reload = vi.spyOn(ws, "reloadFrocaForUser");
+        onTestFinished(() => reload.mockRestore());
+        const [ draftDeleted, eventDeleted, projectDeleted, remaining ] = await asUser(aliceId, () => {
+            const copy = becca.getBranchFromChildAndParent(project.noteId, aliceHome.noteId);
+            expect(project.getParentBranches()).toEqual([ copy ]);
+            return [
+                becca.getBranchFromChildAndParent(draft.noteId, aliceHome.noteId)?.deleteBranch(),
+                becca.getBranchFromChildAndParent(event.noteId, project.noteId)?.deleteBranch(),
+                copy?.deleteBranch(),
+                [ draft.noteId, event.noteId, project.noteId ].filter((noteId) => becca.getNote(noteId))
+            ];
+        });
+        expect(draftDeleted).toBe(true);
+        expect(eventDeleted).toBe(true);
+        expect(projectDeleted).toBe(false);
+        expect(remaining).toEqual([ project.noteId ]);
+        // Only the project moves to Shared with me; the draft and the event are gone.
+        expect(reload.mock.calls.map(([ userId ]) => userId)).toEqual([ aliceId ]);
+
+        const deletedNoteIds = cls.initAsSystem(() => getSql().getColumn<string>(
+            "SELECT noteId FROM notes WHERE noteId IN (?, ?) AND isDeleted = 1", [ draft.noteId, event.noteId ]
+        ));
+        expect(deletedNoteIds.sort()).toEqual([ draft.noteId, event.noteId ].sort());
+        const live = cls.initAsSystem(() => getSql().getColumn<string>(
+            "SELECT noteId || ' in ' || parentNoteId FROM branches WHERE noteId IN (?, ?) AND isDeleted = 0 ORDER BY noteId",
+            [ project.noteId, spec.noteId ]
+        ));
+        expect(live).toEqual([
+            `${project.noteId} in ${bobHome.noteId}`, `${spec.noteId} in ${project.noteId}`
+        ].sort());
+    });
+
+    it("keeps a child that another user keeps elsewhere when a member deletes its parent", async () => {
+        const aliceId = cls.initAsSystem(() => userService.createUser("child-alice-spec", null, false));
+        const bobId = cls.initAsSystem(() => userService.createUser("child-bob-spec", null, false));
+        const aliceHome = cls.initAsSystem(() => userHomes.ensureUserHome(aliceId, "child-alice-spec"));
+        const bobHome = cls.initAsSystem(() => userHomes.ensureUserHome(bobId, "child-bob-spec"));
+        const draft = createOwnedNote(aliceHome.noteId, aliceId, "child draft");
+        const child = createOwnedNote(draft.noteId, aliceId, "child of draft");
+        const bobPrivate = createOwnedNote(bobHome.noteId, bobId, "bob keeps the child");
+        cls.initAsSystem(() => cloningService.cloneNoteToParentNote(child.noteId, bobPrivate.noteId));
+
+        const [ childrenSeen, bobPrivateSeen ] = await asUser(aliceId, () => {
+            const seen = draft.getChildNotes().map((note) => note.noteId);
+            const isBobPrivateSeen = !!becca.getNote(bobPrivate.noteId);
+            becca.getBranchFromChildAndParent(draft.noteId, aliceHome.noteId)?.deleteBranch();
+            return [ seen, isBobPrivateSeen ];
+        });
+        // Every child of a note a member sees is in their view, since visibility covers the subtree.
+        expect(childrenSeen).toEqual([ child.noteId ]);
+        expect(bobPrivateSeen).toBe(false);
+
+        const live = cls.initAsSystem(() => getSql().getColumn<string>(
+            "SELECT noteId || ' in ' || parentNoteId FROM branches WHERE noteId IN (?, ?) AND isDeleted = 0",
+            [ draft.noteId, child.noteId ]
+        ));
+        expect(live).toEqual([ `${child.noteId} in ${bobPrivate.noteId}` ]);
+    });
+});
+
+function createOwnedNote(parentNoteId: string, ownerId: string, title: string) {
+    return cls.initAsSystem(() => noteService.createNewNote({ parentNoteId, ownerId, title, content: "", type: "text" }).note);
+}
+
+/** Runs `fn` as a request by the user would: with their `userId` in CLS. */
+function asUser<T>(userId: string, fn: () => T): Promise<T> {
+    return cls.init(async () => {
+        cls.set("userId", userId);
+        return fn();
+    });
+}

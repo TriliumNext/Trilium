@@ -83,5 +83,5 @@ function serialize(transcript: Transcript) {
 }
 
 function inTransaction<T>(callback: () => T): T {
-    return cls.init(() => getSql().transactional(callback));
+    return cls.initAsSystem(() => getSql().transactional(callback));
 }

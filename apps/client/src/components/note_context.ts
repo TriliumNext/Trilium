@@ -1,5 +1,6 @@
 import type { CKTextEditor, TriliumVim } from "@triliumnext/ckeditor5";
 import type CodeMirror from "@triliumnext/codemirror";
+import type { CollabPeer } from "@triliumnext/commons";
 
 import type FNote from "../entities/fnote.js";
 import froca from "../services/froca.js";
@@ -119,6 +120,8 @@ export interface NoteContextDataMap {
     saveState: {
         state: SaveState;
     };
+    /** Published by the editor of the note: the other editors that have it open in a session. */
+    collaborators: CollabPeer[];
     /** Published by the shown text view of the note, for the highlight lines of the scroll rail. */
     scrollRailHighlights: ScrollRailLayer;
     /** Published by the find bar while a search has matches, for the scroll rail of the split. */

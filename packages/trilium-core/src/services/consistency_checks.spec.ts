@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { getContext } from "./context.js";
+import { getContext, isSystem } from "./context.js";
 import { getSql } from "./sql/index.js";
 import consistency_checks from "./consistency_checks.js";
 import eraseService from "./erase.js";
@@ -264,6 +264,36 @@ describe("Notes without a usable branch", () => {
             );
             expect(liveBranch).toBe("live_br");
         });
+    });
+});
+
+describe("Periodic consistency checks", () => {
+    it("run on their timers as the instance", async () => {
+        const setIntervalSpy = vi.spyOn(globalThis, "setInterval").mockReturnValue(0 as unknown as ReturnType<typeof setInterval>);
+        const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout").mockReturnValue(0 as unknown as ReturnType<typeof setTimeout>);
+        const scopes: boolean[] = [];
+        // Stops each run at its first read, so the checks themselves stay out of this test.
+        vi.spyOn(optionsService, "getOptionBool").mockImplementation(() => {
+            scopes.push(isSystem());
+            throw new Error("stop after reading the scope");
+        });
+        vi.spyOn(console, "log").mockImplementation(() => {});
+
+        try {
+            consistency_checks.startConsistencyChecks();
+            await sqlInit.dbReady;
+
+            const periodic = setIntervalSpy.mock.calls.find(([, delay]) => delay === 60 * 60 * 1000)?.[0];
+            const kickoff = setTimeoutSpy.mock.calls.find(([, delay]) => delay === 4 * 1000)?.[0];
+            expect(periodic).toBeTypeOf("function");
+            expect(kickoff).toBeTypeOf("function");
+            (periodic as () => void)();
+            (kickoff as () => void)();
+
+            expect(scopes).toEqual([ true, true ]);
+        } finally {
+            vi.restoreAllMocks();
+        }
     });
 });
 

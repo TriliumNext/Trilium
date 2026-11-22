@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import becca from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
-import { getContext } from "./context.js";
+import { getContext, isSystem } from "./context.js";
 import eraseService from "./erase.js";
 import noteService from "./notes.js";
 import optionService from "./options.js";
@@ -313,6 +313,12 @@ describe("erase service (real DB)", () => {
 
             const previousEraseAfter = optionService.getOption("eraseEntitiesAfterTimeInSeconds");
             getContext().init(() => optionService.setOption("eraseEntitiesAfterTimeInSeconds", "0"));
+            const scopes = new Map<string, boolean[]>();
+            const getOptionInt = optionService.getOptionInt.bind(optionService);
+            const optionSpy = vi.spyOn(optionService, "getOptionInt").mockImplementation((name, defaultValue) => {
+                scopes.set(name, [ ...(scopes.get(name) ?? []), isSystem() ]);
+                return getOptionInt(name, defaultValue);
+            });
             vi.useFakeTimers();
 
             try {
@@ -325,7 +331,12 @@ describe("erase service (real DB)", () => {
 
                 expect(rowCount("notes", "noteId", noteId)).toBe(0);
                 expect(rowCount("attachments", "attachmentId", attachment.attachmentId)).toBe(0);
+                // Both cleanups ran on their timers, as the instance.
+                expect(scopes.get("eraseEntitiesAfterTimeInSeconds")?.length).toBeGreaterThan(0);
+                expect(scopes.get("eraseUnusedAttachmentsAfterSeconds")?.length).toBeGreaterThan(0);
+                expect([ ...scopes.values() ].flat()).not.toContain(false);
             } finally {
+                optionSpy.mockRestore();
                 // Dropping the fake clock also discards the intervals, so nothing keeps running.
                 vi.useRealTimers();
                 getContext().init(() =>

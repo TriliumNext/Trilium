@@ -33,7 +33,9 @@ const state = vi.hoisted(() => ({
     mainWindow: null as unknown,
     allWindows: [] as unknown[],
     browserWindowAll: [] as unknown[],
-    showAndFocusWindow: vi.fn()
+    showAndFocusWindow: vi.fn(),
+    // whether each "today" lookup ran in a system scope
+    todayScopes: [] as boolean[]
 }));
 
 // `getTodayNote` returns a fake note used by the "today" menu item.
@@ -51,8 +53,14 @@ vi.mock("@triliumnext/core", async (importOriginal) => {
         },
         sql_init: { ...actual.sql_init, isDbInitialized: () => state.dbInitialized },
         options: { ...actual.options, getOptionBool: () => state.disableTray },
-        cls: { ...actual.cls, wrap: (fn: Handler) => fn },
-        date_notes: { ...actual.date_notes, getTodayNote: async () => todayNote }
+        cls: { ...actual.cls, wrapAsSystem: (fn: Handler) => (...args: unknown[]) => actual.cls.initAsSystem(() => fn(...args)) },
+        date_notes: {
+            ...actual.date_notes,
+            getTodayNote: async () => {
+                state.todayScopes.push(actual.cls.isSystem());
+                return todayNote;
+            }
+        }
     };
 });
 
@@ -472,12 +480,15 @@ describe("tray", () => {
                 "createNoteIntoInbox"
             );
 
-            // "today" uses cls.wrap(async ...) — the click returns a promise we await.
+            // "today" uses cls.wrapAsSystem(async ...) — the click returns a promise we await.
             const todayClick = findItem("tray.today")?.click as
                 | ((...args: never[]) => Promise<void>)
                 | undefined;
+            state.todayScopes.length = 0;
             await todayClick?.();
             expect(win.webContents.send).toHaveBeenCalledWith("openInSameTab", "today");
+            // The desktop app has no users, so its menu acts for the instance.
+            expect(state.todayScopes).toEqual([ true ]);
 
             // "close" (labelled "Quit Trilium") genuinely quits the app. It calls
             // app.quit() rather than closing windows so the close-to-tray

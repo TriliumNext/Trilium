@@ -29,6 +29,10 @@ const mockCls = {
         clsCalls.init++;
         return cb();
     }),
+    initAsSystem: vi.fn((cb: () => unknown) => {
+        clsCalls.init++;
+        return cb();
+    }),
     set: vi.fn((key: string, value: unknown) => clsCalls.set.push([key, value]))
 };
 
@@ -93,6 +97,9 @@ describe("createMcpServer", () => {
         expect(readExecute).toHaveBeenCalledWith({ foo: 1 });
         expect(mockSql.transactional).not.toHaveBeenCalled();
         expect(mockCls.set).toHaveBeenCalledWith("componentId", "mcp");
+        // An ETAPI token is not tied to a user, so the tool acts for the instance.
+        expect(mockCls.initAsSystem).toHaveBeenCalledTimes(1);
+        expect(mockCls.init).not.toHaveBeenCalled();
         expect(result).toEqual({ content: [{ type: "text", text: JSON.stringify({ ok: "read" }) }] });
     });
 

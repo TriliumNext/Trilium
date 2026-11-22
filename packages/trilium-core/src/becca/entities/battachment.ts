@@ -104,7 +104,7 @@ class BAttachment extends AbstractBeccaEntity<BAttachment> {
     }
 
     getNote(): BNote {
-        return this.becca.notes[this.ownerId];
+        return this.becca.allNotes[this.ownerId];
     }
 
     /** @returns true if the note has string content (not binary) */
@@ -238,8 +238,17 @@ class BAttachment extends AbstractBeccaEntity<BAttachment> {
         return formatDownloadTitle(this.title, type, this.mime);
     }
 
+    /** An attachment belongs to its note, or to the note of the revision that owns it. */
+    protected override getWriteAccessNoteId() {
+        if (this.ownerId in this.becca.allNotes) {
+            return this.ownerId;
+        }
+        return getSql().getValue<string | null>("SELECT noteId FROM revisions WHERE revisionId = ?", [ this.ownerId ])
+            ?? this.ownerId;
+    }
+
     override beforeSaving() {
-        if (this.becca.notes[this.ownerId]?.isVirtual) {
+        if (this.becca.allNotes[this.ownerId]?.isVirtual) {
             throw new ValidationError(`Cannot save an attachment of note '${this.ownerId}': virtual notes have no attachments.`);
         }
 

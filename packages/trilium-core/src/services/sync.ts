@@ -878,10 +878,10 @@ function getTotalPullCount() {
 
 function startSyncTimer() {
     becca_loader.beccaLoaded.then(() => {
-        setInterval(cls.wrap(sync), 60000);
+        setInterval(cls.wrapAsSystem(sync), 60000);
 
         // kickoff initial sync immediately
-        setTimeout(cls.wrap(sync), 5000);
+        setTimeout(cls.wrapAsSystem(sync), 5000);
 
         // called just so ws.setLastSyncedPush() is called
         getLastSyncedPush();

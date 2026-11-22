@@ -5,9 +5,11 @@ import sql from "../sql.js";
 import myScrypt from "./my_scrypt.js";
 import openIDEncryption from "./open_id_encryption.js";
 
-function clearUserData() {
+function clearEnrollment() {
     sql.transactional(() => {
-        sql.execute("DELETE FROM user_data");
+        sql.execute("DELETE FROM oauth_enrollment");
+        // Reset the admin user's name/email so saveUser() mutations don't bleed between tests.
+        sql.execute("UPDATE users SET username = 'admin', email = NULL WHERE isAdmin = 1 AND isDeleted = 0");
     });
 }
 
@@ -19,10 +21,10 @@ describe("open_id_encryption", () => {
     });
 
     beforeEach(() => {
-        clearUserData();
+        clearEnrollment();
     });
 
-    it("reports no saved identifier on an empty user_data table", () => {
+    it("reports no saved identifier on an empty oauth_enrollment table", () => {
         expect(openIDEncryption.isSubjectIdentifierSaved()).toBe(false);
     });
 
@@ -34,6 +36,14 @@ describe("open_id_encryption", () => {
 
         // a second save short-circuits because a user already exists
         expect(openIDEncryption.saveUser("other", "Bob", "bob@example.com")).toBe(false);
+    });
+
+    it("saveUser falls back to the default username and no email when the provider gives neither", () => {
+        sql.execute("UPDATE users SET username = 'someone', email = 'x@example.com' WHERE isAdmin = 1 AND isDeleted = 0");
+
+        expect(openIDEncryption.saveUser("subject-123", "", "")).toBe(true);
+        expect(sql.getRow("SELECT username, email FROM users WHERE isAdmin = 1 AND isDeleted = 0"))
+            .toEqual({ username: "admin", email: null });
     });
 
     it("verifySubjectIdentifier matches only the enrolled subject identifier", () => {
@@ -51,7 +61,7 @@ describe("open_id_encryption", () => {
     it("verifySubjectIdentifier rejects any subject when the stored hash has a different length", () => {
         openIDEncryption.saveUser("subject-123", "Alice", "alice@example.com");
         sql.transactional(() => {
-            sql.execute("UPDATE user_data SET userIDVerificationHash = 'c2hvcnQ='");
+            sql.execute("UPDATE oauth_enrollment SET userIDVerificationHash = 'c2hvcnQ='");
         });
 
         expect(openIDEncryption.verifySubjectIdentifier("subject-123")).toBe(false);
@@ -60,7 +70,7 @@ describe("open_id_encryption", () => {
     it("verifySubjectIdentifier rejects every subject when the enrolled row lacks a hash or salt", () => {
         openIDEncryption.saveUser("subject-123", "Alice", "alice@example.com");
         sql.transactional(() => {
-            sql.execute("UPDATE user_data SET salt = ''");
+            sql.execute("UPDATE oauth_enrollment SET salt = ''");
         });
 
         expect(openIDEncryption.verifySubjectIdentifier("subject-123")).toBe(false);

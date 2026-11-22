@@ -245,7 +245,7 @@ function updateTrayMenu() {
             label: t("tray.today"),
             type: "normal",
             icon: getIconPath("today"),
-            click: cls.wrap(async () => openInSameTab(await date_notes.getTodayNote()))
+            click: cls.wrapAsSystem(async () => openInSameTab(await date_notes.getTodayNote()))
         },
         {
             label: t("tray.bookmarks"),

@@ -3,17 +3,19 @@ import type {
     NoteReferencesResponse, NoteSaveBase, SaveConflictResponse, SavedAttachmentRow,
     SaveNoteBlocksResponse, SaveNoteDataRequest, SaveNoteDataResponse
 } from "@triliumnext/commons";
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import becca from "../../becca/becca";
 import { load } from "../../becca/becca_loader";
-import { getContext } from "../../services/context";
+import { getContext, initAsSystem } from "../../services/context";
 import eraseService from "../../services/erase";
 import noteService from "../../services/notes";
 import {
     readContent, type ReferenceProvider, registerReferenceProvider, unregisterReferenceProvider
 } from "../../services/references/index";
 import { getSql } from "../../services/sql/index";
+import userHomes from "../../services/user_homes";
+import userService from "../../services/user_service";
 import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../../services/virtual_notes";
 import ws from "../../services/ws";
 import { createTextNote } from "../../test/api_fixtures";
@@ -172,6 +174,16 @@ describe("Notes API (core)", () => {
             });
             expect(res.status).toBe(200);
             expect(res.body.title).toBe("After");
+        });
+
+        it("refuses to rename a user's home, which keeps its user's name", async () => {
+            const userId = initAsSystem(() => userService.createUser("title-home-spec", null, false));
+            onTestFinished(() => initAsSystem(() => userService.deleteUser(userId)));
+            const home = initAsSystem(() => userHomes.ensureUserHome(userId, "title-home-spec"));
+
+            const res = await api.put(`/api/notes/${home.noteId}/title`, { body: { title: "Renamed" } });
+            expect(res.status).toBe(400);
+            expect(initAsSystem(() => becca.getNoteOrThrow(home.noteId).title)).toBe("title-home-spec");
         });
 
         it("updates note content", async () => {

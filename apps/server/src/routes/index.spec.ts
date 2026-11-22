@@ -61,6 +61,11 @@ vi.mock("@triliumnext/core", () => ({
     password: { isPasswordSet: () => state.current.isPasswordSet },
     sql_init: { isDbInitialized: () => state.current.isDbInitialized },
     task_states: { generateTaskStateCss: () => "" },
+    user_homes: { getTopLevelHomeNoteId: (userId: string) => `home_${userId}` },
+    user_service: {
+        hasUsersWithOwnPassword: () => false,
+        getSignedInUser: (userId?: string) => (userId === "alice" ? { username: "alice", isAdmin: false, avatarHue: 210 } : undefined)
+    },
     getLog: () => ({ info: (message: string) => state.current.logInfo.push(message), error: () => {} })
 }));
 
@@ -72,6 +77,7 @@ afterEach(() => {
 
 function makeReq(overrides: {
     loggedIn?: boolean;
+    userId?: string;
     internal?: boolean;
     query?: Record<string, unknown>;
     cookies?: Record<string, string>;
@@ -79,7 +85,10 @@ function makeReq(overrides: {
     session?: Record<string, unknown>;
 } = {}): Request {
     const req = {
-        session: Object.assign(overrides.session ?? {}, { loggedIn: overrides.loggedIn ?? false }),
+        session: Object.assign(overrides.session ?? {}, {
+            loggedIn: overrides.loggedIn ?? false,
+            userId: overrides.userId
+        }),
         query: overrides.query ?? {},
         headers: overrides.userAgent ? { "user-agent": overrides.userAgent } : {},
         cookies: overrides.cookies ?? {}
@@ -114,10 +123,29 @@ describe("bootstrap auth gating (desktop build, #10589)", () => {
 
     it("treats a browser as logged in once it has a real session", () => {
         const { res, body } = makeRes();
-        bootstrap(makeReq({ loggedIn: true, internal: false }), res);
+        bootstrap(makeReq({ loggedIn: true, userId: "alice", internal: false }), res);
 
         expect(body().loggedIn).toBe(true);
         expect(body().csrfToken).toBe("csrf-test-token");
+    });
+
+    it("serves the login screen to a logged-in session with no user", () => {
+        const { res, body } = makeRes();
+        bootstrap(makeReq({ loggedIn: true, internal: false }), res);
+
+        expect(body().loggedIn).toBe(false);
+        expect(body().login).toBeTruthy();
+        expect(body().csrfToken).toBeUndefined();
+    });
+
+    it("names the signed-in user for the global menu, and nobody without a session user", () => {
+        const signedIn = makeRes();
+        bootstrap(makeReq({ loggedIn: true, userId: "alice" }), signedIn.res);
+        expect(signedIn.body().currentUser).toEqual({ username: "alice", isAdmin: false, avatarHue: 210, homeNoteId: "home_alice" });
+
+        const renderer = makeRes();
+        bootstrap(makeReq({ loggedIn: false, internal: true }), renderer.res);
+        expect(renderer.body().currentUser).toBeUndefined();
     });
 
     it("bypasses the login screen for the trusted desktop renderer with no web session", () => {
@@ -144,7 +172,7 @@ describe("bootstrap payloads", () => {
         expect(login.body().fontCss).toBeUndefined();
 
         const signedIn = makeRes();
-        bootstrap(makeReq({ loggedIn: true }), signedIn.res);
+        bootstrap(makeReq({ loggedIn: true, userId: "alice" }), signedIn.res);
         expect(signedIn.body().fontCss).toBe("html:root {}");
 
         state.current.isPasswordSet = false;
@@ -219,20 +247,20 @@ describe("bootstrap payloads", () => {
             csrfInitialized: true, ssoJustEnrolled: true, ssoConnectionFailed: "TLS rejected"
         };
         const first = makeRes();
-        bootstrap(makeReq({ loggedIn: true, session }), first.res);
+        bootstrap(makeReq({ loggedIn: true, userId: "alice", session }), first.res);
         expect(first.body()).toMatchObject({ oauthJustEnrolled: true, oauthConnectionFailed: "TLS rejected" });
-        expect(session).toEqual({ loggedIn: true, csrfInitialized: true });
+        expect(session).toEqual({ loggedIn: true, userId: "alice", csrfInitialized: true });
 
         const second = makeRes();
-        bootstrap(makeReq({ loggedIn: true, session }), second.res);
+        bootstrap(makeReq({ loggedIn: true, userId: "alice", session }), second.res);
         expect(second.body()).toMatchObject({ oauthJustEnrolled: false, oauthConnectionFailed: undefined });
     });
 
     it("logs a failed CSRF token generation", () => {
         state.current.csrfToken = undefined;
-        bootstrap(makeReq({ loggedIn: true }), makeRes().res);
+        bootstrap(makeReq({ loggedIn: true, userId: "alice" }), makeRes().res);
         state.current.csrfToken = "t";
-        bootstrap(makeReq({ loggedIn: true }), makeRes().res);
+        bootstrap(makeReq({ loggedIn: true, userId: "alice" }), makeRes().res);
 
         expect(state.current.logInfo).toEqual([ "CSRF token generation: Failed", "CSRF token generation: Successful" ]);
     });
@@ -277,9 +305,9 @@ describe("bootstrap payloads", () => {
             return body().isMainWindow;
         };
 
-        expect(isMainWindow(makeReq({ loggedIn: true }))).toBe(true);
-        expect(isMainWindow(makeReq({ loggedIn: true, query: { extraWindow: "1" } }))).toBe(false);
-        expect(isMainWindow(makeReq({ loggedIn: true, query: { extraWindow: "1", mobile: "" } }))).toBe(true);
+        expect(isMainWindow(makeReq({ loggedIn: true, userId: "alice" }))).toBe(true);
+        expect(isMainWindow(makeReq({ loggedIn: true, userId: "alice", query: { extraWindow: "1" } }))).toBe(false);
+        expect(isMainWindow(makeReq({ loggedIn: true, userId: "alice", query: { extraWindow: "1", mobile: "" } }))).toBe(true);
     });
 });
 
@@ -328,14 +356,14 @@ describe("getView view resolution (desktop build, #10720)", () => {
 describe("bootstrap startup data", () => {
     it("hands a signed-in client its options, and the CPU check once it is known", () => {
         const signedIn = makeRes();
-        bootstrap(makeReq({ loggedIn: true }), signedIn.res);
+        bootstrap(makeReq({ loggedIn: true, userId: "alice" }), signedIn.res);
         expect(signedIn.body().options).toEqual({ theme: "next" });
         // Unknown while the check is still running, which the client then asks `/api/system-checks` for.
         expect(signedIn.body().isCpuArchMismatch).toBeUndefined();
 
         state.current.cpuArchMismatch = true;
         const checked = makeRes();
-        bootstrap(makeReq({ loggedIn: true }), checked.res);
+        bootstrap(makeReq({ loggedIn: true, userId: "alice" }), checked.res);
         expect(checked.body().isCpuArchMismatch).toBe(true);
 
         // The login screen has no session to read them with.

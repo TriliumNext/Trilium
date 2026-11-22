@@ -11,7 +11,8 @@ function register(router: Router) {
         bindEmitter(req);
         bindEmitter(res);
 
-        cls.init(() => routes.handleCustomRequest(
+        // A `#customRequestHandler` answers without authentication, so it acts for the instance.
+        cls.initAsSystem(() => routes.handleCustomRequest(
             joinWildcardPath(req), req as unknown as CoreRequest, res, isScriptingEnabled
         ));
     });

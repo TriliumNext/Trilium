@@ -36,11 +36,7 @@ Contributions to translations are welcome.
 
 ## Multi-user support
 
-Common request is to allow multiple users collaborate, share notes etc. So far I'm resisting this because of these reasons:
-
-*   it's a huge feature, or rather a Pandora's box of collaboration features like user management, permissions, conflict resolution, real-time editing of a note by multiple people etc. This would be a huge amount of work. Trilium Notes is project made mostly by one person in free time and that's unlikely to change in the future.
-*   given its size it would probably pivot the attention away from my main focus which is a personal note-taking
-*   the assumption that only single person has access to the app simplifies many things, or just outright makes them possible. In multi-user app, our [scripting](Scripting.md)support would be a XSS security hole, while with the single user assumption it's an endless customizable tool.
+A Trilium server can be used by several people, each signing in with their own account, and they can give each other access to notes. The feature is under development and has limitations, including around scripting, which can affect the whole server. See <a class="reference-link" href="Installation%20%26%20Setup/Server%20Installation/Multiple%20users.md">Multiple users</a>.
 
 ## How to open multiple documents in one Trilium instance
 

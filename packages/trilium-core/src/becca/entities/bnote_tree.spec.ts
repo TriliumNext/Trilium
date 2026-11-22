@@ -1,11 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import becca from "../becca.js";
+import { SHARED_WITH_ME_NOTE_ID } from "../note_visibility.js";
 import attributeService from "../../services/attributes.js";
 import cloningService from "../../services/cloning.js";
-import { getContext } from "../../services/context.js";
+import { getContext, initAsSystem } from "../../services/context.js";
 import noteService from "../../services/notes.js";
 import searchService from "../../services/search/services/search.js";
+import userHomes from "../../services/user_homes.js";
+import userService from "../../services/user_service.js";
 import { buildNote } from "../../test/becca_easy_mocking.js";
 import type BBranch from "./bbranch.js";
 import type BNote from "./bnote.js";
@@ -549,5 +552,37 @@ describe("BNote tree / note-path / subtree methods (real DB)", () => {
             expect(emptyParent.getVisibleChildBranches().length).toBe(0);
             expect(emptyParent.hasVisibleChildren()).toBe(false);
         });
+    });
+});
+
+describe("BNote deletion (real DB)", () => {
+    it("leaves a deleted note in none of the Becca's lists of notes", () => {
+        const { note } = createNote("root");
+        getContext().init(() => note.deleteNote());
+
+        expect(Object.values(becca.allNotes)).not.toContain(note);
+    });
+});
+
+/** Standalone has no users, so every scope there acts for the instance and nothing is filtered. */
+const isBrowserRuntime = typeof self !== "undefined";
+
+describe.skipIf(isBrowserRuntime)("BNote deletion by a member (real DB)", () => {
+    it("drops the deleted note from the member's tree", () => {
+        const memberId = initAsSystem(() => userService.createUser(`deleting-member-${Date.now()}`, null, false));
+        const home = initAsSystem(() => userHomes.ensureUserHome(memberId, "deleting-member"));
+
+        const { rootChildren, sharedWithMe } = getContext().init(() => {
+            getContext().set("userId", memberId);
+            const { note } = noteService.createNewNote({ parentNoteId: home.noteId, title: "deleted by member", content: "", type: "text" });
+            note.deleteNote();
+            return {
+                rootChildren: becca.getNoteOrThrow("root").children.map((child) => child?.noteId),
+                sharedWithMe: becca.getNote(SHARED_WITH_ME_NOTE_ID)
+            };
+        });
+
+        expect(rootChildren).toEqual([ home.noteId, "_hidden" ]);
+        expect(sharedWithMe).toBeNull();
     });
 });

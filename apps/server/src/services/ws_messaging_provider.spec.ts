@@ -117,9 +117,16 @@ describe("WebSocketMessagingProvider", () => {
         it("allows a logged-in session", () => {
             const { server } = init();
             const done = vi.fn();
-            server.options.verifyClient({ req: { session: { loggedIn: true } } }, done);
+            server.options.verifyClient({ req: { session: { loggedIn: true, userId: "u" } } }, done);
             expect(done).toHaveBeenCalledWith(true);
             expect(getLogMock.error).not.toHaveBeenCalled();
+        });
+
+        it("rejects a logged-in session with no user", () => {
+            const { server } = init();
+            const done = vi.fn();
+            server.options.verifyClient({ req: { session: { loggedIn: true } } }, done);
+            expect(done).toHaveBeenCalledWith(false);
         });
 
         it("allows when authentication is disabled", () => {
@@ -165,6 +172,24 @@ describe("WebSocketMessagingProvider", () => {
 
             ws.emit("close");
             expect(provider.sendMessageToClient("client-id", { type: "ping" } as any)).toBe(false);
+        });
+
+        it("knows the user of a connection, and tells once when the connection goes away", () => {
+            const { server } = init();
+            const onDisconnected = vi.fn();
+            provider.onClientDisconnected(onDisconnected);
+
+            const ws = makeSocket();
+            server.emit("connection", ws, { session: { userId: "user-1" } });
+            expect(provider.getClientUserId("client-id")).toBe("user-1");
+            expect(provider.getClientUserId("unknown")).toBeUndefined();
+
+            // A connection that fails also closes, which must not count twice.
+            vi.spyOn(console, "error").mockImplementation(() => undefined);
+            ws.emit("error", new Error("boom"));
+            ws.emit("close");
+            expect(onDisconnected).toHaveBeenCalledExactlyOnceWith("client-id");
+            expect(provider.getClientUserId("client-id")).toBeUndefined();
         });
 
         it("ignores incoming messages when no handler is registered", async () => {
@@ -271,6 +296,51 @@ describe("WebSocketMessagingProvider", () => {
 
         it("is a no-op when the server is not initialized", () => {
             expect(() => provider.disconnectAllClients("password changed")).not.toThrow();
+        });
+    });
+
+    describe("per-user delivery", () => {
+        function connectUsers() {
+            const { server } = init();
+            const sockets = {
+                alice: makeSocket(OPEN),
+                aliceClosed: makeSocket(CLOSED),
+                bob: makeSocket(OPEN),
+                anonymous: makeSocket(OPEN)
+            };
+            const requests: Record<keyof typeof sockets, unknown> = {
+                alice: { session: { userId: "alice" } },
+                aliceClosed: { session: { userId: "alice" } },
+                bob: { session: { userId: "bob" } },
+                anonymous: {}
+            };
+            for (const name of Object.keys(sockets) as (keyof typeof sockets)[]) {
+                randomStringMock.mockReturnValueOnce(name);
+                server.emit("connection", sockets[name], requests[name]);
+            }
+            return sockets;
+        }
+
+        it("sendMessageToUserClients sends only to the user's open connections", () => {
+            const sockets = connectUsers();
+
+            provider.sendMessageToUserClients("alice", { type: "ping" } as WebSocketMessage);
+
+            expect(sockets.alice.sent.map((data) => JSON.parse(data))).toEqual([ { type: "ping" } ]);
+            expect([ sockets.aliceClosed.sent, sockets.bob.sent, sockets.anonymous.sent ]).toEqual([ [], [], [] ]);
+        });
+
+        it("disconnectUserClients asks the user's open connections to reload and closes all of theirs", () => {
+            const sockets = connectUsers();
+
+            provider.disconnectUserClients("alice", "user deleted");
+
+            expect(sockets.alice.sent.map((data) => JSON.parse(data))).toEqual([
+                { type: "reload-frontend", reason: "user deleted" }
+            ]);
+            expect([ sockets.aliceClosed.sent, sockets.bob.sent, sockets.anonymous.sent ]).toEqual([ [], [], [] ]);
+            expect([ sockets.alice.closed, sockets.aliceClosed.closed ]).toEqual([ true, true ]);
+            expect([ sockets.bob.closed, sockets.anonymous.closed ]).toEqual([ false, false ]);
         });
     });
 

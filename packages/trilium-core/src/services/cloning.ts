@@ -56,8 +56,10 @@ function cloneNoteToBranch(noteId: string, parentBranchId: string, prefix?: stri
 
     const ret = cloneNoteToParentNote(noteId, parentBranch.noteId, prefix);
 
-    parentBranch.isExpanded = true; // the new target should be expanded, so it immediately shows up to the user
-    parentBranch.save();
+    if (!parentBranch.isVirtual) {
+        parentBranch.isExpanded = true; // the new target should be expanded, so it immediately shows up to the user
+        parentBranch.save();
+    }
 
     return ret;
 }

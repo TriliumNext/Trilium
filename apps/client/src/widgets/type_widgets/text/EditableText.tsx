@@ -21,6 +21,9 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import appContext from "../../../components/app_context";
 import { consumeBlockReference } from "../../../services/block_reference";
 import { consumeBookmark } from "../../../services/bookmark_jump";
+import {
+    isCollaboratingOn, isSavedByAnotherEditor, startCollaboration, stopCollaboration
+} from "../../../services/collaboration";
 import dialog from "../../../services/dialog";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
@@ -131,6 +134,9 @@ export default function EditableText({
                 // The editor is still being built, so there is nothing to save.
                 return;
             }
+            if (isSavedByAnotherEditor(editor.plugins.get("Collaboration"))) {
+                return;
+            }
 
             inlineSourceSaves.flush();
             const attachments = attachmentSaves.collect();
@@ -149,9 +155,23 @@ export default function EditableText({
             if (editor && note) {
                 setEditorNoteId(editor, note.noteId);
             }
+            const collaboration = editor?.plugins.get("Collaboration");
+            if (editor && note && collaboration && isCollaboratingOn(collaboration, note.noteId)) {
+                // The session holds the content, and what its saver saved trails it. The saver
+                // itself only receives what was written past the session, such as a restored
+                // revision, and sets it as a local change, which the session sends to everyone.
+                if (!isSavedByAnotherEditor(collaboration) && getNoteData(editor) !== newContent) {
+                    editor.setData(newContent);
+                }
+                return;
+            }
+            if (collaboration) {
+                stopCollaboration(collaboration);
+            }
             editor?.setData(newContent);
             if (editor && note) {
                 applyPendingAttachmentChanges(editor, note.noteId, pendingAttachmentChangesRef);
+                collaborate(editor);
             }
             if (editor) {
                 onContentShown?.();
@@ -175,6 +195,16 @@ export default function EditableText({
     });
     const templates = useTemplates();
     const [ editorRebuildKey, setEditorRebuildKey ] = useState(0);
+
+    /** Edits the whole note together with the other editors that have it open. */
+    function collaborate(editor: CKTextEditor) {
+        if (block === undefined) {
+            startCollaboration(editor.plugins.get("Collaboration"), note, {
+                onBecomeSaver: () => spacedUpdate.scheduleUpdate(),
+                onPeersChange: (peers) => noteContext?.setContextData("collaborators", peers)
+            });
+        }
+    }
 
     /** Saves what the model holds, then builds a new editor from the saved content. */
     async function reloadEditor() {
@@ -587,6 +617,7 @@ export default function EditableText({
                     }
                     editor.setData(contentRef.current);
                     if (contentNoteIdRef.current) {
+                        collaborate(editor);
                         onContentShown?.();
                     }
                     parentComponent?.triggerEvent("textEditorRefreshed", { ntxId, editor });

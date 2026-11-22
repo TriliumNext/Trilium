@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import BackupService, { getBackup, initBackup } from "./backup.js";
 import type { BackupOptionsService } from "./backup.js";
+import { isSystem } from "./context.js";
 import dateUtils from "./utils/date.js";
 
 /**
@@ -236,16 +237,23 @@ describe("BackupService.regularBackup", () => {
         errorSpy.mockRestore();
     });
 
-    it("runs the scheduled backups inside an execution context", async () => {
+    it("runs the scheduled backups inside a system scope", async () => {
         const options = new FakeOptions({
             dailyBackupEnabled: "true",
             lastDailyBackupDate: LONG_AGO
         });
         const service = new TestBackupService(options);
+        let ranAsSystem: boolean | undefined;
+        const backupNow = service.backupNow.bind(service);
+        vi.spyOn(service, "backupNow").mockImplementation((name) => {
+            ranAsSystem = isSystem();
+            return backupNow(name);
+        });
 
         service.regularBackup();
         // runScheduledBackups is async and fire-and-forget; let it settle.
         await vi.waitFor(() => expect(service.created).toContain("daily"));
+        expect(ranAsSystem).toBe(true);
 
         expect(errorSpy).not.toHaveBeenCalled();
     });
