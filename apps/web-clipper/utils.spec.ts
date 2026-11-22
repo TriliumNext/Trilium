@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
 
 import {
-    createLink, describeError, extractPage, getPageLocationOrigin, isPdfTab, OPTIONAL_REQUEST_TIMEOUT_MS,
-    randomString
+    createLink, describeError, extractPage, findReservedHeader, getPageLocationOrigin, isPdfTab,
+    OPTIONAL_REQUEST_TIMEOUT_MS, parseCustomHeaders, randomString
 } from "./utils";
 
 describe("randomString", () => {
@@ -157,6 +157,33 @@ describe("isPdfTab", () => {
         expect(await isPdfTab({ url: TAB.url })).toBe(false);
         expect(executeScript).not.toHaveBeenCalled();
         expect(fetchMock).not.toHaveBeenCalled();
+    });
+});
+
+describe("parseCustomHeaders", () => {
+    it("parses Header: Value lines, deduplicating case-insensitively and ignoring reserved headers", () => {
+        expect(parseCustomHeaders()).toEqual({});
+        expect(parseCustomHeaders([
+            "X-Auth-Token: a:b:c",
+            "",
+            " : ignored",
+            "x-auth-token: latest",
+            "authorization: Basic secret",
+            "Content-Type: text/plain",
+            "ACCEPT: text/html",
+            "Trilium-Local-Now-Datetime: 2026-01-01",
+            "CF-Access-Client-Id: id1"
+        ].join("\r\n"))).toEqual({
+            "x-auth-token": "latest",
+            "CF-Access-Client-Id": "id1"
+        });
+    });
+
+    it("finds reserved headers regardless of casing", () => {
+        expect(findReservedHeader("")).toBeUndefined();
+        expect(findReservedHeader("X-Custom: ok")).toBeUndefined();
+        expect(findReservedHeader("X-Custom: ok\nauthorization: Basic x")).toBe("authorization");
+        expect(findReservedHeader("cOnTeNt-TyPe: text/plain")).toBe("cOnTeNt-TyPe");
     });
 });
 
