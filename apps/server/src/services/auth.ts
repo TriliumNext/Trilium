@@ -140,12 +140,13 @@ function readSetupAuthToken(req: Request): string | undefined {
 }
 
 /**
- * Whether a request without a user acts for the instance itself: the desktop app's own renderer, an
- * instance without authentication, an instance still being set up, or a sync peer.
+ * Whether a request without a user acts for the instance itself: the desktop app's own renderer, a
+ * token client (`markAsTokenClientRequest()`), an instance without authentication, an instance
+ * still being set up, or a sync peer.
  */
 function isSystemRequest(req: Request): boolean {
-    return isInternalElectronRequest(req) || noAuthentication || !!req.session?.isSyncPeer
-        || mayPassAsUninitialized(req);
+    return isInternalElectronRequest(req) || isTokenClientRequest(req) || noAuthentication
+        || !!req.session?.isSyncPeer || mayPassAsUninitialized(req);
 }
 
 /**
@@ -252,6 +253,7 @@ function checkSetupAuth(req: Request, res: Response, next: NextFunction) {
 
 function checkEtapiToken(req: Request, res: Response, next: NextFunction) {
     if (etapiTokenService.isValidAuthHeader(req.headers.authorization)) {
+        markAsTokenClientRequest(req);
         next();
     } else {
         reject(req, res, "Token not found");
@@ -353,3 +355,19 @@ export default {
     checkCredentials,
     isSystemRequest
 };
+
+/** Keyed by a symbol so that no header or body a client sends can set it. */
+const TOKEN_CLIENT_REQUEST = Symbol("trilium-token-client-request");
+
+/**
+ * Marks a request from a client that authenticates for the whole instance rather than as a user:
+ * the clipper or the sender with an ETAPI token, or the desktop clipper on this computer. An ETAPI
+ * token is not tied to a user yet, so such a request runs as a system scope, as ETAPI does.
+ */
+export function markAsTokenClientRequest(req: Request) {
+    (req as unknown as Record<symbol, unknown>)[TOKEN_CLIENT_REQUEST] = true;
+}
+
+function isTokenClientRequest(req: Request) {
+    return (req as unknown as Record<symbol, unknown>)[TOKEN_CLIENT_REQUEST] === true;
+}
