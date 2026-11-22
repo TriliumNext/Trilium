@@ -4,6 +4,7 @@ import becca from "../../becca/becca.js";
 import type { Request } from "../../http_interface";
 import type { RecentChangeRow } from "@triliumnext/commons";
 import { ValidationError } from "../../errors.js";
+import { getUserId } from "../../services/context.js";
 import { getSql } from "../../services/sql/index.js";
 
 function getRecentChanges(req: Request<{ ancestorNoteId: string }, { deletedOnly?: string }>) {
@@ -13,6 +14,7 @@ function getRecentChanges(req: Request<{ ancestorNoteId: string }, { deletedOnly
     let recentChanges: RecentChangeRow[] = [];
 
     const sql = getSql();
+    const isListed = createChangeFilter(ancestorNoteId);
 
     // Revisions are individual change events. The deleted-notes view lists each note once (at its
     // deletion), so revisions (and the per-note creation point below) are only collected for the
@@ -32,14 +34,7 @@ function getRecentChanges(req: Request<{ ancestorNoteId: string }, { deletedOnly
                 revisions
                 JOIN notes USING(noteId)`);
 
-        for (const revisionRow of revisionRows) {
-            const note = becca.getNote(revisionRow.noteId);
-
-            // for deleted notes, the becca note is null, and it's not possible to (easily) determine if it belongs to a subtree
-            if (ancestorNoteId === "root" || note?.hasAncestor(ancestorNoteId)) {
-                recentChanges.push(revisionRow);
-            }
-        }
+        recentChanges.push(...revisionRows.filter(isListed));
     }
 
     // Date points from the notes table:
@@ -80,14 +75,7 @@ function getRecentChanges(req: Request<{ ancestorNoteId: string }, { deletedOnly
             FROM notes
             WHERE notes.isDeleted = 1`);
 
-    for (const noteRow of noteRows) {
-        const note = becca.getNote(noteRow.noteId);
-
-        // for deleted notes, the becca note is null, and it's not possible to (easily) determine if it belongs to a subtree
-        if (ancestorNoteId === "root" || note?.hasAncestor(ancestorNoteId)) {
-            recentChanges.push(noteRow);
-        }
-    }
+    recentChanges.push(...noteRows.filter(isListed));
 
     recentChanges.sort((a, b) => (a.utcDate > b.utcDate ? -1 : 1));
 
@@ -114,6 +102,28 @@ function getRecentChanges(req: Request<{ ancestorNoteId: string }, { deletedOnly
     }
 
     return recentChanges;
+}
+
+/**
+ * Decides which rows of the ancestor's recent changes the current scope lists. A deleted note has
+ * left the Becca, so `hasAncestor()` cannot place it in a subtree and the member's view cannot
+ * see it: only the "root" list holds deleted notes, and a member sees only the ones they own.
+ */
+function createChangeFilter(ancestorNoteId: string) {
+    const ownDeletedNoteIds = becca.getView()
+        ? new Set(getSql().getColumn<string>(
+            "SELECT noteId FROM notes WHERE isDeleted = 1 AND ownerId = ?", [ getUserId() ]))
+        : null;
+
+    return (row: RecentChangeRow) => {
+        if (row.current_isDeleted) {
+            return ancestorNoteId === "root"
+                && (!ownDeletedNoteIds || ownDeletedNoteIds.has(row.noteId));
+        }
+
+        const note = becca.getNote(row.noteId);
+        return !!note && (ancestorNoteId === "root" || note.hasAncestor(ancestorNoteId));
+    };
 }
 
 /** Returns the IDs of the most recently modified live notes under the ancestor, newest first. */

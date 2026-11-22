@@ -2,8 +2,12 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import type { RecentChangeRow } from "@triliumnext/commons";
 
+import becca from "../../becca/becca";
+import { getContext } from "../../services/context";
+import permissionService from "../../services/permission_service";
 import protectedSessionService from "../../services/protected_session";
 import { getSql } from "../../services/sql/index";
+import userService from "../../services/user_service";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
 
@@ -243,5 +247,56 @@ describe("Recent changes API (core)", () => {
             expect(entry?.title).toBe("[protected]");
             expect(entry?.current_title).toBe("[protected]");
         });
+    });
+});
+
+const isBrowserRuntime = typeof self !== "undefined";
+
+describe.skipIf(isBrowserRuntime)("Recent changes API (core) for a member", () => {
+    let memberId: string;
+    let secretId: string;
+    let sharedId: string;
+    let deletedSecretId: string;
+    let deletedOwnId: string;
+
+    beforeAll(async () => {
+        api = CoreApiTester.build();
+        const create = async (title: string) => (await createTextNote(api, { title })).noteId;
+        secretId = await create("recent member secret");
+        sharedId = await create("recent member shared");
+        deletedSecretId = await create("recent member deleted secret");
+        deletedOwnId = await create("recent member deleted own");
+        for (const noteId of [ deletedSecretId, deletedOwnId ]) {
+            const del = await api.delete(`/api/notes/${noteId}`, {
+                query: { taskId: `recent-member-${noteId}`, last: "true" }
+            });
+            expect(del.status).toBe(204);
+        }
+
+        memberId = getContext().init(() => {
+            becca.getNoteOrThrow(secretId).saveRevision();
+            becca.getNoteOrThrow(sharedId).saveRevision();
+            const userId = userService.createUser(`recent-member-${Date.now()}`, null, false);
+            permissionService.setUserAccess(sharedId, userId, false);
+            return userId;
+        });
+        getSql().execute("UPDATE notes SET ownerId = ? WHERE noteId = ?",
+            [ memberId, deletedOwnId ]);
+    });
+
+    it("lists only the changes of notes the member can see", async () => {
+        const session = { userId: memberId };
+        const changes = await api.get<RecentChangeRow[]>("/api/recent-changes/root", { session });
+        expect(changes.status).toBe(200);
+        const noteIds = changes.body.map((change) => change.noteId);
+        expect(noteIds.filter((noteId) => noteId === sharedId).length).toBeGreaterThan(1);
+        expect(noteIds).toContain(deletedOwnId);
+        expect(noteIds).not.toContain(secretId);
+        expect(noteIds).not.toContain(deletedSecretId);
+
+        const deleted = await api.get<RecentChangeRow[]>("/api/recent-changes/root", {
+            query: { deletedOnly: "true" }, session
+        });
+        expect(deleted.body.map((change) => change.noteId)).toEqual([ deletedOwnId ]);
     });
 });
