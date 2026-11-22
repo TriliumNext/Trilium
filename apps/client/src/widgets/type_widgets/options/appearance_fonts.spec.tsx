@@ -82,7 +82,15 @@ vi.mock("../../react/hooks/tree", async (importOriginal) => ({
     useNoteTitle: (noteId: string | undefined) => mocks.userFonts.find((font) => font.noteId === noteId)?.title
 }));
 
+import { buildNote } from "../../../test/easy-froca";
 import Fonts from "./appearance_fonts";
+
+// The tree preview shows the first notes under the root, which froca serves without the server.
+buildNote({
+    id: "root",
+    title: "root",
+    children: [ { title: "Projects", children: [ { title: "Roadmap" } ] } ]
+});
 
 let host: HTMLElement;
 
