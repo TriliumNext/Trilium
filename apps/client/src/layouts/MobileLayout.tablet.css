@@ -85,9 +85,16 @@
     }
 
     body.mobile {
+        .modal {
+            padding-block: var(--safe-area-inset-top, env(safe-area-inset-top))
+                var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
+        }
+
         .modal-dialog {
-            margin: var(--bs-modal-margin);
+            /* `style.css` centers a mobile dialog with `left` and `transform`. */
+            margin: var(--bs-modal-margin) 0;
             max-width: 80%;
+            max-height: calc(100% - 2 * var(--bs-modal-margin));
         }
 
         .modal-content {

@@ -1,8 +1,8 @@
-body.mobile .revisions-dialog {
-    .modal-dialog {
-        height: 95vh;
-    }
+body.mobile:not(.tablet) .revisions-dialog .modal-dialog {
+    height: 95vh;
+}
 
+body.mobile .revisions-dialog {
     .modal-content {
         flex: 1;
         min-height: 0;
