@@ -5,7 +5,7 @@
         background-color: var(--launcher-pane-background-color);
     }
 
-    body.mobile #mobile-rest-container > :is(#launcher-pane, #mobile-sidebar-wrapper, #detail-container) {
+    body.mobile #mobile-rest-container > :is(#launcher-pane, #mobile-sidebar-wrapper, #mobile-rest-pane) {
         padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
     }
 
@@ -58,12 +58,19 @@
         display: none !important;
     }
 
-    #mobile-rest-container > #mobile-sidebar-wrapper.left-pane-hidden ~ #detail-container {
+    #mobile-rest-container > #mobile-sidebar-wrapper.left-pane-hidden ~ #mobile-rest-pane {
         width: 100%;
     }
 
     #mobile-rest-container {
         background-color: var(--root-background);
+    }
+
+    #mobile-rest-pane {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        min-width: 0;
     }
 
     #detail-container {

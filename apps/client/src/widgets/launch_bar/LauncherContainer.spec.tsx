@@ -329,7 +329,7 @@ describe("LauncherContainer on a tablet", () => {
         options.set("aiEnabled", "false");
     });
 
-    it("shows the desktop's launchers, those marked desktop-only among them, after a fixed tab switcher, and leaves out the AI chat", async () => {
+    it("shows the desktop's launchers, those marked desktop-only among them, and leaves out the AI chat; its bottom bar starts with a tab switcher", async () => {
         h.isMobile = true;
         h.isTablet = true;
         options.set("aiEnabled", "true");
@@ -348,14 +348,22 @@ describe("LauncherContainer on a tablet", () => {
             </ParentComponent.Provider>, container));
         await flush();
 
-        const bar = container.querySelector("#launcher-container");
-        // The previous case loaded the switcher's module, so its stub stands in the place of the button.
-        expect(bar?.firstElementChild?.classList.contains("tab-switcher-stub")).toBe(true);
+        // The rail stands beside the tab bar, so it holds no tab switcher.
+        expect(container.querySelector("#launcher-container")?.firstElementChild?.classList.contains("launcher-slot")).toBe(true);
+        expect(container.querySelector(".tab-switcher-stub, .mobile-tab-switcher")).toBeNull();
         expect(container.querySelector(".launcher-slot[data-launcher-id='_lbMobileCalendarStub']")).toBeNull();
         expect(container.querySelector(".launcher-slot[data-launcher-id='_lbJumpToStub'] button")).not.toBeNull();
         const chatSlot = container.querySelector(".launcher-slot[data-launcher-id='_lbSidebarChatStub']");
         expect(chatSlot).not.toBeNull();
         expect(chatSlot?.childElementCount).toBe(0);
+
+        act(() => render(
+            <ParentComponent.Provider value={new Component()}>
+                <LauncherContainer isHorizontalLayout />
+            </ParentComponent.Provider>, container));
+        await flush();
+        // The previous case loaded the switcher's module, so its stub stands in the place of the button.
+        expect(container.querySelector("#launcher-container")?.firstElementChild?.classList.contains("tab-switcher-stub")).toBe(true);
     });
 });
 

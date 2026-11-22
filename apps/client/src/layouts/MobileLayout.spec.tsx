@@ -33,6 +33,11 @@ describe("MobileLayout", () => {
         // A phone shows the mobile launchers, a tablet the desktop ones.
         buildNote({ id: "_lbMobileVisibleLaunchers", title: "Visible Launchers" });
         buildNote({ id: "_lbVisibleLaunchers", title: "Visible Launchers" });
+        // A tablet's tab bar starts with the history buttons, which take these launchers' titles.
+        buildNote({ id: "_lbBackInHistory", title: "Back" });
+        buildNote({ id: "_lbForwardInHistory", title: "Forward" });
+        // A phone unless the case says otherwise: happy-dom's window is as wide as a tablet's.
+        stubLayoutWidth("phone");
         options.set("experimentalFeatures", "[]");
         // A split shows an empty note, whose view searches for the workspaces, also after the case.
         if (!vi.isMockFunction(server.get)) {
@@ -49,7 +54,7 @@ describe("MobileLayout", () => {
     it("gives each note split a title row, a scroller with the note and its search results, then the type bar, editor toolbar and find bar", async () => {
         let container: HTMLElement | undefined;
         act(() => { container = renderLayout(); });
-        const splits = container?.querySelector("#mobile-rest-container > #detail-container > .split-note-container-widget");
+        const splits = container?.querySelector("#mobile-rest-container > #mobile-rest-pane > #detail-container > .split-note-container-widget");
         expect(splits).not.toBeNull();
 
         const noteContext = new NoteContext("main");
@@ -97,7 +102,11 @@ describe("MobileLayout", () => {
         const container = renderLayout();
         const rest = container.querySelector("#mobile-rest-container");
         expect(rest?.firstElementChild?.id).toBe("mobile-sidebar-wrapper");
-        expect(rest?.firstElementChild?.nextElementSibling?.id).toBe("detail-container");
+        // `#mobile-rest-pane` lays out as its children on a phone; it holds no tab bar there.
+        const restPane = rest?.firstElementChild?.nextElementSibling;
+        expect(restPane?.id).toBe("mobile-rest-pane");
+        expect(restPane?.children).toHaveLength(1);
+        expect(restPane?.firstElementChild?.id).toBe("detail-container");
     });
 
     it("puts the bottom bar under the panes on a phone, holding the launchers and then the global menu", () => {
@@ -119,7 +128,7 @@ describe("MobileLayout", () => {
         expect(root?.querySelector("#launcher-pane.vertical")).toBeNull();
     });
 
-    it("puts the launchers in a rail before the sidebar on a tablet, and moves them as the device turns", () => {
+    it("puts the launchers in a rail before the sidebar on a tablet and the tab bar above the notes, and moves them as the device turns", async () => {
         const layout = stubLayoutWidth("tablet");
         let container: HTMLElement | undefined;
         act(() => { container = renderLayout(); });
@@ -132,12 +141,21 @@ describe("MobileLayout", () => {
         expect(rail?.firstElementChild?.classList.contains("global-menu")).toBe(true);
         expect(rail?.children[1]?.id).toBe("launcher-container");
         // The tree's toggle ends the rail, as in the desktop's vertical layout.
-        expect(rail?.lastElementChild?.classList.contains("left-pane-toggle-button")).toBe(true);
+        await vi.waitFor(() => expect(rail?.lastElementChild?.classList.contains("left-pane-toggle-button")).toBe(true));
         expect(rail?.nextElementSibling?.id).toBe("mobile-sidebar-wrapper");
+        const restPane = root?.querySelector(":scope > #mobile-rest-container > #mobile-rest-pane");
+        await vi.waitFor(() => expect(restPane?.firstElementChild?.classList.contains("tab-row-container")).toBe(true));
+        expect(restPane?.querySelector(".tab-row-widget")).toBeInstanceOf(HTMLElement);
+        expect(restPane?.querySelector(".right-pane-toggle-button")).toBeNull();
+        const detail = restPane?.lastElementChild;
+        expect(detail?.id).toBe("detail-container");
 
         act(() => layout.turnTo("phone"));
         expect(root?.classList.contains("horizontal-layout")).toBe(true);
         expect(root?.querySelector("#launcher-pane.vertical")).toBeNull();
+        expect(root?.querySelector(".tab-row-container")).toBeNull();
+        // The notes stay as they are, so turning the device does not rebuild them.
+        expect(root?.querySelector("#detail-container")).toBe(detail);
         expect(root?.querySelector(":scope > #mobile-bottom-bar > #launcher-pane.horizontal")).toBeInstanceOf(HTMLElement);
     });
 
@@ -203,6 +221,7 @@ describe("MobileLayout", () => {
  * `turnTo()` changes the answer and notifies the listeners, as turning the device does.
  */
 function stubLayoutWidth(initial: "phone" | "tablet") {
+    if (vi.isMockFunction(window.matchMedia)) window.matchMedia.mockRestore();
     let isPhone = initial === "phone";
     const listeners = new Set<() => void>();
     const original = window.matchMedia.bind(window);

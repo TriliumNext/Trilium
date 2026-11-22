@@ -6,7 +6,6 @@ import { useLayoutEffect, useRef } from "preact/hooks";
 
 import { NARROW_LAYOUT } from "../services/utils.js";
 import GlobalMenu from "../widgets/buttons/global_menu.js";
-import LeftPaneToggle from "../widgets/buttons/left_pane_toggle.js";
 import CloseZenModeButton from "../widgets/close_zen_button.js";
 import LauncherContainer from "../widgets/launch_bar/LauncherContainer.js";
 import HideKeyboardButton from "../widgets/mobile_widgets/hide_keyboard_button.js";
@@ -17,12 +16,14 @@ import ToggleSidebarButton from "../widgets/mobile_widgets/toggle_sidebar_button
 import { trackVirtualKeyboard } from "../widgets/mobile_widgets/virtual_keyboard.js";
 import { useLoadCustomWidgets } from "../widgets/react/hooks/custom_widgets.js";
 import { useMediaQuery } from "../widgets/react/hooks/dom.js";
+import { useLazyModule } from "../widgets/react/LazyComponent.js";
 import MobileEditorToolbar from "../widgets/type_widgets/text/mobile_editor_toolbar.js";
 import { Modals, NoteSplits, type NoteSplitParts, triggerLegacyCommand, useAppearance } from "./layout_commons.js";
 
 /**
  * The mobile layout, as a single Preact tree. A phone shows the launch bar at the bottom of the
- * screen; a tablet shows it as a rail on the start edge, before the sidebar.
+ * screen; a tablet shows it as a rail on the start edge, before the sidebar, and the desktop's tab bar
+ * above the notes.
  */
 export default function MobileLayout() {
     const rootRef = useRef<HTMLDivElement>(null);
@@ -43,11 +44,14 @@ export default function MobileLayout() {
                     <div id="launcher-pane" className="vertical">
                         <GlobalMenu isHorizontalLayout={false} />
                         <LauncherContainer isHorizontalLayout={false} />
-                        <LeftPaneToggle isHorizontalLayout={false} />
+                        <LazyLeftPaneToggle />
                     </div>
                 )}
                 <MobileSidebar />
-                <NoteSplits parts={NOTE_SPLIT_PARTS} containerId="detail-container" />
+                <div id="mobile-rest-pane">
+                    {!isPhone && <LazyTabBar />}
+                    <NoteSplits parts={NOTE_SPLIT_PARTS} containerId="detail-container" />
+                </div>
             </div>
             {isPhone && (
                 <div id="mobile-bottom-bar">
@@ -74,3 +78,18 @@ const NOTE_SPLIT_PARTS: NoteSplitParts = {
     titleRowEnd: () => [ <MobileNotePanel />, <MobileDetailMenu /> ],
     beforeFind: () => [ <MobileEditorToolbar /> ]
 };
+
+// The tab bar and the tree's toggle load only on a tablet, so a phone's startup leaves them out. The
+// note splits stay in `#mobile-rest-pane` on a phone too, so turning the device does not rebuild them.
+const loadTabBar = () => import("./TabBar.js");
+const loadLeftPaneToggle = () => import("../widgets/buttons/left_pane_toggle.js");
+
+function LazyTabBar() {
+    const tabBar = useLazyModule(loadTabBar);
+    return tabBar && <tabBar.default fullWidth={false} leftPaneToggle={false} rightPaneToggle={false} />;
+}
+
+function LazyLeftPaneToggle() {
+    const leftPaneToggle = useLazyModule(loadLeftPaneToggle);
+    return leftPaneToggle && <leftPaneToggle.default isHorizontalLayout={false} />;
+}

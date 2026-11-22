@@ -30,8 +30,9 @@ import SyncStatus from "./SyncStatus";
 export default function LauncherContainer({ isHorizontalLayout }: { isHorizontalLayout: boolean }) {
     const childNotes = useLauncherChildNotes();
     const containerRef = useLauncherScrollbarCompensation(isHorizontalLayout, childNotes);
-    // A tablet shows the desktop's launchers, which hold no tab switcher, and has no tab bar.
-    const hasFixedTabSwitcher = isTablet();
+    // A tablet shows the desktop's launchers, which hold no tab switcher. Its rail stands beside a tab
+    // bar, but its bottom bar has none.
+    const hasFixedTabSwitcher = isTablet() && isHorizontalLayout;
     const hasTabSwitcher = hasFixedTabSwitcher
         || !!childNotes?.some((note) => note.getLabelValue("builtinWidget") === "mobileTabSwitcher");
     const [ dragEntered, setDragEntered ] = useState(false);

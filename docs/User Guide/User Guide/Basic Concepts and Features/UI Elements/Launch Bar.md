@@ -30,7 +30,7 @@ Expanding _Available Launchers_ section will show the list of launchers that are
 
 The launch bar on a phone uses a different configuration from the desktop one. The reasoning is that not all desktop icons are available on mobile, and fewer icons fit on a phone screen.
 
-A tablet shows the desktop launch bar instead, in either orientation, with a tab switcher always at its start. Launchers marked as desktop-only are shown there too, while the launcher that opens the AI chat in the right sidebar is not, since the mobile layout has no right sidebar. A device counts as a tablet when the shorter side of its screen is at least 600 pixels.
+A tablet shows the desktop launch bar instead, in either orientation. While it is at the bottom of the screen, a tab switcher always starts it; beside the tabs in landscape, it has none. Launchers marked as desktop-only are shown there too, while the launcher that opens the AI chat in the right sidebar is not, since the mobile layout has no right sidebar. A device counts as a tablet when the shorter side of its screen is at least 600 pixels.
 
 To configure the launch bar on mobile, go to <a class="reference-link" href="Global%20menu.md">Global menu</a> and select _Configure launch bar_.
 

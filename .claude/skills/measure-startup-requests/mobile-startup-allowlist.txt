@@ -103,6 +103,8 @@
 /src/fonts/boxicons.woff2
 /src/index.ts
 /src/layouts/MobileLayout.css
+/src/layouts/MobileLayout.phone.css
+/src/layouts/MobileLayout.tablet.css
 /src/layouts/MobileLayout.tsx
 /src/layouts/layout_commons.css
 /src/layouts/layout_commons.tsx

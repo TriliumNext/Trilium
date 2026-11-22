@@ -31,6 +31,10 @@
         position: relative;
     }
 
+    #mobile-rest-pane {
+        display: contents;
+    }
+
     #mobile-rest-container > #mobile-sidebar-wrapper {
         position: absolute;
         top: 0;
@@ -70,8 +74,8 @@
 
     #mobile-rest-container.instant-screen-change {
         > #mobile-sidebar-wrapper,
-        > #detail-container,
-        > #detail-container::before {
+        > #mobile-rest-pane > #detail-container,
+        > #mobile-rest-pane > #detail-container::before {
             transition: none !important;
         }
     }
