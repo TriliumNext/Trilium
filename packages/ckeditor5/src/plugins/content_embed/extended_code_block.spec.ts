@@ -1,6 +1,6 @@
 import { MIME_TYPE_AUTO } from "@triliumnext/commons/src/lib/mime_type.js";
 import {
-    _getModelData as getModelData, _setModelData as setModelData, Alignment, ButtonView,
+    _getModelData as getModelData, _setModelData as setModelData, Alignment, Autoformat, ButtonView,
     ClassicEditor, CodeBlock, Essentials, List, type ModelElement, Paragraph, Widget
 } from "ckeditor5";
 import { describe, expect, it, vi } from "vitest";
@@ -179,6 +179,31 @@ describe("ExtendedCodeBlock", () => {
             editor.execute("codeBlock");
             expect(getModelData(editor.model))
                 .toBe(`<codeBlock language="plaintext">x[]</codeBlock>`);
+        });
+
+        it("starts a block without the fence that the autoformat typed", async () => {
+            const { editor } = await createEditor({}, [ CodeBlock, Autoformat ]);
+
+            setModelData(editor.model, "<paragraph>[]</paragraph>");
+            for (const character of "```") {
+                editor.execute("insertText", { text: character });
+            }
+
+            expect(getModelData(editor.model))
+                .toBe(`[<contentEmbed boxSize="full" editable="true" hideTitle="true"`
+                    + ` language="text-plain" source=""></contentEmbed>]`);
+        });
+
+        it("keeps a fence that the user selected instead", async () => {
+            const { editor } = await createEditor({}, [ CodeBlock, Autoformat ]);
+            const fence = "```";
+
+            setModelData(editor.model, "<paragraph>[```]</paragraph>");
+            editor.execute("codeBlock");
+
+            expect(getModelData(editor.model))
+                .toBe(`[<contentEmbed boxSize="full" editable="true" hideTitle="true"`
+                    + ` language="text-plain" source="${fence}"></contentEmbed>]`);
         });
 
         it("loads the code blocks without the code block command of CKEditor", async () => {

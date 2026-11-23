@@ -310,6 +310,42 @@ describe("useEmbedCaretNavigation", () => {
         outside.unmount();
     });
 
+    it("starts a paragraph beside the embed on Enter past blank lines, when it leaves on Enter",
+        () => {
+            const editor = {
+                ...buildCaretEditor(null),
+                getEdgeLeftByEnter: vi.fn((_event: KeyboardEvent): EmbedEdge | null => "end"),
+                removeBlankLinesAt: vi.fn(),
+                hasSharedHistory: true
+            };
+            const { figure, insertParagraphBeside, pressKey, unmount } =
+                mountCaretProbe(editor, { leavesOnEnter: true });
+
+            expect(pressKey("Enter")).toBe(true);
+            expect(editor.removeBlankLinesAt).toHaveBeenCalledExactlyOnceWith("end");
+            expect(insertParagraphBeside).toHaveBeenCalledExactlyOnceWith(
+                figure.querySelector(".caret-content"), "end", true
+            );
+            expect(editor.removeBlankLinesAt.mock.invocationCallOrder[0])
+                .toBeLessThan(insertParagraphBeside.mock.invocationCallOrder[0]);
+
+            editor.getEdgeLeftByEnter.mockReturnValue(null);
+            expect(pressKey("Enter")).toBe(false);
+            expect(insertParagraphBeside).toHaveBeenCalledOnce();
+            unmount();
+
+            const withoutOption = mountCaretProbe(editor);
+            editor.getEdgeLeftByEnter.mockReturnValue("end");
+            expect(withoutOption.pressKey("Enter")).toBe(false);
+            expect(withoutOption.insertParagraphBeside).not.toHaveBeenCalled();
+            withoutOption.unmount();
+
+            const outside = mountCaretProbe(editor, { leavesOnEnter: true, hasHost: false });
+            expect(outside.pressKey("Enter")).toBe(false);
+            expect(editor.removeBlankLinesAt).toHaveBeenCalledOnce();
+            outside.unmount();
+        });
+
     it("does nothing in an embed without caret navigation", () => {
         const editor = buildCaretEditor("end");
         const { figure, pressKey, unmount } =
@@ -331,6 +367,7 @@ interface CaretProbeOptions {
     hasCaretNavigation?: boolean;
     /** Whether a text editor with the `ContentEmbedCaret` plugin is around the embed. */
     hasHost?: boolean;
+    leavesOnEnter?: boolean;
 }
 
 /**
@@ -339,11 +376,15 @@ interface CaretProbeOptions {
  */
 function mountCaretProbe(
     editor: EmbeddedCaretEditor | null,
-    { hasCaretNavigation = true, hasHost = true }: CaretProbeOptions = {}
+    { hasCaretNavigation = true, hasHost = true, leavesOnEnter = false }: CaretProbeOptions = {}
 ) {
     const leaveEmbed = vi.fn((_element: HTMLElement, _edge: string) => true);
+    const insertParagraphBeside =
+        vi.fn((_element: HTMLElement, _edge: string, _joinsLatestStep: boolean) => true);
     const host = buildEditable({
-        editor: { plugins: { has: () => hasHost, get: () => ({ leaveEmbed }) } }
+        editor: {
+            plugins: { has: () => hasHost, get: () => ({ leaveEmbed, insertParagraphBeside }) }
+        }
     });
     const figure = document.createElement("figure");
     figure.className = "include-note";
@@ -351,7 +392,7 @@ function mountCaretProbe(
     document.body.append(host);
 
     function Probe() {
-        useEmbedCaretNavigation(() => editor);
+        useEmbedCaretNavigation(() => editor, leavesOnEnter);
         return <div className="caret-editor" tabIndex={-1} />;
     }
     act(() => render(
@@ -370,11 +411,10 @@ function mountCaretProbe(
     return {
         figure,
         leaveEmbed,
-        /** Presses an arrow key in the editor, and returns whether a listener prevented it. */
-        pressKey() {
-            const event = new KeyboardEvent("keydown", {
-                key: "ArrowDown", bubbles: true, cancelable: true
-            });
+        insertParagraphBeside,
+        /** Presses `key` in the editor, and returns whether a listener prevented it. */
+        pressKey(key = "ArrowDown") {
+            const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
             figure.querySelector(".caret-editor")?.dispatchEvent(event);
             return event.defaultPrevented;
         },

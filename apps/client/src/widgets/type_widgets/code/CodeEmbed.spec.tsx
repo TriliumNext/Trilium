@@ -847,6 +847,45 @@ describe("InlineCodeEmbed", () => {
         expectBoxSizeIconAlone(shown);
     });
 
+    it("starts a paragraph on Enter past blank lines, unlike an included note", async () => {
+        const insertParagraphBeside = vi.fn(() => true);
+        const { editable } = buildCodeViewTextEditor({
+            ContentEmbedCaret: { insertParagraphBeside }
+        });
+        const pressEnterAt = (view: Awaited<ReturnType<typeof findView>>, head: number) => {
+            act(() => view.dispatch({ selection: { anchor: head } }));
+            const event = new KeyboardEvent("keydown", {
+                key: "Enter", bubbles: true, cancelable: true
+            });
+            act(() => {
+                view.contentDOM.dispatchEvent(event);
+            });
+            return event.defaultPrevented;
+        };
+
+        const { figure } = await mountInline("foo\n\n", buildEditor(), {
+            language: "text-plain", isEditable: true, container: editable
+        });
+        const view = await findView(figure);
+        const content = figure.querySelector(".code-embed-content");
+        expect(pressEnterAt(view, view.state.doc.length)).toBe(true);
+        expect(view.state.doc.toString()).toBe("foo");
+        expect(insertParagraphBeside).toHaveBeenLastCalledWith(content, "end", false);
+
+        act(() => view.dispatch({ changes: { from: 0, insert: "\n" } }));
+        expect(pressEnterAt(view, 0)).toBe(true);
+        expect(view.state.doc.toString()).toBe("foo");
+        expect(insertParagraphBeside).toHaveBeenLastCalledWith(content, "start", false);
+
+        const { figure: included } = await mount(buildCodeNote("foo\n\n"), buildEditor(), {
+            isEditable: true, container: editable
+        });
+        const includedView = await findView(included);
+        pressEnterAt(includedView, includedView.state.doc.length);
+        expect(includedView.state.doc.toString()).toBe("foo\n\n\n");
+        expect(insertParagraphBeside).toHaveBeenCalledTimes(2);
+    });
+
     it("edits the code, follows the code the note writes, and sets its language", async () => {
         options.set("codeNotesMimeTypes", JSON.stringify([ "text/x-python", "text/x-sh" ]));
         vi.spyOn(contextMenu, "show").mockResolvedValue(undefined);

@@ -15,6 +15,7 @@ import { addEditingKeydownCapture, isFromEditable } from "../move_block_updown.j
 import {
     getCaption, getContentEmbedAt, getContentEmbedDom, isContentEmbed
 } from "./content_embed.js";
+import EmbedHistory from "./embed_history.js";
 
 /** An end of the content of an embed, where the caret enters or leaves it. */
 export type EmbedEdge = "start" | "end";
@@ -79,6 +80,40 @@ export default class ContentEmbedCaret extends Plugin {
             writer.setSelection(embed, "on");
             writer.setSelectionAttribute(TYPE_AROUND_ATTRIBUTE, isForward ? "after" : "before");
         });
+        scrollToTheCaret(editor);
+        return true;
+    }
+
+    /**
+     * Focuses this editor with the caret in a new paragraph beside the embed that contains
+     * `domElement`, past its `edge`, as the buttons of `WidgetTypeAround` insert one. With
+     * `joinsLatestStep`, the paragraph is part of the latest step of `EmbedHistory`. Returns
+     * `false` when `domElement` is not in an embed of this editor.
+     */
+    insertParagraphBeside(
+        domElement: Element, edge: EmbedEdge, joinsLatestStep: boolean
+    ): boolean {
+        const editor = this.editor;
+        const embed = getContentEmbedAt(editor, domElement);
+        if (!embed) {
+            return false;
+        }
+
+        const model = editor.model;
+        const insert = () => {
+            editor.execute("insertParagraph", {
+                position: edge === "end"
+                    ? model.createPositionAfter(embed)
+                    : model.createPositionBefore(embed),
+                attributes: model.schema.getAttributesWithProperty(embed, "copyOnReplace", true)
+            });
+        };
+        editor.editing.view.focus();
+        if (joinsLatestStep && editor.plugins.has(EmbedHistory)) {
+            editor.plugins.get(EmbedHistory).joinLatestStep(insert);
+        } else {
+            model.change(insert);
+        }
         scrollToTheCaret(editor);
         return true;
     }

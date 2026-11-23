@@ -20,6 +20,7 @@ import TriliumMentionUI from "../mention/trilium_mention_ui.js";
 import type { MentionHostedList } from "../mention/types.js";
 import ContentEmbed from "./content_embed.js";
 import ContentEmbedCaret from "./content_embed_caret.js";
+import EmbedHistory from "./embed_history.js";
 
 const EMBED = "<contentEmbed boxSize=\"medium\" noteId=\"n1\"></contentEmbed>";
 const CAPTIONED_EMBED = "<contentEmbed boxSize=\"medium\" noteId=\"n1\">"
@@ -277,7 +278,37 @@ describe("ContentEmbedCaret leaving an embed", () => {
     it("returns false for an element outside its embeds", () => {
         setModelData(editor.model, `<paragraph>[]ab</paragraph>${EMBED}`);
         expect(plugin.leaveEmbed(document.body, "end")).toBe(false);
+        expect(plugin.insertParagraphBeside(document.body, "end", false)).toBe(false);
         expect(getModelData(editor.model)).toBe(`<paragraph>[]ab</paragraph>${EMBED}`);
+    });
+
+    it("focuses the editor with the caret in a new paragraph beside the embed", () => {
+        setModelData(editor.model, AB + EMBED + CD);
+        expect(plugin.insertParagraphBeside(getEmbedContent(editor), "end", false)).toBe(true);
+        expect(getModelData(editor.model)).toBe(`${AB}${EMBED}<paragraph>[]</paragraph>${CD}`);
+        expect(editor.editing.view.document.isFocused).toBe(true);
+
+        expect(plugin.insertParagraphBeside(getEmbedContent(editor), "start", false)).toBe(true);
+        expect(getModelData(editor.model))
+            .toBe(`${AB}<paragraph>[]</paragraph>${EMBED}<paragraph></paragraph>${CD}`);
+    });
+
+    it("undoes the new paragraph with the latest step of the embed, when asked to", () => {
+        const history = editor.plugins.get(EmbedHistory);
+        setModelData(editor.model, AB + EMBED);
+        const step = { undo: vi.fn(() => true), redo: vi.fn(() => true) };
+
+        history.push(step);
+        plugin.insertParagraphBeside(getEmbedContent(editor), "end", true);
+        editor.execute("undo");
+        expect(step.undo).toHaveBeenCalledOnce();
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe(AB + EMBED);
+
+        history.push(step);
+        plugin.insertParagraphBeside(getEmbedContent(editor), "end", false);
+        editor.execute("undo");
+        expect(step.undo).toHaveBeenCalledOnce();
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe(AB + EMBED);
     });
 });
 
