@@ -617,7 +617,8 @@
     "other-page": "Only the system share menu can send content to this address."
   },
   "llm_providers": {
-    "flatpak_sandbox": "Trilium runs as a Flatpak, so it cannot start programs installed outside its sandbox, such as {{- cli}}. To use {{- cli}}:\n\n1. Install it on this computer and sign in to it from a terminal.\n2. Allow Trilium to start programs outside its sandbox by running this in a terminal:\n\n{{- grantCommand}}\n\n3. Restart Trilium.\n\nThis gives Trilium the same access to your computer as an installation outside Flatpak. To take it back, run:\n\n{{- revokeCommand}}"
+    "flatpak_sandbox": "Trilium runs as a Flatpak, so it cannot start programs installed outside its sandbox, such as {{- cli}}. To use {{- cli}}:\n\n1. Install it on this computer and sign in to it from a terminal.\n2. Allow Trilium to start programs outside its sandbox by running this in a terminal:\n\n{{- grantCommand}}\n\n3. Restart Trilium.\n\nThis gives Trilium the same access to your computer as an installation outside Flatpak. To take it back, run:\n\n{{- revokeCommand}}",
+    "unexpected_models_response": "Unexpected response from the provider's model list endpoint"
   },
   "revisions": {
     "draft_description": "Unsaved changes",

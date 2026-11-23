@@ -23,7 +23,8 @@ const VENDOR_PREFIXES: Record<string, string> = {
     anthropic: "Claude",
     "claude-agent": "Claude",
     deepseek: "DeepSeek",
-    google: "Gemini"
+    google: "Gemini",
+    mistral: "Mistral"
 };
 
 /**

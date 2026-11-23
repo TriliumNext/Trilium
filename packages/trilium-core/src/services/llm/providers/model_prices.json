@@ -712,5 +712,77 @@
       "output": 4.4,
       "ctx": 200000
     }
+  },
+  "mistral": {
+    "mistral-large-4": {
+      "input": 5,
+      "output": 25,
+      "ctx": 128000
+    },
+    "mistral-large-4-0": {
+      "input": 5,
+      "output": 25,
+      "ctx": 128000
+    },
+    "mistral-medium-3-5": {
+      "input": 1.5,
+      "output": 7.5,
+      "ctx": 128000
+    },
+    "mistral-medium-3-5-26-04": {
+      "input": 1.5,
+      "output": 7.5,
+      "ctx": 128000
+    },
+    "mistral-small-4": {
+      "input": 0.5,
+      "output": 2.5,
+      "ctx": 128000
+    },
+    "mistral-small-2603": {
+      "input": 0.5,
+      "output": 2.5,
+      "ctx": 128000
+    },
+    "zai-glm-5-3": {
+      "input": 1.5,
+      "output": 7.5,
+      "ctx": 128000
+    },
+    "zai-glm-5-3-flash": {
+      "input": 0.5,
+      "output": 2.5,
+      "ctx": 128000
+    },
+    "mistral-large-2": {
+      "input": 10,
+      "output": 30,
+      "ctx": 128000,
+      "isLegacy": true
+    },
+    "mistral-large": {
+      "input": 10,
+      "output": 30,
+      "ctx": 80000,
+      "isLegacy": true
+    },
+    "mistral-medium": {
+      "input": 2.7,
+      "output": 8.1,
+      "ctx": 32000,
+      "isLegacy": true
+    },
+    "mistral-small": {
+      "input": 0.9,
+      "output": 2.7,
+      "ctx": 32000,
+      "isLegacy": true
+    },
+    "mistral-tiny": {
+      "input": 0.25,
+      "output": 0.75,
+      "ctx": 32000,
+      "isLegacy": true
+    }
   }
 }

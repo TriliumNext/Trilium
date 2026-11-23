@@ -8,12 +8,13 @@ Currently, the following cloud providers are supported:
 *   <span class="tn-icon tn-brand tn-brand-anthropic"></span> [Anthropic](https://platform.claude.com/settings/workspaces/default/keys)
 *   <span class="tn-icon tn-brand tn-brand-openai"></span> OpenAI
 *   <span class="tn-icon tn-brand tn-brand-gemini"></span> Gemini
-*   <span class="tn-icon tn-brand tn-brand-deepseek"></span> DeepSeek
-*   <span class="tn-icon tn-brand tn-brand-openrouter"></span> [OpenRouter](https://openrouter.ai/settings/keys)
+*   <span class="tn-icon tn-brand tn-brand-deepseek"></span> DeepSeek
+*   <span class="tn-icon tn-brand tn-brand-openrouter"></span> [OpenRouter](https://openrouter.ai/settings/keys)
+*   <span class="tn-icon tn-brand tn-brand-mistral"></span> [Mistral](https://console.mistral.ai/api-keys)
 
 For all the providers, an API key is needed. Note that this is charged separately from the subscription you might already have (e.g. Claude Pro). If that might be a problem, consider using either a subscription provider (see below) or using it externally via MCP.
 
-Do note that most other LLM providers (e.g. Groq, Mistral, Together) can still be used in Trilium via the OpenAI-compatible custom endpoint (see below).
+Do note that most other LLM providers (e.g. Groq, Together) can still be used in Trilium via the OpenAI-compatible custom endpoint (see below).
 
 If you are using a proxy or gateway, you can also configure the base URL, otherwise the default will be used.
 
@@ -28,6 +29,8 @@ For OpenRouter, the models are billed to your OpenRouter credits, and their pric
 *   Requests are attributed to Trilium on your OpenRouter activity page.
 
 For Gemini, a chat that doesn't specify a model uses `gemini-3.8-flash`, and the automatically generated chat titles use `gemini-3.5-flash-lite`. A model you select explicitly is used as is and isn't affected by these defaults.
+
+For Mistral, models that support reasoning have a reasoning effort dropdown in the chat. Mistral Large 4 supports _Low_, _Medium_ and _High_ (default: _High_); Mistral Small and Medium support _None_ and _High_; GLM models support _Low_, _High_ and _Max_. A chat that doesn't specify a model uses `mistral-large-4`, and chat titles use `mistral-small-4`.
 
 > [!NOTE]
 > We don't plan to support all cloud providers, even if the library we are using would theoretically support them. Before opening a PR adding support for a different cloud provider, make sure to discuss it over [GitHub Discussions](https://github.com/orgs/TriliumNext/discussions).
@@ -65,7 +68,7 @@ Even for local providers that are not directly supported by Trilium, you can sti
 
 ## Custom endpoints
 
-If your desired hosted (e.g. Groq, Mistral, Together) or local LLM provider is not listed in Trilium, you can use the dedicated _OpenAI-compatible_ provider from the _Custom endpoint_ section.
+If your desired hosted (e.g. Groq, Together) or local LLM provider is not listed in Trilium, you can use the dedicated _OpenAI-compatible_ provider from the _Custom endpoint_ section.
 
 This allows you to set the base URL to an OpenAI-compatible API, with an optional API key if required by the service.
 
