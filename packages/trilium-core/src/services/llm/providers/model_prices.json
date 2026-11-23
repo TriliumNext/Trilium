@@ -600,8 +600,8 @@
       "ctx": 922000
     },
     "gpt-6-rosalind": {
-      "input": 15,
-      "output": 75,
+      "input": 10,
+      "output": 50,
       "ctx": 922000
     },
     "gpt-6-sol": {
@@ -617,6 +617,21 @@
     "gpt-6.1-terra": {
       "input": 1,
       "output": 5,
+      "ctx": 922000
+    },
+    "gpt-6.2-astra": {
+      "input": 8,
+      "output": 40,
+      "ctx": 922000
+    },
+    "gpt-6.2-astra-law": {
+      "input": 8,
+      "output": 40,
+      "ctx": 922000
+    },
+    "gpt-6.2-sol": {
+      "input": 2,
+      "output": 10,
       "ctx": 922000
     },
     "gpt-audio": {
