@@ -1,6 +1,6 @@
 ---
 name: building-showcase-assets
-description: Use when making or changing the pictures and texts of Trilium shown outside the app — the Google Play listing (icon, feature graphic, phone and tablet screenshots, captions, description in listing.json), the Flathub screenshots and their metainfo captions, the website's home page hero (`hero.html`) and its note type / collection / tree screenshots (`apps/website/public/*.webp`), or the demo document those are captured from. Covers `apps/showcase` (targets play, flathub, flathub-preview, hero, website; scenes and seeds; running it on NixOS; its checks), where each output goes and how it is published (Play Console by hand, Flathub through commit-pinned URLs in the metainfo, the website through `apps/website/public`), how the store texts must stay aligned, how to fix the demo document itself (`apps/edit-docs/demo` → `demo.zip`), and the traps already hit (tsx breaking `page.evaluate`, a busy port giving 401, the editor toolbar vanishing, captions wrapping, the tablet layout, canvas text with no height). Do NOT use for Flathub packaging itself (packaging-for-flathub) or for the mobile app's code (developing-capacitor-mobile).
+description: Use when making or changing the pictures and texts of Trilium shown outside the app — the Google Play listing (icon, feature graphic, phone and tablet screenshots, captions, description in listing.json), the App Store product page (iPhone and iPad screenshots, subtitle, keywords, description), the Flathub screenshots and their metainfo captions, the website's home page hero (`hero.html`) and its note type / collection / tree screenshots (`apps/website/public/*.webp`), or the demo document those are captured from. Covers `apps/showcase` (targets play, appstore, flathub, flathub-preview, hero, website; scenes and seeds; running it on NixOS; its checks), where each output goes and how it is published (Play Console and App Store Connect by hand, Flathub through commit-pinned URLs in the metainfo, the website through `apps/website/public`), how the store texts must stay aligned, how to fix the demo document itself (`apps/edit-docs/demo` → `demo.zip`), and the traps already hit (tsx breaking `page.evaluate`, a busy port giving 401, the editor toolbar vanishing, captions wrapping, the tablet layout, canvas text with no height). Do NOT use for Flathub packaging itself (packaging-for-flathub) or for the mobile app's code (developing-capacitor-mobile).
 ---
 
 # Building the showcase: store listings, Flathub, website
@@ -13,16 +13,17 @@ website ones are also copied into the repo.
 
 ```
 pnpm --filter showcase play       # Google Play: icon, screenshots, feature graphic, preview
+pnpm --filter showcase appstore   # App Store: iPhone and iPad screenshots, listing checks
 pnpm --filter showcase flathub    # Flathub: desktop window screenshots + preview with checks
 pnpm --filter showcase hero       # website hero → apps/website/public/hero{,-mobile}.html
 pnpm --filter showcase website    # website screenshots → apps/website/public/*.webp
 pnpm --filter showcase user-guide # User Guide heroes → docs/User Guide/**/*_demo.webp
-pnpm --filter showcase start <targets…> [--only tree,text] [--devices phone,tablet]
+pnpm --filter showcase start <targets…> [--only tree,text] [--devices phone,tablet,iphone,ipad]
     [--url http://localhost:8080] [--port 37991]
 ```
 
 Targets: `icon`, `screenshots`, `feature`, `preview` (the `play` group, the default),
-`flathub`, `flathub-preview`, `hero`, `website`, `user-guide` (never `docs`: `pnpm docs` is a
+`appstore`, `flathub`, `flathub-preview`, `hero`, `website`, `user-guide` (never `docs`: `pnpm docs` is a
 pnpm built-in). `--only` takes scene IDs (or website file names, or User Guide image names),
 `--url` reuses a running server that already holds the demo plus the seed and needs
 no login (`flathub` always boots its own).
@@ -33,6 +34,7 @@ no login (`flathub` always boots its own).
 |---|---|---|---|
 | `icon`, `feature`, `screenshots` | `icon.png`, `feature-graphic.png`, `screenshots/{phone,tablet}/NN-<scene>.png` | Google Play listing | **By hand** in the Play Console; nothing uploads |
 | `preview` | `preview.html` (+ `listing-data.js`) | nowhere: a review mock of the Play page, light and dark | open the file |
+| `appstore` | `appstore/{iphone,ipad}/NN-<scene>.png` | App Store product page (6.9" iPhone, 13" iPad displays) | **By hand** in App Store Connect; the app icon comes from the build (`AppIcon.appiconset`), not the listing |
 | `flathub` | `flathub/NN-<scene>.png` | Flathub app page | copied to `apps/desktop/flatpak/screenshots/<scene>.png`, committed, then linked from the metainfo (below) |
 | `flathub-preview` | `flathub-preview.html` | nowhere: a mock of the Flathub page with Flathub's quality checks | open the file |
 | `hero` | `hero/hero.html`, `hero/hero-mobile.html` (+ app/snapshot/diff PNGs per variant) | `apps/website/public/`, iframed by the home page | copied **only when** every snapshot differs from the app by ≤ 0.5 % of pixels in both schemes |
@@ -44,7 +46,11 @@ description, feature graphic tagline and alt). The Flathub texts live in the met
 `apps/desktop/flatpak/org.triliumnotes.Trilium.metainfo.xml`. **Keep the two descriptions
 in the same shape and wording**: the Play one is the Flathub one with the second paragraph
 about the phone and without the desktop-only items (tabs and windows, global shortcuts, the
-web clipper). Change one, then the other.
+web clipper). The App Store texts live in `src/appstore/listing.json` (name, subtitle,
+promotional text, description, keywords): its description is the Play one with "your iPhone
+and iPad" for "your phone", and its promotional text the Play short description. Metadata must
+not name other mobile platforms (App Review 2.3.10), so it never says Android. Change one, then
+the others.
 
 ### Flathub wiring
 
@@ -100,9 +106,11 @@ web clipper). Change one, then the other.
 
 ## How it is built
 
-- `src/main.ts` parses the arguments and runs the targets; `src/{play,flathub,hero,website}/`
-  hold one target family each; `src/shared/` holds what they share: `scenes.ts`,
-  `demo_server.ts`, `browser.ts`, `build.ts` (paths, options, checks), `png.ts`.
+- `src/main.ts` parses the arguments and runs the targets;
+  `src/{play,appstore,flathub,hero,website,docs}/` hold one target family each; `src/shared/`
+  holds what they share: `scenes.ts` (scenes, `DEVICES`, `APP_STORE_DEVICES`), `store_shots.ts`
+  (captures the scenes on a set of devices and sets them in their caption `frame`; both stores
+  use it), `demo_server.ts`, `browser.ts`, `build.ts` (paths, options, checks), `png.ts`.
   `templates/` holds the HTML the Play images and previews are rendered from (`common.css`
   carries the website hero's gradient).
 - **It runs on Node's own type stripping (`node src/main.ts`), never tsx.** tsx rewrites
@@ -153,6 +161,11 @@ The build fails (exit code 1) on a failed check; `play` checks run after any Pla
 - Flathub (`flathub-preview`): name, summary, description lists ≤ 10 items, branding colors,
   release notes, OARS rating, square SVG icon, 3–10 screenshots, first one light, window
   ≤ 1000×700 (2000×1400 HiDPI), PNGs with alpha (the window shadow), caption form.
+- App Store (end of `appstore`): name and subtitle ≤ 30, promotional text ≤ 170, description
+  ≤ 4000, keywords ≤ 100 bytes without a word of the name; the asset catalog icon 1024×1024
+  without alpha; 1–10 screenshots per device at an accepted size (iPhone 1260×2736, 1290×2796,
+  1320×2868; iPad 2064×2752, 2048×2732; either orientation), no alpha; captions on two lines
+  in both frames.
 - Hero: pixel diff against the live app ≤ 0.5 % in light and dark.
 
 ## Store rules the design follows
@@ -163,6 +176,11 @@ The build fails (exit code 1) on a failed check; `play` checks run after any Pla
 - Large-screen (tablet) screenshots get no text outside the app, so they are uncaptioned.
 - The feature graphic shows only as a promo video's cover and in featured placements, not on
   the listing page; the developer name is account-wide.
+- App Store screenshots take text anywhere, so both devices are captioned
+  (`templates/appstore-screenshot.html`) and show the **whole** screen with its rounded corners:
+  `APP_STORE_DEVICES` captures 430×932 at 3x and 1376×1032 at 2x with an iOS user agent (the
+  client adds `body.ios`, the glass look) and its safe area, so the status bar area stays empty.
+  The iPad uses the scenes' `tablet` variants like the Play tablet.
 - Flathub windows keep frame, rounded corners and shadow: captured with GNOME's own window
   screenshot in a headless GNOME Shell.
 
@@ -170,7 +188,7 @@ The build fails (exit code 1) on a failed check; `play` checks run after any Pla
 
 - **New store scene**: add it to `SCENES` (order = listing order) with a caption that fits two
   lines; add its note to the demo if it lacks one (below); run `start screenshots --only <id>`;
-  check both devices — the tablet shows the tree beside the note, so a scene about the tree
+  check every device (`start screenshots appstore --only <id>`) — the tablets shows the tree beside the note, so a scene about the tree
   needs a `tablet` variant.
 - **New website shot**: add to `WEBSITE_SHOTS`, add its note to the demo, reference
   `<file>.webp` and `<file>-dark.webp` in `pages/Home/index.tsx`.

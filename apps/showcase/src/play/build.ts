@@ -3,13 +3,18 @@ import path from "path";
 import type { Browser } from "playwright";
 import { pathToFileURL } from "url";
 
-import { openApp, openNote, renderTemplate, setOption, settle } from "../shared/browser.ts";
+import { renderTemplate, setOption } from "../shared/browser.ts";
 import {
-    type BuildOptions, type Builder, checkList, outDir, reportChecks, sceneFileName, templatesDir
+    type BuildOptions, type Builder, checkList, outDir, reportChecks, templatesDir
 } from "../shared/build.ts";
-import { findNoteId, openDemo } from "../shared/demo_server.ts";
+import { openDemo } from "../shared/demo_server.ts";
 import { describePng, readPng } from "../shared/png.ts";
-import { DEVICES, type Scene, SCENES } from "../shared/scenes.ts";
+import { DEVICES } from "../shared/scenes.ts";
+import {
+    captureStoreShots, listStoreShots, measureCaptions, rawShotPath, type StoreShot
+} from "../shared/store_shots.ts";
+
+const shotsDir = path.join(outDir, "screenshots");
 
 const listing: Listing = JSON.parse(
     fs.readFileSync(path.join(import.meta.dirname, "listing.json"), "utf8"));
@@ -23,15 +28,6 @@ interface Listing {
     fullDescription: string;
     featureGraphic: { tagline: string; taglineSub: string; alt: string; shots: string[] };
 }
-
-interface StoreShot {
-    device: string;
-    file: string;
-    alt: string;
-}
-
-/** The size of a phone screenshot with its caption, which the store needs for promotion. */
-const CAPTIONED_SIZE = { width: 1080, height: 1920 };
 
 /**
  * The Google Play targets, in build order: the 512 x 512 icon, phone and tablet screenshots of the
@@ -51,7 +47,8 @@ export const PLAY_TARGETS: Record<string, Builder> = {
  */
 export async function checkPlayAssets(browser: Browser) {
     console.log("Checking the Play Store assets...");
-    reportChecks(runChecks(listStoreShots(), await measureCaptions(browser)));
+    const shots = listStoreShots(shotsDir, DEVICES);
+    reportChecks(runChecks(shots, await measureCaptions(browser, DEVICES)));
 }
 
 /**
@@ -80,9 +77,7 @@ async function buildScreenshots(browser: Browser, options: BuildOptions) {
     const server = await openDemo(browser, options);
     try {
         await setOption(browser, server.baseUrl, "rightPaneVisible", "false");
-        for (const deviceName of options.devices) {
-            await captureDevice(browser, options, server.baseUrl, deviceName);
-        }
+        await captureStoreShots(browser, options, server.baseUrl, DEVICES, shotsDir);
     } finally {
         server.stop();
     }
@@ -90,7 +85,7 @@ async function buildScreenshots(browser: Browser, options: BuildOptions) {
 
 async function buildFeature(browser: Browser) {
     const shots = listing.featureGraphic.shots
-        .map((id) => rawShotPath("phone", id))
+        .map((id) => rawShotPath(shotsDir, "phone", id))
         .filter((file) => {
             const exists = fs.existsSync(file);
             if (!exists) {
@@ -109,74 +104,15 @@ async function buildFeature(browser: Browser) {
 }
 
 function buildPreview() {
-    const data = { listing, screenshots: listStoreShots() };
+    const screenshots = listStoreShots(shotsDir, DEVICES).map(({ device, file, scene }) => ({
+        device, file: path.join("screenshots", file), alt: scene.alt
+    }));
+    const data = { listing, screenshots };
     const script = `window.LISTING = ${JSON.stringify(data, null, 4)};\n`;
     fs.writeFileSync(path.join(outDir, "listing-data.js"), script);
     fs.copyFileSync(path.join(templatesDir, "preview.html"), path.join(outDir, "preview.html"));
     fs.copyFileSync(path.join(templatesDir, "common.css"), path.join(outDir, "common.css"));
     console.log(`  Open ${path.join(outDir, "preview.html")}`);
-}
-
-/** The store screenshots on disk, in listing order, with their alt text. */
-function listStoreShots(): StoreShot[] {
-    const screenshots: StoreShot[] = [];
-    for (const deviceName of Object.keys(DEVICES)) {
-        for (const [ index, scene ] of SCENES.entries()) {
-            const file = storeShotPath(deviceName, index, scene.id);
-            if (fs.existsSync(file)) {
-                const relative = path.relative(outDir, file);
-                const { alt } = sceneOn(scene, deviceName);
-                screenshots.push({ device: deviceName, file: relative, alt });
-            }
-        }
-    }
-    return screenshots;
-}
-
-async function captureDevice(browser: Browser, options: BuildOptions, baseUrl: string,
-    deviceName: string) {
-    const device = DEVICES[deviceName];
-    const scenes = SCENES.filter((scene) => options.only?.includes(scene.id) ?? true);
-    for (const listed of scenes) {
-        const index = SCENES.indexOf(listed);
-        const scene = sceneOn(listed, deviceName);
-        const colorScheme = scene.colorScheme ?? "light";
-        const context = await browser.newContext({
-            viewport: device.viewport,
-            deviceScaleFactor: device.deviceScaleFactor,
-            isMobile: true,
-            hasTouch: true,
-            userAgent: device.userAgent,
-            colorScheme
-        });
-        await context.addCookies([ { name: "trilium-device", value: "mobile", url: baseUrl } ]);
-        const page = await context.newPage();
-        page.on("pageerror", (error) => {
-            console.warn(`  [${deviceName}/${scene.id}] page error: ${error.message}`);
-        });
-
-        const noteId = await findNoteId(baseUrl, scene.query);
-        await openApp(page, baseUrl);
-        await openNote(page, noteId);
-        await settle(page);
-        await scene.prepare?.(page);
-        await settle(page, { blur: !scene.keepFocus });
-
-        const store = storeShotPath(deviceName, index, scene.id);
-        const raw = device.captioned ? rawShotPath(deviceName, scene.id) : store;
-        fs.mkdirSync(path.dirname(raw), { recursive: true });
-        await page.screenshot({ path: raw });
-        await context.close();
-
-        if (device.captioned) {
-            await renderTemplate(browser, "screenshot.html", CAPTIONED_SIZE, store, {
-                caption: scene.caption,
-                shot: pathToFileURL(raw).href,
-                dark: colorScheme === "dark"
-            });
-        }
-        console.log(`  ${path.relative(outDir, store)}`);
-    }
 }
 
 /** The store's limits, from the Play Console help on preview assets and on store listing text. */
@@ -204,7 +140,7 @@ function runChecks(screenshots: StoreShot[], captionLines: Map<string, number>) 
         check(`${device} screenshots`, `${minCount} to 8 for promotion`, shots.length,
             shots.length >= minCount && shots.length <= 8);
         for (const shot of shots) {
-            const png = readPng(path.join(outDir, shot.file));
+            const png = readPng(path.join(shotsDir, shot.file));
             if (!png) continue;
             const long = Math.max(png.width, png.height);
             const short = Math.min(png.width, png.height);
@@ -212,49 +148,11 @@ function runChecks(screenshots: StoreShot[], captionLines: Map<string, number>) 
             check(shot.file, rule, describePng(png),
                 short >= 1080 && long <= 3840 && Math.abs(long / short - 16 / 9) < 0.01
                 && !png.alpha && png.size <= 8 * 1024 * 1024);
-            checkLength(`${shot.file} alt text`, shot.alt, 140);
+            checkLength(`${shot.file} alt text`, shot.scene.alt, 140);
         }
     }
     for (const [ id, lines ] of captionLines) {
-        check(`${id} caption`, "two lines on the phone", `${lines} lines`, lines === 2);
+        check(`${id} caption`, "two lines", `${lines} lines`, lines === 2);
     }
     return checks;
-}
-
-/** The scene as the device shows it: on the tablet, with `scene.tablet` in place. */
-function sceneOn(scene: Scene, deviceName: string): Scene {
-    return deviceName === "tablet" && scene.tablet ? { ...scene, ...scene.tablet } : scene;
-}
-
-/**
- * The number of lines each scene's caption takes above the phone screenshot, by scene ID. The
- * caption's text runs are counted by their distinct tops.
- */
-async function measureCaptions(browser: Browser) {
-    const page = await browser.newPage({ viewport: CAPTIONED_SIZE, deviceScaleFactor: 1 });
-    await page.goto(pathToFileURL(path.join(templatesDir, "screenshot.html")).href);
-    const lines = new Map<string, number>();
-    for (const scene of SCENES) {
-        lines.set(scene.id, await page.evaluate(async (caption) => {
-            window.render?.({ caption, shot: "", dark: false });
-            const heading = document.getElementById("caption");
-            if (!heading) return 0;
-            // Reading the layout starts the font loads that `document.fonts.ready` waits for.
-            void heading.offsetHeight;
-            await document.fonts.ready;
-            const range = document.createRange();
-            range.selectNodeContents(heading);
-            return new Set([ ...range.getClientRects() ].map((rect) => Math.round(rect.top))).size;
-        }, scene.caption));
-    }
-    await page.close();
-    return lines;
-}
-
-function rawShotPath(deviceName: string, sceneId: string) {
-    return path.join(outDir, "screenshots", deviceName, "raw", `${sceneId}.png`);
-}
-
-function storeShotPath(deviceName: string, index: number, sceneId: string) {
-    return path.join(outDir, "screenshots", deviceName, sceneFileName(index, sceneId));
 }

@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="common.css">
+    <style>
+        body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        h1 {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            margin: 0;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            font-weight: 400;
+            line-height: 1.08;
+            letter-spacing: -0.03em;
+            text-align: center;
+            white-space: pre-line;
+        }
+
+        .app-shot {
+            position: absolute;
+            left: 50%;
+            translate: -50% 0;
+            box-shadow:
+                0 4px 12px rgb(0 0 0 / 12%),
+                0 48px 120px rgb(40 30 10 / 22%);
+        }
+
+        /* 1290 x 2796; the screen corner radius is that of `theme-next/ios.css` at 430 x 932. */
+        body.iphone {
+            h1 {
+                height: 520px;
+                padding: 0 130px;
+                font-size: 104px;
+            }
+
+            .app-shot {
+                top: 600px;
+                width: 972px;
+                border-radius: 124px;
+            }
+        }
+
+        /* 2752 x 2064 */
+        body.ipad {
+            h1 {
+                height: 400px;
+                padding: 0 373px;
+                font-size: 112px;
+            }
+
+            .app-shot {
+                top: 470px;
+                width: 2005px;
+                border-radius: 28px;
+            }
+        }
+    </style>
+</head>
+<body class="backdrop">
+    <h1 id="caption"></h1>
+    <img class="app-shot" id="shot" alt="">
+    <script>
+        window.render = ({ caption, shot, dark, device }) => {
+            document.getElementById("caption").textContent = caption;
+            document.getElementById("shot").src = shot;
+            document.body.classList.toggle("dark", dark);
+            document.body.classList.add(device);
+        };
+    </script>
+</body>
+</html>

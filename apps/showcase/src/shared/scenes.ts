@@ -10,7 +10,7 @@ export interface Scene {
     keepFocus?: boolean;
     colorScheme?: "light" | "dark";
     caption: string;
-    /** Replaces `query`, `prepare` and `alt` in the tablet layout. */
+    /** Replaces `query`, `prepare` and `alt` on a device with `tablet`. */
     tablet?: { query: string; prepare?(page: Page): Promise<unknown>; alt: string };
     /** Replaces `caption` on Flathub. */
     flathubCaption?: string;
@@ -21,8 +21,12 @@ export interface Device {
     viewport: { width: number; height: number };
     deviceScaleFactor: number;
     userAgent: string;
-    /** Sets the screenshot under a caption, from `templates/screenshot.html`. */
-    captioned: boolean;
+    /** The safe-area insets of the screen in CSS pixels, kept free of the app's controls. */
+    safeArea?: { top: number; bottom: number };
+    /** Shows each scene with `scene.tablet` in place, since the tablet layout docks the tree. */
+    tablet?: boolean;
+    /** Sets the screenshot under a caption, by rendering `template` from `templates/` at `size`. */
+    frame?: { template: string; size: { width: number; height: number } };
 }
 
 /**
@@ -205,9 +209,10 @@ export const HERO: { variants: HeroVariant[] } = {
 };
 
 /**
- * Store devices. The phone renders 360 x 640 CSS pixels at 3x, giving the 1080 x 1920 the store
- * needs for promotion; the tablet is landscape 16:9 at 1920 x 1080 and stays uncaptioned, since
- * the store allows no text outside the app on large-screen screenshots.
+ * Google Play devices. The phone renders 360 x 640 CSS pixels at 3x, which `screenshot.html` sets
+ * under a caption at the 1080 x 1920 the store needs for promotion; the tablet is landscape 16:9 at
+ * 1920 x 1080 and stays uncaptioned, since the store allows no text outside the app on
+ * large-screen screenshots.
  */
 export const DEVICES: Record<string, Device> = {
     phone: {
@@ -215,13 +220,39 @@ export const DEVICES: Record<string, Device> = {
         deviceScaleFactor: 3,
         userAgent: "Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 "
             + "(KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36",
-        captioned: true
+        frame: { template: "screenshot.html", size: { width: 1080, height: 1920 } }
     },
     tablet: {
         viewport: { width: 1280, height: 720 },
         deviceScaleFactor: 1.5,
         userAgent: "Mozilla/5.0 (Linux; Android 15; Pixel Tablet) AppleWebKit/537.36 "
             + "(KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
-        captioned: false
+        tablet: true
+    }
+};
+
+/**
+ * App Store devices: the whole screen of a 6.9-inch iPhone (430 x 932 points, a size
+ * `theme-next/ios.css` knows the corner radius of) and of a 13-inch iPad in landscape, with their
+ * safe areas. `appstore-screenshot.html` sets each under a caption at a size App Store Connect
+ * accepts for that display: 1290 x 2796 and 2752 x 2064.
+ */
+export const APP_STORE_DEVICES: Record<string, Device> = {
+    iphone: {
+        viewport: { width: 430, height: 932 },
+        deviceScaleFactor: 3,
+        userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 "
+            + "(KHTML, like Gecko) Mobile/15E148",
+        safeArea: { top: 59, bottom: 34 },
+        frame: { template: "appstore-screenshot.html", size: { width: 1290, height: 2796 } }
+    },
+    ipad: {
+        viewport: { width: 1376, height: 1032 },
+        deviceScaleFactor: 2,
+        userAgent: "Mozilla/5.0 (iPad; CPU OS 18_6 like Mac OS X) AppleWebKit/605.1.15 "
+            + "(KHTML, like Gecko) Mobile/15E148",
+        safeArea: { top: 24, bottom: 20 },
+        tablet: true,
+        frame: { template: "appstore-screenshot.html", size: { width: 2752, height: 2064 } }
     }
 };

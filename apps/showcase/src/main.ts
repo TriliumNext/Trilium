@@ -4,6 +4,8 @@
  * - Google Play (`play/`): the icon, the feature graphic, phone and tablet screenshots and
  *   `out/preview.html`, a mock of the listing, checked against the store's size and length
  *   limits.
+ * - The App Store (`appstore/`, target `appstore`): iPhone and iPad screenshots under captions in
+ *   `out/appstore`, checked with the listing texts against App Store Connect's limits.
  * - Flathub (`flathub/`): screenshots of the desktop app's window, captured inside a headless
  *   GNOME Shell, and `out/flathub-preview.html`, a mock of the app page from those screenshots
  *   and the metainfo, with Flathub's quality checks.
@@ -15,10 +17,11 @@
  *   their attachments in `docs/User Guide`.
  *
  * Usage:
- *   pnpm --filter showcase play | flathub | hero | website | user-guide
- *   pnpm --filter showcase start [icon] [screenshots] [feature] [preview] [flathub]
+ *   pnpm --filter showcase play | appstore | flathub | hero | website | user-guide
+ *   pnpm --filter showcase start [icon] [screenshots] [feature] [preview] [appstore] [flathub]
  *       [flathub-preview] [hero] [website] [user-guide]
- *       [--only tree,text] [--devices phone,tablet] [--url http://localhost:8080] [--port 37991]
+ *       [--only tree,text] [--devices phone,tablet,iphone,ipad] [--url http://localhost:8080]
+ *       [--port 37991]
  *
  * With no target it builds the Play Store assets only. The demo document is a fresh one with the
  * demo content plus what `SEED` in `shared/scenes.ts` adds, on a dev server the build boots,
@@ -38,17 +41,18 @@
 import fs from "fs";
 import { parseArgs } from "util";
 
+import { APP_STORE_TARGETS } from "./appstore/build.ts";
 import { DOCS_TARGETS } from "./docs/build.ts";
 import { FLATHUB_TARGETS } from "./flathub/build.ts";
 import { HERO_TARGETS } from "./hero/build.ts";
 import { checkPlayAssets, PLAY_TARGETS } from "./play/build.ts";
 import { launchBrowser } from "./shared/browser.ts";
 import { type BuildOptions, type Builder, outDir } from "./shared/build.ts";
-import { DEVICES } from "./shared/scenes.ts";
 import { WEBSITE_TARGETS } from "./website/build.ts";
 
 const BUILDERS: Record<string, Builder> = {
-    ...PLAY_TARGETS, ...FLATHUB_TARGETS, ...HERO_TARGETS, ...WEBSITE_TARGETS, ...DOCS_TARGETS
+    ...PLAY_TARGETS, ...APP_STORE_TARGETS, ...FLATHUB_TARGETS, ...HERO_TARGETS, ...WEBSITE_TARGETS,
+    ...DOCS_TARGETS
 };
 
 /** Names that stand for several targets; `play` is built when none is named. */
@@ -92,7 +96,7 @@ function readOptions(args: string[]): BuildOptions {
     });
     return {
         targets: targets.length ? targets : GROUPS.play,
-        devices: values.devices?.split(",") ?? Object.keys(DEVICES),
+        devices: values.devices?.split(","),
         only: values.only?.split(","),
         url: values.url?.replace(/\/$/, ""),
         port: Number(values.port)

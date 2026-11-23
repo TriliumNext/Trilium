@@ -9,7 +9,8 @@ export const outDir = path.join(appDir, "out");
 
 export interface BuildOptions {
     targets: string[];
-    devices: string[];
+    /** The devices to capture the store screenshots on, or all of the store's. */
+    devices?: string[];
     /** The IDs of the scenes to capture, or all of them. */
     only?: string[];
     /** A running server to capture instead of a demo server the build boots. */

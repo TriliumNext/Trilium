@@ -8,6 +8,7 @@
   "scripts": {
     "start": "node src/main.ts",
     "play": "node src/main.ts play",
+    "appstore": "node src/main.ts appstore",
     "flathub": "node src/main.ts flathub flathub-preview",
     "hero": "node src/main.ts hero",
     "website": "node src/main.ts website",
