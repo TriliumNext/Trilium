@@ -112,6 +112,10 @@
                     padding: 0;
                 }
             }
+
+            &.type-pdf .rendered-content {
+                height: 100%;
+            }
         }
     }
 }
