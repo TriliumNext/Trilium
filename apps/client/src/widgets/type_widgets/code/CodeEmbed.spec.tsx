@@ -847,6 +847,41 @@ describe("InlineCodeEmbed", () => {
         expectBoxSizeIconAlone(shown);
     });
 
+    it("starts a paragraph on Enter past two blank lines, unlike an included note", async () => {
+        const insertParagraphBeside = vi.fn(() => true);
+        const { editable } = buildCodeViewTextEditor({
+            ContentEmbedCaret: { insertParagraphBeside }
+        });
+        const pressEnterAtEnd = (view: Awaited<ReturnType<typeof findView>>) => {
+            act(() => view.dispatch({ selection: { anchor: view.state.doc.length } }));
+            const event = new KeyboardEvent("keydown", {
+                key: "Enter", bubbles: true, cancelable: true
+            });
+            act(() => {
+                view.contentDOM.dispatchEvent(event);
+            });
+            return event.defaultPrevented;
+        };
+
+        const { figure } = await mountInline("foo\n\n", buildEditor(), {
+            language: "text-plain", isEditable: true, container: editable
+        });
+        const view = await findView(figure);
+        expect(pressEnterAtEnd(view)).toBe(true);
+        expect(view.state.doc.toString()).toBe("foo");
+        expect(insertParagraphBeside).toHaveBeenCalledExactlyOnceWith(
+            figure.querySelector(".code-embed-content"), "end", false
+        );
+
+        const { figure: included } = await mount(buildCodeNote("foo\n\n"), buildEditor(), {
+            isEditable: true, container: editable
+        });
+        const includedView = await findView(included);
+        pressEnterAtEnd(includedView);
+        expect(includedView.state.doc.toString()).toBe("foo\n\n\n");
+        expect(insertParagraphBeside).toHaveBeenCalledOnce();
+    });
+
     it("edits the code, follows the code the note writes, and sets its language", async () => {
         options.set("codeNotesMimeTypes", JSON.stringify([ "text/x-python", "text/x-sh" ]));
         vi.spyOn(contextMenu, "show").mockResolvedValue(undefined);

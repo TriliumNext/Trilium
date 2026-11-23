@@ -137,19 +137,32 @@ export interface EmbeddedCaretEditor {
     getEdgeLeftBy(event: KeyboardEvent): EmbedEdge | null;
     /** Runs before the caret leaves the editor past an edge, while the editor has the focus. */
     prepareToLeave?(): void;
+    /**
+     * The edge of the content that Enter in `event` leaves past, as it leaves a code block, or
+     * `null` while the caret stays in the content.
+     */
+    getEdgeLeftByEnter?(event: KeyboardEvent): EmbedEdge | null;
+    /** Removes the blank lines that Enter leaves past at `edge`. */
+    removeBlankLinesAt?(edge: EmbedEdge): void;
+    /** Whether the changes of the editor are steps of the undo stack of the text editor. */
+    readonly hasSharedHistory?: boolean;
 }
 
 /**
  * Lets the arrow keys move the caret between `getEditor()`, the editor of an embed, and the text
- * editor around the embed, while its `EditableEmbedContent` has `hasCaretNavigation`.
- * `getEditor()` returns `null` while the editor is not ready.
+ * editor around the embed, while its `EditableEmbedContent` has `hasCaretNavigation`. With
+ * `leavesOnEnter`, Enter past blank lines at an edge of the content starts a paragraph beside the
+ * embed, as in a code block. `getEditor()` returns `null` while the editor is not ready.
  */
 export function useEmbedCaretNavigation(
-    getEditor: () => EmbeddedCaretEditor | null | undefined
+    getEditor: () => EmbeddedCaretEditor | null | undefined,
+    leavesOnEnter = false
 ) {
     const rootRef = useContext(CaretNavigationContext);
     const getEditorRef = useRef(getEditor);
     getEditorRef.current = getEditor;
+    const leavesOnEnterRef = useRef(leavesOnEnter);
+    leavesOnEnterRef.current = leavesOnEnter;
 
     useEffect(() => {
         const root = rootRef?.current;
@@ -158,6 +171,15 @@ export function useEmbedCaretNavigation(
         // The capture phase runs before the editor handles the key.
         const onKeyDown = (event: KeyboardEvent) => {
             const editor = getEditorRef.current();
+            const enterEdge = leavesOnEnterRef.current && editor?.getEdgeLeftByEnter?.(event);
+            if (editor && enterEdge) {
+                if (insertParagraphBesideContentEmbed(root, enterEdge, editor)) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                return;
+            }
+
             const edge = editor?.getEdgeLeftBy(event);
             if (!editor || !edge) return;
 
@@ -321,6 +343,25 @@ function leaveContentEmbed(element: HTMLElement, edge: EmbedEdge) {
     const editor = findTextEditorAround(element);
     return !!editor?.plugins.has("ContentEmbedCaret")
         && editor.plugins.get("ContentEmbedCaret").leaveEmbed(element, edge);
+}
+
+/**
+ * Removes the blank lines of `embedEditor` at `edge` and puts the caret of the text editor around
+ * `element` in a new paragraph beside its embed, in one undo step. Returns `false`, before any
+ * change, when no text editor with `ContentEmbedCaret` is around `element`.
+ */
+function insertParagraphBesideContentEmbed(
+    element: HTMLElement, edge: EmbedEdge, embedEditor: EmbeddedCaretEditor
+) {
+    const editor = findTextEditorAround(element);
+    if (!editor?.plugins.has("ContentEmbedCaret")) {
+        return false;
+    }
+
+    embedEditor.removeBlankLinesAt?.(edge);
+    embedEditor.prepareToLeave?.();
+    return editor.plugins.get("ContentEmbedCaret")
+        .insertParagraphBeside(element, edge, !!embedEditor.hasSharedHistory);
 }
 
 /**

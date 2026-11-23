@@ -709,6 +709,76 @@ describe("CodeMirror", () => {
             expect(instance.getEdgeLeftBy(arrowLeft)).toBe(null);
         });
 
+        it("tells the end that Enter leaves past two blank lines, as in a code block", () => {
+            const instance = build();
+            editor = instance;
+            const getEdge = (text: string, init: KeyboardEventInit = {}, key = "Enter") => {
+                instance.setText(text);
+                instance.dispatch({ selection: EditorSelection.cursor(text.length) });
+                return instance.getEdgeLeftByEnter(createKeydown(key, instance.contentDOM, init));
+            };
+
+            expect(getEdge("foo\n\n")).toBe("end");
+            expect(getEdge("foo\n  \n\t")).toBe("end");
+            expect(getEdge("\n\n")).toBe("end");
+            expect(getEdge("foo\n")).toBe(null);
+            expect(getEdge("\n")).toBe(null);
+            expect(getEdge("foo\n\nbar")).toBe(null);
+            expect(getEdge("foo\n\n", {}, "ArrowDown")).toBe(null);
+            for (const modifier of [ "shiftKey", "ctrlKey", "altKey", "metaKey", "isComposing" ]) {
+                expect(getEdge("foo\n\n", { [modifier]: true })).toBe(null);
+            }
+
+            instance.dispatch({ selection: EditorSelection.cursor(4) });
+            expect(instance.getEdgeLeftByEnter(createKeydown("Enter", instance.contentDOM)))
+                .toBe(null);
+        });
+
+        it("removes the blank lines that Enter leaves past in an undo step of its own", () => {
+            const instance = build();
+            editor = instance;
+            // A host whose latest step can still grow, so that typing joins it.
+            const { host, history } = createSharedHistory(true);
+            expect(instance.hasSharedHistory).toBe(false);
+            instance.setSharedHistory(history);
+            expect(instance.hasSharedHistory).toBe(true);
+            instance.setText("foo");
+            instance.dispatch({
+                changes: { from: 3, insert: "\n\n" },
+                selection: EditorSelection.cursor(5),
+                userEvent: "input.type"
+            });
+            const steps = host.push.mock.calls.length;
+
+            instance.removeBlankLinesAt("start");
+            expect(instance.getText()).toBe("foo\n\n");
+            instance.removeBlankLinesAt("end");
+            expect(instance.getText()).toBe("foo");
+            expect(host.push).toHaveBeenCalledTimes(steps + 1);
+
+            host.undo();
+            expect(instance.getText()).toBe("foo\n\n");
+            expect(instance.state.selection.main.head).toBe(5);
+        });
+
+        it("leaves Enter to Vim outside its Insert mode", async () => {
+            const instance = build();
+            editor = instance;
+            await instance.setVimKeybindings(true);
+            const { getCM, Vim } = await import("@replit/codemirror-vim");
+            const cm = getCM(instance);
+            expect(cm).not.toBeNull();
+            if (!cm) return;
+            instance.focus();
+            instance.setText("foo\n\n");
+            instance.dispatch({ selection: EditorSelection.cursor(5) });
+            const enter = createKeydown("Enter", instance.contentDOM);
+
+            expect(instance.getEdgeLeftByEnter(enter)).toBe(null);
+            Vim.handleKey(cm, "A", "test");
+            expect(instance.getEdgeLeftByEnter(enter)).toBe("end");
+        });
+
         it("drops the line-wrap side of the cursor before the caret leaves", () => {
             const instance = build();
             editor = instance;
@@ -1120,13 +1190,16 @@ function build(config: Partial<EditorConfig> = {}): CodeMirror {
     return new CodeMirror({ parent, ...config });
 }
 
-/** A shared history over a host that undoes the last step it was given. */
-function createSharedHistory() {
+/**
+ * A shared history over a host that undoes the last step it was given. With `isLatest`, the last
+ * step can still grow.
+ */
+function createSharedHistory(isLatest = false) {
     const steps: Parameters<HostHistory["push"]>[0][] = [];
     const host = {
         push: vi.fn((step: Parameters<HostHistory["push"]>[0]) => {
             steps.push(step);
-            return { isLatest: () => false };
+            return { isLatest: () => isLatest && steps.at(-1) === step };
         }),
         undo: vi.fn(() => steps.pop()?.undo()),
         redo: vi.fn()
