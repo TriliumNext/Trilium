@@ -5410,7 +5410,7 @@
     "badge_on_tooltip": "이 노트에 Vim 모드가 활성화되어 있습니다. 클릭하면 꺼집니다.",
     "badge_off_tooltip": "이 노트에 Vim 모드가 비활성화되어 있습니다. 클릭하면 켜집니다.",
     "menu_note": "Vim 모드",
-    "menu_settings": "설정",
+    "menu_settings": "옵션",
     "menu_help": "도움말",
     "menu_note_description": "이 노트에만 적용됩니다.",
     "menu_note_description_subtree": "이 노트와 그 아래의 하위 노트에 적용됩니다."
