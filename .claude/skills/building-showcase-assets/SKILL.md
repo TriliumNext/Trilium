@@ -13,7 +13,7 @@ website ones are also copied into the repo.
 
 ```
 pnpm --filter showcase play       # Google Play: icon, screenshots, feature graphic, preview
-pnpm --filter showcase appstore   # App Store: iPhone and iPad screenshots, listing checks
+pnpm --filter showcase appstore   # App Store: iPhone and iPad screenshots, preview, checks
 pnpm --filter showcase flathub    # Flathub: desktop window screenshots + preview with checks
 pnpm --filter showcase hero       # website hero → apps/website/public/hero{,-mobile}.html
 pnpm --filter showcase website    # website screenshots → apps/website/public/*.webp
@@ -23,7 +23,7 @@ pnpm --filter showcase start <targets…> [--only tree,text] [--devices phone,ta
 ```
 
 Targets: `icon`, `screenshots`, `feature`, `preview` (the `play` group, the default),
-`appstore`, `flathub`, `flathub-preview`, `hero`, `website`, `user-guide` (never `docs`: `pnpm docs` is a
+`appstore-screenshots`, `appstore-preview` (the `appstore` group), `flathub`, `flathub-preview`, `hero`, `website`, `user-guide` (never `docs`: `pnpm docs` is a
 pnpm built-in). `--only` takes scene IDs (or website file names, or User Guide image names),
 `--url` reuses a running server that already holds the demo plus the seed and needs
 no login (`flathub` always boots its own).
@@ -34,7 +34,8 @@ no login (`flathub` always boots its own).
 |---|---|---|---|
 | `icon`, `feature`, `screenshots` | `icon.png`, `feature-graphic.png`, `screenshots/{phone,tablet}/NN-<scene>.png` | Google Play listing | **By hand** in the Play Console; nothing uploads |
 | `preview` | `preview.html` (+ `listing-data.js`) | nowhere: a review mock of the Play page, light and dark | open the file |
-| `appstore` | `appstore/{iphone,ipad}/NN-<scene>.png` | App Store product page (6.9" iPhone, 13" iPad displays) | **By hand** in App Store Connect; the app icon comes from the build (`AppIcon.appiconset`), not the listing |
+| `appstore-screenshots` | `appstore/{iphone,ipad}/NN-<scene>.png` | App Store product page (6.9" iPhone, 13" iPad displays) | **By hand** in App Store Connect; the app icon comes from the build (`AppIcon.appiconset`), not the listing |
+| `appstore-preview` | `appstore-preview.html` (+ `appstore-data.js`, `appstore/icon.png`) | nowhere: a review mock of the product page, light and dark, with the keywords | open the file |
 | `flathub` | `flathub/NN-<scene>.png` | Flathub app page | copied to `apps/desktop/flatpak/screenshots/<scene>.png`, committed, then linked from the metainfo (below) |
 | `flathub-preview` | `flathub-preview.html` | nowhere: a mock of the Flathub page with Flathub's quality checks | open the file |
 | `hero` | `hero/hero.html`, `hero/hero-mobile.html` (+ app/snapshot/diff PNGs per variant) | `apps/website/public/`, iframed by the home page | copied **only when** every snapshot differs from the app by ≤ 0.5 % of pixels in both schemes |
@@ -47,10 +48,10 @@ description, feature graphic tagline and alt). The Flathub texts live in the met
 in the same shape and wording**: the Play one is the Flathub one with the second paragraph
 about the phone and without the desktop-only items (tabs and windows, global shortcuts, the
 web clipper). The App Store texts live in `src/appstore/listing.json` (name, subtitle,
-promotional text, description, keywords): its description is the Play one with "your iPhone
-and iPad" for "your phone", and its promotional text the Play short description. Metadata must
-not name other mobile platforms (App Review 2.3.10), so it never says Android. Change one, then
-the others.
+promotional text, description, keywords, and the developer the preview shows): its description
+is the Play one with "your iPhone and iPad" for "your phone", and its promotional text the Play
+short description. Metadata must not name other mobile platforms (App Review 2.3.10), so it
+never says Android. Change one, then the others.
 
 ### Flathub wiring
 
@@ -153,7 +154,7 @@ day of the build.
 
 ## Checks
 
-The build fails (exit code 1) on a failed check; `play` checks run after any Play target:
+The build fails (exit code 1) on a failed check; the Play checks run after any Play target:
 
 - Play: name ≤ 30, short ≤ 80, full ≤ 4000, alt texts ≤ 140; icon 512×512 with alpha ≤ 1 MB;
   feature graphic 1024×500 without alpha; 4–8 screenshots per device, 16:9 / 9:16, ≥ 1080 px,
@@ -161,7 +162,7 @@ The build fails (exit code 1) on a failed check; `play` checks run after any Pla
 - Flathub (`flathub-preview`): name, summary, description lists ≤ 10 items, branding colors,
   release notes, OARS rating, square SVG icon, 3–10 screenshots, first one light, window
   ≤ 1000×700 (2000×1400 HiDPI), PNGs with alpha (the window shadow), caption form.
-- App Store (end of `appstore`): name and subtitle ≤ 30, promotional text ≤ 170, description
+- App Store (after any App Store target): name and subtitle ≤ 30, promotional text ≤ 170, description
   ≤ 4000, keywords ≤ 100 bytes without a word of the name; the asset catalog icon 1024×1024
   without alpha; 1–10 screenshots per device at an accepted size (iPhone 1260×2736, 1290×2796,
   1320×2868; iPad 2064×2752, 2048×2732; either orientation), no alpha; captions on two lines

@@ -4,7 +4,7 @@ import type { Browser } from "playwright";
 
 import { setOption } from "../shared/browser.ts";
 import {
-    type BuildOptions, type Builder, checkList, outDir, repoRoot, reportChecks
+    type BuildOptions, type Builder, checkList, outDir, repoRoot, reportChecks, templatesDir
 } from "../shared/build.ts";
 import { openDemo } from "../shared/demo_server.ts";
 import { describePng, readPng } from "../shared/png.ts";
@@ -22,6 +22,8 @@ const listing: Listing = JSON.parse(
 interface Listing {
     name: string;
     subtitle: string;
+    /** The seller shown on the product page, which the developer account sets. */
+    developer: string;
     category: string;
     promotionalText: string;
     description: string;
@@ -46,15 +48,25 @@ const ACCEPTED_SIZES: Record<string, [ number, number ][]> = {
 };
 
 /**
- * The App Store target: iPhone and iPad screenshots of the demo document under their captions in
- * `out/appstore`, then the checks of those and of the listing texts against App Store Connect's
- * limits.
+ * The App Store targets: iPhone and iPad screenshots of the demo document under their captions in
+ * `out/appstore`, and `out/appstore-preview.html`, a mock of the product page.
  */
 export const APP_STORE_TARGETS: Record<string, Builder> = {
-    appstore: buildAppStore
+    "appstore-screenshots": buildScreenshots,
+    "appstore-preview": buildPreview
 };
 
-async function buildAppStore(browser: Browser, options: BuildOptions) {
+/**
+ * Checks the App Store assets on disk and the listing texts against App Store Connect's limits
+ * and fails the build when one of them is not met.
+ */
+export async function checkAppStoreAssets(browser: Browser) {
+    console.log("Checking the App Store assets...");
+    const shots = listStoreShots(shotsDir, APP_STORE_DEVICES);
+    reportChecks(runChecks(shots, await measureCaptions(browser, APP_STORE_DEVICES)));
+}
+
+async function buildScreenshots(browser: Browser, options: BuildOptions) {
     const server = await openDemo(browser, options);
     try {
         await setOption(browser, server.baseUrl, "rightPaneVisible", "false");
@@ -62,9 +74,20 @@ async function buildAppStore(browser: Browser, options: BuildOptions) {
     } finally {
         server.stop();
     }
-    console.log("Checking the App Store assets...");
-    const shots = listStoreShots(shotsDir, APP_STORE_DEVICES);
-    reportChecks(runChecks(shots, await measureCaptions(browser, APP_STORE_DEVICES)));
+}
+
+function buildPreview() {
+    const screenshots = listStoreShots(shotsDir, APP_STORE_DEVICES).map(({ device, file }) => ({
+        device, file: path.join("appstore", file)
+    }));
+    const script = `window.LISTING = ${JSON.stringify({ listing, screenshots }, null, 4)};\n`;
+    fs.writeFileSync(path.join(outDir, "appstore-data.js"), script);
+    fs.mkdirSync(shotsDir, { recursive: true });
+    fs.copyFileSync(appIcon, path.join(shotsDir, "icon.png"));
+    for (const file of [ "appstore-preview.html", "common.css" ]) {
+        fs.copyFileSync(path.join(templatesDir, file), path.join(outDir, file));
+    }
+    console.log(`  Open ${path.join(outDir, "appstore-preview.html")}`);
 }
 
 /** The store's limits, from the App Store Connect help on platform version information. */

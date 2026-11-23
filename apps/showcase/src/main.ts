@@ -4,8 +4,9 @@
  * - Google Play (`play/`): the icon, the feature graphic, phone and tablet screenshots and
  *   `out/preview.html`, a mock of the listing, checked against the store's size and length
  *   limits.
- * - The App Store (`appstore/`, target `appstore`): iPhone and iPad screenshots under captions in
- *   `out/appstore`, checked with the listing texts against App Store Connect's limits.
+ * - The App Store (`appstore/`): iPhone and iPad screenshots under captions in `out/appstore`
+ *   and `out/appstore-preview.html`, a mock of the product page, checked with the listing texts
+ *   against App Store Connect's limits.
  * - Flathub (`flathub/`): screenshots of the desktop app's window, captured inside a headless
  *   GNOME Shell, and `out/flathub-preview.html`, a mock of the app page from those screenshots
  *   and the metainfo, with Flathub's quality checks.
@@ -18,8 +19,8 @@
  *
  * Usage:
  *   pnpm --filter showcase play | appstore | flathub | hero | website | user-guide
- *   pnpm --filter showcase start [icon] [screenshots] [feature] [preview] [appstore] [flathub]
- *       [flathub-preview] [hero] [website] [user-guide]
+ *   pnpm --filter showcase start [icon] [screenshots] [feature] [preview] [appstore-screenshots]
+ *       [appstore-preview] [flathub] [flathub-preview] [hero] [website] [user-guide]
  *       [--only tree,text] [--devices phone,tablet,iphone,ipad] [--url http://localhost:8080]
  *       [--port 37991]
  *
@@ -41,7 +42,7 @@
 import fs from "fs";
 import { parseArgs } from "util";
 
-import { APP_STORE_TARGETS } from "./appstore/build.ts";
+import { APP_STORE_TARGETS, checkAppStoreAssets } from "./appstore/build.ts";
 import { DOCS_TARGETS } from "./docs/build.ts";
 import { FLATHUB_TARGETS } from "./flathub/build.ts";
 import { HERO_TARGETS } from "./hero/build.ts";
@@ -57,7 +58,8 @@ const BUILDERS: Record<string, Builder> = {
 
 /** Names that stand for several targets; `play` is built when none is named. */
 const GROUPS: Record<string, string[]> = {
-    "play": Object.keys(PLAY_TARGETS)
+    play: Object.keys(PLAY_TARGETS),
+    appstore: Object.keys(APP_STORE_TARGETS)
 };
 
 const options = readOptions(process.argv.slice(2));
@@ -72,6 +74,9 @@ try {
     }
     if (options.targets.some((target) => target in PLAY_TARGETS)) {
         await checkPlayAssets(browser);
+    }
+    if (options.targets.some((target) => target in APP_STORE_TARGETS)) {
+        await checkAppStoreAssets(browser);
     }
 } finally {
     await browser.close();
