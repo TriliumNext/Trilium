@@ -4,14 +4,18 @@
         "desktop_title": "Scarica l'applicazione desktop (v{{version}})",
         "architecture": "Architettura:",
         "older_releases": "Vedi le versioni precedenti",
-        "server_title": "Configurare un server per l'accesso su più dispositivi"
+        "server_title": "Configurare un server per l'accesso su più dispositivi",
+        "nightly_title": "Prova la versione nightly",
+        "nightly_subtitle": "Viene compilata ogni giorno dal ramo principale, con le funzionalità e le correzioni più recenti prima ancora che vengano rilasciate. Un programma di installazione \"nightly\" sostituisce l'installazione stabile e apre le stesse note. Se una versione \"nightly\" modifica il database, per tornare alla versione stabile è necessario ripristinare un backup.",
+        "nightly_all_downloads": "Tutti i download notturni",
+        "nightly_learn_more": "Informazioni sulle build notturne"
     },
     "hero_section": {
         "github": "GitHub",
         "dockerhub": "Docker Hub",
-        "screenshot_alt": "Screenshot dell'applicazione desktop Trilium Notes",
-        "title": "Organizza i tuoi pensieri. Costruisci la tua conoscenza personale.",
-        "subtitle": "Trilium è una soluzione open source per prendere appunti e organizzare una base di conoscenze personali. Utilizzalo localmente sul tuo desktop o sincronizzalo con il tuo server self-hosted per avere i tuoi appunti sempre con te, ovunque tu vada.",
+        "screenshot_alt": "L'applicazione desktop Trilium Notes, con una nota di testo aperta accanto all'albero delle note",
+        "title": "Amplia le tue conoscenze personali.",
+        "subtitle": "Raccogli tutto ciò che sai in un unico albero di note, con tutto lo spazio di cui hai bisogno. Scrivi, disegna e pianifica sul tuo computer e sul tuo telefono, e sincronizza il tutto tramite un server gestito da te per accedere alle tue note da qualsiasi browser.",
         "get_started": "Inizia ora",
         "tagline_license": "Licenza AGPL-3.0",
         "tagline_no_account": "Non è necessario alcun account",
@@ -113,7 +117,7 @@
         "more_questions": "Hai ancora domande? <0>Chiedi alla community</0>"
     },
     "final_cta": {
-        "title": "Inizia a costruire la tua base di conoscenze",
+        "title": "Inizia ad ampliare le tue conoscenze",
         "description": "Organizza tutto in un'unica app open source: note gerarchiche, ricerca avanzata e sincronizzazione con un server di tua proprietà.",
         "get_started": "Inizia ora"
     },
@@ -283,5 +287,15 @@
         "render_description": "Crea dashboard interattive e mini-app che vengono visualizzate direttamente all'interno di una nota, come l'orologio mostrato qui.",
         "api_title": "API di script",
         "api_description": "Un'API tipizzata per note, ramificazioni, attributi e ricerca, disponibile sia per gli script frontend che backend."
+    },
+    "download_helper_nightly": {
+        "desktop_description": "L'ultima versione desktop per questo computer. Usa il selettore di architettura qui sopra per scaricare l'altra versione.",
+        "download_flatpak": ".flatpak",
+        "android_title": "Android",
+        "android_description": "L'app mobile conserva una copia completa delle tue note sul telefono, funziona offline e si sincronizza con il tuo server.",
+        "download_apk": "Scarica l'APK (.apk)",
+        "server_title": "Server",
+        "server_description": "L'ultima versione del server, sotto forma di immagine Docker o pacchetto Linux.",
+        "server_quick_start": "Per eseguirlo con Docker:"
     }
 }
