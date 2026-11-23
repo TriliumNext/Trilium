@@ -2,81 +2,81 @@
   "about": {
     "data_directory": "Gegevensmap:",
     "version_label": "Versie:",
-    "version": "{{appVersion}} (databank: {{dbVersion}}, synchroniseringsprotocol: {{syncVersion}})",
+    "version": "{{appVersion}} (database: {{dbVersion}}, syncversie: {{syncVersion}})",
     "build_info": "Build: {{buildDate}}, revisie: <buildRevision />",
-    "contributors_label": "Collaborateuren:",
+    "contributors_label": "Bijdragers:",
     "contributor_roles": {
-      "original-dev": "Originele ontwikkelaar",
-      "lead-dev": "hoofd programmeur"
+      "original-dev": "oorspronkelijke ontwikkelaar",
+      "lead-dev": "hoofdontwikkelaar"
     },
     "role_brief_history": {
-      "lead-dev": "Elian Doran heeft TriliumNext opgericht in 2014 nadat Zadam, de originele oprichter, zich terugtrok uit het project. Later heeft Zadam de originele repository overgedragen over aan het TriliumNext team, waarbij beide projecten uiteindelijk zijn samengevoegd.",
-      "original-dev": "Op 25 december 2017 werd door Zadam de eerste beta van Trilium (met één \"l\", in tegenstelling tot de bloem) uitgegeven. Ontevreden over bestaande notitie toepassingen, bouwde hij een krachtige, zelf-gehoste, hiërarchische kennisbank die meer dan 22 000 GitHub sterren verzamelde. In 2024, wanneer het leven drukker werd, plaatste hij het project in onderhoudsmodus."
+      "lead-dev": "Elian Doran heeft TriliumNext in 2024 opgericht als een community-fork nadat Zadam een stap terugdeed van het project. Later heeft Zadam de originele repository overgedragen aan het TriliumNext-team, waarmee beide projecten weer zijn samengevoegd.",
+      "original-dev": "Op 25 december 2017 bracht Zadam de eerste bèta van Trilium uit (met één \"l\", in tegenstelling tot de bloem). Ontevreden over bestaande notitie-apps bouwde hij een krachtige, zelfgehoste hiërarchische kennisbank met meer dan 22.000 GitHub-sterren. Toen het in 2024 drukker werd, zette hij het project in onderhoudsmodus."
     },
-    "contributor_full_list": "Zie de hele gemeenschap",
-    "github_tooltip": "Meld fouten, stel functionaliteiten voor, of draag bij op GitHub",
+    "contributor_full_list": "Bekijk de hele community",
+    "github_tooltip": "Meld bugs, stel functies voor of draag bij op GitHub",
     "license_tooltip": "Bekijk de licentie",
-    "donate": "Doneer",
-    "donate_tooltip": "Doneer om dit project te steunen",
+    "donate": "Doneren",
+    "donate_tooltip": "Steun dit project met een donatie",
     "channel": {
-      "nightly": "Nachtelijke",
-      "standalone": "Zelfstandig"
+      "nightly": "Nightly",
+      "standalone": "Standalone"
     }
   },
   "toast": {
     "critical-error": {
       "title": "Kritieke fout",
-      "message": "Een kritieke fout heeft plaatsgevonden waardoor het programma niet kon starten:\n\n{{message}}\n\nDit is waarschijnlijk veroorzaakt door een onverwachte fout in een script. Probeer de applicatie op te starten in veilige modus en het probleem op te lossen."
+      "message": "Er is een kritieke fout opgetreden waardoor de applicatie niet kon starten:\n\n{{message}}\n\nDit komt waarschijnlijk door een onverwachte fout in een script. Probeer de applicatie in veilige modus te starten en het probleem op te lossen."
     },
     "widget-error": {
-      "title": "Het starten van de widget is mislukt",
+      "title": "Laden van een widget mislukt",
       "message-unknown": "Onbekende widget kan niet gestart worden omdat:\n\n{{message}}",
-      "message-custom": "Aangepaste widget van notitie met ID \"{{id}}\", getiteld \"{{title}}\" kon niet worden geïnitialiseerd vanwege:\n\n{{message}}"
+      "message-custom": "Aangepaste widget van notitie met ID \"{{id}}\" en titel \"{{title}}\" kon niet worden geïnitialiseerd vanwege:\n\n{{message}}"
     },
     "bundle-error": {
       "title": "Custom script laden mislukt",
       "message": "Script kon niet worden uitgevoerd vanwege:\n\n{{message}}"
     },
-    "scripting-error": "De scriptnotitie kon niet worden uitgevoerd",
+    "scripting-error": "Uitvoeren van de scriptnotitie is mislukt",
     "widget-list-error": {
       "title": "Het is niet gelukt om de lijst met widgets van de server op te halen"
     },
     "widget-render-error": {
-      "title": "Het renderen van een aangepaste React-widget is mislukt"
+      "title": "Renderen van een aangepaste React-widget mislukt"
     },
-    "widget-missing-parent": "Widget heeft niet het verplichte '{{property}}'-veld gedefinieerd.\n\nAls dit script is bedoeld om zonder interface te draaien, gebruik dan in plaats daarvan '#run=frontendStartup'.",
+    "widget-missing-parent": "Een custom widget mist het verplichte '{{property}}'-kenmerk.\n\nAls dit script zonder UI-element moet draaien, gebruik dan in plaats daarvan '#run=frontendStartup'.",
     "open-script-note": "Open scriptnotitie",
     "unhandled-error": {
       "title": "Een achtergrondtaak is mislukt",
       "details-button": "Zie meer details...",
-      "details-intro": "De applicatie draait nog en je notities zijn niet aangetast. Als dit blijft gebeuren, overweeg het op Github te melden door de volgende informatie te plakken.",
+      "details-intro": "De applicatie draait nog en je notities zijn niet aangetast. Blijft dit gebeuren? Overweeg dan om het op GitHub te melden en onderstaande informatie mee te sturen.",
       "details-title": "Technische informatie"
     }
   },
   "add_link": {
-    "add_link": "Voeg link toe",
+    "add_link": "Link toevoegen",
     "help_on_links": "Hulp bij links",
     "note": "Notitie",
     "search_note": "zoek notitie op naam",
-    "link_title": "Link titel",
+    "link_title": "Linktitel",
     "button_add_link": "Link invoegen",
-    "edit_link": "Wijzig link",
+    "edit_link": "Link bewerken",
     "button_edit_link": "Link opslaan",
-    "fix_link": "Corrigeer link",
+    "fix_link": "Link herstellen",
     "button_fix_link": "Corrigeer link",
-    "web_link": "Web pagina",
+    "web_link": "Webpagina",
     "url": "Adres (URL)",
     "invalid_url": "Dit is geen geldige URL.",
-    "script_link_not_allowed": "Links die beginnen met {{scheme}} kunnen code uitvoeren, en zijn daarom niet toegestaan.",
+    "script_link_not_allowed": "Links die beginnen met {{scheme}} kunnen code uitvoeren en zijn daarom niet toegestaan.",
     "display_as": "Weergeven als",
     "display_plain": "Tekst",
     "display_inline": "Icoon & tekst",
     "display_card": "Kaart",
-    "page_title": "Titel van de web pagina",
+    "page_title": "Titel van de webpagina",
     "title_from_url": "Hetzelfde als de URL",
-    "title_from_note": "Indien niet ingesteld, wordt altijd de titel van de notitie gebruikt",
+    "title_from_note": "Indien niet ingesteld, wordt altijd de notitietitel gebruikt",
     "description": "Beschrijving",
-    "page_description": "Beschrijving van de web pagina",
+    "page_description": "Beschrijving van de webpagina",
     "display_embed": "Insluiten",
     "anchors": "Kop / anker",
     "target_anchor": "Ankers",
@@ -91,19 +91,21 @@
     "heading_reference_failed": "Kan geen verwijzing maken naar de opgegeven kop",
     "link_to_heading": "Link naar een kop",
     "link_to_anchor": "Link naar een anker",
-    "no_link_targets": "Er zijn geen koppen of ankers beschikbaar om naar te linken."
+    "no_link_targets": "Er zijn geen koppen of ankers beschikbaar om naar te linken.",
+    "open_file_for_targets": "Open het bestand om de koppen weer te geven.",
+    "listing_changed": "De notitie is gewijzigd terwijl de koppen werden opgehaald. Selecteer de kop opnieuw."
   },
   "branch_prefix": {
     "edit_branch_prefix": "Bewerk branch prefix",
     "save": "Opslaan",
     "branch_prefix_saved": "Branch prefix is opgeslagen.",
-    "help_on_tree_prefix": "Help bij boomvoorvoegsel",
-    "prefix": "Voorvoegsel",
-    "edit_branch_prefix_multiple": "Bewerk zijtakvoorvoegsel voor {{count}} zijtakken",
-    "branch_prefix_saved_multiple": "Vertakkingsvoorvoegsel opgeslagen voor {{count}} vertakkingen.",
-    "affected_branches": "Betrokken takken ({{count}}):",
+    "help_on_tree_prefix": "Help bij boomprefix",
+    "prefix": "prefix",
+    "edit_branch_prefix_multiple": "Bewerk zijtakprefix voor {{count}} zijtakken",
+    "branch_prefix_saved_multiple": "Vertakkingsprefix opgeslagen voor {{count}} vertakkingen.",
+    "affected_branches": "Getroffen vertakkingen ({{count}}):",
     "preview_in_tree": "Voorbeeld in de boom",
-    "description": "Voorvoegsel voor enkel de notitie titel in deze tak. Andere takken behouden de originele titel.",
+    "description": "prefix voor enkel de notitie titel in deze tak. Andere takken behouden de originele titel.",
     "cancel": "Annuleren"
   },
   "bulk_actions": {
@@ -117,7 +119,15 @@
     "relations": "Relaties",
     "notes": "Notities",
     "other": "Andere",
-    "include_descendants": "Neem de onderliggende notities van de geselecteerde notities mee"
+    "include_descendants": "Neem de onderliggende notities van de geselecteerde notities mee",
+    "selected_notes": "Geselecteerde Notes",
+    "remove_from_selection": "Uit de selectie verwijderen",
+    "affected_note_count_one": "De acties worden toegepast op {{count}} notitie.",
+    "affected_note_count_other": "De acties worden toegepast op {{count}} notities.",
+    "add_action": "Actie toevoegen",
+    "remove_action": "Deze actie verwijderen",
+    "no_actions_to_execute": "Voeg eerst een actie toe.",
+    "no_notes_to_execute_on": "Geen van de geselecteerde notes bestaat nog."
   },
   "calendar": {
     "april": "April",
@@ -163,12 +173,12 @@
   },
   "clone_to": {
     "clone_notes_to": "Kloon de notities naar...",
-    "help_on_links": "Hulp op links",
+    "help_on_links": "Hulp bij links",
     "notes_to_clone": "Notities om te klonen",
-    "target_parent_note": "Doel oudernotitie",
+    "target_parent_note": "Target oudernotitie",
     "search_for_note_by_its_name": "zoek naar een notitie op naam",
-    "cloned_note_prefix_title": "De gekloonde notitie zal in de notitieboom getoond worden met het opgegeven voorvoegsel",
-    "prefix_optional": "Voorvoegsel (optioneel)",
+    "cloned_note_prefix_title": "De gekloonde notitie zal in de notitieboom getoond worden met het opgegeven prefix",
+    "prefix_optional": "prefix (optioneel)",
     "clone_to_selected_note": "Kloon naar geselecteerde notitie",
     "no_path_to_clone_to": "Geen pad om naar te klonen.",
     "note_cloned": "De notitie \"{{clonedTitle}}\" is gekloond naar \"{{targetTitle}}\""
@@ -177,20 +187,20 @@
     "confirmation": "Bevestiging",
     "cancel": "Annuleren",
     "ok": "OK",
-    "are_you_sure_remove_note": "Weet u zeker dat u de notitie \"{{title}}\" uit het relatie overzicht wil verwijderen? ",
+    "are_you_sure_remove_note": "Weet u zeker dat u de notitie \"{{title}}\" uit het relatieoverzicht wil verwijderen? ",
     "if_you_dont_check": "De notitie zelf blijft behouden; alleen wordt de vermelding ervan hier verwijderd.",
     "also_delete_note": "Verwijder ook de notitie",
-    "delete_note_keeps_note_one": "De notitie heeft {{count}} andere klone, de notitie zelf blijft dus behouden.",
+    "delete_note_keeps_note_one": "De notitie heeft {{count}} andere kloon, de notitie zelf blijft dus behouden.",
     "delete_note_keeps_note_other": "De notitie heeft {{count}} andere klonen, de notitie zelf blijft dus behouden.",
     "delete_note_deletes_note": "Dit is de enige plaats waar de notitie in de boomstructuur voorkomt, de notitie wordt dus verwijderd. Dit kan ongedaan gemaakt worden via de recente wijzigingen.",
-    "delete_note_deletes_clones": "De notitie wordt verwijderd uit alle {{places}}-locaties waar deze voorkomt. Dit kan ongedaan worden gemaakt via de recente wijzigingen."
+    "delete_note_deletes_clones": "De notitie wordt verwijderd uit alle {{places}} locaties waar deze voorkomt. Dit kan ongedaan worden gemaakt via de recente wijzigingen."
   },
   "delete_notes": {
     "title": "Verwijder notities",
     "close": "Sluiten",
     "clones_label": "Klonen",
-    "delete_clones_description_one": "Verwijder ook {{count}} kloon. Kan ongedaan gemaakt worden bij recente aanpassingen.",
-    "delete_clones_description_other": "Verwijder ook {{count}} klonen. Kan ongedaan gemaakt worden bij recente aanpassingen.",
+    "delete_clones_description_one": "Verwijder ook {{count}} kloon. Kan ongedaan gemaakt worden bij recente wijzigingen.",
+    "delete_clones_description_other": "Verwijder ook {{count}} klonen. Kan ongedaan gemaakt worden bij recente wijzigingen.",
     "delete_all_clones_description": "Verwijder ook alle klonen (kan ongedaan gemaakt worden bij recente wijzigingen)",
     "erase_notes_label": "Definitief verwijderen",
     "erase_notes_description": "Verwijder notities onmiddellijk in plaats van uitgesteld verwijderen. Dit kan niet ongedaan gemaakt worden en forceert het herladen van de toepassing.",
@@ -198,7 +208,7 @@
     "notes_to_be_deleted": "Te verwijderen notities ({{notesCount}})",
     "no_note_to_delete": "Er worden geen notities verwijderd (enkel klonen).",
     "broken_relations_to_be_deleted": "Gebroken relaties ({{relationCount}})",
-    "table_note_with_relation": "Notitie met relatie",
+    "table_note_with_relation": "Notities met relatie",
     "table_relation": "Relatie",
     "table_points_to": "Verwijst naar (verwijderd)",
     "cancel": "Annuleren",
@@ -207,7 +217,7 @@
   "export": {
     "export_note_title": "Notitie exporteren",
     "close": "Sluiten",
-    "export_type_subtree": "Deze notitie & alles daaronder",
+    "export_type_subtree": "Deze notitie en alle onderliggende",
     "what_to_export": "Wat moet er geëxporteerd worden",
     "export_type_single": "Alleen deze notitie",
     "format": "Formaat",
@@ -234,7 +244,7 @@
     "format_pdf": "PDF – om af te drukken of te delen."
   },
   "help": {
-    "title": "Spiekbriefje",
+    "title": "Cheatsheet",
     "editShortcuts": "Sneltoetsen bewerken",
     "noteNavigation": "Notitie navigatie",
     "goUpDown": "omhoog/omlaag gaan in de lijst met notities",
@@ -246,23 +256,23 @@
     "collapseWholeTree": "de volledige notitieboom samenvouwen",
     "collapseSubTree": "sub-notitieboom samenvouwen",
     "toggleArchivedNotes": "gearchiveerde notities weergeven/verbergen",
-    "onlyInDesktop": "Alleen op desktop (Electron versie)",
+    "onlyInDesktop": "Alleen op desktop (Electron build)",
     "openEmptyTab": "leeg tabblad openen",
     "closeActiveTab": "actief tabblad sluiten",
     "activateNextTab": "volgend tabblad activeren",
     "activatePreviousTab": "vorig tabblad activeren",
     "creatingNotes": "Notities maken",
-    "createNoteAfter": "nieuwe notitie aanmaken na de actieve notitie",
+    "createNoteAfter": "nieuwe notitie aanmaken achter de actieve notitie",
     "createNoteInto": "nieuwe subnotitie aanmaken in de actieve notitie",
     "movingCloningNotes": "Notities verplaatsen / klonen",
     "moveNoteUpDown": "notitie omhoog/omlaag verplaatsen in de notitielijst",
     "moveNoteUpHierarchy": "notitie hoger in de hiërarchie plaatsen",
     "selectAllNotes": "selecteer alle notities op het huidige niveau",
     "selectNote": "selecteer notitie",
-    "copyNotes": "actieve notitie (of huidige selectie) naar het klembord kopiëren (gebruikt voor <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/cloning-notes.html#cloning-notes\">cloning</a>)",
+    "copyNotes": "actieve notitie (of huidige selectie) naar het klembord kopiëren (gebruikt voor <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/cloning-notes.html#cloning-notes\">klonen</a>)",
     "cutNotes": "huidige notitie (of huidige selectie) naar het klembord knippen (wordt gebruikt voor het verplaatsen van notities)",
     "pasteNotes": "notitie(s) als sub-notitie in de actieve notitie plakken (dit gebeurt door de notitie te verplaatsen of te klonen, afhankelijk van of deze naar het klembord is gekopieerd of geknipt)",
-    "deleteNotes": "notitie verwijderen / subboom",
+    "deleteNotes": "notitie verwijderen / sub-boomstructuur",
     "editNoteTitle": "In het boomstructuurvenster wordt de focus verplaatst van het boomstructuurvenster naar de notitietitel. Als je op Enter drukt vanuit de notitietitel, wordt de focus verplaatst naar de teksteditor. <kbd>Ctrl+.</kbd> verplaatst de focus terug van de editor naar het boomstructuurvenster.",
     "createEditLink": "externe link aanmaken / bewerken",
     "openAiAssistant": "open de AI assistent op de selectie",
@@ -281,11 +291,11 @@
     "other": "Overige",
     "quickSearch": "focus op snelle zoekinvoer",
     "inPageSearch": "zoeken op de pagina",
-    "showJumpToNoteDialog": "toon <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">\"Ga naar\" dialaog</a>",
+    "showJumpToNoteDialog": "toon <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">\"Ga naar\" dialog</a>",
     "tabShortcuts": "Tab snelkoppelingen",
     "newTabNoteLink": "open notitielinks in een nieuw tabblad",
-    "newTabWithActivationNoteLink": "open notitielinks in een nieuw tabblad en focus deze",
-    "editBranchPrefix": "pas het <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/tree-concepts.html#prefix\">voorvoegsel</a> aan van een actieve notitiekloon",
+    "newTabWithActivationNoteLink": "open notitielinks in een nieuw tabblad en maak deze actief",
+    "editBranchPrefix": "pas het <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/tree-concepts.html#prefix\">prefix</a> aan van een actieve notitiekloon",
     "multiSelectNote": "selecteer meerdere notities boven/onder",
     "editingNotes": "Notities bewerken",
     "headings": "<code>##</code>, <code>###</code>, <code>####</code>  etc. gevolgd door spatie voor kop"
@@ -294,7 +304,7 @@
     "importIntoNote": "In notitie importeren",
     "importIntoNoteNamed": "Importeren naar {{- title}}",
     "import_from": "Importeren vanuit",
-    "cardName": "Bestanden en andere formaten",
+    "cardName": "Bestanden & andere formaten",
     "cardDescription": "ZIP, ENEX, OPML, Markdown, HTML, afbeeldingen en meer",
     "chooseImportFile": "Kies een importbestand",
     "importZipRecommendation": "Bij het importeren van een ZIP bestand wordt de hiërarchie van de notities aangepast aan de structuur van de submappen in het archief.",
@@ -401,7 +411,22 @@
   "include_note": {
     "dialog_title": "Notitie bijvoegen",
     "label_note": "Notitie",
-    "button_include": "Bijgevoegde notitie"
+    "button_include": "Bijgevoegde notitie",
+    "box_size": "Grootte van het kader",
+    "size_compact": "Compact",
+    "size_compact_description": "Eén regel met de titel en acties, of de bedieningselementen van een audiobestand.",
+    "size_resizable": "Aanpasbaar formaat",
+    "size_resizable_description": "Een kader waarvan je de afmetingen vrij kunt aanpassen.",
+    "size_full": "Volledig",
+    "size_full_description": "De volledige inhoud.",
+    "size_expandable": "Uitklapbaar",
+    "size_expandable_description": "Alleen de titel wordt weergegeven totdat je het kader uitklapt.",
+    "inserted_as_image": "Deze Note is als afbeelding ingevoegd.",
+    "size_hint": "Je kunt de grootte later nog aanpassen.",
+    "image_size_hint": "Je kunt de afbeelding later nog vergroten of verkleinen.",
+    "missing_note": "De Note met ID {{noteId}} ontbreekt.",
+    "missing_attachment": "De bijlage met ID {{attachmentId}} ontbreekt.",
+    "unknown_kind": "Voor deze inhoud is een nieuwere versie van Trilium vereist."
   },
   "info": {
     "modalTitle": "Informatiebericht",
@@ -437,11 +462,37 @@
       "math": "vergelijking",
       "collapsible_summary": "Samenvatting",
       "collapsible_details": "Details",
-      "table_column": "Kolom {{number}}"
+      "table_column": "Kolom {{number}}",
+      "tab_title": "Tabblad {{number}}",
+      "tab_content": "Inhoud",
+      "aside": "Kanttekening"
     },
     "admonition": "Voeg {{type}} waarschuwing toe",
     "todo": "Voeg een \"{{title}}\" taak item toe",
-    "todo_nonstandard": "Voeg een \"{{title}}\" taak item toe (niet standaard)"
+    "todo_nonstandard": "Voeg een \"{{title}}\" taak item toe (niet standaard)",
+    "tabs": "Tabbladen invoegen waarbij telkens één paneel zichtbaar is",
+    "aside": "Een tekstkader invoegen waar de hoofdtekst omheen loopt",
+    "titles": {
+      "date": "Datum/tijd invoegen",
+      "include": "Note invoegen",
+      "image": "Afbeelding uploaden",
+      "link": "Interne link",
+      "math": "Wiskundige formule",
+      "footnote": "Voetnoot",
+      "mermaid": "Mermaid-diagram",
+      "mermaid_template": "Mermaid-diagram: {{name}}",
+      "collapsible": "Inklapbaar blok",
+      "tabs": "Tabbladen",
+      "aside": "Tekstkader",
+      "page_break": "Pagina-einde",
+      "table": "Tabel",
+      "note": "Note",
+      "tip": "Tip",
+      "important": "Belangrijk",
+      "caution": "Let op",
+      "warning": "Waarschuwing",
+      "todo": "Taak: {{title}}"
+    }
   },
   "move_to": {
     "dialog_title": "Notities verplaatsen naar ...",
@@ -454,7 +505,10 @@
   },
   "note_type_chooser": {
     "modal_title": "Kies notitietype",
-    "templates": "Sjablonen"
+    "templates": "Sjablonen",
+    "location": "Locatie",
+    "location_placeholder": "Standaardlocatie als je dit veld leeg laat",
+    "manage_templates": "Sjablonen beheren in Content Manager"
   },
   "password_not_set": {
     "title": "Er is geen wachtwoord ingesteld",
@@ -464,8 +518,8 @@
   },
   "prompt": {
     "ok": "OK",
-    "title": "Commando",
-    "defaultTitle": "Commando"
+    "title": "Prompt",
+    "defaultTitle": "Prompt"
   },
   "protected_session_password": {
     "modal_title": "Beveiligde sessie",
@@ -500,7 +554,7 @@
     "confirm_delete_all": "Wilt u alle versies van deze notitie verwijderen?",
     "no_revisions": "Nog geen versies van deze notitie...",
     "restore_button": "Herstel",
-    "highlight_changes": "Markeer veranderingen",
+    "highlight_changes": "Markeer wijzigingen",
     "diff_on": "Toon verschillen",
     "diff_off": "Toon inhoud",
     "diff_on_hint": "Druk hier om notitie bron vergelijking te zien",
@@ -512,6 +566,49 @@
     "confirm_delete": "Wilt u deze versie verwijderen?",
     "revisions_deleted": "Notitieversies zijn verwijderd.",
     "revision_restored": "Notitie versie is hersteld.",
-    "revision_deleted": "Notitie versie is verwijderd."
+    "revision_deleted": "Notitie versie is verwijderd.",
+    "snapshot_interval": "Interval voor Note-revisieopnamen: {{seconds}} s.",
+    "maximum_revisions": "Maximumaantal Note-revisieopnamen: {{number}}.",
+    "save_revision_now": "Nu een revisie opslaan",
+    "save_named_revision": "Revisie met naam opslaan...",
+    "snapshot_header": "Momentopname van Note-revisie",
+    "snapshot_interval_value": "Interval: {{seconds}} s",
+    "snapshot_limit_value": "Limiet: {{number}}",
+    "settings": "Instellingen voor Note-revisies",
+    "menu_tooltip": "Revisieopties",
+    "download_button": "Downloaden",
+    "mime": "MIME-type: ",
+    "file_size": "Bestandsgrootte:",
+    "preview_not_available": "Voor dit type notitie is geen voorbeeld beschikbaar.",
+    "save_revision": "Revisie opslaan",
+    "save_revision_tooltip": "Handmatig een momentopname van de huidige Note opslaan",
+    "description_placeholder": "Geef deze revisie een naam",
+    "revision_saved": "De notitie revisie is opgeslagen.",
+    "edit_description": "Naam bewerken",
+    "description_updated": "De naam van de revisie is bijgewerkt.",
+    "source_auto": "Automatisch opslaan",
+    "source_manual": "Handmatig opslaan",
+    "source_etapi": "ETAPI",
+    "source_llm": "LLM",
+    "source_restore": "Herstellen",
+    "source_unknown": "Snapshot",
+    "date_today": "Vandaag",
+    "date_yesterday": "Gisteren",
+    "date_this_week": "Deze week",
+    "date_this_month": "Deze maand",
+    "source_description_auto": "Automatisch met regelmatige tussenpozen door het systeem opgeslagen",
+    "source_description_manual": "Handmatig door de gebruiker opgeslagen",
+    "source_description_etapi": "Aangemaakt via de externe Trilium-API",
+    "source_description_llm": "Aangemaakt door de AI-assistent"
+  },
+  "note_chips": {
+    "more": "+{{count}} meer"
+  },
+  "doc_notes": {
+    "hidden": "<p>De verborgen boomstructuur wordt gebruikt om verschillende gegevens op applicatieniveau op te slaan. Deze gegevens blijven doorgaans verborgen voor de gebruiker.</p><p>Wijzig deze gegevens alleen als je weet wat je doet. Onjuiste wijzigingen in deze boomstructuur kunnen de applicatie laten vastlopen.</p>",
+    "launchbar_command_launcher": "<p>Je kunt de sneltoets voor deze Launcher instellen via Opties -&gt; Sneltoetsen.</p>",
+    "launchbar_history_navigation": "<p>Met de knoppen Vorige en Volgende navigeer je door de navigatiegeschiedenis.</p><p>Deze Launchers zijn alleen actief in de desktopversie. In de serverversie worden ze genegeerd; daar kun je de standaard navigatieknoppen van je browser gebruiken.</p>",
+    "share": "<p>Hier vind je alle gedeelde Notes.</p>",
+    "system_state": "<p>Dit is een ingebouwde taakstatus die niet kan worden bewerkt of verwijderd.</p><p>Je kunt alleen de positie wijzigen. Die bepaalt de volgorde in de checkbox-werkbalk en bij het doorlopen van de statussen met het toetsenbord.</p>"
   }
 }
