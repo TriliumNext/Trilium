@@ -70,7 +70,10 @@
     "script_link_not_allowed": "I link che iniziano con {{scheme}} possono eseguire codice, pertanto non sono consentiti.",
     "display_as": "Visualizza come",
     "display_plain": "Testo",
-    "display_inline": "Icona e testo"
+    "display_inline": "Icona e testo",
+    "display_embed": "Incorpora",
+    "page_title": "Titolo della pagina web",
+    "display_card": "Scheda"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Modifica il prefisso del ramo",
