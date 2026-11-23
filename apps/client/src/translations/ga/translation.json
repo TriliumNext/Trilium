@@ -2160,7 +2160,6 @@
     "refresh-saved-search-results": "Athnuaigh torthaí cuardaigh sábháilte",
     "create-child-note": "Cruthaigh nóta linbh",
     "unhoist": "Dí-ardaigh",
-    "toggle-sidebar": "Scoránaigh an taobhbharra",
     "dropping-not-allowed": "Ní cheadaítear nótaí a fhágáil sa suíomh seo.",
     "clone-indicator-tooltip": "Tá {{- count}} tuismitheoir ag an nóta seo: {{- parents}}",
     "clone-indicator-tooltip-single": "Tá an nóta seo clónáilte (1 tuismitheoir breise: {{- parent}})",

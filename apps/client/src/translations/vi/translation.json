@@ -2808,7 +2808,6 @@
     "refresh-saved-search-results": "Làm mới kết quả tìm kiếm đã lưu",
     "create-child-note": "Tạo ghi chú con",
     "unhoist": "Hủy đặt làm gốc",
-    "toggle-sidebar": "Bật/tắt thanh bên",
     "dropping-not-allowed": "Không được phép thả ghi chú vào vị trí này.",
     "clone-indicator-tooltip": "Ghi chú này có {{- count}} ghi chú cha: {{- parents}}",
     "clone-indicator-tooltip-single": "Ghi chú này đã được nhân bản (1 ghi chú cha bổ sung: {{- parent}})",

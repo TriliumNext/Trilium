@@ -1744,7 +1744,6 @@
     "refresh-saved-search-results": "Gespeicherte Suchergebnisse aktualisieren",
     "create-child-note": "Untergeordnete Notiz anlegen",
     "unhoist": "Fokus verlassen",
-    "toggle-sidebar": "Seitenleiste ein-/ausblenden",
     "dropping-not-allowed": "Ablegen von Notizen an dieser Stelle ist nicht zulässig.",
     "clone-indicator-tooltip": "Diese Notiz hat {{- count}} übergeordnete Knoten: {{- parents}}",
     "clone-indicator-tooltip-single": "Diese Notiz ist geklont (1 weitere übergeordnete Notiz: {{- parent}})",

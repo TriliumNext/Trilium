@@ -70,7 +70,10 @@
     "script_link_not_allowed": "I link che iniziano con {{scheme}} possono eseguire codice, pertanto non sono consentiti.",
     "display_as": "Visualizza come",
     "display_plain": "Testo",
-    "display_inline": "Icona e testo"
+    "display_inline": "Icona e testo",
+    "display_embed": "Incorpora",
+    "page_title": "Titolo della pagina web",
+    "display_card": "Scheda"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Modifica il prefisso del ramo",
@@ -2296,7 +2299,6 @@
     "refresh-saved-search-results": "Aggiorna i risultati della ricerca salvati",
     "create-child-note": "Crea nota figlio",
     "unhoist": "Sganciare",
-    "toggle-sidebar": "Attiva/disattiva la barra laterale",
     "dropping-not-allowed": "Non è consentito lasciare appunti in questa posizione.",
     "clone-indicator-tooltip": "Questa nota ha {{- count}} genitori: {{- parents}}",
     "clone-indicator-tooltip-single": "Questa nota è stata clonata (1 genitore aggiuntivo: {{- parent}})",
