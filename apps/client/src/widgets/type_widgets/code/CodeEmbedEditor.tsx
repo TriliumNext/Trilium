@@ -47,8 +47,8 @@ export interface CodeEmbedEditorProps {
     /** Called with CodeMirror once it mounts, for extensions such as a linter. */
     onReady?: (view: VanillaCodeMirror) => void;
     /**
-     * Whether Enter past two blank lines at the end of the content starts a paragraph below the
-     * embed, as in a code block.
+     * Whether Enter past blank lines at the start or the end of the content starts a paragraph
+     * beside the embed, as in a code block.
      */
     leavesOnEnter?: boolean;
 }

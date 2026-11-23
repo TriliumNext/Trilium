@@ -847,13 +847,13 @@ describe("InlineCodeEmbed", () => {
         expectBoxSizeIconAlone(shown);
     });
 
-    it("starts a paragraph on Enter past two blank lines, unlike an included note", async () => {
+    it("starts a paragraph on Enter past blank lines, unlike an included note", async () => {
         const insertParagraphBeside = vi.fn(() => true);
         const { editable } = buildCodeViewTextEditor({
             ContentEmbedCaret: { insertParagraphBeside }
         });
-        const pressEnterAtEnd = (view: Awaited<ReturnType<typeof findView>>) => {
-            act(() => view.dispatch({ selection: { anchor: view.state.doc.length } }));
+        const pressEnterAt = (view: Awaited<ReturnType<typeof findView>>, head: number) => {
+            act(() => view.dispatch({ selection: { anchor: head } }));
             const event = new KeyboardEvent("keydown", {
                 key: "Enter", bubbles: true, cancelable: true
             });
@@ -867,19 +867,23 @@ describe("InlineCodeEmbed", () => {
             language: "text-plain", isEditable: true, container: editable
         });
         const view = await findView(figure);
-        expect(pressEnterAtEnd(view)).toBe(true);
+        const content = figure.querySelector(".code-embed-content");
+        expect(pressEnterAt(view, view.state.doc.length)).toBe(true);
         expect(view.state.doc.toString()).toBe("foo");
-        expect(insertParagraphBeside).toHaveBeenCalledExactlyOnceWith(
-            figure.querySelector(".code-embed-content"), "end", false
-        );
+        expect(insertParagraphBeside).toHaveBeenLastCalledWith(content, "end", false);
+
+        act(() => view.dispatch({ changes: { from: 0, insert: "\n" } }));
+        expect(pressEnterAt(view, 0)).toBe(true);
+        expect(view.state.doc.toString()).toBe("foo");
+        expect(insertParagraphBeside).toHaveBeenLastCalledWith(content, "start", false);
 
         const { figure: included } = await mount(buildCodeNote("foo\n\n"), buildEditor(), {
             isEditable: true, container: editable
         });
         const includedView = await findView(included);
-        pressEnterAtEnd(includedView);
+        pressEnterAt(includedView, includedView.state.doc.length);
         expect(includedView.state.doc.toString()).toBe("foo\n\n\n");
-        expect(insertParagraphBeside).toHaveBeenCalledOnce();
+        expect(insertParagraphBeside).toHaveBeenCalledTimes(2);
     });
 
     it("edits the code, follows the code the note writes, and sets its language", async () => {

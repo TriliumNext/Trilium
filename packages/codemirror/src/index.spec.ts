@@ -709,12 +709,13 @@ describe("CodeMirror", () => {
             expect(instance.getEdgeLeftBy(arrowLeft)).toBe(null);
         });
 
-        it("tells the end that Enter leaves past two blank lines, as in a code block", () => {
+        it("tells the edge that Enter leaves past blank lines, as in a code block", () => {
             const instance = build();
             editor = instance;
-            const getEdge = (text: string, init: KeyboardEventInit = {}, key = "Enter") => {
+            const getEdge = (text: string, head = text.length, init: KeyboardEventInit = {},
+                key = "Enter") => {
                 instance.setText(text);
-                instance.dispatch({ selection: EditorSelection.cursor(text.length) });
+                instance.dispatch({ selection: EditorSelection.cursor(head) });
                 return instance.getEdgeLeftByEnter(createKeydown(key, instance.contentDOM, init));
             };
 
@@ -722,16 +723,22 @@ describe("CodeMirror", () => {
             expect(getEdge("foo\n  \n\t")).toBe("end");
             expect(getEdge("\n\n")).toBe("end");
             expect(getEdge("foo\n")).toBe(null);
-            expect(getEdge("\n")).toBe(null);
             expect(getEdge("foo\n\nbar")).toBe(null);
-            expect(getEdge("foo\n\n", {}, "ArrowDown")).toBe(null);
-            for (const modifier of [ "shiftKey", "ctrlKey", "altKey", "metaKey", "isComposing" ]) {
-                expect(getEdge("foo\n\n", { [modifier]: true })).toBe(null);
-            }
+            expect(getEdge("foo\n\n", 4)).toBe(null);
 
-            instance.dispatch({ selection: EditorSelection.cursor(4) });
-            expect(instance.getEdgeLeftByEnter(createKeydown("Enter", instance.contentDOM)))
-                .toBe(null);
+            expect(getEdge("\nfoo", 0)).toBe("start");
+            expect(getEdge("\n", 0)).toBe("start");
+            expect(getEdge("\n\n", 0)).toBe("start");
+            expect(getEdge("", 0)).toBe(null);
+            expect(getEdge(" \nfoo", 0)).toBe(null);
+            expect(getEdge("foo\n", 0)).toBe(null);
+            expect(getEdge("\nfoo", 1)).toBe(null);
+
+            expect(getEdge("foo\n\n", 5, {}, "ArrowDown")).toBe(null);
+            for (const modifier of [ "shiftKey", "ctrlKey", "altKey", "metaKey", "isComposing" ]) {
+                expect(getEdge("foo\n\n", 5, { [modifier]: true })).toBe(null);
+                expect(getEdge("\nfoo", 0, { [modifier]: true })).toBe(null);
+            }
         });
 
         it("removes the blank lines that Enter leaves past in an undo step of its own", () => {
@@ -759,6 +766,12 @@ describe("CodeMirror", () => {
             host.undo();
             expect(instance.getText()).toBe("foo\n\n");
             expect(instance.state.selection.main.head).toBe(5);
+
+            instance.setText("\nfoo");
+            instance.removeBlankLinesAt("end");
+            expect(instance.getText()).toBe("\nfoo");
+            instance.removeBlankLinesAt("start");
+            expect(instance.getText()).toBe("foo");
         });
 
         it("leaves Enter to Vim outside its Insert mode", async () => {

@@ -159,7 +159,7 @@ interface CodeEmbedContentProps {
     hasPositions?: boolean;
     /** Whether the menu of the embed offers the tab width, in place of a toolbar button. */
     hasTabWidthInMenu?: boolean;
-    /** Whether Enter past two blank lines at the end of the code starts a paragraph below. */
+    /** Whether Enter past blank lines at an edge of the code starts a paragraph beside it. */
     leavesOnEnter?: boolean;
 }
 

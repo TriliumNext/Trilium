@@ -542,35 +542,52 @@ export default class CodeMirror extends EditorView {
     /**
      * The edge of the document that Enter, pressed without modifiers, leaves past, as it leaves a
      * code block of CKEditor: the end, while the cursor ends a document whose last two lines are
-     * blank. `null` for any other key, in a Vim mode other than Insert, and while the completion
-     * list is open.
+     * blank, and the start, while the cursor starts a document whose first line is empty and
+     * followed by another. `null` for any other key, in a Vim mode other than Insert, and while
+     * the completion list is open.
      */
     getEdgeLeftByEnter(event: KeyboardEvent): DocumentEdge | null {
         if (event.key !== "Enter" || !this.isPlainKeyAtCursor(event) || this.isInVimCommandMode()) {
             return null;
         }
 
-        const { doc } = this.state;
-        const isBlank = (line: number) => !/\S/.test(doc.line(line).text);
-        const isAtEnd = this.state.selection.main.head === doc.length;
-        return isAtEnd && doc.lines >= 3 && isBlank(doc.lines) && isBlank(doc.lines - 1)
-            ? "end"
-            : null;
+        const { head } = this.state.selection.main;
+        if (head === this.state.doc.length && this.getBlankLinesAt("end")) {
+            return "end";
+        }
+        return head === 0 && this.getBlankLinesAt("start") ? "start" : null;
     }
 
     /**
-     * Removes the two blank lines that Enter leaves past at `edge`, as reported by
-     * `getEdgeLeftByEnter()`, in an undo step of its own.
+     * Removes the blank lines that Enter leaves past at `edge`, as `getEdgeLeftByEnter()` reports
+     * it, in an undo step of its own. Does nothing while those lines are not blank.
      */
     removeBlankLinesAt(edge: DocumentEdge) {
-        const { doc } = this.state;
-        if (edge !== "end" || doc.lines < 3) return;
+        const changes = this.getBlankLinesAt(edge);
+        if (!changes) return;
 
         this.dispatch({
-            changes: { from: doc.line(doc.lines - 2).to, to: doc.length },
+            changes,
             userEvent: "delete",
             annotations: isolateHistory.of("full")
         });
+    }
+
+    /**
+     * The range of the blank lines that Enter leaves past at `edge`, with the line break before
+     * or after them, or `null` while they are not blank: the last two lines, whitespace allowed,
+     * at the end, and an empty first line followed by another at the start.
+     */
+    private getBlankLinesAt(edge: DocumentEdge) {
+        const { doc } = this.state;
+        if (edge === "start") {
+            return doc.lines >= 2 && doc.line(1).length === 0 ? { from: 0, to: 1 } : null;
+        }
+
+        const isBlank = (line: number) => !/\S/.test(doc.line(line).text);
+        return doc.lines >= 3 && isBlank(doc.lines) && isBlank(doc.lines - 1)
+            ? { from: doc.line(doc.lines - 2).to, to: doc.length }
+            : null;
     }
 
     /** Whether the editor records its changes into a history shared with its host. */
