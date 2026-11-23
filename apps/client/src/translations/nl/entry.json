@@ -1,1 +1,14 @@
-{}
+{
+    "login": {
+        "incorrect-password": "Wachtwoord is onjuist. Probeer opnieuw.",
+        "password": "Wachtwoord",
+        "remember-me": "Onthoud me"
+    },
+    "set_password": {
+        "heading": "Stel wachtwoord in",
+        "description": "Voor je Trilium kan beginnen gebruiken via het web, moet je eerst een wachtwoord instellen. Je kan dan aanmelden met dit wachtwoord.",
+        "password": "Wachtwoord",
+        "password-confirmation": "Wachtwoord bevestiging",
+        "button": "Stel wachtwoord in"
+    }
+}
