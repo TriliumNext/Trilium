@@ -121,7 +121,8 @@ never says Android. Change one, then the others.
   `tsconfig.app.json` has `erasableSyntaxOnly`. `pnpm typecheck` covers the app.
 - A browser: `CHROME_BIN`, then `chromium` on the PATH, then Playwright's own (NixOS needs a
   system one). `hero` needs `fonttools` with Brotli (`FONTTOOLS`); `flathub` needs
-  `gnome-shell`, `dbus-run-session` and `gdbus`.
+  `gnome-shell`, `dbus-run-session` and `gdbus`; `appstore-screenshots` needs `7z` (`SEVEN_ZIP`)
+  the first time, to extract the bezels.
 
 ### The demo server and the seed
 
@@ -162,11 +163,11 @@ The build fails (exit code 1) on a failed check; the Play checks run after any P
 - Flathub (`flathub-preview`): name, summary, description lists ≤ 10 items, branding colors,
   release notes, OARS rating, square SVG icon, 3–10 screenshots, first one light, window
   ≤ 1000×700 (2000×1400 HiDPI), PNGs with alpha (the window shadow), caption form.
-- App Store (after any App Store target): name and subtitle ≤ 30, promotional text ≤ 170, description
-  ≤ 4000, keywords ≤ 100 bytes without a word of the name; the asset catalog icon 1024×1024
-  without alpha; 1–10 screenshots per device at an accepted size (iPhone 1260×2736, 1290×2796,
-  1320×2868; iPad 2064×2752, 2048×2732; either orientation), no alpha; captions on two lines
-  in both frames.
+- App Store (after any App Store target): name and subtitle ≤ 30, promotional text ≤ 170,
+  description ≤ 4000, keywords ≤ 100 bytes without a word of the name; the asset catalog icon
+  1024×1024 without alpha; 1–10 screenshots per device at an accepted size (iPhone 1260×2736,
+  1290×2796, 1320×2868; iPad 2064×2752, 2048×2732; either orientation), no alpha; captions on
+  two lines in both frames.
 - Hero: pixel diff against the live app ≤ 0.5 % in light and dark.
 
 ## Store rules the design follows
@@ -178,10 +179,19 @@ The build fails (exit code 1) on a failed check; the Play checks run after any P
 - The feature graphic shows only as a promo video's cover and in featured placements, not on
   the listing page; the developer name is account-wide.
 - App Store screenshots take text anywhere, so both devices are captioned
-  (`templates/appstore-screenshot.html`) and show the **whole** screen with its rounded corners:
-  `APP_STORE_DEVICES` captures 430×932 at 3x and 1376×1032 at 2x with an iOS user agent (the
-  client adds `body.ios`, the glass look) and its safe area, so the status bar area stays empty.
-  The iPad uses the scenes' `tablet` variants like the Play tablet.
+  (`templates/appstore-screenshot.html`) and show the **whole** screen inside Apple's own device
+  bezel: `APP_STORE_DEVICES` captures an iPhone 17 Pro Max (440×956 at 3x) and a 13" iPad Pro
+  (1376×1032 at 2x, landscape) with an iOS user agent (the client adds `body.ios`, the glass
+  look) and their safe areas; the template lays the capture into the bezel's screen opening,
+  clips it to the screen's `cornerRadius`, and draws a 9:41 status bar and the home indicator in
+  points (`--pt`). The iPad uses the scenes' `tablet` variants like the Play tablet.
+- **The bezels are never committed.** Apple's App Store Marketing Artwork License allows them in
+  App Store marketing of the app, "as is" (no shadow, crop or tint), but not their
+  redistribution. `shared/bezels.ts` downloads the disk image from the design resources page once
+  (the iPhone one is 265 MB), extracts the one PNG with `7z` (`SEVEN_ZIP`) into `out/bezels`, and
+  deletes the image. A new bezel: list the image with `7z l`, measure the transparent screen
+  opening, which equals the App Store size, and fill in `Bezel` (`size`, `screen`,
+  and the device's `cornerRadius` in points).
 - Flathub windows keep frame, rounded corners and shadow: captured with GNOME's own window
   screenshot in a headless GNOME Shell.
 

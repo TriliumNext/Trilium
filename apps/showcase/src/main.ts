@@ -4,9 +4,9 @@
  * - Google Play (`play/`): the icon, the feature graphic, phone and tablet screenshots and
  *   `out/preview.html`, a mock of the listing, checked against the store's size and length
  *   limits.
- * - The App Store (`appstore/`): iPhone and iPad screenshots under captions in `out/appstore`
- *   and `out/appstore-preview.html`, a mock of the product page, checked with the listing texts
- *   against App Store Connect's limits.
+ * - The App Store (`appstore/`): iPhone and iPad screenshots in Apple's device bezels under
+ *   captions in `out/appstore`, and `out/appstore-preview.html`, a mock of the product page,
+ *   checked with the listing texts against App Store Connect's limits.
  * - Flathub (`flathub/`): screenshots of the desktop app's window, captured inside a headless
  *   GNOME Shell, and `out/flathub-preview.html`, a mock of the app page from those screenshots
  *   and the metainfo, with Flathub's quality checks.
@@ -35,6 +35,7 @@
  *   CHROME_BIN  browser executable, for systems where Playwright's browsers cannot run (NixOS);
  *               a `chromium` on the PATH is found without it
  *   FONTTOOLS   the `fonttools` command, when the one on the PATH lacks Brotli
+ *   SEVEN_ZIP   the `7z` command that extracts Apple's product bezels, when none is on the PATH
  *
  * The sources run on Node's own type stripping, not tsx: tsx wraps functions in `__name()`
  * calls, which do not exist where the functions passed to `page.evaluate()` and `SEED` run.

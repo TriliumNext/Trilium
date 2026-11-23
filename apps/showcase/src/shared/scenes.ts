@@ -25,8 +25,24 @@ export interface Device {
     safeArea?: { top: number; bottom: number };
     /** Shows each scene with `scene.tablet` in place, since the tablet layout docks the tree. */
     tablet?: boolean;
-    /** Sets the screenshot under a caption, by rendering `template` from `templates/` at `size`. */
-    frame?: { template: string; size: { width: number; height: number } };
+    /**
+     * Sets the screenshot under a caption, by rendering `template` from `templates/` at `size`,
+     * inside `bezel` when there is one.
+     */
+    frame?: { template: string; size: { width: number; height: number }; bezel?: Bezel };
+}
+
+/** A device frame from Apple's product bezels (developer.apple.com/design/resources). */
+export interface Bezel {
+    /** The disk image the design resources page offers. */
+    image: string;
+    /** The PNG inside the disk image. */
+    file: string;
+    size: { width: number; height: number };
+    /** The top left corner of the screen's opening, which is the size of the screenshot. */
+    screen: { x: number; y: number };
+    /** The corner radius of the screen in points, which the screenshot is clipped to. */
+    cornerRadius: number;
 }
 
 /**
@@ -232,19 +248,30 @@ export const DEVICES: Record<string, Device> = {
 };
 
 /**
- * App Store devices: the whole screen of a 6.9-inch iPhone (430 x 932 points, a size
- * `theme-next/ios.css` knows the corner radius of) and of a 13-inch iPad in landscape, with their
- * safe areas. `appstore-screenshot.html` sets each under a caption at a size App Store Connect
- * accepts for that display: 1290 x 2796 and 2752 x 2064.
+ * App Store devices: the whole screen of an iPhone 17 Pro Max (440 x 956 points) and of a
+ * 13-inch iPad Pro in landscape, with their safe areas, at the sizes App Store Connect asks for the
+ * 6.9-inch and 13-inch displays: 1320 x 2868 and 2752 x 2064. `appstore-screenshot.html` sets
+ * each in Apple's bezel of that device, with a status bar, under its caption, at the same size.
  */
 export const APP_STORE_DEVICES: Record<string, Device> = {
     iphone: {
-        viewport: { width: 430, height: 932 },
+        viewport: { width: 440, height: 956 },
         deviceScaleFactor: 3,
         userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 "
             + "(KHTML, like Gecko) Mobile/15E148",
-        safeArea: { top: 59, bottom: 34 },
-        frame: { template: "appstore-screenshot.html", size: { width: 1290, height: 2796 } }
+        safeArea: { top: 62, bottom: 34 },
+        frame: {
+            template: "appstore-screenshot.html",
+            size: { width: 1320, height: 2868 },
+            bezel: {
+                image: "Bezel-iPhone-17.dmg",
+                file: "Bezel-iPhone-17/PNG/iPhone 17 Pro Max/"
+                    + "iPhone 17 Pro Max - Silver - Portrait.png",
+                size: { width: 1470, height: 3000 },
+                screen: { x: 75, y: 66 },
+                cornerRadius: 62
+            }
+        }
     },
     ipad: {
         viewport: { width: 1376, height: 1032 },
@@ -253,6 +280,16 @@ export const APP_STORE_DEVICES: Record<string, Device> = {
             + "(KHTML, like Gecko) Mobile/15E148",
         safeArea: { top: 24, bottom: 20 },
         tablet: true,
-        frame: { template: "appstore-screenshot.html", size: { width: 2752, height: 2064 } }
+        frame: {
+            template: "appstore-screenshot.html",
+            size: { width: 2752, height: 2064 },
+            bezel: {
+                image: "Bezel-iPad-Pro-(M5).dmg",
+                file: "Bezel-iPad-Pro-(M5)/PNG/iPad Pro (M5) 13\" - Silver - Landscape.png",
+                size: { width: 3000, height: 2300 },
+                screen: { x: 124, y: 118 },
+                cornerRadius: 18
+            }
+        }
     }
 };

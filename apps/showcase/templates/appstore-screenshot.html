@@ -27,31 +27,115 @@
             white-space: pre-line;
         }
 
-        .app-shot {
+        .device {
             position: absolute;
             left: 50%;
             translate: -50% 0;
-            box-shadow:
-                0 4px 12px rgb(0 0 0 / 12%),
-                0 48px 120px rgb(40 30 10 / 22%);
+
+            > img {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+            }
         }
 
-        /* 1290 x 2796; the screen corner radius is that of `theme-next/ios.css` at 430 x 932. */
+        /* Sized in the points of the device: `--points` is the width of the screen in points. */
+        .screen {
+            --pt: calc(100cqw / var(--points));
+            position: absolute;
+            overflow: hidden;
+            container-type: size;
+            color: #000;
+            font-family: Inter, system-ui, sans-serif;
+
+            .shot {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+            }
+        }
+
+        body.dark .screen {
+            color: #fff;
+        }
+
+        .status-bar > * {
+            position: absolute;
+            display: flex;
+            align-items: center;
+        }
+
+        .time {
+            gap: calc(5 * var(--pt));
+            font-size: calc(17 * var(--pt));
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .icons {
+            gap: calc(6 * var(--pt));
+
+            svg {
+                height: calc(12 * var(--pt));
+                fill: currentColor;
+            }
+
+            .signal {
+                width: calc(18 * var(--pt));
+            }
+
+            .wifi {
+                width: calc(16 * var(--pt));
+            }
+
+            .battery {
+                width: calc(26 * var(--pt));
+            }
+        }
+
+        .home-indicator {
+            position: absolute;
+            left: 50%;
+            translate: -50% 0;
+            bottom: calc(8 * var(--pt));
+            height: calc(5 * var(--pt));
+            border-radius: calc(3 * var(--pt));
+            background: currentColor;
+        }
+
+        /* The ears beside the Dynamic Island of the iPhone 17 Pro Max: 0-158 and 282-440 pt. */
         body.iphone {
             h1 {
-                height: 520px;
+                height: 540px;
                 padding: 0 130px;
-                font-size: 104px;
+                font-size: 106px;
             }
 
-            .app-shot {
-                top: 600px;
-                width: 972px;
-                border-radius: 124px;
+            .device {
+                top: 620px;
+                width: 1067px;
+            }
+
+            .status-bar > * {
+                top: calc(32 * var(--pt));
+                translate: -50% -50%;
+            }
+
+            .time {
+                left: calc(79 * var(--pt));
+            }
+
+            .icons {
+                left: calc(361 * var(--pt));
+            }
+
+            .home-indicator {
+                width: calc(144 * var(--pt));
             }
         }
 
-        /* 2752 x 2064 */
         body.ipad {
             h1 {
                 height: 400px;
@@ -59,23 +143,95 @@
                 font-size: 112px;
             }
 
-            .app-shot {
-                top: 470px;
-                width: 2005px;
-                border-radius: 28px;
+            .device {
+                top: 460px;
+                width: 2014px;
+            }
+
+            .status-bar > * {
+                top: calc(13 * var(--pt));
+                translate: 0 -50%;
+            }
+
+            .time {
+                left: calc(22 * var(--pt));
+                font-size: calc(13 * var(--pt));
+
+                span:last-child {
+                    font-weight: 500;
+                }
+            }
+
+            .icons {
+                right: calc(22 * var(--pt));
+
+                .signal {
+                    display: none;
+                }
+            }
+
+            .home-indicator {
+                width: calc(300 * var(--pt));
             }
         }
     </style>
 </head>
 <body class="backdrop">
     <h1 id="caption"></h1>
-    <img class="app-shot" id="shot" alt="">
+    <div class="device" hidden>
+        <div class="screen">
+            <img class="shot" id="shot" alt="">
+            <div class="status-bar">
+                <span class="time"><span>9:41</span></span>
+                <span class="icons">
+                    <svg class="signal" viewBox="0 0 18 12">
+                        <rect x="0" y="8" width="3" height="4" rx="1" />
+                        <rect x="5" y="5.5" width="3" height="6.5" rx="1" />
+                        <rect x="10" y="3" width="3" height="9" rx="1" />
+                        <rect x="15" y="0" width="3" height="12" rx="1" />
+                    </svg>
+                    <svg class="wifi" viewBox="0 0 16 12">
+                        <path d="M8 2.2c2.4 0 4.6.9 6.3 2.5l1.3-1.4A11 11 0 0 0 8 .3 11 11 0 0 0 .4 3.3l1.3 1.4A9 9 0 0 1 8 2.2Zm0 3.8c1.4 0 2.7.5 3.7 1.4L13 6a7.3 7.3 0 0 0-10 0l1.3 1.4C5.3 6.5 6.6 6 8 6Zm0 3.7c-.6 0-1.1.2-1.5.6L8 12l1.5-1.7c-.4-.4-.9-.6-1.5-.6Z" />
+                    </svg>
+                    <svg class="battery" viewBox="0 0 26 12">
+                        <rect x="0.5" y="0.5" width="22" height="11" rx="3" fill="none"
+                            stroke="currentColor" opacity="0.4" />
+                        <rect x="2.5" y="2.5" width="18" height="7" rx="1.5" />
+                        <rect x="24" y="4" width="1.5" height="4" rx="0.75" opacity="0.4" />
+                    </svg>
+                </span>
+            </div>
+            <div class="home-indicator"></div>
+        </div>
+        <img class="bezel" alt="">
+    </div>
     <script>
-        window.render = ({ caption, shot, dark, device }) => {
+        window.render = ({ caption, shot, dark, device, points, bezel }) => {
             document.getElementById("caption").textContent = caption;
-            document.getElementById("shot").src = shot;
             document.body.classList.toggle("dark", dark);
             document.body.classList.add(device);
+            if (!bezel) return;
+
+            const frame = document.querySelector(".device");
+            frame.hidden = false;
+            frame.style.aspectRatio = `${bezel.size.width} / ${bezel.size.height}`;
+            frame.querySelector(".bezel").src = bezel.src;
+            const screen = frame.querySelector(".screen");
+            const percent = (value, total) => `${(value / total) * 100}%`;
+            screen.style.left = percent(bezel.screen.x, bezel.size.width);
+            screen.style.top = percent(bezel.screen.y, bezel.size.height);
+            screen.style.width = percent(bezel.screenSize.width, bezel.size.width);
+            screen.style.height = percent(bezel.screenSize.height, bezel.size.height);
+            screen.style.setProperty("--points", points);
+            const radius = bezel.cornerRadius * bezel.screenSize.width / points;
+            screen.style.borderRadius = `${percent(radius, bezel.screenSize.width)} / `
+                + percent(radius, bezel.screenSize.height);
+            document.getElementById("shot").src = shot;
+            if (device === "ipad") {
+                const date = document.createElement("span");
+                date.textContent = "Mon Jun 8";
+                frame.querySelector(".time").append(date);
+            }
         };
     </script>
 </body>

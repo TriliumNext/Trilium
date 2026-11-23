@@ -3,6 +3,7 @@ import path from "path";
 import type { Browser } from "playwright";
 import { pathToFileURL } from "url";
 
+import { fetchBezel } from "./bezels.ts";
 import { openApp, openNote, renderTemplate, settle } from "./browser.ts";
 import { type BuildOptions, sceneFileName, templatesDir } from "./build.ts";
 import { findNoteId } from "./demo_server.ts";
@@ -126,11 +127,21 @@ async function captureScene(browser: Browser, baseUrl: string, dir: string, devi
     await context.close();
 
     if (device.frame) {
+        const { bezel } = device.frame;
         await renderTemplate(browser, device.frame.template, device.frame.size, store, {
             caption: scene.caption,
             shot: pathToFileURL(raw).href,
             dark: colorScheme === "dark",
-            device: deviceName
+            device: deviceName,
+            points: device.viewport.width,
+            bezel: bezel && {
+                ...bezel,
+                src: pathToFileURL(await fetchBezel(bezel)).href,
+                screenSize: {
+                    width: device.viewport.width * device.deviceScaleFactor,
+                    height: device.viewport.height * device.deviceScaleFactor
+                }
+            }
         });
     }
     console.log(`  ${path.relative(path.dirname(dir), store)}`);
