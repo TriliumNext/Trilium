@@ -1090,7 +1090,9 @@
     "link_details_retrieval_enabled": "Автоматически извлекать название и описание для карточек и ссылок \"Иконка и текст\"",
     "link_details_retrieval_description": "В редакторе ссылок, заполнять пустое название или описание карточки или ссылки \"Иконка и текст\" информацией с веб-страницы.",
     "note_completion_link_targets_enabled": "Предлагать заголовки и якоря для ссылок",
-    "note_completion_link_targets_description": "Предлагать заголовок или якорь в качестве назначения после выбора целевой заметки."
+    "note_completion_link_targets_description": "Предлагать заголовок или якорь в качестве назначения после выбора целевой заметки.",
+    "scroll_rail_highlights_enabled": "Отображать акценты на полосе прокрутки",
+    "scroll_rail_highlights_description": "Отображать цветные метки на полосе прокрутки, чтобы видеть акценты в заметке."
   },
   "cpu_arch_warning": {
     "dont_show_again": "Больше не показывать это предупреждение",
@@ -1435,7 +1437,8 @@
     "replace_placeholder": "Заменить на...",
     "find_placeholder": "Поиск в тексте...",
     "case_sensitive": "С учетом регистра",
-    "match_words": "По словам"
+    "match_words": "По словам",
+    "nothing_replaced": "Ничего не было заменено, так как поиск не завершился."
   },
   "template_switch": {
     "template": "Шаблон"
@@ -3096,7 +3099,8 @@
   },
   "popup-editor": {
     "maximize": "Переключить на полный редактор",
-    "attachment_title": "Вложение: {{title}}"
+    "attachment_title": "Вложение: {{title}}",
+    "back": "Вернуться к предыдущей заметке"
   },
   "right_pane": {
     "custom_widget_go_to_source": "Исходный код",
@@ -3148,7 +3152,11 @@
     "annotation_text_box": "Текстовое поле на странице {{pageNumber}}",
     "copy_reference": "Копировать ссылку",
     "page_reference": "Страница {{pageNumber}}",
-    "annotation_reference": "Аннотация на странице {{pageNumber}}"
+    "annotation_reference": "Аннотация на странице {{pageNumber}}",
+    "pages_title": "Страницы",
+    "annotations_title": "Аннотации",
+    "attachments_title": "Вложения",
+    "layers_title": "Слои"
   },
   "platform_indicator": {
     "available_on": "Доступно для {{platform}}"
@@ -5597,5 +5605,8 @@
     "draft_discarded_after_conversion": "Эта заметка была сконвертирована, пока вы её редактировали, и она не хранит версии, поэтому они были отменены.",
     "draft_kept_blocks_gone": "Блоки, которые вы редактировали, были изменены в другом месте и больше не доступны для редактирования здесь. Ваши несохраненные изменения были сохранены в виде версии.",
     "draft_discarded_blocks_gone": "Блоки, которые вы редактировали, были изменены в другом месте и больше не доступны для редактирования здесь. Заметка не хранит версии, поэтому ваши несохраненные изменения были отменены."
+  },
+  "scroll_rail": {
+    "show_highlights": "Акценты"
   }
 }
