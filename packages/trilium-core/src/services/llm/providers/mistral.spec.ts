@@ -169,6 +169,31 @@ describe("MistralProvider chat", () => {
     });
 });
 
+describe("MistralProvider attachments", () => {
+    const fetchMock = vi.fn();
+
+    beforeEach(() => {
+        fetchMock.mockReset();
+        vi.stubGlobal("fetch", fetchMock);
+    });
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it("lists image as a native kind on vision-capable models, not on GLM", async () => {
+        fetchMock.mockResolvedValue({ ok: true, json: async () => ({ data: [] }) });
+        const provider = new MistralProvider("sk-test");
+        const models = await provider.listModels();
+        const byId = new Map(models.map(m => [ m.id, m ]));
+        // Large/Medium/Small/Pixtral read images even without "vision" in the id
+        for (const id of [ "mistral-large-4", "mistral-medium-3-5", "mistral-small-2603", "mistral-large-2" ]) {
+            expect(byId.get(id)?.attachmentKinds, id).toEqual([ "image" ]);
+        }
+        // GLM models served on the API are text-only
+        expect(byId.get("zai-glm-5-3")?.attachmentKinds).toEqual([]);
+    });
+});
+
 describe("MistralProvider model listing", () => {
     const fetchMock = vi.fn();
 

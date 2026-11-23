@@ -1,6 +1,6 @@
 import { createMistral, type MistralProvider as MistralSDKProvider } from "@ai-sdk/mistral";
 import type { LlmReasoningEffort } from "@triliumnext/commons";
-import type { ToolSet } from "ai";
+import type { LanguageModel, ToolSet } from "ai";
 import { t } from "i18next";
 
 import type { LlmProviderConfig, ModelInfo } from "../types.js";
@@ -8,6 +8,12 @@ import { BaseProvider, type RemoteModel } from "./base_provider.js";
 import { llmFetch } from "./fetch.js";
 
 const OFFICIAL_BASE_URL = "https://api.mistral.ai/v1";
+
+/**
+ * Model-id prefixes of Mistral's image-reading chat models: the Pixtral line and the
+ * Large/Medium/Small chat lines. GLM models served on the API are text-only.
+ */
+const MISTRAL_VISION_MODELS = [ "pixtral-", "mistral-large", "mistral-medium", "mistral-small" ];
 
 /**
  * Mistral models that support reasoning with `reasoning_effort` parameter.
@@ -75,7 +81,7 @@ export class MistralProvider extends BaseProvider {
         this.mistral = createMistral({ apiKey, ...(baseURL && { baseURL }), fetch: llmFetch });
     }
 
-    protected createModel(modelId: string) {
+    protected createModel(modelId: string): LanguageModel {
         return this.mistral.chat(modelId);
     }
 
@@ -150,11 +156,10 @@ export class MistralProvider extends BaseProvider {
     }
 
     /**
-     * Mistral models support images natively.
+     * Mistral's chat models read images natively; GLM models served on the API are text-only.
      */
     protected override acceptsAttachment(kind: "image" | "file", modelId: string): boolean {
-        // Mistral vision models support images
-        return kind === "image" && (modelId.includes("vision") || isMistralVisionModel(modelId));
+        return kind === "image" && MISTRAL_VISION_MODELS.some(prefix => modelId.startsWith(prefix));
     }
 
     /**
@@ -209,11 +214,4 @@ export function isMistralChatModel(id: string): boolean {
         return true;
     }
     return false;
-}
-
-/**
- * Whether a model id is a Mistral vision model.
- */
-function isMistralVisionModel(id: string): boolean {
-    return id.includes("vision") || id.includes("multimodal");
 }
