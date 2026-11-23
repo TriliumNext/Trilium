@@ -5490,7 +5490,7 @@
     "badge_on_tooltip": "Vim mode enabled for this note. Click to turn off.",
     "badge_off_tooltip": "Vim mode disabled for this note. Click to turn on.",
     "menu_note": "Vim mode",
-    "menu_settings": "Settings",
+    "menu_settings": "Options",
     "menu_help": "Help",
     "menu_note_description": "Applies just for this note.",
     "menu_note_description_subtree": "Applies to this note and the notes under it."
