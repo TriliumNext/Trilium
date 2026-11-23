@@ -44,6 +44,22 @@ Once installed simply:
 2.  Inside the extracted directory, run `http-server`.
 3.  Access the indicated address (e.g. [http://localhost:8080](http://localhost:8080)).
 
+## Publishing without a Git repository
+
+GitHub Pages and CloudFlare Pages usually deploy from a Git repository. To put an export online without setting one up, the extracted files can also be uploaded to a direct-upload static host. For example, [deed.page](https://deed.page) takes the extracted directory as a single archive:
+
+```sh
+unzip -q export.zip -d site
+tar -C site -czf site.tar.gz .
+curl -T site.tar.gz "https://deed.page/v1/sites?slug=my-notes"
+```
+
+Replace `my-notes` with a name of your own. The response contains the URL of the site and a token which is shown only once; send it as `Authorization: Bearer <token>` with the same `curl` command to publish an updated export to the same address. A single upload is limited to 4 MB; see the [deed.page documentation](https://deed.page/docs) for larger sites.
+
 ## Automation
 
-<a class="reference-link" href="../ETAPI%20(REST%20API).md">ETAPI (REST API)</a> could potentially be used to automate an export on a scheduled task.
+<a class="reference-link" href="../ETAPI%20(REST%20API).md">ETAPI (REST API)</a> could potentially be used to automate an export on a scheduled task. The static format is available as `format=share` on the export endpoint, for example:
+
+```sh
+curl -H "Authorization: $ETAPI_TOKEN" -o export.zip "http://localhost:8080/etapi/notes/<noteId>/export?format=share"
+```
