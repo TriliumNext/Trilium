@@ -1,4 +1,4 @@
-import { FileBasedLogService, type LogFileInfo, type ResponseLocals } from "@triliumnext/core";
+import { FileBasedLogService, type LogFileInfo, type LogFileTail, type ResponseLocals } from "@triliumnext/core";
 import type { Request, Response } from "express";
 import fs from "fs";
 import { EOL } from "os";
@@ -80,12 +80,19 @@ export default class ServerLogService extends FileBasedLogService {
         super.echoToConsole(this.colorizeConsole ? colorizeLogEntry(str, timestamp) : str, timestamp);
     }
 
-    protected override readLogFile(fileName: string): string | null {
-        const filePath = path.join(dataDir.LOG_DIR, fileName);
+    protected override readLogFile(fileName: string, maxBytes: number): LogFileTail | null {
+        let fd: number | undefined;
         try {
-            return fs.readFileSync(filePath, "utf8");
+            fd = fs.openSync(path.join(dataDir.LOG_DIR, fileName), "r");
+            const size = fs.fstatSync(fd).size;
+            const start = Math.max(size - maxBytes, 0);
+            const bytes = new Uint8Array(size - start);
+            const bytesRead = fs.readSync(fd, bytes, 0, bytes.length, start);
+            return { bytes: bytes.subarray(0, bytesRead), omittedBytes: start };
         } catch {
             return null;
+        } finally {
+            if (fd !== undefined) fs.closeSync(fd);
         }
     }
 

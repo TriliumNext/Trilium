@@ -20,7 +20,7 @@ import { type ImageProvider, initImageProvider } from "./services/image_provider
 import { type CoreConfig, initConfig } from "./services/config";
 
 export { default as LogService, getLog } from "./services/log";
-export { default as FileBasedLogService, type LogFileInfo } from "./services/file_based_log";
+export { default as FileBasedLogService, type LogFileInfo, type LogFileTail } from "./services/file_based_log";
 export { default as BackupService, getBackup, initBackup, type BackupOptionsService } from "./services/backup";
 export type * from "./services/sql/types";
 export * from "./services/sql/index";

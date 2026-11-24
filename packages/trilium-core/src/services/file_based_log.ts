@@ -1,5 +1,8 @@
-import LogService from "./log.js";
+import { t } from "i18next";
+
 import { getContext } from "./context.js";
+import LogService from "./log.js";
+import { decodeUtf8 } from "./utils/binary.js";
 
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;
@@ -9,9 +12,18 @@ const DAY = 24 * HOUR;
 const MINIMUM_FILES_TO_KEEP = 7;
 const DEFAULT_RETENTION_DAYS = 7;
 
+/** The most of today's log the backend log view receives; a larger text freezes its editor. */
+export const MAX_LOG_CONTENTS_BYTES = 5 * 1024 * 1024;
+
 export interface LogFileInfo {
     name: string;
     mtime: Date;
+}
+
+/** The end of a log file as read: its last bytes, and how many bytes come before them. */
+export interface LogFileTail {
+    bytes: Uint8Array;
+    omittedBytes: number;
 }
 
 /**
@@ -57,8 +69,8 @@ export default abstract class FileBasedLogService extends LogService {
     /** Write an entry to the current log file */
     protected abstract writeEntry(entry: string): void;
 
-    /** Read the contents of a log file */
-    protected abstract readLogFile(fileName: string): string | null;
+    /** Read at most the last `maxBytes` of a log file, or `null` if it cannot be read. */
+    protected abstract readLogFile(fileName: string, maxBytes: number): LogFileTail | null;
 
     /** List all log files with their modification times */
     protected abstract listLogFiles(): Promise<LogFileInfo[]>;
@@ -193,8 +205,24 @@ export default abstract class FileBasedLogService extends LogService {
         this.log(`ERROR: ${stringifyMessage(message)}`);
     }
 
+    /**
+     * Today's log, or its last {@link MAX_LOG_CONTENTS_BYTES} when it is longer, starting at a line
+     * boundary after a notice of how much is left out.
+     */
     override getLogContents(): string | null {
-        return this.readLogFile(this.getLogFileName());
+        const fileName = this.getLogFileName();
+        const tail = this.readLogFile(fileName, MAX_LOG_CONTENTS_BYTES);
+        if (!tail) return null;
+        if (tail.omittedBytes === 0) return decodeUtf8(tail.bytes);
+
+        // The first line is cut off, possibly inside a multi-byte character.
+        const lineStart = tail.bytes.indexOf(0x0a) + 1;
+        const omittedBytes = tail.omittedBytes + lineStart;
+        const notice = t("backend_log.earlier-entries-omitted", {
+            size: (omittedBytes / (1024 * 1024)).toFixed(1),
+            fileName
+        });
+        return `${notice}\n\n${decodeUtf8(tail.bytes.subarray(lineStart))}`;
     }
 
     // ==================== Formatting Helpers ====================
