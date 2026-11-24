@@ -93,7 +93,11 @@
     "headings": "Cabeçalhos",
     "no_headings_or_anchors": "Essa nota não contém nenhum cabeçalho ou âncora.",
     "title_from_heading": "Se deixado em branco, sempre refletirá o texto do cabeçalho",
-    "retrieving_from_page": "Pegando da página web..."
+    "retrieving_from_page": "Pegando da página web...",
+    "title_from_attachment": "Se não estiver definido, sempre refletirá o título do anexo",
+    "top_of_note": "Link para a nota (padrão)",
+    "select_note_for_targets": "Selecione uma nota para exibir os títulos e âncoras aos quais você pode criar links.",
+    "inspecting_note": "Inspecionando a estrutura da nota"
   },
   "branch_prefix": {
     "prefix": "Prefixo",
