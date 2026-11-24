@@ -385,26 +385,40 @@ export function EmbedPreview({ element, isHidden = false }: {
 
 /**
  * Moves the focus to the element that `selector` matches when the embed box around `rootRef`
- * holds it, including when that element renders after the box took the focus.
+ * holds it, including when that element renders after the box took the focus. The root names
+ * `selector` in `data-embed-focus-target`, which `ContentEmbed` focuses as the box mounts.
+ * Content rendered apart, such as inline source, finds its box once it joins the page.
  */
 function useFocusFromEmbedBox(rootRef: RefObject<HTMLElement | null>, selector?: string) {
-    useEffect(() => {
+    // A layout effect: inline source mounts its embed box right after it renders.
+    useLayoutEffect(() => {
         const root = rootRef.current;
-        const box = root?.closest<HTMLElement>(".include-note-content");
-        if (!root || !box || !selector) return;
+        if (!root || !selector) return;
 
-        const forwardFocus = () => {
-            if (document.activeElement === box) {
-                root.querySelector<HTMLElement>(selector)?.focus();
-            }
-        };
-        const observer = new MutationObserver(forwardFocus);
-        observer.observe(root, { childList: true, subtree: true });
-        box.addEventListener("focus", forwardFocus);
-        forwardFocus();
+        root.dataset.embedFocusTarget = selector;
+        let stopForwarding: (() => void) | undefined;
+        const stopWaiting = whenInPage(root, () => {
+            const box = root.closest<HTMLElement>(".include-note-content");
+            if (!box) return;
+
+            const forwardFocus = () => {
+                if (document.activeElement === box) {
+                    root.querySelector<HTMLElement>(selector)?.focus();
+                }
+            };
+            const observer = new MutationObserver(forwardFocus);
+            observer.observe(root, { childList: true, subtree: true });
+            box.addEventListener("focus", forwardFocus);
+            forwardFocus();
+            stopForwarding = () => {
+                observer.disconnect();
+                box.removeEventListener("focus", forwardFocus);
+            };
+        });
         return () => {
-            observer.disconnect();
-            box.removeEventListener("focus", forwardFocus);
+            stopWaiting();
+            stopForwarding?.();
+            delete root.dataset.embedFocusTarget;
         };
     }, [ rootRef, selector ]);
 }

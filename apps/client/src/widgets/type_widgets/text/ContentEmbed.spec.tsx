@@ -952,6 +952,21 @@ describe("ContentEmbed focused on mount", () => {
         expect(document.activeElement).toBe(contentBox());
     });
 
+    it("gives the focus to the target that its content names, or to the box until it renders", () => {
+        const content = element(`<div class="rendered-content">`
+            + `<div data-embed-focus-target=".target">`
+            + `<div class="cm-scroller" tabindex="-1"><div class="target" tabindex="-1"></div></div>`
+            + `<button>Copy</button></div></div>`);
+        renderBox({ content, isFocusedOnMount: true });
+        expect(document.activeElement).toBe(content.querySelector(".target"));
+
+        act(() => render(null, container));
+        const loading = element(`<div class="rendered-content">`
+            + `<div data-embed-focus-target=".target"><button>Copy</button></div></div>`);
+        renderBox({ content: loading, isFocusedOnMount: true });
+        expect(document.activeElement).toBe(contentBox());
+    });
+
     it("leaves the focus where it went when it left the editor before the box mounted", () => {
         const editable = element(`<div class="ck-editor__editable" tabindex="0"></div>`);
         const field = element(`<input>`);

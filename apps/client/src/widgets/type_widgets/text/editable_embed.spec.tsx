@@ -96,6 +96,25 @@ describe("useEditableEmbed", () => {
         box?.focus();
         expect(document.activeElement).toBe(target);
     });
+
+    it("names its target and passes it the focus once content rendered apart joins the box", async () => {
+        const { figure, root, container } = await mountProbe({
+            editor: buildEditor(),
+            note: null,
+            focusTarget: ".target"
+        }, { isDetached: true });
+        expect(root?.dataset.embedFocusTarget).toBe(".target");
+
+        const box = figure.querySelector<HTMLElement>(".include-note-content");
+        const target = document.createElement("div");
+        target.className = "target";
+        target.tabIndex = -1;
+        root?.append(target);
+        box?.append(container);
+        box?.focus();
+        await vi.waitFor(() => expect(document.activeElement).toBe(target));
+        act(() => render(null, container));
+    });
 });
 
 describe("useEmbedEditors", () => {
@@ -453,7 +472,8 @@ async function mountProbe(
     const probe = {
         state: { canEdit: false, isEditing: false } as ProbeState,
         figure,
-        root: null as HTMLElement | null
+        root: null as HTMLElement | null,
+        container: box
     };
     function Probe() {
         const rootRef = useRef<HTMLDivElement>(null);
@@ -461,8 +481,11 @@ async function mountProbe(
         return <div ref={rootRef} className="probe" />;
     }
 
-    await act(async () => render(<Probe />, box));
-    probe.root = box.querySelector(".probe");
+    // Inline source renders into a container that its embed box takes in afterwards.
+    probe.container = isDetached ? document.createElement("div") : box;
+    const container = probe.container;
+    await act(async () => render(<Probe />, container));
+    probe.root = container.querySelector(".probe");
     return probe;
 }
 
