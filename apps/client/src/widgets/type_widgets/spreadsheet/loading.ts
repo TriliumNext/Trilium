@@ -86,6 +86,15 @@ export function useWorkbookDisplay(apiRef: RefObject<FUniver | undefined>, conta
             univerAPI.disposeUnit(existingWorkbook.getId());
         }
 
+        // Univer focuses the cell editor of a workbook it creates, which would pull the focus
+        // into this sheet when it reloads while the user is elsewhere, such as in another split.
+        const container = containerRef.current;
+        const focusedElsewhere = document.activeElement instanceof HTMLElement
+            && document.activeElement !== document.body
+            && !container?.contains(document.activeElement)
+            ? document.activeElement
+            : null;
+
         const workbook = univerAPI.createWorkbook(workbookData);
 
         restoreViewState(workbook, viewState);
@@ -93,6 +102,10 @@ export function useWorkbookDisplay(apiRef: RefObject<FUniver | undefined>, conta
             makeReadOnly(univerAPI, workbook);
         }
         hooksRef.current.loaded?.(workbook);
+
+        if (focusedElsewhere && container?.contains(document.activeElement)) {
+            focusedElsewhere.focus({ preventScroll: true });
+        }
     }
 
     // Apply pending content once the container becomes visible (non-zero size).

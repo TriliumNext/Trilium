@@ -175,6 +175,43 @@ describe("useWorkbookDisplay", () => {
         render(null, container);
         container.remove();
     });
+
+    it("leaves the focus where it was when a workbook it shows takes it, unless it was in the sheet", async () => {
+        vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(800);
+        vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(600);
+        const container = document.createElement("div");
+        const elsewhere = document.createElement("input");
+        document.body.append(container, elsewhere);
+        // Univer focuses the cell editor of every workbook it creates.
+        const univerAPI = {
+            getActiveWorkbook: () => null,
+            createWorkbook: vi.fn(() => {
+                container.querySelector<HTMLElement>(".cell-editor")?.focus();
+                return { ...mockWorkbook(), getId: () => "wb" };
+            }),
+            disposeUnit: vi.fn()
+        };
+        let show: ((content: string) => void) | undefined;
+        await act(async () => {
+            render(<DisplayHarness univerAPI={univerAPI as unknown as FUniver} onReady={(s) => { show = s; }} />, container);
+        });
+        const cellEditor = document.createElement("div");
+        cellEditor.className = "cell-editor";
+        cellEditor.tabIndex = 0;
+        container.querySelector("div")?.append(cellEditor);
+
+        elsewhere.focus();
+        act(() => show?.("{}"));
+        expect(document.activeElement).toBe(elsewhere);
+
+        cellEditor.focus();
+        act(() => show?.("{}"));
+        expect(document.activeElement).toBe(cellEditor);
+
+        render(null, container);
+        container.remove();
+        elsewhere.remove();
+    });
 });
 
 const LIFECYCLE_STAGES = { Starting: 0, Ready: 1, Rendered: 2, Steady: 3 };
