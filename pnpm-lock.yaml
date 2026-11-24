@@ -7949,10 +7949,9 @@ packages:
   image-q@4.0.0:
     resolution: {integrity: sha512-PfJGVgIfKQJuq3s0tTDOKtztksibuUEbJQIYT3by6wctQo+Rdlh7ef4evJ5NCdxY4CfMbvFkocEwbl4BF8RlJw==}
 
-  image-size@0.7.5:
-    resolution: {integrity: sha512-Hiyv+mXHfFEP7LzUL/llg9RwFxxY+o9N3JVLIeG5E7iFIFAalxvRU9UZthBdYDEVnzHMgjnKJPPpay5BWf1g9g==}
+  image-size@0.7.4:
+    resolution: {integrity: sha512-GqPgxs+VkOr12aWwjSkyRzf5atzObWpFtiRuDgxCl2I/SDpZOKZFRD3iIAeAN6/usmn8SeLWRt7a8JRYK0Whbw==}
     engines: {node: '>=6.9.0'}
-    deprecated: Please migrate to image-size@2.x
     hasBin: true
 
   image-size@2.0.4:
@@ -17294,7 +17293,7 @@ snapshots:
       execa: 1.0.0
       fs-temp: 1.2.1
       fs-xattr: 0.3.1
-      image-size: 0.7.5
+      image-size: 0.7.4
       is-my-json-valid: 2.20.6
       minimist: 1.2.8
       parse-color: 1.0.0
@@ -20135,7 +20134,7 @@ snapshots:
     dependencies:
       '@types/node': 16.9.1
 
-  image-size@0.7.5:
+  image-size@0.7.4:
     optional: true
 
   image-size@2.0.4: {}
