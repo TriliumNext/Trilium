@@ -144,6 +144,8 @@ export interface EmbeddedCaretEditor {
     getEdgeLeftByEnter?(event: KeyboardEvent): EmbedEdge | null;
     /** Removes the blank lines that Enter leaves past at `edge`. */
     removeBlankLinesAt?(edge: EmbedEdge): void;
+    /** Whether `event` is Backspace in empty content, which turns a code block into a paragraph. */
+    isBackspaceOnEmpty?(event: KeyboardEvent): boolean;
     /** Whether the changes of the editor are steps of the undo stack of the text editor. */
     readonly hasSharedHistory?: boolean;
 }
@@ -151,18 +153,19 @@ export interface EmbeddedCaretEditor {
 /**
  * Lets the arrow keys move the caret between `getEditor()`, the editor of an embed, and the text
  * editor around the embed, while its `EditableEmbedContent` has `hasCaretNavigation`. With
- * `leavesOnEnter`, Enter past blank lines at an edge of the content starts a paragraph beside the
- * embed, as in a code block. `getEditor()` returns `null` while the editor is not ready.
+ * `hasCodeBlockKeys`, Enter and Backspace act as in a code block: Enter past blank lines at an
+ * edge of the content starts a paragraph beside the embed, and Backspace in empty content turns
+ * the embed into a paragraph. `getEditor()` returns `null` while the editor is not ready.
  */
 export function useEmbedCaretNavigation(
     getEditor: () => EmbeddedCaretEditor | null | undefined,
-    leavesOnEnter = false
+    hasCodeBlockKeys = false
 ) {
     const rootRef = useContext(CaretNavigationContext);
     const getEditorRef = useRef(getEditor);
     getEditorRef.current = getEditor;
-    const leavesOnEnterRef = useRef(leavesOnEnter);
-    leavesOnEnterRef.current = leavesOnEnter;
+    const hasCodeBlockKeysRef = useRef(hasCodeBlockKeys);
+    hasCodeBlockKeysRef.current = hasCodeBlockKeys;
 
     useEffect(() => {
         const root = rootRef?.current;
@@ -171,7 +174,15 @@ export function useEmbedCaretNavigation(
         // The capture phase runs before the editor handles the key.
         const onKeyDown = (event: KeyboardEvent) => {
             const editor = getEditorRef.current();
-            const enterEdge = leavesOnEnterRef.current && editor?.getEdgeLeftByEnter?.(event);
+            if (editor && hasCodeBlockKeysRef.current && editor.isBackspaceOnEmpty?.(event)) {
+                if (replaceContentEmbedWithParagraph(root, editor)) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                return;
+            }
+
+            const enterEdge = hasCodeBlockKeysRef.current && editor?.getEdgeLeftByEnter?.(event);
             if (editor && enterEdge) {
                 if (insertParagraphBesideContentEmbed(root, enterEdge, editor)) {
                     event.preventDefault();
@@ -365,6 +376,21 @@ function insertParagraphBesideContentEmbed(
 }
 
 /**
+ * Puts the caret of the text editor around `element` in an empty paragraph that replaces its
+ * embed. Returns `false`, before any change, when no text editor with `ContentEmbedCaret` is
+ * around `element`.
+ */
+function replaceContentEmbedWithParagraph(element: HTMLElement, embedEditor: EmbeddedCaretEditor) {
+    const editor = findTextEditorAround(element);
+    if (!editor?.plugins.has("ContentEmbedCaret")) {
+        return false;
+    }
+
+    embedEditor.prepareToLeave?.();
+    return editor.plugins.get("ContentEmbedCaret").replaceWithParagraph(element);
+}
+
+/**
  * Shows `element`, the rendered content of an embed, and disposes of it once it shows another
  * element or unmounts.
  */
@@ -385,26 +411,40 @@ export function EmbedPreview({ element, isHidden = false }: {
 
 /**
  * Moves the focus to the element that `selector` matches when the embed box around `rootRef`
- * holds it, including when that element renders after the box took the focus.
+ * holds it, including when that element renders after the box took the focus. The root names
+ * `selector` in `data-embed-focus-target`, which `ContentEmbed` focuses as the box mounts.
+ * Content rendered apart, such as inline source, finds its box once it joins the page.
  */
 function useFocusFromEmbedBox(rootRef: RefObject<HTMLElement | null>, selector?: string) {
-    useEffect(() => {
+    // A layout effect: inline source mounts its embed box right after it renders.
+    useLayoutEffect(() => {
         const root = rootRef.current;
-        const box = root?.closest<HTMLElement>(".include-note-content");
-        if (!root || !box || !selector) return;
+        if (!root || !selector) return;
 
-        const forwardFocus = () => {
-            if (document.activeElement === box) {
-                root.querySelector<HTMLElement>(selector)?.focus();
-            }
-        };
-        const observer = new MutationObserver(forwardFocus);
-        observer.observe(root, { childList: true, subtree: true });
-        box.addEventListener("focus", forwardFocus);
-        forwardFocus();
+        root.dataset.embedFocusTarget = selector;
+        let stopForwarding: (() => void) | undefined;
+        const stopWaiting = whenInPage(root, () => {
+            const box = root.closest<HTMLElement>(".include-note-content");
+            if (!box) return;
+
+            const forwardFocus = () => {
+                if (document.activeElement === box) {
+                    root.querySelector<HTMLElement>(selector)?.focus();
+                }
+            };
+            const observer = new MutationObserver(forwardFocus);
+            observer.observe(root, { childList: true, subtree: true });
+            box.addEventListener("focus", forwardFocus);
+            forwardFocus();
+            stopForwarding = () => {
+                observer.disconnect();
+                box.removeEventListener("focus", forwardFocus);
+            };
+        });
         return () => {
-            observer.disconnect();
-            box.removeEventListener("focus", forwardFocus);
+            stopWaiting();
+            stopForwarding?.();
+            delete root.dataset.embedFocusTarget;
         };
     }, [ rootRef, selector ]);
 }

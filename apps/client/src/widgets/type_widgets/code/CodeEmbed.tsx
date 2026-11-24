@@ -124,7 +124,7 @@ export function InlineCodeEmbed({ content: savedContent, editor, language }: Sou
             hiddenToolbarItems={EXTENDED_CODE_BLOCK_HIDDEN_ITEMS}
             hasPositions
             hasTabWidthInMenu
-            leavesOnEnter
+            hasCodeBlockKeys
         />
     );
 }
@@ -159,15 +159,18 @@ interface CodeEmbedContentProps {
     hasPositions?: boolean;
     /** Whether the menu of the embed offers the tab width, in place of a toolbar button. */
     hasTabWidthInMenu?: boolean;
-    /** Whether Enter past blank lines at an edge of the code starts a paragraph beside it. */
-    leavesOnEnter?: boolean;
+    /**
+     * Whether Enter and Backspace act as in a code block: Enter past blank lines at an edge of
+     * the code starts a paragraph beside it, and Backspace in an empty block turns it into one.
+     */
+    hasCodeBlockKeys?: boolean;
 }
 
 /** CodeMirror over the code of an embed, and the tools of the embed toolbar for it. */
 function CodeEmbedContent({
     rootRef, note, ownerNote, editor, content, onContentChange, settings, mime, initialLines,
     hasSaveStatus, hasLanguageLabel, hasCopyButton, hiddenToolbarItems, hasPositions,
-    hasTabWidthInMenu, leavesOnEnter
+    hasTabWidthInMenu, hasCodeBlockKeys
 }: CodeEmbedContentProps) {
     const viewRef = useRef<VanillaCodeMirror>(null);
     // The toolbar buttons come from `CodeTools`, with the Editable toggle.
@@ -212,7 +215,7 @@ function CodeEmbedContent({
                             languageLabel={hasLanguageLabel && isEditing ? languageLabel : undefined}
                             viewRef={viewRef}
                             onClose={onContentChange}
-                            leavesOnEnter={leavesOnEnter}
+                            hasCodeBlockKeys={hasCodeBlockKeys}
                         />
                     </Suspense>
                 </CaretNavigationContext.Provider>
