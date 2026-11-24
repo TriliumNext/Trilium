@@ -9,7 +9,7 @@ import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
 import server from "../../../services/server";
 import { buildNote } from "../../../test/easy-froca";
-import { useWorkbookFile } from "./loading";
+import { useWorkbookDisplay, useWorkbookFile } from "./loading";
 
 describe("useWorkbookFile", () => {
     let container: HTMLDivElement;
@@ -141,6 +141,42 @@ describe("useWorkbookFile", () => {
     }
 });
 
+describe("useWorkbookDisplay", () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    it("disposes the shown workbook before creating the next, whose state the unload would clear", async () => {
+        vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(800);
+        vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(600);
+        const calls: string[] = [];
+        let active: { getId(): string } | null = null;
+        const univerAPI = {
+            getActiveWorkbook: () => active,
+            createWorkbook: vi.fn(() => {
+                calls.push("create");
+                const id = `wb${calls.length}`;
+                active = { ...mockWorkbook(), getId: () => id };
+                return active;
+            }),
+            disposeUnit: vi.fn((id: string) => {
+                calls.push(`dispose ${id}`);
+            })
+        };
+        let show: ((content: string) => void) | undefined;
+        const container = document.createElement("div");
+        document.body.appendChild(container);
+        await act(async () => {
+            render(<DisplayHarness univerAPI={univerAPI as unknown as FUniver} onReady={(s) => { show = s; }} />, container);
+        });
+
+        act(() => show?.("{}"));
+        act(() => show?.("{}"));
+
+        expect(calls).toEqual([ "create", "dispose wb1", "create" ]);
+        render(null, container);
+        container.remove();
+    });
+});
+
 const LIFECYCLE_STAGES = { Starting: 0, Ready: 1, Rendered: 2, Steady: 3 };
 
 type MockWorkbook = ReturnType<typeof mockWorkbook>;
@@ -160,5 +196,13 @@ function Harness({ entity, noteContext, isVisible, univerAPI, onError }: {
     const containerRef = useRef<HTMLDivElement>(null);
     const apiRef = useRef<FUniver | undefined>(univerAPI);
     useWorkbookFile({ entity, noteContext, componentId: undefined, isVisible }, apiRef, containerRef, onError);
+    return <div ref={containerRef} />;
+}
+
+function DisplayHarness({ univerAPI, onReady }: { univerAPI: FUniver; onReady(show: (content: string) => void): void }) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const apiRef = useRef<FUniver | undefined>(univerAPI);
+    const { show } = useWorkbookDisplay(apiRef, containerRef);
+    onReady(show);
     return <div ref={containerRef} />;
 }
