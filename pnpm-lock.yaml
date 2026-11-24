@@ -615,8 +615,8 @@ importers:
   apps/server:
     dependencies:
       '@agentclientprotocol/codex-acp':
-        specifier: 2.7.0
-        version: 2.7.0
+        specifier: 2.8.0
+        version: 2.8.0
       '@ai-sdk/anthropic':
         specifier: 4.0.107
         version: 4.0.107(zod@4.6.7)
@@ -1560,12 +1560,12 @@ packages:
   '@actions/io@3.0.2':
     resolution: {integrity: sha512-nRBchcMM+QK1pdjO7/idu86rbJI5YHUKCvKs0KxnSYbVe3F51UfGxuZX4Qy/fWlp6l7gWFwIkrOzN+oUK03kfw==}
 
-  '@agentclientprotocol/codex-acp@2.7.0':
-    resolution: {integrity: sha512-fFFU/tV5DltBzN4cZIh5tJEWGTZFXbwHU7I5RxPkmrGraw3jhAIuvTeudYwK3wAbV311WgIi7qONl2I8uRV2jw==}
+  '@agentclientprotocol/codex-acp@2.8.0':
+    resolution: {integrity: sha512-IYKNewnvVyq8x77n0zwC/ZJJmugtgJoj0RUsgRtHhO+9sSbIDLE21Jh0eyGMX8h67kYo6QybY1PGAMhsoxeKFA==}
     hasBin: true
 
-  '@agentclientprotocol/sdk@2.6.0':
-    resolution: {integrity: sha512-3FtL6MkAV5F9qxg0FQV8wmBszIm2xuVPoDWOILIFSDQ+Vq3Twdh7Cw6Hk2GOPUbevgrTUpUAqZXQy7Geaj79mw==}
+  '@agentclientprotocol/sdk@2.8.0':
+    resolution: {integrity: sha512-EjsvoRX8nEH2z3PAVI2ILsVXAefVcSlLPeXGjlQoFgkJE71F2J0Fj7N6oL/k7SnP0vY+9hmONPFz/K2zalnTiw==}
     peerDependencies:
       '@modelcontextprotocol/server': ^2.4.0
       zod: 4.6.7
@@ -11840,9 +11840,9 @@ snapshots:
 
   '@actions/io@3.0.2': {}
 
-  '@agentclientprotocol/codex-acp@2.7.0':
+  '@agentclientprotocol/codex-acp@2.8.0':
     dependencies:
-      '@agentclientprotocol/sdk': 2.6.0(zod@4.6.7)
+      '@agentclientprotocol/sdk': 2.8.0(zod@4.6.7)
       cross-spawn: 7.0.6
       diff: 9.0.0
       open: 11.0.4
@@ -11851,7 +11851,7 @@ snapshots:
     transitivePeerDependencies:
       - '@modelcontextprotocol/server'
 
-  '@agentclientprotocol/sdk@2.6.0(zod@4.6.7)':
+  '@agentclientprotocol/sdk@2.8.0(zod@4.6.7)':
     dependencies:
       zod: 4.6.7
 
