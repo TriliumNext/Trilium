@@ -293,6 +293,17 @@ describe("ContentEmbedCaret leaving an embed", () => {
             .toBe(`${AB}<paragraph>[]</paragraph>${EMBED}<paragraph></paragraph>${CD}`);
     });
 
+    it("replaces the embed with a paragraph that takes the caret, in one undo step", () => {
+        setModelData(editor.model, AB + EMBED + CD);
+        expect(plugin.replaceWithParagraph(getEmbedContent(editor))).toBe(true);
+        expect(getModelData(editor.model)).toBe(`${AB}<paragraph>[]</paragraph>${CD}`);
+        expect(editor.editing.view.document.isFocused).toBe(true);
+
+        editor.execute("undo");
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe(AB + EMBED + CD);
+        expect(plugin.replaceWithParagraph(document.body)).toBe(false);
+    });
+
     it("undoes the new paragraph with the latest step of the embed, when asked to", () => {
         const history = editor.plugins.get(EmbedHistory);
         setModelData(editor.model, AB + EMBED);

@@ -741,6 +741,26 @@ describe("CodeMirror", () => {
             }
         });
 
+        it("tells when Backspace is pressed in an empty document", () => {
+            const instance = build();
+            editor = instance;
+            const isEmptied = (text: string, init: KeyboardEventInit = {}, key = "Backspace") => {
+                instance.setText(text);
+                instance.dispatch({ selection: EditorSelection.cursor(0) });
+                return instance.isBackspaceOnEmpty(createKeydown(key, instance.contentDOM, init));
+            };
+
+            expect(isEmptied("")).toBe(true);
+            expect(isEmptied("\n")).toBe(false);
+            expect(isEmptied(" ")).toBe(false);
+            expect(isEmptied("", {}, "Delete")).toBe(false);
+            for (const modifier of [ "shiftKey", "ctrlKey", "altKey", "metaKey", "isComposing" ]) {
+                expect(isEmptied("", { [modifier]: true })).toBe(false);
+            }
+            expect(instance.isBackspaceOnEmpty(createKeydown("Backspace", document.body)))
+                .toBe(false);
+        });
+
         it("removes the blank lines that Enter leaves past in an undo step of its own", () => {
             const instance = build();
             editor = instance;
@@ -790,6 +810,12 @@ describe("CodeMirror", () => {
             expect(instance.getEdgeLeftByEnter(enter)).toBe(null);
             Vim.handleKey(cm, "A", "test");
             expect(instance.getEdgeLeftByEnter(enter)).toBe("end");
+
+            const backspace = createKeydown("Backspace", instance.contentDOM);
+            instance.setText("");
+            expect(instance.isBackspaceOnEmpty(backspace)).toBe(true);
+            Vim.handleKey(cm, "<Esc>", "test");
+            expect(instance.isBackspaceOnEmpty(backspace)).toBe(false);
         });
 
         it("drops the line-wrap side of the cursor before the caret leaves", () => {

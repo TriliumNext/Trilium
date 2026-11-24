@@ -559,6 +559,15 @@ export default class CodeMirror extends EditorView {
     }
 
     /**
+     * Whether `event` is Backspace, pressed without modifiers in an empty document, which turns a
+     * code block of CKEditor into a paragraph. `false` in a Vim mode other than Insert.
+     */
+    isBackspaceOnEmpty(event: KeyboardEvent) {
+        return event.key === "Backspace" && this.state.doc.length === 0
+            && this.isPlainKeyAtCursor(event) && !this.isInVimCommandMode();
+    }
+
+    /**
      * Removes the blank lines that Enter leaves past at `edge`, as `getEdgeLeftByEnter()` reports
      * it, in an undo step of its own. Does nothing while those lines are not blank.
      */

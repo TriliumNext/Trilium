@@ -118,6 +118,31 @@ export default class ContentEmbedCaret extends Plugin {
         return true;
     }
 
+    /**
+     * Focuses this editor with the caret in an empty paragraph that replaces the embed that
+     * contains `domElement`, in one undo step, as Backspace turns an empty code block into one.
+     * Returns `false` when `domElement` is not in an embed of this editor.
+     */
+    replaceWithParagraph(domElement: Element): boolean {
+        const editor = this.editor;
+        const embed = getContentEmbedAt(editor, domElement);
+        if (!embed) {
+            return false;
+        }
+
+        const model = editor.model;
+        editor.editing.view.focus();
+        model.change((writer) => {
+            const paragraph = writer.createElement("paragraph",
+                model.schema.getAttributesWithProperty(embed, "copyOnReplace", true));
+            writer.insert(paragraph, embed, "before");
+            writer.remove(embed);
+            writer.setSelection(paragraph, 0);
+        });
+        scrollToTheCaret(editor);
+        return true;
+    }
+
     /** Focuses this editor with the caret at `edge` of its content. */
     focusAt(edge: EmbedEdge) {
         const editor = this.editor;
