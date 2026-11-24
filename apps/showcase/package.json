@@ -16,7 +16,7 @@
   },
   "devDependencies": {
     "@types/pngjs": "6.0.5",
-    "pixelmatch": "7.1.0",
+    "pixelmatch": "7.2.0",
     "playwright": "1.65.1",
     "pngjs": "7.0.0"
   }
