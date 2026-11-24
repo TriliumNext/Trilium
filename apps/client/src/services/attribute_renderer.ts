@@ -99,7 +99,11 @@ const HIDDEN_ATTRIBUTES = [
     "docName",
     "webViewSrc",
     "archived",
-    "clipType"
+    "clipType",
+    "pageDescription",
+    "pageAuthor",
+    "publishedDate",
+    "modifiedDate"
 ];
 
 /**

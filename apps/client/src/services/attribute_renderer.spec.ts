@@ -149,6 +149,11 @@ describe("renderNormalAttributes", () => {
             "#color": "red",
             "#archived": "true", // hidden attribute -> excluded
             "#clipType": "page", // shown by the note icon -> excluded
+            // shown by the "Web clip" badge -> excluded
+            "#pageDescription": "A page",
+            "#pageAuthor": "Someone",
+            "#publishedDate": "2026-01-01",
+            "#modifiedDate": "2026-01-02",
             "#internalBookmark": "x" // auto-link -> excluded
         });
         // a definition-style label is also excluded by isDefinition()
