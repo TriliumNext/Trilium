@@ -162,6 +162,20 @@
         opacity: .75;
     }
 
+    @media (max-width: 991px) {
+        h5:has(> .note-list-attributes) {
+            display: grid;
+            grid-template-columns: auto auto minmax(0, 1fr) auto;
+        }
+
+        .note-list-attributes {
+            grid-row: 2;
+            grid-column: 3;
+            margin-inline-start: 0;
+            text-align: start;
+        }
+    }
+
     /* Stands in for .note-list-attributes when the caller supplies its own controls, so the item
        menu still sits at the far end of the row instead of collapsing next to the title. */
     .note-list-item-actions {
