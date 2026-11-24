@@ -455,8 +455,7 @@ function buildInlineLinkFilter(): Rule {
             // Otherwise treat as normal.
             // TODO: Call super() somehow instead of duplicating the implementation.
             let href = node.getAttribute('href');
-            // Escape backslashes along with the parentheses, and encode spaces (which would end the
-            // destination) the way the image rule does.
+            // A space ends the destination, so encode it as the image rule does.
             /* v8 ignore next -- the filter requires a non-empty href, so this never falls through. */
             if (href) href = href.replace(/([\\()])/g, '\\$1').replace(/ /g, "%20");
             let title = cleanAttribute(node.getAttribute('title'));
