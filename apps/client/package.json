@@ -80,7 +80,7 @@
     "jsdom": "31.0.1",
     "lightningcss": "1.33.0",
     "sass": "1.108.2",
-    "stylelint": "18.0.0",
+    "stylelint": "18.1.0",
     "vite-plugin-static-copy": "4.1.1"
   }
 }
