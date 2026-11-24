@@ -2957,8 +2957,8 @@
     "disclaimer": "这些选项处于实验阶段，可能导致系统不稳定。请谨慎使用。"
   },
   "tab_history_navigation_buttons": {
-    "go-back": "返回上一笔记",
-    "go-forward": "前往下一笔记"
+    "go-back": "单击返回上一笔记，长按或右键查看历史记录",
+    "go-forward": "单击前往下一笔记，长按或右键查看历史记录"
   },
   "breadcrumb_badges": {
     "read_only_explicit": "只读",
