@@ -455,8 +455,9 @@ function buildInlineLinkFilter(): Rule {
             // Otherwise treat as normal.
             // TODO: Call super() somehow instead of duplicating the implementation.
             let href = node.getAttribute('href');
+            // A space would end the destination, so encode it the way the image rule does.
             /* v8 ignore next -- the filter requires a non-empty href, so this never falls through. */
-            if (href) href = href.replace(/([()])/g, '\\$1');
+            if (href) href = href.replace(/([()])/g, '\\$1').replace(/ /g, "%20");
             let title = cleanAttribute(node.getAttribute('title'));
             if (title) title = ` "${title.replace(/"/g, '\\"')}"`;
             return `[${content}](${href}${title})`;

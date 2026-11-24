@@ -418,6 +418,11 @@ describe("Markdown export", () => {
         expect(markdownExportService.toMarkdown(html)).toBe(String.raw`[Google](https://www.google.com "a \"quoted\" title")`);
     });
 
+    it("encodes spaces in link destinations", () => {
+        const html = /*html*/`<p><a href="file:///C:/My Documents/report (final).pdf">Report</a></p>`;
+        expect(markdownExportService.toMarkdown(html)).toBe(String.raw`[Report](file:///C:/My%20Documents/report%20\(final\).pdf)`);
+    });
+
     it("exports reference links verbatim", () => {
         const html = /*html*/`<p><a class="reference-link" href="../../Canvas.html">Canvas</a></p>`;
         const expected = `<a class="reference-link" href="../../Canvas.html">Canvas</a>`;
