@@ -155,7 +155,9 @@
     }
 
     .note-list-attributes {
-        flex-grow: 1;
+        flex: 1 1 0;
+        min-width: 0;
+        overflow-wrap: anywhere;
         margin-inline-start: 1em;
         text-align: right;
         font-size: .75em;

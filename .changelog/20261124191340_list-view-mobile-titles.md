@@ -4,4 +4,4 @@ area: Collections
 closes: [12673]
 ---
 
-On a phone, the list view cut note titles down to a few letters when the note had labels, such as web clippings.
+The list view cut note titles short to make room for their labels (such as a web clipping's page URL), down to a few letters on a phone.
