@@ -144,15 +144,10 @@ function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
     return instance.render(injectIconFallbacks(injectLinkPreviewFallbacks(html)));
 }
 
-/** A bare URL in text, which GFM turns into a link of its own (an extended autolink). */
-const BARE_URL_PATTERN = /\b(?:https?:\/\/|www\.)[^\s<]+/g;
+/** A bare URL in text, which GFM turns into a link of its own. Schemes match in any case. */
+const BARE_URL_PATTERN = /\b(?:https?:\/\/|www\.)[^\s<]+/gi;
 
-/**
- * GFM keeps backslashes in an extended autolink as they are, so the `\_` that Turnish writes for
- * every underscore ends up in the address: `https://en.wikipedia.org/wiki/Hello\_World` links to
- * `Hello%5C_World`. An underscore between two letters or digits can never open or close emphasis,
- * so its escape is dropped inside bare URLs; that also holds where the URL is a link's own text.
- */
+/** GFM keeps backslashes in bare URLs; an underscore between letters or digits cannot form emphasis. */
 function unescapeUnderscoresInBareUrls(markdown: string) {
     return markdown.replace(BARE_URL_PATTERN, (url) => url.replace(/(?<=[\p{L}\p{N}])\\_(?=[\p{L}\p{N}])/gu, "_"));
 }

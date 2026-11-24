@@ -421,6 +421,7 @@ describe("Markdown export", () => {
     it("keeps underscores inside bare URLs unescaped", () => {
         const html = /*html*/`<p>See https://en.wikipedia.org/wiki/Hello_World and www.example.com/snake_case_path for some_word.</p>`;
         expect(markdownExportService.toMarkdown(html)).toBe(String.raw`See https://en.wikipedia.org/wiki/Hello_World and www.example.com/snake_case_path for some\_word.`);
+        expect(markdownExportService.toMarkdown(/*html*/`<p>HTTPS://example.com/snake_case</p>`)).toBe("HTTPS://example.com/snake_case");
     });
 
     it("keeps escaping underscores in bare URLs that could form emphasis", () => {
