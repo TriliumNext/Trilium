@@ -5410,7 +5410,7 @@
     "badge_on_tooltip": "已为这篇笔记启用 Vim 模式。点击关闭。",
     "badge_off_tooltip": "已为这篇笔记禁用 Vim 模式。点击开启。",
     "menu_note": "Vim 模式",
-    "menu_settings": "设置",
+    "menu_settings": "选项",
     "menu_help": "帮助",
     "menu_note_description": "仅应用于这篇笔记。",
     "menu_note_description_subtree": "应用于这篇笔记及其下的笔记。"
