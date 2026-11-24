@@ -989,8 +989,8 @@ importers:
         specifier: 1.0.1
         version: 1.0.1
       defuddle:
-        specifier: 0.19.6
-        version: 0.19.6
+        specifier: 0.19.13
+        version: 0.19.13
       preact:
         specifier: 11.2.0
         version: 11.2.0(preact-render-to-string@6.8.3)
@@ -6820,8 +6820,8 @@ packages:
   defu@6.1.7:
     resolution: {integrity: sha512-7z22QmUWiQ/2d0KkdYmANbRUVABpZ9SNYyH5vx6PZ+nE5bcC0l7uFvEfHlyld/HcGBFTL536ClDt3DEcSlEJAQ==}
 
-  defuddle@0.19.6:
-    resolution: {integrity: sha512-VzIOHD5iKABZVQg2xcPYD/181rgfCO4Mtqay9rfYyXXewMSX+fI+XU3COMpi4YEW34EJuf0WC6f/52NlW9akIw==}
+  defuddle@0.19.13:
+    resolution: {integrity: sha512-BMrCxWUmHge6o8ZBKRDTFxXNSfGDiWiV2rzJLh9vVMJnDExzCvLzaSrSH1mwa/sZZtCBa3Z+jccCXNblj3qnCg==}
     hasBin: true
 
   delaunator@5.1.0:
@@ -18601,7 +18601,7 @@ snapshots:
 
   defu@6.1.7: {}
 
-  defuddle@0.19.6:
+  defuddle@0.19.13:
     dependencies:
       commander: 12.1.0
       mathml-to-latex: 1.8.0
