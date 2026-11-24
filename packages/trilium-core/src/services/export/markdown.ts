@@ -135,11 +135,26 @@ function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
         instance.addRule("blockMarker", buildBlockMarkerFilter());
         instance.use(gfm);
         instance.keep([ "kbd", "sup", "sub" ]);
+        const escape = instance.escape.bind(instance);
+        instance.escape = (text: string) => unescapeUnderscoresInBareUrls(escape(text));
         instances.set(headerlessTables, instance);
     }
 
     const html = isWritingBlockMarkers ? injectBlockMarkers(content) : content;
     return instance.render(injectIconFallbacks(injectLinkPreviewFallbacks(html)));
+}
+
+/** A bare URL in text, which GFM turns into a link of its own (an extended autolink). */
+const BARE_URL_PATTERN = /\b(?:https?:\/\/|www\.)[^\s<]+/g;
+
+/**
+ * GFM keeps backslashes in an extended autolink as they are, so the `\_` that Turnish writes for
+ * every underscore ends up in the address: `https://en.wikipedia.org/wiki/Hello\_World` links to
+ * `Hello%5C_World`. An underscore between two letters or digits can never open or close emphasis,
+ * so its escape is dropped inside bare URLs; that also holds where the URL is a link's own text.
+ */
+function unescapeUnderscoresInBareUrls(markdown: string) {
+    return markdown.replace(BARE_URL_PATTERN, (url) => url.replace(/(?<=[\p{L}\p{N}])\\_(?=[\p{L}\p{N}])/gu, "_"));
 }
 
 /** The attribute of an element that stands for a block marker while Turnish runs, with the id. */
