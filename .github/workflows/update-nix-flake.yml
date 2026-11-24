@@ -55,7 +55,7 @@ jobs:
       - name: Set up Nix
         # The headers hash is a NAR hash of the unpacked tarball, so only Nix can
         # compute it — and the verification step below needs a working builder.
-        uses: cachix/install-nix-action@3dc140bfc76c49fbd4dd958429132e3746bcb086 # v31.11.5
+        uses: cachix/install-nix-action@bb0495a1086c46893eee56f32fd192dfe4a15bb9 # v32.0.0
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
