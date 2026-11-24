@@ -445,11 +445,10 @@ describe("renderMindMapPreviewSvg (real mind-elixir)", () => {
         expect(doc.querySelector("parsererror")).toBeNull();
         expect(result).toContain("Both l &amp; r");
 
-        const labelDivs = Array.from(doc.querySelectorAll("foreignObject > div"))
-            .map((div) => div.textContent);
-        expect(labelDivs).toContain(`label & "quoted"`);
-        expect(Array.from(doc.querySelectorAll("text")).map((text) => text.textContent))
-            .toContain("Both l & r <tags>");
+        // Mind Elixir writes a label as text, so markup in it is shown and exported as characters.
+        const texts = Array.from(doc.querySelectorAll("text")).map((text) => text.textContent);
+        expect(texts).toEqual(expect.arrayContaining([ "Both l & r <tags>", `label & <b>"quoted"</b>` ]));
+        expect(doc.querySelectorAll("foreignObject")).toHaveLength(0);
     });
 
     it("a map without arrows or summaries exports without label injection", async () => {
