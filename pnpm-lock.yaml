@@ -904,8 +904,8 @@ importers:
         specifier: 27.1.5
         version: 27.1.5(typescript@6.0.3)
       i18next-http-backend:
-        specifier: 4.0.10
-        version: 4.0.10
+        specifier: 4.1.0
+        version: 4.1.0
       jquery:
         specifier: 4.1.0
         version: 4.1.0
@@ -7908,8 +7908,8 @@ packages:
   i18next-fs-backend@2.7.0:
     resolution: {integrity: sha512-CUfthmimGMcpLujpZXrVl3aF2Ra/cdYhoA0Ep+PckOk0N8jhwGGDNsrB2WM5CR4i66nYQPJoWR8YzsUrohuqKw==}
 
-  i18next-http-backend@4.0.10:
-    resolution: {integrity: sha512-CfdQuwIVijbrS/fmiTAQYcYyje4nMbH9aIjKYhhm5bgVmWKWLOM1F7qrA1o63Jl1JxQcRjdtWhKlvDzyqV9aPg==}
+  i18next-http-backend@4.1.0:
+    resolution: {integrity: sha512-OY3KA8s6WUfUCviw+6VA79148bYaws+FEOZD6MNeZ8Tw1ocfu1j1Qp3ROYNMikzNv1gyTBgzHbWMP/rfZDSp1g==}
     engines: {node: '>=18'}
 
   i18next@27.1.5:
@@ -20120,7 +20120,7 @@ snapshots:
 
   i18next-fs-backend@2.7.0: {}
 
-  i18next-http-backend@4.0.10: {}
+  i18next-http-backend@4.1.0: {}
 
   i18next@27.1.5(typescript@6.0.3):
     optionalDependencies:

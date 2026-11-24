@@ -39,7 +39,7 @@
     "force-graph": "1.52.0",
     "fullcalendar": "7.1.5",
     "i18next": "27.1.5",
-    "i18next-http-backend": "4.0.10",
+    "i18next-http-backend": "4.1.0",
     "jquery": "4.1.0",
     "jquery.fancytree": "2.38.5",
     "katex": "0.19.1",
