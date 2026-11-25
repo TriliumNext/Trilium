@@ -72,6 +72,19 @@ const fencedCodeBlockFilter: Rule = {
     }
 };
 
+/**
+ * Turnish's ATX heading rule, except that a run of `#` at the end of the text is escaped: a
+ * Markdown reader takes ` #` at the end of an ATX heading as an optional closing sequence and
+ * drops it, so `<h2>Issue #</h2>` would be imported back as "Issue".
+ */
+const headingFilter: Rule = {
+    filter: [ "h1", "h2", "h3", "h4", "h5", "h6" ],
+    replacement (content, node) {
+        const level = Number(node.nodeName.charAt(1));
+        return `\n\n${"#".repeat(level)} ${content.replace(/(^|[ \t])(#+)[ \t]*$/, "$1\\$2")}\n\n`;
+    }
+};
+
 function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
     currentTaskStates = getTaskStates();
     isWritingBlockMarkers = options.blockIds === "markers";
@@ -133,6 +146,7 @@ function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
         instance.addRule("math", buildMathFilter());
         instance.addRule("li", buildListItemFilter());
         instance.addRule("blockMarker", buildBlockMarkerFilter());
+        instance.addRule("heading", headingFilter);
         instance.use(gfm);
         instance.keep([ "kbd", "sup", "sub" ]);
         instances.set(headerlessTables, instance);

@@ -57,6 +57,13 @@ describe("markdown", () => {
         expect(markdownService.renderToHtml(exported, "Title")).toBe(html);
     });
 
+    it("keeps a hash at the end of a heading through a round trip", () => {
+        for (const html of [ "<h2>Issue #</h2>", "<h3>#</h3>", "<h2>C#</h2>" ]) {
+            const exported = markdownExportService.toMarkdown(html);
+            expect(markdownService.renderToHtml(exported, "Title")).toBe(html);
+        }
+    });
+
     it("rewrites language of unknown language tags", () => {
         const result = markdownService.renderToHtml(trimIndentation`\
             \`\`\`unknownlanguage

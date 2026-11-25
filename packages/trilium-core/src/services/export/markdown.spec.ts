@@ -62,6 +62,15 @@ describe("Markdown export", () => {
             .toBe("```\na ``` b\n```");
     });
 
+    it("escapes a run of hashes at the end of a heading", () => {
+        expect(markdownExportService.toMarkdown("<h2>Issue #</h2>")).toBe("## Issue \\#");
+        expect(markdownExportService.toMarkdown("<h3>#</h3>")).toBe("### \\#");
+        expect(markdownExportService.toMarkdown("<h2>A ##</h2>")).toBe("## A \\##");
+        // not a closing sequence: no space before it, or text after it
+        expect(markdownExportService.toMarkdown("<h2>C#</h2>")).toBe("## C#");
+        expect(markdownExportService.toMarkdown("<h2>Tag #1</h2>")).toBe("## Tag #1");
+    });
+
     it("names an unknown language after the last part of its tag", () => {
         expect(markdownExportService.toMarkdown(`<pre><code class="language-text-x-madeup">x</code></pre>`))
             .toBe("```madeup\nx\n```");
