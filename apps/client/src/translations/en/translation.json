@@ -743,6 +743,7 @@
     "share_js": "JavaScript note which will be injected into the share page. JS note must be in the shared sub-tree as well. Consider using 'share_hidden_from_tree'.",
     "share_template": "Embedded JavaScript note that will be used as the template for displaying the shared note. Falls back to the default template. Consider using 'share_hidden_from_tree'.",
     "share_favicon": "Favicon note to be set in the shared page. Typically you want to set it to share root and make it inheritable. Favicon note must be in the shared sub-tree as well. Consider using 'share_hidden_from_tree'.",
+    "docx_template": "Word document (a File note) that the note is written into when it is exported as a Word document, taking its styles, headers, footers and page setup. Typically made inheritable.",
     "is_owned_by_note": "is owned by note",
     "other_notes_with_name": "Other notes with {{attributeType}} name \"{{attributeName}}\"",
     "other_notes_count_one": "{{count}} other note",

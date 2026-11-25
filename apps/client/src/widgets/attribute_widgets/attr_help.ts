@@ -231,6 +231,9 @@ export const ATTR_HELP: AttrHelpMap = {
         shareJs: t("attribute_detail.share_js"),
         shareTemplate: t("attribute_detail.share_template"),
         shareFavicon: t("attribute_detail.share_favicon"),
+        docxTemplate: {
+            description: t("attribute_detail.docx_template"), helpPage: "mHbBMPDPkVV5"
+        },
         internalLink: t("attribute_detail.internal_link"),
         imageLink: t("attribute_detail.image_link"),
         relationMapLink: t("attribute_detail.relation_map_link"),
