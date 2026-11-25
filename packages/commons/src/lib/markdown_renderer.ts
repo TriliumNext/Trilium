@@ -551,10 +551,10 @@ export class CustomMarkdownRenderer extends Renderer {
     override heading(data: Tokens.Heading): string {
         const attributes = getBlockAttributes(data);
         if (data.depth === 1) {
-            // Unescape Markdown backslash escapes (e.g. \# produced by the exporter) so they
-            // don't appear as literal backslashes in the heading text, while keeping the raw
-            // form intact for title-duplicate detection.
-            const text = data.text.replace(/\\([!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~])/g, "$1");
+            // An H1 is written from its raw text, so its markers are taken out here. The exporter
+            // escapes a hash run at the end (`# Issue \#`) so it isn't read as a closing sequence;
+            // only that escape is taken out, other backslashes in the raw text are kept.
+            const text = data.text.replace(/(^|[ \t])\\(#+)$/, "$1$2");
             return `<h1${attributes}>${stripBlockMarkers(text)}</h1>`;
         }
         return withAttributes(super.heading(data).trimEnd(), attributes);

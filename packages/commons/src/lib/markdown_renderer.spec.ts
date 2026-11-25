@@ -201,6 +201,15 @@ describe("renderToHtml", () => {
             expect(html).toBe("<h1>A</h1><p>body</p>");
         });
 
+        it("takes the escape out of a hash run at the end of an <h1>", () => {
+            expect(render("# Issue \\#", "X", { demoteH1: false })).toBe("<h1>Issue #</h1>");
+            expect(render("# Issue \\##", "X", { demoteH1: false })).toBe("<h1>Issue ##</h1>");
+        });
+
+        it("keeps other backslashes in the raw text of an <h1>", () => {
+            expect(render("# a\\#b `c\\#` \\# d", "X", { demoteH1: false })).toBe("<h1>a\\#b `c\\#` \\# d</h1>");
+        });
+
         it("decodes named/decimal/hex entities and preserves unknown ones in demoted headings", () => {
             const html = render("# A &amp; B &#65; &#x41; &unknownent;", "X");
             expect(html).toBe("<h2>A & B A A &unknownent;</h2>");
