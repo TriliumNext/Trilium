@@ -38,8 +38,10 @@ body.heading-style-underline .note-detail-readonly-text-content {
     position: relative;
 }
 
-body.mobile .note-detail-readonly-text {
-    padding-inline-start: 10px;
+@media (max-width: 991px) {
+    body.mobile .note-detail-readonly-text {
+        padding-inline-start: 10px;
+    }
 }
 
 .note-detail-readonly-text p:first-child, .note-detail-readonly-text::before {

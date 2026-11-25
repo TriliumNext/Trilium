@@ -46,6 +46,12 @@ export interface CodeEmbedEditorProps {
     onChange?: (content: string) => void;
     /** Called with CodeMirror once it mounts, for extensions such as a linter. */
     onReady?: (view: VanillaCodeMirror) => void;
+    /**
+     * Whether Enter and Backspace act as in a code block: Enter past blank lines at the start or
+     * the end of the content starts a paragraph beside the embed, and Backspace in empty content
+     * turns the embed into a paragraph.
+     */
+    hasCodeBlockKeys?: boolean;
 }
 
 /**
@@ -54,7 +60,7 @@ export interface CodeEmbedEditorProps {
  */
 export default function CodeEmbedEditor({
     note, ownerNote, editor, history, content, mime, tabWidth, useTabs, wrapLines, hasLineNumbers,
-    languageLabel, viewRef, isShown = true, onClose, onChange, onReady
+    languageLabel, viewRef, isShown = true, onClose, onChange, onReady, hasCodeBlockKeys
 }: CodeEmbedEditorProps) {
     const isLoadingRef = useRef(false);
     const containerRef = useRef<HTMLPreElement>(null);
@@ -66,7 +72,7 @@ export default function CodeEmbedEditor({
     // The effects below wait for this state rather than read `viewRef`: a render of this component
     // before the effects flush runs them ahead of the effect of `CodeMirror` that creates the view.
     const [ view, setView ] = useState<VanillaCodeMirror | null>(null);
-    useEmbedCaretNavigation(() => viewRef.current);
+    useEmbedCaretNavigation(() => viewRef.current, hasCodeBlockKeys);
 
     useEffect(() => {
         if (view) {

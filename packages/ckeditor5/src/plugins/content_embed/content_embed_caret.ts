@@ -15,6 +15,7 @@ import { addEditingKeydownCapture, isFromEditable } from "../move_block_updown.j
 import {
     getCaption, getContentEmbedAt, getContentEmbedDom, isContentEmbed
 } from "./content_embed.js";
+import EmbedHistory from "./embed_history.js";
 
 /** An end of the content of an embed, where the caret enters or leaves it. */
 export type EmbedEdge = "start" | "end";
@@ -78,6 +79,65 @@ export default class ContentEmbedCaret extends Plugin {
             // Without text beside the embed, the fake caret of `WidgetTypeAround` shows there.
             writer.setSelection(embed, "on");
             writer.setSelectionAttribute(TYPE_AROUND_ATTRIBUTE, isForward ? "after" : "before");
+        });
+        scrollToTheCaret(editor);
+        return true;
+    }
+
+    /**
+     * Focuses this editor with the caret in a new paragraph beside the embed that contains
+     * `domElement`, past its `edge`, as the buttons of `WidgetTypeAround` insert one. With
+     * `joinsLatestStep`, the paragraph is part of the latest step of `EmbedHistory`. Returns
+     * `false` when `domElement` is not in an embed of this editor.
+     */
+    insertParagraphBeside(
+        domElement: Element, edge: EmbedEdge, joinsLatestStep: boolean
+    ): boolean {
+        const editor = this.editor;
+        const embed = getContentEmbedAt(editor, domElement);
+        if (!embed) {
+            return false;
+        }
+
+        const model = editor.model;
+        const insert = () => {
+            editor.execute("insertParagraph", {
+                position: edge === "end"
+                    ? model.createPositionAfter(embed)
+                    : model.createPositionBefore(embed),
+                attributes: model.schema.getAttributesWithProperty(embed, "copyOnReplace", true)
+            });
+        };
+        editor.editing.view.focus();
+        if (joinsLatestStep && editor.plugins.has(EmbedHistory)) {
+            editor.plugins.get(EmbedHistory).joinLatestStep(insert);
+        } else {
+            model.change(insert);
+        }
+        scrollToTheCaret(editor);
+        return true;
+    }
+
+    /**
+     * Focuses this editor with the caret in an empty paragraph that replaces the embed that
+     * contains `domElement`, in one undo step, as Backspace turns an empty code block into one.
+     * Returns `false` when `domElement` is not in an embed of this editor.
+     */
+    replaceWithParagraph(domElement: Element): boolean {
+        const editor = this.editor;
+        const embed = getContentEmbedAt(editor, domElement);
+        if (!embed) {
+            return false;
+        }
+
+        const model = editor.model;
+        editor.editing.view.focus();
+        model.change((writer) => {
+            const paragraph = writer.createElement("paragraph",
+                model.schema.getAttributesWithProperty(embed, "copyOnReplace", true));
+            writer.insert(paragraph, embed, "before");
+            writer.remove(embed);
+            writer.setSelection(paragraph, 0);
         });
         scrollToTheCaret(editor);
         return true;

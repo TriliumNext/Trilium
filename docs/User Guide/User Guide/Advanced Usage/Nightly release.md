@@ -26,7 +26,7 @@ This is pretty useful if you are a beta tester that wants to periodically update
     ```sh
     #!/usr/bin/env bash
 
-    name=TriliumNotes-linux-x64-nightly.deb
+    name=TriliumNotes-main-linux-x64.deb
     rm -f $name*
     wget https://github.com/TriliumNext/Trilium/releases/download/nightly/$name
     sudo apt-get install ./$name

@@ -82,6 +82,13 @@ describe("DrawingFindTarget", () => {
         expect(element).toBe(root);
         // The match, 50 pixels wide at (50, 40) of the drawing, which is at (100, 50).
         expect(getRect?.()).toEqual({ left: 150, top: 90, width: 50, height: 20 });
+        expect(vi.mocked(scrollRectIntoView).mock.lastCall?.[2]).toBeUndefined();
+
+        target.highlight(0, { isInstant: true });
+        expect(vi.mocked(scrollRectIntoView).mock.lastCall?.[2]).toBe("instant");
+        // One line for the drawing, which a pan or a zoom cannot move.
+        expect(target.getMatchTargets()).toEqual([ root ]);
+        expect(target.countMatches()).toBe(1);
     });
 
     it("moves the drawing to a match out of view, and back once the search moves on", async () => {
@@ -141,7 +148,10 @@ describe("DrawingFindTarget", () => {
         // `MergedFind.close()` takes the highlight away before it closes on the match.
         target.highlight(0);
         target.highlight(null);
-        expect(target.close(0)).toBe(true);
+        const select = target.close(0);
+        expect(surface.matches).toEqual([]);
+        expect(surface.select).not.toHaveBeenCalled();
+        select?.();
         expect(surface.view).toEqual({ zoom: { value: 2 }, scrollX: 0, scrollY: -260 });
         expect(surface.select).toHaveBeenCalledWith(
             expect.objectContaining({ element: expect.objectContaining({ id: "far" }) }));
@@ -151,7 +161,7 @@ describe("DrawingFindTarget", () => {
         surface.view = ZOOMED_VIEW;
         await target.find("alpha", ANY_CASE);
         target.highlight(0);
-        expect(target.close(null)).toBe(false);
+        expect(target.close(null)).toBeNull();
         expect(surface.view).toEqual(ZOOMED_VIEW);
     });
 
@@ -247,7 +257,7 @@ describe("attachExcalidraw", () => {
             ] }
         }));
 
-        expect(target.close(0)).toBe(true);
+        target.close(0)?.();
         expect(api.updateScene).toHaveBeenLastCalledWith({
             appState: { selectedElementIds: { box: true } },
             captureUpdate: "never"

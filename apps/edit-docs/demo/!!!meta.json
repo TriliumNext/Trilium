@@ -1,6 +1,6 @@
 {
     "formatVersion": 2,
-    "appVersion": "0.106.1",
+    "appVersion": "0.108.0-rc.1",
     "files": [
         {
             "isClone": false,
@@ -6097,6 +6097,1972 @@
                                                     "attachments": []
                                                 }
                                             ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "isClone": false,
+                            "noteId": "E6IV3DYUnkgm",
+                            "notePath": [
+                                "root",
+                                "rvaX6hEaQlmk",
+                                "E6IV3DYUnkgm"
+                            ],
+                            "title": "Trip to Rome",
+                            "notePosition": 390,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/html",
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "iconClass",
+                                    "value": "bx bx-world",
+                                    "isInheritable": false,
+                                    "position": 10
+                                }
+                            ],
+                            "format": "html",
+                            "dataFileName": "Trip to Rome.html",
+                            "attachments": [],
+                            "dirFileName": "Trip to Rome",
+                            "children": [
+                                {
+                                    "isClone": false,
+                                    "noteId": "wmyBdhEW1Qyf",
+                                    "notePath": [
+                                        "root",
+                                        "rvaX6hEaQlmk",
+                                        "E6IV3DYUnkgm",
+                                        "wmyBdhEW1Qyf"
+                                    ],
+                                    "title": "Rome itinerary",
+                                    "notePosition": 10,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [],
+                                    "format": "html",
+                                    "dataFileName": "Rome itinerary.html",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "XjMedf0BwxSX",
+                                    "notePath": [
+                                        "root",
+                                        "rvaX6hEaQlmk",
+                                        "E6IV3DYUnkgm",
+                                        "XjMedf0BwxSX"
+                                    ],
+                                    "title": "Trip planning",
+                                    "notePosition": 20,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "book",
+                                    "mime": "",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "collection",
+                                            "value": "",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "viewType",
+                                            "value": "board",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-trip",
+                                            "isInheritable": false,
+                                            "position": 30
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "hidePromotedAttributes",
+                                            "value": "",
+                                            "isInheritable": false,
+                                            "position": 40
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "subtreeHidden",
+                                            "value": "",
+                                            "isInheritable": false,
+                                            "position": 50
+                                        }
+                                    ],
+                                    "attachments": [],
+                                    "dirFileName": "Trip planning",
+                                    "children": [
+                                        {
+                                            "isClone": false,
+                                            "noteId": "Z5CMURrvqRRv",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "XjMedf0BwxSX",
+                                                "Z5CMURrvqRRv"
+                                            ],
+                                            "title": "Book the flights",
+                                            "notePosition": 10,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "status",
+                                                    "value": "To do",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "iconClass",
+                                                    "value": "bx bxs-plane-take-off",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Book the flights.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "wWl7L0dpbAMI",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "XjMedf0BwxSX",
+                                                "wWl7L0dpbAMI"
+                                            ],
+                                            "title": "Rent a car",
+                                            "notePosition": 20,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "status",
+                                                    "value": "To do",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "iconClass",
+                                                    "value": "bx bx-car",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Rent a car.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "37aGcYfARHFM",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "XjMedf0BwxSX",
+                                                "37aGcYfARHFM"
+                                            ],
+                                            "title": "Pack the camera",
+                                            "notePosition": 30,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "status",
+                                                    "value": "To do",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "iconClass",
+                                                    "value": "bx bx-camera",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Pack the camera.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "jvJIRMp2eeNg",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "XjMedf0BwxSX",
+                                                "jvJIRMp2eeNg"
+                                            ],
+                                            "title": "Buy travel insurance",
+                                            "notePosition": 40,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "status",
+                                                    "value": "To do",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "iconClass",
+                                                    "value": "bx bx-shield-quarter",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Buy travel insurance.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "SdPwQSOXqy9B",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "XjMedf0BwxSX",
+                                                "SdPwQSOXqy9B"
+                                            ],
+                                            "title": "Exchange some currency",
+                                            "notePosition": 50,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "status",
+                                                    "value": "To do",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "iconClass",
+                                                    "value": "bx bx-euro",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Exchange some currency.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "ktGU8FVvEWdf",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "XjMedf0BwxSX",
+                                                "ktGU8FVvEWdf"
+                                            ],
+                                            "title": "Plan the route",
+                                            "notePosition": 60,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "status",
+                                                    "value": "In progress",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "iconClass",
+                                                    "value": "bx bx-map-alt",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Plan the route.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "ZX7DOOr169uB",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "XjMedf0BwxSX",
+                                                "ZX7DOOr169uB"
+                                            ],
+                                            "title": "Find places to stay",
+                                            "notePosition": 70,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "status",
+                                                    "value": "In progress",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "iconClass",
+                                                    "value": "bx bx-bed",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Find places to stay.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "wFvocVbHXTyp",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "XjMedf0BwxSX",
+                                                "wFvocVbHXTyp"
+                                            ],
+                                            "title": "Renew the passport",
+                                            "notePosition": 80,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "status",
+                                                    "value": "Done",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "iconClass",
+                                                    "value": "bx bx-id-card",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Renew the passport.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "CRty4A8mxni9",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "XjMedf0BwxSX",
+                                                "CRty4A8mxni9"
+                                            ],
+                                            "title": "Ask for time off",
+                                            "notePosition": 90,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "status",
+                                                    "value": "Done",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "iconClass",
+                                                    "value": "bx bx-calendar-check",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Ask for time off.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "PZCGXoIa5MHr",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "XjMedf0BwxSX",
+                                                "PZCGXoIa5MHr"
+                                            ],
+                                            "title": "Pick the dates",
+                                            "notePosition": 100,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "status",
+                                                    "value": "Done",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "iconClass",
+                                                    "value": "bx bx-calendar",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Pick the dates.html",
+                                            "attachments": []
+                                        }
+                                    ]
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "aVyB7ObaHITe",
+                                    "notePath": [
+                                        "root",
+                                        "rvaX6hEaQlmk",
+                                        "E6IV3DYUnkgm",
+                                        "aVyB7ObaHITe"
+                                    ],
+                                    "title": "Trip calendar",
+                                    "notePosition": 30,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "book",
+                                    "mime": "",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "collection",
+                                            "value": "",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "viewType",
+                                            "value": "calendar",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-calendar",
+                                            "isInheritable": false,
+                                            "position": 30
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "calendar:initialDate",
+                                            "value": "2026-05-01",
+                                            "isInheritable": false,
+                                            "position": 40
+                                        }
+                                    ],
+                                    "attachments": [],
+                                    "dirFileName": "Trip calendar",
+                                    "children": [
+                                        {
+                                            "isClone": false,
+                                            "noteId": "SiqyrBYFtXjC",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "aVyB7ObaHITe",
+                                                "SiqyrBYFtXjC"
+                                            ],
+                                            "title": "Book club",
+                                            "notePosition": 10,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "startDate",
+                                                    "value": "2026-05-05",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "startTime",
+                                                    "value": "19:00",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "color",
+                                                    "value": "#7c3aed",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Book club.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "0ls3Fhv0do1S",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "aVyB7ObaHITe",
+                                                "0ls3Fhv0do1S"
+                                            ],
+                                            "title": "Dentist",
+                                            "notePosition": 20,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "startDate",
+                                                    "value": "2026-05-07",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "startTime",
+                                                    "value": "10:30",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "color",
+                                                    "value": "#0891b2",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Dentist.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "Vw4lh9YdeAy4",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "aVyB7ObaHITe",
+                                                "Vw4lh9YdeAy4"
+                                            ],
+                                            "title": "Trip to Rome",
+                                            "notePosition": 30,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "startDate",
+                                                    "value": "2026-05-12",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "endDate",
+                                                    "value": "2026-05-15",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "color",
+                                                    "value": "#16a34a",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Trip to Rome.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "SwYWYH5j9Z8e",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "aVyB7ObaHITe",
+                                                "SwYWYH5j9Z8e"
+                                            ],
+                                            "title": "Flight to Rome",
+                                            "notePosition": 40,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "startDate",
+                                                    "value": "2026-05-12",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "startTime",
+                                                    "value": "07:40",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "color",
+                                                    "value": "#ea580c",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Flight to Rome.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "r9H2HhMBPcLg",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "aVyB7ObaHITe",
+                                                "r9H2HhMBPcLg"
+                                            ],
+                                            "title": "Colosseum tour",
+                                            "notePosition": 50,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "startDate",
+                                                    "value": "2026-05-13",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "startTime",
+                                                    "value": "09:00",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "color",
+                                                    "value": "#ea580c",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Colosseum tour.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "W7FGOcyUe7Ir",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "aVyB7ObaHITe",
+                                                "W7FGOcyUe7Ir"
+                                            ],
+                                            "title": "Vatican Museums",
+                                            "notePosition": 60,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "startDate",
+                                                    "value": "2026-05-14",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "startTime",
+                                                    "value": "10:00",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "color",
+                                                    "value": "#ea580c",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Vatican Museums.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "rPJjRoJoi4Ij",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "aVyB7ObaHITe",
+                                                "rPJjRoJoi4Ij"
+                                            ],
+                                            "title": "Flight home",
+                                            "notePosition": 70,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "startDate",
+                                                    "value": "2026-05-15",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "startTime",
+                                                    "value": "18:20",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "color",
+                                                    "value": "#ea580c",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Flight home.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "gxOtACJIk1pz",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "aVyB7ObaHITe",
+                                                "gxOtACJIk1pz"
+                                            ],
+                                            "title": "Team offsite",
+                                            "notePosition": 80,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "startDate",
+                                                    "value": "2026-05-20",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "endDate",
+                                                    "value": "2026-05-21",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "color",
+                                                    "value": "#2563eb",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Team offsite.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "tcOYTFu4a5VU",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "aVyB7ObaHITe",
+                                                "tcOYTFu4a5VU"
+                                            ],
+                                            "title": "Mom's birthday",
+                                            "notePosition": 90,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "startDate",
+                                                    "value": "2026-05-26",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "color",
+                                                    "value": "#db2777",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Mom's birthday.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "wCbXFv9MClL6",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "aVyB7ObaHITe",
+                                                "wCbXFv9MClL6"
+                                            ],
+                                            "title": "Book club",
+                                            "notePosition": 100,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "startDate",
+                                                    "value": "2026-05-27",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "startTime",
+                                                    "value": "19:00",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "color",
+                                                    "value": "#7c3aed",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "1_Book club.html",
+                                            "attachments": []
+                                        }
+                                    ]
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "mdLkCRREZcM3",
+                                    "notePath": [
+                                        "root",
+                                        "rvaX6hEaQlmk",
+                                        "E6IV3DYUnkgm",
+                                        "mdLkCRREZcM3"
+                                    ],
+                                    "title": "Places to visit",
+                                    "notePosition": 40,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "book",
+                                    "mime": "",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "collection",
+                                            "value": "",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "viewType",
+                                            "value": "table",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-map-pin",
+                                            "isInheritable": false,
+                                            "position": 30
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "label:day",
+                                            "value": "promoted,alias=Day,single,number",
+                                            "isInheritable": false,
+                                            "position": 40
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "label:ticket",
+                                            "value": "promoted,alias=Ticket (€),single,number",
+                                            "isInheritable": false,
+                                            "position": 50
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "label:booked",
+                                            "value": "promoted,alias=Booked,single,boolean",
+                                            "isInheritable": false,
+                                            "position": 60
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "label:area",
+                                            "value": "promoted,alias=Area,single,text",
+                                            "isInheritable": false,
+                                            "position": 70
+                                        }
+                                    ],
+                                    "attachments": [],
+                                    "dirFileName": "Places to visit",
+                                    "children": [
+                                        {
+                                            "isClone": false,
+                                            "noteId": "BH4MmpVM7fYF",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "mdLkCRREZcM3",
+                                                "BH4MmpVM7fYF"
+                                            ],
+                                            "title": "Colosseum",
+                                            "notePosition": 10,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "day",
+                                                    "value": "1",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "ticket",
+                                                    "value": "18",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "booked",
+                                                    "value": "true",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "area",
+                                                    "value": "Ancient Rome",
+                                                    "isInheritable": false,
+                                                    "position": 40
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Colosseum.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "BLK0Zu26t2cC",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "mdLkCRREZcM3",
+                                                "BLK0Zu26t2cC"
+                                            ],
+                                            "title": "Roman Forum",
+                                            "notePosition": 20,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "day",
+                                                    "value": "1",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "ticket",
+                                                    "value": "0",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "booked",
+                                                    "value": "true",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "area",
+                                                    "value": "Ancient Rome",
+                                                    "isInheritable": false,
+                                                    "position": 40
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Roman Forum.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "Urt1fEchztcs",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "mdLkCRREZcM3",
+                                                "Urt1fEchztcs"
+                                            ],
+                                            "title": "Palatine Hill",
+                                            "notePosition": 30,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "day",
+                                                    "value": "1",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "ticket",
+                                                    "value": "0",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "booked",
+                                                    "value": "true",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "area",
+                                                    "value": "Ancient Rome",
+                                                    "isInheritable": false,
+                                                    "position": 40
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Palatine Hill.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "FPHqFkiEZPlN",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "mdLkCRREZcM3",
+                                                "FPHqFkiEZPlN"
+                                            ],
+                                            "title": "Vatican Museums",
+                                            "notePosition": 40,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "day",
+                                                    "value": "2",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "ticket",
+                                                    "value": "20",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "booked",
+                                                    "value": "true",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "area",
+                                                    "value": "Vatican",
+                                                    "isInheritable": false,
+                                                    "position": 40
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Vatican Museums.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "NiSRFqSLeVOh",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "mdLkCRREZcM3",
+                                                "NiSRFqSLeVOh"
+                                            ],
+                                            "title": "St. Peter's Basilica",
+                                            "notePosition": 50,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "day",
+                                                    "value": "2",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "ticket",
+                                                    "value": "0",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "booked",
+                                                    "value": "false",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "area",
+                                                    "value": "Vatican",
+                                                    "isInheritable": false,
+                                                    "position": 40
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "St. Peter's Basilica.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "LLDdhxFrDy5h",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "mdLkCRREZcM3",
+                                                "LLDdhxFrDy5h"
+                                            ],
+                                            "title": "Castel Sant'Angelo",
+                                            "notePosition": 60,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "day",
+                                                    "value": "2",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "ticket",
+                                                    "value": "16",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "booked",
+                                                    "value": "false",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "area",
+                                                    "value": "Prati",
+                                                    "isInheritable": false,
+                                                    "position": 40
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Castel Sant'Angelo.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "ORzM2ZFfDiAK",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "mdLkCRREZcM3",
+                                                "ORzM2ZFfDiAK"
+                                            ],
+                                            "title": "Pantheon",
+                                            "notePosition": 70,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "day",
+                                                    "value": "3",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "ticket",
+                                                    "value": "5",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "booked",
+                                                    "value": "false",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "area",
+                                                    "value": "Centro Storico",
+                                                    "isInheritable": false,
+                                                    "position": 40
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Pantheon.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "7ouBo8Bl2UcK",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "mdLkCRREZcM3",
+                                                "7ouBo8Bl2UcK"
+                                            ],
+                                            "title": "Trevi Fountain",
+                                            "notePosition": 80,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "day",
+                                                    "value": "3",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "ticket",
+                                                    "value": "0",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "booked",
+                                                    "value": "false",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "area",
+                                                    "value": "Trevi",
+                                                    "isInheritable": false,
+                                                    "position": 40
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Trevi Fountain.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "sssx2hzGgb1U",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "mdLkCRREZcM3",
+                                                "sssx2hzGgb1U"
+                                            ],
+                                            "title": "Borghese Gallery",
+                                            "notePosition": 90,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "day",
+                                                    "value": "3",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "ticket",
+                                                    "value": "15",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "booked",
+                                                    "value": "false",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "area",
+                                                    "value": "Villa Borghese",
+                                                    "isInheritable": false,
+                                                    "position": 40
+                                                }
+                                            ],
+                                            "format": "html",
+                                            "dataFileName": "Borghese Gallery.html",
+                                            "attachments": []
+                                        }
+                                    ]
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "zxJMMTEdC4qc",
+                                    "notePath": [
+                                        "root",
+                                        "rvaX6hEaQlmk",
+                                        "E6IV3DYUnkgm",
+                                        "zxJMMTEdC4qc"
+                                    ],
+                                    "title": "Trip budget",
+                                    "notePosition": 50,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "spreadsheet",
+                                    "mime": "application/json",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-spreadsheet",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        }
+                                    ],
+                                    "dataFileName": "Trip budget.json",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "YMss1MfCDoVS",
+                                    "notePath": [
+                                        "root",
+                                        "rvaX6hEaQlmk",
+                                        "E6IV3DYUnkgm",
+                                        "YMss1MfCDoVS"
+                                    ],
+                                    "title": "Split the trip costs",
+                                    "notePosition": 60,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "code",
+                                    "mime": "text/x-python",
+                                    "attributes": [],
+                                    "dataFileName": "Split the trip costs.dat",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "n0YSpNss5Kv7",
+                                    "notePath": [
+                                        "root",
+                                        "rvaX6hEaQlmk",
+                                        "E6IV3DYUnkgm",
+                                        "n0YSpNss5Kv7"
+                                    ],
+                                    "title": "Getting around",
+                                    "notePosition": 70,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "code",
+                                    "mime": "text/x-markdown",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bxl-markdown",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        }
+                                    ],
+                                    "dataFileName": "Getting around.md",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "vwNctNayPsZA",
+                                    "notePath": [
+                                        "root",
+                                        "rvaX6hEaQlmk",
+                                        "E6IV3DYUnkgm",
+                                        "vwNctNayPsZA"
+                                    ],
+                                    "title": "Hotel booking.pdf",
+                                    "notePosition": 80,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "file",
+                                    "mime": "application/pdf",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "originalFileName",
+                                            "value": "Hotel booking.pdf",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        }
+                                    ],
+                                    "dataFileName": "Hotel booking.pdf",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "0SWeTfb3uV0M",
+                                    "notePath": [
+                                        "root",
+                                        "rvaX6hEaQlmk",
+                                        "E6IV3DYUnkgm",
+                                        "0SWeTfb3uV0M"
+                                    ],
+                                    "title": "What to pack",
+                                    "notePosition": 90,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bxs-briefcase-alt-2",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        }
+                                    ],
+                                    "format": "html",
+                                    "dataFileName": "What to pack.html",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "u72zLxyPWy05",
+                                    "notePath": [
+                                        "root",
+                                        "rvaX6hEaQlmk",
+                                        "E6IV3DYUnkgm",
+                                        "u72zLxyPWy05"
+                                    ],
+                                    "title": "Trip overview",
+                                    "notePosition": 100,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "book",
+                                    "mime": "",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "collection",
+                                            "value": "",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "viewType",
+                                            "value": "dashboard",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-grid-alt",
+                                            "isInheritable": false,
+                                            "position": 30
+                                        }
+                                    ],
+                                    "attachments": [
+                                        {
+                                            "attachmentId": "HfQmd48hFVYg",
+                                            "title": "dashboard.json",
+                                            "role": "viewConfig",
+                                            "mime": "application/json",
+                                            "position": 10,
+                                            "dataFileName": "Trip overview_dashboard.json"
+                                        }
+                                    ],
+                                    "dirFileName": "Trip overview",
+                                    "children": [
+                                        {
+                                            "isClone": true,
+                                            "noteId": "wmyBdhEW1Qyf",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "u72zLxyPWy05",
+                                                "wmyBdhEW1Qyf"
+                                            ],
+                                            "title": "Rome itinerary",
+                                            "prefix": null,
+                                            "dataFileName": "Rome itinerary.clone.html",
+                                            "type": "text",
+                                            "format": "html",
+                                            "isExpanded": false
+                                        },
+                                        {
+                                            "isClone": true,
+                                            "noteId": "n0YSpNss5Kv7",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "u72zLxyPWy05",
+                                                "n0YSpNss5Kv7"
+                                            ],
+                                            "title": "Getting around",
+                                            "prefix": null,
+                                            "dataFileName": "Getting around.clone.html",
+                                            "type": "text",
+                                            "format": "html",
+                                            "isExpanded": false
+                                        },
+                                        {
+                                            "isClone": true,
+                                            "noteId": "YMss1MfCDoVS",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "E6IV3DYUnkgm",
+                                                "u72zLxyPWy05",
+                                                "YMss1MfCDoVS"
+                                            ],
+                                            "title": "Split the trip costs",
+                                            "prefix": null,
+                                            "dataFileName": "Split the trip costs.clone.html",
+                                            "type": "text",
+                                            "format": "html",
+                                            "isExpanded": false
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "isClone": false,
+                            "noteId": "S3K1DCO3gwA5",
+                            "notePath": [
+                                "root",
+                                "rvaX6hEaQlmk",
+                                "S3K1DCO3gwA5"
+                            ],
+                            "title": "Introducing Trilium Notes",
+                            "notePosition": 400,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "book",
+                            "mime": "",
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "collection",
+                                    "value": "",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "viewType",
+                                    "value": "presentation",
+                                    "isInheritable": false,
+                                    "position": 20
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "iconClass",
+                                    "value": "bx bx-slideshow",
+                                    "isInheritable": false,
+                                    "position": 30
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "presentation:theme",
+                                    "value": "white",
+                                    "isInheritable": false,
+                                    "position": 40
+                                }
+                            ],
+                            "attachments": [],
+                            "dirFileName": "Introducing Trilium Notes",
+                            "children": [
+                                {
+                                    "isClone": false,
+                                    "noteId": "riOK4gn8ZUAq",
+                                    "notePath": [
+                                        "root",
+                                        "rvaX6hEaQlmk",
+                                        "S3K1DCO3gwA5",
+                                        "riOK4gn8ZUAq"
+                                    ],
+                                    "title": "Cover slide",
+                                    "notePosition": 10,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "slide:background",
+                                            "value": "radial-gradient(40vmax 40vmax at 15% 25%,rgba(228,123,25,.25),transparent 70%),radial-gradient(35vmax 35vmax at 75% 20%,rgba(79,165,43,.22),transparent 70%),radial-gradient(28vmax 28vmax at 60% 75%,rgba(227,63,59,.22),transparent 70%),radial-gradient(20vmax 20vmax at 85% 65%,rgba(228,123,25,.18),transparent 70%),radial-gradient(15vmax 15vmax at 40% 50%,rgba(79,165,43,.15),transparent 70%)",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        }
+                                    ],
+                                    "format": "html",
+                                    "dataFileName": "Cover slide.html",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "wqO1mxzHSzTK",
+                                    "notePath": [
+                                        "root",
+                                        "rvaX6hEaQlmk",
+                                        "S3K1DCO3gwA5",
+                                        "wqO1mxzHSzTK"
+                                    ],
+                                    "title": "I. Introduction",
+                                    "notePosition": 20,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "slide:background",
+                                            "value": "radial-gradient(40vmax 40vmax at 15% 25%,rgba(228,123,25,.25),transparent 70%),radial-gradient(35vmax 35vmax at 75% 20%,rgba(79,165,43,.22),transparent 70%),radial-gradient(28vmax 28vmax at 60% 75%,rgba(227,63,59,.22),transparent 70%),radial-gradient(20vmax 20vmax at 85% 65%,rgba(228,123,25,.18),transparent 70%),radial-gradient(15vmax 15vmax at 40% 50%,rgba(79,165,43,.15),transparent 70%)",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        }
+                                    ],
+                                    "format": "html",
+                                    "dataFileName": "I. Introduction.html",
+                                    "attachments": [],
+                                    "dirFileName": "I. Introduction",
+                                    "children": [
+                                        {
+                                            "isClone": false,
+                                            "noteId": "HtCRV2pYf7k4",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "S3K1DCO3gwA5",
+                                                "wqO1mxzHSzTK",
+                                                "HtCRV2pYf7k4"
+                                            ],
+                                            "title": "What is Trilium",
+                                            "notePosition": 10,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [],
+                                            "format": "html",
+                                            "dataFileName": "What is Trilium.html",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "pfjeka0YAkG7",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "S3K1DCO3gwA5",
+                                                "wqO1mxzHSzTK",
+                                                "pfjeka0YAkG7"
+                                            ],
+                                            "title": "Key strengths",
+                                            "notePosition": 20,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [],
+                                            "format": "html",
+                                            "dataFileName": "Key strengths.html",
+                                            "attachments": []
+                                        }
+                                    ]
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "j7ZE0LA71Fxg",
+                                    "notePath": [
+                                        "root",
+                                        "rvaX6hEaQlmk",
+                                        "S3K1DCO3gwA5",
+                                        "j7ZE0LA71Fxg"
+                                    ],
+                                    "title": "II. Life as a maintainer",
+                                    "notePosition": 30,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "slide:background",
+                                            "value": "radial-gradient(40vmax 40vmax at 15% 25%,rgba(228,123,25,.25),transparent 70%),radial-gradient(35vmax 35vmax at 75% 20%,rgba(79,165,43,.22),transparent 70%),radial-gradient(28vmax 28vmax at 60% 75%,rgba(227,63,59,.22),transparent 70%),radial-gradient(20vmax 20vmax at 85% 65%,rgba(228,123,25,.18),transparent 70%),radial-gradient(15vmax 15vmax at 40% 50%,rgba(79,165,43,.15),transparent 70%)",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        }
+                                    ],
+                                    "format": "html",
+                                    "dataFileName": "II. Life as a maintainer.html",
+                                    "attachments": [],
+                                    "dirFileName": "II. Life as a maintainer",
+                                    "children": [
+                                        {
+                                            "isClone": false,
+                                            "noteId": "iuxDB79oilKU",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "S3K1DCO3gwA5",
+                                                "j7ZE0LA71Fxg",
+                                                "iuxDB79oilKU"
+                                            ],
+                                            "title": "Quick history",
+                                            "notePosition": 10,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "mermaid",
+                                            "mime": "text/vnd.mermaid",
+                                            "attributes": [],
+                                            "dataFileName": "Quick history.dat",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "XSMMQgZVJ4Ih",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "S3K1DCO3gwA5",
+                                                "j7ZE0LA71Fxg",
+                                                "XSMMQgZVJ4Ih"
+                                            ],
+                                            "title": "Improvements",
+                                            "notePosition": 20,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [],
+                                            "format": "html",
+                                            "dataFileName": "Improvements.html",
+                                            "attachments": []
+                                        }
+                                    ]
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "OKO6kLbjVx9t",
+                                    "notePath": [
+                                        "root",
+                                        "rvaX6hEaQlmk",
+                                        "S3K1DCO3gwA5",
+                                        "OKO6kLbjVx9t"
+                                    ],
+                                    "title": "Ending",
+                                    "notePosition": 40,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "slide:background",
+                                            "value": "radial-gradient(40vmax 40vmax at 15% 25%,rgba(228,123,25,.25),transparent 70%),radial-gradient(35vmax 35vmax at 75% 20%,rgba(79,165,43,.22),transparent 70%),radial-gradient(28vmax 28vmax at 60% 75%,rgba(227,63,59,.22),transparent 70%),radial-gradient(20vmax 20vmax at 85% 65%,rgba(228,123,25,.18),transparent 70%),radial-gradient(15vmax 15vmax at 40% 50%,rgba(79,165,43,.15),transparent 70%)",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        }
+                                    ],
+                                    "format": "html",
+                                    "dataFileName": "Ending.html",
+                                    "attachments": [],
+                                    "dirFileName": "Ending",
+                                    "children": [
+                                        {
+                                            "isClone": false,
+                                            "noteId": "jqdXVtZ2Pkn2",
+                                            "notePath": [
+                                                "root",
+                                                "rvaX6hEaQlmk",
+                                                "S3K1DCO3gwA5",
+                                                "OKO6kLbjVx9t",
+                                                "jqdXVtZ2Pkn2"
+                                            ],
+                                            "title": "Meta",
+                                            "notePosition": 10,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [],
+                                            "format": "html",
+                                            "dataFileName": "Meta.html",
+                                            "attachments": []
                                         }
                                     ]
                                 }

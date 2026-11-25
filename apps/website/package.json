@@ -9,20 +9,20 @@
 		"preview": "pnpm build && vite preview"
 	},
 	"dependencies": {
-		"i18next": "27.1.1",
+		"i18next": "27.1.5",
 		"preact": "11.2.0",
 		"preact-iso": "2.12.2",
 		"preact-render-to-string": "6.8.3",
-		"react-i18next": "18.0.1"
+		"react-i18next": "18.0.3"
 	},
 	"devDependencies": {
 		"@preact/preset-vite": "2.10.6",
-		"eslint": "10.14.0",
+		"eslint": "10.15.0",
 		"eslint-config-preact": "2.0.0",
 		"typescript": "6.0.3",
 		"user-agent-data-types": "0.4.3",
 		"vite": "8.3.8",
-		"vitest": "5.1.0"
+		"vitest": "5.1.1"
 	},
 	"eslintConfig": {
 		"extends": "preact"

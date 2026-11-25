@@ -15,6 +15,13 @@ entry says what changed for them, in as few words as that takes.
   gain" is "This applies to phones too."
 - **Short examples, or none.** A list such as "a dialog, a menu or a note type" reads as padding;
   one clause ("loads the rest only once you use it") says the same.
+- **A fix names the symptom once, not every case that triggers it.** "Shared notes ignored a
+  `#shareCredentials` password inherited from a note outside the share." is the entry; "…when it
+  came from a template, an `~inherit` target or a parent outside the share" spells out cases the
+  commit body already lists. Aim for one line of about 15 words.
+- **No trigger conditions either.** Drop the "when …" clause that says under which settings or
+  state the bug showed: "The font previews in the Fonts settings were drawn at the wrong size.",
+  not "…larger or smaller than the text they set when the document font size was not 100%."
 
 ## Numbers
 
@@ -43,6 +50,21 @@ reader.
   claim can't be confirmed, drop it.
 - **Length follows the feature.** A new feature with many commands can need several paragraphs (the
   Vim mode highlight); a performance gain fits in two short ones: what changed, then the numbers.
+
+## The overview
+
+The `type: overview` entry opens the release note in the maintainer's voice (`.changelog/README.md`,
+"The overview"). The register above applies, and so do these:
+
+- **Open with the content.** The first sentence is the first change worth telling ("Links can now
+  point at a heading…"), not a framing sentence such as "This release is about…" or "This is the
+  release where…".
+- **No stock phrases.** Leave out "of their own", "next to", "a whole new", "under the hood" and
+  the like; say the fact directly ("text notes have a Vim mode", not "a Vim mode of their own").
+- **No technical detail.** Not what a feature is built on ("the same engine as code notes") or how
+  it works ("the tree comes first, the rest loads later"); only what the user can now do or notice.
+- **Don't repeat the sections below.** Breaking changes, compatibility notes and notices have their
+  own place in the note; the overview does not point to them.
 
 ## Before committing
 

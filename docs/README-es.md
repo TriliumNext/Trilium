@@ -41,15 +41,15 @@ con una sola `l`.
 
 ## 📚 Documentación
 
-**Accede a la documentación completa en
+**Acceda a la documentación completa en
 [docs.triliumnotes.org](https://docs.triliumnotes.org/)**
 
 La documentación está disponible en varios formatos:
-- **Documentación en línea**: Consulta la documentación completa en
+- **Documentación en línea**: consulte la documentación completa en
   [docs.triliumnotes.org](https://docs.triliumnotes.org/)
-- **Ayuda en la aplicación**: Presiona `F1` dentro de Trilium para acceder a la
+- **Ayuda en la aplicación**: pulse `F1` dentro de Trilium para acceder a la
   misma documentación directamente en la aplicación
-- **GitHub**: Navega por la [Guía del Usuario](./User%20Guide/User%20Guide/) en
+- **GitHub**: recorra la [Guía del usuario](./User%20Guide/User%20Guide/) en
   este repositorio
 
 ### Enlaces rápidos
@@ -134,7 +134,7 @@ La documentación está disponible en varios formatos:
 * [Métricas](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
   junto con un panel de control de Grafana.
 
-✨ Consulta los siguientes recursos y comunidades de terceros para obtener más
+✨ Consulte los siguientes recursos y comunidades de terceros para obtener más
 contenido relacionado con TriliumNext:
 
 - [awesome-trilium](https://github.com/Nriver/awesome-trilium) para acceder a
@@ -149,9 +149,10 @@ en https://github.com/TriliumNext
 
 ### ⬆️ ¿Migrando desde Zadam/Trilium?
 
-No se requieren pasos especiales para migrar de una instancia de Zadam/Trilium a
-TriliumNext/Trilium. Simplemente [instala TriliumNext/Trilium](#-installation)
-como de costumbre, y utilizará la base de datos existente.
+No se requieren pasos especiales para migrar de una instancia de zadam/Trilium a
+una de TriliumNext/Trilium. Simplemente [instale
+TriliumNext/Trilium](#-installation) como de costumbre y utilizará su base de
+datos existente.
 
 Las versiones hasta
 [v0.90.4](https://github.com/TriliumNext/Trilium/releases/tag/v0.90.4),
@@ -160,10 +161,10 @@ inclusive, son compatibles con la última versión de Zadam/Trilium
 posteriores de TriliumNext/Trilium incrementan su versión de sincronización, lo
 que impide migrar directamente.
 
-## 💬 Únete a la conversación
+## 💬 Únase a la conversación
 
-Siéntete libre de unirte a nuestras conversaciones oficiales. ¡Nos interesa
-mucho conocer tus funciones favoritas, sugerencias o posibles incidencias!
+Puede unirse a nuestras conversaciones oficiales. Nos interesa mucho conocer sus
+funciones favoritas, sugerencias o posibles incidencias.
 
 - [Matrix](https://matrix.to/#/#triliumnext:matrix.org) (Para discusiones
   síncronas.)
@@ -178,78 +179,77 @@ mucho conocer tus funciones favoritas, sugerencias o posibles incidencias!
 
 ### Windows / macOS
 
-Descarga la versión binaria para tu plataforma desde la [página de la última
-versión](https://github.com/TriliumNext/Trilium/releases/latest), descomprime el
-paquete y ejecuta el archivo `trilium`.
+Descargue la versión binaria para su plataforma desde la [página de la última
+versión](https://github.com/TriliumNext/Trilium/releases/latest), descomprima el
+paquete y ejecute el archivo `trilium`.
 
 ### Linux
 
-Si tu distribución aparece en la siguiente tabla, utiliza el paquete
-correspondiente a tu distribución.
+Si su distribución aparece en la tabla siguiente, utilice el paquete
+correspondiente a su distribución.
 
 [![Estado del
 paquete](https://repology.org/badge/vertical-allrepos/trilium.svg)](https://repology.org/project/trilium/versions)
 
-También puedes descargar la versión binaria para la plataforma correspondiente
-desde la [página de la última
-versión](https://github.com/TriliumNext/Trilium/releases/latest), descomprimir
-el paquete y ejecutar el archivo `trilium`.
+También puede descargar la versión binaria para su plataforma desde la [página
+de la última versión](https://github.com/TriliumNext/Trilium/releases/latest),
+descomprimir el paquete y ejecutar el archivo `trilium`.
 
 TriliumNext también está disponible como paquete Flatpak, aunque aún no se ha
 publicado en FlatHub.
 
 ### Navegador (cualquier sistema operativo)
 
-Si utilizas una instalación en servidor (ver más abajo), puedes acceder
-directamente a la interfaz web (que es prácticamente idéntica a la aplicación de
-escritorio).
+Si utiliza una instalación en servidor (véase más abajo), puede acceder
+directamente a la interfaz web, que es prácticamente idéntica a la aplicación de
+escritorio.
 
 Actualmente, solo se soportan (y han sido probadas) las últimas versiones de
 Chrome y Firefox.
 
 ### Móvil
 
-Para usar TriliumNext en un dispositivo móvil, puedes utilizar un navegador web
-móvil para acceder a la interfaz móvil de una instalación en servidor (ver más
+Para usar TriliumNext en un dispositivo móvil, puede utilizar un navegador web
+móvil para acceder a la interfaz móvil de una instalación en servidor (véase más
 abajo).
 
-Consulta el issue https://github.com/TriliumNext/Trilium/issues/4962 para más
-información sobre el soporte de la aplicación móvil.
+Consulte la incidencia https://github.com/TriliumNext/Trilium/issues/4962 para
+obtener más información sobre la compatibilidad con la aplicación móvil.
 
 #### TriliumDroid
 
-Si prefieres una aplicación nativa para Android, puedes usar
+Si prefiere una aplicación nativa para Android, puede usar
 [TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid).
-Puedes reportar errores y funciones faltantes en [su
+Notifique errores y funciones que falten en [su
 repositorio](https://github.com/FliegendeWurst/TriliumDroid). Nota: al usar
-TriliumDroid, es recomendable desactivar las actualizaciones automáticas en la
-instalación del servidor (ver más abajo), ya que la versión de sincronización
+TriliumDroid, conviene desactivar las actualizaciones automáticas en la
+instalación del servidor (véase más abajo), ya que la versión de sincronización
 debe coincidir entre Trilium y TriliumDroid.
 
 #### Pocket Trilium
 
-Si quieres una aplicación nativa para Android con todas las funciones, prueba
+Si desea una aplicación nativa para Android con todas las funciones, pruebe
 [Pocket Trilium](https://github.com/Nriver/pocket-trilium). Ejecuta una
 instancia completa de Trilium en el teléfono, admite el uso sin conexión y
-permite sincronizar con tu servidor.
+permite sincronizar con su servidor.
 
 #### Trinote
 
-Si quieres una aplicación nativa para iOS, puedes usar
+Si desea una aplicación nativa para iOS, puede usar
 [Trinote](https://apps.apple.com/us/app/trinote/id6761228249), un cliente de
-código abierto para tu servidor Trilium o TriliumNext autoalojado. Permite
+código abierto para su servidor Trilium o TriliumNext autoalojado. Permite
 recorrer y organizar el árbol de notas, buscar notas en el servidor, leer y
 editar todos los tipos de nota (texto, código, mapa mental, hoja de cálculo,
 mapa geográfico, lienzo, etc.) y mantiene las notas disponibles y editables sin
-conexión. Aquí tienes el [repositorio](https://github.com/StephenArg/Trinote) si
-te interesa colaborar, y el servidor de
-[Discord](https://discord.com/invite/ghjJG56EUS) si tienes comentarios o
-sugerencias.
+conexión. Aquí tiene el [repositorio](https://github.com/StephenArg/Trinote) si
+le interesa colaborar, y el servidor de
+[Discord](https://discord.com/invite/ghjJG56EUS) si tiene comentarios o
+sugerencias que comentar.
 
 ### Servidor
 
-Para instalar TriliumNext en tu propio servidor (incluido mediante Docker desde
-[Dockerhub](https://hub.docker.com/r/triliumnext/trilium)), sigue las
+Para instalar TriliumNext en su propio servidor (incluso mediante Docker desde
+[Dockerhub](https://hub.docker.com/r/triliumnext/trilium)), siga las
 [instrucciones de instalación del
 servidor](https://docs.triliumnotes.org/user-guide/setup/server).
 
@@ -258,8 +258,8 @@ servidor](https://docs.triliumnotes.org/user-guide/setup/server).
 
 ### Traducciones
 
-Si eres hablante nativo, puedes ayudar a traducir Trilium visitando nuestra
-[página de Weblate](https://hosted.weblate.org/engage/trilium/).
+Si es hablante nativo, puede ayudar a traducir Trilium visitando nuestra [página
+de Weblate](https://hosted.weblate.org/engage/trilium/).
 
 Cobertura de idiomas hasta el momento:
 
@@ -268,8 +268,8 @@ traducción](https://hosted.weblate.org/widget/trilium/multi-auto.svg)](https://
 
 ### Código
 
-Descarga el repositorio, instala las dependencias usando `pnpm` y luego ejecuta
-el servidor (disponible en http://localhost:8080):
+Descargue el repositorio, instale las dependencias con `pnpm` y, a continuación,
+ejecute el servidor (disponible en http://localhost:8080):
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -279,8 +279,8 @@ pnpm run server:start
 
 ### Documentación
 
-Descarga el repositorio, instala las dependencias usando `pnpm` y luego ejecuta
-el entorno necesario para editar la documentación:
+Descargue el repositorio, instale las dependencias con `pnpm` y, a continuación,
+ejecute el entorno necesario para editar la documentación:
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -288,7 +288,7 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
-Como alternativa, si tienes Nix instalado:
+Como alternativa, si tiene Nix instalado:
 ```shell
 # Ejecutar directamente
 nix run .#edit-docs
@@ -300,8 +300,8 @@ trilium-edit-docs
 
 
 ### Compilación del ejecutable
-Descarga el repositorio, instala las dependencias usando `pnpm` y luego compila
-la aplicación de escritorio para Windows:
+Descargue el repositorio, instale las dependencias con `pnpm` y, a continuación,
+compile la aplicación de escritorio para Windows:
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -309,15 +309,16 @@ pnpm install
 pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 ```
 
-Para más información, consulta la [documentación de
+Para obtener más información, consulte la [documentación de
 desarrollo](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/Developer%20Guide).
 
 ### Documentación para desarrolladores
 
-Consulta la [guía de
+Consulte la [guía de
 documentación](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)
-para más información. Si tienes más preguntas, siéntete libre de contactarnos a
-través de los enlaces de la sección "Únete a la conversación" más arriba.
+para obtener más información. Si tiene más preguntas, no dude en contactar con
+nosotros a través de los enlaces de la sección «Únase a la conversación» más
+arriba.
 
 ## 💖 Patrocinadores
 
@@ -393,7 +394,7 @@ Trilium no sería posible sin las tecnologías que lo sustentan:
 ## 🤝 Soporte
 
 Trilium se desarrolla y mantiene con [cientos de horas de
-trabajo](https://github.com/TriliumNext/Trilium/graphs/commit-activity). Tu
+trabajo](https://github.com/TriliumNext/Trilium/graphs/commit-activity). Su
 apoyo ayuda a mantenerlo de código abierto, mejorar sus funciones y cubrir
 gastos como el alojamiento.
 

@@ -1,0 +1,15 @@
+diff --git a/lib/hdiutil.js b/lib/hdiutil.js
+index a85a3af77883bfd25480db3426a491c4c6ad1632..32a2aba3d423e94c82b3c64b1b6b020893454fe4 100644
+--- a/lib/hdiutil.js
++++ b/lib/hdiutil.js
+@@ -70,6 +70,10 @@ exports.detach = function (path, cb) {
+       setTimeout(function () {
+         util.sh('hdiutil', args, attemptDetach)
+       }, 1000 * Math.pow(2, attempts - 1))
++    } else if (err && /No such file or directory/.test(err.stderr || err.message) && !fs.existsSync(path)) {
++      // A detach that reports "Resource busy" can still unmount the volume, so the retry finds
++      // nothing at `path`. The volume is detached, which is what the caller asked for.
++      cb(null)
+     } else {
+       cb(err)
+     }

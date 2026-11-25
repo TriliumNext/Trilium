@@ -2828,7 +2828,6 @@
     "refresh-saved-search-results": "Opdatér gemte søgeresultater",
     "create-child-note": "Opret undernote",
     "unhoist": "Sænk ned igen",
-    "toggle-sidebar": "Slå sidepanel til/fra",
     "dropping-not-allowed": "Det er ikke tilladt at slippe noter på denne placering.",
     "clone-indicator-tooltip": "Denne note har {{- count}} forældre: {{- parents}}",
     "clone-indicator-tooltip-single": "Denne note er klonet (1 ekstra forælder: {{- parent}})",

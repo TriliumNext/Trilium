@@ -286,7 +286,8 @@ body.layout-horizontal > .horizontal {
 /* Sync status button */
 
 #launcher-pane .sync-status .sync-status-icon {
-    top: 3px;
+    display: block;
+    top: 0;
 }
 
 #launcher-pane .sync-status-icon:not(.sync-status-in-progress):hover {
@@ -759,6 +760,10 @@ body[dir=rtl] :is(#left-pane, .tree-popup-sidebar) span.fancytree-node.protected
 .tab-row-container {
     background: transparent !important;
     height: var(--tab-bar-height) !important;
+}
+
+body.mobile .tab-row-container {
+    background: var(--root-background) !important;
 }
 
 .tab-row-container .toggle-button {

@@ -62,6 +62,26 @@ export function getParentStack(notePath: string | null | undefined, hoistedNoteI
 }
 
 /**
+ * Whether back opens the note of the column in place instead of going up a column. With the tree
+ * docked, back opens the parent of the note shown beside it, and while that note is a child listed
+ * in the column (`spotlightedNoteId` is the child leading to it), its parent is the column's note.
+ * The root column has no back.
+ */
+export function opensColumnNoteOnBack({ isStacked, stack, activeNoteId, spotlightedNoteId }: {
+    isStacked: boolean;
+    stack: string[];
+    activeNoteId: string | undefined;
+    spotlightedNoteId: string | undefined;
+}) {
+    return !isStacked && stack.length > 1 && !!activeNoteId && spotlightedNoteId === activeNoteId;
+}
+
+/** Whether two stacks lead through the same columns. */
+export function isSameStack(a: string[], b: string[]) {
+    return a.length === b.length && a.every((path, index) => path === b[index]);
+}
+
+/**
  * Leaves the tree of `tabId` on the column holding `hoistedNoteId` once the tab unhoists, as a step
  * up out of the hoisted note, instead of the column of the note the tab shows. Runs before the
  * unhoisting, which keeps `notePath` open.

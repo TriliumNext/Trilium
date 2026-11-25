@@ -1,4 +1,5 @@
 .component.toggle-sidebar-button {
     contain: none;
+    flex-shrink: 0;
     min-width: 8px;
 }

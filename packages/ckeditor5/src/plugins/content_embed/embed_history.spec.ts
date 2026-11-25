@@ -35,6 +35,14 @@ describe("EmbedHistory", () => {
         return getModelData(editor.model, { withoutSelection: true });
     }
 
+    function getParagraphEnd() {
+        const paragraph = editor.model.document.getRoot()?.getChild(0);
+        if (!paragraph) {
+            throw new Error("The editor has no paragraph.");
+        }
+        return editor.model.createPositionAt(paragraph, "end");
+    }
+
     it("keeps a step on the undo stack without changing the data", () => {
         editor.setData("<p>a</p>");
         const step = createStep();
@@ -80,6 +88,29 @@ describe("EmbedHistory", () => {
         editor.execute("undo");
         history.push(createStep());
         expect(editor.commands.get("redo")?.isEnabled).toBe(false);
+    });
+
+    it("undoes and redoes a change joined to the latest step together with it", () => {
+        const step = createStep();
+        history.push(step);
+        history.joinLatestStep((writer) => writer.insertText("a", getParagraphEnd()));
+        expect(getText()).toBe("<paragraph>a</paragraph>");
+
+        editor.execute("undo");
+        expect(step.undo).toHaveBeenCalledOnce();
+        expect(getText()).toBe("<paragraph></paragraph>");
+        expect(editor.commands.get("undo")?.isEnabled).toBe(false);
+        editor.execute("redo");
+        expect(step.redo).toHaveBeenCalledOnce();
+        expect(getText()).toBe("<paragraph>a</paragraph>");
+
+        // After a change of the text, the joined change is a step of its own.
+        type("b");
+        history.joinLatestStep((writer) => writer.insertText("c", getParagraphEnd()));
+        expect(getText()).toBe("<paragraph>bac</paragraph>");
+        editor.execute("undo");
+        expect(getText()).toBe("<paragraph>ba</paragraph>");
+        expect(step.undo).toHaveBeenCalledOnce();
     });
 
     it("tells whether a step is still the last change of the undo stack", () => {

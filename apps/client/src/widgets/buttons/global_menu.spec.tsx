@@ -1,3 +1,4 @@
+import { Tooltip } from "bootstrap";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -202,6 +203,21 @@ describe("GlobalMenu's rows", () => {
         expect(toggle).not.toBeNull();
         toggle?.dispatchEvent(new PointerEvent("pointerenter"));
         await vi.waitFor(() => expect(ctrl.itemsLoaded).toBe(true));
+    });
+
+    it("shows the logo's tooltip beside a vertical launch bar", async () => {
+        vi.useRealTimers();
+        container = document.body.appendChild(document.createElement("div"));
+        await act(async () => {
+            if (container) render(<GlobalMenu isHorizontalLayout={false} />, container);
+        });
+        const logo = container.querySelector(".global-menu-button svg");
+        expect(logo).not.toBeNull();
+        await vi.waitFor(() => expect(logo && Tooltip.getInstance(logo)).toBeTruthy());
+        act(() => { if (logo) Tooltip.getInstance(logo)?.show(); });
+        await vi.waitFor(() => expect(document.querySelector(".tooltip")).not.toBeNull());
+        await vi.waitFor(() => expect(document.querySelector(".tooltip")?.getAttribute("data-popper-placement")).toBeTruthy());
+        expect(document.querySelector(".tooltip")?.getAttribute("data-popper-placement")).toBe("right");
     });
 });
 

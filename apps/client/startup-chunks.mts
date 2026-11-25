@@ -89,6 +89,11 @@ export interface StartupChunkOptions {
     pages: Record<string, Step[]>;
     /** The links of a module, or nothing for a module outside the build. */
     getModule: (id: string) => ModuleLinks | null | undefined;
+    /**
+     * The modules of another input whose `import()` loads a view of the app, which sets up the
+     * app's globals first, so that what it loads can share chunks with the app.
+     */
+    appLoaders?: readonly string[];
 }
 
 /**
@@ -104,12 +109,17 @@ export interface StartupChunkOptions {
  * A module that a later step imports too gets a chunk named after both steps, `script-api+editor`,
  * which keeps the rest of the optional step away from a page that skipped it.
  *
- * Every other input of the build counts as a page with one step, which keeps the chunks of the app
- * out of it. A module keeps the chunk the bundler gives it when a step loads from it, or when no
- * lazily loaded module imports it: the code of one page then stays in that page's own chunk, away
+ * Every other input of the build counts as a page whose shell is its own imports, which keeps the
+ * chunks of the app out of it. Unless it is one of the pages, it also gets an optional step for
+ * each module it loads with `import()` without the app, which leaves out what `appLoaders` load:
+ * a chunk it loads that way then holds none of the app's other code, as the share theme draws a
+ * diagram with mermaid, which imports DOMPurify, without the app's globals.
+ *
+ * A module keeps the chunk the bundler gives it when a step loads from it, or when no lazily loaded
+ * module imports it, or when only the lazy steps of another input load it: the code of one page then stays in that page's own chunk, away
  * from the code that a lazily loaded module can make any page download.
  */
-export function assignStartupChunks({ entry, pages, getModule }: StartupChunkOptions) {
+export function assignStartupChunks({ entry, pages, getModule, appLoaders = [] }: StartupChunkOptions) {
     const modules = collectLinkedModules(entry, getModule);
     const stepsByPage = new Map<string, Step[]>();
     const pageEntries = new Set<string>();
@@ -123,11 +133,16 @@ export function assignStartupChunks({ entry, pages, getModule }: StartupChunkOpt
             areaEntries.add(id);
         }
     }
-    for (const [ id, module ] of modules) {
-        if (module.isEntry && id !== entry) {
-            stepsByPage.set(getInputName(id), [ { name: "shell", entries: [ id ] } ]);
-            pageEntries.add(id);
-        }
+    const inputs = [ ...modules ].filter(([ id, module ]) => module.isEntry && id !== entry);
+    for (const [ id ] of inputs) {
+        pageEntries.add(id);
+    }
+    const loaders = new Set(appLoaders);
+    for (const [ id ] of inputs) {
+        const page = getInputName(id);
+        const lazySteps = page in pages ? [] : [ ...collectLazyTargets(id, pageEntries, loaders, modules) ]
+            .map((target) => ({ name: `${LAZY_STEP_PREFIX}${target}`, entries: [ target ], optional: true }));
+        stepsByPage.set(page, [ { name: "shell", entries: [ id ] }, ...lazySteps ]);
     }
 
     const stepsByModule = new Map<string, Map<string, string>>();
@@ -158,11 +173,41 @@ export function assignStartupChunks({ entry, pages, getModule }: StartupChunkOpt
 
     const chunks = new Map<string, string>();
     for (const [ id, stepsOfModule ] of stepsByModule) {
-        if (lazilyLoaded.has(id) && !areaEntries.has(id)) {
+        const loadedAtStartup = [ ...stepsOfModule.values() ]
+            .some((steps) => steps.split("+").some((step) => !step.startsWith(LAZY_STEP_PREFIX)));
+        if (lazilyLoaded.has(id) && !areaEntries.has(id) && loadedAtStartup) {
             chunks.set(id, getChunkName(stepsOfModule, stepsByPage.size));
         }
     }
     return chunks;
+}
+
+/** Starts the name of a step that another input of the build loads with `import()`. */
+const LAZY_STEP_PREFIX = "lazy:";
+
+/**
+ * The modules that `import()` expressions load from `input`, directly or through other modules it
+ * loads, leaving out the entries of the app's pages and what the modules in `appLoaders` load.
+ */
+function collectLazyTargets(input: string, pageEntries: ReadonlySet<string>,
+    appLoaders: ReadonlySet<string>, modules: Map<string, ModuleLinks>) {
+    const targets = new Set<string>();
+    const visited = new Set<string>();
+    const pending = [ input ];
+    for (let id = pending.pop(); id !== undefined; id = pending.pop()) {
+        const module = modules.get(id);
+        if (!module || visited.has(id)) continue;
+        visited.add(id);
+        pending.push(...module.importedIds);
+        if (appLoaders.has(id)) continue;
+        for (const target of module.dynamicallyImportedIds) {
+            if (!pageEntries.has(target)) {
+                targets.add(target);
+                pending.push(target);
+            }
+        }
+    }
+    return targets;
 }
 
 /**
@@ -170,7 +215,7 @@ export function assignStartupChunks({ entry, pages, getModule }: StartupChunkOpt
  * chunks {@link assignStartupChunks} names. It needs `includeDependenciesRecursively: false`, or
  * each chunk would also take the imports of its modules from the chunks of earlier steps.
  */
-export function startupChunkGroup(rootDir: string) {
+export function startupChunkGroup(rootDir: string, appLoaders: readonly string[] = []) {
     const toId = (file: string) => normalizePath(join(rootDir, "src", file));
     let chunks: Map<string, string> | undefined;
 
@@ -187,7 +232,8 @@ export function startupChunkGroup(rootDir: string) {
                         optional: OPTIONAL_AREAS.has(area)
                     }))
                 ] ])),
-                getModule: (moduleId) => ctx.getModuleInfo(moduleId)
+                getModule: (moduleId) => ctx.getModuleInfo(moduleId),
+                appLoaders: appLoaders.map((id) => normalizePath(id))
             });
             return chunks.get(id) ?? null;
         }
@@ -235,10 +281,29 @@ function getInputName(id: string) {
 
 function getChunkName(stepsOfModule: Map<string, string>, pageCount: number) {
     const pagesByStep = new Map<string, string[]>();
-    for (const [ page, step ] of stepsOfModule) {
+    for (const [ page, steps ] of stepsOfModule) {
+        const step = shortenLazySteps(steps);
         pagesByStep.set(step, [ ...pagesByStep.get(step) ?? [], page ]);
     }
     return [ ...pagesByStep ]
         .map(([ step, pages ]) => (pages.length === pageCount ? step : [ step, ...pages ].join(".")))
         .join("_");
+}
+
+/**
+ * Replaces the lazily loaded steps among `steps` (`shell+lazy:…+lazy:…`) by one `lazy-<hash>` of
+ * them all, since a module can be loaded by more of them than a file name holds.
+ */
+function shortenLazySteps(steps: string) {
+    const parts = steps.split("+");
+    const lazy = parts.filter((part) => part.startsWith(LAZY_STEP_PREFIX)).sort();
+    if (!lazy.length) {
+        return steps;
+    }
+    let hash = 0x811c9dc5;
+    for (const char of lazy.join("\n")) {
+        hash = Math.imul(hash ^ char.charCodeAt(0), 0x01000193);
+    }
+    const name = `lazy-${(hash >>> 0).toString(36)}`;
+    return [ ...parts.filter((part) => !part.startsWith(LAZY_STEP_PREFIX)), name ].join("+");
 }

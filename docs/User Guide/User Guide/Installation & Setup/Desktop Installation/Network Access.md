@@ -7,7 +7,7 @@ To better understand what is affected, refer to the following table:
 
 | Feature | Network access OFF | Network access ON |
 | --- | --- | --- |
-| <a class="reference-link" href="../Web%20Clipper.md">Web Clipper</a> | 🔒️ `localhost` only (still accessible to the browser extension on the same device) | 🌐 `localhost` + LAN |
+| <a class="reference-link" href="../Web%20Clipper.md">Web Clipper</a> | 🔒️ `localhost` only (still accessible to the browser extension on the same device) | 🌐 `localhost` + LAN (needs auth from other devices: log in from the extension's options as with a [server](../Server%20Installation.md)) |
 | <a class="reference-link" href="../../Advanced%20Usage/ETAPI%20(REST%20API).md">ETAPI (REST API)</a> | 🔒️ `localhost` only | 🌐 `localhost` + LAN |
 | [LLM MCP](../../AI.md) (only if enabled in settings) | 🔒️ `localhost` only (needs auth) | 🌐 `localhost` + LAN (needs auth) |
 | [Web app](Using%20the%20desktop%20application%20as%20a%20server.md) | ❌️ completely disabled (403), only the desktop app is usable. | 🌐 `localhost` + LAN |

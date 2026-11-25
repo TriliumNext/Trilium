@@ -11,8 +11,6 @@ To go several notes back or forward at once, right-click one of the buttons or p
 
 The _Go to Previous Note_ and _Go to Next Note_ launchers of the <a class="reference-link" href="../UI%20Elements/Launch%20Bar.md">Launch Bar</a> list the same notes, below the launch bar's own items.
 
-![](Note%20Navigation_image.jpg)
-
 ## Jump to note
 
 This is useful to quickly find and view arbitrary notes - click on `Jump to` button on the top or press <kbd>Ctrl</kbd> + <kbd>J</kbd> . Then type part of the note name and autocomplete will help you pick the desired note.

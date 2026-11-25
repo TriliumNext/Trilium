@@ -1,18 +1,18 @@
 {
   "name": "@triliumnext/edit-docs",
-  "version": "0.107.0",
+  "version": "0.108.0-rc.1",
   "private": true,
   "description": "Desktop version of Trilium which imports the demo database (presented to new users at start-up) or the user guide and other documentation and saves the modifications for committing.",
   "dependencies": {
     "archiver": "8.0.0",
-    "better-sqlite3": "13.1.1"
+    "better-sqlite3": "13.2.0"
   },
   "devDependencies": {
     "@triliumnext/client": "workspace:*",
     "@triliumnext/core": "workspace:*",
     "@triliumnext/commons": "workspace:*",
     "@triliumnext/desktop": "workspace:*",
-    "electron": "45.3.1",
+    "electron": "45.4.1",
     "typedoc": "0.28.20",
     "typedoc-plugin-missing-exports": "4.1.4"
   },

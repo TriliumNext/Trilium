@@ -3,9 +3,9 @@
         "github": "GitHub",
         "dockerhub": "Docker Hub",
         "get_started": "시작하기",
-        "title": "생각을 정리하고 나만의 지식 기반을 구축하세요.",
-        "subtitle": "Trilium은 노트를 작성하고 개인 지식 기반을 체계적으로 관리할 수 있는 오픈 소스 솔루션입니다. 데스크톱에서 단독으로 사용하거나 자체 호스팅 서버와 동기화하여 어디서나 노트를 이용하세요.",
-        "screenshot_alt": "Trilium Notes 데스크톱 애플리케이션의 스크린샷",
+        "title": "나만의 지식 기반을 키워 보세요.",
+        "subtitle": "알고 있는 모든 것을 필요한 만큼 깊게 구성할 수 있는 하나의 노트 트리에 보관하세요. 데스크톱과 휴대전화에서 글을 쓰고, 그림을 그리고, 계획을 세우며, 직접 운영하는 서버와 동기화해 어느 브라우저에서든 노트에 접근하세요.",
+        "screenshot_alt": "노트 트리 옆에 텍스트 노트가 열려 있는 Trilium Notes 데스크톱 애플리케이션",
         "tagline_license": "AGPL-3.0 라이선스",
         "tagline_no_account": "계정 불필요",
         "tagline_cross_platform": "오프라인에서도 작동"
@@ -15,7 +15,11 @@
         "desktop_title": "데스크톱 애플리케이션 다운로드(v{{version}})",
         "older_releases": "이전 릴리스 보기",
         "architecture": "아키텍처:",
-        "server_title": "여러 기기에서 이용할 서버 설정"
+        "server_title": "여러 기기에서 이용할 서버 설정",
+        "nightly_title": "나이틀리 빌드 사용해 보기",
+        "nightly_subtitle": "메인 브랜치에서 매일 빌드되며, 정식 출시 전에 최신 기능과 수정 사항을 사용할 수 있습니다. 나이틀리 설치 프로그램은 기존 안정 버전 설치를 대체하며 동일한 노트를 엽니다. 나이틀리 빌드에서 데이터베이스가 변경된 경우 안정 버전으로 돌아가려면 백업을 복원해야 합니다.",
+        "nightly_all_downloads": "모든 나이틀리 빌드 다운로드",
+        "nightly_learn_more": "나이틀리 빌드 알아보기"
     },
     "download_now": {
         "text": "지금 다운로드 ",
@@ -173,7 +177,7 @@
         "more_questions": "더 궁금한 점이 있나요? <0>커뮤니티에 질문하기</0>"
     },
     "final_cta": {
-        "title": "나만의 지식 기반을 만들어 보세요",
+        "title": "지식 기반 키우기 시작하기",
         "description": "계층형 노트, 강력한 검색, 직접 관리하는 서버와의 동기화까지 하나의 오픈 소스 앱에서 모두 정리하세요.",
         "get_started": "시작하기"
     },
@@ -283,5 +287,15 @@
         "render_description": "여기에 표시된 시계처럼 노트 안에서 바로 렌더링되는 대화형 대시보드와 미니 앱을 만드세요.",
         "api_title": "스크립트 API",
         "api_description": "노트, 브랜치, 속성, 검색을 위한 형식화된 API로 프런트엔드와 백엔드 스크립트에서 모두 사용할 수 있습니다."
+    },
+    "download_helper_nightly": {
+        "desktop_description": "이 컴퓨터에 맞는 최신 데스크톱 빌드입니다. 다른 아키텍처용 빌드를 받으려면 위의 아키텍처 전환 옵션을 사용하세요.",
+        "download_flatpak": ".flatpak",
+        "android_title": "안드로이드",
+        "android_description": "모바일 앱은 노트 전체 사본을 휴대전화에 저장하고, 오프라인에서도 작동하며, 서버와 동기화됩니다.",
+        "download_apk": "APK 다운로드 (.apk)",
+        "server_title": "서버",
+        "server_description": "Docker 이미지 또는 Linux 패키지로 제공되는 최신 서버 빌드입니다.",
+        "server_quick_start": "Docker로 실행하려면:"
     }
 }

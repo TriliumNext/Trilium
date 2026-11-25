@@ -108,7 +108,7 @@ export default class RootCommandExecutor extends Component {
     }
 
     async showLaunchBarSubtreeCommand() {
-        const rootNote = utils.isMobile() ? "_lbMobileRoot" : "_lbRoot";
+        const rootNote = utils.getLaunchBarRootId();
         appContext.triggerCommand("openInTreePopup", { noteIdOrPath: rootNote, hoistedNoteId: rootNote });
     }
 

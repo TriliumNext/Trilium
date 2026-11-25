@@ -11,7 +11,7 @@ import type {
 } from "@triliumnext/ckeditor5";
 import { type ComponentProps, h, render } from "preact";
 import { act } from "preact/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import type NoteContext from "../../../components/note_context";
 import type FAttachment from "../../../entities/fattachment";
@@ -20,6 +20,7 @@ import type { AttachmentEditor } from "../../../services/content_renderer";
 import froca from "../../../services/froca";
 import type { ViewScope } from "../../../services/link";
 import type LoadResults from "../../../services/load_results";
+import options from "../../../services/options";
 import { renderInto } from "../../../test/render";
 import type { ContentEmbedBalloon } from "../../dialogs/content_embed";
 import type { EditLinkBalloon } from "../../dialogs/edit_link";
@@ -682,9 +683,10 @@ describe("EditableText", () => {
             heading.scrollIntoView = scrollIntoView;
         }
         const viewScope: ViewScope = { bookmark: "intro" };
+        const noteContext = createNoteContext({ notePath: "root/abc", viewScope });
         const show = (isVisible: boolean) => h(EditableText, {
             note: { noteId: "abc" } as FNote,
-            noteContext: { notePath: "root/abc", viewScope } as NoteContext,
+            noteContext,
             viewScope,
             ntxId: "ntx",
             parentComponent: undefined,
@@ -709,6 +711,33 @@ describe("EditableText", () => {
         await showAgain();
         expect(scrollIntoView).toHaveBeenCalledOnce();
         expect(viewScope.bookmark).toBeUndefined();
+    });
+
+    it("publishes the highlights of its editor while shown", async () => {
+        const getJson = vi.spyOn(options, "getJson").mockReturnValue([ "color" ]);
+        onTestFinished(() => getJson.mockRestore());
+        const root = document.createElement("div");
+        root.innerHTML = "<p>Text <span style=\"color:red\">red</span></p>";
+        const noteContext = createNoteContext({ notePath: "root/abc" });
+        const show = (isVisible: boolean) => h(EditableText, {
+            note: { noteId: "abc" } as FNote,
+            noteContext,
+            viewScope: undefined,
+            ntxId: "ntx",
+            parentComponent: undefined,
+            isVisible
+        });
+        const container = renderInto(show(true));
+        await vi.waitFor(() => expect(rendered.editor).toBeDefined());
+        const editorRef = rendered.editor?.editorRef;
+        if (editorRef) {
+            editorRef.current = createTextEditor("", root);
+        }
+
+        const highlights = noteContext.getContextData("scrollRailHighlights");
+        expect(highlights?.source.readTargets()).toEqual([ root.querySelector("span") ]);
+        await act(() => render(show(false), container));
+        expect(noteContext.getContextData("scrollRailHighlights")).toBeUndefined();
     });
 });
 
@@ -887,6 +916,17 @@ function createApi(
 }
 
 /** A text editor that holds `data`, rendered into `root`. */
+/** A note context with `props` that keeps the data published on it. */
+function createNoteContext(props: Partial<NoteContext>) {
+    const data = new Map<string, unknown>();
+    return {
+        ...props,
+        setContextData: (key: string, value: unknown) => data.set(key, value),
+        getContextData: (key: string) => data.get(key),
+        clearContextData: (key: string) => data.delete(key)
+    } as unknown as NoteContext;
+}
+
 function createTextEditor(data: string, root = document.createElement("div")) {
     return {
         getData: vi.fn(() => data),

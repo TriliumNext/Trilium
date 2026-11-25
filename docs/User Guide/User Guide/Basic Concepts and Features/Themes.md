@@ -3,7 +3,7 @@
 
 Trilium comes with a couple pre-installed color themes, with the default being a light theme. To switch to a dark theme or any other available theme, navigate to the <span class="tn-icon bx bx-cog"></span> Options menu (accessible via the app icon in the top-left corner), select the Appearance tab, and choose your preferred theme. The _Theme_ submenu of the <a class="reference-link" href="UI%20Elements/Global%20menu.md">Global menu</a> switches the theme and the color scheme as well.
 
-![Dark Theme](Themes_dark-theme.png)
+<figure class="image"><img style="aspect-ratio:1616/720;" src="Themes_demo-dark.webp" width="1616" height="720"></figure>
 
 While a dark theme is active, Trilium asks the Dark Reader browser extension not to darken the page a second time. Dark Reader still darkens the light themes. After switching from a dark theme to a light one, reload the page (<kbd>Ctrl</kbd>+<kbd>R</kbd>) for Dark Reader to take effect again.
 

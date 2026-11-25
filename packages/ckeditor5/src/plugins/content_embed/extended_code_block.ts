@@ -2,7 +2,7 @@ import {
     EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE
 } from "@triliumnext/commons/src/lib/content_embeds.js";
 import { MIME_TYPE_AUTO } from "@triliumnext/commons/src/lib/mime_type.js";
-import { type DowncastAttributeEvent, type ModelElement, Plugin } from "ckeditor5";
+import { type DowncastAttributeEvent, type Editor, type ModelElement, Plugin } from "ckeditor5";
 
 import CopyToClipboardButton, { createCopyToClipboardButton } from "../copy_to_clipboard_button.js";
 import ContentEmbed from "./content_embed.js";
@@ -107,11 +107,12 @@ export default class ExtendedCodeBlock extends Plugin {
         }
 
         this.language = language;
+        const fenceTyped = blocks.length === 1 && isFenceTyped(editor, blocks[0]);
         model.change((writer) => {
             const codeBlocks = getSiblingRuns(blocks).map((run) => {
                 const codeBlock = writer.createElement("contentEmbed", {
                     language,
-                    source: run.map(getCodeText).join("\n"),
+                    source: getCodeSource(run, fenceTyped),
                     boxSize: "full",
                     hideTitle: true,
                     editable: true
@@ -194,6 +195,29 @@ function getCodeText(block: ModelElement) {
             return child.is("element", "softBreak") ? "\n" : "";
         })
         .join("");
+}
+
+/** The fence the autoformat of CKEditor opens a code block with. */
+const CODE_FENCE = "```";
+
+/**
+ * Whether the caret ends `block`, and `block` is nothing but the fence — the selection the
+ * autoformat runs this command from.
+ */
+function isFenceTyped(editor: Editor, block: ModelElement) {
+    const selection = editor.model.document.selection;
+    const caret = selection.getFirstPosition();
+    return selection.isCollapsed && !!caret
+        && caret.isEqual(editor.model.createPositionAt(block, "end"))
+        && getCodeText(block) === CODE_FENCE;
+}
+
+/** The code of `run`, empty for the block the autoformat opens with a fence. */
+function getCodeSource(run: ModelElement[], fenceTyped: boolean) {
+    if (fenceTyped) {
+        return "";
+    }
+    return run.map(getCodeText).join("\n");
 }
 
 declare module "ckeditor5" {

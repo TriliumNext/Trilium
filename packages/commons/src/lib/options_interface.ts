@@ -151,6 +151,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     /** JPEG quality a lossless image is converted at, kept apart from {@link imageJpegQuality}. */
     imageConversionQuality: number;
     leftPaneWidth: number;
+    /** The width of the tree docked beside the note on a tablet, in pixels; `0` for the default. */
+    mobileLeftPaneWidth: number;
     rightPaneWidth: number;
     rightPaneCollapsedItems: string;
     rightPaneSelectedTab: string;
@@ -317,6 +319,11 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     mathFieldEnabled: boolean;
     /** Whether the editor surfaces content-area hints (bottom-corner popups that document how to interact with the element under the caret or pointer, e.g. task-state cycle, collapsible-summary shortcut, drag-handle label). */
     textNoteContentHintsEnabled: boolean;
+    /**
+     * Whether the scrollbar of a text note marks the text with a font or background color with a
+     * line in that color.
+     */
+    textNoteScrollRailHighlightsEnabled: boolean;
     /** Whether a URL typed or pasted into a text note is automatically turned into a link preview. The "Link preview" dialog is unaffected and always inserts one on request. */
     textNoteAutoLinkPreviewsEnabled: boolean;
     /** Whether the link editor fills the empty title of a text link with the page's title. */

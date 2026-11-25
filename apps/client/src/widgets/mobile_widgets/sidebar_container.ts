@@ -1,7 +1,7 @@
 import type { Screen } from "../../components/mobile_screen_switcher.js";
 import type NoteContext from "../../components/note_context.js";
 import { onSystemBack } from "../../services/system_back.js";
-import { isNarrowLayout, onNarrowLayoutChange } from "../../services/utils.js";
+import { isTreeStacked, onTreeStackedChange } from "../../services/utils.js";
 import { forgetTabs, getTabNavigation, setTabScreen } from "./tab_navigation.js";
 
 const DRAG_STATE_NONE = 0;
@@ -20,9 +20,10 @@ const STACK_PARALLAX = 30;
 const SCREEN: Screen = "tree";
 
 /**
- * Moves the note tree of the mobile layout, `sidebarEl`, against the note. On a phone, the tree and
- * the note form a navigation stack: the tree lies under the note, which slides away to reveal it,
- * by a swipe from the edge or by `setActiveScreen`. On a tablet, the tree sits next to the note.
+ * Moves the note tree of the mobile layout, `sidebarEl`, against the note. On a phone (see
+ * `isTreeStacked()`), the tree and the note form a navigation stack: the tree lies under the note,
+ * which slides away to reveal it, by a swipe from the edge or by `setActiveScreen`. On a tablet,
+ * in either orientation, the tree is docked next to the note.
  * `MobileSidebar` hands it the events it follows.
  */
 export default class SidebarNavigation {
@@ -59,9 +60,9 @@ export default class SidebarNavigation {
         document.addEventListener("touchmove", onDragMove, { passive: false });
         document.addEventListener("touchend", onDragEnd);
         this.disposers = [
-            onNarrowLayoutChange(() => this.#setSidebarOpen(this.currentTranslate === 0)),
+            onTreeStackedChange(() => this.#setSidebarOpen(this.currentTranslate === 0)),
             onSystemBack(() => {
-                if (!isNarrowLayout() || this.activeScreenName === SCREEN) return false;
+                if (!isTreeStacked() || this.activeScreenName === SCREEN) return false;
                 this.setActiveScreen(SCREEN);
                 return true;
             }),
@@ -85,7 +86,7 @@ export default class SidebarNavigation {
         this.activeTabId = tabId;
 
         // A tab that never showed the tree shows its note.
-        if (isNarrowLayout()) {
+        if (isTreeStacked()) {
             const screen = getTabNavigation(tabId)?.screen ?? "detail";
             this.#findDetail();
             this.#withoutTransition(() => this.#setSidebarOpen(screen === SCREEN));
@@ -98,7 +99,7 @@ export default class SidebarNavigation {
      * a new tab is. Splits and tabs opened in the background keep their screen.
      */
     noteSwitched(noteContext: NoteContext, notePath: string | null | undefined) {
-        if (notePath || !isNarrowLayout()) return;
+        if (notePath || !isTreeStacked()) return;
         if (!noteContext.isMainContext() || noteContext.ntxId !== this.activeTabId) return;
 
         this.#findDetail();
@@ -120,7 +121,7 @@ export default class SidebarNavigation {
     #onDragStart(e: TouchEvent) {
         // The note comes back by opening it, not by a swipe. On the launch bar, a swipe changes tabs.
         const isOnTabSwipe = e.target instanceof Element && !!e.target.closest("#launcher-pane.tab-swipe");
-        if (!isNarrowLayout() || this.currentTranslate !== -100 || isOnTabSwipe) {
+        if (!isTreeStacked() || this.currentTranslate !== -100 || isOnTabSwipe) {
             return;
         }
 
@@ -202,10 +203,10 @@ export default class SidebarNavigation {
 
     /**
      * Places the tree `translatePercentage` of the way from open (0) to closed (-100) by moving the
-     * note off it. On a tablet, both stay in place.
+     * note off it. With the tree docked, both stay in place.
      */
     #applyTranslate(translatePercentage: number) {
-        if (!isNarrowLayout()) {
+        if (!isTreeStacked()) {
             this.sidebarEl.style.transform = "";
             if (this.detailEl) this.detailEl.style.transform = "";
             return;

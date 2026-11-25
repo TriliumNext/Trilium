@@ -97,6 +97,8 @@
 /src/index.ts
 /src/layouts/DesktopLayout.css
 /src/layouts/DesktopLayout.tsx
+/src/layouts/TabBar.css
+/src/layouts/TabBar.tsx
 /src/layouts/layout_commons.css
 /src/layouts/layout_commons.tsx
 /src/layouts/render_layout.ts
@@ -354,6 +356,8 @@
 /src/widgets/react/shortcut_kbd.tsx
 /src/widgets/react/tooltip.css
 /src/widgets/scroll_padding.tsx
+/src/widgets/scroll_rail.css
+/src/widgets/scroll_rail.tsx
 /src/widgets/search/SearchStringEditor.tsx
 /src/widgets/search/search_completions.ts
 /src/widgets/search_field_editor.css

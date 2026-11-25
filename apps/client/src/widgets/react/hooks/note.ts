@@ -9,6 +9,7 @@ import type FNote from "../../../entities/fnote";
 import type { NotePathRecord } from "../../../entities/fnote";
 import attributes from "../../../services/attributes";
 import froca from "../../../services/froca";
+import type LoadResults from "../../../services/load_results";
 import server from "../../../services/server";
 import { useWhenShown } from "./dom";
 import { useTriliumEvent } from "./events";
@@ -462,7 +463,7 @@ export function useSortedNotePaths(note: FNote | null | undefined, hoistedNoteId
     return sortedNotePaths;
 }
 
-/** The number of notes that link to `note`, fetched again when a relation affecting it changes. */
+/** The number of notes that link to `note`, fetched again when a relation pointing at it changes. */
 export function useBacklinkCount(note: FNote | null | undefined, isDefaultViewMode: boolean) {
     const [ backlinkCount, setBacklinkCount ] = useState(0);
 
@@ -476,11 +477,17 @@ export function useBacklinkCount(note: FNote | null | undefined, isDefaultViewMo
 
     useEffect(() => refresh(), [ refresh ]);
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
-        if (note && loadResults.getAttributeRows().some((attr) =>
-            attr.type === "relation" && attributes.isAffecting(attr, note))) {
-            refresh();
-        }
+        if (note && hasBacklinkChanges(loadResults, note)) refresh();
     });
 
     return backlinkCount;
+}
+
+/**
+ * Whether `loadResults` adds, changes or deletes a relation that points at `note`. A backlink is
+ * owned by the other note, so `attributes.isAffecting()` does not see it.
+ */
+export function hasBacklinkChanges(loadResults: LoadResults, note: FNote) {
+    return loadResults.getAttributeRows().some((attr) =>
+        attr.type === "relation" && attr.value === note.noteId);
 }

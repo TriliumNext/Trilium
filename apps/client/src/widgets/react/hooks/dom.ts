@@ -2,6 +2,7 @@ import type { Ref, RefObject } from "preact";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import SpacedUpdate, { type StateCallback } from "../../../services/spaced_update";
+import { isTablet, onTabletChange } from "../../../services/utils";
 import { createHoldContextMenu } from "../../hold_context_menu";
 
 let uniqueNameCounter = 0;
@@ -389,6 +390,18 @@ export function useWindowSize() {
     }, []);
 
     return size;
+}
+
+/** {@link isTablet}, following the viewport as a foldable folds or a window is resized. */
+export function useIsTablet() {
+    const [ tablet, setTablet ] = useState(isTablet);
+
+    useEffect(() => {
+        setTablet(isTablet());
+        return onTabletChange(() => setTablet(isTablet()));
+    }, []);
+
+    return tablet;
 }
 
 /** Whether the CSS media `query` matches, following it as the window changes. */

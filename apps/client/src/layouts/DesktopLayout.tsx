@@ -10,8 +10,7 @@ import { areWindowControlsOnLeft, isElectron } from "../services/utils.js";
 import type BasicWidget from "../widgets/basic_widget.js";
 import GlobalMenu from "../widgets/buttons/global_menu.js";
 import LeftPaneToggle, { LeftPanePeekButton } from "../widgets/buttons/left_pane_toggle.js";
-import RightPaneToggle from "../widgets/buttons/right_pane_toggle.js";
-import CloseZenModeButton, { LeaveFullScreenButton } from "../widgets/close_zen_button.js";
+import CloseZenModeButton from "../widgets/close_zen_button.js";
 import LeftPane, { useLeftPane } from "../widgets/containers/LeftPane.js";
 import LauncherContainer from "../widgets/launch_bar/LauncherContainer.js";
 import SpacerWidget from "../widgets/launch_bar/SpacerWidget.js";
@@ -22,10 +21,10 @@ import { placeCustomWidgets, useCustomWidgets, useLoadCustomWidgets } from "../w
 import { useLegacyWidget } from "../widgets/react/hooks/legacy.js";
 import { useTriliumOption } from "../widgets/react/hooks/options.js";
 import { useNoteContext } from "../widgets/react/hooks/note_context.js";
+import ScrollRail from "../widgets/scroll_rail.js";
 import RightPanelContainer from "../widgets/sidebar/RightPanelContainer.js";
-import TabRowWidget from "../widgets/tab_row.js";
-import TabHistoryNavigationButtons from "../widgets/TabHistoryNavigationButtons.js";
 import { LazyDialog, Modals, NoteSplits, type NoteSplitParts, triggerLegacyCommand, useAppearance } from "./layout_commons.js";
+import TabBar from "./TabBar.js";
 
 /** The desktop layout, as a single Preact tree. */
 export default function DesktopLayout() {
@@ -90,9 +89,13 @@ export default function DesktopLayout() {
     );
 }
 
-/** A split's actions end its title row, after a spacer, and its custom widgets go among its parts. */
+/**
+ * A split's actions end its title row, after a spacer, its scroll rail starts the scroller, and its
+ * custom widgets go among its parts.
+ */
 const NOTE_SPLIT_PARTS: NoteSplitParts = {
     titleRowEnd: () => [ <SpacerWidget baseSize={0} growthFactor={1} />, <NoteActions /> ],
+    scrollerStart: () => [ <ScrollRail /> ],
     between: (gap, builtInCount, split) => [
         <CustomWidgets key={gap} parent="note-detail-pane" slot={split} gap={gap} builtInCount={builtInCount} keepsRoot />
     ]
@@ -100,31 +103,6 @@ const NOTE_SPLIT_PARTS: NoteSplitParts = {
 
 const PASSWORD_NOT_SET_EVENTS: EventNames[] = [ "showPasswordNotSet" ];
 const loadPasswordNotSetDialog = () => import("../widgets/dialogs/password_not_set.js");
-
-/** The tabs with the history buttons before them, and the full screen and right pane toggles after. */
-function TabBar({ fullWidth, leftPaneToggle }: { fullWidth: boolean, leftPaneToggle: boolean }) {
-    const [ tabRow, tabRowWidget ] = useLegacyWidget(() => {
-        const widget = new TabRowWidget();
-        return fullWidth ? widget.class("full-width") : widget;
-    }, { containerClassName: "tab-row-host" });
-    // A change of orientation moves the tab bar, and the tab row it builds anew takes the tabs.
-    useEffect(() => {
-        if (appContext.tabManager?.tabsRestored) {
-            void tabRowWidget.showExistingTabs();
-        }
-    }, [ tabRowWidget ]);
-
-    return (
-        <div className={`tab-row-container ${fullWidth ? "full-width" : ""}`}>
-            {fullWidth && <div id="tab-row-left-spacer" />}
-            {leftPaneToggle && <LeftPaneToggle isHorizontalLayout={true} />}
-            <TabHistoryNavigationButtons />
-            {tabRow}
-            <LeaveFullScreenButton />
-            <RightPaneToggle />
-        </div>
-    );
-}
 
 
 /**

@@ -85,7 +85,7 @@
     "script_link_not_allowed": "{{scheme}} で始まるリンクはコードを実行する可能性があるため、使用できません。",
     "retrieving_from_page": "web ページから取得中...",
     "title_from_attachment": "設定されていない場合、常に添付ファイルのタイトルが表示されます",
-    "top_of_note": "ノート全体にリンク",
+    "top_of_note": "ノートへのリンク（デフォルト）",
     "select_note_for_targets": "リンク可能な見出しとアンカーを表示するには、ノートを選択してください。",
     "inspecting_note": "ノート構造を確認しています",
     "heading_reference_failed": "指定された見出しへのリンクを作成できませんでした",
@@ -1274,7 +1274,11 @@
   },
   "toc": {
     "table_of_contents": "目次",
-    "no_headings": "見出しはありません。"
+    "no_headings": "見出しはありません。",
+    "building": "目次を作成中…",
+    "build_failed": "目次を読み込めませんでした。",
+    "unavailable": "目次がありません。",
+    "retry": "再試行"
   },
   "text_auto_read_only_size": {
     "title": "自動読み取り専用のサイズ",
@@ -1798,7 +1802,6 @@
     "unhoist": "ホイスト解除",
     "saved-search-note-refreshed": "保存した検索ノートが更新されました。",
     "refresh-saved-search-results": "保存した検索結果を更新",
-    "toggle-sidebar": "サイドバーを切り替え",
     "dropping-not-allowed": "この場所にノートをドロップすることはできません。",
     "clone-indicator-tooltip": "このノートには {{- count}} 個の親があります: {{- parents}}",
     "clone-indicator-tooltip-single": "このノートは複製されています (親が 1 件追加: {{- parent}})",
@@ -1880,7 +1883,9 @@
     "copy_success": "クリップボードにコピーしました。",
     "copied_without_links": "ノートはクリップボードにコピーされましたが、ノートへのリンクはシステムクリップボードに配置できませんでした。",
     "paste_notes": "ノートを貼り付け",
-    "paste_failed": "クリップボードを読み込めませんでした。"
+    "paste_failed": "クリップボードを読み込めませんでした。",
+    "copy_ready": "リンクをコピーできます。",
+    "copy_button": "コピー"
   },
   "launcher_context_menu": {
     "add-note-launcher": "ノートランチャーを追加",
@@ -2018,7 +2023,9 @@
     "link_details_retrieval_enabled": "アイコンとテキスト のリンクやカードのタイトルと説明を自動的に取得",
     "link_details_retrieval_description": "リンクエディターで、アイコンとテキスト のリンクまたはカードのタイトルや説明が空の場合、Web ページの情報を自動入力します。",
     "note_completion_link_targets_enabled": "リンク先の見出しとアンカーの候補",
-    "note_completion_link_targets_description": "ノートを選択した後、対象ノート内のリンク先として見出しやアンカーの候補を表示します。"
+    "note_completion_link_targets_description": "ノートを選択した後、対象ノート内のリンク先として見出しやアンカーの候補を表示します。",
+    "scroll_rail_highlights_enabled": "スクロールバーにハイライト箇所を表示",
+    "scroll_rail_highlights_description": "ノート内のどこがハイライトされているかを確認できるよう、スクロールバーに色付きのマークを表示します。"
   },
   "table_context_menu": {
     "delete_row": "行を削除...",
@@ -2471,7 +2478,8 @@
     "find_placeholder": "テキスト内を検索...",
     "replace_placeholder": "置換対象...",
     "replace": "置換",
-    "replace_all": "すべて置換"
+    "replace_all": "すべて置換",
+    "nothing_replaced": "検索が完了しなかったため、何も置換されませんでした。"
   },
   "title_bar_buttons": {
     "window-on-top": "常に手前に表示"
@@ -2921,7 +2929,8 @@
   },
   "popup-editor": {
     "maximize": "フルエディターに切り替え",
-    "attachment_title": "添付ファイル: {{title}}"
+    "attachment_title": "添付ファイル: {{title}}",
+    "back": "前のノートに戻る"
   },
   "server": {
     "unknown_http_error_title": "サーバーとの通信エラー",
@@ -3054,7 +3063,11 @@
     "annotation_text_box": "{{pageNumber}} のテキストボックス",
     "copy_reference": "リンクをコピー",
     "page_reference": "{{pageNumber}} ページ",
-    "annotation_reference": "{{pageNumber}} ページの注釈"
+    "annotation_reference": "{{pageNumber}} ページの注釈",
+    "pages_title": "ページ",
+    "annotations_title": "注釈",
+    "attachments_title": "添付ファイル",
+    "layers_title": "レイヤー"
   },
   "platform_indicator": {
     "available_on": "{{platform}} で利用可能"
@@ -5414,5 +5427,8 @@
     "draft_discarded_after_conversion": "編集中にノートが変換されました。このノートは変更履歴を保持しない設定のため、未保存の変更は破棄されました。",
     "draft_kept_blocks_gone": "編集していたブロックが別の場所で変更されたため、ここでは編集できなくなりました。未保存の変更は変更履歴として保持されました。",
     "draft_discarded_blocks_gone": "編集していたブロックが別の場所で変更されたため、ここでは編集できなくなりました。このノートは変更履歴を保持しない設定のため、未保存の変更は破棄されました。"
+  },
+  "scroll_rail": {
+    "show_highlights": "ハイライト"
   }
 }

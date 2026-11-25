@@ -3,27 +3,45 @@ inputs:
     description: "Whether to upload the APK as a workflow artifact"
     required: false
     default: "true"
-  nightly:
+  variant:
     description: >-
-      Build the signed nightly variant: .nightly application ID suffix, release build
-      type, date-based versionCode, signed with the keystore inputs below. When false
-      (default), an unsigned debug APK (.debug application ID suffix) is built.
+      Which Android build to make. `debug` (default): an unsigned debug APK under the .debug
+      application ID suffix. `nightly`: a release APK under the .nightly suffix with a date-based
+      versionCode, signed with the keystore inputs. `stable`: a release APK and an Android App
+      Bundle under the bare application ID with the package.json version; the APK is signed with
+      the keystore inputs (the app signing key) and the bundle with the upload-keystore inputs.
     required: false
-    default: "false"
+    default: "debug"
   keystore-base64:
-    description: "Base64-encoded Android keystore used to sign the nightly APK"
+    description: "Base64-encoded Android keystore that signs the nightly or stable APK"
     required: false
     default: ""
   keystore-password:
-    description: "Password of the nightly keystore"
+    description: "Password of that keystore"
     required: false
     default: ""
   key-alias:
-    description: "Alias of the signing key inside the nightly keystore"
+    description: "Alias of the signing key inside that keystore"
     required: false
     default: ""
   key-password:
     description: "Password of the signing key"
+    required: false
+    default: ""
+  upload-keystore-base64:
+    description: "Base64-encoded keystore of the Google Play upload key, which signs the stable bundle"
+    required: false
+    default: ""
+  upload-keystore-password:
+    description: "Password of the upload keystore"
+    required: false
+    default: ""
+  upload-key-alias:
+    description: "Alias of the upload key inside the upload keystore"
+    required: false
+    default: ""
+  upload-key-password:
+    description: "Password of the upload key"
     required: false
     default: ""
 runs:
@@ -61,28 +79,49 @@ runs:
       shell: bash
       run: pnpm --filter @triliumnext/mobile exec cap sync android
 
-    - name: Prepare nightly signing
-      if: ${{ inputs.nightly == 'true' }}
+    - name: Prepare signing
+      if: ${{ inputs.variant != 'debug' }}
       shell: bash
       env:
+        VARIANT: ${{ inputs.variant }}
         KEYSTORE_BASE64: ${{ inputs.keystore-base64 }}
         KEYSTORE_PASSWORD: ${{ inputs.keystore-password }}
         KEY_ALIAS: ${{ inputs.key-alias }}
         KEY_PASSWORD: ${{ inputs.key-password }}
+        UPLOAD_KEYSTORE_BASE64: ${{ inputs.upload-keystore-base64 }}
+        UPLOAD_KEYSTORE_PASSWORD: ${{ inputs.upload-keystore-password }}
+        UPLOAD_KEY_ALIAS: ${{ inputs.upload-key-alias }}
+        UPLOAD_KEY_PASSWORD: ${{ inputs.upload-key-password }}
       run: |
-        if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
-          echo "::error::Nightly build requested but the signing inputs (keystore-base64, keystore-password, key-alias, key-password) are not all set."
+        if [ "$VARIANT" != "nightly" ] && [ "$VARIANT" != "stable" ]; then
+          echo "::error::Unknown variant '$VARIANT'; expected debug, nightly or stable."
           exit 1
         fi
-        printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/nightly.keystore"
+        if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+          echo "::error::A $VARIANT build needs the signing inputs (keystore-base64, keystore-password, key-alias, key-password)."
+          exit 1
+        fi
+        printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/app.keystore"
+
+        if [ "$VARIANT" = "nightly" ]; then
+          {
+            echo "TRILIUM_NIGHTLY_BUILD=true"
+            echo "TRILIUM_ANDROID_VERSION_CODE=$(date -u +%Y%m%d)"
+            echo "TRILIUM_ANDROID_VERSION_NAME=nightly-$(date -u +%Y%m%d)"
+          } >> "$GITHUB_ENV"
+          exit 0
+        fi
+
+        if [ -z "$UPLOAD_KEYSTORE_BASE64" ] || [ -z "$UPLOAD_KEYSTORE_PASSWORD" ] || [ -z "$UPLOAD_KEY_ALIAS" ] || [ -z "$UPLOAD_KEY_PASSWORD" ]; then
+          echo "::error::A stable build needs the upload-key inputs (upload-keystore-base64, upload-keystore-password, upload-key-alias, upload-key-password)."
+          exit 1
+        fi
+        printf '%s' "$UPLOAD_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.keystore"
+        version_code=$(node --experimental-strip-types scripts/android-version-code.mts)
+        version_name=$(node -p 'require("./package.json").version')
         {
-          echo "TRILIUM_NIGHTLY_BUILD=true"
-          echo "TRILIUM_ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/nightly.keystore"
-          echo "TRILIUM_ANDROID_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD"
-          echo "TRILIUM_ANDROID_KEY_ALIAS=$KEY_ALIAS"
-          echo "TRILIUM_ANDROID_KEY_PASSWORD=$KEY_PASSWORD"
-          echo "TRILIUM_ANDROID_VERSION_CODE=$(date -u +%Y%m%d)"
-          echo "TRILIUM_ANDROID_VERSION_NAME=nightly-$(date -u +%Y%m%d)"
+          echo "TRILIUM_ANDROID_VERSION_CODE=$version_code"
+          echo "TRILIUM_ANDROID_VERSION_NAME=$version_name"
         } >> "$GITHUB_ENV"
 
     - name: Run Android unit tests
@@ -93,7 +132,23 @@ runs:
     - name: Assemble APK
       shell: bash
       working-directory: apps/mobile/android
-      run: ./gradlew ${{ inputs.nightly == 'true' && 'assembleRelease' || 'assembleDebug' }} --no-daemon
+      env:
+        TRILIUM_ANDROID_KEYSTORE_PATH: ${{ inputs.variant != 'debug' && format('{0}/app.keystore', runner.temp) || '' }}
+        TRILIUM_ANDROID_KEYSTORE_PASSWORD: ${{ inputs.keystore-password }}
+        TRILIUM_ANDROID_KEY_ALIAS: ${{ inputs.key-alias }}
+        TRILIUM_ANDROID_KEY_PASSWORD: ${{ inputs.key-password }}
+      run: ./gradlew ${{ inputs.variant == 'debug' && 'assembleDebug' || 'assembleRelease' }} --no-daemon
+
+    - name: Bundle for Google Play
+      if: ${{ inputs.variant == 'stable' }}
+      shell: bash
+      working-directory: apps/mobile/android
+      env:
+        TRILIUM_ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/upload.keystore
+        TRILIUM_ANDROID_KEYSTORE_PASSWORD: ${{ inputs.upload-keystore-password }}
+        TRILIUM_ANDROID_KEY_ALIAS: ${{ inputs.upload-key-alias }}
+        TRILIUM_ANDROID_KEY_PASSWORD: ${{ inputs.upload-key-password }}
+      run: ./gradlew bundleRelease --no-daemon
 
     - name: Upload APK
       if: ${{ inputs.upload-artifact == 'true' }}

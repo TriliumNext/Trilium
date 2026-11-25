@@ -136,7 +136,7 @@ jobs:
           # A zero-width space after `@` stops GitHub from notifying the upstream authors,
           # and `redirect.github.com` stops it from adding a cross-reference to each
           # upstream pull request.
-          zwsp=$'​'
+          zwsp=$'\xe2\x80\x8b'
           notes=$(printf '%s' "$notes" | sed -E \
             -e "s/(^|[^[:alnum:]_.\`/-])@([[:alnum:]])/\1@${zwsp}\2/g" \
             -e 's#https://github\.com/#https://redirect.github.com/#g')

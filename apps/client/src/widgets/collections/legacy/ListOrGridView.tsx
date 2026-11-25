@@ -2,14 +2,17 @@ import "./ListOrGridView.css";
 import { Card, CardFrame, CardSection } from "../../react/Card";
 
 import type { HighlightedTokenInfo } from "@triliumnext/commons";
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
-import attribute_renderer from "../../../services/attribute_renderer";
+import { getNormalAttributes } from "../../../services/attribute_renderer";
+import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import link from "../../../services/link";
 import { isShare } from "../../../services/utils";
+import { attributeKindIcon } from "../../attribute_widgets/attribute_types";
 import CollectionProperties from "../../note_bars/CollectionProperties";
+import { AttributeBadge } from "../../react/Badge";
 import { useNoteLabel, useNoteLabelBoolean, useNoteProperty } from "../../react/hooks/note";
 import Icon from "../../react/Icon";
 import NoteLink from "../../react/NoteLink";
@@ -278,14 +281,47 @@ function GridNoteCard(props: GridNoteCardProps) {
 }
 
 export function NoteAttributes({ note }: { note: FNote }) {
-    const ref = useRef<HTMLSpanElement>(null);
+    const [ badges, setBadges ] = useState<AttributeBadgeData[]>([]);
     useEffect(() => {
-        attribute_renderer.renderNormalAttributes(note).then(({$renderedAttributes}) => {
-            ref.current?.replaceChildren(...$renderedAttributes);
+        let cancelled = false;
+        getAttributeBadges(note).then((result) => {
+            if (!cancelled) setBadges(result);
         });
+        return () => {
+            cancelled = true;
+        };
     }, [ note ]);
 
-    return <span className="note-list-attributes" ref={ref} />;
+    return (
+        <span className="note-list-attributes">
+            {badges.map(({ attributeId, icon, name, value }) => (
+                <AttributeBadge key={attributeId} icon={icon} name={name} value={value} />
+            ))}
+        </span>
+    );
+}
+
+interface AttributeBadgeData {
+    attributeId: string;
+    icon: string;
+    name: string;
+    value: string | undefined;
+}
+
+/** The note's {@link getNormalAttributes}, a relation's value being the title of its target. */
+async function getAttributeBadges(note: FNote): Promise<AttributeBadgeData[]> {
+    const attributes = getNormalAttributes(note);
+    const targetIds = attributes.filter((attr) => attr.type === "relation").map((attr) => attr.value);
+    const targets = targetIds.length ? await froca.getNotes(targetIds, true) : [];
+
+    return attributes.map((attr) => ({
+        attributeId: attr.attributeId,
+        icon: attributeKindIcon(attr.type, attr.name, attr.value),
+        name: attr.name,
+        value: attr.type === "relation"
+            ? targets.find((target) => target.noteId === attr.value)?.title
+            : attr.value || undefined
+    }));
 }
 
 function NoteChildren({ note, parentNote, highlightedTokens, currentLevel, expandDepth, includeArchived, searchResultsLayout, resolveChildren, showPreview, showNotePath, renderItemActions, renderItemMenu }: {

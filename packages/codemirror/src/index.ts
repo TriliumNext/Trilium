@@ -1,4 +1,4 @@
-import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { defaultKeymap, history, historyKeymap, isolateHistory } from "@codemirror/commands";
 import { EditorView, highlightActiveLine, highlightActiveLineGutter, keymap, lineNumbers, placeholder, tooltips, ViewPlugin, ViewUpdate, type EditorViewConfig, KeyBinding } from "@codemirror/view";
 import { defaultHighlightStyle, StreamLanguage, syntaxHighlighting, indentUnit, bracketMatching, foldGutter, codeFolding } from "@codemirror/language";
 import {
@@ -131,6 +131,8 @@ export default class CodeMirror extends EditorView {
     private vimCompartment: Compartment;
     private hasVimKeybindings: boolean;
     private searchPlugin?: SearchHighlighter | null;
+    /** The highlighter that the latest search installed. */
+    private latestSearchHighlighter: ReturnType<typeof createSearchHighlighter> | null = null;
     private sharedHistory: SharedHistory | null = null;
     private namedCompartments = new Map<string, Compartment>();
     /** Named completion sources aggregated into the editor's single autocompletion. */
@@ -516,14 +518,11 @@ export default class CodeMirror extends EditorView {
      * while the completion list is open.
      */
     getEdgeLeftBy(event: KeyboardEvent): DocumentEdge | null {
-        const { ranges, main } = this.state.selection;
-        const hasModifier = event.shiftKey || event.ctrlKey || event.altKey || event.metaKey;
-        if (event.target !== this.contentDOM || hasModifier || event.isComposing
-            || ranges.length > 1 || !main.empty || completionStatus(this.state) === "active"
-            || isHostedCompletionShown(this)) {
+        if (!this.isPlainKeyAtCursor(event)) {
             return null;
         }
 
+        const { main } = this.state.selection;
         const length = this.state.doc.length;
         switch (event.key) {
             case "ArrowLeft":
@@ -538,6 +537,89 @@ export default class CodeMirror extends EditorView {
             default:
                 return null;
         }
+    }
+
+    /**
+     * The edge of the document that Enter, pressed without modifiers, leaves past, as it leaves a
+     * code block of CKEditor: the end, while the cursor ends a document whose last two lines are
+     * blank, and the start, while the cursor starts a document whose first line is empty and
+     * followed by another. `null` for any other key, in a Vim mode other than Insert, and while
+     * the completion list is open.
+     */
+    getEdgeLeftByEnter(event: KeyboardEvent): DocumentEdge | null {
+        if (event.key !== "Enter" || !this.isPlainKeyAtCursor(event) || this.isInVimCommandMode()) {
+            return null;
+        }
+
+        const { head } = this.state.selection.main;
+        if (head === this.state.doc.length && this.getBlankLinesAt("end")) {
+            return "end";
+        }
+        return head === 0 && this.getBlankLinesAt("start") ? "start" : null;
+    }
+
+    /**
+     * Whether `event` is Backspace, pressed without modifiers in an empty document, which turns a
+     * code block of CKEditor into a paragraph. `false` in a Vim mode other than Insert.
+     */
+    isBackspaceOnEmpty(event: KeyboardEvent) {
+        return event.key === "Backspace" && this.state.doc.length === 0
+            && this.isPlainKeyAtCursor(event) && !this.isInVimCommandMode();
+    }
+
+    /**
+     * Removes the blank lines that Enter leaves past at `edge`, as `getEdgeLeftByEnter()` reports
+     * it, in an undo step of its own. Does nothing while those lines are not blank.
+     */
+    removeBlankLinesAt(edge: DocumentEdge) {
+        const changes = this.getBlankLinesAt(edge);
+        if (!changes) return;
+
+        this.dispatch({
+            changes,
+            userEvent: "delete",
+            annotations: isolateHistory.of("full")
+        });
+    }
+
+    /**
+     * The range of the blank lines that Enter leaves past at `edge`, with the line break before
+     * or after them, or `null` while they are not blank: the last two lines, whitespace allowed,
+     * at the end, and an empty first line followed by another at the start.
+     */
+    private getBlankLinesAt(edge: DocumentEdge) {
+        const { doc } = this.state;
+        if (edge === "start") {
+            return doc.lines >= 2 && doc.line(1).length === 0 ? { from: 0, to: 1 } : null;
+        }
+
+        const isBlank = (line: number) => !/\S/.test(doc.line(line).text);
+        return doc.lines >= 3 && isBlank(doc.lines) && isBlank(doc.lines - 1)
+            ? { from: doc.line(doc.lines - 2).to, to: doc.length }
+            : null;
+    }
+
+    /** Whether the editor records its changes into a history shared with its host. */
+    get hasSharedHistory() {
+        return !!this.sharedHistory;
+    }
+
+    /**
+     * Whether `event` is a key pressed in the editor without modifiers, outside a composition,
+     * with a single cursor and no completion list open.
+     */
+    private isPlainKeyAtCursor(event: KeyboardEvent) {
+        const { ranges, main } = this.state.selection;
+        const hasModifier = event.shiftKey || event.ctrlKey || event.altKey || event.metaKey;
+        return event.target === this.contentDOM && !hasModifier && !event.isComposing
+            && ranges.length === 1 && main.empty && completionStatus(this.state) !== "active"
+            && !isHostedCompletionShown(this);
+    }
+
+    /** Whether Vim keybindings are on and Vim is in a mode other than Insert. */
+    private isInVimCommandMode() {
+        const vim = this.hasVimKeybindings ? getVimEditor?.(this)?.state.vim : null;
+        return !!vim && !vim.insertMode;
     }
 
     /**
@@ -575,18 +657,30 @@ export default class CodeMirror extends EditorView {
 
     /**
      * Highlights the matches of `searchTerm`. While `isActivating`, the match nearest the cursor
-     * becomes the active one and scrolls into view.
+     * becomes the active one and scrolls into view. Once `check` fails after the frame that this
+     * waits for, the search paints nothing and removes its highlighter, unless a newer search
+     * replaced it.
      */
     async performFind(
-        searchTerm: string, matchCase: boolean, wholeWord: boolean, isActivating = true
+        searchTerm: string, matchCase: boolean, wholeWord: boolean, isActivating = true,
+        check?: () => boolean
     ) {
         const plugin = createSearchHighlighter();
+        this.latestSearchHighlighter = plugin;
         this.dispatch({
             effects: this.searchHighlightCompartment.reconfigure(plugin)
         });
 
         // Wait for the plugin to activate in the next render cycle
         await new Promise(requestAnimationFrame);
+        if (check && !check()) {
+            if (this.latestSearchHighlighter === plugin) {
+                this.dispatch({ effects: this.searchHighlightCompartment.reconfigure([]) });
+                this.latestSearchHighlighter = null;
+            }
+            this.searchPlugin = null;
+            return { totalFound: 0, currentFound: 0 };
+        }
         const instance = this.plugin(plugin);
         instance?.searchFor(searchTerm, matchCase, wholeWord, isActivating);
         this.searchPlugin = instance;
@@ -758,13 +852,17 @@ export default class CodeMirror extends EditorView {
 }
 
 let vimLoading: Promise<typeof import("@replit/codemirror-vim").vim> | null = null;
+/** `getCM()` of `@replit/codemirror-vim`, once `loadVim()` loaded it. */
+let getVimEditor: typeof import("@replit/codemirror-vim").getCM | null = null;
 
 /**
  * Loads the extension of the Vim keybindings on the first call, and again after a load that
  * failed. Vim's `u` and `Ctrl-R` then run the shared history of an editor first.
  */
 function loadVim() {
-    vimLoading ??= import("@replit/codemirror-vim").then(({ CodeMirror: VimEditor, vim }) => {
+    vimLoading ??= import("@replit/codemirror-vim").then((module) => {
+        const { CodeMirror: VimEditor, vim } = module;
+        getVimEditor = module.getCM;
         for (const name of [ "undo", "redo" ] as const) {
             const run = VimEditor.commands[name];
             VimEditor.commands[name] = (cm) => {

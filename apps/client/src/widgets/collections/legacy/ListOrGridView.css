@@ -71,6 +71,10 @@
         align-items: flex-start;
     }
 
+    .note-list-attributes {
+        flex-wrap: wrap;
+    }
+
     small {
         line-height: .85em;
     }
@@ -155,11 +159,38 @@
     }
 
     .note-list-attributes {
-        flex-grow: 1;
+        --color: var(--muted-text-color);
+        --attribute-badge-line-color: color-mix(in srgb, var(--main-text-color) 25%, transparent);
+        display: flex;
+        flex: 1 1 0;
+        justify-content: flex-end;
+        gap: 4px;
+        min-width: 0;
+        overflow: hidden;
         margin-inline-start: 1em;
-        text-align: right;
-        font-size: .75em;
-        opacity: .75;
+
+        .attribute-badge:not(.has-value) {
+            flex-shrink: 0;
+        }
+
+        .tn-icon {
+            margin-inline-end: 4px;
+        }
+    }
+
+    @media (max-width: 991px) {
+        h5:has(> .note-list-attributes) {
+            display: grid;
+            grid-template-columns: auto auto minmax(0, 1fr) auto;
+        }
+
+        .note-list-attributes {
+            grid-row: 2;
+            grid-column: 3;
+            justify-content: flex-start;
+            margin-inline-start: 0;
+            margin-block-start: 4px;
+        }
     }
 
     /* Stands in for .note-list-attributes when the caller supplies its own controls, so the item
@@ -184,8 +215,7 @@
 .nested-note-list:not(.search-results) h5,
 .note-book-card:not(.search-results) h5,
 .dashboard-widget-header {
-    span.tn-icon + span,
-    .note-list-attributes {
+    span.tn-icon + span {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -261,8 +291,10 @@
         height: 300px;
     }
 
-    body.mobile & {
-        flex-basis: 150px;
+    @media (max-width: 991px) {
+        body.mobile #root-widget:not(.tablet) & {
+            flex-basis: 150px;
+        }
     }
 
     &:hover {

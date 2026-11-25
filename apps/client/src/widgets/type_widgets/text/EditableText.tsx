@@ -43,6 +43,7 @@ import { useEditorSpacedUpdate } from "../../react/hooks/editor";
 import { useLegacyImperativeHandlers } from "../../react/hooks/legacy";
 import { useLinkTargetLanding, useSearchTermsConsumer } from "../../react/hooks/note_context";
 import { setEditorNoteId } from "../../react/NoteStore";
+import { useScrollRailHighlights } from "../../scroll_rail_markers";
 import { TypeWidgetProps } from "../type_widget";
 import AttachmentSaves, { InlineSourceSaves, useNoteEditor } from "./attachment_saves";
 import CKEditor, { CKEditorApi, NotificationEventData, NotificationEventInfo } from "./CKEditor";
@@ -185,6 +186,8 @@ export default function EditableText({
     }
 
     useSearchTermsConsumer(note, noteContext, ntxId);
+    useScrollRailHighlights(noteContext, note.noteId, !!isVisible,
+        () => editorRef.current?.editing.view.getDomRoot());
     useLinkTargetLanding({ note, ntxId, isVisible }, () => {
         if (contentNoteIdRef.current === note?.noteId) revealLinkTarget();
     });

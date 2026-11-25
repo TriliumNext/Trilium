@@ -84,7 +84,16 @@
     "invalid_url": "Esta no es una URL válida.",
     "script_link_not_allowed": "Los enlaces que empiezan por {{scheme}} pueden ejecutar código, así que no están permitidos.",
     "retrieving_from_page": "Obteniendo datos de la página web...",
-    "title_from_attachment": "Si no se indica, reflejará siempre el título del archivo adjunto"
+    "title_from_attachment": "Si no se indica, reflejará siempre el título del archivo adjunto",
+    "top_of_note": "Enlace a la nota (predeterminado)",
+    "select_note_for_targets": "Seleccione una nota para ver los encabezados y las anclas a los que puede enlazar.",
+    "inspecting_note": "Inspeccionando la estructura de la nota",
+    "heading_reference_failed": "No se puede crear una referencia al encabezado indicado",
+    "link_to_heading": "Enlace a un encabezado",
+    "link_to_anchor": "Enlace a un ancla",
+    "no_link_targets": "No hay encabezados ni anclas a los que pueda enlazar.",
+    "open_file_for_targets": "Abra el archivo para ver la lista de sus encabezados.",
+    "listing_changed": "La nota ha cambiado mientras se listaban sus encabezados. Vuelva a seleccionar el encabezado."
   },
   "branch_prefix": {
     "edit_branch_prefix": "Editar prefijo de rama",
@@ -130,7 +139,7 @@
     "search_for_note_by_its_name": "buscar nota por su nombre",
     "cloned_note_prefix_title": "La nota clonada se mostrará en el árbol de notas con el prefijo dado",
     "prefix_optional": "Prefijo (opcional)",
-    "clone_to_selected_note": "Clonar a nota seleccionada",
+    "clone_to_selected_note": "Clonar a la nota seleccionada",
     "no_path_to_clone_to": "No hay ruta para clonar.",
     "note_cloned": "La nota \"{{clonedTitle}}\" ha sido clonada en \"{{targetTitle}}\""
   },
@@ -254,7 +263,7 @@
     "openAiAssistant": "abre el asistente de IA sobre la selección"
   },
   "import": {
-    "importIntoNote": "Importar a nota",
+    "importIntoNote": "Importar a la nota",
     "chooseImportFile": "Elija el archivo de importación",
     "options": "Opciones",
     "safeImportTooltip": "Las exportaciones de Trilium en <code>.zip</code> pueden contener scripts ejecutables. La importación segura los desactiva; desmarque esta opción solo si el archivo está destinado a ejecutar scripts y confía en su contenido.",
@@ -369,7 +378,7 @@
     "deleted_notes_title": "Notas eliminadas",
     "title_with_ancestor": "{{- title}} - {{- ancestorTitle}}",
     "more_actions": "Más acciones",
-    "deleted_notes_settings": "Ajustes de notas eliminadas",
+    "deleted_notes_settings": "Configuración de las notas eliminadas",
     "no_deleted_notes_message": "No hay notas eliminadas que mostrar.",
     "no_deleted_notes_erasure_hint": "Las notas eliminadas se conservan durante {{- duration}} antes de borrarse de forma permanente.",
     "confirm_undelete_to_default_location": "El padre de esta nota ya no existe, por lo que no se puede restaurar en su ubicación original. ¿Restaurarla en la ubicación predeterminada de las notas nuevas?",
@@ -400,7 +409,7 @@
     "folders_follow_first_level": "Al final cuando el primer nivel es descendente."
   },
   "upload_attachments": {
-    "upload_attachments_to_note": "Cargar archivos adjuntos a nota",
+    "upload_attachments_to_note": "Cargar archivos adjuntos a la nota",
     "choose_files": "Elija los archivos",
     "files_will_be_uploaded": "Los archivos se cargarán como archivos adjuntos en {{noteTitle}}",
     "options": "Opciones",
@@ -730,11 +739,11 @@
     "description": "Quita la etiqueta de cada nota que la tiene de forma directa."
   },
   "rename_label": {
-    "rename_label": "Renombrar etiqueta",
+    "rename_label": "Cambiar nombre de la etiqueta",
     "old_name_placeholder": "antiguo nombre",
     "new_name_placeholder": "nuevo nombre",
     "name_title": "Se permiten caracteres alfanuméricos, guiones bajos y dos puntos.",
-    "description": "Renombra la etiqueta en cada nota que la tiene de forma directa y conserva su valor."
+    "description": "Cambia el nombre de la etiqueta en cada nota que la tiene de forma directa y conserva su valor."
   },
   "update_label_value": {
     "update_label_value": "Actualizar valor de etiqueta",
@@ -757,7 +766,7 @@
     "description": "Mueve cada nota bajo la nota de destino. Una nota con varios padres se clona allí en su lugar, y la que no pueda ir allí, como un padre del destino, permanece donde está."
   },
   "rename_note": {
-    "rename_note": "Renombrar nota",
+    "rename_note": "Cambiar nombre de la nota",
     "description": "Establece el título de cada nota. Las expresiones entre ${ y } se rellenan para cada nota, como ${note.title} para su título actual.",
     "placeholder": "p. ej. NUEVA: ${note.title}"
   },
@@ -775,11 +784,11 @@
     "description": "Quita la relación de cada nota que la tiene de forma directa."
   },
   "rename_relation": {
-    "rename_relation": "Renombrar relación",
+    "rename_relation": "Cambiar nombre de la relación",
     "old_name": "antiguo nombre",
     "new_name": "nuevo nombre",
     "allowed_characters": "Se permiten caracteres alfanuméricos, guiones bajos y dos puntos.",
-    "description": "Renombra la relación en cada nota que la tiene de forma directa y conserva su destino."
+    "description": "Cambia el nombre de la relación en cada nota que la tiene de forma directa y conserva su destino."
   },
   "update_relation_target": {
     "relation_name": "nombre de la relación",
@@ -794,7 +803,7 @@
     "open_custom": "Abrir con...",
     "open_custom_title": "El archivo se abrirá en una aplicación externa y se observará en busca de cambios. Luego podrá volver a cargar la versión modificada en Trilium.",
     "download": "Descargar",
-    "rename_attachment": "Renombrar archivo adjunto...",
+    "rename_attachment": "Cambiar nombre del archivo adjunto...",
     "upload_new_revision": "Subir nueva revisión...",
     "copy_link_to_clipboard": "Copiar referencia al portapapeles",
     "convert_attachment_into_note": "Convertir archivo adjunto en nota...",
@@ -808,7 +817,7 @@
     "convert_confirm": "¿Está seguro de que desea convertir el archivo adjunto '{{title}}' en una nota separada?",
     "convert_success": "El archivo adjunto '{{title}}' se ha convertido en una nota.",
     "enter_new_name": "Introduzca el nombre del nuevo archivo adjunto",
-    "rename_attachment_title": "Renombrar archivo adjunto"
+    "rename_attachment_title": "Cambiar nombre del archivo adjunto"
   },
   "calendar": {
     "mon": "Lun",
@@ -953,7 +962,7 @@
   "note_actions": {
     "convert_into_attachment": "Convertir en archivo adjunto...",
     "re_render_note": "Volver a renderizar nota",
-    "search_in_note": "Buscar en nota",
+    "search_in_note": "Buscar en la nota",
     "note_source": "Fuente de la nota",
     "note_attachments": "Notas adjuntas",
     "open_note_externally": "Abrir externamente",
@@ -976,7 +985,7 @@
     "note_map": "Mapa de la nota",
     "view_ocr_text": "Ver texto OCR",
     "word_wrap_auto": "Automático",
-    "word_wrap_auto_description": "Seguir el ajuste global",
+    "word_wrap_auto_description": "Seguir la configuración global",
     "word_wrap_on": "Encendido",
     "word_wrap_off": "Apagado",
     "save_named_revision": "Guardar revisión nombrada...",
@@ -992,7 +1001,8 @@
     "note_attributes_title": "Atributos de la nota",
     "search_in_note_short": "Buscar",
     "note_attachments_short": "Adjuntos",
-    "note_settings": "Configuración de la nota"
+    "note_settings": "Configuración de la nota",
+    "convert_block_references_changed": "Referencias a bloques de esta nota que ya no funcionan: {{lost}} perdidas y {{moved}} que apuntan a otro bloque. La revisión guardada antes de la conversión conserva la nota tal como estaba."
   },
   "onclick_button": {
     "no_click_handler": "El widget de botón '{{componentId}}' no tiene un controlador de clics definido"
@@ -1010,7 +1020,7 @@
   "code_buttons": {
     "execute_button_title": "Ejecutar script",
     "trilium_api_docs_button_title": "Abrir documentación de la API de Trilium",
-    "save_to_note_button_title": "Guardar en nota",
+    "save_to_note_button_title": "Guardar en la nota",
     "opening_api_docs_message": "Abriendo documentación API...",
     "sql_console_saved_message": "La nota de la consola SQL se ha guardado en {{note_path}}",
     "electron_api_docs_button_title": "Abrir la documentación de la API de Electron"
@@ -1036,7 +1046,7 @@
     "note_panel": "Panel de la nota"
   },
   "note_icon": {
-    "change_note_icon": "Cambiar icono de nota",
+    "change_note_icon": "Cambiar el icono de la nota",
     "search": "Buscar:",
     "reset-default": "Restablecer a icono por defecto",
     "search_placeholder_one": "Buscar {{number}} iconos en {{count}} paquete",
@@ -1174,7 +1184,7 @@
     "action": "acción",
     "search_button": "Buscar",
     "search_execute": "Buscar y ejecutar acciones",
-    "save_to_note": "Guardar en nota",
+    "save_to_note": "Guardar en la nota",
     "search_parameters": "Parámetros de búsqueda",
     "unknown_search_option": "Opción de búsqueda desconocida {{searchOptionName}}",
     "search_note_saved": "La nota de búsqueda se ha guardado en {{- notePathTitle}}",
@@ -1328,7 +1338,7 @@
   "relation_map": {
     "remove_note": "Quitar nota...",
     "edit_title": "Editar título...",
-    "rename_note": "Cambiar nombre de nota",
+    "rename_note": "Cambiar nombre de la nota",
     "enter_new_title": "Introduzca el nuevo título de la nota:",
     "remove_relation": "Eliminar relación...",
     "confirm_remove_relation": "¿Está seguro de que desea eliminar la relación?",
@@ -1338,7 +1348,7 @@
     "note_not_found": "¡Nota {{noteId}} no encontrada!",
     "note_already_in_diagram": "La nota \"{{title}}\" ya está en el diagrama.",
     "default_new_note_title": "nueva nota",
-    "rename_relation": "Renombrar relación...",
+    "rename_relation": "Cambiar nombre de la relación...",
     "new_relation": "Nueva relación",
     "create_relation": "Crear relación",
     "relation_name_placeholder": "Nombre de la relación",
@@ -1357,14 +1367,14 @@
     "expand_note_pane": "Expandir la nota para que ocupe el mapa",
     "restore_note_pane": "Volver a colocar la nota junto al mapa",
     "remove_from_map": "Quitar del mapa",
-    "rename_relation_heading": "Renombrar relación"
+    "rename_relation_heading": "Cambiar nombre de la relación"
   },
   "backend_log": {
     "refresh": "Refrescar"
   },
   "consistency_checks": {
     "title": "Comprobación de coherencia",
-    "find_and_fix_button": "Buscar y solucionar problemas de coherencia",
+    "find_and_fix_button": "Solucionar problemas",
     "finding_and_fixing_message": "Buscando y solucionando problemas de coherencia...",
     "issues_fixed_message": "Los problemas de coherencia han sido solucionados.",
     "find_and_fix_label": "Buscar y solucionar problemas de coherencia",
@@ -1374,11 +1384,11 @@
     "title": "Anonimización de bases de datos",
     "full_anonymization": "Anonimización total",
     "full_anonymization_description": "Crea una copia de la base de datos con todo el contenido eliminado, dejando solo la estructura y algunos metadatos no confidenciales. Seguro para compartirla en línea con fines de depuración de problemas.",
-    "save_fully_anonymized_database": "Guarde una base de datos ligeramente anónima",
+    "save_fully_anonymized_database": "Crear copia",
     "light_anonymization": "Anonimización ligera",
     "light_anonymization_description": "Crea una copia con el contenido de las notas eliminado, excepto los títulos, atributos y scripts/widgets personalizados que permanecerán. Esto proporciona más contexto para el depurado.",
     "choose_anonymization": "Puede decidir usted mismo si desea proporcionar una base de datos total o ligeramente anónima. Incluso una base de datos totalmente anónima es muy útil; sin embargo, en algunos casos, una base de datos ligeramente anónima puede acelerar el proceso de identificación y corrección de errores.",
-    "save_lightly_anonymized_database": "Guarde una base de datos ligeramente anónima",
+    "save_lightly_anonymized_database": "Crear copia",
     "existing_anonymized_databases": "Bases de datos anónimas existentes",
     "creating_fully_anonymized_database": "Creando una base de datos totalmente anónima...",
     "creating_lightly_anonymized_database": "Creando una base de datos ligeramente anónima...",
@@ -1403,7 +1413,7 @@
   "sync": {
     "title": "Sincronizar",
     "force_full_sync_button": "Forzar sincronización completa",
-    "fill_entity_changes_button": "Llenar registros de cambios de entidad",
+    "fill_entity_changes_button": "Rellenar cambios",
     "full_sync_triggered": "Sincronización completa activada",
     "filling_entity_changes": "Rellenar filas de cambios de entidad...",
     "sync_rows_filled_successfully": "Sincronizar filas completadas correctamente",
@@ -1417,7 +1427,7 @@
   "vacuum_database": {
     "title": "Limpiar base de datos",
     "description": "Esto reconstruirá la base de datos, lo que normalmente dará como resultado un archivo de base de datos más pequeño. En realidad, no se cambiará ningún dato.",
-    "button_text": "Limpiar base de datos",
+    "button_text": "Compactar ahora",
     "vacuuming_database": "Limpiando base de datos...",
     "database_vacuumed": "La base de datos ha sido limpiada",
     "vacuum_label": "Limpiar base de datos",
@@ -1672,7 +1682,7 @@
   "custom_date_time_format": {
     "title": "Formato de fecha/hora",
     "description": "Personalizar el formato de fecha y la hora insertada vía <shortcut /> o la barra de herramientas. Vea la <doc>documentación de Day.js</doc> para más tokens de formato disponibles.",
-    "format_string": "Dar formato a cadena",
+    "format_string": "Cadena de formato",
     "formatted_time": "Fecha/hora personalizada",
     "description_short": "Personalizar el formato de la fecha y el tiempo insertados a través de la barra de herramientas.",
     "preview": "Vista previa: {{preview}}"
@@ -1767,9 +1777,9 @@
     "error_empty_name": "El nombre del token no puede estar vacío",
     "token_created_title": "Token ETAPI creado",
     "token_created_message": "Copiar el token creado en el portapapeles. Trilium almacena el token con hash y esta es la última vez que lo ve.",
-    "rename_token": "Renombrar este token",
+    "rename_token": "Cambiar nombre de este token",
     "delete_token": "Eliminar/Desactivar este token",
-    "rename_token_title": "Renombrar token",
+    "rename_token_title": "Cambiar nombre del token",
     "rename_token_message": "Introduzca el nombre del nuevo token",
     "delete_token_confirmation": "¿Está seguro de que desea eliminar el token ETAPI \"{{name}}\"?",
     "no_tokens": "Aún no hay tokens."
@@ -1892,8 +1902,8 @@
   "shortcuts": {
     "keyboard_shortcuts": "Atajos de teclado",
     "type_text_to_filter": "Escriba texto para filtrar los accesos directos...",
-    "reload_app": "Vuelva a cargar la aplicación para aplicar los cambios",
-    "set_all_to_default": "Establecer todos los accesos directos al valor predeterminado",
+    "reload_app": "Recargar la aplicación",
+    "set_all_to_default": "Restablecer todo",
     "confirm_reset": "¿Realmente desea restablecer todos los atajos de teclado a sus valores predeterminados?",
     "no_results": "No se encontraron atajos que coincidan con '{{filter}} '",
     "modified_from_default": "Este atajo se ha modificado respecto a su valor predeterminado.",
@@ -1992,7 +2002,7 @@
     "sort-by": "Ordenar por...",
     "recent-changes-in-subtree": "Cambios recientes en subárbol",
     "convert-to-attachment": "Convertir en adjunto...",
-    "copy-note-path-to-clipboard": "Copiar ruta de nota al portapapeles",
+    "copy-note-path-to-clipboard": "Copiar la ruta de la nota al portapapeles",
     "protect-subtree": "Proteger subárbol",
     "unprotect-subtree": "Desproteger subárbol",
     "clone-to": "Clonar en...",
@@ -2002,7 +2012,7 @@
     "paste-after": "Pegar después de",
     "duplicate": "Duplicar",
     "export": "Exportar...",
-    "import-into-note": "Importar a nota...",
+    "import-into-note": "Importar a la nota...",
     "apply-bulk-actions": "Aplicar acciones en lote...",
     "converted-to-attachments_one": "{{count}} nota se ha convertido en archivos adjuntos.",
     "converted-to-attachments_many": "{{count}} notas se han convertido en archivos adjuntos.",
@@ -2076,7 +2086,8 @@
     "find_placeholder": "Encontrar en texto...",
     "replace_placeholder": "Reemplazar con...",
     "replace": "Reemplazar",
-    "replace_all": "Reemplazar todo"
+    "replace_all": "Reemplazar todo",
+    "nothing_replaced": "No se ha reemplazado nada, porque la búsqueda no ha terminado."
   },
   "highlights_list_2": {
     "title_with_count_one": "{{count}} punto destacado",
@@ -2099,18 +2110,17 @@
   },
   "note_tree": {
     "collapse-title": "Contraer el árbol de notas",
-    "scroll-active-title": "Desplazarse a nota activa",
-    "tree-settings-title": "Ajustes de árbol",
+    "scroll-active-title": "Desplazarse a la nota activa",
+    "tree-settings-title": "Configuración del árbol",
     "hide-archived-notes": "Ocultar notas archivadas",
     "automatically-collapse-notes": "Contraer notas automáticamente",
-    "automatically-collapse-notes-title": "Las notas serán colapsadas después de un periodo de inactividad para despejar el árbol.",
-    "auto-collapsing-notes-after-inactivity": "Colapsando notas automáticamente después de inactividad...",
+    "automatically-collapse-notes-title": "Las notas se contraerán tras un periodo de inactividad para despejar el árbol.",
+    "auto-collapsing-notes-after-inactivity": "Contrayendo notas automáticamente tras un periodo de inactividad…",
     "saved-search-note-refreshed": "La nota de búsqueda guardada fue recargada.",
     "hoist-this-note-workspace": "Anclar esta nota (espacio de trabajo)",
     "refresh-saved-search-results": "Refrescar resultados de búsqueda guardados",
     "create-child-note": "Crear subnota",
     "unhoist": "Desanclar",
-    "toggle-sidebar": "Alternar barra lateral",
     "dropping-not-allowed": "No está permitido soltar notas en esta ubicación.",
     "clone-indicator-tooltip": "Esta nota tiene {{- count}} padres: {{- parents}}",
     "clone-indicator-tooltip-single": "Esta nota está clonada (1 padre adicional: {{- parent}})",
@@ -2204,7 +2214,11 @@
   },
   "toc": {
     "table_of_contents": "Tabla de contenido",
-    "no_headings": "Sin encabezados."
+    "no_headings": "Sin encabezados.",
+    "building": "Generando la tabla de contenido…",
+    "build_failed": "No se ha podido leer la tabla de contenido.",
+    "unavailable": "La tabla de contenido no está disponible.",
+    "retry": "Volver a intentar"
   },
   "watched_file_update_status": {
     "upload_modified_file": "Subir",
@@ -2232,7 +2246,9 @@
     "copy_success": "Copiado al portapapeles.",
     "copied_without_links": "La(s) nota(s) se han copiado al portapapeles, pero los enlaces a notas no pudieron colocarse en el portapapeles del sistema.",
     "paste_notes": "Pegar nota(s)",
-    "paste_failed": "No se ha podido leer el portapapeles."
+    "paste_failed": "No se ha podido leer el portapapeles.",
+    "copy_ready": "El enlace está listo para copiar.",
+    "copy_button": "Copiar"
   },
   "entrypoints": {
     "note-revision-created": "Una revisión de nota ha sido creada.",
@@ -2256,7 +2272,7 @@
     "backend_scripting_disabled_title": "Los scripts de backend están deshabilitados",
     "backend_scripting_disabled_message": "Un script intentó ejecutar código en el servidor, pero los scripts de backend están desactivados por motivos de seguridad. Habilítelos en Opciones → Seguridad si confía en este script.",
     "backend_scripting_disabled_notes_heading": "Scripts que intentaron ejecutar código de backend:",
-    "backend_scripting_disabled_open_settings": "Abrir ajustes de seguridad",
+    "backend_scripting_disabled_open_settings": "Abrir configuración de seguridad",
     "backend_scripting_disabled_more_info": "Más información"
   },
   "ws": {
@@ -2271,7 +2287,7 @@
     "confirm_unhoisting": "La nota requerida '{{requestedNote}}' está fuera del subárbol de la nota anclada '{{hoistedNote}}' y debe desanclarla para acceder a la nota. ¿Desea proceder con el desanclaje?"
   },
   "launcher_context_menu": {
-    "reset_launcher_confirm": "¿Realmente desea restaurar \"{{title}}\"? Todos los datos / ajustes en esta nota (y sus subnotas) se van a perder y el lanzador regresará a su ubicación original.",
+    "reset_launcher_confirm": "¿Realmente desea restaurar \"{{title}}\"? Todos los datos y la configuración en esta nota (y sus subnotas) se van a perder y el lanzador regresará a su ubicación original.",
     "add-note-launcher": "Añadir un lanzador de nota",
     "add-script-launcher": "Añadir un lanzador de script",
     "add-custom-widget": "Añadir un widget personalizado",
@@ -2359,7 +2375,8 @@
     "copy_url": "Copiar dirección (URL)",
     "display_as": "Mostrar como",
     "edit": "Editar...",
-    "include_size_default": "Predeterminado"
+    "include_size_default": "Predeterminado",
+    "tab_width": "Ancho de tabulador"
   },
   "electron_integration": {
     "desktop-application": "Aplicación de escritorio",
@@ -2681,7 +2698,7 @@
     "add-column-after": "Después",
     "new-column": "Columna nueva",
     "existing-item-conflict": "Esta nota ya pertenece a otro tablero que agrupa por «{{label}}». Al añadirla aquí, también se moverá a otra columna en el tablero original. ¿Desea añadirla de todos modos?",
-    "rename-column": "Renombrar columna",
+    "rename-column": "Cambiar nombre de la columna",
     "collapse-column": "Contraer columna",
     "keep-column-collapsed": "Mantener la columna contraída",
     "collapse-all-columns": "Contraer todas las columnas",
@@ -2726,7 +2743,7 @@
       "insert_column": "Insertar columna después / antes",
       "open_item": "Abrir tarjeta",
       "toggle_column": "Contraer / expandir la columna (en la cabecera de una columna)",
-      "rename": "Renombrar tarjeta o columna",
+      "rename": "Cambiar nombre de la tarjeta o de la columna",
       "remove_item": "Quitar tarjeta del tablero",
       "delete_item": "Eliminar la nota",
       "remove_column": "Eliminar columna (en la cabecera de una columna seleccionada)",
@@ -2820,7 +2837,7 @@
     "content_hints_enabled": "Sugerencias de contenido",
     "content_hints_description": "Mostrar sugerencias breves en la esquina inferior del editor que explican cómo interactuar con el elemento bajo el cursor o el puntero.",
     "auto_link_previews_enabled": "Generar vistas previas de enlaces automáticamente",
-    "auto_link_previews_description": "Convertir automáticamente un enlace detectado en una vista previa que muestra el título, la descripción y la imagen de la página web, y guardar las pestañas enviadas por el Web Clipper como vistas previas integradas. Insertar una vista previa desde la barra de herramientas siempre funciona, independientemente de este ajuste.",
+    "auto_link_previews_description": "Convertir automáticamente un enlace detectado en una vista previa que muestra el título, la descripción y la imagen de la página web, y guardar las pestañas enviadas por el Web Clipper como vistas previas integradas. Insertar una vista previa desde la barra de herramientas siempre funciona, independientemente de esta opción.",
     "html_support_enabled": "Conservar etiquetas HTML no admitidas",
     "html_support_description": "Conserva las etiquetas HTML para las que el editor no tiene función propia, según la lista de Opciones → Otros → Etiquetas de importación HTML. Aparecen como bloques que no se pueden editar directamente, y una etiqueta no reconocida puede no ser visible al editar. Si está desactivado, esas etiquetas se eliminan de una nota la primera vez que se edita y se guarda; la importación no se ve afectada en ningún caso.",
     "mathlive_enabled": "Editor visual de MathLive",
@@ -2830,7 +2847,11 @@
     "link_title_retrieval_enabled": "Obtener automáticamente los títulos de los enlaces de texto",
     "link_title_retrieval_description": "En el editor de enlaces, el título vacío de un enlace de texto se rellena con el de la página web.",
     "link_details_retrieval_enabled": "Obtener automáticamente el título y la descripción de los enlaces de icono y texto y de las tarjetas",
-    "link_details_retrieval_description": "En el editor de enlaces, el título o la descripción vacíos de un enlace de icono y texto, o de una tarjeta, se rellenan con los de la página web."
+    "link_details_retrieval_description": "En el editor de enlaces, el título o la descripción vacíos de un enlace de icono y texto, o de una tarjeta, se rellenan con los de la página web.",
+    "note_completion_link_targets_enabled": "Sugerir encabezados y anclas a los que enlazar",
+    "note_completion_link_targets_description": "Después de seleccionar una nota, sugerir también un encabezado o un ancla como destino dentro de la nota seleccionada.",
+    "scroll_rail_highlights_enabled": "Mostrar el texto resaltado en la barra de desplazamiento",
+    "scroll_rail_highlights_description": "Muestra marcas de color en la barra de desplazamiento para que vea en qué lugares de la nota hay texto resaltado."
   },
   "command_palette": {
     "tree-action-name": "Árbol:{{name}}",
@@ -2857,16 +2878,16 @@
     "cancel": "Cancelar"
   },
   "call_to_action": {
-    "next_theme_title": "Prueba el nuevo tema de Trilium",
+    "next_theme_title": "Pruebe el nuevo tema de Trilium",
     "next_theme_message": "Está usando actualmente el tema heredado. ¿Desea probar el nuevo tema?",
-    "next_theme_button": "Prueba el nuevo tema",
+    "next_theme_button": "Probar el nuevo tema",
     "background_effects_title": "Los efectos de fondo son ahora estables",
     "background_effects_message": "En los dispositivos Windows y macOS, los efectos de fondo ya son estables. Los efectos de fondo añaden un toque de color a la interfaz de usuario difuminando el fondo que hay detrás.",
     "background_effects_button": "Activar efectos de fondo",
-    "dismiss": "Desestimar",
+    "dismiss": "Descartar",
     "scripting_disabled_title": "Se han deshabilitado los scripts de backend",
-    "scripting_disabled_message": "Los scripts de backend están ahora deshabilitados de forma predeterminada por seguridad. Sus notas contienen scripts de backend (notas con una etiqueta #run) que ya no se ejecutarán automáticamente.\n\nSi depende de estos scripts, puede volver a habilitar los scripts de backend en los ajustes de seguridad.",
-    "scripting_disabled_button": "Abrir ajustes de seguridad"
+    "scripting_disabled_message": "Los scripts de backend están ahora deshabilitados de forma predeterminada por seguridad. Sus notas contienen scripts de backend (notas con una etiqueta #run) que ya no se ejecutarán automáticamente.\n\nSi depende de estos scripts, puede volver a habilitar los scripts de backend en la configuración de seguridad.",
+    "scripting_disabled_button": "Abrir configuración de seguridad"
   },
   "ui-performance": {
     "title": "Rendimiento",
@@ -2960,9 +2981,9 @@
     "properties-title": "Propiedades del calendario"
   },
   "note-color": {
-    "clear-color": "Borrar color de nota",
-    "set-color": "Asignar color de nota",
-    "set-custom-color": "Asignar color de nota personalizado"
+    "clear-color": "Borrar el color de la nota",
+    "set-color": "Asignar el color de la nota",
+    "set-custom-color": "Asignar un color personalizado a la nota"
   },
   "status_bar": {
     "backlinks_one": "{{count}} enlace entrante",
@@ -3030,7 +3051,11 @@
     "annotation_text_box": "Cuadro de texto en la página {{pageNumber}}",
     "page_reference": "Página {{pageNumber}}",
     "annotation_reference": "Anotación en la página {{pageNumber}}",
-    "copy_reference": "Copiar referencia"
+    "copy_reference": "Copiar referencia",
+    "pages_title": "Páginas",
+    "annotations_title": "Anotaciones",
+    "attachments_title": "Adjuntos",
+    "layers_title": "Capas"
   },
   "experimental_features": {
     "title": "Opciones experimentales",
@@ -3038,7 +3063,8 @@
   },
   "popup-editor": {
     "maximize": "Cambiar a editor completo",
-    "attachment_title": "Adjunto: {{title}}"
+    "attachment_title": "Adjunto: {{title}}",
+    "back": "Volver a la nota anterior"
   },
   "server": {
     "unknown_http_error_title": "Error de comunicación con el servidor",
@@ -3060,7 +3086,7 @@
     "read_only_explicit": "Sólo lectura",
     "read_only_explicit_description": "Esta nota se ha fijado manualmente como solo lectura.\nHaga clic para editarla temporalmente.",
     "read_only_auto": "Solo lectura automática",
-    "read_only_auto_description": "Esta nota se fijó automáticamente con el modo de solo lectura por razones de rendimiento. Este límite automático es ajustable desde los ajustes.\n\nHaga clic para editarla temporalmente.",
+    "read_only_auto_description": "Esta nota se fijó automáticamente con el modo de solo lectura por razones de rendimiento. Este límite automático se puede modificar en la configuración.\n\nHaga clic para editarla temporalmente.",
     "read_only_temporarily_disabled": "Temporalmente editable",
     "read_only_temporarily_disabled_description": "Esta nota actualmente es editable, pero normalmente es de solo lectura. La nota volverá a ser de solo lectura tan pronto como navegue a otra nota.\n\nHaga clic para volver a habilitar el modo de solo lectura.",
     "shared_publicly": "Compartida públicamente",
@@ -3196,7 +3222,7 @@
     "picture-in-picture": "Imagen en imagen",
     "exit-picture-in-picture": "Salir del modo imagen en imagen",
     "unsupported-format": "La vista previa del medio no está disponible para este formato de archivo:\n{{mime}}",
-    "zoom-to-fit": "Acercamiento para llenar",
+    "zoom-to-fit": "Ampliar para rellenar",
     "zoom-reset": "Reiniciar acercamiento para llenar",
     "activate": "Reproducir {{- title}}",
     "seek": "Posición de reproducción",
@@ -3308,7 +3334,7 @@
     "save_named_revision": "Guardar revisión nombrada...",
     "snapshot_interval_value": "Intervalo: {{seconds}}s",
     "snapshot_limit_value": "Límite: {{number}}",
-    "settings": "Ajustes para revisiones de nota",
+    "settings": "Configuración de las revisiones de la nota",
     "menu_tooltip": "Opciones de revisión",
     "download_button": "Descargar",
     "mime": "MIME: ",
@@ -3338,7 +3364,11 @@
     "save_revision_tooltip": "Guardar manualmente una instantánea de la nota actual",
     "source_unknown": "Instantánea",
     "back": "Atrás",
-    "diff_identical": "Esta revisión es idéntica al contenido actual de la nota."
+    "diff_identical": "Esta revisión es idéntica al contenido actual de la nota.",
+    "source_description_draft": "Cambios sin guardar, conservados tras modificarse la nota en otro lugar",
+    "source_description_fragment": "Cambios sin guardar en un extracto cuyos bloques ya no existen",
+    "fragment_not_restorable": "Esta revisión solo contiene algunos bloques de la nota, que ya no forman parte de ella. No se puede restaurar, pero sí copiar.",
+    "copy_button": "Copiar"
   },
   "database": {
     "title": "Base de datos",
@@ -3551,7 +3581,7 @@
     "more_actions": "Más acciones",
     "view_all_chats": "Ver todos los chats",
     "rename": "Cambiar nombre...",
-    "rename_title": "Renombrar chat",
+    "rename_title": "Cambiar nombre del chat",
     "rename_message": "Introduzca un nuevo nombre para este chat:",
     "delete": "Eliminar...",
     "delete_chat": "Eliminar chat",
@@ -3578,7 +3608,7 @@
     "processing_complete": "Procesamiento de OCR completo.",
     "processing_failed": "Fallo al iniciar procesamiento de OCR",
     "text_filtered_low_confidence": "Texto OCR detectado con {{confidence}}% de confianza, pero fue descartado porque su umbral mínimo es {{threshold}}%.",
-    "open_media_settings": "Abrir ajustes",
+    "open_media_settings": "Abrir configuración",
     "view_extracted_text": "Ver texto extraído (OCR)",
     "no_text_recognized": "El OCR no ha encontrado texto que reconocer.",
     "pages_failed_one": "El OCR ha fallado en {{count}} página, por lo que falta su texto. El registro indica el motivo.",
@@ -3691,7 +3721,7 @@
     "direction-down": "Ramas hacia abajo"
   },
   "llm": {
-    "feature_not_enabled": "Active la función experimental LLM en Ajustes → Avanzado → Funciones experimentales para usar integraciones de IA.",
+    "feature_not_enabled": "Active la función experimental LLM en Configuración → Avanzado → Funciones experimentales para usar integraciones de IA.",
     "add_provider": "Añadir proveedor",
     "provider_name": "Nombre",
     "actions": "Acciones",
@@ -3708,7 +3738,7 @@
       "search_notes": "Buscar notas",
       "get_note": "Obtener nota",
       "get_note_content": "Obtener contenido de la nota",
-      "update_note_content": "Actualizar contenido de la nota",
+      "update_note_content": "Reescribir nota",
       "append_to_note": "Añadir al final de la nota",
       "create_note": "Crear nota",
       "get_attributes": "Obtener atributos",
@@ -3722,7 +3752,7 @@
       "note_in_parent": "<Note/> en <Parent/>",
       "get_attachment": "Obtener adjunto",
       "get_attachment_content": "Leer contenido del adjunto",
-      "rename_note": "Renombrar nota",
+      "rename_note": "Cambiar nombre de la nota",
       "delete_note": "Eliminar nota",
       "move_note": "Mover nota",
       "clone_note": "Clonar nota",
@@ -3805,7 +3835,16 @@
     "add_model_provider": "Añadir proveedor de modelos",
     "no_model_providers_configured": "Todavía no hay proveedores de modelos configurados.",
     "provider_no_models": "No se ha seleccionado ningún modelo, por lo que no se ofrece en el chat.",
-    "search_provider_unavailable_standalone": "No disponible en la versión para navegador: este servicio rechaza las solicitudes realizadas desde una página web, por lo que solo se puede usar desde la versión de escritorio o de servidor."
+    "search_provider_unavailable_standalone": "No disponible en la versión para navegador: este servicio rechaza las solicitudes realizadas desde una página web, por lo que solo se puede usar desde la versión de escritorio o de servidor.",
+    "search_check_heading": "Búsqueda de prueba",
+    "search_check_running": "Ejecutando una búsqueda de prueba…",
+    "search_check_passed": "El proveedor de búsqueda funciona. Estos son los primeros resultados de una búsqueda de prueba:",
+    "search_check_no_results": "El proveedor de búsqueda ha respondido, pero no ha encontrado nada en una búsqueda de prueba. Es posible que no tenga ningún motor de búsqueda habilitado.",
+    "search_check_failed": "La búsqueda de prueba ha fallado: {{error}}",
+    "search_check_failed_hint": "Aun así, puede añadir el proveedor, por ejemplo para configurarlo antes de que su servicio esté en funcionamiento.",
+    "add_provider_anyway": "Añadir de todos modos",
+    "save_anyway": "Guardar de todos modos",
+    "retry": "Reintentar"
   },
   "common": {
     "save": "Guardar",
@@ -4963,7 +5002,7 @@
     "compress_png_jpeg_description": "Ahorra más espacio. Las imágenes con transparencia se optimizan en su lugar."
   },
   "sidebar_help": {
-    "attributes_what": "Las etiquetas y relaciones establecidas en esta nota. Una etiqueta asigna un nombre a la nota y, si lo deseas, un valor; una relación la vincula con otra nota.",
+    "attributes_what": "Las etiquetas y relaciones establecidas en esta nota. Una etiqueta asigna un nombre a la nota y, si lo desea, un valor; una relación la vincula con otra nota.",
     "attributes_inheritable": "Al marcar una etiqueta como heredable, esta se aplica a todo el subárbol de notas que se encuentra debajo de esta nota, donde aparecerá como heredada en lugar de propia.",
     "attributes_inherited_what": "Etiquetas y relaciones que llegan a esta nota desde otras fuentes: una etiqueta heredable definida en una nota superior o añadida mediante una plantilla.",
     "attributes_inherited_source": "Aquí son de solo lectura. Cada fila muestra la nota de origen, desde donde se pueden cambiar o eliminar.",
@@ -4981,10 +5020,11 @@
   "attachment_roles": {
     "favicon": "Icono del sitio",
     "coverImage": "Imagen de portada",
-    "viewConfig": "Ajustes de vista",
+    "viewConfig": "Configuración de la vista",
     "canvasLibraryItem": "Biblioteca del lienzo",
     "importSource": "Origen de la importación",
-    "transcript": "Transcripción de la reunión"
+    "transcript": "Transcripción de la reunión",
+    "tocCache": "Caché de la tabla de contenido"
   },
   "compress-images": "Comprimir imágenes",
   "compress-image": "Comprimir imagen",
@@ -5260,7 +5300,11 @@
     "copy_share_link_one": "Copiar enlace público",
     "copy_share_link_many": "Copiar enlace público",
     "copy_share_link_other": "Copiar enlace público",
-    "copy_reference": "Copiar referencia"
+    "copy_reference": "Copiar referencia",
+    "inert_marker": "La referencia {{id}} no marca ningún bloque",
+    "remove_reference": "Quitar referencia",
+    "copy_failed": "No se ha podido crear la referencia.",
+    "paste_failed": "No se ha podido pegar la referencia aquí."
   },
   "split_button": {
     "more_actions": "Más acciones"
@@ -5369,7 +5413,7 @@
     "error_property_not_allowed": "La propiedad «{{name}}» no se puede usar en una plantilla.",
     "error_method_not_allowed": "El método «{{name}}» no se puede usar en una plantilla.",
     "error_method_not_on_value": "El valor anterior a «{{name}}» no tiene ese método.",
-    "variable_note": "La nota que se está renombrando",
+    "variable_note": "La nota a la que se le cambia el nombre",
     "member_title": "El título de la nota",
     "member_note_id": "El identificador de la nota",
     "member_type": "El tipo de la nota, como text o code",
@@ -5548,5 +5592,21 @@
     "menu_help": "Ayuda",
     "menu_note_description": "Se aplica solo a esta nota.",
     "menu_note_description_subtree": "Se aplica a esta nota y a las notas situadas debajo."
+  },
+  "note_save": {
+    "conflict_title": "Modificada en otro lugar",
+    "conflict_message": "Esta nota se ha modificado en otro lugar mientras la editaba. Elija la versión que desea conservar; la otra se guardará como una revisión.",
+    "conflict_message_unversioned": "Esta nota se ha modificado en otro lugar mientras la editaba. Elija la versión que desea conservar; como la nota no conserva revisiones, la otra se descartará.",
+    "keep_this_version": "Conservar esta versión",
+    "load_other_version": "Cargar la otra versión",
+    "draft_kept": "Sus cambios sin guardar se han conservado como una revisión de la nota.",
+    "draft_discarded": "Sus cambios sin guardar se han descartado, ya que la nota no conserva revisiones.",
+    "draft_kept_after_conversion": "La nota se ha convertido mientras la editaba. Sus cambios sin guardar se han conservado como una revisión.",
+    "draft_discarded_after_conversion": "La nota se ha convertido mientras la editaba y no conserva revisiones, por lo que sus cambios sin guardar se han descartado.",
+    "draft_kept_blocks_gone": "Los bloques que estaba editando se han modificado en otro lugar y ya no se pueden editar aquí. Sus cambios sin guardar se han conservado como una revisión.",
+    "draft_discarded_blocks_gone": "Los bloques que estaba editando se han modificado en otro lugar y ya no se pueden editar aquí. La nota no conserva revisiones, por lo que sus cambios sin guardar se han descartado."
+  },
+  "scroll_rail": {
+    "show_highlights": "Resaltados"
   }
 }

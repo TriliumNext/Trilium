@@ -2585,7 +2585,6 @@
     "refresh-saved-search-results": "Odśwież wyniki zapisanego wyszukiwania",
     "create-child-note": "Utwórz notatkę podrzędną",
     "unhoist": "Cofnij zawężenie",
-    "toggle-sidebar": "Przełącz pasek boczny",
     "dropping-not-allowed": "Upuszczanie notatek w tej lokalizacji jest niedozwolone.",
     "clone-indicator-tooltip": "Notatki nadrzędne ({{- count}}): {{- parents}}",
     "clone-indicator-tooltip-single": "Ta notatka jest sklonowana (1 dodatkowa notatka nadrzędna: {{- parent}})",

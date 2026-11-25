@@ -87,6 +87,19 @@ export default class EmbedHistory extends Plugin {
     }
 
     /**
+     * Makes the change of `callback` part of the step on top of the undo stack, so that undo and
+     * redo apply both together. Without a step on top, the change is an undo step of its own.
+     */
+    joinLatestStep(callback: (writer: ModelWriter) => void) {
+        const batch = this.lastBatch;
+        if (batch && this.steps.has(batch)) {
+            this.editor.model.enqueueChange(batch, callback);
+        } else {
+            this.editor.model.change(callback);
+        }
+    }
+
+    /**
      * Undoes the last change of the note, for the content of an embed. The text editor takes the
      * focus when the change was one of its own.
      */

@@ -219,7 +219,7 @@ export function createCaretStop() {
     const stop = document.createElement("div");
     stop.className = "caret-stop";
     stop.setAttribute("aria-hidden", "true");
-    stop.textContent = "​";
+    stop.textContent = "\u200B";
     return stop;
 }
 

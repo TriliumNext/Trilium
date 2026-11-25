@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/source",
-  "version": "0.107.0",
+  "version": "0.108.0-rc.1",
   "description": "Build your personal knowledge base with Trilium Notes",
   "directories": {
     "doc": "docs"
@@ -65,19 +65,19 @@
   "private": true,
   "devDependencies": {
     "@fast-csv/parse": "5.0.8",
-    "@stylistic/eslint-plugin": "5.10.0",
-    "@playwright/test": "1.65.0",
+    "@stylistic/eslint-plugin": "6.0.1",
+    "@playwright/test": "1.65.1",
     "@triliumnext/server": "workspace:*",
     "@types/express": "5.0.6",
     "@types/node": "24.19.2",
     "@typescript/native": "npm:typescript@7.0.2",
-    "@vitest/browser-playwright": "5.1.0",
-    "@vitest/coverage-v8": "5.1.0",
-    "@vitest/ui": "5.1.0",
+    "@vitest/browser-playwright": "5.1.1",
+    "@vitest/coverage-v8": "5.1.1",
+    "@vitest/ui": "5.1.1",
     "cross-env": "10.1.0",
     "dpdm": "4.3.0",
     "esbuild": "0.28.2",
-    "eslint": "10.14.0",
+    "eslint": "10.15.0",
     "eslint-config-preact": "2.0.0",
     "eslint-plugin-playwright": "2.12.2",
     "eslint-plugin-simple-import-sort": "14.0.0",
@@ -85,13 +85,13 @@
     "http-server": "14.1.1",
     "jiti": "2.7.0",
     "js-yaml": "5.5.0",
-    "playwright": "1.65.0",
+    "playwright": "1.65.1",
     "tslib": "2.9.1",
     "tsx": "4.23.15",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.72.2",
+    "typescript-eslint": "8.73.0",
     "vite": "8.3.8",
-    "vitest": "5.1.0"
+    "vitest": "5.1.1"
   },
   "license": "AGPL-3.0-or-later",
   "author": {
@@ -107,5 +107,5 @@
     "url": "https://github.com/TriliumNext/Trilium/issues"
   },
   "homepage": "https://triliumnotes.org",
-  "packageManager": "pnpm@12.20.0"
+  "packageManager": "pnpm@12.22.0"
 }

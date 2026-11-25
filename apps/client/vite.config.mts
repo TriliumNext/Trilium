@@ -8,8 +8,8 @@ import { viteStaticCopy } from 'vite-plugin-static-copy'
 import { startupChunkGroup } from './startup-chunks.mjs';
 import { translationCatalogues } from './translation-catalogues.mjs';
 import {
-    bundleStylesheet, narrowThirdPartySelectors, shareTheme, stripUniverEmojiData,
-    stripUniverHyphenation
+    bundleStylesheet, narrowThirdPartySelectors, SHARE_THEME_APP_LOADERS, shareTheme,
+    stripUniverEmojiData, stripUniverHyphenation
 } from './vite-plugins.mjs';
 
 const assets = [ "assets", "stylesheets", "fonts" ];
@@ -140,7 +140,7 @@ export default defineConfig(() => ({
                 // own, which made a start of the app request about 300 scripts.
                 codeSplitting: {
                     includeDependenciesRecursively: false,
-                    groups: [ startupChunkGroup(import.meta.dirname) ]
+                    groups: [ startupChunkGroup(import.meta.dirname, SHARE_THEME_APP_LOADERS) ]
                 }
             },
             onwarn(warning, rollupWarn) {

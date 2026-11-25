@@ -77,6 +77,12 @@ const themes: ThemeDefinition[] = [
         load: async () => (await import("@fsegurai/codemirror-theme-cobalt2")).cobalt2
     },
     {
+        id: "dracula",
+        name: "Dracula",
+        variant: "dark",
+        load: async () => (await import("@fsegurai/codemirror-theme-dracula")).dracula
+    },
+    {
         id: "forest",
         name: "Forest",
         variant: "dark",
@@ -149,10 +155,22 @@ const themes: ThemeDefinition[] = [
         load: async () => (await import("@fsegurai/codemirror-theme-nord")).nord
     },
     {
+        id: "one-dark",
+        name: "One Dark",
+        variant: "dark",
+        load: async () => (await import("@fsegurai/codemirror-theme-one-dark")).oneDark
+    },
+    {
         id: "palenight",
         name: "Palenight",
         variant: "dark",
         load: async () => (await import("@fsegurai/codemirror-theme-palenight")).palenight
+    },
+    {
+        id: "rose-pine-dawn",
+        name: "Rosé Pine Dawn",
+        variant: "light",
+        load: async () => (await import("@fsegurai/codemirror-theme-rose-pine-dawn")).rosePineDawn
     },
     {
         id: "solarized-dark",

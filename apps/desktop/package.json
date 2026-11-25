@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/desktop",
-  "version": "0.107.0",
+  "version": "0.108.0-rc.1",
   "description": "Build your personal knowledge base with Trilium Notes",
   "private": true,
   "main": "src/main.ts",
@@ -32,10 +32,10 @@
     "test": "vitest --config vitest.config.mts"
   },
   "dependencies": {
-    "better-sqlite3": "13.1.1",
+    "better-sqlite3": "13.2.0",
     "electron-debug": "5.0.0",
     "electron-dl": "5.0.0",
-    "sherpa-onnx-node": "2.0.1"
+    "sherpa-onnx-node": "2.0.2"
   },
   "devDependencies": {
     "@electron-forge/cli": "8.0.1",
@@ -52,7 +52,7 @@
     "@triliumnext/core": "workspace:*",
     "@triliumnext/server": "workspace:*",
     "@types/pngjs": "6.0.5",
-    "electron": "45.3.1",
+    "electron": "45.4.1",
     "gifenc": "1.0.3",
     "node-mocks-http": "1.18.1",
     "pngjs": "7.0.0"

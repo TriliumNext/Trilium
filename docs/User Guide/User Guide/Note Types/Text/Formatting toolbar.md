@@ -9,8 +9,7 @@ The floating bar is a more minimalist option, in which the formatting is hidden 
 
 ### Block-level popup
 
-The first popup is the block-level popup. This will appear to the left of the current paragraph you are currently editing, as a sequence of dots:  
-![](Formatting%20toolbar_image.jpg)
+The first popup is the block-level popup. This will appear to the left of the current paragraph you are currently editing, as a sequence of dots.
 
 Clicking this popup will reveal the formatting options that are specific to the entire paragraph, such as setting a heading, lists, tables, etc.
 

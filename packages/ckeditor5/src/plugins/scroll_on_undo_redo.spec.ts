@@ -99,4 +99,23 @@ describe("ScrollOnUndoRedoPlugin", () => {
 
         expect(scrollSpy).toHaveBeenCalledTimes(2);
     });
+
+    it("skips the scroll when the editor is destroyed before the frame runs", async () => {
+        vi.useFakeTimers();
+
+        const scrollSpy = vi.spyOn(editor.editing.view, "scrollToTheSelection");
+
+        setModelData(editor.model, "<paragraph>hello[]</paragraph>");
+        editor.model.change((writer) => {
+            const pos = editor.model.document.selection.getFirstPosition();
+            if (pos) {
+                writer.insertText(" world", pos);
+            }
+        });
+        editor.execute("undo");
+        await editor.destroy();
+
+        expect(() => vi.runAllTimers()).not.toThrow();
+        expect(scrollSpy).not.toHaveBeenCalled();
+    });
 });

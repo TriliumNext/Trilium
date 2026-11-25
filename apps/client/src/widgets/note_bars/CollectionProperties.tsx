@@ -316,6 +316,7 @@ export function CollectionPropertiesDialog({ className, title, show, stackable, 
     return (
         <Modal
             className={clsx("collection-properties-dialog", className)}
+            portal
             title={title}
             size="lg"
             scrollable

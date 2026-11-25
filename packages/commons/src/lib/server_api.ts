@@ -543,6 +543,12 @@ export interface SaveConflictResponse {
      * A save that keeps its own version replaces them at these blobs.
      */
     attachments?: SavedAttachmentBase[];
+    /**
+     * The content of the note now, for a version conflict of a note whose content is text. The
+     * client saves over it without asking when it holds the content that the save was based on,
+     * as after the note is protected, or the content that the save sends.
+     */
+    content?: string;
 }
 
 /** The answer of `GET /api/notes/:noteId/blocks`. */

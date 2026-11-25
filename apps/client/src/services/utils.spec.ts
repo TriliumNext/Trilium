@@ -35,6 +35,7 @@ import utils, {
     restartDesktopApp,
     reuseAcrossHotReloads,
     rootCauseMessage,
+    STACKED_TREE_LAYOUT,
     toggleBodyClass
 } from "./utils.js";
 
@@ -352,6 +353,32 @@ describe("platform / device detection", () => {
         expect(fileAccept(".enex")).toBe("*/*");
     });
 
+    it("takes a mobile viewport that docks the tree for a tablet's, which shows the desktop launchers", () => {
+        const original = window.glob.device;
+        let isTreeStacked = true;
+        vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+            matches: query === STACKED_TREE_LAYOUT && isTreeStacked
+        }) as MediaQueryList);
+        try {
+            window.glob.device = "mobile";
+            expect([ utils.isTablet(), utils.hasDesktopLaunchBar(), utils.getLaunchBarRootId() ])
+                .toEqual([ false, false, "_lbMobileRoot" ]);
+
+            // A foldable, as it unfolds.
+            isTreeStacked = false;
+            expect([ utils.isTablet(), utils.hasDesktopLaunchBar(), utils.getLaunchBarRootId() ])
+                .toEqual([ true, true, "_lbRoot" ]);
+
+            window.glob.device = "desktop";
+            isTreeStacked = true;
+            expect([ utils.isTablet(), utils.hasDesktopLaunchBar(), utils.getLaunchBarRootId() ])
+                .toEqual([ false, true, "_lbRoot" ]);
+        } finally {
+            window.glob.device = original;
+            vi.restoreAllMocks();
+        }
+    });
+
     it("isMobile / isDesktop respond to glob.device", () => {
         const original = window.glob.device;
         window.glob.device = "mobile";
@@ -401,6 +428,18 @@ describe("isIOS (named export)", () => {
         uaSpy.mockReturnValue("iPad");
         expect(isIOS()).toBe(true);
         uaSpy.mockReturnValue("Windows");
+        expect(isIOS()).toBe(false);
+    });
+
+    it("tells an iPad, which reports a Mac user agent, from a Mac by its touch points", async () => {
+        const { isIOS } = await import("./utils.js");
+        vi.spyOn(navigator, "userAgent", "get").mockReturnValue(
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) "
+            + "Version/26.5 Safari/605.1.15"
+        );
+        const touchPoints = vi.spyOn(navigator, "maxTouchPoints", "get").mockReturnValue(5);
+        expect(isIOS()).toBe(true);
+        touchPoints.mockReturnValue(0);
         expect(isIOS()).toBe(false);
     });
 });

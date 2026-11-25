@@ -1,8 +1,13 @@
-import { cls } from "@triliumnext/core";
+import { cls, getLog } from "@triliumnext/core";
+import { createHmac } from "crypto";
+import express from "express";
 import type { SessionData } from "express-session";
-import { describe, expect, it } from "vitest";
+import supertest from "supertest";
+import { describe, expect, it, vi } from "vitest";
 
-import { SQLiteSessionStore } from "./session_parser.js";
+import sessionSecret from "../services/session_secret.js";
+import sql from "../services/sql.js";
+import sessionParser, { SQLiteSessionStore } from "./session_parser.js";
 
 const store = new SQLiteSessionStore();
 
@@ -60,5 +65,61 @@ describe("SQLiteSessionStore", () => {
         // cookie.expires present → touch is a no-op (early return).
         await touch("sess-3", baseSession(new Date(Date.now() + 60_000)));
         expect(store.getSessionExpiry("sess-3")).toBeInstanceOf(Date);
+    });
+});
+
+describe("sessionParser with several session cookies", () => {
+    const app = express();
+    app.use(sessionParser);
+    app.get("/", (req, res) => {
+        res.json({ sessionID: req.sessionID, loggedIn: req.session.loggedIn ?? false });
+    });
+
+    function signed(sid: string) {
+        const signature = createHmac("sha256", sessionSecret).update(sid).digest("base64").replace(/=+$/, "");
+        return encodeURIComponent(`s:${sid}.${signature}`);
+    }
+
+    function request(cookie: string) {
+        return supertest(app).get("/").set("Cookie", cookie);
+    }
+
+    it("uses the logged-in session when a stale cookie comes first", async () => {
+        await set("live-session", baseSession());
+        const warn = vi.spyOn(getLog(), "warn");
+
+        const res = await request(`trilium.sid=${signed("stale-session")}; other=1; trilium.sid=${signed("live-session")}`);
+        expect(res.body).toEqual({ sessionID: "live-session", loggedIn: true });
+        expect(warn).toHaveBeenCalledOnce();
+        expect(String(warn.mock.calls[0][0])).toContain(`2 "trilium.sid" cookies`);
+
+        await request(`trilium.sid=${signed("stale-session")}; trilium.sid=${signed("live-session")}`);
+        expect(warn).toHaveBeenCalledOnce();
+        warn.mockRestore();
+    });
+
+    it("never picks a session whose cookie signature does not verify", async () => {
+        await set("forged-session", baseSession());
+        const forged = encodeURIComponent("s:forged-session.invalid-signature");
+
+        const res = await request(`trilium.sid=${signed("stale-session")}; trilium.sid=${forged}`);
+        expect(res.body.loggedIn).toBe(false);
+        expect(res.body.sessionID).not.toBe("forged-session");
+    });
+
+    it("passes over undecodable, unsigned and unreadable session cookies", async () => {
+        await set("corrupt-session", baseSession());
+        cls.init(() => sql.execute(
+            /*sql*/`UPDATE sessions SET data = 'not json' WHERE id = ?`, [ "corrupt-session" ]
+        ));
+        await set("kept-session", baseSession());
+
+        const res = await request([
+            "trilium.sid=%E0%A4%A",
+            "trilium.sid=unsigned-session",
+            `trilium.sid=${signed("corrupt-session")}`,
+            `trilium.sid=${signed("kept-session")}`
+        ].join("; "));
+        expect(res.body).toEqual({ sessionID: "kept-session", loggedIn: true });
     });
 });

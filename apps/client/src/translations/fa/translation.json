@@ -2789,7 +2789,6 @@
     "refresh-saved-search-results": "تازه‌سازی نتایج جستجوی ذخیره‌شده",
     "create-child-note": "ایجاد یادداشت فرزند",
     "unhoist": "پایین آوردن",
-    "toggle-sidebar": "تغییر وضعیت نوار کناری",
     "dropping-not-allowed": "رها کردن یادداشت‌ها در این مکان مجاز نیست.",
     "clone-indicator-tooltip": "این یادداشت {{- count}} والد دارد: {{- parents}}",
     "clone-indicator-tooltip-single": "این یادداشت کلون شده است (1 والد اضافی: {{- parent}})",

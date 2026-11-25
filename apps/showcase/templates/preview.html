@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Store listing preview</title>
+    <link rel="stylesheet" href="common.css">
+    <style>
+        :root {
+            color-scheme: light dark;
+            --page: #fff;
+            --text: #1f1f1f;
+            --muted: #5f6368;
+            --accent: #01875f;
+            --on-accent: #fff;
+            --chip-border: #dadce0;
+            --chip-active: #e6f3ef;
+            --control: #fff;
+            --control-hover: #f1f3f4;
+            --shadow: rgb(0 0 0 / 20%);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --page: #0a0e14;
+                --text: #e3e3e3;
+                --muted: #9aa0a6;
+                --accent: #45c89a;
+                --on-accent: #062e22;
+                --chip-border: #3c4048;
+                --chip-active: #14382d;
+                --control: #232a33;
+                --control-hover: #2e3641;
+                --shadow: rgb(0 0 0 / 55%);
+            }
+        }
+
+        body {
+            background: var(--page);
+            color: var(--text);
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 32px 40px 64px;
+        }
+
+        .feature-graphic {
+            margin-top: 56px;
+            padding-top: 32px;
+            border-top: 1px solid var(--chip-border);
+
+            h2 {
+                margin: 0 0 4px;
+                font-size: 24px;
+                font-weight: 500;
+            }
+
+            p {
+                margin: 0 0 16px;
+                color: var(--muted);
+                font-size: 14px;
+            }
+
+            img {
+                width: 100%;
+                max-width: 760px;
+                aspect-ratio: 1024 / 500;
+                border-radius: 12px;
+                display: block;
+            }
+        }
+
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 32px;
+
+            h1 {
+                margin: 0 0 12px;
+                font-size: clamp(36px, 6vw, 60px);
+                font-weight: 500;
+                line-height: 1.1;
+            }
+
+            .developer {
+                color: var(--accent);
+                font-size: 20px;
+                font-weight: 500;
+            }
+
+            .category {
+                color: var(--muted);
+                font-size: 14px;
+                margin-top: 4px;
+            }
+
+            .icon {
+                width: clamp(96px, 20vw, 240px);
+                height: clamp(96px, 20vw, 240px);
+                flex: none;
+                border-radius: 20%;
+                box-shadow: 0 2px 12px var(--shadow);
+            }
+        }
+
+        .actions {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            margin-top: 32px;
+
+            .install {
+                padding: 10px 24px;
+                border-radius: 8px;
+                background: var(--accent);
+                color: var(--on-accent);
+                font-size: 16px;
+                font-weight: 500;
+            }
+
+            .share {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                color: var(--accent);
+                font-weight: 500;
+            }
+        }
+
+        .devices {
+            display: flex;
+            gap: 8px;
+            margin: 48px 0 16px;
+
+            button {
+                padding: 6px 16px;
+                border: 1px solid var(--chip-border);
+                border-radius: 8px;
+                background: none;
+                color: var(--text);
+                font: inherit;
+                font-size: 14px;
+                cursor: pointer;
+
+                &[aria-pressed="true"] {
+                    border-color: transparent;
+                    background: var(--chip-active);
+                    color: var(--accent);
+                }
+            }
+        }
+
+        .carousel {
+            --shot-height: 420px;
+            position: relative;
+
+            &.tablet {
+                --shot-height: 300px;
+            }
+
+            > button {
+                position: absolute;
+                top: calc(var(--shot-height) / 2 - 28px);
+                width: 56px;
+                height: 56px;
+                border: none;
+                border-radius: 50%;
+                display: grid;
+                place-items: center;
+                background: var(--control);
+                color: var(--text);
+                box-shadow: 0 2px 10px var(--shadow);
+                cursor: pointer;
+
+                &:hover {
+                    background: var(--control-hover);
+                }
+
+                &[hidden] {
+                    display: none;
+                }
+
+                &.previous {
+                    left: -28px;
+                }
+
+                &.next {
+                    right: -28px;
+                }
+            }
+        }
+
+        .strip {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            scrollbar-width: none;
+
+            &::-webkit-scrollbar {
+                display: none;
+            }
+
+            img {
+                height: var(--shot-height);
+                flex: none;
+                border-radius: 8px;
+                display: block;
+                border: 1px solid var(--chip-border);
+            }
+        }
+
+        .about {
+            margin-top: 48px;
+            max-width: 760px;
+
+            h2 {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                margin: 0 0 16px;
+                font-size: 24px;
+                font-weight: 500;
+            }
+
+            p {
+                margin: 0 0 16px;
+                line-height: 1.6;
+            }
+
+            .description {
+                white-space: pre-wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <header class="app-header">
+            <div>
+                <h1 id="name"></h1>
+                <div class="developer" id="developer"></div>
+                <div class="category" id="category"></div>
+                <div class="actions">
+                    <span class="install">Install</span>
+                    <span class="share">
+                        <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill="currentColor" d="M18 16a3 3 0 0 0-2.1.9l-7-4.1a3 3 0 0 0
+                                0-1.6l7-4.1A3 3 0 1 0 15 5a3 3 0 0 0 .1.8l-7 4.1a3 3 0 1 0 0
+                                4.2l7 4.1a3 3 0 1 0 2.9-2.2z" />
+                        </svg>
+                        Share
+                    </span>
+                </div>
+            </div>
+            <img class="icon" src="icon.png" alt="">
+        </header>
+
+        <div class="devices" role="group" aria-label="Device">
+            <button type="button" data-device="phone" aria-pressed="true">Phone</button>
+            <button type="button" data-device="tablet" aria-pressed="false">Tablet</button>
+        </div>
+        <div class="carousel">
+            <div class="strip"></div>
+            <button class="previous" type="button" aria-label="Previous screenshots" hidden>
+                <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </button>
+            <button class="next" type="button" aria-label="Next screenshots">
+                <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </button>
+        </div>
+
+        <section class="about">
+            <h2>
+                About this app
+                <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </h2>
+            <p id="short"></p>
+            <p class="description" id="description"></p>
+        </section>
+
+        <section class="feature-graphic">
+            <h2>Feature graphic</h2>
+            <p>
+                Not on the listing page: Play shows it as the cover of a promo video and in
+                featured placements.
+            </p>
+            <img src="feature-graphic.png" alt="">
+        </section>
+    </main>
+    <script src="listing-data.js"></script>
+    <script>
+        const { listing, screenshots } = window.LISTING;
+        document.getElementById("name").textContent = listing.name;
+        document.getElementById("developer").textContent = listing.developer;
+        document.getElementById("category").textContent = listing.category;
+        document.getElementById("short").textContent = listing.shortDescription;
+        document.getElementById("description").textContent = listing.fullDescription;
+        document.querySelector(".feature-graphic img").alt = listing.featureGraphic.alt;
+
+        const carousel = document.querySelector(".carousel");
+        const strip = carousel.querySelector(".strip");
+        const previous = carousel.querySelector(".previous");
+        const next = carousel.querySelector(".next");
+        const chips = document.querySelectorAll(".devices button");
+
+        const update = () => {
+            previous.hidden = strip.scrollLeft <= 1;
+            next.hidden = strip.scrollLeft + strip.clientWidth >= strip.scrollWidth - 1;
+        };
+
+        const showDevice = (device) => {
+            carousel.classList.toggle("tablet", device === "tablet");
+            strip.replaceChildren(...screenshots
+                .filter((shot) => shot.device === device)
+                .map((shot) => {
+                    const img = document.createElement("img");
+                    img.src = shot.file;
+                    img.alt = shot.alt;
+                    img.title = shot.alt;
+                    img.addEventListener("load", update);
+                    return img;
+                }));
+            strip.scrollLeft = 0;
+            for (const chip of chips) {
+                chip.setAttribute("aria-pressed", String(chip.dataset.device === device));
+            }
+            update();
+        };
+
+        const page = (direction) => {
+            strip.scrollBy({ left: direction * strip.clientWidth * 0.8, behavior: "smooth" });
+        };
+
+        for (const chip of chips) {
+            chip.addEventListener("click", () => showDevice(chip.dataset.device));
+        }
+        previous.addEventListener("click", () => page(-1));
+        next.addEventListener("click", () => page(1));
+        strip.addEventListener("scroll", update, { passive: true });
+        addEventListener("resize", update);
+        showDevice("phone");
+    </script>
+</body>
+</html>

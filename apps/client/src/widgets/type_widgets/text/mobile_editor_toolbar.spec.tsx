@@ -3,7 +3,12 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import {
+import Component from "../../../components/component";
+import NoteContext from "../../../components/note_context";
+import { buildNote } from "../../../test/easy-froca";
+import { renderInto } from "../../../test/render";
+import { NoteContextContext, ParentComponent } from "../../react/react_utils";
+import MobileEditorToolbar, {
     isKeyboardPanelOpen, useClosedByToolbarTap, useEditorsFocused, useIsKeyboardPanelOpen,
     useKeyboardPanel, useShownToolbarElement
 } from "./mobile_editor_toolbar";
@@ -337,6 +342,34 @@ function buildPanelFixture() {
     }
     return { root, editable, host, Harness, seen };
 }
+
+describe("MobileEditorToolbar", () => {
+    it("holds its place under an editable text note only in the note's own view", async () => {
+        const note = buildNote({ title: "Itinerary", type: "text" });
+        const render = async (viewMode: "default" | "note-map") => {
+            const noteContext = new NoteContext(`ntx-${viewMode}`);
+            noteContext.noteId = note.noteId;
+            noteContext.viewScope = { viewMode, isReadOnly: false };
+            let container: HTMLElement | undefined;
+            await act(async () => {
+                container = renderInto(
+                    <ParentComponent.Provider value={new Component()}>
+                        <NoteContextContext.Provider value={noteContext}>
+                            <MobileEditorToolbar />
+                        </NoteContextContext.Provider>
+                    </ParentComponent.Provider>
+                );
+            });
+            await act(() => new Promise((resolve) => setTimeout(resolve)));
+            return container?.querySelector(".classic-toolbar-outer-container");
+        };
+
+        expect((await render("default"))?.classList.contains("visible")).toBe(true);
+        const noteMap = await render("note-map");
+        expect(noteMap?.classList.contains("visible")).toBe(false);
+        expect(noteMap?.classList.contains("hidden-ext")).toBe(true);
+    });
+});
 
 describe("useShownToolbarElement", () => {
     it("shows the editor's toolbar, and the text formatting one while that is active", () => {

@@ -28,7 +28,7 @@ import {
  * the spreadsheet note type never turns on, so none of it can run:
  *
  * - The 77 TeX pattern tables, 4.4 MB of lazy chunks (Hungarian alone 747 kB). They
- *   are loaded by `worker-<hash>.js`, the chunk both the package's entry and its
+ *   are loaded by `doc-skeleton-<hash>.js`, the chunk both the package's entry and its
  *   `./worker` export import. That chunk makes exactly 77 relative imports and every
  *   one is a table, so resolving them all to one empty module collapses them into a
  *   single stub chunk.
@@ -50,7 +50,7 @@ export function stripUniverHyphenation(): Plugin {
 
 /**
  * Returns the stub for a hyphenation import made by `@univerjs/engine-render`'s shared
- * worker chunk, and `null` for everything else so other resolvers keep their turn.
+ * `doc-skeleton` chunk, and `null` for everything else so other resolvers keep their turn.
  */
 export function resolveUniverHyphenationStub(source: string, importer: string | undefined): string | null {
     if (!importer || !ENGINE_RENDER_CHUNK.test(importer.replace(/\\/g, "/"))) {
@@ -65,7 +65,7 @@ export function resolveUniverHyphenationStub(source: string, importer: string | 
 }
 
 export const ENGINE_RENDER_ENTRY = "@univerjs/engine-render/lib/es/index.js";
-export const ENGINE_RENDER_CHUNK = /@univerjs\/engine-render\/lib\/es\/worker-[^/]+\.js$/;
+export const ENGINE_RENDER_CHUNK = /@univerjs\/engine-render\/lib\/es\/doc-skeleton-[^/]+\.js$/;
 export const LANGUAGE_DETECTOR_PACKAGE = "franc-min";
 
 function stubPath(name: string): string {
@@ -375,6 +375,9 @@ const LAZY_IMPORTERS: Record<string, string[]> = {
     scripting: [ join(CLIENT_SRC, "services/script_context.ts") ],
     app: [ join(SHARE_THEME_SRC, "content/app_view.ts"), join(SHARE_THEME_SRC, "index.ts") ]
 };
+
+/** The modules of the share theme whose `import()` expressions load the app's views. */
+export const SHARE_THEME_APP_LOADERS = LAZY_IMPORTERS.app;
 
 /**
  * The tables of loaders by which the app picks the view of a collection or the widget of a note

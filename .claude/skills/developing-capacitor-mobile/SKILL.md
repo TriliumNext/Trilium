@@ -156,6 +156,9 @@ never a `-left` var falling back to `env(…-right)`.
   `apps/client/src/stylesheets/style.css` — platform-scoped to where `env()` is the real source.
 - **`body.desktop` rules are in scope too.** An Android tablet WebView has no `Mobi` in its UA, so
   `isMobile()` is false and `index.ts` picks the desktop layout for it.
+- **The mobile layout's inset rules live with the layout**: `apps/client/src/layouts/MobileLayout.phone.css`
+  (bottom bar, bottom sheets) and `MobileLayout.tablet.css` (the panes run under the status and
+  navigation bars and pad what they hold), not `style.css`.
 - **`--keyboard-height` is injected but read by nothing.** `MainActivity` resizes the WebView through
   `bottomMargin` instead, so the CSS viewport shrinks on its own. iOS drives `--tn-keyboard-gap` from
   `ViewController` for a different purpose; the two are not a pair.
@@ -178,7 +181,7 @@ pnpm --filter @triliumnext/mobile open:android   # Android Studio
 pnpm --filter @triliumnext/mobile run:ios | open:ios   # Xcode (macOS)
 ```
 
-CI: `mobile.yml` (pull requests) builds a debug APK via `.github/actions/build-mobile` and an unsigned iOS **Simulator** `.app` on macOS; `nightly.yml` calls the same action with `nightly: "true"` for the signed `assembleRelease` build under the `.nightly` app id. The action runs the Android JVM unit tests before assembling, and `mobile.yml` uploads their JaCoCo report to Codecov under the `mobile` flag; a separate Ubuntu job runs `swift test` on `apps/mobile/ios/RequestBroker`; the JS unit tests live in the standalone suite.
+CI: `mobile.yml` (pull requests) builds a debug APK via `.github/actions/build-mobile` and an unsigned iOS **Simulator** `.app` on macOS; `nightly.yml` calls the same action with `variant: nightly` for the signed `assembleRelease` build under the `.nightly` app id, and `release.yml` with `variant: stable`: the bare app id, the `package.json` version and a `versionCode` from `scripts/android-version-code.mts` (semver order, pre-releases below their release, since Play rejects a code that does not go up). A stable build makes an APK signed with the app signing key (`ANDROID_*` secrets), attached to the GitHub release, and an AAB signed with the Play upload key (`ANDROID_UPLOAD_*`), kept as the `play-bundle-android` workflow artifact; Gradle runs once per key, each run with its own `TRILIUM_ANDROID_KEYSTORE_*` environment. The action runs the Android JVM unit tests before assembling, and `mobile.yml` uploads their JaCoCo report to Codecov under the `mobile` flag; a separate Ubuntu job runs `swift test` on `apps/mobile/ios/RequestBroker`; the JS unit tests live in the standalone suite.
 
 **Debugging on a device:** a *release*-type build (what `nightly.yml` produces) suppresses WebView
 console→logcat forwarding, so anything logged from JS is invisible to `adb logcat` and log-based

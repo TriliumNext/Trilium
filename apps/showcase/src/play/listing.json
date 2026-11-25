@@ -1,0 +1,13 @@
+{
+    "name": "Trilium Notes",
+    "developer": "Trilium Notes Team",
+    "category": "Productivity",
+    "shortDescription": "Grow your personal knowledge base, in a tree of notes as deep as you need.",
+    "fullDescription": "Trilium Notes keeps everything you know in one tree of notes, as deep as you need it. Write rich text with tables, images and math, keep code with syntax highlighting, sketch ideas on a canvas or in a mind map, and find any of it again with full-text search.\n\nYour notes live on your phone and stay available offline. Sync them with a Trilium server you run yourself, and the same notes follow you to your computers and any browser.\n\n• Mind maps, canvas drawings, Mermaid diagrams and spreadsheets\n• Collections that show notes as a board, a calendar, a table or pins on a map\n• Note maps that show how your notes link to each other\n• Labels, relations and templates to organize and query your notes\n• A note can sit in several places of the tree at once\n• Revision history for every note\n• Strong encryption for the notes that must stay private\n\nTrilium is open source and has no ads, no tracking and no account to create. An optional AI assistant works with the provider of your choice, including models running on your own computer.",
+    "featureGraphic": {
+        "tagline": "Grow your knowledge base.",
+        "taglineSub": "A tree of notes as deep as you need, on your phone and on every device you sync.",
+        "alt": "Trilium Notes, with the note tree and a board of trip-planning tasks",
+        "shots": [ "tree", "board" ]
+    }
+}

@@ -1,5 +1,5 @@
 import appContext, { type CommandNames } from "../../components/app_context";
-import { isNarrowLayout } from "../../services/utils";
+import { isTreeStacked } from "../../services/utils";
 import { getTabNavigation } from "./tab_navigation";
 
 export type SwipeDirection = "next" | "previous";
@@ -259,10 +259,10 @@ function isPastLastTab(direction: SwipeDirection) {
         && !getTabToward(direction);
 }
 
-/** The screen a swipe past the first or last tab pulls: the tree while a phone shows it, or the notes. */
+/** The screen a swipe past the first or last tab pulls: the tree while it covers the note, or the notes. */
 function findShownScreen() {
     const sidebar = document.getElementById("mobile-sidebar-wrapper");
-    if (isNarrowLayout() && sidebar?.classList.contains("show")) {
+    if (isTreeStacked() && sidebar?.classList.contains("show")) {
         return sidebar.firstElementChild instanceof HTMLElement ? sidebar.firstElementChild : undefined;
     }
     return document.querySelector<HTMLElement>("#detail-container > .split-note-container-widget") ?? undefined;
@@ -277,11 +277,11 @@ export function getTabToward(direction: SwipeDirection) {
 }
 
 /**
- * The splits to slide toward the tab `direction` leads to, on the note screen of a phone: both tabs
- * must show their note in a single split, and the incoming one must have been rendered.
+ * The splits to slide toward the tab `direction` leads to, on the note screen of a stacked tree:
+ * both tabs must show their note in a single split, and the incoming one must have been rendered.
  */
 function findSplitSlide(direction: SwipeDirection): SplitSlide | undefined {
-    if (!isNarrowLayout() || document.getElementById("mobile-sidebar-wrapper")?.classList.contains("show")) return;
+    if (!isTreeStacked() || document.getElementById("mobile-sidebar-wrapper")?.classList.contains("show")) return;
 
     const current = appContext.tabManager.getActiveMainContext();
     const target = getTabToward(direction);

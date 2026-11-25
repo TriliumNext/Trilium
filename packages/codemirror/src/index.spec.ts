@@ -17,6 +17,7 @@ vi.mock("@replit/codemirror-vim", async (importOriginal) => {
 });
 
 import { hostedCompletion } from "./extensions/hosted_completion.js";
+import { SearchHighlighter } from "./find_replace.js";
 import CodeMirror, {
     type EditorConfig, getThemeById, type HostHistory, SCRIPT_MIME_BACKEND, SharedHistory
 } from "./index.js";
@@ -708,6 +709,115 @@ describe("CodeMirror", () => {
             expect(instance.getEdgeLeftBy(arrowLeft)).toBe(null);
         });
 
+        it("tells the edge that Enter leaves past blank lines, as in a code block", () => {
+            const instance = build();
+            editor = instance;
+            const getEdge = (text: string, head = text.length, init: KeyboardEventInit = {},
+                key = "Enter") => {
+                instance.setText(text);
+                instance.dispatch({ selection: EditorSelection.cursor(head) });
+                return instance.getEdgeLeftByEnter(createKeydown(key, instance.contentDOM, init));
+            };
+
+            expect(getEdge("foo\n\n")).toBe("end");
+            expect(getEdge("foo\n  \n\t")).toBe("end");
+            expect(getEdge("\n\n")).toBe("end");
+            expect(getEdge("foo\n")).toBe(null);
+            expect(getEdge("foo\n\nbar")).toBe(null);
+            expect(getEdge("foo\n\n", 4)).toBe(null);
+
+            expect(getEdge("\nfoo", 0)).toBe("start");
+            expect(getEdge("\n", 0)).toBe("start");
+            expect(getEdge("\n\n", 0)).toBe("start");
+            expect(getEdge("", 0)).toBe(null);
+            expect(getEdge(" \nfoo", 0)).toBe(null);
+            expect(getEdge("foo\n", 0)).toBe(null);
+            expect(getEdge("\nfoo", 1)).toBe(null);
+
+            expect(getEdge("foo\n\n", 5, {}, "ArrowDown")).toBe(null);
+            for (const modifier of [ "shiftKey", "ctrlKey", "altKey", "metaKey", "isComposing" ]) {
+                expect(getEdge("foo\n\n", 5, { [modifier]: true })).toBe(null);
+                expect(getEdge("\nfoo", 0, { [modifier]: true })).toBe(null);
+            }
+        });
+
+        it("tells when Backspace is pressed in an empty document", () => {
+            const instance = build();
+            editor = instance;
+            const isEmptied = (text: string, init: KeyboardEventInit = {}, key = "Backspace") => {
+                instance.setText(text);
+                instance.dispatch({ selection: EditorSelection.cursor(0) });
+                return instance.isBackspaceOnEmpty(createKeydown(key, instance.contentDOM, init));
+            };
+
+            expect(isEmptied("")).toBe(true);
+            expect(isEmptied("\n")).toBe(false);
+            expect(isEmptied(" ")).toBe(false);
+            expect(isEmptied("", {}, "Delete")).toBe(false);
+            for (const modifier of [ "shiftKey", "ctrlKey", "altKey", "metaKey", "isComposing" ]) {
+                expect(isEmptied("", { [modifier]: true })).toBe(false);
+            }
+            expect(instance.isBackspaceOnEmpty(createKeydown("Backspace", document.body)))
+                .toBe(false);
+        });
+
+        it("removes the blank lines that Enter leaves past in an undo step of its own", () => {
+            const instance = build();
+            editor = instance;
+            // A host whose latest step can still grow, so that typing joins it.
+            const { host, history } = createSharedHistory(true);
+            expect(instance.hasSharedHistory).toBe(false);
+            instance.setSharedHistory(history);
+            expect(instance.hasSharedHistory).toBe(true);
+            instance.setText("foo");
+            instance.dispatch({
+                changes: { from: 3, insert: "\n\n" },
+                selection: EditorSelection.cursor(5),
+                userEvent: "input.type"
+            });
+            const steps = host.push.mock.calls.length;
+
+            instance.removeBlankLinesAt("start");
+            expect(instance.getText()).toBe("foo\n\n");
+            instance.removeBlankLinesAt("end");
+            expect(instance.getText()).toBe("foo");
+            expect(host.push).toHaveBeenCalledTimes(steps + 1);
+
+            host.undo();
+            expect(instance.getText()).toBe("foo\n\n");
+            expect(instance.state.selection.main.head).toBe(5);
+
+            instance.setText("\nfoo");
+            instance.removeBlankLinesAt("end");
+            expect(instance.getText()).toBe("\nfoo");
+            instance.removeBlankLinesAt("start");
+            expect(instance.getText()).toBe("foo");
+        });
+
+        it("leaves Enter to Vim outside its Insert mode", async () => {
+            const instance = build();
+            editor = instance;
+            await instance.setVimKeybindings(true);
+            const { getCM, Vim } = await import("@replit/codemirror-vim");
+            const cm = getCM(instance);
+            expect(cm).not.toBeNull();
+            if (!cm) return;
+            instance.focus();
+            instance.setText("foo\n\n");
+            instance.dispatch({ selection: EditorSelection.cursor(5) });
+            const enter = createKeydown("Enter", instance.contentDOM);
+
+            expect(instance.getEdgeLeftByEnter(enter)).toBe(null);
+            Vim.handleKey(cm, "A", "test");
+            expect(instance.getEdgeLeftByEnter(enter)).toBe("end");
+
+            const backspace = createKeydown("Backspace", instance.contentDOM);
+            instance.setText("");
+            expect(instance.isBackspaceOnEmpty(backspace)).toBe(true);
+            Vim.handleKey(cm, "<Esc>", "test");
+            expect(instance.isBackspaceOnEmpty(backspace)).toBe(false);
+        });
+
         it("drops the line-wrap side of the cursor before the caret leaves", () => {
             const instance = build();
             editor = instance;
@@ -910,6 +1020,31 @@ describe("CodeMirror", () => {
             expect(editor.contentDOM.querySelectorAll(".cm-searchMatch")).toHaveLength(2);
         });
 
+        it("paints no search whose check fails after its frame; keeps a newer one", async () => {
+            editor = build();
+            editor.setText("foo bar foo");
+            await editor.performFind("foo", false, false);
+            const searchFor = vi.spyOn(SearchHighlighter.prototype, "searchFor");
+
+            let isWanted = true;
+            const overtaken = editor.performFind("bar", false, false, true, () => isWanted);
+            isWanted = false;
+            expect(await overtaken).toEqual({ totalFound: 0, currentFound: 0 });
+            expect(searchFor).not.toHaveBeenCalled();
+            expect(editor.contentDOM.querySelectorAll(".cm-searchMatch")).toHaveLength(0);
+            expect(editor.getSearchMatches()).toEqual([]);
+
+            // A newer search, installed during the frame, keeps its highlighter.
+            isWanted = true;
+            const older = editor.performFind("foo", false, false, true, () => isWanted);
+            const newer = editor.performFind("bar", false, false);
+            isWanted = false;
+            expect(await older).toEqual({ totalFound: 0, currentFound: 0 });
+            expect((await newer).totalFound).toBe(1);
+            expect(editor.contentDOM.querySelectorAll(".cm-searchMatch")).toHaveLength(1);
+            expect(editor.getSearchMatches()).toEqual([ { from: 4, to: 7 } ]);
+        });
+
         it("does nothing when cleaning a search that never ran", () => {
             editor = build();
             expect(() => editor?.cleanSearch()).not.toThrow();
@@ -1094,13 +1229,16 @@ function build(config: Partial<EditorConfig> = {}): CodeMirror {
     return new CodeMirror({ parent, ...config });
 }
 
-/** A shared history over a host that undoes the last step it was given. */
-function createSharedHistory() {
+/**
+ * A shared history over a host that undoes the last step it was given. With `isLatest`, the last
+ * step can still grow.
+ */
+function createSharedHistory(isLatest = false) {
     const steps: Parameters<HostHistory["push"]>[0][] = [];
     const host = {
         push: vi.fn((step: Parameters<HostHistory["push"]>[0]) => {
             steps.push(step);
-            return { isLatest: () => false };
+            return { isLatest: () => isLatest && steps.at(-1) === step };
         }),
         undo: vi.fn(() => steps.pop()?.undo()),
         redo: vi.fn()

@@ -1,4 +1,4 @@
-import { FileBasedLogService, type LogFileInfo } from "@triliumnext/core";
+import { FileBasedLogService, type LogFileInfo, type LogFileTail } from "@triliumnext/core";
 import { t } from "i18next";
 
 const LOG_DIR_NAME = "logs";
@@ -20,7 +20,6 @@ export default class StandaloneLogService extends FileBasedLogService {
     private currentFile: FileSystemSyncAccessHandle | null = null;
     private currentFileName: string = "";
     private textEncoder = new TextEncoder();
-    private textDecoder = new TextDecoder();
     /** Entries written while no file is open, flushed to the file once it opens. */
     private pendingEntries: string[] = [];
     /** Set while the background retry is the only thing that can open the log file. */
@@ -108,7 +107,7 @@ export default class StandaloneLogService extends FileBasedLogService {
         this.currentFile.flush();
     }
 
-    protected override readLogFile(fileName: string): string | null {
+    protected override readLogFile(fileName: string, maxBytes: number): LogFileTail | null {
         if (!this.logDir) {
             return null;
         }
@@ -117,10 +116,10 @@ export default class StandaloneLogService extends FileBasedLogService {
             // For the current file, we need to read from the sync handle
             if (fileName === this.currentFileName && this.currentFile) {
                 const size = this.currentFile.getSize();
-                const buffer = new ArrayBuffer(size);
-                const view = new DataView(buffer);
-                this.currentFile.read(view, { at: 0 });
-                return this.textDecoder.decode(buffer);
+                const start = Math.max(size - maxBytes, 0);
+                const bytes = new Uint8Array(size - start);
+                const bytesRead = this.currentFile.read(bytes, { at: start });
+                return { bytes: bytes.subarray(0, bytesRead), omittedBytes: start };
             }
 
             // For other files, we'd need async access - return null for now

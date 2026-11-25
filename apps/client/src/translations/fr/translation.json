@@ -1575,7 +1575,6 @@
     "refresh-saved-search-results": "Rafraîchir les résultats de recherche enregistrée",
     "create-child-note": "Créer une note enfant",
     "unhoist": "Désactiver le focus",
-    "toggle-sidebar": "Basculer la barre latérale",
     "dropping-not-allowed": "Déplacer des notes à cet emplacement n'est pas autorisé.",
     "clone-indicator-tooltip": "Cette note a {{- count}} parents: {{- parents}}",
     "clone-indicator-tooltip-single": "Cette note est clonée (1 parent supplémentaire: {{- parent}})",

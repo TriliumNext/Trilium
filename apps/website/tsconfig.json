@@ -9,6 +9,7 @@
 		"jsx": "react-jsx",
 		"jsxImportSource": "preact",
 		"skipLibCheck": true,
+		"allowImportingTsExtensions": true,
 		"types": [
 			"vite/client",
 			"vitest/config"

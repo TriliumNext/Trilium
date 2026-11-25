@@ -10,7 +10,7 @@ This can be useful for a few things:
 
 For shorter snippets of code that can be embedded in [Text](Text.md) notes, see [Code blocks](Text/Developer-specific%20formatting/Code%20blocks.md).
 
-![](Code_image.jpg)
+<figure class="image"><img style="aspect-ratio:1152/720;" src="Code_demo.webp" width="1152" height="720"></figure>
 
 ## Creating a code note
 

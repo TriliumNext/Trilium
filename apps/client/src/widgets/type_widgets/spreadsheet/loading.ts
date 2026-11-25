@@ -69,11 +69,8 @@ export function useWorkbookDisplay(apiRef: RefObject<FUniver | undefined>, conta
 
         hooksRef.current.prepare?.(workbookData);
 
-        // Always assign a fresh unit id. The persisted id is reused verbatim, but the
-        // new workbook is created below BEFORE the old one is disposed, so a stale or
-        // shared id (e.g. a duplicated/cloned note, or this note's content being
-        // re-applied) would collide in Univer's unit registry and throw. The id is
-        // ephemeral — view state keys off the sheet id, not the workbook id.
+        // A fresh unit id, so a persisted id that another unit still holds (a cloned note's)
+        // cannot collide in Univer's unit registry. View state keys off the sheet id.
         workbookData.id = randomString();
 
         // Pin the workbook locale to the only locale bundle the editor registers (see
@@ -82,19 +79,33 @@ export function useWorkbookDisplay(apiRef: RefObject<FUniver | undefined>, conta
         // loaded workbooks consistent and lets the persisted value be dropped on save.
         workbookData.locale = LocaleType.EN_US;
 
-        // Create the new workbook BEFORE disposing the old one so the formula
-        // engine transitions cleanly without a gap where stale state could leak.
-        const workbook = univerAPI.createWorkbook(workbookData);
-
+        // The old workbook goes first: its conditional formatting unload runs
+        // `ConditionalFormattingViewModelV2.clearCache()`, which drops the rule calculators of
+        // every unit, so a workbook created before it would show none of its formatting.
         if (existingWorkbook) {
             univerAPI.disposeUnit(existingWorkbook.getId());
         }
+
+        // Univer focuses the cell editor of a workbook it creates, which would pull the focus
+        // into this sheet when it reloads while the user is elsewhere, such as in another split.
+        const container = containerRef.current;
+        const focusedElsewhere = document.activeElement instanceof HTMLElement
+            && document.activeElement !== document.body
+            && !container?.contains(document.activeElement)
+            ? document.activeElement
+            : null;
+
+        const workbook = univerAPI.createWorkbook(workbookData);
 
         restoreViewState(workbook, viewState);
         if (hooksRef.current.readOnly) {
             makeReadOnly(univerAPI, workbook);
         }
         hooksRef.current.loaded?.(workbook);
+
+        if (focusedElsewhere && container?.contains(document.activeElement)) {
+            focusedElsewhere.focus({ preventScroll: true });
+        }
     }
 
     // Apply pending content once the container becomes visible (non-zero size).

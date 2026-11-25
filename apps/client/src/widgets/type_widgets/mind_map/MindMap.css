@@ -18,7 +18,7 @@
        restated (see the overlay buttons in theme-next/base.css), as the geo map takes it too. */
     --mind-map-inset: var(--overlay-button-inset, 10px);
     --mind-map-inset-top: var(--mind-map-inset);
-    --mind-map-inset-bottom: var(--mind-map-inset);
+    --mind-map-inset-bottom: calc(var(--mind-map-inset) + var(--note-bottom-inset, 0px));
     /* What the control group at the foot comes out at — the room the panel above it has to leave
        for it. The image viewer's controls are the same height, being the same group. */
     --mind-map-toolbar-height: var(--overlay-button-height, 28px);

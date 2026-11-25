@@ -1,6 +1,7 @@
 import "./TitleRow.css";
 
 import clsx from "clsx";
+import type { ComponentChildren } from "preact";
 import { useEffect, useState } from "preact/hooks";
 
 import froca from "../../services/froca";
@@ -21,19 +22,28 @@ import { VimTitleStatus } from "./VimStatus";
  * Shared by the quick editor and the geo map's marker pane, so a rename from either saves the same
  * way — through the title widget.
  */
-export default function TitleRow({ compact }: {
+export default function TitleRow({ compact, start }: {
     /** Standing in a narrow header rather than at the head of a split (see TitleRow.css). */
     compact?: boolean;
+    /** Shown before the icon, such as the back button of the quick editor. */
+    start?: ComponentChildren;
 } = {}) {
     const { viewScope } = useNoteContext();
     const className = clsx("title-row", compact && "tn-title-row-compact");
 
     if (viewScope?.attachmentId) {
-        return <AttachmentTitleRow className={className} attachmentId={viewScope.attachmentId} />;
+        return (
+            <AttachmentTitleRow
+                className={className}
+                attachmentId={viewScope.attachmentId}
+                start={start}
+            />
+        );
     }
 
     return (
         <div className={className}>
+            {start}
             <NoteIcon />
             <NoteTitleWidget />
             <VimTitleStatus />
@@ -47,7 +57,11 @@ export default function TitleRow({ compact }: {
  * in place, so the title is plain read-only text, prefixed to make clear that what is displayed is
  * an attachment of the note and not the note itself.
  */
-function AttachmentTitleRow({ className, attachmentId }: { className: string; attachmentId: string }) {
+function AttachmentTitleRow({ className, attachmentId, start }: {
+    className: string;
+    attachmentId: string;
+    start?: ComponentChildren;
+}) {
     const [ title, setTitle ] = useState<string>();
 
     function refresh() {
@@ -63,6 +77,7 @@ function AttachmentTitleRow({ className, attachmentId }: { className: string; at
 
     return (
         <div className={clsx(className, "attachment-title-row")}>
+            {start}
             <Icon icon="bx bx-paperclip" />
             <span className="attachment-title">{t("popup-editor.attachment_title", { title })}</span>
         </div>
