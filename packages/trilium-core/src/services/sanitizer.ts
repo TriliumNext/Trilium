@@ -98,6 +98,11 @@ export function sanitizeHtml(dirtyHtml: string) {
             section: {
                 "--include-note-width": sizeRegex
             },
+            // The editor's page break.
+            div: {
+                "page-break-after": [ /^\s*always\s*$/ ],
+                "page-break-before": [ /^\s*always\s*$/ ]
+            },
             // The width of a resized aside.
             aside: {
                 "--aside-width": sizeRegex

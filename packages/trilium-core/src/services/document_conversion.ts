@@ -29,7 +29,7 @@ export async function convertDocumentNoteToText(note: BNote) {
 
     const content = wrapStringOrBuffer(note.getContent());
     const bodyFontSize = note.mime === DOCX_MIME ? readDocxBodyFontSize(content) : undefined;
-    const documentHtml = await convertOfficeToHtml(content, note.mime);
+    const documentHtml = await convertOfficeToHtml(content, note.mime, { pageBreaks: true });
     const html = sanitizeHtml(cleanDocumentHtml(documentHtml, { bodyFontSize }));
 
     getSql().transactional(() => {
@@ -71,6 +71,8 @@ function readSize(xml: string | undefined) {
     const value = xml?.match(/<w:sz\s+w:val="(\d+)"/)?.[1];
     return value ? Number(value) : undefined;
 }
+
+const PAGE_BREAK = `<div class="page-break" style="page-break-after:always;"></div>`;
 
 /** The inline styles a text note keeps from a converted document; the rest is page layout. */
 const KEPT_STYLES = new Set([ "color", "background-color", "text-align", "width" ]);
@@ -142,6 +144,14 @@ export function cleanDocumentHtml(
     for (const span of root.querySelectorAll("span").reverse()) {
         if (!Object.keys(span.attributes).length) {
             span.replaceWith(...span.childNodes);
+        }
+    }
+
+    // The editor's page break, which it reads from the `page-break-after` style. The rule that
+    // opens the footnotes of the document is not one.
+    for (const rule of root.querySelectorAll("hr.page-break")) {
+        if (!rule.closest(".document-notes-section")) {
+            rule.replaceWith(PAGE_BREAK);
         }
     }
 

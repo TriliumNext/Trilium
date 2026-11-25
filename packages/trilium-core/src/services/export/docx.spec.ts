@@ -75,11 +75,13 @@ describe("renderTextNoteToDocx", () => {
         expect(strFromU8(files["docProps/core.xml"])).toContain("<dc:title>Feedback</dc:title>");
     });
 
-    it("writes Word's defaults for body text, bold headings and the editor's font sizes", async () => {
+    it("writes Word's defaults, bold headings, the editor's font sizes and its page breaks", async () => {
         const note = buildNote({ type: "text", title: "Styles" });
         const files = unzipSync(await renderTextNoteToDocx(note, `<h2>Heading</h2>`
             + `<p><span class="text-huge">Huge</span> <span class="text-small">small</span></p>`
-            + `<figure class="table"><table><tbody><tr><td><p>Cell</p></td></tr></tbody></table></figure>`));
+            + `<figure class="table"><table><tbody><tr><td><p>Cell</p></td></tr></tbody></table></figure>`
+            + `<div class="page-break" style="page-break-after:always;"><span style="display:none;">&nbsp;</span></div>`
+            + `<p>Next page</p>`));
         const styles = strFromU8(files["word/styles.xml"]);
         const xml = strFromU8(files["word/document.xml"]);
 
@@ -92,6 +94,7 @@ describe("renderTextNoteToDocx", () => {
         expect(xml).toMatch(/<w:sz w:val="40"\/>.*Huge/s);
         expect(xml).toMatch(/<w:sz w:val="19"\/>.*small/s);
         expect(xml).toMatch(/<w:pStyle w:val="TableText"\/>.*Cell/s);
+        expect(xml).toMatch(/<w:pageBreakBefore\/>.*Next page/s);
         expect(styles).toMatch(/<w:style [^>]*w:styleId="TableText">.*<w:spacing w:after="0"\/>/s);
     });
 });

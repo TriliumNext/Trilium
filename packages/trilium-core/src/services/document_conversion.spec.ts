@@ -1,6 +1,8 @@
 import { DOCX_MIME, ODT_MIME } from "@triliumnext/commons";
-import { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun } from "docx";
-import { strToU8, zipSync } from "fflate";
+import {
+    Document, Packer, PageBreak, Paragraph, Table, TableCell, TableRow, TextRun
+} from "docx";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -13,6 +15,8 @@ import {
 } from "./document_conversion.js";
 import { renderTextNoteToDocx } from "./export/docx.js";
 import noteService from "./notes.js";
+import { convertOfficeToHtml } from "./office_preview.js";
+import { sanitizeHtml } from "./sanitizer.js";
 
 const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), "toc", "fixtures");
 
@@ -68,6 +72,35 @@ describe("cleanDocumentHtml", () => {
             + `</table></figure>`
             + `<figure class="table"><table><tr><td rowspan="2">merged</td><td>f</td></tr>`
             + `<tr><td>g</td></tr></table></figure>`);
+    });
+});
+
+describe("page breaks", () => {
+    it("writes the editor's page break for the document's, but not for the rule above its notes", () => {
+        const html = cleanDocumentHtml(`<p>one</p><hr class="page-break"><p>two</p>`
+            + `<div class="document-notes-section"><hr class="page-break"><p>A note.</p></div>`);
+
+        expect(html).toBe(`<p>one</p><div class="page-break" style="page-break-after:always;"></div><p>two</p>`
+            + `<div class="document-notes-section"><hr class="page-break"><p>A note.</p></div>`);
+    });
+
+    it("keeps a page break the author typed, but not where Word last broke the pages", async () => {
+        const docx = await Packer.pack(new Document({ sections: [ { children: [
+            new Paragraph({ children: [ new TextRun("one"), new PageBreak() ] }),
+            new Paragraph("two and three")
+        ] } ] }), "uint8array");
+        // Word records where it broke the pages at its last save, here inside the second paragraph.
+        const files = unzipSync(docx);
+        files["word/document.xml"] = strToU8(strFromU8(files["word/document.xml"])
+            .replace(`<w:t xml:space="preserve">two and three</w:t>`,
+                `<w:t xml:space="preserve">two and </w:t><w:lastRenderedPageBreak/><w:t xml:space="preserve">three</w:t>`));
+
+        const html = sanitizeHtml(cleanDocumentHtml(
+            await convertOfficeToHtml(zipSync(files), DOCX_MIME, { pageBreaks: true })));
+
+        expect(html.replace(/\s+</g, "<")).toContain(`<p>one</p>`
+            + `<div class="page-break" style="page-break-after:always"></div><p>two and three</p>`);
+        expect(html).not.toContain("<br");
     });
 });
 
