@@ -63,15 +63,6 @@ const DOCUMENT_STYLES: IStylesOptions = {
 };
 
 /**
- * Gives the last paragraph of a table cell the `TableText` style of {@link DOCUMENT_STYLES}. The
- * paragraphs before it keep the document's default style, with its spacing between paragraphs.
- */
-const STYLE_MAP = {
-    "figure.table td, figure.table th, figure.table td p:last-child, figure.table th p:last-child":
-        "TableText"
-};
-
-/**
  * Converts the HTML of a text note into a Word document. Formatting that Word can hold (colors,
  * borders, cell shading, lists, images) is kept; what it cannot hold is logged and left out.
  *
@@ -88,11 +79,12 @@ export async function renderTextNoteToDocx(note: BNote, html: string): Promise<U
     ]);
     const { Document, Packer, patchDocument, PatchType } = docx;
 
-    const bodyFontSize = (template && readDocxBodyFontSize(template)) || BODY_FONT_SIZE;
+    const bodyFontSize = shell?.contentFontSize
+        ?? ((template && readDocxBodyFontSize(template)) || BODY_FONT_SIZE);
     const warnings: string[] = [];
     const children = htmlToContent(prepareHtml(html, textWidth), {
         stylesheet: buildContentStylesheet(bodyFontSize),
-        styleMap: STYLE_MAP,
+        styleMap: buildStyleMap(shell?.contentStyle),
         images: resolveImage,
         maxImageWidth: Math.floor(textWidth / TWIPS_PER_PIXEL),
         onWarning: (warning) => warnings.push(warning.message)
@@ -123,6 +115,19 @@ export async function renderTextNoteToDocx(note: BNote, html: string): Promise<U
     });
 
     return Packer.pack(document, "uint8array");
+}
+
+/**
+ * Gives the last paragraph of a table cell the `TableText` style of {@link DOCUMENT_STYLES}. The
+ * paragraphs before it keep the document's default style, with its spacing between paragraphs,
+ * or `contentStyle`, the style that a template gives the note's text.
+ */
+function buildStyleMap(contentStyle: string | undefined): Record<string, string> {
+    return {
+        ...(contentStyle ? { "p, li, pre, blockquote, figcaption": contentStyle } : {}),
+        "figure.table td, figure.table th, figure.table td p:last-child, figure.table th p:last-child":
+            "TableText"
+    };
 }
 
 function headingStyle(points: number) {

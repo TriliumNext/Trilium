@@ -31,9 +31,10 @@ const CONTENT_RELATIONSHIP_TYPES = new Set([
 ]);
 
 /** The style that `renderTextNoteToDocx()` gives text in table cells. */
-const TABLE_TEXT_STYLE = `<w:style w:type="paragraph" w:customStyle="1" w:styleId="TableText">`
-    + `<w:name w:val="Table Text"/><w:basedOn w:val="Normal"/><w:qFormat/>`
-    + `<w:pPr><w:spacing w:after="0"/></w:pPr></w:style>`;
+const TABLE_TEXT_STYLE = "TableText";
+
+/** The style that `renderTextNoteToDocx()` gives the note's paragraphs in a template. */
+export const NOTE_TEXT_STYLE = "NoteText";
 
 /**
  * Returns the bytes of the Word document that the `~docxTemplate` relation of `note` points at,
@@ -66,10 +67,15 @@ export function getDocxTemplate(note: BNote): Uint8Array | undefined {
  * last section, and the pictures only that body showed are removed. Styles, headers, footers, the theme and
  * embedded fonts stay either way, and the `TableText` style is added when the document lacks it.
  *
+ * A `{{content}}` paragraph also gives the note's text its look: the {@link NOTE_TEXT_STYLE}
+ * style, added when the document lacks it, is based on the paragraph's style and has the
+ * character formatting of its first run, such as its font and size.
+ *
  * Also returns the width of the text on the page where the note goes, in twips, since
- * `patchDocument()` sizes tables for {@link DEFAULT_TEXT_WIDTH} whatever the template's page.
+ * `patchDocument()` sizes tables for {@link DEFAULT_TEXT_WIDTH} whatever the template's page,
+ * and the font size of {@link NOTE_TEXT_STYLE}, in points, when the run sets one.
  */
-export function prepareDocxTemplate(docx: Uint8Array): { data: Uint8Array; textWidth: number } {
+export function prepareDocxTemplate(docx: Uint8Array): PreparedDocxTemplate {
     let files: Record<string, Uint8Array>;
     try {
         files = unzipSync(docx);
@@ -83,8 +89,8 @@ export function prepareDocxTemplate(docx: Uint8Array): { data: Uint8Array; textW
     }
 
     const original = strFromU8(documentXml);
-    const markerAt = findContentMarker(original);
-    if (markerAt !== undefined) {
+    const marker = findContentMarker(original);
+    if (marker) {
         files["word/document.xml"] = documentXml;
     } else {
         const document = emptyBody(original);
@@ -97,18 +103,45 @@ export function prepareDocxTemplate(docx: Uint8Array): { data: Uint8Array; textW
             removeUnreferencedMedia(files);
         }
     }
-    const textWidth = readTextWidth(strFromU8(files["word/document.xml"]), markerAt ?? 0);
+    const textWidth = readTextWidth(strFromU8(files["word/document.xml"]), marker?.index ?? 0);
 
     const styles = files["word/styles.xml"];
+    const runProperties = marker && readRunProperties(marker.paragraph);
+    const contentStyle = styles && marker ? NOTE_TEXT_STYLE : undefined;
     if (styles) {
-        const xml = strFromU8(styles);
-        if (!xml.includes(`w:styleId="TableText"`)) {
-            const withStyle = xml.replace("</w:styles>", `${TABLE_TEXT_STYLE}</w:styles>`);
-            files["word/styles.xml"] = strToU8(withStyle);
+        let xml = strFromU8(styles);
+        const added: string[] = [];
+        if (marker && !hasStyle(xml, NOTE_TEXT_STYLE)) {
+            const basedOn = readParagraphStyle(marker.paragraph) ?? readDefaultParagraphStyle(xml);
+            added.push(paragraphStyle(NOTE_TEXT_STYLE, "Note Text", basedOn, runProperties ?? ""));
+        }
+        if (!hasStyle(xml, TABLE_TEXT_STYLE)) {
+            added.push(paragraphStyle(TABLE_TEXT_STYLE, "Table Text", contentStyle ?? "Normal", "",
+                `<w:pPr><w:spacing w:after="0"/></w:pPr>`));
+        }
+        if (added.length) {
+            xml = xml.replace("</w:styles>", `${added.join("")}</w:styles>`);
+            files["word/styles.xml"] = strToU8(xml);
         }
     }
 
-    return { data: zipSync(files), textWidth };
+    const halfPoints = readSize(runProperties);
+    return {
+        data: zipSync(files),
+        textWidth,
+        contentStyle,
+        contentFontSize: halfPoints ? halfPoints / 2 : undefined
+    };
+}
+
+export interface PreparedDocxTemplate {
+    data: Uint8Array;
+    /** The width of the text on the page where the note goes, in twips. */
+    textWidth: number;
+    /** The paragraph style of the note's text, when the template has a `{{content}}` line. */
+    contentStyle?: string;
+    /** The font size of {@link contentStyle}, in points, when the line sets one. */
+    contentFontSize?: number;
 }
 
 /**
@@ -159,8 +192,8 @@ function emptyBody(document: string) {
 }
 
 /**
- * The position of the paragraph whose text is `{{content}}` in `document`, which Word can have
- * split across several runs, or `undefined` without one.
+ * The paragraph whose text is `{{content}}` in `document`, which Word can have split across
+ * several runs, and its position, or `undefined` without one.
  */
 function findContentMarker(document: string) {
     for (const paragraph of document.matchAll(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g)) {
@@ -168,10 +201,48 @@ function findContentMarker(document: string) {
             .map((run) => run[1])
             .join("");
         if (CONTENT_MARKER.test(text)) {
-            return paragraph.index;
+            return { index: paragraph.index, paragraph: paragraph[0] };
         }
     }
     return undefined;
+}
+
+/** The `<w:rPr>` of the first run of `paragraph` with text, without its character style. */
+function readRunProperties(paragraph: string) {
+    for (const [ run ] of paragraph.matchAll(/<w:r(?![A-Za-z])[^>]*>[\s\S]*?<\/w:r>/g)) {
+        if (/<w:t\b/.test(run)) {
+            return run.match(/<w:rPr>[\s\S]*?<\/w:rPr>/)?.[0]
+                .replace(/<w:rStyle\b[^>]*\/>/, "");
+        }
+    }
+    return undefined;
+}
+
+function readParagraphStyle(paragraph: string) {
+    const properties = paragraph.match(/<w:pPr>[\s\S]*?<\/w:pPr>/)?.[0];
+    return properties?.match(/<w:pStyle\s+w:val="([^"]+)"/)?.[1];
+}
+
+/** The id of the style that paragraphs without one of their own have. */
+function readDefaultParagraphStyle(styles: string) {
+    for (const [ style ] of styles.matchAll(/<w:style\b[^>]*>/g)) {
+        if (style.includes(`w:type="paragraph"`) && /\bw:default="(1|true|on)"/.test(style)) {
+            return style.match(/\bw:styleId="([^"]+)"/)?.[1] ?? "Normal";
+        }
+    }
+    return "Normal";
+}
+
+function hasStyle(styles: string, id: string) {
+    return styles.includes(`w:styleId="${id}"`);
+}
+
+function paragraphStyle(
+    id: string, name: string, basedOn: string, runProperties: string, paragraphProperties = ""
+) {
+    return `<w:style w:type="paragraph" w:customStyle="1" w:styleId="${id}">`
+        + `<w:name w:val="${name}"/><w:basedOn w:val="${basedOn}"/><w:qFormat/>`
+        + `${paragraphProperties}${runProperties}</w:style>`;
 }
 
 /**

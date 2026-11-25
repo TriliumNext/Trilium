@@ -215,6 +215,42 @@ describe("renderTextNoteToDocx with a template", () => {
         expect(document).not.toContain("tent }}");
     });
 
+    it("writes the note's text in the font and size of the {{content}} line", async () => {
+        const template = await Packer.pack(new Document({
+            styles: { default: { heading2: { run: { font: "Play" } } } },
+            sections: [ { children: [
+                new Paragraph({ children: [
+                    new TextRun({ text: "{{con", font: "Lato", size: 21 }),
+                    new TextRun({ text: "tent}}", font: "Lato", size: 21 })
+                ] })
+            ] } ]
+        }), "uint8array");
+        const note = createNotes(DOCX_MIME, template);
+
+        const docx = await renderTextNoteToDocx(note, `<h2>Strengths</h2>`
+            + `<p>Feedback <span class="text-big">text</span></p><ul><li>Ownership</li></ul>`
+            + `<figure class="table"><table><tbody><tr><td>Cell</td></tr></tbody></table>`
+            + `</figure>`);
+
+        const styles = readPart(docx, "word/styles.xml") ?? "";
+        const noteText = styles.match(/<w:style [^>]*w:styleId="NoteText".*?<\/w:style>/s)?.[0];
+        expect(noteText).toContain(`w:ascii="Lato"`);
+        expect(noteText).toContain(`<w:sz w:val="21"/>`);
+        expect(noteText).toContain(`<w:basedOn w:val="Normal"/>`);
+        expect(styles).toMatch(/w:styleId="TableText">.*?<w:basedOn w:val="NoteText"\/>/s);
+
+        const document = readPart(docx, "word/document.xml") ?? "";
+        const paragraphOf = (text: string) => [ ...document.matchAll(/<w:p>.*?<\/w:p>/gs) ]
+            .map((match) => match[0]).find((paragraph) => paragraph.includes(text));
+        expect(paragraphOf("Strengths")).toContain(`<w:pStyle w:val="Heading2"/>`);
+        expect(paragraphOf("Strengths")).not.toContain("Lato");
+        expect(paragraphOf("Feedback")).toContain(`<w:pStyle w:val="NoteText"/>`);
+        // 1.4 × the line's 10.5pt, in half-points.
+        expect(paragraphOf("Feedback")).toContain(`<w:sz w:val="29"/>`);
+        expect(paragraphOf("Ownership")).toContain(`<w:pStyle w:val="NoteText"/>`);
+        expect(paragraphOf("Cell")).toContain(`<w:pStyle w:val="TableText"/>`);
+    });
+
     it("refuses a template that is not a Word document, whatever its content", async () => {
         const note = createNotes("application/pdf", await buildTemplate());
 
