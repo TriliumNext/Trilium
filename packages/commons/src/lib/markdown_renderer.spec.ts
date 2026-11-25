@@ -206,6 +206,12 @@ describe("renderToHtml", () => {
             expect(render("# Issue \\##", "X", { demoteH1: false })).toBe("<h1>Issue ##</h1>");
         });
 
+        it("takes the escape out when a block marker follows the trailing hash", () => {
+            const marker = `<a data-trilium-block-id="abc"></a>`;
+            const html = render(`# Issue \\# ${marker}`, "X", { demoteH1: false });
+            expect(html).toBe(`<h1 data-trilium-block-id="abc">Issue #</h1>`);
+        });
+
         it("keeps other backslashes in the raw text of an <h1>", () => {
             expect(render("# a\\#b `c\\#` \\# d", "X", { demoteH1: false })).toBe("<h1>a\\#b `c\\#` \\# d</h1>");
         });

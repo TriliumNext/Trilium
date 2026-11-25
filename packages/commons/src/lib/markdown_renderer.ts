@@ -554,8 +554,9 @@ export class CustomMarkdownRenderer extends Renderer {
             // An H1 is written from its raw text, so its markers are taken out here. The exporter
             // escapes a hash run at the end (`# Issue \#`) so it isn't read as a closing sequence;
             // only that escape is taken out, other backslashes in the raw text are kept.
-            const text = data.text.replace(/(^|[ \t])\\(#+)$/, "$1$2");
-            return `<h1${attributes}>${stripBlockMarkers(text)}</h1>`;
+            // Strip block markers first so a trailing marker does not hide the escape from the regex.
+            const text = stripBlockMarkers(data.text).replace(/(^|[ \t])\\(#+)$/, "$1$2");
+            return `<h1${attributes}>${text}</h1>`;
         }
         return withAttributes(super.heading(data).trimEnd(), attributes);
     }
