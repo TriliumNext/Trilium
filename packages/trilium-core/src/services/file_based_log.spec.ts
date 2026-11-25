@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as cls from "./context.js";
-import FileBasedLogService, { type LogFileInfo } from "./file_based_log.js";
+import FileBasedLogService, { type LogFileInfo, type LogFileTail, MAX_LOG_CONTENTS_BYTES } from "./file_based_log.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -40,8 +40,12 @@ class MemoryLogService extends FileBasedLogService {
     protected override writeEntry(entry: string): void {
         this.files[this.currentFile].push(entry);
     }
-    protected override readLogFile(fileName: string): string | null {
-        return this.files[fileName]?.join("") ?? null;
+    protected override readLogFile(fileName: string, maxBytes: number): LogFileTail | null {
+        const entries = this.files[fileName];
+        if (!entries) return null;
+        const bytes = new TextEncoder().encode(entries.join(""));
+        const start = Math.max(bytes.length - maxBytes, 0);
+        return { bytes: bytes.subarray(start), omittedBytes: start };
     }
     protected override async listLogFiles(): Promise<LogFileInfo[]> {
         if (this.listShouldThrow) throw new Error("list failed");
@@ -174,6 +178,52 @@ describe("FileBasedLogService (shared logic)", () => {
         log.closeShouldThrow = true;
         expect(log.callCheckDateAndRotate(DAY_MS + 1)).toBe(1);
         await Promise.resolve();
+    });
+
+    describe("getLogContents", () => {
+        const MiB = 1024 * 1024;
+
+        /** Today's log holding the given text, as one entry. */
+        async function withLog(text: string) {
+            await log.initialize();
+            log.files[log.currentFile] = [ text ];
+        }
+
+        it("returns a log within the limit whole, and null when there is none", async () => {
+            await withLog("first\nsecond\n");
+            expect(log.getLogContents()).toBe("first\nsecond\n");
+
+            log.files = {};
+            expect(log.getLogContents()).toBeNull();
+        });
+
+        it("leaves out the start of a longer log at a line boundary and says how much", async () => {
+            const line = `${"x".repeat(1023)}\n`;
+            const lines = Array.from({ length: MAX_LOG_CONTENTS_BYTES / 1024 + 2 * 1024 }, () => line);
+            // One byte longer than the rest, so the cut falls inside its two-byte `é`.
+            lines[2 * 1024] = `é${"x".repeat(1022)}\n`;
+            const lastLine = `${"last line".padEnd(1023, ".")}\n`;
+            lines[lines.length - 1] = lastLine;
+            await withLog(lines.join(""));
+
+            const contents = log.getLogContents() ?? "";
+            const [ notice, , ...rest ] = contents.split("\n");
+            const shown = rest.join("\n");
+
+            expect(notice).toContain("2.0");
+            expect(notice).toContain(log.currentFile);
+            expect(shown.startsWith(line)).toBe(true);
+            expect(shown.endsWith(lastLine)).toBe(true);
+            expect(shown).not.toContain("�");
+            expect(new TextEncoder().encode(shown).length).toBeLessThanOrEqual(MAX_LOG_CONTENTS_BYTES);
+        });
+
+        it("keeps the whole tail when it holds no line break", async () => {
+            await withLog("y".repeat(MAX_LOG_CONTENTS_BYTES + MiB));
+
+            const shown = (log.getLogContents() ?? "").split("\n").at(-1);
+            expect(shown).toBe("y".repeat(MAX_LOG_CONTENTS_BYTES));
+        });
     });
 
     it("formatTime pads hours and the three millisecond magnitudes", () => {

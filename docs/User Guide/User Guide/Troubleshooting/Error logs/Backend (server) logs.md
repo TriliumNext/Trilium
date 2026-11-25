@@ -1,7 +1,7 @@
 # Backend (server) logs
 ## Accessing via the backend log
 
-In the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>, go to _Advanced_ → _Backend log_. This will display the current backend log (i.e. today's), with the historical information available only on disk (see below).
+In the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>, go to _Advanced_ → _Backend log_. This will display the current backend log (i.e. today's), with the historical information available only on disk (see below). When today's log is larger than 5 MiB, only its last 5 MiB are shown, after a line saying how much was left out; the whole file stays on disk.
 
 The log is colored to make it easier to read: request status codes by class, slow SQL queries, warnings in amber and errors in red. The statement of a slow SQL query is highlighted the same way as in the <a class="reference-link" href="../../Advanced%20Usage/Database/Manually%20altering%20the%20database/SQL%20Console.md">SQL Console</a>, using the color scheme of code notes (see _Color schemes_ in <a class="reference-link" href="../../Note%20Types/Code.md">Code</a>).
 
@@ -9,7 +9,7 @@ A search that the app runs in the background, for example to filter a collection
 
 Interaction since v0.104.0:
 
-*   The file can be downloaded as a text file using the <span class="tn-icon bx bx-download"></span> button in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> area.
+*   The file can be downloaded as a text file using the <span class="tn-icon bx bx-download"></span> button in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> area. The download holds what the log view shows, so for a log larger than 5 MiB, take the file from the disk instead.
 *   The file can also be searched just like a normal <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> note.
 
 ## Location on the disk

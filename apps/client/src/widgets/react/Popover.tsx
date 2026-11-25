@@ -3,10 +3,11 @@ import "./Popover.css";
 import { autoUpdate, type Placement, type VirtualElement } from "@floating-ui/dom";
 import clsx from "clsx";
 import { ComponentChildren, createPortal } from "preact";
-import { useEffect, useRef } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 
 import { FLOATING_LAYER_SELECTOR, isWithinFloatingLayer } from "./floating_layers";
 import { useBodyClass } from "./hooks/dom";
+import { suspendModalFocusTraps } from "./modal_focustrap";
 import { placeFloating } from "./Popup";
 
 export interface PopoverProps {
@@ -69,6 +70,11 @@ export default function Popover({ getAnchorRect, placement, updateKey, className
     const arrowRef = useRef<HTMLDivElement>(null);
     const updateRef = useRef<(() => void) | undefined>(undefined);
     useBodyClass("backdrop-open", !!maximized);
+
+    // Opened from a modal (a calendar in the quick-edit popup), the popover stands above it, and
+    // the modal's focus trap would otherwise pull focus out of the popover's fields.
+    const [ overModal ] = useState(() => !!document.querySelector(".modal.show"));
+    useEffect(() => (overModal ? suspendModalFocusTraps() : undefined), [ overModal ]);
 
     // In a ref, so the placement set up once reads the latest `getAnchorRect`. Setting it up again
     // on every render would reset the position mid-interaction.
@@ -161,9 +167,9 @@ export default function Popover({ getAnchorRect, placement, updateKey, className
             {/* What dims the page behind a maximized card — its sibling rather than its child, for
                 the reason given in Popover.css. Drawn before it, so it stands behind it whatever
                 the two are given to stand at. */}
-            {maximized && <div className="tn-popover-backdrop" />}
+            {maximized && <div className={clsx("tn-popover-backdrop", overModal && "over-modal")} />}
 
-            <div ref={elRef} className={clsx("tn-popover", maximized && "maximized", className)}>
+            <div ref={elRef} className={clsx("tn-popover", maximized && "maximized", overModal && "over-modal", className)}>
                 {/* Points at the anchor from the side the card is on (see the placements in
                     Popover.css). First in the card, so its static position is the card's corner,
                     which `placeFloating()` measures the arrow's offset from. */}

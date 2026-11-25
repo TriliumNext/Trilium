@@ -120,7 +120,11 @@ body.desktop .jump-to-note-dialog.wide {
     }
 
     .note-list-attributes {
-        display: block;
+        --color: var(--muted-text-color);
+        --attribute-badge-line-color: color-mix(in srgb, var(--main-text-color) 25%, transparent);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
         margin-bottom: 12px;
     }
 

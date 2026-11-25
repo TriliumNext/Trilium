@@ -18,7 +18,7 @@ import froca from "../../../services/froca";
 import { buildNote } from "../../../test/easy-froca";
 import { renderInto } from "../../../test/render";
 import type { ViewModeProps } from "../interface";
-import { GridView, ListView } from "./ListOrGridView";
+import { GridView, ListView, NoteAttributes } from "./ListOrGridView";
 
 describe("ListOrGridView", () => {
     it("previews only the corner of a workbook, in the list as in the grid", async () => {
@@ -30,6 +30,31 @@ describe("ListOrGridView", () => {
             await vi.waitFor(() => expect(getRenderedContent).toHaveBeenCalledOnce());
             expect(getRenderedContent).toHaveBeenCalledWith(workbook, expect.objectContaining({ trim: true }));
         }
+    });
+});
+
+describe("NoteAttributes", () => {
+    it("shows each attribute as a badge, a relation by its target's title", async () => {
+        buildNote({ id: "attrTarget", title: "Target note" });
+        const note = buildNote({
+            title: "Clipping",
+            "#pageUrl": "https://example.com",
+            "#todo": "",
+            "~author": "attrTarget",
+            "#clipType": "page"
+        });
+        const container = renderInto(<NoteAttributes note={note} />);
+
+        await vi.waitFor(() => expect(container.querySelectorAll(".attribute-badge")).toHaveLength(3));
+        const badges = [ ...container.querySelectorAll(".attribute-badge") ].map((badge) => ({
+            name: badge.querySelector(".attribute-badge-name")?.textContent,
+            value: badge.querySelector(".attribute-badge-value")?.textContent
+        }));
+        expect(badges).toEqual([
+            { name: "pageUrl", value: "https://example.com" },
+            { name: "todo", value: undefined },
+            { name: "author", value: "Target note" }
+        ]);
     });
 });
 

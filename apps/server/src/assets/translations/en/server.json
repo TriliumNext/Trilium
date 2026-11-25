@@ -349,6 +349,7 @@
   "backend_log": {
     "log-does-not-exist": "The backend log file '{{ fileName }}' does not exist (yet).",
     "reading-log-failed": "Reading the backend log file '{{ fileName }}' failed.",
+    "earlier-entries-omitted": "This log is too long to show in full, so its first {{size}} MiB are left out. The whole log is in the file {{fileName}}.",
     "log-file-unavailable": "The log file could not be opened, so only the most recent entries kept in memory are shown. Trilium keeps trying to open it and writes these entries to it once it can."
   },
   "content_renderer": {

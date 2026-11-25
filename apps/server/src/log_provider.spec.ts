@@ -214,7 +214,7 @@ function paint(format: Parameters<typeof styleText>[0], text: string) {
 describe("ServerLogService log files", () => {
     /** The protected file operations `FileBasedLogService` drives rotation and cleanup through. */
     interface LogFileOps {
-        readLogFile(fileName: string): string | null;
+        readLogFile(fileName: string, maxBytes: number): { bytes: Uint8Array; omittedBytes: number } | null;
         listLogFiles(): Promise<{ name: string; mtime: Date }[]>;
         deleteLogFile(fileName: string): Promise<void>;
         getRetentionDays(): number;
@@ -227,7 +227,25 @@ describe("ServerLogService log files", () => {
     afterEach(() => vi.restoreAllMocks());
 
     it("reads a missing log file as null", () => {
-        expect(fileOps().readLogFile("trilium-1999-01-01.log")).toBeNull();
+        expect(fileOps().readLogFile("trilium-1999-01-01.log", 1024)).toBeNull();
+    });
+
+    it("reads a log file whole, or only its last bytes, closing it either way", () => {
+        const fileName = "trilium-1999-01-02.log";
+        const filePath = path.join(dataDir.LOG_DIR, fileName);
+        fs.writeFileSync(filePath, "first line\nsecond line\n");
+        const close = vi.spyOn(fs, "closeSync");
+        try {
+            const ops = fileOps();
+            const decode = (tail: ReturnType<LogFileOps["readLogFile"]>) =>
+                tail && { text: new TextDecoder().decode(tail.bytes), omittedBytes: tail.omittedBytes };
+
+            expect(decode(ops.readLogFile(fileName, 1024))).toEqual({ text: "first line\nsecond line\n", omittedBytes: 0 });
+            expect(decode(ops.readLogFile(fileName, 12))).toEqual({ text: "second line\n", omittedBytes: 11 });
+            expect(close).toHaveBeenCalledTimes(2);
+        } finally {
+            fs.rmSync(filePath);
+        }
     });
 
     it("ends the open log stream once, and drops entries written after it closed", () => {

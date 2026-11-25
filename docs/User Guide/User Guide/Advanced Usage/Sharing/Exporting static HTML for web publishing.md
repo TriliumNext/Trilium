@@ -46,4 +46,10 @@ Once installed simply:
 
 ## Automation
 
-<a class="reference-link" href="../ETAPI%20(REST%20API).md">ETAPI (REST API)</a> could potentially be used to automate an export on a scheduled task.
+To automate an export (for example on a scheduled task), use <a class="reference-link" href="../ETAPI%20(REST%20API).md">ETAPI (REST API)</a>: the export endpoint produces the static layout with `format=share`.
+
+```sh
+curl -H "Authorization: $ETAPI_TOKEN" -o export.zip "http://localhost:8080/etapi/notes/<noteId>/export?format=share"
+```
+
+The archive has the same structure as an export from the UI, so it can be extracted and deployed the same way. ETAPI refuses this export if the subtree contains a protected note.

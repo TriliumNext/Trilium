@@ -1,4 +1,4 @@
-import type { LogFileInfo } from "@triliumnext/core";
+import type { LogFileInfo, LogFileTail } from "@triliumnext/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import StandaloneLogService, { MAX_PENDING_ENTRIES } from "./log_provider.js";
@@ -13,7 +13,7 @@ interface LogInternals {
     openLogFile(fileName: string): Promise<void>;
     closeLogFile(): void;
     writeEntry(entry: string): void;
-    readLogFile(fileName: string): string | null;
+    readLogFile(fileName: string, maxBytes: number): LogFileTail | null;
     listLogFiles(): Promise<LogFileInfo[]>;
     deleteLogFile(fileName: string): Promise<void>;
     getRetentionDays(): number;
@@ -112,10 +112,15 @@ describe("StandaloneLogService file handling", () => {
         expect(internal.currentFileName).toBe("trilium-2024-01-15.log");
 
         internal.writeEntry("hello world\n");
-        expect(internal.readLogFile("trilium-2024-01-15.log")).toBe("hello world\n");
+        const read = (maxBytes: number) => {
+            const tail = internal.readLogFile("trilium-2024-01-15.log", maxBytes);
+            return tail && { text: new TextDecoder().decode(tail.bytes), omittedBytes: tail.omittedBytes };
+        };
+        expect(read(1024)).toEqual({ text: "hello world\n", omittedBytes: 0 });
+        expect(read(6)).toEqual({ text: "world\n", omittedBytes: 6 });
 
         // A different file name cannot be read via the sync handle.
-        expect(internal.readLogFile("trilium-2024-01-14.log")).toBeNull();
+        expect(internal.readLogFile("trilium-2024-01-14.log", 1024)).toBeNull();
 
         internal.closeLogFile();
         expect(handle.close).toHaveBeenCalled();
@@ -179,14 +184,14 @@ describe("StandaloneLogService file handling", () => {
     it("readLogFile returns null without a directory and swallows read errors", async () => {
         const service = new StandaloneLogService();
         const internal = internalsOf(service);
-        expect(internal.readLogFile("trilium-2024-01-15.log")).toBeNull();
+        expect(internal.readLogFile("trilium-2024-01-15.log", 1024)).toBeNull();
 
         // With an open current file whose read throws → caught, returns null.
         const handle = makeSyncHandle();
         handle.read = () => { throw new Error("read fail"); };
         installOpfs({ createSyncAccessHandle: async () => handle });
         await internal.openLogFile("trilium-2024-05-01.log");
-        expect(internal.readLogFile("trilium-2024-05-01.log")).toBeNull();
+        expect(internal.readLogFile("trilium-2024-05-01.log", 1024)).toBeNull();
     });
 });
 
