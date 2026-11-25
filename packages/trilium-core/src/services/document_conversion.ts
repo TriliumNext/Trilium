@@ -13,9 +13,8 @@ import { getSql } from "./sql/index.js";
 import { wrapStringOrBuffer } from "./utils/binary.js";
 
 /**
- * Converts a file note holding a word-processing document (DOCX, ODT, RTF) into a text note in
- * place. A named revision keeps the original file, so the conversion can be undone. Embedded
- * pictures arrive as `data:` URIs, which `updateNoteData()` stores as attachments.
+ * Converts a file note holding a DOCX, ODT or RTF document into a text note in place, keeping the
+ * file in a named revision.
  */
 export async function convertDocumentNoteToText(note: BNote) {
     if (note.type !== "file" || !isConvertibleToText(note.mime)) {
@@ -62,13 +61,8 @@ const PAGE_BREAK = `<div class="page-break" style="page-break-after:always;"></d
 const KEPT_STYLES = new Set([ "color", "background-color", "text-align", "width" ]);
 
 /**
- * Turns the HTML of the office preview into the HTML of a text note: tables in the `<figure>` the
- * editor writes, highlights as the editor's spans, colors with the variables that adapt them to
- * the theme, and without the wrappers and the styles of the word processor's page.
- *
- * `tableLayouts`, one for each table of the HTML in order, gives the tables the column widths
- * and the cell borders, padding, alignment and heights that the office preview leaves out. They
- * are left out when their number differs from that of the tables.
+ * Turns the HTML of the office preview into the HTML of a text note. `tableLayouts` holds one
+ * {@link TableLayout} per table, in document order.
  */
 export function cleanDocumentHtml(
     html: string,
@@ -157,9 +151,8 @@ export function cleanDocumentHtml(
 }
 
 /**
- * The editor's font size class nearest to a size relative to the body text, or none for a size
- * near the body text's own. The bounds lie halfway between the sizes of the classes
- * (`--ck-content-font-size-*`: 0.7, 0.85, 1, 1.4 and 1.8em).
+ * The editor's font size class nearest to `value` relative to the body text, or none near the
+ * body size. The bounds lie halfway between the `--ck-content-font-size-*` sizes.
  */
 function getFontSizeClass(value: string, bodyFontSize: number) {
     const match = value.match(/^([\d.]+)(pt|px)$/i);
@@ -182,9 +175,8 @@ function getFontSizeClass(value: string, bodyFontSize: number) {
 }
 
 /**
- * The office preview pads a row with fewer cells than the table's grid with empty `<td>`s, where
- * the word processor stretches its last cell to the end of the row. This gives that cell the
- * `colspan` instead. A row shortened by a `rowspan` above it is not widened.
+ * Replaces the empty `<td>`s that pad a short row with a `colspan` on its last cell, except in a
+ * row shortened by a `rowspan` above it.
  */
 function fillShortRows(table: HTMLElement) {
     const rows = getRows(table);
@@ -226,11 +218,7 @@ function readRowWidths(rows: HTMLElement[]) {
     return widths;
 }
 
-/**
- * Adds the styles of `layout` to the cells of `table`, row by row, and its column widths as the
- * editor's `<colgroup>` when the table has as many columns. A table whose rows differ in number
- * from the layout's is left as it is.
- */
+/** Adds the cell styles and the `<colgroup>` of `layout` to `table` when their rows match. */
 function applyTableLayout(table: HTMLElement, layout: TableLayout) {
     const rows = getRows(table);
     if (rows.length !== layout.rows.length) {

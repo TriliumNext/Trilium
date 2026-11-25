@@ -15,29 +15,7 @@ import { stripListItemIds } from "./strip_list_item_ids.js";
 const BODY_FONT_SIZE = 11;
 
 /**
- * The look that note content gets from the app's stylesheets rather than from its own markup, so a
- * table without borders of its own still has the borders and header shading it shows in Trilium.
- * Layout tables have no borders in the app either. The `text-*` sizes are those of the editor's
- * font size classes (`--ck-content-font-size-*`) relative to the size of body text, in points.
- */
-function buildContentStylesheet(bodyFontSize: number) {
-    return `
-        figure.table table { border-collapse: collapse; border: 1px solid #bfbfbf; }
-        figure.table td, figure.table th { border: 1px solid #bfbfbf; padding: 4px 6px; }
-        figure.table th { background-color: #f2f2f2; font-weight: bold; }
-        table.layout-table, table.layout-table td, table.layout-table th { border: none; }
-        table.layout-table th { background-color: transparent; }
-        .text-tiny { font-size: ${(bodyFontSize * 0.7).toFixed(1)}pt; }
-        .text-small { font-size: ${(bodyFontSize * 0.85).toFixed(1)}pt; }
-        .text-big { font-size: ${(bodyFontSize * 1.4).toFixed(1)}pt; }
-        .text-huge { font-size: ${(bodyFontSize * 1.8).toFixed(1)}pt; }
-    `;
-}
-
-/**
- * Word's defaults for body text, and headings in bold and in the text color, where the defaults
- * of `docx` have no spacing and blue headings. The last paragraph of a table cell has no spacing
- * after it, which would leave a gap at the bottom of every cell. Sizes are in half-points,
+ * Word's defaults for body text, with bold headings in the text color. Sizes are in half-points,
  * spacing in twentieths of a point.
  */
 const DOCUMENT_STYLES: IStylesOptions = {
@@ -63,11 +41,8 @@ const DOCUMENT_STYLES: IStylesOptions = {
 };
 
 /**
- * Converts the HTML of a text note into a Word document. Formatting that Word can hold (colors,
- * borders, cell shading, lists, images) is kept; what it cannot hold is logged and left out.
- *
- * A note with a `~docxTemplate` relation is written into that Word document instead, in place of
- * its body, so it takes the template's styles, headers, footers and page setup.
+ * Converts the HTML of a text note into a Word document, written into the note's
+ * `~docxTemplate` when it has one. What Word cannot hold is logged and left out.
  */
 export async function renderTextNoteToDocx(note: BNote, html: string): Promise<Uint8Array> {
     const template = getDocxTemplate(note);
@@ -118,9 +93,26 @@ export async function renderTextNoteToDocx(note: BNote, html: string): Promise<U
 }
 
 /**
- * Gives the last paragraph of a table cell the `TableText` style of {@link DOCUMENT_STYLES}. The
- * paragraphs before it keep the document's default style, with its spacing between paragraphs,
- * or `contentStyle`, the style that a template gives the note's text.
+ * The table borders and font sizes that note content gets from the app's stylesheets rather than
+ * its markup. The `text-*` sizes follow `--ck-content-font-size-*`.
+ */
+function buildContentStylesheet(bodyFontSize: number) {
+    return `
+        figure.table table { border-collapse: collapse; border: 1px solid #bfbfbf; }
+        figure.table td, figure.table th { border: 1px solid #bfbfbf; padding: 4px 6px; }
+        figure.table th { background-color: #f2f2f2; font-weight: bold; }
+        table.layout-table, table.layout-table td, table.layout-table th { border: none; }
+        table.layout-table th { background-color: transparent; }
+        .text-tiny { font-size: ${(bodyFontSize * 0.7).toFixed(1)}pt; }
+        .text-small { font-size: ${(bodyFontSize * 0.85).toFixed(1)}pt; }
+        .text-big { font-size: ${(bodyFontSize * 1.4).toFixed(1)}pt; }
+        .text-huge { font-size: ${(bodyFontSize * 1.8).toFixed(1)}pt; }
+    `;
+}
+
+/**
+ * Gives the last paragraph of a table cell the `TableText` style, and the note's other text
+ * `contentStyle` when a template sets one.
  */
 function buildStyleMap(contentStyle: string | undefined): Record<string, string> {
     return {
@@ -145,9 +137,8 @@ const TWIPS_PER_PIXEL = 15;
 const TWIPS_PER_POINT = 20;
 
 /**
- * Removes what only means something inside this Trilium instance (editor bookkeeping, links to
- * other notes, which keep their text) and puts table widths where `htmlToContent()` reads them.
- * `textWidth` is the width of the text on the page, in twips.
+ * Removes editor bookkeeping and links to other notes, and puts table widths where
+ * `htmlToContent()` reads them. `textWidth` is in twips.
  */
 export function prepareHtml(html: string, textWidth = DEFAULT_TEXT_WIDTH) {
     const root = parse(stripListItemIds(html));
@@ -168,13 +159,8 @@ export function prepareHtml(html: string, textWidth = DEFAULT_TEXT_WIDTH) {
 }
 
 /**
- * CKEditor writes a table's width on its `<figure>` and the column widths in a `<colgroup>`;
- * `htmlToContent()` reads them from the `<table>` and its cells. The first row's cells are enough
- * for Word's column grid.
- *
- * A table that is not inside another gets its width in points, the whole width of the text when
- * it has none: `htmlToContent()` resolves percentages against {@link DEFAULT_TEXT_WIDTH}, which
- * leaves tables narrower than the text of a template with a wider page or narrower margins.
+ * Moves the widths from the `<figure>` and `<colgroup>` to the `<table>` and its first row. A
+ * top-level table gets points, as `htmlToContent()` assumes {@link DEFAULT_TEXT_WIDTH}.
  */
 function moveTableWidths(table: HTMLElement, textWidth: number) {
     const figure = table.parentNode;

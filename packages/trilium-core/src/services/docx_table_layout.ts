@@ -18,11 +18,8 @@ export interface TableLayout {
 }
 
 /**
- * Reads the layout of every table in the body of a Word document, outer tables before the tables
- * inside them, as the office preview writes them. Returns an empty list for a file it cannot read.
- *
- * The space before a cell's first paragraph and after its last one is added to the cell's
- * padding: a note's editor has no paragraph spacing, and Word draws that space inside the cell.
+ * Reads the layout of every table of a Word document, outer before nested as the office preview
+ * writes them. The paragraph spacing at a cell's top and bottom counts as padding.
  */
 export function readDocxTableLayouts(docx: Uint8Array): TableLayout[] {
     let files: Record<string, Uint8Array>;

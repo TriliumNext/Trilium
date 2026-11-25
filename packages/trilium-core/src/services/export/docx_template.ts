@@ -61,19 +61,8 @@ export function getDocxTemplate(note: BNote): Uint8Array | undefined {
 }
 
 /**
- * Turns a Word document into the shell that a note's content is patched into. A document with a
- * `{{content}}` paragraph in its body is kept whole, and the note replaces that paragraph.
- * Otherwise its body becomes a single `{{content}}` paragraph followed by the page setup of its
- * last section, and the pictures only that body showed are removed. Styles, headers, footers, the theme and
- * embedded fonts stay either way, and the `TableText` style is added when the document lacks it.
- *
- * A `{{content}}` paragraph also gives the note's text its look: the {@link NOTE_TEXT_STYLE}
- * style, added when the document lacks it, is based on the paragraph's style and has the
- * character formatting of its first run, such as its font and size.
- *
- * Also returns the width of the text on the page where the note goes, in twips, since
- * `patchDocument()` sizes tables for {@link DEFAULT_TEXT_WIDTH} whatever the template's page,
- * and the font size of {@link NOTE_TEXT_STYLE}, in points, when the run sets one.
+ * Turns a Word document into the shell that `patchDocument()` writes a note into, in place of its
+ * `{{content}}` line or else of its whole body, and adds the styles the note's text takes.
  */
 export function prepareDocxTemplate(docx: Uint8Array): PreparedDocxTemplate {
     let files: Record<string, Uint8Array>;
