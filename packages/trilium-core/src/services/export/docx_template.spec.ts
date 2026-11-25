@@ -108,13 +108,13 @@ describe("prepareDocxTemplate", () => {
         expect(textWidth).toBe(11906 - 2 * 1440);
     });
 
-    it("reads the size of the {{content}} line from the styles it is based on", async () => {
+    it("reads the size of the {{content}} line from its styles, whatever their ids", async () => {
         const template = await Packer.pack(new Document({
             styles: {
                 default: { document: { run: { size: 20 } } },
                 paragraphStyles: [
-                    { id: "Large", name: "Large", basedOn: "Normal", run: { size: 40 } },
-                    { id: "Answer", name: "Answer", basedOn: "Large", run: { bold: true } }
+                    { id: "Large[2]", name: "Large", basedOn: "Normal", run: { size: 40 } },
+                    { id: "Answer", name: "Answer", basedOn: "Large[2]", run: { bold: true } }
                 ]
             },
             sections: [ { children: [

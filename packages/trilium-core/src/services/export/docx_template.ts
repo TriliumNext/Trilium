@@ -4,6 +4,7 @@ import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import type BNote from "../../becca/entities/bnote.js";
 import { ValidationError } from "../../errors.js";
 import { decodeUtf8, wrapStringOrBuffer } from "../utils/binary.js";
+import { escapeRegExp } from "../utils/index.js";
 
 /** The relation that points a note, or the notes under it, at the Word document to export into. */
 export const DOCX_TEMPLATE_RELATION = "docxTemplate";
@@ -233,7 +234,7 @@ function readStyleSize(styles: string, id: string) {
     while (styleId && !seen.has(styleId)) {
         seen.add(styleId);
         const style = styles.match(new RegExp(
-            `<w:style\\b[^>]*w:styleId="${styleId}"[^>]*>[\\s\\S]*?</w:style>`))?.[0];
+            `<w:style\\b[^>]*w:styleId="${escapeRegExp(styleId)}"[^>]*>[\\s\\S]*?</w:style>`))?.[0];
         const size = readSize(style?.match(/<w:rPr>[\s\S]*?<\/w:rPr>/)?.[0]);
         if (size) {
             return size;
