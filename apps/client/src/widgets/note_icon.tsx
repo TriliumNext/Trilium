@@ -1,11 +1,10 @@
 import "./note_icon.css";
 
 import { t } from "i18next";
-import { useEffect, useState } from "preact/hooks";
 
 import FNote from "../entities/fnote";
 import attributes from "../services/attributes";
-import { useNoteLabel } from "./react/hooks/note";
+import { useNoteIcon } from "./react/hooks/note";
 import { useNoteContext } from "./react/hooks/note_context";
 import { IconPickerButton } from "./react/IconPickerButton";
 
@@ -16,13 +15,7 @@ import { IconPickerButton } from "./react/IconPickerButton";
  */
 export default function NoteIcon() {
     const { note, viewScope } = useNoteContext();
-    const [ icon, setIcon ] = useState<string | null | undefined>();
-    const [ iconClass ] = useNoteLabel(note, "iconClass");
-    const [ workspaceIconClass ] = useNoteLabel(note, "workspaceIconClass");
-
-    useEffect(() => {
-        setIcon(note?.getIcon());
-    }, [ note, iconClass, workspaceIconClass ]);
+    const icon = useNoteIcon(note);
 
     const isDisabled = viewScope?.viewMode !== "default"
         || note?.isMetadataReadOnly;

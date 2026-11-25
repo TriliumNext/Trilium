@@ -120,7 +120,13 @@ function processNoteChange(loadResults: LoadResults, ec: EntityChange) {
             }
         }
 
-        note.update(ec.entity as FNoteRow);
+        const row = ec.entity as FNoteRow;
+        if (note.title !== row.title || note.type !== row.type || note.mime !== row.mime
+                || note.isProtected !== row.isProtected) {
+            loadResults.addNotePropertiesChange(note.noteId);
+        }
+
+        note.update(row);
     }
 }
 

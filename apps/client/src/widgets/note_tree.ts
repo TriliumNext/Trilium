@@ -1249,7 +1249,8 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
 
         for (const noteId of loadResults.getNoteIds()) {
             const contentReloaded = loadResults.isNoteContentReloaded(noteId);
-            if (contentReloaded && !loadResults.isNoteReloaded(noteId, contentReloaded.componentId)) {
+            if (contentReloaded && !loadResults.isNoteReloaded(noteId, contentReloaded.componentId)
+                    && !loadResults.hasNotePropertiesChanged(noteId)) {
                 // Only the note content was reloaded, not the note itself. This would cause a redundant update on every few seconds while editing a note.
                 continue;
             }

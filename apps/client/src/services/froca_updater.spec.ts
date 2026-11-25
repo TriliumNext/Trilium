@@ -115,6 +115,23 @@ describe("froca_updater - note changes", () => {
         expect(loadResults.isNoteContentReloaded(note.noteId)).toBeTruthy();
     });
 
+    it("tells a change of the note's type from a change of its content alone", async () => {
+        const note = buildNote({ title: "Review" });
+        note.blobId = "first";
+        const row = { noteId: note.noteId, title: "Review", isProtected: false, type: "text", mime: "text/html" };
+
+        await process([ec({ entityId: note.noteId, componentId: "editor", entity: { ...row, blobId: "second" } as any })]);
+        const saved = triggerSpy.mock.calls[0][1].loadResults as LoadResults;
+        expect(saved.isNoteContentReloaded(note.noteId)).toBeTruthy();
+        expect(saved.hasNotePropertiesChanged(note.noteId)).toBe(false);
+
+        await process([ec({ entityId: note.noteId, componentId: "client", entity: {
+            ...row, type: "file", mime: "application/pdf", blobId: "third"
+        } as any })]);
+        const converted = triggerSpy.mock.calls[1][1].loadResults as LoadResults;
+        expect(converted.hasNotePropertiesChanged(note.noteId)).toBe(true);
+    });
+
     it("does not register content change when protection status changed", async () => {
         const note = buildNote({ title: "Prot" });
         note.blobId = "oldBlob";

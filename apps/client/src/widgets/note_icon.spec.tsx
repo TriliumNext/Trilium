@@ -37,7 +37,8 @@ const iconPickerProps = vi.hoisted(() => ({
 
 vi.mock("./react/hooks/note", async (importOriginal) => ({
     ...(await importOriginal<typeof import("./react/hooks/note")>()),
-    useNoteLabel: () => [ undefined ]
+    useNoteLabel: () => [ undefined ],
+    useNoteIcon: (note: FNote | undefined) => note?.getIcon()
 }));
 vi.mock("./react/hooks/note_context", async (importOriginal) => ({
     ...(await importOriginal<typeof import("./react/hooks/note_context")>()),
