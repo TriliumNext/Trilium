@@ -3,9 +3,16 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { describe, expect, it } from "vitest";
 
-import type NoteContext from "../../../components/note_context";
+import Component from "../../../components/component";
+import NoteContext from "../../../components/note_context";
+import LoadResults from "../../../services/load_results";
+import options from "../../../services/options";
+import { buildNote } from "../../../test/easy-froca";
 import { renderInto } from "../../../test/render";
-import { useContentElement, useGetContextDataFrom, useTextEditor } from "./note_context";
+import { ParentComponent } from "../react_utils";
+import {
+    useContentElement, useGetContextDataFrom, useIsNoteReadOnly, useTextEditor
+} from "./note_context";
 
 describe("per-context hooks", () => {
     it("useTextEditor() returns null for an editor resolved for another context", async () => {
@@ -51,6 +58,47 @@ describe("per-context hooks", () => {
         expect(renders.before.at(-1)).toBe(dataA);
         expect(renders.after.length).toBeGreaterThan(0);
         expect(renders.after.every((value) => value === dataB)).toBe(true);
+    });
+});
+
+describe("useIsNoteReadOnly", () => {
+    it("checks the note again when its type changes, as converting a document to text does", async () => {
+        options.load({ autoReadonlySizeText: 100, autoReadonlySizeCode: 100 });
+        const note = buildNote({
+            title: "Review.docx",
+            type: "file",
+            mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            content: "a".repeat(200)
+        });
+        const noteContext = new NoteContext();
+        noteContext.noteId = note.noteId;
+        noteContext.notePath = note.noteId;
+        noteContext.viewScope = { viewMode: "default" };
+        const parentComponent = new Component();
+        let isReadOnly: boolean | undefined;
+        function Probe() {
+            isReadOnly = useIsNoteReadOnly(note, noteContext).isReadOnly;
+            return null;
+        }
+
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={parentComponent}><Probe /></ParentComponent.Provider>,
+                renderInto(null)
+            );
+        });
+        await settle();
+        expect(isReadOnly).toBe(false);
+
+        note.type = "text";
+        note.mime = "text/html";
+        const loadResults = new LoadResults([]);
+        loadResults.addNote(note.noteId, "client");
+        await act(async () => {
+            await parentComponent.handleEvent("entitiesReloaded", { loadResults });
+        });
+        await settle();
+        expect(isReadOnly).toBe(true);
     });
 });
 
