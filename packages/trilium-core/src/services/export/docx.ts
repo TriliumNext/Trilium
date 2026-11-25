@@ -36,8 +36,8 @@ function buildContentStylesheet(bodyFontSize: number) {
 
 /**
  * Word's defaults for body text, and headings in bold and in the text color, where the defaults
- * of `docx` have no spacing and blue headings. Text in table cells has no spacing after its
- * paragraphs, which would leave a gap at the bottom of every cell. Sizes are in half-points,
+ * of `docx` have no spacing and blue headings. The last paragraph of a table cell has no spacing
+ * after it, which would leave a gap at the bottom of every cell. Sizes are in half-points,
  * spacing in twentieths of a point.
  */
 const DOCUMENT_STYLES: IStylesOptions = {
@@ -62,9 +62,13 @@ const DOCUMENT_STYLES: IStylesOptions = {
     } ]
 };
 
-/** Gives text in table cells the `TableText` style of {@link DOCUMENT_STYLES}. */
+/**
+ * Gives the last paragraph of a table cell the `TableText` style of {@link DOCUMENT_STYLES}. The
+ * paragraphs before it keep the document's default style, with its spacing between paragraphs.
+ */
 const STYLE_MAP = {
-    "figure.table td, figure.table th, figure.table td p, figure.table th p": "TableText"
+    "figure.table td, figure.table th, figure.table td p:last-child, figure.table th p:last-child":
+        "TableText"
 };
 
 /**

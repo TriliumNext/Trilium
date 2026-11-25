@@ -106,4 +106,20 @@ describe("renderTextNoteToDocx", () => {
         expect(xml).toMatch(/<w:pageBreakBefore\/>.*Next page/s);
         expect(styles).toMatch(/<w:style [^>]*w:styleId="TableText">.*<w:spacing w:after="0"\/>/s);
     });
+
+    it("keeps the space between the paragraphs of a cell, but not after its last one", async () => {
+        const note = buildNote({ type: "text", title: "Cells" });
+        const files = unzipSync(await renderTextNoteToDocx(note, `<figure class="table"><table><tbody><tr>`
+            + `<td><p>First</p><p>Last</p></td><td>Bare</td>`
+            + `</tr></tbody></table></figure>`));
+        const xml = strFromU8(files["word/document.xml"]);
+        const paragraphOf = (text: string) =>
+            [ ...xml.matchAll(/<w:p>.*?<\/w:p>/gs) ].map((match) => match[0]).find((p) => p.includes(text));
+
+        expect(paragraphOf("First")).toBeDefined();
+        expect(paragraphOf("First")).not.toContain("TableText");
+        expect(paragraphOf("First")).not.toContain(`w:after="0"`);
+        expect(paragraphOf("Last")).toContain(`<w:pStyle w:val="TableText"/>`);
+        expect(paragraphOf("Bare")).toContain(`<w:pStyle w:val="TableText"/>`);
+    });
 });
