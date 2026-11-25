@@ -209,6 +209,7 @@ function readRunProperties(paragraph: string) {
                 .replace(/<w:rStyle\b[^>]*\/>/, "");
         }
     }
+    /* v8 ignore next -- the marker's text comes from the <w:t> of a run */
     return undefined;
 }
 
@@ -217,14 +218,13 @@ function readParagraphStyle(paragraph: string) {
     return properties?.match(/<w:pStyle\s+w:val="([^"]+)"/)?.[1];
 }
 
+/** The opening tag of the default paragraph style, its attributes in any order. */
+const DEFAULT_PARAGRAPH_STYLE = new RegExp(`<w:style\\b(?=[^>]*\\bw:type="paragraph")`
+    + `(?=[^>]*\\bw:default="(?:1|true|on)")[^>]*\\bw:styleId="([^"]+)"`);
+
 /** The id of the style that paragraphs without one of their own have. */
 function readDefaultParagraphStyle(styles: string) {
-    for (const [ style ] of styles.matchAll(/<w:style\b[^>]*>/g)) {
-        if (style.includes(`w:type="paragraph"`) && /\bw:default="(1|true|on)"/.test(style)) {
-            return style.match(/\bw:styleId="([^"]+)"/)?.[1] ?? "Normal";
-        }
-    }
-    return "Normal";
+    return styles.match(DEFAULT_PARAGRAPH_STYLE)?.[1] ?? "Normal";
 }
 
 /** The font size of the style `id` or of the nearest style it is based on, in half-points. */
@@ -299,13 +299,17 @@ function removeUnreferencedMedia(files: Record<string, Uint8Array>) {
             continue;
         }
         for (const [ , target ] of strFromU8(content).matchAll(/\bTarget="([^"]+)"/g)) {
-            targets.add(target.split("/").at(-1) ?? target);
+            targets.add(fileName(target));
         }
     }
 
     for (const path of Object.keys(files)) {
-        if (path.startsWith("word/media/") && !targets.has(path.split("/").at(-1) ?? path)) {
+        if (path.startsWith("word/media/") && !targets.has(fileName(path))) {
             delete files[path];
         }
     }
+}
+
+function fileName(path: string) {
+    return path.slice(path.lastIndexOf("/") + 1);
 }

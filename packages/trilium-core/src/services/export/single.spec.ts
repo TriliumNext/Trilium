@@ -347,6 +347,10 @@ describe("exportSingleNote", () => {
                 message: "Note type 'code' cannot be exported as a Word document."
             })
         );
+
+        const binaryText = buildNote({ type: "text", title: "Bytes" });
+        vi.spyOn(binaryText, "getContent").mockReturnValue(new Uint8Array([ 1 ]));
+        await expect(exportNote(binaryText, "docx").result).rejects.toThrow("Unsupported content type for export.");
     });
 
     it("sends a text note as a Word document", async () => {

@@ -1612,4 +1612,13 @@ describe("Notes API (core)", () => {
             expect(becca.getNoteOrThrow("_vapiPage").getContent()).toBe("<p>shipped</p>");
         });
     });
+
+    describe("converting a document to text", () => {
+        it("refuses a note that is not a word-processing document", async () => {
+            const { noteId } = await createTextNote(api);
+
+            expect((await api.post(`/api/notes/${noteId}/convert-to-text`)).status).toBe(400);
+            expect(becca.getNoteOrThrow(noteId).type).toBe("text");
+        });
+    });
 });

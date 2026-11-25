@@ -5,6 +5,7 @@ import becca from "../../becca/becca.js";
 import type BAttachment from "../../becca/entities/battachment.js";
 import type BNote from "../../becca/entities/bnote.js";
 import { buildNote } from "../../test/becca_easy_mocking.js";
+import { getLog } from "../log.js";
 import { prepareHtml, renderTextNoteToDocx, resolveImage } from "./docx.js";
 
 /** A 1×1 PNG. */
@@ -52,6 +53,20 @@ describe("prepareHtml", () => {
 
         expect(html).toMatch(/^<figure class="table"><table style="width:500pt;">/);
         expect(html).toContain(`<figure class="table" style="width:50%;"><table style="width:50%;">`);
+    });
+
+    it("leaves the widths it cannot place as they are", () => {
+        const html = prepareHtml(`<table style="width:300px"><tr><td>a</td></tr></table>`
+            + `<figure class="table" style="width:50%"><table style="border:none">`
+            + `<colgroup><col><col style="width:60%;"></colgroup><tr> <td>b</td><th>c</th></tr></table></figure>`
+            + `<table><tr><td><figure class="table" style="width:40%"><table style="width:30%"><tr><td>d</td></tr></table>`
+            + `</figure><table><tr><td>e</td></tr></table></td></tr></table>`, 10000);
+
+        expect(html).toBe(`<table style="width:300px"><tr><td>a</td></tr></table>`
+            + `<figure class="table" style="width:50%"><table style="border:none;width:250pt;">`
+            + `<colgroup><col><col style="width:60%;"></colgroup><tr> <td>b</td><th style="width:60%;">c</th></tr></table></figure>`
+            + `<table style="width:500pt;"><tr><td><figure class="table" style="width:40%"><table style="width:30%"><tr><td>d</td></tr></table>`
+            + `</figure><table><tr><td>e</td></tr></table></td></tr></table>`);
     });
 });
 
@@ -109,6 +124,16 @@ describe("renderTextNoteToDocx", () => {
         expect(styles).toMatch(/<w:style [^>]*w:styleId="TableText">.*<w:spacing w:after="0"\/>/s);
     });
 
+    it("logs what Word cannot hold, and leaves it out", async () => {
+        const info = vi.spyOn(getLog(), "info");
+        const note = buildNote({ type: "text", title: "Embed" });
+
+        const files = unzipSync(await renderTextNoteToDocx(note, `<p>Before</p><iframe src="https://example.com"></iframe>`));
+
+        expect(strFromU8(files["word/document.xml"])).toContain("Before");
+        expect(info).toHaveBeenCalledWith(expect.stringMatching(/^DOCX export of note .* left out or changed: .*iframe/));
+    });
+
     it("keeps the space between the paragraphs of a cell, but not after its last one", async () => {
         const note = buildNote({ type: "text", title: "Cells" });
         const files = unzipSync(await renderTextNoteToDocx(note, `<figure class="table"><table><tbody><tr>`
@@ -140,5 +165,23 @@ describe("resolveImage", () => {
             resolveImage("api/images/img1/chart.png"),
             resolveImage("api/attachments/att1/image/chart.png")
         ]).toEqual([ undefined, undefined ]);
+    });
+
+    it("reads an image note, and leaves out what is missing, not an image or not Trilium's", () => {
+        const text = { mime: "text/html", isContentAvailable: () => true, getContent: () => "" };
+        const image = { mime: "image/png", isContentAvailable: () => true, getContent: () => PNG };
+        vi.spyOn(becca, "getNote").mockReturnValueOnce(image as unknown as BNote).mockReturnValueOnce(null)
+            .mockReturnValueOnce(text as unknown as BNote);
+        vi.spyOn(becca, "getAttachment").mockReturnValueOnce(null)
+            .mockReturnValueOnce(text as unknown as BAttachment);
+
+        expect(resolveImage("api/images/img1/chart.png")).toEqual(PNG);
+        expect([
+            resolveImage("api/images/gone/chart.png"),
+            resolveImage("api/images/page/chart.png"),
+            resolveImage("api/attachments/gone/image/chart.png"),
+            resolveImage("api/attachments/page/image/chart.png"),
+            resolveImage("https://example.com/chart.png")
+        ]).toEqual([ undefined, undefined, undefined, undefined, undefined ]);
     });
 });

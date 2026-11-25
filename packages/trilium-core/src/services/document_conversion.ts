@@ -46,7 +46,7 @@ export async function convertDocumentNoteToText(note: BNote) {
             source: "manual"
         });
 
-        note.title = note.title.replace(/\.(docx|odt|rtf)$/i, "") || note.title;
+        note.title = note.title.replace(/(.)\.(docx|odt|rtf)$/i, "$1");
         note.type = "text";
         note.mime = "text/html";
         note.save();
@@ -199,7 +199,6 @@ function fillShortRows(table: HTMLElement) {
     }
 }
 
-/** A cell with neither attributes nor content, which only the office preview's padding writes. */
 /** The number of grid columns each row takes, counting the cells of `rowspan`s from above. */
 function readRowWidths(rows: HTMLElement[]) {
     const widths: number[] = [];
@@ -247,6 +246,7 @@ function applyTableLayout(table: HTMLElement, layout: TableLayout) {
     }
 }
 
+/** A cell with neither attributes nor content, which only the office preview's padding writes. */
 function isPadding(cell: HTMLElement) {
     return !cell.rawAttrs.trim() && !cell.children.length && !cell.rawText.trim();
 }
@@ -264,7 +264,7 @@ function getRows(table: HTMLElement) {
 }
 
 function getCells(row: HTMLElement) {
-    return row.children.filter((cell) => cell.tagName === "TD" || cell.tagName === "TH");
+    return row.children.filter((cell) => [ "TD", "TH" ].includes(cell.tagName));
 }
 
 function readSpan(cell: HTMLElement, attribute: "colspan" | "rowspan") {

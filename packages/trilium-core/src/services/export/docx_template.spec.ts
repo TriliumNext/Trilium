@@ -3,12 +3,13 @@ import {
     Document, Footer, HeadingLevel, ImageRun, Packer, Paragraph, TextRun
 } from "docx";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import type BNote from "../../becca/entities/bnote.js";
 import { getContext } from "../context.js";
 import noteService from "../notes.js";
 import { renderTextNoteToDocx } from "./docx.js";
-import { prepareDocxTemplate, readDocxBodyFontSize } from "./docx_template.js";
+import { DEFAULT_TEXT_WIDTH, prepareDocxTemplate, readDocxBodyFontSize } from "./docx_template.js";
 
 /** A 1×1 PNG. */
 const PNG = new Uint8Array([
@@ -71,6 +72,10 @@ async function buildMarkedTemplate() {
     ] }), "uint8array");
 }
 
+function xmlZip(files: Record<string, string>) {
+    return zipSync(Object.fromEntries(Object.entries(files).map(([ path, xml ]) => [ path, strToU8(xml) ])));
+}
+
 function readPart(docx: Uint8Array, path: string) {
     const part = unzipSync(docx)[path];
     return part ? strFromU8(part) : undefined;
@@ -125,9 +130,41 @@ describe("prepareDocxTemplate", () => {
         expect(prepareDocxTemplate(template).contentFontSize).toBe(20);
     });
 
-    it("refuses a file that is not a Word document", () => {
-        expect(() => prepareDocxTemplate(new Uint8Array([ 1, 2, 3 ]))).toThrow(
-            expect.objectContaining({ name: "ValidationError" }));
+    it("refuses a file that is not a Word document, or one without a body", () => {
+        for (const docx of [
+            new Uint8Array([ 1, 2, 3 ]),
+            xmlZip({ "word/styles.xml": "<w:styles/>" }),
+            xmlZip({ "word/document.xml": "<w:document/>" })
+        ]) {
+            expect(() => prepareDocxTemplate(docx)).toThrow(
+                expect.objectContaining({ name: "ValidationError" }));
+        }
+    });
+
+    it("reads the page and styles of a template written by another program", () => {
+        const marked = prepareDocxTemplate(xmlZip({
+            "word/document.xml": `<w:document><w:body><w:p><w:r><w:rPr><w:b/></w:rPr></w:r>`
+                + `<w:r><w:t>{{content}}</w:t></w:r></w:p><w:sectPr><w:pgSz w:w="12000"/>`
+                + `<w:pgMar w:start="1000" w:end="1500"/></w:sectPr></w:body></w:document>`,
+            "word/styles.xml": `<w:styles><w:style w:type="paragraph" w:styleId="NoteText"/>`
+                + `<w:style w:type="paragraph" w:styleId="TableText"/></w:styles>`
+        }));
+        expect(marked).toMatchObject({ textWidth: 9500, contentStyle: "NoteText", contentFontSize: undefined });
+        expect(readPart(marked.data, "word/styles.xml")).not.toContain("Note Text");
+
+        // A page narrower than its gutter, and a body without the section properties that close it.
+        const narrow = prepareDocxTemplate(xmlZip({
+            "word/document.xml": `<w:document><w:body><w:p><w:r><w:t>{{content}}</w:t></w:r></w:p>`
+                + `<w:sectPr><w:pgSz w:w="1000"/><w:pgMar w:gutter="2000"/></w:sectPr>`
+                + `</w:body></w:document>`
+        }));
+        const unmarked = prepareDocxTemplate(xmlZip({
+            "word/document.xml": `<w:document><w:body><w:p><w:pPr><w:sectPr><w:pgSz w:w="12000"/>`
+                + `</w:sectPr></w:pPr><w:r><w:t>Old</w:t></w:r></w:p></w:body></w:document>`
+        }));
+        expect([ narrow.textWidth, unmarked.textWidth ]).toEqual([ DEFAULT_TEXT_WIDTH, DEFAULT_TEXT_WIDTH ]);
+        expect(readPart(unmarked.data, "word/document.xml")).toBe(
+            "<w:document><w:body><w:p><w:r><w:t>{{content}}</w:t></w:r></w:p></w:body></w:document>");
     });
 });
 
@@ -147,12 +184,17 @@ describe("readDocxBodyFontSize", () => {
         expect(readDocxBodyFontSize(docxWithStyles(defaults
             + normal(`<w:name w:val="normal"/>`)))).toBe(9.5);
         expect(readDocxBodyFontSize(docxWithStyles(""))).toBe(10);
+        expect(readDocxBodyFontSize(xmlZip({ "word/document.xml": "<w:document/>" }))).toBe(10);
         expect(readDocxBodyFontSize(new Uint8Array([ 1, 2, 3 ]))).toBeUndefined();
     });
 });
 
 describe("renderTextNoteToDocx with a template", () => {
     let counter = 0;
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
 
     function createNotes(templateMime: string, templateContent: Uint8Array) {
         counter++;
@@ -273,5 +315,14 @@ describe("renderTextNoteToDocx with a template", () => {
 
         await expect(renderTextNoteToDocx(note, "<p>x</p>"))
             .rejects.toThrow(/is not a Word document/);
+    });
+
+    it("refuses a protected template while the protected session is locked", async () => {
+        const note = createNotes(DOCX_MIME, await buildTemplate());
+        const template = note.getRelationTarget("docxTemplate");
+        expect(template).toBeTruthy();
+        vi.spyOn(template as BNote, "isContentAvailable").mockReturnValue(false);
+
+        await expect(renderTextNoteToDocx(note, "<p>x</p>")).rejects.toThrow(/is protected/);
     });
 });

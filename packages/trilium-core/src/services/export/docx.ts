@@ -144,7 +144,7 @@ export function prepareHtml(html: string, textWidth = DEFAULT_TEXT_WIDTH) {
     const root = parse(stripListItemIds(html));
 
     for (const link of root.querySelectorAll("a[href]")) {
-        const href = link.getAttribute("href") ?? "";
+        const href = link.attributes.href;
         const isReferenceLink = href.startsWith("#") && link.classList.contains("reference-link");
         if (href.startsWith("#root") || isReferenceLink) {
             link.replaceWith(link.innerHTML);
@@ -194,11 +194,12 @@ function moveTableWidths(table: HTMLElement, textWidth: number) {
         const widths = columnWidths.slice(column, column + span);
         column += span;
 
-        if (getStyle(cell, "width") || widths.some((width) => !width?.endsWith("%"))) {
+        const percents = widths.map((width) => width?.endsWith("%") ? parseFloat(width) : NaN);
+        if (getStyle(cell, "width") || percents.some(Number.isNaN)) {
             continue;
         }
 
-        const total = widths.reduce((sum, width) => sum + parseFloat(width ?? ""), 0);
+        const total = percents.reduce((sum, percent) => sum + percent, 0);
         setStyle(cell, "width", `${Number(total.toFixed(2))}%`);
     }
 }

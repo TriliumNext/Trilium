@@ -7,7 +7,7 @@ import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { buildNote } from "../test/becca_easy_mocking.js";
 import { getContext } from "./context.js";
@@ -49,12 +49,13 @@ describe("cleanDocumentHtml", () => {
     it("gives a size relative to the body text the editor's nearest font size", () => {
         const html = cleanDocumentHtml(`<p><span style="font-size: 20pt"><b>Title</b></span> `
             + `<span style="font-size: 10.5pt">body</span> <span style="font-size: 8.5pt">small</span> `
-            + `<span style="font-size: 6pt">tiny</span> <span style="font-size: 18px">big</span></p>`
+            + `<span style="font-size: 6pt">tiny</span> <span style="font-size: 18px">big</span> `
+            + `<span style="font-size: 1.2em">em</span></p>`
             + `<h2><span style="font-size: 13pt">Heading</span></h2>`, { bodyFontSize: 9.5 });
 
         expect(html).toBe(`<p><span class="text-huge"><b>Title</b></span> body `
             + `<span class="text-small">small</span> <span class="text-tiny">tiny</span> `
-            + `<span class="text-big">big</span></p><h2>Heading</h2>`);
+            + `<span class="text-big">big</span> em</p><h2>Heading</h2>`);
     });
 
     it("gives the last cell of a padded row the rest of the row, but not a row under a rowspan", () => {
@@ -98,6 +99,25 @@ describe("table layout", () => {
         const unmatched = cleanDocumentHtml(merged + merged, { tableLayouts });
         expect(unmatched).not.toContain("vertical-align");
         expect(unmatched).not.toContain("colgroup");
+    });
+
+    it("styles the cells a row has, and sets column widths only when the grid matches", () => {
+        const padding = (value: string): [ string, string ][] => [ [ "padding", value ] ];
+        const html = cleanDocumentHtml(`<figure class="table"><table><caption>Plan</caption>`
+            + `<thead><tr><th>h1</th><th>h2</th></tr></thead><tbody><tr><td>a</td></tr></tbody></table></figure>`
+            + `<table><tr><td>b</td><td>c</td></tr></table>`
+            + `<table><tr><td>d</td></tr><tr><td>e</td></tr></table>`, { tableLayouts: [
+            { columnWidths: [ 1000, 3000 ], rows: [ [ padding("1pt"), padding("2pt") ], [ padding("3pt"), padding("4pt") ] ] },
+            { columnWidths: [ 0, 0 ], rows: [ [ padding("5pt") ] ] },
+            { columnWidths: [ 1000 ], rows: [ [ padding("6pt") ] ] }
+        ] });
+
+        expect(html).toBe(`<figure class="table"><table class="ck-table-resized">`
+            + `<colgroup><col style="width:25%;"><col style="width:75%;"></colgroup><caption>Plan</caption>`
+            + `<thead><tr><th style="padding:1pt;">h1</th><th style="padding:2pt;">h2</th></tr></thead>`
+            + `<tbody><tr><td colspan="2" style="padding:3pt;">a</td></tr></tbody></table></figure>`
+            + `<figure class="table"><table><tr><td style="padding:5pt;">b</td><td>c</td></tr></table></figure>`
+            + `<figure class="table"><table><tr><td>d</td></tr><tr><td>e</td></tr></table></figure>`);
     });
 });
 
@@ -305,6 +325,16 @@ describe("convertDocumentNoteToText", () => {
                 expect.objectContaining({ name: "ValidationError" }));
         }
         expect(pdfNote.type).toBe("file");
+    });
+
+    it("refuses a protected document while the protected session is locked", async () => {
+        const docx = await renderTextNoteToDocx(buildNote({ type: "text", title: "Secret" }), "<p>Secret</p>");
+        const note = createFileNote(DOCX_MIME, docx, "Secret.docx");
+        vi.spyOn(note, "isContentAvailable").mockReturnValue(false);
+
+        await expect(getContext().init(() => convertDocumentNoteToText(note))).rejects.toThrow(
+            expect.objectContaining({ name: "ValidationError" }));
+        expect(note.type).toBe("file");
     });
 });
 
