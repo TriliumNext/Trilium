@@ -330,7 +330,8 @@
   "backend_log": {
     "log-does-not-exist": "バックエンドのログファイル '{{ fileName }}' は（まだ）存在しません。",
     "reading-log-failed": "バックエンドのログファイル '{{ fileName }}' の読み込みに失敗しました。",
-    "log-file-unavailable": "ログファイルを開けなかったため、メモリ上に保持されている最新の記録のみを表示しています。Trilium は引き続きファイルを開こうと試み、開くことができ次第、これらの記録を書き込みます。"
+    "log-file-unavailable": "ログファイルを開けなかったため、メモリ上に保持されている最新の記録のみを表示しています。Trilium は引き続きファイルを開こうと試み、開くことができ次第、これらの記録を書き込みます。",
+    "earlier-entries-omitted": "ログが長すぎて全文を表示できないため、最初の {{size}} MiB が省略されています。ログの全文はファイル {{fileName}} に保存されています。"
   },
   "content_renderer": {
     "note-cannot-be-displayed": "このノートタイプは表示できません。",
