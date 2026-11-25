@@ -4,15 +4,19 @@
         "desktop_title": "Íoslódáil an feidhmchlár deisce (v{{version}})",
         "architecture": "Ailtireacht:",
         "older_releases": "Féach ar eisiúintí níos sine",
-        "server_title": "Socraigh freastalaí le haghaidh rochtana ar ilghléasanna"
+        "server_title": "Socraigh freastalaí le haghaidh rochtana ar ilghléasanna",
+        "nightly_title": "Bain triail as an leagan oíche",
+        "nightly_subtitle": "Tógtha gach lá ón bpríomhbhrainse, leis na gnéithe agus na socruithe is nuaí sula scaoiltear iad. Cuireann suiteálaí oíche do shuiteáil chobhsaí in ionad do shuiteáil agus osclaíonn sé na nótaí céanna. Má athraíonn suiteálaí oíche an bunachar sonraí, ciallaíonn dul ar ais chuig an leagan cobhsaí go ndéantar cúltaca a athbhunú.",
+        "nightly_all_downloads": "Gach íoslódáil oíche",
+        "nightly_learn_more": "Maidir le tógálacha oíche"
     },
     "hero_section": {
-        "title": "Eagraigh do chuid smaointe. Tóg do bhunachar eolais pearsanta.",
-        "subtitle": "Is réiteach foinse oscailte é Trilium chun nótaí a thógáil agus bunachar eolais pearsanta a eagrú. Bain úsáid as go háitiúil ar do dheasc, nó sioncrónaigh é le do fhreastalaí féinóstáilte chun do nótaí a choinneáil cibé áit a théann tú.",
+        "title": "Forbair do bhunachar eolais pearsanta.",
+        "subtitle": "Coinnigh gach rud atá ar eolas agat in aon chrann nótaí amháin, chomh domhain agus is gá duit. Scríobh, déan sceitsí agus pleanáil ar do ríomhaire deisce agus ar do ghuthán, agus déan sioncronú trí fhfreastalaí a ritheann tú féin, ionas gur féidir leat rochtain a fháil ar do nótaí ó bhrabhsálaí ar bith.",
         "get_started": "Tosaigh",
         "github": "GitHub",
         "dockerhub": "Docker Hub",
-        "screenshot_alt": "Scáileán den fheidhmchlár deisce Trilium Notes",
+        "screenshot_alt": "Feidhmchlár deisce Trilium Notes, le nóta téacs ar oscailt in aice le crann na nótaí",
         "tagline_license": "Ceadúnaithe ag AGPL-3.0",
         "tagline_no_account": "Níl aon chuntas ag teastáil",
         "tagline_cross_platform": "Oibríonn as líne"
@@ -113,7 +117,7 @@
         "more_questions": "An bhfuil ceisteanna agat fós? <0>Ceistigh an pobal</0>"
     },
     "final_cta": {
-        "title": "Tosaigh ag tógáil do bhunachar eolais",
+        "title": "Cuir tús le do bhunachar eolais a fhorbairt",
         "description": "Eagraigh gach rud in aon aip foinse oscailte amháin: nótaí ordlathacha, cuardach cumhachtach, agus sioncrónú le freastalaí atá faoi do smacht.",
         "get_started": "Tosaigh"
     },
@@ -283,5 +287,15 @@
         "render_description": "Tóg painéil idirghníomhacha agus mion-aipeanna a thaispeántar go díreach taobh istigh de nóta, cosúil leis an gclog a thaispeántar anseo.",
         "api_title": "API Scripte",
         "api_description": "API clóscríofa le haghaidh nótaí, brainsí, tréithe agus cuardaigh, atá ar fáil do scripteanna tosaigh agus cúil araon."
+    },
+    "download_helper_nightly": {
+        "desktop_description": "An leagan deisce is déanaí don ríomhaire seo. Úsáid an rogha ailtireachta thuas chun an leagan eile a fháil.",
+        "download_flatpak": ".flatpak",
+        "android_title": "Android",
+        "android_description": "Coinníonn an aip shoghluaiste cóip iomlán de do nótaí ar an bhfón, oibríonn sí as líne, agus déanann sí sioncronú le do fhfreastalaí.",
+        "download_apk": "Íoslódáil APK (.apk)",
+        "server_title": "Freastalaí",
+        "server_description": "An leagan freastalaí is déanaí, mar íomhá Docker nó mar phacáiste Linux.",
+        "server_quick_start": "Chun é a rith le Docker:"
     }
 }
