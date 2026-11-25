@@ -108,12 +108,17 @@ export function prepareDocxTemplate(docx: Uint8Array): PreparedDocxTemplate {
     const styles = files["word/styles.xml"];
     const runProperties = marker && readRunProperties(marker.paragraph);
     const contentStyle = styles && marker ? NOTE_TEXT_STYLE : undefined;
+    let halfPoints = readSize(runProperties);
     if (styles) {
         let xml = strFromU8(styles);
         const added: string[] = [];
-        if (marker && !hasStyle(xml, NOTE_TEXT_STYLE)) {
+        if (marker) {
             const basedOn = readParagraphStyle(marker.paragraph) ?? readDefaultParagraphStyle(xml);
-            added.push(paragraphStyle(NOTE_TEXT_STYLE, "Note Text", basedOn, runProperties ?? ""));
+            halfPoints ??= readStyleSize(xml, basedOn);
+            if (!hasStyle(xml, NOTE_TEXT_STYLE)) {
+                added.push(
+                    paragraphStyle(NOTE_TEXT_STYLE, "Note Text", basedOn, runProperties ?? ""));
+            }
         }
         if (!hasStyle(xml, TABLE_TEXT_STYLE)) {
             added.push(paragraphStyle(TABLE_TEXT_STYLE, "Table Text", contentStyle ?? "Normal", "",
@@ -125,7 +130,6 @@ export function prepareDocxTemplate(docx: Uint8Array): PreparedDocxTemplate {
         }
     }
 
-    const halfPoints = readSize(runProperties);
     return {
         data: zipSync(files),
         textWidth,
@@ -140,7 +144,7 @@ export interface PreparedDocxTemplate {
     textWidth: number;
     /** The paragraph style of the note's text, when the template has a `{{content}}` line. */
     contentStyle?: string;
-    /** The font size of {@link contentStyle}, in points, when the line sets one. */
+    /** The font size of {@link contentStyle}, in points, when the line or its style sets one. */
     contentFontSize?: number;
 }
 
@@ -231,6 +235,23 @@ function readDefaultParagraphStyle(styles: string) {
         }
     }
     return "Normal";
+}
+
+/** The font size of the style `id` or of the nearest style it is based on, in half-points. */
+function readStyleSize(styles: string, id: string) {
+    const seen = new Set<string>();
+    let styleId: string | undefined = id;
+    while (styleId && !seen.has(styleId)) {
+        seen.add(styleId);
+        const style = styles.match(new RegExp(
+            `<w:style\\b[^>]*w:styleId="${styleId}"[^>]*>[\\s\\S]*?</w:style>`))?.[0];
+        const size = readSize(style?.match(/<w:rPr>[\s\S]*?<\/w:rPr>/)?.[0]);
+        if (size) {
+            return size;
+        }
+        styleId = style?.match(/<w:basedOn\s+w:val="([^"]+)"/)?.[1];
+    }
+    return undefined;
 }
 
 function hasStyle(styles: string, id: string) {
