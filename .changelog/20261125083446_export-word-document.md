@@ -1,6 +1,7 @@
 ---
 type: improvement
 area: Import and export
+notable: true
 ---
 
-A text note can be exported as a Word document, keeping its colors, tables, lists and images, and can take the styles, headers and footers of another Word document chosen with `~docxTemplate`.
+Text notes can be exported as Word documents, optionally into a Word template chosen with `~docxTemplate`, and Word, OpenDocument Text and RTF documents can be converted into text notes from the note menu.
