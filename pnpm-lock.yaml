@@ -290,8 +290,8 @@ importers:
         specifier: 14.1.1
         version: 14.1.1
       i18next:
-        specifier: 27.1.5
-        version: 27.1.5(typescript@6.0.3)
+        specifier: 27.2.4
+        version: 27.2.4(typescript@6.0.3)
       jquery:
         specifier: 4.1.0
         version: 4.1.0
@@ -321,7 +321,7 @@ importers:
         version: 2.0.4
       react-i18next:
         specifier: 18.0.3
-        version: 18.0.3(i18next@27.1.5(typescript@6.0.3))(react@18.3.1)(typescript@6.0.3)
+        version: 18.0.3(i18next@27.2.4(typescript@6.0.3))(react@18.3.1)(typescript@6.0.3)
       react-window:
         specifier: 2.5.4
         version: 2.5.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -648,8 +648,8 @@ importers:
         specifier: 13.2.0
         version: 13.2.0
       i18next:
-        specifier: 27.1.5
-        version: 27.1.5(typescript@6.0.3)
+        specifier: 27.2.4
+        version: 27.2.4(typescript@6.0.3)
       ipaddr.js:
         specifier: ^2.4.0
         version: 2.5.0
@@ -901,8 +901,8 @@ importers:
         specifier: 7.1.5
         version: 7.1.5(preact-render-to-string@6.8.3)(temporal-polyfill@1.0.8)
       i18next:
-        specifier: 27.1.5
-        version: 27.1.5(typescript@6.0.3)
+        specifier: 27.2.4
+        version: 27.2.4(typescript@6.0.3)
       i18next-http-backend:
         specifier: 4.1.0
         version: 4.1.0
@@ -932,7 +932,7 @@ importers:
         version: 11.2.0(preact-render-to-string@6.8.3)
       react-i18next:
         specifier: 18.0.3
-        version: 18.0.3(i18next@27.1.5(typescript@6.0.3))(react@18.3.1)(typescript@6.0.3)
+        version: 18.0.3(i18next@27.2.4(typescript@6.0.3))(react@18.3.1)(typescript@6.0.3)
       react-window:
         specifier: 2.5.4
         version: 2.5.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1014,8 +1014,8 @@ importers:
   apps/website:
     dependencies:
       i18next:
-        specifier: 27.1.5
-        version: 27.1.5(typescript@6.0.3)
+        specifier: 27.2.4
+        version: 27.2.4(typescript@6.0.3)
       preact:
         specifier: 11.2.0
         version: 11.2.0(preact-render-to-string@6.8.3)
@@ -1027,7 +1027,7 @@ importers:
         version: 6.8.3(preact@11.2.0)
       react-i18next:
         specifier: 18.0.3
-        version: 18.0.3(i18next@27.1.5(typescript@6.0.3))(react@19.3.0)(typescript@6.0.3)
+        version: 18.0.3(i18next@27.2.4(typescript@6.0.3))(react@19.3.0)(typescript@6.0.3)
     devDependencies:
       '@preact/preset-vite':
         specifier: 2.10.6
@@ -1464,8 +1464,8 @@ importers:
         specifier: 0.8.3
         version: 0.8.3
       i18next:
-        specifier: 27.1.5
-        version: 27.1.5(typescript@6.0.3)
+        specifier: 27.2.4
+        version: 27.2.4(typescript@6.0.3)
       js-yaml:
         specifier: 5.5.0
         version: 5.5.0
@@ -7917,8 +7917,8 @@ packages:
     resolution: {integrity: sha512-OY3KA8s6WUfUCviw+6VA79148bYaws+FEOZD6MNeZ8Tw1ocfu1j1Qp3ROYNMikzNv1gyTBgzHbWMP/rfZDSp1g==}
     engines: {node: '>=18'}
 
-  i18next@27.1.5:
-    resolution: {integrity: sha512-KLrH2SWYWiI8Rx+ZbJ4+fdl5Ny2i8V9bJ6TkJ5YFrSyHgeUIGxoueQTZaafcHZcr1ENFqBicpu7ofr3SCSYDgA==}
+  i18next@27.2.4:
+    resolution: {integrity: sha512-Twhl6dx3IznvyQEv7rrYH2xBMAmOIjNuj/lPicevTa0d/fxg4Km315MlAI07SOWQcw2pypA4qf39RoMJgJ8WEQ==}
     engines: {node: '>=22'}
     peerDependencies:
       typescript: ^5 || ^6 || ^7
@@ -20142,7 +20142,7 @@ snapshots:
 
   i18next-http-backend@4.1.0: {}
 
-  i18next@27.1.5(typescript@6.0.3):
+  i18next@27.2.4(typescript@6.0.3):
     optionalDependencies:
       typescript: 6.0.3
 
@@ -22293,18 +22293,18 @@ snapshots:
       react: 18.3.1
       scheduler: 0.23.2
 
-  react-i18next@18.0.3(i18next@27.1.5(typescript@6.0.3))(react@18.3.1)(typescript@6.0.3):
+  react-i18next@18.0.3(i18next@27.2.4(typescript@6.0.3))(react@18.3.1)(typescript@6.0.3):
     dependencies:
       html-parse-stringify: 4.0.1
-      i18next: 27.1.5(typescript@6.0.3)
+      i18next: 27.2.4(typescript@6.0.3)
       react: 18.3.1
     optionalDependencies:
       typescript: 6.0.3
 
-  react-i18next@18.0.3(i18next@27.1.5(typescript@6.0.3))(react@19.3.0)(typescript@6.0.3):
+  react-i18next@18.0.3(i18next@27.2.4(typescript@6.0.3))(react@19.3.0)(typescript@6.0.3):
     dependencies:
       html-parse-stringify: 4.0.1
-      i18next: 27.1.5(typescript@6.0.3)
+      i18next: 27.2.4(typescript@6.0.3)
       react: 19.3.0
     optionalDependencies:
       typescript: 6.0.3
