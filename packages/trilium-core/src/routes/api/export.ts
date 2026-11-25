@@ -27,7 +27,7 @@ async function exportBranch(req: Request<{ branchId: string; type: string; forma
         if (type === "subtree" && (format === "html" || format === "markdown" || format === "share")) {
             await zipExportService.exportToZip(taskContext, branch, format, res);
         } else if (type === "single") {
-            if (format !== "html" && format !== "markdown") {
+            if (format !== "html" && format !== "markdown" && format !== "docx") {
                 throw new ValidationError("Invalid export type.");
             }
             await singleExportService.exportSingleNote(taskContext, branch, format, res);

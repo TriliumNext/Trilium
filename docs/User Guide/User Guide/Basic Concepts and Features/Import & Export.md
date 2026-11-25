@@ -23,6 +23,8 @@ Trilium natively supports the following formats for both import and export.
 *   OPML (Outliner Interchange Format)
     *   Supports both OPML v1.0 for plain text and v2.0 with HTML support.
 
+A single <a class="reference-link" href="../Note%20Types/Text.md">Text</a> note can also be exported as a Word document (`.docx`): in the export dialog, select _Only this note_ and then _Word document_. The document keeps text colors, highlights, headings, lists, links, images and tables with their cell colors, borders and column widths, so it looks the same in Microsoft Word, Google Docs or LibreOffice. Links to other notes become plain text, and diagrams and embedded notes are left out. A Word document that you import becomes a <a class="reference-link" href="../Note%20Types/File.md">File</a> note.
+
 To import from other applications such as OneNote, Notion and others, see <a class="reference-link" href="Import%20%26%20Export/Importing%20data%20from%20other%20applications.md">Importing data from other applications</a>.
 
 ## Maximum import size
