@@ -33,6 +33,13 @@ vi.mock("./CodeMirror", async (importOriginal) => {
 // The `/` list of a Markdown editor loads the task states from the `_taskStates` subtree.
 vi.mock("../../../services/task_states", () => ({ getTaskStateDefinitions: async () => [] }));
 
+// A script note starts a TypeScript language service build that no test awaits, and its lazy
+// imports would otherwise still be loading when the test environment is torn down.
+vi.mock("@triliumnext/codemirror/src/type_completion/index.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("@triliumnext/codemirror/src/type_completion/index.js")>(),
+    buildTypeCompletion: async () => ({ extensions: [], complete: null })
+}));
+
 // jsdom has no `checkVisibility()`, and lays nothing out, so an editor counts as hidden unless a
 // test says otherwise.
 beforeEach(() => stubVisibility(false));

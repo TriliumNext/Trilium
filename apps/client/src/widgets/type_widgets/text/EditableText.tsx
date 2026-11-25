@@ -198,7 +198,8 @@ export default function EditableText({
         consumeBlockReference(root, noteContext?.viewScope);
     }
 
-    useTriliumEvent("scrollToEnd", () => {
+    useTriliumEvent("scrollToEnd", ({ ntxId: eventNtxId }) => {
+        if (eventNtxId !== ntxId) return;
         const editor = editorRef.current;
         if (!editor) return;
 

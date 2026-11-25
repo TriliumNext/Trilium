@@ -38,7 +38,7 @@
     "fflate": "0.8.3",
     "force-graph": "1.52.0",
     "fullcalendar": "7.1.5",
-    "i18next": "27.1.5",
+    "i18next": "27.2.4",
     "i18next-http-backend": "4.1.0",
     "jquery": "4.1.0",
     "jquery.fancytree": "2.38.5",
@@ -50,7 +50,7 @@
     "preact": "11.2.0",
     "react-i18next": "18.0.3",
     "react-window": "2.5.4",
-    "react-zoom-pan-pinch": "4.2.0",
+    "react-zoom-pan-pinch": "4.4.0",
     "reveal.js": "6.0.2",
     "tabulator-tables": "6.7.1",
     "temporal-polyfill": "1.0.8"
