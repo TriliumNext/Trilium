@@ -1,3 +1,4 @@
+import type { IStylesOptions } from "docx";
 import { HTMLElement, parse } from "node-html-parser";
 
 import becca from "../../becca/becca.js";
@@ -6,10 +7,14 @@ import { getLog } from "../log.js";
 import { wrapStringOrBuffer } from "../utils/binary.js";
 import { stripListItemIds } from "./strip_list_item_ids.js";
 
+/** The size of body text in the document, in points. */
+const BODY_FONT_SIZE = 11;
+
 /**
  * The look that note content gets from the app's stylesheets rather than from its own markup, so a
  * table without borders of its own still has the borders and header shading it shows in Trilium.
- * Layout tables have no borders in the app either.
+ * Layout tables have no borders in the app either. The `text-*` sizes are those of the editor's
+ * font size classes (`--ck-content-font-size-*`) relative to {@link BODY_FONT_SIZE}.
  */
 const CONTENT_STYLESHEET = `
     figure.table table { border-collapse: collapse; border: 1px solid #bfbfbf; }
@@ -17,7 +22,44 @@ const CONTENT_STYLESHEET = `
     figure.table th { background-color: #f2f2f2; font-weight: bold; }
     table.layout-table, table.layout-table td, table.layout-table th { border: none; }
     table.layout-table th { background-color: transparent; }
+    .text-tiny { font-size: ${(BODY_FONT_SIZE * 0.7).toFixed(1)}pt; }
+    .text-small { font-size: ${(BODY_FONT_SIZE * 0.85).toFixed(1)}pt; }
+    .text-big { font-size: ${(BODY_FONT_SIZE * 1.4).toFixed(1)}pt; }
+    .text-huge { font-size: ${(BODY_FONT_SIZE * 1.8).toFixed(1)}pt; }
 `;
+
+/**
+ * Word's defaults for body text, and headings in bold and in the text color, where the defaults
+ * of `docx` have no spacing and blue headings. Text in table cells has no spacing after its
+ * paragraphs, which would leave a gap at the bottom of every cell. Sizes are in half-points,
+ * spacing in twentieths of a point.
+ */
+const DOCUMENT_STYLES: IStylesOptions = {
+    default: {
+        document: {
+            run: { font: "Calibri", size: BODY_FONT_SIZE * 2 },
+            paragraph: { spacing: { after: 160, line: 276 } }
+        },
+        heading1: headingStyle(20),
+        heading2: headingStyle(16),
+        heading3: headingStyle(13),
+        heading4: headingStyle(12),
+        heading5: headingStyle(11),
+        heading6: headingStyle(11)
+    },
+    paragraphStyles: [ {
+        id: "TableText",
+        name: "Table Text",
+        basedOn: "Normal",
+        quickFormat: true,
+        paragraph: { spacing: { after: 0 } }
+    } ]
+};
+
+/** Gives text in table cells the `TableText` style of {@link DOCUMENT_STYLES}. */
+const STYLE_MAP = {
+    "figure.table td, figure.table th, figure.table td p, figure.table th p": "TableText"
+};
 
 /**
  * Converts the HTML of a text note into a Word document. Formatting that Word can hold (colors,
@@ -32,32 +74,43 @@ export async function renderTextNoteToDocx(note: BNote, html: string): Promise<U
     const warnings: string[] = [];
     const children = htmlToContent(prepareHtml(html), {
         stylesheet: CONTENT_STYLESHEET,
+        styleMap: STYLE_MAP,
         images: resolveImage,
         onWarning: (warning) => warnings.push(warning.message)
     });
 
     if (warnings.length) {
-        getLog().info(`DOCX export of note '${note.noteId}' left out or changed: ${warnings.join("; ")}`);
+        getLog().info(
+            `DOCX export of note '${note.noteId}' left out or changed: ${warnings.join("; ")}`);
     }
 
     const document = new Document({
         title: note.title,
+        styles: DOCUMENT_STYLES,
         sections: [ { children: [ ...children ] } ]
     });
 
     return Packer.pack(document, "uint8array");
 }
 
+function headingStyle(points: number) {
+    return {
+        run: { bold: true, color: "auto", size: points * 2 },
+        paragraph: { spacing: { before: 240, after: 80 }, keepNext: true }
+    };
+}
+
 /**
- * Removes what only means something inside this Trilium instance (editor bookkeeping, links to other
- * notes, which keep their text) and puts table widths where `htmlToContent()` reads them.
+ * Removes what only means something inside this Trilium instance (editor bookkeeping, links to
+ * other notes, which keep their text) and puts table widths where `htmlToContent()` reads them.
  */
 export function prepareHtml(html: string) {
     const root = parse(stripListItemIds(html));
 
     for (const link of root.querySelectorAll("a[href]")) {
         const href = link.getAttribute("href") ?? "";
-        if (href.startsWith("#root") || href.startsWith("#") && link.classList.contains("reference-link")) {
+        const isReferenceLink = href.startsWith("#") && link.classList.contains("reference-link");
+        if (href.startsWith("#root") || isReferenceLink) {
             link.replaceWith(link.innerHTML);
         }
     }

@@ -1,4 +1,6 @@
 import { DOCX_MIME, ODT_MIME } from "@triliumnext/commons";
+import { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun } from "docx";
+import { strToU8, zipSync } from "fflate";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -6,7 +8,9 @@ import { describe, expect, it } from "vitest";
 
 import { buildNote } from "../test/becca_easy_mocking.js";
 import { getContext } from "./context.js";
-import { cleanDocumentHtml, convertDocumentNoteToText } from "./document_conversion.js";
+import {
+    cleanDocumentHtml, convertDocumentNoteToText, readDocxBodyFontSize
+} from "./document_conversion.js";
 import { renderTextNoteToDocx } from "./export/docx.js";
 import noteService from "./notes.js";
 
@@ -36,6 +40,51 @@ describe("cleanDocumentHtml", () => {
             + `<p style="text-align:center;">Centered</p>`
             + `<figure class="table"><table><tr><td style="background-color:#BCD9F5;--tn-background:#BCD9F5;"><p>Cell</p></td></tr></table></figure>`
             + `<ol><li>Item</li></ol>`);
+    });
+
+    it("gives a size relative to the body text the editor's nearest font size", () => {
+        const html = cleanDocumentHtml(`<p><span style="font-size: 20pt"><b>Title</b></span> `
+            + `<span style="font-size: 10.5pt">body</span> <span style="font-size: 8.5pt">small</span> `
+            + `<span style="font-size: 6pt">tiny</span> <span style="font-size: 18px">big</span></p>`
+            + `<h2><span style="font-size: 13pt">Heading</span></h2>`, { bodyFontSize: 9.5 });
+
+        expect(html).toBe(`<p><span class="text-huge"><b>Title</b></span> body `
+            + `<span class="text-small">small</span> <span class="text-tiny">tiny</span> `
+            + `<span class="text-big">big</span></p><h2>Heading</h2>`);
+    });
+
+    it("gives the last cell of a padded row the rest of the row, but not a row under a rowspan", () => {
+        const html = cleanDocumentHtml(`<table>`
+            + `<tr><td>a</td><td>b</td><td>notes</td><td></td></tr>`
+            + `<tr><td><p class="empty-paragraph"><br></p></td><td>c</td><td>d</td><td>e</td></tr>`
+            + `<tr><td>f</td><td><p class="empty-paragraph"><br></p></td><td></td><td> </td></tr>`
+            + `</table>`
+            + `<table><tr><td rowspan="2">merged</td><td>f</td></tr><tr><td>g</td></tr></table>`);
+
+        expect(html).toBe(`<figure class="table"><table>`
+            + `<tr><td>a</td><td>b</td><td colspan="2">notes</td></tr>`
+            + `<tr><td><p class="empty-paragraph"><br></p></td><td>c</td><td>d</td><td>e</td></tr>`
+            + `<tr><td>f</td><td colspan="3"><p class="empty-paragraph"><br></p></td></tr>`
+            + `</table></figure>`
+            + `<figure class="table"><table><tr><td rowspan="2">merged</td><td>f</td></tr>`
+            + `<tr><td>g</td></tr></table></figure>`);
+    });
+});
+
+describe("readDocxBodyFontSize", () => {
+    function docxWithStyles(styles: string) {
+        return zipSync({ "word/styles.xml": strToU8(`<w:styles>${styles}</w:styles>`) });
+    }
+
+    it("reads the Normal style, then the document defaults, then Word's own size", () => {
+        const defaults = `<w:docDefaults><w:rPrDefault><w:rPr><w:sz w:val="19"/></w:rPr></w:rPrDefault></w:docDefaults>`;
+
+        expect(readDocxBodyFontSize(docxWithStyles(defaults
+            + `<w:style w:type="paragraph" w:styleId="Normal"><w:rPr><w:sz w:val="24"/></w:rPr></w:style>`))).toBe(12);
+        expect(readDocxBodyFontSize(docxWithStyles(defaults
+            + `<w:style w:type="paragraph" w:styleId="Normal"><w:name w:val="normal"/></w:style>`))).toBe(9.5);
+        expect(readDocxBodyFontSize(docxWithStyles(""))).toBe(10);
+        expect(readDocxBodyFontSize(new Uint8Array([ 1, 2, 3 ]))).toBeUndefined();
     });
 });
 
@@ -83,6 +132,31 @@ describe("convertDocumentNoteToText", () => {
         expect(revision?.mime).toBe(DOCX_MIME);
         expect(revision?.title).toBe(`${counter}-Feedback.docx`);
         expect(new Uint8Array(revision?.getContent() as Uint8Array)).toEqual(docx);
+    });
+
+    it("keeps a row whose last cell reaches the end of the table, and the sizes of the text", async () => {
+        // A row with fewer cells than the grid, as Google Docs writes one, and a 20pt run on a
+        // document whose body is Word's default 10pt.
+        const cell = (text: string) => new TableCell({ children: [ new Paragraph(text) ] });
+        const table = new Table({ columnWidths: [ 2000, 2000, 2000, 2000 ], rows: [
+            new TableRow({ children: [ cell("Grade"), cell("Outcome"), cell("Notes") ] }),
+            new TableRow({
+                children: [ cell("Signature"), cell("Date"), cell("Owner"), cell("Date") ]
+            })
+        ] });
+        const title = new Paragraph({
+            children: [ new TextRun({ text: "Annual review", size: 40 }) ]
+        });
+        const document = new Document({ sections: [ { children: [ title, table ] } ] });
+        const docx = await Packer.pack(document, "uint8array");
+        const note = createFileNote(DOCX_MIME, docx, "Evaluation.docx");
+
+        await getContext().init(() => convertDocumentNoteToText(note));
+
+        const content = String(note.getContent());
+        expect(content).toContain(`<span class="text-huge">Annual review</span>`);
+        expect(content).toMatch(/<td colspan="2"><p>Notes<\/p>/);
+        expect(content.match(/<td/g)).toHaveLength(7);
     });
 
     it("converts an OpenDocument text, with its top heading demoted below the note's title", async () => {

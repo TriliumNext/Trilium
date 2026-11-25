@@ -74,4 +74,24 @@ describe("renderTextNoteToDocx", () => {
         expect(Object.keys(files).some((path) => path.startsWith("word/media/"))).toBe(true);
         expect(strFromU8(files["docProps/core.xml"])).toContain("<dc:title>Feedback</dc:title>");
     });
+
+    it("writes Word's defaults for body text, bold headings and the editor's font sizes", async () => {
+        const note = buildNote({ type: "text", title: "Styles" });
+        const files = unzipSync(await renderTextNoteToDocx(note, `<h2>Heading</h2>`
+            + `<p><span class="text-huge">Huge</span> <span class="text-small">small</span></p>`
+            + `<figure class="table"><table><tbody><tr><td><p>Cell</p></td></tr></tbody></table></figure>`));
+        const styles = strFromU8(files["word/styles.xml"]);
+        const xml = strFromU8(files["word/document.xml"]);
+
+        const defaults = styles.match(/<w:docDefaults>.*?<\/w:docDefaults>/s)?.[0];
+        expect(defaults).toMatch(/<w:sz w:val="22"\/>/);
+        expect(defaults).toMatch(/<w:spacing w:after="160" w:line="276"\/>/);
+        const heading = styles.match(/<w:style [^>]*w:styleId="Heading2".*?<\/w:style>/s)?.[0];
+        expect(heading).toContain("<w:b/>");
+        expect(heading).not.toContain("2E74B5");
+        expect(xml).toMatch(/<w:sz w:val="40"\/>.*Huge/s);
+        expect(xml).toMatch(/<w:sz w:val="19"\/>.*small/s);
+        expect(xml).toMatch(/<w:pStyle w:val="TableText"\/>.*Cell/s);
+        expect(styles).toMatch(/<w:style [^>]*w:styleId="TableText">.*<w:spacing w:after="0"\/>/s);
+    });
 });
