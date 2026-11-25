@@ -1,8 +1,8 @@
 diff --git a/dist/index.cjs.js b/dist/index.cjs.js
-index e4db255..636da4e 100644
+index aa16378..56e90bc 100644
 --- a/dist/index.cjs.js
 +++ b/dist/index.cjs.js
-@@ -1469,7 +1469,11 @@ var isEditableTarget = function (node) {
+@@ -1676,7 +1676,11 @@ var isEditableTarget = function (node) {
          return true;
      if (element.isContentEditable)
          return true;
@@ -16,10 +16,10 @@ index e4db255..636da4e 100644
  /**
   * HTML5 drag sources (or anything nested inside them). A pan started here
 diff --git a/dist/index.esm.js b/dist/index.esm.js
-index 92c7948..597439a 100644
+index 2c0efc8..c4bc381 100644
 --- a/dist/index.esm.js
 +++ b/dist/index.esm.js
-@@ -1467,7 +1467,11 @@ var isEditableTarget = function (node) {
+@@ -1674,7 +1674,11 @@ var isEditableTarget = function (node) {
          return true;
      if (element.isContentEditable)
          return true;

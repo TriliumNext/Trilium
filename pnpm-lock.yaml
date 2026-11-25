@@ -87,7 +87,7 @@ patchedDependencies:
   '@excalidraw/excalidraw@0.18.1': ab1f9211ffc9c7f65505b0f4f17f9a7879f35a67c4a87efcd98c54e41743618a
   appdmg@0.6.6: 6c875d6ba70a4a7a257ac6208147d0af4344aa7c9fbdbd046a313bbdfca94a6e
   exceljs@4.4.0: 608c2aabb16393f2cc7f10e1e34a3b8b0f1b346e11be78dea365a09e40bb165f
-  react-zoom-pan-pinch@4.2.0: 09dfeb6f635c52ef565ca21aec3f70eb129577661f85eb67262092e8cb9f8548
+  react-zoom-pan-pinch@4.4.0: 92041c2c4096c02a3541d0c0536ca4d4c54d11c88318d5e1c2fc24f5535060e9
 
 importers:
 
@@ -326,8 +326,8 @@ importers:
         specifier: 2.5.4
         version: 2.5.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-zoom-pan-pinch:
-        specifier: 4.2.0
-        version: 4.2.0(patch_hash=09dfeb6f635c52ef565ca21aec3f70eb129577661f85eb67262092e8cb9f8548)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 4.4.0
+        version: 4.4.0(patch_hash=92041c2c4096c02a3541d0c0536ca4d4c54d11c88318d5e1c2fc24f5535060e9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       reveal.js:
         specifier: 6.0.2
         version: 6.0.2
@@ -937,8 +937,8 @@ importers:
         specifier: 2.5.4
         version: 2.5.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-zoom-pan-pinch:
-        specifier: 4.2.0
-        version: 4.2.0(patch_hash=09dfeb6f635c52ef565ca21aec3f70eb129577661f85eb67262092e8cb9f8548)(react-dom@18.3.1(react@18.3.1))(react@19.3.0)
+        specifier: 4.4.0
+        version: 4.4.0(patch_hash=92041c2c4096c02a3541d0c0536ca4d4c54d11c88318d5e1c2fc24f5535060e9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       reveal.js:
         specifier: 6.0.2
         version: 6.0.2
@@ -7498,7 +7498,7 @@ packages:
     resolution: {integrity: sha512-/kVP2U8z596Ia0gwFrwyIeo74ta5aVmSeU1FfAUMAmcEP5EP7zydmag3SLiN64NaRKef3lxsq7i/g7ltJQDGow==}
     engines: {node: '>=4.0'}
     peerDependencies:
-      debug: '*'
+      debug: '>=3.2.7'
     peerDependenciesMeta:
       debug:
         optional: true
@@ -9983,8 +9983,8 @@ packages:
       '@types/react':
         optional: true
 
-  react-zoom-pan-pinch@4.2.0:
-    resolution: {integrity: sha512-QSw1dvr6QGv5zHCUY7SEIY7EWRDbx1y6plylrWf2Nko9KOMW1MEoPC6oJ+Y/qOSeQjhvbkMV0m5bFF7pBxCH4A==}
+  react-zoom-pan-pinch@4.4.0:
+    resolution: {integrity: sha512-7lMrVmFopsR3KeUNesScTUcc9pNxfEPaqsJfwEH2rkuzLEMqEvwJlPaqEY8gCZ9q2AEpxplZMAZTwr/m7nY05g==}
     engines: {node: '>=8', npm: '>=5'}
     peerDependencies:
       react: '*'
@@ -22391,14 +22391,9 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  react-zoom-pan-pinch@4.2.0(patch_hash=09dfeb6f635c52ef565ca21aec3f70eb129577661f85eb67262092e8cb9f8548)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  react-zoom-pan-pinch@4.4.0(patch_hash=92041c2c4096c02a3541d0c0536ca4d4c54d11c88318d5e1c2fc24f5535060e9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-
-  react-zoom-pan-pinch@4.2.0(patch_hash=09dfeb6f635c52ef565ca21aec3f70eb129577661f85eb67262092e8cb9f8548)(react-dom@18.3.1(react@18.3.1))(react@19.3.0):
-    dependencies:
-      react: 19.3.0
       react-dom: 18.3.1(react@18.3.1)
 
   react@16.14.0:
