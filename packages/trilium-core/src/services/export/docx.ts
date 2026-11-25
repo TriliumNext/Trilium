@@ -5,6 +5,9 @@ import becca from "../../becca/becca.js";
 import type BNote from "../../becca/entities/bnote.js";
 import { getLog } from "../log.js";
 import { wrapStringOrBuffer } from "../utils/binary.js";
+import {
+    CONTENT_PLACEHOLDER, getDocxTemplate, prepareDocxTemplate, readDocxBodyFontSize
+} from "./docx_template.js";
 import { stripListItemIds } from "./strip_list_item_ids.js";
 
 /** The size of body text in the document, in points. */
@@ -14,19 +17,21 @@ const BODY_FONT_SIZE = 11;
  * The look that note content gets from the app's stylesheets rather than from its own markup, so a
  * table without borders of its own still has the borders and header shading it shows in Trilium.
  * Layout tables have no borders in the app either. The `text-*` sizes are those of the editor's
- * font size classes (`--ck-content-font-size-*`) relative to {@link BODY_FONT_SIZE}.
+ * font size classes (`--ck-content-font-size-*`) relative to the size of body text, in points.
  */
-const CONTENT_STYLESHEET = `
-    figure.table table { border-collapse: collapse; border: 1px solid #bfbfbf; }
-    figure.table td, figure.table th { border: 1px solid #bfbfbf; padding: 4px 6px; }
-    figure.table th { background-color: #f2f2f2; font-weight: bold; }
-    table.layout-table, table.layout-table td, table.layout-table th { border: none; }
-    table.layout-table th { background-color: transparent; }
-    .text-tiny { font-size: ${(BODY_FONT_SIZE * 0.7).toFixed(1)}pt; }
-    .text-small { font-size: ${(BODY_FONT_SIZE * 0.85).toFixed(1)}pt; }
-    .text-big { font-size: ${(BODY_FONT_SIZE * 1.4).toFixed(1)}pt; }
-    .text-huge { font-size: ${(BODY_FONT_SIZE * 1.8).toFixed(1)}pt; }
-`;
+function buildContentStylesheet(bodyFontSize: number) {
+    return `
+        figure.table table { border-collapse: collapse; border: 1px solid #bfbfbf; }
+        figure.table td, figure.table th { border: 1px solid #bfbfbf; padding: 4px 6px; }
+        figure.table th { background-color: #f2f2f2; font-weight: bold; }
+        table.layout-table, table.layout-table td, table.layout-table th { border: none; }
+        table.layout-table th { background-color: transparent; }
+        .text-tiny { font-size: ${(bodyFontSize * 0.7).toFixed(1)}pt; }
+        .text-small { font-size: ${(bodyFontSize * 0.85).toFixed(1)}pt; }
+        .text-big { font-size: ${(bodyFontSize * 1.4).toFixed(1)}pt; }
+        .text-huge { font-size: ${(bodyFontSize * 1.8).toFixed(1)}pt; }
+    `;
+}
 
 /**
  * Word's defaults for body text, and headings in bold and in the text color, where the defaults
@@ -64,16 +69,22 @@ const STYLE_MAP = {
 /**
  * Converts the HTML of a text note into a Word document. Formatting that Word can hold (colors,
  * borders, cell shading, lists, images) is kept; what it cannot hold is logged and left out.
+ *
+ * A note with a `~docxTemplate` relation is written into that Word document instead, in place of
+ * its body, so it takes the template's styles, headers, footers and page setup.
  */
 export async function renderTextNoteToDocx(note: BNote, html: string): Promise<Uint8Array> {
-    const [ { Document, Packer }, { htmlToContent } ] = await Promise.all([
+    const template = getDocxTemplate(note);
+    const [ docx, { htmlToContent } ] = await Promise.all([
         import("docx"),
         import("docx/html")
     ]);
+    const { Document, Packer, patchDocument, PatchType } = docx;
 
+    const bodyFontSize = (template && readDocxBodyFontSize(template)) || BODY_FONT_SIZE;
     const warnings: string[] = [];
     const children = htmlToContent(prepareHtml(html), {
-        stylesheet: CONTENT_STYLESHEET,
+        stylesheet: buildContentStylesheet(bodyFontSize),
         styleMap: STYLE_MAP,
         images: resolveImage,
         onWarning: (warning) => warnings.push(warning.message)
@@ -82,6 +93,18 @@ export async function renderTextNoteToDocx(note: BNote, html: string): Promise<U
     if (warnings.length) {
         getLog().info(
             `DOCX export of note '${note.noteId}' left out or changed: ${warnings.join("; ")}`);
+    }
+
+    if (template) {
+        return patchDocument({
+            outputType: "uint8array",
+            data: prepareDocxTemplate(template),
+            patches: {
+                [CONTENT_PLACEHOLDER]: { type: PatchType.DOCUMENT, children: [ ...children ] }
+            },
+            keepOriginalStyles: false,
+            properties: { title: note.title }
+        });
     }
 
     const document = new Document({

@@ -1,15 +1,15 @@
 import { DOCX_MIME, isConvertibleToText, isDefaultHyperlinkColor } from "@triliumnext/commons";
-import { unzipSync } from "fflate";
 import { t } from "i18next";
 import { HTMLElement, parse } from "node-html-parser";
 
 import type BNote from "../becca/entities/bnote.js";
 import { ValidationError } from "../errors.js";
+import { readDocxBodyFontSize } from "./export/docx_template.js";
 import noteService from "./notes.js";
 import { convertOfficeToHtml } from "./office_preview.js";
 import { sanitizeHtml } from "./sanitizer.js";
 import { getSql } from "./sql/index.js";
-import { decodeUtf8, wrapStringOrBuffer } from "./utils/binary.js";
+import { wrapStringOrBuffer } from "./utils/binary.js";
 
 /**
  * Converts a file note holding a word-processing document (DOCX, ODT, RTF) into a text note in
@@ -45,31 +45,6 @@ export async function convertDocumentNoteToText(note: BNote) {
 
         noteService.updateNoteData(note.noteId, html);
     });
-}
-
-/**
- * The font size of body text in a Word document, in points: that of its `Normal` style, or else
- * of its document defaults, or else Word's own 10pt.
- */
-export function readDocxBodyFontSize(docx: Uint8Array): number | undefined {
-    let styles: string;
-    try {
-        const files = unzipSync(docx, { filter: (file) => file.name === "word/styles.xml" });
-        styles = decodeUtf8(files["word/styles.xml"] ?? new Uint8Array());
-    } catch {
-        return undefined;
-    }
-
-    const normalStyle = styles
-        .match(/<w:style\b[^>]*w:styleId="Normal"[^>]*>[\s\S]*?<\/w:style>/)?.[0];
-    const runDefaults = styles.match(/<w:rPrDefault>[\s\S]*?<\/w:rPrDefault>/)?.[0];
-    const halfPoints = readSize(normalStyle) ?? readSize(runDefaults);
-    return halfPoints ? halfPoints / 2 : 10;
-}
-
-function readSize(xml: string | undefined) {
-    const value = xml?.match(/<w:sz\s+w:val="(\d+)"/)?.[1];
-    return value ? Number(value) : undefined;
 }
 
 const PAGE_BREAK = `<div class="page-break" style="page-break-after:always;"></div>`;

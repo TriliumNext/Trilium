@@ -402,6 +402,8 @@ const BUILTIN_ATTRIBUTES = [
     { type: "relation", name: "monthTemplate" },
     { type: "relation", name: "quarterTemplate" },
     { type: "relation", name: "yearTemplate" },
+    // The Word document whose styles, headers, footers and page setup a note exported as DOCX takes.
+    { type: "relation", name: "docxTemplate" },
     { type: "relation", name: "widget", isDangerous: true },
     { type: "relation", name: "renderNote", isDangerous: true },
     { type: "relation", name: "searchScript", isDangerous: true },

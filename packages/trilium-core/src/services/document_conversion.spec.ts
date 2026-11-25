@@ -10,9 +10,7 @@ import { describe, expect, it } from "vitest";
 
 import { buildNote } from "../test/becca_easy_mocking.js";
 import { getContext } from "./context.js";
-import {
-    cleanDocumentHtml, convertDocumentNoteToText, readDocxBodyFontSize
-} from "./document_conversion.js";
+import { cleanDocumentHtml, convertDocumentNoteToText } from "./document_conversion.js";
 import { renderTextNoteToDocx } from "./export/docx.js";
 import noteService from "./notes.js";
 import { convertOfficeToHtml } from "./office_preview.js";
@@ -101,23 +99,6 @@ describe("page breaks", () => {
         expect(html.replace(/\s+</g, "<")).toContain(`<p>one</p>`
             + `<div class="page-break" style="page-break-after:always"></div><p>two and three</p>`);
         expect(html).not.toContain("<br");
-    });
-});
-
-describe("readDocxBodyFontSize", () => {
-    function docxWithStyles(styles: string) {
-        return zipSync({ "word/styles.xml": strToU8(`<w:styles>${styles}</w:styles>`) });
-    }
-
-    it("reads the Normal style, then the document defaults, then Word's own size", () => {
-        const defaults = `<w:docDefaults><w:rPrDefault><w:rPr><w:sz w:val="19"/></w:rPr></w:rPrDefault></w:docDefaults>`;
-
-        expect(readDocxBodyFontSize(docxWithStyles(defaults
-            + `<w:style w:type="paragraph" w:styleId="Normal"><w:rPr><w:sz w:val="24"/></w:rPr></w:style>`))).toBe(12);
-        expect(readDocxBodyFontSize(docxWithStyles(defaults
-            + `<w:style w:type="paragraph" w:styleId="Normal"><w:name w:val="normal"/></w:style>`))).toBe(9.5);
-        expect(readDocxBodyFontSize(docxWithStyles(""))).toBe(10);
-        expect(readDocxBodyFontSize(new Uint8Array([ 1, 2, 3 ]))).toBeUndefined();
     });
 });
 
