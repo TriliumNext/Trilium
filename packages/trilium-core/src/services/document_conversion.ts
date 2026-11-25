@@ -4,6 +4,7 @@ import { HTMLElement, parse } from "node-html-parser";
 
 import type BNote from "../becca/entities/bnote.js";
 import { ValidationError } from "../errors.js";
+import { readDocxTableLayouts, type TableLayout } from "./docx_table_layout.js";
 import { readDocxBodyFontSize } from "./export/docx_template.js";
 import noteService from "./notes.js";
 import { convertOfficeToHtml } from "./office_preview.js";
@@ -28,9 +29,11 @@ export async function convertDocumentNoteToText(note: BNote) {
     }
 
     const content = wrapStringOrBuffer(note.getContent());
-    const bodyFontSize = note.mime === DOCX_MIME ? readDocxBodyFontSize(content) : undefined;
+    const isDocx = note.mime === DOCX_MIME;
+    const bodyFontSize = isDocx ? readDocxBodyFontSize(content) : undefined;
+    const tableLayouts = isDocx ? readDocxTableLayouts(content) : undefined;
     const documentHtml = await convertOfficeToHtml(content, note.mime, { pageBreaks: true });
-    const html = sanitizeHtml(cleanDocumentHtml(documentHtml, { bodyFontSize }));
+    const html = sanitizeHtml(cleanDocumentHtml(documentHtml, { bodyFontSize, tableLayouts }));
 
     getSql().transactional(() => {
         note.saveRevision({
@@ -56,10 +59,17 @@ const KEPT_STYLES = new Set([ "color", "background-color", "text-align", "width"
  * Turns the HTML of the office preview into the HTML of a text note: tables in the `<figure>` the
  * editor writes, highlights as the editor's spans, colors with the variables that adapt them to
  * the theme, and without the wrappers and the styles of the word processor's page.
+ *
+ * `tableLayouts`, one for each table of the HTML in order, gives the tables the column widths
+ * and the cell borders, padding, alignment and heights that the office preview leaves out. They
+ * are left out when their number differs from that of the tables.
  */
 export function cleanDocumentHtml(
     html: string,
-    { bodyFontSize = 12 }: { bodyFontSize?: number } = {}
+    { bodyFontSize = 12, tableLayouts }: {
+        bodyFontSize?: number;
+        tableLayouts?: readonly TableLayout[];
+    } = {}
 ) {
     const root = parse(html);
 
@@ -110,6 +120,13 @@ export function cleanDocumentHtml(
 
     for (const element of root.querySelectorAll("[style]")) {
         keepStyles(element);
+    }
+
+    const tables = root.querySelectorAll("table");
+    if (tableLayouts?.length === tables.length) {
+        for (const [ index, table ] of tables.entries()) {
+            applyTableLayout(table, tableLayouts[index]);
+        }
     }
 
     for (const item of root.querySelectorAll("li[value]")) {
@@ -173,6 +190,20 @@ function fillShortRows(table: HTMLElement) {
         }
     }
 
+    const widths = readRowWidths(rows);
+    const tableWidth = Math.max(0, ...widths);
+    for (const [ index, row ] of rows.entries()) {
+        const last = getCells(row).at(-1);
+        if (last && widths[index] < tableWidth) {
+            const colspan = readSpan(last, "colspan") + tableWidth - widths[index];
+            last.setAttribute("colspan", String(colspan));
+        }
+    }
+}
+
+/** A cell with neither attributes nor content, which only the office preview's padding writes. */
+/** The number of grid columns each row takes, counting the cells of `rowspan`s from above. */
+function readRowWidths(rows: HTMLElement[]) {
     const widths: number[] = [];
     const coveredByRowspan: number[] = [];
     for (const [ index, row ] of rows.entries()) {
@@ -186,18 +217,42 @@ function fillShortRows(table: HTMLElement) {
         }
         widths.push(width);
     }
+    return widths;
+}
 
-    const tableWidth = Math.max(0, ...widths);
+/**
+ * Adds the styles of `layout` to the cells of `table`, row by row, and its column widths as the
+ * editor's `<colgroup>` when the table has as many columns. A table whose rows differ in number
+ * from the layout's is left as it is.
+ */
+function applyTableLayout(table: HTMLElement, layout: TableLayout) {
+    const rows = getRows(table);
+    if (rows.length !== layout.rows.length) {
+        return;
+    }
+
     for (const [ index, row ] of rows.entries()) {
-        const last = getCells(row).at(-1);
-        if (last && widths[index] < tableWidth) {
-            const colspan = readSpan(last, "colspan") + tableWidth - widths[index];
-            last.setAttribute("colspan", String(colspan));
+        const cells = getCells(row);
+        for (const [ column, styles ] of layout.rows[index].entries()) {
+            const cell = cells.at(column);
+            if (!cell) {
+                break;
+            }
+            const style = styles.map(([ property, value ]) => `${property}:${value};`).join("");
+            cell.setAttribute("style", (cell.getAttribute("style") ?? "") + style);
         }
+    }
+
+    const total = layout.columnWidths.reduce((sum, width) => sum + width, 0);
+    if (total > 0 && layout.columnWidths.length === Math.max(0, ...readRowWidths(rows))) {
+        const columns = layout.columnWidths
+            .map((width) => `<col style="width:${Number((width / total * 100).toFixed(2))}%;">`)
+            .join("");
+        table.insertAdjacentHTML("afterbegin", `<colgroup>${columns}</colgroup>`);
+        table.classList.add("ck-table-resized");
     }
 }
 
-/** A cell with neither attributes nor content, which only the office preview's padding writes. */
 function isPadding(cell: HTMLElement) {
     return !cell.rawAttrs.trim() && !cell.children.length && !cell.rawText.trim();
 }

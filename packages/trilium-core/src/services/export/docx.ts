@@ -125,10 +125,14 @@ export async function renderTextNoteToDocx(note: BNote, html: string): Promise<U
 function buildStyleMap(contentStyle: string | undefined): Record<string, string> {
     return {
         ...(contentStyle ? { "p, li, pre, blockquote, figcaption": contentStyle } : {}),
-        "figure.table td, figure.table th, figure.table td p:last-child, figure.table th p:last-child":
-            "TableText"
+        [ TABLE_TEXT_SELECTORS ]: "TableText"
     };
 }
+
+const TABLE_TEXT_SELECTORS = [
+    "figure.table td", "figure.table th",
+    "figure.table td p:last-child", "figure.table th p:last-child"
+].join(", ");
 
 function headingStyle(points: number) {
     return {

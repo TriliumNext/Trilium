@@ -1,6 +1,7 @@
 import { DOCX_MIME, ODT_MIME } from "@triliumnext/commons";
 import {
-    Document, Packer, PageBreak, Paragraph, Table, TableCell, TableRow, TextRun
+    BorderStyle, Document, HeightRule, Packer, PageBreak, Paragraph, Table, TableCell, TableRow,
+    TextRun, VerticalAlignTable
 } from "docx";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import fs from "fs";
@@ -11,6 +12,7 @@ import { describe, expect, it } from "vitest";
 import { buildNote } from "../test/becca_easy_mocking.js";
 import { getContext } from "./context.js";
 import { cleanDocumentHtml, convertDocumentNoteToText } from "./document_conversion.js";
+import { readDocxTableLayouts } from "./docx_table_layout.js";
 import { renderTextNoteToDocx } from "./export/docx.js";
 import noteService from "./notes.js";
 import { convertOfficeToHtml } from "./office_preview.js";
@@ -70,6 +72,32 @@ describe("cleanDocumentHtml", () => {
             + `</table></figure>`
             + `<figure class="table"><table><tr><td rowspan="2">merged</td><td>f</td></tr>`
             + `<tr><td>g</td></tr></table></figure>`);
+    });
+});
+
+describe("table layout", () => {
+    /** A Word document of `body`, with no styles of its own. */
+    function docxWithBody(body: string) {
+        return zipSync({ "word/document.xml": strToU8(`<w:document><w:body>${body}</w:body></w:document>`) });
+    }
+
+    const cell = (properties: string, text: string) =>
+        `<w:tc><w:tcPr>${properties}</w:tcPr><w:p><w:r><w:t>${text}</w:t></w:r></w:p></w:tc>`;
+
+    it("skips the cells that continue a merge, and leaves tables alone when they don't match", () => {
+        const docx = docxWithBody(`<w:tbl><w:tblGrid><w:gridCol w:w="1000"/><w:gridCol w:w="1000"/></w:tblGrid>`
+            + `<w:tr>${cell(`<w:vMerge w:val="restart"/><w:vAlign w:val="bottom"/>`, "A")}${cell("", "B")}</w:tr>`
+            + `<w:tr>${cell("<w:vMerge/>", "")}${cell(`<w:vAlign w:val="center"/>`, "C")}</w:tr></w:tbl>`);
+        const merged = `<table><tr><td rowspan="2">A</td><td>B</td></tr><tr><td>C</td></tr></table>`;
+        const tableLayouts = readDocxTableLayouts(docx);
+
+        const html = cleanDocumentHtml(merged, { tableLayouts });
+        expect(html).toMatch(/<td rowspan="2" style="[^"]*vertical-align:bottom;[^"]*">A/);
+        expect(html).toMatch(/<td style="[^"]*vertical-align:middle;[^"]*">C/);
+
+        const unmatched = cleanDocumentHtml(merged + merged, { tableLayouts });
+        expect(unmatched).not.toContain("vertical-align");
+        expect(unmatched).not.toContain("colgroup");
     });
 });
 
@@ -134,7 +162,7 @@ describe("convertDocumentNoteToText", () => {
         const content = String(note.getContent());
         expect(content).toContain(">Feedback</h2>");
         expect(content).toContain(`<span style="color:#138613;--tn-color:#138613"><b>strong quarter</b></span>`);
-        expect(content).toMatch(/<figure class="table"><table>.*<td style="background-color:#BCD9F5;--tn-background:#BCD9F5">/s);
+        expect(content).toMatch(/<figure class="table"><table[^>]*>.*<td style="background-color:#BCD9F5;--tn-background:#BCD9F5[;"]/s);
         expect(content).toMatch(/<ul>\s*<li>Ownership<\/li><\/ul>/);
         expect(content).not.toContain("data:image");
         const [ picture ] = note.getAttachments();
@@ -169,8 +197,74 @@ describe("convertDocumentNoteToText", () => {
 
         const content = String(note.getContent());
         expect(content).toContain(`<span class="text-huge">Annual review</span>`);
-        expect(content).toMatch(/<td colspan="2"><p>Notes<\/p>/);
+        expect(content).toMatch(/<td colspan="2"[^>]*><p>Notes<\/p>/);
         expect(content.match(/<td/g)).toHaveLength(7);
+    });
+
+    it("keeps the borders, padding, alignment, heights and column widths of a Word table", async () => {
+        const border = { style: BorderStyle.SINGLE, size: 6, color: "B9D5DD" };
+        const table = new Table({
+            columnWidths: [ 2000, 6000 ],
+            borders: {
+                top: border, bottom: border, left: border, right: border,
+                insideHorizontal: border, insideVertical: border
+            },
+            margins: { top: 0, bottom: 0, left: 115, right: 115 },
+            rows: [
+                new TableRow({
+                    height: { value: 504, rule: HeightRule.ATLEAST },
+                    children: [
+                        new TableCell({
+                            verticalAlign: VerticalAlignTable.CENTER,
+                            children: [ new Paragraph("Name") ]
+                        }),
+                        new TableCell({ children: [
+                            new Paragraph("Alexandra"),
+                            new Paragraph({ text: "Nemes", spacing: { after: 100 } })
+                        ] })
+                    ]
+                }),
+                new TableRow({ children: [
+                    new TableCell({
+                        borders: { bottom: { style: BorderStyle.DASHED, size: 12, color: "E64C4C" } },
+                        children: [ new Paragraph("Role") ]
+                    }),
+                    new TableCell({ children: [ new Paragraph("Developer") ] })
+                ] })
+            ]
+        });
+        const docx = await Packer.pack(new Document({
+            styles: { default: { document: { paragraph: { spacing: { after: 200 } } } } },
+            sections: [ { children: [ table ] } ]
+        }), "uint8array");
+        const note = createFileNote(DOCX_MIME, docx, "Details.docx");
+
+        await getContext().init(() => convertDocumentNoteToText(note));
+
+        const content = String(note.getContent());
+        expect(content).toMatch(/<table class="ck-table-resized"><colgroup>/);
+        expect(content).toMatch(/<col style="width:25%"\s*\/?><col style="width:75%"\s*\/?>/);
+        expect(cellStyles(content, "Name")).toEqual({
+            "border-style": "solid",
+            "border-width": "0.75pt",
+            "border-color": "#B9D5DD",
+            "--tn-border-color": "#B9D5DD",
+            // 10pt after the cell's paragraph, from the document's defaults.
+            padding: "0pt 5.75pt 10pt 5.75pt",
+            "vertical-align": "middle",
+            height: "25.2pt"
+        });
+        expect(cellStyles(content, "Alexandra")).toMatchObject({
+            padding: "0pt 5.75pt 5pt 5.75pt", "vertical-align": "top", height: "25.2pt"
+        });
+        const role = cellStyles(content, "Role");
+        expect(role).toMatchObject({
+            "border-style": "solid solid dashed solid",
+            "border-width": "0.75pt 0.75pt 1.5pt 0.75pt",
+            "border-color": "#B9D5DD #B9D5DD #E64C4C #B9D5DD"
+        });
+        expect(role).not.toHaveProperty("--tn-border-color");
+        expect(role).not.toHaveProperty("height");
     });
 
     it("converts an OpenDocument text, with its top heading demoted below the note's title", async () => {
@@ -196,3 +290,13 @@ describe("convertDocumentNoteToText", () => {
         expect(pdfNote.type).toBe("file");
     });
 });
+
+/** The inline styles of the table cell of `html` whose text starts with `text`. */
+function cellStyles(html: string, text: string) {
+    const style = html.match(new RegExp(`<td[^>]*?style="([^"]*)"[^>]*>(?:<[^>]+>)*${text}`))?.[1];
+    expect(style).toBeDefined();
+    return Object.fromEntries((style ?? "").split(";").filter(Boolean).map((declaration) => {
+        const separator = declaration.indexOf(":");
+        return [ declaration.slice(0, separator).trim(), declaration.slice(separator + 1).trim() ];
+    }));
+}
