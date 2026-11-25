@@ -52,6 +52,25 @@ async function buildTemplate() {
     return zipSync(files);
 }
 
+/**
+ * A form with a cover page and a closing page around a `{{content}}` line, which Word has split
+ * into two runs. The cover is portrait and the closing page landscape.
+ */
+async function buildMarkedTemplate() {
+    return Packer.pack(new Document({ sections: [
+        { children: [
+            new Paragraph({ children: [ new TextRun("Cover page"), new ImageRun({
+                type: "png", data: PNG, transformation: { width: 9, height: 9 }
+            }) ] }),
+            new Paragraph({ children: [ new TextRun("{{ con"), new TextRun("tent }}") ] })
+        ] },
+        {
+            properties: { page: { size: { orientation: "landscape" } } },
+            children: [ new Paragraph("Signatures") ]
+        }
+    ] }), "uint8array");
+}
+
 function readPart(docx: Uint8Array, path: string) {
     const part = unzipSync(docx)[path];
     return part ? strFromU8(part) : undefined;
@@ -64,7 +83,7 @@ describe("prepareDocxTemplate", () => {
         const document = readPart(shell, "word/document.xml");
         const body = document?.match(/<w:body>([\s\S]*)<\/w:body>/)?.[1];
         expect(body).toMatch(
-            /^<w:p><w:r><w:t>\{\{trilium_content\}\}<\/w:t><\/w:r><\/w:p><w:sectPr\b/);
+            /^<w:p><w:r><w:t>\{\{content\}\}<\/w:t><\/w:r><\/w:p><w:sectPr\b/);
         expect(body).toContain(`w:orient="landscape"`);
         expect(body).toContain("<w:footerReference");
         expect(body).not.toContain("Old answers");
@@ -75,6 +94,18 @@ describe("prepareDocxTemplate", () => {
         expect(relationships).not.toContain("relationships/image");
         expect(readPart(shell, "word/styles.xml")).toContain(`w:styleId="TableText"`);
         expect(textWidth).toBe(16838 - 2 * 1440);
+    });
+
+    it("keeps the body around a {{content}} line, and reads the width of its section", async () => {
+        const { data: shell, textWidth } = prepareDocxTemplate(await buildMarkedTemplate());
+
+        const document = readPart(shell, "word/document.xml") ?? "";
+        expect(document).toContain("Cover page");
+        expect(document).toContain("Signatures");
+        expect(Object.keys(unzipSync(shell)).some((path) => path.startsWith("word/media/")))
+            .toBe(true);
+        // The portrait A4 page of the section holding the line, not the landscape last one.
+        expect(textWidth).toBe(11906 - 2 * 1440);
     });
 
     it("refuses a file that is not a Word document", () => {
@@ -171,6 +202,17 @@ describe("renderTextNoteToDocx with a template", () => {
         }));
         expect(full).toEqual({ width: "13958", grid: 13958 });
         expect(half).toEqual({ width: "6979", grid: 6979 });
+    });
+
+    it("writes the note in place of the {{content}} line, between the rest", async () => {
+        const note = createNotes(DOCX_MIME, await buildMarkedTemplate());
+
+        const docx = await renderTextNoteToDocx(note, `<p>Feedback text</p>`);
+
+        const document = readPart(docx, "word/document.xml") ?? "";
+        expect(document).toMatch(/Cover page.*Feedback text.*Signatures/s);
+        expect(document).not.toContain("{{ con");
+        expect(document).not.toContain("tent }}");
     });
 
     it("refuses a template that is not a Word document, whatever its content", async () => {

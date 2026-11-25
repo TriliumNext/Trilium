@@ -8,8 +8,13 @@ import { decodeUtf8, wrapStringOrBuffer } from "../utils/binary.js";
 /** The relation that points a note, or the notes under it, at the Word document to export into. */
 export const DOCX_TEMPLATE_RELATION = "docxTemplate";
 
-/** The key of the paragraph that `patchDocument()` replaces with the note's content. */
-export const CONTENT_PLACEHOLDER = "trilium_content";
+/**
+ * The key of the paragraph that `patchDocument()` replaces with the note's content: `{{content}}`,
+ * which a template can hold where the note goes. Spaces inside the braces are allowed.
+ */
+export const CONTENT_PLACEHOLDER = "content";
+
+const CONTENT_MARKER = /\{\{\s*content\s*\}\}/;
 
 /**
  * The width of the text on the page of `docx`'s own documents, in twips: an A4 page with 1-inch
@@ -55,13 +60,14 @@ export function getDocxTemplate(note: BNote): Uint8Array | undefined {
 }
 
 /**
- * Turns a Word document into the shell that a note's content is patched into: its body becomes a
- * single `{{trilium_content}}` paragraph followed by the page setup of its last section, and the
- * pictures only that body showed are removed. Styles, headers, footers, the theme and embedded
- * fonts stay, and the `TableText` style is added when the document lacks it.
+ * Turns a Word document into the shell that a note's content is patched into. A document with a
+ * `{{content}}` paragraph in its body is kept whole, and the note replaces that paragraph.
+ * Otherwise its body becomes a single `{{content}}` paragraph followed by the page setup of its
+ * last section, and the pictures only that body showed are removed. Styles, headers, footers, the theme and
+ * embedded fonts stay either way, and the `TableText` style is added when the document lacks it.
  *
- * Also returns the width of the text on the page, in twips, since `patchDocument()` sizes tables
- * for {@link DEFAULT_TEXT_WIDTH} whatever the template's page.
+ * Also returns the width of the text on the page where the note goes, in twips, since
+ * `patchDocument()` sizes tables for {@link DEFAULT_TEXT_WIDTH} whatever the template's page.
  */
 export function prepareDocxTemplate(docx: Uint8Array): { data: Uint8Array; textWidth: number } {
     let files: Record<string, Uint8Array>;
@@ -76,15 +82,22 @@ export function prepareDocxTemplate(docx: Uint8Array): { data: Uint8Array; textW
         throw new ValidationError("The Word template is not a valid DOCX file.");
     }
 
-    const document = emptyBody(strFromU8(documentXml));
-    const textWidth = readTextWidth(document);
-    files["word/document.xml"] = strToU8(document);
+    const original = strFromU8(documentXml);
+    const markerAt = findContentMarker(original);
+    if (markerAt !== undefined) {
+        files["word/document.xml"] = documentXml;
+    } else {
+        const document = emptyBody(original);
+        files["word/document.xml"] = strToU8(document);
 
-    const relsPath = "word/_rels/document.xml.rels";
-    if (files[relsPath]) {
-        files[relsPath] = strToU8(removeUnusedRelationships(strFromU8(files[relsPath]), document));
-        removeUnreferencedMedia(files);
+        const relsPath = "word/_rels/document.xml.rels";
+        if (files[relsPath]) {
+            const rels = removeUnusedRelationships(strFromU8(files[relsPath]), document);
+            files[relsPath] = strToU8(rels);
+            removeUnreferencedMedia(files);
+        }
     }
+    const textWidth = readTextWidth(strFromU8(files["word/document.xml"]), markerAt ?? 0);
 
     const styles = files["word/styles.xml"];
     if (styles) {
@@ -145,9 +158,29 @@ function emptyBody(document: string) {
         + document.slice(bodyEnd);
 }
 
-/** The width of a page of the last section of `document` minus its margins, in twips. */
-function readTextWidth(document: string) {
-    const section = document.slice(document.lastIndexOf("<w:sectPr"));
+/**
+ * The position of the paragraph whose text is `{{content}}` in `document`, which Word can have
+ * split across several runs, or `undefined` without one.
+ */
+function findContentMarker(document: string) {
+    for (const paragraph of document.matchAll(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g)) {
+        const text = [ ...paragraph[0].matchAll(/<w:t\b[^>]*>([^<]*)<\/w:t>/g) ]
+            .map((run) => run[1])
+            .join("");
+        if (CONTENT_MARKER.test(text)) {
+            return paragraph.index;
+        }
+    }
+    return undefined;
+}
+
+/**
+ * The width of the page minus its margins, in twips, of the section that the body's content at
+ * position `from` of `document` is in: the first `<w:sectPr>` after it closes that section.
+ */
+function readTextWidth(document: string, from: number) {
+    const sectionStart = document.indexOf("<w:sectPr", from);
+    const section = sectionStart < 0 ? "" : document.slice(sectionStart);
     const pageWidth = readTwips(section.match(/<w:pgSz\b[^>]*>/)?.[0], "w");
     const margins = section.match(/<w:pgMar\b[^>]*>/)?.[0];
     if (!pageWidth || !margins) {

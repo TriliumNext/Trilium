@@ -107,6 +107,7 @@ export async function renderTextNoteToDocx(note: BNote, html: string): Promise<U
                 [CONTENT_PLACEHOLDER]: { type: PatchType.DOCUMENT, children: [ ...children ] }
             },
             keepOriginalStyles: false,
+            trimPlaceholders: true,
             properties: { title: note.title }
         });
     }
