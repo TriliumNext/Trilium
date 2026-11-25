@@ -323,8 +323,8 @@ importers:
         specifier: 18.0.3
         version: 18.0.3(i18next@27.1.5(typescript@6.0.3))(react@18.3.1)(typescript@6.0.3)
       react-window:
-        specifier: 2.5.3
-        version: 2.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 2.5.4
+        version: 2.5.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-zoom-pan-pinch:
         specifier: 4.2.0
         version: 4.2.0(patch_hash=09dfeb6f635c52ef565ca21aec3f70eb129577661f85eb67262092e8cb9f8548)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -934,8 +934,8 @@ importers:
         specifier: 18.0.3
         version: 18.0.3(i18next@27.1.5(typescript@6.0.3))(react@18.3.1)(typescript@6.0.3)
       react-window:
-        specifier: 2.5.3
-        version: 2.5.3(react-dom@18.3.1(react@18.3.1))(react@19.3.0)
+        specifier: 2.5.4
+        version: 2.5.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-zoom-pan-pinch:
         specifier: 4.2.0
         version: 4.2.0(patch_hash=09dfeb6f635c52ef565ca21aec3f70eb129577661f85eb67262092e8cb9f8548)(react-dom@18.3.1(react@18.3.1))(react@19.3.0)
@@ -9973,8 +9973,8 @@ packages:
       '@types/react':
         optional: true
 
-  react-window@2.5.3:
-    resolution: {integrity: sha512-zN/mX+4cLgwp8xDqQYKmgbzj/oZ2LrF4V8KbAbgkpA9zAt3+q4nWPe0MhvIDIh9c4kHPySSchNcd8DjyR6jItQ==}
+  react-window@2.5.4:
+    resolution: {integrity: sha512-6fvaimB9b4ubVnYiTrFUJJS+sgV+z9Lk2llcZH6U+U/2zFSAfhfgZEOpJTC0Mj/WHxYq3GhniM5CReSExM7qRQ==}
     peerDependencies:
       '@types/react': ^18.2.6 || ^19.0.0
       react: ^18.0.0 || ^19.0.0
@@ -22386,14 +22386,9 @@ snapshots:
       react: 19.3.0
       tslib: 2.9.1
 
-  react-window@2.5.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  react-window@2.5.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-
-  react-window@2.5.3(react-dom@18.3.1(react@18.3.1))(react@19.3.0):
-    dependencies:
-      react: 19.3.0
       react-dom: 18.3.1(react@18.3.1)
 
   react-zoom-pan-pinch@4.2.0(patch_hash=09dfeb6f635c52ef565ca21aec3f70eb129577661f85eb67262092e8cb9f8548)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
