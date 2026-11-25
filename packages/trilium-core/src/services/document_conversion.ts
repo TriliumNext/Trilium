@@ -28,14 +28,20 @@ export async function convertDocumentNoteToText(note: BNote) {
             `Note '${note.noteId}' content is not available; a protected session may be required.`);
     }
 
+    const { blobId, mime } = note;
     const content = wrapStringOrBuffer(note.getContent());
-    const isDocx = note.mime === DOCX_MIME;
+    const isDocx = mime === DOCX_MIME;
     const bodyFontSize = isDocx ? readDocxBodyFontSize(content) : undefined;
     const tableLayouts = isDocx ? readDocxTableLayouts(content) : undefined;
-    const documentHtml = await convertOfficeToHtml(content, note.mime, { pageBreaks: true });
+    const documentHtml = await convertOfficeToHtml(content, mime, { pageBreaks: true });
     const html = sanitizeHtml(cleanDocumentHtml(documentHtml, { bodyFontSize, tableLayouts }));
 
     getSql().transactional(() => {
+        if (note.blobId !== blobId || note.type !== "file" || note.mime !== mime) {
+            throw new ValidationError(
+                `Note '${note.noteId}' changed while it was being converted.`);
+        }
+
         note.saveRevision({
             description: t("note_conversion.revision_before_text"),
             source: "manual"

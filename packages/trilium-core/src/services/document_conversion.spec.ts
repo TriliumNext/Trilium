@@ -277,6 +277,23 @@ describe("convertDocumentNoteToText", () => {
         expect(String(note.getContent())).toContain("<h2>Contract document</h2>");
     });
 
+    it("leaves a note alone when its file is replaced while it converts", async () => {
+        const docx = await renderTextNoteToDocx(buildNote({ type: "text", title: "Draft" }),
+            "<p>First draft</p>");
+        const replacement = await renderTextNoteToDocx(buildNote({ type: "text", title: "Draft" }),
+            "<p>Second draft</p>");
+        const note = createFileNote(DOCX_MIME, docx, "Draft.docx");
+
+        const conversion = getContext().init(() => convertDocumentNoteToText(note));
+        getContext().init(() => note.setContent(replacement));
+
+        await expect(conversion).rejects.toThrow(
+            expect.objectContaining({ name: "ValidationError" }));
+        expect(note.type).toBe("file");
+        expect(new Uint8Array(note.getContent() as Uint8Array)).toEqual(replacement);
+        expect(note.getRevisions()).toHaveLength(0);
+    });
+
     it("refuses notes that are not word-processing documents", async () => {
         const textNote = getContext().init(() => noteService.createNewNote({
             parentNoteId: "root", title: "Text", content: "<p>x</p>", type: "text"
