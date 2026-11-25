@@ -1,5 +1,4 @@
-
-
+import { DOCX_MIME } from "@triliumnext/commons";
 import type { Response } from "../../http_interface";
 import mimeTypes from "mime-types";
 
@@ -9,7 +8,7 @@ import type BNote from "../../becca/entities/bnote.js";
 import { ValidationError } from "../../errors.js";
 import type TaskContext from "../task_context.js";
 import { escapeHtml,getContentDisposition } from "../utils/index.js";
-import { DOCX_MIME, renderTextNoteToDocx } from "./docx.js";
+import { renderTextNoteToDocx } from "./docx.js";
 import { formatHtml } from "./format_html.js";
 import mdService from "./markdown.js";
 import { stripListItemIds } from "./strip_list_item_ids.js";

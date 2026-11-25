@@ -21,6 +21,7 @@ import becca from "../../becca/becca.js";
 import type BBranch from "../../becca/entities/bbranch.js";
 import type BNote from "../../becca/entities/bnote.js";
 import { getLog } from "../../services/log.js";
+import { convertDocumentNoteToText } from "../../services/document_conversion.js";
 import noteFormatConversionService from "../../services/note_format_conversion.js";
 import noteService from "../../services/notes.js";
 import {
@@ -622,6 +623,10 @@ function convertNoteFormat(req: Request<{ noteId: string }>) {
     return noteFormatConversionService.convertNoteFormat(note);
 }
 
+async function convertDocumentToText(req: Request<{ noteId: string }>) {
+    await convertDocumentNoteToText(becca.getNoteOrThrow(req.params.noteId));
+}
+
 export default {
     getNote,
     getNoteBlob,
@@ -647,5 +652,6 @@ export default {
     deleteNotes,
     forceSaveRevision,
     convertNoteToAttachment,
-    convertNoteFormat
+    convertNoteFormat,
+    convertDocumentToText
 };

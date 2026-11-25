@@ -3,6 +3,7 @@ import "./NoteActions.css";
 import type {
     ConvertNoteFormatResponse, ConvertToAttachmentResponse, ToggleInParentResponse
 } from "@triliumnext/commons";
+import { isConvertibleToText } from "@triliumnext/commons/src/lib/office.js";
 import { ComponentChildren, RefObject } from "preact";
 import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 
@@ -235,6 +236,8 @@ export function NoteContextMenu({ note, noteContext, leadingViewActions = [], tr
                     <CommandItem command="saveNamedRevision" icon="bx bx-purchase-tag" disabled={isInOptionsOrHelp} text={t("note_actions.save_named_revision")} />
                 </FormDropdownSubmenu>
                 {canBeConvertedToAttachment && !isInPopup && <ConvertToAttachment note={note} />}
+                {note.type === "file" && isConvertibleToText(note.mime) && isContentAvailable && !isInOptionsOrHelp &&
+                    <ConvertDocumentToText note={note} />}
                 {note.type === "render" && <CommandItem command="renderActiveNote" icon="bx bx-extension" text={t("note_actions.re_render_note")}
                 />}
 
@@ -514,6 +517,24 @@ function ConvertNoteFormat({ note }: { note: FNote }) {
                 }
             }}
         >{isMarkdown ? t("note_actions.convert_to_text") : t("note_actions.convert_to_markdown")}</FormListItem>
+    );
+}
+
+function ConvertDocumentToText({ note }: { note: FNote }) {
+    return (
+        <FormListItem
+            icon="bx bx-note"
+            onClick={async () => {
+                const { default: dialog } = await import("../../services/dialog");
+                if (!(await dialog.confirm(t("note_actions.convert_format_warning")))) {
+                    return;
+                }
+
+                await server.post(`notes/${note.noteId}/convert-to-text`);
+                await ws.waitForMaxKnownEntityChangeId();
+                toast.showMessage(t("note_actions.convert_to_text_successful"));
+            }}
+        >{t("note_actions.convert_to_text")}</FormListItem>
     );
 }
 

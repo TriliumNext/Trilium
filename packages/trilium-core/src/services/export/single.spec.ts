@@ -1,3 +1,4 @@
+import { DOCX_MIME } from "@triliumnext/commons";
 import type { Response } from "../../http_interface";
 import { strFromU8, unzipSync } from "fflate";
 import { describe, expect, it, vi } from "vitest";
@@ -9,7 +10,6 @@ import type BNote from "../../becca/entities/bnote.js";
 import type { ExportFormat } from "../../meta.js";
 import TaskContext from "../task_context.js";
 import { buildNote } from "../../test/becca_easy_mocking.js";
-import { DOCX_MIME } from "./docx.js";
 import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../virtual_notes.js";
 import singleExportService, { mapByNoteType, type SingleExportFormat } from "./single.js";
 

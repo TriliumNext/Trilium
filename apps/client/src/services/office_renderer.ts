@@ -1,4 +1,4 @@
-import { OFFICE_PREVIEW_TOO_LARGE_MESSAGE } from "@triliumnext/commons/src/lib/office.js";
+import { isDefaultHyperlinkColor, OFFICE_PREVIEW_TOO_LARGE_MESSAGE } from "@triliumnext/commons/src/lib/office.js";
 
 import { sanitizeNoteContentHtml } from "./sanitize_content.js";
 import server from "./server.js";
@@ -141,8 +141,7 @@ function stripLinkColors(html: string): string {
     template.innerHTML = html;
 
     for (const el of template.content.querySelectorAll<HTMLElement>("a[style], a [style]")) {
-        const color = el.style.getPropertyValue("color").toLowerCase().replaceAll(" ", "");
-        if (!DEFAULT_HYPERLINK_COLORS.has(color)) {
+        if (!isDefaultHyperlinkColor(el.style.getPropertyValue("color"))) {
             continue;
         }
 
@@ -154,11 +153,3 @@ function stripLinkColors(html: string): string {
 
     return template.innerHTML;
 }
-
-/** Each default in both hex and the rgb() form CSSStyleDeclaration may serialize it to. */
-const DEFAULT_HYPERLINK_COLORS = new Set([
-    "#000080", "rgb(0,0,128)", // LibreOffice "Internet Link"
-    "#0563c1", "rgb(5,99,193)", // Word (Office theme)
-    "#0000ff", "rgb(0,0,255)", // classic hyperlink blue
-    "#0000ee", "rgb(0,0,238)" // HTML user-agent default
-]);

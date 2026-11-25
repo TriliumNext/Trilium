@@ -3,6 +3,7 @@ A note's type may be converted to another:
 
 *   <a class="reference-link" href="Text.md">Text</a> notes to <a class="reference-link" href="Markdown.md">Markdown</a> notes
 *   Markdown notes to Text notes
+*   <a class="reference-link" href="File.md">File</a> notes holding a Word, OpenDocument Text or RTF document to Text notes
 
 Before conversion, a revision is saved automatically, so you can restore the original or recover any missing elements from it if the conversion produces undesired results. Read more about <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20Revisions.md">Note Revisions</a>.
 
@@ -20,6 +21,12 @@ To do so, go to the <a class="reference-link" href="../Basic%20Concepts%20and%2
 > Since Markdown does not support all the capabilities of Text notes, this conversion is lossy in terms of formatting: some formatting may be lost, and some unsupported elements may even be dropped. It's strongly recommended that you inspect the content for any information that might have gone missing after the conversion.
 
 To convert a text note to Markdown, go to the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Advanced_ and select _Convert to Markdown note_.
+
+### Document to Text Note
+
+A <a class="reference-link" href="File.md">File</a> note holding a Word (`.docx`), OpenDocument Text (`.odt`) or RTF document can be turned into a Text note, so that its content can be edited in Trilium. To do so, go to the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> and select _Convert to text note_.
+
+The conversion keeps headings, paragraphs and their alignment, bold, italic and the other text formatting, text and highlight colors, lists, links, tables with their cell colors, and pictures, which become attachments of the note. The extension is removed from the title of the note. The document's fonts and font sizes, the borders and column widths of its tables, and the colors of its headings are not kept, so that the note follows the theme like any other Text note. The revision saved beforehand holds the original file, so it can be downloaded or restored from <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20Revisions.md">Note Revisions</a>.
 
 ## Converting multiple notes
 

@@ -6,8 +6,6 @@ import { getLog } from "../log.js";
 import { wrapStringOrBuffer } from "../utils/binary.js";
 import { stripListItemIds } from "./strip_list_item_ids.js";
 
-export const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-
 /**
  * The look that note content gets from the app's stylesheets rather than from its own markup, so a
  * table without borders of its own still has the borders and header shading it shows in Trilium.
