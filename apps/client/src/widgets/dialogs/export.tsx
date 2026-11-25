@@ -29,6 +29,7 @@ interface ExportFormat {
     description: string;
     icon: string;
     recommended?: boolean;
+    beta?: boolean;
 }
 
 export default function ExportDialog() {
@@ -101,9 +102,7 @@ export default function ExportDialog() {
                         {formats.map((format) => (
                             <SelectableCard
                                 key={format.value} icon={format.icon}
-                                title={format.recommended
-                                    ? <span className="export-format-heading">{format.name}<Badge text={t("export.recommended")} className="export-recommended-badge" outline /></span>
-                                    : format.name}
+                                title={<FormatHeading format={format} />}
                                 description={format.description}
                                 selected={selectedFormat === format.value} onSelect={() => setSelectedFormat(format.value)}
                             />
@@ -119,10 +118,26 @@ export default function ExportDialog() {
     );
 }
 
+/** The name of an export format, with the badge that marks it recommended or in beta. */
+function FormatHeading({ format }: { format: ExportFormat }) {
+    if (!format.recommended && !format.beta) {
+        return <>{format.name}</>;
+    }
+
+    return (
+        <span className="export-format-heading">
+            {format.name}
+            {format.recommended
+                ? <Badge text={t("export.recommended")} className="export-format-badge" outline />
+                : <Badge text={t("note_types.beta-feature")} className="export-format-badge" outline />}
+        </span>
+    );
+}
+
 const HTML_FORMAT: ExportFormat = { value: "html", name: t("export.format_html_name"), description: t("export.format_html_description"), icon: "bx bxl-html5", recommended: true };
 const MARKDOWN_FORMAT: ExportFormat = { value: "markdown", name: t("export.format_markdown_name"), description: t("export.format_markdown_description"), icon: "bx bxl-markdown" };
 const SHARE_FORMAT: ExportFormat = { value: "share", name: t("export.format_share_name"), description: t("export.format_share_description"), icon: "bx bx-globe" };
-const DOCX_FORMAT: ExportFormat = { value: "docx", name: t("export.format_docx_name"), description: t("export.format_docx_description"), icon: "bx bxs-file-doc" };
+const DOCX_FORMAT: ExportFormat = { value: "docx", name: t("export.format_docx_name"), description: t("export.format_docx_description"), icon: "bx bxs-file-doc", beta: true };
 const OPML_FORMAT: ExportFormat = { value: "opml", name: t("export.format_opml_name"), description: t("export.format_opml_description"), icon: "bx bx-list-ul" };
 
 const subtreeFormats: ExportFormat[] = [HTML_FORMAT, MARKDOWN_FORMAT, SHARE_FORMAT, OPML_FORMAT];
