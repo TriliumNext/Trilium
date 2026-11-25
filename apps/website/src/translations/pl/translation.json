@@ -4,7 +4,8 @@
         "architecture": "Architektura:",
         "older_releases": "Sprawdź poprzednie wydania",
         "server_title": "Skonfiguruj serwer, aby mieć dostęp z wielu urządzeń",
-        "title": "Start"
+        "title": "Start",
+        "nightly_title": "Wypróbuj kompilację nocną (nightly build)"
     },
     "hero_section": {
         "title": "Uporządkuj swoje myśli i zbuduj bazę Twojej wiedzy.",
@@ -46,7 +47,7 @@
         "share_title": "Udostępniaj notatki w sieci",
         "share_content": "Jeżeli masz serwer, publikuj struktury wybranych notatek jako publicznie, tylko do odczytu strony, które każdy może przeglądać bez konta.",
         "api_title": "REST API",
-        "api_content": "Czytaj, twórz i aktualizuj swoje notatki programowane przez HTTP przez interfejs REST API Trilium, idealne do tworzenia automatyzacji z innymi stronami."
+        "api_content": "Czytaj, twórz i aktualizuj swoje notatki programowo przez HTTP dzięki interfejsowi REST API Trilium, idealnemu do tworzenia automatyzacji z innymi stronami."
     },
     "note_types": {
         "text_title": "Notatki tekstowe",
@@ -246,7 +247,7 @@
         "title": "Otwórz swoje notatki",
         "subtitle": "Swobodnie przenoś swoje notatki. Przenieś je z innych aplikacji, przekształć je z powrotem na otwarte formaty albo przekształć je na dopracowane dokumenty - jak tylko zechcesz.",
         "pillar_import_title": "Importuj",
-        "pillar_import_description": "Przenieś twoje notatki, z zachowaniem ich struktury, z innych aplikacji albo zaimportuj pliki w standardach Markdown, HTML i OPML.",
+        "pillar_import_description": "Przenieś twoje notatki, z zachowaniem ich struktury, z innych aplikacji lub zaimportuj pliki w standardach Markdown, HTML i OPML.",
         "pillar_export_title": "Eksportuj",
         "pillar_export_description": "Przenieś, w każdym momencie, każdą notatkę lub całe drzewa notatek do otwartego i wspieranego przez inne aplikacje formatu:",
         "pillar_export_markdown": "Markdown dla czytelnego tekstu",
