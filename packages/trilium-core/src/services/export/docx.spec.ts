@@ -3,8 +3,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import becca from "../../becca/becca.js";
 import type BAttachment from "../../becca/entities/battachment.js";
+import type BNote from "../../becca/entities/bnote.js";
 import { buildNote } from "../../test/becca_easy_mocking.js";
-import { prepareHtml, renderTextNoteToDocx } from "./docx.js";
+import { prepareHtml, renderTextNoteToDocx, resolveImage } from "./docx.js";
 
 /** A 1×1 PNG. */
 const PNG = new Uint8Array([
@@ -62,6 +63,7 @@ describe("renderTextNoteToDocx", () => {
     it("keeps the colors, borders, column widths and images of a table", async () => {
         vi.spyOn(becca, "getAttachment").mockReturnValue({
             mime: "image/png",
+            isContentAvailable: () => true,
             getContent: () => PNG
         } as unknown as BAttachment);
         const note = buildNote({ type: "text", title: "Feedback" });
@@ -121,5 +123,22 @@ describe("renderTextNoteToDocx", () => {
         expect(paragraphOf("First")).not.toContain(`w:after="0"`);
         expect(paragraphOf("Last")).toContain(`<w:pStyle w:val="TableText"/>`);
         expect(paragraphOf("Bare")).toContain(`<w:pStyle w:val="TableText"/>`);
+    });
+});
+
+describe("resolveImage", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("leaves out a protected image while the protected session is locked", () => {
+        const locked = { mime: "image/png", isContentAvailable: () => false, getContent: () => "" };
+        vi.spyOn(becca, "getNote").mockReturnValue(locked as unknown as BNote);
+        vi.spyOn(becca, "getAttachment").mockReturnValue(locked as unknown as BAttachment);
+
+        expect([
+            resolveImage("api/images/img1/chart.png"),
+            resolveImage("api/attachments/att1/image/chart.png")
+        ]).toEqual([ undefined, undefined ]);
     });
 });

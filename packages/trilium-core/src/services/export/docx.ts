@@ -242,13 +242,17 @@ export function resolveImage(source: string): Uint8Array | undefined {
     const imageNote = source.match(/api\/images\/([a-zA-Z0-9_]+)/);
     if (imageNote) {
         const note = becca.getNote(imageNote[1]);
-        return note?.mime.startsWith("image/") ? wrapStringOrBuffer(note.getContent()) : undefined;
+        return note?.mime.startsWith("image/") && note.isContentAvailable()
+            ? wrapStringOrBuffer(note.getContent())
+            : undefined;
     }
 
     const imageAttachment = source.match(/api\/attachments\/([a-zA-Z0-9_]+)\/image/);
     if (imageAttachment) {
         const attachment = becca.getAttachment(imageAttachment[1]);
-        return attachment?.mime.startsWith("image/") ? attachment.getContent() : undefined;
+        return attachment?.mime.startsWith("image/") && attachment.isContentAvailable()
+            ? attachment.getContent()
+            : undefined;
     }
 
     return undefined;
