@@ -6,7 +6,8 @@ import type BNote from "../../becca/entities/bnote.js";
 import { getLog } from "../log.js";
 import { wrapStringOrBuffer } from "../utils/binary.js";
 import {
-    CONTENT_PLACEHOLDER, getDocxTemplate, prepareDocxTemplate, readDocxBodyFontSize
+    CONTENT_PLACEHOLDER, DEFAULT_TEXT_WIDTH, getDocxTemplate, prepareDocxTemplate,
+    readDocxBodyFontSize
 } from "./docx_template.js";
 import { stripListItemIds } from "./strip_list_item_ids.js";
 
@@ -75,6 +76,8 @@ const STYLE_MAP = {
  */
 export async function renderTextNoteToDocx(note: BNote, html: string): Promise<Uint8Array> {
     const template = getDocxTemplate(note);
+    const shell = template ? prepareDocxTemplate(template) : undefined;
+    const textWidth = shell?.textWidth ?? DEFAULT_TEXT_WIDTH;
     const [ docx, { htmlToContent } ] = await Promise.all([
         import("docx"),
         import("docx/html")
@@ -83,10 +86,11 @@ export async function renderTextNoteToDocx(note: BNote, html: string): Promise<U
 
     const bodyFontSize = (template && readDocxBodyFontSize(template)) || BODY_FONT_SIZE;
     const warnings: string[] = [];
-    const children = htmlToContent(prepareHtml(html), {
+    const children = htmlToContent(prepareHtml(html, textWidth), {
         stylesheet: buildContentStylesheet(bodyFontSize),
         styleMap: STYLE_MAP,
         images: resolveImage,
+        maxImageWidth: Math.floor(textWidth / TWIPS_PER_PIXEL),
         onWarning: (warning) => warnings.push(warning.message)
     });
 
@@ -95,10 +99,10 @@ export async function renderTextNoteToDocx(note: BNote, html: string): Promise<U
             `DOCX export of note '${note.noteId}' left out or changed: ${warnings.join("; ")}`);
     }
 
-    if (template) {
+    if (shell) {
         return patchDocument({
             outputType: "uint8array",
-            data: prepareDocxTemplate(template),
+            data: shell.data,
             patches: {
                 [CONTENT_PLACEHOLDER]: { type: PatchType.DOCUMENT, children: [ ...children ] }
             },
@@ -123,11 +127,15 @@ function headingStyle(points: number) {
     };
 }
 
+const TWIPS_PER_PIXEL = 15;
+const TWIPS_PER_POINT = 20;
+
 /**
  * Removes what only means something inside this Trilium instance (editor bookkeeping, links to
  * other notes, which keep their text) and puts table widths where `htmlToContent()` reads them.
+ * `textWidth` is the width of the text on the page, in twips.
  */
-export function prepareHtml(html: string) {
+export function prepareHtml(html: string, textWidth = DEFAULT_TEXT_WIDTH) {
     const root = parse(stripListItemIds(html));
 
     for (const link of root.querySelectorAll("a[href]")) {
@@ -139,7 +147,7 @@ export function prepareHtml(html: string) {
     }
 
     for (const table of root.querySelectorAll("table")) {
-        moveTableWidths(table);
+        moveTableWidths(table, textWidth);
     }
 
     return root.toString();
@@ -149,11 +157,22 @@ export function prepareHtml(html: string) {
  * CKEditor writes a table's width on its `<figure>` and the column widths in a `<colgroup>`;
  * `htmlToContent()` reads them from the `<table>` and its cells. The first row's cells are enough
  * for Word's column grid.
+ *
+ * A table that is not inside another gets its width in points, the whole width of the text when
+ * it has none: `htmlToContent()` resolves percentages against {@link DEFAULT_TEXT_WIDTH}, which
+ * leaves tables narrower than the text of a template with a wider page or narrower margins.
  */
-function moveTableWidths(table: HTMLElement) {
+function moveTableWidths(table: HTMLElement, textWidth: number) {
     const figure = table.parentNode;
     const figureWidth = figure?.tagName === "FIGURE" ? getStyle(figure, "width") : undefined;
-    if (figureWidth && !getStyle(table, "width")) {
+    const width = getStyle(table, "width") ?? figureWidth;
+    if (!table.closest("td, th")) {
+        const percent = width === undefined ? 100 : parsePercent(width);
+        if (percent !== undefined) {
+            const points = textWidth * percent / 100 / TWIPS_PER_POINT;
+            setStyle(table, "width", `${Number(points.toFixed(2))}pt`);
+        }
+    } else if (figureWidth && !getStyle(table, "width")) {
         setStyle(table, "width", figureWidth);
     }
 
@@ -191,9 +210,17 @@ function getStyle(element: HTMLElement, property: string) {
 }
 
 function setStyle(element: HTMLElement, property: string, value: string) {
-    const style = (element.getAttribute("style") ?? "").trim();
+    const style = (element.getAttribute("style") ?? "")
+        .replace(new RegExp(`(?:^|;)\\s*${property}\\s*:[^;]*`, "i"), "")
+        .trim()
+        .replace(/^;/, "");
     const separator = style && !style.endsWith(";") ? ";" : "";
     element.setAttribute("style", `${style}${separator}${property}:${value};`);
+}
+
+function parsePercent(width: string) {
+    const match = width.match(/^([\d.]+)%$/);
+    return match ? Number(match[1]) : undefined;
 }
 
 /** Returns the bytes of an image that the note content refers to by its `api/` address. */

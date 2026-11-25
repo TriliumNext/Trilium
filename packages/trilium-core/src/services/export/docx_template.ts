@@ -11,6 +11,12 @@ export const DOCX_TEMPLATE_RELATION = "docxTemplate";
 /** The key of the paragraph that `patchDocument()` replaces with the note's content. */
 export const CONTENT_PLACEHOLDER = "trilium_content";
 
+/**
+ * The width of the text on the page of `docx`'s own documents, in twips: an A4 page with 1-inch
+ * margins. A template without page setup has it too.
+ */
+export const DEFAULT_TEXT_WIDTH = 9026;
+
 const RELATIONSHIP_TYPES = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 
 /** The relationships of a document's body that only its content refers to. */
@@ -53,8 +59,11 @@ export function getDocxTemplate(note: BNote): Uint8Array | undefined {
  * single `{{trilium_content}}` paragraph followed by the page setup of its last section, and the
  * pictures only that body showed are removed. Styles, headers, footers, the theme and embedded
  * fonts stay, and the `TableText` style is added when the document lacks it.
+ *
+ * Also returns the width of the text on the page, in twips, since `patchDocument()` sizes tables
+ * for {@link DEFAULT_TEXT_WIDTH} whatever the template's page.
  */
-export function prepareDocxTemplate(docx: Uint8Array): Uint8Array {
+export function prepareDocxTemplate(docx: Uint8Array): { data: Uint8Array; textWidth: number } {
     let files: Record<string, Uint8Array>;
     try {
         files = unzipSync(docx);
@@ -68,6 +77,7 @@ export function prepareDocxTemplate(docx: Uint8Array): Uint8Array {
     }
 
     const document = emptyBody(strFromU8(documentXml));
+    const textWidth = readTextWidth(document);
     files["word/document.xml"] = strToU8(document);
 
     const relsPath = "word/_rels/document.xml.rels";
@@ -85,7 +95,7 @@ export function prepareDocxTemplate(docx: Uint8Array): Uint8Array {
         }
     }
 
-    return zipSync(files);
+    return { data: zipSync(files), textWidth };
 }
 
 /**
@@ -133,6 +143,26 @@ function emptyBody(document: string) {
     const placeholder = `<w:p><w:r><w:t>{{${CONTENT_PLACEHOLDER}}}</w:t></w:r></w:p>`;
     return document.slice(0, contentStart) + placeholder + sectionProperties
         + document.slice(bodyEnd);
+}
+
+/** The width of a page of the last section of `document` minus its margins, in twips. */
+function readTextWidth(document: string) {
+    const section = document.slice(document.lastIndexOf("<w:sectPr"));
+    const pageWidth = readTwips(section.match(/<w:pgSz\b[^>]*>/)?.[0], "w");
+    const margins = section.match(/<w:pgMar\b[^>]*>/)?.[0];
+    if (!pageWidth || !margins) {
+        return DEFAULT_TEXT_WIDTH;
+    }
+
+    const left = readTwips(margins, "left") ?? readTwips(margins, "start") ?? 0;
+    const right = readTwips(margins, "right") ?? readTwips(margins, "end") ?? 0;
+    const textWidth = pageWidth - left - right - (readTwips(margins, "gutter") ?? 0);
+    return textWidth > 0 ? textWidth : DEFAULT_TEXT_WIDTH;
+}
+
+function readTwips(element: string | undefined, attribute: string) {
+    const value = element?.match(new RegExp(`\\bw:${attribute}="(-?\\d+)"`))?.[1];
+    return value === undefined ? undefined : Number(value);
 }
 
 /** Removes the pictures and links of the body that `document` no longer refers to. */

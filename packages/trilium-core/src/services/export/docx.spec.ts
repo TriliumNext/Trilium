@@ -36,12 +36,21 @@ describe("prepareHtml", () => {
         const html = prepareHtml(`<figure class="table" style="width:80%;"><table>`
             + `<colgroup><col style="width:20%;"><col style="width:30%;"><col style="width:50%;"></colgroup>`
             + `<tbody><tr><td colspan="2">a</td><td style="width:40%">b</td></tr><tr><td>c</td><td>d</td><td>e</td></tr>`
-            + `</tbody></table></figure>`);
+            + `</tbody></table></figure>`, 10000);
 
-        expect(html).toContain(`<table style="width:80%;">`);
+        expect(html).toContain(`<table style="width:400pt;">`);
         expect(html).toContain(`<td colspan="2" style="width:50%;">a</td>`);
         expect(html).toContain(`<td style="width:40%">b</td>`);
         expect(html).toContain(`<td>c</td>`);
+    });
+
+    it("gives a table without a width the text's, and leaves one in a cell relative to it", () => {
+        const html = prepareHtml(`<figure class="table"><table><tbody><tr><td>`
+            + `<figure class="table" style="width:50%;"><table><tbody><tr><td>a</td></tr>`
+            + `</tbody></table></figure></td></tr></tbody></table></figure>`, 10000);
+
+        expect(html).toMatch(/^<figure class="table"><table style="width:500pt;">/);
+        expect(html).toContain(`<figure class="table" style="width:50%;"><table style="width:50%;">`);
     });
 });
 

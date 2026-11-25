@@ -59,7 +59,7 @@ function readPart(docx: Uint8Array, path: string) {
 
 describe("prepareDocxTemplate", () => {
     it("empties the body to the placeholder and page setup, dropping its pictures", async () => {
-        const shell = prepareDocxTemplate(await buildTemplate());
+        const { data: shell, textWidth } = prepareDocxTemplate(await buildTemplate());
 
         const document = readPart(shell, "word/document.xml");
         const body = document?.match(/<w:body>([\s\S]*)<\/w:body>/)?.[1];
@@ -74,6 +74,7 @@ describe("prepareDocxTemplate", () => {
         const relationships = readPart(shell, "word/_rels/document.xml.rels");
         expect(relationships).not.toContain("relationships/image");
         expect(readPart(shell, "word/styles.xml")).toContain(`w:styleId="TableText"`);
+        expect(textWidth).toBe(16838 - 2 * 1440);
     });
 
     it("refuses a file that is not a Word document", () => {
@@ -149,6 +150,27 @@ describe("renderTextNoteToDocx with a template", () => {
             strFromU8(part).includes("Form footer"))).toBe(true);
         expect(readPart(docx, "docProps/core.xml"))
             .toContain(`<dc:title>${counter}-Review</dc:title>`);
+    });
+
+    it("sizes tables against the width of the text on the template's page", async () => {
+        const note = createNotes(DOCX_MIME, await buildTemplate());
+
+        const docx = await renderTextNoteToDocx(note,
+            `<figure class="table"><table><tbody><tr><td>a</td><td>b</td></tr></tbody></table>`
+            + `</figure><figure class="table" style="width:50%;"><table><tbody>`
+            + `<tr><td>c</td></tr></tbody></table></figure>`);
+
+        // A landscape A4 page with 1-inch margins leaves 16838 - 2 × 1440 twips for the text.
+        const document = readPart(docx, "word/document.xml") ?? "";
+        const tables = document.match(/<w:tbl>.*?<\/w:tbl>/gs) ?? [];
+        expect(tables).toHaveLength(2);
+        const [ full, half ] = tables.map((table) => ({
+            width: table.match(/<w:tblW w:type="dxa" w:w="(\d+)"\/>/)?.[1],
+            grid: [ ...table.matchAll(/<w:gridCol w:w="(\d+)"\/>/g) ]
+                .reduce((sum, match) => sum + Number(match[1]), 0)
+        }));
+        expect(full).toEqual({ width: "13958", grid: 13958 });
+        expect(half).toEqual({ width: "6979", grid: 6979 });
     });
 
     it("refuses a template that is not a Word document, whatever its content", async () => {
