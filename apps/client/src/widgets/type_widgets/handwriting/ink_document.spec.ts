@@ -97,6 +97,19 @@ describe("ink document", () => {
         expect(parseInkDocument(JSON.stringify({ paper: "plaid", strokes: [] })).paper).toBe("ruled");
     });
 
+    it("keeps the width of a saved stroke within the tools' range and drops strokes with bad points", () => {
+        const strokes = [
+            { w: 1e9, p: [ 0, 0, 128 ] },
+            { w: -4, p: [ 0, 0, 128 ] },
+            { w: "4", p: [ 0, 0, 128 ] },
+            { w: 2, p: [ 0, 0, 128, "x", 1, 0 ] },
+            { w: 2, p: [ 0, 0, 128, 1e308, 1e308, 0, 1e308, 1e308, 0 ] },
+            { w: 2, p: [ 0, 0, null ] }
+        ];
+        const parsed = parseInkDocument(JSON.stringify({ version: 1, strokes })).strokes;
+        expect(parsed.map((stroke) => stroke.size)).toEqual([ 60, 3, 3 ]);
+    });
+
     it("outlines a pen stroke as perfect-freehand does, built all at once or point by point", () => {
         const stroke = makeStroke(wavyPoints(300));
         const raw: number[][] = [];
@@ -170,5 +183,23 @@ describe("ink document", () => {
 
         index.remove(late);
         expect(index.query(area)).toEqual([ early ]);
+    });
+
+    it("indexes a stroke that spans the world, and answers a query over all of it, without a cell each", () => {
+        const wide = makeStroke([ -1e12, -1e12, 0.5, 1e12, 1e12, 0.5 ], 1);
+        const small = makeStroke([ 10, 10, 0.5, 20, 20, 0.5 ], 0);
+        const index = new StrokeIndex();
+        index.add(wide);
+        index.add(small);
+
+        expect(index.query({ minX: 0, minY: 0, maxX: 50, maxY: 50 })).toEqual([ small, wide ]);
+        expect(index.query({ minX: -Infinity, minY: -Infinity, maxX: Infinity, maxY: Infinity }))
+            .toEqual([ small, wide ]);
+        expect(index.query({ minX: 5000, minY: 5000, maxX: 5100, maxY: 5100 })).toEqual([ wide ]);
+
+        index.remove(wide);
+        expect(index.query({ minX: -1e9, minY: -1e9, maxX: 1e9, maxY: 1e9 })).toEqual([ small ]);
+        index.clear();
+        expect(index.query({ minX: 0, minY: 0, maxX: 50, maxY: 50 })).toEqual([]);
     });
 });

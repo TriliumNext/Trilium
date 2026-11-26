@@ -82,6 +82,8 @@ interface SerializedDocument {
 }
 
 const POSITION_SCALE = 10;
+/** The widest stroke a document can hold: the highlighter at its largest thickness. */
+const MAX_STROKE_SIZE = 60;
 const PRESSURE_SCALE = 255;
 
 export function createStroke(
@@ -138,12 +140,14 @@ export function parseInkDocument(content: string | null | undefined): InkDocumen
     const strokes: Stroke[] = [];
     for (const serialized of raw.strokes) {
         if (!Array.isArray(serialized?.p) || serialized.p.length < 3) continue;
+        const points = decodePoints(serialized.p);
+        if (!points) continue;
         strokes.push(createStroke({
             tool: serialized.t === "h" ? "highlighter" : "pen",
             color: typeof serialized.c === "string" ? serialized.c : AUTO_COLOR,
-            size: typeof serialized.w === "number" ? serialized.w : 3,
+            size: isFiniteNumber(serialized.w) && serialized.w > 0 ? Math.min(MAX_STROKE_SIZE, serialized.w) : 3,
             simulatePressure: serialized.s === 1,
-            points: decodePoints(serialized.p),
+            points,
             order: strokes.length
         }));
     }
@@ -201,13 +205,17 @@ function encodePoints(points: number[]) {
     return encoded;
 }
 
-function decodePoints(encoded: number[]) {
+/** Returns the points of a saved stroke, or `undefined` when one of its values is not a finite number. */
+function decodePoints(encoded: unknown[]) {
     const points: number[] = [];
     const current = [ 0, 0, 0 ];
     for (let i = 0; i + 2 < encoded.length; i += 3) {
-        current[0] += encoded[i];
-        current[1] += encoded[i + 1];
-        current[2] += encoded[i + 2];
+        const [ dx, dy, dp ] = [ encoded[i], encoded[i + 1], encoded[i + 2] ];
+        if (!isFiniteNumber(dx) || !isFiniteNumber(dy) || !isFiniteNumber(dp)) return undefined;
+        current[0] += dx;
+        current[1] += dy;
+        current[2] += dp;
+        if (!current.every(Number.isFinite)) return undefined;
         points.push(
             current[0] / POSITION_SCALE,
             current[1] / POSITION_SCALE,
@@ -465,12 +473,24 @@ function segmentsCross(
 }
 
 const CELL_SIZE = 512;
+/** How many cells a stroke can cover before `StrokeIndex` keeps it apart, and checks it on every query. */
+const MAX_STROKE_CELLS = 4096;
 
-/** A uniform grid over the world that finds the strokes near a rectangle without visiting all. */
+/**
+ * A uniform grid over the world that finds the strokes near a rectangle without visiting all. A
+ * stroke that covers more than `MAX_STROKE_CELLS` cells is kept in `wide` instead, and a query
+ * over more cells than the grid holds visits the cells it holds, so neither costs more than the
+ * strokes themselves however far they reach.
+ */
 export class StrokeIndex {
     private cells = new Map<string, Set<Stroke>>();
+    private wide = new Set<Stroke>();
 
     add(stroke: Stroke) {
+        if (countCells(stroke.bounds) > MAX_STROKE_CELLS) {
+            this.wide.add(stroke);
+            return;
+        }
         for (const key of cellKeys(stroke.bounds)) {
             let cell = this.cells.get(key);
             if (!cell) {
@@ -482,6 +502,7 @@ export class StrokeIndex {
     }
 
     remove(stroke: Stroke) {
+        if (this.wide.delete(stroke)) return;
         for (const key of cellKeys(stroke.bounds)) {
             const cell = this.cells.get(key);
             if (!cell) continue;
@@ -492,13 +513,16 @@ export class StrokeIndex {
 
     clear() {
         this.cells.clear();
+        this.wide.clear();
     }
 
     /** Returns the strokes whose bounds intersect `bounds`, in drawing order. */
     query(bounds: Bounds): Stroke[] {
         const found = new Set<Stroke>();
-        for (const key of cellKeys(bounds)) {
-            const cell = this.cells.get(key);
+        const cells = countCells(bounds) > this.cells.size
+            ? this.cells.values()
+            : Array.from(cellKeys(bounds), (key) => this.cells.get(key));
+        for (const cell of [ ...cells, this.wide ]) {
             if (!cell) continue;
             for (const stroke of cell) {
                 if (boundsIntersect(stroke.bounds, bounds)) found.add(stroke);
@@ -506,6 +530,14 @@ export class StrokeIndex {
         }
         return [ ...found ].sort((a, b) => a.order - b.order);
     }
+}
+
+/** How many cells of the grid `bounds` covers, or `Infinity` for bounds that are not finite. */
+function countCells(bounds: Bounds) {
+    const columns = Math.floor(bounds.maxX / CELL_SIZE) - Math.floor(bounds.minX / CELL_SIZE) + 1;
+    const rows = Math.floor(bounds.maxY / CELL_SIZE) - Math.floor(bounds.minY / CELL_SIZE) + 1;
+    const count = Math.max(0, columns) * Math.max(0, rows);
+    return Number.isFinite(count) ? count : Infinity;
 }
 
 function* cellKeys(bounds: Bounds) {
