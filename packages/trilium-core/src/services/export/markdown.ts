@@ -9,7 +9,7 @@ import {
 import { HIGHLIGHT_BACKGROUND } from "@triliumnext/commons/src/lib/marked_extensions.js";
 import { gfm, serializeStructuralHtml, type TableBlockId } from "@triliumnext/turndown-plugin-gfm";
 import { type HTMLElement as ParsedElement, parse as parseHtml } from "node-html-parser";
-import Turnish, { type Rule } from "turnish";
+import Turnish, { type Rule, wrapInlineContent } from "turnish";
 
 import { getTaskStates } from "../task_states.js";
 import { escapeHtml } from "../utils/index.js";
@@ -133,6 +133,7 @@ function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
         instance.addRule("math", buildMathFilter());
         instance.addRule("li", buildListItemFilter());
         instance.addRule("blockMarker", buildBlockMarkerFilter());
+        instance.addRule("intrawordEmphasis", intrawordEmphasisFilter);
         instance.use(gfm);
         instance.keep([ "kbd", "sup", "sub" ]);
         instances.set(headerlessTables, instance);
@@ -140,6 +141,24 @@ function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
 
     const html = isWritingBlockMarkers ? injectBlockMarkers(content) : content;
     return instance.render(injectIconFallbacks(injectLinkPreviewFallbacks(html)));
+}
+
+/**
+ * Emphasis is written with `_`, but `_` cannot open or close emphasis inside a word, so a partly
+ * italic word such as `un<em>believ</em>able` would come back as the plain text `un_believ_able`.
+ * Emphasis that touches a letter, digit or underscore is written with `*`, which works there.
+ */
+const intrawordEmphasisFilter: Rule = {
+    filter: (node) => (node.nodeName === "EM" || node.nodeName === "I") && touchesWordCharacter(node),
+    replacement: (content) => wrapInlineContent(content, (text) => `*${text}*`)
+};
+
+const WORD_CHARACTER_BEFORE = /[\p{L}\p{N}_]$/u;
+const WORD_CHARACTER_AFTER = /^[\p{L}\p{N}_]/u;
+
+function touchesWordCharacter(node: Node) {
+    return WORD_CHARACTER_BEFORE.test(node.previousSibling?.textContent ?? "")
+        || WORD_CHARACTER_AFTER.test(node.nextSibling?.textContent ?? "");
 }
 
 /** The attribute of an element that stands for a block marker while Turnish runs, with the id. */

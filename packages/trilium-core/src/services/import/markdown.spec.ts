@@ -57,6 +57,13 @@ describe("markdown", () => {
         expect(markdownService.renderToHtml(exported, "Title")).toBe(html);
     });
 
+    it("keeps emphasis inside a word through a round trip", () => {
+        for (const html of [ "<p>un<em>believ</em>able</p>", "<p><em>Java</em>Script and 3<em>rd</em></p>", "<p>snake_<em>case</em></p>" ]) {
+            const exported = markdownExportService.toMarkdown(html);
+            expect(markdownService.renderToHtml(exported, "Title")).toBe(html);
+        }
+    });
+
     it("rewrites language of unknown language tags", () => {
         const result = markdownService.renderToHtml(trimIndentation`\
             \`\`\`unknownlanguage
