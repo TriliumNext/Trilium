@@ -219,7 +219,10 @@
     "result_single_html": "단일 HTML 파일입니다. 이미지와 첨부 파일이 내장되어 있습니다.",
     "result_single_markdown": "단일 Markdown(.md) 파일입니다.",
     "preparing_export": "내보내기 준비 중…",
-    "export_in_progress_with_total": "총 {{totalCount}}개 중 {{progressCount}}개 노트를 내보냈습니다"
+    "export_in_progress_with_total": "총 {{totalCount}}개 중 {{progressCount}}개 노트를 내보냈습니다",
+    "format_docx_name": "Word 문서",
+    "format_docx_description": "Word, Google Docs 및 LibreOffice에서 열 수 있습니다",
+    "result_single_docx": "색상, 표, 목록 및 이미지를 유지하는 Word 문서 (.docx)입니다. 다이어그램과 삽입된 노트는 제외됩니다."
   },
   "help": {
     "title": "치트 시트",
@@ -901,7 +904,8 @@
     "template_title_template": "템플릿 노트에 설정하는 속성으로, 해당 템플릿에서 생성되는 노트의 기본 제목을 지정합니다. 부모 노트의 <code>#titleTemplate</code> 설정보다 우선 적용됩니다. <code>#titleTemplate</code> 설정과 동일한 방식으로 평가되며, 자동으로 제공되는 <code>now</code> 및 <code>parentNote</code> 변수를 사용할 수 있습니다. 예: <code>Meeting ${now.format('YYYY-MM-DD')}</code>.",
     "exclude_from_llm": "이 노트를 AI 채팅과 MCP 서버에서 숨깁니다. 하위 노트도 숨기려면 라벨을 상속 가능하도록 설정하세요.",
     "bookmark_open_mode": "런치바에서 노트 버튼을 클릭했을 때 노트가 열리는 위치를 지정합니다: <code>currentTab</code>(기본값), <code>newTab</code>, <code>newSplit</code>, <code>newWindow</code> 또는 <code>quickEdit</code>. 북마크, 런치바에 드래그하여 추가한 노트, 북마크 폴더에 있는 노트에 적용됩니다.",
-    "vim_mode": "이 기기의 Vim 모드 설정과 관계없이 이 텍스트 노트에서 Vim 모드를 켜거나, 끄려면 값 <code>false</code>, 즉 거짓 값을 사용합니다."
+    "vim_mode": "이 기기의 Vim 모드 설정과 관계없이 이 텍스트 노트에서 Vim 모드를 켜거나, 끄려면 값 <code>false</code>, 즉 거짓 값을 사용합니다.",
+    "docx_template": "노트를 Word 문서로 내보낼 때 사용되는 Word 문서(파일 노트)로, 해당 문서의 스타일, 머리글, 바닥글 및 페이지 설정이 적용됩니다. 일반적으로 상속 가능하도록 설정합니다."
   },
   "attribute_editor": {
     "help_text_body1": "레이블을 추가하려면 예를 들어 <code>#rock</code> 값을 입력합니다. 값도 함께 추가하려면 예를 들어 <code>#year = 2020</code> 값을 입력합니다",
