@@ -100,6 +100,10 @@ export default class InkSurface {
     private lastY = 0;
     private panRemainderX = 0;
     private panRemainderY = 0;
+    /** The pan, in CSS pixels, that the next animation frame applies. */
+    private pendingPanX = 0;
+    private pendingPanY = 0;
+    private panFrame: number | undefined;
     private pinchDistance = 0;
 
     constructor(private container: HTMLElement, private options: InkSurfaceOptions) {
@@ -135,6 +139,7 @@ export default class InkSurface {
         this.resizeObserver.disconnect();
         if (this.fullRedrawFrame !== undefined) cancelAnimationFrame(this.fullRedrawFrame);
         if (this.liveFrame !== undefined) cancelAnimationFrame(this.liveFrame);
+        if (this.panFrame !== undefined) cancelAnimationFrame(this.panFrame);
         clearTimeout(this.warmTimer);
         this.baseCanvas.remove();
         this.liveLayer.remove();
@@ -254,6 +259,7 @@ export default class InkSurface {
 
     private begin(mode: Mode, e: PointerEvent) {
         e.preventDefault();
+        this.applyPendingPan();
         this.container.setPointerCapture(e.pointerId);
         this.mode = mode;
         this.activePointerId = e.pointerId;
@@ -521,6 +527,7 @@ export default class InkSurface {
     //#region View
 
     private zoomAround(deviceX: number, deviceY: number, factor: number) {
+        this.applyPendingPan();
         const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, this.zoom * factor));
         if (zoom === this.zoom) return;
 
@@ -534,7 +541,28 @@ export default class InkSurface {
         this.reportState();
     }
 
+    /**
+     * Pans the view in the next animation frame. Pointers and wheels report several moves per
+     * frame, and drawing each one would copy the whole canvas several times per frame.
+     */
     private panByClient(dx: number, dy: number) {
+        this.pendingPanX += dx;
+        this.pendingPanY += dy;
+        this.panFrame ??= requestAnimationFrame(() => {
+            this.panFrame = undefined;
+            this.applyPendingPan();
+        });
+    }
+
+    private applyPendingPan() {
+        if (this.panFrame !== undefined) cancelAnimationFrame(this.panFrame);
+        this.panFrame = undefined;
+        const dx = this.pendingPanX;
+        const dy = this.pendingPanY;
+        this.pendingPanX = 0;
+        this.pendingPanY = 0;
+        if (dx === 0 && dy === 0) return;
+
         const deviceX = dx * this.dpr + this.panRemainderX;
         const deviceY = dy * this.dpr + this.panRemainderY;
         const wholeX = Math.trunc(deviceX);
