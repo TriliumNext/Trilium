@@ -432,7 +432,12 @@ function useNoteFullscreen(containerEl: HTMLElement | null, noteId: string | und
     }, [ isPageFullscreen ]);
     useEffect(() => {
         if (!isPageFullscreen || !containerEl) return;
-        return releaseFromAncestors(containerEl);
+        const restoreAncestors = releaseFromAncestors(containerEl);
+        const restoreEditables = disableEditablesOutside(containerEl);
+        return () => {
+            restoreAncestors();
+            restoreEditables();
+        };
     }, [ isPageFullscreen, containerEl ]);
 
     if (!isIOS()) {
@@ -481,5 +486,25 @@ function releaseFromAncestors(element: HTMLElement) {
     }
     return () => {
         for (const restore of restores) restore();
+    };
+}
+
+/** The elements of the page that take typed text, and so Scribble's handwriting. */
+const EDITABLE_SELECTOR = "input:not([type=hidden]), textarea, [contenteditable]:not([contenteditable=false])";
+
+/**
+ * Makes the text fields outside `element` inert, and returns the function that puts them back.
+ * iPadOS Scribble writes Apple Pencil strokes into the text field under them even when the
+ * element covers it, such as the note title under the toolbar.
+ */
+function disableEditablesOutside(element: HTMLElement) {
+    const disabled: HTMLElement[] = [];
+    for (const editable of document.querySelectorAll<HTMLElement>(EDITABLE_SELECTOR)) {
+        if (element.contains(editable) || editable.inert) continue;
+        editable.inert = true;
+        disabled.push(editable);
+    }
+    return () => {
+        for (const editable of disabled) editable.inert = false;
     };
 }
