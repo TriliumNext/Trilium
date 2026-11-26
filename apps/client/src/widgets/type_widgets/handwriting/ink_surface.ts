@@ -1,3 +1,4 @@
+import { isIOS } from "../../../services/utils";
 import {
     AUTO_COLOR, type Bounds, createStroke, getStrokeOutline, type InkDocument, type InkTool,
     type PaperStyle, serializeInkDocument, type Stroke, strokeHitsSegment, StrokeIndex
@@ -89,6 +90,10 @@ export default class InkSurface {
         container.addEventListener("pointerup", (e) => this.onPointerEnd(e), listener);
         container.addEventListener("pointercancel", (e) => this.onPointerEnd(e), listener);
         container.addEventListener("wheel", (e) => this.onWheel(e), { ...listener, passive: false });
+        // iPadOS gives short Apple Pencil strokes to Scribble unless the touch is canceled.
+        container.addEventListener("touchstart", (e) => {
+            if (isIOS()) e.preventDefault();
+        }, { ...listener, passive: false });
 
         this.resizeObserver = new ResizeObserver(() => this.resize());
         this.resizeObserver.observe(container);
