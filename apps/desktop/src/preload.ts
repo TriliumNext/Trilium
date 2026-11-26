@@ -3,6 +3,7 @@ import type {
     BackupPassphraseStatus,
     ElectronApi,
     ElectronContextMenuParams,
+    NativeDirectoryPickResult,
     NativeImportOptions,
     OneNoteLoginResult,
     RendererStartupMetric,
@@ -351,6 +352,15 @@ contextBridge.exposeInMainWorld("electronApi", {
         },
         clear(): Promise<BackupPassphraseChange> {
             return ipcRenderer.invoke("backup-passphrase-clear");
+        }
+    },
+
+    backupLocation: {
+        choose(): Promise<NativeDirectoryPickResult> {
+            return ipcRenderer.invoke("backup-location-choose");
+        },
+        reset(): Promise<void> {
+            return ipcRenderer.invoke("backup-location-reset");
         }
     },
 

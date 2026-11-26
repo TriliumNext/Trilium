@@ -623,6 +623,21 @@ export interface ElectronBackupPassphraseApi {
     clear(): Promise<BackupPassphraseChange>;
 }
 
+/**
+ * The folder that backups are written to. The main process stores it from the folder that the user
+ * accepts in the OS dialog, and the options API does not write it, so a frontend script cannot
+ * choose where backups go or which folder the backup download reads.
+ */
+export interface ElectronBackupLocationApi {
+    /**
+     * Prompts the native folder picker at the current backup folder and, once the user accepts a
+     * folder, writes later backups there.
+     */
+    choose(): Promise<NativeDirectoryPickResult>;
+    /** Writes later backups to the default folder again. */
+    reset(): Promise<void>;
+}
+
 /** Outcome of a {@link ElectronOneNoteApi.login} attempt. */
 export interface OneNoteLoginResult {
     /** True if sign-in completed and a Microsoft Graph token was stored. */
@@ -763,7 +778,9 @@ export interface ElectronRestoreApi {
     pickBackup(): Promise<NativeBackupPickResult>;
 }
 
-/** Outcome of {@link ElectronDialogApi.pickDirectory}. */
+/**
+ * Outcome of {@link ElectronDialogApi.pickDirectory} and {@link ElectronBackupLocationApi.choose}.
+ */
 export interface NativeDirectoryPickResult {
     status: "selected" | "cancelled";
     /** Absolute path of the chosen directory (when `status === "selected"`). */
@@ -917,6 +934,8 @@ export interface ElectronApi {
     security: ElectronSecurityApi;
     /** Write-only access to the backup passphrase, kept in the OS keyring. */
     backupPassphrase: ElectronBackupPassphraseApi;
+    /** The backup folder, which only the main process stores. */
+    backupLocation: ElectronBackupLocationApi;
     /** OneNote importer sign-in via a loopback OAuth redirect (desktop only). */
     onenote: ElectronOneNoteApi;
     /** Desktop-native subtree export that streams a `.zip` straight to a file. */

@@ -647,6 +647,26 @@ describe("preload script", () => {
         });
     });
 
+    describe("backupLocation", () => {
+        const backupLocation = () => getGroup("backupLocation");
+
+        it("choose invokes its IPC channel, passing no folder of its own", async () => {
+            await backupLocation().choose();
+            expect(ipcRendererInvoked)
+                .toContainEqual({ channel: "backup-location-choose", args: [] });
+        });
+
+        it("reset invokes its IPC channel", async () => {
+            await backupLocation().reset();
+            expect(ipcRendererInvoked)
+                .toContainEqual({ channel: "backup-location-reset", args: [] });
+        });
+
+        it("exposes no way to name a folder", () => {
+            expect(Object.keys(backupLocation()).sort()).toEqual([ "choose", "reset" ]);
+        });
+    });
+
     describe("onenote", () => {
         const onenote = () => getGroup("onenote");
 

@@ -30,6 +30,7 @@ import IpcMessagingProvider from "./ipc_messaging_provider";
 import DesktopPlatformProvider from "./platform_provider";
 import { registerTriliumAppScheme, setupTriliumAppProtocol } from "./protocol";
 import { applyLaunchOnStartup, setupAutoLaunch, wasLaunchedHidden } from "./services/auto_launch";
+import { setupBackupLocationHandlers } from "./services/backup_location";
 import { setupCustomDictionary } from "./services/custom_dictionary";
 import { setupReferer } from "./services/referer";
 import { setupDialogHandlers } from "./services/dialog";
@@ -38,6 +39,7 @@ import { setupImportHandlers } from "./services/import";
 import {
     adoptBackupPassphrase,
     getBackupPassphrase,
+    isPassphraseSet,
     registerBackupPassphraseIpcHandlers
 } from "./services/backup_passphrase";
 import { setupOneNoteHandlers } from "./services/onenote";
@@ -150,6 +152,7 @@ export async function main() {
     setupDialogHandlers();
     registerSecurityIpcHandlers();
     registerBackupPassphraseIpcHandlers();
+    setupBackupLocationHandlers();
     setupStartupMetricsIpc();
     setupResourceDownloads();
     setupTranscriptionHandlers();
@@ -289,6 +292,7 @@ export async function main() {
             {
                 allowCustomDirectory: true,
                 getPassphrase: getBackupPassphrase,
+                isPassphraseStored: isPassphraseSet,
                 setPassphrase: adoptBackupPassphrase
             }
         ),

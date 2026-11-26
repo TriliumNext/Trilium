@@ -71,15 +71,14 @@ export async function backUpExistingData(
  *
  * The stored passphrase is reported as a yes or a no and never as itself: a screen that could read
  * it could be made to hand it over, and it is the one thing standing between a stolen backup and
- * the knowledge base inside it.
+ * the knowledge base inside it. The instance encrypts its backups whenever one is stored, also
+ * while the keyring is locked and the screen has no stored passphrase to offer.
  */
 export async function getExistingBackupDefaults(): Promise<SetupBackupDefaults> {
-    const backup = getBackup();
-
     return {
-        storedPassphrase: (await backup.hasStoredPassphrase?.()) ?? false,
-        encrypt: isOptionEnabled("backupEnableEncryption"),
-        compress: isOptionEnabled("backupEnableCompression")
+        storedPassphrase: (await getBackup().hasStoredPassphrase?.()) ?? false,
+        encrypt: isPassphraseStored(),
+        compress: isCompressionEnabled()
     };
 }
 
@@ -106,19 +105,24 @@ export function resolveBackupSettings(now: Date, requested: unknown): SetupBacku
         passphrase: typeof asked.passphrase === "string" ? asked.passphrase : "",
         useStoredPassphrase: typeof asked.useStoredPassphrase === "boolean"
             ? asked.useStoredPassphrase
-            : isOptionEnabled("backupEnableEncryption"),
+            // Stored, not readable: a locked keyring keeps the plain copy in the default folder.
+            : isPassphraseStored(),
         compress: typeof asked.compress === "boolean"
             ? asked.compress
-            : isOptionEnabled("backupEnableCompression")
+            : isCompressionEnabled()
     };
+}
+
+function isPassphraseStored(): boolean {
+    return getBackup().isPassphraseStored?.() ?? false;
 }
 
 /**
  * Reads leniently, the way the backup itself does: setup runs against a database that has not been
  * migrated, so an option added by a newer version may not be there to read at all.
  */
-function isOptionEnabled(name: "backupEnableCompression" | "backupEnableEncryption"): boolean {
-    return optionService.getOptionOrNull(name) === "true";
+function isCompressionEnabled(): boolean {
+    return optionService.getOptionOrNull("backupEnableCompression") === "true";
 }
 
 /**

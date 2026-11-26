@@ -36,7 +36,8 @@ const mocks = vi.hoisted(() => ({
     markAppReady: vi.fn(),
     isScriptingEnabled: vi.fn(),
     publishHealthcheckTarget: vi.fn(),
-    sessionParser: vi.fn()
+    sessionParser: vi.fn(),
+    removeLeftoverStagingFiles: vi.fn()
 }));
 
 vi.mock("@triliumnext/core", () => ({
@@ -69,6 +70,9 @@ vi.mock("./app.js", () => ({ default: mocks.buildApp }));
 vi.mock("./log_provider.js", () => ({ TRILIUM_LOGO: "LOGO" }));
 vi.mock("./services/config.js", () => ({ default: state.config }));
 vi.mock("./services/data_dir.js", () => ({ default: { TRILIUM_DATA_DIR: "/data" } }));
+vi.mock("./services/anonymization.js", () => ({
+    default: { removeLeftoverStagingFiles: mocks.removeLeftoverStagingFiles }
+}));
 vi.mock("./services/cpu_profiler.js", () => ({
     startCpuProfiler: mocks.startCpuProfiler,
     writeCpuProfile: mocks.writeCpuProfile
@@ -202,9 +206,10 @@ describe("startTriliumServer", () => {
         expect(state.messaging.attachToHttpServer).toHaveBeenCalledWith(server, mocks.sessionParser);
         expect(mocks.installProcessErrorHandlers.mock.invocationCallOrder[0])
             .toBeLessThan(mocks.buildApp.mock.invocationCallOrder[0]);
+        expect(mocks.removeLeftoverStagingFiles).toHaveBeenCalledOnce();
         const steps = [
             mocks.wsInit, mocks.registerOcrHandlers, mocks.registerServerLlmExtensions,
-            mocks.registerPdfTocGenerator
+            mocks.registerPdfTocGenerator, mocks.removeLeftoverStagingFiles
         ];
         for (const step of steps) {
             expect(step.mock.invocationCallOrder[0]).toBeLessThan(mocks.markAppReady.mock.invocationCallOrder[0]);
