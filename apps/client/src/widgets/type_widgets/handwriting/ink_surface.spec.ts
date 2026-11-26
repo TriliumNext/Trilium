@@ -201,6 +201,14 @@ describe("ink surface input", () => {
         pointer("pointerup", "touch", 5, 300);
         pointer("pointerup", "touch", 6, 380);
         expect(onChange).toHaveBeenCalledTimes(3);
+
+        // A pen that lands on two resting fingers and lifts at once draws, and undoes nothing.
+        pointer("pointerdown", "touch", 7, 300);
+        pointer("pointerdown", "touch", 8, 320);
+        swipe("pen", 9, 400);
+        pointer("pointerup", "touch", 7, 300);
+        pointer("pointerup", "touch", 8, 320);
+        expect(parseInkDocument(surface.serialize()).strokes).toHaveLength(2);
     });
 
     it("straightens a line when the pen rests at its end, and moves its end with the pen", () => {

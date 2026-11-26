@@ -451,6 +451,7 @@ export default class InkSurface {
     /** Ends the gesture of the fingers on the screen, such as a resting palm, for a pen to draw. */
     private yieldTouchesToPen() {
         this.cancelGesture();
+        this.twoFingerTapStart = undefined;
         for (const pointerId of this.touches.keys()) {
             this.ignoredTouches.add(pointerId);
         }
