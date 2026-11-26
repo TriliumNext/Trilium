@@ -1,8 +1,10 @@
 import "./Handwriting.css";
 
+import clsx from "clsx";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
+import { isIOS } from "../../../services/utils";
 import ColorPicker from "../../react/ColorPicker";
 import { useFullscreen } from "../../react/hooks/dom";
 import { useEditorSpacedUpdate } from "../../react/hooks/editor";
@@ -28,7 +30,7 @@ const HAS_TOUCH = navigator.maxTouchPoints > 0;
 export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     const surfaceElRef = useRef<HTMLDivElement>(null);
     const [ containerEl, setContainerEl ] = useState<HTMLDivElement | null>(null);
-    const [ isFullscreen, toggleFullscreen ] = useFullscreen(containerEl);
+    const [ isFullscreen, isPageFullscreen, toggleFullscreen ] = useNoteFullscreen(containerEl, note?.noteId);
     const surfaceRef = useRef<InkSurface | undefined>(undefined);
     const pendingDocRef = useRef<InkDocument | undefined>(undefined);
     const [ tool, setTool ] = useState<SurfaceTool>("pen");
@@ -96,7 +98,10 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     }
 
     return (
-        <div ref={setContainerEl} className="handwriting-container">
+        <div
+            ref={setContainerEl}
+            className={clsx("handwriting-container", isPageFullscreen && "handwriting-page-fullscreen")}
+        >
             <div ref={surfaceElRef} className="handwriting-surface" data-tool={isReadOnly ? "pan" : tool} />
 
             {!isReadOnly && (
@@ -165,4 +170,76 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
             </OverlayControlGroup>
         </div>
     );
+}
+
+/**
+ * Shows the note fullscreen. On iOS and iPadOS, the note fills the page instead of the screen:
+ * Safari closes an element's fullscreen on a downward drag, which panning makes all the time.
+ * Escape or the button leaves either mode, and so does opening another note.
+ */
+function useNoteFullscreen(containerEl: HTMLElement | null, noteId: string | undefined): [ boolean, boolean, () => void ] {
+    const [ isScreenFullscreen, toggleScreenFullscreen ] = useFullscreen(containerEl);
+    const [ isPageFullscreen, setPageFullscreen ] = useState(false);
+
+    useEffect(() => setPageFullscreen(false), [ noteId ]);
+    useEffect(() => {
+        if (!isPageFullscreen) return;
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setPageFullscreen(false);
+        };
+        document.addEventListener("keydown", onKeyDown);
+        return () => document.removeEventListener("keydown", onKeyDown);
+    }, [ isPageFullscreen ]);
+    useEffect(() => {
+        if (!isPageFullscreen || !containerEl) return;
+        return releaseFromAncestors(containerEl);
+    }, [ isPageFullscreen, containerEl ]);
+
+    if (!isIOS()) {
+        return [ isScreenFullscreen, false, () => void toggleScreenFullscreen() ];
+    }
+    return [ isPageFullscreen, isPageFullscreen, () => setPageFullscreen(!isPageFullscreen) ];
+}
+
+/**
+ * The styles that make an ancestor confine a fixed element, by clipping it, by acting as its
+ * containing block or by keeping its `z-index` inside a stacking context, with the value that
+ * does not. `#center-pane` isolates itself and the scrolling container of a note has a clip path.
+ */
+const CONFINING_STYLES: { property: string, neutral: string, confines(value: string, style: CSSStyleDeclaration): boolean }[] = [
+    { property: "isolation", neutral: "auto", confines: (value) => value === "isolate" },
+    { property: "clip-path", neutral: "none", confines: (value) => value !== "none" },
+    { property: "mask-image", neutral: "none", confines: (value) => value !== "none" && value !== "" },
+    { property: "transform", neutral: "none", confines: (value) => value !== "none" },
+    { property: "translate", neutral: "none", confines: (value) => value !== "none" && value !== "" },
+    { property: "scale", neutral: "none", confines: (value) => value !== "none" && value !== "" },
+    { property: "filter", neutral: "none", confines: (value) => value !== "none" },
+    { property: "backdrop-filter", neutral: "none", confines: (value) => value !== "none" && value !== "" },
+    { property: "opacity", neutral: "1", confines: (value) => Number(value) < 1 },
+    { property: "will-change", neutral: "auto", confines: (value) => /transform|filter|opacity|perspective|clip/.test(value) },
+    { property: "contain", neutral: "none", confines: (value) => /layout|paint|strict|content/.test(value) },
+    { property: "container-type", neutral: "normal", confines: (value) => value !== "normal" && value !== "" },
+    { property: "z-index", neutral: "auto", confines: (value, style) => value !== "auto" && style.position !== "static" }
+];
+
+/**
+ * Overrides the styles of the ancestors of `element` that would confine it, for it to cover the
+ * page, and returns the function that puts them back.
+ */
+function releaseFromAncestors(element: HTMLElement) {
+    const restores: (() => void)[] = [];
+    for (let node = element.parentElement; node && node !== document.documentElement; node = node.parentElement) {
+        const ancestor = node;
+        const computed = getComputedStyle(ancestor);
+        for (const { property, neutral, confines } of CONFINING_STYLES) {
+            if (!confines(computed.getPropertyValue(property), computed)) continue;
+            const value = ancestor.style.getPropertyValue(property);
+            const priority = ancestor.style.getPropertyPriority(property);
+            ancestor.style.setProperty(property, neutral, "important");
+            restores.push(() => ancestor.style.setProperty(property, value, priority));
+        }
+    }
+    return () => {
+        for (const restore of restores) restore();
+    };
 }
