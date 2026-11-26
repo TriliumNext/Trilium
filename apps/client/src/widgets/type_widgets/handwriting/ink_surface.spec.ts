@@ -8,6 +8,7 @@ describe("ink surface input", () => {
     let surface: InkSurface;
     const onChange = vi.fn();
     const onStateChange = vi.fn();
+    const onGesture = vi.fn();
     /** `[x, y, width, height, globalAlpha]` of each `fillRect()` call on any canvas. */
     const fillRects: number[][] = [];
     /** The `fillStyle` of each `fill()` call on any canvas. */
@@ -22,7 +23,8 @@ describe("ink surface input", () => {
         document.body.append(container);
         onChange.mockReset();
         onStateChange.mockReset();
-        surface = new InkSurface(container, { onChange, onGestureStart: () => {}, onStateChange });
+        onGesture.mockReset();
+        surface = new InkSurface(container, { onChange, onGesture, onStateChange });
     });
 
     afterEach(() => {
@@ -100,7 +102,7 @@ describe("ink surface input", () => {
             .map(([ , y ]) => y);
         surface.destroy();
         vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
-        surface = new InkSurface(container, { onChange, onGestureStart: () => {}, onStateChange: () => {} });
+        surface = new InkSurface(container, { onChange, onGesture, onStateChange: () => {} });
         fillRects.length = 0;
         surface.load({ paper: "ruled", layout: "infinite", strokes: [] });
         expect(lines(fillRects)).toEqual([ 0, 32, 64, 96, 128, 160, 192, 224, 256, 288 ]);
@@ -119,7 +121,7 @@ describe("ink surface input", () => {
     it("shows a view, or the whole content, around the middle of the container", () => {
         surface.destroy();
         vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
-        surface = new InkSurface(container, { onChange, onGestureStart: () => {}, onStateChange: () => {} });
+        surface = new InkSurface(container, { onChange, onGesture, onStateChange: () => {} });
         surface.load({ paper: "ruled", layout: "infinite", strokes: [] });
 
         surface.showView({ x: 10, y: 20, zoom: 2 });
@@ -153,7 +155,7 @@ describe("ink surface input", () => {
     it("shows pages up to an empty one after the last ink, and fits their width", () => {
         surface.destroy();
         vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
-        surface = new InkSurface(container, { onChange, onGestureStart: () => {}, onStateChange: () => {} });
+        surface = new InkSurface(container, { onChange, onGesture, onStateChange: () => {} });
         surface.load({ paper: "blank", layout: "pages", strokes: [] });
         expect(surface.getPageCount()).toBe(1);
 
@@ -331,7 +333,7 @@ describe("ink surface input", () => {
         vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
         container.style.color = "rgb(0, 0, 0)";
         container.style.backgroundColor = "rgb(255, 255, 255)";
-        surface = new InkSurface(container, { onChange, onGestureStart: () => {}, onStateChange });
+        surface = new InkSurface(container, { onChange, onGesture, onStateChange });
         const stroke = createStroke({
             tool: "pen", color: AUTO_COLOR, size: 3, simulatePressure: false,
             points: [ 10, 10, 0.5, 60, 10, 0.5 ], order: 0
@@ -358,6 +360,27 @@ describe("ink surface input", () => {
         await nextFrame();
         expect(fills).toContain("rgb(200, 0, 0)");
         expect(fills).not.toContain("rgb(240, 240, 240)");
+    });
+
+    it("reports a stroke or an erase for as long as it lasts, the pen resting or not", () => {
+        vi.useFakeTimers({ toFake: [ "setInterval", "clearInterval", "setTimeout", "clearTimeout" ] });
+        pointer("pointerdown", "pen", 1, 100);
+        expect(onGesture).toHaveBeenCalledOnce();
+        vi.advanceTimersByTime(2000);
+        const whileDown = onGesture.mock.calls.length;
+        expect(whileDown).toBeGreaterThanOrEqual(8);
+        pointer("pointerup", "pen", 1, 100);
+        vi.advanceTimersByTime(2000);
+        expect(onGesture).toHaveBeenCalledTimes(whileDown);
+
+        // A pan reports nothing, and an erase that the pointer cancels stops reporting.
+        swipe("touch", 2, 100);
+        expect(onGesture).toHaveBeenCalledTimes(whileDown);
+        pointer("pointerdown", "pen", 3, 100, 50, 32);
+        pointer("pointercancel", "pen", 3, 100, 50, 0);
+        const afterErase = onGesture.mock.calls.length;
+        vi.advanceTimersByTime(2000);
+        expect(onGesture).toHaveBeenCalledTimes(afterErase);
     });
 
     function swipe(type: string, pointerId: number, y: number, buttons = 1) {

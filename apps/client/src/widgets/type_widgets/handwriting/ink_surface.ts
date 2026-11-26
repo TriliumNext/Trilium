@@ -23,8 +23,11 @@ export interface InkSurfaceState {
 interface InkSurfaceOptions {
     /** Called after the strokes or the paper change through the surface, not after `load()`. */
     onChange(): void;
-    /** Called when a stroke or an erase starts, before it changes anything. */
-    onGestureStart(): void;
+    /**
+     * Called when a stroke or an erase starts, before it changes anything, and then every
+     * `GESTURE_INTERVAL` ms until it ends, the pointer moving or not.
+     */
+    onGesture(): void;
     onStateChange(state: InkSurfaceState): void;
 }
 
@@ -49,6 +52,8 @@ const PEN_MIDDLE_BUTTON = 4;
 /** How long two fingers can rest on the screen, and how far they can move, for a tap that undoes. */
 const TWO_FINGER_TAP_TIME = 300;
 const TWO_FINGER_TAP_SLOP = 10;
+/** How often a stroke or an erase in progress calls `onGesture()`, in ms. */
+const GESTURE_INTERVAL = 250;
 /** How long the pointer rests at the end of a stroke, and how far it can move, to make a shape of it. */
 const HOLD_TIME = 500;
 const HOLD_SLOP = 5;
@@ -165,6 +170,7 @@ export default class InkSurface {
      */
     private snapped: { drawn: Stroke, line?: { fromX: number, fromY: number, pressure: number } } | undefined;
     private warmTimer: ReturnType<typeof setTimeout> | undefined;
+    private gestureTimer: ReturnType<typeof setInterval> | undefined;
     private erased: Stroke[] = [];
     private lastX = 0;
     private lastY = 0;
@@ -213,6 +219,7 @@ export default class InkSurface {
         if (this.liveFrame !== undefined) cancelAnimationFrame(this.liveFrame);
         if (this.panFrame !== undefined) cancelAnimationFrame(this.panFrame);
         clearTimeout(this.warmTimer);
+        clearInterval(this.gestureTimer);
         this.baseCanvas.remove();
         this.liveLayer.remove();
     }
@@ -492,7 +499,9 @@ export default class InkSurface {
         this.panRemainderX = 0;
         this.panRemainderY = 0;
         if (mode === "draw" || mode === "erase") {
-            this.options.onGestureStart();
+            this.options.onGesture();
+            clearInterval(this.gestureTimer);
+            this.gestureTimer = setInterval(() => this.options.onGesture(), GESTURE_INTERVAL);
         }
 
         if (mode === "draw") {
@@ -602,9 +611,7 @@ export default class InkSurface {
             this.updatePageCount();
             this.options.onChange();
         }
-        this.mode = "idle";
-        this.activePointerId = undefined;
-        this.activePointerType = undefined;
+        this.endGesture();
     }
 
     private onWheel(e: WheelEvent) {
@@ -636,6 +643,12 @@ export default class InkSurface {
             this.applyHistory(this.erased, []);
             this.erased = [];
         }
+        this.endGesture();
+    }
+
+    private endGesture() {
+        clearInterval(this.gestureTimer);
+        this.gestureTimer = undefined;
         this.mode = "idle";
         this.activePointerId = undefined;
         this.activePointerType = undefined;

@@ -168,7 +168,7 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                 spacedUpdate.resetUpdateTimer();
                 spacedUpdate.scheduleUpdate();
             },
-            onGestureStart: () => spacedUpdate.resetUpdateTimer(),
+            onGesture: () => spacedUpdate.resetUpdateTimer(),
             onStateChange: setState
         });
         surfaceRef.current = surface;
