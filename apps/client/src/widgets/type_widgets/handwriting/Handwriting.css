@@ -25,7 +25,7 @@
 
         /* The ring is as wide as the eraser, whose radius is `ERASER_RADIUS` in ink_surface.ts. */
         &[data-tool="eraser"] {
-            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Ccircle cx='10' cy='10' r='8' fill='none' stroke='white' stroke-width='3'/%3E%3Ccircle cx='10' cy='10' r='8' fill='none' stroke='black' stroke-width='1'/%3E%3C/svg%3E") 10 10, cell;
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Ccircle cx='10' cy='10' r='8' fill='%23e53935' fill-opacity='0.25' stroke='white' stroke-width='3'/%3E%3Ccircle cx='10' cy='10' r='8' fill='none' stroke='%23e53935' stroke-width='1.5'/%3E%3C/svg%3E") 10 10, cell;
         }
 
         &[data-tool="pan"] {
