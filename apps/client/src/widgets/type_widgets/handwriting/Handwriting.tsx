@@ -4,10 +4,11 @@ import { useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
 import ColorPicker from "../../react/ColorPicker";
+import { useFullscreen } from "../../react/hooks/dom";
 import { useEditorSpacedUpdate } from "../../react/hooks/editor";
 import { useEffectiveReadOnly } from "../../react/hooks/note_context";
 import OverlayControlGroup, {
-    OverlayControlButton, OverlayControlDropdown, ZoomControls
+    OverlayControlButton, OverlayControlDropdown, OverlayFullscreenButton, ZoomControls
 } from "../../react/OverlayControlGroup";
 import Slider from "../../react/Slider";
 import { TypeWidgetProps } from "../type_widget";
@@ -22,6 +23,8 @@ const TOOLS: { tool: SurfaceTool, icon: string, title: () => string }[] = [
 
 export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     const surfaceElRef = useRef<HTMLDivElement>(null);
+    const [ containerEl, setContainerEl ] = useState<HTMLDivElement | null>(null);
+    const [ isFullscreen, toggleFullscreen ] = useFullscreen(containerEl);
     const surfaceRef = useRef<InkSurface | undefined>(undefined);
     const pendingDocRef = useRef<InkDocument | undefined>(undefined);
     const [ tool, setTool ] = useState<SurfaceTool>("pen");
@@ -87,7 +90,7 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     }
 
     return (
-        <div className="handwriting-container">
+        <div ref={setContainerEl} className="handwriting-container">
             <div ref={surfaceElRef} className="handwriting-surface" data-tool={isReadOnly ? "pan" : tool} />
 
             {!isReadOnly && (
@@ -144,6 +147,7 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                     onZoomOut={() => surfaceRef.current?.zoomBy(0.8)}
                     onReset={() => surfaceRef.current?.resetZoom()}
                 />
+                <OverlayFullscreenButton isFullscreen={isFullscreen} onToggle={toggleFullscreen} />
             </OverlayControlGroup>
         </div>
     );

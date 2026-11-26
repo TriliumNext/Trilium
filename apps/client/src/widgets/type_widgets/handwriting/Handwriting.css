@@ -64,6 +64,16 @@
         --overlay-group-inset: 12px;
     }
 
+    &:fullscreen {
+        .handwriting-tools {
+            --overlay-group-inset-top: calc(12px + var(--safe-area-inset-top, env(safe-area-inset-top)));
+        }
+
+        .handwriting-zoom {
+            --overlay-group-inset-bottom: calc(12px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
+        }
+    }
+
     .handwriting-pen-settings {
         display: flex;
         flex-direction: column;

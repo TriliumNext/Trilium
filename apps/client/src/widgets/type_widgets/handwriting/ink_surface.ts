@@ -78,6 +78,8 @@ export default class InkSurface {
     private redoStack: HistoryEntry[] = [];
 
     private dpr = 1;
+    /** Whether the canvases have been sized to the container, which the first `resize()` does. */
+    private sized = false;
     private zoom = 1;
     /** The position of the world origin on the canvas, in whole device pixels. */
     private tx = 0;
@@ -616,6 +618,12 @@ export default class InkSurface {
         const height = Math.max(1, Math.round(rect.height * this.dpr));
         if (width === this.baseCanvas.width && height === this.baseCanvas.height) return;
 
+        // The view keeps its middle in place, as when the note goes fullscreen.
+        if (this.sized) {
+            this.tx += Math.round((width - this.baseCanvas.width) / 2);
+            this.ty += Math.round((height - this.baseCanvas.height) / 2);
+        }
+        this.sized = true;
         for (const canvas of [ this.baseCanvas, this.settledCanvas, this.liveCanvas ]) {
             canvas.width = width;
             canvas.height = height;
