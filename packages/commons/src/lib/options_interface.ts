@@ -351,6 +351,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     textNoteHtmlSupportEnabled: boolean;
     /** Whether text notes are edited with the keys of Vim, on this device. */
     textNoteVimModeEnabled: boolean;
+    /** Whether one finger draws in handwriting notes, on this device. Otherwise fingers pan and zoom. */
+    handwritingFingerDrawing: boolean;
     /** Whether the notice that explains Vim mode was shown when it was first turned on. */
     textNoteVimModeNoticeShown: boolean;
     /** Whether six more Ctrl keys of Insert mode, such as `Ctrl+V`, follow Vim. */

@@ -145,6 +145,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "textNoteStickyTableHeadersEnabled",
     "textNoteHtmlSupportEnabled",
     "textNoteVimModeEnabled",
+    "handwritingFingerDrawing",
     "textNoteVimModeNoticeShown",
     "textNoteVimInsertKeysEnabled",
     "textNoteVimStartupCommands",

@@ -6,6 +6,7 @@ import { t } from "../../../services/i18n";
 import ColorPicker from "../../react/ColorPicker";
 import { useFullscreen } from "../../react/hooks/dom";
 import { useEditorSpacedUpdate } from "../../react/hooks/editor";
+import { useTriliumOptionBool } from "../../react/hooks/options";
 import { useEffectiveReadOnly } from "../../react/hooks/note_context";
 import OverlayControlGroup, {
     OverlayControlButton, OverlayControlDropdown, OverlayFullscreenButton, ZoomControls
@@ -21,6 +22,9 @@ const TOOLS: { tool: SurfaceTool, icon: string, title: () => string }[] = [
     { tool: "eraser", icon: "bx-eraser", title: () => t("handwriting.eraser") }
 ];
 
+/** Whether the device has a touch screen, the only one on which fingers can draw. */
+const HAS_TOUCH = navigator.maxTouchPoints > 0;
+
 export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     const surfaceElRef = useRef<HTMLDivElement>(null);
     const [ containerEl, setContainerEl ] = useState<HTMLDivElement | null>(null);
@@ -32,6 +36,7 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     const [ size, setSize ] = useState(3);
     const [ state, setState ] = useState<InkSurfaceState>({ zoom: 1, canUndo: false, canRedo: false });
     const isReadOnly = useEffectiveReadOnly(note, noteContext);
+    const [ fingerDrawing, setFingerDrawing ] = useTriliumOptionBool("handwritingFingerDrawing");
 
     const spacedUpdate = useEditorSpacedUpdate({
         note,
@@ -80,7 +85,8 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
         surface.color = color;
         surface.size = size;
         surface.readOnly = isReadOnly;
-    }, [ tool, color, size, isReadOnly ]);
+        surface.fingerDrawing = fingerDrawing;
+    }, [ tool, color, size, isReadOnly, fingerDrawing ]);
 
     function cyclePaper() {
         const surface = surfaceRef.current;
@@ -104,6 +110,14 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                             onClick={() => setTool(itemTool)}
                         />
                     ))}
+                    {HAS_TOUCH && (
+                        <OverlayControlButton
+                            title={t("handwriting.finger_drawing")}
+                            icon="bxs-hand-up"
+                            active={fingerDrawing}
+                            onClick={() => setFingerDrawing(!fingerDrawing)}
+                        />
+                    )}
                     <OverlayControlDropdown title={t("handwriting.pen_settings")} icon="bx-palette" panel>
                         <div className="handwriting-pen-settings">
                             <ColorPicker

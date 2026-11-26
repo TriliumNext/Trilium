@@ -342,6 +342,7 @@ const defaultOptions: DefaultOption[] = [
     // them is worse than their absence. See `textNoteHtmlSupportEnabled` for what turning it off costs.
     { name: "textNoteHtmlSupportEnabled", value: "false", isSynced: true },
     { name: "textNoteVimModeEnabled", value: "false", isSynced: false },
+    { name: "handwritingFingerDrawing", value: "false", isSynced: false },
     { name: "textNoteVimModeNoticeShown", value: "false", isSynced: false },
     { name: "textNoteVimInsertKeysEnabled", value: "false", isSynced: true },
     { name: "textNoteVimStartupCommands", value: "", isSynced: true },

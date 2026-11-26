@@ -59,6 +59,8 @@ export default class InkSurface {
     color = AUTO_COLOR;
     size = 3;
     readOnly = false;
+    /** Whether one finger draws. Otherwise fingers only pan and zoom, and only a pen or a mouse draws. */
+    fingerDrawing = false;
 
     private baseCanvas: HTMLCanvasElement;
     private liveLayer: HTMLDivElement;
@@ -96,8 +98,10 @@ export default class InkSurface {
 
     private mode: Mode = "idle";
     private activePointerId: number | undefined;
-    private penSeen = false;
+    private activePointerType: string | undefined;
     private touches = new Map<number, { x: number, y: number }>();
+    /** Touches that were down when a pen took over, or came while it drew, until they are lifted. */
+    private ignoredTouches = new Set<number>();
     private liveStroke: Stroke | undefined;
     private liveBuilder: StrokeBuilder | undefined;
     /** The index of the stroke point up to which the stroke being drawn is on `settledCanvas`. */
@@ -237,11 +241,16 @@ export default class InkSurface {
 
     private onPointerDown(e: PointerEvent) {
         if (e.pointerType === "touch") {
+            if (this.activePointerType === "pen") {
+                this.ignoredTouches.add(e.pointerId);
+                return;
+            }
             this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
             this.container.setPointerCapture(e.pointerId);
             if (this.touches.size === 2) {
                 this.cancelGesture();
                 this.mode = "pinch";
+                this.activePointerType = "touch";
                 this.pinchDistance = this.getPinch().distance;
                 const { x, y } = this.getPinch();
                 this.lastX = x;
@@ -249,20 +258,30 @@ export default class InkSurface {
                 return;
             }
             if (this.touches.size > 2 || this.mode !== "idle") return;
-            // Once a pen has drawn, a finger moves the page; without a pen, the finger is the pen.
-            this.begin(this.penSeen || this.readOnly ? "pan" : this.inkMode(e), e);
+            this.begin(this.fingerDrawing && !this.readOnly ? this.inkMode(e) : "pan", e);
             return;
         }
 
+        if (e.pointerType === "pen" && this.activePointerType === "touch") {
+            this.yieldTouchesToPen();
+        }
         if (this.mode !== "idle") return;
         if (e.pointerType === "pen") {
-            this.penSeen = true;
             this.begin(this.readOnly ? "pan" : this.inkMode(e), e);
         } else if (e.button === 1 || (e.button === 0 && this.readOnly)) {
             this.begin("pan", e);
         } else if (e.button === 0) {
             this.begin(this.inkMode(e), e);
         }
+    }
+
+    /** Ends the gesture of the fingers on the screen, such as a resting palm, for a pen to draw. */
+    private yieldTouchesToPen() {
+        this.cancelGesture();
+        for (const pointerId of this.touches.keys()) {
+            this.ignoredTouches.add(pointerId);
+        }
+        this.touches.clear();
     }
 
     private inkMode(e: PointerEvent): Mode {
@@ -275,6 +294,7 @@ export default class InkSurface {
         this.container.setPointerCapture(e.pointerId);
         this.mode = mode;
         this.activePointerId = e.pointerId;
+        this.activePointerType = e.pointerType;
         this.lastX = e.clientX;
         this.lastY = e.clientY;
         this.panRemainderX = 0;
@@ -306,6 +326,7 @@ export default class InkSurface {
     }
 
     private onPointerMove(e: PointerEvent) {
+        if (this.ignoredTouches.has(e.pointerId)) return;
         if (e.pointerType === "touch" && this.touches.has(e.pointerId)) {
             this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
         }
@@ -344,10 +365,14 @@ export default class InkSurface {
     }
 
     private onPointerEnd(e: PointerEvent) {
+        if (this.ignoredTouches.delete(e.pointerId)) return;
         this.touches.delete(e.pointerId);
 
         if (this.mode === "pinch") {
-            if (this.touches.size < 2) this.mode = "idle";
+            if (this.touches.size < 2) {
+                this.mode = "idle";
+                this.activePointerType = undefined;
+            }
             return;
         }
         if (e.pointerId !== this.activePointerId) return;
@@ -365,6 +390,7 @@ export default class InkSurface {
         }
         this.mode = "idle";
         this.activePointerId = undefined;
+        this.activePointerType = undefined;
     }
 
     private onWheel(e: WheelEvent) {
@@ -398,6 +424,7 @@ export default class InkSurface {
         }
         this.mode = "idle";
         this.activePointerId = undefined;
+        this.activePointerType = undefined;
     }
 
     //#endregion
