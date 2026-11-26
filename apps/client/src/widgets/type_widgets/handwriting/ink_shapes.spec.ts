@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { buildStrokePoints, parseInkDocument } from "./ink_document";
 import {
-    closedShapeToPoints, type Ellipse, ellipseToPoints, lineToPoints, polygonToPoints, recognizeEllipse,
-    recognizeLine, recognizeRectangle, recognizeTriangle
+    type Arrow, arrowToPoints, type Ellipse, ellipseToPoints, lineToPoints, polygonToPoints, recognizeArrow,
+    recognizeEllipse, recognizeLine, recognizeRectangle, recognizeTriangle, shapeToPoints
 } from "./ink_shapes";
 
 describe("line recognition", () => {
@@ -233,8 +233,65 @@ describe("ellipse recognition", () => {
 
         // A small circle keeps enough points to stay round, and a rectangle is tried first.
         expect(ellipseToPoints({ centerX: 0, centerY: 0, radiusX: 10, radiusY: 10, angle: 0 }, 0.5).length / 3).toBe(25);
-        expect(closedShapeToPoints(ring(80, 80), 20, 0.5)?.length).toBe(85 * 3);
-        expect(closedShapeToPoints(ring(80, 80, 0, 0, 180), 20, 0.5)).toBeUndefined();
+        expect(shapeToPoints(ring(80, 80), 20, 0.5)?.length).toBe(85 * 3);
+        expect(shapeToPoints(ring(80, 80, 0, 0, 180), 20, 0.5)).toBeUndefined();
+    });
+});
+
+describe("arrow recognition", () => {
+    /** Flat triples of a stroke along the segments between `vertices`, with a point every 4 units. */
+    const path = (...vertices: number[][]) => {
+        const points = [ vertices[0][0], vertices[0][1], 0.5 ];
+        for (const [ index, [ toX, toY ] ] of vertices.entries()) {
+            if (!index) continue;
+            const [ fromX, fromY ] = vertices[index - 1];
+            const steps = Math.ceil(Math.hypot(toX - fromX, toY - fromY) / 4);
+            for (let step = 1; step <= steps; step++) {
+                points.push(fromX + (toX - fromX) * step / steps, fromY + (toY - fromY) * step / steps, 0.5);
+            }
+        }
+        return points;
+    };
+    const rounded = (arrow: Arrow | undefined) => arrow && Object.values(arrow).map(Math.round);
+    const start = [ 300, 100 ];
+    const tip = [ 100, 100 ];
+
+    it("takes a shaft and two barbs drawn from the tip as an arrow with even barbs", () => {
+        // Barbs of 50 at 37 degrees and of 32 at 18 degrees give barbs of 41 at 28 degrees.
+        const drawn = path(start, tip, [ 140, 70 ], tip, [ 130, 110 ]);
+        expect(rounded(recognizeArrow(drawn, 20))).toEqual([ 300, 100, 100, 100, 41, 28 ]);
+
+        // An arrow drawn with a pen comes back to its tip further out than it first got there.
+        const { points } = parseInkDocument(JSON.stringify({ version: 1, strokes: [ { w: 3, p: PEN_ARROW } ] })).strokes[0];
+        expect(rounded(recognizeArrow(points, 20))).toEqual([ 318, 215, 178, 218, 44, 27 ]);
+    });
+
+    it("leaves a stroke that is not an arrow as it is", () => {
+        // A shaft alone, with one barb, and with both barbs on one side.
+        expect(recognizeArrow(path(start, tip), 20)).toBeUndefined();
+        expect(recognizeArrow(path(start, tip, [ 140, 70 ]), 20)).toBeUndefined();
+        expect(recognizeArrow(path(start, tip, [ 140, 70 ], tip, [ 130, 85 ]), 20)).toBeUndefined();
+        // A bent shaft, barbs across the shaft, barbs as long as the shaft and a small arrow.
+        expect(recognizeArrow(path(start, [ 200, 160 ], tip, [ 140, 70 ], tip, [ 130, 110 ]), 20)).toBeUndefined();
+        expect(recognizeArrow(path(start, tip, [ 105, 60 ], tip, [ 105, 140 ]), 20)).toBeUndefined();
+        expect(recognizeArrow(path(start, tip, [ 260, 40 ], tip, [ 260, 160 ]), 20)).toBeUndefined();
+        expect(recognizeArrow(path([ 115, 100 ], tip, [ 104, 97 ], tip, [ 104, 103 ]), 20)).toBeUndefined();
+    });
+
+    it("runs a stroke of one pressure along the shaft and both barbs, into the tip once smoothed", () => {
+        const points = arrowToPoints({ fromX: 300, fromY: 100, toX: 100, toY: 100, barbLength: 40, barbAngle: 30 }, 0.4);
+        expect(points.slice(0, 3)).toEqual([ 300, 100, 0.4 ]);
+        expect(points.slice(-3).map((value) => Math.round(value * 10) / 10)).toEqual([ 134.6, 80, 0.4 ]);
+        expect(points.length / 3).toBeLessThan(60);
+
+        const smoothed = buildStrokePoints({ size: 3, simulatePressure: false, points });
+        const nearest = (x: number, y: number) =>
+            Math.min(...smoothed.map(({ point }) => Math.hypot(point[0] - x, point[1] - y)));
+        expect(nearest(100, 100)).toBeLessThan(1);
+        expect(nearest(134.6, 120)).toBeLessThan(1);
+        expect(nearest(134.6, 80)).toBeLessThan(0.1);
+        // A pen arrow goes through the same door as the closed shapes.
+        expect(shapeToPoints(path(start, tip, [ 140, 70 ], tip, [ 130, 110 ]), 20, 0.5)?.slice(0, 2)).toEqual(start);
     });
 });
 
@@ -294,4 +351,35 @@ const PEN_CIRCLE = [
     -23, 0, 1, -24, 0, 1, -16, 0, 1, -16, 0, 2, -23, 0, 2, -16, 0, 0, -16, 0, 2, -24, 0, 0,
     -8, 0, 2, -8, 0, 0, -15, 0, 0, -8, 0, 0, -16, 0, 0, -8, 8, 1, -8, 0, -1, -8, 0, 2,
     -8, 0, 1, -8, 8, 0, -8, 0, -176, 0, 8, -28
+];
+
+/**
+ * An arrow drawn with a pen on a tablet, as the saved `p` of its stroke: the shaft, a barb out and
+ * back to the tip, and the other barb.
+ */
+const PEN_ARROW = [
+    3176, 2146, 3, 0, 8, 51, -8, 0, 1, 0, 8, 2, -8, 8, 4, -16, 0, 1, -15, 0, 2, -16, -8, 2,
+    -24, 0, 2, -24, 0, 1, -23, 0, 3, -16, 0, 4, -24, -8, 2, -24, 0, 3, -23, 0, 2, -24, 0, 2,
+    -24, -8, 2, -23, 0, 2, -32, 0, 1, -24, -8, 2, -23, 0, 1, -32, 0, 1, -24, 0, 1, -31, 0, 1,
+    -32, 0, 1, -24, 0, 1, -31, 0, 0, -32, 0, 1, -39, 0, 1, -40, 0, 1, -47, 0, 1, -40, 0, 1,
+    -39, 0, 1, -40, 0, 1, -39, 0, 1, -48, 0, 2, -31, 0, 0, -32, 0, 1, -32, 0, 0, -31, 0, 1,
+    -24, 8, 1, -32, 0, 1, -15, 0, 0, -16, 0, 0, -24, 8, 0, -16, 0, 1, -15, 0, -1, -16, 0, 1,
+    -8, 0, 0, -8, 0, 0, -16, 0, 0, -8, 0, 0, -8, 8, 0, -8, 0, 0, -7, 0, 0, -8, 0, 0,
+    -16, 0, -1, -8, 0, 0, -8, 8, 1, -8, 0, -1, -16, 0, 0, -8, 0, 0, -15, 0, 0, -8, 0, 1,
+    -8, 0, -1, -8, 0, 0, -8, 0, 1, -8, 7, -1, -8, 0, 1, -8, 0, 0, 8, 0, 15, 8, 0, -1,
+    8, -7, 0, 8, 0, 1, 8, 0, 0, 8, -8, -1, 8, -8, 0, 15, -8, 0, 8, -8, 0, 16, -8, 0,
+    8, -8, 0, 8, -8, 0, 16, -8, -1, 16, -8, 0, 7, -7, 1, 16, -16, -1, 8, -8, 0, 16, -8, 0,
+    8, -8, 0, 8, -8, 0, 8, 0, 0, 8, -8, -1, 7, -8, 1, 8, -8, 1, 8, -8, -1, 8, 0, 1,
+    8, 0, -1, 0, -7, 0, 8, 0, 1, 8, -8, -1, 8, -8, 1, 8, 0, 1, 8, 0, -1, 0, -8, 0,
+    7, 0, 0, 8, 0, 1, 8, 0, 0, 8, -8, 0, -8, 8, -4, -16, 8, 1, -7, 8, -1, -8, 8, 0,
+    -8, 0, 0, -16, 7, 0, -8, 8, 0, -16, 8, 0, -8, 0, 0, -15, 8, 0, -16, 8, 0, -8, 8, 0,
+    -16, 8, 0, -16, 8, 0, -8, 8, 0, -15, 8, 0, -16, 8, 1, -16, 7, -1, -8, 8, 1, -16, 8, 0,
+    -8, 0, 0, -8, 8, 0, -15, 8, 0, -8, 0, 0, -8, 8, 1, -8, 0, -1, -8, 8, 1, -8, 8, -1,
+    -8, 0, 0, -8, 8, 1, -8, 8, 0, -8, 0, -2, 0, 7, 0, 0, 8, 0, 0, 8, 0, 0, 8, 0,
+    8, 8, 3, 8, 0, -1, 8, 8, 1, 8, 0, 0, 8, 0, 0, 8, 8, 0, 8, 0, 0, 8, 0, 0,
+    8, 0, 0, 8, 8, 0, 15, 0, 0, 8, 0, 0, 8, 8, 0, 16, 0, 0, 16, 8, 0, 16, 0, 0,
+    15, 7, -1, 24, 8, 0, 16, 8, 0, 16, 8, -1, 15, 8, 0, 16, 0, 1, 16, 8, -1, 16, 8, 0,
+    16, 8, 1, 8, 8, -1, 7, 0, 0, 16, 8, 0, 8, 0, -1, 8, 0, 0, 8, 7, 1, 8, 0, -1,
+    8, 0, 2, 8, 8, 1, 8, 0, 1, 8, 8, 0, 7, 0, 1, 8, 0, 9, 8, 0, 0, 16, 0, 0,
+    8, 0, 0, 8, 0, -1, 8, 8, -98, 8, 0, -21
 ];

@@ -5,7 +5,7 @@ import {
     PAGE_GAP, PAGE_HEIGHT, PAGE_WIDTH, type PaperStyle, serializeInkDocument, serializeStroke,
     type Stroke, StrokeBuilder, strokeHitsSegment, StrokeIndex
 } from "./ink_document";
-import { closedShapeToPoints, lineToPoints, recognizeLine } from "./ink_shapes";
+import { shapeToPoints, lineToPoints, recognizeLine } from "./ink_shapes";
 
 export type SurfaceTool = InkTool | "eraser";
 
@@ -623,7 +623,7 @@ export default class InkSurface {
     }
 
     /**
-     * Makes a straight line or a closed shape of the stroke being drawn when it was drawn as one.
+     * Makes a straight line or another shape of the stroke being drawn when it was drawn as one.
      * The shape has one width, from the mean pressure of the stroke. The end of a line then
      * follows the pointer.
      */
@@ -642,7 +642,7 @@ export default class InkSurface {
         }
         const points = line
             ? lineToPoints(line, pressure)
-            : closedShapeToPoints(stroke.points, minSize, pressure);
+            : shapeToPoints(stroke.points, minSize, pressure);
         if (!points) return;
         this.snapped = { drawn: stroke, line: line && { fromX: line.fromX, fromY: line.fromY, pressure } };
         this.liveStroke = { ...stroke, simulatePressure: false, points };

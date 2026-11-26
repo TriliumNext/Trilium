@@ -271,6 +271,24 @@ describe("ink surface input", () => {
         for (let i = 0; i < round.length; i += 2) {
             expect(Math.abs(Math.hypot(round[i] - 200, round[i + 1] - 200) - 80)).toBeLessThan(3);
         }
+        surface.undo();
+        surface.undo();
+
+        // A shaft and two barbs become an arrow from the same start to the same tip.
+        const arrow = [
+            [ 300, 100 ], [ 250, 101 ], [ 200, 102 ], [ 150, 101 ], [ 100, 100 ],
+            [ 120, 85 ], [ 140, 70 ], [ 120, 85 ], [ 100, 100 ], [ 115, 105 ], [ 130, 110 ]
+        ];
+        draw(...arrow);
+        vi.advanceTimersByTime(600);
+        pointer("pointerup", "pen", 1, 110, 130);
+        const [ straight ] = drawn();
+        expect(straight.slice(0, 2)).toEqual([ 300, 100 ]);
+        expect(straight.length).toBeGreaterThan(arrow.length * 2);
+        // The shaft is level from its start to the tip, where the stroke first turns back.
+        const turn = straight.findIndex((x, index) => index % 2 === 0 && x === 100);
+        expect(turn).toBeGreaterThan(0);
+        expect(new Set(straight.slice(0, turn + 2).filter((_, index) => index % 2))).toEqual(new Set([ 100 ]));
     });
 
     function swipe(type: string, pointerId: number, y: number) {

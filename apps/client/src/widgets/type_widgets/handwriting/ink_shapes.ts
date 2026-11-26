@@ -82,6 +82,28 @@ const ELLIPSE_STEP = 6;
 const MIN_ELLIPSE_POINTS = 24;
 const MAX_ELLIPSE_POINTS = 160;
 
+/** How far back toward its start a stroke comes for its shaft to have ended, as a share of its reach. */
+const TIP_RETREAT = 0.03;
+/** The shortest and the longest barb of an arrow, as a share of the length of its shaft. */
+const MIN_BARB = 0.1;
+const MAX_BARB = 0.6;
+/** The smallest and the largest angle between a barb of an arrow and its shaft, in degrees. */
+const MIN_BARB_ANGLE = 10;
+const MAX_BARB_ANGLE = 70;
+/** How far along the head of an arrow the stroke is back at the tip, as shares of the head's path. */
+const MIN_BARB_RETURN = 0.3;
+const MAX_BARB_RETURN = 0.9;
+/** How far from the tip the stroke can be when it comes back to it, as a share of the shorter barb. */
+const BARB_RETURN_GAP = 0.3;
+/** How much longer than its three straight runs the path of the head of an arrow can be. */
+const BARB_DETOUR = 1.3;
+
+export interface Arrow extends Line {
+    barbLength: number;
+    /** The angle between each barb and the shaft, in degrees. */
+    barbAngle: number;
+}
+
 export interface Ellipse {
     centerX: number;
     centerY: number;
@@ -226,14 +248,110 @@ export function ellipseToPoints({ centerX, centerY, radiusX, radiusY, angle }: E
 }
 
 /**
- * Returns the points of the closed shape that a stroke was drawn as, at one pressure: a
- * rectangle, a triangle or an ellipse.
+ * Returns the arrow that a stroke was drawn as, from its flat `x, y, pressure` triples. The stroke
+ * goes along the shaft to the tip, where it first turns back toward its start, then out along one
+ * barb, back to the tip and out along the other barb, on the other side of the shaft. The arrow
+ * keeps the ends of the shaft drawn, and its two barbs take the mean length and the mean angle of
+ * those drawn.
  */
-export function closedShapeToPoints(points: number[], minSize: number, pressure: number) {
+export function recognizeArrow(points: number[], minSize: number): Arrow | undefined {
+    const count = points.length / 3;
+    if (count < 8) return undefined;
+    const fromX = points[0];
+    const fromY = points[1];
+    const fromStart = (i: number) => Math.hypot(points[3 * i] - fromX, points[3 * i + 1] - fromY);
+    let reach = 0;
+    for (let i = 1; i < count; i++) {
+        reach = Math.max(reach, fromStart(i));
+    }
+    // The stroke can come back to the tip a little further out than it first got there.
+    let tip = 0;
+    let shaftLength = 0;
+    for (let i = 1; i < count; i++) {
+        const distance = fromStart(i);
+        if (distance > shaftLength) {
+            shaftLength = distance;
+            tip = i;
+        } else if (distance < shaftLength - TIP_RETREAT * reach) {
+            break;
+        }
+    }
+    const toX = points[3 * tip];
+    const toY = points[3 * tip + 1];
+    if (!recognizeLine(points.slice(0, 3 * tip + 3), minSize)) return undefined;
+
+    // The head: how far along it each point is, and how far from the tip.
+    const along = [ 0 ];
+    const away = [ 0 ];
+    for (let i = tip + 1; i < count; i++) {
+        const step = Math.hypot(points[3 * i] - points[3 * i - 3], points[3 * i + 1] - points[3 * i - 2]);
+        along.push(along[along.length - 1] + step);
+        away.push(Math.hypot(points[3 * i] - toX, points[3 * i + 1] - toY));
+    }
+    const headLength = along[along.length - 1];
+    let back = -1;
+    for (let i = 0; i < away.length; i++) {
+        if (along[i] < MIN_BARB_RETURN * headLength || along[i] > MAX_BARB_RETURN * headLength) continue;
+        if (back < 0 || away[i] < away[back]) back = i;
+    }
+    if (back < 0) return undefined;
+    const furthest = (from: number, to: number) => {
+        let best = from;
+        for (let i = from; i <= to; i++) {
+            if (away[i] > away[best]) best = i;
+        }
+        return best;
+    };
+    const barbs = [ furthest(0, back), furthest(back, away.length - 1) ];
+    const shortBarb = Math.min(away[barbs[0]], away[barbs[1]]);
+    const longBarb = Math.max(away[barbs[0]], away[barbs[1]]);
+    if (shortBarb < MIN_BARB * shaftLength || longBarb > MAX_BARB * shaftLength) return undefined;
+    if (away[back] > BARB_RETURN_GAP * shortBarb) return undefined;
+    if (headLength > BARB_DETOUR * (2 * away[barbs[0]] + away[barbs[1]])) return undefined;
+
+    // The angle of each barb from the shaft, as seen from the tip, negative on one side of it.
+    const angles = barbs.map((barb) => {
+        const x = points[3 * (tip + barb)] - toX;
+        const y = points[3 * (tip + barb) + 1] - toY;
+        const cross = (fromX - toX) * y - (fromY - toY) * x;
+        const dot = (fromX - toX) * x + (fromY - toY) * y;
+        return Math.atan2(cross, dot) * 180 / Math.PI;
+    });
+    if (angles[0] * angles[1] >= 0) return undefined;
+    if (angles.some((angle) => Math.abs(angle) < MIN_BARB_ANGLE || Math.abs(angle) > MAX_BARB_ANGLE)) {
+        return undefined;
+    }
+    return {
+        fromX, fromY, toX, toY,
+        barbLength: (shortBarb + longBarb) / 2,
+        barbAngle: (Math.abs(angles[0]) + Math.abs(angles[1])) / 2
+    };
+}
+
+/**
+ * Returns the flat `x, y, pressure` triples of a stroke along `arrow`, at one pressure: the shaft
+ * to the tip, one barb, and by way of the tip again the other.
+ */
+export function arrowToPoints({ fromX, fromY, toX, toY, barbLength, barbAngle }: Arrow, pressure: number) {
+    const shaftAngle = Math.atan2(fromY - toY, fromX - toX);
+    const barb = (side: number) => {
+        const angle = shaftAngle + side * barbAngle * Math.PI / 180;
+        return [ toX + barbLength * Math.cos(angle), toY + barbLength * Math.sin(angle) ];
+    };
+    return pathToPoints([ [ fromX, fromY ], [ toX, toY ], barb(1), [ toX, toY ], barb(-1) ], pressure);
+}
+
+/**
+ * Returns the points of the shape that a stroke was drawn as, at one pressure: a rectangle, a
+ * triangle, an ellipse or an arrow.
+ */
+export function shapeToPoints(points: number[], minSize: number, pressure: number) {
     const corners = recognizeRectangle(points, minSize) ?? recognizeTriangle(points, minSize);
     if (corners) return polygonToPoints(corners, pressure);
     const ellipse = recognizeEllipse(points, minSize);
-    return ellipse && ellipseToPoints(ellipse, pressure);
+    if (ellipse) return ellipseToPoints(ellipse, pressure);
+    const arrow = recognizeArrow(points, minSize);
+    return arrow && arrowToPoints(arrow, pressure);
 }
 
 const CORNER_SIGNS = [ [ -1, -1 ], [ 1, -1 ], [ 1, 1 ], [ -1, 1 ] ];
@@ -377,38 +495,49 @@ function findCorners(points: number[]): number[][] | undefined {
 
 /**
  * Returns the flat `x, y, pressure` triples of a stroke around the closed polygon of `corners`, at
- * one pressure. `StrokeBuilder` moves each point only part of the way to the next, which rounds a
- * corner by about the distance between the points around it, so the points lie `CORNER_STEP` from
- * each corner and twice as far apart with each step away from it. The stroke starts and ends in
- * the middle of the first side, where its two ends make no corner.
+ * one pressure. The stroke starts and ends in the middle of the first side, where its two ends
+ * make no corner.
  */
 export function polygonToPoints(corners: number[][], pressure: number): number[] {
-    const sides = corners.map((from, index) => {
-        const to = corners[(index + 1) % corners.length];
-        const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
+    const [ first, second ] = corners;
+    const start = [ (first[0] + second[0]) / 2, (first[1] + second[1]) / 2 ];
+    return pathToPoints([ start, ...corners.slice(1), first, start ], pressure);
+}
+
+/**
+ * Returns the flat `x, y, pressure` triples of a stroke along the straight segments between
+ * `vertices`, at one pressure. `StrokeBuilder` moves each point only part of the way to the next,
+ * which rounds a corner by about the distance between the points around it, so the points lie
+ * `CORNER_STEP` from each vertex between two segments and twice as far apart with each step away
+ * from it.
+ */
+function pathToPoints(vertices: number[][], pressure: number): number[] {
+    const points = [ vertices[0][0], vertices[0][1], pressure ];
+    for (let index = 0; index + 1 < vertices.length; index++) {
+        const [ fromX, fromY ] = vertices[index];
+        const [ toX, toY ] = vertices[index + 1];
+        const length = Math.hypot(toX - fromX, toY - fromY);
+        if (!length) continue;
+        const add = (distance: number) => points.push(
+            fromX + (toX - fromX) * distance / length, fromY + (toY - fromY) * distance / length, pressure
+        );
         const steps: number[] = [];
         for (let step = CORNER_STEP; step < length / 2; step *= 2) {
             steps.push(step);
         }
-        return { from, to, length, steps };
-    });
 
-    const points: number[] = [];
-    const add = ({ from, to, length }: (typeof sides)[number], distance: number) => {
-        const share = length ? distance / length : 0;
-        points.push(from[0] + (to[0] - from[0]) * share, from[1] + (to[1] - from[1]) * share, pressure);
-    };
-    add(sides[0], sides[0].length / 2);
-    for (const [ index, side ] of sides.entries()) {
-        for (let i = side.steps.length - 1; i >= 0; i--) {
-            add(side, side.length - side.steps[i]);
+        if (index > 0) {
+            for (const step of steps) {
+                add(step);
+            }
         }
-        const next = sides[(index + 1) % sides.length];
-        add(next, 0);
-        for (const step of next.steps) {
-            add(next, step);
+        add(length / 2);
+        if (index + 2 < vertices.length) {
+            for (let i = steps.length - 1; i >= 0; i--) {
+                add(length - steps[i]);
+            }
         }
-        add(next, next.length / 2);
+        add(length);
     }
     return points;
 }
