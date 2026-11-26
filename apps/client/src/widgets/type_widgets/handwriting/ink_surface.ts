@@ -16,6 +16,8 @@ export interface InkSurfaceState {
 interface InkSurfaceOptions {
     /** Called after the strokes or the paper change through the surface, not after `load()`. */
     onChange(): void;
+    /** Called when a stroke or an erase starts, before it changes anything. */
+    onGestureStart(): void;
     onStateChange(state: InkSurfaceState): void;
 }
 
@@ -259,6 +261,9 @@ export default class InkSurface {
         this.lastY = e.clientY;
         this.panRemainderX = 0;
         this.panRemainderY = 0;
+        if (mode === "draw" || mode === "erase") {
+            this.options.onGestureStart();
+        }
 
         if (mode === "draw") {
             const tool = this.tool === "highlighter" ? "highlighter" : "pen";

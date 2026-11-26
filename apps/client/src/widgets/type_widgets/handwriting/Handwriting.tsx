@@ -51,7 +51,12 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     useEffect(() => {
         if (!surfaceElRef.current) return;
         const surface = new InkSurface(surfaceElRef.current, {
-            onChange: () => spacedUpdate.scheduleUpdate(),
+            // As in canvas notes, each change postpones the save, so it runs once writing pauses.
+            onChange: () => {
+                spacedUpdate.resetUpdateTimer();
+                spacedUpdate.scheduleUpdate();
+            },
+            onGestureStart: () => spacedUpdate.resetUpdateTimer(),
             onStateChange: setState
         });
         surfaceRef.current = surface;
