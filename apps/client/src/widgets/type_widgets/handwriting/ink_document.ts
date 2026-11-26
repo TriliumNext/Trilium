@@ -59,7 +59,8 @@ export interface InkView {
 interface SerializedStroke {
     /** `"h"` for the highlighter; the pen is left out. */
     t?: "h";
-    c: string;
+    /** The color, left out for {@link AUTO_COLOR}. */
+    c?: string;
     w: number;
     /** `1` when the pressure is simulated. */
     s?: 1;
@@ -109,12 +110,12 @@ export function serializeInkDocument(
 export function serializeStroke(stroke: Stroke): string {
     if (stroke.json === undefined) {
         const serialized: SerializedStroke = {
-            c: stroke.color,
+            ...(stroke.tool === "highlighter" && { t: "h" as const }),
+            ...(stroke.color !== AUTO_COLOR && { c: stroke.color }),
             w: stroke.size,
+            ...(stroke.simulatePressure && { s: 1 as const }),
             p: encodePoints(stroke.points)
         };
-        if (stroke.tool === "highlighter") serialized.t = "h";
-        if (stroke.simulatePressure) serialized.s = 1;
         stroke.json = JSON.stringify(serialized);
     }
     return stroke.json;

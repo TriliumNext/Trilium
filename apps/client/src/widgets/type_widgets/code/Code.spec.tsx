@@ -186,7 +186,7 @@ describe("note source", () => {
     it("shows a handwriting note with one stroke per line", () => {
         const note = buildNote({ type: "handwriting", mime: "application/json", title: "H", content: "" });
         const content = JSON.stringify({
-            version: 1, paper: "grid", strokes: [ { c: "auto", w: 3, p: [ 1, 2, 128, 3, 4, 0 ] }, { c: "#e64d4d", w: 3, p: [ 5, 6, 7 ] } ]
+            version: 1, paper: "grid", strokes: [ { w: 3, p: [ 1, 2, 128, 3, 4, 0 ] }, { c: "#e64d4d", w: 3, p: [ 5, 6, 7 ] } ]
         });
         const source = formatViewSource(note, content);
         expect(source).toBe([
@@ -194,7 +194,7 @@ describe("note source", () => {
             "    \"version\": 1,",
             "    \"paper\": \"grid\",",
             "    \"strokes\": [",
-            "        {\"c\":\"auto\",\"w\":3,\"p\":[1,2,128,3,4,0]},",
+            "        {\"w\":3,\"p\":[1,2,128,3,4,0]},",
             "        {\"c\":\"#e64d4d\",\"w\":3,\"p\":[5,6,7]}",
             "    ]",
             "}"

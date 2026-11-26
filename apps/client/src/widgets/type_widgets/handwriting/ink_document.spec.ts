@@ -45,7 +45,8 @@ describe("ink document", () => {
         const content = serializeInkDocument("grid", [ pen, highlighter ]);
         const raw = JSON.parse(content);
         expect(raw.strokes[0]).toEqual({ t: "h", c: "#ff0000", w: 15, s: 1, p: [ 0, 0, 128, 1000, 0, 0 ] });
-        expect(raw.strokes[1].p).toEqual([ 100, 200, 128, 23, 57, 127, -155, -177, -255 ]);
+        expect(content).toContain(`{"t":"h","c":"#ff0000","w":15,"s":1,"p":[`);
+        expect(raw.strokes[1]).toEqual({ w: 4, p: [ 100, 200, 128, 23, 57, 127, -155, -177, -255 ] });
 
         const doc = parseInkDocument(content);
         expect(doc.paper).toBe("grid");
@@ -56,6 +57,7 @@ describe("ink document", () => {
         expect([ x, y ]).toEqual([ 12.3, 25.7 ]);
         expect(pressure).toBe(1);
         expect(doc.strokes[1].bounds).toEqual({ minX: -7.2, minY: 4, maxX: 16.3, maxY: 29.7 });
+        expect(doc.strokes[1].color).toBe(AUTO_COLOR);
     });
 
     it("joins the JSON that each stroke keeps from its first save", () => {
