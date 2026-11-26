@@ -141,7 +141,8 @@ describe("Image API (core)", () => {
         it.each([
             [ "canvas", "canvas-export.svg" ],
             [ "mermaid", "mermaid-export.svg" ],
-            [ "mindMap", "mindmap-export.svg" ]
+            [ "mindMap", "mindmap-export.svg" ],
+            [ "handwriting", "handwriting-export.svg" ]
         ])("renders a real %s note from its SVG attachment", async (type, attachmentTitle) => {
             const noteId = await createImageNote({
                 type,

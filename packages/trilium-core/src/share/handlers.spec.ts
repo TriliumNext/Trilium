@@ -480,7 +480,7 @@ describe("share handlers", () => {
         expect(fetchNote(valid)).toBe(200);
     });
 
-    it("serves the SVG a canvas, mermaid or mind map note renders to, sanitized", () => {
+    it("serves the SVG a canvas, mermaid, mind map or handwriting note renders to, sanitized", () => {
         buildShareTree([
             {
                 id: "canvasNote",
@@ -499,6 +499,15 @@ describe("share handlers", () => {
             },
             { id: "mindMapNote", type: "mindMap", mime: "application/json", content: "not json" },
             {
+                id: "handwritingNote",
+                type: "handwriting",
+                mime: "application/json",
+                content: "{\"version\":1,\"strokes\":[]}",
+                attachments: [
+                    { id: "handwritingExport", title: NOTE_TYPE_IMAGE_ATTACHMENTS.handwriting, mime: "image/svg+xml" }
+                ]
+            },
+            {
                 id: "binaryExport",
                 type: "canvas",
                 mime: "application/json",
@@ -508,6 +517,7 @@ describe("share handlers", () => {
         ]);
         stubAttachmentContent("canvasExport", `<svg id="export" onload="alert(1)"/>`);
         stubAttachmentContent("binaryAttachment", encodeUtf8("<svg id=\"binary\"/>"));
+        stubAttachmentContent("handwritingExport", `<svg id="ink"/>`);
         const image = (noteId: string) => request("/share/api/images/:noteId/:filename", {
             params: { noteId, filename: "x.svg" }
         });
@@ -525,6 +535,7 @@ describe("share handlers", () => {
         expect(image("mermaidNote").body).toBe(`<svg id="legacy"></svg>`);
         expect(image("binaryExport").body).toBe(`<svg id="fallback"/>`);
         expect(image("mindMapNote").body).toBe("<svg/>");
+        expect(image("handwritingNote").body).toBe(`<svg id="ink"/>`);
 
         for (const content of [ "", "5", "{}", "{\"svg\":1}", "{\"svg\":\"\"}" ]) {
             const legacyNote = shaca.getNote("mindMapNote");
