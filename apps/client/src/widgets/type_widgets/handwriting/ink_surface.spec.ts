@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AUTO_COLOR, createStroke } from "./ink_document";
+import { AUTO_COLOR, createStroke, parseInkDocument } from "./ink_document";
 import InkSurface from "./ink_surface";
 
 describe("ink surface input", () => {
@@ -24,6 +24,7 @@ describe("ink surface input", () => {
     afterEach(() => {
         surface.destroy();
         container.remove();
+        vi.useRealTimers();
         vi.restoreAllMocks();
         vi.unstubAllGlobals();
     });
@@ -177,6 +178,52 @@ describe("ink surface input", () => {
         expect(onChange).toHaveBeenCalledTimes(3);
     });
 
+    it("straightens a line when the pen rests at its end, and moves its end with the pen", () => {
+        vi.useFakeTimers({ toFake: [ "setTimeout", "clearTimeout" ] });
+        /** The `[x, y]` positions of each stroke of the note. */
+        const drawn = () => parseInkDocument(surface.serialize()).strokes
+            .map(({ points }) => points.filter((_, index) => index % 3 !== 2));
+        const draw = (...positions: number[][]) => {
+            for (const [ index, [ x, y ] ] of positions.entries()) {
+                pointer(index ? "pointermove" : "pointerdown", "pen", 1, y, x);
+            }
+        };
+        const wobblyLine = [ [ 50, 100 ], [ 100, 104 ], [ 150, 97 ], [ 200, 100 ] ];
+        const straightLine = [ 50, 100, 150, 115, 250, 130 ];
+
+        // Lifted without a rest, the stroke stays as drawn.
+        draw(...wobblyLine);
+        vi.advanceTimersByTime(400);
+        pointer("pointerup", "pen", 1, 100, 200);
+        expect(drawn()).toEqual([ wobblyLine.flat() ]);
+        surface.undo();
+
+        // After a rest the stroke is a line from its start to the pen, wherever the pen goes next.
+        draw(...wobblyLine);
+        vi.advanceTimersByTime(600);
+        pointer("pointermove", "pen", 1, 130, 250);
+        pointer("pointerup", "pen", 1, 130, 250);
+        expect(drawn()).toEqual([ straightLine ]);
+
+        // The first undo gives back the stroke as drawn and the second removes it.
+        surface.undo();
+        expect(drawn()).toEqual([ wobblyLine.flat() ]);
+        surface.undo();
+        expect(drawn()).toEqual([]);
+        surface.redo();
+        surface.redo();
+        expect(drawn()).toEqual([ straightLine ]);
+        surface.undo();
+        surface.undo();
+
+        // A rest at the end of a curve changes nothing.
+        const curve = [ [ 50, 100 ], [ 100, 160 ], [ 150, 160 ], [ 200, 100 ] ];
+        draw(...curve);
+        vi.advanceTimersByTime(600);
+        pointer("pointerup", "pen", 1, 100, 200);
+        expect(drawn()).toEqual([ curve.flat() ]);
+    });
+
     function swipe(type: string, pointerId: number, y: number) {
         pointer("pointerdown", type, pointerId, y);
         pointer("pointermove", type, pointerId, y + 20);
@@ -184,9 +231,9 @@ describe("ink surface input", () => {
         pointer("pointerup", type, pointerId, y + 40);
     }
 
-    function pointer(kind: string, pointerType: string, pointerId: number, y: number) {
+    function pointer(kind: string, pointerType: string, pointerId: number, y: number, x = 50) {
         container.dispatchEvent(new PointerEvent(kind, {
-            pointerId, pointerType, clientX: 50, clientY: y, button: 0,
+            pointerId, pointerType, clientX: x, clientY: y, button: 0,
             buttons: kind === "pointerup" ? 0 : 1, pressure: 0.5, bubbles: true
         }));
     }

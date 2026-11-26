@@ -5,6 +5,7 @@ import {
     PAGE_GAP, PAGE_HEIGHT, PAGE_WIDTH, type PaperStyle, serializeInkDocument, serializeStroke,
     type Stroke, StrokeBuilder, strokeHitsSegment, StrokeIndex
 } from "./ink_document";
+import { lineToPoints, recognizeLine } from "./ink_shapes";
 
 export type SurfaceTool = InkTool | "eraser";
 
@@ -42,6 +43,11 @@ const PEN_ERASER_BUTTON = 32;
 /** How long two fingers can rest on the screen, and how far they can move, for a tap that undoes. */
 const TWO_FINGER_TAP_TIME = 300;
 const TWO_FINGER_TAP_SLOP = 10;
+/** How long the pointer rests at the end of a stroke, and how far it can move, to straighten it. */
+const HOLD_TIME = 500;
+const HOLD_SLOP = 5;
+/** The shortest stroke that a hold straightens, in CSS pixels. */
+const MIN_LINE_LENGTH = 20;
 /** How many stroke points of the stroke being drawn are fixed onto `settledCanvas` at a time. */
 const SETTLE_CHUNK = 48;
 /**
@@ -138,6 +144,15 @@ export default class InkSurface {
     /** Raw `x, y, pressure` triples of the input that the browser predicts after the last move. */
     private predicted: number[] = [];
     private liveFrame: number | undefined;
+    private holdTimer: ReturnType<typeof setTimeout> | undefined;
+    /** Where the pointer was when `holdTimer` started, in client coordinates. */
+    private holdX = 0;
+    private holdY = 0;
+    /**
+     * Set once a hold has made a straight line of the stroke being drawn: the start and the
+     * pressure of the line, and the stroke as it was drawn.
+     */
+    private straightened: { fromX: number, fromY: number, pressure: number, drawn: Stroke } | undefined;
     private warmTimer: ReturnType<typeof setTimeout> | undefined;
     private erased: Stroke[] = [];
     private lastX = 0;
@@ -444,6 +459,7 @@ export default class InkSurface {
             this.predicted = [];
             this.liveLayer.style.opacity = tool === "highlighter" ? String(HIGHLIGHTER_ALPHA) : "";
             this.addLivePoints([ e ]);
+            this.watchHold(e);
             this.scheduleLiveFrame();
         } else if (mode === "erase") {
             this.erased = [];
@@ -478,12 +494,19 @@ export default class InkSurface {
         if (e.pointerId !== this.activePointerId) return;
 
         if (this.mode === "draw" && this.liveStroke) {
-            const events = e.getCoalescedEvents?.() ?? [];
-            this.addLivePoints(events.length ? events : [ e ]);
-            this.predicted = [];
-            for (const event of e.getPredictedEvents?.() ?? []) {
-                const { x, y } = this.toWorld(event.clientX, event.clientY);
-                this.predicted.push(x, y, this.liveStroke.simulatePressure ? 0.5 : event.pressure);
+            if (this.straightened) {
+                const { fromX, fromY, pressure } = this.straightened;
+                const { x, y } = this.toWorld(e.clientX, e.clientY);
+                this.liveStroke.points = lineToPoints({ fromX, fromY, toX: x, toY: y }, pressure);
+            } else {
+                const events = e.getCoalescedEvents?.() ?? [];
+                this.addLivePoints(events.length ? events : [ e ]);
+                this.predicted = [];
+                for (const event of e.getPredictedEvents?.() ?? []) {
+                    const { x, y } = this.toWorld(event.clientX, event.clientY);
+                    this.predicted.push(x, y, this.liveStroke.simulatePressure ? 0.5 : event.pressure);
+                }
+                this.watchHold(e);
             }
             this.scheduleLiveFrame();
         } else if (this.mode === "erase") {
@@ -587,6 +610,42 @@ export default class InkSurface {
         }
     }
 
+    /** Waits for a hold again once the pointer has left the place where the last wait started. */
+    private watchHold(e: PointerEvent) {
+        if (this.holdTimer !== undefined
+            && Math.hypot(e.clientX - this.holdX, e.clientY - this.holdY) <= HOLD_SLOP) {
+            return;
+        }
+        this.holdX = e.clientX;
+        this.holdY = e.clientY;
+        clearTimeout(this.holdTimer);
+        this.holdTimer = setTimeout(() => this.straightenLiveStroke(), HOLD_TIME);
+    }
+
+    /**
+     * Makes a straight line of the stroke being drawn when it was drawn as one. The line has one
+     * width, from the mean pressure of the stroke, and its end then follows the pointer.
+     */
+    private straightenLiveStroke() {
+        const stroke = this.liveStroke;
+        if (!stroke || this.straightened) return;
+        const line = recognizeLine(stroke.points, MIN_LINE_LENGTH / this.zoom);
+        if (!line) return;
+
+        const strokePoints = this.liveBuilder?.points ?? [];
+        let pressure = 0.5;
+        if (strokePoints.length) {
+            pressure = 0;
+            for (const point of strokePoints) {
+                pressure += point.pressure / strokePoints.length;
+            }
+        }
+        this.straightened = { fromX: line.fromX, fromY: line.fromY, pressure, drawn: stroke };
+        this.liveStroke = { ...stroke, simulatePressure: false, points: lineToPoints(line, pressure) };
+        this.predicted = [];
+        this.redrawLiveStroke();
+    }
+
     private scheduleLiveFrame() {
         if (this.liveFrame !== undefined) return;
         this.liveFrame = requestAnimationFrame(() => {
@@ -603,6 +662,10 @@ export default class InkSurface {
 
         this.clearCanvas(this.live, this.liveCanvas);
         this.applyWorldTransform(this.live);
+        if (this.straightened) {
+            this.fillOpaque(this.live, stroke, toPath(getStrokeOutline(stroke)));
+            return;
+        }
         if (stroke.points.length <= 6) {
             this.fillOpaque(this.live, stroke, toPath(getShortStrokeOutline(stroke)));
             return;
@@ -635,6 +698,9 @@ export default class InkSurface {
     private endLiveStroke() {
         if (this.liveFrame !== undefined) cancelAnimationFrame(this.liveFrame);
         this.liveFrame = undefined;
+        clearTimeout(this.holdTimer);
+        this.holdTimer = undefined;
+        this.straightened = undefined;
         this.liveStroke = undefined;
         this.liveBuilder = undefined;
         this.predicted = [];
@@ -644,14 +710,21 @@ export default class InkSurface {
 
     private commitLiveStroke() {
         const live = this.liveStroke;
+        const drawn = this.straightened?.drawn;
         this.endLiveStroke();
         if (!live || live.points.length < 3) return;
 
-        const stroke = createStroke(live);
+        // Undoing a straightened line first gives back the stroke as it was drawn.
+        const original = drawn && createStroke(drawn);
+        if (original) {
+            this.nextOrder++;
+            this.pushHistory({ added: [ original ], removed: [] });
+        }
+        const stroke = createStroke({ ...live, order: this.nextOrder });
         this.nextOrder++;
         this.strokes.add(stroke);
         this.index.add(stroke);
-        this.pushHistory({ added: [ stroke ], removed: [] });
+        this.pushHistory({ added: [ stroke ], removed: original ? [ original ] : [] });
 
         if (!this.zoomPreview) {
             this.applyWorldTransform(this.base);
