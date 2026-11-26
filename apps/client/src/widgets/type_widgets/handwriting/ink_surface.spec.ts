@@ -121,6 +121,25 @@ describe("ink surface input", () => {
         expect(surface.getView().zoom).toBe(1);
     });
 
+    it("undoes on a short tap with two fingers, but not after a pinch", () => {
+        swipe("pen", 1, 100);
+        swipe("pen", 2, 200);
+        expect(onChange).toHaveBeenCalledTimes(2);
+
+        pointer("pointerdown", "touch", 3, 300);
+        pointer("pointerdown", "touch", 4, 320);
+        pointer("pointerup", "touch", 3, 300);
+        pointer("pointerup", "touch", 4, 320);
+        expect(onChange).toHaveBeenCalledTimes(3);
+
+        pointer("pointerdown", "touch", 5, 300);
+        pointer("pointerdown", "touch", 6, 320);
+        pointer("pointermove", "touch", 6, 380);
+        pointer("pointerup", "touch", 5, 300);
+        pointer("pointerup", "touch", 6, 380);
+        expect(onChange).toHaveBeenCalledTimes(3);
+    });
+
     function swipe(type: string, pointerId: number, y: number) {
         pointer("pointerdown", type, pointerId, y);
         pointer("pointermove", type, pointerId, y + 20);

@@ -1,11 +1,14 @@
 import "./Handwriting.css";
 
 import clsx from "clsx";
+import type { TargetedKeyboardEvent } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
 import { isIOS } from "../../../services/utils";
 import ColorPicker from "../../react/ColorPicker";
+import type { DropdownHandle } from "../../react/Dropdown";
+import { FormDropdownSubmenu, FormListItem } from "../../react/FormList";
 import { useFullscreen } from "../../react/hooks/dom";
 import { useEditorSpacedUpdate } from "../../react/hooks/editor";
 import { useTriliumOptionBool } from "../../react/hooks/options";
@@ -15,14 +18,27 @@ import OverlayControlGroup, {
 } from "../../react/OverlayControlGroup";
 import Slider from "../../react/Slider";
 import { TypeWidgetProps } from "../type_widget";
-import { AUTO_COLOR, type InkDocument, type InkView, PAPER_STYLES, parseInkDocument } from "./ink_document";
+import { AUTO_COLOR, type InkDocument, type InkTool, type InkView, PAPER_STYLES, parseInkDocument } from "./ink_document";
 import InkSurface, { HIGHLIGHTER_WIDTH_FACTOR, type InkSurfaceState, type SurfaceTool } from "./ink_surface";
 
-const TOOLS: { tool: SurfaceTool, icon: string, title: () => string }[] = [
-    { tool: "pen", icon: "bx-pen", title: () => t("handwriting.pen") },
-    { tool: "highlighter", icon: "bx-highlight", title: () => t("handwriting.highlighter") },
-    { tool: "eraser", icon: "bx-eraser", title: () => t("handwriting.eraser") }
+const TOOLS: { tool: SurfaceTool, icon: string, title: () => string, key: string }[] = [
+    { tool: "pen", icon: "bx-pen", title: () => t("handwriting.pen"), key: "p" },
+    { tool: "highlighter", icon: "bx-highlight", title: () => t("handwriting.highlighter"), key: "h" },
+    { tool: "eraser", icon: "bx-eraser", title: () => t("handwriting.eraser"), key: "e" }
 ];
+
+interface InkSettings {
+    color: string;
+    size: number;
+}
+
+const DEFAULT_INK_SETTINGS: Record<InkTool, InkSettings> = {
+    pen: { color: AUTO_COLOR, size: 3 },
+    highlighter: { color: "#facc15", size: 3 }
+};
+const MIN_SIZE = 1;
+const MAX_SIZE = 12;
+const SIZE_STEP = 0.5;
 
 /** Whether the device has a touch screen, the only one on which fingers can draw. */
 const HAS_TOUCH = navigator.maxTouchPoints > 0;
@@ -41,9 +57,11 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     /** The note whose strokes the surface shows. */
     const shownNoteIdRef = useRef<string | undefined>(undefined);
     const [ tool, setTool ] = useState<SurfaceTool>("pen");
-    const [ color, setColor ] = useState(AUTO_COLOR);
-    const [ size, setSize ] = useState(3);
-    const [ state, setState ] = useState<InkSurfaceState>({ zoom: 1, canUndo: false, canRedo: false });
+    const [ inkSettings, setInkSettings ] = useState(DEFAULT_INK_SETTINGS);
+    const inkTool: InkTool | undefined = tool === "eraser" ? undefined : tool;
+    const { color, size } = inkSettings[inkTool ?? "pen"];
+    const settingsRef = useRef<DropdownHandle>(null);
+    const [ state, setState ] = useState<InkSurfaceState>({ zoom: 1, paper: "ruled", canUndo: false, canRedo: false });
     const isReadOnly = useEffectiveReadOnly(note, noteContext);
     const [ fingerDrawing, setFingerDrawing ] = useTriliumOptionBool("handwritingFingerDrawing");
 
@@ -114,17 +132,53 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
         surface.fingerDrawing = fingerDrawing;
     }, [ tool, color, size, isReadOnly, fingerDrawing ]);
 
-    function cyclePaper() {
-        const surface = surfaceRef.current;
-        if (!surface) return;
-        const next = (PAPER_STYLES.indexOf(surface.getPaper()) + 1) % PAPER_STYLES.length;
-        surface.setPaper(PAPER_STYLES[next]);
+    function updateInk(changes: Partial<InkSettings>) {
+        if (!inkTool) return;
+        setInkSettings((current) => ({ ...current, [inkTool]: { ...current[inkTool], ...changes } }));
+    }
+
+    /** Picks `itemTool`, or opens its settings when it is already picked. */
+    function pickTool(itemTool: SurfaceTool) {
+        if (itemTool === tool && itemTool !== "eraser") {
+            settingsRef.current?.show();
+        } else {
+            setTool(itemTool);
+        }
+    }
+
+    function onKeyDown(e: TargetedKeyboardEvent<HTMLDivElement>) {
+        if (isReadOnly) return;
+        const key = e.key.toLowerCase();
+        const modifier = e.ctrlKey || e.metaKey;
+        let handled = true;
+        if (modifier && !e.altKey && key === "z") {
+            if (e.shiftKey) surfaceRef.current?.redo();
+            else surfaceRef.current?.undo();
+        } else if (modifier && !e.altKey && !e.shiftKey && key === "y") {
+            surfaceRef.current?.redo();
+        } else if (modifier || e.altKey) {
+            handled = false;
+        } else if (e.key === "[" || e.key === "]") {
+            const step = e.key === "]" ? SIZE_STEP : -SIZE_STEP;
+            updateInk({ size: Math.min(MAX_SIZE, Math.max(MIN_SIZE, size + step)) });
+        } else {
+            const match = TOOLS.find((item) => item.key === key);
+            if (match) setTool(match.tool);
+            else handled = false;
+        }
+        if (handled) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
     }
 
     return (
         <div
             ref={setContainerEl}
             className={clsx("handwriting-container", isPageFullscreen && "handwriting-page-fullscreen")}
+            tabIndex={-1}
+            onKeyDown={onKeyDown}
+            onPointerDown={() => containerEl?.focus({ preventScroll: true })}
         >
             <div
                 ref={surfaceElRef}
@@ -134,58 +188,87 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
             />
 
             {!isReadOnly && (
-                <OverlayControlGroup placement="top-center" className="handwriting-tools">
-                    {TOOLS.map(({ tool: itemTool, icon, title }) => (
-                        <OverlayControlButton
-                            key={itemTool}
-                            title={title()}
-                            icon={icon}
-                            active={tool === itemTool}
-                            onClick={() => setTool(itemTool)}
-                        />
-                    ))}
-                    {HAS_TOUCH && (
-                        <OverlayControlButton
-                            title={t("handwriting.finger_drawing")}
-                            icon="bxs-hand-up"
-                            active={fingerDrawing}
-                            onClick={() => setFingerDrawing(!fingerDrawing)}
-                        />
-                    )}
-                    <OverlayControlDropdown title={t("handwriting.pen_settings")} icon="bx-palette" panel>
-                        <div className="handwriting-pen-settings">
-                            <ColorPicker
-                                currentValue={color === AUTO_COLOR ? null : color}
-                                onChange={(newColor) => setColor(newColor ?? AUTO_COLOR)}
+                <div className="handwriting-toolbar">
+                    <OverlayControlGroup className="handwriting-tools" titlePosition="bottom">
+                        {TOOLS.map(({ tool: itemTool, icon, title, key }) => (
+                            <OverlayControlButton
+                                key={itemTool}
+                                title={title()}
+                                icon={icon}
+                                shortcut={key.toUpperCase()}
+                                active={tool === itemTool}
+                                onClick={() => pickTool(itemTool)}
                             />
-                            <Slider
-                                title={t("handwriting.thickness")}
-                                value={size}
-                                min={1}
-                                max={12}
-                                step={0.5}
-                                onChange={setSize}
-                            />
-                        </div>
-                    </OverlayControlDropdown>
-                    <OverlayControlButton
-                        title={t("handwriting.change_paper")}
-                        icon="bx-grid"
-                        onClick={cyclePaper}
-                    />
-                    <OverlayControlButton
-                        title={t("handwriting.undo")}
-                        icon="bx-undo"
-                        disabled={!state.canUndo}
-                        onClick={() => surfaceRef.current?.undo()}
-                    />
-                    <OverlayControlButton
-                        title={t("handwriting.redo")}
-                        icon="bx-redo"
-                        disabled={!state.canRedo}
-                        onClick={() => surfaceRef.current?.redo()}
-                    />
-                </OverlayControlGroup>
+                        ))}
+                        {inkTool && (
+                            <OverlayControlDropdown
+                                title={t("handwriting.pen_settings")}
+                                face={<span className="handwriting-swatch" style={getSwatchStyle(color, size)} />}
+                                dropdownRef={settingsRef}
+                                panel
+                            >
+                                <div className="handwriting-pen-settings">
+                                    <ColorPicker
+                                        currentValue={color === AUTO_COLOR ? null : color}
+                                        onChange={(newColor) => updateInk({ color: newColor ?? AUTO_COLOR })}
+                                    />
+                                    <Slider
+                                        title={t("handwriting.thickness")}
+                                        value={size}
+                                        min={MIN_SIZE}
+                                        max={MAX_SIZE}
+                                        step={SIZE_STEP}
+                                        onChange={(newSize) => updateInk({ size: newSize })}
+                                    />
+                                </div>
+                            </OverlayControlDropdown>
+                        )}
+                    </OverlayControlGroup>
+
+                    <OverlayControlGroup titlePosition="bottom">
+                        <OverlayControlButton
+                            title={t("handwriting.undo")}
+                            icon="bx-undo"
+                            shortcut="CommandOrControl+Z"
+                            disabled={!state.canUndo}
+                            onClick={() => surfaceRef.current?.undo()}
+                        />
+                        <OverlayControlButton
+                            title={t("handwriting.redo")}
+                            icon="bx-redo"
+                            shortcut="CommandOrControl+Shift+Z"
+                            disabled={!state.canRedo}
+                            onClick={() => surfaceRef.current?.redo()}
+                        />
+                    </OverlayControlGroup>
+
+                    <OverlayControlGroup titlePosition="bottom">
+                        <OverlayControlDropdown title={t("common.more_actions")} icon="bx-dots-horizontal-rounded">
+                            <FormDropdownSubmenu icon="bx bx-grid" title={t("handwriting.paper")}>
+                                {PAPER_STYLES.map((paper) => (
+                                    <FormListItem
+                                        key={paper}
+                                        checkable
+                                        checked={state.paper === paper}
+                                        onClick={() => surfaceRef.current?.setPaper(paper)}
+                                    >
+                                        {t(`handwriting.paper_${paper}`)}
+                                    </FormListItem>
+                                ))}
+                            </FormDropdownSubmenu>
+                            {HAS_TOUCH && (
+                                <FormListItem
+                                    icon="bx bxs-hand-up"
+                                    checkable
+                                    checked={fingerDrawing}
+                                    onClick={() => setFingerDrawing(!fingerDrawing)}
+                                >
+                                    {t("handwriting.finger_drawing")}
+                                </FormListItem>
+                            )}
+                        </OverlayControlDropdown>
+                    </OverlayControlGroup>
+                </div>
             )}
 
             <OverlayControlGroup placement="bottom-end" className="handwriting-zoom">
@@ -206,11 +289,15 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     );
 }
 
-/**
- * Shows the note fullscreen. On iOS and iPadOS, the note fills the page instead of the screen:
- * Safari closes an element's fullscreen on a downward drag, which panning makes all the time.
- * Escape or the button leaves either mode, and so does opening another note.
- */
+/** A dot of the ink's color, as thick as its line, for the button that opens its settings. */
+function getSwatchStyle(color: string, size: number) {
+    const diameter = Math.round(6 + size * 1.2);
+    return {
+        "--swatch-color": color === AUTO_COLOR ? "var(--main-text-color)" : color,
+        "--swatch-size": `${diameter}px`
+    };
+}
+
 /** Cursors browsers show reliably are at most 128 px wide; this leaves room for the outline. */
 const MAX_CURSOR_DIAMETER = 120;
 const MIN_CURSOR_DIAMETER = 4;
@@ -232,6 +319,11 @@ function getInkCursor(tool: SurfaceTool, size: number, zoom: number) {
     return `url("data:image/svg+xml,${encodeURIComponent(svg)}") ${center} ${center}, crosshair`;
 }
 
+/**
+ * Shows the note fullscreen. On iOS and iPadOS, the note fills the page instead of the screen:
+ * Safari closes an element's fullscreen on a downward drag, which panning makes all the time.
+ * Escape or the button leaves either mode, and so does opening another note.
+ */
 function useNoteFullscreen(containerEl: HTMLElement | null, noteId: string | undefined): [ boolean, boolean, () => void ] {
     const [ isScreenFullscreen, toggleScreenFullscreen ] = useFullscreen(containerEl);
     const [ isPageFullscreen, setPageFullscreen ] = useState(false);

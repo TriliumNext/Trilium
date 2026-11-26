@@ -42,15 +42,41 @@
         }
     }
 
-    .handwriting-tools,
+    &:focus {
+        outline: none;
+    }
+
+    .handwriting-toolbar {
+        --handwriting-toolbar-top: 12px;
+
+        position: absolute;
+        top: var(--handwriting-toolbar-top);
+        left: 50%;
+        z-index: 1;
+        display: flex;
+        gap: 8px;
+        max-width: calc(100% - 24px);
+        transform: translateX(-50%);
+    }
+
+    .handwriting-swatch {
+        display: block;
+        width: var(--swatch-size);
+        height: var(--swatch-size);
+        margin: auto;
+        border-radius: 50%;
+        background: var(--swatch-color);
+        box-shadow: 0 0 0 1px var(--main-border-color);
+    }
+
     .handwriting-zoom {
         --overlay-group-inset: 12px;
     }
 
     &:fullscreen,
     &.handwriting-page-fullscreen {
-        .handwriting-tools {
-            --overlay-group-inset-top: calc(12px + var(--safe-area-inset-top, env(safe-area-inset-top)));
+        .handwriting-toolbar {
+            --handwriting-toolbar-top: calc(12px + var(--safe-area-inset-top, env(safe-area-inset-top)));
         }
 
         .handwriting-zoom {

@@ -9,6 +9,7 @@ export type SurfaceTool = InkTool | "eraser";
 
 export interface InkSurfaceState {
     zoom: number;
+    paper: PaperStyle;
     canUndo: boolean;
     canRedo: boolean;
 }
@@ -36,6 +37,9 @@ const HIGHLIGHTER_ALPHA = 0.35;
 export const HIGHLIGHTER_WIDTH_FACTOR = 5;
 /** The bit of `PointerEvent.buttons` that a pen sets while its eraser end touches the screen. */
 const PEN_ERASER_BUTTON = 32;
+/** How long two fingers can rest on the screen, and how far they can move, for a tap that undoes. */
+const TWO_FINGER_TAP_TIME = 300;
+const TWO_FINGER_TAP_SLOP = 10;
 /** How many stroke points of the stroke being drawn are fixed onto `settledCanvas` at a time. */
 const SETTLE_CHUNK = 48;
 /**
@@ -111,7 +115,9 @@ export default class InkSurface {
     private mode: Mode = "idle";
     private activePointerId: number | undefined;
     private activePointerType: string | undefined;
-    private touches = new Map<number, { x: number, y: number }>();
+    private touches = new Map<number, { x: number, y: number, downAt: number, downX: number, downY: number }>();
+    /** When a two-finger contact started, while it can still be a tap that undoes. */
+    private twoFingerTapStart: number | undefined;
     /** Touches that were down when a pen took over, or came while it drew, until they are lifted. */
     private ignoredTouches = new Set<number>();
     private liveStroke: Stroke | undefined;
@@ -282,6 +288,7 @@ export default class InkSurface {
         this.paper = paper;
         this.cancelZoomPreview();
         this.redrawAll();
+        this.reportState();
         this.options.onChange();
     }
 
@@ -320,9 +327,13 @@ export default class InkSurface {
                 this.ignoredTouches.add(e.pointerId);
                 return;
             }
-            this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            const now = performance.now();
+            this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY, downAt: now, downX: e.clientX, downY: e.clientY });
             this.container.setPointerCapture(e.pointerId);
             if (this.touches.size === 2) {
+                const isTap = [ ...this.touches.values() ].every((touch) =>
+                    now - touch.downAt < TWO_FINGER_TAP_TIME && isWithinSlop(touch));
+                this.twoFingerTapStart = isTap ? now : undefined;
                 this.cancelGesture();
                 this.mode = "pinch";
                 this.activePointerType = "touch";
@@ -403,7 +414,12 @@ export default class InkSurface {
     private onPointerMove(e: PointerEvent) {
         if (this.ignoredTouches.has(e.pointerId)) return;
         if (e.pointerType === "touch" && this.touches.has(e.pointerId)) {
-            this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            const touch = this.touches.get(e.pointerId);
+            if (touch) {
+                touch.x = e.clientX;
+                touch.y = e.clientY;
+                if (!isWithinSlop(touch)) this.twoFingerTapStart = undefined;
+            }
         }
 
         if (this.mode === "pinch") {
@@ -442,6 +458,12 @@ export default class InkSurface {
     private onPointerEnd(e: PointerEvent) {
         if (this.ignoredTouches.delete(e.pointerId)) return;
         this.touches.delete(e.pointerId);
+        if (this.twoFingerTapStart !== undefined && this.touches.size === 0) {
+            const isTap = performance.now() - this.twoFingerTapStart < TWO_FINGER_TAP_TIME
+                && e.type !== "pointercancel";
+            this.twoFingerTapStart = undefined;
+            if (isTap && !this.readOnly) this.undo();
+        }
 
         if (this.mode === "pinch") {
             if (this.touches.size < 2) {
@@ -740,6 +762,7 @@ export default class InkSurface {
     private reportState() {
         this.options.onStateChange({
             zoom: this.zoom,
+            paper: this.paper,
             canUndo: this.undoStack.length > 0,
             canRedo: this.redoStack.length > 0
         });
@@ -946,6 +969,10 @@ export default class InkSurface {
     }
 
     //#endregion
+}
+
+function isWithinSlop(touch: { x: number, y: number, downX: number, downY: number }) {
+    return Math.hypot(touch.x - touch.downX, touch.y - touch.downY) <= TWO_FINGER_TAP_SLOP;
 }
 
 function getContext(canvas: HTMLCanvasElement, settings?: CanvasRenderingContext2DSettings) {
