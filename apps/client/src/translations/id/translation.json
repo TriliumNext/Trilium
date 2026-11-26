@@ -1773,8 +1773,6 @@
     "save_password": "Simpan kata sandi",
     "password_stored": "Kata sandi cadangan telah disimpan.",
     "password_not_stored": "Kata sandi cadangan tidak dapat disimpan.",
-    "encryption_not_disabled": "Kata sandi cadangan telah dihapus, tetapi enkripsi tidak dapat dinonaktifkan. Cadangan tidak akan dienkripsi sampai Anda mengaktifkan enkripsi kembali.",
-    "encryption_not_enabled": "Kata sandi cadangan telah disimpan, tetapi enkripsi tidak dapat diaktifkan. Cadangan tidak akan dienkripsi sampai Anda mengaktifkannya.",
     "compressed": "Dikompresi",
     "encrypted": "Terenkripsi",
     "restore_backup": "Pulihkan cadangan",

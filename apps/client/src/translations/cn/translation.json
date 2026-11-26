@@ -1728,8 +1728,6 @@
     "save_password": "保存密码",
     "password_stored": "备份密码已保存。",
     "password_not_stored": "备份密码保存失败。",
-    "encryption_not_disabled": "备份密码已移除，但加密无法关闭。在你重新开启加密之前，备份将不会被加密。",
-    "encryption_not_enabled": "备份密码已保存，但无法开启加密。在你开启加密之前，备份将不会被加密。",
     "compressed": "已压缩",
     "encrypted": "已加密",
     "backups_summary_other": "{{count}} 个备份，最近一个在 {{age}} 前。",

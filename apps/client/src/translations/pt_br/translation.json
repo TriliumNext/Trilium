@@ -1702,8 +1702,6 @@
     "save_password": "Salvar senha",
     "password_stored": "A senha do backup foi salva.",
     "password_not_stored": "A senha do backup não pôde ser salva.",
-    "encryption_not_disabled": "A senha do backup foi removida, mas a criptografia não pôde ser desativada. Os backups não serão criptografados até você ativar a criptografia novamente.",
-    "encryption_not_enabled": "A senha do backup foi salva, mas a criptografia não pôde ser ativada. Os backups não serão criptografados até você ativá-la.",
     "compressed": "Comprimido",
     "encrypted": "Criptografado"
   },

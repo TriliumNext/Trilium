@@ -445,8 +445,6 @@
     "save_password": "Salvează parola",
     "password_stored": "Parola copiilor de siguranță a fost salvată.",
     "password_not_stored": "Parola copiilor de siguranță nu a putut fi salvată.",
-    "encryption_not_disabled": "Parola copiilor de siguranță a fost eliminată, dar criptarea nu a putut fi dezactivată. Copiile nu vor fi criptate până când nu activați criptarea din nou.",
-    "encryption_not_enabled": "Parola copiilor de siguranță a fost salvată, dar criptarea nu a putut fi activată. Copiile nu vor fi criptate până când nu o activați.",
     "compressed": "Comprimată",
     "encrypted": "Criptată"
   },

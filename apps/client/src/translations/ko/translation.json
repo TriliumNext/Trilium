@@ -2158,8 +2158,6 @@
     "save_password": "비밀번호 저장",
     "password_stored": "백업 비밀번호가 저장되었습니다.",
     "password_not_stored": "백업 비밀번호를 저장할 수 없습니다.",
-    "encryption_not_disabled": "백업 비밀번호는 삭제되었지만 암호화를 끌 수 없습니다. 암호화를 다시 켜기 전까지 백업은 암호화되지 않습니다.",
-    "encryption_not_enabled": "백업 비밀번호는 저장되었지만 암호화를 켤 수 없습니다. 암호화를 켜기 전까지 백업은 암호화되지 않습니다.",
     "compressed": "압축됨",
     "encrypted": "암호화됨",
     "backups_summary_other": "백업 {{count}}개, 가장 최근 백업은 {{age}} 전",

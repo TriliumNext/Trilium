@@ -2215,8 +2215,6 @@
     "save_password": "Lưu mật khẩu",
     "password_stored": "Mật khẩu sao lưu đã được lưu.",
     "password_not_stored": "Không thể lưu mật khẩu sao lưu.",
-    "encryption_not_disabled": "Mật khẩu sao lưu đã bị xóa, nhưng không thể tắt mã hóa. Các bản sao lưu sẽ không được mã hóa cho đến khi bạn bật mã hóa lại.",
-    "encryption_not_enabled": "Mật khẩu sao lưu đã được lưu, nhưng không thể bật mã hóa. Các bản sao lưu sẽ không được mã hóa cho đến khi bạn bật nó.",
     "compressed": "Đã nén",
     "encrypted": "Đã mã hóa"
   },

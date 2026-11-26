@@ -865,8 +865,6 @@
     "save_password": "Salva password",
     "password_stored": "La password di backup è stata salvata.",
     "password_not_stored": "Impossibile salvare la password di backup.",
-    "encryption_not_disabled": "La password di backup è stata rimossa, ma non è stato possibile disattivare la crittografia. I backup non saranno crittografati finché non si riattiverà la crittografia.",
-    "encryption_not_enabled": "La password di backup è stata salvata, ma non è stato possibile attivare la crittografia. I backup non saranno crittografati finché non si attiva la crittografia.",
     "compressed": "Compresso",
     "encrypted": "Crittografato"
   },
