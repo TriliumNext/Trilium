@@ -43,6 +43,8 @@ const SETTLE_CHUNK = 48;
 const SETTLE_OVERLAP = 8;
 /** How many loaded strokes `warmSerialization()` encodes per task. */
 const WARM_BATCH = 2000;
+/** How long after the last zoom step the strokes are drawn again at the new scale, in ms. */
+const ZOOM_SETTLE_DELAY = 150;
 
 /**
  * A canvas for handwriting. Finished strokes live on one canvas and the stroke being drawn on two
@@ -80,7 +82,14 @@ export default class InkSurface {
     /** The position of the world origin on the canvas, in whole device pixels. */
     private tx = 0;
     private ty = 0;
-    private fullRedrawFrame: number | undefined;
+    /**
+     * The base canvas as it was when a zoom started, and the view it was drawn at. Until the zoom
+     * settles, each frame scales this picture instead of drawing every visible stroke again.
+     */
+    private zoomPreview: { snapshot: HTMLCanvasElement, zoom: number, tx: number, ty: number } | undefined;
+    private snapshotCanvas: HTMLCanvasElement | undefined;
+    private previewFrame: number | undefined;
+    private settleTimer: ReturnType<typeof setTimeout> | undefined;
     private autoColor = "#000";
 
     private mode: Mode = "idle";
@@ -137,7 +146,7 @@ export default class InkSurface {
     destroy() {
         this.abort.abort();
         this.resizeObserver.disconnect();
-        if (this.fullRedrawFrame !== undefined) cancelAnimationFrame(this.fullRedrawFrame);
+        this.cancelZoomPreview();
         if (this.liveFrame !== undefined) cancelAnimationFrame(this.liveFrame);
         if (this.panFrame !== undefined) cancelAnimationFrame(this.panFrame);
         clearTimeout(this.warmTimer);
@@ -157,6 +166,7 @@ export default class InkSurface {
         this.undoStack = [];
         this.redoStack = [];
         this.syncPaper();
+        this.cancelZoomPreview();
         this.redrawAll();
         this.reportState();
         this.warmSerialization(doc.strokes);
@@ -476,7 +486,7 @@ export default class InkSurface {
         this.index.add(stroke);
         this.pushHistory({ added: [ stroke ], removed: [] });
 
-        if (this.fullRedrawFrame === undefined) {
+        if (!this.zoomPreview) {
             this.applyWorldTransform(this.base);
             this.fillStroke(this.base, stroke);
         }
@@ -530,13 +540,14 @@ export default class InkSurface {
         this.applyPendingPan();
         const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, this.zoom * factor));
         if (zoom === this.zoom) return;
+        this.beginZoomPreview();
 
         const applied = zoom / this.zoom;
         this.tx = Math.round(deviceX - (deviceX - this.tx) * applied);
         this.ty = Math.round(deviceY - (deviceY - this.ty) * applied);
         this.zoom = zoom;
         this.syncPaper();
-        this.scheduleFullRedraw();
+        this.schedulePreviewFrame();
         this.redrawLiveStroke();
         this.reportState();
     }
@@ -577,7 +588,10 @@ export default class InkSurface {
         this.redrawLiveStroke();
 
         const { width, height } = this.baseCanvas;
-        if (this.fullRedrawFrame !== undefined) return;
+        if (this.zoomPreview) {
+            this.schedulePreviewFrame();
+            return;
+        }
         if (Math.abs(wholeX) >= width || Math.abs(wholeY) >= height) {
             this.redrawAll();
             return;
@@ -607,6 +621,7 @@ export default class InkSurface {
             canvas.height = height;
         }
         this.syncPaper();
+        this.cancelZoomPreview();
         this.redrawAll();
         this.redrawLiveStroke();
     }
@@ -643,12 +658,62 @@ export default class InkSurface {
 
     //#region Rendering
 
-    private scheduleFullRedraw() {
-        if (this.fullRedrawFrame !== undefined) return;
-        this.fullRedrawFrame = requestAnimationFrame(() => {
-            this.fullRedrawFrame = undefined;
-            this.redrawAll();
+    /** Keeps the base canvas as it is now, to be scaled until the zoom settles. */
+    private beginZoomPreview() {
+        clearTimeout(this.settleTimer);
+        this.settleTimer = setTimeout(() => this.settleZoom(), ZOOM_SETTLE_DELAY);
+        if (this.zoomPreview) return;
+
+        this.snapshotCanvas ??= document.createElement("canvas");
+        const snapshot = this.snapshotCanvas;
+        if (snapshot.width !== this.baseCanvas.width || snapshot.height !== this.baseCanvas.height) {
+            snapshot.width = this.baseCanvas.width;
+            snapshot.height = this.baseCanvas.height;
+        }
+        const ctx = getContext(snapshot);
+        ctx.clearRect(0, 0, snapshot.width, snapshot.height);
+        ctx.drawImage(this.baseCanvas, 0, 0);
+        this.zoomPreview = { snapshot, zoom: this.zoom, tx: this.tx, ty: this.ty };
+    }
+
+    private schedulePreviewFrame() {
+        this.previewFrame ??= requestAnimationFrame(() => {
+            this.previewFrame = undefined;
+            this.drawZoomPreview();
         });
+    }
+
+    /** Draws the snapshot of `zoomPreview` where its strokes are in the current view. */
+    private drawZoomPreview() {
+        const preview = this.zoomPreview;
+        if (!preview) return;
+
+        const scale = this.zoom / preview.zoom;
+        const { width, height } = this.baseCanvas;
+        this.base.save();
+        this.base.setTransform(1, 0, 0, 1, 0, 0);
+        this.base.clearRect(0, 0, width, height);
+        this.base.drawImage(
+            preview.snapshot,
+            this.tx - preview.tx * scale,
+            this.ty - preview.ty * scale,
+            preview.snapshot.width * scale,
+            preview.snapshot.height * scale
+        );
+        this.base.restore();
+    }
+
+    private settleZoom() {
+        this.cancelZoomPreview();
+        this.redrawAll();
+    }
+
+    private cancelZoomPreview() {
+        clearTimeout(this.settleTimer);
+        this.settleTimer = undefined;
+        if (this.previewFrame !== undefined) cancelAnimationFrame(this.previewFrame);
+        this.previewFrame = undefined;
+        this.zoomPreview = undefined;
     }
 
     private redrawAll() {
@@ -657,7 +722,7 @@ export default class InkSurface {
     }
 
     private redrawBounds(bounds: Bounds) {
-        if (this.fullRedrawFrame !== undefined) return;
+        if (this.zoomPreview) return;
 
         const scale = this.zoom * this.dpr;
         const margin = 2;
