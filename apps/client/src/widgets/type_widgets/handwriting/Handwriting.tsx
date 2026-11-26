@@ -15,7 +15,7 @@ import OverlayControlGroup, {
 } from "../../react/OverlayControlGroup";
 import Slider from "../../react/Slider";
 import { TypeWidgetProps } from "../type_widget";
-import { AUTO_COLOR, type InkDocument, PAPER_STYLES, parseInkDocument } from "./ink_document";
+import { AUTO_COLOR, type InkDocument, type InkView, PAPER_STYLES, parseInkDocument } from "./ink_document";
 import InkSurface, { HIGHLIGHTER_WIDTH_FACTOR, type InkSurfaceState, type SurfaceTool } from "./ink_surface";
 
 const TOOLS: { tool: SurfaceTool, icon: string, title: () => string }[] = [
@@ -27,12 +27,19 @@ const TOOLS: { tool: SurfaceTool, icon: string, title: () => string }[] = [
 /** Whether the device has a touch screen, the only one on which fingers can draw. */
 const HAS_TOUCH = navigator.maxTouchPoints > 0;
 
+/** The view of each note left in this session, which reopening the note shows again. */
+const sessionViews = new Map<string, InkView>();
+
 export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     const surfaceElRef = useRef<HTMLDivElement>(null);
     const [ containerEl, setContainerEl ] = useState<HTMLDivElement | null>(null);
     const [ isFullscreen, isPageFullscreen, toggleFullscreen ] = useNoteFullscreen(containerEl, note?.noteId);
     const surfaceRef = useRef<InkSurface | undefined>(undefined);
     const pendingDocRef = useRef<InkDocument | undefined>(undefined);
+    const noteIdRef = useRef(note?.noteId);
+    noteIdRef.current = note?.noteId;
+    /** The note whose strokes the surface shows. */
+    const shownNoteIdRef = useRef<string | undefined>(undefined);
     const [ tool, setTool ] = useState<SurfaceTool>("pen");
     const [ color, setColor ] = useState(AUTO_COLOR);
     const [ size, setSize ] = useState(3);
@@ -51,12 +58,27 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
         onContentChange(content) {
             const doc = parseInkDocument(content);
             if (surfaceRef.current) {
-                surfaceRef.current.load(doc);
+                showDocument(surfaceRef.current, doc);
             } else {
                 pendingDocRef.current = doc;
             }
         }
     });
+
+    /**
+     * Loads `doc`. A note opened anew shows the view it was left at in this session, else the one
+     * it was saved at, else all its content; a note changed elsewhere keeps the view it has.
+     */
+    function showDocument(surface: InkSurface, doc: InkDocument) {
+        const noteId = noteIdRef.current;
+        const previous = shownNoteIdRef.current;
+        if (previous && previous !== noteId) sessionViews.set(previous, surface.getCenterView());
+        surface.load(doc);
+        if (!previous || previous !== noteId) {
+            shownNoteIdRef.current = noteId;
+            surface.showView((noteId && sessionViews.get(noteId)) || doc.view || "content");
+        }
+    }
 
     useEffect(() => {
         if (!surfaceElRef.current) return;
@@ -71,10 +93,12 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
         });
         surfaceRef.current = surface;
         if (pendingDocRef.current) {
-            surface.load(pendingDocRef.current);
+            showDocument(surface, pendingDocRef.current);
             pendingDocRef.current = undefined;
         }
         return () => {
+            if (shownNoteIdRef.current) sessionViews.set(shownNoteIdRef.current, surface.getCenterView());
+            shownNoteIdRef.current = undefined;
             surface.destroy();
             surfaceRef.current = undefined;
         };
@@ -170,6 +194,11 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                     onZoomIn={() => surfaceRef.current?.zoomBy(1.25)}
                     onZoomOut={() => surfaceRef.current?.zoomBy(0.8)}
                     onReset={() => surfaceRef.current?.resetZoom()}
+                />
+                <OverlayControlButton
+                    title={t("handwriting.zoom_to_fit")}
+                    icon="bx-target-lock"
+                    onClick={() => surfaceRef.current?.showView("content")}
                 />
                 <OverlayFullscreenButton isFullscreen={isFullscreen} onToggle={toggleFullscreen} />
             </OverlayControlGroup>

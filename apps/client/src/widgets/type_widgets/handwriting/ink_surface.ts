@@ -1,7 +1,7 @@
 import { isIOS } from "../../../services/utils";
 import {
     AUTO_COLOR, type Bounds, createStroke, getShortStrokeOutline, getStrokeOutline, type InkDocument,
-    type InkTool, outlineStrokePoints, type PaperStyle, serializeInkDocument, serializeStroke,
+    type InkTool, type InkView, outlineStrokePoints, type PaperStyle, serializeInkDocument, serializeStroke,
     type Stroke, StrokeBuilder, strokeHitsSegment, StrokeIndex
 } from "./ink_document";
 
@@ -50,6 +50,8 @@ const ZOOM_SETTLE_DELAY = 150;
 /** The spacing of the paper's lines and of its grid, in world units. */
 const RULED_STEP = 32;
 const GRID_STEP = 24;
+/** The room left around the content when the view fits it, in CSS pixels. */
+const FIT_MARGIN = 32;
 /** The opacity of the paper's lines over the background, in the text color. */
 const PAPER_LINE_ALPHA = 0.16;
 
@@ -93,6 +95,8 @@ export default class InkSurface {
     /** The position of the world origin on the canvas, in whole device pixels. */
     private tx = 0;
     private ty = 0;
+    /** The view that `showView()` was asked for while the container had no size. */
+    private pendingView: InkView | "content" | undefined;
     /**
      * The base canvas as it was when a zoom started, and the view it was drawn at. Until the zoom
      * settles, each frame scales this picture instead of drawing every visible stroke again.
@@ -202,7 +206,66 @@ export default class InkSurface {
     }
 
     serialize() {
-        return serializeInkDocument(this.paper, this.strokes);
+        return serializeInkDocument(this.paper, this.strokes, this.getCenterView());
+    }
+
+    /** The world point at the middle of the container, and the zoom. */
+    getCenterView(): InkView {
+        if (this.pendingView && this.pendingView !== "content") return this.pendingView;
+        const scale = this.zoom * this.dpr;
+        return {
+            x: (this.baseCanvas.width / 2 - this.tx) / scale,
+            y: (this.baseCanvas.height / 2 - this.ty) / scale,
+            zoom: this.zoom
+        };
+    }
+
+    /**
+     * Shows `view` around the middle of the container, or with `"content"`, all the strokes at
+     * 100% or less. An empty note shows its origin at the top left, at 100%.
+     */
+    showView(view: InkView | "content") {
+        if (this.baseCanvas.width <= 1 || this.baseCanvas.height <= 1) {
+            this.pendingView = view;
+            return;
+        }
+        this.pendingView = undefined;
+        const target = view === "content" ? this.getContentView() : view;
+        const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, target.zoom));
+        const scale = zoom * this.dpr;
+        if (this.panFrame !== undefined) cancelAnimationFrame(this.panFrame);
+        this.panFrame = undefined;
+        this.pendingPanX = 0;
+        this.pendingPanY = 0;
+        this.panRemainderX = 0;
+        this.panRemainderY = 0;
+        this.zoom = zoom;
+        this.tx = Math.round(this.baseCanvas.width / 2 - target.x * scale);
+        this.ty = Math.round(this.baseCanvas.height / 2 - target.y * scale);
+        this.cancelZoomPreview();
+        this.redrawAll();
+        this.redrawLiveStroke();
+        this.reportState();
+    }
+
+    private getContentView(): InkView {
+        const width = this.baseCanvas.width / this.dpr;
+        const height = this.baseCanvas.height / this.dpr;
+        const bounds = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
+        for (const stroke of this.strokes) {
+            bounds.minX = Math.min(bounds.minX, stroke.bounds.minX);
+            bounds.minY = Math.min(bounds.minY, stroke.bounds.minY);
+            bounds.maxX = Math.max(bounds.maxX, stroke.bounds.maxX);
+            bounds.maxY = Math.max(bounds.maxY, stroke.bounds.maxY);
+        }
+        if (!this.strokes.size) return { x: width / 2, y: height / 2, zoom: 1 };
+
+        const zoom = Math.min(
+            1,
+            Math.max(1, width - 2 * FIT_MARGIN) / (bounds.maxX - bounds.minX),
+            Math.max(1, height - 2 * FIT_MARGIN) / (bounds.maxY - bounds.minY)
+        );
+        return { x: (bounds.minX + bounds.maxX) / 2, y: (bounds.minY + bounds.maxY) / 2, zoom };
     }
 
     /** The zoom, and the position of the world origin in the container, in CSS pixels. */
@@ -666,6 +729,10 @@ export default class InkSurface {
             canvas.height = height;
         }
         this.cancelZoomPreview();
+        if (this.pendingView && width > 1 && height > 1) {
+            this.showView(this.pendingView);
+            return;
+        }
         this.redrawAll();
         this.redrawLiveStroke();
     }

@@ -35,6 +35,15 @@ export interface Stroke {
 export interface InkDocument {
     paper: PaperStyle;
     strokes: Stroke[];
+    /** The view the note was last saved at. */
+    view?: InkView;
+}
+
+/** A view of a note: the world point at the middle of the screen, and the zoom. */
+export interface InkView {
+    x: number;
+    y: number;
+    zoom: number;
 }
 
 interface SerializedStroke {
@@ -55,6 +64,7 @@ interface SerializedDocument {
     version: 1;
     paper: PaperStyle;
     strokes: SerializedStroke[];
+    view?: InkView;
 }
 
 const POSITION_SCALE = 10;
@@ -70,13 +80,16 @@ export function createStroke(
  * Returns the saved document. It joins the JSON of each stroke, which `serializeStroke()` computes
  * once per stroke, so saving a large document does not encode every point again.
  */
-export function serializeInkDocument(paper: PaperStyle, strokes: Iterable<Stroke>): string {
+export function serializeInkDocument(paper: PaperStyle, strokes: Iterable<Stroke>, view?: InkView): string {
     const sorted = [ ...strokes ].sort((a, b) => a.order - b.order);
     const parts: string[] = [];
     for (const stroke of sorted) {
         parts.push(serializeStroke(stroke));
     }
-    return `{"version":1,"paper":${JSON.stringify(paper)},"strokes":[${parts.join(",")}]}`;
+    const savedView = view
+        ? `,"view":${JSON.stringify({ x: round(view.x, 10), y: round(view.y, 10), zoom: round(view.zoom, 1000) })}`
+        : "";
+    return `{"version":1,"paper":${JSON.stringify(paper)}${savedView},"strokes":[${parts.join(",")}]}`;
 }
 
 /** Returns the JSON of `stroke` in the saved document, computed on the first call. */
@@ -120,7 +133,23 @@ export function parseInkDocument(content: string | null | undefined): InkDocumen
     }
 
     const paper = PAPER_STYLES.includes(raw.paper as PaperStyle) ? raw.paper as PaperStyle : "ruled";
-    return { paper, strokes };
+    return { paper, strokes, view: parseView(raw.view) };
+}
+
+function parseView(view: unknown): InkView | undefined {
+    if (!view || typeof view !== "object") return undefined;
+    const { x, y, zoom } = view as Partial<Record<keyof InkView, unknown>>;
+    if (!isFiniteNumber(x) || !isFiniteNumber(y) || !isFiniteNumber(zoom) || zoom <= 0) return undefined;
+    return { x, y, zoom };
+}
+
+function isFiniteNumber(value: unknown): value is number {
+    return typeof value === "number" && Number.isFinite(value);
+}
+
+/** Rounds `value` to a multiple of `1 / precision`. */
+function round(value: number, precision: number) {
+    return Math.round(value * precision) / precision;
 }
 
 function encodePoints(points: number[]) {

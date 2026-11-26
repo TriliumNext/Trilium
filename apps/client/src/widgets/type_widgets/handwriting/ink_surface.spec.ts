@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { AUTO_COLOR, createStroke } from "./ink_document";
 import InkSurface from "./ink_surface";
 
 describe("ink surface input", () => {
@@ -85,6 +86,39 @@ describe("ink surface input", () => {
         expect(zoomed).toContain(269);
         // The preview frame and the settled redraw both draw them, at the same positions.
         expect(new Set(zoomed).size).toBe(14);
+    });
+
+    it("shows a view, or the whole content, around the middle of the container", () => {
+        surface.destroy();
+        vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 400, 300));
+        surface = new InkSurface(container, { onChange, onGestureStart: () => {}, onStateChange: () => {} });
+
+        surface.showView({ x: 10, y: 20, zoom: 2 });
+        expect(surface.getView()).toEqual({ zoom: 2, x: 180, y: 110 });
+        expect(surface.getCenterView()).toEqual({ x: 10, y: 20, zoom: 2 });
+
+        // An empty note shows its origin at the top left, at 100%.
+        surface.showView("content");
+        expect(surface.getView()).toEqual({ zoom: 1, x: 0, y: 0 });
+
+        // The stroke and its width of 4 on each side span 1008 by 508, which fit at 1/3 with
+        // 32 px to spare on each side of the width.
+        const stroke = createStroke({
+            tool: "pen", color: AUTO_COLOR, size: 4, simulatePressure: false,
+            points: [ 1000, 1000, 0.5, 2000, 1500, 0.5 ], order: 0
+        });
+        surface.load({ paper: "ruled", strokes: [ stroke ] });
+        surface.showView("content");
+        // The origin lies on a whole pixel, which is 3 world units at this zoom.
+        const view = surface.getCenterView();
+        expect(Math.abs(view.x - 1500)).toBeLessThanOrEqual(1.5);
+        expect(Math.abs(view.y - 1250)).toBeLessThanOrEqual(1.5);
+        expect(view.zoom).toBeCloseTo(336 / 1008);
+
+        // A small drawing is not enlarged.
+        surface.load({ paper: "ruled", strokes: [ createStroke({ ...stroke, points: [ 0, 0, 0.5, 10, 10, 0.5 ] }) ] });
+        surface.showView("content");
+        expect(surface.getView().zoom).toBe(1);
     });
 
     function swipe(type: string, pointerId: number, y: number) {

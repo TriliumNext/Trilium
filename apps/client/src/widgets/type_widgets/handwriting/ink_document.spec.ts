@@ -68,6 +68,15 @@ describe("ink document", () => {
         expect(serializeInkDocument("dots", strokes)).toBe(content);
     });
 
+    it("saves the view rounded, and reads it back only when it is whole", () => {
+        const content = serializeInkDocument("ruled", [], { x: 12.345, y: -6.789, zoom: 0.83333 });
+        expect(parseInkDocument(content).view).toEqual({ x: 12.3, y: -6.8, zoom: 0.833 });
+        expect(parseInkDocument(serializeInkDocument("ruled", [])).view).toBeUndefined();
+        for (const view of [ { x: 1, y: 2 }, { x: 1, y: "2", zoom: 1 }, { x: 1, y: 2, zoom: 0 }, [] ]) {
+            expect(parseInkDocument(JSON.stringify({ strokes: [], view })).view).toBeUndefined();
+        }
+    });
+
     it("falls back to an empty ruled page for missing or broken content", () => {
         for (const content of [ "", null, "{", "{}", JSON.stringify({ strokes: [ { p: [ 1 ] } ] }) ]) {
             expect(parseInkDocument(content)).toEqual({ paper: "ruled", strokes: [] });

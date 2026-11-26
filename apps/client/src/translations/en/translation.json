@@ -4373,7 +4373,8 @@
     "thickness": "Thickness",
     "change_paper": "Change paper",
     "undo": "Undo",
-    "redo": "Redo"
+    "redo": "Redo",
+    "zoom_to_fit": "Zoom to fit"
   },
   "mind-map": {
     "addChild": "Add child",
