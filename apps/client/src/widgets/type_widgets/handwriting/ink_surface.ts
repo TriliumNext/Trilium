@@ -5,7 +5,9 @@ import {
     PAGE_GAP, PAGE_HEIGHT, PAGE_WIDTH, type PaperStyle, serializeInkDocument, serializeStroke,
     type Stroke, StrokeBuilder, strokeHitsSegment, StrokeIndex
 } from "./ink_document";
-import { lineToPoints, polygonToPoints, recognizeLine, recognizeRectangle } from "./ink_shapes";
+import {
+    lineToPoints, polygonToPoints, recognizeLine, recognizeRectangle, recognizeTriangle
+} from "./ink_shapes";
 
 export type SurfaceTool = InkTool | "eraser";
 
@@ -46,7 +48,7 @@ const TWO_FINGER_TAP_SLOP = 10;
 /** How long the pointer rests at the end of a stroke, and how far it can move, to make a shape of it. */
 const HOLD_TIME = 500;
 const HOLD_SLOP = 5;
-/** The shortest line and the shortest side of a rectangle that a hold makes, in CSS pixels. */
+/** The shortest line and the shortest side of a shape that a hold makes, in CSS pixels. */
 const MIN_SHAPE_SIZE = 20;
 /** How many stroke points of the stroke being drawn are fixed onto `settledCanvas` at a time. */
 const SETTLE_CHUNK = 48;
@@ -623,16 +625,18 @@ export default class InkSurface {
     }
 
     /**
-     * Makes a straight line or a rectangle of the stroke being drawn when it was drawn as one. The
-     * shape has one width, from the mean pressure of the stroke. The end of a line then follows
-     * the pointer.
+     * Makes a straight line, a rectangle or a triangle of the stroke being drawn when it was drawn
+     * as one. The shape has one width, from the mean pressure of the stroke. The end of a line
+     * then follows the pointer.
      */
     private snapLiveStroke() {
         const stroke = this.liveStroke;
         if (!stroke || this.snapped) return;
         const minSize = MIN_SHAPE_SIZE / this.zoom;
         const line = recognizeLine(stroke.points, minSize);
-        const corners = line ? undefined : recognizeRectangle(stroke.points, minSize);
+        const corners = line
+            ? undefined
+            : recognizeRectangle(stroke.points, minSize) ?? recognizeTriangle(stroke.points, minSize);
         if (!line && !corners) return;
 
         const strokePoints = this.liveBuilder?.points ?? [];

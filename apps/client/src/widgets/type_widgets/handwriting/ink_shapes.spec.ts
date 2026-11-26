@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { buildStrokePoints, parseInkDocument } from "./ink_document";
-import { lineToPoints, polygonToPoints, recognizeLine, recognizeRectangle } from "./ink_shapes";
+import {
+    lineToPoints, polygonToPoints, recognizeLine, recognizeRectangle, recognizeTriangle
+} from "./ink_shapes";
 
 describe("line recognition", () => {
     /** Flat triples through `[x, y]` pairs, at a pressure of 0.5. */
@@ -104,6 +106,38 @@ describe("rectangle recognition", () => {
         expect(recognizeRectangle(outline(box).slice(0, -33 * 3), 20)).toBeUndefined();
         expect(recognizeRectangle([ ...outline(box), ...outline(box) ], 20)).toBeUndefined();
         expect(recognizeRectangle(outline([ [ 0, 0 ], [ 15, 0 ], [ 15, 15 ], [ 0, 15 ] ]), 20)).toBeUndefined();
+    });
+
+    it("takes a stroke around a triangle as that triangle, with a side along an axis if close", () => {
+        const triangle = [ [ 0, 0 ], [ 200, 0 ], [ 100, 150 ] ];
+        expect(rounded(recognizeTriangle(outline(triangle, 2), 20)))
+            .toEqual([ [ -2, -2 ], [ 98, 148 ], [ 198, -2 ] ]);
+
+        // Drawn 6 degrees off, the base is level again, and as long.
+        const leveled = rounded(recognizeTriangle(outline(triangle, 0, 6), 20)) ?? [];
+        expect(leveled[0][1]).toBe(leveled[2][1]);
+        expect(leveled[2][0] - leveled[0][0]).toBe(200);
+        expect(leveled[1][1] - leveled[0][1]).toBe(150);
+
+        // With every side more than 10 degrees off the axes, the corners stay where drawn.
+        const equilateral = [ [ 0, 0 ], [ 200, 0 ], [ 100, 173 ] ];
+        expect(rounded(recognizeTriangle(outline(equilateral, 0, 15), 20)))
+            .toEqual(rounded([ [ 0, 0 ], [ 193.2, 51.8 ], [ 51.8, 193 ] ]));
+    });
+
+    it("leaves a stroke that is not a triangle as it is", () => {
+        const circle: number[] = [];
+        for (let angle = 0; angle <= 360; angle += 10) {
+            circle.push(100 + 80 * Math.cos(angle * Math.PI / 180), 100 + 80 * Math.sin(angle * Math.PI / 180), 0.5);
+        }
+        expect(recognizeTriangle(circle, 20)).toBeUndefined();
+        // A rectangle, two sides of a triangle, a sliver and a small triangle.
+        const triangle = outline([ [ 0, 0 ], [ 200, 0 ], [ 100, 150 ] ]);
+        expect(recognizeTriangle(outline(box), 20)).toBeUndefined();
+        expect(recognizeTriangle(triangle.slice(0, -19 * 3), 20)).toBeUndefined();
+        expect(recognizeTriangle(outline([ [ 0, 0 ], [ 200, 0 ], [ 100, 12 ] ]), 20)).toBeUndefined();
+        expect(recognizeTriangle(outline([ [ 0, 0 ], [ 15, 0 ], [ 8, 12 ] ]), 20)).toBeUndefined();
+        expect(recognizeTriangle(triangle, 20)).toBeDefined();
     });
 
     it("runs a stroke of one pressure around a polygon, close to its corners once smoothed", () => {

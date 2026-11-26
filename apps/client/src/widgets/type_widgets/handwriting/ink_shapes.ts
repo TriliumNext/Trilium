@@ -59,6 +59,10 @@ const AXIS_SNAP = 15;
 const SIDE_DEVIATION = 0.14;
 /** How far from a right angle each corner of a stroke drawn as a rectangle can be, in degrees. */
 const CORNER_SKEW = 25;
+/** The smallest corner of a stroke drawn as a triangle, in degrees. */
+const MIN_TRIANGLE_ANGLE = 15;
+/** How close to an axis, in degrees, a side of a triangle is drawn to be laid along it. */
+const TRIANGLE_AXIS_SNAP = 10;
 /** The shortest and the longest path of a stroke around a shape, as a share of its perimeter. */
 const MIN_ROUND = 0.75;
 const MAX_ROUND = 1.35;
@@ -79,33 +83,13 @@ export function recognizeRectangle(points: number[], minSize: number): number[][
     const corners = findCorners(points);
     if (!corners) return undefined;
 
-    const sides = corners.map(([ x, y ], index) => {
-        const [ nextX, nextY ] = corners[(index + 1) % 4];
-        return { x: nextX - x, y: nextY - y, length: Math.hypot(nextX - x, nextY - y) };
-    });
+    const sides = getSides(corners);
     const width = (sides[0].length + sides[2].length) / 2;
     const height = (sides[1].length + sides[3].length) / 2;
     const shortSide = Math.min(width, height);
     if (shortSide < minSize || Math.min(...sides.map((side) => side.length)) === 0) return undefined;
-    for (const [ index, side ] of sides.entries()) {
-        const previous = sides[(index + 3) % 4];
-        const cosine = -(side.x * previous.x + side.y * previous.y) / (side.length * previous.length);
-        if (Math.abs(Math.acos(cosine) * 180 / Math.PI - 90) > CORNER_SKEW) return undefined;
-    }
-
-    const tolerance = (SIDE_DEVIATION * shortSide) ** 2;
-    let pathLength = 0;
-    for (let i = 0; i + 2 < points.length; i += 3) {
-        const deviation = Math.min(...corners.map(([ x, y ], index) => {
-            const [ nextX, nextY ] = corners[(index + 1) % 4];
-            return pointToSegmentSquared(points[i], points[i + 1], x, y, nextX, nextY);
-        }));
-        if (deviation > tolerance) return undefined;
-        if (i) pathLength += Math.hypot(points[i] - points[i - 3], points[i + 1] - points[i - 2]);
-    }
-    const perimeter = 2 * (width + height);
-    if (pathLength < MIN_ROUND * perimeter || pathLength > MAX_ROUND * perimeter) return undefined;
-    if (getClosingGap(points) > CLOSING_GAP * (width + height)) return undefined;
+    if (getCornerAngles(sides).some((angle) => Math.abs(angle - 90) > CORNER_SKEW)) return undefined;
+    if (!goesAround(points, corners, sides, SIDE_DEVIATION * shortSide)) return undefined;
 
     // The second and fourth sides, turned back by a quarter, point along the first and third.
     const alongX = sides[0].x - sides[2].x + sides[1].y - sides[3].y;
@@ -123,7 +107,115 @@ export function recognizeRectangle(points: number[], minSize: number): number[][
     ]);
 }
 
+/**
+ * Returns the three corners of the triangle that a stroke was drawn as, from its flat
+ * `x, y, pressure` triples. The stroke goes once around three corners of at least
+ * `MIN_TRIANGLE_ANGLE` degrees each, close to the sides between them, and ends where it started.
+ * The triangle keeps the corners drawn, turned around their middle so that the side nearest to an
+ * axis lies along it when it is within `TRIANGLE_AXIS_SNAP` degrees of it.
+ */
+export function recognizeTriangle(points: number[], minSize: number): number[][] | undefined {
+    if (points.length < 12) return undefined;
+    const corners = findTriangleCorners(points);
+    const sides = getSides(corners);
+    const shortSide = Math.min(...sides.map((side) => side.length));
+    if (shortSide < minSize) return undefined;
+    if (getCornerAngles(sides).some((angle) => !(angle >= MIN_TRIANGLE_ANGLE))) return undefined;
+    if (!goesAround(points, corners, sides, SIDE_DEVIATION * shortSide)) return undefined;
+
+    let turn = Infinity;
+    for (const side of sides) {
+        const angle = Math.atan2(side.y, side.x) * 180 / Math.PI;
+        const offAxis = angle - Math.round(angle / 90) * 90;
+        if (Math.abs(offAxis) < Math.abs(turn)) turn = offAxis;
+    }
+    if (Math.abs(turn) > TRIANGLE_AXIS_SNAP) return corners;
+
+    const cos = Math.cos(-turn * Math.PI / 180);
+    const sin = Math.sin(-turn * Math.PI / 180);
+    const centerX = (corners[0][0] + corners[1][0] + corners[2][0]) / 3;
+    const centerY = (corners[0][1] + corners[1][1] + corners[2][1]) / 3;
+    return corners.map(([ x, y ]) => [
+        centerX + (x - centerX) * cos - (y - centerY) * sin,
+        centerY + (x - centerX) * sin + (y - centerY) * cos
+    ]);
+}
+
 const CORNER_SIGNS = [ [ -1, -1 ], [ 1, -1 ], [ 1, 1 ], [ -1, 1 ] ];
+
+type Side = { x: number, y: number, length: number };
+
+/** The vector and the length of the side from each corner of a closed polygon to the next. */
+function getSides(corners: number[][]): Side[] {
+    return corners.map(([ x, y ], index) => {
+        const [ nextX, nextY ] = corners[(index + 1) % corners.length];
+        return { x: nextX - x, y: nextY - y, length: Math.hypot(nextX - x, nextY - y) };
+    });
+}
+
+/** The angle inside each corner of a polygon, in degrees, from the `sides` that leave them. */
+function getCornerAngles(sides: Side[]) {
+    return sides.map((side, index) => {
+        const previous = sides[(index + sides.length - 1) % sides.length];
+        const cosine = -(side.x * previous.x + side.y * previous.y) / (side.length * previous.length);
+        return Math.acos(Math.max(-1, Math.min(1, cosine))) * 180 / Math.PI;
+    });
+}
+
+/**
+ * Whether a stroke goes once around the polygon of `corners`, within `tolerance` of its sides, and
+ * ends where it started.
+ */
+function goesAround(points: number[], corners: number[][], sides: Side[], tolerance: number) {
+    let pathLength = 0;
+    for (let i = 0; i + 2 < points.length; i += 3) {
+        const deviation = Math.min(...corners.map(([ x, y ], index) => {
+            const [ nextX, nextY ] = corners[(index + 1) % corners.length];
+            return pointToSegmentSquared(points[i], points[i + 1], x, y, nextX, nextY);
+        }));
+        if (deviation > tolerance ** 2) return false;
+        if (i) pathLength += Math.hypot(points[i] - points[i - 3], points[i + 1] - points[i - 2]);
+    }
+    let perimeter = 0;
+    for (const side of sides) {
+        perimeter += side.length;
+    }
+    return pathLength >= MIN_ROUND * perimeter && pathLength <= MAX_ROUND * perimeter
+        && getClosingGap(points) <= CLOSING_GAP * perimeter / 2;
+}
+
+/**
+ * Returns the three points of a stroke that lie furthest apart: the one furthest from the middle
+ * of the stroke, the one furthest from that point, and the one furthest from the line through
+ * both. For a stroke around a triangle, these are its corners.
+ */
+function findTriangleCorners(points: number[]): number[][] {
+    const count = points.length / 3;
+    let middleX = 0;
+    let middleY = 0;
+    for (let i = 0; i + 2 < points.length; i += 3) {
+        middleX += points[i] / count;
+        middleY += points[i + 1] / count;
+    }
+    const furthest = (distance: (x: number, y: number) => number) => {
+        let best = [ points[0], points[1] ];
+        let bestDistance = -Infinity;
+        for (let i = 0; i + 2 < points.length; i += 3) {
+            const candidate = distance(points[i], points[i + 1]);
+            if (candidate > bestDistance) {
+                bestDistance = candidate;
+                best = [ points[i], points[i + 1] ];
+            }
+        }
+        return best;
+    };
+
+    const first = furthest((x, y) => Math.hypot(x - middleX, y - middleY));
+    const second = furthest((x, y) => Math.hypot(x - first[0], y - first[1]));
+    const third = furthest((x, y) =>
+        Math.abs((x - first[0]) * (second[1] - first[1]) - (y - first[1]) * (second[0] - first[0])));
+    return [ first, second, third ];
+}
 
 /**
  * Returns the four points of a stroke that reach furthest into the corners of the smallest box
@@ -153,6 +245,7 @@ function findCorners(points: number[]): number[][] | undefined {
     }
     return corners;
 }
+
 /**
  * Returns the flat `x, y, pressure` triples of a stroke around the closed polygon of `corners`, at
  * one pressure. `StrokeBuilder` moves each point only part of the way to the next, which rounds a

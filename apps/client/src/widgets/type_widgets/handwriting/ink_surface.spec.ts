@@ -242,6 +242,16 @@ describe("ink surface input", () => {
         }
         surface.undo();
         expect(drawn()).toEqual([ rectangle.flat() ]);
+        surface.undo();
+
+        // A stroke around a triangle becomes one the same way.
+        const triangle = [ [ 50, 100 ], [ 150, 103 ], [ 250, 100 ], [ 203, 180 ], [ 150, 260 ], [ 97, 180 ], [ 50, 100 ] ];
+        draw(...triangle);
+        vi.advanceTimersByTime(600);
+        pointer("pointerup", "pen", 1, 100, 50);
+        expect(drawn()[0].length).toBeGreaterThan(triangle.length * 2);
+        surface.undo();
+        expect(drawn()).toEqual([ triangle.flat() ]);
     });
 
     function swipe(type: string, pointerId: number, y: number) {
