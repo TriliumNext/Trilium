@@ -273,6 +273,7 @@
     "scroll_rail_highlights_description": "Show coloured marks on the scrollbar so you can see where text is highlighted in the note."
   },
   "handwriting": {
-    "pen_settings": "Colour and thickness"
+    "color_text": "Text colour",
+    "color_custom": "Custom colour..."
   }
 }

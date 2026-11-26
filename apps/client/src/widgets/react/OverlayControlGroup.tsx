@@ -158,13 +158,11 @@ export function OverlayControlButton(props: OverlayControlButtonProps) {
     );
 }
 
-interface OverlayControlDropdownProps extends Pick<DropdownProps, "children" | "disabled" | "mobileBottomSheet" | "dropdownRef"> {
+interface OverlayControlDropdownProps extends Pick<DropdownProps, "children" | "disabled" | "mobileBottomSheet"> {
     /** What the button opens, said on hover; it is also the button's name. */
     title: string;
     /** The boxicons name of the mark it wears (`bx-palette`). */
-    icon?: string;
-    /** What the button shows in place of an {@link icon}, such as a swatch of the current color. */
-    face?: ComponentChildren;
+    icon: string;
     /** Opens a {@link DropdownPanel}, for a picker or a form, instead of a menu. */
     panel?: boolean;
 }
@@ -173,7 +171,7 @@ interface OverlayControlDropdownProps extends Pick<DropdownProps, "children" | "
  * A button on such a group that opens a menu, or a panel with `panel`. The popup and the tooltip open
  * away from the edge that the group is pinned to, and the tooltip never flips to a side.
  */
-export function OverlayControlDropdown({ title, icon, face, panel, ...props }: OverlayControlDropdownProps) {
+export function OverlayControlDropdown({ title, icon, panel, ...props }: OverlayControlDropdownProps) {
     const direction = useContext(TooltipDirection);
     const titleOptions = useMemo(() => ({ fallbackPlacements: direction && [ direction ] }), [ direction ]);
     const Toggle = panel ? DropdownPanel : Dropdown;
@@ -181,9 +179,8 @@ export function OverlayControlDropdown({ title, icon, face, panel, ...props }: O
         <Toggle
             {...props}
             className="tn-overlay-control-dropdown"
-            buttonClassName={clsx("tn-overlay-icon-button", icon && [ "bx", icon ])}
+            buttonClassName={clsx("tn-overlay-icon-button bx", icon)}
             buttonProps={{ "aria-label": title }}
-            text={face}
             title={title}
             titlePosition={direction}
             titleOptions={titleOptions}

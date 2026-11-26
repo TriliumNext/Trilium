@@ -1,13 +1,11 @@
 import "./Handwriting.css";
 
 import clsx from "clsx";
-import type { TargetedKeyboardEvent } from "preact";
+import type { CSSProperties, TargetedKeyboardEvent } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
 import { isIOS } from "../../../services/utils";
-import ColorPicker from "../../react/ColorPicker";
-import type { DropdownHandle } from "../../react/Dropdown";
 import { FormDropdownSubmenu, FormListItem } from "../../react/FormList";
 import { useFullscreen } from "../../react/hooks/dom";
 import { useEditorSpacedUpdate } from "../../react/hooks/editor";
@@ -16,7 +14,6 @@ import { useEffectiveReadOnly } from "../../react/hooks/note_context";
 import OverlayControlGroup, {
     OverlayControlButton, OverlayControlDropdown, OverlayFullscreenButton, ZoomControls
 } from "../../react/OverlayControlGroup";
-import Slider from "../../react/Slider";
 import { TypeWidgetProps } from "../type_widget";
 import { AUTO_COLOR, type InkDocument, type InkTool, type InkView, PAPER_STYLES, parseInkDocument } from "./ink_document";
 import InkSurface, { HIGHLIGHTER_WIDTH_FACTOR, type InkSurfaceState, type SurfaceTool } from "./ink_surface";
@@ -32,9 +29,34 @@ interface InkSettings {
     size: number;
 }
 
+/** The colors and the three thicknesses each tool offers. Its first color and middle thickness are its default. */
+const INK_PRESETS: Record<InkTool, { colors: { color: string, name: string }[], sizes: number[] }> = {
+    pen: {
+        colors: [
+            { color: AUTO_COLOR, name: "text" },
+            { color: "#e64d4d", name: "red" },
+            { color: "#4d99e6", name: "blue" },
+            { color: "#4dae4d", name: "green" },
+            { color: "#994de6", name: "purple" }
+        ],
+        sizes: [ 1.5, 3, 6 ]
+    },
+    highlighter: {
+        colors: [
+            { color: "#facc15", name: "yellow" },
+            { color: "#99e64d", name: "green" },
+            { color: "#e64db3", name: "pink" },
+            { color: "#4de5e6", name: "cyan" },
+            { color: "#e6994d", name: "orange" }
+        ],
+        sizes: [ 2, 4, 8 ]
+    }
+};
+const SIZE_NAMES = [ "fine", "medium", "bold" ];
+
 const DEFAULT_INK_SETTINGS: Record<InkTool, InkSettings> = {
-    pen: { color: AUTO_COLOR, size: 3 },
-    highlighter: { color: "#facc15", size: 3 }
+    pen: { color: INK_PRESETS.pen.colors[0].color, size: INK_PRESETS.pen.sizes[1] },
+    highlighter: { color: INK_PRESETS.highlighter.colors[0].color, size: INK_PRESETS.highlighter.sizes[1] }
 };
 const MIN_SIZE = 1;
 const MAX_SIZE = 12;
@@ -60,7 +82,6 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     const [ inkSettings, setInkSettings ] = useState(DEFAULT_INK_SETTINGS);
     const inkTool: InkTool | undefined = tool === "eraser" ? undefined : tool;
     const { color, size } = inkSettings[inkTool ?? "pen"];
-    const settingsRef = useRef<DropdownHandle>(null);
     const [ state, setState ] = useState<InkSurfaceState>({ zoom: 1, paper: "ruled", canUndo: false, canRedo: false });
     const isReadOnly = useEffectiveReadOnly(note, noteContext);
     const [ fingerDrawing, setFingerDrawing ] = useTriliumOptionBool("handwritingFingerDrawing");
@@ -137,15 +158,6 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
         setInkSettings((current) => ({ ...current, [inkTool]: { ...current[inkTool], ...changes } }));
     }
 
-    /** Picks `itemTool`, or opens its settings when it is already picked. */
-    function pickTool(itemTool: SurfaceTool) {
-        if (itemTool === tool && itemTool !== "eraser") {
-            settingsRef.current?.show();
-        } else {
-            setTool(itemTool);
-        }
-    }
-
     function onKeyDown(e: TargetedKeyboardEvent<HTMLDivElement>) {
         if (isReadOnly) return;
         const key = e.key.toLowerCase();
@@ -197,32 +209,9 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                                 icon={icon}
                                 shortcut={key.toUpperCase()}
                                 active={tool === itemTool}
-                                onClick={() => pickTool(itemTool)}
+                                onClick={() => setTool(itemTool)}
                             />
                         ))}
-                        {inkTool && (
-                            <OverlayControlDropdown
-                                title={t("handwriting.pen_settings")}
-                                face={<span className="handwriting-swatch" style={getSwatchStyle(color, size)} />}
-                                dropdownRef={settingsRef}
-                                panel
-                            >
-                                <div className="handwriting-pen-settings">
-                                    <ColorPicker
-                                        currentValue={color === AUTO_COLOR ? null : color}
-                                        onChange={(newColor) => updateInk({ color: newColor ?? AUTO_COLOR })}
-                                    />
-                                    <Slider
-                                        title={t("handwriting.thickness")}
-                                        value={size}
-                                        min={MIN_SIZE}
-                                        max={MAX_SIZE}
-                                        step={SIZE_STEP}
-                                        onChange={(newSize) => updateInk({ size: newSize })}
-                                    />
-                                </div>
-                            </OverlayControlDropdown>
-                        )}
                     </OverlayControlGroup>
 
                     <OverlayControlGroup titlePosition="bottom">
@@ -271,6 +260,10 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                 </div>
             )}
 
+            {!isReadOnly && inkTool && (
+                <InkRail tool={inkTool} color={color} size={size} onChange={updateInk} />
+            )}
+
             <OverlayControlGroup placement="bottom-end" className="handwriting-zoom">
                 <ZoomControls
                     percent={Math.round(state.zoom * 100)}
@@ -289,13 +282,97 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     );
 }
 
-/** A dot of the ink's color, as thick as its line, for the button that opens its settings. */
-function getSwatchStyle(color: string, size: number) {
-    const diameter = Math.round(6 + size * 1.2);
-    return {
-        "--swatch-color": color === AUTO_COLOR ? "var(--main-text-color)" : color,
-        "--swatch-size": `${diameter}px`
-    };
+interface InkRailProps {
+    tool: InkTool;
+    color: string;
+    size: number;
+    onChange(changes: Partial<InkSettings>): void;
+}
+
+/**
+ * The color and the thickness of the pen or the highlighter, on a rail down the side of the note:
+ * steps and the value of the thickness, its three presets, then the colors.
+ */
+function InkRail({ tool, color, size, onChange }: InkRailProps) {
+    const customInputRef = useRef<HTMLInputElement>(null);
+    const presets = INK_PRESETS[tool];
+    const isCustomColor = !presets.colors.some((preset) => preset.color === color);
+    const setSize = (newSize: number) => onChange({ size: Math.min(MAX_SIZE, Math.max(MIN_SIZE, newSize)) });
+
+    return (
+        <div className="handwriting-rail">
+            <OverlayControlGroup vertical titlePosition="right">
+                <OverlayControlButton
+                    title={t("handwriting.thicker")}
+                    icon="bx-plus"
+                    shortcut="]"
+                    disabled={size >= MAX_SIZE}
+                    onClick={() => setSize(size + SIZE_STEP)}
+                />
+                <OverlayControlButton
+                    title={t("handwriting.reset_thickness")}
+                    text={Number.isInteger(size) ? String(size) : size.toFixed(1)}
+                    onClick={() => setSize(presets.sizes[1])}
+                />
+                <OverlayControlButton
+                    title={t("handwriting.thinner")}
+                    icon="bx-minus"
+                    shortcut="["
+                    disabled={size <= MIN_SIZE}
+                    onClick={() => setSize(size - SIZE_STEP)}
+                />
+            </OverlayControlGroup>
+
+            <OverlayControlGroup vertical titlePosition="right">
+                {presets.sizes.map((presetSize, index) => (
+                    <OverlayControlButton
+                        key={presetSize}
+                        title={t(`handwriting.size_${SIZE_NAMES[index]}`)}
+                        text={<span className="handwriting-dot" style={dotStyle(4 + index * 5)} />}
+                        active={size === presetSize}
+                        onClick={() => setSize(presetSize)}
+                    />
+                ))}
+            </OverlayControlGroup>
+
+            <OverlayControlGroup vertical titlePosition="right">
+                {presets.colors.map((preset) => (
+                    <OverlayControlButton
+                        key={preset.color}
+                        title={t(`handwriting.color_${preset.name}`)}
+                        text={<span className="handwriting-swatch" style={swatchStyle(preset.color)} />}
+                        active={color === preset.color}
+                        onClick={() => onChange({ color: preset.color })}
+                    />
+                ))}
+                <OverlayControlButton
+                    title={t("handwriting.color_custom")}
+                    text={<span className="handwriting-swatch handwriting-swatch-custom" style={isCustomColor ? swatchStyle(color) : undefined} />}
+                    active={isCustomColor}
+                    onClick={() => customInputRef.current?.click()}
+                />
+            </OverlayControlGroup>
+
+            {/* The browser's own color picker, which the custom color button opens. */}
+            <input
+                ref={customInputRef}
+                type="color"
+                className="handwriting-custom-color"
+                value={isCustomColor && color.startsWith("#") ? color : "#000000"}
+                onChange={(e) => onChange({ color: e.currentTarget.value })}
+                tabIndex={-1}
+                aria-hidden="true"
+            />
+        </div>
+    );
+}
+
+function swatchStyle(color: string): CSSProperties {
+    return { "--swatch-color": color === AUTO_COLOR ? "var(--main-text-color)" : color } as CSSProperties;
+}
+
+function dotStyle(diameter: number): CSSProperties {
+    return { "--dot-size": `${diameter}px` } as CSSProperties;
 }
 
 /** Cursors browsers show reliably are at most 128 px wide; this leaves room for the outline. */
