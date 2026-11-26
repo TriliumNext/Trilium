@@ -367,6 +367,7 @@ class FakeSocket {
     readyState = 1;
     onopen: (() => void) | null = null;
     onmessage: ((e: MessageEvent<string>) => void) | null = null;
+    onclose: ((e: CloseEvent) => void) | null = null;
     sent: string[] = [];
     url: string;
     constructor(url: string) {
@@ -508,6 +509,66 @@ describe("WebSocket transport", () => {
         vi.advanceTimersByTime(1000);
         // a brand-new socket was created by connectWebSocket()
         expect(lastSocket).not.toBe(first);
+    });
+
+    it("sends the page's CSRF token as the first message of a connection", async () => {
+        (window as any).glob = { ...baseGlob, dbInitialized: true, csrfToken: "page-token" };
+        await loadWsFresh();
+        vi.advanceTimersByTime(0);
+
+        lastSocket.onopen?.();
+
+        expect(JSON.parse(lastSocket.sent[0])).toEqual({ type: "csrf-token", token: "page-token" });
+    });
+
+    it("reconnects with a new token after a refusal, but not after a second one", async () => {
+        (window as any).glob = { ...baseGlob, dbInitialized: true, csrfToken: "stale-token" };
+        await loadWsFresh();
+        const { default: server } = await import("./server.js");
+        const refresh = vi.spyOn(server, "refreshCsrfToken").mockImplementation(async () => {
+            (window as any).glob.csrfToken = "fresh-token";
+        });
+        vi.advanceTimersByTime(0);
+        const refused = lastSocket;
+        refused.readyState = FakeSocket.CLOSED;
+
+        refused.onclose?.({ code: 4403 } as CloseEvent);
+        // The ping loop does not reconnect while the token is renewed.
+        vi.advanceTimersByTime(1000);
+        expect(lastSocket).toBe(refused);
+        await vi.waitFor(() => expect(lastSocket).not.toBe(refused));
+
+        expect(refresh).toHaveBeenCalledOnce();
+        lastSocket.onopen?.();
+        expect(JSON.parse(lastSocket.sent[0]))
+            .toEqual({ type: "csrf-token", token: "fresh-token" });
+
+        const second = lastSocket;
+        second.readyState = FakeSocket.CLOSED;
+        second.onclose?.({ code: 4403 } as CloseEvent);
+        await vi.waitFor(() => expect(toast.showPersistent).toHaveBeenCalledWith(
+            expect.objectContaining({ id: "lost-websocket-connection" })
+        ));
+        vi.advanceTimersByTime(5000);
+        expect(lastSocket).toBe(second);
+        expect(refresh).toHaveBeenCalledOnce();
+    });
+
+    it("renews a refused token again once a connection was served since", async () => {
+        await loadWsFresh();
+        const { default: server } = await import("./server.js");
+        const refresh = vi.spyOn(server, "refreshCsrfToken").mockResolvedValue(undefined);
+        vi.advanceTimersByTime(0);
+
+        lastSocket.onclose?.({ code: 4403 } as CloseEvent);
+        await vi.waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+        lastSocket.onmessage?.({ data: JSON.stringify({ type: "ping" }) } as MessageEvent<string>);
+        lastSocket.onclose?.({ code: 4403 } as CloseEvent);
+        await vi.waitFor(() => expect(refresh).toHaveBeenCalledTimes(2));
+
+        // After any other close, the ping loop reconnects.
+        lastSocket.onclose?.({ code: 1006 } as CloseEvent);
+        expect(refresh).toHaveBeenCalledTimes(2);
     });
 
     it("does not bootstrap a socket in print mode", async () => {

@@ -1780,11 +1780,38 @@
     "start_session_button": "Start protected session",
     "started": "Protected session has been started.",
     "wrong_password": "Wrong password.",
+    "data_key_unreadable": "The password is right, but the key of the protected notes cannot be read. Do not reset the password, which would lose them on every device: the User Guide says how to bring the key back.",
     "protecting-finished-successfully": "Protecting finished successfully.",
     "unprotecting-finished-successfully": "Unprotecting finished successfully.",
     "protecting-in-progress": "Protecting in progress: {{count}}",
     "unprotecting-in-progress-count": "Unprotecting in progress: {{count}}",
     "locked_note_title": "Protected"
+  },
+  "sign_in_records": {
+    "title": "Security records of this device",
+    "state_legacy": "The second factor was set up with an earlier version, which stored it in every backup next to its key. Remove it and set it up again. Until then, downloading a backup asks for your password and a code.",
+    "state_blocked": "A sync peer wrote one of the settings of the second factor, so sign-in refuses every code. Restart the server with the TRILIUM_RESET_SECOND_FACTOR variable to remove the factor, then set it up again.",
+    "state_removed": "The second factor was removed with the TRILIUM_RESET_SECOND_FACTOR variable. Until you set it up again, sign-in asks for the words of the variable instead of a code.",
+    "waiting_one": "After {{count}} wrong code in a row, codes are refused until {{time}}.",
+    "waiting_other": "After {{count}} wrong codes in a row, codes are refused until {{time}}.",
+    "attempts": "Right password, wrong or missing code",
+    "attempts_description": "Someone who knows the password tried to sign in. If it wasn't you, change the password and set up the second factor again.",
+    "attempt_no_code_one": "Without a code: once, last at {{time}}",
+    "attempt_no_code_other": "Without a code: {{count}} times, last at {{time}}",
+    "attempt_wrong_code_one": "With a wrong code: once, last at {{time}}",
+    "attempt_wrong_code_other": "With a wrong code: {{count}} times, last at {{time}}",
+    "attempt_wrong_recovery_code_one": "With a wrong recovery code: once, last at {{time}}",
+    "attempt_wrong_recovery_code_other": "With a wrong recovery code: {{count}} times, last at {{time}}",
+    "repairs": "Settings repaired at startup",
+    "repairs_description": "Settings of this device that a sync peer had changed, which were put back at startup. After upgrading, also check the settings a peer could have changed earlier: the sign-in method and second factor, the backups and their folder, the sync server and the proxy.",
+    "none": "None"
+  },
+  "credentials": {
+    "password": "Password",
+    "code": "Second factor",
+    "code_description": "A code from the authenticator app, or a recovery code.",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
   },
   "relation_map": {
     "remove_note": "Remove note...",
@@ -2393,6 +2420,8 @@
     "for_more_info": "for more info.",
     "protected_session_timeout_label": "Auto-close session after",
     "reset_confirmation": "By resetting the password you will forever lose access to all your existing protected notes. Do you really want to reset the password?",
+    "reset_confirmation_data_key_unreadable": "Your password was right, but the key of the protected notes could not be read. A reset loses them on every device for good, while the User Guide says how to bring the key back. Do you really want to reset the password?",
+    "data_key_unreadable": "The password was not changed: the key of the protected notes cannot be read.",
     "reset_success_message": "Password has been reset. Please set new password",
     "change_password_heading": "Change Password",
     "set_password_heading": "Set Password",
@@ -2559,7 +2588,10 @@
     "handshake_failed": "Sync server handshake failed, error: {{message}}",
     "effective_server": "Server in use",
     "effective_server_description": "Set through config.ini or environment variables, which take priority over the server address above.",
-    "effective_server_disabled": "Synchronization is turned off."
+    "effective_server_disabled": "Synchronization is turned off.",
+    "unfinished_title": "Unfinished sync",
+    "unfinished_description": "The last sync of this device did not finish, so the consistency checks are skipped until a sync finishes. Enter the sync server above again, or mark this device as not syncing.",
+    "unfinished_confirm": "Mark as not syncing"
   },
   "api_log": {
     "close": "Close"

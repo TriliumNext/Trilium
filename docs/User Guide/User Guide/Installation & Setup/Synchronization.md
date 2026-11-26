@@ -92,6 +92,10 @@ This will disable TLS certificate verification, significantly reducing security 
 
 If you edit the same note on multiple instances before synchronization, Trilium resolves conflicts by retaining the newer change and discarding the older one. The older version remains accessible in [note revisions](../Basic%20Concepts%20and%20Features/Notes/Note%20Revisions.md), allowing data recovery if needed.
 
+### Unfinished sync
+
+When the last sync of a device did not finish and the device no longer has a sync server, <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Sync_ shows _Unfinished sync_. Until a sync finishes, Trilium skips the consistency checks, since notes that have not arrived yet would look like damage. Enter the sync server again to finish the sync, or press _Mark as not syncing_ when the device is meant to work on its own.
+
 ### Hash Check
 
 After each synchronization, Trilium computes a hash of all synced data on both the client and the sync server. If there is a discrepancy, Trilium will automatically initiate a recovery mechanism to resolve the issue.

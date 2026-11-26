@@ -7,6 +7,7 @@ import optionService from "../../services/options";
 import { getConfig, initConfig } from "../../services/config";
 import { getContext } from "../../services/context";
 import { getSql } from "../../services/sql/index";
+import sqlInit from "../../services/sql_init";
 import { CoreApiTester } from "../../test/api_tester";
 
 /**
@@ -184,6 +185,51 @@ describe("Options API (core)", () => {
                 initConfig(original);
             }
         });
+    });
+
+    it("says whether the last sync of a device without a sync server did not finish", async () => {
+        const getOptionMap = optionService.getOptionMap.bind(optionService);
+        const withSyncIncomplete = (value: string) => vi.spyOn(optionService, "getOptionMap")
+            .mockImplementation(() => ({ ...getOptionMap(), syncIncomplete: value }));
+
+        mockSyncServerHost("");
+        withSyncIncomplete("true");
+        expect((await api.get<Record<string, string>>("/api/options")).body.isLastSyncUnfinished)
+            .toBe("true");
+
+        withSyncIncomplete("false");
+        expect((await api.get<Record<string, string>>("/api/options")).body.isLastSyncUnfinished)
+            .toBe("false");
+
+        vi.restoreAllMocks();
+        mockSyncServerHost("https://sync.example.com");
+        withSyncIncomplete("true");
+        expect((await api.get<Record<string, string>>("/api/options")).body.isLastSyncUnfinished)
+            .toBe("false");
+    });
+
+    it("says whether the second factor is legacy", async () => {
+        const getOptionMap = optionService.getOptionMap.bind(optionService);
+        const withState = (secondFactorState: string) => vi.spyOn(optionService, "getOptionMap")
+            .mockImplementation(() => ({ ...getOptionMap(), secondFactorState }));
+
+        const cases = [ [ "legacy", "true" ], [ "blocked", "false" ], [ "", "false" ] ];
+        for (const [ state, isLegacy ] of cases) {
+            withState(state);
+            const options = (await api.get<Record<string, string>>("/api/options")).body;
+            expect(options.isSecondFactorLegacy).toBe(isLegacy);
+            vi.restoreAllMocks();
+        }
+    });
+
+    it("refuses to read or write an option before the database opens", async () => {
+        vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(false);
+        const before = getOptionValue("zoomFactor");
+
+        expect((await api.get("/api/options")).status).toBe(400);
+        expect((await api.put("/api/options/zoomFactor/1.5")).status).toBe(400);
+        expect((await api.put("/api/options", { body: { zoomFactor: "1.5" } })).status).toBe(400);
+        expect(getOptionValue("zoomFactor")).toBe(before);
     });
 
     it("flags backend scripts, ignoring #run labels on frontend scripts", async () => {

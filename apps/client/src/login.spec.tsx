@@ -1,10 +1,11 @@
 import { render } from "preact";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// t() returns the key so assertions are deterministic and not tied to English text;
+// t() returns the key, and the time where one is given, so assertions are not tied to English text;
 // initLocale is a no-op (no http backend under test).
 vi.mock("./services/i18n", () => ({
-    t: (key: string) => key,
+    t: (key: string, options?: { time?: string }) =>
+        (options?.time ? `${key} ${options.time}` : key),
     initLocale: vi.fn(),
     getCurrentLanguage: () => "en"
 }));
@@ -109,6 +110,34 @@ describe("PasswordLogin", () => {
         submit();
         await flush();
         expect(shownError()).toContain("login.incorrect-recovery-code");
+    });
+
+    it("says why a second factor was refused besides a wrong code", async () => {
+        const waitUntil = Date.parse("2026-11-26T10:00:00Z");
+        const time = new Date(waitUntil).toLocaleString();
+        const cases = [
+            [ { reason: "wait", waitUntil }, `login.totp-wait ${time}` ],
+            [ { reason: "step-ahead", waitUntil }, `login.totp-step-ahead ${time}` ],
+            [ { reason: "unreadable" }, "login.factor-unreadable" ],
+            [ { reason: "removed" }, "login.factor-removed" ]
+        ] as const;
+
+        for (const [ refusal, message ] of cases) {
+            mockFetch({
+                ok: false,
+                status: 401,
+                json: async () => ({ factor: "totp", ...refusal })
+            });
+            const { shownError, password, totp, submit } = setup(true);
+            password.value = "secret";
+            if (totp) totp.value = "123456";
+            submit();
+            await flush();
+
+            expect(shownError()).toContain(message);
+            render(null, container);
+            container.remove();
+        }
     });
 
     it("reports rate limiting on 429 rather than a credential error", async () => {

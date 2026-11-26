@@ -1,11 +1,21 @@
-import type { EntityChange, EntityChangeRecord, EntityRow } from "@triliumnext/commons";
+import type {
+    EntityChange,
+    EntityChangeRecord,
+    EntityRow,
+    OptionNames,
+    OptionRow
+} from "@triliumnext/commons";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import becca from "../becca/becca.js";
+import contentHashService from "./content_hash.js";
 import * as cls from "./context.js";
 import { getCrypto } from "./encryption/crypto.js";
 import events from "./events.js";
+import { getLog } from "./log.js";
 import notes from "./notes.js";
+import optionService from "./options.js";
+import { getDefaultOptionSyncedFlag, isDeviceOption } from "./options_init.js";
 import { getSql } from "./sql/index.js";
 import syncUpdateService from "./sync_update.js";
 import { decodeBase64, encodeBase64 } from "./utils/binary.js";
@@ -390,7 +400,157 @@ describe("sync_update service (real DB)", () => {
             }
         });
     });
+
+    describe("options and flags that a peer sends", () => {
+        it("refuses a row of every option kept on this device, and logs its name", () => {
+            const info = vi.spyOn(getLog(), "info");
+            // The options of a device that has TOTP and a sync server set up.
+            cls.init(() => {
+                for (const name of [
+                    "totpEncryptionSalt", "totpEncryptedSecret", "totpVerificationHash",
+                    "recoveryCodeInitialVector", "recoveryCodeSecurityKey", "recoveryCodesEncrypted"
+                ] as const) {
+                    optionService.setOption(name, "local");
+                }
+                optionService.setOption("totpLastUsedStep", "1");
+                optionService.setOption("syncServerHost", "https://sync.example");
+            });
+            const local = getSql().getRows<OptionRow>("SELECT * FROM options WHERE isSynced = 0")
+                .filter(({ name }) => getDefaultOptionSyncedFlag(name as OptionNames) !== true);
+            // Options of removed features, which this old fixture still holds and no code writes.
+            expect(local.filter(({ name }) => !isDeviceOption(name)).map(({ name }) => name).sort())
+                .toEqual([
+                    "anthropicApiKey", "openaiApiKey", "userSubjectIdentifierSaved", "voyageApiKey"
+                ]);
+
+            apply(local.map((row) => optionRecord(row.name, "planted-by-a-peer")));
+
+            for (const row of local) {
+                expect(getSql().getRow(
+                    "SELECT value, isSynced FROM options WHERE name = ?", [ row.name ]), row.name)
+                    .toEqual({ value: row.value, isSynced: 0 });
+            }
+            expect(info).toHaveBeenCalledWith(expect.stringContaining("option \"mfaMethod\""));
+        });
+
+        it("refuses the TOTP secret on an instance that never enrolled", () => {
+            cls.init(() => optionService.setOption("totpEncryptedSecret", ""));
+
+            apply([ optionRecord("totpEncryptedSecret", "the-peer's-secret") ]);
+
+            expect(getSql().getRow(
+                "SELECT value, isSynced FROM options WHERE name = 'totpEncryptedSecret'"))
+                .toEqual({ value: "", isSynced: 0 });
+        });
+
+        it("refuses an option it does not know when it holds it local-only", () => {
+            cls.init(() =>
+                optionService.createOption("someTreeCollapsed" as OptionNames, "local", false)
+            );
+
+            apply([ optionRecord("someTreeCollapsed", "planted") ]);
+
+            expect(getSql().getValue("SELECT value FROM options WHERE name = 'someTreeCollapsed'"))
+                .toBe("local");
+        });
+
+        it("refuses a row that names another option than its change", () => {
+            apply([ {
+                entityChange: buildEC({
+                    entityName: "options",
+                    entityId: "harmlessOption",
+                    hash: "changed"
+                }),
+                entity: {
+                    name: "mfaMethod",
+                    value: "",
+                    isSynced: 1,
+                    utcDateModified: dateUtils.utcNowDateTime()
+                } as unknown as EntityRow
+            } ]);
+
+            expect(getSql().getValue("SELECT value FROM options WHERE name = 'mfaMethod'"))
+                .not.toBe("");
+            expect(entityChangeCount("options", "harmlessOption")).toBe(0);
+        });
+
+        it("stores an unknown option as synced, whatever the row says, and hashes match", () => {
+            // The sender is a later release that declares an option this release does not know.
+            cls.init(() =>
+                optionService.createOption("optionOfALaterRelease" as OptionNames, "x", true)
+            );
+            const senderHashes = cls.init(() => contentHashService.getEntityHashes());
+            const record = optionRecord("optionOfALaterRelease", "x", {
+                isRowSynced: 0,
+                isChangeSynced: false
+            });
+            record.entityChange.hash = localHash("options", "optionOfALaterRelease");
+            cls.init(() => {
+                getSql().execute("DELETE FROM options WHERE name = 'optionOfALaterRelease'");
+                getSql().execute(/*sql*/`DELETE FROM entity_changes
+                    WHERE entityName = 'options' AND entityId = 'optionOfALaterRelease'`);
+            });
+
+            apply([ record ]);
+
+            expect(getSql().getValue(
+                "SELECT isSynced FROM options WHERE name = 'optionOfALaterRelease'")).toBe(1);
+            expect(getSql().getValue(/*sql*/`SELECT isSynced FROM entity_changes
+                WHERE entityName = 'options' AND entityId = 'optionOfALaterRelease'`)).toBe(1);
+            expect(cls.init(() => contentHashService.checkContentHashes(senderHashes))).toEqual([]);
+        });
+
+        it("stores the change of a note that a peer calls not synced as synced", () => {
+            const noteId = createNote();
+
+            apply([ {
+                entityChange: buildEC({ entityId: noteId, hash: "changed", isSynced: false }),
+                entity: rowWith(noteId, { title: "kept-back" })
+            } ]);
+
+            expect(getSql().getValue(/*sql*/`SELECT isSynced FROM entity_changes
+                WHERE entityName = 'notes' AND entityId = ?`, [ noteId ])).toBe(1);
+        });
+
+        it("stores a note reordering as synced", () => {
+            const noteId = createNote();
+            const branchId = getSql().getValue<string>(
+                "SELECT branchId FROM branches WHERE noteId = ?", [ noteId ]
+            );
+
+            apply([ {
+                entityChange: buildEC({
+                    entityName: "note_reordering",
+                    entityId: "root",
+                    isSynced: false
+                }),
+                entity: { [branchId]: 5 } as unknown as EntityRow
+            } ]);
+
+            expect(getSql().getValue(/*sql*/`SELECT isSynced FROM entity_changes
+                WHERE entityName = 'note_reordering' AND entityId = 'root'`)).toBe(1);
+        });
+    });
 });
+
+/** A sync peer's option row, dated now so that it overwrites the stored one. */
+function optionRecord(
+    name: string,
+    value: string,
+    { isRowSynced = 1, isChangeSynced = true } = {}
+): EntityChangeRecord {
+    const utcDateModified = dateUtils.utcNowDateTime();
+    return {
+        entityChange: buildEC({
+            entityName: "options",
+            entityId: name,
+            hash: "planted",
+            isSynced: isChangeSynced,
+            utcDateChanged: utcDateModified
+        }),
+        entity: { name, value, isSynced: isRowSynced, utcDateModified } as unknown as EntityRow
+    };
+}
 
 function entityChangeCount(entityName: string, entityId?: string): number {
     return entityId === undefined

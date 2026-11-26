@@ -33,6 +33,8 @@ Note that <a class="reference-link" href="Synchronization.md">Synchronization</
 *   **Desktop and web client**: to download an existing backup, navigate to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Backup_ → _Existing backups_ and select _Download_ (<span class="tn-icon bx bx-download"></span>).
 *   **Standalone client**: automatic backups are not supported in this version. You can manually create and download a backup by going to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Backup_ → _Download backup_.
 
+While the server uses a second factor that was set up with an earlier version, downloading a backup asks for your password and a one-time password. See _After upgrading_ in <a class="reference-link" href="Server%20Installation/Multi-factor%20authentication%20with%20TOTP.md">Multi-factor authentication with TOTP</a>.
+
 ## Restoring a backup
 
 *   **For a new Trilium instance**: When setting up a new Trilium instance, use the _Restore from backup_ option in the setup menu to guide you through restoring your existing backup.

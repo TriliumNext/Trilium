@@ -1,8 +1,10 @@
 import { cls, options } from "@triliumnext/core";
+import crypto from "crypto";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import sql_init from "../sql_init.js";
 import recoveryCodes from "./recovery_codes.js";
+import { isSealed } from "./second_factor_key.js";
 
 // A recovery code in this scheme is any string matching /^.{22}==$/ (24 chars
 // ending in "=="). We use deterministic placeholder codes here.
@@ -77,6 +79,30 @@ describe("recovery_codes", () => {
         expect(recoveryCodes.matchesRecoveryCode("too-short")).toBe(false);
     });
 
+    it("matches legacy codes for the setup wizard, and seals them with the key file once", () => {
+        plantLegacyCodes([ CODE_A, CODE_B ].join(","));
+
+        expect(recoveryCodes.matchesRecoveryCode(CODE_A)).toBe(true);
+        expect(isSealed(options.getOption("recoveryCodesEncrypted"))).toBe(false);
+
+        expect(cls.init(() => recoveryCodes.convertLegacyRecoveryCodes())).toBe(true);
+        expect(isSealed(options.getOption("recoveryCodesEncrypted"))).toBe(true);
+        expect(options.getOption("recoveryCodeSecurityKey")).toBe("");
+        expect(options.getOption("recoveryCodeInitialVector")).toBe("");
+        expect(recoveryCodes.getRecoveryCodes()).toEqual([ CODE_A, CODE_B ]);
+        expect(cls.init(() => recoveryCodes.convertLegacyRecoveryCodes())).toBe(false);
+    });
+
+    it("leaves legacy codes that do not open", () => {
+        plantLegacyCodes(CODE_A);
+        cls.init(() =>
+            options.setOption("recoveryCodeSecurityKey", crypto.randomBytes(32).toString("hex")));
+
+        expect(recoveryCodes.getRecoveryCodes()).toEqual([]);
+        expect(cls.init(() => recoveryCodes.convertLegacyRecoveryCodes())).toBe(false);
+        cls.init(() => recoveryCodes.clearRecoveryCodes());
+    });
+
     it("answers the same way however many times the shape check is run", () => {
         // The pattern is shared between the two checks now. Held in a variable with the `g` flag it
         // would remember where it last matched and answer correctly only every other call.
@@ -127,3 +153,19 @@ describe("recovery_codes", () => {
         expect(reuse).toBe(false);
     });
 });
+
+/** Stores codes in the legacy form: encrypted with a key and an IV kept in options. */
+function plantLegacyCodes(codes: string) {
+    const iv = crypto.randomBytes(16);
+    const key = crypto.randomBytes(32);
+    const cipher = crypto.createCipheriv("aes-256-cbc", key, iv);
+    cls.init(() => {
+        options.setOption("recoveryCodeInitialVector", iv.toString("hex"));
+        options.setOption("recoveryCodeSecurityKey", key.toString("hex"));
+        options.setOption(
+            "recoveryCodesEncrypted",
+            cipher.update(codes, "utf-8", "hex") + cipher.final("hex")
+        );
+        options.setOption("encryptedRecoveryCodes", "true");
+    });
+}

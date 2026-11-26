@@ -316,6 +316,64 @@ describe("CSRF token handling", () => {
         expect(attempt).toBe(2);
     });
 
+    it("keeps the credential headers of a guarded request on its retry", async () => {
+        (window as any).fetch = vi.fn(async () => ({
+            ok: true,
+            json: async () => ({ csrfToken: "fresh-token" })
+        }));
+        (window as any).location = { search: "" } as any;
+
+        const sent: AjaxOptions[] = [];
+        (window as any).$.ajax = (opts: AjaxOptions) => {
+            sent.push(opts);
+            if (sent.length === 1) {
+                opts.error({
+                    status: 403,
+                    responseText: JSON.stringify({ message: "Invalid CSRF token" })
+                });
+            } else {
+                opts.success({ success: true }, "success", fakeJqXhr(""));
+            }
+        };
+
+        await server.withCredentials(
+            "POST",
+            "totp/reset",
+            {},
+            { password: "pässword", code: "123456" }
+        );
+
+        const [ first, retry ] = sent.map((opts) => opts.headers as Record<string, string>);
+        // The server decodes the header as UTF-8.
+        expect(new TextDecoder().decode(
+            Uint8Array.from(atob(first["trilium-cred"]), (c) => c.charCodeAt(0))
+        )).toBe("user:pässword");
+        expect(first["trilium-totp"]).toBe("123456");
+        expect(retry).toMatchObject({
+            "trilium-cred": first["trilium-cred"],
+            "trilium-totp": "123456",
+            "x-csrf-token": "fresh-token"
+        });
+    });
+
+    it("sends no code header where no code is given", async () => {
+        let headers: Record<string, string> = {};
+        (window as any).$.ajax = (opts: AjaxOptions) => {
+            headers = opts.headers as Record<string, string>;
+            opts.success({ success: true }, "success", fakeJqXhr(""));
+        };
+
+        await server.withCredentials(
+            "PUT",
+            "totp/method",
+            { method: "totp" },
+            { password: "p", code: "" }
+        );
+
+        expect(headers["trilium-cred"]).toBe(btoa("user:p"));
+        expect(headers).not.toHaveProperty("trilium-totp");
+    });
+
     it("does not retry when the 403 is not a csrf error (bad json / wrong message)", async () => {
         (window as any).$.ajax = (opts: AjaxOptions) => {
             // unparseable body -> isCsrfError catch -> false

@@ -301,6 +301,37 @@ describe("totp", () => {
         }
     });
 
+    it("verifyTOTP refuses codes while the stored step is ahead, and resets it after a day", () => {
+        mockValidate.mockReturnValue(true);
+        vi.useFakeTimers({ toFake: [ "Date" ] });
+        try {
+            cls.init(() => {
+                totp.setSecret(SECRET);
+                options.setOption("startupRepairRecord", "");
+            });
+            const start = new Date("2026-01-01T00:00:40Z").getTime();
+            vi.setSystemTime(start);
+            const aYearAhead = Math.floor((start + 365 * 24 * 3600 * 1000) / 1000 / 30);
+            cls.init(() => options.setOption("totpLastUsedStep", String(aYearAhead)));
+            const verify = () => cls.init(() => totp.verifyTOTP("000000"));
+            // The step after the stored one, less the step of drift that a code is checked over.
+            expect(totp.getStepWaitUntil()).toBe(aYearAhead * 30 * 1000);
+
+            expect(verify()).toBe(false);
+            vi.setSystemTime(start + 24 * 3600 * 1000 - 1000);
+            expect(verify()).toBe(false);
+
+            vi.setSystemTime(start + 24 * 3600 * 1000);
+            expect(verify()).toBe(true);
+            expect(Number(options.getOption("totpLastUsedStep"))).toBeLessThan(aYearAhead);
+            expect(totp.getStepWaitUntil()).toBeNull();
+            expect(options.getOption("startupRepairRecord")).toContain("totpLastUsedStep");
+        } finally {
+            vi.useRealTimers();
+            cls.init(() => options.setOption("clockAheadMarks", ""));
+        }
+    });
+
     it("enrollment accepts a step either side, the wizard only the current one", async () => {
         const codeFor = await useRealCodes();
         vi.useFakeTimers({ toFake: [ "Date" ] });

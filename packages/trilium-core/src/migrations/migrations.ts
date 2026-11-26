@@ -9,6 +9,24 @@ export function getMaxMigrationVersion() {
 
 // Migrations should be kept in descending order, so the latest migration is first.
 export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
+    // Sessions carry the kind of login that made them, and one without a kind passes no route,
+    // so every user logs in again instead of seeing refused requests.
+    {
+        version: 244,
+        sql: /*sql*/`DELETE FROM sessions;`
+    },
+    // Device options added in this version. Earlier versions stored a peer's row under any name,
+    // so a row with one of these names can come from a peer: they start empty.
+    {
+        version: 243,
+        sql: /*sql*/`
+            DELETE FROM options WHERE name IN ('secondFactorState', 'totpWrongCodeCount',
+                'signInAttemptRecord', 'startupRepairRecord', 'clockAheadMarks');
+            DELETE FROM entity_changes WHERE entityName = 'options' AND entityId IN
+                ('secondFactorState', 'totpWrongCodeCount', 'signInAttemptRecord',
+                'startupRepairRecord', 'clockAheadMarks');
+        `
+    },
     // The in-app help (`_help` subtree) became virtual — injected into becca from the bundled
     // help meta on every load, never persisted or synced (see services/virtual_notes.ts).
     // Remove the previously persisted rows, including their entity_changes so the deletions

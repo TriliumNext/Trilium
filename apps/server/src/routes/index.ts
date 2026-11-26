@@ -8,10 +8,11 @@ import assetPath from "../services/asset_path.js";
 import config from "../services/config.js";
 import { getLog } from "@triliumnext/core";
 import { isInternalElectronRequest } from "../services/electron_request.js";
+import { isInteractiveSession } from "../services/login_session.js";
 import port from "../services/port.js";
 import openID from "../services/open_id.js";
 import { isDev, isElectron, isMac, supportsBackgroundMaterial } from "../services/utils.js";
-import totp from "../services/totp.js";
+import { getSecondFactorCheck } from "../services/second_factor.js";
 import { getKnownCpuArchMismatch } from "./api/system_info.js";
 import { generateCsrfToken } from "./csrf_protection.js";
 
@@ -49,8 +50,12 @@ export function bootstrap(req: Request, res: Response) {
         // to trust whoever can reach it. Asked for anywhere else, the screen would be holding out
         // for an answer the routes behind it were never going to want. The second factor rides on
         // the same exemption, since it is only ever asked for alongside the password.
-        setupAuthRequired: sharedItems.setupAuthRequired && !isElectronRenderer && !noAuthentication,
+        // Over the network the lock does not depend on the password row, which syncs.
+        setupAuthRequired: sharedItems.hasExistingData === true && !isElectronRenderer
+            && !noAuthentication,
         setupSecondFactorRequired: sharedItems.setupSecondFactorRequired && !isElectronRenderer && !noAuthentication,
+        setupLockedWithoutPassword: sharedItems.hasExistingData === true && !isElectronRenderer
+            && !noAuthentication && !passwordService.isPasswordSet(),
         baseApiUrl: "api/",
         appPath,
         isStandalone: false,
@@ -101,6 +106,7 @@ export function bootstrap(req: Request, res: Response) {
             ...commonItems,
             passwordSet: false,
             setPasswordInDesktopApp: isElectron,
+            passwordRemoved: !!optionService.getOptionOrNull("encryptedDataKey"),
             // The font options belong to the user, who has not signed in yet.
             fontCss: undefined,
             hasNativeTitleBar: false,
@@ -110,7 +116,8 @@ export function bootstrap(req: Request, res: Response) {
         return;
     }
 
-    if (!isElectronRenderer && !noAuthentication && !req.session.loggedIn) {
+    // A sync session is treated as logged out, so it gets no CSRF token.
+    if (!isElectronRenderer && !noAuthentication && !isInteractiveSession(req.session)) {
         // Pre-auth window: a password is set but the user hasn't logged in. Skipped only
         // for the trusted desktop renderer, which doesn't gate on a web session; a browser
         // reaching the desktop's HTTP listener still logs in here. Serve a minimal payload
@@ -138,7 +145,9 @@ export function bootstrap(req: Request, res: Response) {
                 ssoEnabled: openID.isOpenIDEnabled(),
                 ssoIssuerName: openID.getSSOIssuerName(),
                 ssoIssuerIcon: openID.getSSOIssuerIcon(),
-                totpEnabled: totp.isTotpEnabled(),
+                // Also shown for a factor that cannot be checked and for the words of the
+                // reset variable.
+                totpEnabled: getSecondFactorCheck() !== "none",
                 ssoError,
                 ssoConnectionFailed
             },

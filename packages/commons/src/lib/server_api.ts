@@ -1,4 +1,5 @@
 import type { Locale } from "./i18n.js";
+import type { DeviceRecordEntry } from "./options_interface.js";
 import { AttachmentRow, AttributeRow, BranchRow, NoteRow, NoteType, OptionRow, RevisionSource } from "./rows.js";
 import type { SetupTargetScreen } from "./setup_marker.js";
 import type { TocHeading } from "./toc.js";
@@ -233,10 +234,35 @@ export interface ExistingBackupsResponse {
     backups: DatabaseBackup[];
 }
 
-export type ChangePasswordResponse = Response;
+/**
+ * Why a right password was refused: `data-key-unreadable` when the data key of protected notes does
+ * not open with it, `password-not-restored` when the password row was emptied and a different
+ * password was sent.
+ */
+export type PasswordFailureCode = "data-key-unreadable" | "password-not-restored";
+
+export type ChangePasswordResponse = Response & { code?: PasswordFailureCode };
 
 export interface TOTPStatus {
     set: boolean;
+    /** Whether `checkCredentials()` asks for a code besides the password. */
+    isCodeAsked: boolean;
+}
+
+/** The sign-in records of this device, from `GET /api/sign-in/records`. */
+export interface SignInRecords {
+    /** `legacy`, `blocked`, `removed` or empty, as in the `secondFactorState` option. */
+    secondFactorState: string;
+    /** Device options that a start repaired after a sync peer wrote them. */
+    repairs: DeviceRecordEntry[];
+    /** Right passwords sent without a right code. */
+    attempts: DeviceRecordEntry[];
+    wrongCodeCount: number;
+    /**
+     * When TOTP codes are accepted again after wrong ones, in milliseconds since the epoch,
+     * or `null`.
+     */
+    waitUntil: number | null;
 }
 
 export interface TOTPGenerate {
@@ -1389,6 +1415,11 @@ export type BootstrapDefinition = {
      */
     setupSecondFactorRequired?: boolean;
     /**
+     * Whether the wizard is locked while no password is set, so that nothing unlocks it. Only
+     * `true` together with `setupAuthRequired`.
+     */
+    setupLockedWithoutPassword?: boolean;
+    /**
      * The screen the wizard should open on, from the marker that asked for setup. Only meaningful
      * while `dbInitialized` is `false`, and absent for a first run, which starts at the language step.
      */
@@ -1406,6 +1437,11 @@ export type BootstrapDefinition = {
      * `POST /set-password` from the network.
      */
     setPasswordInDesktopApp?: boolean;
+    /**
+     * Whether the password row was emptied while the data key of protected notes was kept,
+     * together with `passwordSet: false`: only the previous password can be set again.
+     */
+    passwordRemoved?: boolean;
     /**
      * Whether the current session is authenticated. `false` only in the pre-auth
      * window when a password is set but the user hasn't logged in (web/server only),

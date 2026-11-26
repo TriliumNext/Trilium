@@ -247,6 +247,10 @@ function update(req: Request) {
     }
 
     const { entities, instanceId } = body;
+    // Without it the changes would be stored under this instance's own ID.
+    if (typeof instanceId !== "string" || !instanceId) {
+        throw new ValidationError("A push must name the instance ID of its sender.");
+    }
 
     getSql().transactional(() => syncUpdateService.updateEntities(entities, instanceId));
 }
@@ -264,6 +268,18 @@ export function cleanUpPartialRequests() {
 
 /* v8 ignore next -- module-level timer, not invoked in tests */
 setInterval(cleanUpPartialRequests, 60 * 1000);
+
+/**
+ * Confirms that a device without a sync server no longer syncs, so that the consistency checks fix
+ * problems instead of waiting for a sync to finish.
+ */
+function confirmAlone() {
+    if (syncOptions.isSyncSetup()) {
+        throw new ValidationError("A sync server is set.");
+    }
+
+    optionService.setOption("syncIncomplete", "false");
+}
 
 function syncFinished() {
     // after the first sync finishes, the application is ready to be used
@@ -291,6 +307,7 @@ export default {
     getChanged,
     update,
     getStats,
+    confirmAlone,
     syncFinished,
     queueSector,
     checkEntityChanges

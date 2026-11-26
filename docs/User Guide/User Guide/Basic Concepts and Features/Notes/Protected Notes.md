@@ -57,6 +57,17 @@ flowchart TD
     dataKey -->|"decrypts (AES-128-CBC)"| content["Title and content<br>of each protected note"]
 ```
 
+## When the key of the protected notes cannot be read
+
+Trilium can report that the password is right but the key of the protected notes cannot be read. This happens when the stored data encryption key was replaced, for example by a sync peer that wrote one of its own. Do not reset the password: a reset replaces the key on every device, and the protected notes are then lost for good.
+
+The original key comes back only when it is written again, since the replaced one is newer than any backup. To do so, on one device:
+
+1.  Stop the device from syncing, for example by disconnecting it from the network.
+2.  Restore a [backup](../../Installation%20%26%20Setup/Backup.md) made before the key stopped opening.
+3.  Change the password in <a class="reference-link" href="../UI%20Elements/Options.md">Options</a> → _Password & Auth_. The new password can be the same as the old one: the change writes the key again.
+4.  Let the device sync again. The key it wrote reaches every other device.
+
 ## Sharing Protected Notes
 
 Protected notes cannot be shared in the same way as regular notes. Their encryption ensures that only authorized users with the correct password can access them.

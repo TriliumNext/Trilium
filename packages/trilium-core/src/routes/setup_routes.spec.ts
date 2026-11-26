@@ -156,6 +156,8 @@ function captureRegistrations(): { builders: Map<string, string>; middleware: Ma
         apiResultHandler: stub("apiResultHandler"),
         checkApiAuth: stub("checkApiAuth"),
         checkApiAuthOrElectron: stub("checkApiAuthOrElectron"),
+        checkSyncAuth: stub("checkSyncAuth"),
+        checkBackupDownload: stub("checkBackupDownload"),
         checkAppNotInitialized: stub("checkAppNotInitialized"),
         checkSetupAuth: stub("checkSetupAuth"),
         checkCredentials: stub("checkCredentials"),

@@ -250,7 +250,12 @@ describe("sync service", () => {
         // while the DB is not yet marked initialized (the initial sync hasn't converged).
         const countSynced = () => getSql().getValue<number>("SELECT COUNT(1) FROM entity_changes WHERE isSynced = 1") ?? 0;
         const prevInitialized = options.getOptionOrNull("initialized");
-        cls.init(() => options.setOption("initialized", "false"));
+        const zoomFactor = options.getOptionOrNull("zoomFactor");
+        // An initial sync that has not converged, so the database was never opened.
+        cls.init(() => {
+            options.setOption("initialized", "false");
+            getSql().execute("DELETE FROM options WHERE name = 'zoomFactor'");
+        });
 
         let alreadyPulled = 0;
         let capturedTotal: number | null = null;
@@ -268,7 +273,14 @@ describe("sync service", () => {
         try {
             await runSync();
         } finally {
-            cls.init(() => options.setOption("initialized", prevInitialized ?? "true"));
+            cls.init(() => {
+                options.setOption("initialized", prevInitialized ?? "true");
+                getSql().execute(
+                    `INSERT OR REPLACE INTO options (name, value, isSynced, utcDateModified)
+                     VALUES ('zoomFactor', ?, 0, '2020-01-01 00:00:00.000Z')`,
+                    [ zoomFactor ]
+                );
+            });
         }
 
         // grand total = already-pulled (local) + this batch (1) + remaining reported by the remote (5)

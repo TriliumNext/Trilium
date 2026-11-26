@@ -5,6 +5,7 @@ Data directory contains:
 *   `config.ini` - instance level settings like port on which the Trilium application runs
 *   `backup` - contains automatically [backup](Backup.md) of documents
 *   `log` - contains application log files
+*   `second_factor_key.txt` - the key of the [second factor](Server%20Installation/Multi-factor%20authentication%20with%20TOTP.md), which belongs with `document.db` when you move it
 
 ## Location of the data directory
 

@@ -72,6 +72,10 @@ interface SharedApiRoutesContext {
     checkApiAuth: any;
     apiResultHandler: any;
     checkApiAuthOrElectron: any;
+    /** Lets through only a sync session, for the routes that a sync client calls. */
+    checkSyncAuth: any;
+    /** Asks a backup download for a download token while the second factor is `legacy`. */
+    checkBackupDownload: any;
     checkAppNotInitialized: any;
     /**
      * Refuses a setup route where the wizard has a knowledge base behind it and has not been
@@ -89,7 +93,25 @@ interface SharedApiRoutesContext {
     csrfMiddleware: any;
 }
 
-export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTransaction, apiRoute, asyncApiRoute, checkApiAuth, apiResultHandler, checkApiAuthOrElectron, checkAppNotInitialized, checkSetupAuth, checkCredentials, loginRateLimiter, uploadMiddlewareWithErrorHandling, importMiddlewareWithErrorHandling, csrfMiddleware }: SharedApiRoutesContext) {
+export function buildSharedApiRoutes({
+    route,
+    asyncRoute,
+    asyncRouteWithoutTransaction,
+    apiRoute,
+    asyncApiRoute,
+    checkApiAuth,
+    apiResultHandler,
+    checkApiAuthOrElectron,
+    checkSyncAuth,
+    checkBackupDownload,
+    checkAppNotInitialized,
+    checkSetupAuth,
+    checkCredentials,
+    loginRateLimiter,
+    uploadMiddlewareWithErrorHandling,
+    importMiddlewareWithErrorHandling,
+    csrfMiddleware
+}: SharedApiRoutesContext) {
     apiRoute(GET, '/api/tree', treeApiRoute.getTree);
     apiRoute(PST, '/api/tree/load', treeApiRoute.load);
 
@@ -247,12 +269,15 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     asyncApiRoute(PST, "/api/sync/now", syncApiRoute.syncNow);
     apiRoute(PST, "/api/sync/fill-entity-changes", syncApiRoute.fillEntityChanges);
     apiRoute(PST, "/api/sync/force-full-sync", syncApiRoute.forceFullSync);
-    route(GET, "/api/sync/check", [checkApiAuth], syncApiRoute.checkSync, apiResultHandler);
-    route(GET, "/api/sync/changed", [checkApiAuth], syncApiRoute.getChanged, apiResultHandler);
-    route(PUT, "/api/sync/update", [checkApiAuth], syncApiRoute.update, apiResultHandler);
-    route(PST, "/api/sync/finished", [checkApiAuth], syncApiRoute.syncFinished, apiResultHandler);
-    route(PST, "/api/sync/check-entity-changes", [checkApiAuth], syncApiRoute.checkEntityChanges, apiResultHandler);
-    route(PST, "/api/sync/queue-sector/:entityName/:sector", [checkApiAuth], syncApiRoute.queueSector, apiResultHandler);
+    apiRoute(PST, "/api/sync/confirm-alone", syncApiRoute.confirmAlone);
+    route(GET, "/api/sync/check", [checkSyncAuth], syncApiRoute.checkSync, apiResultHandler);
+    route(GET, "/api/sync/changed", [checkSyncAuth], syncApiRoute.getChanged, apiResultHandler);
+    route(PUT, "/api/sync/update", [checkSyncAuth], syncApiRoute.update, apiResultHandler);
+    route(PST, "/api/sync/finished", [checkSyncAuth], syncApiRoute.syncFinished, apiResultHandler);
+    route(PST, "/api/sync/check-entity-changes",
+        [checkSyncAuth], syncApiRoute.checkEntityChanges, apiResultHandler);
+    route(PST, "/api/sync/queue-sector/:entityName/:sector",
+        [checkSyncAuth], syncApiRoute.queueSector, apiResultHandler);
     route(GET, "/api/sync/stats", [], syncApiRoute.getStats, apiResultHandler);
 
     //#region Import/export
@@ -345,7 +370,8 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     // Backup routes
     asyncApiRoute(GET, "/api/database/backups", backupRoute.getExistingBackups);
     asyncApiRoute(PST, "/api/database/backup-database", backupRoute.backupDatabase);
-    asyncRoute(GET, "/api/database/backup/download", [checkApiAuthOrElectron], backupRoute.downloadBackup);
+    asyncRoute(GET, "/api/database/backup/download",
+        [checkApiAuthOrElectron, checkBackupDownload], backupRoute.downloadBackup);
 
     apiRoute(GET, "/api/other/icon-registry", otherRoute.getIconRegistry);
     apiRoute(GET, "/api/other/icon-usage", otherRoute.getIconUsage);

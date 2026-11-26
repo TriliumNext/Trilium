@@ -29,6 +29,9 @@ const mocks = vi.hoisted(() => {
                     ? { success: true, recoveryCodes: [ "aaaa-bbbb", "cccc-dddd" ] }
                     : { success: false };
             }
+            return { success: true, recoveryCodes: [ "aaaa-bbbb", "cccc-dddd" ] };
+        }),
+        withCredentials: vi.fn(async (_method: string, url: string) => {
             if (url === "totp/enable") return { success: enrollment.enabled };
             return { success: true, recoveryCodes: [ "aaaa-bbbb", "cccc-dddd" ] };
         }),
@@ -71,7 +74,13 @@ vi.mock("../../react/Modal", () => ({
 }));
 
 vi.mock("../../../services/server", () => ({
-    default: { get: mocks.get, post: mocks.post, put: async () => ({}), remove: async () => ({}) }
+    default: {
+        get: mocks.get,
+        post: mocks.post,
+        withCredentials: mocks.withCredentials,
+        put: async () => ({}),
+        remove: async () => ({})
+    }
 }));
 
 vi.mock("../../../services/dialog", () => ({ default: { confirm: mocks.confirm } }));
@@ -117,10 +126,30 @@ async function open(totpStatus?: TOTPStatus) {
 const badge = () => host.querySelector(".mfa-status-badge")?.className;
 const button = (name: string) => host.querySelector<HTMLButtonElement>(`button[name='${name}']`);
 const dots = () => [ ...host.querySelectorAll(".recovery-code-dot") ];
+const credentialsBoxes = () => [
+    ...document.querySelectorAll<HTMLInputElement>(".credentials-modal input")
+];
+
+/** Fills in the credentials dialog that a guarded change opens, and submits it. */
+async function answerCredentials(...values: string[]) {
+    for (const [ index, value ] of values.entries()) {
+        await act(async () => {
+            const box = credentialsBoxes()[index];
+            if (box) {
+                box.value = value;
+                box.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+        });
+    }
+    await act(async () => {
+        document.querySelector<HTMLFormElement>(".credentials-modal form")?.requestSubmit();
+    });
+    await act(async () => {});
+}
 
 describe("TOTP before it has been set up", () => {
     it("offers the one way in, and says the method is off", async () => {
-        await open({ set: false } as TOTPStatus);
+        await open({ set: false, isCodeAsked: false });
 
         expect(badge()).toContain("inactive");
         expect(button("totp-setup-button")).not.toBeNull();
@@ -138,7 +167,7 @@ describe("TOTP once a secret is set", () => {
     });
 
     it("replaces the call to action with the codes panel, and says the method is on", async () => {
-        await open({ set: true } as TOTPStatus);
+        await open({ set: true, isCodeAsked: true });
 
         expect(badge()).toContain("active");
         expect(button("totp-setup-button")).toBeNull();
@@ -147,39 +176,62 @@ describe("TOTP once a secret is set", () => {
     });
 
     it("shows one dot per code, filled for the ones still to be spent", async () => {
-        await open({ set: true } as TOTPStatus);
+        await open({ set: true, isCodeAsked: true });
 
         expect(dots()).toHaveLength(3);
         expect(dots().filter((dot) => dot.className.includes("available"))).toHaveLength(2);
         expect(dots().filter((dot) => dot.className.includes("used"))).toHaveLength(1);
     });
 
-    it("asks before minting a fresh batch, the old ones being lost either way", async () => {
+    it("asks before minting a fresh batch, then for the password and a code", async () => {
         mocks.confirm.mockResolvedValueOnce(false);
-        await open({ set: true } as TOTPStatus);
+        await open({ set: true, isCodeAsked: true });
 
         await act(async () => button("regenerate-recovery-keys-button")?.click());
+        expect(credentialsBoxes()).toHaveLength(0);
+
+        await act(async () => button("regenerate-recovery-keys-button")?.click());
+        expect(credentialsBoxes()).toHaveLength(2);
+        await answerCredentials("the password", "123456");
+
+        expect(mocks.withCredentials).toHaveBeenCalledWith(
+            "POST", "totp_recovery/regenerate", {}, { password: "the password", code: "123456" });
         expect(mocks.post).not.toHaveBeenCalled();
-
-        await act(async () => button("regenerate-recovery-keys-button")?.click());
-        expect(mocks.post).toHaveBeenCalledWith("totp_recovery/regenerate");
     });
 
     it("asks before removing TOTP, and refreshes the page's idea of it once gone", async () => {
         mocks.confirm.mockResolvedValueOnce(false);
-        await open({ set: true } as TOTPStatus);
+        await open({ set: true, isCodeAsked: true });
 
         await act(async () => button("totp-remove-button")?.click());
-        expect(mocks.post).not.toHaveBeenCalled();
+        expect(credentialsBoxes()).toHaveLength(0);
 
         await act(async () => button("totp-remove-button")?.click());
-        expect(mocks.post).toHaveBeenCalledWith("totp/reset");
+        await answerCredentials("the password", "123456");
+
+        expect(mocks.withCredentials).toHaveBeenCalledWith(
+            "POST", "totp/reset", {}, { password: "the password", code: "123456" });
         expect(mocks.refresh).toHaveBeenCalled();
+    });
+
+    it("sends nothing when the credentials dialog is canceled", async () => {
+        await open({ set: true, isCodeAsked: true });
+
+        await act(async () => button("totp-remove-button")?.click());
+        const cancel = document.querySelector<HTMLButtonElement>(
+            ".credentials-modal .modal-footer button"
+        );
+        expect(cancel?.textContent?.trim()).toBe("credentials.cancel");
+        await act(async () => cancel?.click());
+
+        expect(credentialsBoxes()).toHaveLength(0);
+        expect(mocks.withCredentials).not.toHaveBeenCalled();
+        expect(mocks.refresh).not.toHaveBeenCalled();
     });
 
     it("says so plainly when there are no codes at all, rather than showing an empty row of dots", async () => {
         mocks.recovery.keysExist = false;
-        await open({ set: true } as TOTPStatus);
+        await open({ set: true, isCodeAsked: true });
 
         expect(dots()).toHaveLength(0);
         const row = button("regenerate-recovery-keys-button")?.closest(".tn-card-option");
@@ -202,7 +254,7 @@ describe("enrolling in TOTP", () => {
 
     /** Opens the dialog and lets the secret it asks for arrive — requested as the step is shown. */
     async function startEnrolling() {
-        await open({ set: false } as TOTPStatus);
+        await open({ set: false, isCodeAsked: false });
         await act(async () => button("totp-setup-button")?.click());
         await act(async () => {});
         await act(async () => {});
@@ -259,7 +311,7 @@ describe("enrolling in TOTP", () => {
 
         expect(mocks.post).toHaveBeenCalledWith("totp/verify", { secret: "JBSWY3DPEHPK3PXP", token: "000000" });
         // Nothing is stored by verifying, so a refusal leaves TOTP exactly as it was.
-        expect(mocks.post).not.toHaveBeenCalledWith("totp/enable", expect.anything());
+        expect(mocks.withCredentials).not.toHaveBeenCalled();
         expect(codeBox()?.value).toBe("");
         expect(dialog()?.querySelector(".totp-recovery-codes")).toBeNull();
     });
@@ -270,7 +322,7 @@ describe("enrolling in TOTP", () => {
 
         const codes = [ ...(dialog()?.querySelectorAll(".totp-recovery-codes li") ?? []) ];
         expect(codes.map((code) => code.textContent)).toEqual([ "aaaa-bbbb", "cccc-dddd" ]);
-        expect(mocks.post).not.toHaveBeenCalledWith("totp/enable", expect.anything());
+        expect(mocks.withCredentials).not.toHaveBeenCalled();
     });
 
     it("will not finish until the codes have been acknowledged as saved", async () => {
@@ -291,12 +343,14 @@ describe("enrolling in TOTP", () => {
 
         await act(async () => void dialog()?.querySelector<HTMLInputElement>("input[type='checkbox']")?.click());
         await act(async () => footerButtons()[0].click());
-        await act(async () => {});
+        // No factor is set, so the server asks for the password alone.
+        expect(credentialsBoxes()).toHaveLength(1);
+        await answerCredentials("the password");
 
-        expect(mocks.post).toHaveBeenCalledWith("totp/enable", {
+        expect(mocks.withCredentials).toHaveBeenCalledWith("POST", "totp/enable", {
             secret: "JBSWY3DPEHPK3PXP",
             recoveryCodes: [ "aaaa-bbbb", "cccc-dddd" ]
-        });
+        }, { password: "the password", code: "" });
         expect(mocks.refresh).toHaveBeenCalled();
         expect(mocks.showMessage).toHaveBeenCalledWith("multi_factor_authentication.totp_enroll_enabled");
     });
@@ -308,7 +362,7 @@ describe("enrolling in TOTP", () => {
 
         await act(async () => void dialog()?.querySelector<HTMLInputElement>("input[type='checkbox']")?.click());
         await act(async () => footerButtons()[0].click());
-        await act(async () => {});
+        await answerCredentials("the password");
 
         expect(mocks.showError).toHaveBeenCalledWith("multi_factor_authentication.totp_enroll_enable_error");
         expect(mocks.refresh).not.toHaveBeenCalled();

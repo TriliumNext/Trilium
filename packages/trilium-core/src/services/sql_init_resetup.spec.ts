@@ -29,8 +29,9 @@ describe("createDatabaseForSync on a partially set-up database", () => {
         const sql = getSql();
 
         // Turn the (initialized) fixture into the failed-setup state: schema + data
-        // present, but the initial sync never converged.
+        // present, but the initial sync never converged, so the database was never opened.
         sql.execute("UPDATE options SET value = 'false' WHERE name = 'initialized'");
+        sql.execute("DELETE FROM options WHERE name = 'zoomFactor'");
         expect(sqlInit.schemaExists()).toBe(true);
         expect(sqlInit.isDbInitialized()).toBe(false);
         const staleNoteCount = sql.getValue<number>("SELECT COUNT(*) FROM notes") ?? 0;
@@ -63,6 +64,7 @@ describe("createDatabaseForSync on a partially set-up database", () => {
 
         // Failed-setup state again, with a marker row standing in for partially pulled data.
         sql.execute("UPDATE options SET value = 'false' WHERE name = 'initialized'");
+        sql.execute("DELETE FROM options WHERE name = 'zoomFactor'");
         sql.execute(/*sql*/`INSERT INTO notes (noteId, title, type, mime, isProtected, isDeleted, dateCreated, dateModified, utcDateCreated, utcDateModified)
             VALUES ('stalePulled1', 'stale', 'text', 'text/html', 0, 0, '2026-07-18', '2026-07-18', '2026-07-18', '2026-07-18')`);
         expect(sqlInit.schemaExists()).toBe(true);

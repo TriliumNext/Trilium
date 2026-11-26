@@ -16,6 +16,7 @@ import becca from "../becca/becca.js";
 import BOption from "../becca/entities/boption.js";
 import type { OptionRow } from "@triliumnext/commons";
 import type { FilterOptionsByType, OptionDefinitions, OptionMap, OptionNames } from "@triliumnext/commons";
+import { isOpenedDatabase, OPENED_DATABASE_SIGNS } from "./database_validation.js";
 import { getDefaultOptionSyncedFlag } from "./options_init.js";
 import { getSql } from "./sql/index.js";
 
@@ -101,13 +102,24 @@ function setOption<T extends OptionNames>(name: T, value: string | OptionDefinit
  * @param name the name of the option to be created.
  * @param value the value of the option, as a string. It can then be interpreted as other types such as a number of boolean.
  * @param isSynced `true` if the value should be synced across multiple instances (e.g. locale) or `false` if it should be local-only (e.g. theme).
+ * @param utcDateModified the date to create it with, instead of now.
+ * @throws an option that only the opening of a database creates, on a database that has not opened.
  */
-function createOption<T extends OptionNames>(name: T, value: string | OptionDefinitions[T], isSynced: boolean) {
+function createOption<T extends OptionNames>(name: T, value: string | OptionDefinitions[T],
+    isSynced: boolean, utcDateModified?: string) {
+    if (OPENED_DATABASE_SIGNS.includes(name) && !isOpenedDatabase(getStoredOptionValue)) {
+        throw new Error(`Option '${name}' is created only when the database opens.`);
+    }
+
     new BOption({
         name: name,
         value: value as string,
         isSynced: isSynced
-    }).save();
+    }).save({ utcDateModified });
+}
+
+function getStoredOptionValue(name: string) {
+    return getSql().getValue<string>("SELECT value FROM options WHERE name = ?", [ name ]);
 }
 
 function getOptions() {

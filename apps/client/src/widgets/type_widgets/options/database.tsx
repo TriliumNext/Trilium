@@ -473,6 +473,7 @@ function AnonymizationOptions() {
                 )}
                 files={databases}
                 downloadEndpoint="api/database/anonymized/download"
+                downloadKind="anonymized"
                 downloadText={t("database_anonymization.download")}
                 onDelete={remove}
                 emptyIcon="bx bx-glasses"

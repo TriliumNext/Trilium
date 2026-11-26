@@ -45,6 +45,14 @@ async function getHeaders(headers?: Headers) {
     return allHeaders;
 }
 
+/** Rebuilds the headers for a retry: the caller's own headers, with a fresh `glob.csrfToken`. */
+async function getRetryHeaders(headers: Headers) {
+    return {
+        ...headers,
+        ...await getHeaders({ "trilium-component-id": headers["trilium-component-id"] })
+    };
+}
+
 async function getWithSilentNotFound<T>(url: string, componentId?: string) {
     return await call<T>("GET", url, componentId, { silentNotFound: true });
 }
@@ -314,6 +322,27 @@ interface CallOptions {
      * everywhere else, so an ordinary request that hangs still fails rather than hanging its caller.
      */
     timeoutMs?: number;
+    /** Headers added to the default ones, such as the credentials of {@link withCredentials}. */
+    headers?: Record<string, string>;
+}
+
+/** The password, and a second factor code when the server asks for one. */
+export interface Credentials {
+    password: string;
+    code: string;
+}
+
+/** Sends a request to a route that asks for the password and, when a factor is set, a code. */
+async function withCredentials<T>(
+    method: "POST" | "PUT", url: string, data: unknown, { password, code }: Credentials
+) {
+    // `checkCredentials()` reads the password after the colon and ignores the user name.
+    const bytes = new TextEncoder().encode(`user:${password}`);
+    const headers: Record<string, string> = { "trilium-cred": btoa(String.fromCharCode(...bytes)) };
+    if (code) {
+        headers["trilium-totp"] = code;
+    }
+    return await call<T>(method, url, undefined, { data, headers });
 }
 
 /**
@@ -334,7 +363,8 @@ const USE_LOCAL_FETCH = import.meta.env.VITE_DISABLE_LOCAL_FETCH !== "true";
 
 async function call<T>(method: string, url: string, componentId?: string, options: CallOptions = {}) {
     const headers = await getHeaders({
-        "trilium-component-id": componentId
+        "trilium-component-id": componentId,
+        ...options.headers
     });
     const { data } = options;
 
@@ -424,8 +454,7 @@ function ajax(url: string, method: string, data: unknown, headers: Headers, opts
                 if (!opts.csrfRetried && isCsrfError(jqXhr.status, jqXhr.responseText)) {
                     try {
                         await refreshCsrfToken();
-                        // Rebuild headers so the fresh glob.csrfToken is picked up
-                        const retryHeaders = await getHeaders({ "trilium-component-id": headers["trilium-component-id"] });
+                        const retryHeaders = await getRetryHeaders(headers);
                         const retryResult = await ajax(url, method, data, retryHeaders, { ...opts, csrfRetried: true });
                         res(retryResult);
                         return;
@@ -533,8 +562,7 @@ async function localAjax(
         // refresh it and retry the request once.
         if (!opts.csrfRetried && isCsrfError(resp.status, responseText)) {
             await refreshCsrfToken();
-            // Rebuild headers so the fresh glob.csrfToken is picked up
-            const retryHeaders = await getHeaders({ "trilium-component-id": headers["trilium-component-id"] });
+            const retryHeaders = await getRetryHeaders(headers);
             return await ajax(url, method, data, retryHeaders, { ...opts, csrfRetried: true });
         }
 
@@ -618,5 +646,7 @@ export default {
     // don't remove, used from CKEditor image upload!
     getHeaders,
     getLocalUpload,
-    getMaxKnownEntityChangeId: () => maxKnownEntityChangeId
+    getMaxKnownEntityChangeId: () => maxKnownEntityChangeId,
+    refreshCsrfToken,
+    withCredentials
 };

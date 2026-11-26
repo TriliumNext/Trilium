@@ -6,14 +6,16 @@
  * - TOTP/2FA is not supported in standalone mode
  * - Uses synchronous Node.js crypto.scryptSync for performance
  *
- * The TOTP secret is encrypted using AES and stored in options.
- * Verification uses scrypt-based hashing with constant-time comparison.
+ * The TOTP secret is sealed with the key of `second_factor_key.txt` and stored in options. A legacy
+ * secret is encrypted with `totpEncryptionSalt`, another option, and is read for the conversion at
+ * startup and by the setup wizard. `totpVerificationHash` is set whenever a secret is set.
  */
 import type { OptionNames } from "@triliumnext/commons";
 import { binary_utils, data_encryption, options as optionService } from "@triliumnext/core";
 import crypto from "crypto";
 
-import { constantTimeCompare, randomSecureToken, toBase64 } from "../utils.js";
+import { toBase64 } from "../utils.js";
+import { isSealed, open, seal } from "./second_factor_key.js";
 
 const TOTP_OPTIONS: Record<string, OptionNames> = {
     SALT: "totpEncryptionSalt",
@@ -32,58 +34,70 @@ function getTotpVerificationHash(secret: string): Buffer {
     return crypto.scryptSync(secret, salt, 32, SCRYPT_OPTIONS);
 }
 
-function verifyTotpSecret(secret: string): boolean {
-    const givenSecretHash = toBase64(getTotpVerificationHash(secret));
-    const dbSecretHash = optionService.getOptionOrNull(TOTP_OPTIONS.VERIFICATION_HASH);
-
-    if (!dbSecretHash) {
-        return false;
-    }
-
-    return constantTimeCompare(givenSecretHash, dbSecretHash);
-}
-
 function setTotpSecret(secret: string) {
     if (!secret) {
         throw new Error("TOTP secret cannot be empty");
     }
 
-    const encryptionSalt = randomSecureToken(32);
-    optionService.setOption(TOTP_OPTIONS.SALT, encryptionSalt);
-
-    const verificationHash = toBase64(getTotpVerificationHash(secret));
-    optionService.setOption(TOTP_OPTIONS.VERIFICATION_HASH, verificationHash);
-
-    const encryptedSecret = data_encryption.encrypt(
-        Buffer.from(encryptionSalt),
-        secret
+    optionService.setOption(TOTP_OPTIONS.SALT, "");
+    optionService.setOption(
+        TOTP_OPTIONS.ENCRYPTED_SECRET,
+        seal(TOTP_OPTIONS.ENCRYPTED_SECRET, secret)
     );
-    optionService.setOption(TOTP_OPTIONS.ENCRYPTED_SECRET, encryptedSecret);
+    optionService.setOption(
+        TOTP_OPTIONS.VERIFICATION_HASH,
+        toBase64(getTotpVerificationHash(secret))
+    );
 }
 
+/** Returns the secret, sealed or legacy, or `null` when none is set or it does not open. */
 function getTotpSecret(): string | null {
-    const encryptionSalt = optionService.getOptionOrNull(TOTP_OPTIONS.SALT);
     const encryptedSecret = optionService.getOptionOrNull(TOTP_OPTIONS.ENCRYPTED_SECRET);
-
-    if (!encryptionSalt || !encryptedSecret) {
+    if (!encryptedSecret) {
         return null;
     }
 
-    try {
-        const decryptedSecret = data_encryption.decrypt(
-            Buffer.from(encryptionSalt),
-            encryptedSecret
-        );
+    return isSealed(encryptedSecret)
+        ? open(TOTP_OPTIONS.ENCRYPTED_SECRET, encryptedSecret)
+        : getLegacyTotpSecret(encryptedSecret);
+}
 
-        if (!decryptedSecret) {
-            return null;
-        }
-
-        return binary_utils.decodeUtf8(decryptedSecret);
-    } catch (e) {
-        console.error("Failed to decrypt TOTP secret:", e);
+/** Reads a secret in the legacy form, encrypted with `totpEncryptionSalt`. */
+function getLegacyTotpSecret(encryptedSecret: string): string | null {
+    const encryptionSalt = optionService.getOptionOrNull(TOTP_OPTIONS.SALT);
+    if (!encryptionSalt) {
         return null;
     }
+
+    const decryptedSecret = data_encryption.decryptStrictly(
+        Buffer.from(encryptionSalt),
+        encryptedSecret
+    );
+    return decryptedSecret ? binary_utils.decodeUtf8(decryptedSecret) : null;
+}
+
+/**
+ * Seals a legacy secret with the key file and clears its salt.
+ *
+ * @returns whether a legacy secret was converted.
+ */
+function convertLegacyTotpSecret(): boolean {
+    const encryptedSecret = optionService.getOptionOrNull(TOTP_OPTIONS.ENCRYPTED_SECRET);
+    if (!encryptedSecret || isSealed(encryptedSecret)) {
+        return false;
+    }
+
+    const secret = getLegacyTotpSecret(encryptedSecret);
+    if (secret === null) {
+        return false;
+    }
+
+    optionService.setOption(
+        TOTP_OPTIONS.ENCRYPTED_SECRET,
+        seal(TOTP_OPTIONS.ENCRYPTED_SECRET, secret)
+    );
+    optionService.setOption(TOTP_OPTIONS.SALT, "");
+    return true;
 }
 
 function resetTotpSecret() {
@@ -97,9 +111,9 @@ function isTotpSecretSet(): boolean {
 }
 
 export default {
-    verifyTotpSecret,
     setTotpSecret,
     getTotpSecret,
+    convertLegacyTotpSecret,
     resetTotpSecret,
     isTotpSecretSet
 };

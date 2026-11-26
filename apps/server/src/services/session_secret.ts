@@ -16,7 +16,8 @@ if (!fs.existsSync(sessionSecretPath)) {
 
     getLog().info("Generated session secret");
 
-    fs.writeFileSync(sessionSecretPath, sessionSecret, ENCODING);
+    // Readable only by the server's user, since it signs the sessions and the CSRF tokens.
+    fs.writeFileSync(sessionSecretPath, sessionSecret, { encoding: ENCODING, mode: 0o600 });
 } else {
     sessionSecret = fs.readFileSync(sessionSecretPath, ENCODING);
 }

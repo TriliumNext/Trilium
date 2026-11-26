@@ -204,7 +204,10 @@
     "sso-not-enrolled": "Single sign-on isn't set up yet. Sign in with your password first, then link your account from the settings."
   },
   "password": {
-    "incorrect": "The password you entered is incorrect."
+    "incorrect": "The password you entered is incorrect.",
+    "change-data-key-unreadable": "The key of protected notes cannot be read, so the password was not changed.",
+    "restore-refused": "The password of this knowledge base was removed. Enter the password it had.",
+    "session-data-key-unreadable": "The password is right, but the key of protected notes cannot be read."
   },
   "set_password": {
     "title": "Set Password",
@@ -623,5 +626,12 @@
   "revisions": {
     "draft_description": "Unsaved changes",
     "fragment_description": "Unsaved changes to an excerpt"
+  },
+  "second_factor": {
+    "refused-wait": "Too many wrong codes. Try again after {{time}}.",
+    "refused-step-ahead": "A code was used while the server clock was ahead. Codes work again after {{time}}.",
+    "refused-unreadable": "The second factor cannot be checked. Restart the server with TRILIUM_RESET_SECOND_FACTOR to remove it.",
+    "refused-removed": "The second factor was removed. Restart the server with TRILIUM_RESET_SECOND_FACTOR and send its words as the code.",
+    "download-refused": "Until the second factor is set up again, a download asks for the password and a current code."
   }
 }

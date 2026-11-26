@@ -148,6 +148,22 @@ describe("content_hash", () => {
             expect(mismatch).toBeDefined();
             expect(mismatch?.sector).toBe("O");
         });
+
+        it("flags every sector of a kind that only the other side holds", () => {
+            // A client without ETAPI tokens, whose sync cursor passed one after the server
+            // was restored.
+            const failed = getContext().init(() => {
+                const remote = JSON.parse(JSON.stringify(contentHash.getEntityHashes()));
+                remote["spec_remote_only"] = { P: "remote-hash", Q: "other-hash" };
+
+                return contentHash.checkContentHashes(remote);
+            });
+
+            expect(failed.filter((c) => c.entityName === "spec_remote_only")).toEqual([
+                { entityName: "spec_remote_only", sector: "P" },
+                { entityName: "spec_remote_only", sector: "Q" }
+            ]);
+        });
     });
 
     describe("fingerprint cache", () => {

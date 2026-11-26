@@ -91,6 +91,43 @@ describe("sync protocol with built-in OIDC enabled (#10548)", () => {
             .expect(204);
     });
 
+    it("serves a sync session at sync routes only, and as logged out at /bootstrap", async () => {
+        const sessionCookie = await syncLogin();
+
+        await supertest(app).get("/api/sync/check").set("Cookie", sessionCookie).expect(200);
+        for (const path of [
+            "/api/notes/root", "/api/options", "/api/database/backups", "/api/totp/status"
+        ]) {
+            const res = await supertest(app).get(path).set("Cookie", sessionCookie);
+            expect(res.status, path).toBe(401);
+        }
+
+        const bootstrap = await supertest(app)
+            .get("/bootstrap")
+            .set("Cookie", sessionCookie)
+            .expect(200);
+        expect(bootstrap.body.loggedIn).toBe(false);
+        expect(bootstrap.body.csrfToken).toBeUndefined();
+    });
+
+    it("refuses interactive sessions at sync routes, and kindless ones anywhere", async () => {
+        const login = await supertest(app)
+            .post("/login")
+            .send({ password: "demo1234" })
+            .expect(302);
+        const sessionCookie = (login.headers["set-cookie"] as unknown as string[])[0];
+        await supertest(app).get("/api/notes/root").set("Cookie", sessionCookie).expect(200);
+
+        const res = await supertest(app).get("/api/sync/check").set("Cookie", sessionCookie);
+        expect(res.status).toBe(401);
+        expect(res.text).toBe("Sync session not found");
+
+        // A session from before the kinds existed.
+        const sql = (await import("../../src/services/sql.js")).default;
+        sql.execute("UPDATE sessions SET data = json_remove(data, '$.sessionKind')");
+        await supertest(app).get("/api/notes/root").set("Cookie", sessionCookie).expect(401);
+    });
+
     it("rejects sync requests without the session cookie", async () => {
         const res = await supertest(app)
             .put("/api/sync/update?logMarkerId=spec")
@@ -98,7 +135,7 @@ describe("sync protocol with built-in OIDC enabled (#10548)", () => {
             .set("pageIndex", "0")
             .send({ entities: [], instanceId: "spec-desktop" });
         expect(res.status).toBe(401);
-        expect(res.text).toBe("Logged in session not found");
+        expect(res.text).toBe("Sync session not found");
     });
 
     it("allows the setup wizard to trigger sync/now without a CSRF token while the DB is uninitialized", async () => {
@@ -109,7 +146,12 @@ describe("sync protocol with built-in OIDC enabled (#10548)", () => {
         // it), leaving a failed initial sync stuck forever. CSRF also protects nothing
         // here: before initialization there is no authenticated session to ride.
         const sql = (await import("../../src/services/sql.js")).default;
+        const zoomFactor = sql.getValue<string>(
+            "SELECT value FROM options WHERE name = 'zoomFactor'"
+        );
+        // A first sync that has not finished, so the database was never opened.
         sql.execute("UPDATE options SET value = 'false' WHERE name = 'initialized'");
+        sql.execute("DELETE FROM options WHERE name = 'zoomFactor'");
         try {
             const res = await supertest(app).post("/api/sync/now");
             expect(res.status).toBe(200);
@@ -118,6 +160,8 @@ describe("sync protocol with built-in OIDC enabled (#10548)", () => {
             expect(res.body.errorCode).toBe("NOT_CONFIGURED");
         } finally {
             sql.execute("UPDATE options SET value = 'true' WHERE name = 'initialized'");
+            sql.execute(/*sql*/`INSERT INTO options (name, value, isSynced, utcDateModified)
+                VALUES ('zoomFactor', ?, 0, '2020-01-01 00:00:00.000Z')`, [ zoomFactor ]);
         }
     });
 
@@ -138,7 +182,7 @@ describe("sync protocol with built-in OIDC enabled (#10548)", () => {
             .set("pageIndex", "0")
             .send({ entities: [], instanceId: "spec-desktop" });
         expect(res.status).toBe(401);
-        expect(res.text).toBe("Logged in session not found");
+        expect(res.text).toBe("Sync session not found");
     });
 });
 

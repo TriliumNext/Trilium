@@ -1,8 +1,18 @@
-import type { EntityChange, EntityChangeRecord, EntityRow } from "@triliumnext/commons";
+import type {
+    EntityChange,
+    EntityChangeRecord,
+    EntityRow,
+    OptionNames,
+    OptionRow
+} from "@triliumnext/commons";
 
 import blobService from "./blob.js";
 import entityChangesService from "./entity_changes.js";
 import { getLog } from "./log.js";
+import {
+    getDefaultOptionSyncedFlag,
+    isDeviceOption as isDeviceOptionName
+} from "./options_init.js";
 import { getSql } from "./sql/index.js";
 import ws from "./ws.js";
 import { default as eventService } from "./events.js";
@@ -61,6 +71,11 @@ function updateEntity(remoteEC: EntityChange, remoteEntityRow: EntityRow | undef
         return;
     }
 
+    if (remoteEC.entityName === "options" && remoteEntityRow
+        && !isOptionRowTaken(remoteEC, remoteEntityRow)) {
+        return;
+    }
+
     const updated = remoteEC.entityName === "note_reordering"
         ? updateNoteReordering(remoteEC, remoteEntityRow, instanceId)
         : updateNormalEntity(remoteEC, remoteEntityRow, instanceId, updateContext);
@@ -81,13 +96,42 @@ function updateEntity(remoteEC: EntityChange, remoteEntityRow: EntityRow | undef
     }
 }
 
+/**
+ * Whether a peer's row of an option is one this instance takes. One it keeps on its device is
+ * refused: one its code declares so, or, of a name its code does not know, one it holds local-only.
+ */
+function isOptionRowTaken(remoteEC: EntityChange, remoteEntityRow: EntityRow) {
+    const name = remoteEC.entityId;
+    if ((remoteEntityRow as OptionRow).name !== name) {
+        getLog().error("Refused a synced option whose row names another option than its change.");
+        return false;
+    }
+
+    const isDeviceOption = isDeviceOptionName(name)
+        || (getDefaultOptionSyncedFlag(name as OptionNames) === undefined
+            && getSql().getValue<number>(
+                "SELECT isSynced FROM options WHERE name = ?", [ name ]
+            ) === 0);
+    if (isDeviceOption) {
+        getLog().info(`Refused a synced row of option ${JSON.stringify(name)}, `
+            + "which this instance keeps on its device.");
+    }
+    return !isDeviceOption;
+}
+
 function updateNormalEntity(incomingEC: EntityChange, remoteEntityRow: EntityRow | undefined, instanceId: string, updateContext: UpdateContext) {
     // A change dated later than now was written while a clock ran ahead, so its real age is
-    // unknown: an incoming one is stored as now, and a local one loses the conflict.
+    // unknown: an incoming one is stored as now, and a local one loses the conflict. Whatever the
+    // sender says, what a peer sends is synced: a change it calls local stays on this instance, out
+    // of the hash check.
     const now = dateUtils.utcNowDateTime();
-    const remoteEC = incomingEC.utcDateChanged && incomingEC.utcDateChanged > now
-        ? { ...incomingEC, utcDateChanged: now }
-        : incomingEC;
+    const remoteEC = {
+        ...incomingEC,
+        isSynced: true,
+        utcDateChanged: incomingEC.utcDateChanged && incomingEC.utcDateChanged > now
+            ? now
+            : incomingEC.utcDateChanged
+    };
     const localEC = getSql().getRow<EntityChange | undefined>(/*sql*/`SELECT * FROM entity_changes WHERE entityName = ? AND entityId = ?`, [remoteEC.entityName, remoteEC.entityId]);
     const localECIsFromTheFuture = !!localEC?.utcDateChanged && localEC.utcDateChanged > now;
     const localECIsOlderOrSameAsRemote = localEC && (localECIsFromTheFuture
@@ -115,6 +159,10 @@ function updateNormalEntity(incomingEC: EntityChange, remoteEntityRow: EntityRow
             }
 
             preProcessContent(remoteEC, remoteEntityRow);
+
+            if (remoteEC.entityName === "options") {
+                (remoteEntityRow as { isSynced: number }).isSynced = 1;
+            }
 
             getSql().replace(remoteEC.entityName, remoteEntityRow);
 
@@ -245,7 +293,7 @@ function updateNoteReordering(remoteEC: EntityChange, remoteEntityRow: EntityRow
         getSql().execute("UPDATE branches SET notePosition = ? WHERE branchId = ?", [remoteEntityRow[key as keyof EntityRow], key]);
     }
 
-    entityChangesService.putEntityChangeWithInstanceId(remoteEC, instanceId);
+    entityChangesService.putEntityChangeWithInstanceId({ ...remoteEC, isSynced: true }, instanceId);
 
     return true;
 }

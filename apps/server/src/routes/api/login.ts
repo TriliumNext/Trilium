@@ -9,6 +9,7 @@ import type { Request } from "express";
 
 import { verifyLoginCredentials } from "../../services/auth.js";
 import etapiTokenService from "../../services/etapi_tokens.js";
+import { markLoggedIn } from "../../services/login_session.js";
 import sql from "../../services/sql.js";
 import sqlInit from "../../services/sql_init.js";
 import utils from "../../services/utils.js";
@@ -58,7 +59,8 @@ async function loginSync(req: Request) {
         });
     });
 
-    req.session.loggedIn = true;
+    // Only the sync routes, since every copy of the database holds the document secret.
+    markLoggedIn(req.session, "sync");
 
     return {
         instanceId: getInstanceId(),
@@ -70,9 +72,9 @@ async function token(req: Request) {
     const password = req.body.password;
     const submittedTotpToken = req.body.totpToken;
 
-    const failedFactor = await verifyLoginCredentials(password, submittedTotpToken);
-    if (failedFactor) {
-        return [401, { message: "Incorrect credential", factor: failedFactor }];
+    const refusal = await verifyLoginCredentials(password, submittedTotpToken);
+    if (refusal) {
+        return [401, { message: "Incorrect credential", ...refusal }];
     }
 
     // for backwards compatibility with Sender which does not send the name

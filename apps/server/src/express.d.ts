@@ -32,6 +32,8 @@ export declare module "express-serve-static-core" {
 export declare module "express-session" {
     interface SessionData {
         loggedIn: boolean;
+        /** Which login made the session; read through `login_session.ts`. */
+        sessionKind?: "interactive" | "sync";
         lastAuthState: {
             totpEnabled: boolean;
             ssoEnabled: boolean;

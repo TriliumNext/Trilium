@@ -1,9 +1,9 @@
 import { becca, cls } from "@triliumnext/core";
 import type { RequestHandler, Router } from "express";
 
-import { verifyLoginCredentials } from "../services/auth.js";
+import { describeRefusal, verifyLoginCredentials } from "../services/auth.js";
 import etapiTokenService from "../services/etapi_tokens.js";
-import totp from "../services/totp.js";
+import { getSecondFactorCheck } from "../services/second_factor.js";
 import eu from "./etapi_utils.js";
 
 function register(router: Router, loginMiddleware: RequestHandler[]) {
@@ -15,20 +15,22 @@ function register(router: Router, loginMiddleware: RequestHandler[]) {
             const { password, totpToken } = req.body;
 
             // Checked before the password so that the answer says nothing about the password.
-            if (totp.isTotpEnabled() && (typeof totpToken !== "string" || !totpToken)) {
+            if (getSecondFactorCheck() !== "none"
+                && (typeof totpToken !== "string" || !totpToken)) {
                 eu.sendError(res, 401, "TOTP_REQUIRED", "TOTP token is required.");
                 return;
             }
 
             // `verifyTOTP()` and `verifyRecoveryCode()` write options when they accept a code, and
             // middleware runs before `processRequest()` opens a CLS context.
-            const failedFactor = await cls.init(() => verifyLoginCredentials(password, totpToken));
-            if (failedFactor === "password") {
+            const refusal = await cls.init(() => verifyLoginCredentials(password, totpToken));
+            if (refusal?.factor === "password") {
                 eu.sendError(res, 401, "WRONG_PASSWORD", "Wrong password.");
                 return;
             }
-            if (failedFactor === "totp") {
-                eu.sendError(res, 401, "WRONG_TOTP", "Wrong TOTP token.");
+            if (refusal) {
+                eu.sendError(res, 401, "WRONG_TOTP",
+                    refusal.reason ? describeRefusal(refusal) : "Wrong TOTP token.");
                 return;
             }
 

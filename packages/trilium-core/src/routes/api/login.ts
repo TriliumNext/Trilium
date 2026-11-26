@@ -1,3 +1,5 @@
+import { t } from "i18next";
+
 import type { Request } from "../../http_interface";
 import events from "../../services/events.js";
 import passwordEncryptionService from "../../services/encryption/password_encryption.js";
@@ -16,9 +18,12 @@ async function loginToProtectedSession(req: Request) {
 
     const decryptedDataKey = await passwordEncryptionService.getDataKey(password);
     if (!decryptedDataKey) {
+        // A reset would empty the data key on every device, so the message says the password
+        // is right.
         return {
             success: false,
-            message: "Unable to obtain data key."
+            message: t("password.session-data-key-unreadable"),
+            code: "data-key-unreadable"
         };
     }
 

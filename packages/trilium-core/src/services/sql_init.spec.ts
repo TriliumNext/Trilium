@@ -28,6 +28,32 @@ describe("sql_init (real DB)", () => {
             expect(getSql().getValue("SELECT value FROM options WHERE name = 'initialized'")).toBe("true");
             expect(sqlInit.isDbInitialized()).toBe(true);
         });
+
+        it("takes a database holding zoomFactor as opened, whatever its initialized flag", () => {
+            const zoomFactor = getSql().getValue<string>(
+                "SELECT value FROM options WHERE name = 'zoomFactor'"
+            );
+            getContext().init(() =>
+                getSql().execute("UPDATE options SET value = 'false' WHERE name = 'initialized'")
+            );
+            try {
+                expect(sqlInit.isDbInitialized()).toBe(true);
+
+                getContext().init(() =>
+                    getSql().execute("DELETE FROM options WHERE name = 'zoomFactor'")
+                );
+                expect(sqlInit.isDbInitialized()).toBe(false);
+            } finally {
+                getContext().init(() => {
+                    getSql().execute(
+                        "UPDATE options SET value = 'true' WHERE name = 'initialized'"
+                    );
+                    getSql().execute(/*sql*/`INSERT OR REPLACE INTO options
+                        (name, value, isSynced, utcDateModified)
+                        VALUES ('zoomFactor', ?, 0, '2020-01-01 00:00:00.000Z')`, [ zoomFactor ]);
+                });
+            }
+        });
     });
 
     describe("getDbSize", () => {
@@ -174,6 +200,7 @@ describe("createInitialDatabase with demo content", () => {
 
     async function createAgain(locale: string) {
         getSql().execute("UPDATE options SET value = 'false' WHERE name = 'initialized'");
+        getSql().execute("DELETE FROM options WHERE name = 'zoomFactor'");
         await getContext().init(() => sqlInit.createInitialDatabase(false, locale));
     }
 

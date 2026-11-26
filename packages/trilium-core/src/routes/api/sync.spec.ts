@@ -430,6 +430,20 @@ describe("Sync API (core)", () => {
             expect(update).toHaveBeenCalledWith([], "x");
         });
 
+        it("refuses a push that names no instance ID", async () => {
+            const update = vi.spyOn(syncUpdateService, "updateEntities")
+                .mockImplementation(() => {});
+
+            for (const instanceId of [ "", undefined ]) {
+                const res = await api.put("/api/sync/update", {
+                    headers: { pageCount: "1", pageIndex: "0" },
+                    body: { entities: [], instanceId }
+                });
+                expect(res.status).toBe(400);
+            }
+            expect(update).not.toHaveBeenCalled();
+        });
+
         it("throws when a multi-page request has no request ID", async () => {
             const res = await api.put<{ message: string }>("/api/sync/update", {
                 headers: { pageCount: "2", pageIndex: "0" },
@@ -507,6 +521,17 @@ describe("Sync API (core)", () => {
             expect(res.status).toBe(500);
             expect(res.body.message).toContain("does not have expected record");
         });
+    });
+
+    it("marks a device with no sync server as not syncing, refusing if one is set", async () => {
+        const setOption = vi.spyOn(optionService, "setOption").mockImplementation(() => {});
+        vi.spyOn(syncOptions, "isSyncSetup").mockReturnValueOnce(true).mockReturnValueOnce(false);
+
+        expect((await api.post("/api/sync/confirm-alone")).status).toBe(400);
+        expect(setOption).not.toHaveBeenCalled();
+
+        expect((await api.post("/api/sync/confirm-alone")).status).toBe(204);
+        expect(setOption).toHaveBeenCalledWith("syncIncomplete", "false");
     });
 
     it("syncFinished marks the database as initialized", async () => {

@@ -19,6 +19,7 @@ import config from "./services/config.js";
 import { getLog } from "@triliumnext/core";
 import { desktopNetworkAccessGate } from "./services/desktop_network_gate.js";
 import { createReactiveOidcMiddleware } from "./services/open_id.js";
+import { startSecondFactor, takeResetWords } from "./services/second_factor.js";
 import { setupSecondFactor } from "./services/setup_second_factor.js";
 import { RESOURCE_DIR } from "./services/resource_dir.js";
 import utils, { getResourceDir, isDev } from "./services/utils.js";
@@ -141,6 +142,9 @@ export default async function buildApp() {
     // at all: the browser-only build never runs this file. Desktop reaches it through the same
     // www.js → buildApp path, and is exempt from the wizard's gate for its own reasons.
     initSetupSecondFactor(setupSecondFactor);
+    // Deleted from `process.env` right away, before any child process can inherit them.
+    takeResetWords();
+    void becca_loader.beccaLoaded.then(() => startSecondFactor());
 
     // Server-side i18next always boots on "en" (initTranslations runs before initSql in initializeCore),
     // so re-sync it with the document's stored locale before the scheduler's dbReady.then(checkHiddenSubtree)

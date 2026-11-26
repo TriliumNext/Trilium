@@ -1,6 +1,7 @@
 import type { WebSocketMessage } from "@triliumnext/commons";
 import type { ClientMessageHandler, MessagingProvider } from "@triliumnext/core";
 import type WebSocketMessagingProvider from "@triliumnext/server/src/services/ws_messaging_provider.js";
+import type { CsrfTokenCheck } from "@triliumnext/server/src/services/ws_messaging_provider.js";
 import type express from "express";
 import type { Server as HttpServer } from "http";
 
@@ -30,8 +31,12 @@ export default class CompositeMessagingProvider implements MessagingProvider {
         private readonly ws: WebSocketMessagingProvider
     ) {}
 
-    attachToHttpServer(httpServer: HttpServer, sessionParser: express.RequestHandler): void {
-        this.ws.attachToHttpServer(httpServer, sessionParser);
+    attachToHttpServer(
+        httpServer: HttpServer,
+        sessionParser: express.RequestHandler,
+        isValidCsrfToken: CsrfTokenCheck
+    ): void {
+        this.ws.attachToHttpServer(httpServer, sessionParser, isValidCsrfToken);
     }
 
     disconnectAllClients(reason: string): void {

@@ -88,6 +88,18 @@ describe("validating a candidate database", () => {
         });
     });
 
+    it("takes one that has opened, whatever a peer pushed into its flag", () => {
+        const opened = candidate({
+            options: {
+                initialized: "false",
+                zoomFactor: "1.0",
+                dbVersion: String(appInfo.dbVersion)
+            }
+        });
+
+        expect(validateDatabase(opened)).toMatchObject({ valid: true });
+    });
+
     it("refuses one from a version this cannot migrate, in either direction", () => {
         const tooOld = candidate({
             options: { initialized: "true", dbVersion: String(OLDEST_SUPPORTED_DB_VERSION - 1) }

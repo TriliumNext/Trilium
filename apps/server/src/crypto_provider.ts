@@ -31,8 +31,9 @@ export default class NodejsCryptoProvider implements CryptoProvider {
     }
 
     hmac(secret: string | Uint8Array, value: string | Uint8Array) {
-        const hmac = crypto.createHmac("sha256", Buffer.from(secret.toString(), "ascii"));
-        hmac.update(value.toString());
+        // Bytes are used as they are and text as UTF-8, like the browser provider does.
+        const hmac = crypto.createHmac("sha256", binary_utils.wrapStringOrBuffer(secret));
+        hmac.update(binary_utils.wrapStringOrBuffer(value));
         return hmac.digest("base64");
     }
 

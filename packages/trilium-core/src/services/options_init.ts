@@ -1,7 +1,21 @@
-import { DEFAULT_TRANSCRIPTION_MODEL, type KeyboardShortcutWithRequiredActionName, type OptionDefinitions, type OptionMap, type OptionNames, SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
+import {
+    DEFAULT_TRANSCRIPTION_MODEL,
+    type EntityChange,
+    type KeyboardShortcutWithRequiredActionName,
+    type OptionDefinitions,
+    type OptionMap,
+    type OptionNames,
+    SANITIZER_DEFAULT_ALLOWED_TAGS
+} from "@triliumnext/commons";
 
+import becca from "../becca/becca.js";
 import appInfo from "./app_info.js";
+import { getConfig } from "./config.js";
+import { addDeviceRecordEntries } from "./device_records.js";
+import entityChangesService from "./entity_changes.js";
 import { getPlatform } from "./platform.js";
+import { getSql } from "./sql/index.js";
+import syncOptions from "./sync_options.js";
 import dateUtils from "./utils/date.js";
 import keyboardActions from "./keyboard_actions.js";
 import { getLog } from "./log.js";
@@ -251,6 +265,20 @@ const defaultOptions: DefaultOption[] = [
     { name: "editedNotesOpenInRibbon", value: "true", isSynced: true },
     { name: "mfaMethod", value: "totp", isSynced: false },
     { name: "encryptedRecoveryCodes", value: "false", isSynced: false },
+    // Declared so that every database holds them as device options, empty as
+    // `resetTotpSecret()` leaves them.
+    { name: "totpEncryptionSalt", value: "", isSynced: false },
+    { name: "totpEncryptedSecret", value: "", isSynced: false },
+    { name: "totpVerificationHash", value: "", isSynced: false },
+    { name: "totpLastUsedStep", value: "", isSynced: false },
+    { name: "recoveryCodeInitialVector", value: "", isSynced: false },
+    { name: "recoveryCodeSecurityKey", value: "", isSynced: false },
+    { name: "recoveryCodesEncrypted", value: "", isSynced: false },
+    { name: "secondFactorState", value: "", isSynced: false },
+    { name: "totpWrongCodeCount", value: "", isSynced: false },
+    { name: "signInAttemptRecord", value: "", isSynced: false },
+    { name: "startupRepairRecord", value: "", isSynced: false },
+    { name: "clockAheadMarks", value: "", isSynced: false },
 
     // Appearance
     { name: "splitEditorOrientation", value: "horizontal", isSynced: true },
@@ -399,11 +427,109 @@ const defaultOptions: DefaultOption[] = [
 ];
 
 /**
+ * The value that a start writes into a device option that a sync peer stored as synced: `default`
+ * is the declared default, `keep` the stored value, `block-second-factor` the stored value with
+ * the second factor set to `blocked`, and a function computes the value.
+ */
+type PlantedOptionValue =
+    | "default"
+    | "keep"
+    | "block-second-factor"
+    | ((options: OptionMap) => string);
+
+/** Device options whose planted rows a start resets to their default. */
+const DEVICE_OPTIONS_TAKING_THEIR_DEFAULT = [
+    "syncMaxBlobContentSize", "zoomFactor", "overrideThemeFonts", "mainFontFamily", "mainFontSize",
+    "treeFontFamily", "treeFontSize", "detailFontFamily", "detailFontSize", "monospaceFontFamily",
+    "monospaceFontSize", "monospaceLigaturesEnabled", "spellCheckEnabled", "spellCheckLanguageCode",
+    "autoFixConsistencyIssues", "vimKeymapEnabled", "codeLineWrapEnabled", "codeLineNumbersEnabled",
+    "transcriptionModel", "transcriptionKeepRecordings", "leftPaneWidth", "mobileLeftPaneWidth",
+    "leftPaneVisible", "rightPaneWidth", "rightPaneVisible", "rightPaneCollapsedItems",
+    "rightPaneSelectedTab", "presentationSidebarVisible", "nativeTitleBarVisible",
+    "hideArchivedNotes_main", "debugModeEnabled", "treeDensity", "autoReadonlySizeText",
+    "autoReadonlySizeCode", "dailyBackupEnabled", "weeklyBackupEnabled", "monthlyBackupEnabled",
+    "customDbBackupDir", "backupEnableCompression", "backupEnableEncryption", "maxContentWidth",
+    "centerContent", "disableTray", "closeToTray", "launchOnStartup", "hideOnAutoStart",
+    "logRetentionDays", "codeNoteTheme", "codeNoteThemeMatchesApp", "codeNoteThemeLight",
+    "codeNoteThemeDark", "motionEnabled", "shadowsEnabled", "backdropEffectsEnabled",
+    "smoothScrollEnabled", "hardwareAccelerationEnabled",
+    "codeBlockTheme", "codeBlockThemeMatchesApp",
+    "codeBlockThemeLight", "codeBlockThemeDark", "textNoteScrollRailHighlightsEnabled",
+    "textNoteStickyTableHeadersEnabled", "textNoteVimModeEnabled", "textNoteVimModeNoticeShown",
+    "layoutOrientation", "noteTitleStyle", "backgroundEffects", "mcpEnabled"
+] as const satisfies readonly OptionNames[];
+
+/**
+ * The device options, which sync refuses from a peer, each with the value that a start writes into
+ * a row that a peer stored as synced. Each new device option needs an entry, which a spec checks,
+ * because the default is not always the safe value. Keyboard shortcuts are device options too, and
+ * are reset to their default.
+ */
+const DEVICE_OPTIONS: Record<string, PlantedOptionValue> = {
+    // Created with each database, not from `defaultOptions`.
+    documentId: "keep",
+    documentSecret: "keep",
+    dbVersion: "keep",
+    initialized: () => "true",
+    lastSyncedPull: () => "0",
+    lastSyncedPush: () => "0",
+    openNoteContexts: () => JSON.stringify([ { notePath: "root", active: true } ]),
+    lastDailyBackupDate: () => dateUtils.utcNowDateTime(),
+    lastWeeklyBackupDate: () => dateUtils.utcNowDateTime(),
+    lastMonthlyBackupDate: () => dateUtils.utcNowDateTime(),
+    theme: () => "next",
+    syncServerHost: () => "",
+    syncServerTimeout: () => "120",
+    syncProxy: () => "",
+    // A planted `false` would hide that the pulls after it can be missing.
+    syncIncomplete: () => "true",
+    // Its default function also writes `syncServerTimeout`.
+    syncServerTimeoutTimeScale: () => "60",
+
+    // The second factor. The default of `mfaMethod` would turn a configured OpenID login off.
+    mfaMethod: getMfaMethodOfTheDevice,
+    encryptedRecoveryCodes: (options) => options.recoveryCodesEncrypted ? "true" : "false",
+    totpEncryptionSalt: "block-second-factor",
+    totpEncryptedSecret: "block-second-factor",
+    totpVerificationHash: "block-second-factor",
+    recoveryCodeInitialVector: "block-second-factor",
+    recoveryCodeSecurityKey: "block-second-factor",
+    recoveryCodesEncrypted: "block-second-factor",
+    totpLastUsedStep: () => "",
+
+    // Written only by this device: sync refuses them, and migration 243 deleted every row of these
+    // names.
+    secondFactorState: "keep",
+    totpWrongCodeCount: "keep",
+    signInAttemptRecord: "keep",
+    startupRepairRecord: "keep",
+    clockAheadMarks: "keep",
+
+    ...Object.fromEntries(DEVICE_OPTIONS_TAKING_THEIR_DEFAULT.map((name) => [ name, "default" ]))
+};
+
+/** Whether the option is a device option, which sync refuses from a peer. */
+export function isDeviceOption(name: string): boolean {
+    return Object.hasOwn(DEVICE_OPTIONS, name) || name.startsWith("keyboardShortcuts");
+}
+
+/**
+ * Returns the device option names, for the spec that checks that {@link DEVICE_OPTIONS}
+ * is complete.
+ */
+export function getDeviceOptionNames(): string[] {
+    return Object.keys(DEVICE_OPTIONS);
+}
+
+/**
  * Initializes the options, by checking which options from {@link #allDefaultOptions()} are missing and registering them. It will also check some environment variables such as safe mode, to make any necessary adjustments.
  *
  * This method is called regardless of whether a new database is created, or an existing database is used.
  */
 export function initStartupOptions() {
+    const syncServerWasSet = syncOptions.isSyncSetup();
+    const repaired = repairPlantedDeviceOptions();
+
     const optionsMap = optionService.getOptionMap();
 
     const allDefaultOptions = defaultOptions.concat(getKeyboardDefaultOptions());
@@ -418,10 +544,16 @@ export function initStartupOptions() {
                 resolvedValue = value;
             }
 
-            optionService.createOption(name, resolvedValue, isSynced);
+            // A synced default dated now would overwrite the value of a device that
+            // upgraded earlier.
+            optionService.createOption(name, resolvedValue, isSynced, isSynced ? EPOCH : undefined);
             log.info(`Created option "${name}" with default value "${resolvedValue}"`);
         }
     }
+
+    writeOptionsNoOwnerSets(repaired, syncServerWasSet);
+    queueUnsyncedEntityChanges(repaired);
+    addDeviceRecordEntries("startupRepairRecord", repaired);
 
     if (getPlatform().getEnv("TRILIUM_START_NOTE_ID") || getPlatform().getEnv("TRILIUM_SAFE_MODE")) {
         optionService.setOption(
@@ -433,6 +565,142 @@ export function initStartupOptions() {
                 }
             ])
         );
+    }
+}
+
+/** The epoch as a UTC date time, older than every value a user writes. */
+const EPOCH = "1970-01-01 00:00:00.000Z";
+
+/**
+ * Makes each device option whose row or entity change is marked synced local-only again, since only
+ * a sync peer can have written that, and writes the value that {@link DEVICE_OPTIONS} gives it.
+ *
+ * @returns the names of the repaired options.
+ */
+function repairPlantedDeviceOptions(): string[] {
+    const planted = getSql().getColumn<string>(/*sql*/`
+        SELECT options.name
+        FROM options
+        LEFT JOIN entity_changes
+            ON entity_changes.entityName = 'options' AND entity_changes.entityId = options.name
+        WHERE options.isSynced = 1 OR entity_changes.isSynced = 1`).filter(isDeviceOption);
+    const optionsMap = optionService.getOptionMap();
+    const log = getLog();
+
+    for (const name of planted) {
+        const option = becca.getOption(name);
+        /* v8 ignore next 3 -- becca loads every row of `options` before this runs */
+        if (!option) {
+            continue;
+        }
+        option.value = getPlantedOptionValue(name, optionsMap);
+        option.isSynced = false;
+        option.save();
+        log.info(`Made option '${name}' local-only again: a peer had stored it as synced.`);
+    }
+
+    if (planted.some((name) => DEVICE_OPTIONS[name] === "block-second-factor")) {
+        optionService.setOption("secondFactorState", "blocked");
+        log.info("The second factor cannot be checked: a peer had stored a row of it.");
+    }
+
+    return planted;
+}
+
+function getPlantedOptionValue(name: string, options: OptionMap): string {
+    const rule = Object.hasOwn(DEVICE_OPTIONS, name) ? DEVICE_OPTIONS[name] : "default";
+    if (typeof rule === "function") {
+        return rule(options);
+    }
+
+    const declared = rule === "default"
+        ? defaultOptions.concat(getKeyboardDefaultOptions()).find((option) => option.name === name)
+        : undefined;
+    if (!declared) {
+        return options[name as OptionNames];
+    }
+    return typeof declared.value === "function" ? declared.value(options) : declared.value;
+}
+
+/** Returns `oauth` when OpenID is configured and an account is enrolled, `totp` otherwise. */
+function getMfaMethodOfTheDevice(): string {
+    const openId = getConfig().MultiFactorAuthentication;
+    const isOpenIdConfigured =
+        !!(openId?.oauthBaseUrl && openId.oauthClientId && openId.oauthClientSecret);
+    const hasAccount = !!getSql().getValue(/*sql*/`SELECT 1 FROM user_data
+        WHERE userIDEncryptedDataKey IS NOT NULL AND userIDEncryptedDataKey != ''`);
+    return isOpenIdConfigured && hasAccount ? "oauth" : "totp";
+}
+
+/**
+ * Writes the device options that no owner sets with the value their readers need, whatever their
+ * flags, since a sync peer can have planted them with both flags off.
+ *
+ * @param repaired the names repaired so far, which this adds to.
+ * @param syncServerWasSet whether a sync server was set before the planted options were repaired.
+ */
+function writeOptionsNoOwnerSets(repaired: string[], syncServerWasSet: boolean) {
+    // Every database that has been opened holds `true`.
+    const isInitializedRewritten = writeChangedOption("initialized", "true", repaired)
+        || repaired.includes("initialized");
+    writeChangedOption("autoFixConsistencyIssues", "true", repaired);
+
+    // The consistency checks would take notes that have not arrived yet for damage and push fixes.
+    const hasSyncServer = syncOptions.isSyncSetup();
+    const isSyncAddressEmptied = syncServerWasSet && !hasSyncServer;
+    const isSyncIncompletePlanted = repaired.includes("syncIncomplete");
+    if (isSyncAddressEmptied
+        || (hasSyncServer && (isSyncIncompletePlanted || isInitializedRewritten))) {
+        writeChangedOption("syncIncomplete", "true", repaired);
+    } else if (!hasSyncServer && optionService.getOption("lastSyncedPull") === "0") {
+        writeChangedOption("syncIncomplete", "false", repaired);
+    }
+}
+
+/**
+ * @returns whether a stored value changed, in which case `repaired` names the option. A missing
+ *          option, which a database older than the option lacks, is created and not recorded.
+ */
+function writeChangedOption(name: "initialized" | "autoFixConsistencyIssues" | "syncIncomplete",
+    value: string, repaired: string[]) {
+    const current = optionService.getOptionOrNull(name);
+    if (current === value) {
+        return false;
+    }
+
+    optionService.setOption(name, value);
+    if (current === null) {
+        return false;
+    }
+
+    getLog().info(`Wrote option '${name}' as '${value}' at the start.`);
+    if (!repaired.includes(name)) {
+        repaired.push(name);
+    }
+    return true;
+}
+
+/**
+ * Marks synced and queues again each entity change outside `options` that is marked not synced,
+ * since only a sync peer can have written that, so that its row reaches every device and the hash
+ * check.
+ *
+ * @param repaired the names repaired so far, which this adds the entity names to.
+ */
+function queueUnsyncedEntityChanges(repaired: string[]) {
+    const entityChanges = getSql().getRows<EntityChange>(/*sql*/`
+        SELECT * FROM entity_changes WHERE isSynced = 0 AND entityName != 'options'`);
+
+    for (const entityChange of entityChanges) {
+        entityChangesService.putEntityChangeForOtherInstances({ ...entityChange, isSynced: true });
+        if (!repaired.includes(entityChange.entityName)) {
+            repaired.push(entityChange.entityName);
+        }
+    }
+
+    if (entityChanges.length > 0) {
+        getLog().info(`Queued ${entityChanges.length} entity changes for sync: `
+            + "a peer had stored them as not synced.");
     }
 }
 
