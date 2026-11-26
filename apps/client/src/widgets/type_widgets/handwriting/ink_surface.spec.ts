@@ -7,6 +7,7 @@ describe("ink surface input", () => {
     let container: HTMLDivElement;
     let surface: InkSurface;
     const onChange = vi.fn();
+    const onStateChange = vi.fn();
     /** `[x, y, width, height, globalAlpha]` of each `fillRect()` call on any canvas. */
     const fillRects: number[][] = [];
 
@@ -18,7 +19,8 @@ describe("ink surface input", () => {
         container = document.createElement("div");
         document.body.append(container);
         onChange.mockReset();
-        surface = new InkSurface(container, { onChange, onGestureStart: () => {}, onStateChange: () => {} });
+        onStateChange.mockReset();
+        surface = new InkSurface(container, { onChange, onGestureStart: () => {}, onStateChange });
     });
 
     afterEach(() => {
@@ -65,6 +67,29 @@ describe("ink surface input", () => {
         pointer("pointermove", "pen", 1, 140);
         pointer("pointerup", "pen", 1, 140);
         expect(onChange).toHaveBeenCalledOnce();
+    });
+
+    it("erases while the barrel button of a pen is held and pans with its middle button", async () => {
+        const strokeCount = () => parseInkDocument(surface.serialize()).strokes.length;
+        swipe("pen", 1, 100);
+        expect(strokeCount()).toBe(1);
+
+        // Barrel button held: buttons 1 (tip) + 2. The eraser shows as the tool while it is held.
+        pointer("pointermove", "pen", 2, 100, 50, 2);
+        expect(onStateChange).toHaveBeenLastCalledWith(expect.objectContaining({ penErasing: true }));
+        swipe("pen", 2, 100, 3);
+        expect(strokeCount()).toBe(0);
+        expect(onStateChange).toHaveBeenLastCalledWith(expect.objectContaining({ penErasing: false }));
+
+        // Middle button held: buttons 1 (tip) + 4.
+        swipe("pen", 3, 100, 5);
+        await nextFrame();
+        expect(strokeCount()).toBe(0);
+        expect(surface.getView().y).toBe(40);
+
+        const contextMenu = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+        container.dispatchEvent(contextMenu);
+        expect(contextMenu.defaultPrevented).toBe(true);
     });
 
     it("draws each line of the paper where the view puts it, rounded on its own", async () => {
@@ -291,17 +316,17 @@ describe("ink surface input", () => {
         expect(new Set(straight.slice(0, turn + 2).filter((_, index) => index % 2))).toEqual(new Set([ 100 ]));
     });
 
-    function swipe(type: string, pointerId: number, y: number) {
-        pointer("pointerdown", type, pointerId, y);
-        pointer("pointermove", type, pointerId, y + 20);
-        pointer("pointermove", type, pointerId, y + 40);
+    function swipe(type: string, pointerId: number, y: number, buttons = 1) {
+        pointer("pointerdown", type, pointerId, y, 50, buttons);
+        pointer("pointermove", type, pointerId, y + 20, 50, buttons);
+        pointer("pointermove", type, pointerId, y + 40, 50, buttons);
         pointer("pointerup", type, pointerId, y + 40);
     }
 
-    function pointer(kind: string, pointerType: string, pointerId: number, y: number, x = 50) {
+    function pointer(kind: string, pointerType: string, pointerId: number, y: number, x = 50, buttons = 1) {
         container.dispatchEvent(new PointerEvent(kind, {
             pointerId, pointerType, clientX: x, clientY: y, button: 0,
-            buttons: kind === "pointerup" ? 0 : 1, pressure: 0.5, bubbles: true
+            buttons: kind === "pointerup" ? 0 : buttons, pressure: 0.5, bubbles: true
         }));
     }
 });

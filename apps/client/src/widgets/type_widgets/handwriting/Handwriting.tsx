@@ -91,8 +91,10 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
     const inkTool: InkTool | undefined = tool === "eraser" ? undefined : tool;
     const { color, size } = inkSettings[inkTool ?? "pen"];
     const [ state, setState ] = useState<InkSurfaceState>({
-        zoom: 1, paper: "ruled", layout: "pages", canUndo: false, canRedo: false
+        zoom: 1, paper: "ruled", layout: "pages", canUndo: false, canRedo: false, penErasing: false
     });
+    /** The tool the pen uses now, the eraser while a button of the pen erases. */
+    const activeTool: SurfaceTool = state.penErasing ? "eraser" : tool;
     const isReadOnly = useEffectiveReadOnly(note, noteContext);
     const [ fingerDrawing, setFingerDrawing ] = useTriliumOptionBool("handwritingFingerDrawing");
 
@@ -233,8 +235,8 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
             <div
                 ref={surfaceElRef}
                 className="handwriting-surface"
-                data-tool={isReadOnly ? "pan" : tool}
-                style={{ cursor: isReadOnly ? undefined : getInkCursor(tool, size, state.zoom) }}
+                data-tool={isReadOnly ? "pan" : activeTool}
+                style={{ cursor: isReadOnly ? undefined : getInkCursor(activeTool, size, state.zoom) }}
             />
 
             {!isReadOnly && (
@@ -246,7 +248,7 @@ export default function Handwriting({ note, noteContext }: TypeWidgetProps) {
                                 title={title()}
                                 icon={icon}
                                 shortcut={key.toUpperCase()}
-                                active={tool === itemTool}
+                                active={activeTool === itemTool}
                                 onClick={() => setTool(itemTool)}
                             />
                         ))}

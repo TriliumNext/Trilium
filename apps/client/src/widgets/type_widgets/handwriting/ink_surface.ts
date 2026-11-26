@@ -16,6 +16,8 @@ export interface InkSurfaceState {
     layout: InkLayout;
     canUndo: boolean;
     canRedo: boolean;
+    /** Whether a button of the pen makes it erase, whatever the tool. */
+    penErasing: boolean;
 }
 
 interface InkSurfaceOptions {
@@ -40,6 +42,10 @@ const ERASER_RADIUS = 8;
 export const HIGHLIGHTER_WIDTH_FACTOR = 5;
 /** The bit of `PointerEvent.buttons` that a pen sets while its eraser end touches the screen. */
 const PEN_ERASER_BUTTON = 32;
+/** The bit of `PointerEvent.buttons` of the barrel button of a pen, which erases while held. */
+const PEN_BARREL_BUTTON = 2;
+/** The bit of `PointerEvent.buttons` of a pen's button mapped to the middle button, which pans. */
+const PEN_MIDDLE_BUTTON = 4;
 /** How long two fingers can rest on the screen, and how far they can move, for a tap that undoes. */
 const TWO_FINGER_TAP_TIME = 300;
 const TWO_FINGER_TAP_SLOP = 10;
@@ -105,6 +111,7 @@ export default class InkSurface {
         query: (bounds) => this.index.query(bounds)
     });
     private nextOrder = 0;
+    private penErasing = false;
     private paper: PaperStyle = "ruled";
     private layout: InkLayout = "pages";
     private pageCount = 1;
@@ -185,7 +192,10 @@ export default class InkSurface {
         container.addEventListener("pointermove", (e) => this.onPointerMove(e), listener);
         container.addEventListener("pointerup", (e) => this.onPointerEnd(e), listener);
         container.addEventListener("pointercancel", (e) => this.onPointerEnd(e), listener);
+        container.addEventListener("pointerleave", () => this.setPenErasing(false), listener);
         container.addEventListener("wheel", (e) => this.onWheel(e), { ...listener, passive: false });
+        // The barrel button of a pen also opens the context menu.
+        container.addEventListener("contextmenu", (e) => e.preventDefault(), listener);
         // iPadOS gives short Apple Pencil strokes to Scribble unless the touch is canceled.
         container.addEventListener("touchstart", (e) => {
             if (isIOS()) e.preventDefault();
@@ -398,6 +408,7 @@ export default class InkSurface {
     //#region Input
 
     private onPointerDown(e: PointerEvent) {
+        this.trackPenButtons(e);
         if (e.pointerType === "touch") {
             if (this.activePointerType === "pen") {
                 this.ignoredTouches.add(e.pointerId);
@@ -429,7 +440,7 @@ export default class InkSurface {
         }
         if (this.mode !== "idle") return;
         if (e.pointerType === "pen") {
-            this.begin(this.readOnly ? "pan" : this.inkMode(e), e);
+            this.begin(this.readOnly || (e.buttons & PEN_MIDDLE_BUTTON) ? "pan" : this.inkMode(e), e);
         } else if (e.button === 1 || (e.button === 0 && this.readOnly)) {
             this.begin("pan", e);
         } else if (e.button === 0) {
@@ -446,8 +457,19 @@ export default class InkSurface {
         this.touches.clear();
     }
 
+    /** Reports whether the buttons of a pen, hovering or on the screen, make it erase. */
+    private trackPenButtons(e: PointerEvent) {
+        if (e.pointerType === "pen") this.setPenErasing(isPenErasing(e));
+    }
+
+    private setPenErasing(erasing: boolean) {
+        if (erasing === this.penErasing) return;
+        this.penErasing = erasing;
+        this.reportState();
+    }
+
     private inkMode(e: PointerEvent): Mode {
-        return this.tool === "eraser" || (e.buttons & PEN_ERASER_BUTTON) ? "erase" : "draw";
+        return this.tool === "eraser" || (e.pointerType === "pen" && isPenErasing(e)) ? "erase" : "draw";
     }
 
     private begin(mode: Mode, e: PointerEvent) {
@@ -489,6 +511,7 @@ export default class InkSurface {
     }
 
     private onPointerMove(e: PointerEvent) {
+        this.trackPenButtons(e);
         if (this.ignoredTouches.has(e.pointerId)) return;
         if (e.pointerType === "touch" && this.touches.has(e.pointerId)) {
             const touch = this.touches.get(e.pointerId);
@@ -540,6 +563,7 @@ export default class InkSurface {
     }
 
     private onPointerEnd(e: PointerEvent) {
+        this.trackPenButtons(e);
         if (this.ignoredTouches.delete(e.pointerId)) return;
         this.touches.delete(e.pointerId);
         if (this.twoFingerTapStart !== undefined && this.touches.size === 0) {
@@ -925,7 +949,8 @@ export default class InkSurface {
             paper: this.paper,
             layout: this.layout,
             canUndo: this.undoStack.length > 0,
-            canRedo: this.redoStack.length > 0
+            canRedo: this.redoStack.length > 0,
+            penErasing: this.penErasing
         });
     }
 
@@ -1183,6 +1208,11 @@ export default class InkSurface {
     }
 
     //#endregion
+}
+
+/** Whether the eraser end or the barrel button of the pen of `e` is pressed. */
+function isPenErasing(e: PointerEvent) {
+    return (e.buttons & (PEN_ERASER_BUTTON | PEN_BARREL_BUTTON)) !== 0;
 }
 
 function isWithinSlop(touch: { x: number, y: number, downX: number, downY: number }) {
