@@ -70,6 +70,27 @@ const MAX_ROUND = 1.35;
 const CLOSING_GAP = 0.12;
 /** The distance from a corner of a shape to the first point after it, in world units. */
 const CORNER_STEP = 1;
+/**
+ * How far a stroke can stray from an ellipse, as a share of the way from the center of the
+ * ellipse to its edge. The corners of a rectangle are 41% outside the ellipse in its box.
+ */
+const ELLIPSE_DEVIATION = 0.2;
+/** The share of its length from which the width of an ellipse makes it a circle. */
+const CIRCLE_RATIO = 0.85;
+/** The distance between the points of a stroke around an ellipse, in world units, and their number. */
+const ELLIPSE_STEP = 6;
+const MIN_ELLIPSE_POINTS = 24;
+const MAX_ELLIPSE_POINTS = 160;
+
+export interface Ellipse {
+    centerX: number;
+    centerY: number;
+    /** Half the length of the ellipse along its own axes, the first of them turned by `angle`. */
+    radiusX: number;
+    radiusY: number;
+    /** In degrees, clockwise on the screen. */
+    angle: number;
+}
 
 /**
  * Returns the four corners of the rectangle that a stroke was drawn as, from its flat
@@ -141,7 +162,120 @@ export function recognizeTriangle(points: number[], minSize: number): number[][]
     ]);
 }
 
+/**
+ * Returns the ellipse that a stroke was drawn as, from its flat `x, y, pressure` triples. The
+ * stroke goes once around the ellipse inside the smallest box around it, within
+ * `ELLIPSE_DEVIATION` of the way from its center to its edge, and ends where it started. An
+ * ellipse nearly as wide as long is a circle, and any other lies along the axes when it was drawn
+ * within `AXIS_SNAP` degrees of them.
+ */
+export function recognizeEllipse(stroke: number[], minSize: number): Ellipse | undefined {
+    if (stroke.length < 12) return undefined;
+    const points = trimToLoop(stroke);
+    const box = fitBox(points, getLongAxisAngle(points));
+    const { cos, sin } = box;
+    let radiusX = box.width / 2;
+    let radiusY = box.height / 2;
+    if (Math.min(radiusX, radiusY) * 2 < minSize) return undefined;
+
+    const centerU = (box.minU + box.maxU) / 2;
+    const centerV = (box.minV + box.maxV) / 2;
+    let pathLength = 0;
+    for (let i = 0; i + 2 < points.length; i += 3) {
+        const u = points[i] * cos + points[i + 1] * sin - centerU;
+        const v = points[i + 1] * cos - points[i] * sin - centerV;
+        if (Math.abs(Math.hypot(u / radiusX, v / radiusY) - 1) > ELLIPSE_DEVIATION) return undefined;
+        if (i) pathLength += Math.hypot(points[i] - points[i - 3], points[i + 1] - points[i - 2]);
+    }
+    const perimeter = getEllipsePerimeter(radiusX, radiusY);
+    if (pathLength < MIN_ROUND * perimeter || pathLength > MAX_ROUND * perimeter) return undefined;
+    if (getClosingGap(points) > CLOSING_GAP * perimeter / 2) return undefined;
+
+    let { angle } = box;
+    const quarters = Math.round(angle / 90);
+    if (Math.min(radiusX, radiusY) >= CIRCLE_RATIO * Math.max(radiusX, radiusY)) {
+        radiusX = radiusY = (radiusX + radiusY) / 2;
+        angle = 0;
+    } else if (Math.abs(angle - quarters * 90) <= AXIS_SNAP) {
+        if (quarters % 2) [ radiusX, radiusY ] = [ radiusY, radiusX ];
+        angle = 0;
+    }
+    return {
+        centerX: centerU * cos - centerV * sin,
+        centerY: centerU * sin + centerV * cos,
+        radiusX, radiusY, angle
+    };
+}
+
+/**
+ * Returns the flat `x, y, pressure` triples of a stroke around `ellipse`, at one pressure, with a
+ * point about every `ELLIPSE_STEP` units. The stroke ends on its first point.
+ */
+export function ellipseToPoints({ centerX, centerY, radiusX, radiusY, angle }: Ellipse, pressure: number) {
+    const cos = Math.cos(angle * Math.PI / 180);
+    const sin = Math.sin(angle * Math.PI / 180);
+    const steps = Math.ceil(getEllipsePerimeter(radiusX, radiusY) / ELLIPSE_STEP);
+    const count = Math.max(MIN_ELLIPSE_POINTS, Math.min(MAX_ELLIPSE_POINTS, steps));
+    const points: number[] = [];
+    for (let i = 0; i <= count; i++) {
+        const x = radiusX * Math.cos(2 * Math.PI * i / count);
+        const y = radiusY * Math.sin(2 * Math.PI * i / count);
+        points.push(centerX + x * cos - y * sin, centerY + x * sin + y * cos, pressure);
+    }
+    return points;
+}
+
+/**
+ * Returns the points of the closed shape that a stroke was drawn as, at one pressure: a
+ * rectangle, a triangle or an ellipse.
+ */
+export function closedShapeToPoints(points: number[], minSize: number, pressure: number) {
+    const corners = recognizeRectangle(points, minSize) ?? recognizeTriangle(points, minSize);
+    if (corners) return polygonToPoints(corners, pressure);
+    const ellipse = recognizeEllipse(points, minSize);
+    return ellipse && ellipseToPoints(ellipse, pressure);
+}
+
 const CORNER_SIGNS = [ [ -1, -1 ], [ 1, -1 ], [ 1, 1 ], [ -1, 1 ] ];
+
+/**
+ * The angle of the direction along which a stroke spreads most, in degrees between -90 and 90.
+ * Each segment of the stroke counts by its length, so that the speed of the pointer, which sets
+ * how close the points are, does not turn it.
+ */
+function getLongAxisAngle(points: number[]) {
+    let total = 0;
+    let middleX = 0;
+    let middleY = 0;
+    const segments: number[][] = [];
+    for (let i = 3; i + 2 < points.length; i += 3) {
+        const length = Math.hypot(points[i] - points[i - 3], points[i + 1] - points[i - 2]);
+        const x = (points[i] + points[i - 3]) / 2;
+        const y = (points[i + 1] + points[i - 2]) / 2;
+        segments.push([ x, y, length ]);
+        total += length;
+        middleX += x * length;
+        middleY += y * length;
+    }
+    if (!total) return 0;
+
+    let spreadX = 0;
+    let spreadY = 0;
+    let spreadBoth = 0;
+    for (const [ x, y, length ] of segments) {
+        const dx = x - middleX / total;
+        const dy = y - middleY / total;
+        spreadX += dx * dx * length;
+        spreadY += dy * dy * length;
+        spreadBoth += dx * dy * length;
+    }
+    return Math.atan2(2 * spreadBoth, spreadX - spreadY) * 90 / Math.PI;
+}
+
+/** Ramanujan's approximation of the perimeter of an ellipse. */
+function getEllipsePerimeter(radiusX: number, radiusY: number) {
+    return Math.PI * (3 * (radiusX + radiusY) - Math.sqrt((3 * radiusX + radiusY) * (radiusX + 3 * radiusY)));
+}
 
 type Side = { x: number, y: number, length: number };
 
@@ -222,12 +356,7 @@ function findTriangleCorners(points: number[]): number[][] {
  * around it, at any angle, in the order they lie around the box.
  */
 function findCorners(points: number[]): number[][] | undefined {
-    let box = fitBox(points, 0);
-    for (let angle = ANGLE_STEP; angle < 90; angle += ANGLE_STEP) {
-        const candidate = fitBox(points, angle);
-        if (candidate.width * candidate.height < box.width * box.height) box = candidate;
-    }
-    const { minU, maxU, minV, maxV, width, height, cos, sin } = box;
+    const { minU, maxU, minV, maxV, width, height, cos, sin } = fitSmallestBox(points);
     if (!width || !height) return undefined;
 
     const corners = CORNER_SIGNS.map(() => [ 0, 0 ]);
@@ -284,6 +413,16 @@ export function polygonToPoints(corners: number[][], pressure: number): number[]
     return points;
 }
 
+/** The box of the smallest area around a stroke, at any angle from 0 to 90 degrees. */
+function fitSmallestBox(points: number[]) {
+    let box = fitBox(points, 0);
+    for (let angle = ANGLE_STEP; angle < 90; angle += ANGLE_STEP) {
+        const candidate = fitBox(points, angle);
+        if (candidate.width * candidate.height < box.width * box.height) box = candidate;
+    }
+    return box;
+}
+
 /** The bounds of a stroke along axes turned by `angle` degrees, `u` along the first and `v` the second. */
 function fitBox(points: number[], angle: number) {
     const cos = Math.cos(angle * Math.PI / 180);
@@ -301,6 +440,30 @@ function fitBox(points: number[], angle: number) {
         maxV = Math.max(maxV, v);
     }
     return { angle, cos, sin, minU, maxU, minV, maxV, width: maxU - minU, height: maxV - minV };
+}
+
+/**
+ * Returns the part of a stroke between its two points nearest to each other, one in its first
+ * quarter and one in its last. A stroke around a shape often runs past its start, and the ends
+ * left out here lie beside the loop, not on it.
+ */
+function trimToLoop(points: number[]) {
+    const count = points.length / 3;
+    const quarter = Math.max(1, Math.floor(count / 4));
+    let from = 0;
+    let to = count - 1;
+    let gap = Infinity;
+    for (let i = 0; i < quarter; i++) {
+        for (let j = count - quarter; j < count; j++) {
+            const distance = Math.hypot(points[3 * i] - points[3 * j], points[3 * i + 1] - points[3 * j + 1]);
+            if (distance < gap) {
+                gap = distance;
+                from = i;
+                to = j;
+            }
+        }
+    }
+    return points.slice(3 * from, 3 * to + 3);
 }
 
 /**

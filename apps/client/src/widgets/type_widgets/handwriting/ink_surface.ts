@@ -5,9 +5,7 @@ import {
     PAGE_GAP, PAGE_HEIGHT, PAGE_WIDTH, type PaperStyle, serializeInkDocument, serializeStroke,
     type Stroke, StrokeBuilder, strokeHitsSegment, StrokeIndex
 } from "./ink_document";
-import {
-    lineToPoints, polygonToPoints, recognizeLine, recognizeRectangle, recognizeTriangle
-} from "./ink_shapes";
+import { closedShapeToPoints, lineToPoints, recognizeLine } from "./ink_shapes";
 
 export type SurfaceTool = InkTool | "eraser";
 
@@ -625,20 +623,15 @@ export default class InkSurface {
     }
 
     /**
-     * Makes a straight line, a rectangle or a triangle of the stroke being drawn when it was drawn
-     * as one. The shape has one width, from the mean pressure of the stroke. The end of a line
-     * then follows the pointer.
+     * Makes a straight line or a closed shape of the stroke being drawn when it was drawn as one.
+     * The shape has one width, from the mean pressure of the stroke. The end of a line then
+     * follows the pointer.
      */
     private snapLiveStroke() {
         const stroke = this.liveStroke;
         if (!stroke || this.snapped) return;
         const minSize = MIN_SHAPE_SIZE / this.zoom;
         const line = recognizeLine(stroke.points, minSize);
-        const corners = line
-            ? undefined
-            : recognizeRectangle(stroke.points, minSize) ?? recognizeTriangle(stroke.points, minSize);
-        if (!line && !corners) return;
-
         const strokePoints = this.liveBuilder?.points ?? [];
         let pressure = 0.5;
         if (strokePoints.length) {
@@ -647,8 +640,11 @@ export default class InkSurface {
                 pressure += point.pressure / strokePoints.length;
             }
         }
+        const points = line
+            ? lineToPoints(line, pressure)
+            : closedShapeToPoints(stroke.points, minSize, pressure);
+        if (!points) return;
         this.snapped = { drawn: stroke, line: line && { fromX: line.fromX, fromY: line.fromY, pressure } };
-        const points = line ? lineToPoints(line, pressure) : polygonToPoints(corners ?? [], pressure);
         this.liveStroke = { ...stroke, simulatePressure: false, points };
         this.predicted = [];
         this.redrawLiveStroke();

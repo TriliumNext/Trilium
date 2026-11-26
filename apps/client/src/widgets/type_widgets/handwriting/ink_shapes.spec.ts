@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { buildStrokePoints, parseInkDocument } from "./ink_document";
 import {
-    lineToPoints, polygonToPoints, recognizeLine, recognizeRectangle, recognizeTriangle
+    closedShapeToPoints, type Ellipse, ellipseToPoints, lineToPoints, polygonToPoints, recognizeEllipse,
+    recognizeLine, recognizeRectangle, recognizeTriangle
 } from "./ink_shapes";
 
 describe("line recognition", () => {
@@ -159,6 +160,84 @@ describe("rectangle recognition", () => {
     });
 });
 
+describe("ellipse recognition", () => {
+    /**
+     * Flat triples of a stroke around an ellipse centered on (300, 200) and turned by `angle`
+     * degrees, over `sweep` degrees, with a radius that `wobble` changes three times around.
+     */
+    const ring = (radiusX: number, radiusY: number, angle = 0, wobble = 0, sweep = 360) => {
+        const cos = Math.cos(angle * Math.PI / 180);
+        const sin = Math.sin(angle * Math.PI / 180);
+        const points: number[] = [];
+        for (let degrees = 0; degrees <= sweep; degrees += 5) {
+            const turn = degrees * Math.PI / 180;
+            const x = (radiusX + wobble * Math.sin(3 * turn)) * Math.cos(turn);
+            const y = (radiusY + wobble * Math.sin(3 * turn)) * Math.sin(turn);
+            points.push(300 + x * cos - y * sin, 200 + x * sin + y * cos, 0.5);
+        }
+        return points;
+    };
+    const rounded = (ellipse: Ellipse | undefined) => ellipse && Object.values(ellipse).map(Math.round);
+
+    it("takes a stroke around an ellipse as that ellipse, or as a circle when nearly round", () => {
+        expect(rounded(recognizeEllipse(ring(80, 80), 20))).toEqual([ 300, 200, 80, 80, 0 ]);
+        expect(rounded(recognizeEllipse(ring(120, 60), 20))).toEqual([ 300, 200, 120, 60, 0 ]);
+
+        // A lumpy ring that is nine tenths as high as wide is a circle of the mean radius.
+        const lumpy = recognizeEllipse(ring(80, 72, 30, 6), 20);
+        expect(lumpy?.radiusX).toBe(lumpy?.radiusY);
+        expect(lumpy?.radiusX).toBeGreaterThan(72);
+        expect(lumpy?.radiusX).toBeLessThan(84);
+        expect(lumpy?.angle).toBe(0);
+
+        // A circle drawn with a pen runs past its start, inside the loop, which leaves the fit alone.
+        const { points } = parseInkDocument(JSON.stringify({ version: 1, strokes: [ { w: 3, p: PEN_CIRCLE } ] })).strokes[0];
+        expect(rounded(recognizeEllipse(points, 20))).toEqual([ 582, 255, 33, 27, -23 ]);
+
+        // Drawn almost level or almost upright, an ellipse lies along the axes.
+        expect(rounded(recognizeEllipse(ring(120, 60, 10), 20))).toEqual([ 300, 200, 120, 60, 0 ]);
+        expect(rounded(recognizeEllipse(ring(120, 60, 80), 20))).toEqual([ 300, 200, 60, 120, 0 ]);
+        expect(rounded(recognizeEllipse(ring(120, 60, 40), 20))).toEqual([ 300, 200, 120, 60, 40 ]);
+    });
+
+    it("leaves a stroke that is not an ellipse as it is", () => {
+        const square = [ [ 0, 0 ], [ 100, 0 ], [ 100, 100 ], [ 0, 100 ] ];
+        const triangle = [ [ 0, 0 ], [ 200, 0 ], [ 100, 150 ] ];
+        for (const corners of [ square, triangle ]) {
+            const points: number[] = [];
+            for (const [ index, [ fromX, fromY ] ] of corners.entries()) {
+                const [ toX, toY ] = corners[(index + 1) % corners.length];
+                for (let step = 0; step <= 10; step++) {
+                    points.push(fromX + (toX - fromX) * step / 10, fromY + (toY - fromY) * step / 10, 0.5);
+                }
+            }
+            expect(recognizeEllipse(points, 20)).toBeUndefined();
+        }
+        // Three quarters of a circle, a circle drawn twice around and a small one.
+        expect(recognizeEllipse(ring(80, 80, 0, 0, 270), 20)).toBeUndefined();
+        expect(recognizeEllipse(ring(80, 80, 0, 0, 720), 20)).toBeUndefined();
+        expect(recognizeEllipse(ring(8, 8), 20)).toBeUndefined();
+    });
+
+    it("runs a stroke of one pressure around an ellipse, on it once smoothed", () => {
+        const points = ellipseToPoints({ centerX: 300, centerY: 200, radiusX: 120, radiusY: 60, angle: 0 }, 0.4);
+        expect(points.slice(0, 3)).toEqual([ 420, 200, 0.4 ]);
+        expect(points.slice(-3).map((value) => Math.round(value * 10) / 10)).toEqual([ 420, 200, 0.4 ]);
+        expect(points.length / 3).toBeLessThan(120);
+
+        const smoothed = buildStrokePoints({ size: 4, simulatePressure: false, points });
+        for (const { point: [ x, y ], pressure } of smoothed) {
+            expect(pressure).toBe(0.4);
+            expect(Math.abs(Math.hypot((x - 300) / 120, (y - 200) / 60) - 1)).toBeLessThan(0.01);
+        }
+
+        // A small circle keeps enough points to stay round, and a rectangle is tried first.
+        expect(ellipseToPoints({ centerX: 0, centerY: 0, radiusX: 10, radiusY: 10, angle: 0 }, 0.5).length / 3).toBe(25);
+        expect(closedShapeToPoints(ring(80, 80), 20, 0.5)?.length).toBe(85 * 3);
+        expect(closedShapeToPoints(ring(80, 80, 0, 0, 180), 20, 0.5)).toBeUndefined();
+    });
+});
+
 /**
  * A rectangle drawn with a pen on a tablet, as the saved `p` of its stroke. Its corners are between
  * 81 and 98 degrees and its sides lean up to 18 degrees.
@@ -191,4 +270,28 @@ const PEN_RECTANGLE = [
     8, 0, 3, 8, 0, -1, 8, 0, 3, 8, 0, 0, 8, 0, -1, 8, 0, 3, 7, 0, 7, 8, 0, -1,
     16, 0, 0, 8, 0, 1, 8, 0, 0, -8, -8, 17, -8, 0, 0, -8, 0, 2, 8, 0, 15, 0, 8, 1,
     8, 8, -1
+];
+
+/**
+ * A circle drawn with a pen on a tablet, as the saved `p` of its stroke. The stroke runs 42 units
+ * past its start, up to halfway to the center.
+ */
+const PEN_CIRCLE = [
+    5902, 2288, 1, -8, -8, 2, 0, -8, 4, -8, 0, 78, -15, 0, 6, -24, 8, 3, -24, 0, 5, -23, 0, 4,
+    -16, 8, 2, -24, 0, 3, -16, 8, 4, -23, 8, 1, -24, 8, 2, -16, 8, 3, -16, 8, 2, -16, 15, 2,
+    -15, 8, 2, -24, 8, 1, -16, 16, 3, -8, 8, 2, -16, 16, 2, -15, 8, 2, -8, 15, 2, -16, 16, 1,
+    -8, 16, 2, -8, 8, 1, 0, 16, 1, -8, 16, 2, 0, 15, 0, -8, 16, 0, 0, 16, 1, 0, 16, 0,
+    0, 16, 0, 8, 15, 2, 0, 16, 0, 0, 16, 0, 0, 16, 2, 8, 16, 0, 0, 15, 1, 8, 16, 1,
+    8, 16, 1, 8, 16, 1, 8, 16, 2, 8, 8, 1, 8, 7, 1, 7, 16, 2, 8, 8, 2, 8, 8, 0,
+    8, 8, 2, 16, 8, 3, 16, 8, 1, 16, 8, 1, 15, 8, 1, 16, 0, 2, 16, 7, 1, 16, 0, 0,
+    16, 0, 0, 23, 0, 0, 24, 0, 2, 24, 0, 0, 23, -7, 0, 24, -8, -2, 24, 0, 1, 23, -8, 0,
+    24, -8, -1, 24, -8, 0, 24, -8, 2, 23, -16, -2, 24, -8, 0, 24, -15, 2, 16, -16, 0, 15, -24, -1,
+    8, -16, 1, 16, -16, 0, 8, -15, 0, 8, -16, 0, 8, -24, 0, 8, -16, 0, 8, -23, 1, 0, -8, -1,
+    7, -24, 0, 0, -16, 0, 0, -16, 0, 0, -15, 1, 0, -16, 0, 0, -16, 1, 0, -16, 2, -7, -16, 1,
+    0, -15, 2, -8, -8, 3, -8, -16, 2, -8, -16, 1, -8, -8, 3, -8, -16, 1, -16, -8, 1, -8, -15, 2,
+    -23, -16, 1, -16, -16, 2, -16, -8, 2, -24, -16, 0, -15, -8, 2, -16, -8, 2, -24, -7, 1, -16, -16, 2,
+    -24, -8, 1, -15, 0, 1, -24, -8, 2, -16, -8, 0, -24, 0, 2, -23, -8, 1, -16, 0, 0, -24, -8, 1,
+    -23, 0, 1, -24, 0, 1, -16, 0, 1, -16, 0, 2, -23, 0, 2, -16, 0, 0, -16, 0, 2, -24, 0, 0,
+    -8, 0, 2, -8, 0, 0, -15, 0, 0, -8, 0, 0, -16, 0, 0, -8, 8, 1, -8, 0, -1, -8, 0, 2,
+    -8, 0, 1, -8, 8, 0, -8, 0, -176, 0, 8, -28
 ];

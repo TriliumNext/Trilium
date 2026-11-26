@@ -252,6 +252,25 @@ describe("ink surface input", () => {
         expect(drawn()[0].length).toBeGreaterThan(triangle.length * 2);
         surface.undo();
         expect(drawn()).toEqual([ triangle.flat() ]);
+        surface.undo();
+
+        // A stroke around a circle becomes a circle around the same center.
+        const circle: number[][] = [];
+        for (let degrees = 0; degrees <= 360; degrees += 20) {
+            const radius = degrees % 40 ? 78 : 82;
+            circle.push([
+                Math.round(200 + radius * Math.cos(degrees * Math.PI / 180)),
+                Math.round(200 + radius * Math.sin(degrees * Math.PI / 180))
+            ]);
+        }
+        draw(...circle);
+        vi.advanceTimersByTime(600);
+        pointer("pointerup", "pen", 1, 200, 282);
+        const [ round ] = drawn();
+        expect(round.length).toBeGreaterThan(circle.length * 2);
+        for (let i = 0; i < round.length; i += 2) {
+            expect(Math.abs(Math.hypot(round[i] - 200, round[i + 1] - 200) - 80)).toBeLessThan(3);
+        }
     });
 
     function swipe(type: string, pointerId: number, y: number) {
