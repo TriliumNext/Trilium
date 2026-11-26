@@ -410,7 +410,10 @@
     "result_single_html": "単一の HTML ファイル。画像や添付ファイルが埋め込まれます。",
     "result_single_markdown": "単一のマークダウン (.md) ファイル。",
     "preparing_export": "エクスポートを準備中…",
-    "export_in_progress_with_total": "{{totalCount}} 件中 {{progressCount}} 件のノートをエクスポートしました"
+    "export_in_progress_with_total": "{{totalCount}} 件中 {{progressCount}} 件のノートをエクスポートしました",
+    "format_docx_name": "Word ドキュメント",
+    "format_docx_description": "Word、Google ドキュメント、LibreOffice で開くことができます",
+    "result_single_docx": "色、表、リスト、画像が保持される Word ドキュメント（.docx）です。図や埋め込みノートは含まれません。"
   },
   "help": {
     "title": "チートシート",
@@ -1717,7 +1720,8 @@
     "calendar_hide_routine_events": "週に {{days}} 日以上繰り返される予定を、月、年、リスト、の各表示から非表示にします。設定した値に応じて適用されます。",
     "exclude_from_llm": "このノートを AI チャットおよび MCP サーバーから非表示にします。ラベルに継承設定を適用することで、その下にあるノートもまとめて非表示にできます。",
     "bookmark_open_mode": "ランチャーバー上のノートのボタンをクリックした際の動作を指定します: <code>currentTab</code>（デフォルト）,<code>newTab</code>, <code>newSplit</code>, <code>newWindow</code> または <code>quickEdit</code>。これはブックマーク、ランチャーバーにドロップされたノート、およびブックマークフォルダ内のノートに適用されます。",
-    "vim_mode": "このテキストノートで Vim モードを有効にします。<code>false</code> を指定すると無効になります。なお、この設定はデバイス全体の Vim モードオプションの設定内容にかかわらず適用されます。"
+    "vim_mode": "このテキストノートで Vim モードを有効にします。<code>false</code> を指定すると無効になります。なお、この設定はデバイス全体の Vim モードオプションの設定内容にかかわらず適用されます。",
+    "docx_template": "Word ドキュメントとしてエクスポートする際に、その内容が書き込まれる Word ドキュメント（ファイルノート）です。スタイル、ヘッダー、フッター、ページ設定が適用されます。通常、継承可能な設定にされます。"
   },
   "link_context_menu": {
     "open_note_in_popup": "クイック編集",
