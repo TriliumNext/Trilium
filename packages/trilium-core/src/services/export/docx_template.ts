@@ -106,8 +106,8 @@ export function prepareDocxTemplate(docx: Uint8Array): PreparedDocxTemplate {
             const basedOn = readParagraphStyle(marker.paragraph) ?? readDefaultParagraphStyle(xml);
             halfPoints ??= readStyleSize(xml, basedOn);
             if (!hasStyle(xml, NOTE_TEXT_STYLE)) {
-                added.push(
-                    paragraphStyle(NOTE_TEXT_STYLE, "Note Text", basedOn, runProperties ?? ""));
+                added.push(paragraphStyle(NOTE_TEXT_STYLE, "Note Text", basedOn,
+                    runProperties ?? "", BODY_TEXT_PARAGRAPH_PROPERTIES));
             }
         }
         if (!hasStyle(xml, TABLE_TEXT_STYLE)) {
@@ -247,6 +247,10 @@ function readStyleSize(styles: string, id: string) {
 function hasStyle(styles: string, id: string) {
     return styles.includes(`w:styleId="${id}"`);
 }
+
+/** Turns off the pagination and outline level that a heading's style gives the text based on it. */
+const BODY_TEXT_PARAGRAPH_PROPERTIES = `<w:pPr><w:keepNext w:val="0"/><w:keepLines w:val="0"/>`
+    + `<w:outlineLvl w:val="9"/></w:pPr>`;
 
 function paragraphStyle(
     id: string, name: string, basedOn: string, runProperties: string, paragraphProperties = ""

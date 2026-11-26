@@ -130,6 +130,22 @@ describe("prepareDocxTemplate", () => {
         expect(prepareDocxTemplate(template).contentFontSize).toBe(20);
     });
 
+    it("keeps the look of a heading {{content}} line, but not its pagination", async () => {
+        const template = await Packer.pack(new Document({ sections: [ { children: [
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [ new TextRun({ text: "{{content}}", font: "Lato", bold: false }) ]
+            })
+        ] } ] }), "uint8array");
+
+        const styles = readPart(prepareDocxTemplate(template).data, "word/styles.xml") ?? "";
+        const noteText = styles.match(/<w:style [^>]*w:styleId="NoteText".*?<\/w:style>/s)?.[0];
+        expect(noteText).toContain(`<w:basedOn w:val="Heading2"/>`);
+        expect(noteText).toContain(`<w:keepNext w:val="0"/>`);
+        expect(noteText).toContain(`<w:keepLines w:val="0"/>`);
+        expect(noteText).toContain(`<w:outlineLvl w:val="9"/>`);
+    });
+
     it("refuses a file that is not a Word document, or one without a body", () => {
         for (const docx of [
             new Uint8Array([ 1, 2, 3 ]),
