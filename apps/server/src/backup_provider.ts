@@ -8,7 +8,15 @@ import type {
     SetupBackupSettings,
     SetupExistingBackup
 } from "@triliumnext/commons";
-import { BackupOptionsService, BackupService, getLog, sync_mutex as syncMutexService, utils as coreUtils, ws } from "@triliumnext/core";
+import {
+    BackupOptionsService,
+    BackupService,
+    getLog,
+    getPlatform,
+    sync_mutex as syncMutexService,
+    utils as coreUtils,
+    ws
+} from "@triliumnext/core";
 import type { Response } from "express";
 import fs from "fs";
 import { t } from "i18next";
@@ -181,12 +189,16 @@ export default class ServerBackupService extends BackupService {
             return null;
         }
 
-        return isListedBackup(directory, path.basename(resolvedPath)) ? resolvedPath : null;
+        return statListedBackup(resolvedPath) ? resolvedPath : null;
     }
 
     /** Whether there is a passphrase that opens, without letting the caller learn what it is. */
     override async hasStoredPassphrase(): Promise<boolean> {
         return !!(await this.config.getPassphrase?.());
+    }
+
+    override isPassphraseStored(): boolean {
+        return this.config.isPassphraseStored?.() ?? false;
     }
 
     /**
@@ -217,9 +229,7 @@ export default class ServerBackupService extends BackupService {
         // A backup someone asked for carries the password they typed while asking. Wanting the
         // stored one instead is a request rather than a value, since the passphrase is kept where
         // the interface that asked cannot read it.
-        const useStored = settings
-            ? settings.useStoredPassphrase
-            : this.config.isPassphraseStored?.() ?? false;
+        const useStored = settings ? settings.useStoredPassphrase : this.isPassphraseStored();
         if (!useStored) {
             return { compress, passphrase: settings?.passphrase || null, keepLocal: false };
         }
@@ -283,11 +293,10 @@ function listBackupsIn(directory: string): DatabaseBackup[] {
     }
 
     return fileNames
-        .filter(isBackupFileName)
         .flatMap((fileName) => {
             const filePath = path.resolve(directory, fileName);
-            const stat = fs.statSync(filePath, { throwIfNoEntry: false });
-            if (!stat?.isFile()) {
+            const stat = statListedBackup(filePath);
+            if (!stat) {
                 return [];
             }
 
@@ -301,21 +310,39 @@ function listBackupsIn(directory: string): DatabaseBackup[] {
         });
 }
 
-/** Whether {@link listBackupsIn} lists the file of this name in `directory`. */
-function isListedBackup(directory: string, fileName: string): boolean {
-    const stat = fs.statSync(path.resolve(directory, fileName), { throwIfNoEntry: false });
+/**
+ * The `fs.Stats` of a file that {@link listBackupsIn} lists, or `null` for any other. The
+ * extensions exclude intermediate files (`*.db-journal`, `*.part`). Any name passes, since the
+ * setup screen writes its backup under the name the user typed.
+ */
+function statListedBackup(filePath: string): fs.Stats | null {
+    const fileName = path.basename(filePath);
+    if (!fileName.endsWith(DATABASE_EXTENSION) && !fileName.endsWith(CONTAINER_EXTENSION)) {
+        return null;
+    }
 
-    return isBackupFileName(fileName) && !!stat?.isFile();
+    const stat = fs.statSync(filePath, { throwIfNoEntry: false });
+    return stat?.isFile() && !isLiveDatabase(filePath) ? stat : null;
 }
 
 /**
- * Whether a file name is one of a backup. The extension check excludes intermediate files
- * (`*.db-journal`, `*.part`). The name test ignores case, since the setup screen names its backup
- * for a person ("Backup …").
+ * Whether a file is the live database, which is in a backup folder set to the data directory.
+ * Compared by path ignoring case, since Windows and macOS ignore it too, and by file ID, which
+ * also catches a link.
  */
-function isBackupFileName(fileName: string): boolean {
-    return fileName.toLowerCase().includes("backup")
-        && (fileName.endsWith(DATABASE_EXTENSION) || fileName.endsWith(CONTAINER_EXTENSION));
+function isLiveDatabase(filePath: string): boolean {
+    const livePath = getPlatform().getDatabasePath?.();
+    if (!livePath) {
+        return false;
+    }
+    if (path.resolve(livePath).toLowerCase() === filePath.toLowerCase()) {
+        return true;
+    }
+
+    const live = fs.statSync(livePath, { bigint: true, throwIfNoEntry: false });
+    const candidate = fs.statSync(filePath, { bigint: true, throwIfNoEntry: false });
+    // A file system without file IDs reports 0 for every file.
+    return !!live?.ino && live.ino === candidate?.ino && live.dev === candidate.dev;
 }
 
 /**

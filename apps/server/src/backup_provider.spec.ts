@@ -1,6 +1,10 @@
 import { readBackupContainer, writeBackupContainer } from "@triliumnext/backup-container";
-import type { OptionNames, SetupBackupSettings } from "@triliumnext/commons";
-import { getLog, getSql, ws } from "@triliumnext/core";
+import {
+    defaultBackupName,
+    type OptionNames,
+    type SetupBackupSettings
+} from "@triliumnext/commons";
+import { getLog, getPlatform, getSql, ws } from "@triliumnext/core";
 import type { Response } from "express";
 import fs from "fs";
 import os from "os";
@@ -410,6 +414,18 @@ describe("ServerBackupService.backupAs: the backup the setup screen asked for", 
         expect(written.directoryPath).toBe(CUSTOM_DIR);
     });
 
+    it("lists and serves it under any name, so the screen can download it", async () => {
+        const service = desktopService(CUSTOM_DIR);
+        const named = await service.backupAs(asked({ compress: true }));
+        const defaulted = await service.backupAs(asked({ name: defaultBackupName(new Date()) }));
+
+        expect((await service.getExistingBackups()).map((b) => b.filePath).sort())
+            .toEqual([ named.filePath, defaulted.filePath ].sort());
+        for (const written of [ named, defaulted ]) {
+            expect(service.resolveBackupPath(written.filePath)).toBe(written.filePath);
+        }
+    });
+
     it("locks it with the password typed on the screen, over anything the instance is set up for", async () => {
         // Encryption is off in the options, and there is a stored passphrase that is not this one:
         // what the user typed while asking is what the backup is written with.
@@ -475,6 +491,15 @@ describe("ServerBackupService.backupAs: the backup the setup screen asked for", 
             .resolves.toBe(false);
         // A build with no keyring behind it at all, which is every server deployment.
         await expect(desktopService("").hasStoredPassphrase()).resolves.toBe(false);
+
+        // A locked keyring: stored, but not readable.
+        const locked = desktopService("", {}, {
+            isPassphraseStored: () => true,
+            getPassphrase: async () => null
+        });
+        await expect(locked.hasStoredPassphrase()).resolves.toBe(false);
+        expect(locked.isPassphraseStored()).toBe(true);
+        expect(desktopService("").isPassphraseStored()).toBe(false);
     });
 });
 
@@ -848,7 +873,7 @@ describe("ServerBackupService: serving only what the listing names", () => {
         const backup = path.join(DEFAULT_DIR, "backup-daily.db");
         fs.writeFileSync(backup, "db-bytes");
         const unlisted = [
-            path.join(DEFAULT_DIR, "document.db"),
+            path.join(DEFAULT_DIR, "config.ini"),
             path.join(DEFAULT_DIR, "session_secret.txt"),
             path.join(DEFAULT_DIR, "backup-daily.db-journal"),
             path.join(DEFAULT_DIR, "nested", "backup-daily.db")
@@ -881,6 +906,28 @@ describe("ServerBackupService: serving only what the listing names", () => {
         expectRefused(service, keyFile);
         expectRefused(service, deeper);
         expect(service.resolveBackupPath(backup)).toBe(backup);
+    });
+
+    it("never lists or serves the live database, even in the backup folder", async () => {
+        fs.mkdirSync(CUSTOM_DIR, { recursive: true });
+        const live = path.join(CUSTOM_DIR, "document.db");
+        const other = path.join(CUSTOM_DIR, "other.db");
+        for (const filePath of [ live, `${live}-wal`, other ]) {
+            fs.writeFileSync(filePath, "bytes");
+        }
+        // The same file under another name, which only its file ID gives away.
+        const linked = path.join(CUSTOM_DIR, "linked.db");
+        fs.linkSync(live, linked);
+        vi.spyOn(getPlatform(), "getDatabasePath").mockReturnValue(live);
+        const service = desktopService(CUSTOM_DIR);
+
+        expect((await service.getExistingBackups()).map((b) => b.filePath)).toEqual([ other ]);
+        // `Document.db` opens the live database on Windows and macOS.
+        const otherCase = path.join(CUSTOM_DIR, "Document.db");
+        for (const filePath of [ live, otherCase, `${live}-wal`, linked ]) {
+            expectRefused(service, filePath);
+        }
+        expect(service.resolveBackupPath(other)).toBe(other);
     });
 });
 

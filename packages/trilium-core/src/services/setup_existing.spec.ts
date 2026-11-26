@@ -155,14 +155,25 @@ describe("what becomes of the existing database", () => {
     });
 });
 
-/** Puts a stored passphrase in place, or takes the whole notion of one away. */
-function stubStoredPassphrase(hasOne: boolean | undefined) {
-    const backup = getBackup() as { hasStoredPassphrase?: (() => Promise<boolean>) | undefined };
-    const previous = backup.hasStoredPassphrase;
-    backup.hasStoredPassphrase = hasOne === undefined ? undefined : async () => hasOne;
+/**
+ * Puts a stored passphrase in place, or takes the whole notion of one away. `readable: false`
+ * stands for a keyring that is locked.
+ */
+function stubStoredPassphrase(
+    hasOne: boolean | undefined,
+    { readable = hasOne }: { readable?: boolean } = {}
+) {
+    const backup = getBackup() as {
+        hasStoredPassphrase?: (() => Promise<boolean>) | undefined;
+        isPassphraseStored?: (() => boolean) | undefined;
+    };
+    const { hasStoredPassphrase, isPassphraseStored } = backup;
+    backup.hasStoredPassphrase = hasOne === undefined ? undefined : async () => !!readable;
+    backup.isPassphraseStored = hasOne === undefined ? undefined : () => hasOne;
 
     return () => {
-        backup.hasStoredPassphrase = previous;
+        backup.hasStoredPassphrase = hasStoredPassphrase;
+        backup.isPassphraseStored = isPassphraseStored;
     };
 }
 
@@ -179,8 +190,8 @@ describe("what a backup asked for over a request is written as", () => {
     const now = new Date(2026, 7, 7, 10, 32, 21);
     const SUGGESTED_NAME = "Trilium data (2026-08-07 10-32-21)";
 
-    it("takes the answers the screen sent", async () => {
-        expect(await resolveBackupSettings(now, {
+    it("takes the answers the screen sent", () => {
+        expect(resolveBackupSettings(now, {
             name: "Before the import",
             passphrase: "hunter2",
             useStoredPassphrase: false,
@@ -193,63 +204,67 @@ describe("what a backup asked for over a request is written as", () => {
         });
     });
 
-    /** The name a backup asked for over a request is written under. */
-    async function nameFor(requested: unknown) {
-        return (await resolveBackupSettings(now, requested)).name;
-    }
-
-    it("names it after the moment where nothing usable was asked for", async () => {
-        expect(await nameFor({})).toBe(SUGGESTED_NAME);
-        expect(await nameFor({ name: "   " })).toBe(SUGGESTED_NAME);
-        expect(await nameFor(undefined)).toBe(SUGGESTED_NAME);
+    it("names it after the moment where nothing usable was asked for", () => {
+        expect(resolveBackupSettings(now, {}).name).toBe(SUGGESTED_NAME);
+        expect(resolveBackupSettings(now, { name: "   " }).name).toBe(SUGGESTED_NAME);
+        expect(resolveBackupSettings(now, undefined).name).toBe(SUGGESTED_NAME);
         // A caller may send anything at all, including something that is not an object.
-        expect(await nameFor("a backup, please")).toBe(SUGGESTED_NAME);
+        expect(resolveBackupSettings(now, "a backup, please").name).toBe(SUGGESTED_NAME);
     });
 
-    it("reduces a name that would have named somewhere else to one that names a file", async () => {
+    it("reduces a name that would have named somewhere else to one that names a file", () => {
         // The name crosses a request boundary and is then resolved against the backup directory, so
         // it is the one field here that could reach outside it if it were taken at its word.
-        expect(await nameFor({ name: "../../etc/passwd" })).toBe("....etcpasswd");
-        expect(await nameFor({ name: "..\\..\\Windows" })).toBe("....Windows");
-        expect(await nameFor({ name: ".." })).toBe(SUGGESTED_NAME);
+        expect(resolveBackupSettings(now, { name: "../../etc/passwd" }).name).toBe("....etcpasswd");
+        expect(resolveBackupSettings(now, { name: "..\\..\\Windows" }).name).toBe("....Windows");
+        expect(resolveBackupSettings(now, { name: ".." }).name).toBe(SUGGESTED_NAME);
     });
 
-    it("reads no answer out of anything that is not one", async () => {
+    it("reads no answer out of anything that is not one", () => {
         instanceBacksUp({});
         const restore = stubStoredPassphrase(false);
 
         const notAnswers = { passphrase: 42, compress: "yes", useStoredPassphrase: 1 };
-        expect(await resolveBackupSettings(now, notAnswers))
+        expect(resolveBackupSettings(now, notAnswers))
             .toMatchObject({ passphrase: "", compress: false, useStoredPassphrase: false });
 
         restore();
     });
 
-    it("falls back on how the instance backs up, where the caller said nothing", async () => {
+    it("falls back on how the instance backs up, where the caller said nothing", () => {
         // A caller older than the screen's questions backs up as the instance's other backups do.
         instanceBacksUp({ compress: true, encrypt: false });
         const restore = stubStoredPassphrase(true);
 
-        expect(await resolveBackupSettings(now, {}))
+        expect(resolveBackupSettings(now, {}))
             .toMatchObject({ useStoredPassphrase: true, compress: true });
 
         restore();
     });
 
-    it("asks for no stored passphrase where none is stored, whatever the option says", async () => {
+    it("asks for no stored passphrase where none is stored, whatever the option says", () => {
         instanceBacksUp({ encrypt: true });
         const restore = stubStoredPassphrase(false);
 
-        expect(await resolveBackupSettings(now, {})).toMatchObject({ useStoredPassphrase: false });
+        expect(resolveBackupSettings(now, {})).toMatchObject({ useStoredPassphrase: false });
 
         restore();
     });
 
-    it("lets the screen turn off what the instance turns on", async () => {
+    it("asks for the stored passphrase where it is stored but cannot be read", () => {
+        // The backup then stays plain in the default folder, with a toast (`resolveFormat()`).
+        const restore = stubStoredPassphrase(true, { readable: false });
+
+        expect(resolveBackupSettings(now, {})).toMatchObject({ useStoredPassphrase: true });
+
+        restore();
+    });
+
+    it("lets the screen turn off what the instance turns on", () => {
         instanceBacksUp({ compress: true });
         const restore = stubStoredPassphrase(true);
 
-        expect(await resolveBackupSettings(now, { useStoredPassphrase: false, compress: false }))
+        expect(resolveBackupSettings(now, { useStoredPassphrase: false, compress: false }))
             .toMatchObject({ useStoredPassphrase: false, compress: false });
 
         restore();
@@ -272,6 +287,15 @@ describe("what the screen is offered as its answers", () => {
         stubStoredPassphrase(false);
         await expect(getExistingBackupDefaults())
             .resolves.toMatchObject({ storedPassphrase: false, encrypt: false });
+
+        restore();
+    });
+
+    it("offers encryption, but no stored passphrase, where that cannot be read", async () => {
+        const restore = stubStoredPassphrase(true, { readable: false });
+
+        await expect(getExistingBackupDefaults())
+            .resolves.toMatchObject({ storedPassphrase: false, encrypt: true });
 
         restore();
     });
@@ -308,9 +332,7 @@ describe("the started backup, followed through its status", () => {
         }));
 
         startBackUpExistingData(new Date());
-        expect(getExistingBackupStatus().state).toBe("running");
-        // The write starts once the settings are resolved.
-        await vi.waitFor(() => expect(report).toBeDefined());
+        await vi.waitFor(() => expect(getExistingBackupStatus().state).toBe("running"));
 
         report?.(0.25);
         expect(getExistingBackupStatus()).toMatchObject({ state: "running", fraction: 0.25 });

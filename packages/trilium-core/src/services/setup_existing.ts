@@ -71,14 +71,13 @@ export async function backUpExistingData(
  *
  * The stored passphrase is reported as a yes or a no and never as itself: a screen that could read
  * it could be made to hand it over, and it is the one thing standing between a stolen backup and
- * the knowledge base inside it. The instance encrypts its backups whenever one is stored.
+ * the knowledge base inside it. The instance encrypts its backups whenever one is stored, also
+ * while the keyring is locked and the screen has no stored passphrase to offer.
  */
 export async function getExistingBackupDefaults(): Promise<SetupBackupDefaults> {
-    const storedPassphrase = await hasStoredPassphrase();
-
     return {
-        storedPassphrase,
-        encrypt: storedPassphrase,
+        storedPassphrase: (await getBackup().hasStoredPassphrase?.()) ?? false,
+        encrypt: isPassphraseStored(),
         compress: isCompressionEnabled()
     };
 }
@@ -94,10 +93,7 @@ export async function getExistingBackupDefaults(): Promise<SetupBackupDefaults> 
  *
  * @param now the moment to name the backup after, where the caller named nothing usable.
  */
-export async function resolveBackupSettings(
-    now: Date,
-    requested: unknown
-): Promise<SetupBackupSettings> {
+export function resolveBackupSettings(now: Date, requested: unknown): SetupBackupSettings {
     const asked = (typeof requested === "object" && requested !== null
         ? requested
         : {}) as Partial<Record<keyof SetupBackupSettings, unknown>>;
@@ -109,15 +105,16 @@ export async function resolveBackupSettings(
         passphrase: typeof asked.passphrase === "string" ? asked.passphrase : "",
         useStoredPassphrase: typeof asked.useStoredPassphrase === "boolean"
             ? asked.useStoredPassphrase
-            : await hasStoredPassphrase(),
+            // Stored, not readable: a locked keyring keeps the plain copy in the default folder.
+            : isPassphraseStored(),
         compress: typeof asked.compress === "boolean"
             ? asked.compress
             : isCompressionEnabled()
     };
 }
 
-async function hasStoredPassphrase(): Promise<boolean> {
-    return (await getBackup().hasStoredPassphrase?.()) ?? false;
+function isPassphraseStored(): boolean {
+    return getBackup().isPassphraseStored?.() ?? false;
 }
 
 /**
@@ -155,8 +152,7 @@ export function startBackUpExistingData(now: Date, requested?: unknown): void {
     }
 
     status = { state: "running", fraction: null };
-    resolveBackupSettings(now, requested)
-        .then(backUpExistingData)
+    backUpExistingData(resolveBackupSettings(now, requested))
         .then((written) => {
             status = { state: "done", fraction: 1, result: written };
         })
